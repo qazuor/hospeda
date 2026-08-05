@@ -9,6 +9,9 @@
  * (not `POST_CREATE`) — both are real differences in the underlying data,
  * not incidental drift between the two pages.
  *
+ * A header CTA and an empty-state CTA both link to `eventos/nuevo` (HOS-374
+ * §5.2.2), so an editor with no events yet has something to click.
+ *
  * Auth protection: both middleware AND this page check for a valid user
  * session, matching the `/mi-cuenta/propiedades` convention.
  *
@@ -101,12 +104,27 @@ const fetchErrorMessage = t(
     'No se pudo cargar la lista. Intentá recargar la página.'
 );
 const retryLabel = t('account.myContent.card.retry', 'Reintentar');
+const createCtaLabel = t('account.myContent.events.list.createCta', '+ Nuevo evento');
+const emptyCtaLabel = t(
+    'account.myContent.events.list.emptyCta',
+    'Crear mi primer evento'
+);
+
+const createUrl = buildUrl({ locale, path: 'mi-cuenta/eventos/nuevo' });
 
 const isEmpty = events.length === 0;
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="eventos">
-    <AccountPageHeader title={title} description={subtitle} />
+    <div class="my-content-page__header">
+        <AccountPageHeader title={title} description={subtitle} />
+        <a
+            class:list={['my-content-page__create-btn', btn.primary]}
+            href={createUrl}
+        >
+            {createCtaLabel}
+        </a>
+    </div>
 
     {fetchError ? (
         <div class:list={['my-content-page__error', accountSectionStyles.branded]} role="alert">
@@ -135,13 +153,33 @@ const isEmpty = events.length === 0;
             ))}
         </div>
     ) : (
-        <EmptyState locale={locale} variant="empty" message={emptyMessage} tone="warm">
+        <EmptyState
+            locale={locale}
+            variant="empty"
+            message={emptyMessage}
+            actionUrl={createUrl}
+            actionLabel={emptyCtaLabel}
+            tone="warm"
+        >
             <CalendarIcon size={56} weight="duotone" />
         </EmptyState>
     )}
 </AccountLayout>
 
 <style>
+    .my-content-page__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-4, 1rem);
+        flex-wrap: wrap;
+    }
+
+    .my-content-page__create-btn {
+        flex-shrink: 0;
+        text-decoration: none;
+    }
+
     .my-content-page__grid {
         display: grid;
         grid-template-columns: 1fr;

@@ -3043,6 +3043,26 @@ export const eventEditApi = {
     },
 
     /**
+     * Create a new event authored by the caller (HOS-374 §5.2.2 create page).
+     *
+     * `POST /api/v1/protected/events`. Authorship (`authorId`) is forced
+     * server-side from the authenticated actor by `httpToDomainEventCreate`
+     * (HOS-374 D-2) — never sent from here, and the HTTP schema does not even
+     * accept it. The created event goes through the normal moderation queue.
+     *
+     * @param params - The create payload, a `.pick()` subset of
+     *   `EventCreateHttpSchema` (see `EventCreateForm.client.tsx`).
+     * @returns The created event record.
+     */
+    create({
+        data
+    }: {
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/events`, body: data });
+    },
+
+    /**
      * Update one of the caller's own events via PATCH (partial update). Only
      * sends the fields provided in `data`.
      *
@@ -3073,6 +3093,44 @@ export const eventEditApi = {
      */
     softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.delete({ path: `${PROTECTED}/events/${id}` });
+    }
+};
+
+// --- Event Organizers (Protected) ---
+
+/**
+ * Protected event organizer API endpoints.
+ *
+ * Just `create` today — needed so `EventCreateForm.client.tsx` (HOS-374
+ * §5.2.2) can let an editor whose organizer is not in the public catalog
+ * create one inline, since `EventCreateHttpSchema.organizerId` is a required
+ * UUID with no other way to satisfy it from `/mi-cuenta`.
+ *
+ * Gated server-side on `EVENT_ORGANIZER_CREATE` — deliberately narrower than
+ * the admin `EVENT_ORGANIZER_MANAGE`/`_VIEW`/`_UPDATE`/`_DELETE` set (see
+ * `packages/seed/src/required/rolePermissions.seed.ts`'s EDITOR block): an
+ * editor can create an organizer but not list/edit/delete one through this
+ * surface.
+ */
+export const eventOrganizerApi = {
+    /**
+     * Create a new event organizer authored by the caller.
+     *
+     * `POST /api/v1/protected/event-organizers`. Only `name` is genuinely
+     * required by `EventOrganizerCreateHttpSchema` — every other field
+     * (description, logo, contact, social links) is optional, which is why
+     * the inline create form only collects a name.
+     *
+     * @param params - The create payload, a `.pick()` subset of
+     *   `EventOrganizerCreateHttpSchema` (see `EventCreateForm.client.tsx`).
+     * @returns The created event organizer record.
+     */
+    create({
+        data
+    }: {
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/event-organizers`, body: data });
     }
 };
 
