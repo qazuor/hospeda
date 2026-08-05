@@ -112,15 +112,48 @@ describe('buildEntityCacheTags', () => {
 });
 
 describe('vocabulary tables', () => {
-    it('declares a collection tag for every entity that has an entity prefix', () => {
-        expect(Object.keys(CACHE_TAG_COLLECTIONS).sort()).toEqual(
-            Object.keys(CACHE_TAG_ENTITY_PREFIXES).sort()
-        );
+    it('never declares a collection tag for something that is not a tagged entity', () => {
+        // The half of the old totality invariant that is still load-bearing.
+        // Until HOS-369 W2-4 this asserted set EQUALITY, i.e. every entity must
+        // have a collection tag. That was relaxed on purpose: `attraction` and
+        // `pointOfInterest` have detail pages but no page that lists them, and
+        // inventing `list-attr` to satisfy a type would have added vocabulary
+        // nothing emits and nothing purges.
+        //
+        // What must never happen is the reverse — a collection tag keyed on
+        // something the entity table does not know about, which is how the two
+        // sides drift into naming different things.
+        const entities = new Set(Object.keys(CACHE_TAG_ENTITY_PREFIXES));
+        for (const key of Object.keys(CACHE_TAG_COLLECTIONS)) {
+            expect(entities.has(key), `${key} is not a known entity`).toBe(true);
+        }
+    });
+
+    it('withholds a collection tag from exactly the entities that have no listing page', () => {
+        // Pinned as a literal rather than derived, so ADDING a listing page for
+        // one of these without giving it a collection tag fails here, and so
+        // does adding a collection tag for something that still has no listing.
+        // Either direction is a real bug; deriving the expectation from the
+        // tables themselves would make this test agree with whatever it found.
+        const withoutCollection = Object.keys(CACHE_TAG_ENTITY_PREFIXES)
+            .filter((entity) => !(entity in CACHE_TAG_COLLECTIONS))
+            .sort();
+
+        expect(withoutCollection).toEqual(['attraction', 'pointOfInterest']);
     });
 
     it('emits only valid tags for every collection', () => {
         for (const tag of Object.values(CACHE_TAG_COLLECTIONS)) {
             expect(isValidCacheTag({ tag })).toBe(true);
+        }
+    });
+
+    it('emits only valid tags for every entity prefix', () => {
+        // The prefixes gained four entries in W2-4; a prefix containing a
+        // comma, a space or non-ASCII would be dropped by Cloudflare at storage
+        // time and the response cached unpurgeably.
+        for (const prefix of Object.values(CACHE_TAG_ENTITY_PREFIXES)) {
+            expect(isValidCacheTag({ tag: `${prefix}-example-slug` })).toBe(true);
         }
     });
 });

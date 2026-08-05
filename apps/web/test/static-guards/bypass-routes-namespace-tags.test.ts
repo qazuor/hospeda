@@ -70,12 +70,17 @@ describe('routes that bypass the middleware collector', () => {
         const headers = getSitemapResponseHeaders();
 
         const tags = String(headers['Cache-Tag']).split(',');
+        // `list-gastro` / `list-exp` arrived with HOS-369 W2-4. Kept
+        // enumerated rather than derived so a new collection has to be
+        // acknowledged here rather than silently absorbed.
         expect(tags).toEqual([
             CATCH_ALL,
             `${NS}list-accom`,
             `${NS}list-dest`,
             `${NS}list-event`,
-            `${NS}list-post`
+            `${NS}list-post`,
+            `${NS}list-gastro`,
+            `${NS}list-exp`
         ]);
         expect(headers['Cache-Control']).toBe(
             'public, max-age=86400, stale-while-revalidate=86400'

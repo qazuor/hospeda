@@ -178,4 +178,114 @@ describe('getAffectedCacheTags', () => {
             expect(tags).toEqual([]);
         });
     });
+
+    describe('gastronomy and experience (HOS-369 W2-4)', () => {
+        it.each([
+            'gastronomy',
+            'experience'
+        ] as const)('yields entity tags, its own collection, and the parent destination for %s', (entityType) => {
+            const tags = getAffectedCacheTags({
+                entityType,
+                slug: 'la-parrilla',
+                id: 'uuid-1',
+                destinationSlug: 'colon'
+            });
+
+            const prefix = entityType === 'gastronomy' ? 'gastro' : 'exp';
+            expect(tags).toContain(`${prefix}-la-parrilla`);
+            expect(tags).toContain(`${prefix}-uuid-1`);
+            expect(tags).toContain(entityType === 'gastronomy' ? 'list-gastro' : 'list-exp');
+            expect(tags).toContain('dest-colon');
+        });
+
+        it.each([
+            'gastronomy',
+            'experience'
+        ] as const)('does NOT purge the home page for %s', (entityType) => {
+            // Unlike accommodations, events and posts, the home surfaces no
+            // commerce listings. Adding `home` here would evict it on every
+            // restaurant edit for nothing.
+            const tags = getAffectedCacheTags({ entityType, slug: 'x', id: 'y' });
+            expect(tags).not.toContain('home');
+        });
+
+        it('does not cross the two commerce collections', () => {
+            // A gastronomy write must not evict the experiences listing.
+            const tags = getAffectedCacheTags({ entityType: 'gastronomy', slug: 'x' });
+            expect(tags).not.toContain('list-exp');
+        });
+
+        it('degrades to the collection tag when no identifying key is present', () => {
+            const tags = getAffectedCacheTags({ entityType: 'gastronomy' });
+            expect(tags).toEqual(['list-gastro']);
+        });
+    });
+
+    describe('attraction and pointOfInterest fan-out (HOS-369 W2-4)', () => {
+        it.each([
+            'attraction',
+            'pointOfInterest'
+        ] as const)('purges EVERY related destination for %s, not just the first', (entityType) => {
+            // The reason this variant carries `destinationSlugs` (plural).
+            // A singular field would have evicted one destination and left
+            // the others stale while still reporting success.
+            const tags = getAffectedCacheTags({
+                entityType,
+                slug: 'termas',
+                id: 'uuid-9',
+                destinationSlugs: ['colon', 'concordia', 'federacion']
+            });
+
+            expect(tags).toContain('dest-colon');
+            expect(tags).toContain('dest-concordia');
+            expect(tags).toContain('dest-federacion');
+        });
+
+        it.each([
+            'attraction',
+            'pointOfInterest'
+        ] as const)('%s has no collection tag, because nothing lists them', (entityType) => {
+            const tags = getAffectedCacheTags({
+                entityType,
+                slug: 'termas',
+                destinationSlugs: ['colon']
+            });
+            expect(tags.some((tag) => tag.startsWith('list-'))).toBe(false);
+        });
+
+        it('uses distinct prefixes so an attraction and a POI sharing a slug do not collide', () => {
+            const attraction = getAffectedCacheTags({ entityType: 'attraction', slug: 'termas' });
+            const poi = getAffectedCacheTags({ entityType: 'pointOfInterest', slug: 'termas' });
+
+            expect(attraction).toContain('attr-termas');
+            expect(poi).toContain('poi-termas');
+            expect(attraction).not.toEqual(poi);
+        });
+
+        it('tolerates an absent or empty destination list without emitting a bare prefix', () => {
+            // A malformed `dest-` tag would match nothing and quietly waste a
+            // slot in the 16 KB header budget.
+            const tags = getAffectedCacheTags({
+                entityType: 'pointOfInterest',
+                slug: 'termas',
+                destinationSlugs: ['', 'colon']
+            });
+
+            expect(tags).toContain('dest-colon');
+            expect(tags).not.toContain('dest-');
+            expect(getAffectedCacheTags({ entityType: 'pointOfInterest', slug: 'termas' })).toEqual(
+                ['poi-termas']
+            );
+        });
+
+        it('deduplicates a destination that appears twice in the relation list', () => {
+            const tags = getAffectedCacheTags({
+                entityType: 'attraction',
+                slug: 'termas',
+                destinationSlugs: ['colon', 'colon']
+            });
+
+            expect(tags.filter((tag) => tag === 'dest-colon')).toHaveLength(1);
+        });
+    });
 });

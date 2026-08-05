@@ -368,6 +368,21 @@ export interface SessionUser {
      */
     readonly roles: readonly string[];
     /**
+     * Every granular permission the actor holds, from the same `/auth/me`
+     * payload as `roles`.
+     *
+     * Roles are NOT a substitute for this (HOS-374 OQ-1): the "trusted editor"
+     * is two per-user grants in `user_permission` (`*_PUBLISH_OWN`,
+     * `*_DELETE_OWN`) on the plain `EDITOR` role, deliberately not a role of
+     * its own. Any gate that must tell a plain editor from a trusted one — the
+     * publish and delete controls in `/mi-cuenta`, which are ABSENT rather
+     * than disabled for a plain editor (OQ-3) — can only ask this set.
+     *
+     * Empty when the payload was malformed; consumers must treat that as the
+     * lowest-privilege case, exactly like `roles`.
+     */
+    readonly permissions: readonly string[];
+    /**
      * Avatar URL from the actor (`users.image`, mirrored onto `Actor.image`
      * by `actorMiddleware`). `null` when the user has no avatar. Without this,
      * server-rendered surfaces (header, account dashboard) cannot show the
@@ -519,6 +534,12 @@ export async function parseSessionUser({
                             // former `role` scalar, which no longer exists in
                             // any payload.
                             roles?: readonly string[];
+                            // HOS-374: the granular permission set. Already on
+                            // this payload — `/auth/me` returns the full set
+                            // deliberately ("needed for client-side feature
+                            // gating", see `apps/api/src/routes/auth/me.ts`) —
+                            // the middleware simply discarded it until now.
+                            permissions?: readonly string[];
                             // SPEC-239 commerce-owner password gate. Lives on
                             // the actor since HOS-296 — see `SessionUser`.
                             mustChangePassword?: boolean;
@@ -541,6 +562,15 @@ export async function parseSessionUser({
                     email: actor.email || '',
                     roles: Array.isArray(actor.roles)
                         ? actor.roles.filter((role): role is string => typeof role === 'string')
+                        : [],
+                    // Same defensive shape as `roles`: a malformed payload
+                    // yields an EMPTY set, never a partial one, so every gate
+                    // built on it fails closed rather than granting something
+                    // the actor may not hold.
+                    permissions: Array.isArray(actor.permissions)
+                        ? actor.permissions.filter(
+                              (permission): permission is string => typeof permission === 'string'
+                          )
                         : [],
                     image: typeof actor.image === 'string' ? actor.image : null,
                     // Fail-open on anything but an explicit `true`, matching

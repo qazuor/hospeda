@@ -176,6 +176,17 @@ export class ExperienceService extends BaseCommerceListingService<
         return 'experienceId';
     }
 
+    /**
+     * Entity kind reported to the cache-revalidation pipeline (HOS-369 W2-4).
+     *
+     * Must match the `EntityChangeData` discriminant and the
+     * `@repo/cache-tags` vocabulary exactly — a mismatch purges nothing while
+     * still reporting success.
+     */
+    protected override get _revalidationEntityType(): 'experience' {
+        return 'experience';
+    }
+
     /** Experience-amenity junction model (satisfies {@link CommerceJunctionModel}). */
     protected override get _amenityJunctionModel(): CommerceJunctionModel<Record<string, unknown>> {
         return this._amenityJunctionModelInstance;

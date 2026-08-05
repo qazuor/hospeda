@@ -163,7 +163,12 @@ describe('editorial ownership is author-scoped (HOS-374 §5.1.4/OQ-4)', () => {
     // rejects the legitimate author of any content someone else created —
     // before the service ever runs. The two fields diverge exactly when an
     // admin creates content on an editor's behalf.
-    const routeFiles = ['update.ts', 'patch.ts', 'softDelete.ts'];
+    // `getById.ts` is a READ, but it belongs here for the same reason as the
+    // writes: it serves an author their own unapproved content, so its scope
+    // must be authorship. It exists at all because the public `getById`
+    // carries `cacheTTL` — an actor-shaped response through a cached public
+    // route would hand one author's draft to the next caller (HOS-374).
+    const routeFiles = ['update.ts', 'patch.ts', 'softDelete.ts', 'getById.ts'];
 
     // Posts were the asymmetric half: the same three routes gated on a flat
     // `requiredPermissions: [POST_UPDATE]` with no ownership at all, so an
