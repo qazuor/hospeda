@@ -91,7 +91,9 @@ test.describe('EDITOR-01: publication gate @p0 @editor', () => {
             headers: { cookie: admin.sessionCookie },
             data: { moderationState: 'APPROVED' }
         });
-        expect(moderate.status()).toBe(200);
+        // 201, not 200: the route factory assigns POST → 201 across the API,
+        // including action-POSTs like this one that create nothing.
+        expect(moderate.status()).toBe(201);
 
         // ── 5. It is now public ──────────────────────────────────────────────
         const publicReadAfter = await request.get(

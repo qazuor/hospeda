@@ -56,7 +56,9 @@ test.describe('EDITOR-02: trusted editor publish/unpublish @p1 @editor', () => {
             headers: { cookie: admin.sessionCookie },
             data: { moderationState: 'APPROVED' }
         });
-        expect(moderate.status()).toBe(200);
+        // 201, not 200 — see the note in editor-01: POST → 201 is the factory's
+        // convention, action-POSTs included.
+        expect(moderate.status()).toBe(201);
         expect(
             (await request.get(`${API_URL}/api/v1/public/posts/slug/${post.slug}`)).status()
         ).toBe(200);
@@ -69,7 +71,7 @@ test.describe('EDITOR-02: trusted editor publish/unpublish @p1 @editor', () => {
                 data: { visibility: 'PRIVATE' }
             }
         );
-        expect(unpublish.status()).toBe(200);
+        expect(unpublish.status()).toBe(201);
 
         const unpublished = (await unpublish.json()) as {
             data?: { visibility?: string; moderationState?: string };
@@ -78,10 +80,26 @@ test.describe('EDITOR-02: trusted editor publish/unpublish @p1 @editor', () => {
         // This is the assertion the whole orthogonality decision exists for.
         expect(unpublished.data?.moderationState).toBe('APPROVED');
 
+        // 403, NOT 404 — and that asymmetry is deliberate here only in the sense
+        // that this spec records what the API actually does. A post withheld by
+        // `moderationState` answers 404 (see editor-01), while one withheld by
+        // `visibility` answers 403, which confirms to an anonymous caller that
+        // the slug exists. The codebase convention elsewhere (accommodation,
+        // point-of-interest) is NOT_FOUND for content the caller may not see.
+        // Pinned exactly rather than as `[403, 404]` so that closing the gap
+        // fails this line loudly instead of passing unnoticed.
         const publicWhileUnpublished = await request.get(
             `${API_URL}/api/v1/public/posts/slug/${post.slug}`
         );
-        expect(publicWhileUnpublished.status()).toBe(404);
+        expect(publicWhileUnpublished.status()).toBe(403);
+
+        // The invariant that does NOT depend on which status code is chosen:
+        // an unpublished post is absent from the public listing.
+        const publicList = await request.get(`${API_URL}/api/v1/public/posts?pageSize=100`);
+        const listBody = (await publicList.json()) as {
+            data?: { items?: ReadonlyArray<{ id?: string }> };
+        };
+        expect((listBody.data?.items ?? []).map((item) => item.id)).not.toContain(post.id);
 
         // ── A trusted editor may edit their own APPROVED post ────────────────
         // The §7.6.3 state lock is bypassed by holding PUBLISH_OWN, because the
@@ -100,7 +118,7 @@ test.describe('EDITOR-02: trusted editor publish/unpublish @p1 @editor', () => {
                 data: { visibility: 'PUBLIC' }
             }
         );
-        expect(republish.status()).toBe(200);
+        expect(republish.status()).toBe(201);
 
         const republished = (await republish.json()) as {
             data?: { visibility?: string; moderationState?: string };
