@@ -11,6 +11,27 @@
  * So the payload this form produces is asserted against that real schema rather
  * than against a hand-written expectation of it — a local copy could drift from
  * the validator and still pass.
+ *
+ * ## The payload is a DELTA, and that is only safe because the API MERGES
+ *
+ * `settings` is a JSONB column holding the user's whole preference tree —
+ * `themeWeb`, `languageWeb`, `notifications`, `newsletter`,
+ * `searchHistoryEnabled` and the entire `onboarding` subtree. This form owns
+ * exactly ONE key of it and sends exactly that key, which is the only
+ * non-destructive shape available to it: the strict web allowlist forbids
+ * echoing back keys it does not own, and re-sending a locally reconstructed
+ * tree would clobber whatever the client did not know about.
+ *
+ * The other half of that contract is server-side: the PATCH must MERGE this
+ * delta into the stored JSONB, never replace it. `UserModel` declares `settings`
+ * in `mergeableJsonbColumns` (`packages/db/src/models/user/user.model.ts`) so
+ * the DB shallow-merges the delta. Until it did, ticking this one checkbox wiped
+ * every other preference — see `packages/db/test/models/user.model.settings-merge.test.ts`,
+ * which is what holds that half up.
+ *
+ * The assertions below therefore pin the delta shape DELIBERATELY: if someone
+ * ever "fixes" a wipe by making the form send a full settings object, they have
+ * moved the destruction into the client instead of removing it, and these turn red.
  */
 
 import { UserSettingsWebPatchSchema } from '@repo/schemas';
@@ -99,6 +120,32 @@ describe('buildProfilePatch — social opt-in', () => {
         expect(buildProfilePatch({ current, baseline }).flatChanged).not.toHaveProperty(
             'publicProfileShowSocialNetworks'
         );
+    });
+
+    it('sends ONLY the key it owns, never a reconstructed settings tree', () => {
+        // The non-destructive shape. The form has no knowledge of `themeWeb`,
+        // `notifications`, `onboarding` and the rest, so the only way it can
+        // avoid clobbering them is to not mention them — and to rely on the API
+        // merging the delta. Sending a rebuilt object here would destroy every
+        // preference the client never loaded.
+        const { current, baseline } = snapshots({ from: false, to: true });
+
+        const settings = buildProfilePatch({ current, baseline }).payload.settings as Record<
+            string,
+            unknown
+        >;
+
+        expect(Object.keys(settings)).toEqual(['publicProfileShowSocialNetworks']);
+        for (const foreign of [
+            'themeWeb',
+            'languageWeb',
+            'notifications',
+            'newsletter',
+            'searchHistoryEnabled',
+            'onboarding'
+        ]) {
+            expect(settings).not.toHaveProperty(foreign);
+        }
     });
 
     it('does not put the toggle inside the socialNetworks JSONB', () => {
