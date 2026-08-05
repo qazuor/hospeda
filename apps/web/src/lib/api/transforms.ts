@@ -2200,6 +2200,63 @@ export function transformEventEditCardList({
 }
 
 // ---------------------------------------------------------------------------
+// Editor own-content detail transforms (HOS-374 Phase 2 2C-2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Transforms a raw `GET /protected/posts/:id` payload into `PostEditDetail`
+ * (the editor's initial data at `/mi-cuenta/publicaciones/[id]/editar`).
+ *
+ * Two deliberate asymmetries with {@link transformPostEditCard}:
+ *  - The three state columns fall back to their most CONSERVATIVE values
+ *    (`PENDING`/`PRIVATE`/`DRAFT`), same as the card — never to a value that
+ *    would read as "already live", which here would also unlock the wrong
+ *    edit-lock branch.
+ *  - `readingTimeMinutes` and `relatedDestinationId` fall back to `null`, NOT
+ *    to `0`/`''`. Those two are the form's "cleared" values, and a `0` reading
+ *    time would ship in the very first PATCH as a real (invalid) edit the
+ *    author never made.
+ *
+ * @param item - Raw post object from `postEditApi.getById`
+ * @returns Typed `PostEditDetail` for the `PostEditor` island
+ *
+ * @example
+ * ```ts
+ * const result = await postEditApi.getById({ id, cookieHeader });
+ * if (result.ok) {
+ *   const post = transformPostEditDetail({ item: result.data });
+ * }
+ * ```
+ */
+export function transformPostEditDetail({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').PostEditDetail {
+    return {
+        id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        title: String(item.title ?? ''),
+        summary: String(item.summary ?? ''),
+        content: String(item.content ?? ''),
+        category: String(item.category ?? ''),
+        readingTimeMinutes:
+            typeof item.readingTimeMinutes === 'number' ? item.readingTimeMinutes : null,
+        relatedDestinationId:
+            typeof item.relatedDestinationId === 'string' ? item.relatedDestinationId : null,
+        moderationState: String(
+            item.moderationState ?? 'PENDING'
+        ) as import('./types').EditorContentModerationState,
+        visibility: String(
+            item.visibility ?? 'PRIVATE'
+        ) as import('./types').EditorContentVisibility,
+        lifecycleState: String(
+            item.lifecycleState ?? 'DRAFT'
+        ) as import('./types').EditorContentLifecycleState
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Gastronomy transforms (SPEC-239)
 // ---------------------------------------------------------------------------
 

@@ -500,3 +500,29 @@ export interface EventEditListItem {
     readonly lifecycleState: EditorContentLifecycleState;
     readonly updatedAt: string;
 }
+
+/**
+ * One of the author's own posts, loaded for the editor at
+ * `/mi-cuenta/publicaciones/[id]/editar` (HOS-374 Phase 2 2C-2). Transformed
+ * from the raw `GET /protected/posts/:id` payload by `transformPostEditDetail`.
+ *
+ * A superset of {@link PostEditListItem}: the same three state columns plus the
+ * editable body. `media` is absent — post media stays in a JSONB blob and is
+ * out of scope until slice 2D.
+ */
+export interface PostEditDetail {
+    readonly id: string;
+    /** Server-derived at create time and immutable here; shown read-only. */
+    readonly slug: string;
+    readonly title: string;
+    readonly summary: string;
+    readonly content: string;
+    readonly category: string;
+    /** `null` when the API sent no value — never defaulted to a number here. */
+    readonly readingTimeMinutes: number | null;
+    /** `null` when the post relates to no destination. */
+    readonly relatedDestinationId: string | null;
+    readonly moderationState: EditorContentModerationState;
+    readonly visibility: EditorContentVisibility;
+    readonly lifecycleState: EditorContentLifecycleState;
+}
