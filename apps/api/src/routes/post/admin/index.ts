@@ -3,10 +3,12 @@
  * Routes that require admin-level access
  */
 import { createRouter } from '../../../utils/create-app';
+import { adminAddPostMediaRoute } from './addMedia';
 import { adminPostBatchRoute } from './batch';
 import { adminCreatePostRoute } from './create';
 import { adminDeletePostRoute } from './delete';
 import { adminGetPostByIdRoute } from './getById';
+import { adminGetPostMediaRoute } from './getMedia';
 import { adminGetPostSeoRoute } from './getSeo';
 import { adminHardDeletePostRoute } from './hardDelete';
 import { adminSetPostLifecycleStateRoute } from './lifecycleState';
@@ -14,7 +16,10 @@ import { adminListPostsRoute } from './list';
 import { adminModeratePostRoute } from './moderate';
 import { adminPatchPostRoute } from './patch';
 import { adminSetPostPublishStateRoute } from './publishState';
+import { adminRemovePostMediaRoute } from './removeMedia';
+import { adminReorderPostMediaRoute } from './reorderMedia';
 import { adminRestorePostRoute } from './restore';
+import { adminSetFeaturedPostMediaRoute } from './setFeaturedMedia';
 import { adminPostTrendRoute } from './trend';
 import { adminUpdatePostRoute } from './update';
 import { adminUpdatePostSeoRoute } from './updateSeo';
@@ -67,5 +72,24 @@ app.route('/', adminGetPostSeoRoute);
 
 // PUT /:id/seo - Update post SEO metadata
 app.route('/', adminUpdatePostSeoRoute);
+
+// Media management (HOS-390) — relational post_media / event_media rows.
+// Registered most-specific-first by convention; Hono resolves static segments
+// ahead of params on its own (see test/routes/post-protected-media.test.ts).
+
+// PATCH /:id/media/reorder
+app.route('/', adminReorderPostMediaRoute);
+
+// GET /:id/media - List gallery photos.
+app.route('/', adminGetPostMediaRoute);
+
+// POST /:id/media - Add photo to gallery.
+app.route('/', adminAddPostMediaRoute);
+
+// PUT /:id/media/:mediaId/featured
+app.route('/', adminSetFeaturedPostMediaRoute);
+
+// DELETE /:id/media/:mediaId - Remove photo from gallery.
+app.route('/', adminRemovePostMediaRoute);
 
 export { app as adminPostRoutes };
