@@ -100,8 +100,16 @@ function makeLeadModel(lead = mockLead) {
 }
 
 /** Mock factory for `HostTradeModel`, used by the claim-time owner backfill. */
+/**
+ * Mock factory for `HostTradeModel`, used by the claim-time owner backfill.
+ *
+ * `ownerUserId` admits `undefined` as well as `null` for the same reason its
+ * partner sibling below does: the schema declares it `.nullish()`, the backfill
+ * has to read both as "empty", and a mock that cannot express `undefined`
+ * cannot catch a check that only handles `null`.
+ */
 function makeHostTradeModel(
-    hostTrade: { id: string; ownerUserId: string | null } = {
+    hostTrade: { id: string; ownerUserId?: string | null } = {
         id: HOST_TRADE_ID,
         ownerUserId: null
     }
@@ -460,6 +468,35 @@ describe('AllianceLeadService', () => {
 
             expect(result.error).toBeUndefined();
             expect(hostTradeModel.update).not.toHaveBeenCalled();
+        });
+
+        // The host-trade mirror of the partner case further down. Both links go
+        // through one shared `backfillProvisionedOwner` today, so a single test
+        // happens to cover both — but only by coincidence of the current
+        // factoring. Re-inlining this branch with a strict `=== null` check
+        // leaves the partner test green and this listing ownerless forever
+        // while the claim reports success, which is exactly what happened
+        // before the helper existed.
+        it('should treat an UNDEFINED host trade owner as empty, not as already owned', async () => {
+            const service = makeService();
+            const model = makeLeadModel(claimableLead({ provisionedHostTradeId: HOST_TRADE_ID }));
+            (service as any)._model = model;
+            const hostTradeModel = makeHostTradeModel({
+                id: HOST_TRADE_ID,
+                ownerUserId: undefined
+            });
+            (service as any)._hostTradeModel = hostTradeModel;
+
+            const result = await service.claimLead({
+                actor: claimant,
+                id: LEAD_ID,
+                token: RAW_TOKEN
+            });
+
+            expect(result.error).toBeUndefined();
+            const [where, data] = hostTradeModel.update.mock.calls[0] ?? [];
+            expect(where).toEqual({ id: HOST_TRADE_ID });
+            expect(data).toEqual(expect.objectContaining({ ownerUserId: ACTOR_ID }));
         });
 
         it('should not touch the host trade model when the lead has no provisioned listing', async () => {
