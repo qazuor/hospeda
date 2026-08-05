@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import type { z } from 'zod';
 import { HostTradeBenefitTypeEnum } from '../../enums/host-trade-benefit-type.enum.js';
 import {
     HOST_TRADE_BENEFIT_MAX_PERCENTAGE,
@@ -15,12 +14,19 @@ import {
  */
 const BenefitSchema = HostTradeBenefitFieldsSchema.superRefine(refineHostTradeBenefit);
 
+/**
+ * Result type derived from the schema itself rather than named off the zod
+ * namespace — the exported alias for it has changed across zod majors, and
+ * deriving it here keeps these helpers compiling through the next one.
+ */
+type BenefitParseResult = ReturnType<typeof BenefitSchema.safeParse>;
+
 /** Collects the `path.join('.')` of every issue, for order-independent assertions. */
-const issuePathsOf = (result: z.SafeParseReturnType<unknown, unknown>): string[] =>
+const issuePathsOf = (result: BenefitParseResult): string[] =>
     result.success ? [] : result.error.issues.map((issue) => issue.path.join('.'));
 
 /** Collects issue messages, so a rule is pinned to ITS message, not just "failed". */
-const issueMessagesOf = (result: z.SafeParseReturnType<unknown, unknown>): string[] =>
+const issueMessagesOf = (result: BenefitParseResult): string[] =>
     result.success ? [] : result.error.issues.map((issue) => issue.message);
 
 describe('refineHostTradeBenefit', () => {
