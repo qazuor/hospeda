@@ -12,6 +12,7 @@
  * Stores ISO `YYYY-MM-DD` strings (local-day, no TZ shift).
  */
 
+import { CalendarDotsIcon } from '@repo/icons';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { DateRange } from 'react-day-picker';
 import { DayPicker, getDefaultClassNames } from 'react-day-picker';
@@ -20,9 +21,8 @@ import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import 'react-day-picker/style.css';
-import { CalendarDotsIcon } from '@repo/icons';
 import styles from './DateRangeFilter.module.css';
+import { loadDayPickerStyles } from './load-day-picker-styles';
 
 /** Configuration for the date-range filter group. */
 export interface DateRangeFilterConfig {
@@ -323,6 +323,16 @@ function SingleBoundPicker({
 export function DateRangeFilter({ config, value, onChange, locale }: DateRangeFilterProps) {
     const { t } = createTranslations(locale);
     const mode = config.mode ?? 'range';
+
+    // react-day-picker's stylesheet used to be a bare `import` here, which put
+    // 8,845 B of calendar CSS on the critical path of every page reaching the
+    // filters barrel — including ones with no date picker at all (HOS-369
+    // W3-5). It is now imported with `?url` and attached at runtime. Requested
+    // on mount rather than on open, so it lands long before a user can reach
+    // the trigger and the calendar never flashes unstyled.
+    useEffect(() => {
+        void loadDayPickerStyles();
+    }, []);
 
     const fromDate = value.from ? fromIsoDay(value.from) : undefined;
     const toDate = value.to ? fromIsoDay(value.to) : undefined;

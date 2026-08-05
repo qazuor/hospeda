@@ -319,12 +319,15 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 				clearCompareModeIfOutsideSection(window.location.pathname);
 				initScrollReveal();
 				initParallax();
-				// Lazy-load GLightbox only when elements with [data-glightbox] exist on the page
+				// Lazy-load GLightbox only when elements with [data-glightbox] exist
+				// on the page. The import goes through `@/lib/load-glightbox`, which
+				// pulls in the stylesheet too: importing the CSS directly from this
+				// inline script put it in the page's stylesheet list, so the 11 KB
+				// shipped as a render-blocking <link> on every page despite this
+				// guard (HOS-369 W3-5).
 				if (document.querySelector('[data-glightbox]')) {
-					const [{ default: GLightbox }] = await Promise.all([
-						import('glightbox'),
-						import('glightbox/dist/css/glightbox.min.css'),
-					]);
+					const { loadGlightbox } = await import('@/lib/load-glightbox');
+					const GLightbox = await loadGlightbox();
 					GLightbox({
 						selector: '[data-glightbox]',
 						touchNavigation: true,

@@ -14,13 +14,21 @@ import { CalendarIcon } from '@repo/icons';
 import { useEffect, useRef, useState } from 'react';
 import { DayPicker } from 'react-day-picker';
 import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
-import 'react-day-picker/style.css';
+import dayPickerCssUrl from 'react-day-picker/style.css?url';
 import { FieldError } from '@/components/ui/FieldError';
+import { ensureStylesheet } from '@/lib/ensure-stylesheet';
 import type { FieldErrors } from '@/lib/forms/field-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { ddmmyyyyToDate } from './ProfileCompletion.helpers';
 import styles from './ProfileCompletion.module.css';
 import { ProfileCompletionAvatarPicker } from './ProfileCompletionAvatarPicker';
+
+// HOS-369 W3-5: attached at runtime rather than imported as a style
+// dependency. A bare `import 'react-day-picker/style.css'` here made Astro
+// hoist the calendar CSS into the <head> of every page reaching this module.
+// This one only affects the account area, but the mechanism is the same as the
+// two public-page cases — see test/static-guards/lazy-vendor-css.test.ts.
+void ensureStylesheet({ href: dayPickerCssUrl });
 
 const DAY_PICKER_LOCALES = { es: esLocale, en: enLocale, pt: ptLocale } as const;
 
