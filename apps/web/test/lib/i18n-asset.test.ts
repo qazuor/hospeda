@@ -24,13 +24,19 @@ import {
 /**
  * Distinct per locale, and carrying a `<` that must survive as an escape.
  *
+ * Both keys sit under `nav`, which is a CLIENT namespace: since HOS-369 W3-2
+ * `buildBody` narrows the dictionary to `CLIENT_I18N_NAMESPACES`, so a fixture
+ * under an unreachable namespace would be pruned before the escaping assertion
+ * ever saw it, and this test would fail for a reason that has nothing to do
+ * with escaping.
+ *
  * `vi.hoisted` because the mock factory below is hoisted above every
  * declaration in this file; a plain `const` would not exist yet when it runs.
  */
 const FIXTURES = vi.hoisted<Record<string, Record<string, string>>>(() => ({
-    es: { 'nav.home': 'Inicio', 'legal.terms': 'Ver <b>términos</b>' },
-    en: { 'nav.home': 'Home', 'legal.terms': 'See <b>terms</b>' },
-    pt: { 'nav.home': 'Início', 'legal.terms': 'Ver <b>termos</b>' }
+    es: { 'nav.home': 'Inicio', 'nav.terms': 'Ver <b>términos</b>', 'faq.q1': 'Pregunta' },
+    en: { 'nav.home': 'Home', 'nav.terms': 'See <b>terms</b>', 'faq.q1': 'Question' },
+    pt: { 'nav.home': 'Início', 'nav.terms': 'Ver <b>termos</b>', 'faq.q1': 'Pergunta' }
 }));
 
 vi.mock('@/lib/i18n', async (importOriginal) => {
@@ -105,6 +111,18 @@ describe('getI18nAssetBody', () => {
         // start a closing tag in an embedding document.
         expect(body).toContain('Ver \\u003cb>t');
         expect(body.includes('<'), 'a raw `<` survived into the served body').toBe(false);
+    });
+
+    it('drops namespaces the browser cannot reach, and keeps the ones it can', () => {
+        // The fixture deliberately carries BOTH a client namespace (`nav`) and
+        // one no client-reachable module names (`faq`). Asserting only the
+        // absence of `faq` would pass even with the narrowing removed if the
+        // fixture had no `faq` key to begin with — the pair is what makes this
+        // sensitive to `buildBody` losing its `pickClientNamespaces` call.
+        const body = getI18nAssetBody('es');
+
+        expect(body, 'a non-client namespace was serialized into the asset').not.toContain('"faq.');
+        expect(body, 'a client namespace was pruned by mistake').toContain('"nav.home"');
     });
 });
 
