@@ -1,5 +1,6 @@
 import { relations } from 'drizzle-orm';
-import { index, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, integer, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { destinations } from '../destination/destination.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 
 /**
@@ -50,6 +51,39 @@ export const allianceLeads = pgTable(
         /** Internal admin note about the lead disposition, set via mark-handled. */
         adminNote: text('admin_note'),
         /**
+         * Service category the applicant operates in (HOS-278 §6.4).
+         *
+         * These five columns REVERSE HOS-277's NG-3 ("no dedicated typed
+         * columns per kind") for `service_provider` alone, and the reason is
+         * concrete: approving a provider must materialize a `host_trades` row,
+         * and that table requires `category`, `destination_id` and a benefit —
+         * none of which survive as data under NG-3, which serializes every
+         * kind-specific answer into {@link message} as labelled prose. The data
+         * was always collected; it just was not addressable.
+         *
+         * Nullable because the other three kinds do not use them, and because
+         * leads submitted before this change have none. Required-ness is
+         * enforced per-kind by Zod at write time, not by the column.
+         *
+         * Stored as varchar rather than a pg enum to match this table's own
+         * documented convention (see {@link kind} and {@link status}).
+         * Validated against `HostTradeCategoryEnum` in `@repo/schemas`.
+         */
+        category: varchar('category', { length: 50 }),
+        /** Destination the applicant covers. Becomes `host_trades.destination_id`. */
+        destinationId: uuid('destination_id').references(() => destinations.id, {
+            onDelete: 'set null'
+        }),
+        /**
+         * What the applicant offers hosts, as a closed type validated against
+         * `HostTradeBenefitTypeEnum`. See {@link category} for why it is varchar.
+         */
+        benefitType: varchar('benefit_type', { length: 30 }),
+        /** Magnitude of the benefit, interpreted by {@link benefitType}. */
+        benefitValue: integer('benefit_value'),
+        /** Fine print accompanying the benefit. */
+        benefitText: text('benefit_text'),
+        /**
          * The account this application belongs to (HOS-278 §6.2).
          *
          * Nullable because the anonymous applicant is the PRIMARY case, not an
@@ -99,6 +133,10 @@ export const allianceLeads = pgTable(
 );
 
 export const allianceLeadsRelations = relations(allianceLeads, ({ one }) => ({
+    destination: one(destinations, {
+        fields: [allianceLeads.destinationId],
+        references: [destinations.id]
+    }),
     applicant: one(users, {
         fields: [allianceLeads.applicantUserId],
         references: [users.id],
