@@ -1091,5 +1091,29 @@
                 "fetchError": "Couldn't load the list. Try reloading the page."
             }
         }
+    },
+    "alliances": {
+        "applications": {
+            "title": "Your applications",
+            "submittedOn": "Submitted on",
+            "note": "We'll email you as soon as an application is resolved."
+        },
+        "programs": {
+            "partner": "Partner",
+            "sponsor": "Sponsor",
+            "editor": "Editor",
+            "service_provider": "Service provider"
+        },
+        "status": {
+            "pending": "Under review",
+            "reviewing": "Under review",
+            "approved": "Approved",
+            "rejected": "Not moving forward"
+        },
+        "claim": {
+            "working": "Confirming your application…",
+            "confirmed": "Done! We linked the application to your account.",
+            "failed": "We couldn't confirm that application. The link may have expired or already been used."
+        }
     }
 }

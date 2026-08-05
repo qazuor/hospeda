@@ -72,6 +72,11 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // mean an application could be attached without the owner ever being asked.
     [NotificationType.ALLIANCE_CLAIM_INVITE]: NotificationCategory.TRANSACTIONAL,
 
+    // Alliance application resolved (HOS-278 AC-6) — TRANSACTIONAL: it is the
+    // answer to something the recipient asked for, and the landing copy already
+    // promises it.
+    [NotificationType.ALLIANCE_LEAD_DECISION]: NotificationCategory.TRANSACTIONAL,
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3) — TRANSACTIONAL:
     // overbooking risk, always sent, never opted out of
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]: NotificationCategory.TRANSACTIONAL,

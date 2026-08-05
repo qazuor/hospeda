@@ -1091,5 +1091,29 @@
                 "fetchError": "Não foi possível carregar a lista. Tente recarregar a página."
             }
         }
+    },
+    "alliances": {
+        "applications": {
+            "title": "Suas candidaturas",
+            "submittedOn": "Enviada em",
+            "note": "Assim que resolvermos uma candidatura, escrevemos para você por e-mail."
+        },
+        "programs": {
+            "partner": "Partner",
+            "sponsor": "Sponsor",
+            "editor": "Editor",
+            "service_provider": "Fornecedor"
+        },
+        "status": {
+            "pending": "Em análise",
+            "reviewing": "Em análise",
+            "approved": "Aprovada",
+            "rejected": "Não avançou"
+        },
+        "claim": {
+            "working": "Confirmando sua candidatura…",
+            "confirmed": "Pronto! Vinculamos a candidatura à sua conta.",
+            "failed": "Não foi possível confirmar essa candidatura. O link pode ter expirado ou já ter sido usado."
+        }
     }
 }

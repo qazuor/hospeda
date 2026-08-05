@@ -724,6 +724,133 @@ describe('AllianceLeadService', () => {
             );
         });
 
+        // HOS-278 AC-6 — the applicant hears the outcome, either way.
+        it('should notify the applicant when a lead is approved (AC-6)', async () => {
+            const notifyDecision = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, null, {
+                notifyDecision
+            });
+            (service as any)._model = makeLeadModel();
+
+            await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(notifyDecision).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    leadId: LEAD_ID,
+                    email: 'juan@example.com',
+                    kind: 'partner',
+                    outcome: 'approved'
+                })
+            );
+        });
+
+        it('should notify the applicant when a lead is REJECTED too (AC-6)', async () => {
+            const notifyDecision = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, null, {
+                notifyDecision
+            });
+            const model = makeLeadModel();
+            model.update.mockResolvedValue({ ...mockLead, status: 'rejected' });
+            (service as any)._model = model;
+
+            await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'rejected' }
+            });
+
+            expect(notifyDecision).toHaveBeenCalledWith(
+                expect.objectContaining({ outcome: 'rejected' })
+            );
+        });
+
+        it('should never hand the admin note to the notifier', async () => {
+            const notifyDecision = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, null, {
+                notifyDecision
+            });
+            (service as any)._model = makeLeadModel();
+
+            await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'rejected', adminNote: 'Internal: not a good fit' }
+            });
+
+            const sent = notifyDecision.mock.calls[0]?.[0];
+            expect(JSON.stringify(sent)).not.toContain('not a good fit');
+        });
+
+        it('should still persist the decision when the notification fails', async () => {
+            const notifyDecision = vi.fn().mockRejectedValue(new Error('SMTP down'));
+            const service = new AllianceLeadService({ logger: undefined }, null, {
+                notifyDecision
+            });
+            const model = makeLeadModel();
+            (service as any)._model = model;
+
+            const result = await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(model.update).toHaveBeenCalled();
+        });
+
+        it('should not notify when the lead does not exist', async () => {
+            const notifyDecision = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, null, {
+                notifyDecision
+            });
+            const model = makeLeadModel();
+            model.findById.mockResolvedValue(null);
+            (service as any)._model = model;
+
+            const result = await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect(notifyDecision).not.toHaveBeenCalled();
+        });
+
+        it('should not notify when the actor lacks ALLIANCE_LEAD_MANAGE', async () => {
+            const notifyDecision = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, null, {
+                notifyDecision
+            });
+            (service as any)._model = makeLeadModel();
+
+            await service.markHandled({
+                actor: guestActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(notifyDecision).not.toHaveBeenCalled();
+        });
+
+        it('should work with no notifier injected at all', async () => {
+            const service = makeService();
+            (service as any)._model = makeLeadModel();
+
+            const result = await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(result.error).toBeUndefined();
+        });
+
         it('should return FORBIDDEN for actor without ALLIANCE_LEAD_MANAGE', async () => {
             const service = makeService();
             (service as any)._model = makeLeadModel();

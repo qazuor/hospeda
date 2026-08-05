@@ -1091,5 +1091,29 @@
                 "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
             }
         }
+    },
+    "alliances": {
+        "applications": {
+            "title": "Tus postulaciones",
+            "submittedOn": "Enviada el",
+            "note": "Cuando resolvamos una postulación te vamos a escribir por correo."
+        },
+        "programs": {
+            "partner": "Partner",
+            "sponsor": "Sponsor",
+            "editor": "Editor",
+            "service_provider": "Proveedor"
+        },
+        "status": {
+            "pending": "En revisión",
+            "reviewing": "En revisión",
+            "approved": "Aprobada",
+            "rejected": "No avanzó"
+        },
+        "claim": {
+            "working": "Confirmando tu postulación…",
+            "confirmed": "¡Listo! Vinculamos la postulación a tu cuenta.",
+            "failed": "No pudimos confirmar esa postulación. El enlace pudo haber vencido o ya haberse usado."
+        }
     }
 }

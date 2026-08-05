@@ -14,6 +14,7 @@ import {
     AdminSystemEvent,
     AiCostThresholdAlert,
     AllianceClaimInvite,
+    AllianceLeadDecision,
     CommerceOwnerCredentials,
     ContactSubmissionEmail,
     FeedbackReportEmail,
@@ -43,6 +44,7 @@ import type {
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
     AllianceClaimInvitePayload,
+    AllianceLeadDecisionPayload,
     CommerceOwnerCredentialsPayload,
     ContactSubmissionPayload,
     FeedbackReportPayload,
@@ -595,6 +597,15 @@ export class NotificationService {
                     programLabel: p.programLabel,
                     claimUrl: p.claimUrl,
                     expiresAtLabel: formatDate({ dateString: p.expiresAt })
+                });
+            }
+
+            case 'alliance_lead_decision': {
+                const p = payload as AllianceLeadDecisionPayload;
+                return AllianceLeadDecision({
+                    recipientName,
+                    programLabel: p.programLabel,
+                    outcome: p.outcome
                 });
             }
 

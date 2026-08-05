@@ -65,4 +65,33 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
         expect(source).toContain('<AccountLayout');
         expect(source).toContain('activeSection="aliados"');
     });
+
+    // HOS-278 AC-14 — the hub now also reports the state of what you applied to.
+    describe('own applications (HOS-278 AC-14)', () => {
+        it('fetches the caller own applications, forwarding the session cookie', () => {
+            expect(source).toContain(
+                "import { allianceLeadsApi } from '@/lib/api/endpoints-protected';"
+            );
+            expect(source).toContain('allianceLeadsApi.mine({');
+            expect(source).toContain("Astro.request.headers.get('cookie')");
+        });
+
+        it('degrades to an empty list rather than erroring the hub', () => {
+            // The applications panel is an addition to a hub that stood on its
+            // own for two specs; an API failure must not take the page down.
+            expect(source).toContain('myLeadsResult.ok ? myLeadsResult.data.leads : []');
+        });
+
+        it('renders the applications section above the discovery hub', () => {
+            expect(source).toContain(
+                "import AllianceApplicationsSection from '@/components/account/AllianceApplicationsSection.astro';"
+            );
+            expect(source).toContain(
+                '<AllianceApplicationsSection locale={locale} leads={myLeads} />'
+            );
+            expect(source.indexOf('<AllianceApplicationsSection')).toBeLessThan(
+                source.indexOf('<DiscoveryDoorHub')
+            );
+        });
+    });
 });
