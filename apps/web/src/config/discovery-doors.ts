@@ -23,12 +23,25 @@ import type { ComponentType } from 'react';
 /**
  * A single acquirable option inside a `DiscoveryDoor` hub page (spec §6.2/§6.3).
  *
- * "Acquired" state (HOS-131 OQ-3, owner-decided): the signal is PERMISSIONS,
- * not billing entitlements — a user has "acquired" an option once they hold
- * `acquiredPermission`. Options with no `acquiredPermission` (`sponsor`,
- * `partner`, `serviceProvider` — lead-only flows with no auto-provisioning,
- * HOS-277 NG-1) can never be acquired; they render as `unacquired`, always
- * linking their lead-capture landing.
+ * "Acquired" state (HOS-131 OQ-3, owner-decided): the signal is normally
+ * PERMISSIONS, not billing entitlements — a user has "acquired" an option
+ * once they hold `acquiredPermission`. `sponsor`/`partner` fit that model
+ * directly: they stay lead-only flows with no auto-provisioning (HOS-277
+ * NG-1), so they never acquire an `acquiredPermission` and can never resolve
+ * to `'acquired'` — they render as `unacquired`, always linking their
+ * lead-capture landing.
+ *
+ * `serviceProvider` is the deliberate EXCEPTION (HOS-278 AC-7): once an admin
+ * approves the lead, it materializes a `host_trades` row, but the provider
+ * gets NO permission and NO role change — they stay an ordinary tourist
+ * account, and ownership of that row is the real gate. Permissions cannot
+ * represent that state, so this option ALSO carries no `acquiredPermission`,
+ * but it is NOT stuck `unacquired` forever: the hub page
+ * (`mi-cuenta/aliados/index.astro`) fetches `GET /host-trades/mine` and
+ * force-acquires it via `resolveDoorOptionState`'s `acquiredOptionIds`
+ * override (`src/lib/nav-gating.ts`) whenever a row comes back. So "no
+ * `acquiredPermission`" no longer means "can never be acquired" for every
+ * option — check each option's own comment for which mechanism applies.
  */
 export interface DiscoveryDoorOption {
     /** Stable identifier. */
@@ -49,8 +62,13 @@ export interface DiscoveryDoorOption {
     readonly ctaI18nKey: string;
     /**
      * The permission that signals "already acquired" (HOS-131 OQ-3). Omitted
-     * means this option can never be acquired — used only by the
-     * not-yet-implemented `comingSoon` placeholders (NG-2).
+     * means this option is never acquired via the PERMISSION mechanism. For
+     * most such options (the not-yet-implemented `comingSoon` placeholders,
+     * NG-2, and the lead-only `sponsor`/`partner` options) that genuinely
+     * means "can never be acquired". `serviceProvider` is the one exception —
+     * it is force-acquired out-of-band instead (see the interface doc above
+     * and HOS-278 AC-7). Do not add a permission here for `serviceProvider`;
+     * an approved provider deliberately receives none.
      */
     readonly acquiredPermission?: PermissionEnum;
     /** Path segment for the "Gestionar" link, shown once the option is acquired. */
@@ -218,10 +236,17 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // `alliance_leads`, feeding the HostTrade directory once
                 // approved) — no longer the generic '/contacto' form.
                 href: 'sumate/proveedor',
-                ctaI18nKey: 'account.doors.common.contactCta'
-                // No acquiredPermission: service_provider is a lead-only flow
-                // (HOS-277 NG-1) — the admin evaluates and provisions
-                // manually, so this option never resolves to 'acquired'.
+                ctaI18nKey: 'account.doors.common.contactCta',
+                // HOS-278 AC-7: no acquiredPermission — an approved provider
+                // is an ordinary tourist account with no role/permission
+                // change, so the permission mechanism structurally cannot
+                // represent "acquired" for this option. The hub page
+                // force-acquires it out-of-band instead, via
+                // `resolveDoorOptionState`'s `acquiredOptionIds` override,
+                // once `GET /host-trades/mine` returns a row (see the
+                // interface doc above). `manageHref` is what the "Gestionar"
+                // button links to once that happens.
+                manageHref: 'mi-cuenta/proveedor'
             },
             // HOS-374 OQ-5 splits the former single `editor` option in two, one
             // per content type, so an acquired editor lands on the listing for

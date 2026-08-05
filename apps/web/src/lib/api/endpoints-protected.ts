@@ -17,6 +17,9 @@ import type {
     AddonResponse,
     DestinationReviewListItem,
     DowngradePreview,
+    HostTradeBenefitTypeEnum,
+    HostTradeCategoryEnum,
+    HostTradeOwnerUpdate,
     KeepSelections,
     LinkPreapprovalResponse,
     OccupancySourceEnum,
@@ -1996,6 +1999,90 @@ export const allianceLeadsApi = {
             path: `${PROTECTED}/alliance/leads/mine`,
             cookieHeader
         });
+    }
+};
+
+// --- Host-trade self-service (Protected — HOS-278 AC-7 .. AC-10) ---
+
+/**
+ * The caller's own `host_trades` directory listing, as the account page shows
+ * it. A read allowlist mirroring `HostTradeOwnerViewSchema` field-for-field
+ * (same precedent as {@link MyAllianceLeadItem} — the web declares its own
+ * read interface rather than importing the Zod-inferred type directly).
+ *
+ * `benefit`/`benefitType`/`benefitValue` are the LIVE, publicly visible offer.
+ * `pendingBenefit*` + `benefitReviewState` describe an edit awaiting admin
+ * review (HOS-278 AC-8) — they never overwrite the live trio until approved.
+ */
+export interface MyHostTrade {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly category: HostTradeCategoryEnum;
+    readonly contact: string;
+    /** Fine print of the LIVE benefit (conditions, exclusions, validity). */
+    readonly benefit: string;
+    readonly benefitType: HostTradeBenefitTypeEnum | null;
+    readonly benefitValue: number | null;
+    readonly pendingBenefitType: HostTradeBenefitTypeEnum | null;
+    readonly pendingBenefitValue: number | null;
+    /** Fine print of the PENDING benefit edit, when one is awaiting review. */
+    readonly pendingBenefitText: string | null;
+    readonly benefitReviewState: 'pending' | null;
+    readonly destinationId: string;
+    readonly is24h: boolean;
+    readonly scheduleText: string | null;
+    readonly isActive: boolean;
+    /** Set once the listing has been taken down (HOS-278 R-4) — the row survives. */
+    readonly revokedAt: string | null;
+    readonly revokeReason: string | null;
+}
+
+/** Response envelope for `GET /protected/host-trades/mine`. */
+export interface MyHostTradeResponse {
+    /** `null` when the caller owns no listing — never a 403/404. */
+    readonly trade: MyHostTrade | null;
+}
+
+/**
+ * Provider self-service view/edit of their OWN `host_trades` listing.
+ *
+ * Auth-only (no permission — HOS-278 AC-7): an approved service provider is
+ * an ordinary tourist account with no role/permission change, so ownership of
+ * the row is the only gate. `mine()` answers `{ trade: null }` rather than an
+ * error when the caller owns none, mirroring {@link allianceLeadsApi.mine}.
+ */
+export const hostTradesApi = {
+    /**
+     * Fetches the caller's own listing, or `null`.
+     *
+     * @param params - `{ cookieHeader }` when calling from SSR; omit in the browser.
+     * @returns The caller's listing, or an error the page degrades from.
+     */
+    mine({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<MyHostTradeResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/mine`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Applies an edit to the caller's own listing.
+     *
+     * Operational fields (`contact`, `scheduleText`, `is24h`) apply
+     * immediately; any of `benefitType`/`benefitValue`/`benefitText` present
+     * goes to the PENDING columns and waits for admin review (HOS-278 AC-8) —
+     * see `HostTradeOwnerUpdateSchema`'s JSDoc for the full contract.
+     *
+     * @param body - The changed fields only (validated by `HostTradeOwnerUpdateSchema`).
+     * @returns The updated listing (owner view shape).
+     */
+    updateMine(body: HostTradeOwnerUpdate): Promise<ApiResult<{ readonly trade: MyHostTrade }>> {
+        return apiClient.patch({ path: `${PROTECTED}/host-trades/mine`, body });
     }
 };
 

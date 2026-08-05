@@ -43,15 +43,24 @@ interface Props {
      * href instead of emitting a broken empty href.
      */
     readonly adminUrl?: string;
+    /**
+     * Option ids that are force-`'acquired'` out-of-band (HOS-278), bypassing
+     * the permission mechanism entirely for those ids — see
+     * `resolveDoorOptionState`'s JSDoc in `src/lib/nav-gating.ts` for why the
+     * override exists. Only `mi-cuenta/aliados/index.astro` passes this today
+     * (`['serviceProvider']` once `GET /host-trades/mine` returns a row);
+     * every other caller omits it and behaviour is unchanged.
+     */
+    readonly acquiredOptionIds?: readonly string[];
 }
 
-const { locale, door, roles, adminUrl } = Astro.props;
+const { locale, door, roles, adminUrl, acquiredOptionIds } = Astro.props;
 const { t } = createTranslations(locale);
 
 const visibility = (node: GatedNavNode) => isVisibleByRoles(node, roles);
 
 const optionRows = door.options.map((option) => {
-    const state = resolveDoorOptionState({ option, visibility });
+    const state = resolveDoorOptionState({ option, visibility, acquiredOptionIds });
     // Resolve the "Gestionar" target only for acquired options. A
     // `managesInAdminPanel` option links the absolute admin URL; when that env
     // var isn't configured, `manageHref` stays undefined and the button is
