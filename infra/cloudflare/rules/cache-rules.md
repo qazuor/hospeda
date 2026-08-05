@@ -388,49 +388,74 @@ The first table shows the two new commerce collections are isolated from each
 other and from the detail pages. The second shows a per-entity tag evicts one
 attraction without touching its sibling.
 
-#### What is NOT verified by probing, and why
+#### The many-to-many fan-out — verified end to end, 2026-08-05
 
-Two W2-4 surfaces could not be measured because staging has no data for them:
-a gastronomy detail page (the listing renders no entries) and a POI detail page
-(`hasOwnPage` is false for every seeded row — it is the flag that separates a
-curated landmark from the 839 catalog rows).
+A `curl` cannot trigger this one: confirming that editing a POI evicts every
+destination page showing it needs a real write through `PointOfInterestService`,
+which means the admin UI. It has now been run, and it passes.
 
-More importantly, the **many-to-many fan-out is not probe-verifiable at all**.
-Confirming that editing one POI evicts every destination page showing it needs
-a real write through `PointOfInterestService`, which means the admin UI — a
-`curl` cannot trigger it. What IS verified is the mapper: `getAffectedCacheTags`
-emits one `dest-<slug>` per related destination, mutation-tested by truncating
-the fan-out to its first element (three assertions go red).
+One edit of `palacio_san_jose` (linked to Colón, Concepción del Uruguay and
+Concordia) produced five purges, all `trigger = hook`, `status = success`:
 
-That is coverage of the tag computation, NOT of the chain from service through
-Cloudflare. Treat the fan-out as untested end-to-end until somebody edits a
-multi-destination POI in staging and watches those destination pages fall.
+```
+preview:dest-colon                                pointOfInterest  success  hook
+preview:dest-concepcion-del-uruguay               pointOfInterest  success  hook
+preview:dest-concordia                            pointOfInterest  success  hook
+preview:poi-palacio_san_jose                      pointOfInterest  success  hook
+preview:poi-97b617e6-ce5c-4c6e-a6b0-cb2bb0c81b16  pointOfInterest  success  hook
+```
 
-#### Setting up that end-to-end check (and what it turned up)
+Three destination tags from ONE write is the fan-out. All four pages went
+`HIT` → `MISS`.
 
-Staging cannot run the check as-is. `r_destination_point_of_interest` holds
-**zero rows** there, so `_resolveDestinationSlugsForRevalidation` returns `[]`
-and a fan-out probe would pass without fanning out to anything. Exactly one POI
-(`palacio_san_jose`) has `hasOwnPage = true`. Before probing, link that POI to
-two or more destinations from the admin's POI → Destinations tab, warm every
-affected destination page to `HIT`, then edit and save the POI itself.
+**Two things make the measurement mean something, and the first attempt had
+neither.** Warm at 23:40:34, probe at 23:43:53 — 3m19s against a 300s TTL, so
+expiry is arithmetically excluded. And the result is `MISS`, not `EXPIRED`:
+`EXPIRED` is an object still present but aged out, `MISS` is an object that is
+gone. An earlier attempt read three `HIT → EXPIRED` transitions as a working
+fan-out; they were the TTL elapsing, and the tell was that the POI's own page —
+warmed last, so still young — stayed `HIT`. Everything with an expired clock
+fell and everything with a fresh one survived. That is a clock, not a purge.
+Prefer the `revalidation_log` query above to cache-status inference: it shows
+the service emitting the exact tags, and infers nothing.
 
-Preparing that setup surfaced a real gap, now fixed: the three relation
-mutators — `addPointOfInterestToDestination`,
-`removePointOfInterestFromDestination`, and
-`updatePointOfInterestDestinationRelation` — scheduled no revalidation at all.
-Only `_afterCreate` / `_afterUpdate` on the POI row were wired to the purge
-chain. Linking a POI to a destination changes that destination's page (it
-renders its `PRIMARY` POIs server-side) and evicted nothing; the page stayed
-stale for the full TTL. Unlinking carried the subtler half: the link row is
-already soft-deleted by the time the purge runs, so the one destination whose
-page actually changed is precisely the one the relation table can no longer
-report — it has to be passed to the purge explicitly.
+#### What this took, and what it exposed
 
-Note the ordering this implies for the probe. The relation edits themselves now
-purge, so linking the POI to its destinations evicts those pages as a side
-effect. Warm the pages to `HIT` **after** the links exist, not before, or the
-first probe measures the link purge instead of the POI-edit fan-out.
+Setting the check up cost two bug fixes, both of which had been live since W2-4
+shipped.
+
+**The four W2-4 entity types had no `revalidation_config` row**, so
+`scheduleRevalidation` returned at its config lookup and every purge for
+`pointOfInterest`, `attraction`, `gastronomy` and `experience` was a silent
+no-op on staging AND production. Fixed by seed baseline + data-migration `0036`,
+plus a `logger.warn` on that branch and a derived static guard
+(`every-entity-type-has-config.guard.test.ts`) that fails when any `entityType`
+in the `EntityChangeData` union has no baseline row.
+
+**The three relation mutators scheduled nothing.** `addPointOfInterestToDestination`,
+`removePointOfInterestFromDestination` and `updatePointOfInterestDestinationRelation`
+were never wired to the purge chain — only `_afterCreate` / `_afterUpdate` on the
+POI row were. Linking a POI to a destination changes that destination's page (it
+renders its `PRIMARY` POIs server-side) and evicted nothing. Unlinking carried
+the subtler half: the link row is already gone by the time the purge runs, so
+the one destination whose page actually changed is precisely the one the
+relation table can no longer report. It has to be passed to the purge
+explicitly.
+
+Two notes for anyone re-running this:
+
+- Staging shipped with **zero rows** in `r_destination_point_of_interest`, so a
+  fan-out probe would have passed without fanning out to anything. Link the POI
+  to two or more destinations first (admin → POI → Destinations).
+- The relation edits now purge too, so **warm the pages after the links exist**,
+  not before, or the first probe measures the link purge instead of the
+  POI-edit fan-out.
+
+#### What is still NOT verified by probing
+
+Two W2-4 surfaces have no staging data to measure: a gastronomy detail page
+(the listing renders no entries) and — until `0031` opened three of them — a POI
+detail page gated on `hasOwnPage`.
 
 ### Purging from a shell
 
