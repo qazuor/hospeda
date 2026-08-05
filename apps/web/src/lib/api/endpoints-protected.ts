@@ -2705,15 +2705,63 @@ export const accommodationEditApi = {
 
 /**
  * Protected post edit API endpoints. Backs the editor's own-content dashboard
- * (`/mi-cuenta/publicaciones`, HOS-374 §5.2.2).
+ * (`/mi-cuenta/publicaciones`) and the editor form
+ * (`/mi-cuenta/publicaciones/[id]/editar`) — HOS-374 §5.2.2.
  *
- * `GET /protected/posts/:id` does not exist yet — only the list, patch, and
- * soft-delete endpoints are live server-side. This slice (Phase 2 2C-1) only
- * needs {@link postEditApi.listOwn}; `update`/`softDelete` are wired ahead of
- * time for the editor form a later slice builds, but nothing here invents a
- * `getById` wrapper for a route that does not exist.
+ * Every endpoint here is author-scoped SERVER-side: authorship comes from the
+ * session, never from a parameter this client could widen.
  */
 export const postEditApi = {
+    /**
+     * Load one of the caller's own posts, in whatever moderation and lifecycle
+     * state it is in.
+     *
+     * This goes to the PROTECTED route rather than `GET /public/posts/:id`,
+     * which would technically answer (an author may read their own pending
+     * post). That route carries `cacheTTL: 300`, so a response shaped by WHO
+     * asked would be cached and then served to whoever asked next — an
+     * author's unpublished draft handed to an anonymous visitor.
+     *
+     * @param params - Post ID plus the SSR cookie header.
+     * @returns The post, or a 403/404 error when the caller is not its author.
+     */
+    getById({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/posts/${id}`, cookieHeader });
+    },
+
+    /**
+     * Publish or unpublish one of the caller's own posts.
+     *
+     * Moves `visibility` ONLY — the moderation verdict is left intact, so
+     * unpublish → edit → republish never re-enters the review queue
+     * (HOS-374 §7.6.1). Requires `POST_PUBLISH_OWN` plus authorship (or the
+     * broad `POST_PUBLISH_TOGGLE`); a plain editor gets a 403.
+     *
+     * Do NOT reach for `update({ data: { isPublished } })` instead: that field
+     * name lies. `httpToDomainPostUpdate` maps it to the `publishedAt`
+     * TIMESTAMP, which no read path consults — it publishes nothing.
+     *
+     * @param params - Post ID and the target visibility.
+     * @returns The updated post.
+     */
+    setPublishState({
+        id,
+        visibility
+    }: {
+        readonly id: string;
+        readonly visibility: 'PUBLIC' | 'PRIVATE';
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/posts/${id}/publish-state`,
+            body: { visibility }
+        });
+    },
     /**
      * List the authenticated user's own posts, in every moderation and
      * lifecycle state — including drafts, pending-review, and rejected

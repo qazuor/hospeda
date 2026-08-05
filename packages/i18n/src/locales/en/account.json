@@ -1081,6 +1081,57 @@
                 "subtitle": "Check the status of your articles",
                 "empty": "You haven't written any post yet",
                 "fetchError": "Couldn't load the list. Try reloading the page."
+            },
+            "editor": {
+                "pageTitle": "Edit post",
+                "slugImmutableNotice": "The public URL is generated when the post is created and cannot be changed.",
+                "backToList": "Back to my posts",
+                "lockNotice": "This post has already been approved and published, so you can't edit it. Contact the team if you need a change.",
+                "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
+                "publicationExplainer": "Your post is visible on the public site only when it is approved, public and active at the same time.",
+                "publishBlockedByUnsaved": "Save your changes before changing publication.",
+                "section": {
+                    "basicInfo": "Basic information",
+                    "content": "Content",
+                    "details": "Details",
+                    "publication": "Publication"
+                },
+                "field": {
+                    "title": "Title",
+                    "summary": "Summary",
+                    "category": "Category",
+                    "content": "Content",
+                    "readingTime": "Reading time (minutes)",
+                    "destination": "Related destination",
+                    "destinationNone": "No related destination"
+                },
+                "hint": {
+                    "summary": "Between 10 and 300 characters. Shown in the blog listing.",
+                    "content": "At least 100 characters.",
+                    "readingTime": "Leave it empty to keep the current value."
+                },
+                "placeholder": {
+                    "content": "Write your post..."
+                },
+                "action": {
+                    "publish": "Publish",
+                    "unpublish": "Unpublish",
+                    "delete": "Delete",
+                    "deleteConfirm": "Delete this post?",
+                    "deleteYes": "Yes, delete",
+                    "deleteNo": "Cancel"
+                },
+                "toast": {
+                    "saved": "Changes saved",
+                    "noChanges": "No changes to save",
+                    "published": "Post published",
+                    "unpublished": "Post unpublished",
+                    "publishError": "Couldn't change publication.",
+                    "deleteError": "Couldn't delete the post."
+                },
+                "error": {
+                    "saveFailed": "Couldn't save the changes."
+                }
             }
         },
         "events": {
