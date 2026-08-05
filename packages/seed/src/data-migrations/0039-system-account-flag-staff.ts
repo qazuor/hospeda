@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0038-system-account-flag-staff
+ * Data migration: 0039-system-account-flag-staff
  *
  * Flips `users.is_system_account` to `true` on the two required-seed staff
  * accounts in environments that were seeded before the column existed.
@@ -63,7 +63,7 @@ import { and, eq, inArray, users } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0038-system-account-flag-staff',
+    name: '0039-system-account-flag-staff',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

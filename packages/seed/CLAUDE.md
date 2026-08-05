@@ -197,7 +197,7 @@ Two things to know before touching this:
   not: evaluating `SUPER_ADMIN`/`ADMIN` at read time would unpublish a real editor's author
   page the moment they are promoted, and publish a staff account the moment one is demoted.
   Role decides the value exactly once, at backfill time
-  (`src/data-migrations/0038-system-account-flag-staff.ts`), resolved **by email**.
+  (`src/data-migrations/0039-system-account-flag-staff.ts`), resolved **by email**.
 - **The fixture key is guarded.** `test/required-staff-system-account.test.ts` asserts more
   than the two fixture values: it asserts the key survives `UserCreateInputSchema`, the
   schema `UserService.create` parses through. That extra assertion exists because a fixture

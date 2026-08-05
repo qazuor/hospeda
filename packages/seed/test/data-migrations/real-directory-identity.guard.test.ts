@@ -16,6 +16,14 @@
  * both sets cleanly; `pnpm db:seed:migrate` would then have thrown on the
  * duplicate prefix before applying anything.
  *
+ * It then recurred verbatim on the very next catch-up merge, at `0038`:
+ * `staging` landed `0038-hos-374-cut-editor-panel-access` while this branch's
+ * `system-account-flag-staff` was sitting on the same prefix, and the five
+ * HOS-375 migrations had to be renumbered a second time (to `0039`-`0043`).
+ * That is the point — the collision is not a one-off mistake but the default
+ * outcome of any long-lived branch that allocates a prefix, and this guard is
+ * what reports it in CI at unit level instead of at `db:seed:migrate` time.
+ *
  * This guard is deliberately source-level (readdir + read the file text) and
  * imports no migration module: importing them pulls in the DB layer, which is
  * exactly what makes the existing real-directory check DB-gated.

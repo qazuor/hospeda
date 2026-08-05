@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Integration tests for `0038-system-account-flag-staff.ts` (HOS-375 T-005).
+ * Integration tests for `0039-system-account-flag-staff.ts` (HOS-375 T-005).
  *
  * Runs against the REAL integration database, using the rollback-isolation
  * idiom established by
@@ -25,7 +25,7 @@ import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as systemAccountFlagStaff from '../../src/data-migrations/0038-system-account-flag-staff.js';
+import * as systemAccountFlagStaff from '../../src/data-migrations/0039-system-account-flag-staff.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -109,7 +109,7 @@ async function clearTargets(tx: DrizzleClient): Promise<void> {
         .where(inArray(users.email, [SUPER_ADMIN_EMAIL, ADMIN_EMAIL, EDITOR_EMAIL]));
 }
 
-describe('HOS-375 T-005: 0038-system-account-flag-staff (integration)', () => {
+describe('HOS-375 T-005: 0039-system-account-flag-staff (integration)', () => {
     beforeAll(async () => {
         if (!process.env.HOSPEDA_DATABASE_URL) {
             throw new Error(

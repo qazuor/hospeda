@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0042-transliterate-user-slugs
+ * Data migration: 0043-transliterate-user-slugs
  *
  * Rewrites every `users.slug` that does not match the public-route pattern
  * `^[a-z0-9]+(?:[_-][a-z0-9]+)*$` into a transliterated, conforming
@@ -92,15 +92,15 @@
  *
  * ## `contentOnly` flag decision
  *
- * `false` (the default — omitted below). Unlike `0025`/`0027`/`0028`/`0035`,
+ * `false` (the default — omitted below). Unlike `0025`/`0027`/`0028`/`0040`,
  * the two rows this migration acts on genuinely exist on a fresh build,
  * produced by real fixtures under `src/data/user/example/**` — and those
  * fixtures now carry the correct ASCII slug directly (see Dual-write above).
  * A fresh `db:fresh`/`db:fresh-dev` build is therefore already correct
  * without running `up()` for real, so `--baseline-stamp` records this
- * migration applied without invoking it — exactly `0034`'s reasoning
+ * migration applied without invoking it — exactly `0039`'s reasoning
  * (`isSystemAccount` backfill), which is the closer precedent here than
- * `0035` (whose target row has no fixture baseline at all).
+ * `0040` (whose target row has no fixture baseline at all).
  *
  * ## Idempotency
  *
@@ -128,7 +128,7 @@ import { and, eq, ne, sql, users } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0042-transliterate-user-slugs',
+    name: '0043-transliterate-user-slugs',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

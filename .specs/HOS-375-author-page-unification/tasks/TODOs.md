@@ -45,15 +45,15 @@
   - Blocked by: T-003 · Blocks: T-035
 
 - [x] **T-005** (complexity: 2) — Data-migration: flip `is_system_account` on the two staff accounts
-  - **Done.** `0038-system-account-flag-staff.ts`, resolved by email, idempotent, silent no-op where the accounts are absent. Verified the dual-write guard non-vacuously: committed T-004 alone first and watched it fail.
+  - **Done.** `0039-system-account-flag-staff.ts`, resolved by email, idempotent, silent no-op where the accounts are absent. Verified the dual-write guard non-vacuously: committed T-004 alone first and watched it fail.
   - Blocked by: T-001, T-002 · Blocks: T-035
 
 - [x] **T-006** (complexity: 2) — Data-migration: set the editorial account slug to `equipo-hospeda`
-  - **Done.** `0039-editorial-author-slug.ts` (`contentOnly`), plus the baseline half: `0025`'s `ensureEditorialAuthor` now sets the slug at creation. Resolved by `EDITORIAL_EMAIL`; a third auto-slug value is fed in the tests to prove nothing is hardcoded. A different account already holding the slug is a hard throw, not a skip — skipping would publish the random auto-slug.
+  - **Done.** `0040-editorial-author-slug.ts` (`contentOnly`), plus the baseline half: `0025`'s `ensureEditorialAuthor` now sets the slug at creation. Resolved by `EDITORIAL_EMAIL`; a third auto-slug value is fed in the tests to prove nothing is hardcoded. A different account already holding the slug is a hard throw, not a skip — skipping would publish the random auto-slug.
   - Blocked by: T-001 · Blocks: T-007, T-035
 
 - [x] **T-007** (complexity: 3) — Data-migration: re-attribute imported events to the editorial account
-  - **Done.** `0040-reattribute-imported-events.ts` (`contentOnly`), scoped to `created_by_id IS NULL`. The source account resolves by `superadmin@hospeda.com` and **falls back to `ctx.actor.id`** when absent: the documented prod bootstrap never seeds that account, so `0027`/`0028` attribute the imports to the real promoted admin and an email-only lookup would leave them on a human's public author page. See the T-007 note in `state.json`.
+  - **Done.** `0041-reattribute-imported-events.ts` (`contentOnly`), scoped to `created_by_id IS NULL`. The source account resolves by `superadmin@hospeda.com` and **falls back to `ctx.actor.id`** when absent: the documented prod bootstrap never seeds that account, so `0027`/`0028` attribute the imports to the real promoted admin and an email-only lookup would leave them on a human's public author page. See the T-007 note in `state.json`.
   - Blocked by: T-001, T-006 · Blocks: T-035
 
 - [x] **T-008** (complexity: 2) — Add `publicProfileShowSocialNetworks` to the user settings schema
