@@ -11,7 +11,7 @@
  * which is not a stable property of the data — it can change after a `VACUUM`,
  * a plan change, or a concurrent update that moves a tuple.
  *
- * `packages/seed/src/data-migrations/0036-reattribute-imported-events.ts`
+ * `packages/seed/src/data-migrations/0040-reattribute-imported-events.ts`
  * resolves its fallback actor through this function and THROWS by design when
  * that actor is not the one `0027`/`0028` ran as. So a non-deterministic pick
  * does not quietly choose a different-but-equivalent actor — it aborts `0036`

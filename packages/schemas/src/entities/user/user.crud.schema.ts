@@ -37,7 +37,7 @@ import { AssignableRoleEnumSchema } from './user-role.schema.js';
  * non-conforming value is REPAIRED through `toSlug` instead of refused. Two
  * further layers already back that up: `apps/api/src/routes/user/public/getBySlug.ts`
  * validates the `:slug` PATH PARAM with the same regex, and
- * `packages/seed/src/data-migrations/0038-transliterate-user-slugs.ts` backfills
+ * `packages/seed/src/data-migrations/0042-transliterate-user-slugs.ts` backfills
  * the rows that predate it.
  *
  * `UserSchema.slug` stays `.min(1)` for the separate reason that it is also the

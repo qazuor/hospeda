@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0038-transliterate-user-slugs
+ * Data migration: 0042-transliterate-user-slugs
  *
  * Rewrites every `users.slug` that does not match the public-route pattern
  * `^[a-z0-9]+(?:[_-][a-z0-9]+)*$` into a transliterated, conforming
@@ -128,7 +128,7 @@ import { and, eq, ne, sql, users } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0038-transliterate-user-slugs',
+    name: '0042-transliterate-user-slugs',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

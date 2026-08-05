@@ -99,12 +99,27 @@ test.describe('ACC-02: edit propagates via revalidation @p0 @accommodation @cach
         ).toBe(true);
 
         // ── Assert revalidation scheduled for this entity's cache tag ──────
+        //
+        // 20s, because the log entry is written after the purge ATTEMPT and the
+        // service's own worst case is longer than it looks: `accommodation` has a
+        // 5s debounce, and `enqueuePurgeGroup` then waits out whatever remains of
+        // `MIN_PURGE_INTERVAL_MS` (12s) since the last flush — the deliberate
+        // spacing that keeps bursts under Cloudflare's 5-purges-per-minute
+        // ceiling. 5 + 12 = 17s before the entry can exist, and the whole P0
+        // suite shares one API process, so any other entity purging just before
+        // this one charges the full 12s to it.
+        //
+        // The old 10s only ever passed because few entity types purged at all.
+        // HOS-369 W2-4 wired four more (POI, attraction, gastronomy, experience)
+        // and the commerce specs exercise two of them, which made the wait real
+        // and this test fail reproducibly. Nothing regressed — the timeout was
+        // always below the documented contract; it just had no way to show it.
         await assertRevalidationTriggered({
             since,
             entityType: 'accommodation',
             entityId: accommodation.id,
             targets: [`accom-${accommodation.slug}`],
-            timeoutMs: 10_000
+            timeoutMs: 20_000
         });
 
         // ── DB invariant: new name persisted ──────────────────────────────

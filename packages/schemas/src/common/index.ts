@@ -27,6 +27,7 @@ export * from './commerce-media.schema.js';
 export * from './commerce-owner-listing.schema.js';
 export * from './commerce-rating.schema.js';
 export * from './contact.schema.js';
+export * from './content-media.schema.js';
 // Dedicated content state-transition bodies (HOS-374 §7.6.4)
 export * from './content-state.schema.js';
 // Relation-selector lookup options (SPEC-169 §5.5)

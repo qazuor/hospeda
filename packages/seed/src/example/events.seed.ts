@@ -1,8 +1,11 @@
-import { EventModel } from '@repo/db';
+import { EventMediaModel, EventModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { EventService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
+import { buildEventMediaRows } from '../utils/content-media-builder.js';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
+import { logger } from '../utils/logger.js';
+import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
 
@@ -111,6 +114,60 @@ const preProcessEvent = async (item: unknown, context: SeedContext) => {
 /**
  * Events seed using Seed Factory
  */
+
+/**
+ * Writes an event's photos into the relational `event_media` table (HOS-390).
+ *
+ * Twin of `seedPostMediaRows` — see `posts.seed.ts` for the full rationale. The
+ * short version: photos become rows because that table is the source of truth
+ * the read paths move to, while the `media` blob stays for videos.
+ *
+ * Idempotent: skips entirely when the event already has media rows.
+ *
+ * @param input.eventId - Real DB id of the event.
+ * @param input.media - The fixture's `media` block, if any.
+ * @param input.label - Event name, for logging.
+ */
+async function seedEventMediaRows({
+    eventId,
+    media,
+    label
+}: {
+    readonly eventId: string;
+    readonly media: FixtureMediaBlock | undefined;
+    readonly label: string;
+}): Promise<void> {
+    if (!media) return;
+    const hasPhotos = Boolean(media.featuredImage) || (media.gallery?.length ?? 0) > 0;
+    if (!hasPhotos) return;
+
+    const mediaModel = new EventMediaModel();
+    const { total: existingCount } = await mediaModel.findByEvent({ eventId, pageSize: 1 });
+    if (existingCount > 0) {
+        logger.info(`Skipping media for ${label}: ${existingCount} rows already exist`);
+        return;
+    }
+
+    for (const row of buildEventMediaRows({ eventId, media })) {
+        await mediaModel.create(row);
+    }
+}
+
+/**
+ * Seed-factory `postProcess` hook: mirrors the fixture's photos into
+ * `event_media` right after the event row exists.
+ */
+const postProcessEvent = async (result: unknown, item: unknown): Promise<void> => {
+    const created = result as { id?: string } | null;
+    const fixture = item as { media?: FixtureMediaBlock; name?: string };
+    if (!created?.id) return;
+    await seedEventMediaRows({
+        eventId: created.id,
+        media: fixture.media,
+        label: fixture.name ?? created.id
+    });
+};
+
 export const seedEvents = createSeedFactory({
     entityName: 'Events',
     serviceClass: EventService,
@@ -118,6 +175,7 @@ export const seedEvents = createSeedFactory({
     files: exampleManifest.events,
     normalizer: eventNormalizer,
     preProcess: preProcessEvent,
+    postProcess: postProcessEvent,
     getEntityInfo: getEventInfo,
 
     // HOS-25 T-016: every `example` event gets a stable UUIDv5 derived from its

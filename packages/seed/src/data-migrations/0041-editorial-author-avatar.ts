@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0037-editorial-author-avatar
+ * Data migration: 0041-editorial-author-avatar
  *
  * Gives the shared editorial author ("Equipo Hospeda") the Hospeda isotype as
  * its avatar, in environments seeded before HOS-375 set one.
@@ -64,7 +64,7 @@ import { eq, users } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0037-editorial-author-avatar',
+    name: '0041-editorial-author-avatar',
     group: 'required',
     destructive: false,
     contentOnly: true

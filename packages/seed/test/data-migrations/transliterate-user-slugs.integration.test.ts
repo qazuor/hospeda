@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Integration tests for `0038-transliterate-user-slugs.ts` (HOS-375).
+ * Integration tests for `0042-transliterate-user-slugs.ts` (HOS-375).
  *
  * Runs against the REAL integration database, using the rollback-isolation
  * idiom established by
@@ -34,7 +34,7 @@ import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as transliterateUserSlugs from '../../src/data-migrations/0038-transliterate-user-slugs.js';
+import * as transliterateUserSlugs from '../../src/data-migrations/0042-transliterate-user-slugs.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -137,7 +137,7 @@ async function clearAllNonConformingSlugs(tx: DrizzleClient): Promise<void> {
     await tx.delete(users).where(sql`${users.slug} !~ '^[a-z0-9]+(?:[_-][a-z0-9]+)*$'`);
 }
 
-describe('HOS-375: 0038-transliterate-user-slugs (integration)', () => {
+describe('HOS-375: 0042-transliterate-user-slugs (integration)', () => {
     beforeAll(async () => {
         if (!process.env.HOSPEDA_DATABASE_URL) {
             throw new Error(

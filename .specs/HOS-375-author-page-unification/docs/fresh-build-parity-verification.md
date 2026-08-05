@@ -3,6 +3,16 @@
 Executed 2026-08-02 against the HOS-375 worktree's Postgres instance
 (`localhost:5436`). Both tracks were measured, and they agree on every fact.
 
+> **Numbering note (added 2026-08-05).** The command transcripts below are verbatim
+> and still show the numeric prefixes these migrations carried when the runs happened.
+> A later catch-up merge of `staging` brought in `0036-hos-369-w24-revalidation-config`
+> and `0037-hos-390-content-media-to-relational`, which collided with this branch's
+> prefixes, so the five HOS-375 migrations were renumbered to sit after them. The
+> mapping — nothing about their content or relative order changed:
+> `0034-system-account-flag-staff` → `0038`, `0035-editorial-author-slug` → `0039`,
+> `0036-reattribute-imported-events` → `0040`, `0037-editorial-author-avatar` → `0041`,
+> `0038-transliterate-user-slugs` → `0042`.
+
 ## What is being proven
 
 HOS-375's content-attribution work is split across a baseline half (seed fixtures and

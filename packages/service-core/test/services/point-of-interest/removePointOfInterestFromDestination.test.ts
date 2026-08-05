@@ -31,7 +31,10 @@ describe('PointOfInterestService.removePointOfInterestFromDestination', () => {
         model = createTypedModelMock(PointOfInterestModel, ['findOne']);
         relatedModel = createTypedModelMock(RDestinationPointOfInterestModel, [
             'findOne',
-            'softDelete'
+            // `hardDelete`, not `softDelete`: the join table has no `deleted_at`
+            // and the real model throws on soft-deleting it (HOS-369). A mock of
+            // the wrong method resolves happily and hides that entirely.
+            'hardDelete'
         ]);
         destinationModel = createTypedModelMock(DestinationModel, ['findOne']);
         ctx = { logger: createLoggerMock() };
@@ -43,7 +46,7 @@ describe('PointOfInterestService.removePointOfInterestFromDestination', () => {
         asMock(model.findOne).mockResolvedValue(pointOfInterest);
         asMock(destinationModel.findOne).mockResolvedValue(destination);
         asMock(relatedModel.findOne).mockResolvedValueOnce(relation); // relation exists
-        asMock(relatedModel.softDelete).mockResolvedValue(relation);
+        asMock(relatedModel.hardDelete).mockResolvedValue(1);
         const result = await service.removePointOfInterestFromDestination(
             actorWithPerms,
             validInput
@@ -91,12 +94,14 @@ describe('PointOfInterestService.removePointOfInterestFromDestination', () => {
         expect(result.data).toBeUndefined();
     });
 
-    it('should return INTERNAL_ERROR if softDelete fails', async () => {
+    it('should return INTERNAL_ERROR when the delete removes no row', async () => {
         asMock(model.findOne).mockResolvedValue(pointOfInterest);
         asMock(destinationModel.findOne).mockResolvedValue(destination);
         asMock(relatedModel.findOne).mockResolvedValueOnce(relation); // relation exists
-        asMock(relatedModel.softDelete).mockResolvedValue(null); // simulate failure
-        asMock(relatedModel.findOne).mockResolvedValueOnce(null); // not found after delete
+        // 0 rows affected: the row vanished between the existence check and the
+        // delete. `hardDelete` reports a COUNT, so zero is the only failure
+        // signal there is — there is no row left to re-read and inspect.
+        asMock(relatedModel.hardDelete).mockResolvedValue(0);
         const result = await service.removePointOfInterestFromDestination(
             actorWithPerms,
             validInput
@@ -113,13 +118,13 @@ describe('PointOfInterestService.removePointOfInterestFromDestination', () => {
         asMock(model.findOne).mockResolvedValue(pointOfInterest);
         asMock(destinationModel.findOne).mockResolvedValue(destination);
         asMock(relatedModel.findOne).mockResolvedValueOnce(relation); // relation exists
-        asMock(relatedModel.softDelete).mockResolvedValue(relation);
+        asMock(relatedModel.hardDelete).mockResolvedValue(1);
 
         await service.removePointOfInterestFromDestination(actorWithPerms, validInput, ctxWithTx);
 
         expect(model.findOne).toHaveBeenCalledWith(expect.anything(), marker);
         expect(destinationModel.findOne).toHaveBeenCalledWith(expect.anything(), marker);
         expect(relatedModel.findOne).toHaveBeenCalledWith(expect.anything(), marker);
-        expect(relatedModel.softDelete).toHaveBeenCalledWith(expect.anything(), marker);
+        expect(relatedModel.hardDelete).toHaveBeenCalledWith(expect.anything(), marker);
     });
 });

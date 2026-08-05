@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Integration tests for `0036-reattribute-imported-events.ts` (HOS-375 T-007).
+ * Integration tests for `0040-reattribute-imported-events.ts` (HOS-375 T-007).
  *
  * Runs against the REAL integration database, using the rollback-isolation
  * idiom established by
@@ -25,7 +25,7 @@ import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as reattributeImportedEvents from '../../src/data-migrations/0036-reattribute-imported-events.js';
+import * as reattributeImportedEvents from '../../src/data-migrations/0040-reattribute-imported-events.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -161,7 +161,7 @@ async function clearTargets(tx: DrizzleClient): Promise<void> {
     await tx.delete(users).where(inArray(users.email, emails));
 }
 
-describe('HOS-375 T-007: 0036-reattribute-imported-events (integration)', () => {
+describe('HOS-375 T-007: 0040-reattribute-imported-events (integration)', () => {
     beforeAll(async () => {
         if (!process.env.HOSPEDA_DATABASE_URL) {
             throw new Error(

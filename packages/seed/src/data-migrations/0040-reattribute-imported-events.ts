@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0036-reattribute-imported-events
+ * Data migration: 0040-reattribute-imported-events
  *
  * Moves the bulk-imported events off the super-admin account and onto the
  * shared editorial author ("Equipo Hospeda").
@@ -103,7 +103,7 @@ import { and, eq, events, isNull, users } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0036-reattribute-imported-events',
+    name: '0040-reattribute-imported-events',
     group: 'required',
     destructive: false,
     contentOnly: true
@@ -189,7 +189,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         }
 
         throw new Error(
-            `0036-reattribute-imported-events matched ZERO events and the editorial author holds none either, so nothing was re-attributed. ` +
+            `0040-reattribute-imported-events matched ZERO events and the editorial author holds none either, so nothing was re-attributed. ` +
                 `The source account was resolved to ${sourceAuthorId} (from "${SUPER_ADMIN_EMAIL}", falling back to the running actor when absent), ` +
                 `but no event carries "author_id = <that account> AND created_by_id IS NULL". ` +
                 'Refusing to record this migration as applied: ledgering it would leave the bulk-imported events attributed to a real person and publish their author page (HOS-375 AC-14), with no way to re-run. ' +
@@ -211,7 +211,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     // ledgered as a success either.
     if (moved.length === 0) {
         throw new Error(
-            `0036-reattribute-imported-events found ${matchedBefore} matching event(s) but updated none. ` +
+            `0040-reattribute-imported-events found ${matchedBefore} matching event(s) but updated none. ` +
                 'A concurrent writer most likely changed them mid-migration. Refusing to record this as applied; re-run.'
         );
     }

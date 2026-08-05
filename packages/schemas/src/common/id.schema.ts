@@ -79,6 +79,9 @@ export type EntityViewIdType = z.infer<typeof EntityViewIdSchema>;
 export const EventIdSchema = BaseIdSchema;
 export type EventIdType = z.infer<typeof EventIdSchema>;
 
+export const EventMediaIdSchema = BaseIdSchema;
+export type EventMediaIdType = z.infer<typeof EventMediaIdSchema>;
+
 export const EventLocationIdSchema = BaseIdSchema;
 export type EventLocationIdType = z.infer<typeof EventLocationIdSchema>;
 
@@ -87,6 +90,9 @@ export type EventOrganizerIdType = z.infer<typeof EventOrganizerIdSchema>;
 
 export const PostIdSchema = BaseIdSchema;
 export type PostIdType = z.infer<typeof PostIdSchema>;
+
+export const PostMediaIdSchema = BaseIdSchema;
+export type PostMediaIdType = z.infer<typeof PostMediaIdSchema>;
 
 export const PostSponsorIdSchema = BaseIdSchema;
 export type PostSponsorIdType = z.infer<typeof PostSponsorIdSchema>;

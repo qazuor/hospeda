@@ -62,7 +62,7 @@ async function grantSuperAdminRole(userId: string): Promise<void> {
  * update moving a tuple).
  *
  * That turns a specific data-migration failure into a reachable one rather
- * than a theoretical one. `0036-reattribute-imported-events.ts` resolves its
+ * than a theoretical one. `0040-reattribute-imported-events.ts` resolves its
  * fallback actor through {@link findSuperAdminActor}, and by design it THROWS
  * when the actor it resolves is not the one `0027`/`0028` ran as. A
  * non-deterministic pick therefore does not merely choose a different-but-fine

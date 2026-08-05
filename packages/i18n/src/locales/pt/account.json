@@ -1144,6 +1144,58 @@
                 "subtitle": "Veja o status dos seus eventos",
                 "empty": "Você ainda não criou nenhum evento",
                 "fetchError": "Não foi possível carregar a lista. Tente recarregar a página."
+            },
+            "editor": {
+                "pageTitle": "Editar evento",
+                "backToList": "Voltar aos meus eventos",
+                "readOnlyNotice": "A URL, o organizador e o local são definidos ao criar o evento e não são editáveis aqui.",
+                "lockNotice": "Este evento já foi aprovado e publicado, então você não pode editá-lo. Fale com a equipe se precisar mudar algo.",
+                "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
+                "publicationExplainer": "Seu evento aparece no site público somente quando está aprovado, público e ativo ao mesmo tempo.",
+                "publishBlockedByUnsaved": "Salve as alterações antes de mudar a publicação.",
+                "monthPrecisionNotice": "Este evento tem data aproximada ao mês, então não é editável aqui. Fale conosco se precisar definir o dia.",
+                "section": {
+                    "basicInfo": "Informações básicas",
+                    "description": "Descrição",
+                    "schedule": "Datas",
+                    "publication": "Publicação"
+                },
+                "field": {
+                    "name": "Nome",
+                    "category": "Categoria",
+                    "description": "Descrição",
+                    "startDate": "Começa",
+                    "endDate": "Termina",
+                    "organizer": "Organiza",
+                    "location": "Local"
+                },
+                "hint": {
+                    "description": "Entre 50 e 2000 caracteres. O resumo da listagem sai daqui.",
+                    "endDate": "Opcional. Deixe vazio se o evento durar um só momento."
+                },
+                "placeholder": {
+                    "description": "Conte do que se trata o evento..."
+                },
+                "action": {
+                    "publish": "Publicar",
+                    "unpublish": "Despublicar",
+                    "delete": "Excluir",
+                    "deleteConfirm": "Excluir este evento?",
+                    "deleteYes": "Sim, excluir",
+                    "deleteNo": "Cancelar"
+                },
+                "toast": {
+                    "saved": "Alterações salvas",
+                    "noChanges": "Não há alterações para salvar",
+                    "published": "Evento publicado",
+                    "unpublished": "Evento despublicado",
+                    "publishError": "Não foi possível alterar a publicação.",
+                    "deleteError": "Não foi possível excluir o evento."
+                },
+                "error": {
+                    "saveFailed": "Não foi possível salvar as alterações.",
+                    "startDateRequired": "O evento precisa de uma data de início."
+                }
             }
         }
     },

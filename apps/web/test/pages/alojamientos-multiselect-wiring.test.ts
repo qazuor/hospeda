@@ -82,10 +82,15 @@ describe('alojamientos/index.astro — type chips wired to real multi-select (HO
 
     describe('data-fetch forwarding (existing baseline — types blueprint already worked end-to-end)', () => {
         it('still forwards types (CSV string straight from the URL) to accommodationsApi.list', () => {
-            const fetchBlock = src.slice(
-                src.indexOf('const result = await accommodationsApi.list({'),
-                src.indexOf('const result = await accommodationsApi.list({') + 400
-            );
+            // Anchored on the call itself, not on how it is bound. HOS-369 W2-5
+            // moved this read into a `Promise.all` array, so the old
+            // `const result = await accommodationsApi.list({` anchor stopped
+            // matching and sliced an empty string — which reads as "types is not
+            // forwarded" when the only thing that changed was the assignment.
+            const callIndex = src.indexOf('accommodationsApi.list({');
+            expect(callIndex, 'accommodationsApi.list call not found').toBeGreaterThan(-1);
+
+            const fetchBlock = src.slice(callIndex, callIndex + 400);
             expect(fetchBlock).toContain('types,');
         });
 
@@ -98,10 +103,12 @@ describe('alojamientos/index.astro — type chips wired to real multi-select (HO
         // highlight — so the singular `type` is forwarded to the API too
         // (backend applies `types` OR, else `type`). Mirrors events/blog.
         it('forwards the legacy singular type param so old ?type=HOTEL links filter the grid', () => {
-            const fetchBlock = src.slice(
-                src.indexOf('const result = await accommodationsApi.list({'),
-                src.indexOf('const result = await accommodationsApi.list({') + 700
-            );
+            // Same anchoring note as above: bind to the call, not to how its
+            // result is assigned.
+            const callIndex = src.indexOf('accommodationsApi.list({');
+            expect(callIndex, 'accommodationsApi.list call not found').toBeGreaterThan(-1);
+
+            const fetchBlock = src.slice(callIndex, callIndex + 700);
             expect(fetchBlock).toMatch(
                 /type:\s*url\.searchParams\.get\('type'\)\s*\?\?\s*undefined/
             );

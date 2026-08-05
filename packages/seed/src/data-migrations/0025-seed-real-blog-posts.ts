@@ -104,7 +104,7 @@ const EDITORIAL_EMAIL = 'editorial@hospeda.com.ar';
  * explicitly at creation so a new environment never generates the random
  * `user-<8 hex>` auto-slug that `users.slug.$defaultFn` would otherwise
  * produce — that slug became a public, indexable URL under HOS-375, and it
- * differed per environment. `0035-editorial-author-slug` is the migration half
+ * differed per environment. `0039-editorial-author-slug` is the migration half
  * of this dual-write, renaming the account in environments seeded before the
  * slug was set here; keep both sides in sync.
  */
@@ -131,7 +131,7 @@ const EDITORIAL_BIO =
  * `q_auto` cut the payload from 28.7 KB of PNG to ~8 KB of WebP. The source
  * asset is already square (192x192), so `c_fill` crops nothing today.
  *
- * `0037-editorial-author-avatar` is the migration half of this dual-write, for
+ * `0041-editorial-author-avatar` is the migration half of this dual-write, for
  * environments seeded before this field existed; keep both sides in sync.
  */
 const EDITORIAL_AVATAR =

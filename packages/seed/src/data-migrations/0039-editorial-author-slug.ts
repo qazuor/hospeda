@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0035-editorial-author-slug
+ * Data migration: 0039-editorial-author-slug
  *
  * Gives the shared editorial author ("Equipo Hospeda") the stable, curated
  * slug `equipo-hospeda` in environments seeded before HOS-375.
@@ -70,7 +70,7 @@ import { and, eq, ne, users } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0035-editorial-author-slug',
+    name: '0039-editorial-author-slug',
     group: 'required',
     destructive: false,
     contentOnly: true

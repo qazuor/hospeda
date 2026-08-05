@@ -883,7 +883,22 @@ export class RevalidationService {
         try {
             const config = await this.getEntityConfig(event.entityType);
 
-            if (!config) return; // No config -- skip revalidation
+            if (!config) {
+                // A MISSING row is not a configuration choice — it is an entity
+                // type whose purge chain was wired without the row that turns it
+                // on, and until HOS-369 that failed in total silence: no log
+                // here, no `revalidation_log` entry (writeLog runs downstream),
+                // and a fire-and-forget caller that sees a successful write
+                // either way. Four entity types purged nothing for an entire
+                // wave because of it. `enabled: false` and
+                // `autoRevalidateOnChange: false` below stay quiet by contrast:
+                // those rows exist, so somebody chose them.
+                this.logger.warn(
+                    { entityType: event.entityType },
+                    'No revalidation_config row for this entity type — skipping purge. Its cache tags will never be evicted until a row is added (see seed data-migration 0036).'
+                );
+                return;
+            }
             if (!config.enabled) return; // Disabled for this entity type
             if (!config.autoRevalidateOnChange) return; // Auto-revalidation turned off
 

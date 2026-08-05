@@ -2296,6 +2296,59 @@ export function transformPostEditDetail({
     };
 }
 
+/**
+ * Transforms a raw `GET /protected/events/:id` payload into `EventEditDetail`
+ * (the editor's initial data at `/mi-cuenta/eventos/[id]/editar`).
+ *
+ * The `date` sub-object is flattened here rather than in the component: the API
+ * carries `{ start, end, precision }` while the form holds three independent
+ * scalars, and `precision` decides whether the schedule fields are editable at
+ * all (HOS-280 — see `ScheduleSection`).
+ *
+ * `datePrecision` falls back to `'EXACT'`, matching the schema's own default
+ * for every event that predates the column.
+ *
+ * @param item - Raw event object from `eventEditApi.getById`
+ * @returns Typed `EventEditDetail` for the `EventEditor` island
+ */
+export function transformEventEditDetail({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').EventEditDetail {
+    const date = (item.date ?? {}) as Record<string, unknown>;
+    const organizer = (item.organizer ?? null) as Record<string, unknown> | null;
+    const location = (item.location ?? null) as Record<string, unknown> | null;
+
+    const isoOrNull = (value: unknown): string | null => {
+        if (typeof value === 'string') return value;
+        if (value instanceof Date) return value.toISOString();
+        return null;
+    };
+
+    return {
+        id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        name: String(item.name ?? ''),
+        description: String(item.description ?? ''),
+        category: String(item.category ?? ''),
+        startDate: isoOrNull(date.start),
+        endDate: isoOrNull(date.end),
+        datePrecision: date.precision === 'MONTH' ? 'MONTH' : 'EXACT',
+        organizerName: typeof organizer?.name === 'string' ? organizer.name : null,
+        locationName: typeof location?.name === 'string' ? location.name : null,
+        moderationState: String(
+            item.moderationState ?? 'PENDING'
+        ) as import('./types').EditorContentModerationState,
+        visibility: String(
+            item.visibility ?? 'PRIVATE'
+        ) as import('./types').EditorContentVisibility,
+        lifecycleState: String(
+            item.lifecycleState ?? 'DRAFT'
+        ) as import('./types').EditorContentLifecycleState
+    };
+}
+
 // ---------------------------------------------------------------------------
 // Gastronomy transforms (SPEC-239)
 // ---------------------------------------------------------------------------
