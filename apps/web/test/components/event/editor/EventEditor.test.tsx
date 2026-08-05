@@ -53,6 +53,19 @@ vi.mock('../../../../src/lib/api/endpoints-protected', () => ({
         update: vi.fn(),
         softDelete: vi.fn(),
         setPublishState: vi.fn()
+    },
+    /*
+     * HOS-390: the editor now renders `ContentMediaSection`, which reaches for
+     * `contentMediaApi` at module load. A mock without it fails the whole file
+     * at import time, not at the assertion — `listMedia` resolving empty keeps
+     * the section inert so these tests stay about the form.
+     */
+    contentMediaApi: {
+        listMedia: vi.fn().mockResolvedValue({ ok: true, data: { media: [] } }),
+        addMedia: vi.fn(),
+        removeMedia: vi.fn(),
+        setFeaturedMedia: vi.fn(),
+        reorderMedia: vi.fn()
     }
 }));
 
