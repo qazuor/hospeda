@@ -31,6 +31,7 @@ import { pickLocalizedSeo } from '@/lib/seo';
 import { getPostCategoryColor } from '@/lib/colors';
 import { getExpiryStatus } from '@/lib/format-expires';
 import { getMediaUrl } from '@repo/media';
+import { toRenderableImageUrl } from '@/lib/media';
 import { renderContent } from '@/lib/render-content';
 import { extractToc } from '@/lib/extract-toc';
 
@@ -129,20 +130,52 @@ const postTags: readonly { readonly id: string; readonly name: string; readonly 
     }))
     .filter((tag) => tag.slug && tag.name);
 
-const rawAuthorAvatar = String(authorObj?.profilePicture || authorObj?.image || authorObj?.avatarUrl || '');
+// `PostAuthorPublicSchema.image` asserts type but NOT URL format on purpose
+// (HOS-375): `users.image` is written outside Zod by Better Auth, so a strict
+// response schema would fail-close this page to a 500 on one bad stored row.
+// The junk therefore arrives here intact, and it must be dropped BEFORE
+// `getMediaUrl` — that helper passes any non-Cloudinary string through
+// unchanged, so without this guard `avatars/x.jpg` would land in `<img src>`
+// and resolve against the current post path, 404ing as a broken image.
+const rawAuthorAvatar = toRenderableImageUrl(
+	String(authorObj?.profilePicture || authorObj?.image || authorObj?.avatarUrl || ''),
+);
 const authorAvatar = rawAuthorAvatar ? getMediaUrl(rawAuthorAvatar, { preset: 'avatar' }) : '';
 
+/**
+ * The author, as this page is allowed to publish them.
+ *
+ * `firstName`/`lastName` are deliberately not read. The payload is stripped
+ * through `PostPublicSchema`, whose `author` is the narrow
+ * `PostAuthorPublicSchema` (id, displayName, slug, image), so they never
+ * arrive — and every consumer below used to fall back to them and publish the
+ * author's legal name whenever `display_name` was empty, which Better Auth
+ * writes directly and therefore really is empty for some accounts.
+ */
 const authorForCard = authorObj
 	? {
 			id: String(authorObj.id || ''),
-			displayName: authorObj.displayName ? String(authorObj.displayName) : null,
-			firstName: authorObj.firstName ? String(authorObj.firstName) : null,
-			lastName: authorObj.lastName ? String(authorObj.lastName) : null,
+			displayName: authorObj.displayName ? String(authorObj.displayName).trim() : null,
 			profilePicture: authorAvatar || null,
 			bio: authorObj.bio ? String(authorObj.bio) : null,
 			slug: authorObj.slug ? String(authorObj.slug) : null,
 	  }
 	: null;
+
+/** The one resolved byline every consumer on this page reads. */
+const resolvedAuthorName = authorForCard?.displayName || '';
+
+/**
+ * Whether this post has an author it may actually publish.
+ *
+ * With `firstName`/`lastName` gone, an author who never chose a display name
+ * resolves to `''` — and an empty name renders as a bare "Por " in
+ * `PostDetailHeader` and as a nameless avatar-plus-empty-link in
+ * `PostAuthorCard`. Both surfaces are gated on this instead: no byline beats
+ * the wrong byline, and it beats a broken one too. Same rule the event byline
+ * applies in `toEventDetailProps`.
+ */
+const hasPublishableAuthor = Boolean(authorForCard?.id && resolvedAuthorName);
 
 // --- Auth ---
 
@@ -249,10 +282,7 @@ const sponsorship = post.sponsorship as Record<string, unknown> | undefined;
 
 // --- JSON-LD ---
 const siteBase = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const articleAuthorName =
-	authorForCard?.displayName ||
-	[authorForCard?.firstName, authorForCard?.lastName].filter(Boolean).join(' ') ||
-	'';
+const articleAuthorName = resolvedAuthorName;
 /**
  * Absolute URL of the author's page, for the JSON-LD `author.url` (HOS-375
  * §5.6 / §6.9). It had never been populated, so the Article structured data
@@ -359,9 +389,9 @@ const breadcrumbItems = [
 			bookmarkCount={bookmarkCount}
 			postId={postId}
 			locale={locale}
-			author={authorForCard ? {
+			author={hasPublishableAuthor && authorForCard ? {
 				id: authorForCard.id,
-				name: authorForCard.displayName || [authorForCard.firstName, authorForCard.lastName].filter(Boolean).join(' ') || '',
+				name: resolvedAuthorName,
 				slug: authorForCard.slug,
 			} : null}
 			likes={Number(post.likes ?? 0)}
@@ -499,7 +529,7 @@ const breadcrumbItems = [
 	<div slot="sidebar" class="post-sidebar">
 		<PostTableOfContents headings={tocHeadings} locale={locale} />
 
-		{authorForCard && authorForCard.id && (
+		{hasPublishableAuthor && authorForCard && (
 			<PostAuthorCard author={authorForCard} locale={locale} />
 		)}
 

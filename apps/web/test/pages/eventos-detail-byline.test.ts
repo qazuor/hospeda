@@ -13,6 +13,7 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { createTranslations } from '../../src/lib/i18n';
 
 const pageSrc = readFileSync(
     resolve(__dirname, '../../src/pages/[lang]/eventos/[slug].astro'),
@@ -76,6 +77,64 @@ describe('EventDetailHeader.astro — author byline', () => {
         // config.shared.ts) — an `event.detail.*` key would silently resolve to
         // the inline fallback and never translate.
         expect(headerSrc).toContain("t('events.detail.byline'");
-        expect(headerSrc).toContain("replace('{{name}}', author.name)");
+    });
+
+    it('interpolates through the params form, not by hand', () => {
+        // `t` interpolates the resolved string AND the fallback; `.replace()` on
+        // the result only ever reached the first, so a missing key rendered the
+        // raw `{{name}}` placeholder or a pre-baked Spanish fallback.
+        expect(headerSrc).toContain(
+            "t('events.detail.byline', 'Por {{name}}', { name: author.name })"
+        );
+        expect(headerSrc).not.toContain("replace('{{name}}'");
+    });
+});
+
+describe('PostDetailHeader.astro — author byline', () => {
+    const postHeaderSrc = readFileSync(
+        resolve(__dirname, '../../src/components/post/PostDetailHeader.astro'),
+        'utf8'
+    );
+
+    it('interpolates through the params form, not by hand', () => {
+        expect(postHeaderSrc).toContain(
+            "t('blog.detail.byline', 'Por {{name}}', { name: author.name })"
+        );
+        expect(postHeaderSrc).not.toContain("replace('{{name}}'");
+    });
+
+    it('resolves the label once, so the linked and unlinked bylines cannot drift', () => {
+        expect(postHeaderSrc).toContain('const authorLabel = author ?');
+        expect(postHeaderSrc).toContain('{authorLabel && (');
+    });
+});
+
+describe('the byline keys actually RESOLVE — the namespace gotcha (§6.9)', () => {
+    /**
+     * A byline key that silently falls back is invisible in `/es/`: the inline
+     * fallback IS the Spanish copy, so the page looks perfect while the key is
+     * dead. `event.json` is registered under the `events` namespace, and several
+     * `event.detail.*` keys in this repo hit the fallback for exactly that
+     * reason. `/en/` is where it shows.
+     */
+    it.each([
+        { key: 'events.detail.byline', expected: 'By Ana Torres' },
+        { key: 'blog.detail.byline', expected: 'By Ana Torres' }
+    ])('$key resolves to the English copy, not the Spanish fallback', ({ key, expected }) => {
+        const { t } = createTranslations('en');
+
+        const label = t(key, 'Por {{name}}', { name: 'Ana Torres' });
+
+        expect(label).toBe(expected);
+    });
+
+    it('reports a dead key as the fallback — proving the check above bites', () => {
+        // Non-vacuity: without this, a `t` that returned the English string for
+        // anything would make the two cases above pass for the wrong reason.
+        const { t } = createTranslations('en');
+
+        expect(t('events.detai.byline', 'Por {{name}}', { name: 'Ana Torres' })).toBe(
+            'Por Ana Torres'
+        );
     });
 });

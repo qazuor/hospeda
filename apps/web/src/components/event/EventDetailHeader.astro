@@ -100,8 +100,11 @@ const locationLabel =
 // redirect that still serves the old post-only URL: an internal link should
 // never spend a hop it can avoid. A slug-less author degrades to plain text.
 const authorHref = author?.slug ? buildUrl({ locale, path: `autores/${author.slug}` }) : null;
+// `t` interpolates `{{name}}` into the resolved string AND into the fallback, so
+// the params form covers both paths — hand-rolling `.replace()` on the result
+// only ever worked for the resolved one.
 const authorLabel = author
-    ? t('events.detail.byline', `Por ${author.name}`).replace('{{name}}', author.name)
+    ? t('events.detail.byline', 'Por {{name}}', { name: author.name })
     : null;
 
 const categoryStyle = `background-color: ${categoryColors.bg}; color: ${categoryColors.text}; border: 1px solid ${categoryColors.border};`;

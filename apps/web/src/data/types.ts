@@ -780,7 +780,13 @@ export interface EventDetailOrganizer {
  */
 export interface EventDetailAuthor {
     readonly id: string;
-    /** Already resolved for display — display name, or first + last name. */
+    /**
+     * Already resolved for display — the author's chosen `displayName` and
+     * NOTHING else. There is deliberately no first+last-name fallback: an
+     * author who never set a display name gets no byline rather than having
+     * their legal name published on a page they never opted into. See
+     * `EventAuthorPublicSchema`, which does not expose those fields at all.
+     */
     readonly name: string;
     /**
      * `null` when the author row has no slug, which leaves the byline as plain
