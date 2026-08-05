@@ -81,7 +81,37 @@ Two properties that migration must have:
 - **Idempotent** — `WHERE owner_user_id IS NULL` in the UPDATE itself, so
   re-running never overwrites an owner set legitimately in between.
 
-## Result — run 2026-08-05
+## Result — staging, after the migrations landed (2026-08-05)
+
+Migrations were applied to staging later the same day (79 of 79 structural, 39
+of 39 seed data-migrations, both sets matching the repository exactly). The
+query now runs:
+
+```text
+ orphaned | provisioned_total
+----------+-------------------
+        0 |                 0
+```
+
+**Zero orphans, out of zero provisioned.** This is the vacuous case the count was
+shaped to expose rather than hide: staging holds 0 `alliance_leads`, 20 curated
+`host_trades`, and 6 partners, so nothing has been provisioned through this flow
+and there was never anything to strand.
+
+The difference from the pre-migration run below is not the number — it is that
+the query **parses**. Zero is now a measurement of the data instead of an
+artifact of a missing column.
+
+Schema verified alongside it: all seven HOS-278 columns present and nullable,
+`partners_ownerUserId_idx` created, both new foreign keys in place, and all 6
+existing partners still carrying a `starts_at` (the `DROP NOT NULL` relaxed the
+constraint without touching a single row). Extras-carril objects survived the
+migrate — `search_index` matview present, 110 `set_updated_at` triggers, 6
+promo-code CHECK constraints.
+
+**Still to run against production**, which remains 9 migrations behind.
+
+## Prior result — before the migrations, both environments (2026-08-05)
 
 **Zero orphans on both environments. The promotion gate is clear — but not for
 the reason the audit was written to check.**
@@ -105,14 +135,14 @@ shipped, but it has had no opportunity to fire.
 **Re-run this audit after the pending migrations are applied**, before any real
 partner or provider is provisioned. Zero today is a statement about the schema,
 not about the data, and it stops being true the moment the columns land and the
-first lead is approved.
+first lead is approved. *(Done for staging — see the section above.)*
 
 ## The finding that actually matters
 
-Both environments are **behind on migrations**, and by more than this spec:
+Both environments were **behind on migrations**, and by more than this spec:
 
-- staging is 4 behind (0075–0078),
-- production is 9 behind (0070–0078).
+- staging was 4 behind (0075–0078) — **resolved 2026-08-05**,
+- production is 9 behind (0070–0078) — **still outstanding**.
 
 Everything HOS-278 has merged — the typed provider/partner columns, the
 provisioned links, `partners.owner_user_id`, the nullable `starts_at` — is
