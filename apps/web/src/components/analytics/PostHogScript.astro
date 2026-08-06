@@ -26,6 +26,18 @@
  *    `saveConsent()` in `cookie-consent.ts` so capture can toggle mid-session
  *    without a page reload.
  *
+ * Why `disable_surveys: true` (HOS-369):
+ * posthog-js ALWAYS fetches `static/surveys.js` — having zero surveys in the
+ * project, or toggling surveys off in the PostHog dashboard, does not stop it
+ * (the SDK still loads the script so `getSurveys()` / `renderSurvey()` keep
+ * working for API-presentation surveys). `disable_surveys: true` is the only
+ * switch that prevents the request. Hospeda uses no surveys: zero references
+ * anywhere in `apps/web`, and zero surveys configured in any of the three
+ * PostHog projects (hospeda-staging, hospeda-web-prod, hospeda-prod). Measured
+ * on a staging trace (mobile, 4x CPU, Slow 4G): one request plus ~6 ms of main
+ * thread. REMOVE THIS FLAG before shipping any PostHog survey — with it set,
+ * surveys silently never render and the survey APIs return no data.
+ *
  * Call sites (search, accommodation detail, signup, contact-host, newsletter)
  * use `trackEvent()` from `@/lib/analytics/posthog-client` which is a thin
  * wrapper around `window.posthog?.capture(...)`.
@@ -116,6 +128,7 @@ if (!window.__hospeda_posthog_initialized) {
         autocapture: false,
         capture_performance: { web_vitals: true },
         disable_session_recording: true,
+        disable_surveys: true,
         persistence: readAnalyticsConsent() ? 'localStorage+cookie' : 'memory',
         respect_dnt: true,
         loaded: function (ph) {

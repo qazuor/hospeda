@@ -47,6 +47,33 @@ import { describe, expect, it } from 'vitest';
 const SOURCE_PATH = resolve(__dirname, '../../../src/components/analytics/PostHogScript.astro');
 const source = readFileSync(SOURCE_PATH, 'utf8');
 
+/**
+ * The `snippetBody` template literal ALONE — i.e. the text that actually ships
+ * inside the <script> tag, with the file's frontmatter and JSDoc stripped out.
+ *
+ * Assertions about what the browser executes must run against this, not against
+ * `source`: the file's own JSDoc quotes several config options verbatim, so a
+ * whole-file `toContain('disable_surveys: true')` would stay green even after
+ * the flag was deleted from the emitted snippet — the prose would satisfy it.
+ */
+const SNIPPET_OPEN = 'const snippetBody = `';
+const snippetStart = source.indexOf(SNIPPET_OPEN);
+if (snippetStart === -1) {
+    throw new Error(
+        `PostHogScript.astro no longer declares \`${SNIPPET_OPEN}\` — the snippet-body ` +
+            'assertions below cannot target the emitted script. Update this extraction.'
+    );
+}
+const snippetBodyStart = snippetStart + SNIPPET_OPEN.length;
+const snippetEnd = source.indexOf('\n`;', snippetBodyStart);
+if (snippetEnd === -1) {
+    throw new Error(
+        'PostHogScript.astro `snippetBody` template literal has no closing backtick on its ' +
+            'own line — the snippet-body assertions below cannot target the emitted script.'
+    );
+}
+const snippetBody = source.slice(snippetBodyStart, snippetEnd);
+
 describe('PostHogScript.astro — snippet rendering pattern', () => {
     it('must NOT render the snippet via JSX expression children (broken pattern #1)', () => {
         const buggyJsxChildren = /<script\b[^>]*\bdefine:vars\b[^>]*>\s*\{`/;
@@ -101,6 +128,19 @@ describe('PostHogScript.astro — snippet rendering pattern', () => {
             "persistence: readAnalyticsConsent() ? 'localStorage+cookie' : 'memory'"
         );
         expect(source).toContain('window.__hospeda_posthog_initialized = true;');
+    });
+
+    it('must disable surveys so posthog-js never fetches surveys.js (HOS-369)', () => {
+        // posthog-js loads `static/surveys.js` unconditionally: zero surveys in
+        // the project and the dashboard survey toggle both leave the request in
+        // place. `disable_surveys: true` is the only switch that removes it.
+        expect(
+            snippetBody,
+            'The emitted PostHog snippet must pass `disable_surveys: true` to init(). Without ' +
+                'it posthog-js fetches static/surveys.js on every page (~6 ms of main thread ' +
+                'plus a request) even though Hospeda has no surveys in any PostHog project. ' +
+                'Only delete this flag when actually shipping a PostHog survey.'
+        ).toContain('disable_surveys: true');
     });
 
     it('must gate rendering on dev mode and key presence', () => {
