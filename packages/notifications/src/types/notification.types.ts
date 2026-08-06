@@ -135,6 +135,7 @@ export enum NotificationType {
      */
     HOST_TRADE_REVOKED = 'host_trade_revoked',
     PARTNER_REVOKED = 'partner_revoked',
+    PARTNER_UNPAID_NOTICE = 'partner_unpaid_notice',
     /**
      * HOS-176 Increment A — advance notice sent to a subscriber before a plan
      * price INCREASE is applied to their MercadoPago preapproval.
@@ -803,6 +804,21 @@ export interface PartnerRevokedPayload extends BaseNotificationPayload {
 }
 
 /**
+ * Payload for the PARTNER_UNPAID_NOTICE notification (HOS-278 R-3).
+ *
+ * The one-time nudge before an unpaid partner listing is archived. Sent by the
+ * reaper cron, never by a user action, and never twice — see
+ * `partners.unpaid_notice_sent_at`.
+ */
+export interface PartnerUnpaidNoticePayload extends BaseNotificationPayload {
+    readonly type: NotificationType.PARTNER_UNPAID_NOTICE;
+    /** Display name of the partner that has not been paid for. */
+    readonly partnerName: string;
+    /** Days remaining before it is archived. */
+    readonly daysUntilArchive: number;
+}
+
+/**
  * Payload for the ACCOMMODATION_CALENDAR_FEED_BROKEN notification
  * (HOS-162 Phase 3, spec §14.4).
  *
@@ -902,5 +918,6 @@ export type NotificationPayload =
     | AllianceLeadDecisionPayload
     | HostTradeRevokedPayload
     | PartnerRevokedPayload
+    | PartnerUnpaidNoticePayload
     | AccommodationCalendarFeedBrokenPayload
     | PlanPriceChangeNoticePayload;

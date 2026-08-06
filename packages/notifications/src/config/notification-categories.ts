@@ -84,6 +84,10 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Partner revoked (HOS-278 R-4) — TRANSACTIONAL for the same reason.
     [NotificationType.PARTNER_REVOKED]: NotificationCategory.TRANSACTIONAL,
 
+    // Unpaid partner nudge (HOS-278 R-3) — TRANSACTIONAL: it reports a pending
+    // consequence on an arrangement the recipient entered, not marketing.
+    [NotificationType.PARTNER_UNPAID_NOTICE]: NotificationCategory.TRANSACTIONAL,
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3) — TRANSACTIONAL:
     // overbooking risk, always sent, never opted out of
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]: NotificationCategory.TRANSACTIONAL,

@@ -74,6 +74,11 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // provider directory, so naming it would describe the wrong takedown.
     [NotificationType.PARTNER_REVOKED]: '{partnerName} ya no aparece entre los aliados de Hospeda',
 
+    // Unpaid partner nudge (HOS-278 R-3). States the fact, not a deadline
+    // countdown: the exact day lives in the body, where "no se borra nada" can
+    // sit next to it.
+    [NotificationType.PARTNER_UNPAID_NOTICE]: '{partnerName} todavía no está publicado',
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3)
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]:
         'Tu calendario de {providerLabel} dejó de sincronizarse — {accommodationName}',

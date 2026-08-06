@@ -582,6 +582,13 @@
       "when": 1785988980327,
       "tag": "0082_heavy_smasher",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1786018335426,
+      "tag": "0083_fancy_juggernaut",
+      "breakpoints": true
     }
   ]
 }

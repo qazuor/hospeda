@@ -143,6 +143,17 @@ export const partners = pgTable(
             onDelete: 'set null'
         }),
         /**
+         * When the "you have not paid, we will archive this" notice was sent
+         * (HOS-278 R-3), or null if it never was.
+         *
+         * Load-bearing for the reaper's FIRST stage and nothing else: without
+         * it the 30-day nudge has no memory, so the cron would re-send it every
+         * single day from day 31 until the partner either pays or is archived.
+         * Sixty emails is not a reminder, it is a reason to mark the sender as
+         * spam.
+         */
+        unpaidNoticeSentAt: timestamp('unpaid_notice_sent_at', { withTimezone: true }),
+        /**
          * When this partner was revoked (HOS-278 R-4), or null if it was not.
          *
          * Revoking flips {@link lifecycleState} to INACTIVE and fills this

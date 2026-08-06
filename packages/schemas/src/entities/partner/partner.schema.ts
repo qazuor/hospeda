@@ -116,6 +116,13 @@ export const partnerSchema = z.object({
     /** Admin who accepted the content. */
     contentApprovedById: UserIdSchema.nullish(),
     /**
+     * When the unpaid-partner notice was sent (HOS-278 R-3), or null.
+     *
+     * The reaper's memory for its first stage: without it the 30-day nudge
+     * would go out every day until the partner pays or is archived.
+     */
+    unpaidNoticeSentAt: z.coerce.date().nullish(),
+    /**
      * When this partner was revoked (HOS-278 R-4), or null if it was not.
      *
      * Revoking sets {@link partnerSchema.shape.lifecycleState} to INACTIVE and
@@ -178,4 +185,23 @@ export const PARTNER_REVOKE_MANAGED_FIELDS = {
     revokedAt: true,
     revokedById: true,
     revokeReason: true
+} as const;
+
+/**
+ * The reaper's bookkeeping column, as an `.omit()` mask (HOS-278 R-3).
+ *
+ * One key, and its own mask rather than a guest in
+ * {@link PARTNER_REVOKE_MANAGED_FIELDS}: that one is about a takedown decision
+ * an admin made, this is about a cron's memory of having sent an email. The
+ * first version of this shipped inside the revoke mask with a comment
+ * apologising for it, and the mask guard caught the mismatch — which is
+ * exactly what a guard that asserts "this mask names its own columns and no
+ * others" is for.
+ *
+ * Omitted from the write schemas for the usual reason: the reaper is its only
+ * writer, and an admin who could stamp it by hand would silence a partner's
+ * nudge with nothing recording that they did.
+ */
+export const PARTNER_REAPER_MANAGED_FIELDS = {
+    unpaidNoticeSentAt: true
 } as const;
