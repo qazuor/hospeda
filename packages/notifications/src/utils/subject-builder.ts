@@ -69,6 +69,11 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.HOST_TRADE_REVOKED]:
         'Tu ficha {listingName} ya no aparece en el directorio de Hospeda',
 
+    // Partner revoked (HOS-278 R-4). Names the partner for the same reason,
+    // and says "aliados" rather than "directorio": a partner was never in the
+    // provider directory, so naming it would describe the wrong takedown.
+    [NotificationType.PARTNER_REVOKED]: '{partnerName} ya no aparece entre los aliados de Hospeda',
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3)
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]:
         'Tu calendario de {providerLabel} dejó de sincronizarse — {accommodationName}',
