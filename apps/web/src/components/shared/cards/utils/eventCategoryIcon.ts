@@ -61,7 +61,7 @@ export type EventCategoryIconName =
  * Kept private to this module — callers that need the name string alone
  * should use {@link getEventCategoryIconName}.
  */
-const EVENT_CATEGORY_ICON_COMPONENTS: Readonly<
+export const EVENT_CATEGORY_ICON_COMPONENTS: Readonly<
     Record<EventCategoryIconName, ComponentType<IconProps>>
 > = {
     BallroomIcon,

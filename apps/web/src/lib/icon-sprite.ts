@@ -23,18 +23,18 @@
  *
  * ## What goes in
  *
- * The icon set is enumerated at RUNTIME from `@repo/icons`'s own exports plus
- * its data-driven `ICON_MAP`, not from a list re-derived by scanning source.
- * The wrapper's sprite branch DOES have a membership test now
- * (`hasIconSpriteSymbol`, HOS-369 sprite-subsetting groundwork), but this
- * generator still publishes no manifest (`setIconSpriteSymbols({ symbols:
- * null })` in {@link initIconSprite}), which resolves that check permissively
- * — i.e. still "emit a `<use>` for ANY icon once a base URL is configured".
- * So the sprite still has to be a SUPERSET of what the app can render, and
- * "everything the package exports" is still the only enumeration that stays a
- * superset when someone adds an icon. A LATER change will start publishing a
- * real manifest and subsetting this generator's output to match; until then
- * this file's job does not change.
+ * The sprite is a SUBSET (HOS-369 sprite-manifest): it carries exactly the
+ * (glyph, weight) pairs listed in the committed manifest,
+ * `./icon-sprite-manifest.json` — built by `apps/web/scripts/build-icon-manifest.ts`,
+ * which statically derives every pair `apps/web` can actually reach (see that
+ * script's own docs for the two categories of usage it covers). The wrapper's
+ * membership test (`hasIconSpriteSymbol`) is what makes this safe: a glyph
+ * usage the manifest omits — because the analyzer could not confidently
+ * resolve it, or because the manifest has not been regenerated yet — falls
+ * back to inline rendering instead of an empty `<use>`. `collectGlyphSet`
+ * below still enumerates every glyph `@repo/icons` can reach at all (from the
+ * barrel and `ICON_MAP`); it is the LOOKUP TABLE {@link buildBody} resolves
+ * each manifest name against, not the set of what gets rendered.
  *
  * Glyphs are keyed by the Phosphor component's own `displayName`, so the ~480
  * wrappers (many of which are semantic aliases of the same glyph) collapse onto
@@ -48,21 +48,22 @@
  */
 
 import { createHash } from 'node:crypto';
-import type { PhosphorGlyphComponent, SpriteWeight } from '@repo/icons';
+import type { PhosphorGlyphComponent, SpriteManifestPair, SpriteWeight } from '@repo/icons';
 import * as iconExports from '@repo/icons';
 import {
+    expandSpriteSymbolEntry,
     getIconSpriteGlyph,
     getIconSpriteName,
     ICON_SPRITE_GLOBAL,
     ICON_SPRITE_SYMBOLS_GLOBAL,
     iconSymbolId,
-    SPRITE_WEIGHTS,
     setIconSpriteBase,
     setIconSpriteSymbols
 } from '@repo/icons';
 import { ICON_MAP } from '@repo/icons/resolver';
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import iconSpriteManifestJson from './icon-sprite-manifest.json';
 
 /**
  * URL path prefix the sprite is served under.
@@ -213,28 +214,77 @@ function renderGlyph({
 }
 
 /**
- * Builds the sprite document: one `<symbol>` per glyph per shipped weight.
+ * The committed icon-sprite manifest, as read off disk: `{ glyphName:
+ * "initials" }`, one character per weight the app reaches that glyph at (see
+ * {@link expandSpriteSymbolEntry}'s compact-entry format). Built by
+ * `apps/web/scripts/build-icon-manifest.ts` (HOS-369 sprite-manifest) —
+ * regenerate it with `pnpm icons:build-manifest` after adding, removing, or
+ * changing the weight of an icon usage; a static guard
+ * (`test/static-guards/icon-manifest-drift.test.ts`) fails CI if it drifts
+ * from what the analyzer currently derives from source.
+ */
+const ICON_SPRITE_MANIFEST = iconSpriteManifestJson as Readonly<Record<string, string>>;
+
+/**
+ * The manifest's entries as compact `"name:initials"` strings — the exact
+ * shape {@link expandSpriteSymbolEntry} decodes, and the exact shape
+ * {@link setIconSpriteSymbols}/{@link iconSpriteClientScript} both consume.
+ * Computed once: every entry is just its own key and value joined, so
+ * building this list costs nothing worth memoizing further.
+ */
+const MANIFEST_ENTRIES: ReadonlyArray<string> = Object.entries(ICON_SPRITE_MANIFEST).map(
+    ([name, initials]) => `${name}:${initials}`
+);
+
+/**
+ * The manifest, decoded into (glyph name, weight) pairs and sorted so the
+ * sprite document — and therefore its hash — depends only on WHICH pairs the
+ * manifest carries, not on the object's own key iteration order.
+ */
+function manifestPairs(): SpriteManifestPair[] {
+    return MANIFEST_ENTRIES.flatMap((entry) => expandSpriteSymbolEntry({ entry })).sort((a, b) => {
+        if (a.name !== b.name) return a.name < b.name ? -1 : 1;
+        return a.weight < b.weight ? -1 : 1;
+    });
+}
+
+/**
+ * Builds the sprite document: one `<symbol>` per (glyph, weight) pair the
+ * committed manifest lists — a SUBSET of every glyph `@repo/icons` can reach,
+ * not the full cartesian product this generator shipped before HOS-369
+ * sprite-manifest.
  *
- * @returns The SVG source and the glyph count behind it.
+ * @returns The SVG source and the distinct glyph count behind it.
+ * @throws When the manifest names a glyph {@link collectGlyphSet} cannot
+ *   resolve. That means the manifest and the app's actual icon set have
+ *   drifted apart — the drift guard should have caught it before this ever
+ *   runs, but failing loudly here is the backstop: silently skipping the
+ *   pair would ship a sprite the wrapper still emits `<use>` references
+ *   into, for a `<symbol>` that was never rendered.
  */
 function buildBody(): { readonly body: string; readonly glyphCount: number } {
     const glyphs = collectGlyphSet();
     const symbols: string[] = [];
+    const distinctNames = new Set<string>();
 
-    // Sorted by name so the document — and therefore the hash — depends only on
-    // WHICH glyphs are in it, not on module evaluation order.
-    for (const [name, glyph] of [...glyphs].sort(([a], [b]) => (a < b ? -1 : 1))) {
-        for (const weight of SPRITE_WEIGHTS) {
-            const { children, viewBox } = renderGlyph({ glyph, weight });
-            symbols.push(
-                `<symbol id="${iconSymbolId({ name, weight })}" viewBox="${viewBox}">${children}</symbol>`
+    for (const { name, weight } of manifestPairs()) {
+        const glyph = glyphs.get(name);
+        if (glyph === undefined) {
+            throw new Error(
+                `[icon-sprite] manifest names "${name}", which no reachable @repo/icons wrapper resolves to — run \`pnpm icons:build-manifest\` to regenerate it`
             );
         }
+        distinctNames.add(name);
+
+        const { children, viewBox } = renderGlyph({ glyph, weight });
+        symbols.push(
+            `<symbol id="${iconSymbolId({ name, weight })}" viewBox="${viewBox}">${children}</symbol>`
+        );
     }
 
     return {
         body: `<svg xmlns="http://www.w3.org/2000/svg">${symbols.join('')}</svg>`,
-        glyphCount: glyphs.size
+        glyphCount: distinctNames.size
     };
 }
 
@@ -271,7 +321,7 @@ export function iconSpriteUrl(): string {
 /**
  * The exact SVG document served for the sprite.
  *
- * @returns The `<svg>` source carrying one `<symbol>` per glyph per weight.
+ * @returns The `<svg>` source carrying one `<symbol>` per manifest pair.
  */
 export function getIconSpriteBody(): string {
     return SPRITE.body;
@@ -308,8 +358,8 @@ export function isCurrentIconSpriteFile(file: string): boolean {
 }
 
 /**
- * The inline script that hands the sprite URL — and, once a later change ships
- * a subset sprite, its symbol manifest — to the browser.
+ * The inline script that hands the sprite URL AND its symbol manifest to the
+ * browser (HOS-369 sprite-manifest).
  *
  * Client islands render icons too, and they run in a realm where
  * `setIconSpriteBase`/`setIconSpriteSymbols` were never called. `@repo/icons`
@@ -321,18 +371,17 @@ export function isCurrentIconSpriteFile(file: string): boolean {
  * `JSON.stringify` on the URL is what keeps the snippet from being a string
  * concatenation of an unescaped value.
  *
- * @param params.symbols - The current sprite's symbol manifest, or `null`
- *   (the default) to emit no manifest assignment at all. Today's sprite is
- *   the full cartesian product of every glyph at every shipped weight, and
- *   `@repo/icons`' `hasIconSpriteSymbol` already treats "no manifest
- *   published" as "every pair exists" — the exact same behaviour a manifest
- *   listing all 988 ids would produce, at zero HTML cost instead of ~20 KB.
- *   Passing an array here (once a later change generates a subset) emits the
- *   second assignment.
+ * @param params.symbols - Manifest entries to publish, in
+ *   {@link expandSpriteSymbolEntry}'s compact `"name:initials"` shape —
+ *   defaults to {@link MANIFEST_ENTRIES}, the real committed manifest, so a
+ *   call with no arguments is what every page actually emits. Pass `null` to
+ *   suppress the manifest assignment entirely (every pair reads as present —
+ *   see `hasIconSpriteSymbol`'s permissive default); tests use this to
+ *   isolate the URL-only half of the output.
  * @returns Classic-script source, ready to be emitted with `set:html`.
  */
 export function iconSpriteClientScript({
-    symbols = null
+    symbols = MANIFEST_ENTRIES
 }: {
     readonly symbols?: ReadonlyArray<string> | null;
 } = {}): string {
@@ -349,12 +398,12 @@ export function iconSpriteClientScript({
  * in the tree inline, and the page would ship both forms.
  *
  * `setIconSpriteSymbols` is called alongside `setIconSpriteBase`, both wired
- * the same way, so the two halves of the (base, manifest) pair stay symmetric
- * for a later change that ships a real subset. Today's sprite carries every
- * pair, so `null` (the permissive default — see `hasIconSpriteSymbol`) is the
- * correct manifest to publish.
+ * the same way, publishing the SAME committed manifest
+ * ({@link MANIFEST_ENTRIES}) {@link iconSpriteClientScript} hands the
+ * browser — the server and the browser can never disagree about which pairs
+ * the sprite carries, because both read the one manifest this module loaded.
  */
 export function initIconSprite(): void {
     setIconSpriteBase(iconSpriteUrl());
-    setIconSpriteSymbols({ symbols: null });
+    setIconSpriteSymbols({ symbols: MANIFEST_ENTRIES });
 }
