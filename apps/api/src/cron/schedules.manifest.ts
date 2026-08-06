@@ -298,6 +298,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Archive partners whose endsAt has passed — backup safety net for missed MP webhooks (SPEC-271 T-271-12).'
     },
     {
+        name: 'partner-unpaid-reaper',
+        displayName: 'Aliados sin pagar',
+        category: 'billing',
+        schedule: '45 4 * * *',
+        description:
+            'Nudge unpaid provisioned partners at 30 days and archive them at 90 (HOS-278 R-3). Never deletes: archiving flips lifecycleState and an admin can reverse it.'
+    },
+    {
         name: 'featured-by-entitlement-reconcile',
         displayName: 'Reconciliación de destacados por plan y addon',
         category: 'billing',
