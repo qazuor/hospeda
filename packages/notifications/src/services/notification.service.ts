@@ -20,6 +20,7 @@ import {
     FeedbackReportEmail,
     HostTradeRevoked,
     PartnerRevoked,
+    PartnerUnpaidNotice,
     PaymentFailure,
     PaymentRetryWarning,
     PaymentSuccess,
@@ -53,6 +54,7 @@ import type {
     HostTradeRevokedPayload,
     NotificationPayload,
     PartnerRevokedPayload,
+    PartnerUnpaidNoticePayload,
     PaymentNotificationPayload,
     PaymentRetryWarningPayload,
     PlanBeingRetiredPayload,
@@ -628,6 +630,15 @@ export class NotificationService {
                     recipientName,
                     partnerName: p.partnerName,
                     reason: p.reason
+                });
+            }
+
+            case 'partner_unpaid_notice': {
+                const p = payload as PartnerUnpaidNoticePayload;
+                return PartnerUnpaidNotice({
+                    recipientName,
+                    partnerName: p.partnerName,
+                    daysUntilArchive: p.daysUntilArchive
                 });
             }
 
