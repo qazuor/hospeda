@@ -13,6 +13,12 @@
  * 8. Per-row action buttons carry a UNIQUE accessible name (question-scoped) —
  *    regression guard for the duplicate-name bug already hit once in
  *    CommerceFaqManager (four action pairs sharing one name across rows).
+ * 9. Channel-visibility checkboxes (HOS-393 fase 2): both default to checked
+ *    on a new FAQ (G-3), toggling them is reflected in the .add/.update
+ *    payload, and the edit form seeds them from the FAQ's current flags.
+ * 10. Per-row non-default marker (AC-14): a FAQ with either flag off shows a
+ *     text-visible badge (not colour-only); a FAQ at the all-true default
+ *     shows neither badge.
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -77,7 +83,9 @@ const FAQ_1: AccommodationFaqItem = {
     question: '¿Cuándo es el check-in?',
     answer: 'A partir de las 14hs.',
     category: null,
-    displayOrder: 0
+    displayOrder: 0,
+    isVisibleOnListing: true,
+    isUsableByAi: true
 };
 
 const FAQ_2: AccommodationFaqItem = {
@@ -85,7 +93,9 @@ const FAQ_2: AccommodationFaqItem = {
     question: '¿Aceptan mascotas?',
     answer: 'Sí, previa consulta.',
     category: null,
-    displayOrder: 1
+    displayOrder: 1,
+    isVisibleOnListing: true,
+    isUsableByAi: true
 };
 
 function renderSection(initialFaqs: readonly AccommodationFaqItem[] = []) {
@@ -137,7 +147,9 @@ describe('FaqSection', () => {
             question: '¿Hay wifi?',
             answer: 'Sí, gratuito en todo el hospedaje.',
             category: null,
-            displayOrder: 2
+            displayOrder: 2,
+            isVisibleOnListing: true,
+            isUsableByAi: true
         };
         mockAdd.mockResolvedValueOnce({ ok: true, data: { faq: newFaq } });
 
@@ -156,12 +168,63 @@ describe('FaqSection', () => {
             expect(mockAdd).toHaveBeenCalledWith({
                 accommodationId: 'acc-1',
                 question: '¿Hay wifi?',
-                answer: 'Sí, gratuito en todo el hospedaje.'
+                answer: 'Sí, gratuito en todo el hospedaje.',
+                isVisibleOnListing: true,
+                isUsableByAi: true
             });
         });
 
         await waitFor(() => {
             expect(screen.getByText('¿Hay wifi?')).toBeInTheDocument();
+        });
+    });
+
+    it('defaults both channel-visibility checkboxes to checked on a new FAQ (G-3)', () => {
+        renderSection([]);
+        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
+
+        const visibleCheckbox = screen.getByLabelText(
+            'Visible en la ficha pública'
+        ) as HTMLInputElement;
+        const aiCheckbox = screen.getByLabelText('Usable por la IA') as HTMLInputElement;
+
+        expect(visibleCheckbox.checked).toBe(true);
+        expect(aiCheckbox.checked).toBe(true);
+    });
+
+    it('sends unchecked channel-visibility flags in the .add payload', async () => {
+        const newFaq: AccommodationFaqItem = {
+            id: 'faq-new',
+            question: '¿Hay estacionamiento cubierto?',
+            answer: 'Sí, para dos vehículos.',
+            category: null,
+            displayOrder: 2,
+            isVisibleOnListing: false,
+            isUsableByAi: false
+        };
+        mockAdd.mockResolvedValueOnce({ ok: true, data: { faq: newFaq } });
+
+        renderSection([]);
+        fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
+
+        fireEvent.change(screen.getByLabelText('Pregunta'), {
+            target: { value: '¿Hay estacionamiento cubierto?' }
+        });
+        fireEvent.change(screen.getByLabelText('Respuesta'), {
+            target: { value: 'Sí, para dos vehículos.' }
+        });
+        fireEvent.click(screen.getByLabelText('Visible en la ficha pública'));
+        fireEvent.click(screen.getByLabelText('Usable por la IA'));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+
+        await waitFor(() => {
+            expect(mockAdd).toHaveBeenCalledWith({
+                accommodationId: 'acc-1',
+                question: '¿Hay estacionamiento cubierto?',
+                answer: 'Sí, para dos vehículos.',
+                isVisibleOnListing: false,
+                isUsableByAi: false
+            });
         });
     });
 
@@ -183,13 +246,33 @@ describe('FaqSection', () => {
                 accommodationId: 'acc-1',
                 faqId: 'faq-1',
                 question: '¿A qué hora es el check-in?',
-                answer: 'A partir de las 14hs.'
+                answer: 'A partir de las 14hs.',
+                isVisibleOnListing: true,
+                isUsableByAi: true
             });
         });
 
         await waitFor(() => {
             expect(screen.getByText('¿A qué hora es el check-in?')).toBeInTheDocument();
         });
+    });
+
+    it('seeds the edit form checkboxes from the FAQ current channel-visibility flags', () => {
+        const hiddenFaq: AccommodationFaqItem = {
+            ...FAQ_1,
+            isVisibleOnListing: false,
+            isUsableByAi: false
+        };
+        renderSection([hiddenFaq]);
+        fireEvent.click(screen.getByRole('button', { name: /^Editar/ }));
+
+        const visibleCheckbox = screen.getByLabelText(
+            'Visible en la ficha pública'
+        ) as HTMLInputElement;
+        const aiCheckbox = screen.getByLabelText('Usable por la IA') as HTMLInputElement;
+
+        expect(visibleCheckbox.checked).toBe(false);
+        expect(aiCheckbox.checked).toBe(false);
     });
 
     it('calls .remove and removes the FAQ when delete is confirmed', async () => {
@@ -236,15 +319,19 @@ describe('FaqSection', () => {
     it('rolls back the optimistic reorder when the API call fails', async () => {
         mockReorder.mockResolvedValueOnce({ ok: false, error: { status: 500, message: 'boom' } });
 
-        renderSection([FAQ_1, FAQ_2]);
+        const { container } = renderSection([FAQ_1, FAQ_2]);
         fireEvent.click(screen.getByRole('button', { name: /^Bajar "¿Cuándo es el check-in\?"/ }));
 
         await waitFor(() => {
             expect(screen.getByText('No se pudo reordenar.')).toBeInTheDocument();
         });
 
-        // FAQ_1 is still first in DOM order after rollback.
-        const questions = screen.getAllByText(/¿/).map((el) => el.textContent);
+        // FAQ_1 is still first in DOM order after rollback. Scoped to `.question`
+        // elements (not a bare "¿" text match) so the explanatory copy block
+        // above the list — which also starts with "¿" — cannot collide.
+        const questions = Array.from(container.querySelectorAll('.question')).map(
+            (el) => el.textContent
+        );
         expect(questions[0]).toBe('¿Cuándo es el check-in?');
     });
 
@@ -278,5 +365,69 @@ describe('FaqSection', () => {
         expect(screen.getByLabelText('Pregunta')).toBeInTheDocument();
         fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }));
         expect(screen.queryByLabelText('Pregunta')).not.toBeInTheDocument();
+    });
+
+    describe('per-row channel-visibility marker (AC-14)', () => {
+        it('shows no badge for a FAQ at the all-true default', () => {
+            renderSection([FAQ_1]);
+            expect(screen.queryByText('No visible en la ficha')).not.toBeInTheDocument();
+            expect(screen.queryByText('No usable por IA')).not.toBeInTheDocument();
+        });
+
+        it('shows the "not visible" badge, as real text, when isVisibleOnListing is false', () => {
+            const hiddenFaq: AccommodationFaqItem = { ...FAQ_1, isVisibleOnListing: false };
+            renderSection([hiddenFaq]);
+
+            const badge = screen.getByText('No visible en la ficha');
+            expect(badge).toBeInTheDocument();
+            // The badge must carry real visible text (not rely on colour alone).
+            expect(badge.textContent).toBe('No visible en la ficha');
+            expect(screen.queryByText('No usable por IA')).not.toBeInTheDocument();
+        });
+
+        it('shows the "not AI-usable" badge when isUsableByAi is false', () => {
+            const aiDisabledFaq: AccommodationFaqItem = { ...FAQ_1, isUsableByAi: false };
+            renderSection([aiDisabledFaq]);
+
+            expect(screen.getByText('No usable por IA')).toBeInTheDocument();
+            expect(screen.queryByText('No visible en la ficha')).not.toBeInTheDocument();
+        });
+
+        it('shows BOTH badges for a FAQ with both flags off (the "draft" combination)', () => {
+            const draftFaq: AccommodationFaqItem = {
+                ...FAQ_1,
+                isVisibleOnListing: false,
+                isUsableByAi: false
+            };
+            renderSection([draftFaq]);
+
+            expect(screen.getByText('No visible en la ficha')).toBeInTheDocument();
+            expect(screen.getByText('No usable por IA')).toBeInTheDocument();
+        });
+
+        it('still renders a FAQ with both flags off — the editor never filters by them', () => {
+            // The editor is the management surface, not a consumer (§6.2 of the
+            // spec): unlike getBySlug / the AI prompt, it must NOT hide FAQs
+            // based on isVisibleOnListing / isUsableByAi.
+            const draftFaq: AccommodationFaqItem = {
+                ...FAQ_1,
+                isVisibleOnListing: false,
+                isUsableByAi: false
+            };
+            renderSection([draftFaq, FAQ_2]);
+
+            expect(screen.getByText('¿Cuándo es el check-in?')).toBeInTheDocument();
+            expect(screen.getByText('¿Aceptan mascotas?')).toBeInTheDocument();
+        });
+    });
+
+    it('renders the explanatory copy block above the list (G-6)', () => {
+        renderSection([FAQ_1]);
+        expect(
+            screen.getByText('¿Por qué ocultar o restringir una pregunta?')
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText(/una pregunta no visible en la ficha pero usable por la IA no es privada/)
+        ).toBeInTheDocument();
     });
 });

@@ -126,7 +126,13 @@ describe('accommodationFaqApi routing (HOS-393)', () => {
 
         expect(postProtected).toHaveBeenCalledWith({
             path: '/api/v1/protected/accommodations/acc-1/faqs',
-            body: { question: '¿Hay wifi?', answer: 'Sí, gratuito.', category: undefined }
+            body: {
+                question: '¿Hay wifi?',
+                answer: 'Sí, gratuito.',
+                category: undefined,
+                isVisibleOnListing: undefined,
+                isUsableByAi: undefined
+            }
         });
         expect(post).not.toHaveBeenCalled();
     });
@@ -143,7 +149,9 @@ describe('accommodationFaqApi routing (HOS-393)', () => {
             body: {
                 question: '¿A qué hora es el check-in?',
                 answer: undefined,
-                category: undefined
+                category: undefined,
+                isVisibleOnListing: undefined,
+                isUsableByAi: undefined
             }
         });
     });
