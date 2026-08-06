@@ -43,6 +43,21 @@
  * `fill` of their own, so `currentColor` — and the duotone brand color — resolve
  * exactly as they did inline.
  *
+ * ## Why there is also a (glyph, weight) PAIR fail-safe
+ *
+ * {@link isSpriteWeight} is a fail-safe on the WEIGHT axis only: it assumes
+ * that if a weight is shipped at all, every glyph has a `<symbol>` for it — true
+ * today, because the sprite is the full cartesian product of every glyph the
+ * package can reach at every shipped weight. A subset sprite (planned in a
+ * later change) breaks that assumption: a glyph can ship at `duotone` but not
+ * `bold`. {@link hasIconSpriteSymbol} is the same fail-safe pattern extended to
+ * that pair, checked in addition to {@link isSpriteWeight} rather than instead
+ * of it. This PR only adds the mechanism — every consumer today either
+ * configures no manifest at all, or (this app) an explicit `null`, both of
+ * which resolve to the SAME permissive default the mechanism had before it
+ * existed, so introducing it is a no-op until a later change actually ships a
+ * subset.
+ *
  * @module sprite
  */
 
@@ -74,6 +89,18 @@ export type SpriteWeight = (typeof SPRITE_WEIGHTS)[number];
  * Consumers that never assign it (i.e. `apps/admin`) keep inline rendering.
  */
 export const ICON_SPRITE_GLOBAL = '__HOSPEDA_ICON_SPRITE__';
+
+/**
+ * Name of the global a page assigns to hand the sprite's SYMBOL MANIFEST to the
+ * browser — sibling of {@link ICON_SPRITE_GLOBAL}, same rationale: the server
+ * sets its manifest through {@link setIconSpriteSymbols} at boot, but client
+ * islands render in a different realm where that call never happened, so the
+ * value has to come from something the HTML shell assigned before hydration.
+ *
+ * Consumers that never assign it keep the permissive default — see
+ * {@link hasIconSpriteSymbol}.
+ */
+export const ICON_SPRITE_SYMBOLS_GLOBAL = '__HOSPEDA_ICON_SPRITE_SYMBOLS__';
 
 /**
  * Property under which a wrapper records the sprite symbol NAME of the Phosphor
@@ -157,6 +184,112 @@ export function getIconSpriteBase(): string | null {
  */
 export function isSpriteWeight(weight: IconWeight): weight is SpriteWeight {
     return (SPRITE_WEIGHTS as ReadonlyArray<string>).includes(weight);
+}
+
+/**
+ * The symbol manifest set explicitly via {@link setIconSpriteSymbols}, memoized
+ * into a `Set` for O(1) lookups — `null` when nothing set one (including "set,
+ * then cleared with `null`").
+ */
+let spriteSymbolsSet: Set<string> | null = null;
+
+/**
+ * The array most recently read off {@link ICON_SPRITE_SYMBOLS_GLOBAL}, kept
+ * only to detect whether the global changed between calls.
+ */
+let cachedGlobalSymbolsArray: unknown;
+
+/** `cachedGlobalSymbolsArray`, memoized into a `Set`. */
+let cachedGlobalSymbolsSet: Set<string> | null = null;
+
+/**
+ * Turns the (glyph name, weight) symbol manifest on for every Phosphor icon
+ * wrapper.
+ *
+ * This is the WEIGHT-axis fail-safe ({@link isSpriteWeight}) extended to the
+ * PAIR axis: today's sprite is the full cartesian product of every glyph at
+ * every shipped weight, but a future subset sprite will not carry every pair,
+ * and a `<use href>` at a missing `<symbol>` renders NOTHING — silently. This
+ * setter is how a consumer tells the wrapper exactly which pairs actually have
+ * a `<symbol>`, so a miss can fall back to inline rendering instead of
+ * disappearing.
+ *
+ * @param params.symbols - Every `<symbol id>` the current sprite carries (see
+ *   {@link iconSymbolId}), or `null` to clear the explicit setting, after which
+ *   the value falls back to {@link ICON_SPRITE_SYMBOLS_GLOBAL} and then to the
+ *   permissive default — see {@link hasIconSpriteSymbol}.
+ *
+ * @example
+ * ```ts
+ * setIconSpriteSymbols({ symbols: listCurrentSpriteSymbolIds() }); // once, at server start
+ * ```
+ */
+export function setIconSpriteSymbols({
+    symbols
+}: {
+    readonly symbols: ReadonlyArray<string> | null;
+}): void {
+    spriteSymbolsSet = symbols === null ? null : new Set(symbols);
+}
+
+/**
+ * Reads {@link ICON_SPRITE_SYMBOLS_GLOBAL} off `globalThis`, memoizing the
+ * derived `Set` so repeated {@link hasIconSpriteSymbol} calls — hundreds per
+ * page — do not rescan the array each time. The cache is keyed on the array's
+ * own identity, so it stays correct if the global is ever reassigned.
+ *
+ * @returns The manifest `Set`, or `null` when the global carries no usable array.
+ */
+function readGlobalSpriteSymbolsSet(): Set<string> | null {
+    const fromGlobal = (globalThis as Record<string, unknown>)[ICON_SPRITE_SYMBOLS_GLOBAL];
+    if (!Array.isArray(fromGlobal)) return null;
+
+    if (fromGlobal !== cachedGlobalSymbolsArray) {
+        cachedGlobalSymbolsArray = fromGlobal;
+        cachedGlobalSymbolsSet = new Set(fromGlobal as ReadonlyArray<string>);
+    }
+    return cachedGlobalSymbolsSet;
+}
+
+/**
+ * Whether the sprite currently in effect carries a `<symbol>` for a given
+ * (glyph name, weight) pair id.
+ *
+ * ## The default is PERMISSIVE, and that is deliberate
+ *
+ * When NO manifest is configured anywhere — no {@link setIconSpriteSymbols}
+ * call, no {@link ICON_SPRITE_SYMBOLS_GLOBAL} — this returns `true`
+ * unconditionally. "No manifest" means "no one told the wrapper the sprite is
+ * anything other than the full cartesian product", which is today's reality:
+ * every (glyph, weight) pair the sprite generator can reach has a `<symbol>`.
+ * Flipping this default to `false` would silently inline EVERY icon in
+ * `apps/web` (and `apps/admin`, which never configures a base at all and so
+ * would newly fail this check too, though it never reaches this branch since
+ * it never configures a base). A future reader "cleaning up" what looks like
+ * an inverted fail-open here would triple the HTML this mechanism exists to
+ * shrink, with no error, on every page, in production, discoverable only by
+ * noticing every icon rendered heavier than expected.
+ *
+ * ## Resolution order
+ *
+ * Mirrors {@link getIconSpriteBase} exactly: an explicit
+ * {@link setIconSpriteSymbols} call wins; failing that, the manifest the HTML
+ * shell published on {@link ICON_SPRITE_SYMBOLS_GLOBAL}; failing that, the
+ * permissive default above.
+ *
+ * @param params.symbol - The `<symbol id>` to check, e.g. `StarIcon-duotone`
+ *   (see {@link iconSymbolId}).
+ * @returns `true` when the pair is known to have a symbol, OR when no manifest
+ *   is configured at all. `false` only when a manifest IS configured and does
+ *   not list this pair.
+ */
+export function hasIconSpriteSymbol({ symbol }: { readonly symbol: string }): boolean {
+    if (spriteSymbolsSet !== null) return spriteSymbolsSet.has(symbol);
+
+    const fromGlobal = readGlobalSpriteSymbolsSet();
+    if (fromGlobal !== null) return fromGlobal.has(symbol);
+
+    return true;
 }
 
 /**
