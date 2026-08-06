@@ -1766,9 +1766,58 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
   new home. Mutation-tested 4/4: static import in an island, `driver-tour.css`
   imported from `BaseLayout.astro`, the vendor `@import` back in `global.css`, and
   the theme deleted — each fails and names the file.
-- **W3-5** — Consolidate the 20 render-blocking stylesheets. Gated on the
-  CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not start before
-  that resolves.
+- **W3-5** — Consolidate the 20 render-blocking stylesheets. **Partly shipped.**
+
+  ~~Gated on the CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not
+  start before that resolves.~~ **That gate was wrong and cost this task a wave
+  of delay.** It conflated two different things: *inlining* a stylesheet into a
+  `<style>` element, which really is constrained, and *removing* one from the
+  critical path, which is not.
+
+  `inlineStylesheets: 'never'` is set in `astro.config.mjs` for a reason that
+  has nothing to do with byte count — Astro's `'auto'` inlines small sheets as
+  `<style nonce="…">`, and `<ClientRouter />` soft navigation swaps in a page
+  whose nonce no longer matches the CSP the browser pinned on first load
+  (GAP-30-01). Forcing sheets to external hashed files routes them through
+  `style-src 'self'`, which is immune to that. Nothing about that decision
+  blocks reducing how many of those external sheets are render-blocking.
+
+  The proof is already merged: `apps/web/src/lib/ensure-stylesheet.ts` — whose
+  own header names it "HOS-369 W3-5" — takes vendor CSS off the critical path by
+  importing it with Vite's `?url` suffix and injecting a `<link>` at runtime. A
+  same-origin `<link rel="stylesheet">` is allowed by `style-src 'self'` and
+  needs no hash, so the mechanism is CSP-compatible **by construction**. It
+  shipped for `glightbox` and `react-day-picker` while this line still claimed
+  the task could not start.
+
+  What that module also documents is the real constraint, which is the one worth
+  carrying forward: **Astro hoists the CSS of a page's ENTIRE module graph into
+  `<head>`, without distinguishing a static import from a dynamic one.** So a
+  `[data-glightbox]` guard plus `import()` does not help, and neither does
+  moving the import into its own module — Vite merges a module whose only
+  content is a CSS import back into its parent chunk. `?url` + runtime injection
+  is what breaks the chain. Both failures were measured, not predicted.
+
+  Remaining work is the consolidation itself, and it needs a re-measurement
+  first: the "20 sheets / 57,603 B brotli" figure in §5.6 predates W3-4 and this
+  module's two extractions.
+
+  **Do not classify a sheet as non-critical by reading the settled DOM.** A
+  first pass at bucketing the 20 sheets marked seven of them as contributing no
+  critical bytes. At least one of those seven is wrong, and wrong in a way that
+  generalizes: `EventCardHorizontalSkeleton.astro` is the `slot="fallback"` of a
+  `server:defer` island (`NextEventsSectionSkeleton` →
+  `pages/[lang]/index.astro:252`). A server island's fallback is what the
+  document ships and what the user looks at until the deferred render lands, so
+  its CSS is as critical as anything above the fold — and then it is replaced,
+  which is precisely why it is invisible to any check that runs after the page
+  settles. Measured, not argued: `skeleton-pulse` appears **63 times in the raw
+  SSR HTML** of the staging home.
+
+  The classifier has to read the **raw SSR HTML** (`curl`, no JS), the same
+  discipline the SSR-first island rule in `apps/web/CLAUDE.md` already demands
+  of island tests. Seven sheets were classified this way; the other six were not
+  re-checked and must be before any of them is treated as safe to defer.
 - **W3-6 (new, 2026-08-04)** — Deduplicate the inline SVG icons. See the
   re-measurement below: 520 inline `<svg>` elements on one listing page, only
   **169 distinct** — each icon repeated ~20×, once per card. 355 KB, the second
@@ -1844,15 +1893,24 @@ brotli / 127 KB gzip on the wire, not 639 KB. The 632 KB that *is* paid in full 
 every navigation is HTML parsing and the DOM text node — which is exactly the
 CPU-bound work mobile PSI throttles 4×, and therefore still the right target.
 
-#### Measured on 2026-08-05 — AC-8 met, after W3-6 and W3-3
+#### Measured on 2026-08-05 — document weight, after W3-6 and W3-3
+
+> **This section is diagnosis, not acceptance.** It recorded AC-8 as met against
+> the old "home HTML under 500 KB" criterion. That criterion was replaced the
+> same day (see §9, AC-8) because the document got lighter while the page got
+> slower. The progression below is still accurate and still useful — it is the
+> best record of where the document's bytes went — but it no longer decides
+> whether HOS-369 closes.
 
 | Page | Baseline 2026-08-04 | After W3-1 | After W3-6 | After W3-3 | Total |
 |---|---|---|---|---|---|
 | `/es/` (home) | 1,256,468 B | 611,861 B | 511,077 B | **412,346 B** | **−67.2 %** |
 | `/es/alojamientos/` | 1,385,789 B | 741,191 B | 490,047 B | 490,046 B | **−64.6 %** |
 
-**AC-8 is met**: the home is 412,346 B against the 500,000 B threshold, a 17.5 %
-margin rather than the knife-edge the earlier projections kept landing on.
+~~**AC-8 is met**~~: the home is 412,346 B against the old 500,000 B threshold, a
+17.5 % margin rather than the knife-edge the earlier projections kept landing on.
+**That threshold is retired** — see the note above and §9, AC-8. The reduction is
+real; what it did not buy was a faster page.
 
 It took THREE levers, not the one the criterion named — and each time the
 arithmetic fell short, it was because a bucket nobody had measured on the home
@@ -1873,6 +1931,43 @@ before predicting anything about it.
 Verified on staging with real data after each deploy: the sprite reaches `HIT` at
 the edge, 383 `<use>` resolve with none broken, the destinations map and carousel
 render from the narrowed prop set, and the i18n dictionary carries its 8,840 keys.
+
+#### Cold first-visit profile, 2026-08-05 — the baseline AC-8 now measures against
+
+Taken after the whole of Wave D, on a genuinely cold cache (recipe in §9, AC-8).
+This is the measurement that retired the document-weight criterion:
+
+| | |
+|---|---|
+| Requests | **153** |
+| Transferred | **1,123 KB** |
+| JS | **106 requests / 2,019 KB decoded** |
+| CSS | 254 KB |
+| LCP | **≈ 15,266 ms** |
+
+Three heaviest resources, all decoded bytes:
+
+| Resource | Decoded | Note |
+|---|---|---|
+| `src.*.js` | 504 KB | |
+| `/icons/sprite.*.svg` | **489 KB** | created by W3-6; 8,248 ms, slowest resource on the home |
+| `/i18n/es.*.js` | **389 KB** | created by W3-1 |
+
+**Two of the three heaviest resources were created by this wave**, to shrink the
+HTML the old AC-8 was measuring. Both are `immutable` and `HIT` at the edge, so
+they are first-visit cost that buys every later page — the trade is sound, the
+criterion that scored it was not.
+
+Two consequences for the remaining work, so nobody re-derives them:
+
+- **The sprite is the home's slowest resource**, and `<use href="…#id">` means no
+  icon paints until the whole file arrives. The fix is to inline only the icons
+  in the first viewport and leave the sprite for the rest — not to revert W3-6.
+- **Over half the i18n dictionary is `account.*` keys** the public home can never
+  use. Measured at ~17.7 KB brotli and deferred on that basis; in decoded bytes,
+  which is what the main thread pays and what mobile PSI throttles 4×, it is
+  worth far more. That is W3-2, and it needs two assets, per-route conditional
+  linking, and a guard that can reason about which islands each `.astro` mounts.
 
 ### 6.7 Documentation cleanup
 
@@ -2112,22 +2207,37 @@ Wave B onward:
   purge-by-URL provably could not reach (§5.11.2).
 - **AC-7** — `https://hospeda.com.ar/` resolves to `/es/` at the edge
   (`cf-cache-status` present on the 301, no origin hit).
-- **AC-8** — Home HTML drops below 500 KB uncompressed. **Baseline re-measured
-  2026-08-04** (see §6.6): the home is 1,256,468 B and the accommodation listing
-  1,385,789 B, so this is a ~3× reduction, not a trim. **HOS-369 does not close
-  until Wave D ships** — the owner's acceptance of this spec is a faster site,
-  and the waves already delivered do not move a Lighthouse score on their own.
+- **AC-8** (rewritten 2026-08-05, owner decision) — **The home meets Lighthouse's
+  "good" thresholds on mobile: `LCP ≤ 2,500 ms` and `TBT ≤ 200 ms`**, measured
+  cold against staging. Not met today: the cold profile in §6.6 measures
+  **LCP ≈ 15,266 ms**. **HOS-369 does not close until it is.**
 
-  **MET 2026-08-05: the home measures 412,346 B on staging** (17.5 % under the
-  threshold). See §6.6 for the full progression.
+  Measured with a genuinely cold cache — `performance_start_trace(reload: true)`
+  does NOT give one, it reuses the browser cache. The recipe that does:
+  `new_page(url: "about:blank", isolatedContext: <n>)` → `emulate(…)` →
+  `performance_start_trace(reload: false, autoStop: false)` → `navigate_page(url)`
+  → `performance_stop_trace()`. Sanity-check every throttled timing against the
+  RTT: anything completing in less than one RTT under emulated throttling is
+  cache, not speed.
 
-  Corrected twice on the way there, and both corrections are worth keeping. The
-  criterion originally read "after W3-1": W3-1 shipped and the home was 611,860 B,
-  22 % over. It was then amended to "W3-1 and W3-6 together": those shipped and
-  the home was 511,077 B, still 2.2 % over. It took **W3-1, W3-6 and W3-3**.
-  Each shortfall had the same cause — the bucket table in §6.6 was measured on the
-  LISTING, and the home has a different profile. Do not project one page's
-  composition onto another.
+  **The criterion this replaces was measuring the wrong thing, and that is the
+  finding worth keeping.** It read "home HTML drops below 500 KB uncompressed",
+  and it was marked MET on 2026-08-05 at 412,346 B — 17.5 % under the threshold,
+  after three levers (W3-1, W3-6, W3-3). The document did get lighter. The page
+  did not get faster, and the cold profile in §6.6 says so in detail: two of the
+  three heaviest resources on the home are the sprite and the dictionary that
+  Wave D itself created, to shrink the very HTML this AC was measuring. A
+  criterion that goes green because weight moved out of the document and into a
+  resource the document then has to fetch is not measuring the user's
+  experience; it is measuring where the bytes are parked.
+
+  Document weight stays in §6.6 as a diagnostic — it is still the right lens on
+  main-thread parse cost, which mobile PSI throttles 4× — but it is no longer an
+  acceptance criterion. Sprite and dictionary are `immutable` and `HIT` at the
+  edge: first-visit cost that buys every subsequent page. Do **not** revert them
+  to satisfy this AC; that re-inlines 355 KB of SVG and ~650 KB of dictionary
+  into every document. The fix is to stop the first visit paying for all of it at
+  once (W3-2, W3-6 follow-up), not to move it back.
 - **AC-9** — TTFB for an anonymous, cached catalog route measured from Buenos
   Aires is under 200 ms.
 - **AC-10** — Googlebot user-agent receives the same `HIT` as a browser
