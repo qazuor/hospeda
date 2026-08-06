@@ -74,6 +74,12 @@ export default defineConfig({
         maxWorkers: 3,
         testTimeout: 15000,
         css: {
+            // HOS-369 W3-5: `?url` imports are asset references, not style
+            // dependencies (see `src/lib/ensure-stylesheet.ts`) — let Vite
+            // actually process them so tests can assert on the real resolved
+            // href, instead of the empty-string stub Vitest returns for CSS
+            // ids excluded from processing.
+            include: [/\.css\?url$/],
             modules: {
                 classNameStrategy: 'non-scoped'
             }

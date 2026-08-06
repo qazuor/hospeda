@@ -38,14 +38,17 @@ import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPref
 import { FeedbackHeadlessHost } from '@/components/feedback/FeedbackHeadlessHost.client';
 import { PaginationLoading } from '@/components/shared/feedback/PaginationLoading.client';
 import '@/styles/global.css';
-// Static stylesheet for the @repo/feedback widget. Imported here so Astro/Vite
-// tracks it as a page-level CSS asset and preserves it across view transitions
-// (a runtime-injected style tag would be dropped when Astro swaps the head).
-import '@repo/feedback/styles.css';
-// App-level overrides: map @repo/feedback tokens onto the Hospeda brand palette
-// and lift the FAB above the ScrollToTop button. Loaded after the package CSS
-// so the override selectors win without needing higher specificity.
-import '@/styles/feedback-overrides.css';
+// @repo/feedback's package stylesheet and the Hospeda brand-token overrides
+// (`@/styles/feedback-overrides.css`) are NOT imported here (HOS-369 W3-5).
+// `FeedbackHeadlessHost` hydrates with `client:idle` and cannot be interacted
+// with until then, so both stylesheets are attached at runtime from its mount
+// effect via `loadFeedbackStyles()` (components/feedback/load-feedback-styles.ts)
+// instead of shipping render-blocking in every page's <head>. That loader also
+// re-attaches both sheets, IN ORDER, on every `astro:after-swap` — a
+// runtime-injected `<link>` is dropped by Astro's head-swap on navigation, and
+// this island is `transition:persist`ed so it never remounts to notice. See
+// the loader's file header for the full explanation, including why the
+// package sheet must attach strictly before the overrides sheet.
 // Static stylesheet for the inline CollectionPickerPopover React island.
 // Imported here (not as a CSS Module co-located with the island) so the styles
 // are bundled into the page's main stylesheet and survive ClientRouter swaps.
