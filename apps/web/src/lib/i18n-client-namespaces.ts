@@ -73,6 +73,10 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.nav',
     'account.newsletter',
     'account.pages',
+    // HOS-278 D3 — named by `PartnerEditForm.client.tsx`, the partner
+    // self-service island. Sibling of `account.provider` below, which the
+    // provider form needs for the same reason.
+    'account.partner',
     'account.preferences',
     'account.profileCompletion',
     'account.provider',
