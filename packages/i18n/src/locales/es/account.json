@@ -1347,7 +1347,9 @@
             "underReview": "Estamos revisando tu logo y tus textos. Te avisamos apenas terminemos; todavía no hay nada que pagar.",
             "rejected": "Revisamos tus datos y necesitamos que corrijas algo antes de seguir. El detalle está abajo, junto al formulario.",
             "approved": "Tu contenido está aprobado. Ya podés activar tu suscripción para aparecer publicado.",
-            "approvedCta": "Ir al pago"
+            "approvedCta": "Ir al pago",
+            "revoked": "Tu ficha de aliado fue dada de baja y ya no se ve en el sitio.",
+            "revokedContact": "Si querés más información, escribinos y te contamos los detalles."
         },
         "errors": {
             "fetchFailed": "No pudimos cargar tu ficha de aliado. Recargá la página para reintentar."
