@@ -5,7 +5,10 @@ import {
     LifecycleStatusEnum,
     type Partner,
     PartnerContentReviewStateEnum,
+    type PartnerOwnerUpdate,
+    PartnerOwnerUpdateSchema,
     PartnerSubscriptionStatusEnum,
+    RoleEnum,
     ServiceErrorCode,
     searchPartnerSchema,
     updatePartnerSchema
@@ -33,6 +36,64 @@ import {
     checkCanUpdate,
     checkCanView
 } from './partner.permissions';
+
+/**
+ * The column a partner listing is owned through.
+ *
+ * Named rather than inlined so the ownership scope is one string, not a literal
+ * repeated across every owner-scoped read.
+ */
+const PARTNER_OWNER_SCOPE_KEY = 'ownerUserId' as const;
+
+/**
+ * Resolves the actor to the account id a partner may be owned by, or null.
+ *
+ * An anonymous or guest actor carries a sentinel id that is not a real `users`
+ * row. Returning null for it means the ownership filter is never built from a
+ * value that could coincidentally match — the read simply resolves to nothing,
+ * which is the same answer a real user who owns no partner gets.
+ */
+const resolvePartnerOwnerUserId = (actor: Actor): string | null => {
+    const isAnonymous =
+        actor.roles.length === 0 || actor.roles.every((role) => role === RoleEnum.GUEST);
+    return isAnonymous ? null : actor.id;
+};
+
+/**
+ * Port for telling a partner their listing was taken down (HOS-278 R-4).
+ *
+ * Injected rather than imported, for the same reason its host-trade sibling is:
+ * `@repo/service-core` has no business knowing about an email transport.
+ * Omitting it silences the notification (tests, preview environments) without
+ * changing the revocation itself, which is the durable outcome.
+ */
+export interface PartnerRevokeNotifyPort {
+    /**
+     * Announces the revocation to the partner's owner.
+     *
+     * Called fire-and-forget AFTER the row is already written: a mail server
+     * having a bad afternoon must not roll back an admin's decision, and an
+     * admin watching a spinner must not be waiting on the transport.
+     *
+     * @param input - Who owns it, what it was called, and why it came down.
+     */
+    notifyRevoked: (input: {
+        readonly partnerId: string;
+        readonly ownerUserId: string;
+        readonly partnerName: string;
+        readonly reason: string;
+    }) => Promise<void>;
+}
+
+/** Input for {@link PartnerService.revoke}. */
+const revokePartnerInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    reason: z
+        .string()
+        .trim()
+        .min(1, { message: 'zodError.partner.revokeReason.required' })
+        .max(1000, { message: 'zodError.partner.revokeReason.max' })
+});
 
 /** Input for {@link PartnerService.reviewContent}. */
 const reviewPartnerContentInputSchema = z
@@ -118,10 +179,20 @@ export class PartnerService extends BaseCrudService<
         return ['slug', 'name'];
     }
 
-    constructor(ctx: ServiceConfig & { model?: PartnerModel }) {
+    /**
+     * Port used to tell a partner their listing was revoked (R-4). Null in
+     * every context that did not inject one, which silences the notice without
+     * changing the revocation.
+     */
+    private readonly revokeNotifier: PartnerRevokeNotifyPort | null;
+
+    constructor(
+        ctx: ServiceConfig & { model?: PartnerModel; revokeNotifier?: PartnerRevokeNotifyPort }
+    ) {
         super(ctx, PartnerService.ENTITY_NAME);
         this.model = ctx.model ?? new PartnerModel();
         this.adminSearchSchema = adminSearchPartnerSchema;
+        this.revokeNotifier = ctx.revokeNotifier ?? null;
     }
 
     /**
@@ -332,6 +403,150 @@ export class PartnerService extends BaseCrudService<
     }
 
     /**
+     * The partner listing owned by the calling account, or null (HOS-278 D3).
+     *
+     * Auth-only by design, exactly like its `host_trades` sibling: an approved
+     * partner is an ordinary account, so demanding `PARTNER_VIEW_ALL` would
+     * lock them out of their own ficha and contradict AC-7.
+     *
+     * Ownership IS the gate, and it fails closed: the query is scoped by
+     * `ownerUserId` to the actor's own id, and an actor with no real identity
+     * matches the same nothing an actor who owns no partner does. Both get
+     * null — never a 403, which would confirm a partner exists, and never a
+     * 404, which would make "no partner yet" look like a broken page.
+     *
+     * @param actor - The authenticated actor.
+     * @param ctx - Optional service execution context.
+     * @returns `{ partner }`, null when the actor owns none.
+     */
+    public async getOwn(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ partner: Partner | null }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getOwn',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validatedInput, a) => {
+                const ownerUserId = resolvePartnerOwnerUserId(a);
+                if (ownerUserId === null) {
+                    return { partner: null };
+                }
+
+                const partner = await this.model.findOne(
+                    { [PARTNER_OWNER_SCOPE_KEY]: ownerUserId },
+                    ctx?.tx
+                );
+
+                return { partner: partner ?? null };
+            }
+        });
+    }
+
+    /**
+     * Applies a partner's edit to their OWN listing (HOS-278 D3).
+     *
+     * Two destinations, decided per field and not by the caller:
+     *
+     * - **Operational** (`contactInfo`, `socialNetworks`) apply immediately.
+     *   These are the facts that go stale and that only the partner can keep
+     *   current; an admin queue would make the directory less accurate rather
+     *   than more. Both are shallow-merged by the model, so a form that models
+     *   one key cannot delete its siblings.
+     * - **Content** (`logoUrl`, `description`, `websiteUrl`) go to the PENDING
+     *   columns and wait for review (§6.3 step 4). The live ones are untouched,
+     *   so a partner who is already published stays on the carousel while their
+     *   edit is in the queue.
+     *
+     * The identity and commercial fields are not rejected here — they never
+     * arrive. `PartnerOwnerUpdateSchema` does not declare them, so Zod strips
+     * them at parse time.
+     *
+     * @param actor - The authenticated owner.
+     * @param input - The fields being changed.
+     * @param ctx - Optional service execution context.
+     * @returns The updated partner.
+     * @throws `NOT_FOUND` when the actor owns no partner.
+     */
+    public async updateOwn(
+        actor: Actor,
+        input: PartnerOwnerUpdate,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ partner: Partner }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateOwn',
+            input: { actor, ...input },
+            schema: PartnerOwnerUpdateSchema,
+            ctx,
+            execute: async (validated, a) => {
+                const ownerUserId = resolvePartnerOwnerUserId(a);
+                if (ownerUserId === null) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'No partner listing is owned by this account'
+                    );
+                }
+
+                const existing = await this.model.findOne(
+                    { [PARTNER_OWNER_SCOPE_KEY]: ownerUserId },
+                    ctx?.tx
+                );
+
+                // There is no id in the request at all, so there is no "other
+                // partner's listing" to address. Reading someone else's is not
+                // forbidden here, it is unreachable — the same structural
+                // property AC-10 gives the provider ficha.
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'No partner listing is owned by this account'
+                    );
+                }
+
+                const { logoUrl, description, websiteUrl, ...operational } = validated;
+                const hasContentEdit =
+                    logoUrl !== undefined || description !== undefined || websiteUrl !== undefined;
+
+                const updated = await this.model.update(
+                    { id: existing.id },
+                    {
+                        ...operational,
+                        updatedById: a.id,
+                        ...(hasContentEdit
+                            ? {
+                                  // Written as a WHOLE snapshot of the submission,
+                                  // not merged with whatever was pending before: a
+                                  // second edit replaces the first, and an admin
+                                  // must review one coherent proposal rather than a
+                                  // collage of two.
+                                  pendingLogoUrl: logoUrl ?? null,
+                                  pendingDescription: description ?? null,
+                                  pendingWebsiteUrl: websiteUrl ?? null,
+                                  contentReviewState: PartnerContentReviewStateEnum.PENDING,
+                                  // Cleared so a partner who fixes what an admin
+                                  // objected to is not still staring at the old
+                                  // rejection while the new submission waits.
+                                  contentReviewNote: null
+                              }
+                            : {})
+                    },
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'No partner listing is owned by this account'
+                    );
+                }
+
+                return { partner: updated };
+            }
+        });
+    }
+
+    /**
      * Resolves the content submission a partner is waiting on (HOS-278 AC-11).
      *
      * Approving promotes the pending trio onto the live columns and stamps
@@ -429,6 +644,122 @@ export class PartnerService extends BaseCrudService<
                         ServiceErrorCode.NOT_FOUND,
                         `Partner not found: ${validated.id}`
                     );
+                }
+
+                return { partner: updated };
+            }
+        });
+    }
+    /**
+     * Revokes a partner: makes it invisible while KEEPING the row.
+     *
+     * R-4 was decided as "revoke, not undo", the same call `host_trades` made.
+     * The row survives, the reason and the admin who decided are recorded, and
+     * the partner is told. Deleting instead would destroy the only evidence
+     * that the partner was ever approved, and the audit question that follows a
+     * revocation ("who took this down, and why?") would have no answer.
+     *
+     * Deliberately NOT `softDelete`: a soft-deleted row disappears from admin
+     * queries too, and a revoked partner must stay in front of the admins who
+     * revoked it. `lifecycleState` is the visibility switch this table already
+     * had — public reads force `ACTIVE`, so flipping it to `INACTIVE` is what
+     * removes them from the carousel. `subscriptionStatus` is deliberately left
+     * alone: writing it here would conflate "we took them down" with "they
+     * stopped paying", and the billing crons read that column.
+     *
+     * Gated by `PARTNER_MANAGE`, NOT by the stricter `PARTNER_DELETE` its
+     * host-trade sibling uses. `PARTNER_DELETE` exists in the enum but is
+     * granted to no role and consulted by nothing, so gating on it would ship
+     * an endpoint nobody can call — `HOST_TRADE_DELETE`, by contrast, is
+     * seeded to SUPER_ADMIN and ADMIN, which is what makes the stricter choice
+     * viable there and not here.
+     *
+     * @param actor - The admin revoking. Requires `PARTNER_MANAGE`.
+     * @param input - `{ id, reason }` — the reason is required, not optional.
+     * @param ctx - Optional service execution context.
+     * @returns The revoked partner.
+     */
+    public async revoke(
+        actor: Actor,
+        input: { readonly id: string; readonly reason: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ partner: Partner }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'revoke',
+            input: { actor, ...input },
+            schema: revokePartnerInputSchema,
+            ctx,
+            execute: async (validated, a) => {
+                const existing = await this.model.findById(validated.id, ctx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Partner not found: ${validated.id}`
+                    );
+                }
+
+                checkCanSoftDelete(a, existing);
+
+                // Re-revoking is a no-op rather than an error: it would
+                // otherwise overwrite the ORIGINAL reason and author with
+                // whoever pressed the button second, quietly rewriting the
+                // audit trail this whole mechanism exists to keep.
+                if (existing.revokedAt) {
+                    return { partner: existing };
+                }
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    {
+                        lifecycleState: LifecycleStatusEnum.INACTIVE,
+                        revokedAt: new Date(),
+                        revokedById: a.id,
+                        revokeReason: validated.reason,
+                        updatedById: a.id
+                    },
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Partner not found: ${validated.id}`
+                    );
+                }
+
+                if (updated.ownerUserId == null) {
+                    // Nobody to write to. Curated partners created by hand in
+                    // the admin belong to no account, and an approved
+                    // application whose applicant never confirmed their email
+                    // provisions one the same way. Logged rather than silent:
+                    // "the partner was not told" is a real outcome an admin may
+                    // need to act on by hand.
+                    this.logger.info(
+                        { partnerId: updated.id },
+                        '[partner] revoked a partner with no owner — nobody was notified'
+                    );
+                } else if (this.revokeNotifier !== null) {
+                    // AFTER the write, and deliberately NOT awaited. The
+                    // revocation is the durable outcome; the email reports it.
+                    // Awaiting would let a slow transport hold an admin's UI
+                    // open, and throwing would surface a delivery problem as a
+                    // failed revocation the admin would then retry — which the
+                    // re-revoke guard turns into a no-op anyway, so the retry
+                    // would not even re-send.
+                    const ownerUserId = updated.ownerUserId;
+                    void this.revokeNotifier
+                        .notifyRevoked({
+                            partnerId: updated.id,
+                            ownerUserId,
+                            partnerName: updated.name,
+                            reason: validated.reason
+                        })
+                        .catch((error: unknown) => {
+                            this.logger.error(
+                                { partnerId: updated.id, error },
+                                '[partner] revocation notice failed to send'
+                            );
+                        });
                 }
 
                 return { partner: updated };

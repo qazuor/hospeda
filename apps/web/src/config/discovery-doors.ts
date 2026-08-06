@@ -221,10 +221,18 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // qualified, typed lead that persists in `alliance_leads`) —
                 // no longer the generic '/contacto' form.
                 href: 'sumate/partner',
-                ctaI18nKey: 'account.doors.common.contactCta'
-                // No acquiredPermission: partner is a lead-only flow (HOS-277
-                // NG-1) — the admin evaluates and provisions manually, so this
-                // option never resolves to 'acquired'.
+                ctaI18nKey: 'account.doors.common.contactCta',
+                // HOS-278 D3: still no acquiredPermission, and that is not an
+                // oversight — an approved partner is an ordinary account with
+                // no role or permission change (AC-7), so the permission
+                // mechanism structurally cannot represent "acquired" here.
+                // Inventing a permission to fix it would contradict AC-7. The
+                // hub page force-acquires the option out-of-band instead, via
+                // `resolveDoorOptionState`'s `acquiredOptionIds` override, once
+                // `GET /partners/mine` returns a row — exactly what
+                // `serviceProvider` does below. `manageHref` is what the
+                // "Gestionar" button links to once that happens.
+                manageHref: 'mi-cuenta/partner'
             },
             {
                 id: 'serviceProvider',

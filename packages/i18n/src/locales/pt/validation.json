@@ -3343,6 +3343,10 @@
         }
     },
     "partner": {
+        "revokeReason": {
+            "required": "[PT] El motivo de la baja no puede estar vacío",
+            "max": "[PT] El motivo de la baja no puede superar los {{max}} caracteres"
+        },
         "contentReview": {
             "decision": {
                 "invalid": "[PT] La decisión de revisión no es válida"

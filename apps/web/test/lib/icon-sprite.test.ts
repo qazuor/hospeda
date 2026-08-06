@@ -12,13 +12,16 @@
 import { createHash } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { brotliCompressSync } from 'node:zlib';
 import * as iconExports from '@repo/icons';
 import {
+    expandSpriteSymbolEntry,
     getIconSpriteBase,
-    getIconSpriteName,
+    hasIconSpriteSymbol,
     iconSymbolId,
     SPRITE_WEIGHTS,
-    setIconSpriteBase
+    setIconSpriteBase,
+    setIconSpriteSymbols
 } from '@repo/icons';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
@@ -31,6 +34,7 @@ import {
     initIconSprite,
     isCurrentIconSpriteFile
 } from '@/lib/icon-sprite';
+import iconSpriteManifest from '@/lib/icon-sprite-manifest.json';
 
 /** The 8 hex chars embedded in the current sprite URL. */
 function currentHash(): string {
@@ -42,6 +46,26 @@ function symbolIds(): ReadonlyArray<string> {
     return [...getIconSpriteBody().matchAll(/<symbol id="([^"]+)"/g)].map(
         (match) => match[1] ?? ''
     );
+}
+
+/**
+ * Every (glyph, weight) pair the committed manifest lists, decoded straight
+ * off the JSON file — independent of {@link getIconSpriteBody}, so a test
+ * built from this cannot pass just because the generator and the assertion
+ * share the same (possibly buggy) derivation.
+ */
+function manifestPairIds(): ReadonlyArray<string> {
+    return Object.entries(iconSpriteManifest as Record<string, string>).flatMap(
+        ([name, initials]) =>
+            expandSpriteSymbolEntry({ entry: `${name}:${initials}` }).map((pair) =>
+                iconSymbolId(pair)
+            )
+    );
+}
+
+/** How many total (glyph, weight) pairs the committed manifest lists. */
+function expectedManifestPairCount(): number {
+    return manifestPairIds().length;
 }
 
 describe('iconSpriteUrl', () => {
@@ -88,9 +112,14 @@ describe('getIconSpriteBody', () => {
         expect(getIconSpriteBody().endsWith('</svg>')).toBe(true);
     });
 
-    it('carries one <symbol> per glyph per shipped weight', () => {
-        expect(getIconSpriteGlyphCount()).toBeGreaterThan(200);
-        expect(symbolIds().length).toBe(getIconSpriteGlyphCount() * SPRITE_WEIGHTS.length);
+    it('carries one <symbol> per (glyph, weight) pair the committed manifest lists', () => {
+        // HOS-369 sprite-manifest: the sprite is a SUBSET, not the full
+        // cartesian product — a glyph can list one weight and another four.
+        // The manifest itself is the independent source of truth here (read
+        // straight off disk, not through the generator under test), so this
+        // catches the generator silently drifting from what it was told to build.
+        expect(getIconSpriteGlyphCount()).toBeGreaterThan(50);
+        expect(symbolIds().length).toBe(expectedManifestPairCount());
     });
 
     it('gives every symbol a unique id', () => {
@@ -109,12 +138,24 @@ describe('getIconSpriteBody', () => {
 
     it('ships a distinct body for each weight of the same glyph', () => {
         // A generator that built the right IDS but rendered every symbol at one
-        // weight would still produce four well-formed symbols — all drawing the
-        // same shape, and three of them wrong. So this compares the symbols'
+        // weight would still produce well-formed symbols — all drawing the same
+        // shape, and all but one of them wrong. So this compares the symbols'
         // CHILDREN; the opening tag is excluded precisely because its `id`
-        // differs per weight and would make any four symbols look distinct.
-        const bodies = SPRITE_WEIGHTS.map((weight) => {
-            const id = iconSymbolId({ name: 'StarIcon', weight });
+        // differs per weight and would make distinct-id symbols look distinct
+        // regardless. Picks whichever manifest glyph lists the MOST weights,
+        // rather than assuming a specific glyph (e.g. `StarIcon`) still has all
+        // four — under subsetting a glyph legitimately ships only the weights
+        // `apps/web` actually renders it at.
+        const [multiWeightName, multiWeightInitials] = Object.entries(
+            iconSpriteManifest as Record<string, string>
+        ).reduce((best, entry) => (entry[1].length > best[1].length ? entry : best));
+        const weights = expandSpriteSymbolEntry({
+            entry: `${multiWeightName}:${multiWeightInitials}`
+        }).map((pair) => pair.weight);
+        expect(weights.length, 'no manifest glyph ships more than one weight').toBeGreaterThan(1);
+
+        const bodies = weights.map((weight) => {
+            const id = iconSymbolId({ name: multiWeightName, weight });
             const start = getIconSpriteBody().indexOf(`<symbol id="${id}"`);
             expect(start, `${id} is missing from the sprite`).toBeGreaterThan(-1);
             return getIconSpriteBody().slice(
@@ -126,7 +167,7 @@ describe('getIconSpriteBody', () => {
         expect(
             new Set(bodies).size,
             'two shipped weights of the same glyph render identical artwork — the weight prop is not reaching the renderer'
-        ).toBe(SPRITE_WEIGHTS.length);
+        ).toBe(weights.length);
     });
 
     it('gives each symbol a viewBox, since the <use> host has none', () => {
@@ -153,16 +194,16 @@ describe('getIconSpriteBody', () => {
         expect(symbol).toContain('opacity="0.2"');
     });
 
-    it('covers every Phosphor icon the package exports', () => {
-        // The wrapper's sprite branch has NO membership test — once a base URL
-        // is set it emits a `<use>` for any icon. So the sprite must be a
-        // superset of what the app can render; an icon exported but not
-        // enumerated renders as nothing, silently.
+    it('carries a <symbol> for every pair the committed manifest lists', () => {
+        // HOS-369 sprite-manifest: the generator no longer has to cover every
+        // Phosphor icon the package exports (that was the pre-subsetting
+        // invariant) — it has to cover exactly what the MANIFEST lists. A
+        // manifest entry with no matching symbol is the one failure mode the
+        // wrapper's `hasIconSpriteSymbol` membership check cannot save: the
+        // wrapper would believe the pair is safe to reference and emit a
+        // `<use>` at a `<symbol>` that was never rendered.
         const ids = new Set(symbolIds());
-        const missing = Object.values(iconExports as Record<string, unknown>)
-            .map((value) => getIconSpriteName(value))
-            .filter((name): name is string => name !== null)
-            .filter((name) => !ids.has(iconSymbolId({ name, weight: 'regular' })));
+        const missing = manifestPairIds().filter((id) => !ids.has(id));
 
         expect(missing).toEqual([]);
     });
@@ -201,15 +242,32 @@ describe('isCurrentIconSpriteFile', () => {
 
 describe('initIconSprite', () => {
     afterEach(() => {
-        // Module-level singleton in @repo/icons — leaving it on would change
-        // what every later icon render in this worker emits.
+        // Module-level singletons in @repo/icons — leaving either on would
+        // change what every later icon render in this worker emits.
         setIconSpriteBase(null);
+        setIconSpriteSymbols({ symbols: null });
     });
 
     it('points @repo/icons at the sprite this process serves', () => {
         initIconSprite();
 
         expect(getIconSpriteBase()).toBe(iconSpriteUrl());
+    });
+
+    it('publishes the real committed manifest, in step with the base', () => {
+        // HOS-369 sprite-manifest: `initIconSprite` no longer resets to the
+        // permissive `null` default — it publishes the SAME manifest the
+        // sprite was built from, so the server-rendered `<use>` references
+        // and `hasIconSpriteSymbol`'s verdict about them can never disagree.
+        // Proven with a pair that is NOT in the manifest, not one that is:
+        // asserting `true` on a real pair would also pass with the OLD
+        // permissive-`null` behaviour this replaces, which is exactly the
+        // regression this test exists to catch.
+        setIconSpriteSymbols({ symbols: null });
+
+        initIconSprite();
+
+        expect(hasIconSpriteSymbol({ symbol: 'DefinitelyNotAGlyph-regular' })).toBe(false);
     });
 
     it('is called at module scope by the SSR entry, not from a page', () => {
@@ -230,8 +288,12 @@ describe('initIconSprite', () => {
 });
 
 describe('iconSpriteClientScript', () => {
-    it('assigns the global @repo/icons reads, with the current URL', () => {
-        expect(iconSpriteClientScript()).toBe(
+    it('assigns the URL global, with the current URL', () => {
+        // Isolates the URL-only half of the output — passing `symbols: null`
+        // explicitly suppresses the (now real, non-empty) manifest assignment
+        // this function publishes by default. See the "publishes the real
+        // committed manifest by default" test below for that half.
+        expect(iconSpriteClientScript({ symbols: null })).toBe(
             `window.${iconExports.ICON_SPRITE_GLOBAL}="${iconSpriteUrl()}";`
         );
     });
@@ -240,5 +302,60 @@ describe('iconSpriteClientScript', () => {
         // Islands ask for the base while they render. Anything asynchronous here
         // would hand the first island `null` and it would re-inline every glyph.
         expect(iconSpriteClientScript()).not.toMatch(/fetch|import|addEventListener/);
+    });
+
+    it('publishes the real committed manifest by default (HOS-369 sprite-manifest)', () => {
+        // The call site (`IconSpriteClientData.astro`) passes nothing, so this
+        // IS what every page actually emits — not a groundwork stand-in.
+        const withDefault = iconSpriteClientScript();
+        const urlOnly = iconSpriteClientScript({ symbols: null });
+
+        expect(withDefault).not.toBe(urlOnly);
+        expect(withDefault.startsWith(urlOnly)).toBe(true);
+        expect(withDefault).toContain(iconExports.ICON_SPRITE_SYMBOLS_GLOBAL);
+        // Round-trips to exactly the committed manifest's compact entries —
+        // proves the default is THE manifest, not some other non-empty value.
+        const published = JSON.parse(
+            withDefault
+                .slice(withDefault.indexOf(`window.${iconExports.ICON_SPRITE_SYMBOLS_GLOBAL}=`))
+                .split('=')
+                .slice(1)
+                .join('=')
+                .replace(/;$/, '')
+        );
+        expect(published).toEqual(
+            Object.entries(iconSpriteManifest as Record<string, string>).map(
+                ([name, initials]) => `${name}:${initials}`
+            )
+        );
+    });
+
+    it('keeps the published manifest small enough to be worth publishing on every page', () => {
+        // The whole point of the compact "name:initials" shape over a full
+        // "Name-weight" array is a small per-page cost. Brotli, not raw bytes,
+        // is what actually crosses the wire (HTML responses are compressed) —
+        // budgeted at ~3 KB brotli; well past that, the once-per-session
+        // sprite-byte savings would no longer be worth the per-page tax.
+        const withDefault = iconSpriteClientScript();
+        const symbolsAssignment = withDefault.slice(
+            withDefault.indexOf(`window.${iconExports.ICON_SPRITE_SYMBOLS_GLOBAL}=`)
+        );
+
+        const brotliBytes = brotliCompressSync(symbolsAssignment).length;
+
+        expect(brotliBytes).toBeGreaterThan(0);
+        expect(brotliBytes).toBeLessThan(3 * 1024);
+    });
+
+    it('extends to publish an arbitrary manifest when one is supplied', () => {
+        const symbols = ['StarIcon-duotone', 'HomeIcon-fill'];
+
+        const script = iconSpriteClientScript({ symbols });
+        const urlOnly = iconSpriteClientScript({ symbols: null });
+
+        expect(script.startsWith(urlOnly)).toBe(true);
+        expect(script).toBe(
+            `${urlOnly}window.${iconExports.ICON_SPRITE_SYMBOLS_GLOBAL}=${JSON.stringify(symbols)};`
+        );
     });
 });

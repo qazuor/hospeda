@@ -471,8 +471,25 @@ export function FeedbackForm({
                 Renders only when the site key is configured; otherwise skipped.
                 The onSuccess callback stores the token so it can be included in
                 the submission payload. onExpire/onError resets the token so any
-                re-submission triggers a fresh challenge. */}
-            {turnstileSiteKey && (
+                re-submission triggers a fresh challenge.
+
+                ALSO gated on `isOpen` (HOS-369). `FeedbackModal` renders this
+                form unconditionally — it drives visibility through the native
+                `<dialog>`'s `showModal()`, not by unmounting — so without this
+                gate the widget mounted on EVERY page. `@marsidev/react-turnstile`
+                injects `challenges.cloudflare.com/turnstile/v0/api.js` when it
+                mounts, and that script measured **1,626 ms of main-thread
+                FunctionCall time** on the staging home: the single largest
+                contributor to a TBT that carries 30 % of the Lighthouse score.
+                All of it spent arming an anti-bot check for a form the visitor
+                had not opened.
+
+                Gating on `isOpen` is safe for the check itself: the widget is
+                `size: 'invisible'`, so it runs its challenge as soon as it
+                mounts, and the user still has to type a message before they can
+                submit — far longer than the challenge needs. The server stays
+                fail-closed on a missing token either way. */}
+            {turnstileSiteKey && isOpen && (
                 <Turnstile
                     siteKey={turnstileSiteKey}
                     options={{ size: 'invisible' }}

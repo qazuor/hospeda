@@ -3,7 +3,12 @@ import { PartnerContentReviewStateEnum } from '../../../enums/partner-content-re
 import { PartnerTierEnum } from '../../../enums/partner-tier.enum.js';
 import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
 import { createPartnerSchema } from '../partner.create.schema.js';
-import { PARTNER_REVIEW_MANAGED_FIELDS, partnerSchema } from '../partner.schema.js';
+import {
+    PARTNER_REAPER_MANAGED_FIELDS,
+    PARTNER_REVIEW_MANAGED_FIELDS,
+    PARTNER_REVOKE_MANAGED_FIELDS,
+    partnerSchema
+} from '../partner.schema.js';
 import { updatePartnerSchema } from '../partner.update.schema.js';
 
 /** A valid value for each review-managed field, so only the allowlist can reject it. */
@@ -14,10 +19,18 @@ const smuggled: Record<string, unknown> = {
     contentReviewState: PartnerContentReviewStateEnum.APPROVED,
     contentReviewNote: 'sneaky',
     contentApprovedAt: new Date().toISOString(),
-    contentApprovedById: '00000000-0000-4000-a000-000000000003'
+    contentApprovedById: '00000000-0000-4000-a000-000000000003',
+    revokedAt: new Date().toISOString(),
+    revokedById: '00000000-0000-4000-a000-000000000004',
+    revokeReason: 'sneaky',
+    unpaidNoticeSentAt: new Date().toISOString()
 };
 
-const REVIEW_FIELDS = Object.keys(PARTNER_REVIEW_MANAGED_FIELDS);
+const REVIEW_FIELDS = [
+    ...Object.keys(PARTNER_REVIEW_MANAGED_FIELDS),
+    ...Object.keys(PARTNER_REVOKE_MANAGED_FIELDS),
+    ...Object.keys(PARTNER_REAPER_MANAGED_FIELDS)
+];
 
 /** A minimal payload the create schema accepts on its own. */
 const baseCreate = {
@@ -38,7 +51,9 @@ describe('PARTNER_REVIEW_MANAGED_FIELDS — the mask itself', () => {
             (key) =>
                 key.startsWith('pending') ||
                 key.startsWith('contentReview') ||
-                key.startsWith('contentApproved')
+                key.startsWith('contentApproved') ||
+                key.startsWith('revoke') ||
+                key.startsWith('unpaid')
         );
 
         // Act + Assert

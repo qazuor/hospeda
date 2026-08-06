@@ -568,6 +568,27 @@
       "when": 1785974063516,
       "tag": "0080_orange_plazm",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1785983144775,
+      "tag": "0081_serious_hex",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1785988980327,
+      "tag": "0082_heavy_smasher",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1786018335426,
+      "tag": "0083_fancy_juggernaut",
+      "breakpoints": true
     }
   ]
 }

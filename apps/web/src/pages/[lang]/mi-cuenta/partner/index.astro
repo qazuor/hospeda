@@ -1,0 +1,170 @@
+---
+/**
+ * @file mi-cuenta/partner/index.astro
+ * @description Partner self-service page for the owner's own `partners`
+ * listing (HOS-278 D3, §8). Reached from the "Sumate como aliado" hub
+ * (`mi-cuenta/aliados`) once `partner` resolves to `'acquired'` — see
+ * `resolveDoorOptionState`'s `acquiredOptionIds` override in
+ * `src/lib/nav-gating.ts` for how that state is derived from this same
+ * `GET /partners/mine` fetch.
+ *
+ * Auth-only (no permission gate, HOS-278 AC-7): an approved partner is an
+ * ordinary account, so ownership of the row — not a role or permission — is
+ * what lets someone reach this page's content.
+ *
+ * Four renders, mirroring the provider ficha:
+ * - fetch failed   -> friendly error state (never a crash).
+ * - `partner: null`-> empty state ("you haven't applied / been approved yet"),
+ *   linking back to the aliados hub. NOT an error, NOT a 404.
+ * - `revokedAt` set -> prominent "taken down" state + the admin's
+ *   `revokeReason` when present. No edit form is offered (the API would still
+ *   accept a PATCH — this is a UX choice, not a hard block), matching the
+ *   provider ficha.
+ * - otherwise      -> a status banner reflecting §8's four partner states,
+ *   plus the `PartnerEditForm` edit island.
+ *
+ * The status banner is the visible half of AC-11: it says "load your data",
+ * "under review" or "you can pay now", and the payment CTA appears ONLY once
+ * `contentApprovedAt` is set — the same column the API gate reads, so the page
+ * and the endpoint can never disagree about whether payment is open.
+ *
+ * @route     /[lang]/mi-cuenta/partner/
+ * @rendering SSR (prerender = false — authenticated, owner-scoped data)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import { PartnerEditForm } from '@/components/account/PartnerEditForm.client';
+import { partnersApi } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+// Auth guard: middleware protects /mi-cuenta/* automatically, safety net.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
+}
+
+const title = t('account.partner.pageTitle', 'Mi ficha de aliado');
+const subtitle = t('account.partner.pageSubtitle', 'Gestioná tu presencia como aliado de Hospeda');
+
+const partnerResult = await partnersApi.mine({
+    cookieHeader: Astro.request.headers.get('cookie') ?? undefined
+});
+
+const fetchFailed = !partnerResult.ok;
+const partner = partnerResult.ok ? partnerResult.data.partner : null;
+
+// `!= null` (not `!== null`) on purpose, and it is load-bearing twice over:
+// `contentApprovedAt` is `z.coerce.date().nullish()` on the owner view, so an
+// absent value can arrive as `undefined` — a key dropped by JSON serialization
+// — not just `null`. A `!== null` test would read that `undefined` as
+// "approved" and offer to charge a partner nobody reviewed, which is AC-11
+// failing open. Same reason the provider page tests `revokedAt` this way.
+const isContentApproved = partner !== null && partner.contentApprovedAt != null;
+// Same `!= null` reasoning, and it pre-empts every other state below: a
+// revoked partner is not "waiting for review" or "ready to pay", and offering
+// either would contradict the email they just received.
+const isRevoked = partner !== null && partner.revokedAt != null;
+const hasSubmitted = partner !== null && partner.contentReviewState != null;
+const isUnderReview = partner !== null && partner.contentReviewState === 'pending';
+---
+
+<AccountLayout locale={locale} title={title} description={subtitle} activeSection="partner">
+    <AccountPageHeader title={title} description={subtitle} />
+
+    {
+        fetchFailed ? (
+            <AccountSectionCard>
+                <p role="alert">
+                    {t(
+                        'account.partner.errors.fetchFailed',
+                        'No pudimos cargar tu ficha de aliado. Recargá la página para reintentar.'
+                    )}
+                </p>
+            </AccountSectionCard>
+        ) : partner === null ? (
+            <AccountSectionCard>
+                <p>
+                    {t(
+                        'account.partner.empty.text',
+                        'Todavía no tenés una ficha de aliado. Postulate desde "Sumate como aliado" y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.'
+                    )}
+                </p>
+                <a href={buildUrl({ locale, path: 'mi-cuenta/aliados' })}>
+                    {t('account.partner.empty.cta', 'Ir a Sumate como aliado')}
+                </a>
+            </AccountSectionCard>
+        ) : (
+            <>
+                <AccountSectionCard>
+                    {
+                        isRevoked ? (
+                            <>
+                                <p role="alert">
+                                    {t(
+                                        'account.partner.status.revoked',
+                                        'Tu ficha de aliado fue dada de baja y ya no se ve en el sitio.'
+                                    )}
+                                </p>
+                                {partner.revokeReason && <p>{partner.revokeReason}</p>}
+                                <p>
+                                    {t(
+                                        'account.partner.status.revokedContact',
+                                        'Si querés más información, escribinos y te contamos los detalles.'
+                                    )}
+                                </p>
+                            </>
+                        ) : isContentApproved ? (
+                            <>
+                                <p>
+                                    {t(
+                                        'account.partner.status.approved',
+                                        'Tu contenido está aprobado. Ya podés activar tu suscripción para aparecer publicado.'
+                                    )}
+                                </p>
+                                <a href={buildUrl({ locale, path: 'mi-cuenta/suscripcion' })}>
+                                    {t('account.partner.status.approvedCta', 'Ir al pago')}
+                                </a>
+                            </>
+                        ) : isUnderReview ? (
+                            <p>
+                                {t(
+                                    'account.partner.status.underReview',
+                                    'Estamos revisando tu logo y tus textos. Te avisamos apenas terminemos; todavía no hay nada que pagar.'
+                                )}
+                            </p>
+                        ) : hasSubmitted ? (
+                            <p role="alert">
+                                {t(
+                                    'account.partner.status.rejected',
+                                    'Revisamos tus datos y necesitamos que corrijas algo antes de seguir. El detalle está abajo, junto al formulario.'
+                                )}
+                            </p>
+                        ) : (
+                            <p>
+                                {t(
+                                    'account.partner.status.empty',
+                                    'Tu postulación fue aprobada. Completá tu logo y tus textos para que un admin los revise. Todavía no estás publicado.'
+                                )}
+                            </p>
+                        )
+                    }
+                </AccountSectionCard>
+
+                {!isRevoked && (
+                    <AccountSectionCard>
+                        <PartnerEditForm locale={locale} partner={partner} client:load />
+                    </AccountSectionCard>
+                )}
+            </>
+        )
+    }
+</AccountLayout>

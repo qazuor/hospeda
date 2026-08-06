@@ -136,8 +136,10 @@ import {
     adminListPartnersRoute,
     adminManualPaymentRoute,
     adminReviewPartnerContentRoute,
+    adminRevokePartnerRoute,
     adminSendPaymentLinkRoute,
     adminUpdatePartnerRoute,
+    protectedPartnerRoutes,
     publicPartnersRoutes
 } from './partners';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
@@ -471,6 +473,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/alliance', protectedAllianceRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
+        // Partner self-service: the caller's OWN listing (HOS-278 D3).
+        app.route('/api/v1/protected/partners', protectedPartnerRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);
@@ -547,6 +551,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminSendPaymentLinkRoute);
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
+        app.route('/api/v1/admin/partners', adminRevokePartnerRoute);
         // Commerce leads admin management (SPEC-239 T-047)
         app.route('/api/v1/admin/commerce', adminCommerceRoutes);
         // Alliance leads admin inbox (HOS-277)

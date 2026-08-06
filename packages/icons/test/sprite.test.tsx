@@ -15,6 +15,7 @@ import type { ReactElement } from 'react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { BellIcon, HomeIcon, NotificationIcon, StarIcon } from '../src';
 import {
+    expandSpriteSymbolEntry,
     getIconSpriteBase,
     getIconSpriteName,
     ICON_SPRITE_GLOBAL,
@@ -64,6 +65,60 @@ describe('iconSymbolId', () => {
         const ids = SPRITE_WEIGHTS.map((weight) => iconSymbolId({ name: 'StarIcon', weight }));
 
         expect(new Set(ids).size).toBe(SPRITE_WEIGHTS.length);
+    });
+});
+
+describe('expandSpriteSymbolEntry', () => {
+    it('decodes a full id (the pre-manifest shape) to exactly one pair', () => {
+        expect(expandSpriteSymbolEntry({ entry: 'StarIcon-duotone' })).toEqual([
+            { name: 'StarIcon', weight: 'duotone' }
+        ]);
+    });
+
+    it('round-trips a full id through iconSymbolId unchanged', () => {
+        for (const weight of SPRITE_WEIGHTS) {
+            const id = iconSymbolId({ name: 'SomeOtherIcon', weight });
+            const [pair] = expandSpriteSymbolEntry({ entry: id });
+
+            expect(pair, id).toBeDefined();
+            expect(iconSymbolId(pair as { name: string; weight: typeof weight })).toBe(id);
+        }
+    });
+
+    it('decodes a compact entry to one pair per weight initial', () => {
+        expect(expandSpriteSymbolEntry({ entry: 'StarIcon:df' })).toEqual([
+            { name: 'StarIcon', weight: 'duotone' },
+            { name: 'StarIcon', weight: 'fill' }
+        ]);
+    });
+
+    it('decodes every shipped weight initial to the weight it names', () => {
+        // r/b/f/d are the first letters of regular/bold/fill/duotone — all
+        // four distinct, so there is no ambiguity to test around.
+        expect(expandSpriteSymbolEntry({ entry: 'X:rbfd' })).toEqual([
+            { name: 'X', weight: 'regular' },
+            { name: 'X', weight: 'bold' },
+            { name: 'X', weight: 'fill' },
+            { name: 'X', weight: 'duotone' }
+        ]);
+    });
+
+    it('drops an unrecognised initial rather than throwing', () => {
+        // Runs against whatever the HTML shell put on a global; a malformed
+        // manifest must degrade one pair, not crash icon rendering.
+        expect(expandSpriteSymbolEntry({ entry: 'X:rz' })).toEqual([
+            { name: 'X', weight: 'regular' }
+        ]);
+    });
+
+    it('drops a full id with no recognisable weight suffix rather than throwing', () => {
+        expect(expandSpriteSymbolEntry({ entry: 'NoWeightHere' })).toEqual([]);
+        expect(expandSpriteSymbolEntry({ entry: 'Some-Bogus-Weight' })).toEqual([]);
+    });
+
+    it('drops an entry with an empty name on either shape', () => {
+        expect(expandSpriteSymbolEntry({ entry: ':rd' })).toEqual([]);
+        expect(expandSpriteSymbolEntry({ entry: '-regular' })).toEqual([]);
     });
 });
 

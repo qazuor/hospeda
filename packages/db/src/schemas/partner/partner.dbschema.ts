@@ -1,3 +1,4 @@
+import type { ContactInfo, SocialNetwork } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { billingPlans, billingSubscriptions } from '../../billing/index.ts';
@@ -29,6 +30,27 @@ export const partners = pgTable(
         logoUrl: text('logo_url'),
         websiteUrl: text('website_url'),
         description: text('description'),
+        /**
+         * How to reach the partner, and where they are (HOS-278 D3).
+         *
+         * OPERATIONAL, unlike the reviewed content trio further down: a phone
+         * number or an address is the kind of fact that goes stale and that
+         * only the partner can keep current, so routing it through an admin
+         * queue would make the directory less accurate rather than more. Same
+         * split `host_trades` draws between its contact/schedule fields and its
+         * benefit.
+         *
+         * Shallow-MERGED on update (see `PartnerModel.mergeableJsonbColumns`),
+         * so a form that models only the phone cannot delete the emails it
+         * never sent.
+         */
+        contactInfo: jsonb('contact_info').$type<ContactInfo>(),
+        /**
+         * Operational counterpart of {@link contactInfo}, but REPLACED
+         * wholesale rather than merged — see `PartnerModel` for why merging
+         * would make a cleared social link impossible to express.
+         */
+        socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         subscriptionStatus: PartnerSubscriptionStatusPgEnum('subscription_status')
             .notNull()
             .default('pending'),
@@ -120,6 +142,37 @@ export const partners = pgTable(
         contentApprovedById: uuid('content_approved_by_id').references(() => users.id, {
             onDelete: 'set null'
         }),
+        /**
+         * When the "you have not paid, we will archive this" notice was sent
+         * (HOS-278 R-3), or null if it never was.
+         *
+         * Load-bearing for the reaper's FIRST stage and nothing else: without
+         * it the 30-day nudge has no memory, so the cron would re-send it every
+         * single day from day 31 until the partner either pays or is archived.
+         * Sixty emails is not a reminder, it is a reason to mark the sender as
+         * spam.
+         */
+        unpaidNoticeSentAt: timestamp('unpaid_notice_sent_at', { withTimezone: true }),
+        /**
+         * When this partner was revoked (HOS-278 R-4), or null if it was not.
+         *
+         * Revoking flips {@link lifecycleState} to INACTIVE and fills this
+         * trio. It never deletes the row: the partner must stay auditable, and
+         * the fact that they were once approved is itself worth keeping.
+         *
+         * Deliberately NOT {@link deletedAt} — a soft-deleted row disappears
+         * from admin queries too, and a revoked partner must stay in front of
+         * the admins who revoked it. `lifecycleState` is the visibility switch
+         * this table already had; the trio is what turns flipping it into a
+         * decision with an author. `subscriptionStatus` is deliberately left
+         * alone: using it would conflate "we took them down" with "they
+         * stopped paying".
+         */
+        revokedAt: timestamp('revoked_at', { withTimezone: true }),
+        /** Admin who revoked the partner. */
+        revokedById: uuid('revoked_by_id').references(() => users.id, { onDelete: 'set null' }),
+        /** Why it was revoked. Required at the endpoint, so never empty when set. */
+        revokeReason: text('revoke_reason'),
         // Audit fields
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
