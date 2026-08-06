@@ -1,5 +1,9 @@
 import type { z } from 'zod';
-import { PARTNER_REVIEW_MANAGED_FIELDS, partnerSchema } from './partner.schema.js';
+import {
+    PARTNER_REVIEW_MANAGED_FIELDS,
+    PARTNER_REVOKE_MANAGED_FIELDS,
+    partnerSchema
+} from './partner.schema.js';
 
 /**
  * Create partner schema
@@ -18,6 +22,7 @@ import { PARTNER_REVIEW_MANAGED_FIELDS, partnerSchema } from './partner.schema.j
  */
 export const createPartnerSchema = partnerSchema.omit({
     ...PARTNER_REVIEW_MANAGED_FIELDS,
+    ...PARTNER_REVOKE_MANAGED_FIELDS,
     id: true,
     createdAt: true,
     updatedAt: true,

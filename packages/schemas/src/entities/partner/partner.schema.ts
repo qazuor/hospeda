@@ -115,6 +115,21 @@ export const partnerSchema = z.object({
     contentApprovedAt: z.coerce.date().nullish(),
     /** Admin who accepted the content. */
     contentApprovedById: UserIdSchema.nullish(),
+    /**
+     * When this partner was revoked (HOS-278 R-4), or null if it was not.
+     *
+     * Revoking sets {@link partnerSchema.shape.lifecycleState} to INACTIVE and
+     * fills this trio. It never deletes the row: the listing must stay
+     * auditable, and the partner's history of having been approved is itself a
+     * fact worth keeping. This is deliberately NOT `deletedAt` — a revoked
+     * partner is still visible to admins in normal queries, a soft-deleted one
+     * is not.
+     */
+    revokedAt: z.coerce.date().nullish(),
+    /** Admin who revoked the partner. */
+    revokedById: UserIdSchema.nullish(),
+    /** Why it was revoked. Required at the endpoint, so never empty when set. */
+    revokeReason: z.string().max(1000).nullish(),
     ...BaseAuditFields
 });
 
@@ -141,4 +156,26 @@ export const PARTNER_REVIEW_MANAGED_FIELDS = {
     contentReviewNote: true,
     contentApprovedAt: true,
     contentApprovedById: true
+} as const;
+
+/**
+ * The revocation columns, as an `.omit()` mask (HOS-278 R-4).
+ *
+ * Kept separate from {@link PARTNER_REVIEW_MANAGED_FIELDS} rather than folded
+ * into it because they answer a different question — that one is "has the
+ * content been vetted?", this one is "was this partner taken down, by whom, and
+ * why?". Both are spread into the same two schemas; splitting them keeps each
+ * name honest about what it covers.
+ *
+ * Same reason for omitting them: `POST /admin/partners/{id}/revoke` is the only
+ * way to move them, so a revocation is always a decision someone made on
+ * purpose and never a field that rode along inside an unrelated PATCH. An admin
+ * who could clear `revokedAt` through the update schema would un-revoke a
+ * partner while leaving the reason and the author pointing at a takedown that
+ * no longer holds.
+ */
+export const PARTNER_REVOKE_MANAGED_FIELDS = {
+    revokedAt: true,
+    revokedById: true,
+    revokeReason: true
 } as const;

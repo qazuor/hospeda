@@ -81,6 +81,8 @@ export type PartnerOwnerUpdate = z.infer<typeof PartnerOwnerUpdateSchema>;
  * - **Review** (the pending trio, the review state and note, and the approval
  *   stamp) — an owner who could set `contentApprovedAt` would approve their own
  *   content, which is AC-11 defeated in one field.
+ * - **Revocation** (R-4) — an owner who could clear `revokedAt` would put
+ *   themselves back on the carousel after an admin took them down.
  */
 export const PARTNER_OWNER_FORBIDDEN_FIELDS = [
     'id',
@@ -102,7 +104,10 @@ export const PARTNER_OWNER_FORBIDDEN_FIELDS = [
     'contentReviewState',
     'contentReviewNote',
     'contentApprovedAt',
-    'contentApprovedById'
+    'contentApprovedById',
+    'revokedAt',
+    'revokedById',
+    'revokeReason'
 ] as const;
 
 /**
@@ -141,7 +146,11 @@ export const PartnerOwnerViewSchema = partnerSchema.pick({
     pendingWebsiteUrl: true,
     contentReviewState: true,
     contentReviewNote: true,
-    contentApprovedAt: true
+    contentApprovedAt: true,
+    // The partner is told WHY they were taken down, but not by whom — the
+    // admin's identity is an audit fact, like `contentApprovedById` above.
+    revokedAt: true,
+    revokeReason: true
 });
 
 /** Inferred type for {@link PartnerOwnerViewSchema}. */
