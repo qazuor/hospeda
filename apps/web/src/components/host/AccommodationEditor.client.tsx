@@ -38,6 +38,8 @@ import { CapacitySection } from './editor/CapacitySection.client';
 import { ContactInfoSection } from './editor/ContactInfoSection.client';
 import type { EditorSectionNavItem } from './editor/EditorSectionNav.client';
 import { EditorSectionNav } from './editor/EditorSectionNav.client';
+import type { AccommodationFaqItem } from './editor/FaqSection.client';
+import { FaqSection } from './editor/FaqSection.client';
 import { FeaturedToggleSection } from './editor/FeaturedToggleSection.client';
 import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from './editor/field-ids';
 import { LocationPicker } from './editor/LocationPicker.client';
@@ -67,6 +69,12 @@ export interface AccommodationEditorProps {
     readonly features: readonly AmenityData[];
     readonly initialFeaturedImage?: MediaImage | null;
     readonly initialGallery?: readonly MediaImage[];
+    /**
+     * Pre-fetched FAQs from the SSR editor page (HOS-393). FAQs are managed
+     * by `FaqSection`, which persists each mutation immediately against its
+     * own endpoints — they never enter this component's PATCH diff.
+     */
+    readonly initialFaqs?: readonly AccommodationFaqItem[];
 }
 
 /**
@@ -229,7 +237,8 @@ export function AccommodationEditor({
     amenities,
     features,
     initialFeaturedImage = null,
-    initialGallery = []
+    initialGallery = [],
+    initialFaqs = []
 }: AccommodationEditorProps) {
     const { t } = createTranslations(locale);
 
@@ -517,6 +526,7 @@ export function AccommodationEditor({
             contact: t('host.properties.editor.section.contact', 'Contacto'),
             socialNetworks: t('host.properties.editor.section.socialNetworks', 'Redes sociales'),
             amenities: t('host.properties.editor.section.amenities', 'Servicios y comodidades'),
+            faqs: t('host.properties.editor.section.faqs', 'Preguntas frecuentes'),
             photos: t('host.properties.editor.section.photos', 'Fotos'),
             calendar: t('host.properties.editor.section.calendar', 'Calendario'),
             translations: t('host.properties.editor.translation.sectionTitle', 'Traducciones'),
@@ -537,6 +547,7 @@ export function AccommodationEditor({
             { id: 'editor-contact', label: sectionLabels.contact },
             { id: 'editor-socialNetworks', label: sectionLabels.socialNetworks },
             { id: 'editor-amenities', label: sectionLabels.amenities },
+            { id: 'editor-faqs', label: sectionLabels.faqs },
             { id: 'editor-photos', label: sectionLabels.photos },
             { id: 'editor-calendar', label: sectionLabels.calendar }
         ];
@@ -664,6 +675,18 @@ export function AccommodationEditor({
                             features={features}
                             onToggleAmenity={handleToggleAmenity}
                             onToggleFeature={handleToggleFeature}
+                        />
+                    </section>
+
+                    <section
+                        id="editor-faqs"
+                        className={styles.card}
+                        aria-label={sectionLabels.faqs}
+                    >
+                        <FaqSection
+                            locale={locale}
+                            accommodationId={accommodationId}
+                            initialFaqs={initialFaqs}
                         />
                     </section>
 

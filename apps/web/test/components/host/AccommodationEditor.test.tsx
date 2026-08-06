@@ -105,6 +105,9 @@ vi.mock('@/components/host/editor/SocialNetworksSection.module.css', () => ({
 vi.mock('@/components/host/editor/PhotoSection.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
+vi.mock('@/components/host/editor/FaqSection.module.css', () => ({
+    default: new Proxy({}, { get: (_t, prop) => String(prop) })
+}));
 vi.mock('@/components/host/editor/CalendarSection.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));

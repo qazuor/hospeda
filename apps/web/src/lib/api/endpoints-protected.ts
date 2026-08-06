@@ -2788,6 +2788,179 @@ export const accommodationEditApi = {
     }
 };
 
+// --- Accommodation FAQs (Protected — HOS-393) ---
+
+/**
+ * A single FAQ entry belonging to an accommodation, as returned by the
+ * protected FAQ endpoints. Mirrors the display fields of
+ * `AccommodationFaqSchema` (`@repo/schemas`) — audit/lifecycle fields are
+ * intentionally omitted, the editor UI has no use for them.
+ */
+export interface AccommodationFaqItem {
+    readonly id: string;
+    readonly question: string;
+    readonly answer: string;
+    readonly category: string | null;
+    readonly displayOrder: number | null;
+}
+
+/**
+ * Protected accommodation FAQ API endpoints (HOS-393). Backs the accommodation
+ * editor's FAQ section (`FaqSection.client.tsx`).
+ *
+ * FAQ mutations do NOT go through `accommodationEditApi.update`'s PATCH diff —
+ * each call here persists immediately against its own endpoint, so the FAQ
+ * section never enters the parent editor's dirty-tracking / unsaved-changes
+ * guard (AC-2, HOS-393).
+ */
+export const accommodationFaqApi = {
+    /**
+     * List all FAQs for an accommodation.
+     *
+     * @param params - Accommodation ID and optional SSR cookie header.
+     * @returns The accommodation's FAQs.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationFaqApi.list({ accommodationId: 'acc-uuid' });
+     * if (result.ok) console.log(result.data.faqs);
+     * ```
+     */
+    list({
+        accommodationId,
+        cookieHeader
+    }: {
+        readonly accommodationId: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly faqs: readonly AccommodationFaqItem[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${accommodationId}/faqs`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Add a new FAQ to an accommodation.
+     *
+     * @param params - Accommodation ID and the new FAQ's fields.
+     * @returns The newly created FAQ.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationFaqApi.add({
+     *   accommodationId: 'acc-uuid',
+     *   question: '¿Hay estacionamiento?',
+     *   answer: 'Sí, gratuito para huéspedes.'
+     * });
+     * ```
+     */
+    add({
+        accommodationId,
+        question,
+        answer,
+        category
+    }: {
+        readonly accommodationId: string;
+        readonly question: string;
+        readonly answer: string;
+        readonly category?: string;
+    }): Promise<ApiResult<{ readonly faq: AccommodationFaqItem }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${accommodationId}/faqs`,
+            body: { question, answer, category }
+        });
+    },
+
+    /**
+     * Update an existing FAQ.
+     *
+     * Uses PUT — the backend route for accommodation FAQ edits is
+     * `PUT /{id}/faqs/{faqId}` (not PATCH), even though the body is a partial
+     * update (`FaqUpdatePayloadSchema`).
+     *
+     * @param params - Accommodation ID, FAQ ID, and the fields to update.
+     * @returns The updated FAQ.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationFaqApi.update({
+     *   accommodationId: 'acc-uuid',
+     *   faqId: 'faq-uuid',
+     *   question: '¿Hay estacionamiento cubierto?'
+     * });
+     * ```
+     */
+    update({
+        accommodationId,
+        faqId,
+        question,
+        answer,
+        category
+    }: {
+        readonly accommodationId: string;
+        readonly faqId: string;
+        readonly question?: string;
+        readonly answer?: string;
+        readonly category?: string;
+    }): Promise<ApiResult<{ readonly faq: AccommodationFaqItem }>> {
+        return apiClient.put({
+            path: `${PROTECTED}/accommodations/${accommodationId}/faqs/${faqId}`,
+            body: { question, answer, category }
+        });
+    },
+
+    /**
+     * Delete a FAQ from an accommodation.
+     *
+     * @param params - Accommodation ID and FAQ ID to delete.
+     * @returns Whether the deletion succeeded.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationFaqApi.remove({ accommodationId: 'acc-uuid', faqId: 'faq-uuid' });
+     * ```
+     */
+    remove({
+        accommodationId,
+        faqId
+    }: {
+        readonly accommodationId: string;
+        readonly faqId: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/accommodations/${accommodationId}/faqs/${faqId}`
+        });
+    },
+
+    /**
+     * Reorder the FAQs of an accommodation.
+     *
+     * @param params - Accommodation ID and the desired display order, as an
+     *   explicit `{ faqId, displayOrder }[]` array.
+     * @returns Whether the reorder succeeded.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationFaqApi.reorder({
+     *   accommodationId: 'acc-uuid',
+     *   order: [{ faqId: 'faq-1', displayOrder: 0 }, { faqId: 'faq-2', displayOrder: 1 }]
+     * });
+     * ```
+     */
+    reorder({
+        accommodationId,
+        order
+    }: {
+        readonly accommodationId: string;
+        readonly order: ReadonlyArray<{ readonly faqId: string; readonly displayOrder: number }>;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.put({
+            path: `${PROTECTED}/accommodations/${accommodationId}/faqs/reorder`,
+            body: { order }
+        });
+    }
+};
+
 // --- Post edit (Protected — HOS-374 Phase 2 2C-1) ---
 
 /**
