@@ -568,6 +568,13 @@
       "when": 1785974063516,
       "tag": "0080_orange_plazm",
       "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1785983144775,
+      "tag": "0081_serious_hex",
+      "breakpoints": true
     }
   ]
 }
