@@ -6,8 +6,7 @@ from code, and for the shared-zone constraint every rule must respect.
 
 Dashboard path: **hospeda.com.ar → Caching → Cache Rules**.
 
-Current state: **1 active rule**, plus one written and pending application
-(`HOS-369 - staging /_image/ endpoint`).
+Current state: **2 active rules**.
 
 ---
 
@@ -547,14 +546,16 @@ explicit exemption entry for it.
 
 ---
 
-## `HOS-369 - staging /_image/ endpoint` — PENDING APPLICATION
-
-> **Status: written here, NOT yet applied in the dashboard.** Everything below
-> is the intended configuration; apply it, then flip this heading and record the
-> rule id. Nothing else in this repo depends on it existing.
+## `HOS-369 - staging /_image/ endpoint`
 
 Makes Astro's on-demand image endpoint eligible for edge caching **on staging
 only**.
+
+- **Rule id**: `25e1a22682144e9683dbeae6deb57ca6`
+- **Phase**: `http_request_cache_settings`
+- **Order**: 2
+- **Status**: active
+- **Created**: 2026-08-05 (HOS-369)
 
 ### The problem it fixes
 
@@ -641,3 +642,23 @@ Then confirm the variants stay distinct — the two must differ in body size:
 curl -sS -o /dev/null -w '%{size_download}\n' 'https://staging.hospeda.com.ar/_image/?href=%2F_astro%2Fhero-playa.1jJv_K_i.jpg&w=1200&h=835&f=webp'
 curl -sS -o /dev/null -w '%{size_download}\n' 'https://staging.hospeda.com.ar/_image/?href=%2F_astro%2Fhero-playa.1jJv_K_i.jpg&w=400&h=300&f=webp'
 ```
+
+### Verification run (2026-08-05, at deploy)
+
+Against the three `srcset` variants the staging home actually emits for the hero:
+
+| Variant | Body | 1st request | 2nd request |
+|---|---|---|---|
+| `w=1200&h=835&f=webp` | 49,564 B | `MISS` | `HIT`, `age: 19` |
+| `w=480&h=334&f=webp` | 12,394 B | `MISS` | `HIT`, `age: 0` |
+| `w=800&h=557&f=webp` | 28,952 B | `HIT` | `HIT` |
+
+Three distinct body sizes, each with its own `MISS → HIT` cycle: the cache key
+kept the query string, so every transform is its own entry. Production was
+re-checked in the same run and still answers `DYNAMIC` on `/_image/`, as
+intended — the rule is host-scoped to staging.
+
+One caveat worth knowing: the request issued seconds after deploying the rule
+returned `DYNAMIC` while it was still propagating, then settled into `HIT`. A
+single `DYNAMIC` immediately after a change is propagation, not a broken
+expression — re-probe before concluding anything.
