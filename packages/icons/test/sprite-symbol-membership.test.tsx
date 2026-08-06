@@ -105,6 +105,31 @@ describe('hasIconSpriteSymbol', () => {
         expect(hasIconSpriteSymbol({ symbol: STAR_FILL })).toBe(true);
     });
 
+    it('understands a compact entry passed via setIconSpriteSymbols (HOS-369 sprite-manifest)', () => {
+        setIconSpriteSymbols({ symbols: ['StarIcon:df'] });
+
+        expect(hasIconSpriteSymbol({ symbol: STAR_DUOTONE })).toBe(true);
+        expect(hasIconSpriteSymbol({ symbol: STAR_FILL })).toBe(true);
+        expect(
+            hasIconSpriteSymbol({ symbol: iconSymbolId({ name: 'StarIcon', weight: 'regular' }) })
+        ).toBe(false);
+    });
+
+    it('understands a compact entry published on the global', () => {
+        (globalThis as Record<string, unknown>)[ICON_SPRITE_SYMBOLS_GLOBAL] = ['StarIcon:d'];
+
+        expect(hasIconSpriteSymbol({ symbol: STAR_DUOTONE })).toBe(true);
+        expect(hasIconSpriteSymbol({ symbol: STAR_FILL })).toBe(false);
+    });
+
+    it('mixes compact and full-id entries in the same manifest without either shape losing', () => {
+        setIconSpriteSymbols({ symbols: ['StarIcon:d', 'HomeIcon-fill'] });
+
+        expect(hasIconSpriteSymbol({ symbol: STAR_DUOTONE })).toBe(true);
+        expect(hasIconSpriteSymbol({ symbol: 'HomeIcon-fill' })).toBe(true);
+        expect(hasIconSpriteSymbol({ symbol: STAR_FILL })).toBe(false);
+    });
+
     it('re-derives its cache when the global is reassigned to a different array', () => {
         // The Set is memoized off the global's own array identity so repeated
         // lookups do not rescan it — but a later reassignment (a fresh
