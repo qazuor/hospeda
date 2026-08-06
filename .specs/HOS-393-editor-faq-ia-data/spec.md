@@ -206,9 +206,13 @@ additive-only policy:
   `.optional()` with default `true`.
 - The FAQ read schema gains both as required-with-default.
 
-**OQ-1 decides** whether these live on the shared `BaseFaqSchema` (and thus on
-destinations, gastronomy and experiences too) or only on the accommodation FAQ
-schema.
+**They must NOT go on `BaseFaqSchema`.** All four FAQ tables
+(`accommodation_faqs`, `destination_faqs`, `gastronomy_faqs`,
+`experience_faqs`) extend it, and only accommodation is in scope. Introduce a
+small shared fragment — e.g. `FaqChannelVisibilityFields` — and extend only the
+accommodation FAQ schema with it. HOS-400 reuses that same fragment when it
+brings gastronomy and experiences in; keeping it shared from day one is what
+makes that a two-line change instead of a copy-paste.
 
 ## 8. UX / UI behavior
 
@@ -270,15 +274,19 @@ All strings via `t()`, keys under `host.properties.editor.faq.*`, in es/en/pt.
 
 ## 11. Open questions
 
-- **OQ-1** — **Do the two flags live on `BaseFaqSchema` (all entities) or only
-  on accommodation FAQs?** Recommendation: **accommodation only, for now.**
-  The AI flag is meaningless where there is no chat (destinations, gastronomy,
-  experiences have none), and adding two inert columns to three tables to be
-  symmetrical is speculative. The public-visibility flag would arguably be
-  useful everywhere, but nobody has asked. Extend when a second entity gains a
-  chat or an actual need. Cost of deferring is low: the columns are additive.
+None open.
 
 Resolved during this spec (see §12 for the reasoning):
+
+- **OQ-1 — scope: accommodation only.** The flags do **not** go on
+  `BaseFaqSchema`. All four FAQ tables extend it, and only accommodation is in
+  scope, so they go in a **shared schema fragment** that just the participating
+  entity schemas extend. Rationale: the AI flag is inert where there is no chat,
+  and today the chat exists only on accommodations. Gastronomy and experiences
+  get both flags **together with their chat**, in HOS-400 — bundling them is
+  what keeps the pair coherent instead of shipping a checkbox that does
+  nothing. Destinations are deliberately out: no chat and no stated need.
+  Deferring costs nothing; the columns are additive.
 
 - IA Data is not built — it is removed (NG-1, HOS-398).
 - Bot behaviour is structured config, not free text (NG-2, HOS-399).
@@ -329,4 +337,5 @@ Canonical tracking:
 HOS-393
 
 Related: HOS-394 (`apiClient.post` credentials), HOS-398 (remove IA Data),
-HOS-399 (bot configuration).
+HOS-399 (bot configuration), HOS-400 (AI chat + these same flags for gastronomy
+and experiences).
