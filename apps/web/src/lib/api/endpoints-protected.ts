@@ -2148,6 +2148,9 @@ export interface MyPartner {
     readonly contentReviewNote: string | null;
     /** When content FIRST cleared review — the AC-11 payment gate. */
     readonly contentApprovedAt: string | null;
+    /** Set once the partner has been taken down (HOS-278 R-4) — the row survives. */
+    readonly revokedAt: string | null;
+    readonly revokeReason: string | null;
 }
 
 /** Response envelope for `GET /protected/partners/mine`. */

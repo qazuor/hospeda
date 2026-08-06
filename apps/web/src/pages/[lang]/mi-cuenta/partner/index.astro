@@ -16,6 +16,10 @@
  * - fetch failed   -> friendly error state (never a crash).
  * - `partner: null`-> empty state ("you haven't applied / been approved yet"),
  *   linking back to the aliados hub. NOT an error, NOT a 404.
+ * - `revokedAt` set -> prominent "taken down" state + the admin's
+ *   `revokeReason` when present. No edit form is offered (the API would still
+ *   accept a PATCH — this is a UX choice, not a hard block), matching the
+ *   provider ficha.
  * - otherwise      -> a status banner reflecting §8's four partner states,
  *   plus the `PartnerEditForm` edit island.
  *
@@ -65,6 +69,10 @@ const partner = partnerResult.ok ? partnerResult.data.partner : null;
 // "approved" and offer to charge a partner nobody reviewed, which is AC-11
 // failing open. Same reason the provider page tests `revokedAt` this way.
 const isContentApproved = partner !== null && partner.contentApprovedAt != null;
+// Same `!= null` reasoning, and it pre-empts every other state below: a
+// revoked partner is not "waiting for review" or "ready to pay", and offering
+// either would contradict the email they just received.
+const isRevoked = partner !== null && partner.revokedAt != null;
 const hasSubmitted = partner !== null && partner.contentReviewState != null;
 const isUnderReview = partner !== null && partner.contentReviewState === 'pending';
 ---
@@ -98,7 +106,23 @@ const isUnderReview = partner !== null && partner.contentReviewState === 'pendin
             <>
                 <AccountSectionCard>
                     {
-                        isContentApproved ? (
+                        isRevoked ? (
+                            <>
+                                <p role="alert">
+                                    {t(
+                                        'account.partner.status.revoked',
+                                        'Tu ficha de aliado fue dada de baja y ya no se ve en el sitio.'
+                                    )}
+                                </p>
+                                {partner.revokeReason && <p>{partner.revokeReason}</p>}
+                                <p>
+                                    {t(
+                                        'account.partner.status.revokedContact',
+                                        'Si querés más información, escribinos y te contamos los detalles.'
+                                    )}
+                                </p>
+                            </>
+                        ) : isContentApproved ? (
                             <>
                                 <p>
                                     {t(
@@ -135,9 +159,11 @@ const isUnderReview = partner !== null && partner.contentReviewState === 'pendin
                     }
                 </AccountSectionCard>
 
-                <AccountSectionCard>
-                    <PartnerEditForm locale={locale} partner={partner} client:load />
-                </AccountSectionCard>
+                {!isRevoked && (
+                    <AccountSectionCard>
+                        <PartnerEditForm locale={locale} partner={partner} client:load />
+                    </AccountSectionCard>
+                )}
             </>
         )
     }
