@@ -72,7 +72,7 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
     describe('own applications (HOS-278 AC-14)', () => {
         it('fetches the caller own applications, forwarding the session cookie', () => {
             expect(source).toContain(
-                "import { allianceLeadsApi, hostTradesApi } from '@/lib/api/endpoints-protected';"
+                "import { allianceLeadsApi, hostTradesApi, partnersApi } from '@/lib/api/endpoints-protected';"
             );
             expect(source).toContain('allianceLeadsApi.mine({');
             expect(source).toContain("Astro.request.headers.get('cookie')");
@@ -102,7 +102,7 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
     describe('serviceProvider acquired signal (HOS-278 §8)', () => {
         it('fetches the caller own host-trade listing, forwarding the session cookie', () => {
             expect(source).toContain(
-                "import { allianceLeadsApi, hostTradesApi } from '@/lib/api/endpoints-protected';"
+                "import { allianceLeadsApi, hostTradesApi, partnersApi } from '@/lib/api/endpoints-protected';"
             );
             expect(source).toContain('hostTradesApi.mine({');
         });
@@ -111,8 +111,39 @@ describe('mi-cuenta/aliados/index.astro (HOS-131 "Sumate como aliado" hub)', () 
             expect(source).toContain('myTradeResult.ok ? myTradeResult.data.trade : null');
         });
 
-        it('passes acquiredOptionIds=["serviceProvider"] to DiscoveryDoorHub only when a trade exists', () => {
-            expect(source).toContain("acquiredOptionIds={myTrade ? ['serviceProvider'] : []}");
+        it('adds "serviceProvider" to acquiredOptionIds only when a trade exists', () => {
+            // HOS-278 D3 moved this out of an inline ternary on the prop and
+            // into a named array, because a SECOND force-acquired option
+            // joined it. The conditionality is what matters and it now lives
+            // in the spread — asserting only `acquiredOptionIds={...}` would
+            // pass even if the guard were dropped and the option always sent.
+            expect(source).toContain("...(myTrade ? (['serviceProvider'] as const) : [])");
+            expect(source).toContain('acquiredOptionIds={acquiredOptionIds}');
+        });
+    });
+
+    // HOS-278 D3 — the partner door option force-acquires the same way, once
+    // the caller owns a `partners` row. Neither option declares an
+    // `acquiredPermission`: an approved aliado is an ordinary account (AC-7),
+    // so there is no permission for the normal mechanism to read.
+    describe('partner acquired signal (HOS-278 D3)', () => {
+        it('fetches the caller own partner listing, forwarding the session cookie', () => {
+            expect(source).toContain('partnersApi.mine({');
+            expect(source).toContain("Astro.request.headers.get('cookie')");
+        });
+
+        it('degrades to null on fetch failure, rather than erroring the hub', () => {
+            expect(source).toContain('myPartnerResult.ok ? myPartnerResult.data.partner : null');
+        });
+
+        it('adds "partner" to acquiredOptionIds only when a partner exists', () => {
+            expect(source).toContain("...(myPartner ? (['partner'] as const) : [])");
+        });
+
+        it('fetches all three in parallel, not chained', () => {
+            // This is an uncacheable actor-scoped SSR page: chaining the three
+            // reads would add two full API round-trips to its TTFB for nothing.
+            expect(source).toContain('await Promise.all([');
         });
     });
 });
