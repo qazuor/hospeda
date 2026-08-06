@@ -66,6 +66,19 @@ const isTestFile = (f: string): boolean => /\.test\.tsx?$/.test(f) || f.includes
  *   failure, never as "external".
  */
 function resolveSpecifier(spec: string, fromFile: string): string | null | undefined {
+    // An asset import is legitimately not a TS module, so it is external to
+    // this graph. Checked BEFORE the path branches, and against the specifier
+    // stripped of Vite's query suffix: `?url` (see `lib/ensure-stylesheet.ts`)
+    // means "give me the built asset's URL as a string", and the specifier
+    // then ends in `?url`, not in `.css`. An end-anchored extension test on
+    // the raw specifier misses it and reports the import as UNRESOLVED —
+    // which is a hard failure here, since an unresolved import truncates the
+    // graph. Only `@/…` and workspace-package specifiers reach that far
+    // (a bare `react-day-picker/style.css?url` exits earlier as external),
+    // which is why this stayed latent until a `?url` import of a workspace
+    // package's stylesheet appeared.
+    if (/\.(css|svg|png|jpe?g|webp|json)$/.test(spec.replace(/\?.*$/, ''))) return null;
+
     let base: string;
     if (spec.startsWith('@/')) {
         base = join(WEB_SRC, spec.slice(2));
@@ -95,8 +108,6 @@ function resolveSpecifier(spec: string, fromFile: string): string | null | undef
     for (const candidate of candidates) {
         if (existsSync(candidate) && statSync(candidate).isFile()) return candidate;
     }
-    // A CSS module or other asset import is legitimately not a TS module.
-    if (/\.(css|svg|png|jpe?g|webp|json)$/.test(spec)) return null;
     return undefined;
 }
 
