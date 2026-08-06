@@ -4,6 +4,7 @@ import { PartnerTierEnum } from '../../../enums/partner-tier.enum.js';
 import { PartnerTypeEnum } from '../../../enums/partner-type.enum.js';
 import { createPartnerSchema } from '../partner.create.schema.js';
 import {
+    PARTNER_REAPER_MANAGED_FIELDS,
     PARTNER_REVIEW_MANAGED_FIELDS,
     PARTNER_REVOKE_MANAGED_FIELDS,
     partnerSchema
@@ -21,12 +22,14 @@ const smuggled: Record<string, unknown> = {
     contentApprovedById: '00000000-0000-4000-a000-000000000003',
     revokedAt: new Date().toISOString(),
     revokedById: '00000000-0000-4000-a000-000000000004',
-    revokeReason: 'sneaky'
+    revokeReason: 'sneaky',
+    unpaidNoticeSentAt: new Date().toISOString()
 };
 
 const REVIEW_FIELDS = [
     ...Object.keys(PARTNER_REVIEW_MANAGED_FIELDS),
-    ...Object.keys(PARTNER_REVOKE_MANAGED_FIELDS)
+    ...Object.keys(PARTNER_REVOKE_MANAGED_FIELDS),
+    ...Object.keys(PARTNER_REAPER_MANAGED_FIELDS)
 ];
 
 /** A minimal payload the create schema accepts on its own. */
@@ -49,7 +52,8 @@ describe('PARTNER_REVIEW_MANAGED_FIELDS — the mask itself', () => {
                 key.startsWith('pending') ||
                 key.startsWith('contentReview') ||
                 key.startsWith('contentApproved') ||
-                key.startsWith('revoke')
+                key.startsWith('revoke') ||
+                key.startsWith('unpaid')
         );
 
         // Act + Assert

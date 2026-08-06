@@ -184,10 +184,24 @@ export const PARTNER_REVIEW_MANAGED_FIELDS = {
 export const PARTNER_REVOKE_MANAGED_FIELDS = {
     revokedAt: true,
     revokedById: true,
-    revokeReason: true,
-    // R-3, not R-4, but it belongs to the same category and lives here rather
-    // than in a one-key mask of its own: the reaper cron is its only writer,
-    // and an admin who could set it by hand would silence a partner's nudge
-    // without anything recording that they did.
+    revokeReason: true
+} as const;
+
+/**
+ * The reaper's bookkeeping column, as an `.omit()` mask (HOS-278 R-3).
+ *
+ * One key, and its own mask rather than a guest in
+ * {@link PARTNER_REVOKE_MANAGED_FIELDS}: that one is about a takedown decision
+ * an admin made, this is about a cron's memory of having sent an email. The
+ * first version of this shipped inside the revoke mask with a comment
+ * apologising for it, and the mask guard caught the mismatch — which is
+ * exactly what a guard that asserts "this mask names its own columns and no
+ * others" is for.
+ *
+ * Omitted from the write schemas for the usual reason: the reaper is its only
+ * writer, and an admin who could stamp it by hand would silence a partner's
+ * nudge with nothing recording that they did.
+ */
+export const PARTNER_REAPER_MANAGED_FIELDS = {
     unpaidNoticeSentAt: true
 } as const;

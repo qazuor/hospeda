@@ -32,7 +32,8 @@ const smuggled: Record<string, unknown> = {
     contentApprovedById: '00000000-0000-4000-a000-000000000005',
     revokedAt: new Date().toISOString(),
     revokedById: '00000000-0000-4000-a000-000000000006',
-    revokeReason: 'sneaky'
+    revokeReason: 'sneaky',
+    unpaidNoticeSentAt: new Date().toISOString()
 };
 
 describe('PartnerOwnerUpdateSchema — server-side stripping', () => {

@@ -83,6 +83,8 @@ export type PartnerOwnerUpdate = z.infer<typeof PartnerOwnerUpdateSchema>;
  *   content, which is AC-11 defeated in one field.
  * - **Revocation** (R-4) — an owner who could clear `revokedAt` would put
  *   themselves back on the carousel after an admin took them down.
+ * - **Reaper bookkeeping** (R-3) — an owner who could stamp
+ *   `unpaidNoticeSentAt` would silence their own archive warning.
  */
 export const PARTNER_OWNER_FORBIDDEN_FIELDS = [
     'id',
@@ -107,7 +109,8 @@ export const PARTNER_OWNER_FORBIDDEN_FIELDS = [
     'contentApprovedById',
     'revokedAt',
     'revokedById',
-    'revokeReason'
+    'revokeReason',
+    'unpaidNoticeSentAt'
 ] as const;
 
 /**
