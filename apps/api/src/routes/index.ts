@@ -135,6 +135,7 @@ import {
     adminListPartnerPlansRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
+    adminReviewPartnerContentRoute,
     adminSendPaymentLinkRoute,
     adminUpdatePartnerRoute,
     publicPartnersRoutes
@@ -545,6 +546,7 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminDeletePartnerRoute);
         app.route('/api/v1/admin/partners', adminSendPaymentLinkRoute);
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
+        app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
         // Commerce leads admin management (SPEC-239 T-047)
         app.route('/api/v1/admin/commerce', adminCommerceRoutes);
         // Alliance leads admin inbox (HOS-277)

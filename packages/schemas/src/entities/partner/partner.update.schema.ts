@@ -1,5 +1,5 @@
 import type { z } from 'zod';
-import { partnerSchema } from './partner.schema.js';
+import { PARTNER_REVIEW_MANAGED_FIELDS, partnerSchema } from './partner.schema.js';
 
 /**
  * Update partner schema
@@ -11,9 +11,15 @@ import { partnerSchema } from './partner.schema.js';
  * admin editing a partner must not be able to hand the listing to a different
  * account as an unremarkable field edit; `host_trades` forbids the same field
  * for the same reason (`HOST_TRADE_OWNER_FORBIDDEN_FIELDS`).
+ *
+ * The content-review columns are omitted too — see
+ * {@link PARTNER_REVIEW_MANAGED_FIELDS}. `POST /admin/partners/{id}/review-content`
+ * is the only way to move them, so an approval is always a decision someone
+ * made on purpose and never a field that rode along inside an unrelated PATCH.
  */
 export const updatePartnerSchema = partnerSchema
     .omit({
+        ...PARTNER_REVIEW_MANAGED_FIELDS,
         id: true,
         createdAt: true,
         createdById: true,

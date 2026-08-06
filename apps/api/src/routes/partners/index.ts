@@ -5,6 +5,7 @@ export {
     adminListPartnerPlansRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
+    adminReviewPartnerContentRoute,
     adminSendPaymentLinkRoute,
     adminUpdatePartnerRoute
 } from './admin/index.js';

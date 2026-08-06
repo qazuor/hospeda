@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
+import { PartnerContentReviewStateEnumSchema } from '../../enums/partner-content-review-state.schema.js';
 import { PartnerSubscriptionStatusEnumSchema } from '../../enums/partner-subscription-status.schema.js';
 import { PartnerTierEnumSchema } from '../../enums/partner-tier.schema.js';
 import { PartnerTypeEnumSchema } from '../../enums/partner-type.schema.js';
@@ -56,7 +57,71 @@ export const partnerSchema = z.object({
      */
     startsAt: z.coerce.date().nullable().optional(),
     endsAt: z.coerce.date().nullable().optional(),
+    /**
+     * Logo the partner submitted and an admin has not resolved yet.
+     *
+     * The pending trio below is deliberately SEPARATE from the live
+     * `logoUrl` / `description` / `websiteUrl` rather than a review flag on
+     * the row itself, for the reason `host_trades` split its benefit the same
+     * way: once a partner is paying and published, an edit must not pull the
+     * vetted listing off the carousel while it waits for someone to look at
+     * it. The public read path never touches these.
+     *
+     * `null` means "nothing pending", not "no logo".
+     */
+    pendingLogoUrl: z.string().url().nullish(),
+    /** Pending counterpart of {@link partnerSchema.shape.description}. */
+    pendingDescription: z.string().max(5000).nullish(),
+    /** Pending counterpart of {@link partnerSchema.shape.websiteUrl}. */
+    pendingWebsiteUrl: z.string().url().nullish(),
+    /**
+     * State of the current submission, or null when there has never been one.
+     *
+     * An explicit marker rather than something inferred from the pending
+     * columns: a partner who submits only a description leaves
+     * {@link partnerSchema.shape.pendingLogoUrl} null, and inferring would read
+     * that as "nothing to review".
+     */
+    contentReviewState: PartnerContentReviewStateEnumSchema.nullish(),
+    /** Why an admin rejected the submission. Null unless the state is `rejected`. */
+    contentReviewNote: z.string().max(1000).nullish(),
+    /**
+     * When this partner's content FIRST cleared review — the payment gate
+     * itself (AC-11).
+     *
+     * Null means no admin has ever accepted this partner's content, and no
+     * payment may be initiated for it. Once set it is never cleared: a later
+     * edit moves {@link partnerSchema.shape.contentReviewState} back to
+     * `pending` but the live content is still the approved one, so the partner
+     * keeps both their listing and their ability to pay for it.
+     */
+    contentApprovedAt: z.coerce.date().nullish(),
+    /** Admin who accepted the content. */
+    contentApprovedById: UserIdSchema.nullish(),
     ...BaseAuditFields
 });
 
 export type Partner = z.infer<typeof partnerSchema>;
+
+/**
+ * The content-review columns, as an `.omit()` mask (HOS-278 D2).
+ *
+ * Every one of these is written by the review flow alone — the partner's own
+ * submission fills the pending trio, the admin's decision resolves it — so
+ * none of them may arrive through the admin create or update schemas. Same
+ * criterion as `ownerUserId`: a field whose whole purpose is to record who
+ * decided what, and when, must not be settable as an ordinary field edit.
+ * An admin who could PATCH `contentApprovedAt` would be approving content
+ * without ever looking at it, which is the exact check AC-11 asks for.
+ *
+ * Declared once and spread into both schemas so the two can never drift.
+ */
+export const PARTNER_REVIEW_MANAGED_FIELDS = {
+    pendingLogoUrl: true,
+    pendingDescription: true,
+    pendingWebsiteUrl: true,
+    contentReviewState: true,
+    contentReviewNote: true,
+    contentApprovedAt: true,
+    contentApprovedById: true
+} as const;

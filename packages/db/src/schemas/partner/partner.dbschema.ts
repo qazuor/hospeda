@@ -3,6 +3,7 @@ import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-o
 import { billingPlans, billingSubscriptions } from '../../billing/index.ts';
 import {
     LifecycleStatusPgEnum,
+    PartnerContentReviewStatePgEnum,
     PartnerSubscriptionStatusPgEnum,
     PartnerTierPgEnum,
     PartnerTypePgEnum
@@ -65,6 +66,60 @@ export const partners = pgTable(
          */
         startsAt: timestamp('starts_at', { withTimezone: true }),
         endsAt: timestamp('ends_at', { withTimezone: true }),
+        /**
+         * Logo the partner submitted, awaiting an admin's verdict (HOS-278 AC-11).
+         *
+         * This trio is deliberately SEPARATE from the live
+         * {@link logoUrl}/{@link description}/{@link websiteUrl} rather than a
+         * review flag on the row, for the reason `host_trades` split its
+         * benefit the same way: a partner who is already paying and published
+         * must not have their listing pulled off the carousel because they
+         * uploaded a new logo and nobody has looked at it yet. The public read
+         * path never touches these columns.
+         *
+         * `null` here does NOT mean "no logo", it means "nothing pending".
+         */
+        pendingLogoUrl: text('pending_logo_url'),
+        /** Pending counterpart of {@link description}. */
+        pendingDescription: text('pending_description'),
+        /** Pending counterpart of {@link websiteUrl}. */
+        pendingWebsiteUrl: text('pending_website_url'),
+        /**
+         * State of the CURRENT submission, or null when there has never been one.
+         *
+         * An explicit marker rather than something inferred from the pending
+         * columns: a partner who edits only their description leaves
+         * {@link pendingLogoUrl} null, and inferring would read that as
+         * "nothing to review".
+         */
+        contentReviewState: PartnerContentReviewStatePgEnum('content_review_state'),
+        /**
+         * Why an admin turned the submission down.
+         *
+         * Kept because discarding a rejected submission without recording the
+         * refusal — which is what the `host_trades` reject path does, harmlessly,
+         * since that provider keeps their published benefit — would leave a
+         * partner looking at an empty form with no way to learn that the logo
+         * is the reason they are still not visible.
+         */
+        contentReviewNote: text('content_review_note'),
+        /**
+         * When this partner's content FIRST cleared review — the payment gate
+         * itself (HOS-278 AC-11).
+         *
+         * NULL means no admin has ever accepted this partner's content, and no
+         * payment may be initiated for it. Separate from
+         * {@link contentReviewState} on purpose, and never cleared once set: a
+         * later edit sends the state back to `pending`, but the LIVE content is
+         * still the approved one, so the partner keeps both their listing and
+         * the right to be charged for it. Reading the state instead would make
+         * every edit a self-inflicted suspension of billing.
+         */
+        contentApprovedAt: timestamp('content_approved_at', { withTimezone: true }),
+        /** Admin who accepted the content. */
+        contentApprovedById: uuid('content_approved_by_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
         // Audit fields
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -83,6 +138,11 @@ export const partners = pgTable(
         partners_lifecycleState_idx: index('partners_lifecycleState_idx').on(table.lifecycleState),
         partners_startsAt_idx: index('partners_startsAt_idx').on(table.startsAt),
         partners_ownerUserId_idx: index('partners_ownerUserId_idx').on(table.ownerUserId),
+        // Drives the admin review queue ("what is waiting on me"), which reads
+        // exactly one value out of a column that is null for most rows.
+        partners_contentReviewState_idx: index('partners_contentReviewState_idx').on(
+            table.contentReviewState
+        ),
         partners_deletedAt_idx: index('partners_deletedAt_idx').on(table.deletedAt),
         // Composite index for findActivePartners (filters by both subscriptionStatus and lifecycleState)
         partners_subscriptionStatus_lifecycleState_idx: index(
