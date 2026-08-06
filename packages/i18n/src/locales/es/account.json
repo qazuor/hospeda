@@ -1334,5 +1334,59 @@
                 "saveFailed": "No se pudieron guardar los cambios"
             }
         }
+    },
+    "partner": {
+        "pageTitle": "Mi ficha de aliado",
+        "pageSubtitle": "Gestioná tu presencia como aliado de Hospeda",
+        "empty": {
+            "text": "Todavía no tenés una ficha de aliado. Postulate desde \"Sumate como aliado\" y, una vez aprobada tu solicitud, tu ficha va a aparecer acá.",
+            "cta": "Ir a Sumate como aliado"
+        },
+        "status": {
+            "empty": "Tu postulación fue aprobada. Completá tu logo y tus textos para que un admin los revise. Todavía no estás publicado.",
+            "underReview": "Estamos revisando tu logo y tus textos. Te avisamos apenas terminemos; todavía no hay nada que pagar.",
+            "rejected": "Revisamos tus datos y necesitamos que corrijas algo antes de seguir. El detalle está abajo, junto al formulario.",
+            "approved": "Tu contenido está aprobado. Ya podés activar tu suscripción para aparecer publicado.",
+            "approvedCta": "Ir al pago"
+        },
+        "errors": {
+            "fetchFailed": "No pudimos cargar tu ficha de aliado. Recargá la página para reintentar."
+        },
+        "form": {
+            "title": "Editar mi ficha de aliado",
+            "identitySection": "Datos administrados por Hospeda",
+            "identityNote": "Estos datos los gestiona el equipo de Hospeda. Si necesitás corregirlos, contactanos.",
+            "contentSection": "Logo y textos",
+            "contentNote": "Los cambios en el logo, la descripción y el sitio pasan por revisión antes de publicarse. Lo que ya está publicado sigue visible mientras tanto.",
+            "pendingLabel": "En revisión",
+            "pendingText": "Ya enviaste cambios y estamos revisándolos. Podés seguir ajustándolos: se revisa la última versión que envíes.",
+            "rejectedLabel": "Cambios rechazados",
+            "contactSection": "Contacto",
+            "socialSection": "Redes",
+            "immediateNote": "Estos datos se actualizan al instante, sin revisión.",
+            "noChanges": "No hay cambios para guardar",
+            "success": "Cambios guardados",
+            "saving": "Guardando…",
+            "save": "Guardar cambios",
+            "errors": {
+                "saveFailed": "No se pudieron guardar los cambios"
+            },
+            "fields": {
+                "name": "Nombre",
+                "slug": "Identificador",
+                "logoUrl": "URL del logo",
+                "websiteUrl": "Sitio web",
+                "description": "Descripción",
+                "workEmail": "Email de contacto",
+                "workPhone": "Teléfono",
+                "whatsapp": "WhatsApp",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "X / Twitter",
+                "linkedIn": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            }
+        }
     }
 }

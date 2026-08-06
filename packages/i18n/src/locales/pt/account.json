@@ -1334,5 +1334,59 @@
                 "saveFailed": "Não foi possível salvar as mudanças"
             }
         }
+    },
+    "partner": {
+        "pageTitle": "Minha ficha de parceiro",
+        "pageSubtitle": "Gerencie sua presença como parceiro da Hospeda",
+        "empty": {
+            "text": "Você ainda não tem uma ficha de parceiro. Candidate-se em \"Seja parceiro\" e, depois que sua solicitação for aprovada, sua ficha vai aparecer aqui.",
+            "cta": "Ir para Seja parceiro"
+        },
+        "status": {
+            "empty": "Sua candidatura foi aprovada. Preencha seu logo e seus textos para que um admin os revise. Você ainda não está publicado.",
+            "underReview": "Estamos revisando seu logo e seus textos. Avisamos assim que terminarmos; ainda não há nada a pagar.",
+            "rejected": "Revisamos seus dados e precisamos que você corrija algo antes de continuar. O detalhe está abaixo, junto ao formulário.",
+            "approved": "Seu conteúdo está aprovado. Já pode ativar sua assinatura para aparecer publicado.",
+            "approvedCta": "Ir para o pagamento"
+        },
+        "errors": {
+            "fetchFailed": "Não conseguimos carregar sua ficha de parceiro. Recarregue a página para tentar de novo."
+        },
+        "form": {
+            "title": "Editar minha ficha de parceiro",
+            "identitySection": "Dados administrados pela Hospeda",
+            "identityNote": "Estes dados são gerenciados pela equipe da Hospeda. Fale com a gente se precisar corrigi-los.",
+            "contentSection": "Logo e textos",
+            "contentNote": "As mudanças no logo, na descrição e no site passam por revisão antes de serem publicadas. O que já está publicado continua visível enquanto isso.",
+            "pendingLabel": "Em revisão",
+            "pendingText": "Você já enviou mudanças e estamos revisando. Pode continuar ajustando: revisamos a última versão que você enviar.",
+            "rejectedLabel": "Mudanças rejeitadas",
+            "contactSection": "Contato",
+            "socialSection": "Redes",
+            "immediateNote": "Estes dados são atualizados na hora, sem revisão.",
+            "noChanges": "Não há mudanças para salvar",
+            "success": "Mudanças salvas",
+            "saving": "Salvando…",
+            "save": "Salvar mudanças",
+            "errors": {
+                "saveFailed": "Não foi possível salvar as mudanças"
+            },
+            "fields": {
+                "name": "Nome",
+                "slug": "Identificador",
+                "logoUrl": "URL do logo",
+                "websiteUrl": "Site",
+                "description": "Descrição",
+                "workEmail": "E-mail de contato",
+                "workPhone": "Telefone",
+                "whatsapp": "WhatsApp",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "X / Twitter",
+                "linkedIn": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            }
+        }
     }
 }

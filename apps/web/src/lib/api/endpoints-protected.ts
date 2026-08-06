@@ -2086,6 +2086,124 @@ export const hostTradesApi = {
     }
 };
 
+// --- Partner self-service (Protected — HOS-278 D3) ---
+
+/** Contact details the partner maintains. Mirrors the shared `contactInfo` JSONB. */
+export interface MyPartnerContactInfo {
+    readonly personalEmail?: string | null;
+    readonly workEmail?: string | null;
+    readonly homePhone?: string | null;
+    readonly workPhone?: string | null;
+    readonly mobilePhone?: string | null;
+    readonly whatsapp?: string | null;
+    readonly website?: string | null;
+}
+
+/** Social links the partner maintains. Mirrors the shared `socialNetworks` JSONB. */
+export interface MyPartnerSocialNetworks {
+    readonly facebook?: string;
+    readonly instagram?: string;
+    readonly twitter?: string;
+    readonly linkedIn?: string;
+    readonly tiktok?: string;
+    readonly youtube?: string;
+}
+
+/**
+ * The caller's own `partners` listing, as the account page shows it.
+ *
+ * A read allowlist mirroring `PartnerOwnerViewSchema` field-for-field (same
+ * precedent as {@link MyHostTrade} — the web declares its own read interface
+ * rather than importing the Zod-inferred type directly).
+ *
+ * `logoUrl`/`description`/`websiteUrl` are the LIVE, publicly visible content.
+ * `pending*` + `contentReviewState` describe an edit awaiting admin review
+ * (§6.3 step 4) — they never overwrite the live trio until approved.
+ *
+ * `contentApprovedAt` is the payment gate (AC-11): null means no admin has
+ * accepted this partner's content yet, so the page must not offer to charge
+ * them. It stays set once earned, so a partner editing an already-approved
+ * listing keeps the CTA while the new edit waits.
+ */
+export interface MyPartner {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly type: string;
+    readonly tier: string;
+    readonly logoUrl: string | null;
+    readonly description: string | null;
+    readonly websiteUrl: string | null;
+    readonly contactInfo: MyPartnerContactInfo | null;
+    readonly socialNetworks: MyPartnerSocialNetworks | null;
+    readonly subscriptionStatus: string;
+    readonly lifecycleState: string;
+    readonly startsAt: string | null;
+    readonly endsAt: string | null;
+    readonly pendingLogoUrl: string | null;
+    readonly pendingDescription: string | null;
+    readonly pendingWebsiteUrl: string | null;
+    readonly contentReviewState: 'pending' | 'approved' | 'rejected' | null;
+    /** Why an admin turned the last submission down. Null unless rejected. */
+    readonly contentReviewNote: string | null;
+    /** When content FIRST cleared review — the AC-11 payment gate. */
+    readonly contentApprovedAt: string | null;
+}
+
+/** Response envelope for `GET /protected/partners/mine`. */
+export interface MyPartnerResponse {
+    /** `null` when the caller owns no partner listing — never a 403/404. */
+    readonly partner: MyPartner | null;
+}
+
+/** What a partner may PATCH onto their own listing. */
+export interface MyPartnerUpdate {
+    readonly logoUrl?: string | null;
+    readonly description?: string | null;
+    readonly websiteUrl?: string | null;
+    readonly contactInfo?: MyPartnerContactInfo | null;
+    readonly socialNetworks?: MyPartnerSocialNetworks | null;
+}
+
+/**
+ * Partner self-service view/edit of their OWN `partners` listing.
+ *
+ * Auth-only (no permission — HOS-278 AC-7): an approved partner is an ordinary
+ * account with no role/permission change, so ownership of the row is the only
+ * gate. `mine()` answers `{ partner: null }` rather than an error when the
+ * caller owns none, mirroring {@link hostTradesApi.mine}.
+ */
+export const partnersApi = {
+    /**
+     * Fetches the caller's own partner listing, or `null`.
+     *
+     * @param params - `{ cookieHeader }` when calling from SSR; omit in the browser.
+     * @returns The caller's listing, or an error the page degrades from.
+     */
+    mine({ cookieHeader }: { cookieHeader?: string } = {}): Promise<ApiResult<MyPartnerResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/partners/mine`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Applies an edit to the caller's own partner listing.
+     *
+     * `contactInfo`/`socialNetworks` apply immediately and are MERGED with the
+     * stored value, so omitting a key preserves it. Any of
+     * `logoUrl`/`description`/`websiteUrl` present goes to the PENDING columns
+     * and waits for admin review — see `PartnerOwnerUpdateSchema`'s JSDoc for
+     * the full contract.
+     *
+     * @param body - The changed fields only (validated by `PartnerOwnerUpdateSchema`).
+     * @returns The updated listing (owner view shape).
+     */
+    updateMine(body: MyPartnerUpdate): Promise<ApiResult<{ readonly partner: MyPartner }>> {
+        return apiClient.patch({ path: `${PROTECTED}/partners/mine`, body });
+    }
+};
+
 // --- Host Analytics (Protected — SPEC-207) ---
 
 /** Analytics window type for time-range queries */

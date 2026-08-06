@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { BaseAuditFields } from '../../common/audit.schema.js';
+import { ContactInfoSchema } from '../../common/contact.schema.js';
 import { UserIdSchema } from '../../common/id.schema.js';
+import { SocialNetworkSchema } from '../../common/social.schema.js';
 import { LifecycleStatusEnumSchema } from '../../enums/lifecycle-state.schema.js';
 import { PartnerContentReviewStateEnumSchema } from '../../enums/partner-content-review-state.schema.js';
 import { PartnerSubscriptionStatusEnumSchema } from '../../enums/partner-subscription-status.schema.js';
@@ -34,6 +36,21 @@ export const partnerSchema = z.object({
     logoUrl: z.string().url().nullable().optional(),
     websiteUrl: z.string().url().nullable().optional(),
     description: z.string().max(5000).nullable().optional(),
+    /**
+     * How to reach the partner, and where they are (HOS-278 D3).
+     *
+     * OPERATIONAL: the partner edits these and they apply immediately, unlike
+     * the reviewed content trio. A phone number is the kind of fact that goes
+     * stale and that only the partner can keep current, so an admin queue would
+     * make the directory less accurate rather than more.
+     *
+     * Read with the LENIENT overlay on read paths — the stored value predates
+     * nothing here, but the same rule that protects users applies: a read must
+     * never 500 on data already in the column.
+     */
+    contactInfo: ContactInfoSchema.nullish(),
+    /** Operational counterpart of {@link partnerSchema.shape.contactInfo}. */
+    socialNetworks: SocialNetworkSchema.nullish(),
     subscriptionStatus: PartnerSubscriptionStatusEnumSchema,
     lifecycleState: LifecycleStatusEnumSchema,
     analytics: partnerAnalyticsSchema.default({}),

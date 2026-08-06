@@ -35,6 +35,28 @@ export class PartnerModel extends BaseModelImpl<Partner> {
     protected table = partners;
     public entityName = 'partner';
 
+    /**
+     * Grouped JSONB columns shallow-merged (PostgreSQL `||`) on update rather
+     * than replaced wholesale (HOS-278 D3).
+     *
+     * `contactInfo` is here because the `/mi-cuenta` form models a SUBSET of
+     * its keys (three of nine). Without the merge, saving a phone number would
+     * replace the whole object and silently delete the emails and preference
+     * enums the form never sent — the exact loss `accommodations` declared this
+     * for. Clearing still works: every `ContactInfoSchema` field is
+     * `.nullish()`, so "I deleted my phone" travels as an explicit `null`.
+     *
+     * `socialNetworks` is deliberately NOT here, and the reason is a real
+     * dead-end rather than an oversight. Its schema fields are `.optional()`
+     * but NOT `.nullable()`, so a cleared link cannot be expressed: `null` is
+     * rejected by Zod, `''` fails the `.url()` regex, and under a merge an
+     * omitted key is PRESERVED. Merging would ship a form whose "delete my
+     * Instagram" button silently does nothing. Replacing wholesale makes
+     * omission mean removal — which is safe here precisely because the partner
+     * form models all six keys, so there is no sibling for it to lose.
+     */
+    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;
+
     protected getTableName(): string {
         return 'partners';
     }

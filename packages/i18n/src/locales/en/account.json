@@ -1334,5 +1334,59 @@
                 "saveFailed": "We couldn't save your changes"
             }
         }
+    },
+    "partner": {
+        "pageTitle": "My partner listing",
+        "pageSubtitle": "Manage your presence as a Hospeda partner",
+        "empty": {
+            "text": "You don't have a partner listing yet. Apply from \"Become a partner\" and, once your application is approved, your listing will show up here.",
+            "cta": "Go to Become a partner"
+        },
+        "status": {
+            "empty": "Your application was approved. Add your logo and copy so an admin can review them. You are not published yet.",
+            "underReview": "We're reviewing your logo and copy. We'll let you know as soon as we're done — there's nothing to pay yet.",
+            "rejected": "We reviewed your details and need you to fix something before moving on. The specifics are below, next to the form.",
+            "approved": "Your content is approved. You can activate your subscription now to go live.",
+            "approvedCta": "Go to payment"
+        },
+        "errors": {
+            "fetchFailed": "We couldn't load your partner listing. Reload the page to try again."
+        },
+        "form": {
+            "title": "Edit my partner listing",
+            "identitySection": "Managed by Hospeda",
+            "identityNote": "These fields are managed by the Hospeda team. Contact us if you need to correct them.",
+            "contentSection": "Logo and copy",
+            "contentNote": "Changes to your logo, description and website go through review before they're published. Whatever is already live stays visible in the meantime.",
+            "pendingLabel": "Under review",
+            "pendingText": "You've already submitted changes and we're reviewing them. You can keep adjusting: we review the last version you send.",
+            "rejectedLabel": "Changes rejected",
+            "contactSection": "Contact",
+            "socialSection": "Social",
+            "immediateNote": "These fields update instantly, with no review.",
+            "noChanges": "No changes to save",
+            "success": "Changes saved",
+            "saving": "Saving…",
+            "save": "Save changes",
+            "errors": {
+                "saveFailed": "We couldn't save your changes"
+            },
+            "fields": {
+                "name": "Name",
+                "slug": "Identifier",
+                "logoUrl": "Logo URL",
+                "websiteUrl": "Website",
+                "description": "Description",
+                "workEmail": "Contact email",
+                "workPhone": "Phone",
+                "whatsapp": "WhatsApp",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "X / Twitter",
+                "linkedIn": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            }
+        }
     }
 }

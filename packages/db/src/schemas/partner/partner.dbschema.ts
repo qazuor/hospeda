@@ -1,3 +1,4 @@
+import type { ContactInfo, SocialNetwork } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
 import { index, jsonb, pgTable, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { billingPlans, billingSubscriptions } from '../../billing/index.ts';
@@ -29,6 +30,27 @@ export const partners = pgTable(
         logoUrl: text('logo_url'),
         websiteUrl: text('website_url'),
         description: text('description'),
+        /**
+         * How to reach the partner, and where they are (HOS-278 D3).
+         *
+         * OPERATIONAL, unlike the reviewed content trio further down: a phone
+         * number or an address is the kind of fact that goes stale and that
+         * only the partner can keep current, so routing it through an admin
+         * queue would make the directory less accurate rather than more. Same
+         * split `host_trades` draws between its contact/schedule fields and its
+         * benefit.
+         *
+         * Shallow-MERGED on update (see `PartnerModel.mergeableJsonbColumns`),
+         * so a form that models only the phone cannot delete the emails it
+         * never sent.
+         */
+        contactInfo: jsonb('contact_info').$type<ContactInfo>(),
+        /**
+         * Operational counterpart of {@link contactInfo}, but REPLACED
+         * wholesale rather than merged — see `PartnerModel` for why merging
+         * would make a cleared social link impossible to express.
+         */
+        socialNetworks: jsonb('social_networks').$type<SocialNetwork>(),
         subscriptionStatus: PartnerSubscriptionStatusPgEnum('subscription_status')
             .notNull()
             .default('pending'),

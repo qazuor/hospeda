@@ -5,7 +5,10 @@ import {
     LifecycleStatusEnum,
     type Partner,
     PartnerContentReviewStateEnum,
+    type PartnerOwnerUpdate,
+    PartnerOwnerUpdateSchema,
     PartnerSubscriptionStatusEnum,
+    RoleEnum,
     ServiceErrorCode,
     searchPartnerSchema,
     updatePartnerSchema
@@ -33,6 +36,28 @@ import {
     checkCanUpdate,
     checkCanView
 } from './partner.permissions';
+
+/**
+ * The column a partner listing is owned through.
+ *
+ * Named rather than inlined so the ownership scope is one string, not a literal
+ * repeated across every owner-scoped read.
+ */
+const PARTNER_OWNER_SCOPE_KEY = 'ownerUserId' as const;
+
+/**
+ * Resolves the actor to the account id a partner may be owned by, or null.
+ *
+ * An anonymous or guest actor carries a sentinel id that is not a real `users`
+ * row. Returning null for it means the ownership filter is never built from a
+ * value that could coincidentally match — the read simply resolves to nothing,
+ * which is the same answer a real user who owns no partner gets.
+ */
+const resolvePartnerOwnerUserId = (actor: Actor): string | null => {
+    const isAnonymous =
+        actor.roles.length === 0 || actor.roles.every((role) => role === RoleEnum.GUEST);
+    return isAnonymous ? null : actor.id;
+};
 
 /** Input for {@link PartnerService.reviewContent}. */
 const reviewPartnerContentInputSchema = z
@@ -329,6 +354,150 @@ export class PartnerService extends BaseCrudService<
         // TODO: Log manual payment in audit log with note
 
         return updated;
+    }
+
+    /**
+     * The partner listing owned by the calling account, or null (HOS-278 D3).
+     *
+     * Auth-only by design, exactly like its `host_trades` sibling: an approved
+     * partner is an ordinary account, so demanding `PARTNER_VIEW_ALL` would
+     * lock them out of their own ficha and contradict AC-7.
+     *
+     * Ownership IS the gate, and it fails closed: the query is scoped by
+     * `ownerUserId` to the actor's own id, and an actor with no real identity
+     * matches the same nothing an actor who owns no partner does. Both get
+     * null — never a 403, which would confirm a partner exists, and never a
+     * 404, which would make "no partner yet" look like a broken page.
+     *
+     * @param actor - The authenticated actor.
+     * @param ctx - Optional service execution context.
+     * @returns `{ partner }`, null when the actor owns none.
+     */
+    public async getOwn(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ partner: Partner | null }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getOwn',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validatedInput, a) => {
+                const ownerUserId = resolvePartnerOwnerUserId(a);
+                if (ownerUserId === null) {
+                    return { partner: null };
+                }
+
+                const partner = await this.model.findOne(
+                    { [PARTNER_OWNER_SCOPE_KEY]: ownerUserId },
+                    ctx?.tx
+                );
+
+                return { partner: partner ?? null };
+            }
+        });
+    }
+
+    /**
+     * Applies a partner's edit to their OWN listing (HOS-278 D3).
+     *
+     * Two destinations, decided per field and not by the caller:
+     *
+     * - **Operational** (`contactInfo`, `socialNetworks`) apply immediately.
+     *   These are the facts that go stale and that only the partner can keep
+     *   current; an admin queue would make the directory less accurate rather
+     *   than more. Both are shallow-merged by the model, so a form that models
+     *   one key cannot delete its siblings.
+     * - **Content** (`logoUrl`, `description`, `websiteUrl`) go to the PENDING
+     *   columns and wait for review (§6.3 step 4). The live ones are untouched,
+     *   so a partner who is already published stays on the carousel while their
+     *   edit is in the queue.
+     *
+     * The identity and commercial fields are not rejected here — they never
+     * arrive. `PartnerOwnerUpdateSchema` does not declare them, so Zod strips
+     * them at parse time.
+     *
+     * @param actor - The authenticated owner.
+     * @param input - The fields being changed.
+     * @param ctx - Optional service execution context.
+     * @returns The updated partner.
+     * @throws `NOT_FOUND` when the actor owns no partner.
+     */
+    public async updateOwn(
+        actor: Actor,
+        input: PartnerOwnerUpdate,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ partner: Partner }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateOwn',
+            input: { actor, ...input },
+            schema: PartnerOwnerUpdateSchema,
+            ctx,
+            execute: async (validated, a) => {
+                const ownerUserId = resolvePartnerOwnerUserId(a);
+                if (ownerUserId === null) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'No partner listing is owned by this account'
+                    );
+                }
+
+                const existing = await this.model.findOne(
+                    { [PARTNER_OWNER_SCOPE_KEY]: ownerUserId },
+                    ctx?.tx
+                );
+
+                // There is no id in the request at all, so there is no "other
+                // partner's listing" to address. Reading someone else's is not
+                // forbidden here, it is unreachable — the same structural
+                // property AC-10 gives the provider ficha.
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'No partner listing is owned by this account'
+                    );
+                }
+
+                const { logoUrl, description, websiteUrl, ...operational } = validated;
+                const hasContentEdit =
+                    logoUrl !== undefined || description !== undefined || websiteUrl !== undefined;
+
+                const updated = await this.model.update(
+                    { id: existing.id },
+                    {
+                        ...operational,
+                        updatedById: a.id,
+                        ...(hasContentEdit
+                            ? {
+                                  // Written as a WHOLE snapshot of the submission,
+                                  // not merged with whatever was pending before: a
+                                  // second edit replaces the first, and an admin
+                                  // must review one coherent proposal rather than a
+                                  // collage of two.
+                                  pendingLogoUrl: logoUrl ?? null,
+                                  pendingDescription: description ?? null,
+                                  pendingWebsiteUrl: websiteUrl ?? null,
+                                  contentReviewState: PartnerContentReviewStateEnum.PENDING,
+                                  // Cleared so a partner who fixes what an admin
+                                  // objected to is not still staring at the old
+                                  // rejection while the new submission waits.
+                                  contentReviewNote: null
+                              }
+                            : {})
+                    },
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'No partner listing is owned by this account'
+                    );
+                }
+
+                return { partner: updated };
+            }
+        });
     }
 
     /**
