@@ -204,7 +204,7 @@ import type { ComponentType } from 'react';
  *  - Priority-chip icons (WifiIcon, PoolIcon, CarIcon, DogIcon)
  *  - Homepage feature icons (BuildingIcon, CalendarDotsIcon, etc.)
  */
-const WEB_ICON_MAP: Record<string, ComponentType<IconProps>> = {
+export const WEB_ICON_MAP: Record<string, ComponentType<IconProps>> = {
     // --- Entity icons ---
     AccommodationIcon,
     // --- System icons ---
@@ -372,6 +372,10 @@ const WEB_ICON_MAP: Record<string, ComponentType<IconProps>> = {
 /**
  * Resolve an icon name string to its React component.
  * Returns undefined if the icon name is not in the local web map.
+ *
+ * {@link WEB_ICON_MAP} itself is also exported so build tooling can enumerate
+ * every glyph reachable through it without knowing the icon-name universe —
+ * see `apps/web/scripts/build-icon-manifest.ts`.
  *
  * Use this instead of `resolveIcon` from `@repo/icons/resolver` in any
  * code path that reaches client-side islands — the full resolver imports

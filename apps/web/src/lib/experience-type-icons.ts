@@ -47,22 +47,23 @@ interface ExperienceTypeParams {
  * to "tasting" — there is no wine/grape icon in the catalog yet. Both are
  * flagged for owner review.
  */
-const EXPERIENCE_TYPE_ICONS: Readonly<Record<ExperienceTypeEnum, ComponentType<IconProps>>> = {
-    [ExperienceTypeEnum.CAR_RENTAL]: CarIcon,
-    [ExperienceTypeEnum.BIKE_RENTAL]: BicyclesIcon,
-    [ExperienceTypeEnum.KAYAK_RENTAL]: KayakRentalIcon,
-    [ExperienceTypeEnum.QUAD_RENTAL]: MotorhomeParkingIcon,
-    [ExperienceTypeEnum.TOUR_GUIDE]: CompassIcon,
-    [ExperienceTypeEnum.GUIDED_VISIT]: HistoricMuseumIcon,
-    [ExperienceTypeEnum.EXCURSION]: NaturalReserveIcon,
-    [ExperienceTypeEnum.BOAT_TRIP]: RecreationalBoatingIcon,
-    [ExperienceTypeEnum.FISHING_CHARTER]: SportFishingIcon,
-    [ExperienceTypeEnum.BIRD_WATCHING]: BirdWatchingIcon,
-    [ExperienceTypeEnum.CULTURAL_TOUR]: CulturalCenterIcon,
-    [ExperienceTypeEnum.WINE_TASTING]: DropIcon,
-    [ExperienceTypeEnum.OUTDOOR_ADVENTURE]: RuralActivitiesIcon,
-    [ExperienceTypeEnum.OTHER]: TagIcon
-};
+export const EXPERIENCE_TYPE_ICONS: Readonly<Record<ExperienceTypeEnum, ComponentType<IconProps>>> =
+    {
+        [ExperienceTypeEnum.CAR_RENTAL]: CarIcon,
+        [ExperienceTypeEnum.BIKE_RENTAL]: BicyclesIcon,
+        [ExperienceTypeEnum.KAYAK_RENTAL]: KayakRentalIcon,
+        [ExperienceTypeEnum.QUAD_RENTAL]: MotorhomeParkingIcon,
+        [ExperienceTypeEnum.TOUR_GUIDE]: CompassIcon,
+        [ExperienceTypeEnum.GUIDED_VISIT]: HistoricMuseumIcon,
+        [ExperienceTypeEnum.EXCURSION]: NaturalReserveIcon,
+        [ExperienceTypeEnum.BOAT_TRIP]: RecreationalBoatingIcon,
+        [ExperienceTypeEnum.FISHING_CHARTER]: SportFishingIcon,
+        [ExperienceTypeEnum.BIRD_WATCHING]: BirdWatchingIcon,
+        [ExperienceTypeEnum.CULTURAL_TOUR]: CulturalCenterIcon,
+        [ExperienceTypeEnum.WINE_TASTING]: DropIcon,
+        [ExperienceTypeEnum.OUTDOOR_ADVENTURE]: RuralActivitiesIcon,
+        [ExperienceTypeEnum.OTHER]: TagIcon
+    };
 
 /**
  * Fallback icon for experience type values not present in the canonical map

@@ -41,7 +41,7 @@ interface PointOfInterestTypeParams {
  * `@repo/icons` has no dedicated public-viewpoint/lookout glyph in the
  * attractions category yet, and it is the closest available concept.
  */
-const POINT_OF_INTEREST_TYPE_ICONS: Readonly<
+export const POINT_OF_INTEREST_TYPE_ICONS: Readonly<
     Record<PointOfInterestTypeEnum, ComponentType<IconProps>>
 > = {
     [PointOfInterestTypeEnum.BEACH]: BeachIcon,

@@ -23,6 +23,8 @@
         "lighthouse": "lhci autorun --config=./lighthouserc.json",
         "a11y:sweep": "tsx scripts/a11y-sweep/sweep.ts",
         "a11y:diagnose": "A11Y_DETAIL=1 tsx scripts/a11y-sweep/sweep.ts",
+        "icons:build-manifest": "tsx scripts/build-icon-manifest.ts",
+        "icons:check-manifest": "tsx scripts/build-icon-manifest.ts --check",
         "clean": "rm -rf node_modules dist .astro"
     },
     "dependencies": {
