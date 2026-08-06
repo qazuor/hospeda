@@ -579,6 +579,89 @@ export const PARTNER_LISTING_PLAN: PlanDefinition = {
     limits: []
 };
 
+/**
+ * The two commercial partner tiers (HOS-278 D4, §6.3).
+ *
+ * Both carry `product_domain='partner'` and, like {@link PARTNER_LISTING_PLAN},
+ * are intentionally excluded from `ALL_PLANS` so accommodation pricing surfaces
+ * never expose them.
+ *
+ * ## Prices
+ *
+ * Monthly figures are the owner's (2026-08-06): silver ARS 15,000, gold ARS
+ * 30,000. The annual figures are DERIVED, not separately decided — every plan
+ * in this file prices a year at ten months (`annualPriceArs = monthlyPriceArs
+ * × 10`, "2 months free", 16.67% off) and these follow the same rule. If that
+ * rule ever changes, it changes here for all of them together.
+ *
+ * ## Why only two cadences
+ *
+ * §6.3 asks for monthly, quarterly, semiannual and annual. Only two are
+ * shipped, and that is a platform limit rather than a commercial choice:
+ * `ensurePrice` in the seed hardcodes `intervalCount: 1` in both its lookup and
+ * its insert, and the only downstream lookups are `findMonthlyPrice` /
+ * `findAnnualPrice`. Quarterly and semiannual would be `month × 3` and
+ * `month × 6` — MercadoPago supports them, this pipeline cannot express them
+ * yet. Adding them means touching price seeding, the lookups and the partner
+ * checkout, all shared with accommodation billing, so it was split out rather
+ * than bolted on here.
+ */
+export const PARTNER_SILVER_PLAN: PlanDefinition = {
+    slug: 'partner-silver',
+    name: 'Partner Silver',
+    description: 'Partner tier with carousel presence (HOS-278 §6.3).',
+    // See PARTNER_LISTING_PLAN: 'owner' only satisfies the PlanCategory type;
+    // product_domain is the real discriminator.
+    category: 'owner',
+    monthlyPriceArs: 1500000,
+    annualPriceArs: 15000000,
+    monthlyPriceUsdRef: 15,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: false,
+    sortOrder: 2,
+    isActive: true,
+    // Empty for the same reason COMMERCE_LISTING_PLAN's are: partner visibility
+    // is driven by the subscription status and the partner row's own
+    // lifecycle/subscription columns, NOT by the entitlement engine.
+    entitlements: [],
+    limits: []
+};
+
+/** Gold tier. See {@link PARTNER_SILVER_PLAN} for the pricing rule. */
+export const PARTNER_GOLD_PLAN: PlanDefinition = {
+    slug: 'partner-gold',
+    name: 'Partner Gold',
+    description:
+        'Partner tier with carousel presence plus a dedicated /partners/<slug>/ page (HOS-278 §6.3).',
+    category: 'owner',
+    monthlyPriceArs: 3000000,
+    annualPriceArs: 30000000,
+    monthlyPriceUsdRef: 30,
+    hasTrial: false,
+    trialDays: 0,
+    isDefault: false,
+    sortOrder: 3,
+    isActive: true,
+    entitlements: [],
+    limits: []
+};
+
+/**
+ * Every partner-domain plan the seed maintains, in display order.
+ *
+ * `PARTNER_LISTING_PLAN` stays in the list and stays ACTIVE on purpose. It
+ * predates the tiers and a live partner row may still point its `plan_id` at
+ * it; deactivating it here would strand that partner's subscription lookup
+ * without anything saying so. Retiring it is a data decision about real rows,
+ * not a config edit, so it is deliberately left for a follow-up.
+ */
+export const ALL_PARTNER_PLANS: readonly PlanDefinition[] = [
+    PARTNER_LISTING_PLAN,
+    PARTNER_SILVER_PLAN,
+    PARTNER_GOLD_PLAN
+];
+
 // ─── TEST DAILY PLAN (testing-only, HOSPEDA_SHOW_TEST_BILLING_PLAN) ────────
 
 /**
