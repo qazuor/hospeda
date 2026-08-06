@@ -1,6 +1,6 @@
 import type { AdminInfoType, I18nText } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import { boolean, index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { accommodations } from './accommodation.dbschema.ts';
@@ -21,6 +21,19 @@ export const accommodationFaqs = pgTable(
         category: text('category'),
         /** Display order for FAQ items within an accommodation; backfilled from created_at on migration. */
         displayOrder: integer('display_order'),
+        /**
+         * HOS-393: channel visibility. The two flags are independent — a FAQ can be
+         * public-only, AI-only, both, or neither (effectively a draft).
+         *
+         * Both are `NOT NULL DEFAULT true`, so pre-existing rows keep today's
+         * behaviour (published on the listing AND fed to the chat) with no backfill.
+         *
+         * Named `is*` per the repo convention (`is_featured`, `is_verified`).
+         * `is_public` was rejected: too easily confused with the `visibility` enum
+         * other entities carry.
+         */
+        isVisibleOnListing: boolean('is_visible_on_listing').notNull().default(true),
+        isUsableByAi: boolean('is_usable_by_ai').notNull().default(true),
         lifecycleState: LifecycleStatusPgEnum('lifecycle_state').notNull().default('ACTIVE'),
         adminInfo: jsonb('admin_info').$type<AdminInfoType>(),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
