@@ -6,12 +6,15 @@
  * backed by a real qualified lead-capture landing since HOS-277: `sponsor`
  * and `partner` stay lead-only forever (an admin evaluates and provisions
  * manually — no self-service "acquired" state exists for them);
- * `serviceProvider` becomes a real, self-service-editable `host_trades`
- * directory listing once an admin approves the lead (HOS-278) — this page
- * fetches `GET /host-trades/mine` and, when a row comes back, force-acquires
- * that door option (`resolveDoorOptionState`'s `acquiredOptionIds` override,
- * `src/lib/nav-gating.ts`) so it shows "Gestionar" → `/mi-cuenta/proveedor`
- * instead of the acquire CTA; `editor` resolves `acquired` once the user
+ * `serviceProvider` and `partner` each become a real, self-service-editable
+ * listing once an admin approves the lead (HOS-278) — this page fetches
+ * `GET /host-trades/mine` and `GET /partners/mine` and, when a row comes back,
+ * force-acquires that door option (`resolveDoorOptionState`'s
+ * `acquiredOptionIds` override, `src/lib/nav-gating.ts`) so it shows
+ * "Gestionar" → `/mi-cuenta/proveedor` or `/mi-cuenta/partner` instead of the
+ * acquire CTA. Neither declares an `acquiredPermission`, and that is AC-7: an
+ * approved aliado is an ordinary account, so there is no permission for the
+ * normal mechanism to read; `editor` resolves `acquired` once the user
  * holds `POST_CREATE`/`EVENT_CREATE`, linking the relevant own-content
  * listing.
  *
@@ -23,7 +26,7 @@ import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import AllianceApplicationsSection from '@/components/account/AllianceApplicationsSection.astro';
 import { AllianceClaimBanner } from '@/components/account/AllianceClaimBanner.client';
 import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';
-import { allianceLeadsApi, hostTradesApi } from '@/lib/api/endpoints-protected';
+import { allianceLeadsApi, hostTradesApi, partnersApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -72,12 +75,23 @@ const description = t(door.subtitleI18nKey);
 // uncacheable actor-scoped SSR page, so chaining them would add a full API
 // round-trip to its TTFB for nothing.
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const [myLeadsResult, myTradeResult] = await Promise.all([
+const [myLeadsResult, myTradeResult, myPartnerResult] = await Promise.all([
     allianceLeadsApi.mine({ cookieHeader }),
-    hostTradesApi.mine({ cookieHeader })
+    hostTradesApi.mine({ cookieHeader }),
+    partnersApi.mine({ cookieHeader })
 ]);
 const myLeads = myLeadsResult.ok ? myLeadsResult.data.leads : [];
 const myTrade = myTradeResult.ok ? myTradeResult.data.trade : null;
+const myPartner = myPartnerResult.ok ? myPartnerResult.data.partner : null;
+
+// Both force-acquired options are built here rather than inline in the
+// template so the list is one expression to read and to test. Each entry is
+// independent: a partner who is also a provider gets both, and a failed fetch
+// only drops its own option back to the acquire CTA.
+const acquiredOptionIds = [
+    ...(myTrade ? (['serviceProvider'] as const) : []),
+    ...(myPartner ? (['partner'] as const) : [])
+];
 
 // HOS-278 AC-4 — this is where the claim invitation email lands.
 //
@@ -98,6 +112,6 @@ const hasPendingClaim =
         door={door}
         roles={user.roles}
         adminUrl={getAdminUrl()}
-        acquiredOptionIds={myTrade ? ['serviceProvider'] : []}
+        acquiredOptionIds={acquiredOptionIds}
     />
 </AccountLayout>
