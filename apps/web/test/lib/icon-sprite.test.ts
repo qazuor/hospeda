@@ -16,9 +16,11 @@ import * as iconExports from '@repo/icons';
 import {
     getIconSpriteBase,
     getIconSpriteName,
+    hasIconSpriteSymbol,
     iconSymbolId,
     SPRITE_WEIGHTS,
-    setIconSpriteBase
+    setIconSpriteBase,
+    setIconSpriteSymbols
 } from '@repo/icons';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
@@ -201,15 +203,29 @@ describe('isCurrentIconSpriteFile', () => {
 
 describe('initIconSprite', () => {
     afterEach(() => {
-        // Module-level singleton in @repo/icons — leaving it on would change
-        // what every later icon render in this worker emits.
+        // Module-level singletons in @repo/icons — leaving either on would
+        // change what every later icon render in this worker emits.
         setIconSpriteBase(null);
+        setIconSpriteSymbols({ symbols: null });
     });
 
     it('points @repo/icons at the sprite this process serves', () => {
         initIconSprite();
 
         expect(getIconSpriteBase()).toBe(iconSpriteUrl());
+    });
+
+    it('resets the symbol manifest to permissive, in step with the base — symmetric wiring for a later subset change', () => {
+        // Non-vacuous: `hasIconSpriteSymbol` is ALSO permissive when nothing
+        // was ever configured, so this only proves `initIconSprite` calls
+        // `setIconSpriteSymbols` if a prior restrictive manifest is cleared by
+        // it. Without that call, the restriction set here would still be in
+        // effect and the assertion below would fail.
+        setIconSpriteSymbols({ symbols: ['SomeOtherIcon-regular'] });
+
+        initIconSprite();
+
+        expect(hasIconSpriteSymbol({ symbol: 'StarIcon-duotone' })).toBe(true);
     });
 
     it('is called at module scope by the SSR entry, not from a page', () => {
@@ -240,5 +256,32 @@ describe('iconSpriteClientScript', () => {
         // Islands ask for the base while they render. Anything asynchronous here
         // would hand the first island `null` and it would re-inline every glyph.
         expect(iconSpriteClientScript()).not.toMatch(/fetch|import|addEventListener/);
+    });
+
+    it('emits byte-identical output whether the symbols arg is omitted or explicit null', () => {
+        // The call site (`IconSpriteClientData.astro`) passes nothing. This
+        // proves that is indistinguishable from the "explicit null" case, so
+        // there is no hidden default drift between them.
+        expect(iconSpriteClientScript()).toBe(iconSpriteClientScript({ symbols: null }));
+    });
+
+    it('does not grow the emitted HTML today — the manifest global is not published', () => {
+        // Today's sprite is the full cartesian product, and `hasIconSpriteSymbol`
+        // already treats "no manifest published" as "every pair exists" — so
+        // omitting the assignment is behaviourally identical to publishing all
+        // 988 ids, at zero bytes instead of ~20 KB per page. See
+        // `iconSpriteClientScript`'s JSDoc.
+        expect(iconSpriteClientScript()).not.toContain(iconExports.ICON_SPRITE_SYMBOLS_GLOBAL);
+    });
+
+    it('extends to publish a manifest once one is supplied (groundwork for a later subset change)', () => {
+        const symbols = ['StarIcon-duotone', 'HomeIcon-fill'];
+
+        const script = iconSpriteClientScript({ symbols });
+
+        expect(script.startsWith(iconSpriteClientScript())).toBe(true);
+        expect(script).toBe(
+            `${iconSpriteClientScript()}window.${iconExports.ICON_SPRITE_SYMBOLS_GLOBAL}=${JSON.stringify(symbols)};`
+        );
     });
 });

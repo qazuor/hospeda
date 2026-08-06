@@ -27,7 +27,13 @@
  */
 import type { ComponentType } from 'react';
 import type { PhosphorGlyphProps } from './sprite';
-import { getIconSpriteBase, iconSymbolId, isSpriteWeight, markIconSpriteGlyph } from './sprite';
+import {
+    getIconSpriteBase,
+    hasIconSpriteSymbol,
+    iconSymbolId,
+    isSpriteWeight,
+    markIconSpriteGlyph
+} from './sprite';
 import type { IconProps, IconWeight } from './types';
 import { DEFAULT_DUOTONE_COLOR, ICON_SIZES } from './types';
 
@@ -111,22 +117,31 @@ export function createPhosphorIcon(
             const spriteBase = getIconSpriteBase();
             if (spriteBase !== null) {
                 const symbol = iconSymbolId({ name: spriteName, weight: resolvedWeight });
-                return (
-                    <svg
-                        width={resolvedSize}
-                        height={resolvedSize}
-                        // Load-bearing: `fill` is inherited, and inherited
-                        // properties DO cross into the `<use>` shadow tree.
-                        // Dropping it leaves the symbol's paths black, ignoring
-                        // `currentColor` and the duotone brand color alike.
-                        fill={resolvedColor}
-                        className={mergedClassName}
-                        aria-label={resolvedAriaLabel}
-                        {...props}
-                    >
-                        <use href={`${spriteBase}#${symbol}`} />
-                    </svg>
-                );
+                // Membership check, in ADDITION to the weight-axis one above: a
+                // subset sprite (later change) will not carry a <symbol> for
+                // every (glyph, weight) pair `isSpriteWeight` alone allows
+                // through. A miss falls through to the inline return below —
+                // same fail-safe shape as the weight check, just on the other
+                // axis. `hasIconSpriteSymbol` defaults to `true` when no
+                // manifest is configured, so this is a no-op today.
+                if (hasIconSpriteSymbol({ symbol })) {
+                    return (
+                        <svg
+                            width={resolvedSize}
+                            height={resolvedSize}
+                            // Load-bearing: `fill` is inherited, and inherited
+                            // properties DO cross into the `<use>` shadow tree.
+                            // Dropping it leaves the symbol's paths black, ignoring
+                            // `currentColor` and the duotone brand color alike.
+                            fill={resolvedColor}
+                            className={mergedClassName}
+                            aria-label={resolvedAriaLabel}
+                            {...props}
+                        >
+                            <use href={`${spriteBase}#${symbol}`} />
+                        </svg>
+                    );
+                }
             }
         }
 

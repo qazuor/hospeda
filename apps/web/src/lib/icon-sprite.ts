@@ -24,11 +24,17 @@
  * ## What goes in
  *
  * The icon set is enumerated at RUNTIME from `@repo/icons`'s own exports plus
- * its data-driven `ICON_MAP`, not from a list re-derived by scanning source. The
- * wrapper's sprite branch has no membership test — it emits a `<use>` for ANY
- * icon once a base URL is configured — so the sprite has to be a SUPERSET of
- * what the app can render, and "everything the package exports" is the only
- * enumeration that stays a superset when someone adds an icon.
+ * its data-driven `ICON_MAP`, not from a list re-derived by scanning source.
+ * The wrapper's sprite branch DOES have a membership test now
+ * (`hasIconSpriteSymbol`, HOS-369 sprite-subsetting groundwork), but this
+ * generator still publishes no manifest (`setIconSpriteSymbols({ symbols:
+ * null })` in {@link initIconSprite}), which resolves that check permissively
+ * — i.e. still "emit a `<use>` for ANY icon once a base URL is configured".
+ * So the sprite still has to be a SUPERSET of what the app can render, and
+ * "everything the package exports" is still the only enumeration that stays a
+ * superset when someone adds an icon. A LATER change will start publishing a
+ * real manifest and subsetting this generator's output to match; until then
+ * this file's job does not change.
  *
  * Glyphs are keyed by the Phosphor component's own `displayName`, so the ~480
  * wrappers (many of which are semantic aliases of the same glyph) collapse onto
@@ -48,9 +54,11 @@ import {
     getIconSpriteGlyph,
     getIconSpriteName,
     ICON_SPRITE_GLOBAL,
+    ICON_SPRITE_SYMBOLS_GLOBAL,
     iconSymbolId,
     SPRITE_WEIGHTS,
-    setIconSpriteBase
+    setIconSpriteBase,
+    setIconSpriteSymbols
 } from '@repo/icons';
 import { ICON_MAP } from '@repo/icons/resolver';
 import { createElement } from 'react';
@@ -300,22 +308,37 @@ export function isCurrentIconSpriteFile(file: string): boolean {
 }
 
 /**
- * The inline script that hands the sprite URL to the browser.
+ * The inline script that hands the sprite URL — and, once a later change ships
+ * a subset sprite, its symbol manifest — to the browser.
  *
  * Client islands render icons too, and they run in a realm where
- * `setIconSpriteBase` was never called. `@repo/icons` reads
- * `ICON_SPRITE_GLOBAL` off `globalThis` on its first lookup, so the HTML shell
- * assigning it before hydration is all that is needed — the same
- * "value the shell emits, read once on the client" mechanism the translation
- * dictionary uses.
+ * `setIconSpriteBase`/`setIconSpriteSymbols` were never called. `@repo/icons`
+ * reads `ICON_SPRITE_GLOBAL`/`ICON_SPRITE_SYMBOLS_GLOBAL` off `globalThis` on
+ * first lookup, so the HTML shell assigning them before hydration is all that
+ * is needed — the same "value the shell emits, read once on the client"
+ * mechanism the translation dictionary uses.
  *
  * `JSON.stringify` on the URL is what keeps the snippet from being a string
  * concatenation of an unescaped value.
  *
+ * @param params.symbols - The current sprite's symbol manifest, or `null`
+ *   (the default) to emit no manifest assignment at all. Today's sprite is
+ *   the full cartesian product of every glyph at every shipped weight, and
+ *   `@repo/icons`' `hasIconSpriteSymbol` already treats "no manifest
+ *   published" as "every pair exists" — the exact same behaviour a manifest
+ *   listing all 988 ids would produce, at zero HTML cost instead of ~20 KB.
+ *   Passing an array here (once a later change generates a subset) emits the
+ *   second assignment.
  * @returns Classic-script source, ready to be emitted with `set:html`.
  */
-export function iconSpriteClientScript(): string {
-    return `window.${ICON_SPRITE_GLOBAL}=${JSON.stringify(iconSpriteUrl())};`;
+export function iconSpriteClientScript({
+    symbols = null
+}: {
+    readonly symbols?: ReadonlyArray<string> | null;
+} = {}): string {
+    const base = `window.${ICON_SPRITE_GLOBAL}=${JSON.stringify(iconSpriteUrl())};`;
+    if (symbols === null) return base;
+    return `${base}window.${ICON_SPRITE_SYMBOLS_GLOBAL}=${JSON.stringify(symbols)};`;
 }
 
 /**
@@ -324,7 +347,14 @@ export function iconSpriteClientScript(): string {
  * Must happen at module load of the SSR entry rather than from a layout: a
  * component that enabled it mid-render would leave every icon rendered earlier
  * in the tree inline, and the page would ship both forms.
+ *
+ * `setIconSpriteSymbols` is called alongside `setIconSpriteBase`, both wired
+ * the same way, so the two halves of the (base, manifest) pair stay symmetric
+ * for a later change that ships a real subset. Today's sprite carries every
+ * pair, so `null` (the permissive default — see `hasIconSpriteSymbol`) is the
+ * correct manifest to publish.
  */
 export function initIconSprite(): void {
     setIconSpriteBase(iconSpriteUrl());
+    setIconSpriteSymbols({ symbols: null });
 }

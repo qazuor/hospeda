@@ -601,11 +601,14 @@ export {
     getIconSpriteBase,
     getIconSpriteGlyph,
     getIconSpriteName,
+    hasIconSpriteSymbol,
     ICON_SPRITE_GLOBAL,
+    ICON_SPRITE_SYMBOLS_GLOBAL,
     iconSymbolId,
     isSpriteWeight,
     SPRITE_WEIGHTS,
-    setIconSpriteBase
+    setIconSpriteBase,
+    setIconSpriteSymbols
 } from './sprite';
 export type { IconProps, IconWeight } from './types';
 // Export types and constants
