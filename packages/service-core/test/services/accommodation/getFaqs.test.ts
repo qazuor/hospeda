@@ -127,4 +127,38 @@ describe('AccommodationService.getFaqs', () => {
         const result = await service.getFaqs(actor, {});
         expectValidationError(result);
     });
+
+    // -------------------------------------------------------------------
+    // HOS-393 — the owner-facing editor sees ALL FAQs with their flags
+    // regardless of value (AC-14): getFaqs must not filter or strip
+    // isVisibleOnListing / isUsableByAi.
+    // -------------------------------------------------------------------
+
+    it('should return channel-visibility flags unfiltered, including non-default values (AC-14)', async () => {
+        const faqsWithFlags = [
+            {
+                ...faqs[0],
+                isVisibleOnListing: true,
+                isUsableByAi: true
+            },
+            {
+                ...faqs[1],
+                isVisibleOnListing: false,
+                isUsableByAi: false
+            }
+        ];
+        const accommodationWithFaqs = {
+            ...accommodation,
+            faqs: faqsWithFlags
+        } as typeof accommodation & { faqs: typeof faqsWithFlags };
+        modelMock.findWithRelations.mockResolvedValue(accommodationWithFaqs);
+        vi.spyOn(permissionHelpers, 'checkCanView').mockReturnValue();
+
+        const result = await service.getFaqs(actor, input);
+        expectSuccess(result);
+        // Both the fully-enabled and the fully-disabled FAQ are present —
+        // the management surface never hides a FAQ based on its flags.
+        expect(result.data?.faqs).toHaveLength(2);
+        expect(result.data?.faqs).toEqual(faqsWithFlags);
+    });
 });
