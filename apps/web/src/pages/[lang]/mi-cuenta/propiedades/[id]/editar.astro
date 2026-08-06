@@ -21,6 +21,7 @@ import { transformAccommodationEdit, transformAccommodationMedia, transformAccom
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { AccommodationEditor } from '@/components/host/AccommodationEditor.client';
+import type { AccommodationFaqItem } from '@/components/host/editor/FaqSection.client';
 
 export const prerender = false;
 
@@ -60,6 +61,7 @@ let amenities: Awaited<ReturnType<typeof transformAmenityList>> = [];
 let features: Awaited<ReturnType<typeof transformAmenityList>> = [];
 let initialFeaturedImage: MediaImage | null = null;
 let initialGallery: readonly MediaImage[] = [];
+let initialFaqs: readonly AccommodationFaqItem[] = [];
 let fetchError = false;
 
 try {
@@ -72,14 +74,18 @@ try {
             Accept: 'application/json'
         };
 
-        // Parallel fetch: accommodation detail + amenities + features + destinations
+        // Parallel fetch: accommodation detail + amenities + features + destinations + FAQs
         // SPEC-266: filter catalog endpoints to the accommodation vertical so only
         // accommodation-scoped amenities/features appear in the editor checkboxes.
-        const [accomResponse, amenitiesResponse, featuresResponse, destinationsResponse] = await Promise.all([
+        // HOS-393: FAQs are preloaded here so FaqSection renders with real data on
+        // first paint — the fetch degrades to an empty list on failure (see below),
+        // it must never block or fail the whole editor page.
+        const [accomResponse, amenitiesResponse, featuresResponse, destinationsResponse, faqsResponse] = await Promise.all([
             fetch(`${apiUrl}/api/v1/protected/accommodations/${accommodationId}`, { headers }),
             fetch(`${apiUrl}/api/v1/public/amenities?pageSize=100&applicableVertical=accommodation`, { headers }),
             fetch(`${apiUrl}/api/v1/public/features?pageSize=100&applicableVertical=accommodation`, { headers }),
-            fetch(`${apiUrl}/api/v1/public/destinations?pageSize=100`, { headers })
+            fetch(`${apiUrl}/api/v1/public/destinations?pageSize=100`, { headers }),
+            fetch(`${apiUrl}/api/v1/protected/accommodations/${accommodationId}/faqs`, { headers })
         ]);
 
         if (accomResponse.ok) {
@@ -169,6 +175,21 @@ try {
             }
             features = catalogFeatures;
         }
+
+        // HOS-393: FAQs for the editor's FaqSection. Never blocks/fails the page —
+        // a failed or malformed response degrades to an empty list, same as the
+        // amenities/features/destinations fetches above.
+        if (faqsResponse.ok) {
+            const faqsBody = (await faqsResponse.json()) as {
+                data?: { faqs?: AccommodationFaqItem[] };
+            };
+            initialFaqs = faqsBody.data?.faqs ?? [];
+        } else {
+            logger.warn('editar.astro: faqs fetch failed', {
+                status: faqsResponse.status,
+                accommodationId
+            });
+        }
     }
 } catch (err) {
     logger.error('editar.astro: unexpected error', { error: err, accommodationId });
@@ -201,6 +222,7 @@ if (!accommodationData || fetchError) {
                 features={features}
                 initialFeaturedImage={initialFeaturedImage}
                 initialGallery={initialGallery}
+                initialFaqs={initialFaqs}
             />
         </div>
     </main>

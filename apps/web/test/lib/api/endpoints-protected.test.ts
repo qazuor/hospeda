@@ -3,6 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const postProtected = vi.fn();
 const post = vi.fn();
 const getProtected = vi.fn();
+const put = vi.fn();
+const del = vi.fn();
 
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: {
@@ -10,11 +12,17 @@ vi.mock('../../../src/lib/api/client', () => ({
         // Non-credentialed variant: exposed so tests can assert that protected
         // mutations do NOT route through it (would send no session cookie → 401).
         post: (args: unknown) => post(args),
-        getProtected: (args: unknown) => getProtected(args)
+        getProtected: (args: unknown) => getProtected(args),
+        put: (args: unknown) => put(args),
+        delete: (args: unknown) => del(args)
     }
 }));
 
-import { accommodationCalendarSyncApi, userApi } from '../../../src/lib/api/endpoints-protected';
+import {
+    accommodationCalendarSyncApi,
+    accommodationFaqApi,
+    userApi
+} from '../../../src/lib/api/endpoints-protected';
 
 describe('accommodationCalendarSyncApi credentialed mutations (HOS-157 regression)', () => {
     beforeEach(() => {
@@ -83,6 +91,88 @@ describe('userApi.getSubscription productDomain param (HOS-259)', () => {
             path: '/api/v1/protected/users/me/subscription',
             params: { productDomain: 'accommodation' },
             cookieHeader: 'sid=abc'
+        });
+    });
+});
+
+describe('accommodationFaqApi routing (HOS-393)', () => {
+    beforeEach(() => {
+        postProtected.mockReset();
+        post.mockReset();
+        getProtected.mockReset();
+        put.mockReset();
+        del.mockReset();
+        postProtected.mockResolvedValue({ ok: true, data: { faq: {} } });
+        put.mockResolvedValue({ ok: true, data: { faq: {} } });
+        del.mockResolvedValue({ ok: true, data: { success: true } });
+        getProtected.mockResolvedValue({ ok: true, data: { faqs: [] } });
+    });
+
+    it('list() calls getProtected with the accommodation-scoped path', async () => {
+        await accommodationFaqApi.list({ accommodationId: 'acc-1' });
+
+        expect(getProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/accommodations/acc-1/faqs',
+            cookieHeader: undefined
+        });
+    });
+
+    it('add() uses the credentialed postProtected (never plain post)', async () => {
+        await accommodationFaqApi.add({
+            accommodationId: 'acc-1',
+            question: '¿Hay wifi?',
+            answer: 'Sí, gratuito.'
+        });
+
+        expect(postProtected).toHaveBeenCalledWith({
+            path: '/api/v1/protected/accommodations/acc-1/faqs',
+            body: { question: '¿Hay wifi?', answer: 'Sí, gratuito.', category: undefined }
+        });
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    it('update() sends PUT (not PATCH) to the faqId sub-path', async () => {
+        await accommodationFaqApi.update({
+            accommodationId: 'acc-1',
+            faqId: 'faq-1',
+            question: '¿A qué hora es el check-in?'
+        });
+
+        expect(put).toHaveBeenCalledWith({
+            path: '/api/v1/protected/accommodations/acc-1/faqs/faq-1',
+            body: {
+                question: '¿A qué hora es el check-in?',
+                answer: undefined,
+                category: undefined
+            }
+        });
+    });
+
+    it('remove() sends DELETE to the faqId sub-path', async () => {
+        await accommodationFaqApi.remove({ accommodationId: 'acc-1', faqId: 'faq-1' });
+
+        expect(del).toHaveBeenCalledWith({
+            path: '/api/v1/protected/accommodations/acc-1/faqs/faq-1'
+        });
+    });
+
+    it('reorder() sends PUT to the /reorder sub-path with the explicit order array', async () => {
+        await accommodationFaqApi.reorder({
+            accommodationId: 'acc-1',
+            order: [
+                { faqId: 'faq-2', displayOrder: 0 },
+                { faqId: 'faq-1', displayOrder: 1 }
+            ]
+        });
+
+        expect(put).toHaveBeenCalledWith({
+            path: '/api/v1/protected/accommodations/acc-1/faqs/reorder',
+            body: {
+                order: [
+                    { faqId: 'faq-2', displayOrder: 0 },
+                    { faqId: 'faq-1', displayOrder: 1 }
+                ]
+            }
         });
     });
 });

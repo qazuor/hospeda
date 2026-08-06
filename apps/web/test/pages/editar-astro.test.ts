@@ -30,7 +30,7 @@ describe('editar.astro', () => {
     });
 
     it('should fetch accommodation by ID from protected endpoint', () => {
-        expect(src).toContain('/api/v1/protected/accommodations/${accommodationId}');
+        expect(src).toContain(`/api/v1/protected/accommodations/\${accommodationId}`);
     });
 
     it('should redirect to propiedades list on 404/403', () => {
@@ -48,5 +48,26 @@ describe('editar.astro', () => {
     it('should have auth guard', () => {
         expect(src).toContain('Astro.locals.user');
         expect(src).toContain('buildLoginRedirect');
+    });
+
+    // HOS-393: FAQs are preloaded via the same parallel Promise.all fan-out.
+    describe('FAQ preload (HOS-393)', () => {
+        it('fetches FAQs from the accommodation-scoped protected endpoint', () => {
+            expect(src).toContain(`/api/v1/protected/accommodations/\${accommodationId}/faqs`);
+        });
+
+        it('degrades to an empty FAQ list on a non-ok response, without setting fetchError', () => {
+            const faqBlockStart = src.indexOf('faqsResponse.ok');
+            expect(faqBlockStart).toBeGreaterThan(-1);
+            const faqBlock = src.slice(faqBlockStart, faqBlockStart + 400);
+            // The else branch only logs a warning — it must NOT flip fetchError,
+            // which would redirect the whole editor page away.
+            expect(faqBlock).not.toContain('fetchError = true');
+            expect(faqBlock).toContain('logger.warn');
+        });
+
+        it('passes initialFaqs to the AccommodationEditor island', () => {
+            expect(src).toContain('initialFaqs={initialFaqs}');
+        });
     });
 });
