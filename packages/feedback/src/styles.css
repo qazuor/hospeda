@@ -1,0 +1,21 @@
+/**
+ * Test-support stand-in for the package's real stylesheet.
+ *
+ * In production, `@repo/feedback/styles.css` resolves via `package.json`'s
+ * `exports` map to `dist/index.css` — a build artifact tsup aggregates from
+ * every CSS file `src/index.ts` transitively imports (see
+ * `packages/feedback/tsup.config.ts`). Consumer apps resolve this through
+ * normal workspace `node_modules` package resolution, so this file has no
+ * effect there.
+ *
+ * `apps/web/vitest.config.ts` aliases `@repo/feedback` straight to this
+ * `src/` directory for fast test-time resolution, bypassing the `exports`
+ * map entirely — which means the built `dist/index.css` is unreachable from
+ * web app tests. This file exists only so Vite's `?url` transform (used by
+ * `apps/web/src/components/feedback/load-feedback-styles.ts`, see
+ * `test/static-guards/feedback-lazy-css.test.ts`) has a real, resolvable
+ * file to import; its content is not otherwise exercised.
+ */
+.feedback-root {
+    all: unset;
+}
