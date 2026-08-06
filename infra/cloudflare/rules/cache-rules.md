@@ -6,7 +6,8 @@ from code, and for the shared-zone constraint every rule must respect.
 
 Dashboard path: **hospeda.com.ar → Caching → Cache Rules**.
 
-Current state: **1 active rule**.
+Current state: **1 active rule**, plus one written and pending application
+(`HOS-369 - staging /_image/ endpoint`).
 
 ---
 
@@ -543,3 +544,100 @@ nothing able to invalidate it. That is also why the endpoint deliberately does
 not call `applyCacheHeaders`: it carries no cache tag, because there is no purge
 for a tag to trigger. Both cache-tag static guards in `apps/web` carry an
 explicit exemption entry for it.
+
+---
+
+## `HOS-369 - staging /_image/ endpoint` — PENDING APPLICATION
+
+> **Status: written here, NOT yet applied in the dashboard.** Everything below
+> is the intended configuration; apply it, then flip this heading and record the
+> rule id. Nothing else in this repo depends on it existing.
+
+Makes Astro's on-demand image endpoint eligible for edge caching **on staging
+only**.
+
+### The problem it fixes
+
+`/_image/` is Astro's image-transform endpoint: `apps/web` renders
+`<Image>` / `<img src="/_image/?href=…&w=…&h=…&f=webp">`, and the ORIGIN decodes
+and re-encodes the source image per request. Measured on the staging home
+(2026-08-05, cold, Slow 4G + 4x CPU):
+
+- every `/_image/` response returns **`cf-cache-status: DYNAMIC`** — Cloudflare
+  never caches it, despite the origin sending
+  `cache-control: public, max-age=31536000, immutable`
+- **9 requests / 292 kB** on the home alone
+- the LCP element (`/_image/?href=/_astro/hero-*.jpg&w=1200&h=835&f=webp`) had a
+  **6,487 ms load duration**, the dominant term in a 15,266 ms LCP
+
+Two independent reasons it is uncached, both of which this rule addresses:
+
+1. The `HOS-369 W1-2` rule above requires `http.request.uri.query eq ""`. Every
+   `/_image/` URL carries its parameters in the query string, so it can never
+   match. It is not an oversight in that rule — that clause is what keeps
+   filtered listing URLs out of the cache.
+2. With no rule matching, Cloudflare falls back to its default behaviour, which
+   caches by file extension. `/_image/` has no extension, so the default set
+   does not cover it either.
+
+### Expression
+
+```
+(http.host eq "staging.hospeda.com.ar"
+ and http.request.method eq "GET"
+ and starts_with(http.request.uri.path, "/_image/"))
+```
+
+Staging-only, deliberately, like every rule in this file — the zone is shared
+and production is not touched without explicit owner approval.
+
+### Settings
+
+| Setting | Value | API equivalent |
+|---|---|---|
+| Cache eligibility | Eligible for cache | `"cache": true` |
+| Edge TTL | Use cache-control header if present | `edge_ttl.mode = "respect_origin"` |
+| Browser TTL | Respect origin TTL | `browser_ttl.mode = "respect_origin"` |
+| Cache key → query string | **Include all** (the default) | do NOT set `ignore_query_strings` |
+
+The cache key MUST keep the query string: `href`, `w`, `h` and `f` ARE the
+image's identity. Ignoring it would serve one transform for every variant — the
+hero at thumbnail size, or a WebP where an AVIF was asked for. This is the one
+setting that turns the rule from a win into a visible bug, so it is called out
+rather than left to the default.
+
+No cookie or session clause is needed: the endpoint reads nothing but its query
+parameters and returns no per-user content. It is already `x-robots-tag:
+noindex, nofollow` at the origin.
+
+### Purging
+
+Not required, and no tag is emitted. The `href` parameter points at a
+content-hashed build asset (`/_astro/hero-playa.1jJv_K_i.jpg`), so changing an
+image produces a new hash, a new query string, and therefore a new cache key.
+The old key simply stops being requested — the same reasoning as the i18n
+dictionary asset above.
+
+The exception is a **remote** `href` (`images.pexels.com`, Cloudinary): those
+URLs are not content-hashed, so a replaced remote image keeps its cache key for
+the full year. If that ever matters, purge by URL; do not shorten the TTL for
+everyone to cover it.
+
+### Verifying
+
+```bash
+# First request may be MISS; the second must be HIT with a non-zero age.
+URL='https://staging.hospeda.com.ar/_image/?href=%2F_astro%2Fhero-playa.1jJv_K_i.jpg&w=1200&h=835&f=webp'
+curl -sS -o /dev/null -D - "$URL" | grep -iE '^(cf-cache-status|age|cf-ray):'
+curl -sS -o /dev/null -D - "$URL" | grep -iE '^(cf-cache-status|age|cf-ray):'
+```
+
+Use `GET`, not `curl -I`: a `HEAD` does not match `http.request.method eq "GET"`
+and will report `DYNAMIC` even once the rule is live.
+
+Then confirm the variants stay distinct — the two must differ in body size:
+
+```bash
+curl -sS -o /dev/null -w '%{size_download}\n' 'https://staging.hospeda.com.ar/_image/?href=%2F_astro%2Fhero-playa.1jJv_K_i.jpg&w=1200&h=835&f=webp'
+curl -sS -o /dev/null -w '%{size_download}\n' 'https://staging.hospeda.com.ar/_image/?href=%2F_astro%2Fhero-playa.1jJv_K_i.jpg&w=400&h=300&f=webp'
+```
