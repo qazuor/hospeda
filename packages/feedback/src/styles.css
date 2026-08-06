@@ -9,13 +9,18 @@
  * effect there.
  *
  * `apps/web/vitest.config.ts` aliases `@repo/feedback` straight to this
- * `src/` directory for fast test-time resolution, bypassing the `exports`
- * map entirely — which means the built `dist/index.css` is unreachable from
- * web app tests. This file exists only so Vite's `?url` transform (used by
- * `apps/web/src/components/feedback/load-feedback-styles.ts`, see
- * `test/static-guards/feedback-lazy-css.test.ts`) has a real, resolvable
- * file to import; its content is not otherwise exercised.
+ * `src/` directory for fast test-time resolution (a pre-existing SPEC-187
+ * workaround), bypassing the `exports` map entirely — which means the built
+ * `dist/index.css` is unreachable from web app tests. This file exists only
+ * so Vite's `?url` transform, used by
+ * `apps/web/src/components/feedback/load-feedback-styles.ts`, has a real,
+ * resolvable file to import.
+ *
+ * DELIBERATELY EMPTY of rules. `?url` only needs the file to exist — its
+ * content is never applied by any test. An earlier version declared
+ * `.feedback-root { all: unset; }`, which is inert only for as long as
+ * nothing imports this file: tsup would fold it into `dist/index.css` the
+ * moment `src/index.ts` reached it, and `all: unset` on the widget root
+ * would strip the real widget's styling in production. A stand-in whose
+ * failure mode is "no rules" cannot do that.
  */
-.feedback-root {
-    all: unset;
-}
