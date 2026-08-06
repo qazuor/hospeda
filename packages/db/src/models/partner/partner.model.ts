@@ -1,7 +1,8 @@
 import type { LifecycleStatusEnum, Partner, PartnerSubscriptionStatusEnum } from '@repo/schemas';
-import { and, asc, count, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, exists, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.js';
+import { allianceLeads } from '../../schemas/alliance/alliance_lead.dbschema.js';
 import type {
     LifecycleStatusPgEnum,
     PartnerSubscriptionStatusPgEnum
@@ -258,6 +259,67 @@ export class PartnerModel extends BaseModelImpl<Partner> {
                     lte(partners.endsAt, now)
                 )
             );
+
+        return result as Partner[];
+    }
+
+    /**
+     * Partners that were provisioned from an approved lead and never paid
+     * (HOS-278 R-3).
+     *
+     * The population R-3 is about — "un partner puede cargar todo y no pagar
+     * nunca" — and deliberately NOT every unpaid partner. The scope is decided
+     * by `alliance_leads.provisioned_partner_id`: a partner an admin typed in
+     * by hand is that admin's working state, and archiving it out from under
+     * them would be the cron deciding their queue is stale. Same predicate the
+     * migration-0080 backfill used to draw the same line.
+     *
+     * "Never paid" is `starts_at IS NULL`: that column is written only when a
+     * subscription actually activates, which makes it the honest record of
+     * whether money ever moved. Reading `subscription_status` instead would
+     * also match a partner who paid once and lapsed — a different story, owned
+     * by the dunning flow, not by this reaper.
+     *
+     * Already-archived and revoked rows are excluded so the cron is idempotent
+     * and never re-touches a partner an admin has already dealt with.
+     *
+     * @param input - `{ createdBefore, noticeState }` (RO-RO).
+     *   `noticeState: 'un-notified'` returns candidates for the nudge (stage
+     *   one); `'any'` returns candidates for archiving (stage two), which does
+     *   not care whether the notice went out — a partner who was created
+     *   before the notice column existed must still be archivable.
+     * @param limit - Batch ceiling, mirroring the expiry cron.
+     * @returns The matching partners.
+     */
+    async findUnpaidProvisioned(
+        input: { readonly createdBefore: Date; readonly noticeState: 'un-notified' | 'any' },
+        limit = 100
+    ): Promise<Partner[]> {
+        const db = getDb();
+
+        const conditions = [
+            isNull(partners.startsAt),
+            isNull(partners.revokedAt),
+            isNull(partners.deletedAt),
+            ne(partners.lifecycleState, 'ARCHIVED'),
+            lte(partners.createdAt, input.createdBefore),
+            exists(
+                db
+                    .select({ one: sql`1` })
+                    .from(allianceLeads)
+                    .where(eq(allianceLeads.provisionedPartnerId, partners.id))
+            )
+        ];
+
+        if (input.noticeState === 'un-notified') {
+            conditions.push(isNull(partners.unpaidNoticeSentAt));
+        }
+
+        const result = await db
+            .select()
+            .from(partners)
+            .where(and(...conditions))
+            .limit(limit);
 
         return result as Partner[];
     }

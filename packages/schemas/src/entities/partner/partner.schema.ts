@@ -116,6 +116,13 @@ export const partnerSchema = z.object({
     /** Admin who accepted the content. */
     contentApprovedById: UserIdSchema.nullish(),
     /**
+     * When the unpaid-partner notice was sent (HOS-278 R-3), or null.
+     *
+     * The reaper's memory for its first stage: without it the 30-day nudge
+     * would go out every day until the partner pays or is archived.
+     */
+    unpaidNoticeSentAt: z.coerce.date().nullish(),
+    /**
      * When this partner was revoked (HOS-278 R-4), or null if it was not.
      *
      * Revoking sets {@link partnerSchema.shape.lifecycleState} to INACTIVE and
@@ -177,5 +184,10 @@ export const PARTNER_REVIEW_MANAGED_FIELDS = {
 export const PARTNER_REVOKE_MANAGED_FIELDS = {
     revokedAt: true,
     revokedById: true,
-    revokeReason: true
+    revokeReason: true,
+    // R-3, not R-4, but it belongs to the same category and lives here rather
+    // than in a one-key mask of its own: the reaper cron is its only writer,
+    // and an admin who could set it by hand would silence a partner's nudge
+    // without anything recording that they did.
+    unpaidNoticeSentAt: true
 } as const;
