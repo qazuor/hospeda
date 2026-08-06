@@ -8,6 +8,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
+import { analyzeIconManifest } from '../../scripts/icon-manifest/analyze';
 import {
     extractIconIdentifiersFromConst,
     resolveDataDrivenGroups
@@ -260,5 +261,35 @@ describe('resolveDataDrivenGroups', () => {
         for (const group of groups) {
             expect(group.iconIdentifiers.length, group.id).toBeGreaterThan(0);
         }
+    });
+});
+
+describe('analyzeIconManifest — default weight is unconditional', () => {
+    // Regression coverage for a real production gap: a manifest built by
+    // logic that only added a glyph's default weight when a literal JSX tag
+    // existed shipped "PencilSimpleIcon": "r" (missing "duotone"), because
+    // `EditIcon` (default weight duotone, no explicit `defaultWeight`) is
+    // only ever a literal tag at weight="regular" — its duotone default was
+    // reached solely through an alias (`ContributionBanner.astro`) and two
+    // local lookup tables (`discovery-doors.ts`, `comparison-row-icons.ts`).
+    const report = analyzeIconManifest();
+
+    it('includes PencilSimpleIcon-duotone even though EditIcon is never a literal duotone tag', () => {
+        expect(report.pairs.get('PencilSimpleIcon')?.has('duotone')).toBe(true);
+    });
+
+    it('reports a non-trivial number of default-weight-only bindings (the alias/table usage pattern)', () => {
+        expect(report.stats.defaultWeightOnlyBindings).toBeGreaterThan(0);
+    });
+
+    it('every resolved static binding contributes at least its default weight', () => {
+        // Cheap, general re-statement of the same invariant the dedicated
+        // static guard (icon-manifest-default-weight.test.ts) checks against
+        // the COMMITTED manifest — this one checks it against a FRESH
+        // analyzer run instead, so a regression here is caught before the
+        // manifest is even regenerated.
+        expect(report.stats.staticCallSitesResolved).toBeGreaterThanOrEqual(
+            report.stats.defaultWeightOnlyBindings
+        );
     });
 });

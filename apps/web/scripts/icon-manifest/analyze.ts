@@ -4,12 +4,32 @@
  * (glyph, weight) pair `apps/web` can reach, from TWO categories of usage
  * (HOS-369 sprite-manifest).
  *
- * **(a) Statically imported identifiers** — `<StarIcon weight="fill" />`. The
- * glyph and every literal weight it is ever rendered at come straight from
- * source: {@link findRepoIconsImportBindings} finds the `@repo/icons`
- * import, {@link findJsxOpenTags}/{@link resolveTagWeight} find its call
- * sites and their weights, {@link buildWrapperGlyphIndex} maps the wrapper to
- * its real sprite glyph name.
+ * **(a) Statically imported identifiers**. {@link findRepoIconsImportBindings}
+ * finds every `@repo/icons` import in a file; {@link buildWrapperGlyphIndex}
+ * maps each one to its real sprite glyph name and resolved DEFAULT weight
+ * (`weight ?? defaultWeight ?? 'duotone'`, mirroring `createPhosphorIcon`
+ * exactly). Every resolved binding contributes its default-weight pair
+ * UNCONDITIONALLY — not only when a literal `<StarIcon .../>` JSX tag is
+ * found for it in that file. An identifier can be reachable without ever
+ * appearing as a literal tag: `const Icon = variant === 'x' ? EditIcon :
+ * ImageIcon; <Icon />` (an alias), or `icon: EditIcon` in a local lookup
+ * table rendered generically elsewhere (`ContributionBanner.astro`,
+ * `discovery-doors.ts`) — the identifier is still imported, still reachable,
+ * and still renders at ITS resolved default weight whenever the alias picks
+ * it. {@link findJsxOpenTags}/{@link resolveTagWeight} additionally scan for
+ * literal tags of the SAME name in the SAME file and add any explicit
+ * weights found on top — call-site weights are additive, never a
+ * replacement for the unconditional default-weight contribution.
+ *
+ * This was a real gap, caught in production verification (not a
+ * hypothetical): a manifest that added the default weight only when a
+ * literal tag was found shipped `PencilSimpleIcon` (aka `EditIcon`) at
+ * `"r"` only — its `regular` call sites were literal tags, but its
+ * `duotone` default (declared nowhere, since `EditIcon` sets no
+ * `defaultWeight`) was reached ONLY through the three alias/table usages
+ * above, none of which are a literal `<EditIcon` tag. 30 of 196 glyphs
+ * (15%) were missing their default weight this way before the fix; only one
+ * of them happened to be on a page that got measured.
  *
  * **(b) Data-driven resolvers** — `resolveIcon({ iconName })`, and the dozen
  * siblings cataloged in {@link resolveDataDrivenGroups}. These resolve a
@@ -67,8 +87,16 @@ function addPair(pairs: PairAccumulator, name: string, weight: SpriteWeight): vo
 export interface AnalyzerStats {
     /** How many `apps/web/src` files were scanned. */
     readonly filesScanned: number;
-    /** Distinct (import binding, file) pairs whose JSX call sites contributed a pair. */
+    /** Distinct (import binding, file) pairs resolved to a known sprite glyph — with or without a literal JSX tag. */
     readonly staticCallSitesResolved: number;
+    /**
+     * Resolved bindings that contributed ONLY their default weight because no
+     * literal JSX tag of that name was found in the same file — the alias /
+     * local-table usage pattern (`const Icon = a ? X : Y; <Icon />`,
+     * `icon: X` in a lookup table). Reported so this category stays visible,
+     * not folded silently into `staticCallSitesResolved`.
+     */
+    readonly defaultWeightOnlyBindings: number;
     /** `weight={expression}` call sites resolved conservatively as fill+regular. */
     readonly dynamicWeightSites: number;
     /** JSX-rendered `@repo/icons` bindings this analyzer could not map to a sprite glyph. Genuinely omitted. */
@@ -97,6 +125,7 @@ export function analyzeIconManifest(): AnalyzerReport {
     const files = collectSourceFiles({ dir: WEB_SRC_DIR, extensions: ['.astro', '.ts', '.tsx'] });
 
     let staticCallSitesResolved = 0;
+    let defaultWeightOnlyBindings = 0;
     let dynamicWeightSites = 0;
     const unresolvedImports: string[] = [];
 
@@ -106,18 +135,35 @@ export function analyzeIconManifest(): AnalyzerReport {
         if (bindings.size === 0) continue;
 
         for (const [localName, importedName] of bindings) {
-            const tags = findJsxOpenTags({ source, tagName: localName });
-            if (tags.length === 0) continue; // imported but never rendered as JSX here — nothing to resolve
-
             const wrapperInfo = wrapperIndex.get(importedName);
+            const tags = findJsxOpenTags({ source, tagName: localName });
+
             if (!wrapperInfo) {
-                unresolvedImports.push(
-                    `${relative(REPO_ROOT, file)}: <${localName}> (imported as "${importedName}") has no known sprite glyph`
-                );
+                // Only worth reporting when this binding was clearly meant to
+                // render an icon (a literal tag with its exact name exists).
+                // Most `@repo/icons` value imports are NOT icons at all
+                // (functions, constants, types already filtered out) and
+                // never match a JSX tag of their own name — reporting those
+                // would flood this list with non-findings.
+                if (tags.length > 0) {
+                    unresolvedImports.push(
+                        `${relative(REPO_ROOT, file)}: <${localName}> (imported as "${importedName}") has no known sprite glyph`
+                    );
+                }
                 continue;
             }
 
+            // UNCONDITIONAL: an imported binding is reachable whether or not
+            // this file happens to render it via a literal `<Name .../>` tag
+            // — it may be stored in a variable and rendered through an alias,
+            // or as a value in a local lookup table rendered generically
+            // elsewhere. Its resolved default weight must always be in the
+            // manifest, or that render path silently falls back to inline.
+            // See this module's doc for the production bug this fixes.
+            addPair(pairs, wrapperInfo.spriteName, wrapperInfo.defaultWeight);
             staticCallSitesResolved++;
+            if (tags.length === 0) defaultWeightOnlyBindings++;
+
             for (const tagText of tags) {
                 const { literalWeights, dynamicCount } = resolveTagWeight({ tagText });
 
@@ -130,9 +176,9 @@ export function analyzeIconManifest(): AnalyzerReport {
                     dynamicWeightSites += dynamicCount;
                     addPair(pairs, wrapperInfo.spriteName, 'fill');
                     addPair(pairs, wrapperInfo.spriteName, 'regular');
-                } else {
-                    addPair(pairs, wrapperInfo.spriteName, wrapperInfo.defaultWeight);
                 }
+                // A tag with no weight attribute at all needs nothing further
+                // here — its weight IS the default, already added above.
             }
         }
     }
@@ -161,6 +207,7 @@ export function analyzeIconManifest(): AnalyzerReport {
         stats: {
             filesScanned: files.length,
             staticCallSitesResolved,
+            defaultWeightOnlyBindings,
             dynamicWeightSites,
             unresolvedImports,
             dataDrivenMissing,

@@ -46,6 +46,10 @@ function printReport(
         report.stats.staticCallSitesResolved
     );
     console.log(
+        '[icon-manifest] resolved via default weight only (no literal JSX tag — alias/table usage):',
+        report.stats.defaultWeightOnlyBindings
+    );
+    console.log(
         '[icon-manifest] dynamic weight={} sites (resolved conservatively as fill+regular):',
         report.stats.dynamicWeightSites
     );
