@@ -59,6 +59,42 @@ const resolvePartnerOwnerUserId = (actor: Actor): string | null => {
     return isAnonymous ? null : actor.id;
 };
 
+/**
+ * Port for telling a partner their listing was taken down (HOS-278 R-4).
+ *
+ * Injected rather than imported, for the same reason its host-trade sibling is:
+ * `@repo/service-core` has no business knowing about an email transport.
+ * Omitting it silences the notification (tests, preview environments) without
+ * changing the revocation itself, which is the durable outcome.
+ */
+export interface PartnerRevokeNotifyPort {
+    /**
+     * Announces the revocation to the partner's owner.
+     *
+     * Called fire-and-forget AFTER the row is already written: a mail server
+     * having a bad afternoon must not roll back an admin's decision, and an
+     * admin watching a spinner must not be waiting on the transport.
+     *
+     * @param input - Who owns it, what it was called, and why it came down.
+     */
+    notifyRevoked: (input: {
+        readonly partnerId: string;
+        readonly ownerUserId: string;
+        readonly partnerName: string;
+        readonly reason: string;
+    }) => Promise<void>;
+}
+
+/** Input for {@link PartnerService.revoke}. */
+const revokePartnerInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    reason: z
+        .string()
+        .trim()
+        .min(1, { message: 'zodError.partner.revokeReason.required' })
+        .max(1000, { message: 'zodError.partner.revokeReason.max' })
+});
+
 /** Input for {@link PartnerService.reviewContent}. */
 const reviewPartnerContentInputSchema = z
     .object({
@@ -143,10 +179,20 @@ export class PartnerService extends BaseCrudService<
         return ['slug', 'name'];
     }
 
-    constructor(ctx: ServiceConfig & { model?: PartnerModel }) {
+    /**
+     * Port used to tell a partner their listing was revoked (R-4). Null in
+     * every context that did not inject one, which silences the notice without
+     * changing the revocation.
+     */
+    private readonly revokeNotifier: PartnerRevokeNotifyPort | null;
+
+    constructor(
+        ctx: ServiceConfig & { model?: PartnerModel; revokeNotifier?: PartnerRevokeNotifyPort }
+    ) {
         super(ctx, PartnerService.ENTITY_NAME);
         this.model = ctx.model ?? new PartnerModel();
         this.adminSearchSchema = adminSearchPartnerSchema;
+        this.revokeNotifier = ctx.revokeNotifier ?? null;
     }
 
     /**
@@ -598,6 +644,122 @@ export class PartnerService extends BaseCrudService<
                         ServiceErrorCode.NOT_FOUND,
                         `Partner not found: ${validated.id}`
                     );
+                }
+
+                return { partner: updated };
+            }
+        });
+    }
+    /**
+     * Revokes a partner: makes it invisible while KEEPING the row.
+     *
+     * R-4 was decided as "revoke, not undo", the same call `host_trades` made.
+     * The row survives, the reason and the admin who decided are recorded, and
+     * the partner is told. Deleting instead would destroy the only evidence
+     * that the partner was ever approved, and the audit question that follows a
+     * revocation ("who took this down, and why?") would have no answer.
+     *
+     * Deliberately NOT `softDelete`: a soft-deleted row disappears from admin
+     * queries too, and a revoked partner must stay in front of the admins who
+     * revoked it. `lifecycleState` is the visibility switch this table already
+     * had — public reads force `ACTIVE`, so flipping it to `INACTIVE` is what
+     * removes them from the carousel. `subscriptionStatus` is deliberately left
+     * alone: writing it here would conflate "we took them down" with "they
+     * stopped paying", and the billing crons read that column.
+     *
+     * Gated by `PARTNER_MANAGE`, NOT by the stricter `PARTNER_DELETE` its
+     * host-trade sibling uses. `PARTNER_DELETE` exists in the enum but is
+     * granted to no role and consulted by nothing, so gating on it would ship
+     * an endpoint nobody can call — `HOST_TRADE_DELETE`, by contrast, is
+     * seeded to SUPER_ADMIN and ADMIN, which is what makes the stricter choice
+     * viable there and not here.
+     *
+     * @param actor - The admin revoking. Requires `PARTNER_MANAGE`.
+     * @param input - `{ id, reason }` — the reason is required, not optional.
+     * @param ctx - Optional service execution context.
+     * @returns The revoked partner.
+     */
+    public async revoke(
+        actor: Actor,
+        input: { readonly id: string; readonly reason: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ partner: Partner }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'revoke',
+            input: { actor, ...input },
+            schema: revokePartnerInputSchema,
+            ctx,
+            execute: async (validated, a) => {
+                const existing = await this.model.findById(validated.id, ctx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Partner not found: ${validated.id}`
+                    );
+                }
+
+                checkCanSoftDelete(a, existing);
+
+                // Re-revoking is a no-op rather than an error: it would
+                // otherwise overwrite the ORIGINAL reason and author with
+                // whoever pressed the button second, quietly rewriting the
+                // audit trail this whole mechanism exists to keep.
+                if (existing.revokedAt) {
+                    return { partner: existing };
+                }
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    {
+                        lifecycleState: LifecycleStatusEnum.INACTIVE,
+                        revokedAt: new Date(),
+                        revokedById: a.id,
+                        revokeReason: validated.reason,
+                        updatedById: a.id
+                    },
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Partner not found: ${validated.id}`
+                    );
+                }
+
+                if (updated.ownerUserId == null) {
+                    // Nobody to write to. Curated partners created by hand in
+                    // the admin belong to no account, and an approved
+                    // application whose applicant never confirmed their email
+                    // provisions one the same way. Logged rather than silent:
+                    // "the partner was not told" is a real outcome an admin may
+                    // need to act on by hand.
+                    this.logger.info(
+                        { partnerId: updated.id },
+                        '[partner] revoked a partner with no owner — nobody was notified'
+                    );
+                } else if (this.revokeNotifier !== null) {
+                    // AFTER the write, and deliberately NOT awaited. The
+                    // revocation is the durable outcome; the email reports it.
+                    // Awaiting would let a slow transport hold an admin's UI
+                    // open, and throwing would surface a delivery problem as a
+                    // failed revocation the admin would then retry — which the
+                    // re-revoke guard turns into a no-op anyway, so the retry
+                    // would not even re-send.
+                    const ownerUserId = updated.ownerUserId;
+                    void this.revokeNotifier
+                        .notifyRevoked({
+                            partnerId: updated.id,
+                            ownerUserId,
+                            partnerName: updated.name,
+                            reason: validated.reason
+                        })
+                        .catch((error: unknown) => {
+                            this.logger.error(
+                                { partnerId: updated.id, error },
+                                '[partner] revocation notice failed to send'
+                            );
+                        });
                 }
 
                 return { partner: updated };

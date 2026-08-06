@@ -1347,7 +1347,9 @@
             "underReview": "Estamos revisando seu logo e seus textos. Avisamos assim que terminarmos; ainda não há nada a pagar.",
             "rejected": "Revisamos seus dados e precisamos que você corrija algo antes de continuar. O detalhe está abaixo, junto ao formulário.",
             "approved": "Seu conteúdo está aprovado. Já pode ativar sua assinatura para aparecer publicado.",
-            "approvedCta": "Ir para o pagamento"
+            "approvedCta": "Ir para o pagamento",
+            "revoked": "Sua ficha de parceiro foi dada de baixa e não aparece mais no site.",
+            "revokedContact": "Se quiser mais informação, fale com a gente e explicamos os detalhes."
         },
         "errors": {
             "fetchFailed": "Não conseguimos carregar sua ficha de parceiro. Recarregue a página para tentar de novo."

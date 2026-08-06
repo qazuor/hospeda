@@ -904,6 +904,7 @@
 | `DELETE /api/v1/admin/partners/{id}` | `partners/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271) |
 | `POST /api/v1/admin/partners/{id}/send-link` | `partners/admin/send-link.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271). Returns 422 until the partner's content is approved (HOS-278 AC-11) |
 | `POST /api/v1/admin/partners/{id}/manual-payment` | `partners/admin/manual-payment.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE) (SPEC-271). Refuses with VALIDATION_ERROR until the partner's content is approved (HOS-278 AC-11) |
+| `POST /api/v1/admin/partners/{id}/revoke` | `partners/admin/revoke.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE). Takes a partner off the public surfaces while keeping the row, with an author and a required reason (HOS-278 R-4). Gated on PARTNER_MANAGE and NOT the stricter PARTNER_DELETE, which exists in the enum but is granted to no role |
 | `POST /api/v1/admin/partners/{id}/review-content` | `partners/admin/review-content.ts` | none | - | n/a | Admin action; PermissionEnum-gated (PARTNER_MANAGE). Resolves a partner's pending content submission — approving is what opens the payment step (HOS-278 AC-11) |
 | **POINT-OF-INTEREST — ADMIN** | | | | | |
 | `GET /api/v1/admin/points-of-interest` | `point-of-interest/admin/list.ts` | none | - | n/a | POI admin route — no billing entitlement gate; permission-gated only (HOS-143) |

@@ -19,6 +19,7 @@ import {
     ContactSubmissionEmail,
     FeedbackReportEmail,
     HostTradeRevoked,
+    PartnerRevoked,
     PaymentFailure,
     PaymentRetryWarning,
     PaymentSuccess,
@@ -51,6 +52,7 @@ import type {
     FeedbackReportPayload,
     HostTradeRevokedPayload,
     NotificationPayload,
+    PartnerRevokedPayload,
     PaymentNotificationPayload,
     PaymentRetryWarningPayload,
     PlanBeingRetiredPayload,
@@ -616,6 +618,15 @@ export class NotificationService {
                 return HostTradeRevoked({
                     recipientName,
                     listingName: p.listingName,
+                    reason: p.reason
+                });
+            }
+
+            case 'partner_revoked': {
+                const p = payload as PartnerRevokedPayload;
+                return PartnerRevoked({
+                    recipientName,
+                    partnerName: p.partnerName,
                     reason: p.reason
                 });
             }

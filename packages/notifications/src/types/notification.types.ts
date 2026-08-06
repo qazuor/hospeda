@@ -134,6 +134,7 @@ export enum NotificationType {
      * party to, not something they can opt out of hearing.
      */
     HOST_TRADE_REVOKED = 'host_trade_revoked',
+    PARTNER_REVOKED = 'partner_revoked',
     /**
      * HOS-176 Increment A — advance notice sent to a subscriber before a plan
      * price INCREASE is applied to their MercadoPago preapproval.
@@ -787,6 +788,21 @@ export interface HostTradeRevokedPayload extends BaseNotificationPayload {
 }
 
 /**
+ * Payload for the PARTNER_REVOKED notification (HOS-278 R-4).
+ *
+ * The partner-program counterpart of {@link HostTradeRevokedPayload}. Separate
+ * rather than shared because the two arrangements differ: a provider left a
+ * directory, a partner left the alliance surfaces they were paying for.
+ */
+export interface PartnerRevokedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.PARTNER_REVOKED;
+    /** Display name of the partner that was taken down. */
+    readonly partnerName: string;
+    /** Why it was revoked. Shown to the partner verbatim. */
+    readonly reason: string;
+}
+
+/**
  * Payload for the ACCOMMODATION_CALENDAR_FEED_BROKEN notification
  * (HOS-162 Phase 3, spec §14.4).
  *
@@ -885,5 +901,6 @@ export type NotificationPayload =
     | AllianceClaimInvitePayload
     | AllianceLeadDecisionPayload
     | HostTradeRevokedPayload
+    | PartnerRevokedPayload
     | AccommodationCalendarFeedBrokenPayload
     | PlanPriceChangeNoticePayload;
