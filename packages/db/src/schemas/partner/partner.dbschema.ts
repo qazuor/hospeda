@@ -142,6 +142,26 @@ export const partners = pgTable(
         contentApprovedById: uuid('content_approved_by_id').references(() => users.id, {
             onDelete: 'set null'
         }),
+        /**
+         * When this partner was revoked (HOS-278 R-4), or null if it was not.
+         *
+         * Revoking flips {@link lifecycleState} to INACTIVE and fills this
+         * trio. It never deletes the row: the partner must stay auditable, and
+         * the fact that they were once approved is itself worth keeping.
+         *
+         * Deliberately NOT {@link deletedAt} — a soft-deleted row disappears
+         * from admin queries too, and a revoked partner must stay in front of
+         * the admins who revoked it. `lifecycleState` is the visibility switch
+         * this table already had; the trio is what turns flipping it into a
+         * decision with an author. `subscriptionStatus` is deliberately left
+         * alone: using it would conflate "we took them down" with "they
+         * stopped paying".
+         */
+        revokedAt: timestamp('revoked_at', { withTimezone: true }),
+        /** Admin who revoked the partner. */
+        revokedById: uuid('revoked_by_id').references(() => users.id, { onDelete: 'set null' }),
+        /** Why it was revoked. Required at the endpoint, so never empty when set. */
+        revokeReason: text('revoke_reason'),
         // Audit fields
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
