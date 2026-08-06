@@ -575,6 +575,13 @@
       "when": 1785983144775,
       "tag": "0081_serious_hex",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1785988980327,
+      "tag": "0082_heavy_smasher",
+      "breakpoints": true
     }
   ]
 }
