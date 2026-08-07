@@ -174,6 +174,26 @@ export function checkExperienceCanEditFaqs(
 }
 
 /**
+ * Checks if the actor may add/remove/reorder/feature photos on an experience
+ * listing's gallery (HOS-372).
+ *
+ * Accepts either `COMMERCE_EDIT_ALL` (staff) or `COMMERCE_EDIT_OWN` when the
+ * actor is the listing owner — identical gate to
+ * {@link checkExperienceCanEditFaqs}, kept as a separate named wrapper for
+ * call-site clarity (media vs FAQ operations).
+ *
+ * @param actor - The actor performing the action.
+ * @param entity - The experience entity whose media is being edited.
+ * @throws {ServiceError} FORBIDDEN when neither condition is met.
+ */
+export function checkExperienceCanEditMedia(
+    actor: Actor,
+    entity: { ownerId?: string | null }
+): void {
+    checkCanEditOwn(actor, entity);
+}
+
+/**
  * Checks if the actor may view experience listings (public read).
  *
  * For public/protected read paths, any actor is allowed to attempt to list;

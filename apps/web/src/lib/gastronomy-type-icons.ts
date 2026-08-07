@@ -54,17 +54,18 @@ interface GastronomyTypeParams {
  * - `FOOD_TRUCK` uses `MotorhomeParkingIcon` (a van glyph) — the closest
  *   vehicle icon available; there is no dedicated truck icon.
  */
-const GASTRONOMY_TYPE_ICONS: Readonly<Record<GastronomyTypeEnum, ComponentType<IconProps>>> = {
-    [GastronomyTypeEnum.RESTAURANT]: RestaurantIcon,
-    [GastronomyTypeEnum.BAR]: BarServiceIcon,
-    [GastronomyTypeEnum.CAFE]: CoffeeIcon,
-    [GastronomyTypeEnum.PARRILLA]: TraditionalGrillIcon,
-    [GastronomyTypeEnum.CERVECERIA]: TraditionalPubIcon,
-    [GastronomyTypeEnum.HELADERIA]: SnowflakeIcon,
-    [GastronomyTypeEnum.PANADERIA]: TraditionalBakeryIcon,
-    [GastronomyTypeEnum.ROTISERIA]: PackageIcon,
-    [GastronomyTypeEnum.FOOD_TRUCK]: MotorhomeParkingIcon
-};
+export const GASTRONOMY_TYPE_ICONS: Readonly<Record<GastronomyTypeEnum, ComponentType<IconProps>>> =
+    {
+        [GastronomyTypeEnum.RESTAURANT]: RestaurantIcon,
+        [GastronomyTypeEnum.BAR]: BarServiceIcon,
+        [GastronomyTypeEnum.CAFE]: CoffeeIcon,
+        [GastronomyTypeEnum.PARRILLA]: TraditionalGrillIcon,
+        [GastronomyTypeEnum.CERVECERIA]: TraditionalPubIcon,
+        [GastronomyTypeEnum.HELADERIA]: SnowflakeIcon,
+        [GastronomyTypeEnum.PANADERIA]: TraditionalBakeryIcon,
+        [GastronomyTypeEnum.ROTISERIA]: PackageIcon,
+        [GastronomyTypeEnum.FOOD_TRUCK]: MotorhomeParkingIcon
+    };
 
 /**
  * Fallback icon for gastronomy type values not present in the canonical map

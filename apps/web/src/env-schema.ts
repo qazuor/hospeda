@@ -69,6 +69,24 @@ export const serverEnvBaseSchema = z.object({
     // isolated process.env that never receives this server-only var, so making it
     // hard-required broke every web write flow that calls getApiUrl().
     HOSPEDA_REVALIDATION_SECRET: z.string().min(32).optional(),
+    /**
+     * Deployment-environment identifier, and the namespace every cache tag this
+     * app emits is prefixed with (`prod:list-accom`, `preview:home` — HOS-369).
+     *
+     * `staging.hospeda.com.ar` and `hospeda.com.ar` share ONE Cloudflare zone,
+     * so without this prefix a staging write evicts production's cached
+     * objects. The API derives the SAME namespace from the SAME variable; if
+     * the two disagree, purges match nothing and report success — which is why
+     * `/api/revalidate` rejects any tag whose namespace is not this one.
+     *
+     * Optional in the schema, NOT optional in a deployment: it is only
+     * inferrable for the unambiguously local cases (`NODE_ENV=test` → `test`,
+     * development/unset → `dev`). Under `NODE_ENV=production` — which staging
+     * and production BOTH run — resolution deliberately fails rather than
+     * guessing `prod`, and the app degrades to serving uncached responses. See
+     * `resolveCacheTagEnvironment` in `@repo/cache-tags`.
+     */
+    HOSPEDA_DEPLOY_ENV: z.enum(['dev', 'test', 'preview', 'prod']).optional(),
     PUBLIC_SENTRY_DSN: z.url().optional(),
     PUBLIC_SENTRY_RELEASE: z.string().optional(),
     /**

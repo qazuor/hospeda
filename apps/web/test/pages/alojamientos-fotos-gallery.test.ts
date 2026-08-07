@@ -190,11 +190,20 @@ describe('fotos.astro — ALL items rendered (no slice or cap)', () => {
 describe('BaseLayout.astro — GLightbox initialization script', () => {
     it('lazy-loads the glightbox package only when [data-glightbox] elements exist', () => {
         expect(baseLayoutSrc).toContain("document.querySelector('[data-glightbox]')");
-        expect(baseLayoutSrc).toContain("import('glightbox')");
+        expect(baseLayoutSrc).toContain("import('@/lib/load-glightbox')");
     });
 
-    it('imports the glightbox CSS alongside the JS (same Promise.all)', () => {
-        expect(baseLayoutSrc).toContain("import('glightbox/dist/css/glightbox.min.css')");
+    it('reaches the stylesheet through the lazy loader, not a direct import', () => {
+        // HOS-369 W3-5: this used to assert
+        // `import('glightbox/dist/css/glightbox.min.css')` right here. That
+        // import WAS dynamic and still shipped the 11 KB stylesheet as a
+        // render-blocking <link> on every page, because Astro hoists the CSS of
+        // every module in a page's graph into <head> regardless. The stylesheet
+        // now lives behind `?url` in `@/lib/load-glightbox` and is attached at
+        // runtime — see test/static-guards/lazy-vendor-css.test.ts, which is
+        // what pins the `?url` form.
+        expect(baseLayoutSrc).not.toContain("import('glightbox/dist/css/glightbox.min.css')");
+        expect(baseLayoutSrc).toContain('loadGlightbox()');
     });
 
     it('initializes GLightbox with the [data-glightbox] selector', () => {

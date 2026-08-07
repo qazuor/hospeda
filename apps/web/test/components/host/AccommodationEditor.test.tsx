@@ -49,14 +49,32 @@ vi.mock('@/components/host/editor/LocationPickerMap.client', () => ({
 }));
 
 // HOS-224: FeaturedToggleSection self-fetches its entitlement on mount via a
-// dynamic import of `@/lib/api/endpoints-protected`. In the submit tests below
-// that module is `vi.doMock`ed to expose only `update`, so the component's
-// `getFeaturedEntitlement` call rejects and its trailing async state work races
-// the submit assertions (same class of instability that forced the
-// LocationPickerMap stub above). Stub it — the dedicated read-source test
+// dynamic import of `@/lib/api/endpoints-protected`, and its trailing async
+// state work races the submit assertions (same class of instability that forced
+// the LocationPickerMap stub above). Stub it — the dedicated read-source test
 // `AccommodationEditor.featured-mount.test.ts` guards that it is actually mounted.
 vi.mock('@/components/host/editor/FeaturedToggleSection.client', () => ({
     FeaturedToggleSection: () => <div data-testid="mock-featured-toggle-section" />
+}));
+
+// HOS-383: the submit tests below used to register a PER-TEST `vi.doMock` of
+// `@/lib/api/endpoints-protected` that exposed ONLY `update`. That had two costs:
+//
+//  1. It re-registered the mock on every test, so the ~2900-line module was
+//     re-evaluated inside each one — on the critical path of the `await import()`
+//     that `handleSubmit` performs. Under load that resolution is what blew the
+//     `waitFor` budget, producing a timeout with no other symptom (no toast, no
+//     field error, no form error). That was the flake.
+//  2. Exposing only `update` broke every OTHER consumer in the tree, which is
+//     exactly why FeaturedToggleSection above had to be stubbed out.
+//
+// A single hoisted mock that spreads the real module fixes both: it is applied
+// once, and every other export stays genuine.
+const { mockUpdate } = vi.hoisted(() => ({ mockUpdate: vi.fn() }));
+
+vi.mock('@/lib/api/endpoints-protected', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/api/endpoints-protected')>()),
+    accommodationEditApi: { update: mockUpdate }
 }));
 
 // CSS module mocks for all section modules
@@ -84,10 +102,10 @@ vi.mock('@/components/host/editor/ContactInfoSection.module.css', () => ({
 vi.mock('@/components/host/editor/SocialNetworksSection.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
-vi.mock('@/components/host/editor/LocationSection.module.css', () => ({
+vi.mock('@/components/host/editor/PhotoSection.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
-vi.mock('@/components/host/editor/PhotoSection.module.css', () => ({
+vi.mock('@/components/host/editor/FaqSection.module.css', () => ({
     default: new Proxy({}, { get: (_t, prop) => String(prop) })
 }));
 vi.mock('@/components/host/editor/CalendarSection.module.css', () => ({
@@ -168,30 +186,116 @@ const DEFAULT_PROPS: AccommodationEditorProps = {
 };
 
 // ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+/**
+ * Budget for the async submit round-trip. The happy path is a dynamic
+ * `import()` plus an already-resolved mock, so it settles in a few
+ * milliseconds; this leaves orders of magnitude of headroom for a loaded CI
+ * shard while still reporting a genuine failure in seconds instead of a
+ * quarter of a minute (HOS-383).
+ */
+const PATCH_TIMEOUT_MS = 5000;
+
+/**
+ * Waits for the editor's PATCH to fire, reporting WHY it did not rather than
+ * an opaque timeout.
+ *
+ * `handleSubmit` has two silent early returns — an empty diff (which emits a
+ * "no hay cambios" toast) and a rejected validation (which renders inline
+ * `role="alert"` field errors). Both return in microseconds, so a bare
+ * `waitFor` on the update mock burns its whole budget and then reports only
+ * that time ran out. That reads as slowness, and it is not: the happy path of
+ * these tests measures ~250ms against the 15s budget this replaced, so an
+ * exhausted timeout always meant the PATCH was never going to fire at all.
+ * Naming the branch actually taken is what makes a recurrence diagnosable.
+ * @param params - The update mock to watch and how many calls to expect.
+ */
+async function expectPatchToFire({
+    mockUpdate,
+    times = 1
+}: {
+    readonly mockUpdate: ReturnType<typeof vi.fn>;
+    readonly times?: number;
+}): Promise<void> {
+    try {
+        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(times), {
+            timeout: PATCH_TIMEOUT_MS
+        });
+    } catch (timeoutError) {
+        const sawNoChangesToast = vi
+            .mocked(addToast)
+            .mock.calls.some((call) => /no hay cambios/i.test(String(call[0]?.message ?? '')));
+        if (sawNoChangesToast) {
+            throw new Error(
+                'PATCH never fired: the editor computed an EMPTY diff and toasted "no hay cambios".'
+            );
+        }
+
+        const fieldErrors = screen
+            .queryAllByRole('alert')
+            .map((el) => el.textContent?.trim())
+            .filter(Boolean);
+        if (fieldErrors.length > 0) {
+            throw new Error(
+                `PATCH never fired: validation REJECTED the payload — ${fieldErrors.join(' | ')}`
+            );
+        }
+
+        throw timeoutError;
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe('AccommodationEditor', () => {
-    // ExternalReputationSection fetches its own data on mount; stub `fetch`
-    // so that unrelated call resolves cleanly instead of rendering its own
-    // `role="alert"` error banner, which collides with these tests' field
-    // validation assertions.
+    // Two sections self-fetch on mount and need DIFFERENT response shapes, so
+    // the stub answers per endpoint rather than returning one payload to both:
+    //
+    // - ExternalReputationSection — a clean response keeps it from rendering its
+    //   own `role="alert"` error banner, which collides with these tests' field
+    //   validation assertions.
+    // - PhotoSection — reads `result.data.media` and calls `.find()` on it. Served
+    //   the reputation payload it got `undefined`, threw inside its effect, and
+    //   landed in a `.catch` that fires a state update OUTSIDE `act` (HOS-383).
     beforeEach(() => {
         vi.stubGlobal(
             'fetch',
-            vi.fn().mockResolvedValue({
-                ok: true,
-                status: 200,
-                json: async () => ({
-                    data: {
-                        listings: [],
-                        reputation: { showExternalReputation: false, aggregateFetchedAt: null }
-                    }
+            vi.fn().mockImplementation((input: RequestInfo | URL) =>
+                Promise.resolve({
+                    ok: true,
+                    status: 200,
+                    json: async () =>
+                        String(input).includes('/media')
+                            ? { data: { media: [] } }
+                            : {
+                                  data: {
+                                      listings: [],
+                                      reputation: {
+                                          showExternalReputation: false,
+                                          aggregateFetchedAt: null
+                                      }
+                                  }
+                              }
                 })
-            })
+            )
         );
         mockHas = vi.fn((_key: string) => false);
         mockIsLoading.current = false;
+        // One shared hoisted mock (see the `vi.mock` above) means its call log
+        // must be cleared between tests; the default resolution is re-applied
+        // here so each test starts from the same successful-save baseline.
+        mockUpdate.mockReset();
+        mockUpdate.mockResolvedValue({ ok: true, data: {} });
+        // `addToast` is a module-level mock and there is no global `clearMocks`,
+        // so without this its calls ACCUMULATE across every test in this file.
+        // That makes any "a toast was emitted" assertion pass on a toast some
+        // earlier test produced — including the failure diagnostics in
+        // `expectPatchToFire`, which would then name the wrong branch.
+        vi.mocked(addToast).mockClear();
     });
 
     afterEach(() => {
@@ -314,11 +418,6 @@ describe('AccommodationEditor', () => {
     });
 
     it('should call accommodationEditApi.update with changed fields only', async () => {
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
         const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
@@ -328,12 +427,7 @@ describe('AccommodationEditor', () => {
         fireEvent.submit(nameInput.closest('form')!);
 
         // Wait for async submit
-        await vi.waitFor(
-            () => {
-                expect(mockUpdate).toHaveBeenCalledOnce();
-            },
-            { timeout: 15000 }
-        );
+        await expectPatchToFire({ mockUpdate });
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.id).toBe('acc-123');
         expect(callArg.data.name).toBe('Hotel Actualizado');
@@ -342,11 +436,6 @@ describe('AccommodationEditor', () => {
     it('should show a success message after a successful save', async () => {
         // Regression: a successful save was previously silent (only cleared the
         // error), leaving the user with no confirmation that the change applied.
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
         const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
@@ -355,12 +444,7 @@ describe('AccommodationEditor', () => {
         await user.type(nameInput, 'Hotel Actualizado');
         fireEvent.submit(nameInput.closest('form')!);
 
-        await vi.waitFor(
-            () => {
-                expect(mockUpdate).toHaveBeenCalledOnce();
-            },
-            { timeout: 15000 }
-        );
+        await expectPatchToFire({ mockUpdate });
         // Success is surfaced as a toast (not an inline banner) — assert the
         // toast store received a success toast with the confirmation message.
         await vi.waitFor(() => {
@@ -380,11 +464,6 @@ describe('AccommodationEditor', () => {
         // produced an empty diff ("no changes") while the DB kept X — the just-
         // saved change could not be undone without a full reload. Asserts on the
         // ACTUAL body of the SECOND save (it must carry the restored value).
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
         const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
@@ -394,7 +473,7 @@ describe('AccommodationEditor', () => {
         await user.clear(nameInput);
         await user.type(nameInput, 'Hotel Actualizado');
         fireEvent.submit(nameInput.closest('form')!);
-        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(1), { timeout: 15000 });
+        await expectPatchToFire({ mockUpdate, times: 1 });
         expect(mockUpdate.mock.calls[0][0].data.name).toBe('Hotel Actualizado');
 
         // 2) Revert name to the ORIGINAL value and save again. Without the
@@ -402,7 +481,7 @@ describe('AccommodationEditor', () => {
         await user.clear(nameInput);
         await user.type(nameInput, 'Hotel Test');
         fireEvent.submit(nameInput.closest('form')!);
-        await vi.waitFor(() => expect(mockUpdate).toHaveBeenCalledTimes(2), { timeout: 15000 });
+        await expectPatchToFire({ mockUpdate, times: 2 });
         expect(mockUpdate.mock.calls[1][0].data.name).toBe('Hotel Test');
     });
 
@@ -412,11 +491,6 @@ describe('AccommodationEditor', () => {
         // slots (phone/whatsapp/email/website) were rendered but their
         // `errors` prop was always `{}`, so an invalid email/phone/URL
         // silently reached the API instead of being caught client-side.
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
         const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
@@ -434,11 +508,6 @@ describe('AccommodationEditor', () => {
         // HTTP schema's bare `z.string().optional()` for phone/whatsapp (no
         // format check), so "abc" reached the server. It now enforces
         // InternationalPhoneRegex client-side (composePhoneValue → "+54 abc").
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
         const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
@@ -456,11 +525,6 @@ describe('AccommodationEditor', () => {
     it('shows a "no changes" info toast when submitting an unchanged form (HOS-190)', async () => {
         // Regression guard: a diff-empty submit used to `return` silently,
         // leaving the host with no feedback. It now surfaces an info toast.
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
         const nameInput = screen.getByLabelText(/nombre/i) as HTMLInputElement;
@@ -478,12 +542,6 @@ describe('AccommodationEditor', () => {
     });
 
     it('should include contact info fields in PATCH payload when changed', async () => {
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
-        const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
         // Two fields carry a "Número" sub-label (phone + WhatsApp); scope to the
@@ -491,53 +549,35 @@ describe('AccommodationEditor', () => {
         const phoneNumberInput = within(
             screen.getByRole('group', { name: /^teléfono$/i })
         ).getByLabelText(/número/i) as HTMLInputElement;
-        await user.clear(phoneNumberInput);
-        await user.type(phoneNumberInput, '9 343 9999999');
+        // Set the value in ONE event rather than per-keystroke: this asserts on
+        // the PATCH payload, not on typing mechanics, and `composePhoneValue`
+        // is a pure function of the FINAL number, so the composed
+        // "<dialCode> <number>" is identical either way.
+        fireEvent.change(phoneNumberInput, { target: { value: '9 343 9999999' } });
         fireEvent.submit(phoneNumberInput.closest('form')!);
 
-        await vi.waitFor(
-            () => {
-                expect(mockUpdate).toHaveBeenCalledOnce();
-            },
-            { timeout: 15000 }
-        );
+        await expectPatchToFire({ mockUpdate });
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.phone).toBe('+54 9 343 9999999');
     });
 
     it('should include whatsapp in PATCH payload when changed', async () => {
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
-        const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
         // Scope to the WhatsApp <fieldset> (legend "WhatsApp") to target its number input.
         const whatsappNumberInput = within(
             screen.getByRole('group', { name: /^whatsapp$/i })
         ).getByLabelText(/número/i) as HTMLInputElement;
-        await user.clear(whatsappNumberInput);
-        await user.type(whatsappNumberInput, '9 343 8888888');
+        // Single change event — see the phone test above for why.
+        fireEvent.change(whatsappNumberInput, { target: { value: '9 343 8888888' } });
         fireEvent.submit(whatsappNumberInput.closest('form')!);
 
-        await vi.waitFor(
-            () => {
-                expect(mockUpdate).toHaveBeenCalledOnce();
-            },
-            { timeout: 15000 }
-        );
+        await expectPatchToFire({ mockUpdate });
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.whatsapp).toBe('+54 9 343 8888888');
     });
 
     it('should include social network fields in PATCH payload when changed', async () => {
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
         const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
@@ -545,22 +585,12 @@ describe('AccommodationEditor', () => {
         await user.type(twitterInput, 'mi-hotel');
         fireEvent.submit(twitterInput.closest('form')!);
 
-        await vi.waitFor(
-            () => {
-                expect(mockUpdate).toHaveBeenCalledOnce();
-            },
-            { timeout: 15000 }
-        );
+        await expectPatchToFire({ mockUpdate });
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.twitter).toBe('https://x.com/mi-hotel');
     });
 
     it('should not include unchanged contact/social fields in PATCH payload', async () => {
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
         const user = userEvent.setup();
         render(<AccommodationEditor {...DEFAULT_PROPS} />);
 
@@ -570,12 +600,7 @@ describe('AccommodationEditor', () => {
         await user.type(nameInput, 'Solo cambio nombre');
         fireEvent.submit(nameInput.closest('form')!);
 
-        await vi.waitFor(
-            () => {
-                expect(mockUpdate).toHaveBeenCalledOnce();
-            },
-            { timeout: 15000 }
-        );
+        await expectPatchToFire({ mockUpdate });
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.name).toBe('Solo cambio nombre');
         expect(callArg.data.phone).toBeUndefined();
@@ -588,11 +613,6 @@ describe('AccommodationEditor', () => {
     // -----------------------------------------------------------------------
 
     it('should include media in PATCH payload when featuredImage changes from null', async () => {
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
         const user = userEvent.setup();
         // Start with no initial media so any photo state is a "change"
         render(
@@ -613,23 +633,13 @@ describe('AccommodationEditor', () => {
         await user.type(nameInput, 'Hotel con fotos');
         fireEvent.submit(nameInput.closest('form')!);
 
-        await vi.waitFor(
-            () => {
-                expect(mockUpdate).toHaveBeenCalledOnce();
-            },
-            { timeout: 15000 }
-        );
+        await expectPatchToFire({ mockUpdate });
         // No photo change → media should be absent from payload
         const callArg = mockUpdate.mock.calls[0][0];
         expect(callArg.data.media).toBeUndefined();
     });
 
     it('should include media when initialFeaturedImage differs from current photoData', async () => {
-        const mockUpdate = vi.fn().mockResolvedValue({ ok: true, data: {} });
-        vi.doMock('@/lib/api/endpoints-protected', () => ({
-            accommodationEditApi: { update: mockUpdate }
-        }));
-
         const initialImage = {
             url: 'https://example.com/old.jpg',
             publicId: 'hospeda/old',
@@ -656,12 +666,7 @@ describe('AccommodationEditor', () => {
         await user.type(nameInput, 'Hotel con galería');
         fireEvent.submit(nameInput.closest('form')!);
 
-        await vi.waitFor(
-            () => {
-                expect(mockUpdate).toHaveBeenCalledOnce();
-            },
-            { timeout: 15000 }
-        );
+        await expectPatchToFire({ mockUpdate });
         // Gallery was seeded from initialGallery — it matches current photoData,
         // so media should NOT be added (no change detected).
         const callArg = mockUpdate.mock.calls[0][0];

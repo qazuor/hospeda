@@ -50,6 +50,8 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { pickLocalizedSeo } from '@/lib/seo';
 import { buildUrl } from '@/lib/urls';
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 export const prerender = false;
 
@@ -144,6 +146,48 @@ if (!result.data) return new Response(null, { status: 404 });
 const rawAccommodation = result.data as Record<string, unknown>;
 const accommodation = toAccommodationDetailPageProps({ item: rawAccommodation, locale });
 
+// --- Edge cacheability (HOS-369) ---
+// Placed AFTER the 404/410 guards above so an error response is never marked
+// shareable, and after `accommodation` is derived so the id is available.
+//
+// This page is addressed by its OWN two tags and deliberately NOT by
+// `list-accom`: a detail page is not a listing, and tagging it with the
+// collection would make every accommodation write evict every other
+// accommodation's page. Editing THIS accommodation evicts THIS page.
+//
+// Content pulled in from other entities (similar stays, the owner's other
+// properties, related posts and events, reviews, promotions, nearby POIs) is
+// therefore not purge-addressable from here. It goes stale for at most the
+// 300s TTL, which is the trade this scoping buys.
+const entityCacheTags = buildEntityCacheTags({
+	entity: 'accommodation',
+	slug,
+	id: accommodation.id
+});
+const [primaryCacheTag, ...extraCacheTags] = entityCacheTags;
+
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// Two independent reasons to stay private, both fail-closed:
+	//  - a query string means this render is visitor-specific: every `ctx*`
+	//    above comes from a search param and feeds the WhatsApp prefill with
+	//    the visitor's dates and party size. The Cloudflare Cache Rule already
+	//    bypasses on a non-empty query, but the ORIGIN must not mark such a
+	//    response shareable either — the rule is not the only thing that could
+	//    ever cache it;
+	//  - no usable entity tag means nothing could purge this page, and an
+	//    unpurgeable cached page is worse than an uncached one.
+	cacheable: Astro.url.search === '' && primaryCacheTag !== undefined,
+	// Only read when `cacheable` is true, which requires `primaryCacheTag`.
+	// The other branch exists to satisfy the non-empty tuple type and is never
+	// applied, because `applyCacheHeaders` returns before touching tags.
+	tags:
+		primaryCacheTag !== undefined
+			? [primaryCacheTag, ...extraCacheTags]
+			: [CACHE_TAG_COLLECTIONS.accommodation]
+});
+
 // Extract lifecycle fields directly from raw API response (not in AccommodationDetailData)
 const accommodationLifecycleState = String(rawAccommodation.lifecycleState ?? 'ACTIVE');
 const accommodationDeletedAt = rawAccommodation.deletedAt
@@ -151,6 +195,16 @@ const accommodationDeletedAt = rawAccommodation.deletedAt
     : null;
 
 // --- Parallel secondary fetches with graceful degradation ---
+//
+// HOS-369 W2-5: the bookmark count joined this batch. It only needs
+// `accommodation.id`, which has been available since the `getBySlug` above, but
+// it used to be awaited on its own AFTER this block resolved — a third
+// sequential round-trip charged to TTFB for a value that could have travelled
+// with the other eight.
+//
+// The page is now down to two waves, which is the floor: `getBySlug` first
+// because everything here is keyed off the entity it returns, then everything
+// else at once.
 const [
     similarResult,
     ownerPropsResult,
@@ -159,7 +213,8 @@ const [
     reviewsResult,
     externalReputationResult,
     promotionsResult,
-    nearbyPoisResult
+    nearbyPoisResult,
+    bookmarkCountResult
 ] = await Promise.allSettled([
         accommodationsApi.getSimilar({ id: accommodation.id, limit: 6 }),
         accommodationsApi.listByOwner({ userId: accommodation.owner.id, pageSize: 7 }),
@@ -168,7 +223,11 @@ const [
         accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 100 }),
         accommodationsApi.getExternalReputation({ id: accommodation.id }),
         ownerPromotionsApi.listByAccommodation({ accommodationId: accommodation.id }),
-        accommodationsApi.getNearbyPois({ slug })
+        accommodationsApi.getNearbyPois({ slug }),
+        userBookmarksPublicApi.count({
+            entityType: 'ACCOMMODATION',
+            entityId: accommodation.id
+        })
     ]);
 
 /** Safely extract array from a settled API result. */
@@ -257,18 +316,16 @@ const externalReputationData = (() => {
 // is edge-cacheable, so every visitor receives the same HTML and each island
 // resolves its own visitor state after hydration. The count below is a public
 // aggregate, not visitor state, so it stays server-rendered.
+// Resolved from the parallel batch above. `allSettled` already absorbs a
+// rejection, so the old try/catch is gone rather than lost: an unavailable
+// count still leaves `bookmarkCount` undefined and simply hides the counter.
 let bookmarkCount: number | undefined;
 
-try {
-    const countResult = await userBookmarksPublicApi.count({
-        entityType: 'ACCOMMODATION',
-        entityId: accommodation.id
-    });
-    if (countResult.ok) {
-        bookmarkCount = countResult.data.count;
+if (bookmarkCountResult.status === 'fulfilled') {
+    const settled = bookmarkCountResult.value as { ok?: boolean; data?: { count?: number } };
+    if (settled?.ok && typeof settled.data?.count === 'number') {
+        bookmarkCount = settled.data.count;
     }
-} catch {
-    // Graceful degradation: counter not shown if fetch fails
 }
 
 // --- WhatsApp contact (HOS-19, VIEWER-gated) ---

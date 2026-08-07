@@ -35,7 +35,7 @@ type IconComponent = ComponentType<IconProps>;
  * Lookup table of the icon names the homepage stats grid can render.
  * Keyed by the `*Icon` name strings stored in `platformStats`.
  */
-const STATS_ICON_MAP: Readonly<Record<string, IconComponent>> = Object.freeze({
+export const STATS_ICON_MAP: Readonly<Record<string, IconComponent>> = Object.freeze({
     BuildingIcon,
     CompassIcon,
     StarIcon,

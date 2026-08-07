@@ -8,6 +8,7 @@
  *   - PATCH /accommodations/:id          (EDIT_ACCOMMODATION_INFO)
  *   - POST /accommodations/:id/faqs      (EDIT_ACCOMMODATION_INFO)
  *   - PUT  /accommodations/:id/faqs/:faqId (EDIT_ACCOMMODATION_INFO)
+ *   - PUT  /accommodations/:id/faqs/reorder (EDIT_ACCOMMODATION_INFO, HOS-393)
  *
  * Each test wires the middleware in a minimal Hono app, sets the
  * `userEntitlements` / `billingLoadFailed` context variables, and asserts:
@@ -364,7 +365,8 @@ describe('per-route smoke: each wired route uses the correct key', () => {
         'PUT /accommodations/:id (update)',
         'PATCH /accommodations/:id (patch)',
         'POST /accommodations/:id/faqs (addFaq)',
-        'PUT /accommodations/:id/faqs/:faqId (updateFaq)'
+        'PUT /accommodations/:id/faqs/:faqId (updateFaq)',
+        'PUT /accommodations/:id/faqs/reorder (reorderFaqs)'
     ];
 
     for (const label of publishRoutes) {

@@ -21,11 +21,20 @@ import { AllianceLeadCreateInputSchema, AllianceLeadCreateResponseSchema } from 
 import { AllianceLeadService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { createAllianceClaimInvitePort } from '../../../lib/alliance-ports';
 import { getActorFromContext } from '../../../utils/actor';
+import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { createPublicRoute } from '../../../utils/route-factory';
 
-const allianceLeadService = new AllianceLeadService({ logger: apiLogger });
+// The claim-invite port is what turns an anonymous submission whose email
+// already has an owner into an invitation to confirm (HOS-278 §6.2). It is
+// injected, and called fire-and-forget, so that "does this address have an
+// account?" cannot be read off the response time (AC-3).
+const allianceLeadService = new AllianceLeadService(
+    { logger: apiLogger },
+    createAllianceClaimInvitePort(env.HOSPEDA_SITE_URL)
+);
 
 /**
  * Extended request body: the canonical create-input schema augmented with an

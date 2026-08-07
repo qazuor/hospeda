@@ -8,18 +8,23 @@
  * graph read backwards and trips the repo's circular-dependency guard.
  */
 
-import type { Image, OpeningHours } from '@repo/schemas';
+import type { OpeningHours } from '@repo/schemas';
 import type { CommerceI18nValues } from '../CommerceTranslationPanel.client';
 
 /**
- * Subset of the contact JSONB block the owner edits in this surface.
- * NOTE: `website` is intentionally absent per SPEC-253 AC-4 — it is not
- * exposed in the owner editor UI even though it exists in ContactInfoSchema.
+ * The `contactInfo` members this surface exposes, in render order.
+ *
+ * NOTE: `website` is intentionally absent per SPEC-253 AC-4 — it is not exposed
+ * in the owner editor UI even though it exists in `ContactInfoSchema`.
+ *
+ * Runtime array rather than a bare type so the id contract can ENUMERATE what
+ * the editor claims to render (HOS-385): the schema's `contactInfo` block is a
+ * whole object, and only these members have a control to focus.
  */
-export interface ContactValues {
-    mobilePhone: string;
-    workEmail: string;
-}
+export const CONTACT_KEYS = ['mobilePhone', 'workEmail'] as const;
+
+/** Subset of the contact JSONB block the owner edits in this surface. */
+export type ContactValues = Record<(typeof CONTACT_KEYS)[number], string>;
 
 /** Social URLs the owner edits (subset of SocialNetwork, includes linkedIn per AC-4). */
 export interface SocialValues {
@@ -48,8 +53,9 @@ export const SOCIAL_KEYS: ReadonlyArray<keyof SocialValues> = [
  * two. It replaced the 18 independent `useState` slots + manual `dirty` Set this
  * editor used to carry, which made per-section extraction impossible.
  *
- * `preservedMedia` is deliberately NOT part of this type — it is never editable,
- * never diffed, and only rides along on a media patch.
+ * Media is deliberately NOT part of this type (HOS-372): `MediaSection` owns its
+ * own state and persists every photo operation immediately against the
+ * relational media endpoints, so photos are never diffed into the PATCH body.
  */
 export interface CommerceEditData {
     readonly name: string;
@@ -66,8 +72,6 @@ export interface CommerceEditData {
     readonly isPriceOnRequest: boolean;
     readonly priceFrom: number | null;
     readonly priceUnit: string;
-    readonly featuredImage: Image | null;
-    readonly gallery: readonly Image[];
     readonly amenityIds: ReadonlySet<string>;
     readonly featureIds: ReadonlySet<string>;
     readonly i18nValues: CommerceI18nValues;

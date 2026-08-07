@@ -3,7 +3,9 @@
  * @file eventos/en/[slug]/index.astro
  * @description Events at a specific venue/location.
  * @route /{lang}/eventos/en/{slug}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
+ *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
+ *   per request by the `applyCacheHeaders` call below, not by this comment.
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
@@ -19,6 +21,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { slug } = Astro.params;
@@ -30,6 +35,22 @@ if (!locResult.ok) return new Response(null, { status: 404 });
 const locData = locResult.data as Record<string, unknown>;
 const locationId = String(locData.id || '');
 const locationName = String(locData.name || slug);
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After the two 404 guards, so an error response is never marked shareable.
+//
+// Tagged `list-event` only. The event LOCATION this page is keyed on has no tag
+// of its own — `eventLocation` is absent from the vocabulary and from
+// `entity-tag-mapper.ts` — so renaming a location does not purge this page; it
+// goes stale for at most the 300s TTL. Event writes, which are what actually
+// changes the list below, do purge it.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// `/…/page/N/` rewrites into this route with `?page=N`.
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.event]
+});
 
 // NOTE: eventsApi has no getByLocation method. The closest available filter is
 // destinationId (resolves via event_locations.destination_id server-side). When

@@ -491,6 +491,111 @@
       "when": 1785264922839,
       "tag": "0069_mushy_captain_america",
       "breakpoints": true
+    },
+    {
+      "idx": 70,
+      "version": "7",
+      "when": 1785734540497,
+      "tag": "0070_volatile_freak",
+      "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1785734540498,
+      "tag": "0071_nervous_rogue",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1785734586479,
+      "tag": "0072_wealthy_kingpin",
+      "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1785822784422,
+      "tag": "0073_sparkling_deadpool",
+      "breakpoints": true
+    },
+    {
+      "idx": 74,
+      "version": "7",
+      "when": 1785856256975,
+      "tag": "0074_abandoned_meggan",
+      "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1785894061155,
+      "tag": "0075_absurd_adam_warlock",
+      "breakpoints": true
+    },
+    {
+      "idx": 76,
+      "version": "7",
+      "when": 1785897612792,
+      "tag": "0076_smiling_longshot",
+      "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1785942333246,
+      "tag": "0077_daffy_bedlam",
+      "breakpoints": true
+    },
+    {
+      "idx": 78,
+      "version": "7",
+      "when": 1785945557950,
+      "tag": "0078_aspiring_thunderball",
+      "breakpoints": true
+    },
+    {
+      "idx": 79,
+      "version": "7",
+      "when": 1785958344935,
+      "tag": "0079_lowly_leader",
+      "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1785974063516,
+      "tag": "0080_orange_plazm",
+      "breakpoints": true
+    },
+    {
+      "idx": 81,
+      "version": "7",
+      "when": 1785983144775,
+      "tag": "0081_serious_hex",
+      "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1785988980327,
+      "tag": "0082_heavy_smasher",
+      "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1786018335426,
+      "tag": "0083_fancy_juggernaut",
+      "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1786038194991,
+      "tag": "0084_hot_night_thrasher",
+      "breakpoints": true
     }
   ]
 }

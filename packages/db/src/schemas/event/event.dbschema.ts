@@ -20,6 +20,7 @@ import {
 import { rEntityTag } from '../tag/r_entity_tag.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { eventLocations } from './event_location.dbschema.ts';
+import { eventMedia } from './event_media.dbschema.ts';
 import { eventOrganizers } from './event_organizer.dbschema.ts';
 
 export const events = pgTable(
@@ -119,5 +120,15 @@ export const eventsRelations = relations(events, ({ one, many }) => ({
         fields: [events.destinationId],
         references: [destinations.id]
     }),
-    tags: many(rEntityTag)
+    tags: many(rEntityTag),
+    /**
+     * HOS-390: the relational gallery rows (`event_media`).
+     *
+     * Deliberately NOT named `media`: `events` already has a `media` JSONB
+     * COLUMN, and a relation of the same name lands on the same key of the
+     * query result — the relation would shadow the blob every read path still
+     * uses today. `accommodations` carries exactly that collision; it is not
+     * replicated here.
+     */
+    mediaItems: many(eventMedia)
 }));

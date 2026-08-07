@@ -36,8 +36,9 @@ export const protectedCreateEventRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        // Convert HTTP input to domain input
-        const domainInput = httpToDomainEventCreate(body as EventCreateHttp);
+        // Convert HTTP input to domain input. Authorship comes from the actor,
+        // never from the body (HOS-374 D-2).
+        const domainInput = httpToDomainEventCreate(body as EventCreateHttp, actor.id);
         const result = await eventService.create(actor, domainInput);
 
         if (result.error) {

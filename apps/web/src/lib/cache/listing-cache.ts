@@ -46,8 +46,13 @@
  * on its own; it is the origin-side prerequisite for the Cache Rule.
  *
  * On-demand freshness is handled by `POST /api/revalidate`, which purges the
- * entire Cloudflare cache on any content write, so the TTL below only bounds
- * staleness in the (rare) case a purge is missed.
+ * cache TAGS a write affects (HOS-369 W1-1 — it used to flush the whole zone on
+ * any content write, which would have made this cache empty itself). The TTL
+ * below only bounds staleness in the case a purge is missed.
+ *
+ * Which tags a response carries is declared through `applyCacheHeaders`
+ * (`./response-cache.ts`) — the only thing that may mark a response cacheable,
+ * and which cannot do so without them.
  */
 
 /** `s-maxage` in seconds — how long Cloudflare serves the cached HTML. */
@@ -146,4 +151,35 @@ export function hasActiveAccommodationListingFilters({
     }
 
     return false;
+}
+
+/**
+ * Whether a listing URL carries nothing but pagination — the signal that it is
+ * the plain, unfiltered listing, possibly at page N.
+ *
+ * This exists because `/…/page/N/` is not what the listing page actually sees.
+ * Those routes are `Astro.rewrite`s into the parent listing with `?page=N`
+ * appended, so a naive `Astro.url.search === ''` check would mark every
+ * paginated page non-cacheable while looking correct on page 1 — the kind of
+ * regression that shows up as a cache-hit-rate number nobody is watching
+ * rather than as a broken page.
+ *
+ * The accommodation listing does not use this: it has its own richer predicate
+ * ({@link hasActiveAccommodationListingFilters}) covering sort and trip-context
+ * params it additionally accepts. This is the conservative default for the
+ * catalog listings that accept no facets of their own (HOS-369 W2-3), where
+ * anything other than `page` should keep the response private.
+ *
+ * @param params.searchParams - The request URL's search params.
+ * @returns `true` when the only params present (if any) are pagination.
+ */
+export function hasOnlyPaginationParams({
+    searchParams
+}: {
+    readonly searchParams: URLSearchParams;
+}): boolean {
+    for (const key of searchParams.keys()) {
+        if (key !== 'page') return false;
+    }
+    return true;
 }

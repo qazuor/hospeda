@@ -61,6 +61,15 @@ export type PoiCategoryIdType = z.infer<typeof PoiCategoryIdSchema>;
 export const HostTradeIdSchema = BaseIdSchema;
 export type HostTradeIdType = z.infer<typeof HostTradeIdSchema>;
 
+/**
+ * Id of a row in `partners` — the alliance/sponsor directory.
+ *
+ * Not to be confused with {@link BenefitPartnerIdSchema}, which belongs to the
+ * separate Benefit Listings System further down this file.
+ */
+export const PartnerIdSchema = BaseIdSchema;
+export type PartnerIdType = z.infer<typeof PartnerIdSchema>;
+
 export const DestinationIdSchema = BaseIdSchema;
 export type DestinationIdType = z.infer<typeof DestinationIdSchema>;
 
@@ -79,6 +88,9 @@ export type EntityViewIdType = z.infer<typeof EntityViewIdSchema>;
 export const EventIdSchema = BaseIdSchema;
 export type EventIdType = z.infer<typeof EventIdSchema>;
 
+export const EventMediaIdSchema = BaseIdSchema;
+export type EventMediaIdType = z.infer<typeof EventMediaIdSchema>;
+
 export const EventLocationIdSchema = BaseIdSchema;
 export type EventLocationIdType = z.infer<typeof EventLocationIdSchema>;
 
@@ -87,6 +99,9 @@ export type EventOrganizerIdType = z.infer<typeof EventOrganizerIdSchema>;
 
 export const PostIdSchema = BaseIdSchema;
 export type PostIdType = z.infer<typeof PostIdSchema>;
+
+export const PostMediaIdSchema = BaseIdSchema;
+export type PostMediaIdType = z.infer<typeof PostMediaIdSchema>;
 
 export const PostSponsorIdSchema = BaseIdSchema;
 export type PostSponsorIdType = z.infer<typeof PostSponsorIdSchema>;

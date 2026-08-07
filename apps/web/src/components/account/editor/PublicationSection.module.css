@@ -1,0 +1,107 @@
+/* PublicationSection.module.css — HOS-374 2C-2 */
+
+.states {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-4, 1rem) var(--space-6, 1.5rem);
+    margin: 0;
+}
+
+.state {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+}
+
+.stateLabel {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.stateValue {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-3, 0.75rem);
+}
+
+.publishButton,
+.deleteButton,
+.cancelButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.5rem 1.25rem;
+    border-radius: var(--radius-pill, 9999px);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+    transition:
+        opacity 150ms ease-out,
+        background-color 150ms ease-out;
+}
+
+.publishButton {
+    border: none;
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground, #ffffff);
+}
+
+/* Literal oklch, same hue as the REJECTED badge in `EditableContentCard.astro`:
+   this app defines no `--destructive` token (the commerce editor's
+   `var(--destructive, …)` resolves to its fallback everywhere). */
+.deleteButton {
+    border: 1px solid oklch(0.55 0.22 25 / 0.45);
+    background-color: transparent;
+    color: oklch(0.55 0.22 25);
+}
+
+.cancelButton {
+    border: 1px solid var(--border);
+    background-color: transparent;
+    color: var(--core-foreground);
+}
+
+.publishButton:hover:not(:disabled),
+.deleteButton:hover:not(:disabled),
+.cancelButton:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.publishButton:disabled,
+.deleteButton:disabled,
+.cancelButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.publishButton:focus-visible,
+.deleteButton:focus-visible,
+.cancelButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.confirm {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.confirmText {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}

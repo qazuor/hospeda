@@ -7,6 +7,7 @@
 import type { IconProps } from '@repo/icons';
 import {
     BuildingIcon,
+    CalendarIcon,
     CompassIcon,
     EditIcon,
     ForkKnifeIcon,
@@ -22,12 +23,25 @@ import type { ComponentType } from 'react';
 /**
  * A single acquirable option inside a `DiscoveryDoor` hub page (spec §6.2/§6.3).
  *
- * "Acquired" state (HOS-131 OQ-3, owner-decided): the signal is PERMISSIONS,
- * not billing entitlements — a user has "acquired" an option once they hold
- * `acquiredPermission`. Options with no `acquiredPermission` (`sponsor`,
- * `partner`, `serviceProvider` — lead-only flows with no auto-provisioning,
- * HOS-277 NG-1) can never be acquired; they render as `unacquired`, always
- * linking their lead-capture landing.
+ * "Acquired" state (HOS-131 OQ-3, owner-decided): the signal is normally
+ * PERMISSIONS, not billing entitlements — a user has "acquired" an option
+ * once they hold `acquiredPermission`. `sponsor`/`partner` fit that model
+ * directly: they stay lead-only flows with no auto-provisioning (HOS-277
+ * NG-1), so they never acquire an `acquiredPermission` and can never resolve
+ * to `'acquired'` — they render as `unacquired`, always linking their
+ * lead-capture landing.
+ *
+ * `serviceProvider` is the deliberate EXCEPTION (HOS-278 AC-7): once an admin
+ * approves the lead, it materializes a `host_trades` row, but the provider
+ * gets NO permission and NO role change — they stay an ordinary tourist
+ * account, and ownership of that row is the real gate. Permissions cannot
+ * represent that state, so this option ALSO carries no `acquiredPermission`,
+ * but it is NOT stuck `unacquired` forever: the hub page
+ * (`mi-cuenta/aliados/index.astro`) fetches `GET /host-trades/mine` and
+ * force-acquires it via `resolveDoorOptionState`'s `acquiredOptionIds`
+ * override (`src/lib/nav-gating.ts`) whenever a row comes back. So "no
+ * `acquiredPermission`" no longer means "can never be acquired" for every
+ * option — check each option's own comment for which mechanism applies.
  */
 export interface DiscoveryDoorOption {
     /** Stable identifier. */
@@ -48,8 +62,13 @@ export interface DiscoveryDoorOption {
     readonly ctaI18nKey: string;
     /**
      * The permission that signals "already acquired" (HOS-131 OQ-3). Omitted
-     * means this option can never be acquired — used only by the
-     * not-yet-implemented `comingSoon` placeholders (NG-2).
+     * means this option is never acquired via the PERMISSION mechanism. For
+     * most such options (the not-yet-implemented `comingSoon` placeholders,
+     * NG-2, and the lead-only `sponsor`/`partner` options) that genuinely
+     * means "can never be acquired". `serviceProvider` is the one exception —
+     * it is force-acquired out-of-band instead (see the interface doc above
+     * and HOS-278 AC-7). Do not add a permission here for `serviceProvider`;
+     * an approved provider deliberately receives none.
      */
     readonly acquiredPermission?: PermissionEnum;
     /** Path segment for the "Gestionar" link, shown once the option is acquired. */
@@ -167,11 +186,13 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
         id: 'partner',
         i18nKey: 'account.doors.partner.title',
         subtitleI18nKey: 'account.doors.partner.subtitle',
-        // RESOLVED (HOS-134 D-4): `editor` below is the acquired-capable
-        // option that drives the stateful label — once a user holds
-        // `POST_CREATE` (the editor role), `resolveDoorLabelKey`
-        // (`src/lib/nav-gating.ts`) switches this door's rendered title from
-        // `i18nKey` to `statefulI18nKey` ("Sumá otra alianza").
+        // RESOLVED (HOS-134 D-4): the two `editor*` options below are the
+        // acquired-capable ones that drive the stateful label — once a user
+        // holds `POST_CREATE` or `EVENT_CREATE` (the editor role),
+        // `resolveDoorLabelKey` (`src/lib/nav-gating.ts`) switches this door's
+        // rendered title from `i18nKey` to `statefulI18nKey` ("Sumá otra
+        // alianza"). Split into two by HOS-374 OQ-5; before that it was a
+        // single `editor` option.
         statefulI18nKey: 'account.doors.partner.titleStateful',
         kind: 'partner',
         href: 'mi-cuenta/aliados',
@@ -200,10 +221,18 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // qualified, typed lead that persists in `alliance_leads`) —
                 // no longer the generic '/contacto' form.
                 href: 'sumate/partner',
-                ctaI18nKey: 'account.doors.common.contactCta'
-                // No acquiredPermission: partner is a lead-only flow (HOS-277
-                // NG-1) — the admin evaluates and provisions manually, so this
-                // option never resolves to 'acquired'.
+                ctaI18nKey: 'account.doors.common.contactCta',
+                // HOS-278 D3: still no acquiredPermission, and that is not an
+                // oversight — an approved partner is an ordinary account with
+                // no role or permission change (AC-7), so the permission
+                // mechanism structurally cannot represent "acquired" here.
+                // Inventing a permission to fix it would contradict AC-7. The
+                // hub page force-acquires the option out-of-band instead, via
+                // `resolveDoorOptionState`'s `acquiredOptionIds` override, once
+                // `GET /partners/mine` returns a row — exactly what
+                // `serviceProvider` does below. `manageHref` is what the
+                // "Gestionar" button links to once that happens.
+                manageHref: 'mi-cuenta/partner'
             },
             {
                 id: 'serviceProvider',
@@ -215,24 +244,58 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
                 // `alliance_leads`, feeding the HostTrade directory once
                 // approved) — no longer the generic '/contacto' form.
                 href: 'sumate/proveedor',
-                ctaI18nKey: 'account.doors.common.contactCta'
-                // No acquiredPermission: service_provider is a lead-only flow
-                // (HOS-277 NG-1) — the admin evaluates and provisions
-                // manually, so this option never resolves to 'acquired'.
+                ctaI18nKey: 'account.doors.common.contactCta',
+                // HOS-278 AC-7: no acquiredPermission — an approved provider
+                // is an ordinary tourist account with no role/permission
+                // change, so the permission mechanism structurally cannot
+                // represent "acquired" for this option. The hub page
+                // force-acquires it out-of-band instead, via
+                // `resolveDoorOptionState`'s `acquiredOptionIds` override,
+                // once `GET /host-trades/mine` returns a row (see the
+                // interface doc above). `manageHref` is what the "Gestionar"
+                // button links to once that happens.
+                manageHref: 'mi-cuenta/proveedor'
             },
+            // HOS-374 OQ-5 splits the former single `editor` option in two, one
+            // per content type, so an acquired editor lands on the listing for
+            // the thing they clicked instead of a shared dashboard they then
+            // have to navigate out of. Matches the convention `accommodation`
+            // and the two commerce verticals already follow above.
+            //
+            // Both keep `href: 'colaborar/editores'` — there is ONE application
+            // form and one manual promotion to RoleEnum.EDITOR (HOS-134 §2);
+            // splitting the door does not split the way in.
+            //
+            // `managesInAdminPanel` is deliberately gone. It used to send an
+            // acquired editor to the admin panel, which HOS-374 Phase 3 closes
+            // to them (§7.6.6) — leaving it would point the "Gestionar" button
+            // at a door they can no longer open. Flipping it here rather than in
+            // Phase 3 removes that window entirely: `/mi-cuenta/publicaciones`
+            // and `/mi-cuenta/eventos` already work while panel access is still
+            // in place.
             {
-                id: 'editor',
-                i18nKey: 'account.doors.partner.options.editor.title',
-                descriptionI18nKey: 'account.doors.partner.options.editor.description',
+                id: 'editorPosts',
+                i18nKey: 'account.doors.partner.options.editorPosts.title',
+                descriptionI18nKey: 'account.doors.partner.options.editorPosts.description',
                 icon: EditIcon,
                 href: 'colaborar/editores',
-                ctaI18nKey: 'account.doors.partner.options.editor.cta',
-                // The only aliado with a real entry form today (HOS-134 §2) —
-                // an admin manually promotes the applicant to RoleEnum.EDITOR,
-                // who then holds POST_CREATE and manages content in the admin
-                // panel, not under /mi-cuenta (`managesInAdminPanel`).
+                ctaI18nKey: 'account.doors.partner.options.editorPosts.cta',
                 acquiredPermission: PermissionEnum.POST_CREATE,
-                managesInAdminPanel: true
+                manageHref: 'mi-cuenta/publicaciones'
+            },
+            {
+                id: 'editorEvents',
+                i18nKey: 'account.doors.partner.options.editorEvents.title',
+                descriptionI18nKey: 'account.doors.partner.options.editorEvents.description',
+                icon: CalendarIcon,
+                href: 'colaborar/editores',
+                ctaI18nKey: 'account.doors.partner.options.editorEvents.cta',
+                // EVENT_CREATE, not POST_CREATE: the two permissions sit on the
+                // same roles today, but keying each option to the capability it
+                // actually manages means a future split between them cannot
+                // silently show an editor a listing they cannot write to.
+                acquiredPermission: PermissionEnum.EVENT_CREATE,
+                manageHref: 'mi-cuenta/eventos'
             }
         ]
     }

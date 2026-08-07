@@ -13,11 +13,11 @@
  *    send an explicit `null` when cleared;
  *  - experience `priceFrom`/`priceUnit` REJECT `null` (T-021) and must instead
  *    omit the key entirely when cleared;
- *  - `contactInfo`/`socialNetworks`/`media`/the four i18n fields are replaced
- *    WHOLESALE, so the payload must carry the untouched members too — the JSONB
- *    block is overwritten server-side, not merged;
- *  - `media` re-sends `videos`/`archivedGallery`, which the owner never edits and
- *    no UI surface displays.
+ *  - `contactInfo`/`socialNetworks`/the four i18n fields are replaced WHOLESALE,
+ *    so the payload must carry the untouched members too — the JSONB block is
+ *    overwritten server-side, not merged;
+ *  - `media` is never sent at all since HOS-372: photos are persisted per
+ *    operation by `MediaSection` against the relational media endpoints.
  *
  * Assertions run against a JSON round-trip of the body (`wireBody`) rather than
  * the raw object, because `toHaveBeenCalledWith` uses `toEqual` semantics and
@@ -70,6 +70,28 @@ vi.mock('../../../src/components/commerce/CommerceTranslationPanel.client', () =
     parseCommerceI18nValues: () => I18N_INITIAL
 }));
 
+// HOS-371: `richDescription` is a TipTap editor now. This suite pins PATCH body
+// shapes, so booting a real editor per render would only add runtime — the
+// controlled-value contract is all these tests need. The real editor is covered
+// in `CommerceListingEditor.rich-description.test.tsx`.
+vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
+    RichTextEditor: ({
+        value,
+        onChange,
+        ariaLabel
+    }: {
+        value: string;
+        onChange: (value: string) => void;
+        ariaLabel?: string;
+    }) => (
+        <textarea
+            aria-label={ariaLabel}
+            value={value}
+            onChange={(event) => onChange(event.target.value)}
+        />
+    )
+}));
+
 vi.mock('../../../src/lib/i18n', () => ({
     createTranslations: () => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
@@ -91,7 +113,15 @@ vi.mock('../../../src/lib/i18n', () => ({
 
 vi.mock('../../../src/lib/api/client', () => ({ apiClient: { patch: vi.fn() } }));
 
+// `MediaSection` hydrates itself from `commerceMediaApi.listMedia` on mount
+// (HOS-372), so the editor cannot render without it stubbed.
 vi.mock('../../../src/lib/api/endpoints-protected', () => ({
+    commerceMediaApi: {
+        listMedia: vi.fn().mockResolvedValue({ ok: true, data: { media: [] } }),
+        addMedia: vi.fn(),
+        removeMedia: vi.fn(),
+        setFeaturedMedia: vi.fn()
+    },
     protectedMediaApi: { deleteMedia: vi.fn().mockResolvedValue({ ok: true, data: {} }) }
 }));
 
@@ -100,10 +130,11 @@ vi.mock('../../../src/lib/env', () => ({ getApiUrl: () => 'http://api.test' }));
 vi.mock('../../../src/lib/logger', () => ({ webLogger: { warn: vi.fn() } }));
 
 import { apiClient } from '../../../src/lib/api/client';
-import { protectedMediaApi } from '../../../src/lib/api/endpoints-protected';
+import { commerceMediaApi, protectedMediaApi } from '../../../src/lib/api/endpoints-protected';
 
 const mockPatch = vi.mocked(apiClient.patch);
 const mockDeleteMedia = vi.mocked(protectedMediaApi.deleteMedia);
+const mockListMedia = vi.mocked(commerceMediaApi.listMedia);
 
 const DESTINATION_1 = '11111111-1111-4111-8111-111111111111';
 const DESTINATION_2 = '22222222-2222-4222-8222-222222222222';
@@ -317,8 +348,12 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
                 })
             );
 
-            fireEvent.change(screen.getByLabelText('Teléfono'), {
-                target: { value: '+5491199999999' }
+            // HOS-371: the editable control is the local-number input; the
+            // combobox contributes the dial code, and the stored string is
+            // recomposed as `"<dialCode> <number>"`. The seeded
+            // `+5491100000000` parses back to (+54, "91100000000").
+            fireEvent.change(screen.getByLabelText('Número'), {
+                target: { value: '91199999999' }
             });
             fireEvent.click(saveButton());
 
@@ -326,7 +361,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             // The server REPLACES the contactInfo JSONB block. Sending only the
             // changed leaf would wipe workEmail.
             expect(body.contactInfo).toEqual({
-                mobilePhone: '+5491199999999',
+                mobilePhone: '+54 91199999999',
                 workEmail: 'dueno@test.com'
             });
         });
@@ -370,12 +405,14 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         });
     });
 
-    describe('media preserves owner-invisible sub-fields', () => {
-        it('re-sends videos and archivedGallery when the gallery changes', async () => {
+    describe('media never travels in the PATCH body (HOS-372)', () => {
+        it('omits media even when the listing was loaded with photos', async () => {
             renderEditor(
                 'gastronomy',
                 buildListing({
+                    summary: 'Resumen original con largo suficiente.',
                     media: {
+                        featuredImage: galleryImage,
                         gallery: [galleryImage],
                         videos: [preservedVideo],
                         archivedGallery: [archivedImage]
@@ -383,22 +420,29 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
                 })
             );
 
-            // Removing the only gallery image is the cheapest way to mark the
-            // media group dirty without going through a file upload.
-            fireEvent.click(screen.getByRole('button', { name: 'Eliminar' }));
-            await waitFor(() =>
-                expect(mockDeleteMedia).toHaveBeenCalledWith({ publicId: 'commerce/g1' })
-            );
-
+            // Any unrelated edit is enough: the question is whether the editor
+            // still carries a buffered `media` block alongside it.
+            fireEvent.change(screen.getByLabelText('Resumen'), {
+                target: { value: 'Resumen editado con largo suficiente.' }
+            });
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            const media = body.media as Record<string, unknown>;
-            // The media JSONB is replaced wholesale — dropping these silently
-            // deletes the owner's videos and archived images.
-            expect(media.videos).toEqual([preservedVideo]);
-            expect(media.archivedGallery).toEqual([archivedImage]);
-            expect(media.gallery).toEqual([]);
+            // `MediaSection` persists every photo operation on its own against
+            // the relational endpoints. Re-adding `media` here would overwrite
+            // those rows with a stale snapshot — the bug HOS-372 fixed.
+            expect(body).not.toHaveProperty('media');
+            expect(body).toEqual({ summary: 'Resumen editado con largo suficiente.' });
+        });
+
+        it('never fires the client-side Cloudinary delete', async () => {
+            renderEditor('gastronomy', buildListing({ media: { gallery: [galleryImage] } }));
+
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+            // Removal goes through `commerceMediaApi.removeMedia`, which deletes
+            // the binary server-side. `delete-entity` rejects commerce verticals
+            // with a 400, so any call here is a regression.
+            expect(mockDeleteMedia).not.toHaveBeenCalled();
         });
     });
 
@@ -506,8 +550,8 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Nueva Parrilla' }
             });
-            fireEvent.change(screen.getByLabelText('Teléfono'), {
-                target: { value: '+5491100000000' }
+            fireEvent.change(screen.getByLabelText('Número'), {
+                target: { value: '91100000000' }
             });
             fireEvent.change(screen.getByLabelText('Rango de precios'), {
                 target: { value: '' }
@@ -517,7 +561,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             const body = await wireBody();
             expect(body).toEqual({
                 name: 'La Nueva Parrilla',
-                contactInfo: { mobilePhone: '+5491100000000' },
+                contactInfo: { mobilePhone: '+54 91100000000' },
                 priceRange: null
             });
         });

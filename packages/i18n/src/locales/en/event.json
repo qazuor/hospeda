@@ -72,6 +72,7 @@
         "agenda": "Event Schedule",
         "pricing": "Tickets and Pricing",
         "organizer": "Organized by",
+        "byline": "By {{name}}",
         "getTickets": "Get Tickets",
         "relatedEvents": "Related Events",
         "shareEvent": "Share Event",

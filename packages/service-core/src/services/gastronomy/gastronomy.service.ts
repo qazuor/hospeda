@@ -31,7 +31,9 @@
 import {
     AmenityModel,
     FeatureModel,
+    type GastronomyMediaModel,
     type GastronomyModel,
+    gastronomyMediaModel,
     gastronomyModel,
     rGastronomyAmenityModel,
     rGastronomyFeatureModel
@@ -67,6 +69,10 @@ import type {
     CommerceJunctionModel
 } from '../commerce/base-commerce-listing.service';
 import { BaseCommerceListingService } from '../commerce/base-commerce-listing.service';
+import {
+    attachComposedGastronomyMedia,
+    attachComposedGastronomyMediaList
+} from './gastronomy.media-read';
 import {
     checkGastronomyCanAdminList,
     checkGastronomyCanCreate,
@@ -136,10 +142,16 @@ export class GastronomyService extends BaseCommerceListingService<
     private _amenityJunctionModelInstance: CommerceJunctionModel<Record<string, unknown>>;
     /** @internal Overrideable in unit tests. */
     private _featureJunctionModelInstance: CommerceJunctionModel<Record<string, unknown>>;
+    /**
+     * Relational media model used by the read-composition hooks (HOS-372).
+     * @internal Overrideable in unit tests.
+     */
+    private _gastronomyMediaModelInstance: GastronomyMediaModel;
 
-    constructor(config: ServiceConfig) {
+    constructor(config: ServiceConfig, mediaModel?: GastronomyMediaModel) {
         super(config, GastronomyService.ENTITY_NAME);
         this.model = gastronomyModel;
+        this._gastronomyMediaModelInstance = mediaModel ?? gastronomyMediaModel;
         this.adminSearchSchema = GastronomyAdminSearchSchema;
         this._amenityModelInstance = new AmenityModel();
         this._featureModelInstance = new FeatureModel();
@@ -163,6 +175,17 @@ export class GastronomyService extends BaseCommerceListingService<
         return 'gastronomyId';
     }
 
+    /**
+     * Entity kind reported to the cache-revalidation pipeline (HOS-369 W2-4).
+     *
+     * Must match the `EntityChangeData` discriminant and the
+     * `@repo/cache-tags` vocabulary exactly — a mismatch purges nothing while
+     * still reporting success.
+     */
+    protected override get _revalidationEntityType(): 'gastronomy' {
+        return 'gastronomy';
+    }
+
     /** Gastronomy-amenity junction model (satisfies {@link CommerceJunctionModel}). */
     protected override get _amenityJunctionModel(): CommerceJunctionModel<Record<string, unknown>> {
         return this._amenityJunctionModelInstance;
@@ -183,6 +206,11 @@ export class GastronomyService extends BaseCommerceListingService<
         return this._featureModelInstance;
     }
 
+    /** Relational media model backing the read-composition hooks (HOS-372). */
+    protected get _gastronomyMediaModel(): GastronomyMediaModel {
+        return this._gastronomyMediaModelInstance;
+    }
+
     // -----------------------------------------------------------------------
     // Relation loading defaults
     // -----------------------------------------------------------------------
@@ -199,6 +227,63 @@ export class GastronomyService extends BaseCommerceListingService<
             features: true,
             faqs: true
         };
+    }
+
+    // -----------------------------------------------------------------------
+    // Media composition (HOS-372)
+    // -----------------------------------------------------------------------
+    //
+    // Photos live in the relational `gastronomy_media` table, not in a JSONB
+    // blob, so every read path has to rebuild the `media` shape consumers
+    // expect. These three hooks are the standard chokepoints
+    // (getById/getBySlug/adminGetById go through `_afterGetByField`; `list()`
+    // and `search()` through their own).
+    //
+    // WITHOUT this wiring the relational rows are written but never read: the
+    // owner persists photos successfully and they appear nowhere. Any new
+    // commerce vertical must wire the same three hooks.
+    //
+    // Composition is batched (`findByGastronomies`, one IN query) so a list
+    // page does not go N+1.
+
+    protected override async _afterGetByField(
+        entity: Gastronomy | null,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<Gastronomy | null> {
+        return attachComposedGastronomyMedia({
+            entity,
+            mediaModel: this._gastronomyMediaModel,
+            tx: ctx?.tx
+        });
+    }
+
+    protected override async _afterList(
+        result: PaginatedListOutput<Gastronomy>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Gastronomy>> {
+        if (!result?.items) return result;
+        const items = await attachComposedGastronomyMediaList({
+            items: result.items,
+            mediaModel: this._gastronomyMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
+    }
+
+    protected override async _afterSearch(
+        result: PaginatedListOutput<Gastronomy>,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<Gastronomy>> {
+        if (!result?.items) return result;
+        const items = await attachComposedGastronomyMediaList({
+            items: result.items,
+            mediaModel: this._gastronomyMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
     }
 
     // -----------------------------------------------------------------------

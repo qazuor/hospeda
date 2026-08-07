@@ -33,6 +33,7 @@ import {
 import * as Sentry from '@sentry/astro';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { loadFeedbackStyles } from '@/components/feedback/load-feedback-styles';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -129,6 +130,16 @@ export function FeedbackHeadlessHost({
     // safe to call multiple times if the component remounts.
     useEffect(() => {
         installRuntimeTrackers();
+    }, []);
+
+    // HOS-369 W3-5: load the widget's CSS off the critical path. Called on
+    // mount (not on-open) so the styles are already in place before the user
+    // can trigger the modal. This island is `transition:persist`ed, so this
+    // effect fires exactly once per session — `loadFeedbackStyles` re-runs
+    // itself on every `astro:after-swap` to survive that. See
+    // `load-feedback-styles.ts` for the full rationale.
+    useEffect(() => {
+        void loadFeedbackStyles();
     }, []);
 
     const [isOpen, setIsOpen] = useState<boolean>(false);

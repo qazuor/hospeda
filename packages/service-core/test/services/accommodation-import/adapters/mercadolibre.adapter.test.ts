@@ -569,6 +569,27 @@ describe('MercadoLibreAdapter', () => {
             // share of it (full + 50% would still be 1.5x the contract). Make
             // the item call burn measurable time so the remainder is observable.
             const ITEM_CALL_MS = 120;
+            /**
+             * The two tolerances are asymmetric, and deliberately so.
+             *
+             * A timer can OVERSHOOT by a lot — a loaded CI runner may take
+             * 300ms to fire a 120ms timeout — which leaves less budget than
+             * expected, so the lower bound needs real slack.
+             *
+             * It can only UNDERSHOOT by a hair: `setTimeout(120)` may fire a
+             * fraction early, the elapsed time floors to 119, and 4881ms remain
+             * of a 5000ms budget where an exact bound demands at most 4880. The
+             * upper bound previously had NO slack for that, which is the whole
+             * bug — one millisecond of clock jitter turned CI red on an
+             * unrelated PR (2026-08-05).
+             *
+             * The upper slack stays SMALL on purpose. Widening it to match the
+             * lower one would push the bound past 5000 and let a fresh full
+             * budget per call — precisely the regression this assertion exists
+             * to catch — sail through.
+             */
+            const BUDGET_OVERSHOOT_TOLERANCE_MS = 200;
+            const BUDGET_UNDERSHOOT_TOLERANCE_MS = 20;
             const timeouts: number[] = [];
             const realSetTimeout = globalThis.setTimeout;
             vi.stubGlobal('setTimeout', ((fn: () => void, ms: number) => {
@@ -606,10 +627,15 @@ describe('MercadoLibreAdapter', () => {
             // regression as if it were the spec.
             const [itemBudget, descriptionBudget] = timeouts as [number, number];
             expect(itemBudget).toBeLessThanOrEqual(5_000);
-            expect(descriptionBudget).toBeLessThanOrEqual(5_000 - ITEM_CALL_MS);
+            // Still well under 5000, so a fresh full budget per call fails here.
+            expect(descriptionBudget).toBeLessThanOrEqual(
+                5_000 - ITEM_CALL_MS + BUDGET_UNDERSHOOT_TOLERANCE_MS
+            );
             // Two-sided: an upper bound alone is satisfied by any proportional
             // share (a 50% split is also "≤ 5000 - 120").
-            expect(descriptionBudget).toBeGreaterThan(5_000 - ITEM_CALL_MS - 200);
+            expect(descriptionBudget).toBeGreaterThan(
+                5_000 - ITEM_CALL_MS - BUDGET_OVERSHOOT_TOLERANCE_MS
+            );
         });
 
         it('should skip the description call when the budget is already spent', async () => {

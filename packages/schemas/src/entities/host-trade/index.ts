@@ -7,6 +7,8 @@ export * from './host-trade.admin-search.schema.js';
 export * from './host-trade.crud.schema.js';
 // HTTP request/response schemas (public + admin read shapes, HTTP coercion)
 export * from './host-trade.http.schema.js';
+// Owner self-service shapes (what a provider may read/edit on their own listing)
+export * from './host-trade.owner.schema.js';
 // Query / filter schemas (public/host list)
 export * from './host-trade.query.schema.js';
 export * from './host-trade.schema.js';

@@ -12,6 +12,7 @@
  * Used for read-only endpoints with no per-user data.
  */
 export const PUBLIC_CACHE_ENDPOINTS = [
+    '/api/v1/public/authors',
     '/api/v1/public/accommodations',
     '/api/v1/public/destinations',
     '/api/v1/public/events',

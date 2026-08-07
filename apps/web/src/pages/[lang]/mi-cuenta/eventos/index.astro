@@ -1,0 +1,227 @@
+---
+/**
+ * @file mi-cuenta/eventos/index.astro
+ * @description Editor own-content listing — shows every event authored by the
+ * authenticated user, in every moderation and lifecycle state (HOS-374
+ * Phase 2 slice 2C-1). Structural mirror of `mi-cuenta/publicaciones` — see
+ * that page's JSDoc for the shared rationale. The only real differences are
+ * data-driven: events carry `name` (not `title`) and gate on `EVENT_CREATE`
+ * (not `POST_CREATE`) — both are real differences in the underlying data,
+ * not incidental drift between the two pages.
+ *
+ * A header CTA and an empty-state CTA both link to `eventos/nuevo` (HOS-374
+ * §5.2.2), so an editor with no events yet has something to click.
+ *
+ * Auth protection: both middleware AND this page check for a valid user
+ * session, matching the `/mi-cuenta/propiedades` convention.
+ *
+ * Role gate: only users whose role grants `EVENT_CREATE` (EDITOR, ADMIN,
+ * SUPER_ADMIN — see `hasEventsNavAccess` in `@/lib/nav-gating`) may reach
+ * this page. Anyone else is redirected back to the account dashboard.
+ *
+ * Data: fetched server-side through `eventEditApi.listOwn` (`lib/api/`),
+ * which forwards the session cookie to `GET /api/v1/protected/events`.
+ * Authorship is resolved from the session server-side — no client-supplied
+ * identifier can widen the scope past the caller's own content.
+ *
+ * @route    /[lang]/mi-cuenta/eventos/
+ * @rendering SSR (prerender = false — requires authenticated user)
+ */
+
+import { CalendarIcon } from '@repo/icons';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { hasEventsNavAccess } from '@/lib/nav-gating';
+import { webLogger as logger } from '@/lib/logger';
+import { eventEditApi } from '@/lib/api/endpoints-protected';
+import { transformEventEditCardList } from '@/lib/api/transforms';
+import type { EventEditListItem } from '@/lib/api/types';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import EditableContentCard from '@/components/account/EditableContentCard.astro';
+import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import accountSectionStyles from '@/components/account/AccountSection.module.css';
+import btn from '@/components/account/AccountButton.module.css';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+// Role gate: only editor-tier roles may see their own-content dashboard.
+if (!hasEventsNavAccess({ roles: user.roles })) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+// ---------------------------------------------------------------------------
+// Server-side fetch: the author's own events, in every moderation/lifecycle
+// state. Session cookie is forwarded so the protected endpoint can identify
+// the caller — never sent as a query filter.
+// ---------------------------------------------------------------------------
+
+let events: readonly EventEditListItem[] = [];
+let fetchError = false;
+
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+
+const result = await eventEditApi.listOwn({
+    cookieHeader,
+    pageSize: 50,
+    sortBy: 'createdAt',
+    sortOrder: 'desc'
+});
+
+if (result.ok) {
+    events = transformEventEditCardList({ items: result.data.items });
+} else {
+    fetchError = true;
+    logger.error('[mi-cuenta/eventos] Failed to fetch own events', result.error.message);
+}
+
+// ---------------------------------------------------------------------------
+// i18n
+// ---------------------------------------------------------------------------
+
+const { t } = createTranslations(locale);
+
+const title = t('account.myContent.events.list.title', 'Mis eventos');
+const subtitle = t(
+    'account.myContent.events.list.subtitle',
+    'Revisá el estado de tus eventos'
+);
+const emptyMessage = t(
+    'account.myContent.events.list.empty',
+    'Todavía no creaste ningún evento'
+);
+const fetchErrorMessage = t(
+    'account.myContent.events.list.fetchError',
+    'No se pudo cargar la lista. Intentá recargar la página.'
+);
+const retryLabel = t('account.myContent.card.retry', 'Reintentar');
+const createCtaLabel = t('account.myContent.events.list.createCta', '+ Nuevo evento');
+const emptyCtaLabel = t(
+    'account.myContent.events.list.emptyCta',
+    'Crear mi primer evento'
+);
+
+const createUrl = buildUrl({ locale, path: 'mi-cuenta/eventos/nuevo' });
+
+const isEmpty = events.length === 0;
+---
+
+<AccountLayout locale={locale} title={title} description={subtitle} activeSection="eventos">
+    <div class="my-content-page__header">
+        <AccountPageHeader title={title} description={subtitle} />
+        <a
+            class:list={['my-content-page__create-btn', btn.primary]}
+            href={createUrl}
+        >
+            {createCtaLabel}
+        </a>
+    </div>
+
+    {fetchError ? (
+        <div class:list={['my-content-page__error', accountSectionStyles.branded]} role="alert">
+            <p class="my-content-page__error-title">{fetchErrorMessage}</p>
+            <a
+                href={Astro.url.pathname}
+                class:list={['my-content-page__retry-btn', btn.primary]}
+            >
+                {retryLabel}
+            </a>
+        </div>
+    ) : !isEmpty ? (
+        <div class="my-content-page__grid" role="list" aria-label={title}>
+            {events.map((event) => (
+                <div class="my-content-page__item" role="listitem" data-reveal="up">
+                    <EditableContentCard
+                        title={event.name}
+                        id={event.id}
+                        editBasePath="mi-cuenta/eventos"
+                        moderationState={event.moderationState}
+                        visibility={event.visibility}
+                        lifecycleState={event.lifecycleState}
+                        locale={locale}
+                    />
+                </div>
+            ))}
+        </div>
+    ) : (
+        <EmptyState
+            locale={locale}
+            variant="empty"
+            message={emptyMessage}
+            actionUrl={createUrl}
+            actionLabel={emptyCtaLabel}
+            tone="warm"
+        >
+            <CalendarIcon size={56} weight="duotone" />
+        </EmptyState>
+    )}
+</AccountLayout>
+
+<style>
+    .my-content-page__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: var(--space-4, 1rem);
+        flex-wrap: wrap;
+    }
+
+    .my-content-page__create-btn {
+        flex-shrink: 0;
+        text-decoration: none;
+    }
+
+    .my-content-page__grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: var(--space-card-gap, 1.875rem);
+    }
+
+    @media (min-width: 640px) {
+        .my-content-page__grid {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    @media (min-width: 1024px) {
+        .my-content-page__grid {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    .my-content-page__item {
+        display: contents;
+    }
+
+    .my-content-page__error {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-12, 3rem) var(--space-8, 2rem);
+        background-color: var(--core-card);
+        border: 1px solid oklch(0.85 0.05 25 / 0.4);
+        border-radius: var(--radius-card, 24px);
+        text-align: center;
+    }
+
+    .my-content-page__error-title {
+        font-family: var(--font-sans);
+        font-size: var(--text-body, 1rem);
+        color: oklch(0.55 0.22 25);
+        margin: 0;
+    }
+
+    .my-content-page__retry-btn {
+        text-decoration: none;
+    }
+</style>

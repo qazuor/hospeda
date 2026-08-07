@@ -60,6 +60,7 @@ export const ExperiencePublicSchema = ExperienceSchema.pick({
 
     // Media (public safe)
     media: true,
+    videos: true,
 
     // Review aggregates (public)
     averageRating: true,
@@ -164,6 +165,7 @@ export const ExperienceProtectedSchema = ExperienceSchema.pick({
     isFeatured: true,
     destinationId: true,
     media: true,
+    videos: true,
     averageRating: true,
     reviewsCount: true,
     rating: true,

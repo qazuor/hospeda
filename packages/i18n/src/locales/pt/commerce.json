@@ -110,6 +110,7 @@
                 "mobilePhone": "Telefone",
                 "workEmail": "E-mail"
             },
+            "richDescriptionPlaceholder": "Conte a história do seu comércio em detalhe...",
             "validation": {
                 "summaryMin": "Mínimo 10 caracteres.",
                 "summaryMax": "Máximo 300 caracteres.",
@@ -183,6 +184,7 @@
             "saving": "Salvando...",
             "success": "Alterações salvas.",
             "error": "Não foi possível salvar as alterações. Tente novamente.",
+            "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
             "media": {
                 "featured": "Imagem principal",
                 "gallery": "Galeria de fotos",

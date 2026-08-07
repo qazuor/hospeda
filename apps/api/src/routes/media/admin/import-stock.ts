@@ -1,4 +1,3 @@
-import { accommodationMediaModel } from '@repo/db';
 import { getGalleryCap, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import {
     AccommodationService,
@@ -17,6 +16,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createAdminRoute } from '../../../utils/route-factory';
+import { resolveVisibleGalleryCount } from '../gallery-count';
 import { type MediaEntityType, validateEntityMediaPermission } from './permissions';
 
 const ImportStockBodySchema = z.object({
@@ -147,18 +147,14 @@ export const adminImportStockMediaRoute = createAdminRoute({
         }
 
         if (parsedBody.role === 'gallery') {
-            let currentGalleryCount: number;
-            if (parsedBody.entityType === 'accommodation') {
-                const { total } = await accommodationMediaModel.findByAccommodation({
-                    accommodationId: parsedBody.entityId,
-                    state: 'visible'
-                });
-                currentGalleryCount = total;
-            } else {
-                const entityMedia = (entityResult.data as { media?: { gallery?: unknown[] } })
-                    .media;
-                currentGalleryCount = entityMedia?.gallery?.length ?? 0;
-            }
+            // Counted via the shared resolver so this path, the protected upload
+            // and the admin upload can never disagree about where an entity
+            // type's photos live — see routes/media/gallery-count.ts.
+            const currentGalleryCount = await resolveVisibleGalleryCount({
+                entityType: parsedBody.entityType,
+                entityId: parsedBody.entityId,
+                entity: entityResult.data
+            });
 
             const galleryLimit = getGalleryCap(parsedBody.entityType);
             if (currentGalleryCount >= galleryLimit) {

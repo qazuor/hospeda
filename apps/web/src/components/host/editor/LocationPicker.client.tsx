@@ -1,6 +1,5 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
-import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
 /**
  * @file LocationPicker.client.tsx
  * @description Location picker with Leaflet map and address autocomplete (SPEC-208, Phase C PR2).
@@ -14,8 +13,11 @@ import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
  * Controlled via `value`/`onChange` (RO-RO). The host can edit lat/lng manually too.
  * Uses `client:only="react"` for SSR safety (Leaflet touches window at init).
  */
+import { TextField } from '@/components/ui/TextField';
+import { useGeocodingReverse, useGeocodingSearch } from '@/hooks/useGeocoding';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { ACCOMMODATION_FIELD_PREFIX } from './field-ids';
 import styles from './LocationPicker.module.css';
 
 // ---------------------------------------------------------------------------
@@ -301,68 +303,49 @@ export function LocationPicker({
                 )}
             </p>
 
-            {/* Coordinate inputs */}
+            {/*
+             * Coordinate inputs.
+             *
+             * These take the wrapper; the Leaflet map above does not (HOS-385
+             * OQ-2). The map is not a labelled control and has no Zod key —
+             * `latitude`/`longitude` are edited by these two plain number
+             * inputs, which is exactly what `<TextField>` is for.
+             */}
             <div className={styles.coordRow}>
                 <div className={styles.field}>
-                    <label
-                        htmlFor="acc-latitude"
-                        className={styles.fieldLabel}
-                    >
-                        {t('host.properties.editor.field.latitude', 'Latitud')}
-                    </label>
-                    <input
-                        id="acc-latitude"
-                        type="number"
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="latitude"
+                        label={t('host.properties.editor.field.latitude', 'Latitud')}
+                        labelClassName={styles.fieldLabel}
                         className={styles.fieldInput}
+                        error={errors?.latitude}
+                        type="number"
                         value={value.latitude ?? ''}
                         min={-90}
                         max={90}
                         step="0.000001"
                         onChange={(e) => handleLatChange(e.target.value)}
                         disabled={disabled}
-                        aria-invalid={Boolean(errors?.latitude)}
-                        aria-describedby={errors?.latitude ? 'acc-latitude-error' : undefined}
                     />
-                    {errors?.latitude && (
-                        <span
-                            id="acc-latitude-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.latitude}
-                        </span>
-                    )}
                 </div>
 
                 <div className={styles.field}>
-                    <label
-                        htmlFor="acc-longitude"
-                        className={styles.fieldLabel}
-                    >
-                        {t('host.properties.editor.field.longitude', 'Longitud')}
-                    </label>
-                    <input
-                        id="acc-longitude"
-                        type="number"
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="longitude"
+                        label={t('host.properties.editor.field.longitude', 'Longitud')}
+                        labelClassName={styles.fieldLabel}
                         className={styles.fieldInput}
+                        error={errors?.longitude}
+                        type="number"
                         value={value.longitude ?? ''}
                         min={-180}
                         max={180}
                         step="0.000001"
                         onChange={(e) => handleLngChange(e.target.value)}
                         disabled={disabled}
-                        aria-invalid={Boolean(errors?.longitude)}
-                        aria-describedby={errors?.longitude ? 'acc-longitude-error' : undefined}
                     />
-                    {errors?.longitude && (
-                        <span
-                            id="acc-longitude-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.longitude}
-                        </span>
-                    )}
                 </div>
             </div>
         </fieldset>

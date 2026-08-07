@@ -23,6 +23,8 @@
         "lighthouse": "lhci autorun --config=./lighthouserc.json",
         "a11y:sweep": "tsx scripts/a11y-sweep/sweep.ts",
         "a11y:diagnose": "A11Y_DETAIL=1 tsx scripts/a11y-sweep/sweep.ts",
+        "icons:build-manifest": "tsx scripts/build-icon-manifest.ts",
+        "icons:check-manifest": "tsx scripts/build-icon-manifest.ts --check",
         "clean": "rm -rf node_modules dist .astro"
     },
     "dependencies": {
@@ -31,6 +33,7 @@
         "@astrojs/rss": "^4.0.19",
         "@repo/analytics": "workspace:*",
         "@repo/billing": "workspace:*",
+        "@repo/cache-tags": "workspace:*",
         "@repo/config": "workspace:*",
         "@repo/design-tokens": "workspace:*",
         "@repo/feedback": "workspace:*",
@@ -44,7 +47,7 @@
         "@tiptap/react": "^3.27.4",
         "@tiptap/starter-kit": "^3.27.4",
         "@vercel/og": "^0.11.1",
-        "astro": "^7.0.9",
+        "astro": "^7.1.6",
         "better-auth": "^1.6.23",
         "clsx": "^2.1.1",
         "dompurify": "^3.4.12",

@@ -29,8 +29,21 @@ import {
 	StatisticsIcon,
 } from '@repo/icons';
 
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+// --- Edge cacheability (HOS-369 W2-2) ---
+// No session, no API call — the content is i18n + code, so it only changes on
+// deploy. Tagged `site-config`: the only tag with a live purger. Nothing purges
+// on deploy, so `s-maxage=300` is also the post-deploy staleness window.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	tags: [CACHE_TAG_SITE_CONFIG]
+});
 
 const touristBenefits = [
 	{ Icon: BuildingsIcon, titleKey: 'benefits.tourist.1.title', titleFb: 'Variedad de opciones', descKey: 'benefits.tourist.1.desc', descFb: 'Desde cabañas junto al río hasta hoteles en el centro. Encontrá el alojamiento perfecto para tu viaje.' },

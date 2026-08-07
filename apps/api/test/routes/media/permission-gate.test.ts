@@ -358,3 +358,80 @@ describe('validateEntityMediaPermission — commerce verticals', () => {
         });
     }
 });
+
+/**
+ * Regression: post/event media authorization (HOS-374 phase 0).
+ *
+ * The protected upload route cast every entity to `{ ownerId?: string | null }`
+ * and rejected on a falsy value. `post` and `event` carry `authorId`, never
+ * `ownerId`, so the check was unconditionally true and the route answered 403 to
+ * everyone — the actual author included. `destination` has neither column and
+ * failed the same way.
+ *
+ * The author fallback below is what makes a non-staff author able to manage
+ * media on their own content. Staff keep passing on the flat permission alone,
+ * so the admin route's behavior is unchanged.
+ */
+describe('author-owned entities (regression, HOS-374)', () => {
+    for (const entityType of ['post', 'event'] as MediaEntityType[]) {
+        describe(`${entityType}`, () => {
+            it('allows the author without the flat editorial permission', () => {
+                const authorId = crypto.randomUUID();
+                const actor = makeActor([PermissionEnum.MEDIA_UPLOAD], authorId);
+                const result = validateEntityMediaPermission({
+                    actor,
+                    entityType,
+                    entity: { authorId }
+                });
+                expect(result).toEqual({ allowed: true });
+            });
+
+            it('rejects a non-author without the flat editorial permission', () => {
+                const actor = makeActor([PermissionEnum.MEDIA_UPLOAD], crypto.randomUUID());
+                const result = validateEntityMediaPermission({
+                    actor,
+                    entityType,
+                    entity: { authorId: crypto.randomUUID() }
+                });
+                expect(result).toEqual({ allowed: false, reason: 'MISSING_ENTITY_PERMISSION' });
+            });
+
+            it('still allows staff holding the flat editorial permission', () => {
+                const permission =
+                    entityType === 'post'
+                        ? PermissionEnum.POST_UPDATE
+                        : PermissionEnum.EVENT_UPDATE;
+                const actor = makeActor([permission], crypto.randomUUID());
+                const result = validateEntityMediaPermission({
+                    actor,
+                    entityType,
+                    entity: { authorId: crypto.randomUUID() }
+                });
+                expect(result).toEqual({ allowed: true });
+            });
+
+            it('rejects when the entity carries no author at all', () => {
+                const actor = makeActor([PermissionEnum.MEDIA_UPLOAD], crypto.randomUUID());
+                const result = validateEntityMediaPermission({
+                    actor,
+                    entityType,
+                    entity: { authorId: null }
+                });
+                expect(result).toEqual({ allowed: false, reason: 'MISSING_ENTITY_PERMISSION' });
+            });
+        });
+    }
+
+    it('does not grant an author fallback to owner-based entity types', () => {
+        // Guards the fallback's scope: passing an authorId that matches must not
+        // unlock an entity type whose belonging is expressed by ownerId.
+        const actorId = crypto.randomUUID();
+        const actor = makeActor([PermissionEnum.MEDIA_UPLOAD], actorId);
+        const result = validateEntityMediaPermission({
+            actor,
+            entityType: 'accommodation',
+            entity: { authorId: actorId }
+        });
+        expect(result).toEqual({ allowed: false, reason: 'MISSING_ENTITY_PERMISSION' });
+    });
+});

@@ -4,12 +4,18 @@
  * Three-tab admin page to manage on-demand ISR revalidation:
  * - Config tab: View and edit revalidation configs per entity type
  * - Logs tab: Browse recent revalidation log entries
- * - Manual tab: Trigger revalidation for specific paths
+ * - Manual tab: Trigger revalidation for specific cache tags, or flush every
+ *   page this deployment has cached
  */
 
 import type { TranslationKey } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
-import type { RevalidationConfig, RevalidationEntityType, RevalidationStats } from '@repo/schemas';
+import type {
+    RevalidationConfig,
+    RevalidationEntityType,
+    RevalidationHealth,
+    RevalidationStats
+} from '@repo/schemas';
 import { PermissionEnum, RevalidationEntityTypeEnum } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
@@ -39,8 +45,10 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped/Tabs';
 import { LogsTab } from '@/features/revalidation/components/LogsTab';
 import {
+    deriveFlushTargetState,
     EmptyState,
     ErrorState,
+    FlushTargetNotice,
     InlineNumberField,
     LoadingState,
     ManualForm,
@@ -53,6 +61,7 @@ import { REVALIDATION_QUERY_KEYS } from '@/hooks/useRevalidation';
 import { requireAdminApiAccess } from '@/lib/admin-api-access';
 import {
     getRevalidationConfigs,
+    getRevalidationHealth,
     getRevalidationStats,
     manualRevalidate,
     revalidateByType,
@@ -273,20 +282,46 @@ function ConfigTab() {
 /**
  * ManualTab
  *
- * Form to enter comma-separated paths and trigger on-demand revalidation,
- * plus a section to revalidate all pages for a specific entity type.
- * Shows aggregated stats above the forms and a result breakdown after each run.
+ * Form to enter comma-separated cache tags and trigger on-demand
+ * revalidation, or (via an explicit, confirmed opt-in) flush everything THIS
+ * deployment cached, plus a section to revalidate all pages for a specific
+ * entity type. Shows aggregated stats above the forms and a result breakdown
+ * after each run.
+ *
+ * The flush names its own blast radius: the environment cache tag it would
+ * purge comes from the API's health report, so the panel never guesses which
+ * deployment it is talking to (HOS-369).
  */
 function ManualTab() {
     const { t } = useTranslations();
     const queryClient = useQueryClient();
     const { addToast } = useToast();
-    const [pathsInput, setPathsInput] = useState('');
+    const [tagsInput, setTagsInput] = useState('');
     const [reason, setReason] = useState('');
+    const [purgeEverything, setPurgeEverything] = useState(false);
+    const [showPurgeConfirm, setShowPurgeConfirm] = useState(false);
 
     const { data: stats, isLoading: statsLoading } = useQuery<RevalidationStats>({
         queryKey: REVALIDATION_QUERY_KEYS.stats,
         queryFn: getRevalidationStats
+    });
+
+    // Which environment a flush would empty is read from the API, never
+    // inferred in the browser: the API is what executes the purge, so it is the
+    // only party that knows which cache-tag namespace it would address.
+    const {
+        data: health,
+        isLoading: healthLoading,
+        isError: healthError
+    } = useQuery<RevalidationHealth>({
+        queryKey: REVALIDATION_QUERY_KEYS.health,
+        queryFn: getRevalidationHealth
+    });
+
+    const flushTargetState = deriveFlushTargetState({
+        isLoading: healthLoading,
+        isError: healthError,
+        target: health?.environmentFlushTarget
     });
 
     const mutation = useMutation({
@@ -304,23 +339,38 @@ function ManualTab() {
                 }),
                 variant: failed > 0 ? 'error' : 'success'
             });
-            setPathsInput('');
+            setTagsInput('');
             setReason('');
+            setPurgeEverything(false);
         },
         onError: () => {
             addToast({ message: t('revalidation.manual.errorToast'), variant: 'error' });
         }
     });
 
-    const parsedPaths = pathsInput
+    const parsedTags = tagsInput
         .split(',')
         .map((p) => p.trim())
         .filter(Boolean);
 
+    /**
+     * Submitting the form never fires the whole-zone purge directly — when
+     * `purgeEverything` is on, it only opens the confirmation dialog. The
+     * actual mutation for that path only runs from `handleConfirmPurge`.
+     */
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (parsedPaths.length === 0) return;
-        mutation.mutate({ paths: parsedPaths, reason: reason || undefined });
+        if (purgeEverything) {
+            setShowPurgeConfirm(true);
+            return;
+        }
+        if (parsedTags.length === 0) return;
+        mutation.mutate({ tags: parsedTags, reason: reason || undefined });
+    };
+
+    const handleConfirmPurge = () => {
+        setShowPurgeConfirm(false);
+        mutation.mutate({ purgeEverything: true, reason: reason || undefined });
     };
 
     return (
@@ -351,12 +401,15 @@ function ManualTab() {
                 </CardHeader>
                 <CardContent>
                     <ManualForm
-                        pathsInput={pathsInput}
+                        tagsInput={tagsInput}
                         reason={reason}
                         isPending={mutation.isPending}
-                        parsedCount={parsedPaths.length}
-                        onPathsChange={setPathsInput}
+                        parsedCount={parsedTags.length}
+                        purgeEverything={purgeEverything}
+                        flushTarget={flushTargetState}
+                        onTagsChange={setTagsInput}
                         onReasonChange={setReason}
+                        onPurgeEverythingChange={setPurgeEverything}
                         onSubmit={handleSubmit}
                     />
                 </CardContent>
@@ -364,7 +417,35 @@ function ManualTab() {
 
             {mutation.data ? <RevalidationResultTable result={mutation.data} /> : null}
 
-            {/* Divider between path-based and entity-type revalidation */}
+            <AlertDialog
+                open={showPurgeConfirm}
+                onOpenChange={setShowPurgeConfirm}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {t('revalidation.manual.purgeEverythingConfirmTitle')}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t('revalidation.manual.purgeEverythingConfirmDescription')}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    {/* Repeated here on purpose: the dialog is the last screen
+                        before the flush runs, so the environment it will empty
+                        has to be legible without scrolling back to the form. */}
+                    <FlushTargetNotice state={flushTargetState} />
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>
+                            {t('revalidation.manual.purgeEverythingConfirmCancel')}
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmPurge}>
+                            {t('revalidation.manual.purgeEverythingConfirmAction')}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Divider between tag-based and entity-type revalidation */}
             <div className="border-t pt-2" />
 
             <EntityTypeRevalidationSection />

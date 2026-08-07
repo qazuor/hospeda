@@ -13,7 +13,7 @@ import { createActor, createAdminActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import * as assertions from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makePostMediaModelStub } from '../../utils/modelMockFactory';
 
 describe('PostService.update', () => {
     let service: PostService;
@@ -25,7 +25,14 @@ describe('PostService.update', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['findById', 'update']);
-        service = createServiceTestInstance(PostService, modelMock);
+        service = createServiceTestInstance(
+            PostService,
+            modelMock,
+            undefined,
+            null,
+            undefined,
+            makePostMediaModelStub()
+        );
         post = createMockPost();
         // Make admin the author and give all permissions
         admin = {

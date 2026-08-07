@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     ALLIANCE_LEAD_SPECIFIC_FIELDS,
+    buildAllianceLeadTypedFields,
     serializeAllianceLeadMessage,
     validateAllianceLeadSpecificFields
 } from '../../../src/lib/forms/alliance-lead-message';
@@ -14,12 +15,25 @@ import {
 const t = (_key: string, fallback?: string) => fallback ?? _key;
 
 describe('ALLIANCE_LEAD_SPECIFIC_FIELDS', () => {
-    it('declares businessName, website, partnershipType for partner', () => {
+    it('declares businessName, partnerType, website, partnershipType for partner (HOS-278 provisioning slice D)', () => {
         expect(ALLIANCE_LEAD_SPECIFIC_FIELDS.partner.map((f) => f.name)).toEqual([
             'businessName',
+            'partnerType',
             'website',
             'partnershipType'
         ]);
+    });
+
+    it('marks businessName and partnerType as typed for partner, website and partnershipType as not (HOS-278 provisioning slice D)', () => {
+        const typedFlags = Object.fromEntries(
+            ALLIANCE_LEAD_SPECIFIC_FIELDS.partner.map((f) => [f.name, !!f.typed])
+        );
+        expect(typedFlags).toEqual({
+            businessName: true,
+            partnerType: true,
+            website: false,
+            partnershipType: false
+        });
     });
 
     it('declares businessName, website, sponsorshipInterest for sponsor', () => {
@@ -30,13 +44,37 @@ describe('ALLIANCE_LEAD_SPECIFIC_FIELDS', () => {
         ]);
     });
 
-    it('declares businessName, serviceType, coverageArea, website for service_provider', () => {
+    it('declares businessName, category, destinationId, benefitType, benefitValue, benefitText, website for service_provider (HOS-278 §6.4)', () => {
         expect(ALLIANCE_LEAD_SPECIFIC_FIELDS.service_provider.map((f) => f.name)).toEqual([
             'businessName',
-            'serviceType',
-            'coverageArea',
+            'category',
+            'destinationId',
+            'benefitType',
+            'benefitValue',
+            'benefitText',
             'website'
         ]);
+    });
+
+    it('marks every service_provider field EXCEPT website as typed (HOS-278 §6.4)', () => {
+        const typedFlags = Object.fromEntries(
+            ALLIANCE_LEAD_SPECIFIC_FIELDS.service_provider.map((f) => [f.name, !!f.typed])
+        );
+        expect(typedFlags).toEqual({
+            businessName: true,
+            category: true,
+            destinationId: true,
+            benefitType: true,
+            benefitValue: true,
+            benefitText: true,
+            website: false
+        });
+    });
+
+    it('does not mark any field as typed for sponsor or editor', () => {
+        for (const kind of ['sponsor', 'editor'] as const) {
+            expect(ALLIANCE_LEAD_SPECIFIC_FIELDS[kind].some((f) => f.typed)).toBe(false);
+        }
     });
 
     it('declares portfolioLinks, topics, experience for editor (no businessName — B2C)', () => {
@@ -59,7 +97,10 @@ describe('ALLIANCE_LEAD_SPECIFIC_FIELDS', () => {
 });
 
 describe('serializeAllianceLeadMessage', () => {
-    it('serializes filled specific fields with i18n labels, per HOS-277 §7.3 example', () => {
+    it('serializes filled non-typed specific fields with i18n labels, per HOS-277 §7.3 example', () => {
+        // businessName is now a typed field for partner (HOS-278 provisioning
+        // slice D) — it is EXCLUDED from message, see the dedicated "typed
+        // fields are excluded" describe block below for that assertion.
         const message = serializeAllianceLeadMessage({
             kind: 'partner',
             specificValues: {
@@ -73,7 +114,6 @@ describe('serializeAllianceLeadMessage', () => {
 
         expect(message).toBe(
             [
-                'businessName: Acme SA',
                 'website: https://acme.com',
                 'partnershipType: Agencia de turismo',
                 '',
@@ -86,13 +126,12 @@ describe('serializeAllianceLeadMessage', () => {
     it('skips empty specific fields', () => {
         const message = serializeAllianceLeadMessage({
             kind: 'partner',
-            specificValues: { businessName: 'Acme SA', partnershipType: 'Agencia' },
+            specificValues: { partnershipType: 'Agencia' },
             freeText: '',
             t
         });
 
         expect(message).not.toContain('website');
-        expect(message).toContain('businessName: Acme SA');
         expect(message).toContain('partnershipType: Agencia');
     });
 
@@ -135,10 +174,26 @@ describe('validateAllianceLeadSpecificFields', () => {
         expect(errors.website).toBeUndefined(); // optional
     });
 
-    it('passes when required fields are filled', () => {
+    // ── partner (HOS-278 §6.3/§7, provisioning slice D) ─────────────────────
+
+    it('requires partnerType for partner', () => {
         const errors = validateAllianceLeadSpecificFields({
             kind: 'partner',
             specificValues: { businessName: 'Acme', partnershipType: 'Agencia' },
+            t
+        });
+
+        expect(errors.partnerType).toBeDefined();
+    });
+
+    it('passes when required fields (including partnerType) are filled', () => {
+        const errors = validateAllianceLeadSpecificFields({
+            kind: 'partner',
+            specificValues: {
+                businessName: 'Acme',
+                partnerType: 'commerce',
+                partnershipType: 'Agencia'
+            },
             t
         });
 
@@ -150,6 +205,7 @@ describe('validateAllianceLeadSpecificFields', () => {
             kind: 'partner',
             specificValues: {
                 businessName: 'Acme',
+                partnerType: 'commerce',
                 partnershipType: 'Agencia',
                 website: 'not-a-url'
             },
@@ -164,6 +220,7 @@ describe('validateAllianceLeadSpecificFields', () => {
             kind: 'partner',
             specificValues: {
                 businessName: 'Acme',
+                partnerType: 'commerce',
                 partnershipType: 'Agencia',
                 website: 'https://acme.com'
             },
@@ -181,5 +238,272 @@ describe('validateAllianceLeadSpecificFields', () => {
         });
 
         expect(Object.keys(errors)).toEqual([]);
+    });
+
+    // ── service_provider (HOS-278 §6.4) ─────────────────────────────────────
+
+    it('requires businessName, category, destinationId, benefitType for service_provider', () => {
+        const errors = validateAllianceLeadSpecificFields({
+            kind: 'service_provider',
+            specificValues: {},
+            t
+        });
+
+        expect(errors.businessName).toBeDefined();
+        expect(errors.category).toBeDefined();
+        expect(errors.destinationId).toBeDefined();
+        expect(errors.benefitType).toBeDefined();
+        expect(errors.website).toBeUndefined(); // optional
+        expect(errors.benefitText).toBeUndefined(); // optional
+    });
+
+    it('does NOT require benefitValue when benefitType is TWO_FOR_ONE (no numeric value)', () => {
+        const errors = validateAllianceLeadSpecificFields({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme',
+                category: 'PLOMERIA',
+                destinationId: 'dest-1',
+                benefitType: 'TWO_FOR_ONE'
+            },
+            t
+        });
+
+        expect(errors.benefitValue).toBeUndefined();
+    });
+
+    it('requires benefitValue when benefitType is PERCENTAGE', () => {
+        const errors = validateAllianceLeadSpecificFields({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme',
+                category: 'PLOMERIA',
+                destinationId: 'dest-1',
+                benefitType: 'PERCENTAGE'
+            },
+            t
+        });
+
+        expect(errors.benefitValue).toBeDefined();
+    });
+
+    it('requires benefitValue when benefitType is FIXED_AMOUNT', () => {
+        const errors = validateAllianceLeadSpecificFields({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme',
+                category: 'PLOMERIA',
+                destinationId: 'dest-1',
+                benefitType: 'FIXED_AMOUNT',
+                benefitValue: '0'
+            },
+            t
+        });
+
+        // "0" is not a positive integer, so this must still fail — just via
+        // the number-format check rather than "missing".
+        expect(errors.benefitValue).toBeDefined();
+    });
+
+    it('passes when benefitValue is a positive integer for a numeric benefitType', () => {
+        const errors = validateAllianceLeadSpecificFields({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme',
+                category: 'PLOMERIA',
+                destinationId: 'dest-1',
+                benefitType: 'PERCENTAGE',
+                benefitValue: '15'
+            },
+            t
+        });
+
+        expect(errors.benefitValue).toBeUndefined();
+    });
+
+    it('rejects a non-integer benefitValue', () => {
+        const errors = validateAllianceLeadSpecificFields({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme',
+                category: 'PLOMERIA',
+                destinationId: 'dest-1',
+                benefitType: 'PERCENTAGE',
+                benefitValue: 'not-a-number'
+            },
+            t
+        });
+
+        expect(errors.benefitValue).toBeDefined();
+    });
+});
+
+describe('serializeAllianceLeadMessage — typed fields are excluded (HOS-278 §6.4)', () => {
+    it('does NOT serialize typed service_provider fields into message', () => {
+        const message = serializeAllianceLeadMessage({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme SA',
+                category: 'PLOMERIA',
+                destinationId: 'dest-1',
+                benefitType: 'PERCENTAGE',
+                benefitValue: '15',
+                benefitText: 'Solo días hábiles',
+                website: 'https://acme.com'
+            },
+            freeText: 'Ofrecemos servicio 24hs.',
+            t
+        });
+
+        expect(message).not.toContain('businessName');
+        expect(message).not.toContain('category');
+        expect(message).not.toContain('destinationId');
+        expect(message).not.toContain('benefitType');
+        expect(message).not.toContain('benefitValue');
+        expect(message).not.toContain('benefitText');
+        expect(message).not.toContain('Acme SA');
+        expect(message).not.toContain('PLOMERIA');
+    });
+
+    it('still serializes the non-typed website field for service_provider', () => {
+        const message = serializeAllianceLeadMessage({
+            kind: 'service_provider',
+            specificValues: { website: 'https://acme.com' },
+            freeText: 'Ofrecemos servicio 24hs.',
+            t
+        });
+
+        expect(message).toContain('website: https://acme.com');
+    });
+
+    it('serializes nothing but the free-text block when only typed fields are filled', () => {
+        const message = serializeAllianceLeadMessage({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme SA',
+                category: 'PLOMERIA',
+                destinationId: 'dest-1',
+                benefitType: 'PERCENTAGE',
+                benefitValue: '15'
+            },
+            freeText: 'Ofrecemos servicio 24hs.',
+            t
+        });
+
+        expect(message).toBe(['Mensaje:', 'Ofrecemos servicio 24hs.'].join('\n'));
+    });
+
+    it('keeps serializing the non-typed partnershipType/website fields for partner', () => {
+        const message = serializeAllianceLeadMessage({
+            kind: 'partner',
+            specificValues: {
+                businessName: 'Acme SA',
+                partnerType: 'commerce',
+                website: 'https://acme.com',
+                partnershipType: 'Agencia'
+            },
+            freeText: '',
+            t
+        });
+
+        expect(message).toContain('partnershipType: Agencia');
+        expect(message).toContain('website: https://acme.com');
+    });
+
+    it('does NOT serialize the typed businessName/partnerType fields into message for partner (HOS-278 provisioning slice D)', () => {
+        const message = serializeAllianceLeadMessage({
+            kind: 'partner',
+            specificValues: {
+                businessName: 'Acme SA',
+                partnerType: 'commerce',
+                partnershipType: 'Agencia'
+            },
+            freeText: '',
+            t
+        });
+
+        expect(message).not.toContain('businessName');
+        expect(message).not.toContain('partnerType');
+        expect(message).not.toContain('Acme SA');
+        expect(message).not.toContain('commerce');
+    });
+});
+
+describe('buildAllianceLeadTypedFields (HOS-278 §6.4)', () => {
+    it('extracts all typed fields for service_provider, converting benefitValue to a number', () => {
+        const typedFields = buildAllianceLeadTypedFields({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme SA',
+                category: 'PLOMERIA',
+                destinationId: 'dest-1',
+                benefitType: 'PERCENTAGE',
+                benefitValue: '15',
+                benefitText: 'Solo días hábiles',
+                website: 'https://acme.com'
+            }
+        });
+
+        expect(typedFields).toEqual({
+            businessName: 'Acme SA',
+            category: 'PLOMERIA',
+            destinationId: 'dest-1',
+            benefitType: 'PERCENTAGE',
+            benefitValue: 15,
+            benefitText: 'Solo días hábiles'
+        });
+        expect(typedFields.benefitValue).toBe(15);
+        expect(typeof typedFields.benefitValue).toBe('number');
+        // website is not typed — must not leak into the typed payload.
+        expect(typedFields).not.toHaveProperty('website');
+    });
+
+    it('excludes benefitValue when the current benefitType does not carry a numeric value', () => {
+        const typedFields = buildAllianceLeadTypedFields({
+            kind: 'service_provider',
+            specificValues: {
+                businessName: 'Acme SA',
+                category: 'PLOMERIA',
+                destinationId: 'dest-1',
+                benefitType: 'TWO_FOR_ONE',
+                // Stale value left over from a previous PERCENTAGE selection —
+                // must NOT be sent, or the backend rejects it.
+                benefitValue: '15'
+            }
+        });
+
+        expect(typedFields).not.toHaveProperty('benefitValue');
+    });
+
+    it('returns no typed fields for sponsor/editor', () => {
+        for (const kind of ['sponsor', 'editor'] as const) {
+            const typedFields = buildAllianceLeadTypedFields({
+                kind,
+                specificValues: { businessName: 'Acme SA', partnershipType: 'Agencia' }
+            });
+
+            expect(typedFields).toEqual({});
+        }
+    });
+
+    // ── partner (HOS-278 §6.3/§7, provisioning slice D) ─────────────────────
+
+    it('extracts businessName and partnerType as typed fields for partner, leaving website/partnershipType out', () => {
+        const typedFields = buildAllianceLeadTypedFields({
+            kind: 'partner',
+            specificValues: {
+                businessName: 'Acme SA',
+                partnerType: 'commerce',
+                website: 'https://acme.com',
+                partnershipType: 'Agencia'
+            }
+        });
+
+        expect(typedFields).toEqual({
+            businessName: 'Acme SA',
+            partnerType: 'commerce'
+        });
+        expect(typedFields).not.toHaveProperty('website');
+        expect(typedFields).not.toHaveProperty('partnershipType');
     });
 });

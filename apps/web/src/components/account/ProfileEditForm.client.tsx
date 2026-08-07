@@ -76,6 +76,12 @@ export interface ProfileEditUser {
     readonly province?: string | null;
     readonly country?: string | null;
     readonly postalCode?: string | null;
+    /**
+     * `settings.publicProfileShowSocialNetworks` (HOS-375 §6.7). Flattened out
+     * of the `settings` JSONB by the page, the same way `phone` is flattened
+     * out of `contactInfo`. Absent/null means "never chosen", which is OFF.
+     */
+    readonly publicProfileShowSocialNetworks?: boolean | null;
 }
 
 interface ProfileEditFormProps {
@@ -185,6 +191,11 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
     const [twitterUrl, setTwitterUrl] = useState(initialUser.twitterUrl ?? '');
     const [linkedinUrl, setLinkedinUrl] = useState(initialUser.linkedinUrl ?? '');
     const [youtubeUrl, setYoutubeUrl] = useState(initialUser.youtubeUrl ?? '');
+    // HOS-375 §6.7: opt-in, so it must initialize OFF for anyone who has never
+    // chosen. `=== true` and not `??`, since the stored value can be null.
+    const [publicProfileShowSocialNetworks, setPublicProfileShowSocialNetworks] = useState(
+        initialUser.publicProfileShowSocialNetworks === true
+    );
 
     // ── Form state — location ─────────────────────────────────────────────
 
@@ -241,7 +252,8 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
             city,
             addressLine1,
             postalCode,
-            avatarUrl
+            avatarUrl,
+            publicProfileShowSocialNetworks
         };
     }
 
@@ -504,9 +516,11 @@ export function ProfileEditForm({ initialUser, locale, apiUrl }: ProfileEditForm
                 twitterUrl={twitterUrl}
                 linkedinUrl={linkedinUrl}
                 youtubeUrl={youtubeUrl}
+                showOnPublicProfile={publicProfileShowSocialNetworks}
                 fieldErrors={fieldErrors}
                 submitting={submitting}
                 t={t}
+                onShowOnPublicProfileChange={setPublicProfileShowSocialNetworks}
                 onFacebookChange={bindChange('facebookUrl', setFacebookUrl)}
                 onInstagramChange={bindChange('instagramUrl', setInstagramUrl)}
                 onTwitterChange={bindChange('twitterUrl', setTwitterUrl)}

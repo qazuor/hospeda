@@ -1,0 +1,20 @@
+{
+    "meta": {
+        "title": "{{name}} - Author",
+        "description": "Articles and events published by {{name}} on Hospeda."
+    },
+    "tagline": "Author",
+    "posts": {
+        "heading": "Articles"
+    },
+    "events": {
+        "heading": "Events"
+    },
+    "empty": {
+        "title": "No published content",
+        "description": "This author has no articles or events published yet. Check back soon."
+    },
+    "socialNetworks": {
+        "regionLabel": "{{name}}'s social networks"
+    }
+}

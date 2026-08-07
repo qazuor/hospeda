@@ -36,8 +36,9 @@ export const protectedCreatePostRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        // Convert HTTP input to domain input
-        const domainInput = httpToDomainPostCreate(body as PostCreateHttp);
+        // Convert HTTP input to domain input. Authorship comes from the actor,
+        // never from the body (HOS-374 D-2).
+        const domainInput = httpToDomainPostCreate(body as PostCreateHttp, actor.id);
         const result = await postService.create(actor, domainInput);
 
         if (result.error) {

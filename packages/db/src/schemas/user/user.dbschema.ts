@@ -143,6 +143,30 @@ export const users = pgTable(
          * successfully changes their password.
          */
         mustChangePassword: boolean('must_change_password').notNull().default(false),
+        /**
+         * HOS-375: Marks an account that represents the platform itself
+         * (service/system account) rather than a person — the required-seed
+         * `superadmin@hospeda.com` and `admin@hospeda.com` today. System
+         * accounts are excluded from the public author surface: their author
+         * page still renders, so bylines never 404, but it stays `noindex` and
+         * out of the sitemap.
+         *
+         * This is deliberately a stored column and NOT derived from the user's
+         * role. The role is mutable and this property is not: evaluating it
+         * live would mean promoting a real editor to ADMIN silently
+         * unpublishes their author page and drops an indexed URL from the
+         * sitemap as a side effect of a permissions change. Role is consulted
+         * exactly once, at backfill time, to decide the initial value.
+         *
+         * It is also NOT an authorization check — there is no permission that
+         * means "deserves a public author profile" — so the project's
+         * "use PermissionEnum, never check roles" convention does not apply
+         * here. Do not "fix" this into a permission check.
+         *
+         * Any code path that creates a service account (importer, bot,
+         * integration user) MUST set this to true: the default is `false`.
+         */
+        isSystemAccount: boolean('is_system_account').notNull().default(false),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         createdById: uuid('created_by_id').references((): AnyPgColumn => users.id, {

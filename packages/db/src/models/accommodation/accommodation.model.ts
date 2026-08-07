@@ -442,8 +442,14 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      * on update instead of wholesale-replaced, so a partial PATCH preserves the
      * sibling keys the caller did not send.
      *
-     * - `media` — a partial media patch (e.g. only `gallery`) must not drop
-     *   sibling keys like `featuredImage` (GAP-078-186, GAP-078-198).
+     * `media` used to head this list (GAP-078-186, GAP-078-198) and was removed by
+     * HOS-372 along with the column itself: photos moved to `accommodation_media`
+     * and videos to their own `videos` column. Leaving it declared was a live trap —
+     * `buildMergeSetClause` guards on `key in table`, so a `media` key would slip
+     * past the merge branch into a plain assignment and produce an UPDATE against a
+     * column that no longer exists. `videos` is deliberately NOT added in its place:
+     * it is a whole array, replaced wholesale, with no sibling keys to preserve.
+     *
      * - `price` / `extraInfo` / `contactInfo` / `socialNetworks` / `location`
      *   (SPEC-229) — single-field edits of these grouped columns (e.g. only
      *   `currency`, or only `bedrooms`) were silently lost because the column
@@ -452,7 +458,6 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      *   deep (`location.coordinates` travels as a unit).
      */
     protected override readonly mergeableJsonbColumns = [
-        'media',
         'price',
         'extraInfo',
         'contactInfo',

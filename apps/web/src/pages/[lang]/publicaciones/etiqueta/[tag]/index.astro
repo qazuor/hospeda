@@ -14,7 +14,9 @@
  *  4. Filter posts via GET /api/v1/public/posts?tags={postTagId}.
  *
  * @route /{lang}/publicaciones/etiqueta/{tag}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
+ *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
+ *   per request by the `applyCacheHeaders` call below, not by this comment.
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
@@ -29,6 +31,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { tag: tagSlug } = Astro.params;
@@ -48,6 +53,26 @@ if (!matchedTag) return new Response(null, { status: 404 });
 
 const tagName = matchedTag.name;
 const tagId = matchedTag.id;
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After all three 404 guards, so a missing or unknown tag is never marked
+// shareable.
+//
+// Tagged `list-post` only. Worth knowing: `entity-tag-mapper.ts` DOES handle a
+// `tag` entity, but maps it to `list-accom` on the stated grounds that a tag
+// "has no page of its own" and is only an accommodation filter. This page is a
+// counter-example to that comment — renaming a tag changes the heading here and
+// purges the accommodation listing instead. The list itself is driven by post
+// writes, which `list-post` covers, so the exposure is the heading going stale
+// for at most the 300s TTL. Fixing it means revisiting that mapper case, which
+// is out of scope for a page-side wave.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// `/…/page/N/` rewrites into this route with `?page=N`.
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.post]
+});
 
 // ── Step 2: Fetch posts filtered by PostTag UUID ───────────────────────────────
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);

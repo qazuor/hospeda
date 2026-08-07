@@ -1,0 +1,337 @@
+/**
+ * @file FaqSection.module.css
+ * @description Styles for FaqSection — HOS-393.
+ */
+
+.section {
+    border: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1.5rem);
+}
+
+.sectionTitle {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-2, 0.5rem);
+    padding-bottom: var(--space-2, 0.5rem);
+    border-bottom: 1px solid var(--border);
+    width: 100%;
+}
+
+.emptyState {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+/* Explanatory copy block (G-6) */
+.channelIntro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-3, 1rem);
+    border-radius: var(--radius-md, 10px);
+    background: var(--surface-warm);
+    border: 1px solid var(--border);
+}
+
+.channelIntroTitle {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.channelIntroBody {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.channelIntroNote {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.error {
+    padding: 0.625rem 0.875rem;
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--destructive-a10, oklch(0.96 0.02 25));
+    color: var(--destructive);
+    border: 1px solid var(--destructive-a25, oklch(0.88 0.06 25));
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+/* FAQ ordered list */
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 1rem);
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.item {
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background-color: var(--core-card);
+    padding: var(--space-3, 1rem);
+}
+
+/* Display row: content + actions side by side */
+.displayRow {
+    display: flex;
+    gap: var(--space-3, 1rem);
+    align-items: flex-start;
+}
+
+.itemContent {
+    flex: 1;
+    min-width: 0;
+}
+
+.question {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-foreground);
+    margin: 0 0 var(--space-1, 0.25rem);
+    word-break: break-word;
+}
+
+/* Per-row non-default channel-visibility marker (AC-14) */
+.badgeRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    margin: 0 0 var(--space-1, 0.25rem);
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-pill, 9999px);
+    background: var(--surface-warm);
+    border: 1px solid var(--border);
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.answer {
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm, 0.9375rem);
+    color: var(--core-muted-foreground);
+    margin: 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
+}
+
+.itemActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1, 0.25rem);
+    flex-shrink: 0;
+}
+
+/* Icon-only reorder buttons (up/down) */
+.iconBtn {
+    width: 2rem;
+    height: 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm, 0.25rem);
+    background: var(--core-background);
+    color: var(--core-foreground);
+    cursor: pointer;
+    transition:
+        border-color 150ms ease-out,
+        background-color 150ms ease-out;
+}
+
+.iconBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.iconBtn:hover:not(:disabled) {
+    border-color: var(--brand-primary);
+    background: var(--surface-warm);
+}
+
+/* Icon + text buttons (edit/delete) */
+.editBtn,
+.deleteBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: var(--radius-sm, 0.25rem);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    cursor: pointer;
+    transition:
+        border-color 150ms ease-out,
+        background-color 150ms ease-out;
+}
+
+.editBtn {
+    border: 1px solid var(--border);
+    background: var(--core-background);
+    color: var(--core-foreground);
+}
+
+.editBtn:hover:not(:disabled) {
+    border-color: var(--brand-primary);
+    background: var(--surface-warm);
+}
+
+.deleteBtn {
+    border: 1px solid var(--destructive-a25, oklch(0.88 0.06 25));
+    background: transparent;
+    color: var(--destructive);
+}
+
+.deleteBtn:hover:not(:disabled) {
+    background: var(--destructive-a10, oklch(0.96 0.02 25));
+}
+
+.editBtn:disabled,
+.deleteBtn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* Edit / Add form */
+.editForm,
+.addForm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.fieldLabel {
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}
+
+.textarea {
+    width: 100%;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: var(--core-background);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    resize: vertical;
+    box-sizing: border-box;
+}
+
+.textarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}
+
+/* Channel-visibility checkboxes (HOS-393) */
+.channelCheckboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 1rem);
+}
+
+.checkboxLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    cursor: pointer;
+}
+
+.editActions {
+    display: flex;
+    gap: var(--space-3, 1rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+.saveBtn {
+    padding: var(--space-2) var(--space-4);
+    border: none;
+    border-radius: var(--radius-md, 10px);
+    background: var(--brand-primary);
+    color: var(--primary-foreground, #fff);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.saveBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.cancelBtn {
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: transparent;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.cancelBtn:hover {
+    background: var(--surface-warm);
+}
+
+/* Add button */
+.addBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    align-self: flex-start;
+    padding: var(--space-2) var(--space-4);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md, 10px);
+    background: transparent;
+    color: var(--brand-primary);
+    font-family: var(--font-sans);
+    font-weight: 500;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.addBtn:hover {
+    background: var(--surface-warm);
+}

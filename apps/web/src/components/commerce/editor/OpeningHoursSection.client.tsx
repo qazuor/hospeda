@@ -11,13 +11,26 @@
 
 import type { OpeningHours } from '@repo/schemas';
 import type { JSX } from 'react';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { FieldError } from '@/components/ui/FieldError';
+import { buildFieldErrorId } from '@/components/ui/TextField';
+import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import fieldStyles from './editor-fields.module.css';
+import { COMMERCE_FIELD_PREFIX } from './field-ids';
 import styles from './OpeningHoursSection.module.css';
 
 const DEFAULT_TZ = 'America/Argentina/Buenos_Aires';
+
+/**
+ * Identity of the aggregate `openingHours` field (HOS-385).
+ *
+ * Derivation only, not `<TextField>`: this is 7 days × N shifts under ONE Zod
+ * key, so there is no single labelled control for the wrapper to own. The
+ * derived id lands on the first day's "closed" checkbox — see the note at that
+ * element for why the group's first control is the right focus target.
+ */
+const OPENING_HOURS_FIELD = { prefix: COMMERCE_FIELD_PREFIX, name: 'openingHours' } as const;
 
 const DAYS = [
     { key: 'mon', label: 'Lun' },
@@ -75,7 +88,7 @@ export function OpeningHoursSection({
                 {t('commerce.owner.editor.sections.openingHours', 'Horarios de atención')}
             </span>
             <div className={styles.days}>
-                {DAYS.map(({ key, label }) => {
+                {DAYS.map(({ key, label }, dayIndex) => {
                     const schedule = dayOf(value, key);
                     return (
                         <div
@@ -86,6 +99,17 @@ export function OpeningHoursSection({
 
                             <label className={fieldStyles.checkbox}>
                                 <input
+                                    // HOS-373 OQ-3: `openingHours` carries ONE
+                                    // aggregate error over 7 days × N shifts, so
+                                    // focus targets the group's first control.
+                                    // Not necessarily the failing day — but it
+                                    // lands the user in the right section, which
+                                    // beats a toast and no hint at all.
+                                    id={
+                                        dayIndex === 0
+                                            ? buildFieldId(OPENING_HOURS_FIELD)
+                                            : undefined
+                                    }
                                     type="checkbox"
                                     checked={schedule.closed}
                                     aria-label={`${label} cerrado`}
@@ -183,7 +207,7 @@ export function OpeningHoursSection({
                 })}
             </div>
             <FieldError
-                id={fieldErrorId('openingHours')}
+                id={buildFieldErrorId(OPENING_HOURS_FIELD)}
                 message={error}
             />
         </section>

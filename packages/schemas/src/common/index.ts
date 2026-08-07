@@ -22,13 +22,20 @@ export {
 export * from './commerce-completeness.js';
 // Commerce common schemas (SPEC-239)
 export * from './commerce-identity.schema.js';
+// Shared relational media row base (HOS-372) — gastronomy/experience media extend this
+export * from './commerce-media.schema.js';
 export * from './commerce-owner-listing.schema.js';
 export * from './commerce-rating.schema.js';
 export * from './contact.schema.js';
+export * from './content-media.schema.js';
+// Dedicated content state-transition bodies (HOS-374 §7.6.4)
+export * from './content-state.schema.js';
 // Relation-selector lookup options (SPEC-169 §5.5)
 export * from './entity-options.schema.js';
 export * from './faq.schema.js';
 export * from './helpers.schema.js';
+// Structured service-provider benefit, shared by alliance leads and host trades
+export * from './host-trade-benefit.schema.js';
 // Shared i18n text schema (I18nTextSchema, i18nText factory, I18nText type)
 export * from './i18n.schema.js';
 export * from './ia.schema.js';

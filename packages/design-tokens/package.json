@@ -19,6 +19,7 @@
             }
         },
         "./tokens.css": "./dist/tokens.css",
+        "./tokens.web.css": "./dist/tokens.web.css",
         "./seed/web-baseline.json": "./seed/web-baseline.json"
     },
     "files": [

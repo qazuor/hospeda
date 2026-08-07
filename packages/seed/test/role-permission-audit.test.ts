@@ -32,14 +32,11 @@ const isBroadGrant = (permissionValue: PermissionEnum): boolean => {
  * Anything broad outside this list fails the audit.
  */
 const ALLOWED_BROAD_GRANTS: Partial<Record<RoleEnum, readonly PermissionEnum[]>> = {
-    // LEGITIMATE (SPEC-169 §3, owner-confirmed): the editorial role sees all editorial content
-    // (posts + events, incl. private) by design. SUPER_ADMIN can narrow per-user via overrides.
-    [RoleEnum.EDITOR]: [
-        PermissionEnum.POST_VIEW_ALL,
-        PermissionEnum.POST_VIEW_PRIVATE,
-        PermissionEnum.EVENT_VIEW_ALL,
-        PermissionEnum.EVENT_VIEW_PRIVATE
-    ],
+    // HOS-374 §7.6.2 / OQ-2 (owner-confirmed) REVERSES the SPEC-169 §3 verdict this
+    // allow-list used to encode: EDITOR is now scoped to its own content, in both
+    // view and edit. It holds no broad grant at all — POST_VIEW_OWN / EVENT_VIEW_OWN
+    // replaced POST_VIEW_ALL / POST_VIEW_PRIVATE / EVENT_VIEW_ALL / EVENT_VIEW_PRIVATE.
+    // Deliberately no key here (an empty allow-list, same as HOST above).
     // KNOWN DEBT (SPEC-169 §11 / §8 Q2): CLIENT_MANAGER is unused and deferred to a future spec —
     // these grants are NOT endorsed, they are tracked debt, listed so the audit passes until the
     // role is activated and tightened. Removing CLIENT_MANAGER from this list is the trigger to fix it.
@@ -79,9 +76,16 @@ describe('SPEC-169 AC-6 — role permission audit (broad grants)', () => {
         });
     }
 
-    it('EDITOR keeps exactly its documented editorial broad grants', () => {
+    it('EDITOR holds NO broad view grant — HOS-374 reverses the SPEC-169 editorial exception', () => {
         const editorBroad = (ROLE_PERMISSIONS[RoleEnum.EDITOR] ?? []).filter(isBroadGrant);
-        expect([...editorBroad].sort()).toEqual([...ALLOWED_BROAD_GRANTS[RoleEnum.EDITOR]!].sort());
+        expect(editorBroad).toEqual([]);
+        expect(ROLE_PERMISSIONS[RoleEnum.EDITOR]).not.toContain(PermissionEnum.POST_VIEW_ALL);
+        expect(ROLE_PERMISSIONS[RoleEnum.EDITOR]).not.toContain(PermissionEnum.EVENT_VIEW_ALL);
+    });
+
+    it('EDITOR holds POST_VIEW_OWN / EVENT_VIEW_OWN (the author-scoped replacement)', () => {
+        expect(ROLE_PERMISSIONS[RoleEnum.EDITOR]).toContain(PermissionEnum.POST_VIEW_OWN);
+        expect(ROLE_PERMISSIONS[RoleEnum.EDITOR]).toContain(PermissionEnum.EVENT_VIEW_OWN);
     });
 });
 

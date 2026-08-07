@@ -3,7 +3,12 @@
  * Generates a QZPay payment link for a partner
  */
 import { PartnerSubscriptionStatusEnum, PermissionEnum } from '@repo/schemas';
-import { PartnerService } from '@repo/service-core';
+import {
+    isPartnerContentApprovedForPayment,
+    PARTNER_CONTENT_NOT_APPROVED_MESSAGE,
+    PartnerService
+} from '@repo/service-core';
+import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -49,6 +54,97 @@ function mapCheckoutErrorToHttp(error: SubscriptionCheckoutError): HTTPException
 }
 
 /**
+ * Handler, exported separately so the AC-11 gate below can be exercised
+ * without standing up the whole admin route (same pattern as `list-plans.ts`).
+ */
+export const sendPartnerPaymentLinkHandler = async (
+    ctx: Context,
+    params: Record<string, unknown>
+) => {
+    const partnerService = new PartnerService({ logger: apiLogger });
+    const actor = getActorFromContext(ctx);
+    const id = params.id as string;
+
+    const billing = getQZPayBilling();
+    if (!billing) {
+        throw new HTTPException(503, { message: 'Billing service is not available' });
+    }
+
+    const partnerResult = await partnerService.getById(actor, id);
+    if (partnerResult.error || !partnerResult.data) {
+        throw new HTTPException(404, { message: 'Partner not found' });
+    }
+
+    const partner = partnerResult.data;
+
+    // AC-11 — the payment step opens only once an admin has accepted this
+    // partner's content. Checked BEFORE the plan check and before any
+    // MercadoPago customer is created: a partner who is not allowed to pay
+    // yet must not leave a customer record behind on the provider side.
+    if (!isPartnerContentApprovedForPayment(partner)) {
+        throw new HTTPException(422, { message: PARTNER_CONTENT_NOT_APPROVED_MESSAGE });
+    }
+
+    if (!partner.planId) {
+        throw new HTTPException(422, {
+            message:
+                'Partner has no billing plan assigned. Set a partner plan before generating a payment link.'
+        });
+    }
+
+    const customerExternalId = buildPartnerCustomerExternalId(partner.id);
+    let customer = await billing.customers.getByExternalId(customerExternalId);
+
+    if (!customer) {
+        customer = await billing.customers.create({
+            externalId: customerExternalId,
+            email: buildPartnerCustomerEmail(partner.id),
+            name: partner.name,
+            metadata: {
+                source: 'partner-admin',
+                createdBy: 'partner-send-link-route',
+                partnerId: partner.id
+            }
+        });
+    }
+
+    try {
+        const result = await initiatePartnerMonthlySubscription({
+            customerId: customer.id,
+            planId: partner.planId,
+            partnerId: partner.id,
+            billing,
+            urls: {
+                paymentMethodReturnUrl: buildPaymentMethodReturnUrl(),
+                notificationUrl: buildNotificationUrl()
+            }
+        });
+
+        const updateResult = await partnerService.update(actor, id, {
+            subscriptionId: result.localSubscriptionId,
+            subscriptionStatus: PartnerSubscriptionStatusEnum.PENDING
+        });
+
+        if (updateResult.error) {
+            apiLogger.warn(
+                { partnerId: id, error: updateResult.error.message },
+                'Partner checkout started but the local partner row could not be updated to pending'
+            );
+        }
+
+        return {
+            paymentUrl: result.checkoutUrl,
+            planId: partner.planId
+        };
+    } catch (error) {
+        if (error instanceof SubscriptionCheckoutError) {
+            throw mapCheckoutErrorToHttp(error);
+        }
+        throw error;
+    }
+};
+
+/**
  * POST /api/v1/admin/partners/{id}/send-link
  * Send payment link - Admin endpoint
  * Requires PARTNER_MANAGE permission
@@ -65,78 +161,5 @@ export const adminSendPaymentLinkRoute = createAdminRoute({
         paymentUrl: z.string().url(),
         planId: z.string().uuid()
     }),
-    handler: async (ctx, params) => {
-        const partnerService = new PartnerService({ logger: apiLogger });
-        const actor = getActorFromContext(ctx);
-        const id = params.id as string;
-
-        const billing = getQZPayBilling();
-        if (!billing) {
-            throw new HTTPException(503, { message: 'Billing service is not available' });
-        }
-
-        const partnerResult = await partnerService.getById(actor, id);
-        if (partnerResult.error || !partnerResult.data) {
-            throw new HTTPException(404, { message: 'Partner not found' });
-        }
-
-        const partner = partnerResult.data;
-        if (!partner.planId) {
-            throw new HTTPException(422, {
-                message:
-                    'Partner has no billing plan assigned. Set a partner plan before generating a payment link.'
-            });
-        }
-
-        const customerExternalId = buildPartnerCustomerExternalId(partner.id);
-        let customer = await billing.customers.getByExternalId(customerExternalId);
-
-        if (!customer) {
-            customer = await billing.customers.create({
-                externalId: customerExternalId,
-                email: buildPartnerCustomerEmail(partner.id),
-                name: partner.name,
-                metadata: {
-                    source: 'partner-admin',
-                    createdBy: 'partner-send-link-route',
-                    partnerId: partner.id
-                }
-            });
-        }
-
-        try {
-            const result = await initiatePartnerMonthlySubscription({
-                customerId: customer.id,
-                planId: partner.planId,
-                partnerId: partner.id,
-                billing,
-                urls: {
-                    paymentMethodReturnUrl: buildPaymentMethodReturnUrl(),
-                    notificationUrl: buildNotificationUrl()
-                }
-            });
-
-            const updateResult = await partnerService.update(actor, id, {
-                subscriptionId: result.localSubscriptionId,
-                subscriptionStatus: PartnerSubscriptionStatusEnum.PENDING
-            });
-
-            if (updateResult.error) {
-                apiLogger.warn(
-                    { partnerId: id, error: updateResult.error.message },
-                    'Partner checkout started but the local partner row could not be updated to pending'
-                );
-            }
-
-            return {
-                paymentUrl: result.checkoutUrl,
-                planId: partner.planId
-            };
-        } catch (error) {
-            if (error instanceof SubscriptionCheckoutError) {
-                throw mapCheckoutErrorToHttp(error);
-            }
-            throw error;
-        }
-    }
+    handler: sendPartnerPaymentLinkHandler
 });

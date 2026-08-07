@@ -171,20 +171,67 @@ const HttpImageSchema = z.object({
  * Matches the domain `BaseMediaObjectSchema` structurally but accepts images
  * without `moderationState` — the converter supplies `APPROVED` by default.
  */
+/** Embedded video shape accepted from web clients. */
+const HttpVideoSchema = z.object({
+    url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
+    caption: z.string().optional(),
+    description: z.string().optional(),
+    moderationState: z.string().optional()
+});
+
 const HttpMediaSchema = z
     .object({
         featuredImage: HttpImageSchema.optional().nullable(),
         gallery: z.array(HttpImageSchema).optional(),
-        videos: z
-            .array(
-                z.object({
-                    url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
-                    caption: z.string().optional(),
-                    description: z.string().optional(),
-                    moderationState: z.string().optional()
-                })
-            )
-            .optional()
+        videos: z.array(HttpVideoSchema).optional()
+    })
+    .nullable();
+
+/** Media keys that carry photos, all managed relationally since HOS-372. */
+const UPDATE_REJECTED_PHOTO_KEYS = ['featuredImage', 'gallery'] as const;
+
+/**
+ * Media shape accepted on UPDATE / PATCH — videos only (HOS-372).
+ *
+ * Photos live in the relational `accommodation_media` table and are managed
+ * exclusively through the granular media endpoints
+ * (`POST|DELETE|PATCH /accommodations/{id}/media/...`). The bulk update path
+ * never wrote them: `AccommodationService.update` strips `featuredImage`,
+ * `gallery` and `archivedGallery` from the payload before touching the DB.
+ *
+ * Until now that strip was SILENT — a client could send a full gallery, receive
+ * HTTP 200, and have every photo discarded before the write. The response
+ * claimed success for work that never happened. Rejecting at the edge turns
+ * that lie into an explicit, actionable error.
+ *
+ * `.strict()` covers the rest of the shape, including `archivedGallery`, which
+ * the service also strips but this HTTP schema never declared.
+ *
+ * The photo keys stay DECLARED with their real types and are rejected by a
+ * whole-object `superRefine` rather than per-field. Rejecting per-field would
+ * narrow each key's inferred type to `undefined`, which reads as a nicer
+ * compile-time signal but rewrites the exported `AccommodationUpdateHttp` type
+ * and breaks every consumer that still names those fields — including the pure
+ * `httpToDomainAccommodationUpdate` converter's own tests. The runtime rejection
+ * is what an HTTP boundary actually needs; its clients are not TypeScript.
+ */
+const HttpMediaUpdateSchema = z
+    .object({
+        featuredImage: HttpImageSchema.optional().nullable(),
+        gallery: z.array(HttpImageSchema).optional(),
+        videos: z.array(HttpVideoSchema).optional()
+    })
+    .strict()
+    .superRefine((value, ctx) => {
+        for (const key of UPDATE_REJECTED_PHOTO_KEYS) {
+            if (value[key] !== undefined) {
+                ctx.addIssue({
+                    code: z.ZodIssueCode.custom,
+                    path: [key],
+                    message: 'zodError.accommodation.media.photosNotUpdatable'
+                });
+            }
+        }
     })
     .nullable();
 
@@ -423,6 +470,17 @@ export const AccommodationUpdateHttpSchema = z
     .partial()
     .omit({
         ownerId: true // Owner cannot be changed after creation
+    })
+    .extend({
+        /**
+         * Videos only (HOS-372). Photo fields are rejected here instead of being
+         * silently discarded by the service — see `HttpMediaUpdateSchema`.
+         *
+         * CREATE deliberately keeps the full `HttpMediaSchema`: `_afterCreate`
+         * shadow-writes that payload into `accommodation_media`, so photos on
+         * create do reach the table and are NOT discarded.
+         */
+        media: HttpMediaUpdateSchema.optional()
     });
 
 export type AccommodationUpdateHttp = z.infer<typeof AccommodationUpdateHttpSchema>;
@@ -566,6 +624,33 @@ type NormalisedMediaObject = {
         description?: string;
     }[];
 };
+
+/**
+ * Maps the HTTP `media` field of an UPDATE payload onto the domain's top-level
+ * `videos` field (HOS-372).
+ *
+ * The HTTP boundary still accepts `media` so existing clients keep working — and
+ * so `HttpMediaUpdateSchema` can keep REJECTING photo keys explicitly rather than
+ * discarding them silently. The domain update surface, however, no longer has a
+ * `media` field at all: the JSONB column is gone, photos live in
+ * `accommodation_media`, and videos live in their own `videos` column.
+ *
+ * The three cases are deliberately distinct:
+ *  - `media` absent          → `{}`, the column is not touched (PATCH semantics).
+ *  - `media: null`           → `{ videos: null }`, an explicit clear.
+ *  - `media` without `videos` → `{}`. A payload that only carried photo keys has
+ *    nothing to say about videos, and emitting `videos: []` here would wipe them.
+ */
+function httpMediaToDomainVideos(httpMedia: HttpMedia | undefined): {
+    videos?: AccommodationUpdateInput['videos'];
+} {
+    if (httpMedia === undefined) return {};
+    if (httpMedia === null) return { videos: null };
+    if (httpMedia.videos === undefined) return {};
+    return {
+        videos: normaliseHttpMedia(httpMedia)?.videos as AccommodationUpdateInput['videos']
+    };
+}
 
 /**
  * Normalise an HTTP media payload to the domain shape.
@@ -735,7 +820,14 @@ export const httpToDomainAccommodationCreate = (
         ? {}
         : {
               media: normaliseHttpMedia(httpData.media) as AccommodationCreateInput['media']
-          })
+          }),
+
+    // HOS-372: `media` above survives on CREATE because `_afterCreate` fans its
+    // PHOTOS out into `accommodation_media`. That shadow-write ignores videos, and
+    // the `media` key itself is dropped on the way to the INSERT (verified against
+    // the DB: no error, the key just vanishes), so videos sent inside the blob
+    // would be lost without this second emission onto the real column.
+    ...httpMediaToDomainVideos(httpData.media)
 });
 
 /**
@@ -967,13 +1059,9 @@ export const httpToDomainAccommodationUpdate = (
     ...(httpData.amenityIds === undefined ? {} : { amenityIds: httpData.amenityIds }),
     ...(httpData.featureIds === undefined ? {} : { featureIds: httpData.featureIds }),
 
-    // Media (SPEC-208 additive): normalise images to domain shape with APPROVED default.
-    // Cast is safe: see create converter comment above for the null-as-clear rationale.
-    ...(httpData.media === undefined
-        ? {}
-        : {
-              media: normaliseHttpMedia(httpData.media ?? null) as AccommodationUpdateInput['media']
-          })
+    // Media (HOS-372): the domain update surface has no `media` field — the HTTP
+    // `media` object carries videos only, and they land on the top-level column.
+    ...httpMediaToDomainVideos(httpData.media)
 });
 
 // ============================================================================

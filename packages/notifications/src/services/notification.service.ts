@@ -13,9 +13,14 @@ import {
     AdminPaymentFailure,
     AdminSystemEvent,
     AiCostThresholdAlert,
+    AllianceClaimInvite,
+    AllianceLeadDecision,
     CommerceOwnerCredentials,
     ContactSubmissionEmail,
     FeedbackReportEmail,
+    HostTradeRevoked,
+    PartnerRevoked,
+    PartnerUnpaidNotice,
     PaymentFailure,
     PaymentRetryWarning,
     PaymentSuccess,
@@ -41,10 +46,15 @@ import type {
     AddonEventPayload,
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
+    AllianceClaimInvitePayload,
+    AllianceLeadDecisionPayload,
     CommerceOwnerCredentialsPayload,
     ContactSubmissionPayload,
     FeedbackReportPayload,
+    HostTradeRevokedPayload,
     NotificationPayload,
+    PartnerRevokedPayload,
+    PartnerUnpaidNoticePayload,
     PaymentNotificationPayload,
     PaymentRetryWarningPayload,
     PlanBeingRetiredPayload,
@@ -583,6 +593,52 @@ export class NotificationService {
                     recipientName,
                     temporaryPassword: p.temporaryPassword,
                     changePasswordUrl: p.changePasswordUrl
+                });
+            }
+
+            case 'alliance_claim_invite': {
+                const p = payload as AllianceClaimInvitePayload;
+                return AllianceClaimInvite({
+                    recipientName,
+                    programLabel: p.programLabel,
+                    claimUrl: p.claimUrl,
+                    expiresAtLabel: formatDate({ dateString: p.expiresAt })
+                });
+            }
+
+            case 'alliance_lead_decision': {
+                const p = payload as AllianceLeadDecisionPayload;
+                return AllianceLeadDecision({
+                    recipientName,
+                    programLabel: p.programLabel,
+                    outcome: p.outcome
+                });
+            }
+
+            case 'host_trade_revoked': {
+                const p = payload as HostTradeRevokedPayload;
+                return HostTradeRevoked({
+                    recipientName,
+                    listingName: p.listingName,
+                    reason: p.reason
+                });
+            }
+
+            case 'partner_revoked': {
+                const p = payload as PartnerRevokedPayload;
+                return PartnerRevoked({
+                    recipientName,
+                    partnerName: p.partnerName,
+                    reason: p.reason
+                });
+            }
+
+            case 'partner_unpaid_notice': {
+                const p = payload as PartnerUnpaidNoticePayload;
+                return PartnerUnpaidNotice({
+                    recipientName,
+                    partnerName: p.partnerName,
+                    daysUntilArchive: p.daysUntilArchive
                 });
             }
 

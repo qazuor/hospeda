@@ -47,6 +47,7 @@ import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import I18nClientData from '@/components/shared/I18nClientData.astro';
+import IconSpriteClientData from '@/components/shared/IconSpriteClientData.astro';
 import '@/styles/global.css';
 
 interface Props {
@@ -61,6 +62,16 @@ const { locale } = Astro.props;
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<!-- HOS-369 Wave D: client translation dictionary (hashed immutable
+		     asset). Must be in <head> so its deferred execution precedes the
+		     island hydration modules — see I18nClientData.astro. -->
+		<I18nClientData locale={locale} />
+
+		<!-- HOS-369 W3-6: the icon sprite's URL, for islands that render icons
+		     after hydration. Inline and classic, so it executes during parse —
+		     see IconSpriteClientData.astro. -->
+		<IconSpriteClientData />
 
 		<!-- Browser UI chrome matches the brand blue, same as BaseLayout — the
 		     dark variant keeps the chrome on-brand under prefers-color-scheme:
@@ -102,7 +113,6 @@ const { locale } = Astro.props;
 		</noscript>
 	</head>
 	<body>
-		<I18nClientData locale={locale} />
 		<main id="main-content">
 			<slot />
 		</main>

@@ -19,7 +19,9 @@
  * handles that case explicitly.
  *
  * @route /{lang}/destinos/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
+ *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
+ *   per request by the `applyCacheHeaders` call below, not by this comment.
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
@@ -37,6 +39,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { CloseIcon } from '@repo/icons';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 
 /**
  * How many attraction chips render in the first row before the "Ver más"
@@ -47,6 +52,29 @@ const VISIBLE_ATTRACTION_LIMIT = 12;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+// --- Edge cacheability (HOS-369 W2-3, corrected) ---
+// The `?attractions=` filter's TOGGLE is client-side, but the frontmatter DOES
+// read the param (`url.searchParams.get('attractions')`, further down) to seed
+// the active badge state and the filtered card set. So the SSR HTML is NOT
+// byte-identical with and without a query string — an earlier version of this
+// comment claimed it was, and gated on `cacheable: true` accordingly.
+//
+// Nothing was served wrong: the Cloudflare rule requires an empty query, so a
+// filtered URL never reached the cache. But the origin was marking a filtered
+// render shareable, and the rule is explicitly not the only thing that may ever
+// cache these responses.
+//
+// Tagged with the collection, not with any one destination: this IS a listing,
+// so every destination write must evict it. `entity-tag-mapper.ts` already
+// emits `list-dest` on destination writes; until this call existed those
+// purges evicted nothing.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.destination]
+});
 
 const url = Astro.url;
 
@@ -377,18 +405,6 @@ const itemListEntries = sortedCards.map((card) => ({
 	 * cell — otherwise the grid would leave holes between visible cards. */
 	.dest-card-wrap--hidden {
 		display: none;
-	}
-
-	/* During chip-toggle View Transitions, fold the per-image transition
-	 * names (Astro emits them for list ↔ detail page morphs) back into the
-	 * root snapshot. Otherwise the named images snapshot independently and
-	 * escape their parent's rounded `overflow: hidden` mask while the
-	 * crossfade runs, briefly looking like the photo pops out of the card.
-	 * Astro applies the name via inline style, so we need `!important` to
-	 * win the cascade. Scoped to `:global` so it pierces Astro's scoped
-	 * styling and reaches the cards rendered by DestinationCard.astro. */
-	:global(html.is-attractions-transition .dest-card__img) {
-		view-transition-name: none !important;
 	}
 
 	/* Attraction filter block.
@@ -766,14 +782,14 @@ const itemListEntries = sortedCards.map((card) => ({
 			// reflow. This is the same animation `<ClientRouter />` gave us
 			// for free when chip clicks still triggered a full navigation.
 			//
-			// `is-attractions-transition` on <html> suppresses the per-card
-			// `view-transition-name` Astro emits for list ↔ detail morphs
-			// (see DestinationCard.astro). Without that suppression the
-			// named images get their own snapshot and escape the parent's
-			// rounded `overflow: hidden` mask while crossfading — they
-			// briefly render with no clip, looking like the image "pops
-			// out" of the card. Stripping the names for the duration of
-			// our transition folds them back into the root snapshot.
+			// This used to also toggle `is-attractions-transition` on <html>
+			// to suppress the per-card `view-transition-name` DestinationCard
+			// emitted: those named images took their own snapshot and escaped
+			// the parent's rounded `overflow: hidden` mask mid-crossfade,
+			// looking like the photo popped out of the card. HOS-369 removed
+			// the names themselves (no detail page ever declared the matching
+			// name, so the list ↔ detail morph they existed for could not
+			// happen), which removes the cause and with it the workaround.
 			//
 			// Browsers without VT (Firefox < 129 at time of writing) get
 			// the unanimated reconcile, which still works fine.
@@ -782,12 +798,7 @@ const itemListEntries = sortedCards.map((card) => ({
 					update();
 					return;
 				}
-				var root = document.documentElement;
-				root.classList.add('is-attractions-transition');
-				var transition = document.startViewTransition(update);
-				transition.finished.finally(function () {
-					root.classList.remove('is-attractions-transition');
-				});
+				document.startViewTransition(update);
 			}
 
 			function onClick(e) {

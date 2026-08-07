@@ -10,6 +10,8 @@ import { adminHardDeleteHostTradeRoute } from './hardDelete';
 import { adminListHostTradesRoute } from './list';
 import { adminPatchHostTradeRoute } from './patch';
 import { adminRestoreHostTradeRoute } from './restore';
+import { adminReviewHostTradeBenefitRoute } from './review-benefit';
+import { adminRevokeHostTradeRoute } from './revoke';
 import { adminUpdateHostTradeRoute } from './update';
 
 const adminRouter = createRouter();
@@ -25,6 +27,12 @@ adminRouter.route('/', adminCreateHostTradeRoute);
 
 // POST /:id/restore - Restore host-trade entry
 adminRouter.route('/', adminRestoreHostTradeRoute);
+
+// POST /:id/revoke - Take the listing off the directory, keeping the row (R-4)
+adminRouter.route('/', adminRevokeHostTradeRoute);
+
+// POST /:id/review-benefit - Resolve a provider's pending benefit edit (AC-8)
+adminRouter.route('/', adminReviewHostTradeBenefitRoute);
 
 // PUT /:id - Update host-trade entry
 adminRouter.route('/', adminUpdateHostTradeRoute);

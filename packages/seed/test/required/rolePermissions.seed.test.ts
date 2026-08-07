@@ -456,6 +456,7 @@ describe('ROLE_PERMISSIONS — Admin-tier commerce permissions (SPEC-239)', () =
 
 // ---------------------------------------------------------------------------
 // HOS-152 — HOST/COMMERCE_OWNER must NOT hold ACCESS_PANEL_ADMIN
+// HOS-374 D-1 — EDITOR/CLIENT_MANAGER must NOT hold ACCESS_PANEL_ADMIN either
 // ---------------------------------------------------------------------------
 // Regression test: HOST and COMMERCE_OWNER were incorrectly granted
 // ACCESS_PANEL_ADMIN, which (combined with a web-side redirect bug) let
@@ -463,14 +464,15 @@ describe('ROLE_PERMISSIONS — Admin-tier commerce permissions (SPEC-239)', () =
 // their first accommodation. Neither role should ever reach the admin panel —
 // they self-manage entirely in the web app (/mi-cuenta). Only the staff
 // roles below may hold this permission.
+//
+// HOS-374 D-1 narrowed the staff allow-list further: EDITOR now authors from
+// `/mi-cuenta` (§5.2) and CLIENT_MANAGER's panel access was never activated
+// (NG-3) — both are removed from ACCESS_PANEL_ADMIN, leaving SUPER_ADMIN and
+// ADMIN as the only roles that reach the admin panel.
 
 const ACCESS_PANEL_ADMIN = 'access.panelAdmin' as const;
-const STAFF_ROLES_WITH_ADMIN_PANEL_ACCESS = [
-    'SUPER_ADMIN',
-    'ADMIN',
-    'EDITOR',
-    'CLIENT_MANAGER'
-] as const;
+const ACCESS_API_ADMIN = 'access.apiAdmin' as const;
+const STAFF_ROLES_WITH_ADMIN_PANEL_ACCESS = ['SUPER_ADMIN', 'ADMIN'] as const;
 
 /** All RoleEnum values, kept as literals to avoid importing @repo/schemas enums. */
 const ALL_ROLES = [
@@ -486,7 +488,7 @@ const ALL_ROLES = [
     'SYSTEM'
 ] as const;
 
-describe('ROLE_PERMISSIONS — ACCESS_PANEL_ADMIN restricted to staff roles (HOS-152)', () => {
+describe('ROLE_PERMISSIONS — ACCESS_PANEL_ADMIN restricted to staff roles (HOS-152, HOS-374 D-1)', () => {
     type RoleKey = keyof typeof ROLE_PERMISSIONS;
     const get = (role: string): readonly string[] =>
         ROLE_PERMISSIONS[role as unknown as RoleKey] as readonly string[];
@@ -512,6 +514,28 @@ describe('ROLE_PERMISSIONS — ACCESS_PANEL_ADMIN restricted to staff roles (HOS
             } else {
                 it(`does NOT grant ACCESS_PANEL_ADMIN to ${role} (non-staff)`, () => {
                     expect(get(role)).not.toContain(ACCESS_PANEL_ADMIN);
+                });
+            }
+        }
+    });
+
+    // HOS-374 §2.5 / D-1: the API admin tier accepts EITHER ACCESS_PANEL_ADMIN OR
+    // ACCESS_API_ADMIN (apps/api/src/middlewares/authorization.ts). A guard that
+    // only covered the panel permission would leave the admin API reachable by a
+    // role that lost the panel but kept this one — so it gets the same audit.
+    describe('audit: only staff roles may hold ACCESS_API_ADMIN', () => {
+        for (const role of ALL_ROLES) {
+            const isStaff = (STAFF_ROLES_WITH_ADMIN_PANEL_ACCESS as readonly string[]).includes(
+                role
+            );
+
+            if (isStaff) {
+                it(`grants ACCESS_API_ADMIN to ${role} (staff)`, () => {
+                    expect(get(role)).toContain(ACCESS_API_ADMIN);
+                });
+            } else {
+                it(`does NOT grant ACCESS_API_ADMIN to ${role} (non-staff)`, () => {
+                    expect(get(role)).not.toContain(ACCESS_API_ADMIN);
                 });
             }
         }

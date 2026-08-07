@@ -5,6 +5,7 @@
 export * from './addon/index.js';
 export * from './admin/index.js';
 export * from './alerts/index.js';
+export * from './alliance/index.js';
 export * from './billing/index.js';
 export * from './calendar-sync/index.js';
 export * from './commerce/index.js';

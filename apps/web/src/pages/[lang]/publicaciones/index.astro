@@ -16,7 +16,9 @@
  * - publishedAfter   — ISO yyyy-mm-dd lower bound on `publishedAt`
  * - publishedBefore  — ISO yyyy-mm-dd upper bound on `publishedAt`
  *
- * Rendering strategy: SSR + ISR 24h.
+ * Rendering strategy: SSR + Cloudflare edge cache — `public, s-maxage=300,
+ * stale-while-revalidate=600`, purged by cache tag. Eligibility is decided per
+ * request by the `applyCacheHeaders` call below, not by this comment.
  * Pagination is URL-based (server-side), so there is NO client-side loading
  * state. Skeleton cards are shown only in the `hasError` branch as a visual
  * placeholder alongside the ErrorBanner — never as a JS loading indicator.
@@ -59,6 +61,8 @@ import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
 import { XCircleIcon } from '@repo/icons';
 import { PostCategoryEnum } from '@repo/schemas';
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
@@ -261,6 +265,27 @@ const canonicalBaseUrl =
 // keep each paginated page self-canonical and indexable (not canonicalized to
 // page 1).
 const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// Same two-part gate as the accommodation and event listings, reusing the
+// predicates this page already computes for SEO rather than inventing a
+// parallel notion of "filtered".
+//
+// Note it is `hasOtherPostFilters`, NOT the `hasActiveFilters` defined above:
+// that one also counts `page > 1` and a non-default sort, because it drives the
+// empty-state copy. Using it here would mark every paginated and every sorted
+// page private — a large, silent loss of cache coverage that no test or page
+// would visibly fail on. Pagination and sort are bounded, high-repeat variants
+// over the same result set and belong in the cache.
+//
+// Tagged with the collection: this IS a listing, so every post write must evict
+// it. `entity-tag-mapper.ts` already emits `list-post`.
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: !facetSeoDecision.noindex && !hasOtherPostFilters,
+    tags: [CACHE_TAG_COLLECTIONS.post]
+});
 
 /**
  * Build the `filterGroups` config for FilterSidebar.

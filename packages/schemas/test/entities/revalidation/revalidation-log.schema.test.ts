@@ -13,7 +13,7 @@ import {
 
 const createValidLog = () => ({
     id: '12345678-1234-4234-8234-123456789012',
-    path: '/en/accommodations/hotel-palace',
+    target: '/en/accommodations/hotel-palace',
     entityType: 'accommodation',
     entityId: '98765432-9876-4876-8876-987654321098',
     trigger: 'manual' as const,
@@ -93,7 +93,7 @@ describe('RevalidationLogSchema', () => {
 
             const result = RevalidationLogSchema.parse(data);
             expect(result.id).toBe(data.id);
-            expect(result.path).toBe(data.path);
+            expect(result.target).toBe(data.target);
             expect(result.entityType).toBe('accommodation');
             expect(result.trigger).toBe('manual');
             expect(result.status).toBe('success');
@@ -102,7 +102,7 @@ describe('RevalidationLogSchema', () => {
         it('should validate a minimal log entry (only required fields)', () => {
             const data = {
                 id: '12345678-1234-4234-8234-123456789012',
-                path: '/es/destinos/litoral',
+                target: '/es/destinos/litoral',
                 entityType: 'destination',
                 trigger: 'cron' as const,
                 status: 'skipped' as const,
@@ -166,7 +166,7 @@ describe('RevalidationLogSchema', () => {
 
     describe('Invalid data', () => {
         it('should reject entry with missing required fields', () => {
-            const result = RevalidationLogSchema.safeParse({ path: '/en/test' });
+            const result = RevalidationLogSchema.safeParse({ target: '/en/test' });
             expect(result.success).toBe(false);
         });
 
@@ -192,7 +192,12 @@ describe('RevalidationLogSchema', () => {
 
         it('should throw ZodError when using .parse() on invalid input', () => {
             expect(() =>
-                RevalidationLogSchema.parse({ id: 'bad', path: 123, trigger: 'bad', status: 'bad' })
+                RevalidationLogSchema.parse({
+                    id: 'bad',
+                    target: 123,
+                    trigger: 'bad',
+                    status: 'bad'
+                })
             ).toThrow(ZodError);
         });
     });
@@ -228,7 +233,7 @@ describe('RevalidationLogSchema', () => {
         it('should produce correct runtime types', () => {
             const result = RevalidationLogSchema.parse(createValidLog());
             expect(typeof result.id).toBe('string');
-            expect(typeof result.path).toBe('string');
+            expect(typeof result.target).toBe('string');
             expect(typeof result.entityType).toBe('string');
             expect(typeof result.trigger).toBe('string');
             expect(typeof result.status).toBe('string');
@@ -255,7 +260,7 @@ describe('RevalidationLogFilterSchema', () => {
                 entityId: 'some-entity-id',
                 trigger: 'manual' as const,
                 status: 'success' as const,
-                path: '/en/accommodations',
+                target: '/en/accommodations',
                 fromDate: new Date('2024-01-01'),
                 toDate: new Date('2024-12-31'),
                 page: 2,
@@ -265,14 +270,14 @@ describe('RevalidationLogFilterSchema', () => {
             expect(result.entityType).toBe('accommodation');
             expect(result.trigger).toBe('manual');
             expect(result.status).toBe('success');
-            expect(result.path).toBe('/en/accommodations');
+            expect(result.target).toBe('/en/accommodations');
             expect(result.page).toBe(2);
             expect(result.pageSize).toBe(25);
         });
 
-        it('should accept path filter as optional string', () => {
-            const result = RevalidationLogFilterSchema.parse({ path: 'hotel' });
-            expect(result.path).toBe('hotel');
+        it('should accept target filter as optional string', () => {
+            const result = RevalidationLogFilterSchema.parse({ target: 'hotel' });
+            expect(result.target).toBe('hotel');
             expect(result.page).toBe(1);
         });
 
@@ -368,7 +373,7 @@ describe('RevalidationLogFilterSchema', () => {
             expect(result.entityId).toBeUndefined();
             expect(result.trigger).toBeUndefined();
             expect(result.status).toBeUndefined();
-            expect(result.path).toBeUndefined();
+            expect(result.target).toBeUndefined();
             expect(result.fromDate).toBeUndefined();
             expect(result.toDate).toBeUndefined();
         });

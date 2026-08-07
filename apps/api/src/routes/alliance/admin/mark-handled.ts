@@ -3,9 +3,13 @@
  *
  * Approves or rejects an alliance lead (workflow transition).
  * Requires ALLIANCE_LEAD_MANAGE permission (enforced in the service layer).
- * Never auto-provisions any role/entity (HOS-277 NG-1) — the admin
+ * Still never auto-provisions any role/entity (HOS-277 NG-1) — the admin
  * provisions the corresponding partner/sponsor/editor/HostTrade entry by
  * hand after approving.
+ *
+ * What DID change (HOS-278 AC-6): the applicant is now emailed the outcome,
+ * whichever way it went. Sending is fire-and-forget after the status is
+ * persisted, so a mail failure never rolls back a decision.
  *
  * @module routes/alliance/admin/mark-handled
  */
@@ -14,11 +18,19 @@ import { AllianceLeadSchema, PermissionEnum } from '@repo/schemas';
 import { AllianceLeadService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { createAllianceDecisionNotifyPort } from '../../../lib/alliance-ports';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
-const allianceLeadService = new AllianceLeadService({ logger: apiLogger });
+// The decision notifier is what turns "the admin remembered to write" into a
+// guarantee (HOS-278 AC-6). No claim-invite port here: this route never
+// creates a lead, so it has no invitation to send.
+const allianceLeadService = new AllianceLeadService(
+    { logger: apiLogger },
+    null,
+    createAllianceDecisionNotifyPort()
+);
 
 /**
  * Request body for the mark-handled action.

@@ -13,11 +13,13 @@ import { useToast } from '@/components/ui/ToastProvider';
 import {
     useAssignUserPermission,
     useRevokeUserPermission,
+    useSetTrustedEditor,
     useUserPermissionOverrides
 } from '@/features/users/hooks/useUserPermissionOverrides';
 import { useTranslations } from '@/hooks/use-translations';
 import { OverrideRow } from './OverrideRow';
 import { PermissionPicker } from './PermissionPicker';
+import { TrustedEditorToggle } from './TrustedEditorToggle';
 
 export interface PermissionOverridesCardProps {
     readonly userId: string;
@@ -30,6 +32,7 @@ export function PermissionOverridesCard({ userId }: PermissionOverridesCardProps
     const { data, isLoading, isError } = useUserPermissionOverrides(userId);
     const assign = useAssignUserPermission(userId);
     const revoke = useRevokeUserPermission(userId);
+    const setTrustedEditor = useSetTrustedEditor(userId);
 
     const errorMessage = (error: unknown): string =>
         error instanceof Error ? error.message : t('admin-pages.access.users.permissions.error');
@@ -74,6 +77,25 @@ export function PermissionOverridesCard({ userId }: PermissionOverridesCardProps
         }
     };
 
+    const handleTrustedEditorToggle = async (trusted: boolean): Promise<void> => {
+        try {
+            await setTrustedEditor.mutateAsync(trusted);
+            addToast({
+                title: trusted
+                    ? t('admin-pages.access.users.permissions.trustedEditorEnabled')
+                    : t('admin-pages.access.users.permissions.trustedEditorDisabled'),
+                message: t('admin-pages.access.users.permissions.changesTakeEffectNextRequest'),
+                variant: 'success'
+            });
+        } catch (error) {
+            addToast({
+                title: t('admin-pages.access.users.permissions.error'),
+                message: errorMessage(error),
+                variant: 'error'
+            });
+        }
+    };
+
     const grantOverrides = data?.grantOverrides ?? [];
     const denyOverrides = data?.denyOverrides ?? [];
     const hasOverrides = grantOverrides.length > 0 || denyOverrides.length > 0;
@@ -105,6 +127,13 @@ export function PermissionOverridesCard({ userId }: PermissionOverridesCardProps
                         />
                     )}
                 </div>
+                {data && (
+                    <TrustedEditorToggle
+                        checked={data.isTrustedEditor}
+                        isPending={setTrustedEditor.isPending}
+                        onToggle={handleTrustedEditorToggle}
+                    />
+                )}
             </CardHeader>
             <CardContent>
                 {isLoading && <p className="py-6 text-center text-muted-foreground text-sm">…</p>}

@@ -7,7 +7,8 @@
  *    parse — see the Step 2 block below for why)
  * 3. Enforce trailing slash (301 redirect before Astro resolves the route)
  * 3.1. Legacy URL aliases (e.g. `/mi-cuenta/messages` -> `/mi-cuenta/consultas`,
- *      `/blog` -> `/publicaciones`) redirect before locale/route resolution
+ *      `/blog` -> `/publicaciones`, `/publicaciones/autor` -> `/autores`)
+ *      redirect before locale/route resolution
  * 4. Extract and validate locale from URL path; redirect invalid locales to default
  * 5. Set validated locale in context.locals
  * 6. Parse session only for routes that need it (protected + auth)
@@ -16,10 +17,14 @@
  * 8b. Rewrite 410 (Gone) responses to the same styled page, forcing the 410 status
  * 9. Set Content-Security-Policy header (enforce mode, HOS-30 Phase 2) on HTML responses
  * 10. Set X-Robots-Tag noindex on hosts in HOSPEDA_NOINDEX_HOSTS (e.g. staging)
+ * 11. Serialize the collected cache tags into the Cache-Tag header on
+ *     edge-cacheable responses (HOS-369 W1-1)
  */
 
 import { defineMiddleware } from 'astro:middleware';
+import { CACHE_TAG_HEADER_NAME, serializeCacheTags } from '@repo/cache-tags';
 import { collectCspHashes } from '../integrations/csp-hash-collector';
+import { isEdgeCacheableControl } from './lib/cache/response-cache';
 import {
     getInternalApiUrl,
     getInternalRequestSecret,
@@ -27,6 +32,7 @@ import {
     isDevelopment,
     isProduction
 } from './lib/env';
+import { initIconSprite } from './lib/icon-sprite';
 import { reportInternalBypassSelfCheck } from './lib/internal-bypass-report';
 import {
     buildChangePasswordRedirect,
@@ -68,6 +74,29 @@ import { CJS_ESM_BRIDGES_WARMED } from './lib/warm-cjs-esm-bridges';
  */
 if (!CJS_ESM_BRIDGES_WARMED) {
     throw new Error('[middleware] CJS/ESM bridge warm-up module failed to load');
+}
+
+/**
+ * Boot-time activation of the external icon sprite (HOS-369 W3-6).
+ *
+ * Middleware is part of the SSR **entry** chunk, so this runs once during boot,
+ * before the listener accepts traffic — which is the only correct time. Sprite
+ * mode is a module-level singleton in `@repo/icons`; flipping it from a layout
+ * or a page would leave every icon already rendered in that tree inline, and the
+ * document would ship both forms. Building the sprite itself (rendering ~1,000
+ * symbols and hashing them) also belongs to boot, not to a request.
+ *
+ * It stays OFF until this call, which is what leaves `apps/admin` — which has no
+ * sprite endpoint and never makes it — rendering icons exactly as before.
+ *
+ * Guarded by `import.meta.env.SSR` for the same reason the self-check below is:
+ * it is false under vitest, and a module-level singleton flipped there would
+ * reach into every OTHER test in the same worker that renders an icon, changing
+ * markup those tests never asked about. Production and `astro build` both see
+ * `true`, so the shipped behaviour is unconditional.
+ */
+if (import.meta.env.SSR) {
+    initIconSprite();
 }
 
 /**
@@ -119,6 +148,12 @@ if (import.meta.env.SSR) {
  */
 export const onRequest = defineMiddleware(async (context, next) => {
     const path = context.url.pathname;
+
+    // Step 0: Open the cache-tag collector for this request. Created before any
+    // branch returns so `Astro.locals.cacheTags` is never undefined for a
+    // downstream caller, whatever path the request takes. Serialized into the
+    // `Cache-Tag` header at Step 11 (HOS-369 W1-1).
+    context.locals.cacheTags = new Set<string>();
 
     // Step 1: Skip static assets and API routes — no middleware processing needed.
     if (isStaticAssetRoute({ path })) {
@@ -197,15 +232,47 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return context.redirect(`/${localeSegment}/publicaciones${tail}${search}`, 301);
     }
 
+    // Step 3.3 (HOS-375): The author page moved out from under the blog — it now
+    // carries events as well as posts, so living at `/publicaciones/autor/` said
+    // the wrong thing about its content. One regex covers the whole subtree: the
+    // tail capture carries both the bare slug and the `/page/<n>/` pagination
+    // suffix, whose shape was kept byte-identical on the new route precisely so
+    // this stays a splice of the path's head.
+    //
+    // 301, not the 308 the messages alias uses: 308's only added guarantee is
+    // method preservation on POST/PUT, and this is a GET-only public page. What
+    // matters here is consolidating search authority onto the new URL, which
+    // both codes do.
+    //
+    // `/publicaciones/autor/` with no slug redirects to `/autores/`, which does
+    // not exist yet (NG-1) and 404s. That is deliberate and not a regression:
+    // the old bare URL was a 404 too, since the route it lived on was `[slug]`.
+    // The day an authors index ships, this redirect already points at it.
+    const legacyAuthorMatch = path.match(/^\/(es|en|pt)\/publicaciones\/autor(\/.*)?$/);
+    if (legacyAuthorMatch) {
+        const localeSegment = legacyAuthorMatch[1];
+        const tail = legacyAuthorMatch[2] ?? '/';
+        const search = context.url.search;
+        return context.redirect(`/${localeSegment}/autores${tail}${search}`, 301);
+    }
+
     // Step 4: Extract and validate locale from the URL path.
     const { locale, restOfPath } = extractLocaleFromPath({ path });
 
     // If the locale segment is missing or not a supported locale, redirect to the
-    // default locale while preserving the rest of the path.
+    // default locale while preserving the rest of the path AND the query string.
     // REQ-19: 301 (permanent) — this is a stable URL strategy decision; Google
     // passes full link equity through 301s but not through the default 302.
+    //
+    // `context.url.search` is passed for the same reason Steps 3, 3.1 and 3.2
+    // pass it: dropping it silently strips campaign parameters from every
+    // locale-less link (`/?utm_source=newsletter` → a bare `/es/`), and the
+    // attribution is gone before analytics sees the first pageview.
     if (locale === null) {
-        const redirectUrl = buildLocaleRedirect({ restOfPath: restOfPath || path });
+        const redirectUrl = buildLocaleRedirect({
+            restOfPath: restOfPath || path,
+            search: context.url.search
+        });
         return context.redirect(redirectUrl, 301);
     }
 
@@ -460,6 +527,35 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const requestHost = context.url.hostname.toLowerCase();
         if (NOINDEX_HOSTS.includes(requestHost)) {
             response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+        }
+    }
+
+    // Step 11: Emit the `Cache-Tag` header so this response can be purged
+    // selectively instead of by flushing the whole zone (HOS-369 W1-1, §5.5).
+    //
+    // Written here, after the render, rather than by the page that decided the
+    // caching: layouts and nested components run their frontmatter after the
+    // page's, so a header written in page frontmatter could not include what
+    // they contribute. It is also written after the CSP branch above, which
+    // REPLACES `response` with a new object — setting the header before that
+    // point would drop it on the floor for every SSR HTML page.
+    //
+    // Only tagged, shared-cacheable responses get the header. An untagged
+    // cacheable response is prevented upstream: `applyCacheHeaders` cannot
+    // declare one (see `lib/cache/response-cache.ts`), and the static guard
+    // `test/static-guards/cacheable-responses-declare-tags.guard.test.ts` fails
+    // the build if any source file sets a public `Cache-Control` on its own.
+    //
+    // Cloudflare consumes and strips `Cache-Tag` before the response reaches the
+    // visitor, so the entity slugs and ids inside it are never exposed and cost
+    // the client nothing.
+    if (context.locals.cacheTags.size > 0) {
+        const cacheControl = response.headers.get('Cache-Control');
+        if (isEdgeCacheableControl({ cacheControl })) {
+            const { header } = serializeCacheTags({ tags: context.locals.cacheTags });
+            if (header !== null) {
+                response.headers.set(CACHE_TAG_HEADER_NAME, header);
+            }
         }
     }
 

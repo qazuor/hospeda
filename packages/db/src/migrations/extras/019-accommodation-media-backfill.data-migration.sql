@@ -57,7 +57,7 @@ DECLARE
     accom_count    integer := 0;
 BEGIN
     -- -------------------------------------------------------------------------
-    -- Guard: skip silently if the relational table doesn't exist yet.
+    -- Guard 1: skip silently if the relational target table doesn't exist yet.
     -- -------------------------------------------------------------------------
     IF NOT EXISTS (
         SELECT 1 FROM information_schema.tables
@@ -65,6 +65,30 @@ BEGIN
           AND table_name   = 'accommodation_media'
     ) THEN
         RAISE NOTICE '019-accommodation-media-backfill: table accommodation_media does not exist, skipping.';
+        RETURN;
+    END IF;
+
+    -- -------------------------------------------------------------------------
+    -- Guard 2: skip once the SOURCE column is gone (HOS-372).
+    --
+    -- The target table outlives the source column: after the cutover drops
+    -- `accommodations.media`, the backfill below reads a column that no longer
+    -- exists, this DO block raises, and since `db:apply-extras` runs the files
+    -- as one batch, every later extras file is skipped too. There is also
+    -- nothing left to backfill at that point — the rows are already relational.
+    --
+    -- Returning early is what makes this safe: PL/pgSQL plans a statement on its
+    -- FIRST EXECUTION, not when the block is entered, so the query below is
+    -- never planned and never resolves the missing column. Verified against a
+    -- real database, not assumed.
+    -- -------------------------------------------------------------------------
+    IF NOT EXISTS (
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public'
+          AND table_name   = 'accommodations'
+          AND column_name  = 'media'
+    ) THEN
+        RAISE NOTICE '019-accommodation-media-backfill: accommodations.media column is gone, nothing to backfill.';
         RETURN;
     END IF;
 

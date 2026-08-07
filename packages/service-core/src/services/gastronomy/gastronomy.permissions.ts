@@ -171,6 +171,26 @@ export function checkGastronomyCanEditFaqs(
 }
 
 /**
+ * Checks if the actor may add/remove/reorder/feature photos on a gastronomy
+ * listing's gallery (HOS-372).
+ *
+ * Accepts either `COMMERCE_EDIT_ALL` (staff) or `COMMERCE_EDIT_OWN` when the
+ * actor is the listing owner — identical gate to
+ * {@link checkGastronomyCanEditFaqs}, kept as a separate named wrapper for
+ * call-site clarity (media vs FAQ operations).
+ *
+ * @param actor - The actor performing the action.
+ * @param entity - The gastronomy entity whose media is being edited.
+ * @throws {ServiceError} FORBIDDEN when neither condition is met.
+ */
+export function checkGastronomyCanEditMedia(
+    actor: Actor,
+    entity: { ownerId?: string | null }
+): void {
+    checkCanEditOwn(actor, entity);
+}
+
+/**
  * Checks if the actor may view gastronomy listings (public read).
  *
  * For public/protected read paths, any actor is allowed to attempt to list;

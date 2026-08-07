@@ -236,6 +236,7 @@
                 "capacity": "Capacity",
                 "pricing": "Pricing",
                 "amenities": "Amenities and features",
+                "faqs": "Frequently asked questions",
                 "contact": "Contact",
                 "socialNetworks": "Social networks",
                 "photos": "Photos",
@@ -294,6 +295,37 @@
                 "galleryCapReached": "Gallery limit reached (max {{cap}} photos)",
                 "galleryCapLabel": "Gallery full"
             },
+            "faq": {
+                "emptyState": "No questions yet. Add the first one.",
+                "addButton": "Add question",
+                "editButton": "Edit",
+                "deleteButton": "Delete",
+                "saveButton": "Save",
+                "cancelButton": "Cancel",
+                "questionLabel": "Question",
+                "answerLabel": "Answer",
+                "questionPlaceholder": "Write the question...",
+                "answerPlaceholder": "Write the answer...",
+                "moveUpAria": "Move up \"{{question}}\"",
+                "moveDownAria": "Move down \"{{question}}\"",
+                "editAria": "Edit \"{{question}}\"",
+                "deleteAria": "Delete \"{{question}}\"",
+                "deleteConfirm": "Delete this question?",
+                "saveError": "Could not save the question.",
+                "deleteError": "Could not delete the question.",
+                "reorderError": "Could not reorder.",
+                "visibleOnListingLabel": "Visible on the listing page",
+                "usableByAiLabel": "Usable by AI",
+                "notVisibleBadge": "Not visible on the listing",
+                "notAiUsableBadge": "Not usable by AI",
+                "channelIntro": {
+                    "title": "Why would you hide or restrict a question?",
+                    "body1": "\"Visible on the listing page\" shows the question on the accommodation's page and in the structured data (JSON-LD) search engines read. \"Usable by AI\" lets the chat assistant use this question to answer guest queries.",
+                    "body2": "Uncheck \"Visible on the listing page\" for information that's useful to know but that you don't want published: something temporary (\"the pool is under repair until November\"), a margin you'd rather not promise in writing (\"there's flexibility on late check-out if there's no next booking\"), or a tip that reads better in a conversation than on the storefront (\"at night it's best to call a taxi\").",
+                    "body3": "Uncheck \"Usable by AI\" for content you want shown exactly as written, without the assistant rephrasing it — legal text or exact cancellation terms, for example.",
+                    "body4": "Important: a question that isn't visible on the listing but is usable by AI is not private. The assistant can still say it to anyone who asks in chat; it just won't be published on the page."
+                }
+            },
             "action": {
                 "save": "Save",
                 "saving": "Saving...",
@@ -311,6 +343,7 @@
                 "saveFailed": "Failed to save",
                 "network": "Network error"
             },
+            "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
             "toast": {
                 "saveSuccess": "Changes saved",
                 "saveError": "We couldn't save your changes. Please try again.",

@@ -4,24 +4,27 @@
  * Pure read-composition helper that rebuilds the `Media` JSONB shape from
  * relational `accommodation_media` rows (SPEC-204, T-012).
  *
- * Phase 2 (P2) contract:
- *  - The relational `accommodation_media` table becomes the read source for
+ * Contract:
+ *  - The relational `accommodation_media` table is the read source for
  *    `featuredImage`, `gallery`, and `archivedGallery`.
- *  - `videos` are NOT migrated to the table (D1 decision) and continue to be
- *    carried forward from the existing JSONB `media.videos`.
+ *  - `videos` are NOT migrated to the table (SPEC-204 D1 decision). Since HOS-372
+ *    dropped the `media` JSONB column they live in a dedicated `videos` column on
+ *    `accommodations`, and are supplied by the caller as an explicit parameter —
+ *    same contract as `composeCommerceMedia`, which serves the two commerce
+ *    verticals.
  *  - The output shape is byte-identical to what consumers received while reads
  *    came from JSONB, so the ~21 downstream read-sites stay untouched (T-013).
  *
  * This module is deliberately PURE (no DB access): it receives already-loaded
- * rows and the current media value, and returns the composed object. The async
- * row loading + chokepoint wiring lives in T-013. Keeping composition pure makes
- * the golden shape-stability test (T-015) trivial to write.
+ * rows plus the videos array, and returns the composed object. The async row
+ * loading + chokepoint wiring lives in `accommodation.media-read.ts`. Keeping
+ * composition pure makes the golden shape-stability test (T-015) trivial to write.
  *
  * Row → shape mapping (mirrors the T-006 backfill / T-007 write-both ordering):
  *  - featuredImage    ← the single row with `is_featured = true` (state 'visible').
  *  - gallery[]        ← `state = 'visible'` AND `is_featured = false`, ordered by `sort_order ASC`.
  *  - archivedGallery[] ← `state = 'archived'`, ordered by `sort_order ASC` (own sequence).
- *  - videos           ← passed through unchanged from the JSONB media value.
+ *  - videos           ← passed through unchanged from the caller-supplied `videos` array.
  *
  * @module accommodation.media-compose
  */
@@ -43,11 +46,14 @@ export interface ComposeAccommodationMediaInput {
      */
     readonly rows: readonly AccommodationMedia[];
     /**
-     * The current JSONB media value (or `null`/`undefined`). Only `videos` is
-     * read from it — every image field is rebuilt from `rows`. Pass the entity's
-     * existing `media` so videos survive the read switch.
+     * The accommodation's `videos` column value (or `null`/`undefined`). Passed
+     * through to the output unchanged — composition never inspects or reorders it.
+     *
+     * Sourced from the dedicated `videos` column, NOT from a `media.videos` blob:
+     * HOS-372 dropped the `media` JSONB column, so reading videos off it yields
+     * `undefined` for every row and silently strips them from the response.
      */
-    readonly currentMedia?: Media | null;
+    readonly videos?: readonly Video[] | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -107,10 +113,7 @@ function bySortOrder(a: AccommodationMedia, b: AccommodationMedia): number {
  * @param input - {@link ComposeAccommodationMediaInput}
  * @returns The composed {@link Media} object (possibly empty `{}`).
  */
-export function composeAccommodationMedia({
-    rows,
-    currentMedia
-}: ComposeAccommodationMediaInput): Media {
+export function composeAccommodationMedia({ rows, videos }: ComposeAccommodationMediaInput): Media {
     const visible = rows.filter((r) => r.state === 'visible');
     const archived = rows.filter((r) => r.state === 'archived');
 
@@ -133,8 +136,7 @@ export function composeAccommodationMedia({
         media.archivedGallery = archivedRows.map(rowToImage);
     }
 
-    // Videos are not migrated to the table — carry them forward from JSONB.
-    const videos: readonly Video[] | undefined = currentMedia?.videos;
+    // Videos are not migrated to the table — they live in their own column.
     if (videos && videos.length > 0) {
         media.videos = [...videos];
     }

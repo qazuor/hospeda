@@ -12,6 +12,8 @@
  */
 
 import rss from '@astrojs/rss';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { buildStaticCacheHeaders } from './cache/response-cache';
 import type { SupportedLocale } from './i18n';
 import { SUPPORTED_LOCALES } from './i18n';
 import { buildUrl } from './urls';
@@ -48,6 +50,37 @@ interface ListApiResponse<T> {
     readonly ok?: boolean;
     readonly success?: boolean;
     readonly data?: ListApiData<T>;
+}
+
+/**
+ * Apply the shared feed caching policy to an `@astrojs/rss` response.
+ *
+ * Feeds bypass middleware (the `.xml` extension short-circuits
+ * `isStaticAssetRoute`), so both the `Cache-Control` and the `Cache-Tag` are
+ * set here rather than by the Step 11 collector, which never sees these
+ * responses (HOS-369 W1-1). The tag is namespaced by deployment environment,
+ * and the response is demoted to `private` when that namespace cannot be
+ * resolved (HOS-369 W1-2) — a cacheable feed with no purge tag would go stale
+ * for a full day with nothing able to evict it.
+ *
+ * @param params.response - The response returned by `rss()`.
+ * @param params.collectionTag - The bare collection tag this feed enumerates.
+ */
+function applyFeedCacheHeaders({
+    response,
+    collectionTag
+}: {
+    readonly response: Response;
+    readonly collectionTag: string;
+}): void {
+    const headers = buildStaticCacheHeaders({
+        cacheControl: 'public, max-age=86400, stale-while-revalidate=86400',
+        tags: [collectionTag]
+    });
+
+    for (const [name, value] of Object.entries(headers)) {
+        response.headers.set(name, value);
+    }
 }
 
 /**
@@ -191,10 +224,7 @@ export async function buildPostsFeed({
         })
     });
 
-    feedResponse.headers.set(
-        'Cache-Control',
-        'public, max-age=86400, stale-while-revalidate=86400'
-    );
+    applyFeedCacheHeaders({ response: feedResponse, collectionTag: CACHE_TAG_COLLECTIONS.post });
 
     return feedResponse;
 }
@@ -249,10 +279,7 @@ export async function buildEventsFeed({
         })
     });
 
-    feedResponse.headers.set(
-        'Cache-Control',
-        'public, max-age=86400, stale-while-revalidate=86400'
-    );
+    applyFeedCacheHeaders({ response: feedResponse, collectionTag: CACHE_TAG_COLLECTIONS.event });
 
     return feedResponse;
 }

@@ -6,7 +6,8 @@
  * even when the main site shell is broken. Only loads the FeedbackForm
  * React island with client:load for immediate interactivity.
  * @route /{lang}/feedback/
- * @rendering SSR (no ISR, no caching)
+ * @rendering SSR only — never edge-cached, and correctly so: the feedback
+ *   form is per-visitor and must not be shared between users.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';

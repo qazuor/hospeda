@@ -11,3 +11,5 @@ export * from './permission.access.schema.js';
 // HTTP operations
 export * from './permission.http.schema.js';
 export * from './permission.management.schema.js';
+// Trusted-editor bundle (HOS-374 §5.1.2 / OQ-1)
+export * from './permission.trusted-editor.schema.js';

@@ -42,7 +42,11 @@ overrides:
   rollup: ">=4.59.0"
   qs: ">=6.14.2"
   "@isaacs/brace-expansion": ">=5.0.1"
-  brace-expansion: ">=5.0.8"
+  # GHSA-rgw5-rvv9-x895 (2026-08-03): <5.0.9 is vulnerable, and the previous
+  # ">=5.0.8" floor here was itself resolving the tree onto the vulnerable
+  # 5.0.8. Transitive only (glob > minimatch > brace-expansion), so raising
+  # this floor is the only reachable fix.
+  brace-expansion: ">=5.0.9"
   shell-quote: ">=1.8.5"
   mdast-util-to-hast: ">=13.2.1"
   preact: ">=10.26.10"
@@ -53,9 +57,17 @@ overrides:
   lodash-es: ">=4.17.24"
   serialize-javascript: ">=7.0.3"
   prismjs: ">=1.30.0"
-  "js-yaml@<4.1.1": "^4.1.1"
-  # The 5.x line is a separate advisory track from the <4.1.1 pin above: 5.2.0 is
-  # installed and is hit by both the flow-collection and the !!omap DoS.
+  # GHSA-5p4m-2wfm-xmqj (2026-08-06, high): the !!omap quadratic-CPU DoS covers
+  # >=4.0.0 <4.3.1, and the previous "<4.1.1" selector here was itself resolving
+  # the tree onto 4.3.0 — inside the new vulnerable range. Same failure mode as
+  # brace-expansion above: the floor was the thing installing the vulnerable
+  # version. Raising the selector to the full advisory range is the fix.
+  # Transitive only (xmlbuilder2, @tanstack/start-plugin-core, ~100 paths), so
+  # an override is the only reachable route — Dependabot cannot patch these.
+  "js-yaml@<4.3.1": "^4.3.1"
+  # The 5.x line is a separate advisory track from the 4.x pin above: 5.2.0 is
+  # installed and is hit by both the flow-collection and the !!omap DoS. Already
+  # above the !!omap fix, so this line needed no change.
   "js-yaml@>=5.0.0": ">=5.2.2"
   # 0.0.33 and 0.1.0 both reach the arbitrary-write and path-traversal
   # advisories. Only reachable through external-editor (CLI prompt tooling).
@@ -66,7 +78,12 @@ overrides:
   # 1.20.5 -> 1.20.6 is a patch within the 1.x line. Bounded below 2 so an
   # express 5 consumer keeps resolving its own 2.x.
   "body-parser@<2": ">=1.20.6 <2"
-  undici: ">=8.7.0 <9"
+  # GHSA (2026-08-03): <8.9.0 is hit by a cross-user information disclosure. The
+  # floor was already ours, so Dependabot bumping the lock alone (#2584) does not
+  # close it — the range still ALLOWS 8.7.0 for transitive paths. Raise the floor.
+  # Stays bounded below 9: the h2-by-default concern that gated adopting 8.x was
+  # settled on that major, and this is a minor within it.
+  undici: ">=8.9.0 <9"
   "vite@^6.0.0": ">=8.0.16 <9"
   "vite@^7.0.0": ">=8.0.16 <9"
   "vite@>=6.0.0": ">=8.0.16 <9"

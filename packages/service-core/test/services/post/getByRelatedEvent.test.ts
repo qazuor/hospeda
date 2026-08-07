@@ -2,6 +2,7 @@ import { PostModel } from '@repo/db';
 import type { EventIdType, PostIdType } from '@repo/schemas';
 import { RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockPost } from '../../factories/postFactory';
@@ -11,7 +12,11 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
 describe('PostService.getByRelatedEvent', () => {
@@ -28,7 +33,13 @@ describe('PostService.getByRelatedEvent', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findAll']);
         loggerMock = createLoggerMock();
-        service = new PostService({ logger: loggerMock }, modelMock);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     it('should return posts by related event (success)', async () => {
@@ -41,12 +52,18 @@ describe('PostService.getByRelatedEvent', () => {
         const result = await service.getByRelatedEvent(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ relatedEventId: eventId });
+        expect(modelMock.findAll).toHaveBeenCalledWith({
+            relatedEventId: eventId,
+            ...PUBLIC_READ_FLOOR
+        });
     });
 
-    it('should filter by visibility', async () => {
+    it('should override a caller-supplied visibility with the public read floor', async () => {
+        // HOS-374 §7.6.5: the public read floor is applied last on public read
+        // paths, so a caller-supplied `visibility` (even PRIVATE) is overridden
+        // rather than honored.
         const posts = [
-            createMockPost({ relatedEventId: eventId, visibility: VisibilityEnum.PRIVATE })
+            createMockPost({ relatedEventId: eventId, visibility: VisibilityEnum.PUBLIC })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
         const params = { eventId, visibility: VisibilityEnum.PRIVATE };
@@ -55,7 +72,7 @@ describe('PostService.getByRelatedEvent', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedEventId: eventId,
-            visibility: VisibilityEnum.PRIVATE
+            ...PUBLIC_READ_FLOOR
         });
     });
 
@@ -74,7 +91,8 @@ describe('PostService.getByRelatedEvent', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedEventId: eventId,
-            createdAt: { gte: params.fromDate, lte: params.toDate }
+            createdAt: { gte: params.fromDate, lte: params.toDate },
+            ...PUBLIC_READ_FLOOR
         });
     });
 

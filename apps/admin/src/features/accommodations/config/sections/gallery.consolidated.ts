@@ -13,9 +13,14 @@ import type { ConsolidatedSectionConfig } from '../../types/consolidated-config.
  * operates on the relational `accommodation_media` table.
  *
  * This section is now VIDEOS ONLY:
- *   media.videos → array<{ url, caption, description, moderationState }>
+ *   videos → array<{ url, caption, description, moderationState }>
  *
- * `media.videos` is wired via the `VIDEO_GALLERY` field (URL + caption +
+ * HOS-372: the field id is `videos`, NOT `media.videos`. The `media` JSONB column
+ * was dropped and `media` is no longer a write field — a dotted `media.videos` id
+ * submits a `media` object the update schema now strips, so the videos would never
+ * reach the DB. `videos` is its own column and its own top-level field.
+ *
+ * `videos` is wired via the `VIDEO_GALLERY` field (URL + caption +
  * description per entry). Gated by `EntitlementKey.CAN_EMBED_VIDEO` — for
  * unlocked hosts the quality-score `video-gallery` signal flips from
  * "pending" to "done" once at least one entry is added.
@@ -37,10 +42,10 @@ export const createGalleryConsolidatedSection = (
             // Video gallery — gated by CAN_EMBED_VIDEO. Quality-score signal
             // `video-gallery` (in features/accommodations/config/score-signals)
             // reads this field and flips to "done" once the host adds at least
-            // one URL. Persists to `media.videos[]` (VideoSchema in
+            // one URL. Persists to the `videos[]` column (VideoSchema in
             // @repo/schemas/common/media.schema).
             {
-                id: 'media.videos',
+                id: 'videos',
                 type: FieldTypeEnum.VIDEO_GALLERY,
                 required: false,
                 modes: ['view', 'edit', 'create'],

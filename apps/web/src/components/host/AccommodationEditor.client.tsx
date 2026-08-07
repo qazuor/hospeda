@@ -23,6 +23,7 @@ import type {
     DestinationData,
     MediaImage
 } from '@/lib/api/types';
+import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -37,7 +38,10 @@ import { CapacitySection } from './editor/CapacitySection.client';
 import { ContactInfoSection } from './editor/ContactInfoSection.client';
 import type { EditorSectionNavItem } from './editor/EditorSectionNav.client';
 import { EditorSectionNav } from './editor/EditorSectionNav.client';
+import type { AccommodationFaqItem } from './editor/FaqSection.client';
+import { FaqSection } from './editor/FaqSection.client';
 import { FeaturedToggleSection } from './editor/FeaturedToggleSection.client';
+import { ACCOMMODATION_FIELD_ID_SUFFIXES, ACCOMMODATION_FIELD_PREFIX } from './editor/field-ids';
 import { LocationPicker } from './editor/LocationPicker.client';
 import { PhotoSection } from './editor/PhotoSection.client';
 import { PlanEntitlementGate } from './editor/PlanEntitlementGate.client';
@@ -65,6 +69,12 @@ export interface AccommodationEditorProps {
     readonly features: readonly AmenityData[];
     readonly initialFeaturedImage?: MediaImage | null;
     readonly initialGallery?: readonly MediaImage[];
+    /**
+     * Pre-fetched FAQs from the SSR editor page (HOS-393). FAQs are managed
+     * by `FaqSection`, which persists each mutation immediately against its
+     * own endpoints — they never enter this component's PATCH diff.
+     */
+    readonly initialFaqs?: readonly AccommodationFaqItem[];
 }
 
 /**
@@ -227,7 +237,8 @@ export function AccommodationEditor({
     amenities,
     features,
     initialFeaturedImage = null,
-    initialGallery = []
+    initialGallery = [],
+    initialFaqs = []
 }: AccommodationEditorProps) {
     const { t } = createTranslations(locale);
 
@@ -246,7 +257,16 @@ export function AccommodationEditor({
     // leaving the ContactInfoSection/SocialNetworksSection/LocationPicker
     // error slots permanently unpopulated.
     const { fieldErrors, formError, validate, handleApiError, clearError, setFormError } =
-        useZodForm({ schema: AccommodationEditFormSchema, t });
+        useZodForm({
+            schema: AccommodationEditFormSchema,
+            t,
+            // HOS-373: a failed submit focuses the first invalid field on the
+            // page. HOS-385: the id is derived from the Zod key by the same
+            // `buildFieldId` the sections render with, so this is a namespace
+            // plus the genuine exceptions — not a table that can disagree.
+            fieldIdPrefix: ACCOMMODATION_FIELD_PREFIX,
+            fieldIdSuffixes: ACCOMMODATION_FIELD_ID_SUFFIXES
+        });
     const [isSaving, setIsSaving] = useState(false);
 
     // --- Field change handlers ---
@@ -403,13 +423,31 @@ export function AccommodationEditor({
         [baseline]
     );
 
+    /**
+     * The PATCH body for the current form state. Memoized (HOS-373) so the
+     * unsaved-changes guard can read the dirty state on every render — the
+     * diff used to be computed only inside `handleSubmit`. Same inputs, same
+     * output: this is the exact value `handleSubmit` used to build inline.
+     */
+    const patchPayload = useMemo(() => buildPatchPayload(formData), [buildPatchPayload, formData]);
+
+    // HOS-373: warns before leaving with unsaved edits. Goes quiet as soon as a
+    // successful save resyncs `baseline` and collapses the diff back to empty.
+    useUnsavedChangesGuard({
+        isDirty: Object.keys(patchPayload).length > 0,
+        message: t(
+            'host.properties.editor.unsavedChanges',
+            'Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?'
+        )
+    });
+
     // --- Submit handler ---
 
     const handleSubmit = useCallback(
         async (e: React.FormEvent) => {
             e.preventDefault();
             setFormError(null);
-            const payload = buildPatchPayload(formData);
+            const payload = patchPayload;
             if (Object.keys(payload).length === 0) {
                 // No changes to persist. Never save silently (HOS-190): give
                 // explicit feedback so "Save" always visibly does something.
@@ -462,7 +500,7 @@ export function AccommodationEditor({
                 setIsSaving(false);
             }
         },
-        [formData, accommodationId, buildPatchPayload, validate, handleApiError, setFormError, t]
+        [formData, accommodationId, patchPayload, validate, handleApiError, setFormError, t]
     );
 
     // --- Cancel handler ---
@@ -488,6 +526,7 @@ export function AccommodationEditor({
             contact: t('host.properties.editor.section.contact', 'Contacto'),
             socialNetworks: t('host.properties.editor.section.socialNetworks', 'Redes sociales'),
             amenities: t('host.properties.editor.section.amenities', 'Servicios y comodidades'),
+            faqs: t('host.properties.editor.section.faqs', 'Preguntas frecuentes'),
             photos: t('host.properties.editor.section.photos', 'Fotos'),
             calendar: t('host.properties.editor.section.calendar', 'Calendario'),
             translations: t('host.properties.editor.translation.sectionTitle', 'Traducciones'),
@@ -508,6 +547,7 @@ export function AccommodationEditor({
             { id: 'editor-contact', label: sectionLabels.contact },
             { id: 'editor-socialNetworks', label: sectionLabels.socialNetworks },
             { id: 'editor-amenities', label: sectionLabels.amenities },
+            { id: 'editor-faqs', label: sectionLabels.faqs },
             { id: 'editor-photos', label: sectionLabels.photos },
             { id: 'editor-calendar', label: sectionLabels.calendar }
         ];
@@ -635,6 +675,18 @@ export function AccommodationEditor({
                             features={features}
                             onToggleAmenity={handleToggleAmenity}
                             onToggleFeature={handleToggleFeature}
+                        />
+                    </section>
+
+                    <section
+                        id="editor-faqs"
+                        className={styles.card}
+                        aria-label={sectionLabels.faqs}
+                    >
+                        <FaqSection
+                            locale={locale}
+                            accommodationId={accommodationId}
+                            initialFaqs={initialFaqs}
                         />
                     </section>
 

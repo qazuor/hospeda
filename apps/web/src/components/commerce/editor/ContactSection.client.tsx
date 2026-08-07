@@ -11,11 +11,14 @@
  */
 
 import type { JSX } from 'react';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { TextField } from '@/components/ui/TextField';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { CommercePhoneField } from './CommercePhoneField';
+import contactStyles from './ContactSection.module.css';
 import type { ContactValues } from './commerce-edit-data';
 import styles from './editor-fields.module.css';
+import { COMMERCE_FIELD_PREFIX } from './field-ids';
 
 export interface ContactSectionProps {
     readonly locale: SupportedLocale;
@@ -43,41 +46,35 @@ export function ContactSection({
             <legend className={styles.label}>
                 {t('commerce.owner.editor.sections.contactInfo', 'Información de contacto')}
             </legend>
-            <input
-                className={styles.input}
-                type="tel"
-                aria-label={t('commerce.owner.editor.contactField.mobilePhone', 'Teléfono')}
+            {/* HOS-371: searchable country-code combobox + local number,
+                replacing the bare `type="tel"` with a static "+54..."
+                placeholder. Recomposes into the same single `mobilePhone`
+                string, so dirty tracking and the payload are unchanged. */}
+            <CommercePhoneField
+                locale={locale}
                 value={contact.mobilePhone}
-                placeholder="+54..."
-                aria-invalid={errors['contactInfo.mobilePhone'] ? 'true' : 'false'}
-                aria-describedby={
-                    errors['contactInfo.mobilePhone']
-                        ? fieldErrorId('contactInfo.mobilePhone')
-                        : undefined
-                }
-                onChange={(event) => onContactChange({ mobilePhone: event.target.value })}
+                onChange={(value) => onContactChange({ mobilePhone: value })}
+                error={errors['contactInfo.mobilePhone']}
             />
-            <FieldError
-                id={fieldErrorId('contactInfo.mobilePhone')}
-                message={errors['contactInfo.mobilePhone']}
-            />
-            <input
-                className={styles.input}
-                type="email"
-                aria-label={t('commerce.owner.editor.contactField.workEmail', 'Email')}
-                value={contact.workEmail}
-                aria-invalid={errors['contactInfo.workEmail'] ? 'true' : 'false'}
-                aria-describedby={
-                    errors['contactInfo.workEmail']
-                        ? fieldErrorId('contactInfo.workEmail')
-                        : undefined
-                }
-                onChange={(event) => onContactChange({ workEmail: event.target.value })}
-            />
-            <FieldError
-                id={fieldErrorId('contactInfo.workEmail')}
-                message={errors['contactInfo.workEmail']}
-            />
+            {/* Visible <label>, not just an aria-label: an empty input with no
+                visible text next to it reads as an anonymous box to a sighted
+                user, which the per-section cards made more obvious. A visible
+                label also satisfies WCAG 3.3.2 (Labels or Instructions), which
+                an aria-label alone does not. */}
+            <div className={contactStyles.emailField}>
+                <TextField
+                    prefix={COMMERCE_FIELD_PREFIX}
+                    name="contactInfo.workEmail"
+                    label={t('commerce.owner.editor.contactField.workEmail', 'Email')}
+                    labelClassName={contactStyles.fieldLabel}
+                    className={styles.input}
+                    error={errors['contactInfo.workEmail']}
+                    type="email"
+                    value={contact.workEmail}
+                    placeholder="contacto@ejemplo.com"
+                    onChange={(event) => onContactChange({ workEmail: event.target.value })}
+                />
+            </div>
         </fieldset>
     );
 }

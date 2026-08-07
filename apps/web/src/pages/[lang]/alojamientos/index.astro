@@ -4,7 +4,9 @@
  * @description Accommodations listing page with filter sidebar, card grid,
  * pagination, and ItemList JSON-LD structured data.
  * @route /{lang}/alojamientos/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
+ *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
+ *   per request by the `applyCacheHeaders` call below, not by this comment.
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
@@ -27,7 +29,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
-import { hasActiveAccommodationListingFilters, resolveListingCacheControl } from '@/lib/cache/listing-cache';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
@@ -201,21 +205,29 @@ const contextQuery = contextQueryParams.toString() || undefined;
 // public-GET-only, and caching a credentialed read would serve one visitor's
 // bookmarks to another.
 
-// Fetch destinations for filter dropdown (CITY only — accommodations are
-// browsed by city, not by parent administrative regions).
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
-const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
-
-// Fetch amenities for filter chips
-const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
-const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
-
-// Fetch features for filter chips
-const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
-const features = featuresResult.ok ? featuresResult.data.items : [];
-
-// Fetch accommodations
-const result = await accommodationsApi.list({
+// HOS-369 W2-5: these four reads are issued CONCURRENTLY, not one after the
+// other. They are genuinely independent — every argument below comes from
+// `url.searchParams`, never from another response — so awaiting them in
+// sequence stacked four round-trips of latency into TTFB for no reason.
+//
+// This matters despite the edge cache rather than because of it: a cached page
+// never runs this frontmatter at all, so the only requests that pay for it are
+// exactly the ones the cache cannot serve — the first hit after a TTL expiry
+// or a purge, and every `stale-while-revalidate` refresh.
+//
+// `Promise.all` and not `allSettled`: none of these reject. The API client
+// returns an `ApiResult` and each `.ok` is checked below, so a failed catalog
+// read degrades to an empty filter list exactly as it did sequentially.
+const [destinationsResult, amenitiesResult, featuresResult, result] = await Promise.all([
+	// Destinations for the filter dropdown (CITY only — accommodations are
+	// browsed by city, not by parent administrative regions).
+	destinationsApi.list({ destinationType: 'CITY', pageSize: 100, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS }),
+	// Amenities for filter chips
+	amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS }),
+	// Features for filter chips
+	featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS }),
+	// The accommodations themselves
+	accommodationsApi.list({
 	page,
 	pageSize,
 	q,
@@ -253,7 +265,12 @@ const result = await accommodationsApi.list({
 	poiId: poiIdRaw,
 	poiSlug: poiSlugRaw,
 	// NOT cached on purpose — see the note above the catalog reads.
-});
+	})
+]);
+
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
+const features = featuresResult.ok ? featuresResult.data.items : [];
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
@@ -481,14 +498,14 @@ const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalB
 // cache. That is the point — the gate existed because the HTML used to differ,
 // and D-8 replaces "the origin promises not to mark it shareable" with "there
 // is nothing personal in it to begin with".
-Astro.response.headers.set(
-	'Cache-Control',
-	resolveListingCacheControl({
-		cacheable:
-			!facetSeoDecision.noindex &&
-			!hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
-	})
-);
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable:
+		!facetSeoDecision.noindex &&
+		!hasActiveAccommodationListingFilters({ searchParams: url.searchParams }),
+	tags: [CACHE_TAG_COLLECTIONS.accommodation]
+});
 
 /**
  * Quick-filter type chips shown above the listing grid (HOS-97). Uses the

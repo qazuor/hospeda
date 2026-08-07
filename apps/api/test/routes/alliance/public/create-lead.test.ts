@@ -14,12 +14,17 @@ import type { AppOpenAPI } from '../../../../src/types.js';
 
 const BASE = '/api/v1/public/alliance/leads';
 
-/** Minimal valid lead payload matching AllianceLeadCreateInputSchema */
+/**
+ * Minimal valid lead payload matching AllianceLeadSubmissionSchema.
+ * `partnerType` is required for `kind: 'partner'` since HOS-278 provisioning
+ * slice D (refineAllianceLeadKindFields).
+ */
 const VALID_LEAD_PAYLOAD = {
     kind: 'partner',
     contactName: 'Juan Pérez',
     email: 'juan@example.com',
-    message: 'Quiero sumar mi negocio como partner de la plataforma.'
+    message: 'Quiero sumar mi negocio como partner de la plataforma.',
+    partnerType: 'commerce'
 };
 
 describe('POST /api/v1/public/alliance/leads (HOS-277)', () => {

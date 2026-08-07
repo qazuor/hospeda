@@ -75,6 +75,16 @@
  *
  * `false` — purely additive, guarded by `onConflictDoNothing` on each
  * table's unique `slug`. Never updates or deletes existing data.
+ *
+ * ## `contentOnly` flag decision
+ *
+ * `true`, for the same reason as `0027-add-confirmed-events-entre-rios-2026`:
+ * no `src/data/**` fixture reproduces these events, so this file is the sole
+ * source of them and baseline-stamping must not skip it. `--baseline-stamp`
+ * leaves it pending and runs it for real, so a from-scratch build gets the
+ * events like any live environment does. See `data-migrations/types.ts`
+ * (`SeedMigrationMeta.contentOnly`) and
+ * `docs/guides/seed-data-migrations.md`.
  */
 
 import type { DrizzleClient } from '@repo/db';
@@ -91,7 +101,8 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 export const meta = {
     name: '0028-add-estimated-events-entre-rios',
     group: 'required',
-    destructive: false
+    destructive: false,
+    contentOnly: true
 } as const satisfies SeedMigrationModule['meta'];
 
 /** The 16 CITY destination slugs this migration's venues/events resolve against. */

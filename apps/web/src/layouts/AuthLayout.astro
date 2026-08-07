@@ -11,6 +11,7 @@ import { createTranslations } from '@/lib/i18n';
 import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import Logo from '@/components/shared/navigation/Logo.astro';
 import I18nClientData from '@/components/shared/I18nClientData.astro';
+import IconSpriteClientData from '@/components/shared/IconSpriteClientData.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
@@ -50,6 +51,17 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<!-- HOS-369 Wave D: client translation dictionary (hashed immutable
+		     asset). Must be in <head> so its deferred execution precedes the
+		     island hydration modules — see I18nClientData.astro. -->
+		<I18nClientData locale={locale} />
+
+		<!-- HOS-369 W3-6: the icon sprite's URL, for islands that render icons
+		     after hydration. Inline and classic, so it executes during parse —
+		     see IconSpriteClientData.astro. -->
+		<IconSpriteClientData />
+
 		<!-- SPEC-157 REQ-18: browser UI chrome matches the brand blue, with a
 		     dark-mode variant gated by prefers-color-scheme. -->
 		<meta name="theme-color" content={BRAND_THEME_COLOR} />
@@ -82,7 +94,6 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		/>
 	</head>
 	<body class="auth-body">
-		<I18nClientData locale={locale} />
 		<!-- Minimal header: logo only, centered -->
 		<header class="auth-header">
 			<div class="auth-header__container">

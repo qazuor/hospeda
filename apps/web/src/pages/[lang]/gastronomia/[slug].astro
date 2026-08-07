@@ -35,6 +35,8 @@ import { renderPlain } from '@/lib/render-plain';
 import type { GastronomyReviewPublicItem } from '@/lib/api/endpoints';
 import type { DetailFaq, GastronomyOpeningHoursEntry } from '@/data/types';
 
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -63,6 +65,35 @@ if (visibility && visibility !== 'PUBLIC') {
 }
 
 const gastronomy = toGastronomyDetailPageProps({ item: raw, locale });
+
+// --- Edge cacheability (HOS-369 W2-4) ---
+// After BOTH guards above — the 404/410 for missing or soft-deleted rows, and
+// the visibility gate. That ordering is what makes this safe: a non-PUBLIC
+// listing 404s before reaching here, so a private listing can never be shared
+// from the edge. It mirrors the service side, which only schedules a purge for
+// a listing that is ACTIVE and PUBLIC.
+//
+// Addressed by its OWN two tags and deliberately NOT by `list-gastronomy`: a
+// detail page is not a listing, and the collection tag would make every
+// gastronomy write evict every other one's page.
+const gastronomyCacheTags = buildEntityCacheTags({
+    entity: 'gastronomy',
+    slug,
+    id: String(raw.id || '')
+});
+const [primaryGastronomyTag, ...extraGastronomyTags] = gastronomyCacheTags;
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    // No usable entity tag means nothing could purge this page, and an
+    // unpurgeable cached page is worse than an uncached one.
+    cacheable: primaryGastronomyTag !== undefined,
+    tags:
+        primaryGastronomyTag !== undefined
+            ? [primaryGastronomyTag, ...extraGastronomyTags]
+            : [CACHE_TAG_COLLECTIONS.gastronomy]
+});
 
 // --- Parallel secondary fetches ---
 const [reviewsSettled, faqsSettled] = await Promise.allSettled([

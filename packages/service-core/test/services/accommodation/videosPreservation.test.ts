@@ -1,20 +1,30 @@
 /**
- * Regression tests for B-2 (data loss guard): media.videos must survive any
- * accommodation update that carries a `media` payload without a `videos` key.
+ * Regression tests for the write-side videos path (HOS-372).
  *
- * Root cause: the media write is a wholesale REPLACE of the JSONB column. The
- * web editor sends only featuredImage+gallery, so `videos` is absent from the
- * client payload. Without the preservation guard the existing videos array is
- * silently wiped.
+ * ## What changed
  *
- * Fix location: `AccommodationService.update()` — the B-2 block that mirrors
- * the existing B-1 archivedGallery preservation logic.
+ * Videos used to live inside the `media` JSONB blob, and `AccommodationService.update()`
+ * carried them forward by hand because the blob write was a wholesale REPLACE: the web
+ * editor sent only `featuredImage`+`gallery`, so an absent `videos` key would wipe the
+ * existing array (the original B-2 guard).
+ *
+ * HOS-372 dropped the `media` column and moved videos to a dedicated `videos` column.
+ * That makes the carry-forward block obsolete AND wrong:
+ *  - Wrong, because it read `existing.media?.videos` off a column that no longer exists
+ *    (always `undefined`) and wrote a `media` object back to a column that no longer
+ *    exists either.
+ *  - Obsolete, because a top-level column gets ordinary PATCH semantics for free: an
+ *    absent `videos` key simply never reaches the SET clause, so the stored array
+ *    survives without any explicit preservation logic.
+ *
+ * These tests pin the new contract: `videos` travels top-level and lands on its own
+ * column, and `media` is never written by an update.
  *
  * @module test/services/accommodation/videosPreservation
  */
 
 import type { AccommodationModel } from '@repo/db';
-import type { Media, Video } from '@repo/schemas';
+import type { Video } from '@repo/schemas';
 import {
     AccommodationUpdateInputSchema,
     DestinationTypeEnum,
@@ -48,9 +58,9 @@ vi.mock('../../../src/services/user-role/user-role.service.js', () => ({
 /**
  * SPEC-204 DIRECT CUTOVER: AccommodationService.update() no longer opens a
  * transaction for media-only payloads. Junction sync (amenityIds/featureIds)
- * still wraps in a tx, but a videos-only blob write does not. The
+ * still wraps in a tx, but a videos-only write does not. The
  * withServiceTransaction mock below is retained for payloads that do include
- * junction fields, but is not exercised by the videos-preservation cases here.
+ * junction fields, but is not exercised by the videos cases here.
  */
 vi.mock('../../../src/utils/transaction', () => ({
     withServiceTransaction: vi.fn(
@@ -123,11 +133,43 @@ function makeService(model: ReturnType<typeof createMockBaseModel>): Accommodati
     return svc;
 }
 
+/**
+ * Runs an update against a mocked model and returns the payload handed to
+ * `model.update`, which is what actually reaches the SET clause.
+ */
+async function captureUpdatePayload(
+    service: AccommodationService,
+    model: ReturnType<typeof createMockBaseModel>,
+    id: string,
+    input: Record<string, unknown>
+): Promise<Record<string, unknown>> {
+    const existing = createMockAccommodation({ id });
+    (model.findById as Mock).mockResolvedValue(existing);
+    (model.update as Mock).mockImplementation(async (_where, payload) => ({
+        ...existing,
+        ...payload
+    }));
+
+    const result = await service.update(
+        createAdminActor(),
+        id,
+        input as Parameters<AccommodationService['update']>[2]
+    );
+    expect(result.error).toBeUndefined();
+    expect(model.update).toHaveBeenCalled();
+
+    const [, payloadArg] = (model.update as Mock).mock.calls[0] as [
+        unknown,
+        Record<string, unknown>
+    ];
+    return payloadArg;
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('AccommodationService.update — media.videos preservation (B-2 regression)', () => {
+describe('AccommodationService.update — videos column write (HOS-372)', () => {
     let model: ReturnType<typeof createMockBaseModel>;
     let service: AccommodationService;
 
@@ -137,142 +179,54 @@ describe('AccommodationService.update — media.videos preservation (B-2 regress
         service = makeService(model);
     });
 
-    it('preserves existing videos when update carries media without a videos key', async () => {
-        // Arrange: existing row has videos
-        const existingVideo1 = makeVideo('https://cdn.test/video-1.mp4');
-        const existingVideo2 = makeVideo('https://cdn.test/video-2.mp4');
-        const existingVideos: Video[] = [existingVideo1, existingVideo2];
+    it('writes top-level videos straight to the videos column', async () => {
+        const videos = [makeVideo('https://youtu.be/aaa'), makeVideo('https://vimeo.com/222')];
+        const input = createMockAccommodationUpdateInput({ videos });
 
-        const existingMedia: Media = {
-            featuredImage: {
-                url: 'https://cdn.test/feat.jpg',
-                moderationState: ModerationStatusEnum.APPROVED
-            },
-            gallery: [],
-            videos: existingVideos
+        const payload = await captureUpdatePayload(service, model, 'acc-vid-01', input);
+
+        expect(payload.videos).toStrictEqual(videos);
+    });
+
+    it('never writes a media key — the column no longer exists', async () => {
+        const input = createMockAccommodationUpdateInput({
+            videos: [makeVideo('https://youtu.be/aaa')]
+        });
+
+        const payload = await captureUpdatePayload(service, model, 'acc-vid-02', input);
+
+        expect(payload).not.toHaveProperty('media');
+    });
+
+    it('leaves videos untouched when the payload omits the key (PATCH semantics)', async () => {
+        // No explicit preservation logic needed: an absent key never reaches the
+        // SET clause, so the stored array survives on its own.
+        const input = createMockAccommodationUpdateInput({ name: 'Updated Name' });
+
+        const payload = await captureUpdatePayload(service, model, 'acc-vid-03', input);
+
+        expect(payload).not.toHaveProperty('videos');
+        expect(payload).not.toHaveProperty('media');
+    });
+
+    it('clears the column when the payload explicitly sends videos: []', async () => {
+        const input = createMockAccommodationUpdateInput({ videos: [] });
+
+        const payload = await captureUpdatePayload(service, model, 'acc-vid-04', input);
+
+        expect(payload.videos).toStrictEqual([]);
+    });
+
+    it('drops a legacy media payload instead of writing it to the dropped column', async () => {
+        // Older clients may still send `media.videos`. The schema strips `media`
+        // from update inputs, but the service must not resurrect it either.
+        const input = {
+            ...createMockAccommodationUpdateInput({}),
+            media: { videos: [makeVideo('https://youtu.be/legacy')], gallery: [] }
         };
-        const existing = createMockAccommodation({ id: 'acc-vid-01', media: existingMedia });
 
-        // Client sends a media update with only featuredImage+gallery (no videos key)
-        const updateInput = createMockAccommodationUpdateInput({
-            media: {
-                featuredImage: {
-                    url: 'https://cdn.test/new-feat.jpg',
-                    moderationState: ModerationStatusEnum.APPROVED
-                },
-                gallery: []
-            }
-        });
+        const payload = await captureUpdatePayload(service, model, 'acc-vid-05', input);
 
-        (model.findById as Mock).mockResolvedValue(existing);
-        (model.update as Mock).mockImplementation(async (_where, payload) => ({
-            ...existing,
-            ...payload
-        }));
-
-        // Act
-        const actor = createAdminActor();
-        const result = await service.update(actor, 'acc-vid-01', updateInput);
-
-        // Assert: videos carried forward from existing row
-        expect(result.error).toBeUndefined();
-        expect(model.update).toHaveBeenCalled();
-        const [, payloadArg] = (model.update as Mock).mock.calls[0] as [unknown, { media: Media }];
-        expect(payloadArg.media).toBeDefined();
-        expect(payloadArg.media.videos).toHaveLength(2);
-        expect(payloadArg.media.videos?.[0]).toStrictEqual(existingVideo1);
-        expect(payloadArg.media.videos?.[1]).toStrictEqual(existingVideo2);
-    });
-
-    it('clears videos when the payload explicitly sends videos: []', async () => {
-        // Arrange: existing row has videos
-        const existingVideos: Video[] = [makeVideo('https://cdn.test/video-1.mp4')];
-        const existing = createMockAccommodation({
-            id: 'acc-vid-02',
-            media: { gallery: [], videos: existingVideos }
-        });
-
-        // Client explicitly sends videos: [] to clear the list
-        const updateInput = createMockAccommodationUpdateInput({
-            media: {
-                gallery: [],
-                videos: []
-            }
-        });
-
-        (model.findById as Mock).mockResolvedValue(existing);
-        (model.update as Mock).mockImplementation(async (_where, payload) => ({
-            ...existing,
-            ...payload
-        }));
-
-        const actor = createAdminActor();
-        await service.update(actor, 'acc-vid-02', updateInput);
-
-        const [, payloadArg] = (model.update as Mock).mock.calls[0] as [unknown, { media: Media }];
-        // Explicit [] must be respected — videos must be cleared
-        expect(payloadArg.media.videos).toEqual([]);
-    });
-
-    it('does not add videos when update carries no media field at all', async () => {
-        // Arrange: existing row has videos
-        const existing = createMockAccommodation({
-            id: 'acc-vid-03',
-            media: {
-                gallery: [],
-                videos: [makeVideo('https://cdn.test/video-1.mp4')]
-            }
-        });
-
-        // Client update touches only the name — no media field in payload
-        const updateInput = createMockAccommodationUpdateInput({ name: 'Updated Name' });
-        (updateInput as Record<string, unknown>).media = undefined;
-
-        (model.findById as Mock).mockResolvedValue(existing);
-        (model.update as Mock).mockImplementation(async (_where, payload) => ({
-            ...existing,
-            ...payload
-        }));
-
-        const actor = createAdminActor();
-        await service.update(actor, 'acc-vid-03', updateInput);
-
-        const [, payloadArg] = (model.update as Mock).mock.calls[0] as [unknown, { media?: Media }];
-        // No media in payload — field stays absent entirely
-        expect(payloadArg.media).toBeUndefined();
-    });
-
-    it('does not inject videos when existing row has none', async () => {
-        // Arrange: existing row has no videos
-        const existing = createMockAccommodation({
-            id: 'acc-vid-04',
-            media: {
-                featuredImage: {
-                    url: 'https://cdn.test/feat.jpg',
-                    moderationState: ModerationStatusEnum.APPROVED
-                },
-                gallery: []
-                // no videos field
-            }
-        });
-
-        const updateInput = createMockAccommodationUpdateInput({
-            media: {
-                gallery: []
-            }
-        });
-
-        (model.findById as Mock).mockResolvedValue(existing);
-        (model.update as Mock).mockImplementation(async (_where, payload) => ({
-            ...existing,
-            ...payload
-        }));
-
-        const actor = createAdminActor();
-        await service.update(actor, 'acc-vid-04', updateInput);
-
-        const [, payloadArg] = (model.update as Mock).mock.calls[0] as [unknown, { media: Media }];
-        // No videos existed — nothing to preserve, field stays absent
-        expect(payloadArg.media.videos).toBeUndefined();
+        expect(payload).not.toHaveProperty('media');
     });
 });

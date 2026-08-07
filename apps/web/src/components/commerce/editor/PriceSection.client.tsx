@@ -18,12 +18,13 @@
 
 import { ExperiencePriceUnitEnum, PriceRangeEnum } from '@repo/schemas';
 import type { JSX } from 'react';
-import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { TextField } from '@/components/ui/TextField';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import type { CommerceEditData, CommerceFieldChange } from './commerce-edit-data';
 import styles from './editor-fields.module.css';
+import { COMMERCE_FIELD_PREFIX } from './field-ids';
 
 /** Experience price unit options. */
 const PRICE_UNIT_OPTIONS = Object.values(ExperiencePriceUnitEnum);
@@ -55,14 +56,12 @@ export function PriceSection({
                 className={styles.section}
                 id="editor-price"
             >
-                <label
-                    className={styles.label}
-                    htmlFor="ce-priceRange"
-                >
-                    {t('commerce.owner.editor.sections.priceRange', 'Rango de precios')}
-                </label>
-                <select
-                    id="ce-priceRange"
+                <TextField
+                    as="select"
+                    prefix={COMMERCE_FIELD_PREFIX}
+                    name="priceRange"
+                    label={t('commerce.owner.editor.sections.priceRange', 'Rango de precios')}
+                    labelClassName={styles.label}
                     className={styles.input}
                     value={data.priceRange}
                     onChange={(event) => {
@@ -78,29 +77,21 @@ export function PriceSection({
                             {tier}
                         </option>
                     ))}
-                </select>
+                </TextField>
 
-                <label
-                    className={styles.label}
-                    htmlFor="ce-menuUrl"
-                >
-                    {t('commerce.owner.editor.sections.menuUrl', 'Enlace al menú')}
-                </label>
-                <input
-                    id="ce-menuUrl"
+                <TextField
+                    prefix={COMMERCE_FIELD_PREFIX}
+                    name="menuUrl"
+                    label={t('commerce.owner.editor.sections.menuUrl', 'Enlace al menú')}
+                    labelClassName={styles.label}
                     className={styles.input}
+                    error={errors.menuUrl}
                     type="url"
                     value={data.menuUrl}
                     placeholder="https://..."
-                    aria-invalid={errors.menuUrl ? 'true' : 'false'}
-                    aria-describedby={errors.menuUrl ? fieldErrorId('menuUrl') : undefined}
                     onChange={(event) => {
                         onFieldChange('menuUrl', event.target.value);
                     }}
-                />
-                <FieldError
-                    id={fieldErrorId('menuUrl')}
-                    message={errors.menuUrl}
                 />
             </section>
         );
@@ -124,47 +115,36 @@ export function PriceSection({
             </label>
 
             {/* T-021: priceFrom — disabled when isPriceOnRequest */}
-            <label
-                className={styles.label}
-                htmlFor="ce-priceFrom"
-            >
-                {t('commerce.owner.editor.sections.priceFrom', 'Precio desde (centavos)')}
-            </label>
-            <input
-                id="ce-priceFrom"
+            <TextField
+                prefix={COMMERCE_FIELD_PREFIX}
+                name="priceFrom"
+                label={t('commerce.owner.editor.sections.priceFrom', 'Precio desde (centavos)')}
+                labelClassName={styles.label}
                 className={styles.input}
+                error={errors.priceFrom}
                 type="number"
                 min={0}
                 step={1}
                 disabled={data.isPriceOnRequest}
                 value={data.priceFrom ?? ''}
-                aria-invalid={errors.priceFrom ? 'true' : 'false'}
-                aria-describedby={errors.priceFrom ? fieldErrorId('priceFrom') : undefined}
                 onChange={(event) => {
                     const raw = event.target.value;
                     const parsed = raw === '' ? null : Math.floor(Number(raw));
                     onFieldChange('priceFrom', parsed);
                 }}
             />
-            <FieldError
-                id={fieldErrorId('priceFrom')}
-                message={errors.priceFrom}
-            />
 
             {/* T-021: priceUnit select — disabled when isPriceOnRequest */}
-            <label
-                className={styles.label}
-                htmlFor="ce-priceUnit"
-            >
-                {t('commerce.owner.editor.sections.priceUnit', 'Unidad de precio')}
-            </label>
-            <select
-                id="ce-priceUnit"
+            <TextField
+                as="select"
+                prefix={COMMERCE_FIELD_PREFIX}
+                name="priceUnit"
+                label={t('commerce.owner.editor.sections.priceUnit', 'Unidad de precio')}
+                labelClassName={styles.label}
                 className={styles.input}
+                error={errors.priceUnit}
                 value={data.priceUnit}
                 disabled={data.isPriceOnRequest}
-                aria-invalid={errors.priceUnit ? 'true' : 'false'}
-                aria-describedby={errors.priceUnit ? fieldErrorId('priceUnit') : undefined}
                 onChange={(event) => {
                     onFieldChange('priceUnit', event.target.value);
                 }}
@@ -178,11 +158,7 @@ export function PriceSection({
                         {t(`commerce.owner.editor.priceUnitOption.${unit}`, unit)}
                     </option>
                 ))}
-            </select>
-            <FieldError
-                id={fieldErrorId('priceUnit')}
-                message={errors.priceUnit}
-            />
+            </TextField>
         </section>
     );
 }

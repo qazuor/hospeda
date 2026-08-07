@@ -1,0 +1,272 @@
+---
+/**
+ * @file EditableContentCard.astro
+ * @description Read-only card for an item in the editor's own-content
+ * dashboards (`/mi-cuenta/publicaciones`, `/mi-cuenta/eventos` — HOS-374
+ * Phase 2 2C-1). Shared by both entities: posts and events expose the exact
+ * same three orthogonal state columns (`moderationState`, `visibility`,
+ * `lifecycleState`), so a single component renders both, with only `title`
+ * and the edit link's base path varying per caller.
+ *
+ * State indicator (the point of this slice, HOS-374 §7.6.1): the three
+ * columns are independent and must never be collapsed into one
+ * "draft/published" boolean —
+ * - `moderationState` — the PLATFORM's verdict (PENDING/APPROVED/REJECTED).
+ * - `visibility` — the AUTHOR's own publish switch (PUBLIC/PRIVATE/RESTRICTED).
+ * - `lifecycleState` — the workflow stage (DRAFT/ACTIVE/ARCHIVED).
+ * Content is publicly visible ONLY when all three read
+ * APPROVED + PUBLIC + ACTIVE. Each badge below carries its own label prefix
+ * so the distinction survives even without relying on color alone.
+ *
+ * The edit link points at a route the next slice builds
+ * (`{editBasePath}/{id}/editar`) — it 404s today by design; this slice ships
+ * the read-only listing only.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import type { SupportedLocale } from '@/lib/i18n';
+import accountSectionStyles from '@/components/account/AccountSection.module.css';
+import btn from '@/components/account/AccountButton.module.css';
+
+/**
+ * Props for the EditableContentCard component.
+ */
+export interface Props {
+    /** Post title or event name — whichever the caller's entity carries. */
+    readonly title: string;
+    /** Entity UUID — used to build the (not yet built) edit route. */
+    readonly id: string;
+    /** Path segment the edit link is built under, e.g. `mi-cuenta/publicaciones`. */
+    readonly editBasePath: string;
+    readonly moderationState: string;
+    readonly visibility: string;
+    readonly lifecycleState: string;
+    /** Current locale for i18n and URL building. */
+    readonly locale: SupportedLocale;
+}
+
+const { title, id, editBasePath, moderationState, visibility, lifecycleState, locale } =
+    Astro.props;
+const { t } = createTranslations(locale);
+
+type BadgeVariant = 'amber' | 'green' | 'red' | 'inactive';
+
+const MODERATION_LABELS: Record<string, { label: string; variant: BadgeVariant }> = {
+    PENDING: {
+        label: t('account.myContent.status.moderation.PENDING', 'Pendiente de revisión'),
+        variant: 'amber'
+    },
+    APPROVED: {
+        label: t('account.myContent.status.moderation.APPROVED', 'Aprobado'),
+        variant: 'green'
+    },
+    REJECTED: {
+        label: t('account.myContent.status.moderation.REJECTED', 'Rechazado'),
+        variant: 'red'
+    }
+};
+
+const VISIBILITY_LABELS: Record<string, { label: string; variant: BadgeVariant }> = {
+    PUBLIC: {
+        label: t('account.myContent.status.visibility.PUBLIC', 'Pública'),
+        variant: 'green'
+    },
+    PRIVATE: {
+        label: t('account.myContent.status.visibility.PRIVATE', 'Privada'),
+        variant: 'inactive'
+    },
+    RESTRICTED: {
+        label: t('account.myContent.status.visibility.RESTRICTED', 'Restringida'),
+        variant: 'amber'
+    }
+};
+
+const LIFECYCLE_LABELS: Record<string, { label: string; variant: BadgeVariant }> = {
+    DRAFT: {
+        label: t('account.myContent.status.lifecycle.DRAFT', 'Borrador'),
+        variant: 'amber'
+    },
+    ACTIVE: {
+        label: t('account.myContent.status.lifecycle.ACTIVE', 'Activo'),
+        variant: 'green'
+    },
+    ARCHIVED: {
+        label: t('account.myContent.status.lifecycle.ARCHIVED', 'Archivado'),
+        variant: 'red'
+    }
+};
+
+const moderationInfo = MODERATION_LABELS[moderationState] ?? {
+    label: moderationState,
+    variant: 'inactive' as BadgeVariant
+};
+const visibilityInfo = VISIBILITY_LABELS[visibility] ?? {
+    label: visibility,
+    variant: 'inactive' as BadgeVariant
+};
+const lifecycleInfo = LIFECYCLE_LABELS[lifecycleState] ?? {
+    label: lifecycleState,
+    variant: 'inactive' as BadgeVariant
+};
+
+const moderationLabelPrefix = t('account.myContent.status.moderation.label', 'Moderación');
+const visibilityLabelPrefix = t('account.myContent.status.visibility.label', 'Visibilidad');
+const lifecycleLabelPrefix = t('account.myContent.status.lifecycle.label', 'Estado');
+
+const editUrl = buildUrl({ locale, path: `${editBasePath}/${id}/editar` });
+const editLinkLabel = t('account.myContent.card.editLink', 'Editar');
+---
+
+<article class="editable-content-card">
+    <div class:list={['editable-content-card__content', accountSectionStyles.branded]}>
+        <h3 class="editable-content-card__title">{title}</h3>
+
+        <div class="editable-content-card__badges" role="group" aria-label={title}>
+            <span class="editable-content-card__badge-row">
+                <span class="editable-content-card__badge-prefix">{moderationLabelPrefix}:</span>
+                <span
+                    class={`editable-content-card__badge editable-content-card__badge--${moderationInfo.variant}`}
+                >
+                    {moderationInfo.label}
+                </span>
+            </span>
+            <span class="editable-content-card__badge-row">
+                <span class="editable-content-card__badge-prefix">{visibilityLabelPrefix}:</span>
+                <span
+                    class={`editable-content-card__badge editable-content-card__badge--${visibilityInfo.variant}`}
+                >
+                    {visibilityInfo.label}
+                </span>
+            </span>
+            <span class="editable-content-card__badge-row">
+                <span class="editable-content-card__badge-prefix">{lifecycleLabelPrefix}:</span>
+                <span
+                    class={`editable-content-card__badge editable-content-card__badge--${lifecycleInfo.variant}`}
+                >
+                    {lifecycleInfo.label}
+                </span>
+            </span>
+        </div>
+
+        <div class="editable-content-card__actions">
+            <a href={editUrl} class:list={['editable-content-card__action', btn.secondaryCompact]}>
+                {editLinkLabel}
+            </a>
+        </div>
+    </div>
+</article>
+
+<style>
+    .editable-content-card {
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card, 24px);
+        box-shadow: var(--shadow-card);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        transition:
+            box-shadow 200ms ease-out,
+            transform 200ms ease-out;
+    }
+
+    .editable-content-card:hover {
+        box-shadow: var(--shadow-card-hover);
+        transform: translateY(-2px);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .editable-content-card,
+        .editable-content-card:hover {
+            transform: none;
+            transition: none;
+        }
+    }
+
+    .editable-content-card__content {
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        flex: 1;
+    }
+
+    .editable-content-card__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(0.9375rem, 0.4vw + 0.875rem, 1.125rem);
+        line-height: 1.35;
+        color: var(--core-foreground);
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    .editable-content-card__badges {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .editable-content-card__badge-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+    }
+
+    .editable-content-card__badge-prefix {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--core-muted-foreground);
+    }
+
+    .editable-content-card__badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 2px 10px;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-weight: 700;
+        font-size: 0.6875rem;
+        line-height: 1.4;
+        white-space: nowrap;
+        letter-spacing: 0.02em;
+        color: var(--primary-foreground, #ffffff);
+        background-color: oklch(0.6 0.15 60);
+    }
+
+    .editable-content-card__badge--amber {
+        background-color: oklch(0.72 0.17 65);
+        color: oklch(0.25 0.06 65);
+    }
+
+    .editable-content-card__badge--green {
+        background-color: oklch(0.55 0.18 145);
+        color: #ffffff;
+    }
+
+    .editable-content-card__badge--red {
+        background-color: oklch(0.55 0.22 25);
+        color: #ffffff;
+    }
+
+    .editable-content-card__badge--inactive {
+        background-color: oklch(0.75 0.04 250);
+        color: oklch(0.3 0.06 250);
+    }
+
+    .editable-content-card__actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 4px;
+        padding-top: 12px;
+        border-top: 1px solid var(--border);
+    }
+</style>

@@ -21,6 +21,7 @@ import BaseLayout from '@/layouts/BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { AllianceLead } from '@/components/alliance/AllianceLead.client';
+import { destinationsApi } from '@/lib/api/endpoints';
 import { CheckCircleIcon } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -38,6 +39,21 @@ const benefits = [
     t('alliance-leads.serviceProvider.benefits.item3', ''),
     t('alliance-leads.serviceProvider.benefits.item4', '')
 ].filter((item) => item.length > 0);
+
+// Coverage-area options for the form's `destinationId` select (HOS-278
+// §6.4). This page is plain SSR — not edge-cached — so fetching it here
+// (rather than client-side from the island) costs nothing extra in cache
+// risk. A failed fetch degrades to an empty list: the form must still
+// render, never 500 the whole landing page over a filter's options.
+const destinationsResult = await destinationsApi.list({
+    destinationType: 'CITY',
+    pageSize: 100,
+    sortBy: 'name',
+    sortOrder: 'asc'
+});
+const destinations = destinationsResult.ok
+    ? destinationsResult.data.items.map((d) => ({ id: d.id, name: d.name }))
+    : [];
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 ---
@@ -78,7 +94,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
     <section class="sumate__form section section--warm">
         <div class="sumate__form-container section__container">
-            <AllianceLead client:load locale={locale} kind="service_provider" />
+            <AllianceLead client:load locale={locale} kind="service_provider" destinations={destinations} />
         </div>
     </section>
 </BaseLayout>

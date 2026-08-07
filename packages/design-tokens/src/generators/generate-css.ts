@@ -26,8 +26,19 @@
  *
  * The pure `buildCSS()` function returns the full output as a string so the
  * colocated tests can assert against it without filesystem IO. The CLI entry
- * at the bottom writes the result to `dist/tokens.css` when invoked directly
- * via `tsx src/generators/generate-css.ts`.
+ * at the bottom writes the artifacts when invoked directly via
+ * `tsx src/generators/generate-css.ts`.
+ *
+ * TWO artifacts are emitted (HOS-369 W3-5):
+ *
+ * - `dist/tokens.css` — the full layout above. Imported by `apps/admin`.
+ * - `dist/tokens.web.css` — the same minus the two `[data-app="admin"]` blocks
+ *   (6,544 B of 71,550). Imported by `apps/web`, which never sets
+ *   `data-app="admin"` on `<html>`, so those rules could only ever be dead
+ *   weight there — and they were shipping render-blocking on every page.
+ *
+ * `buildCSS()` with no arguments still returns the FULL file, so the validator,
+ * the snapshot test and the coverage test are unaffected.
  */
 
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -128,10 +139,21 @@ function emitMediaOverrides(): string {
 }
 
 /**
- * Assemble the full `dist/tokens.css` content. Pure — no filesystem IO so
- * the colocated tests can call this directly and assert against the string.
+ * Assemble the generated token stylesheet. Pure — no filesystem IO so the
+ * colocated tests can call this directly and assert against the string.
+ *
+ * @param params - Options object.
+ * @param params.includeAdminThemes - Whether to emit the two `[data-app="admin"]`
+ *   blocks. Defaults to `true`, which is the full artifact every existing
+ *   caller (validator, snapshot test, coverage test) expects. Passing `false`
+ *   produces the web-only variant — see `writeCSS` for why it exists.
+ * @returns The stylesheet source.
  */
-export function buildCSS(): string {
+export function buildCSS({
+    includeAdminThemes = true
+}: {
+    includeAdminThemes?: boolean;
+} = {}): string {
     const parts: string[] = [];
     parts.push(HEADER);
     parts.push('');
@@ -152,16 +174,20 @@ export function buildCSS(): string {
     parts.push(emitTheme(webDark, INDENT));
     parts.push('}');
     parts.push('');
-    parts.push('/* Admin light theme — applies whenever `data-app="admin"` is set on <html>. */');
-    parts.push('[data-app="admin"] {');
-    parts.push(emitTheme(adminLight, INDENT));
-    parts.push('}');
-    parts.push('');
-    parts.push('/* Admin dark theme — combined selector requires both flags. */');
-    parts.push('[data-app="admin"][data-theme="dark"] {');
-    parts.push(emitTheme(adminDark, INDENT));
-    parts.push('}');
-    parts.push('');
+    if (includeAdminThemes) {
+        parts.push(
+            '/* Admin light theme — applies whenever `data-app="admin"` is set on <html>. */'
+        );
+        parts.push('[data-app="admin"] {');
+        parts.push(emitTheme(adminLight, INDENT));
+        parts.push('}');
+        parts.push('');
+        parts.push('/* Admin dark theme — combined selector requires both flags. */');
+        parts.push('[data-app="admin"][data-theme="dark"] {');
+        parts.push(emitTheme(adminDark, INDENT));
+        parts.push('}');
+        parts.push('');
+    }
     // SPEC-176 T-009 — dark-mode sRGB fallbacks for variant tokens, emitted LAST
     // so its `[data-theme="dark"]:not([data-app="admin"])` selector (nested under
     // `@supports not (oklch)`) does not shadow the base-token dark block above.
@@ -172,21 +198,49 @@ export function buildCSS(): string {
     return parts.join(NL);
 }
 
-/** Resolve the package's dist output path relative to this source file. */
-function resolveOutputPath(): string {
+/** Resolve a path inside the package's `dist/` relative to this source file. */
+function resolveOutputPath(fileName: string): string {
     const here = dirname(fileURLToPath(import.meta.url));
-    return resolve(here, '..', '..', 'dist', 'tokens.css');
+    return resolve(here, '..', '..', 'dist', fileName);
 }
 
 /**
- * Write the generated CSS to disk. Creates `dist/` if it does not exist.
+ * Write the generated stylesheets to disk. Creates `dist/` if it does not exist.
  * Exposed so other tools (e.g. the validate step in T-153-17) can reuse it.
+ *
+ * Two artifacts are emitted:
+ *
+ * - `tokens.css` — everything, including the two `[data-app="admin"]` blocks.
+ *   This is what `apps/admin` imports, and it is unchanged.
+ * - `tokens.web.css` — the same file without those blocks (6,544 B of 71,550,
+ *   9.1%). `apps/web` never sets `data-app="admin"` on `<html>`, so those rules
+ *   can match nothing there; they were measured shipping render-blocking on
+ *   every public page (HOS-369 W3-5).
+ *
+ * The shared part is duplicated across the two artifacts on purpose. Both are
+ * generated from the same source, so there is no maintenance duplication, and
+ * each app imports exactly one file — no ordering hazard, and no risk of admin
+ * silently losing its overrides if an import is dropped.
+ *
+ * @param params - Options object.
+ * @param params.fullPath - Override for the full artifact's path.
+ * @param params.webPath - Override for the web-only artifact's path.
+ * @returns Both written paths.
  */
-export function writeCSS(outputPath: string = resolveOutputPath()): string {
-    const css = buildCSS();
-    mkdirSync(dirname(outputPath), { recursive: true });
-    writeFileSync(outputPath, css, 'utf8');
-    return outputPath;
+export function writeCSS({
+    fullPath = resolveOutputPath('tokens.css'),
+    webPath = resolveOutputPath('tokens.web.css')
+}: {
+    fullPath?: string;
+    webPath?: string;
+} = {}): { fullPath: string; webPath: string } {
+    mkdirSync(dirname(fullPath), { recursive: true });
+    writeFileSync(fullPath, buildCSS(), 'utf8');
+
+    mkdirSync(dirname(webPath), { recursive: true });
+    writeFileSync(webPath, buildCSS({ includeAdminThemes: false }), 'utf8');
+
+    return { fullPath, webPath };
 }
 
 // ============================================================================
@@ -197,6 +251,7 @@ export function writeCSS(outputPath: string = resolveOutputPath()): string {
 
 const invokedDirectly = process.argv[1] === fileURLToPath(import.meta.url);
 if (invokedDirectly) {
-    const outputPath = writeCSS();
-    process.stdout.write(`design-tokens: wrote ${outputPath}\n`);
+    const { fullPath, webPath } = writeCSS();
+    process.stdout.write(`design-tokens: wrote ${fullPath}\n`);
+    process.stdout.write(`design-tokens: wrote ${webPath}\n`);
 }

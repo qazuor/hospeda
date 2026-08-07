@@ -15,6 +15,7 @@ import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createActor } from '../../factories/actorFactory';
 import { expectSuccess } from '../../helpers/assertions';
+import { makePostMediaModelStub } from '../../utils/modelMockFactory';
 
 type QueryChunk = { value?: unknown[] };
 
@@ -81,7 +82,13 @@ describe('PostService.getByCategory — soft-delete default (HOS-274, real PostM
 
     beforeEach(() => {
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new PostService({ logger: loggerMock }, new PostModel());
+        service = new PostService(
+            { logger: loggerMock },
+            new PostModel(),
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     afterEach(() => {

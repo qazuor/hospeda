@@ -10,7 +10,11 @@ import {
     expectNotFoundError,
     expectSuccess
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 
 /**
  * Test suite for EventService.softDelete
@@ -30,7 +34,11 @@ describe('EventService.softDelete', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'softDelete']);
         loggerMock = createLoggerMock();
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     it('should soft delete an event (success)', async () => {

@@ -107,7 +107,38 @@ describe('publicaciones/[slug].astro — media + content enrichment', () => {
             expect(pageSrc).toContain('shares={Number(post.shares ?? 0)}');
             expect(pageSrc).toContain('isFeatured={Boolean(post.isFeatured)}');
             expect(pageSrc).toContain('isNews={Boolean(post.isNews)}');
-            expect(pageSrc).toMatch(/author=\{authorForCard \?/);
+            // Gated on `hasPublishableAuthor`, not just on the relation being
+            // loaded: with `firstName`/`lastName` no longer in the public post
+            // payload, an author who never chose a display name resolves to
+            // `''` and the header would render a bare "Por ".
+            expect(pageSrc).toMatch(/author=\{hasPublishableAuthor && authorForCard \?/);
+        });
+    });
+
+    describe('author byline never publishes a legal name (HOS-375 follow-up)', () => {
+        it('reads only displayName off the author relation', () => {
+            // `PostPublicSchema.author` is the narrow `PostAuthorPublicSchema`
+            // now, so `firstName`/`lastName` never arrive. This page used to
+            // fall back to them in THREE places (the card projection, the
+            // JSON-LD byline, and the header prop) and published the author's
+            // real name whenever `display_name` was empty — which Better Auth
+            // writes directly, so it genuinely is empty for some accounts.
+            expect(pageSrc).not.toContain('authorObj.firstName');
+            expect(pageSrc).not.toContain('authorObj.lastName');
+            expect(pageSrc).not.toContain('authorForCard.firstName');
+            expect(pageSrc).not.toContain('authorForCard.lastName');
+            // Non-vacuity: the display name IS still read.
+            expect(pageSrc).toContain('authorObj.displayName');
+        });
+
+        it('gates the author sidebar card on a resolvable name, not just on the id', () => {
+            // Without a name the card renders an empty avatar circle above an
+            // empty link. Dropping it entirely is the same rule the event
+            // byline applies.
+            expect(pageSrc).toMatch(/\{hasPublishableAuthor && authorForCard && \(/);
+            expect(pageSrc).toMatch(
+                /const hasPublishableAuthor = Boolean\(authorForCard\?\.id && resolvedAuthorName\)/
+            );
         });
     });
 
@@ -144,7 +175,10 @@ describe('publicaciones/[slug].astro — media + content enrichment', () => {
 
         it('renders an author byline linking to the author profile when a slug exists', () => {
             expect(headerSrc).toContain('post-header__byline');
-            expect(headerSrc).toContain('publicaciones/autor/');
+            // HOS-375 moved the author page to `/autores/`. Linked directly, so
+            // this must NOT fall back to the old path and lean on the redirect.
+            expect(headerSrc).toContain('autores/${author.slug}');
+            expect(headerSrc).not.toContain('publicaciones/autor/');
         });
 
         it('renders an "updated on" indicator when updatedAt is meaningfully later than publishedAt', () => {

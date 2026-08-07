@@ -28,10 +28,12 @@
  */
 
 import type {
+    AccommodationMediaModel as AccommodationMediaModelType,
     AccommodationModel as AccommodationModelType,
     DestinationModel as DestinationModelType
 } from '@repo/db';
 import {
+    AccommodationMediaModel,
     AccommodationModel,
     accommodations,
     DestinationModel,
@@ -50,6 +52,7 @@ import type { SQL } from 'drizzle-orm';
 import type { ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
 import { serviceLogger } from '../../utils/service-logger';
+import { attachComposedMediaList } from '../accommodation/accommodation.media-read';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -157,13 +160,16 @@ function toPublicDataItem(row: TaggedRow): SocialPublicDataItem {
 export class SocialPublicDataService {
     private readonly accommodationModel: AccommodationModelType;
     private readonly destinationModel: DestinationModelType;
+    private readonly accommodationMediaModel: AccommodationMediaModelType;
 
     constructor(
         accommodationModel?: AccommodationModelType,
-        destinationModel?: DestinationModelType
+        destinationModel?: DestinationModelType,
+        accommodationMediaModel?: AccommodationMediaModelType
     ) {
         this.accommodationModel = accommodationModel ?? new AccommodationModel();
         this.destinationModel = destinationModel ?? new DestinationModel();
+        this.accommodationMediaModel = accommodationMediaModel ?? new AccommodationMediaModel();
     }
 
     // ---------------------------------------------------------------------------
@@ -245,6 +251,13 @@ export class SocialPublicDataService {
     /**
      * Queries PUBLIC/ACTIVE, non-deleted accommodations, most recent first,
      * optionally narrowed by a `name` substring match.
+     *
+     * SPEC-204 T-024: this calls the model directly, so it bypasses the service
+     * hooks (`_afterList`/`_afterSearch`) that normally compose `media` from the
+     * relational `accommodation_media` table. The composition has to be applied
+     * here explicitly — reading `row.media` alone yields no featured image, since
+     * the `021-accommodation-media-strip-blob-photos` data migration removed the
+     * photo keys from the JSONB column.
      */
     private async fetchAccommodations(
         limit: number,
@@ -262,7 +275,12 @@ export class SocialPublicDataService {
             additionalConditions
         );
 
-        return items.map((item) => this.toPublicEntityRow(item));
+        const withMedia = await attachComposedMediaList({
+            items,
+            mediaModel: this.accommodationMediaModel
+        });
+
+        return withMedia.map((item) => this.toPublicEntityRow(item));
     }
 
     /**

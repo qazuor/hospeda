@@ -7,17 +7,17 @@
  * Access control (permission checks) is enforced at the API route layer
  * (T-008+), not here. This service receives `actorId` for audit log purposes.
  *
- * Side effect (SPEC-168 T-017): every successful plan write triggers a
- * best-effort cache revalidation of the public pricing pages via the
- * RevalidationService singleton. Revalidation failures are logged and
+ * Side effect (SPEC-168 T-017, tag purge since HOS-369 W1-1): every successful
+ * plan write triggers a best-effort cache purge of the `pricing` cache tag via
+ * the RevalidationService singleton. Revalidation failures are logged and
  * swallowed — they never block the write operation.
  *
  * @module services/billing/plan/plan.service
  */
 
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
 import type { QueryContext } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import { getLocalizedPath } from '../../../revalidation/entity-path-mapper.js';
 import { getRevalidationService } from '../../../revalidation/revalidation-init.js';
 import {
     createPlan,
@@ -31,33 +31,6 @@ import {
     updatePlan
 } from './plan.crud.js';
 import type { CreatePlanInput, ListPlansFilters, UpdatePlanInput } from './plan.types.js';
-
-/** Locales supported by the web app — must stay in sync with entity-path-mapper SUPPORTED_LOCALES */
-const PRICING_LOCALES = ['es', 'en', 'pt'] as const;
-
-/**
- * Returns the full set of public pricing page paths that must be revalidated
- * whenever a billing plan changes. Covers both owner and tourist pricing pages
- * for every supported locale.
- *
- * @returns Readonly array of locale-prefixed pricing page paths
- *
- * @example
- * ```ts
- * getPricingPaths()
- * // ['/suscriptores/planes/', '/suscriptores/turistas/',
- * //  '/en/suscriptores/planes/', '/en/suscriptores/turistas/',
- * //  '/pt/suscriptores/planes/', '/pt/suscriptores/turistas/']
- * ```
- */
-function getPricingPaths(): readonly string[] {
-    const paths: string[] = [];
-    for (const locale of PRICING_LOCALES) {
-        paths.push(getLocalizedPath('/suscriptores/planes/', locale));
-        paths.push(getLocalizedPath('/suscriptores/turistas/', locale));
-    }
-    return paths;
-}
 
 /**
  * Plan Service
@@ -84,7 +57,7 @@ export class PlanService {
     private readonly logger = createLogger('plan-service');
 
     /**
-     * Triggers a best-effort revalidation of all public pricing pages.
+     * Triggers a best-effort purge of the `pricing` cache tag.
      *
      * Called after every successful plan write. Uses the global RevalidationService
      * singleton; if it has not been initialized (e.g. in a test harness), this is a
@@ -104,8 +77,8 @@ export class PlanService {
             }
             // Fire-and-forget — must not block the write response.
             void svc
-                .revalidatePaths({
-                    paths: getPricingPaths(),
+                .revalidateTags({
+                    tags: [CACHE_TAG_PRICING],
                     triggeredBy: 'system',
                     trigger: 'hook',
                     entityType: 'plan',

@@ -19,11 +19,15 @@ export const protectedSoftDeletePostRoute = createProtectedRoute({
     method: 'delete',
     path: '/{id}',
     summary: 'Delete post',
-    description: 'Soft deletes a post. Requires POST_DELETE permission.',
+    description: 'Soft deletes a post. Requires authorship or POST_DELETE permission.',
     tags: ['Posts'],
-    requiredPermissions: [PermissionEnum.POST_DELETE],
     requestParams: { id: PostIdSchema },
     responseSchema: SuccessSchema,
+    ownership: {
+        entityType: 'post',
+        ownershipFields: ['authorId'],
+        bypassPermission: PermissionEnum.POST_DELETE
+    },
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
         const id = params.id as string;

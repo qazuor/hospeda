@@ -2,6 +2,7 @@ import { RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import type { Actor, ServiceConfig } from '../../../src/types';
+import { makeEventMediaModelStub } from '../../utils/modelMockFactory';
 
 // Mock EventModel
 class MockEventModel {
@@ -52,7 +53,11 @@ describe('EventService - Relations Support', () => {
         } as Actor;
 
         mockModel = new MockEventModel();
-        service = new EventService({ ...mockContext, model: mockModel as any });
+        service = new EventService({
+            ...mockContext,
+            model: mockModel as any,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     describe('getDefaultListRelations method', () => {

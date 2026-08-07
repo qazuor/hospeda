@@ -25,7 +25,11 @@ import { EventService } from '../../../src/services/event/event.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
 import { expectSuccess } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 
 /** Helper to build a chainable Drizzle-like select mock. */
 function buildSelectMock(resolvedRows: { id: string }[]) {
@@ -49,7 +53,11 @@ describe('EventService — destinationId filter (SPEC-089 Track B)', () => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(EventModel, ['findAll', 'findAllWithRelations', 'count']);
         loggerMock = createLoggerMock();
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     // ─────────────────────────────────────────────────────────────────────────

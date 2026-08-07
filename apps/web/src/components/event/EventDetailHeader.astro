@@ -25,7 +25,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getEventCategoryColor, getBadgeStatusColor } from '@/lib/colors';
 import { formatEventDetailDateRange, formatEventDetailDateRangeCompact } from '@/lib/format-utils';
-import { CalendarDotsIcon, LocationIcon } from '@repo/icons';
+import { buildUrl } from '@/lib/urls';
+import type { EventDetailAuthor } from '@/data/types';
+import { CalendarDotsIcon, LocationIcon, UserIcon } from '@repo/icons';
 
 interface Props {
     readonly eventId: string;
@@ -41,6 +43,12 @@ interface Props {
     readonly locationName?: string | null;
     readonly isPast: boolean;
     readonly isCancelled: boolean;
+    /**
+     * The contributor who wrote the event up (HOS-375 G-7). Absent when the
+     * payload carries no author relation — the byline is then not rendered at
+     * all, rather than rendered empty.
+     */
+    readonly author?: EventDetailAuthor | null;
     readonly bookmarkCount?: number;
     readonly locale: SupportedLocale;
 }
@@ -57,6 +65,7 @@ const {
     locationName,
     isPast,
     isCancelled,
+    author,
     bookmarkCount,
     locale,
 } = Astro.props;
@@ -86,6 +95,17 @@ const locationLabel =
     locationName.trim().toLowerCase() !== locationCity.trim().toLowerCase()
         ? `${locationName}, ${locationCity}`
         : locationName || locationCity || null;
+
+// `/autores/` since HOS-375. Linked directly rather than through the middleware
+// redirect that still serves the old post-only URL: an internal link should
+// never spend a hop it can avoid. A slug-less author degrades to plain text.
+const authorHref = author?.slug ? buildUrl({ locale, path: `autores/${author.slug}` }) : null;
+// `t` interpolates `{{name}}` into the resolved string AND into the fallback, so
+// the params form covers both paths — hand-rolling `.replace()` on the result
+// only ever worked for the resolved one.
+const authorLabel = author
+    ? t('events.detail.byline', 'Por {{name}}', { name: author.name })
+    : null;
 
 const categoryStyle = `background-color: ${categoryColors.bg}; color: ${categoryColors.text}; border: 1px solid ${categoryColors.border};`;
 const pastStyle = `background-color: ${pastColors.bg}; color: ${pastColors.text};`;
@@ -150,6 +170,16 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
                     <span class="event-header__meta-item">
                         <LocationIcon size={15} aria-hidden="true" />
                         {locationLabel}
+                    </span>
+                )}
+                {authorLabel && (
+                    <span class="event-header__meta-item event-header__byline">
+                        <UserIcon size={15} aria-hidden="true" />
+                        {authorHref ? (
+                            <a href={authorHref} class="event-header__byline-link">{authorLabel}</a>
+                        ) : (
+                            <span>{authorLabel}</span>
+                        )}
                     </span>
                 )}
                 {bookmarkCount !== undefined && (
@@ -369,6 +399,25 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
 
     .event-header__meta-separator {
         margin: 0 0.2em;
+    }
+
+    /* The byline inherits `.event-header__meta-item`'s sizing; only the link
+       itself is lifted out of muted grey so it reads as the one interactive
+       element in the meta row. Values mirror `.post-header__byline-link` so the
+       two bylines feel identical — including its literal 0.15s: there is no
+       token for a hover-fast duration (`--duration-normal` is 0.4s, built for
+       card reveals), and inventing one for a single link is not this task's
+       call to make. */
+    .event-header__byline-link {
+        color: var(--core-foreground);
+        text-decoration: none;
+        font-weight: 500;
+        transition: color 0.15s ease;
+    }
+
+    .event-header__byline-link:hover {
+        color: var(--brand-accent);
+        text-decoration: underline;
     }
 
     .event-header__bookmark-count {

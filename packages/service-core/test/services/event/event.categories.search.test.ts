@@ -16,7 +16,11 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createActor } from '../../factories/actorFactory';
 import { expectSuccess } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
 describe('EventService — categories filter forwarding (HOS-96 T-006)', () => {
@@ -31,7 +35,11 @@ describe('EventService — categories filter forwarding (HOS-96 T-006)', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findAll', 'findAllWithRelations', 'count']);
         loggerMock = createLoggerMock();
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     it('forwards filters.categories to model.findAllWithRelations on search()', async () => {

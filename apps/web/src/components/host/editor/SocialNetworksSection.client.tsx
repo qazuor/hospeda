@@ -7,9 +7,12 @@
  * composed/parsed against `data.<network>Url` on every change.
  */
 
+import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { AccommodationEditData } from '@/lib/api/types';
+import { buildFieldId } from '@/lib/forms/build-field-id';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { ACCOMMODATION_FIELD_PREFIX } from './field-ids';
 import styles from './SocialNetworksSection.module.css';
 
 /** The `AccommodationEditData` fields this section reads and writes. */
@@ -33,8 +36,17 @@ interface SocialNetworkFieldConfig {
     readonly fallbackLabel: string;
     /** Placeholder handle shown in the (empty) input. */
     readonly handlePlaceholder: string;
-    /** Slug used to build stable DOM ids (`acc-<slug>`). */
-    readonly idSlug: string;
+    /**
+     * The Zod key this field validates under.
+     *
+     * The validation schema mirrors the flat HTTP payload and names these by
+     * the bare platform (`facebook`), while {@link SocialNetworkField} above is
+     * the React state key (`facebookUrl`). `buildFieldId` derives the DOM id
+     * from THIS one, because it is the name `focusFirstInvalidField` will be
+     * handed when the field fails — so it is not a free-form slug and must not
+     * be edited for cosmetic reasons (HOS-385).
+     */
+    readonly schemaKey: string;
 }
 
 const SOCIAL_NETWORK_FIELDS: readonly SocialNetworkFieldConfig[] = [
@@ -44,7 +56,7 @@ const SOCIAL_NETWORK_FIELDS: readonly SocialNetworkFieldConfig[] = [
         labelKey: 'host.properties.editor.field.facebook',
         fallbackLabel: 'Facebook',
         handlePlaceholder: 'tu-pagina',
-        idSlug: 'facebook'
+        schemaKey: 'facebook'
     },
     {
         field: 'instagramUrl',
@@ -52,7 +64,7 @@ const SOCIAL_NETWORK_FIELDS: readonly SocialNetworkFieldConfig[] = [
         labelKey: 'host.properties.editor.field.instagram',
         fallbackLabel: 'Instagram',
         handlePlaceholder: 'tu-perfil',
-        idSlug: 'instagram'
+        schemaKey: 'instagram'
     },
     {
         field: 'twitterUrl',
@@ -60,7 +72,7 @@ const SOCIAL_NETWORK_FIELDS: readonly SocialNetworkFieldConfig[] = [
         labelKey: 'host.properties.editor.field.twitter',
         fallbackLabel: 'Twitter / X',
         handlePlaceholder: 'tu-usuario',
-        idSlug: 'twitter'
+        schemaKey: 'twitter'
     },
     {
         field: 'linkedinUrl',
@@ -68,7 +80,7 @@ const SOCIAL_NETWORK_FIELDS: readonly SocialNetworkFieldConfig[] = [
         labelKey: 'host.properties.editor.field.linkedin',
         fallbackLabel: 'LinkedIn',
         handlePlaceholder: 'tu-perfil',
-        idSlug: 'linkedin'
+        schemaKey: 'linkedin'
     },
     {
         field: 'tiktokUrl',
@@ -76,7 +88,7 @@ const SOCIAL_NETWORK_FIELDS: readonly SocialNetworkFieldConfig[] = [
         labelKey: 'host.properties.editor.field.tiktok',
         fallbackLabel: 'TikTok',
         handlePlaceholder: 'tu-usuario',
-        idSlug: 'tiktok'
+        schemaKey: 'tiktok'
     },
     {
         field: 'youtubeUrl',
@@ -84,7 +96,7 @@ const SOCIAL_NETWORK_FIELDS: readonly SocialNetworkFieldConfig[] = [
         labelKey: 'host.properties.editor.field.youtube',
         fallbackLabel: 'YouTube',
         handlePlaceholder: 'tu-canal',
-        idSlug: 'youtube'
+        schemaKey: 'youtube'
     }
 ] as const;
 
@@ -139,6 +151,7 @@ function composeSocialUrl(handle: string, domain: string): string {
 
 /** Props for the internal per-network handle input. */
 interface SocialUrlFieldProps {
+    /** Derived by `buildFieldId` from the Zod key — never written by hand. */
     readonly id: string;
     readonly label: string;
     readonly domain: string;
@@ -152,6 +165,15 @@ interface SocialUrlFieldProps {
  * One social-network field: label, fixed domain prefix, and handle input.
  * Collapses the 6 structurally-identical fields in {@link SocialNetworksSection}
  * into a single reusable component.
+ *
+ * This is the one accommodation field that keeps its hand-rolled wiring rather
+ * than taking `<TextField>` (HOS-385): the input sits INSIDE `.urlInputGroup`
+ * next to the fixed domain `<span>`, and its `aria-describedby` names two
+ * elements — that prefix and, when present, the error. The wrapper renders
+ * label, control and error as flat siblings and owns a single-target
+ * `aria-describedby`, so adopting it here would flatten the input group and
+ * drop the prefix from the accessible description. The `id` is still DERIVED
+ * (see the `id` prop), which is the half that was actually drifting.
  */
 function SocialUrlField({
     id,
@@ -163,7 +185,7 @@ function SocialUrlField({
     onHandleChange
 }: SocialUrlFieldProps) {
     const prefixId = `${id}-prefix`;
-    const errorId = `${id}-error`;
+    const errorId = fieldErrorId(id);
     const describedBy = [prefixId, error ? errorId : undefined].filter(Boolean).join(' ');
 
     return (
@@ -192,15 +214,11 @@ function SocialUrlField({
                     aria-describedby={describedBy}
                 />
             </div>
-            {error && (
-                <span
-                    id={errorId}
-                    className={styles.fieldError}
-                    role="alert"
-                >
-                    {error}
-                </span>
-            )}
+            <FieldError
+                id={errorId}
+                message={error}
+                className={styles.fieldErrorSpacing}
+            />
         </div>
     );
 }
@@ -241,7 +259,10 @@ export function SocialNetworksSection({
             {SOCIAL_NETWORK_FIELDS.map((config) => (
                 <SocialUrlField
                     key={config.field}
-                    id={`acc-${config.idSlug}`}
+                    id={buildFieldId({
+                        prefix: ACCOMMODATION_FIELD_PREFIX,
+                        name: config.schemaKey
+                    })}
                     label={t(config.labelKey, config.fallbackLabel)}
                     domain={config.domain}
                     handle={parseSocialHandle(data[config.field], config.domain)}

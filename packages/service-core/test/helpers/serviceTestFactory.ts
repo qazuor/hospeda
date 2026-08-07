@@ -12,12 +12,17 @@ import { createModelMock } from '../utils/modelMockFactory';
  * @param ServiceClass - The service class constructor to instantiate.
  * @param modelMock - (Optional) A mock implementation of the model. If not provided, a default mock is created.
  * @param loggerMock - (Optional) A mock implementation of the logger. If not provided, a default logger mock is created.
+ * @param extraArgs - (Optional) Additional positional constructor arguments, forwarded verbatim
+ *   after `model`. Needed by services whose later parameters are collaborators a
+ *   DB-less unit test must stub — e.g. `PostService`'s 5th argument, the
+ *   `PostMediaModel` its read hooks query (HOS-390).
  * @returns {S} An instance of the service class with mocked dependencies injected.
  */
 export function createServiceTestInstance<S, M = unknown, L = unknown>(
-    ServiceClass: new (ctx: { logger: L }, model?: M) => S,
+    ServiceClass: new (ctx: { logger: L }, model?: M, ...rest: never[]) => S,
     modelMock?: M,
-    loggerMock?: L
+    loggerMock?: L,
+    ...extraArgs: unknown[]
 ): S {
     const defaultLogger = {
         info: vi.fn(),
@@ -27,5 +32,5 @@ export function createServiceTestInstance<S, M = unknown, L = unknown>(
     } as unknown as L;
     const model = modelMock ?? (createModelMock() as M);
     const logger = loggerMock ?? defaultLogger;
-    return new ServiceClass({ logger }, model);
+    return new ServiceClass({ logger }, model, ...(extraArgs as never[]));
 }

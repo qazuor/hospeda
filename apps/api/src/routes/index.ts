@@ -38,7 +38,11 @@ import {
     aiSocialDraftsRoute,
     aiSocialPublicDataRoute
 } from './ai/social/index.js';
-import { adminAllianceRoutes, publicAllianceRoutes } from './alliance/index.js';
+import {
+    adminAllianceRoutes,
+    protectedAllianceRoutes,
+    publicAllianceRoutes
+} from './alliance/index.js';
 import { adminAmenityRoutes, protectedAmenityRoutes, publicAmenityRoutes } from './amenity';
 import { adminAppLogRoutes } from './app-logs';
 import {
@@ -50,6 +54,7 @@ import { adminAuditLogRoutes, adminSecurityLogRoutes } from './audit-logs';
 // ─── Non-entity route imports ─────────────────────────────────────────────────
 import { adminAuthRoutes, authRoutes, protectedAuthRoutes } from './auth';
 import { betterAuthHandler } from './auth/handler';
+import { publicAuthorRoutes } from './author/public/index.js';
 import { createBillingRoutesHandler } from './billing';
 import { adminBillingRoutes } from './billing/admin';
 import { publicBillingRoutes } from './billing/public';
@@ -130,8 +135,11 @@ import {
     adminListPartnerPlansRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
+    adminReviewPartnerContentRoute,
+    adminRevokePartnerRoute,
     adminSendPaymentLinkRoute,
     adminUpdatePartnerRoute,
+    protectedPartnerRoutes,
     publicPartnersRoutes
 } from './partners';
 import { adminPlatformSettingsRoutes } from './platform-settings/admin/index.js';
@@ -299,6 +307,13 @@ export const setupRoutes = (app: AppOpenAPI) => {
         // Users (public read-only: getById, batch)
         app.route('/api/v1/public/users', publicUserRoutes);
 
+        // Public authors list (HOS-375 T-012) — feeds the dynamic sitemap.
+        // Deliberately mounted at /api/v1/public/authors, NOT under
+        // /api/v1/public/users: `users` is a PRIVATE_CACHE_ENDPOINTS prefix, and
+        // this payload is actor-blind, so it needs its own PUBLIC_CACHE_ENDPOINTS
+        // entry to be shared-cacheable at the edge.
+        app.route('/api/v1/public/authors', publicAuthorRoutes);
+
         // Core entities
         app.route('/api/v1/public/accommodations', publicAccommodationRoutes);
 
@@ -454,8 +469,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/protected/experiences', protectedExperienceRoutes);
         // Commerce owner self-checkout: create + start-subscription (HOS-166 §6.3, §7.2)
         app.route('/api/v1/protected/commerce', protectedCommerceRoutes);
+        // Alliance applicant self-service: my own applications (HOS-278 AC-5)
+        app.route('/api/v1/protected/alliance', protectedAllianceRoutes);
         app.route('/api/v1/protected/host', protectedHostRoutes);
         app.route('/api/v1/protected/host-trades', protectedHostTradeRoutes);
+        // Partner self-service: the caller's OWN listing (HOS-278 D3).
+        app.route('/api/v1/protected/partners', protectedPartnerRoutes);
         app.route('/api/v1/protected/host-onboarding', protectedHostOnboardingRoutes);
         app.route('/api/v1/protected/destinations', protectedDestinationRoutes);
         app.route('/api/v1/protected/events', protectedEventRoutes);
@@ -531,6 +550,8 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminDeletePartnerRoute);
         app.route('/api/v1/admin/partners', adminSendPaymentLinkRoute);
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
+        app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
+        app.route('/api/v1/admin/partners', adminRevokePartnerRoute);
         // Commerce leads admin management (SPEC-239 T-047)
         app.route('/api/v1/admin/commerce', adminCommerceRoutes);
         // Alliance leads admin inbox (HOS-277)

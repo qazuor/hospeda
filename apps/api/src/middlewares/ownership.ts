@@ -20,6 +20,8 @@ type OwnableEntity = {
     ownerId?: string | null;
     createdById?: string | null;
     userId?: string | null;
+    /** Editorial content (posts, events) is owned by its author, not its creator. */
+    authorId?: string | null;
     [key: string]: unknown;
 };
 
@@ -63,6 +65,17 @@ export const registerEntityFetcher = (
  */
 export const clearEntityFetchers = (): void => {
     entityFetchers.clear();
+};
+
+/**
+ * List the entity types that currently have a fetcher registered.
+ *
+ * Exposed so the coverage guard can assert against the real registry rather
+ * than parsing the registration source, which would pass on a call that never
+ * executes.
+ */
+export const getRegisteredEntityTypes = (): OwnableEntityType[] => {
+    return [...entityFetchers.keys()];
 };
 
 /**
