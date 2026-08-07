@@ -88,6 +88,13 @@ overrides:
   "vite@^7.0.0": ">=8.0.16 <9"
   "vite@>=6.0.0": ">=8.0.16 <9"
   "@sentry/vite-plugin": ">=5.3.0"
+  # GHSA-2v37-7h3g-55p8 (advisory ampliado 2026-08-07): el generador custom
+  # puede colgarse en un loop infinito con size 0. Sólo la línea 3.x está
+  # afectada (<3.3.17) y 3.3.16 es la que está instalada; las 5.x y 6.x del
+  # árbol quedan fuera del rango. Acotado bajo 4 para no arrastrar a ningún
+  # consumidor de la 3.x a través de un major. Transitivo puro
+  # (vite > postcss > nanoid, ~100 paths), así que Dependabot no lo alcanza.
+  "nanoid@<3.3.17": ">=3.3.17 <4"
   markdown-it: ">=14.1.1"
   diff: ">=8.0.3"
   defu: ">=6.1.5"
