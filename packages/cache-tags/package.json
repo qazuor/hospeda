@@ -3,6 +3,7 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
+    "sideEffects": false,
     "license": "MIT",
     "description": "Cloudflare cache-tag vocabulary shared by the response emitter (apps/web) and the purge caller (@repo/service-core). HOS-369 W1-1.",
     "main": "dist/index.js",
