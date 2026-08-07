@@ -17,7 +17,7 @@ import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { ToastViewport } from '@/components/ui/ToastViewport.client';
 import { ClientRouter } from 'astro:transitions';
-import '@/styles/global.css';
+import CriticalStyles from '@/components/shared/CriticalStyles.astro';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -51,6 +51,10 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<!-- HOS-369: global.css inlined as critical CSS (see CriticalStyles.astro
+		     for why this must be byte-identical across all four layouts). -->
+		<CriticalStyles />
 
 		<!-- HOS-369 Wave D: client translation dictionary (hashed immutable
 		     asset). Must be in <head> so its deferred execution precedes the

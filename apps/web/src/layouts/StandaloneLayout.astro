@@ -13,8 +13,9 @@
  * Hospeda page:
  * - Fonts (`FontsLoader`) and dark-mode FOUC prevention (`ThemeFoucScript`),
  *   so theming/typography are pixel-identical to the rest of the site.
- * - `@/styles/global.css` (design tokens + base resets), so every `var(--x)`
- *   the page uses resolves and dark mode works automatically.
+ * - `global.css` (design tokens + base resets), inlined via `CriticalStyles`
+ *   (HOS-369), so every `var(--x)` the page uses resolves and dark mode works
+ *   automatically.
  * - `<slot name="head" />` for the page to supply its own `SEOHead` + JSON-LD
  *   (this layout does NOT auto-inject SEOHead the way `MarketingLayout` did —
  *   the page owns its full `<head>` content beyond the shell above).
@@ -48,7 +49,7 @@ import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import I18nClientData from '@/components/shared/I18nClientData.astro';
 import IconSpriteClientData from '@/components/shared/IconSpriteClientData.astro';
-import '@/styles/global.css';
+import CriticalStyles from '@/components/shared/CriticalStyles.astro';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -62,6 +63,10 @@ const { locale } = Astro.props;
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<!-- HOS-369: global.css inlined as critical CSS (see CriticalStyles.astro
+		     for why this must be byte-identical across all four layouts). -->
+		<CriticalStyles />
 
 		<!-- HOS-369 Wave D: client translation dictionary (hashed immutable
 		     asset). Must be in <head> so its deferred execution precedes the
