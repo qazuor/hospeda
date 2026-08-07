@@ -37,7 +37,7 @@ import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPrefe
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
 import { FeedbackHeadlessHost } from '@/components/feedback/FeedbackHeadlessHost.client';
 import { PaginationLoading } from '@/components/shared/feedback/PaginationLoading.client';
-import '@/styles/global.css';
+import CriticalStyles from '@/components/shared/CriticalStyles.astro';
 // @repo/feedback's package stylesheet and the Hospeda brand-token overrides
 // (`@/styles/feedback-overrides.css`) are NOT imported here (HOS-369 W3-5).
 // `FeedbackHeadlessHost` hydrates with `client:idle` and cannot be interacted
@@ -93,6 +93,10 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+		<!-- HOS-369: global.css inlined as critical CSS (see CriticalStyles.astro
+		     for why this must be byte-identical across all four layouts). -->
+		<CriticalStyles />
 
 		<!--
 		  Named slot for scripts that MUST run before ANY other head content:
