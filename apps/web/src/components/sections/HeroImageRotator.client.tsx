@@ -128,6 +128,28 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
 
     const activeAlt = images[activeIndex]?.alt ?? '';
 
+    // Defer the off-screen images' network fetch to the same first interaction
+    // that opens the rotation gate above (HOS-369).
+    //
+    // `loading="lazy"` does NOT achieve this, which is the trap this replaces.
+    // The browser's lazy loading triggers on intersection with the VIEWPORT,
+    // and these images are stacked on top of the visible one at `opacity: 0` —
+    // invisible, but squarely inside the viewport, so they are fetched right
+    // away. Measured cold on staging (mobile, 4x CPU, Slow 4G): `hero-atardecer`
+    // (94 KB) and `hero-isla` (64 KB) both started at ~2,791 ms and competed for
+    // bandwidth with the LCP image itself (48 KB), which took 5,001 ms to
+    // arrive. LCP came out at 5,518 ms against a 2,500 ms budget.
+    //
+    // Omitting `srcSet` as well as `src` is load-bearing: a bare `srcset` is
+    // enough for the browser to fetch the image, so gating `src` alone would
+    // change nothing. Both are restored together when the gate opens, which
+    // leaves a full `interval` (5 s by default) before the first crossfade
+    // needs them.
+    //
+    // Under `prefers-reduced-motion` the gate never opens, so these images are
+    // never fetched at all — correct, since nothing will ever rotate to them.
+    const shouldFetch = (index: number) => index === 0 || started;
+
     return (
         <div
             className={styles.container}
@@ -139,8 +161,8 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
             {images.map((image, index) => (
                 <img
                     key={image.src}
-                    src={image.src}
-                    srcSet={image.srcset}
+                    src={shouldFetch(index) ? image.src : undefined}
+                    srcSet={shouldFetch(index) ? image.srcset : undefined}
                     sizes={image.sizes}
                     alt=""
                     aria-hidden="true"

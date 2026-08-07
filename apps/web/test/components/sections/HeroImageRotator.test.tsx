@@ -182,6 +182,63 @@ describe('HeroImageRotator.client.tsx', () => {
         });
     });
 
+    // HOS-369. `loading="lazy"` does not defer these: the browser's lazy
+    // loading keys off viewport intersection, and an `opacity: 0` image stacked
+    // over the visible one is still inside the viewport. Rendered, not asserted
+    // on the source, for the same reason as the rotation gate above.
+    describe('LCP gate: off-screen images are not fetched before interaction (HOS-369)', () => {
+        afterEach(() => {
+            cleanup();
+        });
+
+        it('must give the first image a src, and the off-screen ones none', () => {
+            const { container } = render(<HeroImageRotator images={IMAGES} />);
+            const srcs = [...container.querySelectorAll('img')].map((im) => im.getAttribute('src'));
+
+            expect(srcs[0], 'the LCP image must always be fetched immediately').toBe('/a.jpg');
+            expect(
+                srcs.slice(1),
+                'Off-screen hero images were given a src before any interaction. They are ' +
+                    'inside the viewport at opacity 0, so the browser fetches them at once and ' +
+                    'they compete for bandwidth with the LCP image — 158 KB against its 48 KB, ' +
+                    'which is what pushed the cold staging LCP to 5,518 ms.'
+            ).toEqual([null, null]);
+        });
+
+        it('must not emit a srcSet for the off-screen images either', () => {
+            const withSrcSet = [
+                { src: '/a.jpg', alt: 'A', srcset: '/a-480.jpg 480w' },
+                { src: '/b.jpg', alt: 'B', srcset: '/b-480.jpg 480w' }
+            ] as const;
+            const { container } = render(<HeroImageRotator images={withSrcSet} />);
+            const srcSets = [...container.querySelectorAll('img')].map((im) =>
+                im.getAttribute('srcset')
+            );
+
+            expect(srcSets[0]).toBe('/a-480.jpg 480w');
+            expect(
+                srcSets[1],
+                'A bare srcset is enough for the browser to fetch the image, so gating src ' +
+                    'alone would defer nothing.'
+            ).toBeNull();
+        });
+
+        it('must fetch every image once the user has interacted', () => {
+            const { container } = render(<HeroImageRotator images={IMAGES} />);
+
+            act(() => {
+                window.dispatchEvent(new Event('pointerdown'));
+            });
+
+            const srcs = [...container.querySelectorAll('img')].map((im) => im.getAttribute('src'));
+            expect(
+                srcs,
+                'Once the gate opens the rotator needs the images loaded before the first ' +
+                    'crossfade, which is one full interval away.'
+            ).toEqual(['/a.jpg', '/b.jpg', '/c.jpg']);
+        });
+    });
+
     describe('named export', () => {
         it('should export HeroImageRotator as named export', () => {
             expect(src).toContain('export function HeroImageRotator');
