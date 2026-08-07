@@ -5,12 +5,28 @@
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { act, cleanup, render } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { HeroImageRotator } from '../../../src/components/sections/HeroImageRotator.client';
 
 const src = readFileSync(
     resolve(__dirname, '../../../src/components/sections/HeroImageRotator.client.tsx'),
     'utf8'
 );
+
+vi.mock('@/hooks/use-reduced-motion', () => ({
+    useReducedMotion: () => false
+}));
+
+const IMAGES = [
+    { src: '/a.jpg', alt: 'A' },
+    { src: '/b.jpg', alt: 'B' },
+    { src: '/c.jpg', alt: 'C' }
+] as const;
+
+/** Index of the image currently at full opacity. */
+const activeIndexOf = (container: HTMLElement): number =>
+    [...container.querySelectorAll('img')].findIndex((im) => im.style.opacity === '1');
 
 describe('HeroImageRotator.client.tsx', () => {
     describe('accessibility', () => {
@@ -78,6 +94,91 @@ describe('HeroImageRotator.client.tsx', () => {
 
         it('should load first image eagerly', () => {
             expect(src).toContain("loading={index === 0 ? 'eager' : 'lazy'}");
+        });
+    });
+
+    // HOS-369. These render the component instead of reading its source,
+    // because what matters here is behaviour under timers, and a source
+    // assertion cannot tell a working gate from a deleted one.
+    describe('LCP gate: rotation waits for the first interaction (HOS-369)', () => {
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+            cleanup();
+        });
+
+        it('must NOT rotate before any user interaction, however long it waits', () => {
+            const { container } = render(
+                <HeroImageRotator
+                    images={IMAGES}
+                    interval={1000}
+                />
+            );
+            expect(activeIndexOf(container)).toBe(0);
+
+            // 10 ticks of a 3-image cycle. Deliberately NOT a multiple of
+            // images.length: at 60 ticks the index would wrap back to 0 and this
+            // assertion would pass even with the gate deleted.
+            act(() => {
+                vi.advanceTimersByTime(10_000);
+            });
+
+            expect(
+                activeIndexOf(container),
+                'The rotator advanced without any user interaction. Each crossfade paints a ' +
+                    'new element and produces a fresh LCP candidate, which is what took the ' +
+                    'staging home from 1,032 ms to 9,294 ms of LCP.'
+            ).toBe(0);
+        });
+
+        it('must rotate once the user has interacted', () => {
+            const { container } = render(
+                <HeroImageRotator
+                    images={IMAGES}
+                    interval={1000}
+                />
+            );
+
+            act(() => {
+                window.dispatchEvent(new Event('pointerdown'));
+            });
+            act(() => {
+                vi.advanceTimersByTime(1000);
+            });
+
+            expect(
+                activeIndexOf(container),
+                'After an interaction the LCP is sealed, so the rotator must resume its ' +
+                    'normal crossfade. It stayed frozen instead.'
+            ).toBe(1);
+        });
+
+        it('keeps cycling through every image after the gate opens', () => {
+            const { container } = render(
+                <HeroImageRotator
+                    images={IMAGES}
+                    interval={1000}
+                />
+            );
+
+            act(() => {
+                window.dispatchEvent(new Event('keydown'));
+            });
+            act(() => {
+                vi.advanceTimersByTime(1000);
+            });
+            expect(activeIndexOf(container)).toBe(1);
+            act(() => {
+                vi.advanceTimersByTime(1000);
+            });
+            expect(activeIndexOf(container)).toBe(2);
+            act(() => {
+                vi.advanceTimersByTime(1000);
+            });
+            expect(activeIndexOf(container), 'should wrap back to the first image').toBe(0);
         });
     });
 
