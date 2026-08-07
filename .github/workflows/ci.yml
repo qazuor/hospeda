@@ -26,6 +26,21 @@ on:
       - reopened
       - ready_for_review
   workflow_call:
+  # Manual re-trigger. GitHub delivers workflow runs through its own webhook
+  # pipeline, and when that pipeline is throttled (as during the 2026-08-06
+  # Actions incident, which processed ~15% of webhooks) the `pull_request`
+  # event is DROPPED, not queued: no run is ever created, and none appears
+  # when the incident clears. With only event-driven triggers the sole way
+  # back was to close/reopen the PR or push an empty commit — mutating the PR
+  # to work around an outage. This gives the run a door that does not depend
+  # on the event that failed to arrive.
+  workflow_dispatch:
+    inputs:
+      baseline_ref:
+        description: 'Branch to diff against for the seed dual-write and semgrep baseline checks'
+        required: false
+        default: 'staging'
+        type: string
 
 # Cancel in-progress runs for the same PR when a new push arrives.
 # Pushes to main never cancel (we want every commit on main to build).
@@ -150,6 +165,15 @@ jobs:
           # Full history so semgrep --baseline-commit can resolve the PR base
           # (or the previous push commit) and diff against it.
           fetch-depth: 0
+      - name: Resolve diff baseline
+        # Sets CI_BASELINE_SHA. On workflow_dispatch there is no event-supplied
+        # baseline, and an empty one makes semgrep scan the whole repo and
+        # report pre-existing debt as if this run caused it.
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          BASELINE_REF: ${{ inputs.baseline_ref }}
+        run: bash scripts/resolve-ci-baseline.sh
       - uses: ./.github/actions/setup
       - name: Audit production dependencies (critical/high)
         run: pnpm audit --prod --audit-level=high
@@ -170,7 +194,7 @@ jobs:
         # push) via --baseline-commit, so only findings INTRODUCED by the change
         # block the build — unrelated pre-existing findings do not fail the PR.
         env:
-          SEMGREP_BASELINE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          SEMGREP_BASELINE: ${{ env.CI_BASELINE_SHA }}
         run: |
           uvx --python 3.12 --from semgrep==1.164.0 semgrep scan \
             --config p/typescript \
@@ -197,6 +221,15 @@ jobs:
           # the PR base ref against HEAD (same reason the `security` job uses
           # fetch-depth: 0 for its semgrep --baseline-commit diff).
           fetch-depth: 0
+      - name: Resolve diff baseline
+        # Sets CI_BASELINE_SHA. check-seed-dual-write.sh exits 1 when BASE_SHA
+        # is unset, so without this every workflow_dispatch run fails Guards
+        # for a reason unrelated to the code being checked.
+        env:
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+          BASELINE_REF: ${{ inputs.baseline_ref }}
+        run: bash scripts/resolve-ci-baseline.sh
       - uses: ./.github/actions/setup
       - name: Check package layering (HOS-380)
         run: bash scripts/check-circular-deps.sh
@@ -240,7 +273,7 @@ jobs:
         # untrusted, attacker-controllable text; only ever searched for a
         # literal substring, never executed.
         env:
-          BASE_SHA: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          BASE_SHA: ${{ env.CI_BASELINE_SHA }}
           PR_BODY: ${{ github.event.pull_request.body }}
         run: bash scripts/check-seed-dual-write.sh
       - name: Web must not call admin API tier (BETA-73)
