@@ -124,6 +124,24 @@ auditConfig:
   ignoreGhsas:
     - GHSA-rmmr-r34h-pfm5
     - GHSA-5xrq-8626-4rwp
+    # image-size: DoS en los parsers de ICNS (GHSA-w3rx-r6r6-pgpr) y de JXL/HEIF
+    # (GHSA-5p2g-fcmc-qvqq). Ignorados porque NO HAY PARCHE: el advisory declara
+    # `>=2.0.3` como versión corregida y esa versión no existe — 2.0.2, el último
+    # release publicado (abril 2025), es el vulnerable. No hay override posible.
+    #
+    # RIESGO ACEPTADO, NO INEXISTENTE. `packages/media/src/server/validate-media-file.ts`
+    # llama `imageSize()` sobre el buffer que sube el usuario, e `image/heic` está
+    # en `ENTITY_MIME_TYPES`, así que el vector HEIF es alcanzable: la allowlist de
+    # MIME y el chequeo de magic bytes corren ANTES, y un HEIF bien formado los pasa
+    # a los dos. ICNS y JXL no están en la allowlist, así que ese vector sí está
+    # cerrado. Decisión del owner (2026-08-07) para no romperle la subida a los
+    # usuarios de iPhone, que mandan HEIC por defecto.
+    #
+    # REVISAR: HOS-418 sigue el arreglo real (migrar la medición de dimensiones a
+    # `sharp`, que ya está en el árbol y usa libvips en vez del parser JS) y el
+    # release de image-size 2.0.3 cuando salga. Sacar estas dos líneas al cerrarlo.
+    - GHSA-w3rx-r6r6-pgpr
+    - GHSA-5p2g-fcmc-qvqq
 
 allowBuilds:
   # Needed to upload source maps to Sentry from @sentry/esbuild-plugin (api)
