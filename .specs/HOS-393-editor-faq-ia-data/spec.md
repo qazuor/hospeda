@@ -317,6 +317,35 @@ the reasoning is worth keeping:
   destination tourist context, not accommodation data, and already modelled by
   destinations, attractions and POIs.
 
+### Zod 4: `.default()` fires through `.optional()` and `.partial()`
+
+Found while implementing fase 2, after it had already shipped a silent bug into
+the first draft of the schemas. Verified empirically against the repo's Zod
+(4.3.6):
+
+```js
+z.object({ f: z.boolean().default(true).optional() }).parse({})
+// → { f: true }      NOT { }
+```
+
+The `.default()` fires whenever the key is **absent from the input**, regardless
+of how many `.optional()` / `.partial()` wrappers surround it. `.optional()`
+does not shield it.
+
+Why that matters here: deriving the update payload as
+`CreatePayloadSchema.partial()` looks equivalent to a hand-written partial, but
+it injects `isVisibleOnListing: true, isUsableByAi: true` into **every** update
+that does not explicitly resend them. An owner editing only the question text of
+a FAQ they had hidden would silently re-publish it.
+
+Rule: a field on an **update** payload is `.optional()` with **no** `.default()`.
+Never derive an update schema by `.partial()`-ing a create schema that carries
+defaults. `FaqWithChannelVisibilityUpdatePayloadSchema` is built from
+`FaqUpdatePayloadSchema` for exactly this reason — see the comment on it.
+
+Defaults on the **create** payload are correct and intended (G-3): a FAQ created
+without mentioning the flags must come out visible and AI-usable.
+
 ### Fase 1 notes worth keeping
 
 - `apiClient.post` is the only verb that does **not** send `withCredentials`

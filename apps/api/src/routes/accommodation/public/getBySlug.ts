@@ -121,10 +121,14 @@ async function fetchFeatures(accommodationId: string) {
 }
 
 /**
- * Fetches active FAQs (lifecycleState=ACTIVE, not soft-deleted).
+ * Fetches active, publicly-visible FAQs (lifecycleState=ACTIVE, not soft-deleted,
+ * isVisibleOnListing=true).
  * @remarks Uses getDb() directly because AccommodationService.getFaqs() loads all
  * FAQs via findWithRelations without filtering by lifecycleState=ACTIVE, which would
  * expose draft or archived FAQs to public consumers.
+ * @remarks HOS-393 G-4/AC-8: `isVisibleOnListing = false` FAQs are filtered out HERE,
+ * server-side, before the row ever enters the response payload — filtering only in
+ * the Astro component would still ship the private FAQ in the page's HTML.
  */
 async function fetchFaqs(accommodationId: string) {
     const db = getDb();
@@ -142,6 +146,7 @@ async function fetchFaqs(accommodationId: string) {
             and(
                 eq(accommodationFaqs.accommodationId, accommodationId),
                 eq(accommodationFaqs.lifecycleState, 'ACTIVE'),
+                eq(accommodationFaqs.isVisibleOnListing, true),
                 isNull(accommodationFaqs.deletedAt)
             )
         );
