@@ -313,7 +313,18 @@
                 "deleteConfirm": "¿Eliminás esta pregunta?",
                 "saveError": "No se pudo guardar la pregunta.",
                 "deleteError": "No se pudo eliminar la pregunta.",
-                "reorderError": "No se pudo reordenar."
+                "reorderError": "No se pudo reordenar.",
+                "visibleOnListingLabel": "Visible en la ficha pública",
+                "usableByAiLabel": "Usable por la IA",
+                "notVisibleBadge": "No visible en la ficha",
+                "notAiUsableBadge": "No usable por IA",
+                "channelIntro": {
+                    "title": "¿Por qué ocultar o restringir una pregunta?",
+                    "body1": "\"Visible en la ficha pública\" muestra la pregunta en la página del alojamiento y en los datos estructurados (JSON-LD) que leen los buscadores. \"Usable por la IA\" permite que el asistente de chat use esta pregunta para responder consultas.",
+                    "body2": "Destildá \"Visible en la ficha pública\" para información útil pero que no querés publicar: algo temporal (\"la pileta está en refacción hasta noviembre\"), un margen que preferís no prometer por escrito (\"hay flexibilidad de late check-out si no hay reserva siguiente\"), o una recomendación que suena mejor en una conversación que en la vidriera (\"de noche conviene pedir remis\").",
+                    "body3": "Destildá \"Usable por la IA\" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee — texto legal o condiciones exactas de cancelación, por ejemplo.",
+                    "body4": "Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página."
+                }
             },
             "action": {
                 "save": "Guardar",

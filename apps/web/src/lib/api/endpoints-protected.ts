@@ -2923,6 +2923,19 @@ export interface AccommodationFaqItem {
     readonly answer: string;
     readonly category: string | null;
     readonly displayOrder: number | null;
+    /**
+     * Whether the FAQ appears on the accommodation's public page (accordion,
+     * FAQ sections, and `FAQPage` JSON-LD). Enforced server-side (HOS-393) —
+     * this flag is display-only here, the editor never filters by it.
+     */
+    readonly isVisibleOnListing: boolean;
+    /**
+     * Whether the AI chat assistant may use this FAQ to answer guest
+     * questions. Enforced where the prompt is assembled (HOS-393). A FAQ
+     * that is AI-usable but not `isVisibleOnListing` is NOT private — the
+     * assistant will still say it to anyone who asks in chat.
+     */
+    readonly isUsableByAi: boolean;
 }
 
 /**
@@ -2979,16 +2992,22 @@ export const accommodationFaqApi = {
         accommodationId,
         question,
         answer,
-        category
+        category,
+        isVisibleOnListing,
+        isUsableByAi
     }: {
         readonly accommodationId: string;
         readonly question: string;
         readonly answer: string;
         readonly category?: string;
+        /** Defaults to `true` server-side when omitted (HOS-393). */
+        readonly isVisibleOnListing?: boolean;
+        /** Defaults to `true` server-side when omitted (HOS-393). */
+        readonly isUsableByAi?: boolean;
     }): Promise<ApiResult<{ readonly faq: AccommodationFaqItem }>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/accommodations/${accommodationId}/faqs`,
-            body: { question, answer, category }
+            body: { question, answer, category, isVisibleOnListing, isUsableByAi }
         });
     },
 
@@ -3016,17 +3035,21 @@ export const accommodationFaqApi = {
         faqId,
         question,
         answer,
-        category
+        category,
+        isVisibleOnListing,
+        isUsableByAi
     }: {
         readonly accommodationId: string;
         readonly faqId: string;
         readonly question?: string;
         readonly answer?: string;
         readonly category?: string;
+        readonly isVisibleOnListing?: boolean;
+        readonly isUsableByAi?: boolean;
     }): Promise<ApiResult<{ readonly faq: AccommodationFaqItem }>> {
         return apiClient.put({
             path: `${PROTECTED}/accommodations/${accommodationId}/faqs/${faqId}`,
-            body: { question, answer, category }
+            body: { question, answer, category, isVisibleOnListing, isUsableByAi }
         });
     },
 

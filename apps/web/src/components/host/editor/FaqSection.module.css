@@ -30,6 +30,42 @@
     margin: 0;
 }
 
+/* Explanatory copy block (G-6) */
+.channelIntro {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-3, 1rem);
+    border-radius: var(--radius-md, 10px);
+    background: var(--surface-warm);
+    border: 1px solid var(--border);
+}
+
+.channelIntroTitle {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.channelIntroBody {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+    line-height: 1.5;
+}
+
+.channelIntroNote {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+    margin: 0;
+    line-height: 1.5;
+}
+
 .error {
     padding: 0.625rem 0.875rem;
     border-radius: var(--radius-md, 10px);
@@ -77,6 +113,28 @@
     color: var(--core-foreground);
     margin: 0 0 var(--space-1, 0.25rem);
     word-break: break-word;
+}
+
+/* Per-row non-default channel-visibility marker (AC-14) */
+.badgeRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-1, 0.25rem);
+    margin: 0 0 var(--space-1, 0.25rem);
+}
+
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: var(--radius-pill, 9999px);
+    background: var(--surface-warm);
+    border: 1px solid var(--border);
+    color: var(--core-muted-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 500;
 }
 
 .answer {
@@ -200,6 +258,23 @@
 .textarea:focus-visible {
     outline: 2px solid var(--brand-primary);
     outline-offset: 1px;
+}
+
+/* Channel-visibility checkboxes (HOS-393) */
+.channelCheckboxes {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 1rem);
+}
+
+.checkboxLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    cursor: pointer;
 }
 
 .editActions {
