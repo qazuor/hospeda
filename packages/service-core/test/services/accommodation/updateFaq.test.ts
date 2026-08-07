@@ -179,4 +179,44 @@ describe('AccommodationService.updateFaq', () => {
         const result = await service.updateFaq(actor, {} as any);
         expectValidationError(result);
     });
+
+    // -------------------------------------------------------------------
+    // HOS-393 — channel-visibility flags (isVisibleOnListing / isUsableByAi)
+    // -------------------------------------------------------------------
+
+    it('should propagate explicit channel-visibility flags to the updated FAQ (AC-3)', async () => {
+        modelMock.findById.mockResolvedValue(accommodation);
+        faqModelMock.findById.mockResolvedValue(faq);
+        faqModelMock.update.mockResolvedValue({
+            ...faq,
+            ...updateData,
+            isVisibleOnListing: false,
+            isUsableByAi: true
+        });
+        vi.spyOn(Object.getPrototypeOf(service), '_canUpdate').mockImplementation(() => {});
+
+        const inputWithFlags: AccommodationFaqUpdateInput = {
+            ...input,
+            faq: {
+                ...input.faq,
+                isVisibleOnListing: false,
+                isUsableByAi: true
+            }
+        };
+
+        const result = await service.updateFaq(actor, inputWithFlags);
+        expectSuccess(result);
+        expect(result.data?.faq).toMatchObject({
+            isVisibleOnListing: false,
+            isUsableByAi: true
+        });
+        expect(faqModelMock.update).toHaveBeenCalledWith(
+            { id: faq.id as any },
+            expect.objectContaining({
+                isVisibleOnListing: false,
+                isUsableByAi: true
+            }),
+            undefined
+        );
+    });
 });

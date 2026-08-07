@@ -589,6 +589,13 @@
       "when": 1786018335426,
       "tag": "0083_fancy_juggernaut",
       "breakpoints": true
+    },
+    {
+      "idx": 84,
+      "version": "7",
+      "when": 1786038194991,
+      "tag": "0084_hot_night_thrasher",
+      "breakpoints": true
     }
   ]
 }

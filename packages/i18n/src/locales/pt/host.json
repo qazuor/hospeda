@@ -313,7 +313,18 @@
                 "deleteConfirm": "Excluir esta pergunta?",
                 "saveError": "Não foi possível salvar a pergunta.",
                 "deleteError": "Não foi possível excluir a pergunta.",
-                "reorderError": "Não foi possível reordenar."
+                "reorderError": "Não foi possível reordenar.",
+                "visibleOnListingLabel": "Visível na página do imóvel",
+                "usableByAiLabel": "Utilizável pela IA",
+                "notVisibleBadge": "Não visível na página",
+                "notAiUsableBadge": "Não utilizável pela IA",
+                "channelIntro": {
+                    "title": "Por que ocultar ou restringir uma pergunta?",
+                    "body1": "\"Visível na página do imóvel\" exibe a pergunta na página do alojamento e nos dados estruturados (JSON-LD) que os buscadores leem. \"Utilizável pela IA\" permite que o assistente de chat use esta pergunta para responder consultas.",
+                    "body2": "Desmarque \"Visível na página do imóvel\" para informações úteis, mas que você não quer publicar: algo temporário (\"a piscina está em reforma até novembro\"), uma margem que prefere não prometer por escrito (\"há flexibilidade no late check-out se não houver reserva seguinte\"), ou uma dica que soa melhor numa conversa do que na vitrine (\"à noite é melhor pedir um táxi\").",
+                    "body3": "Desmarque \"Utilizável pela IA\" para conteúdo que você prefere mostrar exatamente como escrito, sem que o assistente o reformule — texto legal ou condições exatas de cancelamento, por exemplo.",
+                    "body4": "Importante: uma pergunta não visível na página, mas utilizável pela IA, não é privada. O assistente pode dizê-la a qualquer pessoa que perguntar pelo chat; ela só não aparece publicada na página."
+                }
             },
             "action": {
                 "save": "Salvar",

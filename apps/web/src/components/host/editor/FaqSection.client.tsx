@@ -26,7 +26,15 @@
  * own question so each row's controls stay uniquely named.
  */
 
-import { AddIcon, ChevronDownIcon, ChevronUpIcon, DeleteIcon, EditIcon } from '@repo/icons';
+import {
+    AddIcon,
+    ChevronDownIcon,
+    ChevronUpIcon,
+    DeleteIcon,
+    EditIcon,
+    EyeOffIcon,
+    SparkleIcon
+} from '@repo/icons';
 import { type JSX, useCallback, useState } from 'react';
 import { type AccommodationFaqItem, accommodationFaqApi } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -50,13 +58,24 @@ export interface FaqSectionProps {
     readonly initialFaqs: readonly AccommodationFaqItem[];
 }
 
-/** Editor state for a single FAQ row (question + answer only — see below). */
+/**
+ * Editor state for a single FAQ row: question + answer plus the two
+ * channel-visibility flags (HOS-393). Both flags default to `true` so a new
+ * FAQ behaves exactly as every FAQ did before the flags existed (G-3).
+ */
 interface FaqEditor {
     readonly question: string;
     readonly answer: string;
+    readonly isVisibleOnListing: boolean;
+    readonly isUsableByAi: boolean;
 }
 
-const EMPTY_EDITOR: FaqEditor = { question: '', answer: '' };
+const EMPTY_EDITOR: FaqEditor = {
+    question: '',
+    answer: '',
+    isVisibleOnListing: true,
+    isUsableByAi: true
+};
 
 /** Max characters of the question echoed into per-row action `aria-label`s. */
 const LABEL_SNIPPET_MAX = 40;
@@ -86,6 +105,17 @@ function toLabelSnippet(question: string): string {
         return trimmed;
     }
     return `${trimmed.slice(0, LABEL_SNIPPET_MAX).trimEnd()}…`;
+}
+
+/**
+ * Whether a FAQ's channel-visibility flags differ from the default
+ * (both `true`). Drives the per-row marker (AC-14) — the editor lists every
+ * FAQ regardless of its flags, so a non-default state must stay visible at a
+ * glance, or a hidden FAQ becomes invisible in the very screen meant to
+ * manage it (R-1).
+ */
+function hasNonDefaultChannelState(faq: AccommodationFaqItem): boolean {
+    return !faq.isVisibleOnListing || !faq.isUsableByAi;
 }
 
 // ---------------------------------------------------------------------------
@@ -129,7 +159,9 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
         const result = await accommodationFaqApi.add({
             accommodationId,
             question: addValues.question.trim(),
-            answer: addValues.answer.trim()
+            answer: addValues.answer.trim(),
+            isVisibleOnListing: addValues.isVisibleOnListing,
+            isUsableByAi: addValues.isUsableByAi
         });
 
         setBusyId(null);
@@ -151,7 +183,12 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
 
     const startEdit = useCallback((faq: AccommodationFaqItem) => {
         setEditingId(faq.id);
-        setEditValues({ question: faq.question, answer: faq.answer });
+        setEditValues({
+            question: faq.question,
+            answer: faq.answer,
+            isVisibleOnListing: faq.isVisibleOnListing,
+            isUsableByAi: faq.isUsableByAi
+        });
         setActionError(null);
     }, []);
 
@@ -172,7 +209,9 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                 accommodationId,
                 faqId,
                 question: editValues.question.trim(),
-                answer: editValues.answer.trim()
+                answer: editValues.answer.trim(),
+                isVisibleOnListing: editValues.isVisibleOnListing,
+                isUsableByAi: editValues.isUsableByAi
             });
 
             setBusyId(null);
@@ -273,6 +312,39 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                 {t('host.properties.editor.section.faqs', 'Preguntas frecuentes')}
             </legend>
 
+            <div className={styles.channelIntro}>
+                <p className={styles.channelIntroTitle}>
+                    {t(
+                        'host.properties.editor.faq.channelIntro.title',
+                        '¿Por qué ocultar o restringir una pregunta?'
+                    )}
+                </p>
+                <p className={styles.channelIntroBody}>
+                    {t(
+                        'host.properties.editor.faq.channelIntro.body1',
+                        '"Visible en la ficha pública" muestra la pregunta en la página del alojamiento y en los datos estructurados (JSON-LD) que leen los buscadores. "Usable por la IA" permite que el asistente de chat use esta pregunta para responder consultas.'
+                    )}
+                </p>
+                <p className={styles.channelIntroBody}>
+                    {t(
+                        'host.properties.editor.faq.channelIntro.body2',
+                        'Destildá "Visible en la ficha pública" para información útil pero que no querés publicar: algo temporal ("la pileta está en refacción hasta noviembre"), un margen que preferís no prometer por escrito ("hay flexibilidad de late check-out si no hay reserva siguiente"), o una recomendación que suena mejor en una conversación que en la vidriera ("de noche conviene pedir remis").'
+                    )}
+                </p>
+                <p className={styles.channelIntroBody}>
+                    {t(
+                        'host.properties.editor.faq.channelIntro.body3',
+                        'Destildá "Usable por la IA" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee — texto legal o condiciones exactas de cancelación, por ejemplo.'
+                    )}
+                </p>
+                <p className={styles.channelIntroNote}>
+                    {t(
+                        'host.properties.editor.faq.channelIntro.body4',
+                        'Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página.'
+                    )}
+                </p>
+            </div>
+
             {actionError && (
                 <p
                     className={styles.error}
@@ -345,6 +417,40 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                             setEditValues((v) => ({ ...v, answer: e.target.value }))
                                         }
                                     />
+                                    <div className={styles.channelCheckboxes}>
+                                        <label className={styles.checkboxLabel}>
+                                            <input
+                                                type="checkbox"
+                                                checked={editValues.isVisibleOnListing}
+                                                onChange={(e) =>
+                                                    setEditValues((v) => ({
+                                                        ...v,
+                                                        isVisibleOnListing: e.target.checked
+                                                    }))
+                                                }
+                                            />
+                                            {t(
+                                                'host.properties.editor.faq.visibleOnListingLabel',
+                                                'Visible en la ficha pública'
+                                            )}
+                                        </label>
+                                        <label className={styles.checkboxLabel}>
+                                            <input
+                                                type="checkbox"
+                                                checked={editValues.isUsableByAi}
+                                                onChange={(e) =>
+                                                    setEditValues((v) => ({
+                                                        ...v,
+                                                        isUsableByAi: e.target.checked
+                                                    }))
+                                                }
+                                            />
+                                            {t(
+                                                'host.properties.editor.faq.usableByAiLabel',
+                                                'Usable por la IA'
+                                            )}
+                                        </label>
+                                    </div>
                                     <div className={styles.editActions}>
                                         <button
                                             type="button"
@@ -370,6 +476,36 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                                 <div className={styles.displayRow}>
                                     <div className={styles.itemContent}>
                                         <p className={styles.question}>{faq.question}</p>
+                                        {hasNonDefaultChannelState(faq) && (
+                                            <div className={styles.badgeRow}>
+                                                {!faq.isVisibleOnListing && (
+                                                    <span className={styles.badge}>
+                                                        <EyeOffIcon
+                                                            size="xs"
+                                                            weight="regular"
+                                                            aria-hidden="true"
+                                                        />
+                                                        {t(
+                                                            'host.properties.editor.faq.notVisibleBadge',
+                                                            'No visible en la ficha'
+                                                        )}
+                                                    </span>
+                                                )}
+                                                {!faq.isUsableByAi && (
+                                                    <span className={styles.badge}>
+                                                        <SparkleIcon
+                                                            size="xs"
+                                                            weight="regular"
+                                                            aria-hidden="true"
+                                                        />
+                                                        {t(
+                                                            'host.properties.editor.faq.notAiUsableBadge',
+                                                            'No usable por IA'
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </div>
+                                        )}
                                         <p className={styles.answer}>{faq.answer}</p>
                                     </div>
                                     <div className={styles.itemActions}>
@@ -497,6 +633,37 @@ export function FaqSection({ locale, accommodationId, initialFaqs }: FaqSectionP
                         )}
                         onChange={(e) => setAddValues((v) => ({ ...v, answer: e.target.value }))}
                     />
+                    <div className={styles.channelCheckboxes}>
+                        <label className={styles.checkboxLabel}>
+                            <input
+                                type="checkbox"
+                                checked={addValues.isVisibleOnListing}
+                                onChange={(e) =>
+                                    setAddValues((v) => ({
+                                        ...v,
+                                        isVisibleOnListing: e.target.checked
+                                    }))
+                                }
+                            />
+                            {t(
+                                'host.properties.editor.faq.visibleOnListingLabel',
+                                'Visible en la ficha pública'
+                            )}
+                        </label>
+                        <label className={styles.checkboxLabel}>
+                            <input
+                                type="checkbox"
+                                checked={addValues.isUsableByAi}
+                                onChange={(e) =>
+                                    setAddValues((v) => ({
+                                        ...v,
+                                        isUsableByAi: e.target.checked
+                                    }))
+                                }
+                            />
+                            {t('host.properties.editor.faq.usableByAiLabel', 'Usable por la IA')}
+                        </label>
+                    </div>
                     <div className={styles.editActions}>
                         <button
                             type="button"
