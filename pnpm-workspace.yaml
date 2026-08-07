@@ -57,9 +57,17 @@ overrides:
   lodash-es: ">=4.17.24"
   serialize-javascript: ">=7.0.3"
   prismjs: ">=1.30.0"
-  "js-yaml@<4.1.1": "^4.1.1"
-  # The 5.x line is a separate advisory track from the <4.1.1 pin above: 5.2.0 is
-  # installed and is hit by both the flow-collection and the !!omap DoS.
+  # GHSA-5p4m-2wfm-xmqj (2026-08-06, high): the !!omap quadratic-CPU DoS covers
+  # >=4.0.0 <4.3.1, and the previous "<4.1.1" selector here was itself resolving
+  # the tree onto 4.3.0 — inside the new vulnerable range. Same failure mode as
+  # brace-expansion above: the floor was the thing installing the vulnerable
+  # version. Raising the selector to the full advisory range is the fix.
+  # Transitive only (xmlbuilder2, @tanstack/start-plugin-core, ~100 paths), so
+  # an override is the only reachable route — Dependabot cannot patch these.
+  "js-yaml@<4.3.1": "^4.3.1"
+  # The 5.x line is a separate advisory track from the 4.x pin above: 5.2.0 is
+  # installed and is hit by both the flow-collection and the !!omap DoS. Already
+  # above the !!omap fix, so this line needed no change.
   "js-yaml@>=5.0.0": ">=5.2.2"
   # 0.0.33 and 0.1.0 both reach the arbitrary-write and path-traversal
   # advisories. Only reachable through external-editor (CLI prompt tooling).
