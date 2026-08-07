@@ -423,11 +423,11 @@ describe('FaqSection', () => {
 
     it('renders the explanatory copy block above the list (G-6)', () => {
         renderSection([FAQ_1]);
+        expect(screen.getByText('¿Por qué ocultar o restringir una pregunta?')).toBeInTheDocument();
         expect(
-            screen.getByText('¿Por qué ocultar o restringir una pregunta?')
-        ).toBeInTheDocument();
-        expect(
-            screen.getByText(/una pregunta no visible en la ficha pero usable por la IA no es privada/)
+            screen.getByText(
+                /una pregunta no visible en la ficha pero usable por la IA no es privada/
+            )
         ).toBeInTheDocument();
     });
 });

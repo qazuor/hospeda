@@ -1,6 +1,15 @@
 import type { AdminInfoType, I18nText } from '@repo/schemas';
 import { relations } from 'drizzle-orm';
-import { boolean, index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
+import {
+    boolean,
+    index,
+    integer,
+    jsonb,
+    pgTable,
+    text,
+    timestamp,
+    uuid
+} from 'drizzle-orm/pg-core';
 import { LifecycleStatusPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
 import { accommodations } from './accommodation.dbschema.ts';
