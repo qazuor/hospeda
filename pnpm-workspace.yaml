@@ -88,6 +88,13 @@ overrides:
   "vite@^7.0.0": ">=8.0.16 <9"
   "vite@>=6.0.0": ">=8.0.16 <9"
   "@sentry/vite-plugin": ">=5.3.0"
+  # GHSA-2v37-7h3g-55p8 (advisory ampliado 2026-08-07): el generador custom
+  # puede colgarse en un loop infinito con size 0. Sólo la línea 3.x está
+  # afectada (<3.3.17) y 3.3.16 es la que está instalada; las 5.x y 6.x del
+  # árbol quedan fuera del rango. Acotado bajo 4 para no arrastrar a ningún
+  # consumidor de la 3.x a través de un major. Transitivo puro
+  # (vite > postcss > nanoid, ~100 paths), así que Dependabot no lo alcanza.
+  "nanoid@<3.3.17": ">=3.3.17 <4"
   markdown-it: ">=14.1.1"
   diff: ">=8.0.3"
   defu: ">=6.1.5"
@@ -117,6 +124,24 @@ auditConfig:
   ignoreGhsas:
     - GHSA-rmmr-r34h-pfm5
     - GHSA-5xrq-8626-4rwp
+    # image-size: DoS en los parsers de ICNS (GHSA-w3rx-r6r6-pgpr) y de JXL/HEIF
+    # (GHSA-5p2g-fcmc-qvqq). Ignorados porque NO HAY PARCHE: el advisory declara
+    # `>=2.0.3` como versión corregida y esa versión no existe — 2.0.2, el último
+    # release publicado (abril 2025), es el vulnerable. No hay override posible.
+    #
+    # RIESGO ACEPTADO, NO INEXISTENTE. `packages/media/src/server/validate-media-file.ts`
+    # llama `imageSize()` sobre el buffer que sube el usuario, e `image/heic` está
+    # en `ENTITY_MIME_TYPES`, así que el vector HEIF es alcanzable: la allowlist de
+    # MIME y el chequeo de magic bytes corren ANTES, y un HEIF bien formado los pasa
+    # a los dos. ICNS y JXL no están en la allowlist, así que ese vector sí está
+    # cerrado. Decisión del owner (2026-08-07) para no romperle la subida a los
+    # usuarios de iPhone, que mandan HEIC por defecto.
+    #
+    # REVISAR: HOS-418 sigue el arreglo real (migrar la medición de dimensiones a
+    # `sharp`, que ya está en el árbol y usa libvips en vez del parser JS) y el
+    # release de image-size 2.0.3 cuando salga. Sacar estas dos líneas al cerrarlo.
+    - GHSA-w3rx-r6r6-pgpr
+    - GHSA-5p2g-fcmc-qvqq
 
 allowBuilds:
   # Needed to upload source maps to Sentry from @sentry/esbuild-plugin (api)
