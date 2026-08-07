@@ -15,7 +15,9 @@
  * 7. Protect /mi-cuenta/* routes (redirect to login if unauthenticated)
  * 8. Rewrite 404 responses to the custom 404 page
  * 8b. Rewrite 410 (Gone) responses to the same styled page, forcing the 410 status
- * 9. Set Content-Security-Policy header (enforce mode, HOS-30 Phase 2) on HTML responses
+ * 9. Defer non-critical component stylesheets to async loading, then set the
+ *    Content-Security-Policy header (enforce mode, HOS-30 Phase 2) on HTML
+ *    responses, hashing the body AFTER that deferral (HOS-369 async-CSS)
  * 10. Set X-Robots-Tag noindex on hosts in HOSPEDA_NOINDEX_HOSTS (e.g. staging)
  * 11. Serialize the collected cache tags into the Cache-Tag header on
  *     edge-cacheable responses (HOS-369 W1-1)
@@ -23,6 +25,7 @@
 
 import { defineMiddleware } from 'astro:middleware';
 import { CACHE_TAG_HEADER_NAME, serializeCacheTags } from '@repo/cache-tags';
+import { rewriteAsyncStylesheets } from '../integrations/async-css';
 import { collectCspHashes } from '../integrations/csp-hash-collector';
 import { isEdgeCacheableControl } from './lib/cache/response-cache';
 import {
@@ -445,11 +448,18 @@ export const onRequest = defineMiddleware(async (context, next) => {
     // Step 9: Attach a Content-Security-Policy header (enforce mode, HOS-30 Phase 2,
     // T-020) to all HTML responses. The policy allows every inline <style>/<script>
     // by the sha256 of its own content, computed from the rendered body below.
-    // The body is NOT modified — it is only read (HOS-369 WB0-1). The previous
-    // implementation stamped a per-request nonce instead, which Cloudflare would
-    // cache alongside the body and turn into a publicly readable token for the
-    // whole TTL (spec §5.13 / D-9). A content hash cannot desynchronize from the
-    // body it describes, cached or not.
+    // The previous implementation stamped a per-request nonce instead, which
+    // Cloudflare would cache alongside the body and turn into a publicly readable
+    // token for the whole TTL (spec §5.13 / D-9). A content hash cannot
+    // desynchronize from the body it describes, cached or not.
+    //
+    // The body IS now modified (this stopped being true as of HOS-369's async-CSS
+    // pass): `rewriteAsyncStylesheets()` defers non-allowlisted component
+    // stylesheets to `media="print"` + an injected activation `<script>` BEFORE
+    // hashing runs, so that injected script's hash makes it into the CSP computed
+    // from the SAME (already-rewritten) body below. See
+    // `integrations/async-css/rewrite-async-stylesheets.ts` for the full
+    // rationale and why that ordering is load-bearing.
     //
     // NOTE (HOS-74): this middleware runs per-request ONLY for SSR routes. A route
     // with `export const prerender = true` runs middleware just once — at build
@@ -483,19 +493,22 @@ export const onRequest = defineMiddleware(async (context, next) => {
         let styleHashes: readonly string[] = [];
 
         if (!context.isPrerendered) {
-            // SSR pages: read the rendered body, hash its inline blocks, and
-            // hand back a Response over the SAME body — the HTML is never
-            // modified. Content-Length is dropped defensively (re-encoding a
-            // decoded string is byte-identical for valid UTF-8, but Node
-            // recomputes it on send, so a stale value can never ship).
+            // SSR pages: read the rendered body, defer non-critical component
+            // stylesheets (HOS-369 async-CSS), THEN hash the RESULT's inline
+            // blocks — the activation script `rewriteAsyncStylesheets` injects
+            // must be hashed too, or the CSP built below would block it and no
+            // deferred stylesheet would ever reactivate. Content-Length is
+            // dropped: the body length changed (stylesheets were rewritten,
+            // a script was injected) and Node recomputes it on send anyway.
             const originalBody = await response.text();
-            const collected = await collectCspHashes({ html: originalBody });
+            const { html: rewrittenBody } = rewriteAsyncStylesheets({ html: originalBody });
+            const collected = await collectCspHashes({ html: rewrittenBody });
             scriptHashes = collected.scriptHashes;
             styleHashes = collected.styleHashes;
 
             const newHeaders = new Headers(response.headers);
             newHeaders.delete('content-length');
-            response = new Response(originalBody, {
+            response = new Response(rewrittenBody, {
                 status: response.status,
                 headers: newHeaders
             });
