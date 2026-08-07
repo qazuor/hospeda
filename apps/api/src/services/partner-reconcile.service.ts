@@ -58,13 +58,44 @@ export async function reconcilePartnerForSubscription(input: {
 
         const mapped = mapBillingStatusToPartnerState(subscriptionStatus);
 
+        // The alliance begins the moment billing confirms the first charge, so
+        // that is when `startsAt` gets sealed (HOS-409). Provisioning leaves it
+        // null on purpose — nothing had started yet — and the unpaid reaper
+        // reads exactly that column to decide who never paid
+        // (`PartnerModel.findUnpaidProvisioned`). A partner activated by a real
+        // charge but left with a null date looks identical to a deadbeat: the
+        // reaper mails an unpaid notice on day 30 and archives them on day 90
+        // while MercadoPago is still charging them.
+        //
+        // Only on the statuses that mean "paying". `past_due` and `incomplete`
+        // also keep the lifecycle ACTIVE, but stamping the date there would
+        // exempt a partner who never paid at all from the reaper entirely.
+        const startsAlliance = mapped.subscriptionStatus === PartnerSubscriptionStatusEnum.ACTIVE;
+
         for (const link of links) {
+            // Read before writing so an admin who typed the real start date on
+            // the edit form outranks "today", and so each renewal webhook — they
+            // all re-report `active` — does not keep resetting it. Two webhooks
+            // racing here both write roughly the same instant, which is harmless.
+            let startsAtPatch: { startsAt?: Date } = {};
+            if (startsAlliance) {
+                const [existing] = await db
+                    .select({ id: partners.id, startsAt: partners.startsAt })
+                    .from(partners)
+                    .where(and(eq(partners.id, link.partnerId), isNull(partners.deletedAt)));
+
+                if (existing && !existing.startsAt) {
+                    startsAtPatch = { startsAt: new Date() };
+                }
+            }
+
             await db
                 .update(partners)
                 .set({
                     subscriptionStatus: mapped.subscriptionStatus,
                     lifecycleState: mapped.lifecycleState,
-                    updatedAt: new Date()
+                    updatedAt: new Date(),
+                    ...startsAtPatch
                 })
                 .where(and(eq(partners.id, link.partnerId), isNull(partners.deletedAt)));
         }
