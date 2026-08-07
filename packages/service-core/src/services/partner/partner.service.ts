@@ -384,12 +384,25 @@ export class PartnerService extends BaseCrudService<
             );
         }
 
-        // Update partner status to active
+        // Update partner status to active.
+        //
+        // `startsAt` is sealed here because THIS is the moment the alliance
+        // begins (HOS-409). Provisioning deliberately leaves it null — at that
+        // point nothing has started — and the unpaid reaper reads exactly that
+        // column to decide who never paid (`PartnerModel.findUnpaidProvisioned`).
+        // Activating without stamping it leaves a paying partner indistinguishable
+        // from a deadbeat, so the reaper mails them an unpaid notice on day 30 and
+        // archives them on day 90 while they are still being charged.
+        //
+        // Only when it is absent: an admin who typed the real start date on the
+        // edit form outranks "today", and a later reactivation must not rewrite
+        // the date the alliance actually began.
         const updated = await this.model.update(
             { id: partnerId },
             {
                 subscriptionStatus: PartnerSubscriptionStatusEnum.ACTIVE,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
+                lifecycleState: LifecycleStatusEnum.ACTIVE,
+                ...(partner.startsAt ? {} : { startsAt: new Date() })
             }
         );
 
