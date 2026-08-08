@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 24/70 tareas (34%)
+## Progreso: 25/70 tareas (36%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 11/17 completadas (complejidad promedio 2.6)
+## Fase `core` — 12/17 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -105,7 +105,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Helper en apps/api que, dado un host_trades.slug, genera el SVG del QR apuntando a {SITE_URL}/mi-cuenta/directorio-proveedores/{slug}/registrar-uso usando `qrcode`. Sin estado, sin tabla, si…
   - Bloqueada por: T-005 · Bloquea a: T-032
 
-- [ ] **T-070** (c2) — Exponer en Zod las 8 columnas de host_trades que agregó T-009 [NUEVA]
+- [x] **T-070** (c2) — Exponer en Zod las 8 columnas de host_trades que agregó T-009
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
@@ -263,14 +263,12 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (11/17). Las disponibles ahora: T-020, T-026, T-028,
-T-029, T-030, T-033, T-040, T-042, T-057, T-070.
+Fase `core` en curso (12/17). Las disponibles ahora: T-020, T-022, T-026,
+T-028, T-029, T-030, T-033, T-040, T-042, T-052, T-057.
 
-**T-070 es nueva** (replan del 2026-08-08): las 8 columnas que T-009 agregó a
-`host_trades` nunca llegaron al `HostTradeSchema` de Zod, así que hoy el
-recálculo las escribe y ningún endpoint las puede leer. Bloquea a T-022 (el
-modelo está tipado sobre la entidad Zod, no puede escribir la suspensión) y a
-T-052 (la tarjeta del directorio).
+T-070 cerró el hueco de las 8 columnas, así que **T-022** (suspensión) y
+**T-052** (stats en TradeCard) quedaron desbloqueadas. El camino crítico sigue
+por **T-028** — la moderación admin.
 
 El camino crítico sigue por **T-028** — la moderación admin, que ya tiene lo
 que necesitaba: `recalculateHostTradeAggregates` para AC-27. T-026 sigue libre:
