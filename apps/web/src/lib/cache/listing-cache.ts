@@ -19,17 +19,34 @@
  * so Cloudflare edge-caches the HTML — but ONLY for responses that are safe to
  * share from a single cache entry:
  *
- *   - anonymous (no per-user favourite state / compare controls baked into the
- *     SSR HTML — see the `!isAuthenticated` gate at each call site); and
  *   - an indexable canonical view (base listing or a single-type landing), not
  *     a `noindex` facet combination; and
  *   - without arbitrary result-narrowing filters (which are low-repeat and
  *     would fill the CDN cache with single-hit entries).
  *
- * Personalised, filtered, or `noindex` responses stay `private` and reach
- * origin as before. Gating on the anonymous case is the load-bearing safety
- * property: the origin never MARKS a personalised (favourite-baked) response as
- * shareable.
+ * Filtered and `noindex` responses stay `private` and reach origin as before.
+ *
+ * WHAT MAKES THIS SAFE CHANGED IN WAVE B0 — do not re-derive it from the old
+ * shape. This file used to describe a third condition, "anonymous, via the
+ * `!isAuthenticated` gate at each call site", and called that gate the
+ * load-bearing safety property. **That gate no longer exists**: as of Wave B0
+ * none of the 37 `applyCacheHeaders` call sites under `src/pages` reads the
+ * session, so a cacheable page emits `public` whether or not a session cookie is
+ * present. That is correct, not a regression — the safety property moved rather
+ * than disappeared. It is now AC-B0-1: the SSR HTML is identical with and
+ * without a session, so there is no personalised response to mark shareable in
+ * the first place. Verified end-to-end on staging (2026-08-08) by diffing two
+ * real responses; see §9 AC-B0-1 in the spec.
+ *
+ * Two consequences worth stating, because reading `public` on a response that
+ * carried a session cookie looks alarming until you know them:
+ *
+ *   - The guarantee is enforced, not assumed. `test/pages/
+ *     cacheable-pages-are-session-blind.guard.test.ts` (WB0-6) is fail-closed:
+ *     reintroducing a session read into a cacheable page fails it.
+ *   - Per-user state is reconciled AFTER hydration, not baked into the HTML.
+ *     `data-user-authenticated` ships as `"false"` and the client flips it; the
+ *     favourites grid resolves through a single `check-bulk` call.
  *
  * IMPORTANT — this header is necessary but not sufficient. The origin cannot
  * control Cloudflare's cache-key. For this to take effect a Cloudflare Cache
