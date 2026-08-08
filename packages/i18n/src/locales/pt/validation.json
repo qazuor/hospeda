@@ -2339,6 +2339,9 @@
         "ownerPromotionDiscountType": {
             "invalid": "[PT] El owner promotion discount type no es válido"
         },
+        "partnerMentionChannel": {
+            "invalid": "O canal de menção não é válido"
+        },
         "paymentStatus": {
             "invalid": "[PT] El payment status no es válido"
         },
