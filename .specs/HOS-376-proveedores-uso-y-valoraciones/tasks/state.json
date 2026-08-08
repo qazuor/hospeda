@@ -778,7 +778,7 @@
             "description": "Al registrar un rechazo, contar los REJECTED de ese proveedor dentro de HOST_TRADE_REJECTION_WINDOW_DAYS. Si alcanza HOST_TRADE_REJECTION_SUSPEND_THRESHOLD, sellar declarationSuspendedAt con declarationSuspendedById=null (automático) y motivo. Un reject/undo descuenta y, si baja del umbral, NO levanta la suspensión sola (el levantamiento es acción de admin, explícito). Método aparte para que un admin la levante, registrando quién. Tests: 2 rechazos no suspenden, el 3ero sí; el undo del 3ero no la levanta; el admin la levanta y queda el ById.",
             "status": "pending",
             "complexity": 3,
-            "blockedBy": ["T-021", "T-012"],
+            "blockedBy": ["T-021", "T-012", "T-070"],
             "blocks": ["T-038", "T-060"],
             "subtasks": [
                 {
@@ -1706,7 +1706,7 @@
             "description": "En apps/web/src/components/host/host-trades/TradeCard.tsx, bajo el beneficio: '★ 4,6 (12 valoraciones) · 34 usos · 21 anfitriones'. El promedio SÓLO se muestra a partir de HOST_TRADE_MIN_REVIEWS_FOR_AVERAGE; debajo va 'N valoraciones' sin estrella. Tests: con 2 valoraciones no hay estrella ni promedio; con 3 sí (AC-25).",
             "status": "pending",
             "complexity": 2,
-            "blockedBy": ["T-023", "T-012"],
+            "blockedBy": ["T-023", "T-012", "T-070"],
             "blocks": ["T-054"],
             "subtasks": [],
             "tags": ["web", "react", "ui"],
@@ -2207,11 +2207,46 @@
                 "started": null,
                 "completed": null
             }
+        },
+        {
+            "id": "T-070",
+            "title": "Exponer en Zod las 8 columnas de host_trades que agregó T-009",
+            "description": "packages/schemas/src/entities/host-trade/: agregar a HostTradeSchema los 5 agregados (confirmedUsesCount, distinctHostsCount, reviewsCount, averageRating, benefitRespectedCount) y las 3 de suspensión (declarationSuspendedAt, declarationSuspendedById, declarationSuspendReason). Están en la DB desde T-009 pero no en la entidad Zod, así que ningún endpoint las puede servir y HostTradeModel (tipado sobre HostTrade) no las puede escribir. Reparto de tiers: los 5 agregados al tier host-facing (HostTradePublicSchema — §6.5 muestra '34 usos · 21 anfitriones'); declarationSuspendedAt + declarationSuspendReason al HostTradeOwnerViewSchema (el proveedor tiene que saber que está suspendido y por qué); declarationSuspendedById SÓLO admin. OBLIGATORIO en el mismo cambio: omitirlas explícitamente en CreateHostTradeSchema y UpdateHostTradeSchema, que se arman con .omit() sobre la entidad y por lo tanto las heredarían al body de create del admin — el guard de T-017 (HOST_TRADE_DOMAIN_MANAGED_FIELDS) se pone rojo si no. Tests: el guard sigue verde; el tier host-facing trae los 5 agregados; el tier owner trae el motivo pero no el declarationSuspendedById; averageRating acepta 2 decimales.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-022", "T-052"],
+            "subtasks": [
+                {
+                    "title": "Los 8 campos en HostTradeSchema",
+                    "completed": false
+                },
+                {
+                    "title": "Reparto en los 3 read tiers",
+                    "completed": false
+                },
+                {
+                    "title": "Omits explícitos en create/update + guard verde",
+                    "completed": false
+                }
+            ],
+            "tags": ["schemas", "zod", "host-trade"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-08T20:25:00.000Z",
+                "started": null,
+                "completed": null
+            }
         }
     ],
     "summary": {
-        "total": 69,
-        "pending": 45,
+        "total": 70,
+        "pending": 46,
         "inProgress": 0,
         "completed": 24,
         "blocked": 0,
