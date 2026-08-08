@@ -123,6 +123,20 @@ export type EntityChangeData =
           readonly destinationSlugs?: readonly string[];
       }
     | {
+          /**
+           * Partner changed (HOS-294).
+           *
+           * Carries no destination fan-out: a partner belongs to no destination
+           * and appears on exactly two surfaces — its own page and the home
+           * carousel. The mapper adds `home` for the second one.
+           */
+          readonly entityType: 'partner';
+          /** Slug of the changed partner — addresses `/partners/<slug>/` */
+          readonly slug?: string;
+          /** Stable UUID of the changed partner */
+          readonly id?: string;
+      }
+    | {
           /** Point of interest changed (HOS-369 W2-4) */
           readonly entityType: 'pointOfInterest';
           /** Slug of the changed POI — addresses `/destinos/lugar/<slug>/` */

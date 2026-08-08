@@ -45,7 +45,7 @@ const allianceLeadService = new AllianceLeadService(
  * hand-copied literal list here would drift the moment a tier is added.
  */
 const ApproveAndProvisionPartnerBodySchema = z.object({
-    /** Commercial tier granted to the partner (`bronze` | `silver` | `gold`). */
+    /** Commercial tier granted to the partner (`silver` | `gold`). */
     tier: z.nativeEnum(PartnerTierEnum),
     /** Optional internal note from the admin explaining the decision. */
     adminNote: z.string().max(1000).optional()

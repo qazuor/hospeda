@@ -12,7 +12,10 @@ import { ErrorBoundary } from '@/components/shared/ui/ErrorBoundary';
 
 const captureExceptionMock = vi.fn();
 
-vi.mock('@sentry/astro', () => ({
+// HOS-369: the boundary reports through the lazy facade, not `@sentry/astro`
+// directly — a static SDK import here would put ~236 KB back on the browser
+// critical path. `test/lib/observability/sentry-lazy.test.ts` guards that.
+vi.mock('@/lib/observability/sentry-lazy', () => ({
     captureException: (...args: unknown[]) => captureExceptionMock(...args)
 }));
 

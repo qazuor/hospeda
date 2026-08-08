@@ -8,6 +8,7 @@ import {
     type PartnerOwnerUpdate,
     PartnerOwnerUpdateSchema,
     PartnerSubscriptionStatusEnum,
+    PartnerTierEnum,
     RoleEnum,
     ServiceErrorCode,
     searchPartnerSchema,
@@ -16,6 +17,7 @@ import {
 import { toSlug } from '@repo/utils';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
+import { getRevalidationService } from '../../revalidation';
 import type {
     Actor,
     PaginatedListOutput,
@@ -152,6 +154,30 @@ export const PARTNER_CONTENT_NOT_APPROVED_MESSAGE =
  * Service for managing partners.
  * Provides CRUD operations and permission/lifecycle hooks for Partner entities.
  */
+/**
+ * The result of a public partner-detail lookup (HOS-294 D-3b, D-6).
+ *
+ * Three outcomes rather than a nullable partner, because the HTTP layer has to
+ * answer two different questions with two different status codes:
+ *
+ * - `found`    — the page exists and is served (200).
+ * - `gone`     — a gold partner that fails the visibility check. It WAS
+ *                published, so the URL is deliberately retired (410), which is
+ *                what tells a crawler to deindex it.
+ * - `notFound` — no row, a soft-deleted row, or a partner that is not gold.
+ *                This URL was never served, so it is a plain 404.
+ *
+ * "Was it published before?" is answered from the CURRENT row alone — no
+ * history is stored, and none is needed: only gold ever had a page, so a gold
+ * row failing visibility is exactly the set of URLs that went away. The known
+ * consequence is that a gold partner downgraded to silver 404s instead of
+ * 410ing; the URL leaves the sitemap either way.
+ */
+export type PartnerPublicLookup =
+    | { readonly outcome: 'found'; readonly partner: Partner }
+    | { readonly outcome: 'gone' }
+    | { readonly outcome: 'notFound' };
+
 export class PartnerService extends BaseCrudService<
     Partner,
     PartnerModel,
@@ -453,6 +479,110 @@ export class PartnerService extends BaseCrudService<
                 );
 
                 return { partner: partner ?? null };
+            }
+        });
+    }
+
+    /**
+     * Schedules a cache purge for this partner (HOS-294 T-011).
+     *
+     * Two surfaces go stale on any partner write and both are addressed by the
+     * tags `getAffectedCacheTags` derives from this event: the partner's own
+     * page, and the home carousel via `home`.
+     *
+     * Never blocking and never throwing: a Cloudflare outage must not fail an
+     * admin's write, which is why the whole thing sits in a try/catch that only
+     * warns. The same shape `AttractionService` uses.
+     *
+     * @param entity - The partner as it now stands after the write.
+     */
+    private _schedulePartnerRevalidation(entity: Partner): void {
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'partner',
+                id: entity.id,
+                slug: entity.slug
+            });
+        } catch (error) {
+            this.logger.warn(
+                { error, entityType: 'partner' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+    }
+
+    protected async _afterCreate(entity: Partner): Promise<Partner> {
+        this._schedulePartnerRevalidation(entity);
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: Partner): Promise<Partner> {
+        this._schedulePartnerRevalidation(entity);
+        return entity;
+    }
+
+    /**
+     * The partner behind a public `/partners/<slug>/` request (HOS-294 D-6).
+     *
+     * Gated on THREE conditions, all of which must hold:
+     *
+     * - `tier === GOLD` — the page is what separates the two paid plans. This
+     *   is the only condition this method adds; the other two are the filters
+     *   every public partner read already applies.
+     * - `lifecycleState === ACTIVE` and `subscriptionStatus === active` — the
+     *   same pair `PartnerModel.findByFilters` forces on the carousel, so the
+     *   ficha can never outlive a partner's presence in the listing.
+     *
+     * Gated by {@link checkCanSearch}, NOT `checkCanView`. The distinction is
+     * load-bearing: `checkCanSearch` accepts `ACCESS_API_PUBLIC`, which is what
+     * an anonymous visitor carries, while `checkCanView` demands
+     * `PARTNER_VIEW_ALL`/`PARTNER_MANAGE` and would 403 every real reader. This
+     * is the same gate the public partner LIST uses, so both public surfaces
+     * move together if that permission is ever tightened.
+     *
+     * The soft-delete check is deliberate redundancy. `findOne` already
+     * excludes deleted rows; repeating it here costs one comparison and means a
+     * regression in that filter cannot turn into a public leak.
+     *
+     * @param actor - The requesting actor, typically anonymous.
+     * @param input - `{ slug }` — the slug from the URL, never a UUID.
+     * @param ctx - Optional service execution context.
+     * @returns One of the three outcomes in {@link PartnerPublicLookup}.
+     */
+    public async getPublicBySlug(
+        actor: Actor,
+        input: { readonly slug: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PartnerPublicLookup>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getPublicBySlug',
+            input: { actor, slug: input.slug },
+            schema: z.object({ slug: z.string().min(1) }),
+            ctx,
+            execute: async (validated, a) => {
+                checkCanSearch(a);
+
+                const partner = await this.model.findOne({ slug: validated.slug }, ctx?.tx);
+
+                if (!partner || partner.deletedAt) {
+                    return { outcome: 'notFound' } as const;
+                }
+
+                // Not gold: this URL was never served for this partner, so the
+                // answer is "no such page", not "the page is gone".
+                if (partner.tier !== PartnerTierEnum.GOLD) {
+                    return { outcome: 'notFound' } as const;
+                }
+
+                const isVisible =
+                    partner.lifecycleState === LifecycleStatusEnum.ACTIVE &&
+                    partner.subscriptionStatus === PartnerSubscriptionStatusEnum.ACTIVE;
+
+                if (!isVisible) {
+                    return { outcome: 'gone' } as const;
+                }
+
+                return { outcome: 'found', partner } as const;
             }
         });
     }

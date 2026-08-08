@@ -140,13 +140,25 @@ describe('POST /api/v1/admin/alliance/leads/:id/approve-and-provision-partner (H
             expect(res.status).toBe(400);
         });
 
-        it.each(['bronze', 'silver', 'gold'])('accepts the %s tier', async (tier) => {
+        it.each(['silver', 'gold'])('accepts the %s tier', async (tier) => {
             const res = await post(app, authorized(), { tier });
 
             // Not asserting 201: the lead does not exist in this suite, so the
             // service answers 404. What matters here is that the body passed
             // validation and reached it — a rejected tier would 400 first.
             expect(res.status).not.toBe(400);
+        });
+
+        it('rejects the retired bronze tier', async () => {
+            // Arrange — bronze was a valid tier until HOS-294 retired it, and
+            // this endpoint is where an admin would still try to hand it out.
+            // Asserted explicitly rather than by deleting the old case, so the
+            // retirement is enforced at the door instead of merely untested:
+            // provisioning a bronze partner now would write a value the column
+            // no longer accepts.
+            const res = await post(app, authorized(), { tier: 'bronze' });
+
+            expect(res.status).toBe(400);
         });
     });
 
