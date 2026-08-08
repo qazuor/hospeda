@@ -17,8 +17,8 @@
  *   - One bulk request shared by every heart on the page; none at all for a guest
  *   - Busy + disabled while resolving; degrades to un-favorited when it fails
  *   - `initialIsFavorited` / `initialBookmarkId` / `isAuthenticated` were
- *     removed from `FavoriteButtonProps` entirely (HOS-369 WB0-5) — a
- *     `@ts-expect-error` pair proves the type no longer accepts them, and the
+ *     removed from `FavoriteButtonProps` entirely (HOS-369 WB0-5) — a source
+ *     assertion on the interface proves they have not come back, and the
  *     toggle/prompt behavior is shown to come only from the resolved session
  * - Pill variant count badge: visible when count >= 3, hidden when count < 3 or undefined
  * - Locale number formatting: count=1234 with locale='es' → "1.234"
@@ -28,6 +28,8 @@
  * arrangeFavoritedUser.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { FavoriteButtonProps } from '../../../../src/components/shared/favorite/FavoriteButton.client';
@@ -866,32 +868,38 @@ describe('FavoriteButton — client-side resolution (WB0-3)', () => {
         expect(mockAddToast).not.toHaveBeenCalled();
     });
 
-    it('no longer accepts initialIsFavorited/initialBookmarkId — removed from FavoriteButtonProps (HOS-369 WB0-5)', () => {
-        // Assert — this line only typechecks if the props are gone. If a
-        // future change resurrects either field, `@ts-expect-error` starts
-        // reporting an unused-directive error and typecheck fails.
-        // @ts-expect-error — initialIsFavorited/initialBookmarkId were removed; SSR can no longer seed favorite state.
-        const props: FavoriteButtonProps = {
-            entityId: 'entity-uuid-1',
-            entityType: 'ACCOMMODATION',
-            locale: 'es',
-            initialIsFavorited: true,
-            initialBookmarkId: 'bookmark-1'
-        };
-        expect(props.entityId).toBe('entity-uuid-1');
-    });
+    it('declares no SSR-seeded favorite or session prop (HOS-369 WB0-5)', () => {
+        // Arrange — the props interface, read as source text.
+        //
+        // This used to be a pair of `@ts-expect-error` assignments whose comment
+        // claimed that resurrecting a prop would surface as an unused-directive
+        // error at typecheck. It would not: `apps/web/tsconfig.json` lists only
+        // `src/**` under `include`, and `vitest.config.ts` does not enable
+        // `test.typecheck`, so NOTHING in CI typechecks this file. Verified by
+        // mutation (AC-B0-5): re-adding `isAuthenticated?: boolean` to the
+        // interface left `pnpm typecheck` at exit 0. A guard whose stated
+        // mechanism does not run is worse than no guard, so the check moved to
+        // something that executes.
+        const source = readFileSync(
+            resolve(
+                __dirname,
+                '../../../../src/components/shared/favorite/FavoriteButton.client.tsx'
+            ),
+            'utf8'
+        );
+        const start = source.indexOf('export interface FavoriteButtonProps {');
+        expect(start).toBeGreaterThan(-1);
+        const propsInterface = source.slice(start, source.indexOf('\n}', start));
 
-    it('no longer accepts isAuthenticated — removed from FavoriteButtonProps (HOS-369 WB0-5)', () => {
-        // Assert — same guarantee as above for the session flag: there is no
-        // prop left that can override the client-resolved session.
-        // @ts-expect-error — isAuthenticated was removed; session is resolved client-side via useAccountPermissions.
-        const props: FavoriteButtonProps = {
-            entityId: 'entity-uuid-1',
-            entityType: 'ACCOMMODATION',
-            locale: 'es',
-            isAuthenticated: false
-        };
-        expect(props.entityId).toBe('entity-uuid-1');
+        // Assert — an SSR prop is the only way HTML cached for everyone can
+        // seed one visitor's state, which is the whole point of WB0-3/WB0-5.
+        // Scoped to the interface body on purpose: the file's header comment
+        // discusses these very names, and matching prose would flag a clean
+        // file (the same both-directions comment bug the session-blind guard
+        // documents).
+        for (const forbidden of ['initialIsFavorited', 'initialBookmarkId', 'isAuthenticated']) {
+            expect(propsInterface).not.toContain(forbidden);
+        }
     });
 
     it('toggles for a signed-in visitor — state comes only from the session, never a prop', async () => {
