@@ -7,6 +7,7 @@ import {
     HostTradeBenefitValueSchema
 } from '../../common/host-trade-benefit.schema.js';
 import { DestinationIdSchema, UserIdSchema } from '../../common/id.schema.js';
+import { BaseReviewFields } from '../../common/review.schema.js';
 import { HostTradeBenefitTypeEnumSchema } from '../../enums/host-trade-benefit-type.schema.js';
 import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
 
@@ -127,6 +128,56 @@ export const HostTradeSchema = z.object({
 
     /** Whether this entry is currently active and visible to hosts */
     isActive: z.boolean().default(true),
+
+    // ------------------------------------------------------------------
+    // Denormalised counters (HOS-376 §7.2)
+    //
+    // Recomputed by `recalculateHostTradeAggregates`, never written by a
+    // client — they are named in `HOST_TRADE_DOMAIN_MANAGED_FIELDS` and the
+    // guard keeps them out of every write shape.
+    //
+    // Optional rather than required, even though the columns are NOT NULL:
+    // the compat policy is additive-only, and a required field would reject
+    // every shape written before these columns existed.
+    // ------------------------------------------------------------------
+
+    /** CONFIRMED, non-deleted benefit usages. */
+    confirmedUsesCount: z.number().int().min(0).default(0).optional(),
+
+    /**
+     * Distinct hosts among those usages — the anti-collusion signal (§6.5).
+     *
+     * Shown next to {@link confirmedUsesCount} precisely so the pair can be
+     * read against each other: "40 usos · 2 anfitriones" delata solo.
+     */
+    distinctHostsCount: z.number().int().min(0).default(0).optional(),
+
+    /** APPROVED reviews with `respectedBenefit = true`. */
+    benefitRespectedCount: z.number().int().min(0).default(0).optional(),
+
+    // `reviewsCount` + `averageRating`, shared with the other reviewed
+    // entities so the directory card and an accommodation card cannot drift
+    // apart on how a rating is shaped.
+    ...BaseReviewFields,
+
+    // ------------------------------------------------------------------
+    // Declaration suspension (HOS-376 §6.5)
+    // ------------------------------------------------------------------
+
+    /** When declaration was suspended for this provider. Null = not suspended. */
+    declarationSuspendedAt: z.coerce.date().nullish(),
+
+    /**
+     * Who suspended it.
+     *
+     * Null does NOT mean "not suspended" — it means the rejection-threshold
+     * cron applied it automatically. An admin id means a person acted
+     * (AC-11 / AC-12), which is why the two cases need separate columns.
+     */
+    declarationSuspendedById: UserIdSchema.nullish(),
+
+    /** Why. Surfaced to the provider, never to the directory. */
+    declarationSuspendReason: z.string().nullish(),
 
     // Shared audit + soft-delete fields
     ...BaseAuditFields
