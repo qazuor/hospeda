@@ -1,3 +1,4 @@
+import type { HostTradeBenefitUsage } from '@repo/schemas';
 import { and, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { hostTradeBenefitUsages } from '../../schemas/host-trade/host_trade_benefit_usage.dbschema.ts';
@@ -5,8 +6,16 @@ import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
 
-/** Drizzle-inferred row shape for `host_trade_benefit_usages`. */
-type HostTradeBenefitUsageRow = typeof hostTradeBenefitUsages.$inferSelect;
+/**
+ * Row shape for `host_trade_benefit_usages`.
+ *
+ * The `@repo/schemas` entity rather than `typeof table.$inferSelect`: Drizzle
+ * widens the pgEnum columns to `string`, which does not satisfy
+ * `BaseModel<TEntity>` when the service layer binds this model to
+ * `BaseCrudService<HostTradeBenefitUsage, …>`. Matching `HostTradeModel`, which
+ * types on `HostTrade` for the same reason.
+ */
+type HostTradeBenefitUsageRow = HostTradeBenefitUsage;
 
 /**
  * Model for the `host_trade_benefit_usages` table (HOS-376).

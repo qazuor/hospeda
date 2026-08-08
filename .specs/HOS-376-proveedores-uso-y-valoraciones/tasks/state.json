@@ -606,39 +606,48 @@
             "id": "T-019",
             "title": "Servicio de usos: declaración por los 3 canales",
             "description": "packages/service-core/src/services/hostTrade/host-trade-usage.service.ts extendiendo BaseCrudService, Result<T>, runWithLoggingAndValidation. Crear el uso desde: QR (declaredBy=HOST, el actor ES el anfitrión), selector (declaredBy=PROVIDER, hostUserId del body validado contra los vinculados), y email lookup (declaredBy=PROVIDER, resuelve email → user y devuelve HOST_NOT_FOUND explícito si no matchea un anfitrión). Sellar expiresAt = now + HOST_TRADE_USAGE_EXPIRY_DAYS. Tests: los 3 canales crean el uso con el declaredBy y creationChannel correctos; el email inexistente devuelve HOST_NOT_FOUND y NO crea fila.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018", "T-014"],
             "blocks": ["T-020", "T-021", "T-030"],
             "subtasks": [
                 {
                     "title": "Canal QR",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Canal selector (validar vinculación)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Canal email lookup + HOST_NOT_FOUND",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Sellado de expiresAt",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "usages"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T13:54:46.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T13:54:46.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T13:54:46.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T12:32:19Z",
+                "completed": "2026-08-08T13:54:46.000Z"
             }
         },
         {
@@ -2130,9 +2139,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 54,
+        "pending": 53,
         "inProgress": 0,
-        "completed": 15,
+        "completed": 16,
         "blocked": 0,
         "averageComplexity": 2.4
     }

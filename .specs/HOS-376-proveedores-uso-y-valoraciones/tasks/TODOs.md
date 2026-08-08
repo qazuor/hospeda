@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 15/69 tareas (21%)
+## Progreso: 16/69 tareas (23%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 2/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 3/16 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -71,7 +71,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-018** (c2) — Modelos DB de las 3 tablas nuevas
   - packages/db/src/models/hostTrade/: HostTradeBenefitUsageModel, HostTradeReviewModel, HostTradeReviewReplyModel, todos extendiendo BaseModelImpl con el molde de host-trade.model.ts. Incluir l…
   - Bloqueada por: T-010 · Bloquea a: T-019, T-024, T-025
-- [ ] **T-019** (c3) — Servicio de usos: declaración por los 3 canales
+- [x] **T-019** (c3) — Servicio de usos: declaración por los 3 canales
   - packages/service-core/src/services/hostTrade/host-trade-usage.service.ts extendiendo BaseCrudService, Result<T>, runWithLoggingAndValidation. Crear el uso desde: QR (declaredBy=HOST, el acto…
   - Bloqueada por: T-018, T-014 · Bloquea a: T-020, T-021, T-030
 - [ ] **T-020** (c3) — Servicio de usos: guardas de declaración
@@ -259,6 +259,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (2/16). Las disponibles ahora: T-015, T-019, T-029, T-040
+Fase `core` en curso (3/16). Las disponibles ahora: T-015, T-020, T-021, T-029, T-030, T-040
 
-T-019 (servicio de usos, camino crítico) quedó desbloqueada al cerrar T-018 + T-014.
+T-019 desbloqueó tres: T-020 (guardas de declaración), T-021 (confirm/reject) y T-030
+(endpoints del anfitrión). El camino crítico sigue por T-021 → T-024.
