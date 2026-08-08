@@ -814,137 +814,137 @@
         {
             "id": "T-022",
             "title": "Admin: TanStack Query hooks for partner mentions",
-            "description": "apps/admin/src/features/partners/hooks/usePartnerMentions.ts — list query + create/update/delete mutations with cache invalidation, following the existing usePartnerQuery.ts pattern. Types from @repo/schemas, never redefined locally.",
-            "status": "pending",
+            "description": "apps/admin/src/features/partners/hooks/usePartnerMentions.ts — list query + create/update/delete mutations with cache invalidation, following the existing usePartnerQuery.ts pattern. Types from @repo/schemas, never redefined locally. DONE: the create mutation takes the WHOLE CreatePartnerMentionBatch rather than one mention, so the once-per-submission guarantee is carried by the hook signature instead of being a caller convention. buildListQuery is an ALLOWLIST, not a spread: createAdminListRoute rejects any query param its schema does not declare, so an undeclared one fails the request rather than being silently dropped.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016"],
             "blocks": ["T-023", "T-024"],
             "subtasks": [
                 {
                     "title": "List query hook",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create/update/delete mutations + invalidation",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "data"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:00:00.000Z",
+                "completed": "2026-08-08T13:40:00.000Z"
             }
         },
         {
             "id": "T-023",
             "title": "Admin: mentions list section on the partner detail page",
-            "description": "A 'Menciones' section below the existing partner fields: newest-first rows with a channel badge, date, an external-link icon opening the URL in a new tab, and the truncated internalNote with expand. Edit and delete affordances per row. Tailwind (admin), Shadcn components, icons from @repo/icons. Tests: renders rows newest-first; a WHATSAPP row with no URL renders without a broken link.",
-            "status": "pending",
+            "description": "A 'Menciones' section below the existing partner fields: newest-first rows with a channel badge, date, an external-link icon opening the URL in a new tab, and the truncated internalNote with expand. Edit and delete affordances per row. Tailwind (admin), Shadcn components, icons from @repo/icons. Tests: renders rows newest-first; a WHATSAPP row with no URL renders without a broken link. DONE: PartnerMentionsSection groups by batchId the same way the partner-facing view does — an admin looking at a flat list cannot answer 'what went out together', which is the question they get asked. groupByBatch is DUPLICATED from service-core's groupMentionsIntoBatches on purpose: the service groups already-stripped public rows, this groups admin rows that still carry internalNote, and one shared function would hand one of the two surfaces the wrong shape. Row extracted to PartnerMentionRow with an inline edit mode (channel/url/note) and the note collapsed behind a toggle past 120 chars, labelled as internal every time it renders. 7 tests; mutation-verified (neutralising the grouping turns 2 red).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022", "T-025"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "List component with badges + link-out",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Row edit/delete affordances",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Render tests incl. the no-URL channel",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:00:00.000Z",
+                "completed": "2026-08-08T13:40:00.000Z"
             }
         },
         {
             "id": "T-024",
             "title": "Admin: multi-channel mention form (AC-7)",
-            "description": "TanStack Form + safeParse against createPartnerMentionBatchSchema. A multi-select channel field: picking N channels reveals N URL inputs, one per channel, each labelled with its channel. Shared date and internal note. One submit posts all entries. Tests: selecting 3 channels renders 3 URL fields; submitting posts ONE request with 3 entries (not 3 requests); a missing URL on a channel that requires one blocks submit while WHATSAPP submits fine without it.",
-            "status": "pending",
+            "description": "TanStack Form + safeParse against createPartnerMentionBatchSchema. A multi-select channel field: picking N channels reveals N URL inputs, one per channel, each labelled with its channel. Shared date and internal note. One submit posts all entries. Tests: selecting 3 channels renders 3 URL fields; submitting posts ONE request with 3 entries (not 3 requests); a missing URL on a channel that requires one blocks submit while WHATSAPP submits fine without it. DONE: plain state + safeParse, NOT TanStack Form — matching the sibling relation managers in this app (FaqManager, PoiDestinationRelationManager), which is the local pattern for this kind of sub-resource panel. State is a Map of channel to url, so the array of channels and the array of links stay paired by construction rather than by two arrays kept in step. The per-entry Zod issue path maps its index back to the channel, which is what lets the message land on the offending input instead of at the top of a form with four URL fields. 9 tests; mutation-verified (turning the single submit into one request per channel turns the COUNT test red).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022", "T-025"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Multi-select channel field",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Dynamic per-channel URL inputs",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Single-request submit",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validation tests both branches",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "ui", "forms"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:00:00.000Z",
+                "completed": "2026-08-08T13:40:00.000Z"
             }
         },
         {
             "id": "T-025",
             "title": "Admin i18n keys for the mentions section",
-            "description": "Section heading, channel labels for all 8 enum values, form labels, empty state, validation messages. Keys under the admin namespace. Copy obeys AC-3: 'Menciones'/'Bitácora' only — no 'alcance', 'impresiones', 'clics', 'estadísticas'.",
-            "status": "pending",
+            "description": "Section heading, channel labels for all 8 enum values, form labels, empty state, validation messages. Keys under the admin namespace. Copy obeys AC-3: 'Menciones'/'Bitácora' only — no 'alcance', 'impresiones', 'clics', 'estadísticas'. DONE: admin-pages.partnerMentions.* in es/en/pt, 46 keys per locale with identical trees (verified). The plural created message states that N channels produced ONE notice — the behaviour the API guarantees and the thing an admin would otherwise assume went out N times.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-023", "T-024", "T-030"],
             "subtasks": [
                 {
                     "title": "Channel labels x8",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Section + form + empty-state copy",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "i18n"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:00:00.000Z",
+                "completed": "2026-08-08T13:40:00.000Z"
             }
         },
         {

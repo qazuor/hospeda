@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 21/32 tasks (66%)
+## Progress: 25/32 tasks (78%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -168,17 +168,36 @@
     not duplicated: the service owns the swallow, the port owns the resolution
   - Blocked by: T-020 · Blocks: none
 
-- [ ] **T-022** (complexity: 2) — Admin TanStack Query hooks
+- [x] **T-022** (complexity: 2) — Admin TanStack Query hooks ✅
+  - The create mutation takes the WHOLE batch, so once-per-submission is carried by
+    the hook signature rather than by caller convention
+  - `buildListQuery` is an ALLOWLIST: `createAdminListRoute` rejects undeclared query
+    params, so a spread would fail the request instead of being ignored
   - Blocked by: T-016 · Blocks: T-023, T-024
 
-- [ ] **T-023** (complexity: 3) — Admin mentions list section
+- [x] **T-023** (complexity: 3) — Admin mentions list section ✅
+  - Groups by `batchId` like the partner view: a flat list cannot answer "what went
+    out together", which is the question an admin actually gets asked
+  - `groupByBatch` is DUPLICATED from service-core on purpose — the service groups
+    already-stripped public rows, this groups admin rows carrying `internalNote`
+  - Row extracted to `PartnerMentionRow` with inline edit + note collapsed past 120
+    chars, labelled internal every time it renders
+  - 7 tests · mutation-verified (neutralising the grouping turns 2 red)
   - Blocked by: T-022, T-025 · Blocks: none
 
-- [ ] **T-024** (complexity: 3) — Admin multi-channel form (AC-7)
-  - N channels → N URL fields → ONE request
+- [x] **T-024** (complexity: 3) — Admin multi-channel form (AC-7) ✅
+  - N channels → N URL fields → ONE request. State is a `Map` of channel→url, so the
+    channels and the links stay paired by construction
+  - Plain state + `safeParse`, NOT TanStack Form — matching `FaqManager` and
+    `PoiDestinationRelationManager`, the local pattern for this kind of panel
+  - The per-entry Zod issue index maps back to its channel, so the error lands on the
+    offending input rather than atop a form with four URL fields
+  - 9 tests · mutation-verified (one request per channel turns the COUNT test red)
   - Blocked by: T-022, T-025 · Blocks: none
 
-- [ ] **T-025** (complexity: 1) — Admin i18n keys
+- [x] **T-025** (complexity: 1) — Admin i18n keys ✅
+  - `admin-pages.partnerMentions.*` in es/en/pt, 46 keys per locale, trees verified
+    identical
   - Blocked by: none · Blocks: T-023, T-024, T-030
 
 - [ ] **T-026** (complexity: 2) — Web fetcher for `/mine/mentions`
