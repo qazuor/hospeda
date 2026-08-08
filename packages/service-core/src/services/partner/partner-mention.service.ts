@@ -91,12 +91,21 @@ const resolveMentionOwnerUserId = (actor: Actor): string | null => {
  *
  * The field list is derived from `PARTNER_MENTION_ADMIN_ONLY_MASK`, so it cannot
  * drift from the schema-level definition of "what the partner must not see".
+ *
+ * That derivation is also why the return needs a cast: the fields are removed by
+ * a runtime `delete` over keys read from the mask, and TypeScript cannot narrow
+ * `Record<string, unknown>` back to the omitted shape from that. The typed
+ * alternative is re-listing the surviving fields here — the exact duplication
+ * the mask exists to prevent, and a list that drifts from the mask is how an
+ * admin-only field reaches the partner.
  */
 const toPublicMention = (mention: PartnerMention): PartnerMentionPublic => {
     const stripped = { ...mention } as Record<string, unknown>;
     for (const field of Object.keys(PARTNER_MENTION_ADMIN_ONLY_MASK)) {
         delete stripped[field];
     }
+    // TYPE-WORKAROUND: a runtime `delete` loop cannot be narrowed back to the
+    // omitted shape; see the docstring for why re-listing the fields is worse.
     return stripped as unknown as PartnerMentionPublic;
 };
 
