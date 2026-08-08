@@ -3162,6 +3162,23 @@
             "min": "[PT] El slug debe tener al menos {{min}} caracteres"
         }
     },
+    "hostTradeUsage": {
+        "hostEmail": {
+            "invalid": "O e-mail do anfitrião não é válido"
+        },
+        "hostIdentifier": {
+            "exactlyOne": "Escolha um anfitrião da lista ou informe o e-mail, mas não os dois"
+        },
+        "note": {
+            "max": "A nota não pode ultrapassar {{max}} caracteres"
+        },
+        "rejectionNote": {
+            "max": "O motivo da recusa não pode ultrapassar {{max}} caracteres"
+        },
+        "servicedAt": {
+            "format": "A data do serviço deve usar o formato AAAA-MM-DD"
+        }
+    },
     "location": {
         "bbox": {
             "invalidType": "[PT] El bbox tiene un tipo de dato inválido",

@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 14/69 tareas (20%)
+## Progreso: 15/69 tareas (21%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,9 +54,9 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 1/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 2/16 completadas (complejidad promedio 2.6)
 
-- [ ] **T-014** (c3) — Zod schemas del uso del beneficio
+- [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
   - Bloqueada por: T-001 · Bloquea a: T-017, T-019
 - [ ] **T-015** (c3) — Zod schemas de la valoración
@@ -259,6 +259,6 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (1/16). Las disponibles ahora: T-014, T-015, T-029, T-040
+Fase `core` en curso (2/16). Las disponibles ahora: T-015, T-019, T-029, T-040
 
-T-019 (servicio de usos) sigue bloqueada: además de T-018 exige T-014.
+T-019 (servicio de usos, camino crítico) quedó desbloqueada al cerrar T-018 + T-014.

@@ -418,39 +418,48 @@
             "id": "T-014",
             "title": "Zod schemas del uso del beneficio",
             "description": "packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/protected/admin) y admin-search. `.strict()` en los bodies HTTP como hace AccommodationReviewCreateBodySchema (anti-impersonation). Tests: parse de payload válido, rechazo de campos administrados inyectados, rechazo de note > 300.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-017", "T-019"],
             "subtasks": [
                 {
                     "title": "Entity schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create input + create body .strict()",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Access tiers",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Admin-search",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "zod"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T06:31:39.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T06:31:39.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T06:31:39.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T06:15:12Z",
+                "completed": "2026-08-08T06:31:39.000Z"
             }
         },
         {
@@ -2121,9 +2130,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 55,
+        "pending": 54,
         "inProgress": 0,
-        "completed": 14,
+        "completed": 15,
         "blocked": 0,
         "averageComplexity": 2.4
     }

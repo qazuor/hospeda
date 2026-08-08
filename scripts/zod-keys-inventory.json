@@ -1207,6 +1207,11 @@
         "zodError.hostTrade.name.min",
         "zodError.hostTrade.revokeReason.max",
         "zodError.hostTrade.slug.min",
+        "zodError.hostTradeUsage.hostEmail.invalid",
+        "zodError.hostTradeUsage.hostIdentifier.exactlyOne",
+        "zodError.hostTradeUsage.note.max",
+        "zodError.hostTradeUsage.rejectionNote.max",
+        "zodError.hostTradeUsage.servicedAt.format",
         "zodError.location.bbox.invalidType",
         "zodError.location.bbox.length",
         "zodError.location.city.invalidType",
@@ -1803,7 +1808,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1802,
+    "total": 1807,
     "byNamespace": {
         "accommodation": 69,
         "accommodationAmenity": 4,
@@ -1847,6 +1852,7 @@
         "gastronomyFeature": 4,
         "health": 14,
         "hostTrade": 12,
+        "hostTradeUsage": 5,
         "location": 31,
         "ownerPromotion": 19,
         "pagination": 7,
