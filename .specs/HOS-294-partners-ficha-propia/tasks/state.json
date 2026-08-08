@@ -381,124 +381,124 @@
             "id": "T-012",
             "title": "Delete the directory page and PartnerCard",
             "description": "Remove apps/web/src/pages/[lang]/partners/index.astro, apps/web/src/components/partner/PartnerCard.astro, apps/web/test/pages/partners.index.test.ts and apps/web/test/components/PartnerCard.test.ts. Deleting the folder makes /es/partners/ 404 through the middleware's existing 404 rewrite (spec D-4). Tests: a page test asserting /es/partners/ returns 404 and renders the custom 404 page (AC-10).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-013", "T-014", "T-015"],
             "subtasks": [
                 {
                     "title": "Delete the four files",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add the 404 assertion",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "cleanup"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:20:36Z",
+                "completed": "2026-08-08T05:20:36Z"
             }
         },
         {
             "id": "T-013",
             "title": "Delete PartnerCardData and toPartnerCardProps",
             "description": "Remove PartnerCardData (apps/web/src/data/types.ts:1247) and toPartnerCardProps (apps/web/src/lib/api/transforms.ts:2715) plus their cases in apps/web/test/lib/api/transforms.test.ts. Do NOT touch toPartnerData (transforms.ts:2762) — it feeds the home carousel and is extended by T-022.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-012"],
             "blocks": ["T-022"],
             "subtasks": [
                 {
                     "title": "Delete the type",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Delete the transform + its tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "cleanup"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:20:36Z",
+                "completed": "2026-08-08T05:20:36Z"
             }
         },
         {
             "id": "T-014",
             "title": "Remove /partners/ from the static sitemap",
             "description": "Delete line 62 of apps/web/src/lib/seo/static-sitemap-pages.ts. CRITICAL: test/lib/seo/static-sitemap-pages.guard.test.ts walks src/pages/[lang] and fails when a page is unclassified, but it does NOT detect an entry whose page was deleted — so forgetting this leaves the sitemap advertising a 404 with CI green. Tests: assert STATIC_SITEMAP_PAGES contains no /partners/ path and that the rendered /sitemap-static.xml does not mention it (AC-11).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-012"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Remove the entry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add the AC-11 assertion",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:20:36Z",
+                "completed": "2026-08-08T05:20:36Z"
             }
         },
         {
             "id": "T-015",
             "title": "Delete the directory's i18n keys in all three locales",
             "description": "In packages/i18n/src/locales/{es,en,pt}/partners.json remove listing.* and tiers.*. KEEP types.* — the detail page renders Comercio / ONG / Institución. The tier is never rendered publicly (spec D-7). Tests: the i18n parity test must still pass across the three locales.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-012"],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "Trim es/en/pt partners.json",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify locale parity",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "cleanup"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:20:36Z",
+                "completed": "2026-08-08T05:20:36Z"
             }
         },
         {
@@ -943,9 +943,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 24,
+        "pending": 20,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.0
     }
