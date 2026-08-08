@@ -315,66 +315,66 @@
             "id": "T-010",
             "title": "Seed the partner revalidation_config row (baseline + data-migration)",
             "description": "Dual-write again. (1) Add a partner entry to packages/seed/src/data/revalidationConfig/001-revalidation-config-defaults.json with autoRevalidateOnChange true, cronIntervalMinutes 120, debounceSeconds 10, enabled true (mirroring pointOfInterest). (2) A numbered data-migration inserting the same row for already-seeded envs — without it, staging and prod schedule nothing. Tests: assert the seed is idempotent and the entity type resolves in RevalidationConfigModel.findByEntityType.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009"],
             "blocks": ["T-011"],
             "subtasks": [
                 {
                     "title": "Add the baseline entry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add the data-migration",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "cache", "migration"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T12:23:10Z",
+                "completed": "2026-08-08T12:23:10Z"
             }
         },
         {
             "id": "T-011",
             "title": "Schedule revalidation on partner writes (entity tag + home)",
             "description": "Wire getRevalidationService().scheduleRevalidation into PartnerService's write paths (update, revoke, registerManualPayment, content review approval) so a partner change purges its own entity tag AND CACHE_TAG_HOME — the carousel lives on the home page, so a logo/name/websiteUrl change IS a change to the home page's output. Fire-and-forget, never blocking the write. Tests: assert both tags are scheduled on an update, and that no list-partner tag is ever emitted (AC-14).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Identify every partner write path",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Schedule entity tag + home",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test both tags, assert no collection tag",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "cache"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T12:23:10Z",
+                "completed": "2026-08-08T12:23:10Z"
             }
         },
         {
@@ -781,35 +781,35 @@
             "id": "T-024",
             "title": "Emit gold partner URLs into sitemap-dynamic.xml",
             "description": "Add a partner block to apps/web/src/pages/sitemap-dynamic.xml.ts filtered by evaluatePartnerIndexability (T-018) — the SAME function the page uses. TRAP: test/pages/sitemap-dynamic.test.ts stubs fetch POSITIONALLY with mockImplementationOnce, so the new fetchAllEntities call MUST be APPENDED to the Promise.allSettled array, never inserted mid-array, or every later entity lands on the wrong stub (the file says so at line 316-319). Path /partners/<slug>/, changefreq monthly, priority 0.6. Tests: assert gold URLs appear and non-qualifying partners do not.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-016", "T-018"],
             "blocks": ["T-026"],
             "subtasks": [
                 {
                     "title": "Append the fetch, never insert",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Filter with the shared predicate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Emit + tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo", "sitemap"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T12:23:10Z",
+                "completed": "2026-08-08T12:23:10Z"
             }
         },
         {
@@ -847,31 +847,31 @@
             "id": "T-026",
             "title": "Guard test: the page and the sitemap share ONE predicate",
             "description": "AC-7. Not a test that the two agree on today's fixtures — agreement is what drifts. Assert structurally that both the page and sitemap-dynamic.xml.ts import and call the same exported evaluatePartnerIndexability, in the spirit of the comment at sitemap-dynamic.xml.ts:461-468. A mutation check is the acceptance bar: flipping one condition inside the predicate must break BOTH sides' tests, never just one.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-019", "T-024"],
             "blocks": ["T-028"],
             "subtasks": [
                 {
                     "title": "Write the structural guard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation-check it breaks both sides",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo", "guard"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T12:23:10Z",
+                "completed": "2026-08-08T12:23:10Z"
             }
         },
         {
@@ -943,9 +943,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 10,
+        "pending": 6,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 23,
         "blocked": 0,
         "averageComplexity": 2.0
     }

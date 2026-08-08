@@ -82,5 +82,12 @@
         "cronIntervalMinutes": 60,
         "debounceSeconds": 5,
         "enabled": true
+    },
+    {
+        "entityType": "partner",
+        "autoRevalidateOnChange": true,
+        "cronIntervalMinutes": 120,
+        "debounceSeconds": 10,
+        "enabled": true
     }
 ]

@@ -17,6 +17,7 @@ import {
 import { toSlug } from '@repo/utils';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
+import { getRevalidationService } from '../../revalidation';
 import type {
     Actor,
     PaginatedListOutput,
@@ -480,6 +481,44 @@ export class PartnerService extends BaseCrudService<
                 return { partner: partner ?? null };
             }
         });
+    }
+
+    /**
+     * Schedules a cache purge for this partner (HOS-294 T-011).
+     *
+     * Two surfaces go stale on any partner write and both are addressed by the
+     * tags `getAffectedCacheTags` derives from this event: the partner's own
+     * page, and the home carousel via `home`.
+     *
+     * Never blocking and never throwing: a Cloudflare outage must not fail an
+     * admin's write, which is why the whole thing sits in a try/catch that only
+     * warns. The same shape `AttractionService` uses.
+     *
+     * @param entity - The partner as it now stands after the write.
+     */
+    private _schedulePartnerRevalidation(entity: Partner): void {
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'partner',
+                id: entity.id,
+                slug: entity.slug
+            });
+        } catch (error) {
+            this.logger.warn(
+                { error, entityType: 'partner' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+    }
+
+    protected async _afterCreate(entity: Partner): Promise<Partner> {
+        this._schedulePartnerRevalidation(entity);
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: Partner): Promise<Partner> {
+        this._schedulePartnerRevalidation(entity);
+        return entity;
     }
 
     /**
