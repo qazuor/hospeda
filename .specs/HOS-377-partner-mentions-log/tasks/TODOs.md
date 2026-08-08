@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 25/32 tasks (78%)
+## Progress: 29/32 tasks (91%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -200,19 +200,37 @@
     identical
   - Blocked by: none · Blocks: T-023, T-024, T-030
 
-- [ ] **T-026** (complexity: 2) — Web fetcher for `/mine/mentions`
-  - Blocked by: T-017 · Blocks: T-027
+- [x] **T-026** (complexity: 2) — Web fetcher for `/mine/mentions` ✅
+  - Routed through the CREDENTIALED `getProtected`; a test asserts it never uses the
+    plain `get`, since a cookie-less request returns somebody else's empty log — which
+    reads to the partner as "nothing was ever promoted for you"
+  - 6 tests · Blocked by: T-017 · Blocks: T-027
 
-- [ ] **T-027** (complexity: 3) — Web "Bitácora de menciones", grouped by batch (AC-10)
-  - CSS Modules, not Tailwind
+- [x] **T-027** (complexity: 3) — Web "Bitácora de menciones", grouped by batch (AC-10) ✅
+  - PURE ASTRO, scoped `<style>`, zero JS — the batches already arrive grouped from
+    `listForOwner`, so there is nothing to compute client-side
+  - ⚠ Vitest CANNOT render `.astro` here (`experimental_AstroContainer` fails to
+    transform it), so these 12 tests are SOURCE assertions and cannot tell a DECLARED
+    branch from a REACHED one. The rendered-DOM proof of the same no-anchor rule is the
+    admin twin's test; the grouping and the strip are mutation-verified in the service
   - Blocked by: T-026, T-029 · Blocks: T-028, T-031
 
-- [ ] **T-028** (complexity: 3) — Wire the bitácora into `/mi-cuenta/aliados`
-  - Never add an `acquiredPermission` to the partner door
+- [x] **T-028** (complexity: 3) — Wire the bitácora into `/mi-cuenta/aliados` ✅
+  - Gated on `visible={myPartner !== null}`. No island needed, so
+    `SESSION_OPTIONAL_SEGMENTS` never came into play
+  - The `acquiredPermission` assertion is on `discovery-doors.ts`, the CONFIG where the
+    violation would be written — a page cannot grant a door a permission, so scanning
+    the page proves nothing
+  - The fetch joins the EXISTING `Promise.all`; chaining it off the partner fetch would
+    buy a round-trip of TTFB for a dependency that does not exist
   - Blocked by: T-027 · Blocks: none
 
-- [ ] **T-029** (complexity: 2) — Web i18n keys + AC-5 separation comment
-  - Verify `CLIENT_I18N_KEY_PREFIXES` coverage or PROD ships raw keys
+- [x] **T-029** (complexity: 2) — Web i18n keys + AC-5 separation comment ✅
+  - `CLIENT_I18N_KEY_PREFIXES` question RESOLVED AS **no entry needed**: pure Astro means
+    no key reaches browser code, and the guard recomputes the list from the import graph
+    and fails on entries in BOTH directions — adding one would have broken CI
+  - AC-5 documented in the component docstring naming HOS-294: sibling section, not a
+    tab, and a DIFFERENT key subtree
   - Blocked by: none · Blocks: T-027, T-030
 
 ### Testing Phase (2 tasks, avg 2.5)

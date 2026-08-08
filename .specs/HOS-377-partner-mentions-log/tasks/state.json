@@ -950,141 +950,141 @@
         {
             "id": "T-026",
             "title": "Web: fetcher for the partner's own mentions",
-            "description": "apps/web fetcher hitting GET /api/v1/protected/partners/mine/mentions, typed from @repo/schemas. Handles the not-a-partner case as an empty result, not an error.",
-            "status": "pending",
+            "description": "apps/web fetcher hitting GET /api/v1/protected/partners/mine/mentions, typed from @repo/schemas. Handles the not-a-partner case as an empty result, not an error. DONE: partnersApi.mineMentions in endpoints-protected.ts, routed through the CREDENTIALED getProtected — a test asserts it never uses the plain get, because a cookie-less request comes back as somebody else's empty log, which reads to the partner as 'nothing was ever promoted for you'. Read interfaces (MyPartnerMention/MyPartnerMentionBatch) follow the web's own-allowlist convention (same as MyPartner) rather than importing the Zod-inferred type; they omit internalNote and the audit authors because the PAYLOAD omits them, not as a rendering choice. 6 tests.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-017"],
             "blocks": ["T-027"],
             "subtasks": [
                 {
                     "title": "Typed fetcher",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Not-a-partner returns empty, not throw",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "data"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:45:00.000Z",
+                "completed": "2026-08-08T14:00:00.000Z"
             }
         },
         {
             "id": "T-027",
             "title": "Web: 'Bitácora de menciones' component, grouped by batch",
-            "description": "Chronological list where a batch renders as ONE entry — date + channel icons + a 'Ver publicación' link per channel (new tab) — not N loose entries sharing a date (AC-10). Empty state reads 'Todavía no registramos menciones', never anything implying a missing metric (AC-3). Vanilla CSS / CSS Modules (web — NOT Tailwind). Icons from @repo/icons. Tests: a 3-row batch renders one grouped entry with 3 links; a WHATSAPP entry renders with no link and no broken affordance.",
-            "status": "pending",
+            "description": "Chronological list where a batch renders as ONE entry — date + channel icons + a 'Ver publicación' link per channel (new tab) — not N loose entries sharing a date (AC-10). Empty state reads 'Todavía no registramos menciones', never anything implying a missing metric (AC-3). Vanilla CSS / CSS Modules (web — NOT Tailwind). Icons from @repo/icons. Tests: a 3-row batch renders one grouped entry with 3 links; a WHATSAPP entry renders with no link and no broken affordance. DONE: a PURE ASTRO component (scoped <style>, zero JS) — the grouping already arrives grouped from listForOwner, so there is nothing to compute client-side. 12 tests. IMPORTANT LIMIT, stated in the suite's own docstring: Vitest cannot render .astro here (experimental_AstroContainer fails to transform it), so these are SOURCE assertions and cannot tell a DECLARED branch from a REACHED one. The rendered-DOM proof of the same no-anchor rule lives in the admin twin's test; the grouping and the strip are pinned (mutation-verified) in the service suite.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-026", "T-029"],
             "blocks": ["T-028", "T-031"],
             "subtasks": [
                 {
                     "title": "Grouped-by-batch rendering",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Per-channel link-out",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Empty state copy",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Render tests incl. the no-URL channel",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:45:00.000Z",
+                "completed": "2026-08-08T14:00:00.000Z"
             }
         },
         {
             "id": "T-028",
             "title": "Web: wire the bitácora into /mi-cuenta/aliados",
-            "description": "Render the mentions block on the partner door, gated by ownership via the /mine fetch — following the serviceProvider pattern (HOS-278 AC-7), NOT by adding an acquiredPermission to discovery-doors.ts (the partner option must never get one; HOS-277 NG-1). If the Astro island needs the session, confirm the segment is in SESSION_OPTIONAL_SEGMENTS (exact match, no prefix) or it renders logged-out.",
-            "status": "pending",
+            "description": "Render the mentions block on the partner door, gated by ownership via the /mine fetch — following the serviceProvider pattern (HOS-278 AC-7), NOT by adding an acquiredPermission to discovery-doors.ts (the partner option must never get one; HOS-277 NG-1). If the Astro island needs the session, confirm the segment is in SESSION_OPTIONAL_SEGMENTS (exact match, no prefix) or it renders logged-out. DONE: gated on `visible={myPartner !== null}`. No island was needed (pure Astro), so SESSION_OPTIONAL_SEGMENTS is not in play at all. The fetch joins the EXISTING Promise.all rather than chaining off the partner fetch — listForOwner resolves ownership from the session, so there is no dependency to pay a round-trip for on an uncacheable SSR page. The acquiredPermission assertion is on discovery-doors.ts, the CONFIG where the violation would be written; asserting it on the page proves nothing, since a page cannot grant a door a permission.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-027"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Ownership-gated render on the aliados page",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Do NOT touch discovery-doors acquiredPermission",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify session segment if an island is used",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:45:00.000Z",
+                "completed": "2026-08-08T14:00:00.000Z"
             }
         },
         {
             "id": "T-029",
             "title": "Web i18n keys + document the AC-5 separation constraint",
-            "description": "Web-side keys for the bitácora (heading, channel labels x8, 'Ver publicación', empty state) in es/en/pt. Verify the prefix is present in CLIENT_I18N_KEY_PREFIXES — a missing prefix ships raw keys in PROD while dev looks fine. Also: leave a code comment marking that the future 'Tus métricas' block (HOS-294, OQ-5) must NOT share a heading or a component with this one (AC-5), so the separation survives whoever builds it.",
-            "status": "pending",
+            "description": "Web-side keys for the bitácora (heading, channel labels x8, 'Ver publicación', empty state) in es/en/pt. Verify the prefix is present in CLIENT_I18N_KEY_PREFIXES — a missing prefix ships raw keys in PROD while dev looks fine. Also: leave a code comment marking that the future 'Tus métricas' block (HOS-294, OQ-5) must NOT share a heading or a component with this one (AC-5), so the separation survives whoever builds it. DONE: account.partnerMentions.* in es/en/pt. The CLIENT_I18N_KEY_PREFIXES question RESOLVED AS 'no entry needed': the component is pure Astro, so no key reaches browser code, and the guard recomputes the list from the real import graph and fails on entries in BOTH directions — adding one would have broken CI. Guard re-run green. AC-5 separation documented in the component docstring, naming HOS-294 and saying explicitly: add a sibling section, not a tab, and put its copy under a DIFFERENT key subtree.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-027", "T-030"],
             "subtasks": [
                 {
                     "title": "es/en/pt keys",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm CLIENT_I18N_KEY_PREFIXES coverage",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "AC-5 separation comment for HOS-294",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "i18n"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:45:00.000Z",
+                "completed": "2026-08-08T14:00:00.000Z"
             }
         },
         {
