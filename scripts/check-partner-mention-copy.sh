@@ -7,17 +7,26 @@
 # never speak of "alcance", "impresiones", "clics" or "estadísticas" — a partner
 # who reads one of those words will ask for the number behind it.
 #
-# ## This is a CONVENIENCE ENTRY POINT, not where the guard runs
+# ## Where the predicate lives, and the three ways it runs
 #
-# The predicate lives in `packages/i18n/test/partner-mention-copy.guard.test.ts`,
-# and that placement is deliberate rather than incidental: CI runs
-# `turbo run test`, which reaches `@repo/i18n`'s suite, so the guard executes on
-# every pull request from there.
+# The predicate is `packages/i18n/test/partner-mention-copy.guard.test.ts`. This
+# script only delegates to it, so all entry points check exactly the same thing.
 #
-# `pnpm check:guards` — which this script is registered in — is invoked by NO
-# workflow and NO git hook. It appears exactly once in the whole repo, in
-# `package.json`. A guard registered ONLY there never runs on a PR, which is
-# precisely the trap this comment exists to stop the next person falling into.
+# It executes on a pull request TWICE, by two independent routes:
+#   1. `turbo run test` reaches `@repo/i18n`'s suite directly.
+#   2. The Guards job in `.github/workflows/ci.yml` has a step running this
+#      script by path.
+#
+# ## The trap worth naming for the next guard
+#
+# That Guards job invokes every guard script INDIVIDUALLY (`bash scripts/…`,
+# one step each) — it never calls `pnpm check:guards`. The aggregate exists for
+# local use only and is invoked by no workflow and no git hook; it appears
+# exactly once in the repo, in `package.json`.
+#
+# So: adding a script to `check:guards` does NOT put it in CI. The Guards job
+# has to gain its own step as well, or the guard is green locally and absent
+# from every pull request.
 #
 # Usage: bash scripts/check-partner-mention-copy.sh
 set -euo pipefail

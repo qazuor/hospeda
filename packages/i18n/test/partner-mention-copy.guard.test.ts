@@ -21,11 +21,21 @@
  * ## Where this runs
  *
  * HERE, as a vitest test, because CI runs `turbo run test` and therefore reaches
- * `@repo/i18n`'s suite. It is ALSO reachable from `pnpm check:guards` via
- * `scripts/check-partner-mention-copy.sh`, but that is a convenience only:
- * `check:guards` is invoked by NO workflow and NO git hook — it appears exactly
- * once in the repo, in `package.json`. A guard registered only there does not
- * run on a pull request.
+ * `@repo/i18n`'s suite.
+ *
+ * It is also reachable two other ways, and the distinction between them matters
+ * to anyone adding the next guard:
+ *
+ * - The **Guards job** in `.github/workflows/ci.yml` runs each guard script
+ *   INDIVIDUALLY by path (`bash scripts/check-*.sh`, one step each). A guard is
+ *   only in CI if it has its own step there.
+ * - **`pnpm check:guards`** aggregates the same scripts for local use, but no
+ *   workflow and no git hook ever invokes that aggregate — it appears exactly
+ *   once in the repo, in `package.json`. **Adding a script to `check:guards`
+ *   does NOT add it to CI**; the Guards job has to gain a step too.
+ *
+ * `scripts/check-partner-mention-copy.sh` is registered in both, and delegates
+ * back to this file, so all three paths execute the same predicate.
  *
  * @module test/partner-mention-copy.guard
  */
