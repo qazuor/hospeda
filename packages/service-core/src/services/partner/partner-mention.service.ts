@@ -1,10 +1,15 @@
-import { PartnerMentionModel } from '@repo/db';
+import { type FindPartnerMentionsFilters, PartnerMentionModel, PartnerModel } from '@repo/db';
 import {
     adminSearchPartnerMentionSchema,
     type CreatePartnerMentionBatch,
     createPartnerMentionBatchSchema,
+    PARTNER_MENTION_ADMIN_ONLY_MASK,
     type PartnerMention,
+    type PartnerMentionPublic,
+    RoleEnum,
+    requiresMentionUrl,
     ServiceErrorCode,
+    type UpdatePartnerMention,
     updatePartnerMentionSchema
 } from '@repo/schemas';
 import { z } from 'zod';
@@ -43,6 +48,103 @@ export interface CreateMentionBatchInput extends CreatePartnerMentionBatch {
     readonly partnerId: string;
 }
 
+/** One submission as the partner sees it: a date, and the channels it ran on. */
+export interface PartnerMentionBatchView {
+    /** Null for a mention that was logged on its own. */
+    readonly batchId: string | null;
+    readonly mentionedAt: Date;
+    readonly mentions: readonly PartnerMentionPublic[];
+}
+
+/**
+ * How many mentions the partner's own log loads at once.
+ *
+ * Not user-controllable: this view is a read-only history for one partner, and
+ * an unbounded fetch on a page nobody paginates is how a heavy partner's account
+ * page starts timing out years from now.
+ */
+const OWNER_LOG_PAGE_SIZE = 200;
+
+/**
+ * Resolves the actor to the account a partner may be owned by, or null.
+ *
+ * Mirrors `PartnerService`'s own resolver deliberately: an anonymous or guest
+ * actor carries a sentinel id that is not a real `users` row, so returning null
+ * keeps the ownership filter from ever being built out of a value that could
+ * coincidentally match.
+ */
+const resolveMentionOwnerUserId = (actor: Actor): string | null => {
+    const isAnonymous =
+        actor.roles.length === 0 || actor.roles.every((role) => role === RoleEnum.GUEST);
+    return isAnonymous ? null : actor.id;
+};
+
+/**
+ * Removes the admin-only fields from a stored row.
+ *
+ * Deliberately a STRIP, not a `partnerMentionPublicSchema.parse()`. This is a
+ * read path over rows that are already in the column, and validating them on the
+ * way out means any row that fails — a legacy shape, a column widened later —
+ * takes down the partner's entire log with a 500 instead of rendering. Hardening
+ * a read contract is how a page that only displays data starts erroring.
+ *
+ * The field list is derived from `PARTNER_MENTION_ADMIN_ONLY_MASK`, so it cannot
+ * drift from the schema-level definition of "what the partner must not see".
+ */
+const toPublicMention = (mention: PartnerMention): PartnerMentionPublic => {
+    const stripped = { ...mention } as Record<string, unknown>;
+    for (const field of Object.keys(PARTNER_MENTION_ADMIN_ONLY_MASK)) {
+        delete stripped[field];
+    }
+    return stripped as unknown as PartnerMentionPublic;
+};
+
+/**
+ * Collapses a flat, newest-first mention list into batches.
+ *
+ * A campaign that ran on four networks is ONE thing that happened, so the
+ * partner sees one entry with four links rather than four entries sharing a
+ * date (AC-10). Un-batched mentions (`batchId === null`) each become their own
+ * single-item batch, so the view has exactly one shape to render.
+ *
+ * Order is preserved from the query, so batches stay newest-promotion-first.
+ */
+const groupMentionsIntoBatches = (
+    mentions: readonly PartnerMention[]
+): PartnerMentionBatchView[] => {
+    const batches: PartnerMentionBatchView[] = [];
+    const byBatchId = new Map<string, PartnerMentionBatchView>();
+
+    for (const mention of mentions) {
+        const publicView = toPublicMention(mention);
+
+        if (!mention.batchId) {
+            batches.push({
+                batchId: null,
+                mentionedAt: mention.mentionedAt,
+                mentions: [publicView]
+            });
+            continue;
+        }
+
+        const existing = byBatchId.get(mention.batchId);
+        if (existing) {
+            (existing.mentions as PartnerMentionPublic[]).push(publicView);
+            continue;
+        }
+
+        const created: PartnerMentionBatchView = {
+            batchId: mention.batchId,
+            mentionedAt: mention.mentionedAt,
+            mentions: [publicView]
+        };
+        byBatchId.set(mention.batchId, created);
+        batches.push(created);
+    }
+
+    return batches;
+};
+
 /**
  * The partner mentions log (HOS-377).
  *
@@ -73,14 +175,19 @@ export class PartnerMentionService extends BaseCrudService<
     /** Fired once per committed batch, or null when no transport was injected. */
     private readonly notifier: PartnerMentionNotifyPort | null;
 
+    /** Used only to resolve the caller's own partner in {@link listForOwner}. */
+    private readonly partnerModel: PartnerModel;
+
     constructor(
         ctx: ServiceConfig & {
             model?: PartnerMentionModel;
+            partnerModel?: PartnerModel;
             notifier?: PartnerMentionNotifyPort;
         }
     ) {
         super(ctx, PartnerMentionService.ENTITY_NAME);
         this.model = ctx.model ?? new PartnerMentionModel();
+        this.partnerModel = ctx.partnerModel ?? new PartnerModel();
         this.adminSearchSchema = adminSearchPartnerMentionSchema;
         this.notifier = ctx.notifier ?? null;
     }
@@ -226,6 +333,186 @@ export class PartnerMentionService extends BaseCrudService<
                 await this.notifyBatch({ partnerId, batchId, mentions });
 
                 return { mentions };
+            }
+        });
+    }
+
+    /**
+     * One partner's log for the admin surface — includes `internalNote`.
+     *
+     * Takes the partner explicitly instead of reading it from the filters, which
+     * is what makes forgetting the scope impossible: there is no code path here
+     * that can produce an unscoped query.
+     *
+     * @param actor - Must hold `PARTNER_MANAGE`.
+     * @param input - The partner id plus optional filters.
+     * @param ctx - Optional service context.
+     * @returns The matching mentions, newest promotion first.
+     */
+    public async listForPartner(
+        actor: Actor,
+        input: { partnerId: string; filters?: FindPartnerMentionsFilters },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ mentions: PartnerMention[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listForPartner',
+            input: { ...input, actor },
+            schema: z.object({ partnerId: z.string().uuid(), filters: z.any().optional() }),
+            ctx,
+            execute: async (validated, a) => {
+                this._canList(a);
+                const mentions = await this.model.findByPartner({
+                    partnerId: validated.partnerId,
+                    filters: validated.filters ?? {},
+                    tx: ctx?.tx
+                });
+                return { mentions };
+            }
+        });
+    }
+
+    /**
+     * The calling partner's own log, grouped by batch, with admin fields stripped.
+     *
+     * Auth-only by design, like `PartnerService.getOwn`: an approved partner is
+     * an ordinary account holding no partner permission, so demanding one would
+     * lock them out of their own mentions. Ownership IS the gate and it fails
+     * closed — an actor with no real identity resolves to null and matches the
+     * same nothing as an actor who owns no partner. Both get an empty log, never
+     * a 403 that would confirm a partner exists.
+     *
+     * `internalNote` and the audit authors are removed HERE rather than in the
+     * route, so the guarantee travels with the data instead of depending on each
+     * caller remembering to strip them.
+     *
+     * @param actor - The authenticated actor.
+     * @param ctx - Optional service context.
+     * @returns Batches, newest first, each carrying its mentions.
+     */
+    public async listForOwner(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ batches: PartnerMentionBatchView[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listForOwner',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, a) => {
+                const ownerUserId = resolveMentionOwnerUserId(a);
+                if (ownerUserId === null) return { batches: [] };
+
+                const partner = await this.partnerModel.findOne({ ownerUserId }, ctx?.tx);
+                if (!partner) return { batches: [] };
+
+                const mentions = await this.model.findByPartner({
+                    partnerId: partner.id as string,
+                    filters: { pageSize: OWNER_LOG_PAGE_SIZE },
+                    tx: ctx?.tx
+                });
+
+                return { batches: groupMentionsIntoBatches(mentions) };
+            }
+        });
+    }
+
+    /**
+     * Correct one mention, re-validating the row as it will END UP.
+     *
+     * `updatePartnerMentionSchema` only ever sees the patch, so it can catch a
+     * channel switch that drops the URL but NOT a lone `{ url: null }` — whether
+     * that is legal depends on the channel already stored. This method closes
+     * that gap by merging the patch onto the current row and checking the result,
+     * which is the only place both halves are visible at once.
+     *
+     * @param actor - Must hold `PARTNER_MANAGE`.
+     * @param input - The mention id and the patch.
+     * @param ctx - Optional service context.
+     * @returns The corrected mention.
+     */
+    public async correct(
+        actor: Actor,
+        input: { id: string; data: UpdatePartnerMention },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ mention: PartnerMention }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'correct',
+            input: { ...input, actor },
+            schema: z.object({ id: z.string().uuid(), data: updatePartnerMentionSchema }),
+            ctx,
+            execute: async (validated, a) => {
+                const current = await this.model.findById(validated.id, ctx?.tx);
+                if (!current) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Mention not found');
+                }
+                this._canUpdate(a, current);
+
+                // The merged row is the only view in which the per-channel URL
+                // rule can actually be decided.
+                const mergedChannel = validated.data.channel ?? current.channel;
+                const mergedUrl =
+                    validated.data.url === undefined ? current.url : validated.data.url;
+
+                if (requiresMentionUrl({ channel: mergedChannel }) && !mergedUrl) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `A ${mergedChannel} mention must keep a link to the publication`
+                    );
+                }
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    { ...validated.data, updatedById: a.id ?? null },
+                    ctx?.tx
+                );
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update mention'
+                    );
+                }
+
+                return { mention: updated };
+            }
+        });
+    }
+
+    /**
+     * Soft-delete a mistakenly logged mention.
+     *
+     * Never a hard delete: a mention that was announced to the partner by email
+     * and then vanishes without trace is worse than one marked removed, and the
+     * admin who removed it stays on the row.
+     *
+     * @param actor - Must hold `PARTNER_MANAGE`.
+     * @param input - The mention id.
+     * @param ctx - Optional service context.
+     * @returns How many rows were removed.
+     */
+    public async remove(
+        actor: Actor,
+        input: { id: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ count: number }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'remove',
+            input: { ...input, actor },
+            schema: z.object({ id: z.string().uuid() }),
+            ctx,
+            execute: async (validated, a) => {
+                const current = await this.model.findById(validated.id, ctx?.tx);
+                if (!current) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Mention not found');
+                }
+                this._canSoftDelete(a, current);
+
+                await this.model.update(
+                    { id: validated.id },
+                    { deletedAt: new Date(), deletedById: a.id ?? null },
+                    ctx?.tx
+                );
+
+                return { count: 1 };
             }
         });
     }
