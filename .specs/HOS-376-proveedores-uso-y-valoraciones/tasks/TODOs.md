@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 17/69 tareas (24%)
+## Progreso: 18/69 tareas (26%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,12 +54,12 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 4/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 5/16 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
   - Bloqueada por: T-001 · Bloquea a: T-017, T-019
-- [ ] **T-015** (c3) — Zod schemas de la valoración
+- [x] **T-015** (c3) — Zod schemas de la valoración
   - packages/schemas/src/entities/host-trade-review/: entity, create body (overallRating 1-5 obligatorio, rating jsonb opcional con las 3 dims, respectedBenefit boolean OBLIGATORIO, content opci…
   - Bloqueada por: T-001 · Bloquea a: T-016, T-017, T-024
 - [ ] **T-016** (c2) — Zod schemas de la réplica
@@ -259,9 +259,9 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (4/16). Las disponibles ahora: T-015, T-020, T-022, T-023,
-T-029, T-030, T-033, T-040, T-042, T-057.
+Fase `core` en curso (5/16). Las disponibles ahora: T-016, T-020, T-022, T-023,
+T-024, T-029, T-030, T-033, T-040, T-042, T-057.
 
-T-021 desbloqueó siete. El camino crítico sigue por T-024 (los 4 gates de la
-valoración), que además de T-021 exige T-015 — o sea que los schemas Zod de la
-valoración son ahora lo que traba el camino.
+T-015 desbloqueó T-016 y T-024. El camino crítico está ahora en **T-024** (los 4
+gates de elegibilidad de la valoración), que ya tiene sus dos dependencias
+cerradas.

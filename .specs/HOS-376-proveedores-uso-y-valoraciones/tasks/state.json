@@ -466,39 +466,48 @@
             "id": "T-015",
             "title": "Zod schemas de la valoración",
             "description": "packages/schemas/src/entities/host-trade-review/: entity, create body (overallRating 1-5 obligatorio, rating jsonb opcional con las 3 dims, respectedBenefit boolean OBLIGATORIO, content opcional min 10 / max 2000, SIN título), update (partial de lo editable), access tiers, admin-search con filtro de moderationState. moderationState/moderatedBy*/averageRating/editedAt NUNCA user-settable. Tests: rechazo si falta respectedBenefit, rechazo de overallRating fuera de 1-5, aceptación sin desglose, rechazo de content de 5 caracteres.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-016", "T-017", "T-024"],
             "subtasks": [
                 {
                     "title": "Entity schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Create body .strict() con respectedBenefit obligatorio",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Access tiers + admin-search",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "zod", "reviews"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:17:11.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:17:11.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:17:11.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T14:09:43Z",
+                "completed": "2026-08-08T14:17:11.000Z"
             }
         },
         {
@@ -2148,9 +2157,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 52,
+        "pending": 51,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 18,
         "blocked": 0,
         "averageComplexity": 2.4
     }

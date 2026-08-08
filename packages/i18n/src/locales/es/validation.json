@@ -3162,6 +3162,17 @@
             "min": "El slug debe tener al menos {{min}} caracteres"
         }
     },
+    "hostTradeReview": {
+        "content": {
+            "max": "El comentario no puede superar los {{max}} caracteres",
+            "min": "El comentario debe tener al menos {{min}} caracteres"
+        },
+        "rating": {
+            "int": "La calificación debe ser un número entero de estrellas",
+            "max": "La calificación máxima es {{max}}",
+            "min": "La calificación mínima es {{min}}"
+        }
+    },
     "hostTradeUsage": {
         "hostEmail": {
             "invalid": "El email del anfitrión no es válido"

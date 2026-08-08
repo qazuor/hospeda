@@ -3162,6 +3162,17 @@
             "min": "[EN] El slug debe tener al menos {{min}} caracteres"
         }
     },
+    "hostTradeReview": {
+        "content": {
+            "max": "The review cannot exceed {{max}} characters",
+            "min": "The review must be at least {{min}} characters long"
+        },
+        "rating": {
+            "int": "The rating must be a whole number of stars",
+            "max": "The highest rating is {{max}}",
+            "min": "The lowest rating is {{min}}"
+        }
+    },
     "hostTradeUsage": {
         "hostEmail": {
             "invalid": "The host's email address is not valid"
