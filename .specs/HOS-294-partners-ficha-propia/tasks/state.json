@@ -113,31 +113,31 @@
             "id": "T-004",
             "title": "Trim PartnerSearchHttpSchema to pagination only",
             "description": "packages/schemas/src/entities/partner/partner.http.schema.ts:20-25 loses q, type, tier and subscriptionStatus, keeping only what BaseHttpSearchSchema provides. Safe: the schema has exactly one consumer, apps/api/src/routes/partners/public/index.ts, and after T-012 its only caller is the home carousel, which sends pageSize alone. Tests: a route test asserting ?q=x&type=ngo&tier=gold&subscriptionStatus=active does not change the result set (AC-9).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-007", "T-027"],
             "subtasks": [
                 {
                     "title": "Trim the schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add the AC-9 route test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "api"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:10:31Z",
+                "completed": "2026-08-08T05:16:01Z"
             }
         },
         {
@@ -214,66 +214,66 @@
             "id": "T-007",
             "title": "Add GET /api/v1/public/partners/{slug}",
             "description": "New route in apps/api/src/routes/partners/public/, registered alongside the existing list route. Maps the service's three-state outcome to 200 / 410 / 404. responseSchema is PartnerPublicSchema (extended in T-005). Public tier: skipAuth. Tests: route tests for all three statuses against a seeded row.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-006"],
             "blocks": ["T-008", "T-016"],
             "subtasks": [
                 {
                     "title": "Create the route file",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register it on the public router",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Route tests for 200/410/404",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "route"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:59:20Z",
+                "completed": "2026-08-08T05:07:16Z"
             }
         },
         {
             "id": "T-008",
             "title": "Classify /api/v1/public/partners as a public-cache endpoint",
             "description": "Add the prefix to PUBLIC_CACHE_ENDPOINTS in apps/api/src/middlewares/cache.constants.ts (it is currently in none of the three lists, so partner responses have no cache classification at all). Tests: an actor-blind test mirroring apps/api/test/routes/user/public/by-slug-actor-blind.test.ts — the same request with and without a session must produce identical bodies and no Vary-on-cookie.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Add the prefix",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Port the actor-blind test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "cache"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:07:16Z",
+                "completed": "2026-08-08T05:10:31Z"
             }
         },
         {
@@ -943,9 +943,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 26,
+        "pending": 24,
         "inProgress": 0,
-        "completed": 2,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.0
     }
