@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 21/69 tareas (30%)
+## Progreso: 22/69 tareas (32%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 8/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 9/16 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -89,7 +89,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-024** (c3) — Servicio de valoraciones: creación con los 4 gates de elegibilidad
   - packages/service-core/src/services/hostTrade/host-trade-review.service.ts. Los 4 gates de spec §6.3, cada uno con su código de error: (1) permiso HOST_TRADE_REVIEW_CREATE; (2) existe uso CON…
   - Bloqueada por: T-018, T-015, T-021 · Bloquea a: T-025, T-026, T-027, T-034, T-036, T-058
-- [ ] **T-025** (c2) — Servicio de réplicas: crear y editar, siempre PENDING
+- [x] **T-025** (c2) — Servicio de réplicas: crear y editar, siempre PENDING
   - host-trade-review-reply.service.ts. Sólo el ownerUserId del proveedor dueño de la valoración puede responder; cualquier otro actor obtiene 404. Una sola réplica por valoración (UNIQUE + guar…
   - Bloqueada por: T-018, T-016, T-024 · Bloquea a: T-026, T-027, T-035, T-036
 - [ ] **T-026** (c3) — Servicio de valoraciones: edición del anfitrión con re-moderación
@@ -259,10 +259,11 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (8/16). Las disponibles ahora: T-020, T-022, T-023, T-025,
-T-029, T-030, T-033, T-040, T-042, T-057.
+Fase `core` en curso (9/16). Las disponibles ahora: T-020, T-022, T-023, T-026,
+T-027, T-029, T-030, T-033, T-040, T-042, T-057.
 
-El bloque de schemas está cerrado (T-014 a T-017) y el camino crítico sigue por
-**T-025** — el servicio de réplicas. Antes de arrancarlo hay que retipar
-`HostTradeReviewReplyModel` sobre la entidad Zod: hoy usa `$inferSelect` y
-Drizzle ensancha el pgEnum a `string`, que no satisface `BaseCrudService`.
+El camino crítico sigue por **T-027** (integrar `resolveInitialModerationState`
+y `moderateText` en el dominio nuevo) y de ahí a T-028. T-026 también quedó
+libre: es la otra mitad de AC-22 — el servicio de réplicas ya conserva la
+réplica al editarla, falta que la edición de la VALORACIÓN le ponga
+`reviewEditedAfterReply`.

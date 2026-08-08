@@ -898,7 +898,7 @@
             "id": "T-025",
             "title": "Servicio de réplicas: crear y editar, siempre PENDING",
             "description": "host-trade-review-reply.service.ts. Sólo el ownerUserId del proveedor dueño de la valoración puede responder; cualquier otro actor obtiene 404. Una sola réplica por valoración (UNIQUE + guard). Editar la réplica la devuelve a PENDING y la saca del directorio hasta reaprobación. Tests: réplica ajena devuelve 404; segunda réplica devuelve conflicto; editar una APPROVED la vuelve PENDING (AC-23).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-018", "T-016", "T-024"],
             "blocks": ["T-026", "T-027", "T-035", "T-036"],
@@ -906,14 +906,23 @@
             "tags": ["service-core", "reviews", "replies"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T16:15:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T16:15:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T16:15:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T15:55:00Z",
+                "completed": "2026-08-08T16:15:00.000Z"
             }
         },
         {
@@ -2184,9 +2193,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 48,
+        "pending": 47,
         "inProgress": 0,
-        "completed": 21,
+        "completed": 22,
         "blocked": 0,
         "averageComplexity": 2.4
     }
