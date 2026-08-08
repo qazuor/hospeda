@@ -70,6 +70,20 @@ export type HostTradeIdType = z.infer<typeof HostTradeIdSchema>;
 export const PartnerIdSchema = BaseIdSchema;
 export type PartnerIdType = z.infer<typeof PartnerIdSchema>;
 
+/** Id of a row in `partner_mentions` — one logged promotion action (HOS-377). */
+export const PartnerMentionIdSchema = BaseIdSchema;
+export type PartnerMentionIdType = z.infer<typeof PartnerMentionIdSchema>;
+
+/**
+ * Groups the `partner_mentions` rows written by ONE admin submission (HOS-377).
+ *
+ * Not an entity id: no `partner_mention_batches` table exists and none is
+ * planned. It is a shared marker generated server-side inside the creating
+ * transaction, which is why it never appears in a request body.
+ */
+export const PartnerMentionBatchIdSchema = BaseIdSchema;
+export type PartnerMentionBatchIdType = z.infer<typeof PartnerMentionBatchIdSchema>;
+
 export const DestinationIdSchema = BaseIdSchema;
 export type DestinationIdType = z.infer<typeof DestinationIdSchema>;
 

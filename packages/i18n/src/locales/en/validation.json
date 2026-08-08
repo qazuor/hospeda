@@ -3345,6 +3345,22 @@
             "required": "[EN] La versión es obligatoria"
         }
     },
+    "partnerMention": {
+        "mentionedAt": {
+            "required": "The mention date is required"
+        },
+        "url": {
+            "invalid": "The publication link is not a valid URL",
+            "tooLong": "The publication link is too long",
+            "requiredForChannel": "This channel needs the link to the publication"
+        },
+        "internalNote": {
+            "tooLong": "The internal note cannot exceed {{max}} characters"
+        },
+        "entries": {
+            "empty": "Pick at least one channel"
+        }
+    },
     "partner": {
         "revokeReason": {
             "required": "[EN] El motivo de la baja no puede estar vacío",

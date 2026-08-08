@@ -3345,6 +3345,22 @@
             "required": "La versión es obligatoria"
         }
     },
+    "partnerMention": {
+        "mentionedAt": {
+            "required": "La fecha de la mención es obligatoria"
+        },
+        "url": {
+            "invalid": "El link de la publicación no es una URL válida",
+            "tooLong": "El link de la publicación es demasiado largo",
+            "requiredForChannel": "Este canal necesita el link a la publicación"
+        },
+        "internalNote": {
+            "tooLong": "La nota interna no puede superar los {{max}} caracteres"
+        },
+        "entries": {
+            "empty": "Elegí al menos un canal"
+        }
+    },
     "partner": {
         "revokeReason": {
             "required": "El motivo de la baja no puede estar vacío",
