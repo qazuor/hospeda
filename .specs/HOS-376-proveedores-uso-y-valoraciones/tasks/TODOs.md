@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 13/69 tareas (18%)
+## Progreso: 14/69 tareas (20%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 0/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 1/16 completadas (complejidad promedio 2.6)
 
 - [ ] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -68,7 +68,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [ ] **T-017** (c2) — Guard test de campos administrados no user-settable
   - Test estático con el molde de HOST_TRADE_OWNER_FORBIDDEN_FIELDS (host-trade.owner.schema.ts:79-94, que ya tiene su guard). Debe afirmar que moderationState, moderatedById, moderatedAt, moder…
   - Bloqueada por: T-014, T-015, T-016 · Bloquea a: —
-- [ ] **T-018** (c2) — Modelos DB de las 3 tablas nuevas
+- [x] **T-018** (c2) — Modelos DB de las 3 tablas nuevas
   - packages/db/src/models/hostTrade/: HostTradeBenefitUsageModel, HostTradeReviewModel, HostTradeReviewReplyModel, todos extendiendo BaseModelImpl con el molde de host-trade.model.ts. Incluir l…
   - Bloqueada por: T-010 · Bloquea a: T-019, T-024, T-025
 - [ ] **T-019** (c3) — Servicio de usos: declaración por los 3 canales
@@ -259,4 +259,6 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `setup` completa. Las disponibles ahora: T-014, T-015, T-018, T-029, T-040
+Fase `core` en curso (1/16). Las disponibles ahora: T-014, T-015, T-029, T-040
+
+T-019 (servicio de usos) sigue bloqueada: además de T-018 exige T-014.
