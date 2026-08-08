@@ -19,6 +19,7 @@ import {
     ContactSubmissionEmail,
     FeedbackReportEmail,
     HostTradeRevoked,
+    PartnerMentionsLogged,
     PartnerRevoked,
     PartnerUnpaidNotice,
     PaymentFailure,
@@ -53,6 +54,7 @@ import type {
     FeedbackReportPayload,
     HostTradeRevokedPayload,
     NotificationPayload,
+    PartnerMentionsLoggedPayload,
     PartnerRevokedPayload,
     PartnerUnpaidNoticePayload,
     PaymentNotificationPayload,
@@ -630,6 +632,16 @@ export class NotificationService {
                     recipientName,
                     partnerName: p.partnerName,
                     reason: p.reason
+                });
+            }
+
+            case 'partner_mentions_logged': {
+                const p = payload as PartnerMentionsLoggedPayload;
+                return PartnerMentionsLogged({
+                    recipientName,
+                    partnerName: p.partnerName,
+                    mentionedAtLabel: p.mentionedAtLabel,
+                    mentions: p.mentions
                 });
             }
 

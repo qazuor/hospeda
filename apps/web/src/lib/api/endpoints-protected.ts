@@ -2159,6 +2159,58 @@ export interface MyPartnerResponse {
     readonly partner: MyPartner | null;
 }
 
+/**
+ * One logged promotion action, as the partner sees it (HOS-377).
+ *
+ * A read allowlist mirroring `partnerMentionPublicSchema`, same precedent as
+ * {@link MyPartner}. The admin-only fields (`internalNote` and the audit
+ * authors) are absent from this interface because they are absent from the
+ * PAYLOAD — the service strips them server-side, so this is describing what
+ * arrives rather than choosing what to render.
+ */
+export interface MyPartnerMention {
+    readonly id: string;
+    readonly partnerId: string;
+    /** One of the 8 `PartnerMentionChannelEnum` values. */
+    readonly channel: string;
+    readonly batchId: string | null;
+    readonly mentionedAt: string;
+    /**
+     * Link to the publication, so the partner can verify it.
+     *
+     * Null for a WhatsApp broadcast or an "other" channel — neither produces a
+     * public permalink, which is why the URL is optional per channel rather
+     * than globally required.
+     */
+    readonly url: string | null;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
+/**
+ * One submission: a date, and every channel it ran on (AC-10).
+ *
+ * A campaign that ran on four networks is ONE thing that happened, so the log
+ * shows one entry with four links rather than four entries sharing a date. A
+ * mention logged on its own arrives as a single-item batch with a null
+ * `batchId`, so the view has exactly one shape to render.
+ */
+export interface MyPartnerMentionBatch {
+    readonly batchId: string | null;
+    readonly mentionedAt: string;
+    readonly mentions: readonly MyPartnerMention[];
+}
+
+/** Response envelope for `GET /protected/partners/mine/mentions`. */
+export interface MyPartnerMentionsResponse {
+    /**
+     * Empty when the caller owns no partner, or owns one with nothing logged
+     * yet — never a 403/404. Both are ordinary states, and a 403 would confirm
+     * that some partner exists.
+     */
+    readonly batches: readonly MyPartnerMentionBatch[];
+}
+
 /** What a partner may PATCH onto their own listing. */
 export interface MyPartnerUpdate {
     readonly logoUrl?: string | null;
@@ -2204,6 +2256,31 @@ export const partnersApi = {
      */
     updateMine(body: MyPartnerUpdate): Promise<ApiResult<{ readonly partner: MyPartner }>> {
         return apiClient.patch({ path: `${PROTECTED}/partners/mine`, body });
+    },
+
+    /**
+     * The caller's own mentions log, grouped by submission, newest first.
+     *
+     * Answers `{ batches: [] }` rather than an error when the caller owns no
+     * partner — the same shape as {@link partnersApi.mine} answering `null`,
+     * and for the same reason: owning no listing is an ordinary state, and a
+     * 403 would confirm that some partner exists.
+     *
+     * `internalNote` and the audit authors are stripped by the SERVICE, not by
+     * this call, so a future caller cannot forget to omit them.
+     *
+     * @param params - `{ cookieHeader }` when calling from SSR; omit in the browser.
+     * @returns The caller's log, or an error the page degrades from.
+     */
+    mineMentions({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<MyPartnerMentionsResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/partners/mine/mentions`,
+            cookieHeader
+        });
     }
 };
 

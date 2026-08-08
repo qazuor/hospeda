@@ -1488,5 +1488,67 @@
             "setFeaturedFailed": "Não foi possível definir a capa. Tente novamente.",
             "uploadFailed": "Não foi possível carregar a imagem. Tente novamente."
         }
+    },
+    "partnerMentions": {
+        "title": "Registro de menções",
+        "description": "Registro das ações de divulgação que a equipe fez por este parceiro, com o link de cada publicação.",
+        "empty": "Ainda não registramos nenhuma divulgação para este parceiro.",
+        "loading": "Carregando o registro…",
+        "channels": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "TWITTER": "Twitter",
+            "YOUTUBE": "YouTube",
+            "TIKTOK": "TikTok",
+            "NEWSLETTER": "Newsletter",
+            "WHATSAPP": "WhatsApp",
+            "OTHER": "Outro canal"
+        },
+        "fields": {
+            "mentionedAt": "Data da divulgação",
+            "channel": "Canal",
+            "channels": "Canais",
+            "url": "Link da publicação",
+            "urlPlaceholder": "https://…",
+            "internalNote": "Nota interna",
+            "internalNotePlaceholder": "Só a equipe vê. O parceiro nunca vê.",
+            "internalNoteHelp": "Contexto para a equipe. Não é mostrado nem enviado ao parceiro."
+        },
+        "form": {
+            "title": "Registrar uma divulgação",
+            "description": "Escolha todos os canais da mesma campanha: eles são salvos juntos e o parceiro recebe um único aviso.",
+            "selectChannels": "Selecione pelo menos um canal",
+            "urlRequired": "Este canal precisa do link da publicação.",
+            "urlOptional": "Opcional: este canal não tem link público.",
+            "submit": "Registrar divulgação",
+            "submitting": "Registrando…",
+            "cancel": "Cancelar"
+        },
+        "actions": {
+            "add": "Registrar divulgação",
+            "edit": "Corrigir",
+            "save": "Salvar alterações",
+            "saving": "Salvando…",
+            "remove": "Remover",
+            "viewPublication": "Ver a publicação",
+            "noPublicationLink": "Sem link público"
+        },
+        "remove": {
+            "title": "Remover esta divulgação?",
+            "description": "Ela deixa de aparecer no registro do parceiro. O registro é mantido junto com quem a removeu.",
+            "confirm": "Remover"
+        },
+        "messages": {
+            "created_one": "Divulgação registrada e o parceiro foi avisado.",
+            "created_other": "Registramos {{count}} divulgações e enviamos um único aviso ao parceiro.",
+            "updated": "Divulgação corrigida.",
+            "removed": "Divulgação removida do registro."
+        },
+        "errors": {
+            "loadFailed": "Não foi possível carregar o registro.",
+            "createFailed": "Não foi possível registrar a divulgação. Tente novamente.",
+            "updateFailed": "Não foi possível salvar a correção. Tente novamente.",
+            "removeFailed": "Não foi possível remover a divulgação. Tente novamente."
+        }
     }
 }

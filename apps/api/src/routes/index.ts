@@ -129,15 +129,19 @@ import {
     publicOwnerPromotionRoutes
 } from './owner-promotion';
 import {
+    adminCreatePartnerMentionsRoute,
     adminCreatePartnerRoute,
+    adminDeletePartnerMentionRoute,
     adminDeletePartnerRoute,
     adminGetPartnerRoute,
+    adminListPartnerMentionsRoute,
     adminListPartnerPlansRoute,
     adminListPartnersRoute,
     adminManualPaymentRoute,
     adminReviewPartnerContentRoute,
     adminRevokePartnerRoute,
     adminSendPaymentLinkRoute,
+    adminUpdatePartnerMentionRoute,
     adminUpdatePartnerRoute,
     protectedPartnerRoutes,
     publicPartnersRoutes
@@ -552,6 +556,12 @@ export const setupRoutes = (app: AppOpenAPI) => {
         app.route('/api/v1/admin/partners', adminManualPaymentRoute);
         app.route('/api/v1/admin/partners', adminReviewPartnerContentRoute);
         app.route('/api/v1/admin/partners', adminRevokePartnerRoute);
+        // Partner mentions log (HOS-377) — sub-resource of a partner, so it mounts
+        // on the same prefix and takes the partner from its own path segment.
+        app.route('/api/v1/admin/partners', adminListPartnerMentionsRoute);
+        app.route('/api/v1/admin/partners', adminCreatePartnerMentionsRoute);
+        app.route('/api/v1/admin/partners', adminUpdatePartnerMentionRoute);
+        app.route('/api/v1/admin/partners', adminDeletePartnerMentionRoute);
         // Commerce leads admin management (SPEC-239 T-047)
         app.route('/api/v1/admin/commerce', adminCommerceRoutes);
         // Alliance leads admin inbox (HOS-277)
