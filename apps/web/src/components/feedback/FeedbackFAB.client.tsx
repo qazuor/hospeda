@@ -11,7 +11,7 @@
 
 import type { SentryFeedbackBridgePayload } from '@repo/feedback';
 import { FeedbackFAB as FeedbackFABBase } from '@repo/feedback';
-import * as Sentry from '@sentry/astro';
+import { captureFeedback, getLastEventId } from '@/lib/observability/sentry-lazy';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -40,18 +40,15 @@ export interface FeedbackFABClientProps {
 
 /**
  * Returns the most recent Sentry event ID, if available.
- * Wrapped in try/catch so SDK changes or pre-init calls cannot crash the FAB.
  *
- * Uses dynamic-dispatch typing to avoid a hard dependency on the exact shape
- * of the @sentry/astro public surface at compile time.
+ * Both helpers below delegate to `sentry-lazy`, which reads the SDK only if it
+ * has actually been loaded and initialised, and already swallows any SDK error.
+ * They return `undefined` / no-op when Sentry is absent — the same behaviour as
+ * before HOS-369, when the SDK was present in the bundle but `init()` had not
+ * run without crash-reporting consent.
  */
 function getSentryEventId(): string | undefined {
-    try {
-        const fn = (Sentry as { lastEventId?: () => string | undefined }).lastEventId;
-        return typeof fn === 'function' ? fn() : undefined;
-    } catch {
-        return undefined;
-    }
+    return getLastEventId();
 }
 
 /**
@@ -59,21 +56,7 @@ function getSentryEventId(): string | undefined {
  * Best-effort: any SDK error is swallowed so the Linear flow is unaffected.
  */
 function handleSentryFeedback(payload: SentryFeedbackBridgePayload): void {
-    try {
-        const fn = (
-            Sentry as {
-                captureFeedback?: (data: {
-                    name: string;
-                    email: string;
-                    message: string;
-                    associatedEventId?: string;
-                }) => void;
-            }
-        ).captureFeedback;
-        fn?.(payload);
-    } catch {
-        // Intentional no-op — Sentry failure must not block feedback submission
-    }
+    captureFeedback({ ...payload });
 }
 
 // ---------------------------------------------------------------------------
