@@ -100,6 +100,25 @@ const toPublicMention = (mention: PartnerMention): PartnerMentionPublic => {
 };
 
 /**
+ * Refuses a mention that does not belong to the partner the caller named.
+ *
+ * Both mutating routes live under `/admin/partners/{partnerId}/mentions/{id}`,
+ * where the two path segments are supplied independently: nothing about the URL
+ * forces the mention to actually be that partner's. Without this check, a mention
+ * id pasted under the wrong partner would be corrected or deleted anyway, and the
+ * audit trail would record it against a partner it never belonged to.
+ *
+ * `PARTNER_MANAGE` is global, so this is not a privilege boundary — it is a
+ * correctness one, which is why it throws NOT_FOUND rather than FORBIDDEN: as far
+ * as the scope the caller asked about is concerned, the row genuinely is not
+ * there, and a distinct error would confirm it exists under some other partner.
+ */
+const assertMentionBelongsTo = (mention: PartnerMention, partnerId: string): void => {
+    if (mention.partnerId === partnerId) return;
+    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Mention not found');
+};
+
+/**
  * Collapses a flat, newest-first mention list into batches.
  *
  * A campaign that ran on four networks is ONE thing that happened, so the
@@ -344,16 +363,20 @@ export class PartnerMentionService extends BaseCrudService<
      * is what makes forgetting the scope impossible: there is no code path here
      * that can produce an unscoped query.
      *
+     * `total` counts the whole filtered set, not the page: the admin list is
+     * paginated, and a page-length total would make the UI advertise exactly one
+     * page no matter how long the log actually is.
+     *
      * @param actor - Must hold `PARTNER_MANAGE`.
      * @param input - The partner id plus optional filters.
      * @param ctx - Optional service context.
-     * @returns The matching mentions, newest promotion first.
+     * @returns The matching mentions, newest promotion first, and the filtered total.
      */
     public async listForPartner(
         actor: Actor,
         input: { partnerId: string; filters?: FindPartnerMentionsFilters },
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ mentions: PartnerMention[] }>> {
+    ): Promise<ServiceOutput<{ mentions: PartnerMention[]; total: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listForPartner',
             input: { ...input, actor },
@@ -361,12 +384,20 @@ export class PartnerMentionService extends BaseCrudService<
             ctx,
             execute: async (validated, a) => {
                 this._canList(a);
-                const mentions = await this.model.findByPartner({
-                    partnerId: validated.partnerId,
-                    filters: validated.filters ?? {},
-                    tx: ctx?.tx
-                });
-                return { mentions };
+                const filters = validated.filters ?? {};
+                const [mentions, total] = await Promise.all([
+                    this.model.findByPartner({
+                        partnerId: validated.partnerId,
+                        filters,
+                        tx: ctx?.tx
+                    }),
+                    this.model.countByPartner({
+                        partnerId: validated.partnerId,
+                        filters,
+                        tx: ctx?.tx
+                    })
+                ]);
+                return { mentions, total };
             }
         });
     }
@@ -425,26 +456,35 @@ export class PartnerMentionService extends BaseCrudService<
      * that gap by merging the patch onto the current row and checking the result,
      * which is the only place both halves are visible at once.
      *
+     * `partnerId` is the scope the caller believes the mention belongs to — the
+     * one in the URL path — and it is CHECKED, not trusted. See
+     * {@link assertMentionBelongsTo}.
+     *
      * @param actor - Must hold `PARTNER_MANAGE`.
-     * @param input - The mention id and the patch.
+     * @param input - The owning partner, the mention id and the patch.
      * @param ctx - Optional service context.
      * @returns The corrected mention.
      */
     public async correct(
         actor: Actor,
-        input: { id: string; data: UpdatePartnerMention },
+        input: { partnerId: string; id: string; data: UpdatePartnerMention },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ mention: PartnerMention }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'correct',
             input: { ...input, actor },
-            schema: z.object({ id: z.string().uuid(), data: updatePartnerMentionSchema }),
+            schema: z.object({
+                partnerId: z.string().uuid(),
+                id: z.string().uuid(),
+                data: updatePartnerMentionSchema
+            }),
             ctx,
             execute: async (validated, a) => {
                 const current = await this.model.findById(validated.id, ctx?.tx);
                 if (!current) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Mention not found');
                 }
+                assertMentionBelongsTo(current, validated.partnerId);
                 this._canUpdate(a, current);
 
                 // The merged row is the only view in which the per-channel URL
@@ -485,25 +525,26 @@ export class PartnerMentionService extends BaseCrudService<
      * admin who removed it stays on the row.
      *
      * @param actor - Must hold `PARTNER_MANAGE`.
-     * @param input - The mention id.
+     * @param input - The owning partner and the mention id.
      * @param ctx - Optional service context.
      * @returns How many rows were removed.
      */
     public async remove(
         actor: Actor,
-        input: { id: string },
+        input: { partnerId: string; id: string },
         ctx?: ServiceContext
     ): Promise<ServiceOutput<{ count: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'remove',
             input: { ...input, actor },
-            schema: z.object({ id: z.string().uuid() }),
+            schema: z.object({ partnerId: z.string().uuid(), id: z.string().uuid() }),
             ctx,
             execute: async (validated, a) => {
                 const current = await this.model.findById(validated.id, ctx?.tx);
                 if (!current) {
                     throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Mention not found');
                 }
+                assertMentionBelongsTo(current, validated.partnerId);
                 this._canSoftDelete(a, current);
 
                 await this.model.update(

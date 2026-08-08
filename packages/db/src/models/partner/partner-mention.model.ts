@@ -1,5 +1,5 @@
 import type { PartnerMention } from '@repo/schemas';
-import { and, asc, desc, eq, gte, isNull, lte } from 'drizzle-orm';
+import { and, asc, count, desc, eq, gte, isNull, lte, type SQL } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import {
     type InsertPartnerMention,
@@ -64,6 +64,71 @@ export class PartnerMentionModel extends BaseModelImpl<PartnerMention> {
     }
 
     /**
+     * The WHERE terms shared by the page query and its total.
+     *
+     * Extracted so the two can never diverge: a count that applies fewer filters
+     * than the list it accompanies reports a total for a different question, and
+     * the UI renders page links to pages that come back empty. The page/pageSize
+     * fields are deliberately not read here — they belong to the slice, not to
+     * the set being sliced.
+     */
+    private buildPartnerConditions(partnerId: string, filters: FindPartnerMentionsFilters): SQL[] {
+        const conditions: SQL[] = [eq(partnerMentions.partnerId, partnerId)];
+
+        if (!filters.includeDeleted) {
+            conditions.push(isNull(partnerMentions.deletedAt));
+        }
+        if (filters.channel) {
+            conditions.push(
+                eq(
+                    partnerMentions.channel,
+                    filters.channel as (typeof partnerMentions.channel.enumValues)[number]
+                )
+            );
+        }
+        if (filters.batchId) {
+            conditions.push(eq(partnerMentions.batchId, filters.batchId));
+        }
+        if (filters.mentionedAfter) {
+            conditions.push(gte(partnerMentions.mentionedAt, filters.mentionedAfter));
+        }
+        if (filters.mentionedBefore) {
+            conditions.push(lte(partnerMentions.mentionedAt, filters.mentionedBefore));
+        }
+
+        return conditions;
+    }
+
+    /**
+     * How many rows {@link findByPartner} would return across every page.
+     *
+     * Shares {@link buildPartnerConditions} with the list query rather than
+     * re-deriving the filters, so the total always describes exactly the set
+     * being paginated.
+     *
+     * @param params - Receives the partner id, optional filters and a transaction.
+     * @returns The number of matching rows.
+     */
+    async countByPartner({
+        partnerId,
+        filters = {},
+        tx
+    }: {
+        readonly partnerId: string;
+        readonly filters?: FindPartnerMentionsFilters;
+        readonly tx?: DrizzleClient;
+    }): Promise<number> {
+        const client = this.getClient(tx);
+
+        const rows = await client
+            .select({ total: count() })
+            .from(partnerMentions)
+            .where(and(...this.buildPartnerConditions(partnerId, filters)));
+
+        return Number(rows[0]?.total ?? 0);
+    }
+
+    /**
      * One partner's log, newest-first by when the promotion HAPPENED.
      *
      * Ordered by `mentionedAt`, not `createdAt`: a mention entered a week late
@@ -94,28 +159,7 @@ export class PartnerMentionModel extends BaseModelImpl<PartnerMention> {
         const page = filters.page ?? 1;
         const pageSize = filters.pageSize ?? 20;
 
-        const conditions = [eq(partnerMentions.partnerId, partnerId)];
-
-        if (!filters.includeDeleted) {
-            conditions.push(isNull(partnerMentions.deletedAt));
-        }
-        if (filters.channel) {
-            conditions.push(
-                eq(
-                    partnerMentions.channel,
-                    filters.channel as (typeof partnerMentions.channel.enumValues)[number]
-                )
-            );
-        }
-        if (filters.batchId) {
-            conditions.push(eq(partnerMentions.batchId, filters.batchId));
-        }
-        if (filters.mentionedAfter) {
-            conditions.push(gte(partnerMentions.mentionedAt, filters.mentionedAfter));
-        }
-        if (filters.mentionedBefore) {
-            conditions.push(lte(partnerMentions.mentionedAt, filters.mentionedBefore));
-        }
+        const conditions = this.buildPartnerConditions(partnerId, filters);
 
         const rows = await client
             .select()

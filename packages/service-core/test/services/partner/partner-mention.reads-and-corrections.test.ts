@@ -54,12 +54,14 @@ const makeMention = (overrides: Record<string, unknown> = {}) => ({
 function makeService(
     opts: {
         mentions?: Record<string, unknown>[];
+        total?: number;
         current?: Record<string, unknown> | null;
         partner?: Record<string, unknown> | null;
     } = {}
 ) {
     const model = {
         findByPartner: vi.fn(async () => opts.mentions ?? []),
+        countByPartner: vi.fn(async () => opts.total ?? (opts.mentions ?? []).length),
         findById: vi.fn(async () => (opts.current === undefined ? makeMention() : opts.current)),
         update: vi.fn(async (_where: unknown, data: Record<string, unknown>) => ({
             ...makeMention(),
@@ -87,6 +89,35 @@ describe('PartnerMentionService.listForPartner', () => {
         );
     });
 
+    it('reports the total of the whole filtered set, not the page length', async () => {
+        // One row on this page, 137 matching the filters overall: a total taken
+        // from the page would advertise a single page of a 7-page log.
+        const { service, model } = makeService({ mentions: [makeMention()], total: 137 });
+
+        const result = await service.listForPartner(adminActor, {
+            partnerId: PARTNER_ID,
+            filters: { pageSize: 1 }
+        });
+
+        expect(result.data?.mentions).toHaveLength(1);
+        expect(result.data?.total).toBe(137);
+        expect(model.countByPartner).toHaveBeenCalledWith(
+            expect.objectContaining({ partnerId: PARTNER_ID })
+        );
+    });
+
+    it('counts with the SAME filters it lists with', async () => {
+        // A count that drops a filter the list applied answers a different
+        // question, and the UI paginates against the wrong number.
+        const { service, model } = makeService({ mentions: [], total: 0 });
+        const filters = { channel: PartnerMentionChannelEnum.NEWSLETTER, pageSize: 5 };
+
+        await service.listForPartner(adminActor, { partnerId: PARTNER_ID, filters });
+
+        expect(model.findByPartner).toHaveBeenCalledWith(expect.objectContaining({ filters }));
+        expect(model.countByPartner).toHaveBeenCalledWith(expect.objectContaining({ filters }));
+    });
+
     it('refuses an actor without PARTNER_MANAGE', async () => {
         const { service, model } = makeService();
 
@@ -94,6 +125,7 @@ describe('PartnerMentionService.listForPartner', () => {
 
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
         expect(model.findByPartner).not.toHaveBeenCalled();
+        expect(model.countByPartner).not.toHaveBeenCalled();
     });
 });
 
@@ -239,6 +271,7 @@ describe('PartnerMentionService.correct — merged-row validation', () => {
         });
 
         const result = await service.correct(adminActor, {
+            partnerId: PARTNER_ID,
             id: MENTION_ID,
             data: { url: null }
         });
@@ -253,6 +286,7 @@ describe('PartnerMentionService.correct — merged-row validation', () => {
         });
 
         const result = await service.correct(adminActor, {
+            partnerId: PARTNER_ID,
             id: MENTION_ID,
             data: { url: null }
         });
@@ -267,6 +301,7 @@ describe('PartnerMentionService.correct — merged-row validation', () => {
         });
 
         const result = await service.correct(adminActor, {
+            partnerId: PARTNER_ID,
             id: MENTION_ID,
             data: { mentionedAt: new Date('2026-07-30T00:00:00.000Z') }
         });
@@ -282,6 +317,7 @@ describe('PartnerMentionService.correct — merged-row validation', () => {
         });
 
         const result = await service.correct(adminActor, {
+            partnerId: PARTNER_ID,
             id: MENTION_ID,
             data: { channel: PartnerMentionChannelEnum.INSTAGRAM }
         });
@@ -293,6 +329,7 @@ describe('PartnerMentionService.correct — merged-row validation', () => {
         const { service } = makeService({ current: null });
 
         const result = await service.correct(adminActor, {
+            partnerId: PARTNER_ID,
             id: MENTION_ID,
             data: { internalNote: 'x' }
         });
@@ -304,6 +341,7 @@ describe('PartnerMentionService.correct — merged-row validation', () => {
         const { service, model } = makeService();
 
         const result = await service.correct(outsiderActor, {
+            partnerId: PARTNER_ID,
             id: MENTION_ID,
             data: { internalNote: 'x' }
         });
@@ -315,7 +353,11 @@ describe('PartnerMentionService.correct — merged-row validation', () => {
     it('stamps the acting admin as the updater', async () => {
         const { service, model } = makeService();
 
-        await service.correct(adminActor, { id: MENTION_ID, data: { internalNote: 'fixed' } });
+        await service.correct(adminActor, {
+            partnerId: PARTNER_ID,
+            id: MENTION_ID,
+            data: { internalNote: 'fixed' }
+        });
 
         expect(model.update).toHaveBeenCalledWith(
             expect.anything(),
@@ -331,7 +373,7 @@ describe('PartnerMentionService.remove', () => {
         // than one marked removed.
         const { service, model } = makeService();
 
-        const result = await service.remove(adminActor, { id: MENTION_ID });
+        const result = await service.remove(adminActor, { partnerId: PARTNER_ID, id: MENTION_ID });
 
         expect(result.data?.count).toBe(1);
         expect(model.update).toHaveBeenCalledWith(
@@ -344,7 +386,7 @@ describe('PartnerMentionService.remove', () => {
     it('records who removed it', async () => {
         const { service, model } = makeService();
 
-        await service.remove(adminActor, { id: MENTION_ID });
+        await service.remove(adminActor, { partnerId: PARTNER_ID, id: MENTION_ID });
 
         expect(model.update).toHaveBeenCalledWith(
             expect.anything(),
@@ -356,7 +398,7 @@ describe('PartnerMentionService.remove', () => {
     it('404s on a mention that does not exist', async () => {
         const { service } = makeService({ current: null });
 
-        const result = await service.remove(adminActor, { id: MENTION_ID });
+        const result = await service.remove(adminActor, { partnerId: PARTNER_ID, id: MENTION_ID });
 
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
@@ -364,9 +406,47 @@ describe('PartnerMentionService.remove', () => {
     it('refuses an actor without PARTNER_MANAGE', async () => {
         const { service, model } = makeService();
 
-        const result = await service.remove(outsiderActor, { id: MENTION_ID });
+        const result = await service.remove(outsiderActor, {
+            partnerId: PARTNER_ID,
+            id: MENTION_ID
+        });
 
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+});
+
+describe('partner scope on the mutating paths', () => {
+    // Both routes are `/admin/partners/{partnerId}/mentions/{id}`, and the two
+    // path segments are supplied independently — nothing about the URL makes the
+    // mention actually belong to that partner. These assert the row is checked
+    // against the scope rather than the scope being decorative.
+    const OTHER_PARTNER_ID = getMockId('attraction', 'pm-partner-other');
+
+    it('correct refuses a mention belonging to another partner', async () => {
+        const { service, model } = makeService();
+
+        const result = await service.correct(adminActor, {
+            partnerId: OTHER_PARTNER_ID,
+            id: MENTION_ID,
+            data: { internalNote: 'moved' }
+        });
+
+        // NOT_FOUND, not FORBIDDEN: a distinct code would confirm the row exists
+        // under some other partner.
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    it('remove refuses a mention belonging to another partner', async () => {
+        const { service, model } = makeService();
+
+        const result = await service.remove(adminActor, {
+            partnerId: OTHER_PARTNER_ID,
+            id: MENTION_ID
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         expect(model.update).not.toHaveBeenCalled();
     });
 });
