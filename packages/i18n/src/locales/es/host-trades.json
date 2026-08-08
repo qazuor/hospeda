@@ -12,8 +12,8 @@
     },
     "accessDenied": {
         "title": "Esta sección es exclusiva para anfitriones",
-        "message": "Para acceder al directorio de proveedores necesitás un plan de anfitrión activo.",
-        "cta": "Ver planes de suscripción"
+        "message": "El directorio es gratuito para quienes publican en Hospeda. Publicá tu alojamiento y accedé a proveedores locales de confianza, con beneficios exclusivos para anfitriones.",
+        "cta": "Publicá tu alojamiento"
     },
     "card": {
         "is24h": "Disponible 24hs",

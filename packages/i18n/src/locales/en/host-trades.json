@@ -12,8 +12,8 @@
     },
     "accessDenied": {
         "title": "This section is exclusive to hosts",
-        "message": "You need an active host plan to access the service provider directory.",
-        "cta": "View subscription plans"
+        "message": "The directory is free for anyone who lists on Hospeda. List your accommodation and get access to trusted local providers, with benefits reserved for hosts.",
+        "cta": "List your accommodation"
     },
     "card": {
         "is24h": "Available 24/7",
