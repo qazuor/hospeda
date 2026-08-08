@@ -1390,5 +1390,23 @@
                 "youtube": "YouTube"
             }
         }
+    },
+    "partnerMentions": {
+        "title": "Mentions log",
+        "subtitle": "Everything we published about you, with a link to each one so you can check it yourself.",
+        "empty": "No mentions logged yet.",
+        "emptyHelp": "Once we promote your listing, every action will appear here with its link.",
+        "viewPublication": "View publication",
+        "noPublicationLink": "No public link",
+        "channels": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "TWITTER": "Twitter",
+            "YOUTUBE": "YouTube",
+            "TIKTOK": "TikTok",
+            "NEWSLETTER": "Newsletter",
+            "WHATSAPP": "WhatsApp",
+            "OTHER": "Other channel"
+        }
     }
 }

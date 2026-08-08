@@ -26,6 +26,7 @@ import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import AllianceApplicationsSection from '@/components/account/AllianceApplicationsSection.astro';
 import { AllianceClaimBanner } from '@/components/account/AllianceClaimBanner.client';
 import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';
+import PartnerMentionsSection from '@/components/account/PartnerMentionsSection.astro';
 import { allianceLeadsApi, hostTradesApi, partnersApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
@@ -74,15 +75,22 @@ const description = t(door.subtitleI18nKey);
 // Both run in parallel — neither depends on the other, and this is an
 // uncacheable actor-scoped SSR page, so chaining them would add a full API
 // round-trip to its TTFB for nothing.
+// The fourth fetch is the mentions log (HOS-377 AC-10). It degrades to an
+// empty list on ANY failure for the same reason as the others, and it joins
+// the same parallel batch rather than being chained off the partner fetch:
+// `listForOwner` resolves ownership server-side from the session, so it does
+// not need the partner id this page is fetching alongside it.
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const [myLeadsResult, myTradeResult, myPartnerResult] = await Promise.all([
+const [myLeadsResult, myTradeResult, myPartnerResult, myMentionsResult] = await Promise.all([
     allianceLeadsApi.mine({ cookieHeader }),
     hostTradesApi.mine({ cookieHeader }),
-    partnersApi.mine({ cookieHeader })
+    partnersApi.mine({ cookieHeader }),
+    partnersApi.mineMentions({ cookieHeader })
 ]);
 const myLeads = myLeadsResult.ok ? myLeadsResult.data.leads : [];
 const myTrade = myTradeResult.ok ? myTradeResult.data.trade : null;
 const myPartner = myPartnerResult.ok ? myPartnerResult.data.partner : null;
+const myMentionBatches = myMentionsResult.ok ? myMentionsResult.data.batches : [];
 
 // Both force-acquired options are built here rather than inline in the
 // template so the list is one expression to read and to test. Each entry is
@@ -107,6 +115,18 @@ const hasPendingClaim =
     <AccountPageHeader title={title} />
     {hasPendingClaim && <AllianceClaimBanner client:load locale={locale} />}
     <AllianceApplicationsSection locale={locale} leads={myLeads} />
+    {/*
+      HOS-377 AC-10. Gated on OWNERSHIP (`myPartner !== null`), exactly like the
+      `partner` door option's acquired state above — never on a permission. The
+      partner door has no `acquiredPermission` and must never get one
+      (HOS-277 NG-1): an approved aliado is an ordinary account, so there is no
+      permission for that mechanism to read.
+    */}
+    <PartnerMentionsSection
+        locale={locale}
+        batches={myMentionBatches}
+        visible={myPartner !== null}
+    />
     <DiscoveryDoorHub
         locale={locale}
         door={door}

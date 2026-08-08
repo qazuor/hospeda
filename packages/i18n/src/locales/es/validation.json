@@ -2339,6 +2339,9 @@
         "ownerPromotionDiscountType": {
             "invalid": "El owner promotion discount type no es válido"
         },
+        "partnerMentionChannel": {
+            "invalid": "El canal de mención no es válido"
+        },
         "paymentStatus": {
             "invalid": "El payment status no es válido"
         },
@@ -3340,6 +3343,22 @@
         "version": {
             "format": "El formato de la versión no es válido",
             "required": "La versión es obligatoria"
+        }
+    },
+    "partnerMention": {
+        "mentionedAt": {
+            "required": "La fecha de la mención es obligatoria"
+        },
+        "url": {
+            "invalid": "El link de la publicación no es una URL válida",
+            "tooLong": "El link de la publicación es demasiado largo",
+            "requiredForChannel": "Este canal necesita el link a la publicación"
+        },
+        "internalNote": {
+            "tooLong": "La nota interna no puede superar los {{max}} caracteres"
+        },
+        "entries": {
+            "empty": "Elegí al menos un canal"
         }
     },
     "partner": {

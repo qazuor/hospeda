@@ -899,6 +899,13 @@ export function createDbMock() {
         // PartnerModel (partner provisioning), so the whole alliance admin route
         // tree fails to load without it.
         PartnerModel: GenericMockModel,
+        // HOS-377: PartnerMentionService is exported from the @repo/service-core
+        // barrel, so EVERY test that imports anything from that package resolves
+        // this model — not just the mentions tests. Omitting it failed 43 test
+        // FILES at collection time across three shards, with zero failed
+        // assertions, which is what that failure mode looks like from the
+        // summary line.
+        PartnerMentionModel: GenericMockModel,
         OwnerPromotionModel: GenericMockModel,
         // HOS-113 T-021: PointOfInterestService (+ its default related model)
         // is instantiated at module scope by the new public POI routes, same

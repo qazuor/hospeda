@@ -35,6 +35,7 @@ import {
     OccupancySourceEnum,
     OwnerPromotionDiscountTypeEnum,
     PartnerContentReviewStateEnum,
+    PartnerMentionChannelEnum,
     PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     PartnerTypeEnum,
@@ -389,6 +390,19 @@ export const PartnerTierPgEnum = pgEnum('partner_tier_enum', enumToTuple(Partner
 export const PartnerSubscriptionStatusPgEnum = pgEnum(
     'partner_subscription_status_enum',
     enumToTuple(PartnerSubscriptionStatusEnum)
+);
+
+/**
+ * Channels a manual partner promotion can be logged against (HOS-377).
+ *
+ * Distinct from {@link SocialPlatformPgEnum}: that one names the targets of the
+ * automated Make.com publishing pipeline, this one names where a human on the
+ * team promoted a partner. They overlap in wording, not in meaning — note this
+ * list says `TWITTER` where the social pipeline says `X`, deliberately.
+ */
+export const PartnerMentionChannelPgEnum = pgEnum(
+    'partner_mention_channel_enum',
+    enumToTuple(PartnerMentionChannelEnum)
 );
 
 /**

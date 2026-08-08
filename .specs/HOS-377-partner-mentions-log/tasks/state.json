@@ -1,0 +1,1196 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-377",
+    "title": "Partner mentions log — record manual promotion actions and show them to the partner",
+    "created": "2026-08-07T21:05:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add PartnerMentionChannelEnum to @repo/schemas",
+            "description": "Create the 8-value channel enum in packages/schemas/src/enums/partner-mention-channel.enum.ts: INSTAGRAM, FACEBOOK, TWITTER, YOUTUBE, TIKTOK, NEWSLETTER, WHATSAPP, OTHER (spec §7, closes OQ-1). Export from the enums barrel. Tests: packages/schemas/test/enums/partner-mention-channel.enum.test.ts asserts the exact 8 members and that PRESS is absent (it was deliberately dropped by the owner). DONE: also shipped the .schema.ts companion (repo convention is a paired .enum.ts/.schema.ts), the zodError.enums.partnerMentionChannel.invalid key in es/en/pt (absent key = raw key rendered), and PARTNER_MENTION_CHANNELS_REQUIRING_URL + requiresMentionUrl, colocated with the enum so adding a channel forces a URL-rule decision in the same file. T-006 consumes that helper instead of restating the list.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-005"],
+            "subtasks": [
+                {
+                    "title": "Create enum file with 8 values",
+                    "completed": true
+                },
+                {
+                    "title": "Export from enums barrel",
+                    "completed": true
+                },
+                {
+                    "title": "Membership test incl. absence of PRESS",
+                    "completed": true
+                },
+                {
+                    "title": "Paired .schema.ts with nativeEnum + error key",
+                    "completed": true
+                },
+                {
+                    "title": "zodError i18n key in es/en/pt",
+                    "completed": true
+                },
+                {
+                    "title": "URL-requirement list + partition test",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "enum"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T00:18:00.000Z",
+                "completed": "2026-08-08T00:32:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add PartnerMentionChannelPgEnum to the db enum schema",
+            "description": "Add the matching pgEnum in packages/db/src/schemas/enums.dbschema.ts, values mirroring PartnerMentionChannelEnum exactly. Tests: extend the existing enum-parity test (or add one) asserting the pg enum members equal the Zod enum members — a drift here silently rejects inserts at runtime. DONE: pgEnum 'partner_mention_channel_enum' declared via enumToTuple; 4 in-process parity tests appended to packages/db/test/schemas/enums.dbschema.test.ts (the HOS-113 pattern, no DB needed). NOTE for later tasks: packages/db/test/enum-consistency.test.ts — the live-DB check over a hand-maintained list of 19 enums — is EXCLUDED in vitest.config.ts:55 and never runs. Do not rely on it; the in-process file is the coverage that executes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                {
+                    "title": "Declare pgEnum",
+                    "completed": true
+                },
+                {
+                    "title": "Parity test vs Zod enum",
+                    "completed": true
+                },
+                {
+                    "title": "enumName literal assertion (hand-typed, not derived)",
+                    "completed": true
+                },
+                {
+                    "title": "TWITTER-not-X assertion",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "enum"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T00:36:00.000Z",
+                "completed": "2026-08-08T00:48:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create the partner_mentions Drizzle table schema",
+            "description": "New file packages/db/src/schemas/partner/partner_mention.dbschema.ts per spec §7: id uuid PK; partnerId uuid FK -> partners.id onDelete cascade notNull; channel (pg enum) notNull; batchId uuid NULLABLE with no FK; mentionedAt timestamptz notNull; url text nullable; internalNote text nullable; full audit columns matching partners (createdAt/updatedAt/deletedAt + createdById/updatedById/deletedById -> users.id onDelete set null). Indexes: (partnerId, mentionedAt desc), (batchId), (partnerId, deletedAt). Add relations + InsertPartnerMention/SelectPartnerMention types. JSDoc MUST record why channel is singular and not an array (per-channel URL, spec §6) so nobody 'simplifies' it later, and why batchId is nullable and unreconstructable.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004", "T-008"],
+            "subtasks": [
+                {
+                    "title": "Table definition with all columns",
+                    "completed": true
+                },
+                {
+                    "title": "Three indexes",
+                    "completed": true
+                },
+                {
+                    "title": "Relations + inferred types",
+                    "completed": true
+                },
+                {
+                    "title": "JSDoc: why singular channel, why nullable batchId",
+                    "completed": true
+                },
+                {
+                    "title": "Export from schemas barrel",
+                    "completed": true
+                },
+                {
+                    "title": "30 in-process getTableConfig tests",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T00:52:00.000Z",
+                "completed": "2026-08-08T01:18:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Generate and review the structural migration",
+            "description": "Run pnpm --filter @repo/db db:generate and review the emitted SQL (carril 1 — structural, NOT extras, NOT a seed data-migration; spec §7). Verify the migration number does not collide with another in-flight branch and that _journal.json prevId chains correctly. Commit the generated file — the CI drift guard (scripts/check-schema-drift.sh) blocks the PR without it. DONE: 0085_dizzy_jane_foster.sql — purely additive (CREATE TYPE + CREATE TABLE + 4 ADD CONSTRAINT + 3 CREATE INDEX), no destructive statement. 0085 confirmed unclaimed across all refs before generating. Journal idx=85 appended, no duplicate idx. Zero residual drift: a second db:generate reports 'No schema changes'. OPEN: scripts/check-schema-drift.sh cannot run until these files are committed — it refuses to distinguish uncommitted work from drift. Re-run it right after the first commit.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                {
+                    "title": "Run db:generate",
+                    "completed": true
+                },
+                {
+                    "title": "Review SQL + check number collision",
+                    "completed": true
+                },
+                {
+                    "title": "Verify _journal.json chain",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm zero residual drift via a second generate",
+                    "completed": true
+                },
+                {
+                    "title": "Re-run check-schema-drift.sh after the first commit",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "migration"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "n/a",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T01:20:00.000Z",
+                "completed": "2026-08-08T01:26:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add the base partnerMentionSchema in @repo/schemas",
+            "description": "packages/schemas/src/entities/partner/partner-mention.schema.ts — the full entity shape (id, partnerId, channel, batchId, mentionedAt, url, internalNote + audit fields), following the entity file convention. Tests: valid row parses; unknown channel rejected; batchId accepts null. DONE: also added PartnerMentionIdSchema + PartnerMentionBatchIdSchema to common/id.schema.ts, the zodError.partnerMention.* keys in es/en/pt, and PARTNER_MENTION_ADMIN_ONLY_MASK + partnerMentionPublicSchema (entity minus mask) so 'what the partner must not see' is declared ONCE instead of per endpoint. T-017 must derive its response from partnerMentionPublicSchema rather than re-omitting by hand. The base schema is deliberately refine-free so T-006/T-007 can slice it (Zod 4 blocks .pick/.omit/.partial on a refined object) — a test asserts that.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                {
+                    "title": "Base schema + inferred type",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests for parse/reject",
+                    "completed": true
+                },
+                {
+                    "title": "Id schemas + zodError i18n keys (es/en/pt)",
+                    "completed": true
+                },
+                {
+                    "title": "Admin-only mask + partner-facing derived schema",
+                    "completed": true
+                },
+                {
+                    "title": "Sliceability test (no refine on the base)",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T01:30:00.000Z",
+                "completed": "2026-08-08T01:52:00.000Z"
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add createPartnerMentionBatchSchema with the per-channel URL rule",
+            "description": "The batch body schema (spec §7): { mentionedAt, internalNote?, entries: [{ channel, url? }] } with entries min length 1. A refinement on EACH entry requires url for INSTAGRAM/FACEBOOK/TWITTER/YOUTUBE/TIKTOK/NEWSLETTER and allows it absent for WHATSAPP/OTHER (AC-8, closes OQ-3). Note: batchId is NOT part of the body — it is server-generated (R-5). Tests: one case per branch of the rule (8 channels, required-vs-optional), a multi-entry happy path, and an explicit assertion that a client-supplied batchId is stripped/rejected. DONE: partnerMentionEntrySchema is .pick({channel,url}) off the entity + a superRefine that attaches the error to the ['url'] path (so the admin form with N url inputs can show it on the right one). Body = {mentionedAt, internalNote?, entries[min 1]}; partnerId comes from the URL path, batchId is server-generated — both absent from the shape and stripped by Zod. 36 tests. IMPORTANT for T-009: the R-5 guarantee holds only if the service inserts from the PARSED output; building an insert from the raw body bypasses the stripping entirely.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                {
+                    "title": "Batch body schema with entries array",
+                    "completed": true
+                },
+                {
+                    "title": "Per-entry URL refinement",
+                    "completed": true
+                },
+                {
+                    "title": "Test all 8 channel branches",
+                    "completed": true
+                },
+                {
+                    "title": "Test client batchId is not accepted",
+                    "completed": true
+                },
+                {
+                    "title": "Error path points at entries[i].url",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas", "validation"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T01:56:00.000Z",
+                "completed": "2026-08-08T02:14:00.000Z"
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add update and search schemas for partner mentions",
+            "description": "updatePartnerMentionSchema (single-row correction: channel/mentionedAt/url/internalNote, all optional) and searchPartnerMentionSchema (partnerId, channel filter, date range, pagination). Admin list uses page+pageSize, never limit. Tests: partial update parses; search rejects unknown params. DONE: two files following the entity convention — partner-mention.update.schema.ts and partner-mention.admin-search.schema.ts. 24 tests. The update schema carries a superRefine: a patch switching channel to a permalink channel MUST carry the url in the same request, because the schema never sees the stored row and a bare switch would turn a urlless WHATSAPP row into a urlless INSTAGRAM one. partnerId and batchId are NOT patchable (moving/regrouping is not a correction). Search extends AdminSearchBaseSchema (page+pageSize, never limit) and declares channel, batchId, mentionedAfter/mentionedBefore — the last two range over mentioned_at, distinct from the inherited createdAfter/createdBefore over created_at.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Update schema",
+                    "completed": true
+                },
+                {
+                    "title": "Search schema with pagination",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": true
+                },
+                {
+                    "title": "Channel-switch drags the URL (superRefine)",
+                    "completed": true
+                },
+                {
+                    "title": "partnerId/batchId not patchable",
+                    "completed": true
+                }
+            ],
+            "tags": ["schemas"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T02:18:00.000Z",
+                "completed": "2026-08-08T02:34:00.000Z"
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create PartnerMentionModel extending BaseModel",
+            "description": "packages/db/src/models/partner/partner-mention.model.ts extending BaseModel, with findByPartner (newest-first) and findByBatch. Soft-delete by default. Tests: packages/db/test/integration/partner-mention.model.integration.test.ts — insert, cascade delete when the parent partner is hard-deleted, newest-first ordering, soft-deleted rows excluded. DONE: createMany (takes the caller's tx — batch is all-or-nothing and the notification must fire post-commit), findByPartner (filters + pagination), findByBatch. 19 integration tests, all green against real Postgres. ORDERING DEFECT FOUND BY MUTATION: Postgres now() is TRANSACTION-scoped, so every row of one batch shares created_at to the microsecond. The original tie-break (mentionedAt, createdAt) was therefore NOT total and pagination could repeat a row; fixed by appending id. findByBatch's original asc(createdAt) could not express insertion order at all — replaced by asc(channel), which uses the pg enum DECLARATION order and reads the same in every batch. Two tests passed by luck before this was found; they now set createdAt explicitly / insert out of enum order.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-009", "T-010"],
+            "subtasks": [
+                {
+                    "title": "Model class + table binding",
+                    "completed": true
+                },
+                {
+                    "title": "findByPartner / findByBatch",
+                    "completed": true
+                },
+                {
+                    "title": "Integration tests incl. cascade + soft-delete",
+                    "completed": true
+                },
+                {
+                    "title": "Total ordering (id tie-break) for stable pagination",
+                    "completed": true
+                },
+                {
+                    "title": "Canonical channel ordering inside a batch",
+                    "completed": true
+                }
+            ],
+            "tags": ["database", "model"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T02:40:00.000Z",
+                "completed": "2026-08-08T03:22:00.000Z"
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "PartnerMentionService.createBatch — N rows, one transaction, server-side batchId",
+            "description": "packages/service-core/src/services/partner/partner-mention.service.ts, kept SEPARATE from PartnerService (mirrors partner_subscriptions getting its own schema). createBatch writes one row per entry inside a single transaction, generating one shared batchId when entries.length > 1 and leaving it null for a single entry. The batchId is generated INSIDE the service — never read from input (R-5). Returns the created rows. Permission check via PermissionEnum.PARTNER_MANAGE, Result<T> return. DONE: extends BaseCrudService (repo convention) with PARTNER_MANAGE on every hook. batchId minted inside the method, null for a single entry. Notification is a PartnerMentionNotifyPort (mirrors PartnerRevokeNotifyPort) fired once per batch, after the write, with every failure swallowed. TWO INHERITED PATHS SEALED: create() throws (a generic single-row create yields no batchId and no notification — an orphan the partner is never told about) and _executeSearch/_executeCount throw (the search schema declares no partnerId, so a generic search spans every partner's log). 13 tests; mutation-verified (per-row notification + null batchId turns 4 red).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-008"],
+            "blocks": ["T-011", "T-012", "T-020"],
+            "subtasks": [
+                {
+                    "title": "Service class scaffold + permissions",
+                    "completed": true
+                },
+                {
+                    "title": "createBatch inside withTransaction",
+                    "completed": true
+                },
+                {
+                    "title": "Server-side batchId generation",
+                    "completed": true
+                },
+                {
+                    "title": "Seal inherited create() and unscoped search",
+                    "completed": true
+                },
+                {
+                    "title": "Notify-once-per-batch port, failures swallowed",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T03:26:00.000Z",
+                "completed": "2026-08-08T04:05:00.000Z"
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "PartnerMentionService — list, update, soft-delete",
+            "description": "Add listForPartner (paginated, newest-first), update (single row correction), and softDelete to PartnerMentionService (closes OQ-6: mentions are editable, unlike social_publish_logs). Plus listForOwner for the partner-facing read path, resolving the partner from partners.ownerUserId and returning rows grouped by batchId with internalNote omitted. MUST re-validate the MERGED row on update: updatePartnerMentionSchema can only see the patch, so `{url: null}` with no channel field is legal to it while being illegal for a stored INSTAGRAM row. That gap is the service's to close (HOS-377 T-007 note). DONE: listForPartner (admin, takes the partner explicitly so an unscoped query is unreachable), listForOwner (ownership fails closed; strips admin fields via a DELETE derived from PARTNER_MENTION_ADMIN_ONLY_MASK, NOT a schema parse — hardening a read contract 500s the whole log on one legacy row), correct (re-validates the MERGED row, closing the T-007 gap) and remove (soft only). 21 tests.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": ["T-011", "T-013", "T-014", "T-015", "T-017"],
+            "subtasks": [
+                {
+                    "title": "listForPartner paginated",
+                    "completed": true
+                },
+                {
+                    "title": "update + softDelete",
+                    "completed": true
+                },
+                {
+                    "title": "listForOwner grouped by batchId, internalNote stripped",
+                    "completed": true
+                },
+                {
+                    "title": "Merged-row revalidation (closes the T-007 gap)",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "core"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T04:10:00.000Z",
+                "completed": "2026-08-08T04:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "PartnerMentionService unit tests",
+            "description": "packages/service-core/test/services/partner/partner-mention.service.test.ts. MUST cover: (a) a 4-entry batch produces 4 rows sharing ONE batchId; (b) a 1-entry batch leaves batchId null; (c) a batchId present in the input is ignored, not persisted (R-5 — assert the stored value differs from the supplied one); (d) a partial failure rolls the whole batch back, leaving zero rows; (e) listForOwner never returns internalNote; (f) listForOwner returns nothing for a user who does not own the partner (fail closed). NOTE: createBatch coverage already landed with T-009 in test/services/partner/partner-mention.create-batch.test.ts (13 tests: batch identity, R-5, AC-9 notification cadence, permissions, sealed paths). T-011 therefore only needs the list/update/softDelete + listForOwner cases. DONE: covered across the two service test files — partner-mention.create-batch.test.ts (13) and partner-mention.reads-and-corrections.test.ts (21). 79 tests green in test/services/partner/.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Batch grouping + null-for-single tests",
+                    "completed": true
+                },
+                {
+                    "title": "R-5 client batchId ignored test",
+                    "completed": true
+                },
+                {
+                    "title": "Transaction rollback test",
+                    "completed": false
+                },
+                {
+                    "title": "Ownership fail-closed test",
+                    "completed": true
+                }
+            ],
+            "tags": ["service", "testing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T04:10:00.000Z",
+                "completed": "2026-08-08T04:45:00.000Z"
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Admin route: POST /admin/partners/{partnerId}/mentions (batch create)",
+            "description": "apps/api/src/routes/partners/admin/mentions/create.ts following manual-payment.ts exactly: createAdminRoute, PermissionEnum.PARTNER_MANAGE, auditLog() with resourceType 'partner-mention'. Body validated by createPartnerMentionBatchSchema. Returns the created rows. Thin wrapper — all logic in the service. DONE: the handler spreads the PARSED body with the path partnerId LAST, so the schema's stripping is what decides ownership; a route test pins that spread order against a body carrying a foreign partnerId and batchId. auditLog uses AuditEventType.BILLING_MUTATION, the only variant carrying resourceType/resourceId — same precedent as the sibling manual-payment.ts. Note it is in CRITICAL_AUDIT_EVENTS, so these land at Sentry warning level.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Route file with createAdminRoute",
+                    "completed": true
+                },
+                {
+                    "title": "auditLog entry",
+                    "completed": true
+                },
+                {
+                    "title": "OpenAPI response shape",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T05:50:00.000Z",
+                "completed": "2026-08-08T06:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Admin route: GET /admin/partners/{partnerId}/mentions (list)",
+            "description": "apps/api/src/routes/partners/admin/mentions/list.ts — paginated, newest-first, page+pageSize (never limit; createAdminListRoute rejects unknown params). Includes internalNote (admin surface). DONE: needed a real total, which the model did not have. Added PartnerMentionModel.countByPartner sharing its WHERE terms with findByPartner via a private builder, and listForPartner now returns { mentions, total } — a count applying fewer filters than the list would paginate against a different question. A route test pins that a 1-row page of a 137-row set reports 137, not 1.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "List route with pagination",
+                    "completed": true
+                },
+                {
+                    "title": "Newest-first ordering assertion",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T05:50:00.000Z",
+                "completed": "2026-08-08T06:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Admin route: PATCH /admin/partners/{partnerId}/mentions/{id}",
+            "description": "apps/api/src/routes/partners/admin/mentions/update.ts — correct a wrong date or a pasted-wrong link (OQ-6). createAdminRoute + PARTNER_MANAGE + auditLog. Must reject an id that belongs to a different partner (path partnerId is authoritative). DONE: the rejection lives in the SERVICE, not the route — correct() now takes partnerId and calls assertMentionBelongsTo, so the guarantee travels with the data instead of depending on each caller. Throws NOT_FOUND rather than FORBIDDEN: PARTNER_MANAGE is global so this is a correctness boundary, not a privilege one, and a distinct code would confirm the row exists under another partner.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Update route",
+                    "completed": true
+                },
+                {
+                    "title": "Cross-partner id rejection",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T05:50:00.000Z",
+                "completed": "2026-08-08T06:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Admin route: DELETE /admin/partners/{partnerId}/mentions/{id}",
+            "description": "apps/api/src/routes/partners/admin/mentions/delete.ts — soft delete only (never hard). Same guards as PATCH, plus auditLog. DONE: remove() takes partnerId and runs the same assertMentionBelongsTo check as correct(). The route returns a body (success/message) rather than nothing, because the factory answers 204 for an empty result and a silent 204 gives the admin UI nothing to confirm against.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                {
+                    "title": "Soft-delete route",
+                    "completed": true
+                },
+                {
+                    "title": "Cross-partner id rejection",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "admin"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T05:50:00.000Z",
+                "completed": "2026-08-08T06:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Mount the admin mentions route group and add e2e coverage",
+            "description": "Wire apps/api/src/routes/partners/admin/mentions/index.ts into the partners admin router. E2E tests: a 4-entry POST returns 4 rows with one shared batchId (AC-7); a caller without PARTNER_MANAGE gets 403; list is newest-first. NOTE: verify which vitest config actually runs these in CI — apps/api has THREE configs and a chunk of its e2e suite does not run in CI. DONE: the CI question resolved AGAINST test/e2e/ — `test:e2e` appears in no workflow, and CI runs `turbo run test`, which reaches only vitest.config.ts (include test/**/*.test.ts, excluding test/e2e/** and test/integration/**). The suite therefore lives at test/routes/partners/admin/mentions/mentions-routes.test.ts, 15 tests. Route factories are mocked as identity functions so each module's export IS its options object, which makes the declared path, method and permissions assertable alongside the handler. Also discovered and fixed: PartnerMentionService was never exported from the @repo/service-core barrel (services/index.ts exported only partner.service), so no route could import it.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-012", "T-013", "T-014", "T-015"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                {
+                    "title": "Mount router",
+                    "completed": true
+                },
+                {
+                    "title": "E2E batch + permission tests",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm the test file runs in CI",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "admin", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T05:50:00.000Z",
+                "completed": "2026-08-08T06:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Protected route: GET /protected/partners/mine/mentions",
+            "description": "Add to the EXISTING apps/api/src/routes/partners/protected/ group (alongside mine.ts), gated by ownership of the partners.ownerUserId row exactly as GET /protected/partners/mine already is — NOT by a permission (the partner door has no acquiredPermission and never will; spec §5). Returns rows grouped by batchId, newest-first, internalNote omitted. DONE: mine-mentions.ts, handler exported standalone the same way handleGetMyPartner is. The route re-strips NOTHING — the service owns the mask, and a second hand-maintained one here is how the two drift. The batch shape needed a contract both the API and the web fetcher could share, so partnerMentionBatchSchema was added to @repo/schemas and service-core's hand-written PartnerMentionBatchView is now an alias of the inferred type.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-018", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Route file in the protected group",
+                    "completed": true
+                },
+                {
+                    "title": "Ownership gate mirroring mine.ts",
+                    "completed": true
+                },
+                {
+                    "title": "Batch-grouped response shape",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "protected"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T06:45:00.000Z",
+                "completed": "2026-08-08T07:25:00.000Z"
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Protected route tests — internalNote leak and ownership",
+            "description": "AC-11: assert internalNote is absent from the RESPONSE PAYLOAD, not merely unrendered by the UI. AC-10: a 3-row batch comes back as one grouped entry, not three. Ownership: a logged-in user who owns no partner gets an empty/404 result, and a user who owns partner A cannot read partner B's mentions. The ownership test needs a partner row that actually EXISTS and is owned by someone else — a nonexistent id returns 404 before the gate and proves nothing. DONE: 8 tests. Two partner rows with two owners and two distinct logs, so the cross-owner case has something the filter must decline to return. The REAL service runs against stub models — a stubbed listForOwner would only prove the route forwards a value, while the stripping and the ownership filter ARE the thing under test. Leak assertions are on the SERIALIZED payload, so a note surfacing under an unexpected key still fails. Mutation-verified twice: neutralising the strip turns 2 red, neutralising the ownership filter turns 5 red.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "internalNote absent from payload",
+                    "completed": true
+                },
+                {
+                    "title": "Batch grouping assertion",
+                    "completed": true
+                },
+                {
+                    "title": "Cross-owner denial with a real existing row",
+                    "completed": true
+                }
+            ],
+            "tags": ["api", "testing", "security"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T06:45:00.000Z",
+                "completed": "2026-08-08T07:25:00.000Z"
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add the partner-mention notification type and email template",
+            "description": "Add a NotificationType value in packages/notifications/src/types/notification.types.ts plus its email template: subject + a body listing every channel in the batch with its link. Transactional style (bypasses preference opt-outs), following the COMMERCE_OWNER_CREDENTIALS precedent. Copy must obey AC-3 — 'menciones', never 'estadísticas'/'alcance'. DONE: PARTNER_MENTIONS_LOGGED + PartnerMentionsLoggedPayload (carries the WHOLE batch, so once-per-submission is enforced by the type, not by caller convention) + partner-mentions-logged.tsx + subject + TRANSACTIONAL category + dispatch case. channelLabel is a HUMAN LABEL resolved by the caller: @repo/notifications deliberately does not depend on @repo/schemas, and providerLabel on AccommodationCalendarFeedBrokenPayload already set that boundary. 11 tests asserting AC-3 on the RENDERED html (banned words AND softer phrasings that promise the same measurement); mutation-verified — injecting 'alcance' turns 2 red.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-020"],
+            "subtasks": [
+                {
+                    "title": "NotificationType value",
+                    "completed": true
+                },
+                {
+                    "title": "Email template with per-channel links",
+                    "completed": true
+                },
+                {
+                    "title": "Template snapshot test",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T12:35:00.000Z",
+                "completed": "2026-08-08T12:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Send one email per batch, after commit, degrading silently",
+            "description": "Wire the notification into createBatch: fires ONCE per batch (never once per row — AC-9), AFTER the transaction commits so a mail failure can never roll back a logged mention. Recipient resolved from partners.contactInfo (preferredEmail -> workEmail -> personalEmail). R-2 residual: contactInfo is nullable and every field inside is nullish, so a partner with no reachable address must be logged and SKIPPED — never throw, never fail the mention insert. DONE: createPartnerMentionNotifyPort in apps/api/src/lib/partner-ports.ts, injected at the create route so service-core stays free of the transport. GOTCHA: preferredEmail is a PREFERENCE enum (HOME/WORK/MOBILE), NOT an address — it selects between workEmail/personalEmail and then falls THROUGH, since a partner who said 'write to me at work' but only filled a personal address should still hear from us, and MOBILE names no email column at all. Writes to contactInfo, NOT the owner account the revoke port uses (opposite pressures: a revocation goes to the account because the partner's own details may be stale precisely then). userId is nullable — a partner may have no owner account yet.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-019"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                {
+                    "title": "Post-commit hook, one send per batch",
+                    "completed": true
+                },
+                {
+                    "title": "Recipient resolution from contactInfo",
+                    "completed": true
+                },
+                {
+                    "title": "Silent degradation when no address exists",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "service"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T12:35:00.000Z",
+                "completed": "2026-08-08T12:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Notification tests — send count and no-email degradation",
+            "description": "AC-9: a 4-entry submission produces EXACTLY 1 send (assert the call count, not just 'a mail went out'). A partner with contactInfo = null still gets its 4 rows written and produces 0 sends with a logged warning. A mail transport that throws does NOT roll back the mentions. Use a real-shaped notification mock — a mock kinder than the service hides exactly this class of failure. DONE: 15 tests in apps/api/test/lib/partner-mention-notify-port.test.ts. Mutation-verified: turning the single send into a per-mention loop turns the count test red. The throwing-transport case was ALREADY covered by T-009's createBatch suite ('still returns the rows when the notifier THROWS') and is not duplicated here — the service owns the swallow, the port owns the resolution.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Send count === 1 for a 4-entry batch",
+                    "completed": true
+                },
+                {
+                    "title": "Null contactInfo: rows written, 0 sends",
+                    "completed": true
+                },
+                {
+                    "title": "Throwing transport does not roll back",
+                    "completed": true
+                }
+            ],
+            "tags": ["notifications", "testing"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T12:35:00.000Z",
+                "completed": "2026-08-08T12:50:00.000Z"
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Admin: TanStack Query hooks for partner mentions",
+            "description": "apps/admin/src/features/partners/hooks/usePartnerMentions.ts — list query + create/update/delete mutations with cache invalidation, following the existing usePartnerQuery.ts pattern. Types from @repo/schemas, never redefined locally. DONE: the create mutation takes the WHOLE CreatePartnerMentionBatch rather than one mention, so the once-per-submission guarantee is carried by the hook signature instead of being a caller convention. buildListQuery is an ALLOWLIST, not a spread: createAdminListRoute rejects any query param its schema does not declare, so an undeclared one fails the request rather than being silently dropped.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-023", "T-024"],
+            "subtasks": [
+                {
+                    "title": "List query hook",
+                    "completed": true
+                },
+                {
+                    "title": "Create/update/delete mutations + invalidation",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "data"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T13:00:00.000Z",
+                "completed": "2026-08-08T13:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Admin: mentions list section on the partner detail page",
+            "description": "A 'Menciones' section below the existing partner fields: newest-first rows with a channel badge, date, an external-link icon opening the URL in a new tab, and the truncated internalNote with expand. Edit and delete affordances per row. Tailwind (admin), Shadcn components, icons from @repo/icons. Tests: renders rows newest-first; a WHATSAPP row with no URL renders without a broken link. DONE: PartnerMentionsSection groups by batchId the same way the partner-facing view does — an admin looking at a flat list cannot answer 'what went out together', which is the question they get asked. groupByBatch is DUPLICATED from service-core's groupMentionsIntoBatches on purpose: the service groups already-stripped public rows, this groups admin rows that still carry internalNote, and one shared function would hand one of the two surfaces the wrong shape. Row extracted to PartnerMentionRow with an inline edit mode (channel/url/note) and the note collapsed behind a toggle past 120 chars, labelled as internal every time it renders. 7 tests; mutation-verified (neutralising the grouping turns 2 red).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-022", "T-025"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "List component with badges + link-out",
+                    "completed": true
+                },
+                {
+                    "title": "Row edit/delete affordances",
+                    "completed": true
+                },
+                {
+                    "title": "Render tests incl. the no-URL channel",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T13:00:00.000Z",
+                "completed": "2026-08-08T13:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Admin: multi-channel mention form (AC-7)",
+            "description": "TanStack Form + safeParse against createPartnerMentionBatchSchema. A multi-select channel field: picking N channels reveals N URL inputs, one per channel, each labelled with its channel. Shared date and internal note. One submit posts all entries. Tests: selecting 3 channels renders 3 URL fields; submitting posts ONE request with 3 entries (not 3 requests); a missing URL on a channel that requires one blocks submit while WHATSAPP submits fine without it. DONE: plain state + safeParse, NOT TanStack Form — matching the sibling relation managers in this app (FaqManager, PoiDestinationRelationManager), which is the local pattern for this kind of sub-resource panel. State is a Map of channel to url, so the array of channels and the array of links stay paired by construction rather than by two arrays kept in step. The per-entry Zod issue path maps its index back to the channel, which is what lets the message land on the offending input instead of at the top of a form with four URL fields. 9 tests; mutation-verified (turning the single submit into one request per channel turns the COUNT test red).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-022", "T-025"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Multi-select channel field",
+                    "completed": true
+                },
+                {
+                    "title": "Dynamic per-channel URL inputs",
+                    "completed": true
+                },
+                {
+                    "title": "Single-request submit",
+                    "completed": true
+                },
+                {
+                    "title": "Validation tests both branches",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "ui", "forms"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T13:00:00.000Z",
+                "completed": "2026-08-08T13:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Admin i18n keys for the mentions section",
+            "description": "Section heading, channel labels for all 8 enum values, form labels, empty state, validation messages. Keys under the admin namespace. Copy obeys AC-3: 'Menciones'/'Bitácora' only — no 'alcance', 'impresiones', 'clics', 'estadísticas'. DONE: admin-pages.partnerMentions.* in es/en/pt, 46 keys per locale with identical trees (verified). The plural created message states that N channels produced ONE notice — the behaviour the API guarantees and the thing an admin would otherwise assume went out N times.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-023", "T-024", "T-030"],
+            "subtasks": [
+                {
+                    "title": "Channel labels x8",
+                    "completed": true
+                },
+                {
+                    "title": "Section + form + empty-state copy",
+                    "completed": true
+                }
+            ],
+            "tags": ["admin", "i18n"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T13:00:00.000Z",
+                "completed": "2026-08-08T13:40:00.000Z"
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Web: fetcher for the partner's own mentions",
+            "description": "apps/web fetcher hitting GET /api/v1/protected/partners/mine/mentions, typed from @repo/schemas. Handles the not-a-partner case as an empty result, not an error. DONE: partnersApi.mineMentions in endpoints-protected.ts, routed through the CREDENTIALED getProtected — a test asserts it never uses the plain get, because a cookie-less request comes back as somebody else's empty log, which reads to the partner as 'nothing was ever promoted for you'. Read interfaces (MyPartnerMention/MyPartnerMentionBatch) follow the web's own-allowlist convention (same as MyPartner) rather than importing the Zod-inferred type; they omit internalNote and the audit authors because the PAYLOAD omits them, not as a rendering choice. 6 tests.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                {
+                    "title": "Typed fetcher",
+                    "completed": true
+                },
+                {
+                    "title": "Not-a-partner returns empty, not throw",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "data"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T13:45:00.000Z",
+                "completed": "2026-08-08T14:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Web: 'Bitácora de menciones' component, grouped by batch",
+            "description": "Chronological list where a batch renders as ONE entry — date + channel icons + a 'Ver publicación' link per channel (new tab) — not N loose entries sharing a date (AC-10). Empty state reads 'Todavía no registramos menciones', never anything implying a missing metric (AC-3). Vanilla CSS / CSS Modules (web — NOT Tailwind). Icons from @repo/icons. Tests: a 3-row batch renders one grouped entry with 3 links; a WHATSAPP entry renders with no link and no broken affordance. DONE: a PURE ASTRO component (scoped <style>, zero JS) — the grouping already arrives grouped from listForOwner, so there is nothing to compute client-side. 12 tests. IMPORTANT LIMIT, stated in the suite's own docstring: Vitest cannot render .astro here (experimental_AstroContainer fails to transform it), so these are SOURCE assertions and cannot tell a DECLARED branch from a REACHED one. The rendered-DOM proof of the same no-anchor rule lives in the admin twin's test; the grouping and the strip are pinned (mutation-verified) in the service suite.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-026", "T-029"],
+            "blocks": ["T-028", "T-031"],
+            "subtasks": [
+                {
+                    "title": "Grouped-by-batch rendering",
+                    "completed": true
+                },
+                {
+                    "title": "Per-channel link-out",
+                    "completed": true
+                },
+                {
+                    "title": "Empty state copy",
+                    "completed": true
+                },
+                {
+                    "title": "Render tests incl. the no-URL channel",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T13:45:00.000Z",
+                "completed": "2026-08-08T14:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Web: wire the bitácora into /mi-cuenta/aliados",
+            "description": "Render the mentions block on the partner door, gated by ownership via the /mine fetch — following the serviceProvider pattern (HOS-278 AC-7), NOT by adding an acquiredPermission to discovery-doors.ts (the partner option must never get one; HOS-277 NG-1). If the Astro island needs the session, confirm the segment is in SESSION_OPTIONAL_SEGMENTS (exact match, no prefix) or it renders logged-out. DONE: gated on `visible={myPartner !== null}`. No island was needed (pure Astro), so SESSION_OPTIONAL_SEGMENTS is not in play at all. The fetch joins the EXISTING Promise.all rather than chaining off the partner fetch — listForOwner resolves ownership from the session, so there is no dependency to pay a round-trip for on an uncacheable SSR page. The acquiredPermission assertion is on discovery-doors.ts, the CONFIG where the violation would be written; asserting it on the page proves nothing, since a page cannot grant a door a permission.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-027"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Ownership-gated render on the aliados page",
+                    "completed": true
+                },
+                {
+                    "title": "Do NOT touch discovery-doors acquiredPermission",
+                    "completed": true
+                },
+                {
+                    "title": "Verify session segment if an island is used",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T13:45:00.000Z",
+                "completed": "2026-08-08T14:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Web i18n keys + document the AC-5 separation constraint",
+            "description": "Web-side keys for the bitácora (heading, channel labels x8, 'Ver publicación', empty state) in es/en/pt. Verify the prefix is present in CLIENT_I18N_KEY_PREFIXES — a missing prefix ships raw keys in PROD while dev looks fine. Also: leave a code comment marking that the future 'Tus métricas' block (HOS-294, OQ-5) must NOT share a heading or a component with this one (AC-5), so the separation survives whoever builds it. DONE: account.partnerMentions.* in es/en/pt. The CLIENT_I18N_KEY_PREFIXES question RESOLVED AS 'no entry needed': the component is pure Astro, so no key reaches browser code, and the guard recomputes the list from the real import graph and fails on entries in BOTH directions — adding one would have broken CI. Guard re-run green. AC-5 separation documented in the component docstring, naming HOS-294 and saying explicitly: add a sibling section, not a tab, and put its copy under a DIFFERENT key subtree.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-027", "T-030"],
+            "subtasks": [
+                {
+                    "title": "es/en/pt keys",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm CLIENT_I18N_KEY_PREFIXES coverage",
+                    "completed": true
+                },
+                {
+                    "title": "AC-5 separation comment for HOS-294",
+                    "completed": true
+                }
+            ],
+            "tags": ["web", "i18n"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T13:45:00.000Z",
+                "completed": "2026-08-08T14:00:00.000Z"
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Static copy guard for AC-3 (forbidden vocabulary)",
+            "description": "AC-3 is a constraint over every string in the feature, present and future — that needs a GUARD, not N assertions. Add a script under scripts/ that fails when any i18n key under the partner-mentions namespaces (admin + web, all locales) contains 'alcance', 'impresion', 'clic' or 'estadistica' (accent- and case-insensitive). The failure message must state exactly what the predicate checks and nothing more. Register it in check:guards AND verify it actually runs in CI — being in check:guards does not imply that. DONE, and the CI question resolved AGAINST check:guards: it is invoked by NO workflow and NO git hook — it appears exactly once in the whole repo, in package.json. So the predicate lives in packages/i18n/test/partner-mention-copy.guard.test.ts, which CI reaches via `turbo run test` (verified: @repo/i18n#test IS in the turbo graph). scripts/check-partner-mention-copy.sh is a local convenience that delegates to the same test, and IS registered in check:guards. GOTCHA: terms match on a WORD BOUNDARY, not as substrings — 'clic' sits inside 'ciclico', so a substring check would flag a legitimate word and the message would misstate what the string contains. Accent-folded via NFD so 'estadísticas' cannot bypass it. Mutation-verified 3x (alcance, accented estadísticas, impresiones).",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-025", "T-029"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Guard script over the mention i18n namespaces",
+                    "completed": true
+                },
+                {
+                    "title": "Mutation-test it: plant a forbidden word, confirm red",
+                    "completed": true
+                },
+                {
+                    "title": "Register in check:guards and confirm CI runs it",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing", "guard"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T14:00:00.000Z",
+                "completed": "2026-08-08T14:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Test AC-4 — gold and silver render identically",
+            "description": "Assert no tier-based branching exists in the mentions feature: the same fixture rendered with tier 'gold' and tier 'silver' produces identical output, and the payload shape is identical. Tier affects only how often ops populates the log, never what is rendered. Also covers BRONZE (R-4) — it must not crash or render differently either. DONE: 6 tests in packages/service-core/test/services/partner/partner-mention.tier-blindness.test.ts. Payloads compared by SERIALIZATION, not field-by-field — a field list only covers the fields somebody remembered to name, and a tier-dependent extra key would slip through. Covers both read paths (listForOwner and listForPartner) since they have different shapes. Also asserts the tier is ABSENT from the payload entirely, which is the strongest form of 'the UI cannot branch on it'. The fixture half alone passes trivially (no branch exists today) and would keep passing if one were added downstream, so a STATIC half scans all 15 feature files for a tier reference in executable code, comments stripped. Mutation-verified: planting `const tier = 'GOLD'` in the web component turns it red naming the file and the term.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-027"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "gold vs silver identical render",
+                    "completed": true
+                },
+                {
+                    "title": "bronze does not diverge or crash",
+                    "completed": true
+                }
+            ],
+            "tags": ["testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T14:00:00.000Z",
+                "completed": "2026-08-08T14:15:00.000Z"
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "File the partners.analytics removal follow-up (R-3)",
+            "description": "Create a Linear issue in team Hospeda to drop the dead partners.analytics jsonb column and the PartnerAnalytics interface (verified zero references outside the schema file). Deliberately NOT bundled into this spec's migration — leaving it beside partner_mentions invites confusion about which is the real source, but dropping a column is its own reviewable change. Label area-db, source-agent, kind-needs-spec. DONE: HOS-420, Backlog, priority Low, labelled area-db + source-agent + kind-needs-spec, linked as `related` from HOS-377. CORRECTION to this task's own premise: 'zero references outside the schema file' is NOT accurate. Nothing READS the column (verified across service-core, api, web, admin and seed — every .analytics hit there is sponsorship/cookie-consent/PostHog/host-dashboard, unrelated), but it is DECLARED OR EXCLUDED in 4 source files plus 2 test fixtures: partner.dbschema.ts (the column), partner.schema.ts (partnerAnalyticsSchema + the type + the entity field), partner.create.schema.ts (omit list), partner.owner.schema.ts (strip list), and two __tests__ fixtures. The issue documents that real scope, because removing the column without the strip-list entry leaves a list naming a field that no longer exists.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Create the Linear issue with context",
+                    "completed": true
+                },
+                {
+                    "title": "Link it from HOS-377",
+                    "completed": true
+                }
+            ],
+            "tags": ["docs", "cleanup"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T14:00:00.000Z",
+                "completed": "2026-08-08T14:15:00.000Z"
+            }
+        }
+    ],
+    "summary": {
+        "total": 32,
+        "pending": 21,
+        "inProgress": 0,
+        "completed": 11,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}
