@@ -13,13 +13,26 @@
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [
-                { "title": "Generate the numbered data-migration module", "completed": false },
-                { "title": "Update the two bronze seed fixtures", "completed": false },
-                { "title": "Verify the dual-write guard passes", "completed": false }
+                {
+                    "title": "Generate the numbered data-migration module",
+                    "completed": false
+                },
+                {
+                    "title": "Update the two bronze seed fixtures",
+                    "completed": false
+                },
+                {
+                    "title": "Verify the dual-write guard passes",
+                    "completed": false
+                }
             ],
             "tags": ["db", "seed", "migration"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -35,13 +48,26 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
             "subtasks": [
-                { "title": "Edit PartnerTierPgEnum in packages/db", "completed": false },
-                { "title": "Generate and hand-verify the SQL", "completed": false },
-                { "title": "Confirm partners_tier_idx survives", "completed": false }
+                {
+                    "title": "Edit PartnerTierPgEnum in packages/db",
+                    "completed": false
+                },
+                {
+                    "title": "Generate and hand-verify the SQL",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm partners_tier_idx survives",
+                    "completed": false
+                }
             ],
             "tags": ["db", "migration"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -57,13 +83,26 @@
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
-                { "title": "Edit enum + schema", "completed": false },
-                { "title": "Fix consumers surfaced by typecheck", "completed": false },
-                { "title": "Update enum tests", "completed": false }
+                {
+                    "title": "Edit enum + schema",
+                    "completed": false
+                },
+                {
+                    "title": "Fix consumers surfaced by typecheck",
+                    "completed": false
+                },
+                {
+                    "title": "Update enum tests",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "enum"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -79,12 +118,22 @@
             "blockedBy": [],
             "blocks": ["T-007", "T-027"],
             "subtasks": [
-                { "title": "Trim the schema", "completed": false },
-                { "title": "Add the AC-9 route test", "completed": false }
+                {
+                    "title": "Trim the schema",
+                    "completed": false
+                },
+                {
+                    "title": "Add the AC-9 route test",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "api"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -95,21 +144,31 @@
             "id": "T-005",
             "title": "Extend PartnerPublicSchema additively with contactInfo and socialNetworks",
             "description": "packages/schemas/src/entities/partner/partner.access.schema.ts picks two more fields from partnerSchema. ADDITIVE ONLY — do not remove subscriptionStatus or lifecycleState here (see spec §12 follow-up); the schema-compat policy forbids removal without a three-phase migration. Tests: assert the new fields are present on the inferred type and that an existing partner payload still parses.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-006"],
             "subtasks": [
-                { "title": "Add the two picks", "completed": false },
-                { "title": "Assert backward compatibility", "completed": false }
+                {
+                    "title": "Add the two picks",
+                    "completed": true
+                },
+                {
+                    "title": "Assert backward compatibility",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "api"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:24:49Z",
+                "completed": "2026-08-08T04:35:51Z"
             }
         },
         {
@@ -121,14 +180,30 @@
             "blockedBy": ["T-005"],
             "blocks": ["T-007"],
             "subtasks": [
-                { "title": "Implement the three-state return type", "completed": false },
-                { "title": "Unit test: gold + active -> found", "completed": false },
-                { "title": "Unit test: existing gold, inactive -> gone", "completed": false },
-                { "title": "Unit test: existing silver -> notFound", "completed": false }
+                {
+                    "title": "Implement the three-state return type",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test: gold + active -> found",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test: existing gold, inactive -> gone",
+                    "completed": false
+                },
+                {
+                    "title": "Unit test: existing silver -> notFound",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "api"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -144,13 +219,26 @@
             "blockedBy": ["T-004", "T-006"],
             "blocks": ["T-008", "T-016"],
             "subtasks": [
-                { "title": "Create the route file", "completed": false },
-                { "title": "Register it on the public router", "completed": false },
-                { "title": "Route tests for 200/410/404", "completed": false }
+                {
+                    "title": "Create the route file",
+                    "completed": false
+                },
+                {
+                    "title": "Register it on the public router",
+                    "completed": false
+                },
+                {
+                    "title": "Route tests for 200/410/404",
+                    "completed": false
+                }
             ],
             "tags": ["api", "route"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -166,12 +254,22 @@
             "blockedBy": ["T-007"],
             "blocks": [],
             "subtasks": [
-                { "title": "Add the prefix", "completed": false },
-                { "title": "Port the actor-blind test", "completed": false }
+                {
+                    "title": "Add the prefix",
+                    "completed": false
+                },
+                {
+                    "title": "Port the actor-blind test",
+                    "completed": false
+                }
             ],
             "tags": ["api", "cache"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -187,13 +285,26 @@
             "blockedBy": [],
             "blocks": ["T-010", "T-011", "T-025"],
             "subtasks": [
-                { "title": "Add the prefix", "completed": false },
-                { "title": "Confirm no collection tag is added", "completed": false },
-                { "title": "Update vocabulary tests", "completed": false }
+                {
+                    "title": "Add the prefix",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm no collection tag is added",
+                    "completed": false
+                },
+                {
+                    "title": "Update vocabulary tests",
+                    "completed": false
+                }
             ],
             "tags": ["cache-tags"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -209,12 +320,22 @@
             "blockedBy": ["T-009"],
             "blocks": ["T-011"],
             "subtasks": [
-                { "title": "Add the baseline entry", "completed": false },
-                { "title": "Add the data-migration", "completed": false }
+                {
+                    "title": "Add the baseline entry",
+                    "completed": false
+                },
+                {
+                    "title": "Add the data-migration",
+                    "completed": false
+                }
             ],
             "tags": ["seed", "cache", "migration"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -230,13 +351,26 @@
             "blockedBy": ["T-009", "T-010"],
             "blocks": [],
             "subtasks": [
-                { "title": "Identify every partner write path", "completed": false },
-                { "title": "Schedule entity tag + home", "completed": false },
-                { "title": "Test both tags, assert no collection tag", "completed": false }
+                {
+                    "title": "Identify every partner write path",
+                    "completed": false
+                },
+                {
+                    "title": "Schedule entity tag + home",
+                    "completed": false
+                },
+                {
+                    "title": "Test both tags, assert no collection tag",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "cache"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -252,12 +386,22 @@
             "blockedBy": [],
             "blocks": ["T-013", "T-014", "T-015"],
             "subtasks": [
-                { "title": "Delete the four files", "completed": false },
-                { "title": "Add the 404 assertion", "completed": false }
+                {
+                    "title": "Delete the four files",
+                    "completed": false
+                },
+                {
+                    "title": "Add the 404 assertion",
+                    "completed": false
+                }
             ],
             "tags": ["web", "cleanup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -273,12 +417,22 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-022"],
             "subtasks": [
-                { "title": "Delete the type", "completed": false },
-                { "title": "Delete the transform + its tests", "completed": false }
+                {
+                    "title": "Delete the type",
+                    "completed": false
+                },
+                {
+                    "title": "Delete the transform + its tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "cleanup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -294,12 +448,22 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Remove the entry", "completed": false },
-                { "title": "Add the AC-11 assertion", "completed": false }
+                {
+                    "title": "Remove the entry",
+                    "completed": false
+                },
+                {
+                    "title": "Add the AC-11 assertion",
+                    "completed": false
+                }
             ],
             "tags": ["web", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -315,12 +479,22 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "Trim es/en/pt partners.json", "completed": false },
-                { "title": "Verify locale parity", "completed": false }
+                {
+                    "title": "Trim es/en/pt partners.json",
+                    "completed": false
+                },
+                {
+                    "title": "Verify locale parity",
+                    "completed": false
+                }
             ],
             "tags": ["i18n", "cleanup"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -336,13 +510,26 @@
             "blockedBy": ["T-007"],
             "blocks": ["T-017", "T-024"],
             "subtasks": [
-                { "title": "Add the endpoint wrapper", "completed": false },
-                { "title": "Preserve the 410 vs 404 distinction", "completed": false },
-                { "title": "Client tests", "completed": false }
+                {
+                    "title": "Add the endpoint wrapper",
+                    "completed": false
+                },
+                {
+                    "title": "Preserve the 410 vs 404 distinction",
+                    "completed": false
+                },
+                {
+                    "title": "Client tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "api-client"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -358,13 +545,26 @@
             "blockedBy": ["T-016"],
             "blocks": ["T-019"],
             "subtasks": [
-                { "title": "Define the props type", "completed": false },
-                { "title": "Implement the transform", "completed": false },
-                { "title": "Test null-field handling + absence of tier", "completed": false }
+                {
+                    "title": "Define the props type",
+                    "completed": false
+                },
+                {
+                    "title": "Implement the transform",
+                    "completed": false
+                },
+                {
+                    "title": "Test null-field handling + absence of tier",
+                    "completed": false
+                }
             ],
             "tags": ["web", "transforms"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -380,13 +580,26 @@
             "blockedBy": [],
             "blocks": ["T-019", "T-024"],
             "subtasks": [
-                { "title": "Implement the predicate", "completed": false },
-                { "title": "Include the minimum-content condition", "completed": false },
-                { "title": "Unit tests per condition", "completed": false }
+                {
+                    "title": "Implement the predicate",
+                    "completed": false
+                },
+                {
+                    "title": "Include the minimum-content condition",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests per condition",
+                    "completed": false
+                }
             ],
             "tags": ["web", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -402,13 +615,26 @@
             "blockedBy": ["T-017", "T-018"],
             "blocks": ["T-021", "T-025", "T-026"],
             "subtasks": [
-                { "title": "Frontmatter: fetch + status propagation", "completed": false },
-                { "title": "SEOHead with the predicate-driven noindex", "completed": false },
-                { "title": "Actor-blindness test", "completed": false }
+                {
+                    "title": "Frontmatter: fetch + status propagation",
+                    "completed": false
+                },
+                {
+                    "title": "SEOHead with the predicate-driven noindex",
+                    "completed": false
+                },
+                {
+                    "title": "Actor-blindness test",
+                    "completed": false
+                }
             ],
             "tags": ["web", "page", "seo"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -424,12 +650,22 @@
             "blockedBy": ["T-015"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "Add keys to the three locales", "completed": false },
-                { "title": "Verify locale parity", "completed": false }
+                {
+                    "title": "Add keys to the three locales",
+                    "completed": false
+                },
+                {
+                    "title": "Verify locale parity",
+                    "completed": false
+                }
             ],
             "tags": ["i18n"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -445,13 +681,26 @@
             "blockedBy": ["T-019", "T-020"],
             "blocks": ["T-028"],
             "subtasks": [
-                { "title": "Markup for the six content blocks", "completed": false },
-                { "title": "Scoped styles using tokens", "completed": false },
-                { "title": "Assert the tier is never rendered", "completed": false }
+                {
+                    "title": "Markup for the six content blocks",
+                    "completed": false
+                },
+                {
+                    "title": "Scoped styles using tokens",
+                    "completed": false
+                },
+                {
+                    "title": "Assert the tier is never rendered",
+                    "completed": false
+                }
             ],
             "tags": ["web", "ui"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -467,13 +716,26 @@
             "blockedBy": ["T-013"],
             "blocks": ["T-023"],
             "subtasks": [
-                { "title": "Extend the PartnerData type", "completed": false },
-                { "title": "Map the two fields in toPartnerData", "completed": false },
-                { "title": "Extend the transform tests", "completed": false }
+                {
+                    "title": "Extend the PartnerData type",
+                    "completed": false
+                },
+                {
+                    "title": "Map the two fields in toPartnerData",
+                    "completed": false
+                },
+                {
+                    "title": "Extend the transform tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "transforms"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -489,13 +751,26 @@
             "blockedBy": ["T-022"],
             "blocks": ["T-028"],
             "subtasks": [
-                { "title": "Branch the visible track", "completed": false },
-                { "title": "Branch the duplicated aria-hidden track", "completed": false },
-                { "title": "Per-tier href + rel tests", "completed": false }
+                {
+                    "title": "Branch the visible track",
+                    "completed": false
+                },
+                {
+                    "title": "Branch the duplicated aria-hidden track",
+                    "completed": false
+                },
+                {
+                    "title": "Per-tier href + rel tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "ui", "seo"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -511,13 +786,26 @@
             "blockedBy": ["T-016", "T-018"],
             "blocks": ["T-026"],
             "subtasks": [
-                { "title": "Append the fetch, never insert", "completed": false },
-                { "title": "Filter with the shared predicate", "completed": false },
-                { "title": "Emit + tests", "completed": false }
+                {
+                    "title": "Append the fetch, never insert",
+                    "completed": false
+                },
+                {
+                    "title": "Filter with the shared predicate",
+                    "completed": false
+                },
+                {
+                    "title": "Emit + tests",
+                    "completed": false
+                }
             ],
             "tags": ["web", "seo", "sitemap"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -533,12 +821,22 @@
             "blockedBy": ["T-009", "T-019"],
             "blocks": [],
             "subtasks": [
-                { "title": "Emit the tags on the page response", "completed": false },
-                { "title": "Assert the header contents", "completed": false }
+                {
+                    "title": "Emit the tags on the page response",
+                    "completed": false
+                },
+                {
+                    "title": "Assert the header contents",
+                    "completed": false
+                }
             ],
             "tags": ["web", "cache"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -554,12 +852,22 @@
             "blockedBy": ["T-019", "T-024"],
             "blocks": ["T-028"],
             "subtasks": [
-                { "title": "Write the structural guard", "completed": false },
-                { "title": "Mutation-check it breaks both sides", "completed": false }
+                {
+                    "title": "Write the structural guard",
+                    "completed": false
+                },
+                {
+                    "title": "Mutation-check it breaks both sides",
+                    "completed": false
+                }
             ],
             "tags": ["web", "seo", "guard"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -575,13 +883,26 @@
             "blockedBy": ["T-004", "T-014"],
             "blocks": ["T-028"],
             "subtasks": [
-                { "title": "Run every repo guard", "completed": false },
-                { "title": "Run existing tests of touched files", "completed": false },
-                { "title": "Full typecheck across the monorepo", "completed": false }
+                {
+                    "title": "Run every repo guard",
+                    "completed": false
+                },
+                {
+                    "title": "Run existing tests of touched files",
+                    "completed": false
+                },
+                {
+                    "title": "Full typecheck across the monorepo",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "guards"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -597,12 +918,22 @@
             "blockedBy": ["T-021", "T-023", "T-026", "T-027"],
             "blocks": [],
             "subtasks": [
-                { "title": "Write the apps/web/CLAUDE.md section", "completed": false },
-                { "title": "Add the root gotcha line", "completed": false }
+                {
+                    "title": "Write the apps/web/CLAUDE.md section",
+                    "completed": false
+                },
+                {
+                    "title": "Add the root gotcha line",
+                    "completed": false
+                }
             ],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
                 "started": null,
@@ -612,9 +943,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 28,
+        "pending": 27,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.0
     }
