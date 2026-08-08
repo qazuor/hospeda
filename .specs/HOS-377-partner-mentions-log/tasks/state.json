@@ -110,22 +110,25 @@
         {
             "id": "T-005",
             "title": "Add the base partnerMentionSchema in @repo/schemas",
-            "description": "packages/schemas/src/entities/partner/partner-mention.schema.ts — the full entity shape (id, partnerId, channel, batchId, mentionedAt, url, internalNote + audit fields), following the entity file convention. Tests: valid row parses; unknown channel rejected; batchId accepts null.",
-            "status": "pending",
+            "description": "packages/schemas/src/entities/partner/partner-mention.schema.ts — the full entity shape (id, partnerId, channel, batchId, mentionedAt, url, internalNote + audit fields), following the entity file convention. Tests: valid row parses; unknown channel rejected; batchId accepts null. DONE: also added PartnerMentionIdSchema + PartnerMentionBatchIdSchema to common/id.schema.ts, the zodError.partnerMention.* keys in es/en/pt, and PARTNER_MENTION_ADMIN_ONLY_MASK + partnerMentionPublicSchema (entity minus mask) so 'what the partner must not see' is declared ONCE instead of per endpoint. T-017 must derive its response from partnerMentionPublicSchema rather than re-omitting by hand. The base schema is deliberately refine-free so T-006/T-007 can slice it (Zod 4 blocks .pick/.omit/.partial on a refined object) — a test asserts that.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-001"],
             "blocks": ["T-006", "T-007"],
             "subtasks": [
-                { "title": "Base schema + inferred type", "completed": false },
-                { "title": "Unit tests for parse/reject", "completed": false }
+                { "title": "Base schema + inferred type", "completed": true },
+                { "title": "Unit tests for parse/reject", "completed": true },
+                { "title": "Id schemas + zodError i18n keys (es/en/pt)", "completed": true },
+                { "title": "Admin-only mask + partner-facing derived schema", "completed": true },
+                { "title": "Sliceability test (no refine on the base)", "completed": true }
             ],
             "tags": ["schemas"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T01:30:00.000Z",
+                "completed": "2026-08-08T01:52:00.000Z"
             }
         },
         {
@@ -727,9 +730,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 28,
+        "pending": 27,
         "inProgress": 0,
-        "completed": 4,
+        "completed": 5,
         "blocked": 0,
         "averageComplexity": 2.4
     }

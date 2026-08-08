@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 4/32 tasks (13%)
+## Progress: 5/32 tasks (16%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -40,7 +40,10 @@
   - Zero residual drift; `check-schema-drift.sh` green on a clean tree
   - Blocked by: T-003 · Blocks: T-008
 
-- [ ] **T-005** (complexity: 2) — Base `partnerMentionSchema`
+- [x] **T-005** (complexity: 2) — Base `partnerMentionSchema` ✅
+  - Plus `PARTNER_MENTION_ADMIN_ONLY_MASK` + `partnerMentionPublicSchema` (entity minus mask)
+  - Refine-free on purpose so T-006/T-007 can slice it; a test asserts it
+  - 14 tests · mutation-verified (shrinking the mask turns 2 red)
   - Blocked by: T-001 · Blocks: T-006, T-007
 
 - [ ] **T-006** (complexity: 3) — `createPartnerMentionBatchSchema` + per-channel URL rule
