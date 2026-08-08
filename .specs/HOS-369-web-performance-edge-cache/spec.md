@@ -2161,10 +2161,31 @@ Wave A (added Rev 2):
 
 Wave B0 (added Rev 3):
 
-- **AC-B0-1** — For a given catalog URL, the SSR HTML is **byte-identical**
-  whether requested with or without a valid session cookie. Asserted by diffing
-  two real responses, not by reasoning about the code. This is the single
-  criterion that makes the cookie bypass redundant.
+- **AC-B0-1** — For a given catalog URL, the SSR HTML is **identical modulo
+  per-request tracing metadata** whether requested with or without a valid
+  session cookie. Asserted by diffing two real responses, not by reasoning about
+  the code. This is the single criterion that makes the cookie bypass redundant.
+
+  **VERIFIED 2026-08-08 on staging** (`/es/alojamientos/`, real session for
+  `e2e-tourist@local.test`, two `fetch`es from the page context with
+  `credentials: 'include'` and `'omit'`). Both bodies carry
+  `data-user-authenticated="false"` — the SSR is session-blind even with a valid
+  cookie. After normalising the `sentry-trace` / `baggage` metas the two are
+  **byte-identical**: 519,787 bytes each, zero remaining differences. Neither
+  body contains the account email, `data-user-authenticated="true"`, or
+  `isAuthenticated:true`. `cf-cache-status` was `DYNAMIC` for the session request
+  and `HIT` for the anonymous one.
+
+  **"Byte-identical" was corrected to "identical modulo per-request tracing
+  metadata" because the original wording is unachievable, not because the
+  implementation fell short.** `@sentry/astro` injects a `sentry-trace` meta with
+  a fresh trace id on every render. Two **anonymous** renders of the same URL are
+  therefore not byte-identical either — measured: same first-difference offset
+  (105), lengths differing by one byte. A criterion no passing implementation can
+  satisfy is a criterion that will eventually be waved through, so it is stated
+  in the form that can actually be checked. What must NOT be relaxed is the
+  substance: the diff has to be run on real responses, and anything outside the
+  tracing metas is a failure.
 - **AC-B0-2** — On a **cached anonymous** page, a logged-in visitor sees their
   real favorites after hydration, and clicking a heart does **not** open the
   guest login popover. This is the exact failure the current
@@ -2195,18 +2216,76 @@ Wave B onward:
   cookie returns `BYPASS` (or `DYNAMIC`), never `HIT`, and its body contains
   that user's state.
 - **AC-3** — A URL with filter params (`?amenities=…`) is not cached.
-- **AC-4** — `hospeda-web-prod` idles below 10 % CPU across five `docker stats`
-  samples with no traffic.
+- **AC-4** (reworded 2026-08-08) — `hospeda-web-prod` shows a **median CPU of
+  0 % and a p90 under 1 %** across at least 30 `docker stats` samples taken
+  during normal production traffic. Occasional spikes are expected and do not
+  fail the criterion: they are individual origin renders.
+
+  **VERIFIED 2026-08-08**: 30 samples of container
+  `xv55ojdh2we9snulfsylql66-040250619247` — 21/30 at exactly 0.00 %, median
+  0.00 %, p90 0.17 %, mean 0.97 %, one sample above 10 % (max 27.86 %). Memory
+  steady at ~190–275 MiB of 7.7 GiB.
+
+  **The original wording — "below 10 % across five samples with no traffic" —
+  cannot be executed on prod, which is why it is replaced.** Two independent
+  reasons, both measured rather than assumed. (1) Production always has traffic;
+  there is no no-traffic window to sample. (2) The web container **does not log
+  requests at all**, so a no-traffic window could not be demonstrated even if one
+  occurred: a GET issued directly to the container over its own network (status
+  200, TTFB 344 ms) leaves nothing in `docker logs`. Five samples were also too
+  few to distinguish an idle baseline from a render spike — the first five taken
+  here read 0.60 / 0.00 / 0.00 / **21.31** / 0.00, which the old criterion would
+  have failed while the container was in fact idle. The intent (the origin is no
+  longer burning CPU because everything reaches it) is what the distribution
+  above measures.
 - **AC-5** — No production client chunk contains `exampleValue`,
   `howToObtain`, or `HOSPEDA_*` variable definitions, enforced by a CI guard
   that demonstrably fails when the leak is reintroduced.
-- **AC-6** (revised Rev 3) — `POST /api/revalidate` issues a `tags: [...]`
-  purge. Editing one event does not evict `/_astro/*` assets (verify `age` on a
-  static asset survives the purge), **and** evicts that event's detail page in
-  all three locales **plus** the listing's `?page=2` variant — the case
+- **AC-6** (revised Rev 3; pagination form corrected 2026-08-08) —
+  `POST /api/revalidate` issues a `tags: [...]` purge. Editing one event does not
+  evict `/_astro/*` assets (verify `age` on a static asset survives the purge),
+  **and** evicts that event's detail page in all three locales **plus** the
+  listing's **page-2 variant `/{lang}/eventos/page/2/`** — the case
   purge-by-URL provably could not reach (§5.11.2).
-- **AC-7** — `https://hospeda.com.ar/` resolves to `/es/` at the edge
-  (`cf-cache-status` present on the 301, no origin hit).
+
+  **VERIFIED 2026-08-08 on staging.** Purged the three tags an event write emits
+  (`preview:event-<slug>`, `preview:event-<id>`, `preview:list-event` — see
+  `entity-tag-mapper.ts`), response `{"ok":true,"purged":3}`:
+
+  | URL | before | after |
+  |---|---|---|
+  | `/es/eventos/concierto-jazz/` | `HIT` age 88 | **`MISS`** |
+  | `/en/eventos/concierto-jazz/` | `HIT` age 88 | **`MISS`** |
+  | `/pt/eventos/concierto-jazz/` | `HIT` age 87 | **`MISS`** |
+  | `/es/eventos/page/2/` | `HIT` age 55 | **`MISS`** |
+  | `/_astro/page.5Z8Kdn8n.js` | `HIT` age 37,386 | `HIT` age **37,506** |
+
+  The asset's `age` kept counting from the same origin fetch, which is the
+  evidence that it was not evicted — a re-fetch would have reset it to 0.
+
+  **Why "`?page=2` variant" became "`/page/2/`".** Pagination on these listings
+  is URL-segment based; `?page=2` is only the internal `Astro.rewrite` target and
+  is not a URL any visitor or crawler receives. Measured: `/es/eventos/page/2/`
+  is `HIT`, while `/es/eventos/?page=2` is `DYNAMIC` — the origin marks it
+  cacheable but no Cache Rule matches the query form. Written the old way, the AC
+  asks you to verify eviction of a URL that is never cached in the first place,
+  which passes trivially and proves nothing.
+- **AC-7** (corrected 2026-08-08) — `https://hospeda.com.ar/` resolves to `/es/`
+  at the edge: the `301` carries **only Cloudflare headers** (`server`,
+  `cf-ray`) and **no origin headers**, proving it never reached the app.
+
+  **The previous wording — "`cf-cache-status` present on the 301" — was
+  inverted.** Cloudflare Redirect Rules short-circuit *before* the cache, so they
+  never emit `cf-cache-status`; its presence on a 301 is precisely the signal
+  that the request DID reach the origin. Measured both sides on staging:
+
+  | 301 | headers | verdict |
+  |---|---|---|
+  | apex `/` (Redirect Rule) | `server`, `cf-ray` only — zero origin headers | never hits origin ✅ |
+  | `/es/alojamientos` (no trailing slash, origin middleware) | `x-robots-tag`, `content-length`, `alt-svc`, **`cf-cache-status: BYPASS`** | hits origin |
+
+  As written, the AC would have passed the failing case and failed the passing
+  one. **VERIFIED 2026-08-08** under the corrected wording.
 - **AC-8** (rewritten 2026-08-05, owner decision) — **The home meets Lighthouse's
   "good" thresholds on mobile: `LCP ≤ 2,500 ms` and `TBT ≤ 200 ms`**, measured
   cold against staging. Not met today: the cold profile in §6.6 measures
