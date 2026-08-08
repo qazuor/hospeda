@@ -47,7 +47,7 @@
             "id": "T-002",
             "title": "Agregar los 5 permisos nuevos a PermissionEnum",
             "description": "En packages/schemas/src/enums/permission.enum.ts, junto al bloque HOST_TRADE_* existente (líneas ~943-950): HOST_TRADE_REVIEW_CREATE ('hostTrade.review.create'), HOST_TRADE_REVIEW_VIEW_ALL ('hostTrade.review.viewAll'), HOST_TRADE_REVIEW_MODERATE ('hostTrade.review.moderate'), HOST_TRADE_USAGE_VIEW_ALL ('hostTrade.usage.viewAll'), HOST_TRADE_USAGE_MANAGE ('hostTrade.usage.manage'). Tests: el test existente de completitud del enum de permisos debe seguir pasando.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-003"],
@@ -55,91 +55,91 @@
             "tags": ["schemas", "auth", "permissions"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:58:00Z",
+                "completed": "2026-08-08T05:07:15Z"
             }
         },
         {
             "id": "T-003",
             "title": "Baseline del seed: asignar los 5 permisos a HOST / ADMIN / SUPER_ADMIN",
             "description": "En packages/seed/src/required/rolePermissions.seed.ts agregar: HOST → HOST_TRADE_REVIEW_CREATE (único que recibe); ADMIN y SUPER_ADMIN → los 5. Insertarlos en los bloques HOST_TRADE_* ya existentes de cada rol. Tests: el test de required/rolePermissions debe cubrir que HOST tiene REVIEW_CREATE y NO tiene los de moderación/admin.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": ["T-004"],
             "subtasks": [
                 {
                     "title": "Bloque SUPER_ADMIN",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Bloque ADMIN",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Bloque HOST (sólo REVIEW_CREATE)",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "auth", "permissions"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:07:15Z",
+                "completed": "2026-08-08T05:07:15Z"
             }
         },
         {
             "id": "T-004",
             "title": "Data-migration del seed para los 5 permisos (dual-write OBLIGATORIO)",
             "description": "Correr `pnpm db:seed:make hos376-host-trade-permissions` y escribir la data-migration que inserta los 5 role-permissions en entornos ya seedeados. SIN esto el baseline de T-003 sólo llega a DBs frescas y staging/prod nunca reciben los permisos. El guard scripts/check-seed-dual-write.sh es fail-closed y bloquea CI si falta. Tests: correr la migración dos veces seguidas y verificar idempotencia.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "pnpm db:seed:make",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Insert idempotente de los 5 permisos",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verificar que check-seed-dual-write.sh pasa",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "migration", "data-migration"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:07:15Z",
+                "completed": "2026-08-08T05:07:15Z"
             }
         },
         {
             "id": "T-005",
             "title": "Agregar la dependencia `qrcode` a apps/api",
             "description": "Instalar `qrcode` (+ tipos si el paquete no los trae) SOLO en apps/api. Fijar la versión verificando el registry. Verificar con el análisis de bundle que no aparece en apps/web (R-9: HOS-369 viene peleando el peso del bundle). Aprobada por el owner el 2026-08-08.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-029"],
@@ -147,107 +147,107 @@
             "tags": ["deps", "api"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:07:15Z",
+                "completed": "2026-08-08T05:20:31Z"
             }
         },
         {
             "id": "T-006",
             "title": "dbschema de host_trade_benefit_usages",
             "description": "packages/db/src/schemas/host-trade/host_trade_benefit_usage.dbschema.ts con todas las columnas de spec §7.1, FKs (hostTradeId cascade, hostUserId cascade), los índices simples y compuestos, y el ÍNDICE ÚNICO PARCIAL sobre (hostTradeId, hostUserId) WHERE status='PENDING' AND deleted_at IS NULL — Drizzle lo expresa con uniqueIndex().where(), va en el carril estructural, NO en extras. Más las relations. Tests: test de schema que verifique la forma de la tabla y la existencia del índice parcial.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Columnas + tipos + defaults",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "FKs y onDelete",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Índices simples y compuestos",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Índice único parcial de PENDING",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Relations",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "schema", "drizzle"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:58:00Z",
+                "completed": "2026-08-08T05:20:31Z"
             }
         },
         {
             "id": "T-007",
             "title": "dbschema de host_trade_reviews",
             "description": "packages/db/src/schemas/host-trade/host_trade_review.dbschema.ts según spec §7.1: overallRating integer, rating jsonb nullable con las 3 dims, averageRating numeric(3,2) nullable, respectedBenefit boolean NOT NULL, content, lifecycleState, moderationState default APPROVED, moderatedBy*/moderationReason, editedAt, audit + soft-delete. UNIQUE (hostUserId, hostTradeId) + índices. Antes de escribir, VERIFICAR el tipo real de gastronomy_reviews.overallRating (numeric vs integer) — spec §11 lo deja como punto abierto no bloqueante. Tests: schema shape + que el unique existe.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-008", "T-010"],
             "subtasks": [
                 {
                     "title": "Verificar el tipo de gastronomy_reviews.overallRating",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Columnas + tipos",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "UNIQUE (hostUserId, hostTradeId)",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Índices de moderationState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Relations",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "schema", "drizzle", "reviews"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:58:00Z",
+                "completed": "2026-08-08T05:20:31Z"
             }
         },
         {
             "id": "T-008",
             "title": "dbschema de host_trade_review_replies",
             "description": "packages/db/src/schemas/host-trade/host_trade_review_reply.dbschema.ts: reviewId UNIQUE FK cascade (una sola réplica por valoración), authorUserId, content, moderationState default PENDING, moderatedBy*/moderationReason, reviewEditedAfterReply boolean default false, audit + soft-delete. Relations. Tests: schema shape + que el UNIQUE de reviewId impide dos réplicas.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-010"],
@@ -255,21 +255,21 @@
             "tags": ["db", "schema", "drizzle", "reviews"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:58:00Z",
+                "completed": "2026-08-08T05:20:31Z"
             }
         },
         {
             "id": "T-009",
             "title": "Agregar las 8 columnas nuevas a host_trades",
             "description": "En packages/db/src/schemas/host-trade/host_trade.dbschema.ts: confirmedUsesCount, distinctHostsCount, reviewsCount, benefitRespectedCount (integer NOT NULL default 0), averageRating (numeric(3,2) NOT NULL default 0), declarationSuspendedAt (timestamptz nullable), declarationSuspendedById (uuid nullable FK users), declarationSuspendReason (text nullable). Tests: schema shape.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-010"],
@@ -277,21 +277,21 @@
             "tags": ["db", "schema", "drizzle"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:58:00Z",
+                "completed": "2026-08-08T05:20:31Z"
             }
         },
         {
             "id": "T-010",
             "title": "Generar la migración estructural (pnpm db:generate)",
             "description": "Correr `pnpm db:generate` y commitear el .sql + el _journal.json resultantes. Verificar que el número de migración no colisiona con otro en vuelo (ver el gotcha de colisiones que se automergean en silencio). Correr `pnpm db:migrate` en la DB del worktree y confirmar que las 3 tablas, las 8 columnas y los 3 enums quedan aplicados. El drift guard bloquea CI si el schema TS cambió sin migración commiteada.",
-            "status": "pending",
+            "status": "in-progress",
             "complexity": 2,
             "blockedBy": ["T-006", "T-007", "T-008", "T-009"],
             "blocks": ["T-011", "T-018"],
@@ -318,7 +318,7 @@
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
+                "started": "2026-08-08T05:20:31Z",
                 "completed": null
             }
         },
@@ -361,7 +361,7 @@
             "id": "T-012",
             "title": "Constantes de configuración del dominio",
             "description": "En packages/schemas/src/entities/host-trade/: HOST_TRADE_USAGE_EXPIRY_DAYS=30, HOST_TRADE_USAGE_REMINDER_DAYS=10, HOST_TRADE_REJECTION_SUSPEND_THRESHOLD=3, HOST_TRADE_REJECTION_WINDOW_DAYS=90, HOST_TRADE_MIN_REVIEWS_FOR_AVERAGE=3, más los máximos de texto (note 300, rejectionNote 300, content 2000, reply 1000). Todas `as const` y exportadas. Sin números mágicos dispersos.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": ["T-020", "T-022", "T-040", "T-052"],
@@ -369,49 +369,49 @@
             "tags": ["schemas", "config"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:07:15Z",
+                "completed": "2026-08-08T05:20:31Z"
             }
         },
         {
             "id": "T-013",
             "title": "Usuario seed que sea anfitrión Y proveedor a la vez",
             "description": "La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (baseline + data-migration si la matriz ya vive en un entorno activo) con el patrón <slug>@local.test / Password123!, seedeado ready-to-use (SPEC-264). Documentarlo en packages/seed/CLAUDE.md.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-064"],
             "subtasks": [
                 {
                     "title": "Usuario host+proveedor en el baseline",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Vincular ownerUserId de un host_trades de ejemplo",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Documentar en packages/seed/CLAUDE.md",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["seed", "testing"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:07:15Z",
+                "completed": "2026-08-08T05:20:31Z"
             }
         },
         {
@@ -2112,9 +2112,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 68,
-        "inProgress": 0,
-        "completed": 1,
+        "pending": 57,
+        "inProgress": 1,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.4
     }

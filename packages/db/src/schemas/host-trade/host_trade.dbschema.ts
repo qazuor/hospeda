@@ -3,6 +3,7 @@ import {
     boolean,
     index,
     integer,
+    numeric,
     pgTable,
     text,
     timestamp,
@@ -12,6 +13,8 @@ import {
 import { destinations } from '../destination/destination.dbschema.ts';
 import { HostTradeBenefitTypePgEnum, HostTradeCategoryPgEnum } from '../enums.dbschema.ts';
 import { users } from '../user/user.dbschema.ts';
+import { hostTradeBenefitUsages } from './host_trade_benefit_usage.dbschema.ts';
+import { hostTradeReviews } from './host_trade_review.dbschema.ts';
 
 /**
  * Host Trades table (SPEC-241)
@@ -115,6 +118,43 @@ export const hostTrades = pgTable(
         revokedById: uuid('revoked_by_id').references(() => users.id, { onDelete: 'set null' }),
         /** Why it was revoked. Surfaced to the provider in the notification. */
         revokeReason: text('revoke_reason'),
+        /**
+         * Denormalized count of CONFIRMED {@link hostTradeBenefitUsages} rows
+         * (HOS-376 §7.2). Recalculated from TS in the `_after*` service hooks,
+         * mirroring `recalculateAndUpdateAccommodationStats` — no Postgres
+         * trigger.
+         */
+        confirmedUsesCount: integer('confirmed_uses_count').notNull().default(0),
+        /**
+         * Denormalized count of distinct hosts among CONFIRMED usages
+         * (HOS-376 §7.2, §6.5). The anti-collusion signal shown next to
+         * {@link confirmedUsesCount} on the public directory card.
+         */
+        distinctHostsCount: integer('distinct_hosts_count').notNull().default(0),
+        /** Denormalized count of `APPROVED` {@link hostTradeReviews} rows. */
+        reviewsCount: integer('reviews_count').notNull().default(0),
+        /** Denormalized average of `APPROVED` reviews' `overallRating`. */
+        averageRating: numeric('average_rating', { precision: 3, scale: 2, mode: 'number' })
+            .notNull()
+            .default(0),
+        /** Denormalized count of `APPROVED` reviews with `respectedBenefit = true`. */
+        benefitRespectedCount: integer('benefit_respected_count').notNull().default(0),
+        /**
+         * When declaration was suspended for this provider (HOS-376 §6.5).
+         * Null = not suspended. Non-null does NOT imply an admin acted —
+         * see {@link declarationSuspendedById}.
+         */
+        declarationSuspendedAt: timestamp('declaration_suspended_at', { withTimezone: true }),
+        /**
+         * Who suspended declaration. Null means the rejection-threshold cron
+         * applied it automatically; non-null means an admin applied or
+         * lifted it (HOS-376 AC-11/AC-12).
+         */
+        declarationSuspendedById: uuid('declaration_suspended_by_id').references(() => users.id, {
+            onDelete: 'set null'
+        }),
+        /** Why declaration was suspended. Surfaced to the provider. */
+        declarationSuspendReason: text('declaration_suspend_reason'),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
         createdById: uuid('created_by_id').references(() => users.id, { onDelete: 'set null' }),
@@ -135,7 +175,7 @@ export const hostTrades = pgTable(
     })
 );
 
-export const hostTradesRelations = relations(hostTrades, ({ one }) => ({
+export const hostTradesRelations = relations(hostTrades, ({ one, many }) => ({
     destination: one(destinations, {
         fields: [hostTrades.destinationId],
         references: [destinations.id]
@@ -150,6 +190,12 @@ export const hostTradesRelations = relations(hostTrades, ({ one }) => ({
         references: [users.id],
         relationName: 'hostTradeRevokedBy'
     }),
+    /** Null when the rejection-threshold cron applied the suspension automatically. */
+    declarationSuspendedBy: one(users, {
+        fields: [hostTrades.declarationSuspendedById],
+        references: [users.id],
+        relationName: 'hostTradeDeclarationSuspendedBy'
+    }),
     createdBy: one(users, {
         fields: [hostTrades.createdById],
         references: [users.id]
@@ -161,7 +207,11 @@ export const hostTradesRelations = relations(hostTrades, ({ one }) => ({
     deletedBy: one(users, {
         fields: [hostTrades.deletedById],
         references: [users.id]
-    })
+    }),
+    /** All benefit-usage records declared/confirmed against this provider (HOS-376). */
+    usages: many(hostTradeBenefitUsages),
+    /** All reviews left for this provider (HOS-376). */
+    reviews: many(hostTradeReviews)
 }));
 
 /** Drizzle-inferred SELECT type for host_trades rows. */
