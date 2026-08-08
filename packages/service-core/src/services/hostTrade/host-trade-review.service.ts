@@ -19,11 +19,23 @@ import type {
 import { ServiceError } from '../../types';
 import { getThresholdForContext } from '../contentModeration/get-threshold-for-context';
 import { resolveInitialModerationState } from '../moderation/review-moderation.helpers';
+import { recalculateHostTradeAggregates } from './host-trade-aggregates';
 import {
     checkCanCreateHostTradeReview,
     checkCanModerateHostTradeReviews,
     checkCanViewAllHostTradeReviews
 } from './host-trade-review.permissions';
+
+/**
+ * State passed from a `_before*` hook to its `_after*` counterpart.
+ *
+ * An instance field would be shared across concurrent requests on the same
+ * service instance; `ctx.hookState` is scoped to one invocation.
+ */
+interface HostTradeReviewHookState extends Record<string, unknown> {
+    /** The listing whose counters must be recomputed once the row is gone. */
+    affectedHostTradeId?: string;
+}
 
 /** Input for {@link HostTradeReviewService.createReview}. */
 const createReviewInputSchema = z.object({
@@ -160,6 +172,106 @@ export class HostTradeReviewService extends BaseCrudService<
         return where;
     }
 
+    // --- Aggregate upkeep (T-023) -----------------------------------------
+    //
+    // Every path that can change what the public card shows recomputes the
+    // listing's counters. The delete hooks come in pairs because the row is
+    // gone by the time the `_after` runs, so the parent listing has to be
+    // captured on the way in.
+
+    protected async _afterCreate(
+        entity: HostTradeReview,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<HostTradeReview> {
+        await recalculateHostTradeAggregates({ hostTradeId: entity.hostTradeId, tx: ctx?.tx });
+        return entity;
+    }
+
+    protected async _afterUpdate(
+        entity: HostTradeReview,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<HostTradeReview> {
+        await recalculateHostTradeAggregates({ hostTradeId: entity.hostTradeId, tx: ctx?.tx });
+        return entity;
+    }
+
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeReviewHookState>
+    ): Promise<string> {
+        await this.rememberParentListing(id, ctx);
+        return id;
+    }
+
+    protected async _afterSoftDelete(
+        result: CountResponse,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeReviewHookState>
+    ): Promise<CountResponse> {
+        await this.recalculateRememberedListing(ctx);
+        return result;
+    }
+
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeReviewHookState>
+    ): Promise<string> {
+        await this.rememberParentListing(id, ctx);
+        return id;
+    }
+
+    protected async _afterHardDelete(
+        result: CountResponse,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeReviewHookState>
+    ): Promise<CountResponse> {
+        await this.recalculateRememberedListing(ctx);
+        return result;
+    }
+
+    protected async _afterRestore(
+        result: CountResponse,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeReviewHookState>
+    ): Promise<CountResponse> {
+        await this.recalculateRememberedListing(ctx);
+        return result;
+    }
+
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeReviewHookState>
+    ): Promise<string> {
+        await this.rememberParentListing(id, ctx);
+        return id;
+    }
+
+    /** Captures the parent listing before the row stops being readable. */
+    private async rememberParentListing(
+        id: string,
+        ctx: ServiceContext<HostTradeReviewHookState>
+    ): Promise<void> {
+        const review = await this.model.findById(id, ctx?.tx);
+        if (ctx.hookState) {
+            ctx.hookState.affectedHostTradeId = review?.hostTradeId;
+        }
+    }
+
+    /** Recomputes the listing captured on the way in, if there was one. */
+    private async recalculateRememberedListing(
+        ctx: ServiceContext<HostTradeReviewHookState>
+    ): Promise<void> {
+        const hostTradeId = ctx.hookState?.affectedHostTradeId;
+        if (hostTradeId) {
+            await recalculateHostTradeAggregates({ hostTradeId, tx: ctx?.tx });
+        }
+    }
+
     // --- Creation ---------------------------------------------------------
 
     /**
@@ -258,7 +370,7 @@ export class HostTradeReviewService extends BaseCrudService<
 
                 const moderationState = await resolveReviewModerationState(validated.content);
 
-                const review = await this.model.create(
+                const created = await this.model.create(
                     {
                         hostTradeId: validated.hostTradeId,
                         hostUserId: validatedActor.id,
@@ -274,7 +386,15 @@ export class HostTradeReviewService extends BaseCrudService<
                     ctx?.tx
                 );
 
-                return { review: review as HostTradeReview };
+                // The public card's numbers move the moment an APPROVED review
+                // exists, and this path never goes through the base create, so
+                // `_afterCreate` would not fire for it.
+                await recalculateHostTradeAggregates({
+                    hostTradeId: validated.hostTradeId,
+                    tx: ctx?.tx
+                });
+
+                return { review: created as HostTradeReview };
             }
         });
     }

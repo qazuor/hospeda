@@ -26,11 +26,23 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { getUserRoles } from '../user-role/user-role.service';
+import { recalculateHostTradeAggregates } from './host-trade-aggregates';
 import {
     checkCanDeclareUsageAsHost,
     checkCanManageUsages,
     checkCanViewAllUsages
 } from './host-trade-usage.permissions';
+
+/**
+ * State passed from a `_before*` hook to its `_after*` counterpart.
+ *
+ * An instance field would be shared across concurrent requests on the same
+ * service instance; `ctx.hookState` is scoped to one invocation.
+ */
+interface HostTradeUsageHookState extends Record<string, unknown> {
+    /** The listing whose counters must be recomputed once the row is gone. */
+    affectedHostTradeId?: string;
+}
 
 /**
  * Answers "is this account a host?" for the email-lookup channel.
@@ -214,6 +226,110 @@ export class HostTradeUsageService extends BaseCrudService<
         return where;
     }
 
+    // --- Aggregate upkeep (T-023) -----------------------------------------
+    //
+    // Only CONFIRMED, non-deleted usages are counted, so the generic CRUD
+    // surface can move a counter in three ways: an admin creating or editing a
+    // row, and a row leaving or returning from soft/hard delete. The delete
+    // hooks come in pairs because the parent listing has to be captured before
+    // the row stops being readable.
+    //
+    // The state machine's own transitions do NOT come through here — see
+    // {@link confirmUsage}.
+
+    protected async _afterCreate(
+        entity: HostTradeBenefitUsage,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<HostTradeBenefitUsage> {
+        await recalculateHostTradeAggregates({ hostTradeId: entity.hostTradeId, tx: ctx?.tx });
+        return entity;
+    }
+
+    protected async _afterUpdate(
+        entity: HostTradeBenefitUsage,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<HostTradeBenefitUsage> {
+        await recalculateHostTradeAggregates({ hostTradeId: entity.hostTradeId, tx: ctx?.tx });
+        return entity;
+    }
+
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeUsageHookState>
+    ): Promise<string> {
+        await this.rememberParentListing(id, ctx);
+        return id;
+    }
+
+    protected async _afterSoftDelete(
+        result: CountResponse,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeUsageHookState>
+    ): Promise<CountResponse> {
+        await this.recalculateRememberedListing(ctx);
+        return result;
+    }
+
+    protected async _beforeHardDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeUsageHookState>
+    ): Promise<string> {
+        await this.rememberParentListing(id, ctx);
+        return id;
+    }
+
+    protected async _afterHardDelete(
+        result: CountResponse,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeUsageHookState>
+    ): Promise<CountResponse> {
+        await this.recalculateRememberedListing(ctx);
+        return result;
+    }
+
+    protected async _beforeRestore(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeUsageHookState>
+    ): Promise<string> {
+        await this.rememberParentListing(id, ctx);
+        return id;
+    }
+
+    protected async _afterRestore(
+        result: CountResponse,
+        _actor: Actor,
+        ctx: ServiceContext<HostTradeUsageHookState>
+    ): Promise<CountResponse> {
+        await this.recalculateRememberedListing(ctx);
+        return result;
+    }
+
+    /** Captures the parent listing before the row stops being readable. */
+    private async rememberParentListing(
+        id: string,
+        ctx: ServiceContext<HostTradeUsageHookState>
+    ): Promise<void> {
+        const usage = await this.model.findById(id, ctx?.tx);
+        if (ctx.hookState) {
+            ctx.hookState.affectedHostTradeId = usage?.hostTradeId;
+        }
+    }
+
+    /** Recomputes the listing captured on the way in, if there was one. */
+    private async recalculateRememberedListing(
+        ctx: ServiceContext<HostTradeUsageHookState>
+    ): Promise<void> {
+        const hostTradeId = ctx.hookState?.affectedHostTradeId;
+        if (hostTradeId) {
+            await recalculateHostTradeAggregates({ hostTradeId, tx: ctx?.tx });
+        }
+    }
+
     // --- Declaration ------------------------------------------------------
 
     /**
@@ -364,6 +480,21 @@ export class HostTradeUsageService extends BaseCrudService<
                     } as unknown as Partial<HostTradeBenefitUsage>,
                     ctx?.tx
                 );
+
+                // The ONLY transition that moves a counter, and it does not go
+                // through the base update, so `_afterUpdate` never fires for
+                // it. `reject` runs from PENDING and `undo` from REJECTED, so
+                // neither enters or leaves CONFIRMED — the day a confirmed
+                // usage becomes reversible, that path needs this line too.
+                // The ONLY transition that moves a counter, and it does not go
+                // through the base update, so `_afterUpdate` never fires for
+                // it. `reject` runs from PENDING and `undo` from REJECTED, so
+                // neither enters or leaves CONFIRMED — the day a confirmed
+                // usage becomes reversible, that path needs this line too.
+                await recalculateHostTradeAggregates({
+                    hostTradeId: usage.hostTradeId,
+                    tx: ctx?.tx
+                });
 
                 return { usage: updated as HostTradeBenefitUsage };
             }

@@ -13,6 +13,18 @@ vi.mock('@repo/content-moderation', () => ({
     moderateText: vi.fn(async () => ({ score: 0 }))
 }));
 
+vi.mock('../../../src/services/hostTrade/host-trade-aggregates', () => ({
+    recalculateHostTradeAggregates: vi.fn(async () => ({
+        aggregates: {
+            confirmedUsesCount: 0,
+            distinctHostsCount: 0,
+            reviewsCount: 0,
+            averageRating: 0,
+            benefitRespectedCount: 0
+        }
+    }))
+}));
+
 vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', () => ({
     getThresholdForContext: vi.fn(async () => ({
         context: 'review',
@@ -23,6 +35,7 @@ vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', 
 }));
 
 import { moderateText } from '@repo/content-moderation';
+import { recalculateHostTradeAggregates } from '../../../src/services/hostTrade/host-trade-aggregates';
 import { HostTradeReviewService } from '../../../src/services/hostTrade/host-trade-review.service';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
@@ -332,5 +345,25 @@ describe('initial moderation state', () => {
             text: 'Trabajo prolijo y puntual.',
             context: 'review'
         });
+    });
+});
+
+describe('aggregate recalculation', () => {
+    it('recalculates the listing counters after a review lands', async () => {
+        const { service } = buildService();
+
+        await service.createReview({ hostTradeId: HT_ID, ...validBody }, hostActor());
+
+        expect(recalculateHostTradeAggregates).toHaveBeenCalledWith(
+            expect.objectContaining({ hostTradeId: HT_ID })
+        );
+    });
+
+    it('does not recalculate when a gate refused the review', async () => {
+        const { service } = buildService({ confirmedUsage: null });
+
+        await service.createReview({ hostTradeId: HT_ID, ...validBody }, hostActor());
+
+        expect(recalculateHostTradeAggregates).not.toHaveBeenCalled();
     });
 });

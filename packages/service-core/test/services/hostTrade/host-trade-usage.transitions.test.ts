@@ -8,8 +8,22 @@
  * `alliance/protected/claim.ts`.
  */
 import type { HostTradeBenefitUsageModel, HostTradeModel, UserModel } from '@repo/db';
+
+vi.mock('../../../src/services/hostTrade/host-trade-aggregates', () => ({
+    recalculateHostTradeAggregates: vi.fn(async () => ({
+        aggregates: {
+            confirmedUsesCount: 0,
+            distinctHostsCount: 0,
+            reviewsCount: 0,
+            averageRating: 0,
+            benefitRespectedCount: 0
+        }
+    }))
+}));
+
 import { ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { recalculateHostTradeAggregates } from '../../../src/services/hostTrade/host-trade-aggregates';
 import { HostTradeUsageService } from '../../../src/services/hostTrade/host-trade-usage.service';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
@@ -231,5 +245,36 @@ describe('undoRejection', () => {
 
         expect(result.error).toBeDefined();
         expect(model.update).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Denormalised aggregates (T-023)
+// ---------------------------------------------------------------------------
+
+describe('aggregate recalculation', () => {
+    it('recalculates the listing counters after a confirmation', async () => {
+        const { service } = buildService();
+
+        await service.confirmUsage({ usageId: USAGE_ID }, actorOf(HOST_ID));
+
+        expect(recalculateHostTradeAggregates).toHaveBeenCalledWith(
+            expect.objectContaining({ hostTradeId: HT_ID })
+        );
+    });
+
+    /**
+     * Rejection does not touch a counter, and this pins WHY rather than merely
+     * recording today's behaviour: only CONFIRMED rows are counted, `reject`
+     * runs from PENDING and `undo` from REJECTED, so neither enters or leaves
+     * CONFIRMED. If a future transition breaks that — a confirmed usage being
+     * reversible, say — this test is the one that has to change first.
+     */
+    it('does not recalculate after a rejection, which cannot change a counter', async () => {
+        const { service } = buildService();
+
+        await service.rejectUsage({ usageId: USAGE_ID }, actorOf(HOST_ID));
+
+        expect(recalculateHostTradeAggregates).not.toHaveBeenCalled();
     });
 });
