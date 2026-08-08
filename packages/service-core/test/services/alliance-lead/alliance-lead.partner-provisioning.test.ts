@@ -210,7 +210,7 @@ describe('provisionPartnerFromLead', () => {
         await provisionPartnerFromLead({
             lead: partnerLead(),
             partnerModel,
-            tier: PartnerTierEnum.BRONZE,
+            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });
@@ -230,7 +230,7 @@ describe('provisionPartnerFromLead', () => {
         const result = await provisionPartnerFromLead({
             lead: partnerLead({ applicantUserId: null }),
             partnerModel,
-            tier: PartnerTierEnum.BRONZE,
+            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });
@@ -249,7 +249,7 @@ describe('provisionPartnerFromLead', () => {
         await provisionPartnerFromLead({
             lead: partnerLead(),
             partnerModel,
-            tier: PartnerTierEnum.BRONZE,
+            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });
@@ -271,7 +271,7 @@ describe('provisionPartnerFromLead', () => {
         const result = await provisionPartnerFromLead({
             lead,
             partnerModel,
-            tier: PartnerTierEnum.BRONZE,
+            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });
@@ -292,7 +292,7 @@ describe('provisionPartnerFromLead', () => {
         const result = await provisionPartnerFromLead({
             lead,
             partnerModel,
-            tier: PartnerTierEnum.BRONZE,
+            tier: PartnerTierEnum.SILVER,
             actorId: '00000000-0000-4000-a000-00000000000a',
             logger: silentLogger()
         });

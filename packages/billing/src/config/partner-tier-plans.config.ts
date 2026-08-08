@@ -15,17 +15,22 @@ import { PARTNER_GOLD_PLAN, PARTNER_SILVER_PLAN } from './plans.config.js';
 /**
  * Tier → plan slug, or `null` for a tier that is not sold.
  *
- * **`BRONZE` maps to `null` deliberately.** §6.3 offers exactly two commercial
- * tiers, silver and gold; bronze exists in `PartnerTierEnum` as a display
- * value and has no price. Modelling that as `null` rather than quietly
- * defaulting to silver is the point: an admin who provisions a bronze partner
- * and then tries to charge them should hit a refusal that says "this tier has
- * no plan", not silently bill them for a tier they were not given. The refusal
- * already exists — `send-link` answers 422 when the partner has no `planId` —
- * so the null flows into a message someone can act on.
+ * ⚠️ **Every tier currently maps to a plan.** `BRONZE` was the only `null`
+ * entry, and HOS-294 removed it from `PartnerTierEnum` (it had no plan, no
+ * price and no product meaning). As a result `resolvePartnerTierPlanSlug` can
+ * no longer return `null` and `isPartnerTierSellable` can no longer return
+ * `false` — read that helper as documentation of an invariant, NOT as an active
+ * guard protecting anything today.
+ *
+ * The `| null` in the type is kept on purpose rather than narrowed away: it
+ * costs nothing, and it is what makes reintroducing a non-sellable tier a
+ * one-line change here instead of a signature change that ripples outward. The
+ * original rationale still holds for that case — an admin who provisions an
+ * unsellable tier and then tries to charge for it should hit a refusal that
+ * says "this tier has no plan" (`send-link` answers 422 on a missing `planId`)
+ * rather than be silently billed for a tier they were not given.
  */
 export const PARTNER_TIER_PLAN_SLUG: Readonly<Record<PartnerTierEnum, string | null>> = {
-    [PartnerTierEnum.BRONZE]: null,
     [PartnerTierEnum.SILVER]: PARTNER_SILVER_PLAN.slug,
     [PartnerTierEnum.GOLD]: PARTNER_GOLD_PLAN.slug
 };

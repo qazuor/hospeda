@@ -222,6 +222,27 @@ export function getAffectedCacheTags(event: EntityChangeData): readonly string[]
             break;
         }
 
+        case 'partner': {
+            // A gold partner has a detail page at `/partners/<slug>/` and NO
+            // listing page anywhere — the filtered directory was retired by
+            // HOS-294 — so there is no collection tag, same as `attraction` and
+            // `pointOfInterest` above.
+            for (const tag of buildEntityCacheTags({
+                entity: 'partner',
+                slug: event.slug,
+                id: event.id
+            })) {
+                tags.add(tag);
+            }
+            // The home page IS the partner listing: the carousel renders every
+            // visible partner's logo, name and outbound link. So a partner write
+            // — a logo approved, a name corrected, a subscription lapsing — is a
+            // change to the home page's output, and skipping this would leave a
+            // revoked partner's logo on the front page for the whole TTL.
+            tags.add(CACHE_TAG_HOME);
+            break;
+        }
+
         case 'tag':
         case 'amenity': {
             // Neither has a page of its own; both are accommodation filters.

@@ -112,13 +112,18 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             query.where(and(...conditions));
         }
 
-        // Sorting: tier order (gold > silver > bronze) then startsAt
+        // Sorting: tier order (gold > silver) then startsAt.
+        //
+        // The `bronze` branch was dropped by HOS-294 along with the tier itself.
+        // It is raw SQL, so nothing in the type system would ever have flagged
+        // it — the enum could lose a value and this CASE would keep naming it
+        // forever, silently dead. `ELSE 99` still catches anything unexpected.
         const sortBy = filters.sort || 'tier';
         const sortOrder = filters.sortOrder || 'desc';
 
         if (sortBy === 'tier') {
             query.orderBy(
-                sql`CASE ${partners.tier} WHEN 'gold' THEN 0 WHEN 'silver' THEN 1 WHEN 'bronze' THEN 2 ELSE 99 END`,
+                sql`CASE ${partners.tier} WHEN 'gold' THEN 0 WHEN 'silver' THEN 1 ELSE 99 END`,
                 desc(partners.startsAt)
             );
         } else if (sortBy === 'startsAt') {
