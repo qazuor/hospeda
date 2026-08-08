@@ -1522,6 +1522,25 @@ export const HOSPEDA_ENV_VARS = [
             'Sentry → Settings → Account → User Auth Tokens → Create New Token. Scopes mínimos: `project:releases`, `org:read`, `project:read`. Lo usan @sentry/astro (web), @sentry/vite-plugin (admin) y @sentry/esbuild-plugin (api) en build-time para subir los source maps y así los stack traces en producción salgan simbolicados. Si falta, el upload se saltea en silencio. El org slug `qazuor` y los project slugs por app (`hospeda-web`, `hospeda-admin`, `hospeda-api`) están hardcoded en cada config de build — el mismo token (org-scoped) sirve para los tres.'
     },
     {
+        name: 'ASTRO_KEY',
+        description:
+            'Stable encryption key for the props Astro passes to server islands (web, build time)',
+        descriptionEs:
+            'Clave de cifrado estable para las props que Astro pasa a los server islands (web, build time)',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=',
+        apps: ['web'],
+        category: 'system',
+        stage: 'build',
+        helpUrl: 'https://docs.astro.build/en/guides/server-islands/#reusing-the-encryption-key',
+        howToObtain:
+            'Run `pnpm astro create-key` inside apps/web and copy the printed value. Use a DIFFERENT key per environment (staging vs production) — it is cryptographic material. Without it Astro generates a fresh key on every build; because the HTML is edge-cached (s-maxage=300, stale-while-revalidate=600) and nothing purges the cache on deploy, for up to ~15 minutes after a release a visitor can receive cached HTML whose `/_server-islands/...?e=` payload was encrypted with the key of the previous build, which the new origin cannot decrypt. Symptom: the "próximos eventos" section on the home fails or hangs on its skeleton. Build-time only — it is baked into the server bundle and never read at runtime, so it must be set as a BUILD variable in Coolify, and `apps/web/Dockerfile` must keep declaring `ARG ASTRO_KEY` or Coolify drops it silently.',
+        howToObtainEs:
+            'Corré `pnpm astro create-key` dentro de apps/web y copiá el valor que imprime. Usá una clave DISTINTA por entorno (staging y producción) — es material criptográfico. Sin ella Astro genera una clave nueva en cada build; como el HTML se cachea en el edge (s-maxage=300, stale-while-revalidate=600) y nada purga el caché en el deploy, hasta ~15 minutos después de una release un visitante puede recibir HTML cacheado cuyo payload `/_server-islands/...?e=` fue cifrado con la clave del build anterior, que el origen nuevo no puede descifrar. Síntoma: la sección "próximos eventos" de la home falla o se queda colgada en su skeleton. Es build-time únicamente — se hornea en el server bundle y nunca se lee en runtime, así que hay que setearla como variable de BUILD en Coolify, y `apps/web/Dockerfile` tiene que seguir declarando `ARG ASTRO_KEY` o Coolify la descarta en silencio.'
+    },
+    {
         name: 'WEEKLY_RESTART_HEARTBEAT_URL',
         description:
             "Optional heartbeat-ping URL (e.g. healthchecks.io / Cronitor) hit by scripts/server-tools/weekly-restart.sh after a successful weekly app-restart + Docker prune cycle, so an external monitor can alert if the cron stops firing. NOT read by any Node app process — read directly by the bash script from the crontab environment on the VPS host. Setting it in a Coolify app's env vars panel has no effect for this purpose; it must be exported in the operator's crontab (or a sourced env file the cron job loads) on the host.",
