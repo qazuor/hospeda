@@ -5,6 +5,7 @@ import {
     createPartnerMentionBatchSchema,
     PARTNER_MENTION_ADMIN_ONLY_MASK,
     type PartnerMention,
+    type PartnerMentionBatch,
     type PartnerMentionPublic,
     RoleEnum,
     requiresMentionUrl,
@@ -48,13 +49,13 @@ export interface CreateMentionBatchInput extends CreatePartnerMentionBatch {
     readonly partnerId: string;
 }
 
-/** One submission as the partner sees it: a date, and the channels it ran on. */
-export interface PartnerMentionBatchView {
-    /** Null for a mention that was logged on its own. */
-    readonly batchId: string | null;
-    readonly mentionedAt: Date;
-    readonly mentions: readonly PartnerMentionPublic[];
-}
+/**
+ * One submission as the partner sees it: a date, and the channels it ran on.
+ *
+ * Aliased to the schema type rather than re-declared, so the HTTP contract the
+ * route publishes and the shape this service builds cannot drift apart.
+ */
+export type PartnerMentionBatchView = PartnerMentionBatch;
 
 /**
  * How many mentions the partner's own log loads at once.

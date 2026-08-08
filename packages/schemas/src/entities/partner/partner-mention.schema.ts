@@ -96,3 +96,23 @@ export const partnerMentionPublicSchema = partnerMentionSchema.omit(
 );
 
 export type PartnerMentionPublic = z.infer<typeof partnerMentionPublicSchema>;
+
+/**
+ * One submission as the partner sees it (AC-10).
+ *
+ * A campaign that ran on four networks is ONE thing that happened, so the log
+ * shows one entry carrying four links rather than four entries sharing a date.
+ * A mention logged on its own becomes a single-item batch with a null
+ * `batchId`, so the view has exactly one shape to render instead of two.
+ *
+ * `mentionedAt` is lifted to the batch because every row in a submission shares
+ * it by construction — the create schema takes one date for the whole thing.
+ */
+export const partnerMentionBatchSchema = z.object({
+    /** Null for a mention that was logged on its own. */
+    batchId: PartnerMentionBatchIdSchema.nullable(),
+    mentionedAt: z.coerce.date(),
+    mentions: z.array(partnerMentionPublicSchema)
+});
+
+export type PartnerMentionBatch = z.infer<typeof partnerMentionBatchSchema>;
