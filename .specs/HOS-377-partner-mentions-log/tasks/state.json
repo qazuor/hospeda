@@ -269,36 +269,44 @@
         {
             "id": "T-007",
             "title": "Add update and search schemas for partner mentions",
-            "description": "updatePartnerMentionSchema (single-row correction: channel/mentionedAt/url/internalNote, all optional) and searchPartnerMentionSchema (partnerId, channel filter, date range, pagination). Admin list uses page+pageSize, never limit. Tests: partial update parses; search rejects unknown params.",
-            "status": "pending",
+            "description": "updatePartnerMentionSchema (single-row correction: channel/mentionedAt/url/internalNote, all optional) and searchPartnerMentionSchema (partnerId, channel filter, date range, pagination). Admin list uses page+pageSize, never limit. Tests: partial update parses; search rejects unknown params. DONE: two files following the entity convention — partner-mention.update.schema.ts and partner-mention.admin-search.schema.ts. 24 tests. The update schema carries a superRefine: a patch switching channel to a permalink channel MUST carry the url in the same request, because the schema never sees the stored row and a bare switch would turn a urlless WHATSAPP row into a urlless INSTAGRAM one. partnerId and batchId are NOT patchable (moving/regrouping is not a correction). Search extends AdminSearchBaseSchema (page+pageSize, never limit) and declares channel, batchId, mentionedAfter/mentionedBefore — the last two range over mentioned_at, distinct from the inherited createdAfter/createdBefore over created_at.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-010"],
             "subtasks": [
                 {
                     "title": "Update schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Search schema with pagination",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests",
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "title": "Channel-switch drags the URL (superRefine)",
+                    "completed": true
+                },
+                {
+                    "title": "partnerId/batchId not patchable",
+                    "completed": true
                 }
             ],
             "tags": ["schemas"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T02:18:00.000Z",
+                "completed": "2026-08-08T02:34:00.000Z"
             }
         },
         {
@@ -374,7 +382,7 @@
         {
             "id": "T-010",
             "title": "PartnerMentionService — list, update, soft-delete",
-            "description": "Add listForPartner (paginated, newest-first), update (single row correction), and softDelete to PartnerMentionService (closes OQ-6: mentions are editable, unlike social_publish_logs). Plus listForOwner for the partner-facing read path, resolving the partner from partners.ownerUserId and returning rows grouped by batchId with internalNote omitted.",
+            "description": "Add listForPartner (paginated, newest-first), update (single row correction), and softDelete to PartnerMentionService (closes OQ-6: mentions are editable, unlike social_publish_logs). Plus listForOwner for the partner-facing read path, resolving the partner from partners.ownerUserId and returning rows grouped by batchId with internalNote omitted. MUST re-validate the MERGED row on update: updatePartnerMentionSchema can only see the patch, so `{url: null}` with no channel field is legal to it while being illegal for a stored INSTAGRAM row. That gap is the service's to close (HOS-377 T-007 note).",
             "status": "pending",
             "complexity": 2,
             "blockedBy": ["T-007", "T-008"],
@@ -1159,9 +1167,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 26,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 6,
+        "completed": 7,
         "blocked": 0,
         "averageComplexity": 2.4
     }

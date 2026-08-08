@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 6/32 tasks (19%)
+## Progress: 7/32 tasks (22%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -53,7 +53,11 @@
   - ⚠ T-009 must insert from the PARSED output — the raw body bypasses the stripping
   - Blocked by: T-005 · Blocks: T-009
 
-- [ ] **T-007** (complexity: 2) — Update and search schemas
+- [x] **T-007** (complexity: 2) — Update and search schemas ✅
+  - A channel switch to a permalink channel must carry the url in the same patch
+  - `partnerId`/`batchId` not patchable; search declares channel, batchId, mentionedAfter/Before
+  - 24 tests · mutation-verified (neutralising the switch guard turns 2 red)
+  - ⚠ T-010 must re-validate the MERGED row — `{url: null}` alone is invisible to the patch schema
   - Blocked by: T-005 · Blocks: T-010
 
 - [ ] **T-008** (complexity: 3) — `PartnerMentionModel` extending `BaseModel`
