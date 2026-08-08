@@ -964,7 +964,7 @@
             "id": "T-027",
             "title": "Integrar resolveInitialModerationState y moderateText para el dominio nuevo",
             "description": "Extender resolveInitialModerationState (packages/service-core/src/services/moderation/review-moderation.helpers.ts) con el entityType nuevo: valoración → APPROVED por default, réplica → PENDING por default. En ambos casos moderateText() con score ≥ 0.5 fuerza PENDING. Tests: valoración limpia nace APPROVED; valoración con score alto nace PENDING (AC-19); réplica limpia nace PENDING igual.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-024", "T-025"],
             "blocks": ["T-028", "T-065"],
@@ -972,14 +972,23 @@
             "tags": ["service-core", "moderation"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T16:40:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T16:40:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T16:40:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T16:25:00Z",
+                "completed": "2026-08-08T16:40:00.000Z"
             }
         },
         {
@@ -2193,9 +2202,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 47,
+        "pending": 46,
         "inProgress": 0,
-        "completed": 22,
+        "completed": 23,
         "blocked": 0,
         "averageComplexity": 2.4
     }

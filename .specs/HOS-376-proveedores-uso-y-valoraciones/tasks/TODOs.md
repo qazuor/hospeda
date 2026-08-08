@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 22/69 tareas (32%)
+## Progreso: 23/69 tareas (33%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 9/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 10/16 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -95,7 +95,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [ ] **T-026** (c3) — Servicio de valoraciones: edición del anfitrión con re-moderación
   - Editar la propia valoración (patrón NUEVO en el repo: hoy ningún usuario puede editar su review, ACCOMMODATION_REVIEW_MODERATE es admin-only). Al editar: sellar editedAt, volver a pasar por …
   - Bloqueada por: T-024, T-025 · Bloquea a: T-034, T-065
-- [ ] **T-027** (c2) — Integrar resolveInitialModerationState y moderateText para el dominio nuevo
+- [x] **T-027** (c2) — Integrar resolveInitialModerationState y moderateText para el dominio nuevo
   - Extender resolveInitialModerationState (packages/service-core/src/services/moderation/review-moderation.helpers.ts) con el entityType nuevo: valoración → APPROVED por default, réplica → PEND…
   - Bloqueada por: T-024, T-025 · Bloquea a: T-028, T-065
 - [ ] **T-028** (c3) — Servicio de moderación admin de valoraciones y réplicas
@@ -259,11 +259,11 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (9/16). Las disponibles ahora: T-020, T-022, T-023, T-026,
-T-027, T-029, T-030, T-033, T-040, T-042, T-057.
+Fase `core` en curso (10/16). Las disponibles ahora: T-020, T-022, T-023,
+T-026, T-028, T-029, T-030, T-033, T-040, T-042, T-057.
 
-El camino crítico sigue por **T-027** (integrar `resolveInitialModerationState`
-y `moderateText` en el dominio nuevo) y de ahí a T-028. T-026 también quedó
-libre: es la otra mitad de AC-22 — el servicio de réplicas ya conserva la
-réplica al editarla, falta que la edición de la VALORACIÓN le ponga
-`reviewEditedAfterReply`.
+El camino crítico sigue por **T-028** — la moderación admin de valoraciones y
+réplicas, que además dispara el recálculo de agregados (AC-27) y por lo tanto
+quiere T-023 hecho primero. T-026 sigue libre: es la otra mitad de AC-22 —
+falta que la edición de la VALORACIÓN le ponga `reviewEditedAfterReply` a la
+réplica.
