@@ -8,105 +8,105 @@
             "id": "T-001",
             "title": "Migrate live bronze partners to silver (seed data-migration + baseline)",
             "description": "Dual-write per HOS-25. (1) `pnpm db:seed:make bronze-tier-retirement` creating a numbered module in packages/seed/src/data-migrations/ that UPDATEs every partners row with tier='bronze' to 'silver'. (2) Edit the baselines: packages/seed/src/data/partner/003-partner-panaderia-la-espiga.json and 005-partner-ong-amigos-del-rio-uruguay.json change tier to \"silver\". Editing only the baseline is the silent bug scripts/check-seed-dual-write.sh exists to catch. MUST land before T-002 in wall-clock order on a live env: Postgres cannot drop an enum value any row still holds. Tests: assert the data-migration is idempotent (re-running it is a no-op) and that the two fixtures parse against the partner seed schema.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-002"],
             "subtasks": [
                 {
                     "title": "Generate the numbered data-migration module",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update the two bronze seed fixtures",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify the dual-write guard passes",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "seed", "migration"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:45:12Z",
+                "completed": "2026-08-08T13:45:12Z"
             }
         },
         {
             "id": "T-002",
             "title": "Drop bronze from the partner_tier Postgres enum (structural migration)",
             "description": "Via `pnpm db:generate` after editing the enum in packages/db. Postgres has no ALTER TYPE ... DROP VALUE, so the migration must: create partner_tier_new with ('silver','gold'), ALTER TABLE partners ALTER COLUMN tier TYPE partner_tier_new USING tier::text::partner_tier_new, DROP TYPE partner_tier, RENAME the new type, and recreate partners_tier_idx if the rewrite drops it. NEVER use db:push against staging/prod. Tests: the @repo/db integration suite must still create a partner row; assert partners_tier_idx exists after the migration.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
             "subtasks": [
                 {
                     "title": "Edit PartnerTierPgEnum in packages/db",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Generate and hand-verify the SQL",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm partners_tier_idx survives",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "migration"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:45:12Z",
+                "completed": "2026-08-08T13:45:12Z"
             }
         },
         {
             "id": "T-003",
             "title": "Remove BRONZE from PartnerTierEnum and its Zod schema",
             "description": "packages/schemas/src/enums/partner-tier.enum.ts and partner-tier.schema.ts drop the BRONZE member. Fix every consumer the typecheck surfaces (admin tier selects, seed schema JSON, any exhaustive switch). Tests: update the enum's own test to assert exactly two values; run the admin typecheck since apps/admin renders tier options.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-002"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Edit enum + schema",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Fix consumers surfaced by typecheck",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update enum tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "enum"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:45:12Z",
+                "completed": "2026-08-08T13:45:12Z"
             }
         },
         {
@@ -943,9 +943,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 4,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 28,
         "blocked": 0,
         "averageComplexity": 2.0
     }

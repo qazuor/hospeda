@@ -83,8 +83,10 @@ describe('resolvePartnerLogoLink', () => {
     });
 
     it('falls back to the external link for an unknown tier', () => {
-        // Arrange — `bronze` still exists in the enum until its migration runs,
-        // and an unrecognised tier must never be treated as gold.
+        // Arrange — `bronze` is no longer a tier (HOS-294 retired it), which is
+        // exactly what makes it a good stand-in for a value the enum does not
+        // know: a stale row, or a tier added later. It must never be treated as
+        // gold, because gold is the one that grants a public page.
         const link = resolvePartnerLogoLink({
             partner: { ...silver, tier: 'bronze' },
             locale: 'es'
