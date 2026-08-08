@@ -208,6 +208,19 @@ export interface PartnerData {
     /** Optional external URL the logo links to. */
     readonly url?: string;
     /**
+     * The partner's slug, used to build the internal href for a gold partner
+     * (`/{lang}/partners/<slug>/`). Absent for a decorative/static entry.
+     */
+    readonly slug?: string;
+    /**
+     * Commercial tier — `gold` or `silver` (HOS-294).
+     *
+     * The marquee reads it to decide WHERE the logo points, and for nothing
+     * else: a gold logo links to its own page, a silver logo to the partner's
+     * own site. It is never rendered as a badge; the tier is internal state.
+     */
+    readonly tier?: string;
+    /**
      * Intrinsic aspect ratio of the logo image (width / height). Used by the
      * marquee to reserve correct horizontal space and set `aspect-ratio` on
      * each `<img>` so logos do not cause CLS while decoding.

@@ -2775,6 +2775,11 @@ export function toPartnerData({ item }: { readonly item: Record<string, unknown>
         name: String(item.name || ''),
         logoPath: String(item.logoUrl || ''),
         url: item.websiteUrl == null ? undefined : String(item.websiteUrl),
+        // Both carried for the tier branch in `PartnersSection` (HOS-294 D-1):
+        // a gold logo links to `/partners/<slug>/`, a silver one to its own
+        // site. Neither is ever rendered as text.
+        slug: item.slug == null ? undefined : String(item.slug),
+        tier: item.tier == null ? undefined : String(item.tier),
         aspectRatio: DEFAULT_PARTNER_LOGO_ASPECT_RATIO
     };
 }

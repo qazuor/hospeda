@@ -711,70 +711,70 @@
             "id": "T-022",
             "title": "Extend PartnerData and toPartnerData with slug and tier",
             "description": "The carousel cannot branch per tier without them: PartnerData (apps/web/src/data/types-ui.ts:198) gains slug and tier, and toPartnerData (transforms.ts:2762) maps them. Purely additive to the marquee's props. Tests: extend the existing toPartnerData cases to cover both fields, including a partner with no websiteUrl.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-013"],
             "blocks": ["T-023"],
             "subtasks": [
                 {
                     "title": "Extend the PartnerData type",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Map the two fields in toPartnerData",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Extend the transform tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "transforms"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T06:14:42Z",
+                "completed": "2026-08-08T06:14:42Z"
             }
         },
         {
             "id": "T-023",
             "title": "Branch the carousel href per tier",
             "description": "PartnersSection.astro:52-83 (and the duplicated aria-hidden track below it — BOTH loops must change or the marquee's second half keeps the old links). Gold -> /{lang}/partners/<slug>/ as a plain internal link, no rel, no target. Silver with websiteUrl -> that URL with target=\"_blank\" rel=\"sponsored nofollow noopener\". Silver without websiteUrl -> the existing unlinked <div>. Tests: AC-5 asserts the exact rel string per tier on the SSR HTML — that one attribute IS the product decision; AC-6 asserts no empty href is ever emitted.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022"],
             "blocks": ["T-028"],
             "subtasks": [
                 {
                     "title": "Branch the visible track",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Branch the duplicated aria-hidden track",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Per-tier href + rel tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ui", "seo"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T06:14:42Z",
+                "completed": "2026-08-08T06:14:42Z"
             }
         },
         {
@@ -943,9 +943,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 12,
+        "pending": 10,
         "inProgress": 0,
-        "completed": 17,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.0
     }
