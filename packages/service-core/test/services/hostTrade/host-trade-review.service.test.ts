@@ -6,8 +6,23 @@
  * fired rather than "something refused".
  */
 import type { HostTradeBenefitUsageModel, HostTradeModel, HostTradeReviewModel } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { ModerationStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@repo/content-moderation', () => ({
+    moderateText: vi.fn(async () => ({ score: 0 }))
+}));
+
+vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', () => ({
+    getThresholdForContext: vi.fn(async () => ({
+        context: 'review',
+        pending: 0.5,
+        reject: 0.85,
+        source: 'code-constants'
+    }))
+}));
+
+import { moderateText } from '@repo/content-moderation';
 import { HostTradeReviewService } from '../../../src/services/hostTrade/host-trade-review.service';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
@@ -254,5 +269,68 @@ describe('duplicate guard', () => {
 
         expect(result.error?.code).toBe(ServiceErrorCode.REVIEW_ALREADY_EXISTS);
         expect(model.create).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Initial moderation state (T-027)
+// ---------------------------------------------------------------------------
+
+/** First argument of the first call to a mocked model method. */
+function firstArg(mock: unknown): Record<string, unknown> {
+    return (mock as { mock: { calls: unknown[][] } }).mock.calls[0]?.[0] as Record<string, unknown>;
+}
+
+describe('initial moderation state', () => {
+    it('publishes a clean review immediately', async () => {
+        const { service, model } = buildService();
+
+        await service.createReview(
+            { hostTradeId: HT_ID, ...validBody, content: 'Trabajo prolijo y puntual.' },
+            hostActor()
+        );
+
+        expect(firstArg(model.create).moderationState).toBe(ModerationStatusEnum.APPROVED);
+    });
+
+    /** AC-19 — content moderation overrides the APPROVED default. */
+    it('holds a flagged review for a human', async () => {
+        vi.mocked(moderateText).mockResolvedValueOnce({ score: 1 } as never);
+        const { service, model } = buildService();
+
+        await service.createReview(
+            { hostTradeId: HT_ID, ...validBody, content: 'un texto con problemas' },
+            hostActor()
+        );
+
+        expect(firstArg(model.create).moderationState).toBe(ModerationStatusEnum.PENDING);
+    });
+
+    /**
+     * The review body is optional (§6.3), so most reviews are stars and a
+     * boolean with nothing to moderate. Calling the engine on an empty string
+     * would spend a round trip to score nothing.
+     */
+    it('skips moderation entirely when there is no text', async () => {
+        const { service, model } = buildService();
+
+        await service.createReview({ hostTradeId: HT_ID, ...validBody }, hostActor());
+
+        expect(moderateText).not.toHaveBeenCalled();
+        expect(firstArg(model.create).moderationState).toBe(ModerationStatusEnum.APPROVED);
+    });
+
+    it('sends the body through content moderation when there is one', async () => {
+        const { service } = buildService();
+
+        await service.createReview(
+            { hostTradeId: HT_ID, ...validBody, content: 'Trabajo prolijo y puntual.' },
+            hostActor()
+        );
+
+        expect(moderateText).toHaveBeenCalledWith({
+            text: 'Trabajo prolijo y puntual.',
+            context: 'review'
+        });
     });
 });

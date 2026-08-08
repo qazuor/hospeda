@@ -1,3 +1,4 @@
+import { moderateText } from '@repo/content-moderation';
 import { HostTradeBenefitUsageModel, HostTradeModel, HostTradeReviewModel } from '@repo/db';
 import type { CountResponse, HostTradeReview, HostTradeReviewAdminSearch } from '@repo/schemas';
 import {
@@ -16,6 +17,8 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { getThresholdForContext } from '../contentModeration/get-threshold-for-context';
+import { resolveInitialModerationState } from '../moderation/review-moderation.helpers';
 import {
     checkCanCreateHostTradeReview,
     checkCanModerateHostTradeReviews,
@@ -253,6 +256,8 @@ export class HostTradeReviewService extends BaseCrudService<
                     );
                 }
 
+                const moderationState = await resolveReviewModerationState(validated.content);
+
                 const review = await this.model.create(
                     {
                         hostTradeId: validated.hostTradeId,
@@ -262,6 +267,7 @@ export class HostTradeReviewService extends BaseCrudService<
                         averageRating: computeBreakdownAverage(validated.rating),
                         respectedBenefit: validated.respectedBenefit,
                         content: validated.content ?? null,
+                        moderationState,
                         createdById: validatedActor.id,
                         updatedById: validatedActor.id
                     } as unknown as Partial<HostTradeReview>,
@@ -272,6 +278,34 @@ export class HostTradeReviewService extends BaseCrudService<
             }
         });
     }
+}
+
+/**
+ * The state a new review is born in (spec §6.4, AC-19).
+ *
+ * `APPROVED` by default, on stronger evidence than the accommodation case: not
+ * a conversation that happened, but a usage the counterpart CONFIRMED. Content
+ * moderation overrides that — a text scoring at or above the threshold is held
+ * for a human whatever the default says.
+ *
+ * The body is optional (§6.3), so most reviews are stars and a boolean with
+ * nothing to moderate. Those skip the engine entirely rather than paying a
+ * round trip to score an empty string.
+ */
+async function resolveReviewModerationState(content: string | null | undefined) {
+    const [moderationResult, thresholds] = await Promise.all([
+        content
+            ? moderateText({ text: content, context: 'review' })
+            : Promise.resolve({ score: 0 }),
+        getThresholdForContext({ context: 'review' })
+    ]);
+
+    return resolveInitialModerationState({
+        entityType: 'hostTrade',
+        verificationLevel: 'none',
+        moderationScore: moderationResult.score,
+        pendingThreshold: thresholds.pending
+    });
 }
 
 /**

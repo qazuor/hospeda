@@ -9,6 +9,21 @@
 import type { HostTradeModel, HostTradeReviewModel, HostTradeReviewReplyModel } from '@repo/db';
 import { ModerationStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('@repo/content-moderation', () => ({
+    moderateText: vi.fn(async () => ({ score: 0 }))
+}));
+
+vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', () => ({
+    getThresholdForContext: vi.fn(async () => ({
+        context: 'review',
+        pending: 0.5,
+        reject: 0.85,
+        source: 'code-constants'
+    }))
+}));
+
+import { moderateText } from '@repo/content-moderation';
 import { HostTradeReviewReplyService } from '../../../src/services/hostTrade/host-trade-review-reply.service';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
@@ -138,18 +153,35 @@ describe('HostTradeReviewReplyService.createReply', () => {
         expect(row.content).toBe(CONTENT);
     });
 
-    /**
-     * AC-21 — the reply is born PENDING. The service does not name the state:
-     * it comes from the column default, and T-027 will layer `moderateText()`
-     * on top. A service that wrote it explicitly would be a second source of
-     * truth for the same decision.
-     */
-    it('never names the moderation state itself', async () => {
+    /** AC-21 — a clean reply is still born PENDING. */
+    it('stamps PENDING even when the text is clean', async () => {
         const { service, model } = buildService();
 
         await service.createReply({ reviewId: REVIEW_ID, content: CONTENT }, ownerActor());
 
-        expect(firstArg(model.create)).not.toHaveProperty('moderationState');
+        expect(firstArg(model.create).moderationState).toBe(ModerationStatusEnum.PENDING);
+    });
+
+    it('sends the text through content moderation', async () => {
+        const { service } = buildService();
+
+        await service.createReply({ reviewId: REVIEW_ID, content: CONTENT }, ownerActor());
+
+        expect(moderateText).toHaveBeenCalledWith({ text: CONTENT, context: 'review' });
+    });
+
+    /**
+     * The reply's PENDING is unconditional, so a flagged text cannot make it
+     * MORE pending. What this pins is that the moderation call does not somehow
+     * flip the answer — the two inputs must agree.
+     */
+    it('stays PENDING when the text is flagged', async () => {
+        vi.mocked(moderateText).mockResolvedValueOnce({ score: 1 } as never);
+        const { service, model } = buildService();
+
+        await service.createReply({ reviewId: REVIEW_ID, content: CONTENT }, ownerActor());
+
+        expect(firstArg(model.create).moderationState).toBe(ModerationStatusEnum.PENDING);
     });
 
     /**

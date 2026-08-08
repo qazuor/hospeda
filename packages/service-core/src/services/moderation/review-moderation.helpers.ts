@@ -11,8 +11,17 @@ export { MODERATION_PENDING_THRESHOLD };
  *   host). Defaults to APPROVED. Future: verified post-stay → stays APPROVED.
  * - `destination`   — unverified (anyone can write). Must be human-moderated
  *   before public visibility.
+ * - `hostTrade`     — a host reviewing a directory provider (HOS-376 §6.4).
+ *   Defaults to APPROVED on STRONGER evidence than the accommodation case: not
+ *   a conversation that happened, but a benefit usage the counterpart actively
+ *   CONFIRMED.
+ * - `hostTradeReply` — the provider's answer to that review. Defaults to
+ *   PENDING, the only default in this table that gates publication, because
+ *   its author has a wounded commercial interest and was physically at the
+ *   host's address. Reply volume is a fraction of review volume, so the gate
+ *   does not choke the funnel.
  */
-export type ReviewEntityType = 'accommodation' | 'destination';
+export type ReviewEntityType = 'accommodation' | 'destination' | 'hostTrade' | 'hostTradeReply';
 
 /**
  * Verification level of the review author.
@@ -66,10 +75,13 @@ export interface ResolveInitialModerationStateInput {
  *    Content-moderation hit forces human review regardless of entity type.
  *    The effective threshold is `input.pendingThreshold ?? MODERATION_PENDING_THRESHOLD`,
  *    allowing callers to inject a DB-backed admin-editable value.
- * 2. `verificationLevel === 'verified'` → `APPROVED`
+ * 2. `entityType === 'hostTradeReply'` → `PENDING`
+ *    A provider's reply is never pre-approved by verification (HOS-376 §6.4).
+ * 3. `verificationLevel === 'verified'` → `APPROVED`
  *    Future reservation-verified reviews are pre-approved (Airbnb model).
- * 3. Entity-type default (spec §3.1):
+ * 4. Entity-type default (spec §3.1, HOS-376 §6.4):
  *    - `accommodation` → `APPROVED`  (semi-verified, publish immediately)
+ *    - `hostTrade`     → `APPROVED`  (a CONFIRMED usage backs it)
  *    - `destination`   → `PENDING`   (unverified, human gate required)
  *
  * @param input - Resolution inputs (entity type, verification level, score, optional DB threshold).
@@ -111,13 +123,25 @@ export function resolveInitialModerationState(
         return ModerationStatusEnum.PENDING;
     }
 
-    // Priority 2: verified reviewer (future reservation system) → APPROVED
+    // Priority 2: a provider's reply is NEVER pre-approved by verification.
+    //
+    // Every other entity type lets `verified` short-circuit, because verifying
+    // the author is evidence the review is real. For a reply it is evidence of
+    // nothing: the risk is what a provider writes about the host's ADDRESS, and
+    // the most verified provider is precisely the one who was standing at it.
+    // Reading `verified` here would be a fail-open on the one default that
+    // exists to gate publication.
+    if (entityType === 'hostTradeReply') {
+        return ModerationStatusEnum.PENDING;
+    }
+
+    // Priority 3: verified reviewer (future reservation system) → APPROVED
     if (verificationLevel === 'verified') {
         return ModerationStatusEnum.APPROVED;
     }
 
-    // Priority 3: per-entity default
-    if (entityType === 'accommodation') {
+    // Priority 4: per-entity default
+    if (entityType === 'accommodation' || entityType === 'hostTrade') {
         return ModerationStatusEnum.APPROVED;
     }
 

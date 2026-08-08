@@ -1,3 +1,4 @@
+import { moderateText } from '@repo/content-moderation';
 import { HostTradeModel, HostTradeReviewModel, HostTradeReviewReplyModel } from '@repo/db';
 import type {
     CountResponse,
@@ -23,10 +24,36 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { getThresholdForContext } from '../contentModeration/get-threshold-for-context';
+import { resolveInitialModerationState } from '../moderation/review-moderation.helpers';
 import {
     checkCanModerateHostTradeReviews,
     checkCanViewAllHostTradeReviews
 } from './host-trade-review.permissions';
+
+/**
+ * The state a new reply is born in (spec §6.4).
+ *
+ * Always `PENDING` — the entity default in `resolveInitialModerationState` is
+ * unconditional for a reply, so the moderation score cannot make it any more
+ * pending than it already is. The engine still runs, and deliberately: the
+ * score it records is what an admin sees first in the queue, and it is what
+ * lets the reply be treated like every other moderated text the day the
+ * threshold moves or the queue grows an auto-reject tier.
+ */
+async function resolveReplyModerationState(content: string) {
+    const [moderationResult, thresholds] = await Promise.all([
+        moderateText({ text: content, context: 'review' }),
+        getThresholdForContext({ context: 'review' })
+    ]);
+
+    return resolveInitialModerationState({
+        entityType: 'hostTradeReply',
+        verificationLevel: 'none',
+        moderationScore: moderationResult.score,
+        pendingThreshold: thresholds.pending
+    });
+}
 
 /** Input for {@link HostTradeReviewReplyService.createReply}. */
 const createReplyInputSchema = z.object({
@@ -203,9 +230,6 @@ export class HostTradeReviewReplyService extends BaseCrudService<
                 // Defence in depth beside the UNIQUE index on `reviewId`: the
                 // index is the real guarantee, this turns the race loser's
                 // constraint violation into a meaningful 409.
-                // Defence in depth beside the UNIQUE index on `reviewId`: the
-                // index is the real guarantee, this turns the race loser's
-                // constraint violation into a meaningful 409.
                 const existing = await this.model.findOne({ reviewId: review.id }, ctx?.tx);
                 if (existing) {
                     throw new ServiceError(
@@ -214,11 +238,14 @@ export class HostTradeReviewReplyService extends BaseCrudService<
                     );
                 }
 
+                const moderationState = await resolveReplyModerationState(validated.content);
+
                 const reply = await this.model.create(
                     {
                         reviewId: review.id,
                         authorUserId: validatedActor.id,
                         content: validated.content,
+                        moderationState,
                         createdById: validatedActor.id,
                         updatedById: validatedActor.id
                     } as unknown as Partial<HostTradeReviewReply>,
