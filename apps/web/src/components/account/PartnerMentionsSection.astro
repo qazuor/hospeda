@@ -1,0 +1,241 @@
+---
+/**
+ * @file PartnerMentionsSection.astro
+ * @description The partner's own "Bitácora de menciones" (HOS-377 T-027, AC-10).
+ *
+ * ## What this is, and the line it must not cross (AC-3 / AC-5)
+ *
+ * This is a verifiable record of ACTIONS the Hospeda team took — a post, a
+ * newsletter inclusion, a broadcast — each with a link so the partner can go
+ * and check it. It is NOT a performance report, and it must never speak like
+ * one: no "alcance", "impresiones", "clics" or "estadísticas", and none of the
+ * softer phrasings that promise the same thing ("cuánta gente lo vio", "el
+ * impacto que tuvo"). Hospeda does not measure any of that, and a partner who
+ * reads "impacto" here will ask for the number behind it.
+ *
+ * **AC-5 — for whoever builds HOS-294 ("Tus métricas", OQ-5):** that block must
+ * NOT share a heading, a container or a component with this one, and its copy
+ * must live under a DIFFERENT i18n subtree than `account.partnerMentions`. The
+ * two answer different questions ("what did you do for me?" vs "how did it
+ * perform?") and blurring them is exactly how this section starts implying a
+ * measurement it does not have. Add a sibling section, not a tab on this one.
+ *
+ * ## Why a pure Astro component and not an island
+ *
+ * It is a read-only list with no interactivity, so it ships zero JavaScript.
+ * That also keeps every key it uses out of the browser dictionary — no entry in
+ * `CLIENT_I18N_KEY_PREFIXES` is needed, and adding one would FAIL the guard
+ * test, which recomputes that list from the real import graph and rejects
+ * entries in both directions.
+ *
+ * `/mi-cuenta/*` is a protected route that is never edge-cached, so reading the
+ * session server-side here is correct.
+ *
+ * Renders NOTHING when there are no batches AND the caller owns no partner —
+ * see the `visible` prop. An empty log for someone who IS a partner is worth
+ * showing (it says "nothing yet", which is true and reassuring); an empty log
+ * for someone who is not is just noise on a discovery hub.
+ */
+
+import { ExternalLinkIcon } from '@repo/icons';
+import type { MyPartnerMentionBatch } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+
+interface Props {
+    /** Active locale for i18n. */
+    readonly locale: SupportedLocale;
+    /** The caller's own submissions, newest promotion first. */
+    readonly batches: ReadonlyArray<MyPartnerMentionBatch>;
+    /**
+     * Whether the visitor owns a partner listing at all.
+     *
+     * Ownership is resolved by the PAGE from its `/partners/mine` fetch, the
+     * same signal that force-acquires the partner door (HOS-278 AC-7). It is
+     * never a permission: the partner option has no `acquiredPermission` and
+     * must never get one (HOS-277 NG-1).
+     */
+    readonly visible: boolean;
+}
+
+const { locale, batches, visible } = Astro.props;
+const { t } = createTranslations(locale);
+
+const dateFormatter = new Intl.DateTimeFormat(locale, {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+});
+---
+
+{
+    visible && (
+        <section class="partner-mentions">
+            <header class="partner-mentions__header">
+                <h2 class="partner-mentions__title">{t('account.partnerMentions.title')}</h2>
+                <p class="partner-mentions__subtitle">
+                    {t('account.partnerMentions.subtitle')}
+                </p>
+            </header>
+
+            {batches.length === 0 ? (
+                <div class="partner-mentions__empty">
+                    <p class="partner-mentions__empty-text">
+                        {t('account.partnerMentions.empty')}
+                    </p>
+                    <p class="partner-mentions__empty-help">
+                        {t('account.partnerMentions.emptyHelp')}
+                    </p>
+                </div>
+            ) : (
+                <ol class="partner-mentions__list">
+                    {batches.map((batch) => (
+                        <li class="partner-mentions__batch">
+                            <time
+                                class="partner-mentions__date"
+                                datetime={batch.mentionedAt}
+                            >
+                                {dateFormatter.format(new Date(batch.mentionedAt))}
+                            </time>
+
+                            <ul class="partner-mentions__channels">
+                                {batch.mentions.map((mention) => (
+                                    <li class="partner-mentions__channel">
+                                        <span class="partner-mentions__channel-name">
+                                            {t(
+                                                `account.partnerMentions.channels.${mention.channel}`
+                                            )}
+                                        </span>
+
+                                        {mention.url ? (
+                                            <a
+                                                class="partner-mentions__link"
+                                                href={mention.url}
+                                                target="_blank"
+                                                rel="noreferrer noopener"
+                                            >
+                                                {t('account.partnerMentions.viewPublication')}
+                                                <ExternalLinkIcon
+                                                    size={14}
+                                                    aria-hidden="true"
+                                                />
+                                            </a>
+                                        ) : (
+                                            /*
+                                             * A WhatsApp broadcast and an "other"
+                                             * channel have no public permalink. A
+                                             * dead link on the one surface whose
+                                             * whole promise is "go and check" is
+                                             * worse than plain text.
+                                             */
+                                            <span class="partner-mentions__no-link">
+                                                {t('account.partnerMentions.noPublicationLink')}
+                                            </span>
+                                        )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </li>
+                    ))}
+                </ol>
+            )}
+        </section>
+    )
+}
+
+<style>
+    .partner-mentions {
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+        padding: var(--space-6);
+        margin-block-end: var(--space-6);
+    }
+
+    .partner-mentions__header {
+        margin-block-end: var(--space-5);
+    }
+
+    .partner-mentions__title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .partner-mentions__subtitle {
+        color: var(--core-muted-foreground);
+        margin: var(--space-2) 0 0;
+    }
+
+    .partner-mentions__empty {
+        border-radius: var(--radius-md);
+        background-color: var(--surface-warm);
+        padding: var(--space-5);
+    }
+
+    .partner-mentions__empty-text {
+        color: var(--core-foreground);
+        font-weight: 500;
+        margin: 0;
+    }
+
+    .partner-mentions__empty-help {
+        color: var(--core-muted-foreground);
+        margin: var(--space-2) 0 0;
+    }
+
+    .partner-mentions__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: var(--space-4);
+    }
+
+    .partner-mentions__batch {
+        border-radius: var(--radius-md);
+        background-color: var(--surface-warm);
+        padding: var(--space-4);
+    }
+
+    .partner-mentions__date {
+        display: block;
+        font-family: var(--font-heading);
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin-block-end: var(--space-3);
+    }
+
+    .partner-mentions__channels {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: var(--space-2);
+    }
+
+    .partner-mentions__channel {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-3);
+    }
+
+    .partner-mentions__channel-name {
+        font-weight: 500;
+        color: var(--core-foreground);
+    }
+
+    .partner-mentions__link {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        color: var(--brand-primary);
+        text-decoration: underline;
+    }
+
+    .partner-mentions__no-link {
+        color: var(--core-muted-foreground);
+    }
+</style>
