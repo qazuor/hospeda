@@ -514,7 +514,7 @@
             "id": "T-016",
             "title": "Zod schemas de la réplica",
             "description": "packages/schemas/src/entities/host-trade-review-reply/: entity, create body (content min 10 / max 1000), update, access tiers. moderationState y reviewEditedAfterReply nunca user-settable. Tests: rechazo de content vacío y de > 1000.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-015"],
             "blocks": ["T-017", "T-025"],
@@ -522,14 +522,23 @@
             "tags": ["schemas", "zod", "reviews"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:55:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:55:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:55:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T14:45:00Z",
+                "completed": "2026-08-08T14:55:00.000Z"
             }
         },
         {
@@ -2166,9 +2175,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 50,
+        "pending": 49,
         "inProgress": 0,
-        "completed": 19,
+        "completed": 20,
         "blocked": 0,
         "averageComplexity": 2.4
     }

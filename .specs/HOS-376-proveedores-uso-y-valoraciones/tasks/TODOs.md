@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 19/69 tareas (27%)
+## Progreso: 20/69 tareas (29%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 6/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 7/16 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -62,7 +62,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-015** (c3) — Zod schemas de la valoración
   - packages/schemas/src/entities/host-trade-review/: entity, create body (overallRating 1-5 obligatorio, rating jsonb opcional con las 3 dims, respectedBenefit boolean OBLIGATORIO, content opci…
   - Bloqueada por: T-001 · Bloquea a: T-016, T-017, T-024
-- [ ] **T-016** (c2) — Zod schemas de la réplica
+- [x] **T-016** (c2) — Zod schemas de la réplica
   - packages/schemas/src/entities/host-trade-review-reply/: entity, create body (content min 10 / max 1000), update, access tiers. moderationState y reviewEditedAfterReply nunca user-settable. T…
   - Bloqueada por: T-015 · Bloquea a: T-017, T-025
 - [ ] **T-017** (c2) — Guard test de campos administrados no user-settable
@@ -259,9 +259,9 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (5/16). Las disponibles ahora: T-016, T-020, T-022, T-023,
-T-024, T-029, T-030, T-033, T-040, T-042, T-057.
+Fase `core` en curso (7/16). Las disponibles ahora: T-017, T-020, T-022, T-023,
+T-025, T-029, T-030, T-033, T-040, T-042, T-057.
 
-T-024 (los 4 gates de elegibilidad) está cerrada: el corazón de seguridad del
-feature ya está puesto. El camino crítico sigue por **T-025** (réplica del
-proveedor), que exige T-016 — los schemas Zod de la réplica.
+T-016 cerró los schemas Zod de la réplica, así que el camino crítico queda libre
+en **T-025** — el servicio de réplicas. T-017 (el guard de campos administrados)
+también se desbloqueó: ya existen los tres juegos de schemas que tiene que barrer.
