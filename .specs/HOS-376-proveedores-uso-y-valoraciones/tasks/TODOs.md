@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 16/69 tareas (23%)
+## Progreso: 17/69 tareas (24%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 3/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 4/16 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -77,7 +77,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [ ] **T-020** (c3) — Servicio de usos: guardas de declaración
   - Antes de crear un uso, verificar en orden: PROVIDER_REVOKED (host_trades.revokedAt o soft-deleted), DECLARATION_SUSPENDED (declarationSuspendedAt), DECLARATION_BLOCKED (existe un REJECTED vi…
   - Bloqueada por: T-019, T-012 · Bloquea a: T-031
-- [ ] **T-021** (c3) — Servicio de usos: confirmar, rechazar y revertir el rechazo
+- [x] **T-021** (c3) — Servicio de usos: confirmar, rechazar y revertir el rechazo
   - Resolver quién es la contraparte según declaredBy: si declaró el proveedor confirma el anfitrión, si declaró el anfitrión confirma el ownerUserId del proveedor. Cualquier otro actor obtiene …
   - Bloqueada por: T-019 · Bloquea a: T-022, T-023, T-024, T-033, T-042, T-043, T-057
 - [ ] **T-022** (c3) — Servicio de usos: suspensión automática por umbral de rechazos
@@ -259,7 +259,9 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (3/16). Las disponibles ahora: T-015, T-020, T-021, T-029, T-030, T-040
+Fase `core` en curso (4/16). Las disponibles ahora: T-015, T-020, T-022, T-023,
+T-029, T-030, T-033, T-040, T-042, T-057.
 
-T-019 desbloqueó tres: T-020 (guardas de declaración), T-021 (confirm/reject) y T-030
-(endpoints del anfitrión). El camino crítico sigue por T-021 → T-024.
+T-021 desbloqueó siete. El camino crítico sigue por T-024 (los 4 gates de la
+valoración), que además de T-021 exige T-015 — o sea que los schemas Zod de la
+valoración son ahora lo que traba el camino.

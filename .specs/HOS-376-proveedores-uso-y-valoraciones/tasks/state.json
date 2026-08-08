@@ -697,43 +697,52 @@
             "id": "T-021",
             "title": "Servicio de usos: confirmar, rechazar y revertir el rechazo",
             "description": "Resolver quién es la contraparte según declaredBy: si declaró el proveedor confirma el anfitrión, si declaró el anfitrión confirma el ownerUserId del proveedor. Cualquier otro actor obtiene NOT_FOUND (404, NO 403 — criterio anti-oráculo de alliance/protected/claim.ts:17-19). confirm sella confirmedAt/confirmedById; reject sella rejectedAt/rejectedById/rejectionNote; reject/undo devuelve a PENDING y sólo lo puede hacer quien rechazó. Tests: confirmar el propio uso declarado devuelve 404 (AC-6); un tercero cualquiera devuelve 404; undo por otro actor devuelve 404.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019"],
             "blocks": ["T-022", "T-023", "T-024", "T-033", "T-042", "T-043", "T-057"],
             "subtasks": [
                 {
                     "title": "Resolución de contraparte según declaredBy",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "confirm",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "reject",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "reject/undo",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "404 anti-oráculo en todos los caminos ajenos",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "usages", "state-machine"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:04:38.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:04:38.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:04:38.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:57:22Z",
+                "completed": "2026-08-08T14:04:38.000Z"
             }
         },
         {
@@ -2139,9 +2148,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 53,
+        "pending": 52,
         "inProgress": 0,
-        "completed": 16,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.4
     }

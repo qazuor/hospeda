@@ -11,6 +11,7 @@ import {
     HostTradeBenefitUsageUpdateInputSchema,
     HostTradeUsageChannelEnum,
     HostTradeUsageDeclaredByEnum,
+    HostTradeUsageStatusEnum,
     RoleEnum,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -55,6 +56,16 @@ const declareBaseShape = {
 };
 
 const declareAsHostInputSchema = z.object(declareBaseShape);
+
+/** Input for the transitions that only need to name the row. */
+const usageIdInputSchema = z.object({
+    usageId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+});
+
+/** Input for {@link HostTradeUsageService.rejectUsage}. */
+const rejectUsageInputSchema = usageIdInputSchema.extend({
+    note: z.string().max(300).optional()
+});
 
 const declareAsProviderInputSchema = z.object({
     ...declareBaseShape,
@@ -315,7 +326,199 @@ export class HostTradeUsageService extends BaseCrudService<
         });
     }
 
+    // --- Transitions ------------------------------------------------------
+
+    /**
+     * Confirms a pending usage. Only the counterpart may do it.
+     *
+     * @param input - The usage id.
+     * @param actor - Must be the counterpart of whoever declared it.
+     * @param ctx - Optional service context.
+     * @returns The confirmed usage.
+     */
+    public async confirmUsage(
+        input: { usageId: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ usage: HostTradeBenefitUsage }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'confirmUsage',
+            input: { ...input, actor },
+            schema: usageIdInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                const usage = await this.requireAnswerableBy(
+                    validated.usageId,
+                    validatedActor,
+                    ctx
+                );
+                this.requireStatus(usage, HostTradeUsageStatusEnum.PENDING);
+
+                const updated = await this.model.update(
+                    { id: validated.usageId },
+                    {
+                        status: HostTradeUsageStatusEnum.CONFIRMED,
+                        confirmedAt: new Date(),
+                        confirmedById: validatedActor.id,
+                        updatedById: validatedActor.id
+                    } as unknown as Partial<HostTradeBenefitUsage>,
+                    ctx?.tx
+                );
+
+                return { usage: updated as HostTradeBenefitUsage };
+            }
+        });
+    }
+
+    /**
+     * Rejects a pending usage. Only the counterpart may do it.
+     *
+     * The note stays OPTIONAL on purpose. Rejection is the control that keeps
+     * the public counter honest (§6.5), and requiring a written explanation to
+     * say "that never happened" would put friction on the one action the system
+     * most needs people to take.
+     *
+     * @param input - The usage id and an optional reason.
+     * @param actor - Must be the counterpart of whoever declared it.
+     * @param ctx - Optional service context.
+     * @returns The rejected usage.
+     */
+    public async rejectUsage(
+        input: { usageId: string; note?: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ usage: HostTradeBenefitUsage }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'rejectUsage',
+            input: { ...input, actor },
+            schema: rejectUsageInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                const usage = await this.requireAnswerableBy(
+                    validated.usageId,
+                    validatedActor,
+                    ctx
+                );
+                this.requireStatus(usage, HostTradeUsageStatusEnum.PENDING);
+
+                const updated = await this.model.update(
+                    { id: validated.usageId },
+                    {
+                        status: HostTradeUsageStatusEnum.REJECTED,
+                        rejectedAt: new Date(),
+                        rejectedById: validatedActor.id,
+                        rejectionNote: validated.note ?? null,
+                        updatedById: validatedActor.id
+                    } as unknown as Partial<HostTradeBenefitUsage>,
+                    ctx?.tx
+                );
+
+                return { usage: updated as HostTradeBenefitUsage };
+            }
+        });
+    }
+
+    /**
+     * Reverts a rejection, returning the usage to `PENDING`.
+     *
+     * Restricted to the account that rejected it, NOT merely to the counterpart.
+     * The counterpart rule alone would let the rejected party undo the rejection
+     * aimed at them — reversal belongs to whoever said no, which is what keeps
+     * the rejection non-punitive and safe to use (§6.5).
+     *
+     * @param input - The usage id.
+     * @param actor - Must be the account that rejected it.
+     * @param ctx - Optional service context.
+     * @returns The usage, back in PENDING.
+     */
+    public async undoRejection(
+        input: { usageId: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ usage: HostTradeBenefitUsage }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'undoRejection',
+            input: { ...input, actor },
+            schema: usageIdInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                const usage = await this.requireUsage(validated.usageId, ctx);
+
+                if (usage.rejectedById !== validatedActor.id) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Usage not found');
+                }
+                this.requireStatus(usage, HostTradeUsageStatusEnum.REJECTED);
+
+                const updated = await this.model.update(
+                    { id: validated.usageId },
+                    {
+                        status: HostTradeUsageStatusEnum.PENDING,
+                        rejectedAt: null,
+                        rejectedById: null,
+                        rejectionNote: null,
+                        updatedById: validatedActor.id
+                    } as unknown as Partial<HostTradeBenefitUsage>,
+                    ctx?.tx
+                );
+
+                return { usage: updated as HostTradeBenefitUsage };
+            }
+        });
+    }
+
     // --- Internals --------------------------------------------------------
+
+    /** Loads a usage or throws NOT_FOUND. */
+    private async requireUsage(
+        usageId: string,
+        ctx?: ServiceContext
+    ): Promise<HostTradeBenefitUsage> {
+        const usage = await this.model.findById(usageId, ctx?.tx);
+        if (!usage) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Usage not found');
+        }
+        return usage;
+    }
+
+    /**
+     * Loads a usage and asserts the actor is the party expected to answer it.
+     *
+     * `declaredBy` decides: a provider-declared usage is answered by the host
+     * named on the row, a host-declared one by the listing's owner. Everyone
+     * else — INCLUDING the declarant answering their own declaration (AC-6) —
+     * gets NOT_FOUND rather than FORBIDDEN, so the endpoint cannot be used to
+     * discover that a given usage id exists.
+     */
+    private async requireAnswerableBy(
+        usageId: string,
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<HostTradeBenefitUsage> {
+        const usage = await this.requireUsage(usageId, ctx);
+
+        let counterpartId: string | null;
+        if (usage.declaredBy === HostTradeUsageDeclaredByEnum.PROVIDER) {
+            counterpartId = usage.hostUserId;
+        } else {
+            const provider = await this.hostTradeModel.findById(usage.hostTradeId, ctx?.tx);
+            counterpartId = provider?.ownerUserId ?? null;
+        }
+
+        if (!counterpartId || counterpartId !== actor.id) {
+            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Usage not found');
+        }
+        return usage;
+    }
+
+    /** Asserts the usage is in the state the transition requires. */
+    private requireStatus(usage: HostTradeBenefitUsage, expected: HostTradeUsageStatusEnum): void {
+        if (usage.status !== expected) {
+            throw new ServiceError(
+                ServiceErrorCode.VALIDATION_ERROR,
+                `Usage is ${usage.status}, expected ${expected}`
+            );
+        }
+    }
 
     /** Loads the provider listing or throws NOT_FOUND. */
     private async requireProvider(hostTradeId: string, ctx?: ServiceContext) {
