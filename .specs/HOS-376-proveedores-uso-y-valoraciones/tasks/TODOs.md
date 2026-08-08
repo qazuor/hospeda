@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 23/69 tareas (33%)
+## Progreso: 24/69 tareas (35%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 10/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 11/16 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -83,7 +83,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [ ] **T-022** (c3) — Servicio de usos: suspensión automática por umbral de rechazos
   - Al registrar un rechazo, contar los REJECTED de ese proveedor dentro de HOST_TRADE_REJECTION_WINDOW_DAYS. Si alcanza HOST_TRADE_REJECTION_SUSPEND_THRESHOLD, sellar declarationSuspendedAt con…
   - Bloqueada por: T-021, T-012 · Bloquea a: T-038, T-060
-- [ ] **T-023** (c3) — Recálculo de los 5 agregados denormalizados de host_trades
+- [x] **T-023** (c3) — Recálculo de los 5 agregados denormalizados de host_trades
   - Con el molde de recalculateAndUpdateAccommodationStats: SQL de agregación desde TS que recalcula confirmedUsesCount, distinctHostsCount (COUNT DISTINCT hostUserId sobre CONFIRMED), reviewsCo…
   - Bloqueada por: T-021 · Bloquea a: T-028, T-044, T-052, T-059
 - [x] **T-024** (c3) — Servicio de valoraciones: creación con los 4 gates de elegibilidad
@@ -259,11 +259,10 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (10/16). Las disponibles ahora: T-020, T-022, T-023,
-T-026, T-028, T-029, T-030, T-033, T-040, T-042, T-057.
+Fase `core` en curso (11/16). Las disponibles ahora: T-020, T-022, T-026,
+T-028, T-029, T-030, T-033, T-040, T-042, T-057.
 
-El camino crítico sigue por **T-028** — la moderación admin de valoraciones y
-réplicas, que además dispara el recálculo de agregados (AC-27) y por lo tanto
-quiere T-023 hecho primero. T-026 sigue libre: es la otra mitad de AC-22 —
-falta que la edición de la VALORACIÓN le ponga `reviewEditedAfterReply` a la
-réplica.
+El camino crítico sigue por **T-028** — la moderación admin, que ya tiene lo
+que necesitaba: `recalculateHostTradeAggregates` para AC-27. T-026 sigue libre:
+es la otra mitad de AC-22 — falta que la edición de la VALORACIÓN le ponga
+`reviewEditedAfterReply` a la réplica.

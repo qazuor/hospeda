@@ -811,35 +811,44 @@
             "id": "T-023",
             "title": "Recálculo de los 5 agregados denormalizados de host_trades",
             "description": "Con el molde de recalculateAndUpdateAccommodationStats: SQL de agregación desde TS que recalcula confirmedUsesCount, distinctHostsCount (COUNT DISTINCT hostUserId sobre CONFIRMED), reviewsCount y averageRating (sólo moderationState=APPROVED y deletedAt IS NULL) y benefitRespectedCount. Enganchar en los hooks _afterCreate/_afterUpdate/_afterSoftDelete/_afterRestore de usos y valoraciones. NO usar triggers de Postgres. Tests: 3 usos confirmados del mismo anfitrión dan confirmedUsesCount=3 y distinctHostsCount=1; una valoración PENDING no suma a reviewsCount.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021"],
             "blocks": ["T-028", "T-044", "T-052", "T-059"],
             "subtasks": [
                 {
                     "title": "Query de agregación",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Enganche en los hooks _after* de usos",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Enganche en los hooks _after* de valoraciones",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "stats", "denormalization"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T19:55:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T19:55:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T19:55:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T19:30:00Z",
+                "completed": "2026-08-08T19:55:00.000Z"
             }
         },
         {
@@ -2202,9 +2211,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 46,
+        "pending": 45,
         "inProgress": 0,
-        "completed": 23,
+        "completed": 24,
         "blocked": 0,
         "averageComplexity": 2.4
     }
