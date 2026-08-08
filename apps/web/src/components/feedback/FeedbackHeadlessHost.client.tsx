@@ -30,10 +30,10 @@ import {
     useConsoleCapture,
     useKeyboardShortcut
 } from '@repo/feedback';
-import * as Sentry from '@sentry/astro';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { loadFeedbackStyles } from '@/components/feedback/load-feedback-styles';
+import { captureFeedback, getLastEventId } from '@/lib/observability/sentry-lazy';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -68,15 +68,12 @@ export interface FeedbackHeadlessHostProps {
 
 /**
  * Returns the most recent Sentry event ID, if available.
- * Wrapped in try/catch so SDK changes or pre-init calls cannot crash the host.
+ *
+ * Both helpers below delegate to `sentry-lazy`, which reads the SDK only if it
+ * has actually been loaded and initialised, and already swallows any SDK error.
  */
 function getSentryEventId(): string | undefined {
-    try {
-        const fn = (Sentry as { lastEventId?: () => string | undefined }).lastEventId;
-        return typeof fn === 'function' ? fn() : undefined;
-    } catch {
-        return undefined;
-    }
+    return getLastEventId();
 }
 
 /**
@@ -84,21 +81,7 @@ function getSentryEventId(): string | undefined {
  * Best-effort: any SDK error is swallowed so the Linear flow is unaffected.
  */
 function handleSentryFeedback(payload: SentryFeedbackBridgePayload): void {
-    try {
-        const fn = (
-            Sentry as {
-                captureFeedback?: (data: {
-                    name: string;
-                    email: string;
-                    message: string;
-                    associatedEventId?: string;
-                }) => void;
-            }
-        ).captureFeedback;
-        fn?.(payload);
-    } catch {
-        // Intentional no-op — Sentry failure must not block feedback submission
-    }
+    captureFeedback({ ...payload });
 }
 
 // ---------------------------------------------------------------------------
