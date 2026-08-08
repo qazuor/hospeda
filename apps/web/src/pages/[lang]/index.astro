@@ -206,12 +206,22 @@ const categoryTiles = [
     canonicalPath={`/${locale}/`}
     ogTagline={t("home.hero.tagline", "Descubrí el Litoral")}
 >
-    <!-- LCP: preload the first hero slide (responsive, high priority) -->
+    <!--
+        LCP: preload the first hero slide (responsive, high priority).
+
+        AVIF only, and deliberately a SINGLE link (HOS-369). `type` makes a
+        browser that cannot decode AVIF skip this hint entirely, so Safari
+        before 16.4 simply loses the preload and still paints the hero from the
+        WebP `<source>`/`<img>` fallback inside `<picture>`. Emitting a second
+        WebP preload to cover them would make every AVIF-capable browser — i.e.
+        almost all traffic — preload BOTH formats and download the hero twice.
+    -->
     <link
         slot="head-extra"
         rel="preload"
         as="image"
-        imagesrcset={heroFirstSlide.srcset}
+        type="image/avif"
+        imagesrcset={heroFirstSlide.avifSrcset}
         imagesizes={HERO_IMAGE_SIZES}
         fetchpriority="high"
     />

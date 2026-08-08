@@ -26,6 +26,13 @@ interface HeroImage {
      */
     readonly srcset?: string;
     /**
+     * Optional AVIF srcset, offered ahead of {@link srcset} via
+     * `<source type="image/avif">`. AVIF is ~40% lighter than WebP here, but
+     * Safari before 16.4 cannot decode it, so it is offered as a preference and
+     * never as the only option — the `<img>` keeps the WebP candidates.
+     */
+    readonly avifSrcset?: string;
+    /**
      * Optional `sizes` attribute paired with `srcset` so the browser knows
      * the rendered image width per viewport.
      */
@@ -159,31 +166,48 @@ export function HeroImageRotator({ images, interval = 5000 }: HeroImageRotatorPr
             aria-atomic="true"
         >
             {images.map((image, index) => (
-                <img
-                    key={image.src}
-                    src={shouldFetch(index) ? image.src : undefined}
-                    srcSet={shouldFetch(index) ? image.srcset : undefined}
-                    sizes={image.sizes}
-                    alt=""
-                    aria-hidden="true"
-                    className={styles.image}
-                    style={{
-                        opacity: index === activeIndex ? 1 : 0,
-                        transition: reducedMotion ? 'none' : 'opacity 1.5s ease-in-out'
-                    }}
-                    loading={index === 0 ? 'eager' : 'lazy'}
-                    // The first image is fetched at high priority so the browser
-                    // gets it before non-critical resources; the rest stay at
-                    // default.
-                    //
-                    // It is NOT, however, the only LCP candidate — that claim
-                    // stood here and was wrong. Every rotated image paints a new
-                    // element and produces its own candidate, which is why the
-                    // rotation is gated on first interaction above (HOS-369).
-                    fetchPriority={index === 0 ? 'high' : 'auto'}
-                    width="480"
-                    height="540"
-                />
+                // <picture> offers AVIF first and falls back to the WebP
+                // candidates on the <img>. Safari before 16.4 cannot decode
+                // AVIF, and this is the LCP element, so the WebP path is not
+                // optional (HOS-369).
+                <picture key={image.src}>
+                    {image.avifSrcset ? (
+                        <source
+                            type="image/avif"
+                            // The off-screen fetch gate applies here TOO. A
+                            // <source srcSet> inside <picture> is enough for the
+                            // browser to start the download on its own, so
+                            // gating only the <img> below would silently restore
+                            // the eager fetch this gate exists to prevent.
+                            srcSet={shouldFetch(index) ? image.avifSrcset : undefined}
+                            sizes={image.sizes}
+                        />
+                    ) : null}
+                    <img
+                        src={shouldFetch(index) ? image.src : undefined}
+                        srcSet={shouldFetch(index) ? image.srcset : undefined}
+                        sizes={image.sizes}
+                        alt=""
+                        aria-hidden="true"
+                        className={styles.image}
+                        style={{
+                            opacity: index === activeIndex ? 1 : 0,
+                            transition: reducedMotion ? 'none' : 'opacity 1.5s ease-in-out'
+                        }}
+                        loading={index === 0 ? 'eager' : 'lazy'}
+                        // The first image is fetched at high priority so the browser
+                        // gets it before non-critical resources; the rest stay at
+                        // default.
+                        //
+                        // It is NOT, however, the only LCP candidate — that claim
+                        // stood here and was wrong. Every rotated image paints a new
+                        // element and produces its own candidate, which is why the
+                        // rotation is gated on first interaction above (HOS-369).
+                        fetchPriority={index === 0 ? 'high' : 'auto'}
+                        width="480"
+                        height="540"
+                    />
+                </picture>
             ))}
         </div>
     );
