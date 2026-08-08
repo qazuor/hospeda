@@ -355,36 +355,44 @@
         {
             "id": "T-009",
             "title": "PartnerMentionService.createBatch — N rows, one transaction, server-side batchId",
-            "description": "packages/service-core/src/services/partner/partner-mention.service.ts, kept SEPARATE from PartnerService (mirrors partner_subscriptions getting its own schema). createBatch writes one row per entry inside a single transaction, generating one shared batchId when entries.length > 1 and leaving it null for a single entry. The batchId is generated INSIDE the service — never read from input (R-5). Returns the created rows. Permission check via PermissionEnum.PARTNER_MANAGE, Result<T> return.",
-            "status": "pending",
+            "description": "packages/service-core/src/services/partner/partner-mention.service.ts, kept SEPARATE from PartnerService (mirrors partner_subscriptions getting its own schema). createBatch writes one row per entry inside a single transaction, generating one shared batchId when entries.length > 1 and leaving it null for a single entry. The batchId is generated INSIDE the service — never read from input (R-5). Returns the created rows. Permission check via PermissionEnum.PARTNER_MANAGE, Result<T> return. DONE: extends BaseCrudService (repo convention) with PARTNER_MANAGE on every hook. batchId minted inside the method, null for a single entry. Notification is a PartnerMentionNotifyPort (mirrors PartnerRevokeNotifyPort) fired once per batch, after the write, with every failure swallowed. TWO INHERITED PATHS SEALED: create() throws (a generic single-row create yields no batchId and no notification — an orphan the partner is never told about) and _executeSearch/_executeCount throw (the search schema declares no partnerId, so a generic search spans every partner's log). 13 tests; mutation-verified (per-row notification + null batchId turns 4 red).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-006", "T-008"],
             "blocks": ["T-011", "T-012", "T-020"],
             "subtasks": [
                 {
                     "title": "Service class scaffold + permissions",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "createBatch inside withTransaction",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Server-side batchId generation",
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "title": "Seal inherited create() and unscoped search",
+                    "completed": true
+                },
+                {
+                    "title": "Notify-once-per-batch port, failures swallowed",
+                    "completed": true
                 }
             ],
             "tags": ["service", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T03:26:00.000Z",
+                "completed": "2026-08-08T04:05:00.000Z"
             }
         },
         {
@@ -425,7 +433,7 @@
         {
             "id": "T-011",
             "title": "PartnerMentionService unit tests",
-            "description": "packages/service-core/test/services/partner/partner-mention.service.test.ts. MUST cover: (a) a 4-entry batch produces 4 rows sharing ONE batchId; (b) a 1-entry batch leaves batchId null; (c) a batchId present in the input is ignored, not persisted (R-5 — assert the stored value differs from the supplied one); (d) a partial failure rolls the whole batch back, leaving zero rows; (e) listForOwner never returns internalNote; (f) listForOwner returns nothing for a user who does not own the partner (fail closed).",
+            "description": "packages/service-core/test/services/partner/partner-mention.service.test.ts. MUST cover: (a) a 4-entry batch produces 4 rows sharing ONE batchId; (b) a 1-entry batch leaves batchId null; (c) a batchId present in the input is ignored, not persisted (R-5 — assert the stored value differs from the supplied one); (d) a partial failure rolls the whole batch back, leaving zero rows; (e) listForOwner never returns internalNote; (f) listForOwner returns nothing for a user who does not own the partner (fail closed). NOTE: createBatch coverage already landed with T-009 in test/services/partner/partner-mention.create-batch.test.ts (13 tests: batch identity, R-5, AC-9 notification cadence, permissions, sealed paths). T-011 therefore only needs the list/update/softDelete + listForOwner cases.",
             "status": "pending",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010"],
@@ -1175,9 +1183,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 24,
+        "pending": 23,
         "inProgress": 0,
-        "completed": 8,
+        "completed": 9,
         "blocked": 0,
         "averageComplexity": 2.4
     }

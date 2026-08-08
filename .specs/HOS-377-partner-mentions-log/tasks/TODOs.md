@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 8/32 tasks (25%)
+## Progress: 9/32 tasks (28%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -67,7 +67,10 @@
   - `findByBatch` sorts by pg enum declaration order, not insertion order
   - Blocked by: T-003, T-004 · Blocks: T-009, T-010
 
-- [ ] **T-009** (complexity: 3) — `createBatch`: N rows, one transaction, server-side `batchId`
+- [x] **T-009** (complexity: 3) — `createBatch`: N rows, one transaction, server-side `batchId` ✅
+  - Inherited `create()` and unscoped search both SEALED (throw pointing at the right method)
+  - Notification is an injected port, once per batch, failures swallowed
+  - 13 tests · mutation-verified (per-row notify + null batchId turns 4 red)
   - Blocked by: T-006, T-008 · Blocks: T-011, T-012, T-020
 
 - [ ] **T-010** (complexity: 2) — Service list / update / soft-delete + `listForOwner`
