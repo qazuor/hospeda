@@ -1,0 +1,621 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-294",
+    "title": "Partners — retire the filtered directory, give each gold partner its own page",
+    "created": "2026-08-08T03:20:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Migrate live bronze partners to silver (seed data-migration + baseline)",
+            "description": "Dual-write per HOS-25. (1) `pnpm db:seed:make bronze-tier-retirement` creating a numbered module in packages/seed/src/data-migrations/ that UPDATEs every partners row with tier='bronze' to 'silver'. (2) Edit the baselines: packages/seed/src/data/partner/003-partner-panaderia-la-espiga.json and 005-partner-ong-amigos-del-rio-uruguay.json change tier to \"silver\". Editing only the baseline is the silent bug scripts/check-seed-dual-write.sh exists to catch. MUST land before T-002 in wall-clock order on a live env: Postgres cannot drop an enum value any row still holds. Tests: assert the data-migration is idempotent (re-running it is a no-op) and that the two fixtures parse against the partner seed schema.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-002"],
+            "subtasks": [
+                { "title": "Generate the numbered data-migration module", "completed": false },
+                { "title": "Update the two bronze seed fixtures", "completed": false },
+                { "title": "Verify the dual-write guard passes", "completed": false }
+            ],
+            "tags": ["db", "seed", "migration"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Drop bronze from the partner_tier Postgres enum (structural migration)",
+            "description": "Via `pnpm db:generate` after editing the enum in packages/db. Postgres has no ALTER TYPE ... DROP VALUE, so the migration must: create partner_tier_new with ('silver','gold'), ALTER TABLE partners ALTER COLUMN tier TYPE partner_tier_new USING tier::text::partner_tier_new, DROP TYPE partner_tier, RENAME the new type, and recreate partners_tier_idx if the rewrite drops it. NEVER use db:push against staging/prod. Tests: the @repo/db integration suite must still create a partner row; assert partners_tier_idx exists after the migration.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                { "title": "Edit PartnerTierPgEnum in packages/db", "completed": false },
+                { "title": "Generate and hand-verify the SQL", "completed": false },
+                { "title": "Confirm partners_tier_idx survives", "completed": false }
+            ],
+            "tags": ["db", "migration"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Remove BRONZE from PartnerTierEnum and its Zod schema",
+            "description": "packages/schemas/src/enums/partner-tier.enum.ts and partner-tier.schema.ts drop the BRONZE member. Fix every consumer the typecheck surfaces (admin tier selects, seed schema JSON, any exhaustive switch). Tests: update the enum's own test to assert exactly two values; run the admin typecheck since apps/admin renders tier options.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-002"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Edit enum + schema", "completed": false },
+                { "title": "Fix consumers surfaced by typecheck", "completed": false },
+                { "title": "Update enum tests", "completed": false }
+            ],
+            "tags": ["schemas", "enum"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Trim PartnerSearchHttpSchema to pagination only",
+            "description": "packages/schemas/src/entities/partner/partner.http.schema.ts:20-25 loses q, type, tier and subscriptionStatus, keeping only what BaseHttpSearchSchema provides. Safe: the schema has exactly one consumer, apps/api/src/routes/partners/public/index.ts, and after T-012 its only caller is the home carousel, which sends pageSize alone. Tests: a route test asserting ?q=x&type=ngo&tier=gold&subscriptionStatus=active does not change the result set (AC-9).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-007", "T-027"],
+            "subtasks": [
+                { "title": "Trim the schema", "completed": false },
+                { "title": "Add the AC-9 route test", "completed": false }
+            ],
+            "tags": ["schemas", "api"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Extend PartnerPublicSchema additively with contactInfo and socialNetworks",
+            "description": "packages/schemas/src/entities/partner/partner.access.schema.ts picks two more fields from partnerSchema. ADDITIVE ONLY — do not remove subscriptionStatus or lifecycleState here (see spec §12 follow-up); the schema-compat policy forbids removal without a three-phase migration. Tests: assert the new fields are present on the inferred type and that an existing partner payload still parses.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-006"],
+            "subtasks": [
+                { "title": "Add the two picks", "completed": false },
+                { "title": "Assert backward compatibility", "completed": false }
+            ],
+            "tags": ["schemas", "api"],
+            "phase": "setup",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add PartnerService.getPublicBySlug with the three-state gold gate",
+            "description": "New method in packages/service-core/src/services/partner/partner.service.ts wrapping PartnerModel.findBySlug (partner.model.ts:188 — it returns ANY partner regardless of visibility, so the gate must live here). Returns a three-state outcome so the route can distinguish 200 / 410 / 404 per spec D-3b: tier===GOLD && lifecycleState===ACTIVE && subscriptionStatus==='active' -> found; tier===GOLD failing visibility -> gone; tier!==GOLD or no row -> notFound. Tests: one case per state, and the failing-gate cases MUST use rows that EXIST — a nonexistent slug returns notFound before the gate ever runs and proves nothing.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-007"],
+            "subtasks": [
+                { "title": "Implement the three-state return type", "completed": false },
+                { "title": "Unit test: gold + active -> found", "completed": false },
+                { "title": "Unit test: existing gold, inactive -> gone", "completed": false },
+                { "title": "Unit test: existing silver -> notFound", "completed": false }
+            ],
+            "tags": ["service-core", "api"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add GET /api/v1/public/partners/{slug}",
+            "description": "New route in apps/api/src/routes/partners/public/, registered alongside the existing list route. Maps the service's three-state outcome to 200 / 410 / 404. responseSchema is PartnerPublicSchema (extended in T-005). Public tier: skipAuth. Tests: route tests for all three statuses against a seeded row.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-006"],
+            "blocks": ["T-008", "T-016"],
+            "subtasks": [
+                { "title": "Create the route file", "completed": false },
+                { "title": "Register it on the public router", "completed": false },
+                { "title": "Route tests for 200/410/404", "completed": false }
+            ],
+            "tags": ["api", "route"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Classify /api/v1/public/partners as a public-cache endpoint",
+            "description": "Add the prefix to PUBLIC_CACHE_ENDPOINTS in apps/api/src/middlewares/cache.constants.ts (it is currently in none of the three lists, so partner responses have no cache classification at all). Tests: an actor-blind test mirroring apps/api/test/routes/user/public/by-slug-actor-blind.test.ts — the same request with and without a session must produce identical bodies and no Vary-on-cookie.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Add the prefix", "completed": false },
+                { "title": "Port the actor-blind test", "completed": false }
+            ],
+            "tags": ["api", "cache"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Add the partner entity prefix to the cache-tag vocabulary",
+            "description": "packages/cache-tags/src/vocabulary.ts: add partner to CACHE_TAG_ENTITY_PREFIXES and deliberately NOT to CACHE_TAG_COLLECTIONS — there is no page listing partners, which is the documented rationale for attraction and pointOfInterest being absent from that map (vocabulary.ts:62-75). Inventing list-partner would add vocabulary nothing emits and nothing purges. Tests: update vocabulary.test.ts, whose existing assertions already walk both maps.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-010", "T-011", "T-025"],
+            "subtasks": [
+                { "title": "Add the prefix", "completed": false },
+                { "title": "Confirm no collection tag is added", "completed": false },
+                { "title": "Update vocabulary tests", "completed": false }
+            ],
+            "tags": ["cache-tags"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Seed the partner revalidation_config row (baseline + data-migration)",
+            "description": "Dual-write again. (1) Add a partner entry to packages/seed/src/data/revalidationConfig/001-revalidation-config-defaults.json with autoRevalidateOnChange true, cronIntervalMinutes 120, debounceSeconds 10, enabled true (mirroring pointOfInterest). (2) A numbered data-migration inserting the same row for already-seeded envs — without it, staging and prod schedule nothing. Tests: assert the seed is idempotent and the entity type resolves in RevalidationConfigModel.findByEntityType.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                { "title": "Add the baseline entry", "completed": false },
+                { "title": "Add the data-migration", "completed": false }
+            ],
+            "tags": ["seed", "cache", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Schedule revalidation on partner writes (entity tag + home)",
+            "description": "Wire getRevalidationService().scheduleRevalidation into PartnerService's write paths (update, revoke, registerManualPayment, content review approval) so a partner change purges its own entity tag AND CACHE_TAG_HOME — the carousel lives on the home page, so a logo/name/websiteUrl change IS a change to the home page's output. Fire-and-forget, never blocking the write. Tests: assert both tags are scheduled on an update, and that no list-partner tag is ever emitted (AC-14).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Identify every partner write path", "completed": false },
+                { "title": "Schedule entity tag + home", "completed": false },
+                { "title": "Test both tags, assert no collection tag", "completed": false }
+            ],
+            "tags": ["service-core", "cache"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Delete the directory page and PartnerCard",
+            "description": "Remove apps/web/src/pages/[lang]/partners/index.astro, apps/web/src/components/partner/PartnerCard.astro, apps/web/test/pages/partners.index.test.ts and apps/web/test/components/PartnerCard.test.ts. Deleting the folder makes /es/partners/ 404 through the middleware's existing 404 rewrite (spec D-4). Tests: a page test asserting /es/partners/ returns 404 and renders the custom 404 page (AC-10).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-013", "T-014", "T-015"],
+            "subtasks": [
+                { "title": "Delete the four files", "completed": false },
+                { "title": "Add the 404 assertion", "completed": false }
+            ],
+            "tags": ["web", "cleanup"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Delete PartnerCardData and toPartnerCardProps",
+            "description": "Remove PartnerCardData (apps/web/src/data/types.ts:1247) and toPartnerCardProps (apps/web/src/lib/api/transforms.ts:2715) plus their cases in apps/web/test/lib/api/transforms.test.ts. Do NOT touch toPartnerData (transforms.ts:2762) — it feeds the home carousel and is extended by T-022.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                { "title": "Delete the type", "completed": false },
+                { "title": "Delete the transform + its tests", "completed": false }
+            ],
+            "tags": ["web", "cleanup"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Remove /partners/ from the static sitemap",
+            "description": "Delete line 62 of apps/web/src/lib/seo/static-sitemap-pages.ts. CRITICAL: test/lib/seo/static-sitemap-pages.guard.test.ts walks src/pages/[lang] and fails when a page is unclassified, but it does NOT detect an entry whose page was deleted — so forgetting this leaves the sitemap advertising a 404 with CI green. Tests: assert STATIC_SITEMAP_PAGES contains no /partners/ path and that the rendered /sitemap-static.xml does not mention it (AC-11).",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                { "title": "Remove the entry", "completed": false },
+                { "title": "Add the AC-11 assertion", "completed": false }
+            ],
+            "tags": ["web", "seo"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Delete the directory's i18n keys in all three locales",
+            "description": "In packages/i18n/src/locales/{es,en,pt}/partners.json remove listing.* and tiers.*. KEEP types.* — the detail page renders Comercio / ONG / Institución. The tier is never rendered publicly (spec D-7). Tests: the i18n parity test must still pass across the three locales.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-012"],
+            "blocks": ["T-020"],
+            "subtasks": [
+                { "title": "Trim es/en/pt partners.json", "completed": false },
+                { "title": "Verify locale parity", "completed": false }
+            ],
+            "tags": ["i18n", "cleanup"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Add partnerApi.getBySlug to the web API client",
+            "description": "Extend partnerApi in apps/web/src/lib/api/endpoints.ts:1861 with getBySlug, returning ApiResult<PartnerPublic> and surfacing the 410 distinctly from the 404 so the page can propagate the right status. Never fetch() directly from a page. Tests: mock the client and assert 200 / 410 / 404 map to distinguishable results.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-017", "T-024"],
+            "subtasks": [
+                { "title": "Add the endpoint wrapper", "completed": false },
+                { "title": "Preserve the 410 vs 404 distinction", "completed": false },
+                { "title": "Client tests", "completed": false }
+            ],
+            "tags": ["web", "api-client"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Add toPartnerDetailProps to transforms.ts",
+            "description": "A NEW transform for the detail page — not a rename of the deleted toPartnerCardProps (spec D-7). Maps the public payload to the page's props: name, logoUrl, type, description, contactInfo, socialNetworks, websiteUrl. It must NOT carry tier or isFeatured. Tests: null/missing-field handling for every optional field, and an assertion that the output shape has no tier key.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-019"],
+            "subtasks": [
+                { "title": "Define the props type", "completed": false },
+                { "title": "Implement the transform", "completed": false },
+                { "title": "Test null-field handling + absence of tier", "completed": false }
+            ],
+            "tags": ["web", "transforms"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Write evaluatePartnerIndexability, the shared page/sitemap predicate",
+            "description": "New apps/web/src/lib/seo/partner-indexable.ts, modeled on author-indexable.ts. Returns { isIndexable } from: tier gold, lifecycleState ACTIVE, subscriptionStatus active, AND a minimum-content condition (non-empty description) — the last one is R-3's mitigation against indexing thin pages, the same judgment isThinDestination encodes. This ONE function is consumed by both the page (T-019) and the sitemap (T-024); that is the whole point. Tests: one case per failing condition plus the all-pass case.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-019", "T-024"],
+            "subtasks": [
+                { "title": "Implement the predicate", "completed": false },
+                { "title": "Include the minimum-content condition", "completed": false },
+                { "title": "Unit tests per condition", "completed": false }
+            ],
+            "tags": ["web", "seo"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Create pages/[lang]/partners/[slug].astro (fetch, status, head)",
+            "description": "SSR page: fetch via partnerApi.getBySlug, propagate 410 for gone and 404 for notFound (the pattern at alojamientos/[slug].astro:141), render SEOHead with noindex={!isIndexable} where isIndexable comes from evaluatePartnerIndexability — never a literal — and a self-referential canonical. The frontmatter must NOT read Astro.locals.user: the page is edge-cacheable and must be actor-blind (AC-13). Tests: SSR-HTML tests for 200/410/404 and a byte-identity test between anonymous and authenticated requests.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017", "T-018"],
+            "blocks": ["T-021", "T-025", "T-026"],
+            "subtasks": [
+                { "title": "Frontmatter: fetch + status propagation", "completed": false },
+                { "title": "SEOHead with the predicate-driven noindex", "completed": false },
+                { "title": "Actor-blindness test", "completed": false }
+            ],
+            "tags": ["web", "page", "seo"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Add the detail page i18n keys in es/en/pt",
+            "description": "New partners.detail.* keys in packages/i18n/src/locales/{es,en,pt}/partners.json: section headings for contact and social links, and the labels the page needs. No tier key. Since the page is a plain Astro page with no island, CLIENT_I18N_KEY_PREFIXES is NOT involved — but if an island is ever added here, its prefix must be registered there or the browser renders raw keys in production while dev looks fine.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-015"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "Add keys to the three locales", "completed": false },
+                { "title": "Verify locale parity", "completed": false }
+            ],
+            "tags": ["i18n"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Build the detail page markup and scoped styles",
+            "description": "Single column, no hero, no gallery: logo, name, organization type (via partners.types.*), description, contact info, social links. It is a business card, not a listing. Vanilla CSS in a scoped <style> block with design tokens only — no hardcoded colors, uniform --radius-card. Every string through t(). Tests: SSR-HTML assertions for each rendered field, plus an assertion that the tier appears nowhere in the output (AC-1).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-019", "T-020"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                { "title": "Markup for the six content blocks", "completed": false },
+                { "title": "Scoped styles using tokens", "completed": false },
+                { "title": "Assert the tier is never rendered", "completed": false }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Extend PartnerData and toPartnerData with slug and tier",
+            "description": "The carousel cannot branch per tier without them: PartnerData (apps/web/src/data/types-ui.ts:198) gains slug and tier, and toPartnerData (transforms.ts:2762) maps them. Purely additive to the marquee's props. Tests: extend the existing toPartnerData cases to cover both fields, including a partner with no websiteUrl.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-013"],
+            "blocks": ["T-023"],
+            "subtasks": [
+                { "title": "Extend the PartnerData type", "completed": false },
+                { "title": "Map the two fields in toPartnerData", "completed": false },
+                { "title": "Extend the transform tests", "completed": false }
+            ],
+            "tags": ["web", "transforms"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Branch the carousel href per tier",
+            "description": "PartnersSection.astro:52-83 (and the duplicated aria-hidden track below it — BOTH loops must change or the marquee's second half keeps the old links). Gold -> /{lang}/partners/<slug>/ as a plain internal link, no rel, no target. Silver with websiteUrl -> that URL with target=\"_blank\" rel=\"sponsored nofollow noopener\". Silver without websiteUrl -> the existing unlinked <div>. Tests: AC-5 asserts the exact rel string per tier on the SSR HTML — that one attribute IS the product decision; AC-6 asserts no empty href is ever emitted.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-022"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                { "title": "Branch the visible track", "completed": false },
+                { "title": "Branch the duplicated aria-hidden track", "completed": false },
+                { "title": "Per-tier href + rel tests", "completed": false }
+            ],
+            "tags": ["web", "ui", "seo"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Emit gold partner URLs into sitemap-dynamic.xml",
+            "description": "Add a partner block to apps/web/src/pages/sitemap-dynamic.xml.ts filtered by evaluatePartnerIndexability (T-018) — the SAME function the page uses. TRAP: test/pages/sitemap-dynamic.test.ts stubs fetch POSITIONALLY with mockImplementationOnce, so the new fetchAllEntities call MUST be APPENDED to the Promise.allSettled array, never inserted mid-array, or every later entity lands on the wrong stub (the file says so at line 316-319). Path /partners/<slug>/, changefreq monthly, priority 0.6. Tests: assert gold URLs appear and non-qualifying partners do not.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-016", "T-018"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                { "title": "Append the fetch, never insert", "completed": false },
+                { "title": "Filter with the shared predicate", "completed": false },
+                { "title": "Emit + tests", "completed": false }
+            ],
+            "tags": ["web", "seo", "sitemap"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Emit cache tags on the detail page response",
+            "description": "The page response carries its own entity tag plus the CACHE_TAG_ALL catch-all at the head of the list (truncation drops the tail, and losing that one removes the response's last-resort purge path). No collection tag exists for partners by design. Tests: assert the emitted Cache-Tag header contains the namespaced entity tag and all, and never list-partner.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-009", "T-019"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Emit the tags on the page response", "completed": false },
+                { "title": "Assert the header contents", "completed": false }
+            ],
+            "tags": ["web", "cache"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Guard test: the page and the sitemap share ONE predicate",
+            "description": "AC-7. Not a test that the two agree on today's fixtures — agreement is what drifts. Assert structurally that both the page and sitemap-dynamic.xml.ts import and call the same exported evaluatePartnerIndexability, in the spirit of the comment at sitemap-dynamic.xml.ts:461-468. A mutation check is the acceptance bar: flipping one condition inside the predicate must break BOTH sides' tests, never just one.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-019", "T-024"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                { "title": "Write the structural guard", "completed": false },
+                { "title": "Mutation-check it breaks both sides", "completed": false }
+            ],
+            "tags": ["web", "seo", "guard"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Run the repo guards and the full affected test suites",
+            "description": "Before the PR: static-sitemap-pages.guard.test.ts, the i18n key guards, check-seed-dual-write.sh, and the endpoint-gate-matrix guard if the new route needs a row. Run the EXISTING tests of every file touched, not only the new ones — search the changed symbols in each package's test/ directory. Run each suite to completion; a scan truncated by a pipe reads as complete and is not.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-004", "T-014"],
+            "blocks": ["T-028"],
+            "subtasks": [
+                { "title": "Run every repo guard", "completed": false },
+                { "title": "Run existing tests of touched files", "completed": false },
+                { "title": "Full typecheck across the monorepo", "completed": false }
+            ],
+            "tags": ["testing", "guards"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Document the partner page in apps/web/CLAUDE.md",
+            "description": "A short section covering the gold gate, the shared indexability predicate, the per-tier carousel rel contract, and the 410-vs-404 rule — the three things a future reader would otherwise re-derive wrongly. Also note in the root CLAUDE.md gotchas that partner tiers are gold/silver only since HOS-294.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": ["T-021", "T-023", "T-026", "T-027"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Write the apps/web/CLAUDE.md section", "completed": false },
+                { "title": "Add the root gotcha line", "completed": false }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-08T03:20:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 28,
+        "pending": 28,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.0
+    }
+}
