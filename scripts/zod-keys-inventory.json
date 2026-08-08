@@ -897,6 +897,9 @@
         "zodError.enums.gastronomyType.invalid",
         "zodError.enums.hostTradeBenefitType.invalid",
         "zodError.enums.hostTradeCategory.invalid",
+        "zodError.enums.hostTradeUsageChannel.invalid",
+        "zodError.enums.hostTradeUsageDeclaredBy.invalid",
+        "zodError.enums.hostTradeUsageStatus.invalid",
         "zodError.enums.invoiceStatus.invalid",
         "zodError.enums.lifecycleStatus.invalid",
         "zodError.enums.messageSenderType.invalid",
@@ -1800,7 +1803,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1798,
+    "total": 1802,
     "byNamespace": {
         "accommodation": 69,
         "accommodationAmenity": 4,
@@ -1829,7 +1832,7 @@
         "entityTag": 1,
         "entityTags": 1,
         "entityView": 20,
-        "enums": 71,
+        "enums": 74,
         "event": 52,
         "eventLocation": 22,
         "eventOrganizer": 13,

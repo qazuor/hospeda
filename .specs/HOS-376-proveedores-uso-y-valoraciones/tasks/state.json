@@ -8,23 +8,39 @@
             "id": "T-001",
             "title": "Crear los 3 enums de uso del beneficio en @repo/schemas",
             "description": "Crear packages/schemas/src/enums/host-trade-usage-status.{enum,schema}.ts (PENDING|CONFIRMED|REJECTED|EXPIRED), host-trade-usage-declared-by.{enum,schema}.ts (PROVIDER|HOST) y host-trade-usage-channel.{enum,schema}.ts (QR|LINKED_SELECTOR|EMAIL_LOOKUP). Exportarlos desde el barrel de enums. Seguir exactamente el molde de host-trade-benefit-type.enum.ts. Tests: parse de cada valor válido y rechazo de un valor inválido por enum, en packages/schemas/test/enums/.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-006", "T-007", "T-014", "T-015"],
             "subtasks": [
-                { "title": "host-trade-usage-status enum + schema", "completed": false },
-                { "title": "host-trade-usage-declared-by enum + schema", "completed": false },
-                { "title": "host-trade-usage-channel enum + schema", "completed": false },
-                { "title": "Exportar desde el barrel", "completed": false }
+                {
+                    "title": "host-trade-usage-status enum + schema",
+                    "completed": true
+                },
+                {
+                    "title": "host-trade-usage-declared-by enum + schema",
+                    "completed": true
+                },
+                {
+                    "title": "host-trade-usage-channel enum + schema",
+                    "completed": true
+                },
+                {
+                    "title": "Exportar desde el barrel",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "enums"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": true,
+                "typecheck": true,
+                "tests": true
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:45:42Z",
+                "completed": "2026-08-08T04:51:07Z"
             }
         },
         {
@@ -38,7 +54,11 @@
             "subtasks": [],
             "tags": ["schemas", "auth", "permissions"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -54,13 +74,26 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-004"],
             "subtasks": [
-                { "title": "Bloque SUPER_ADMIN", "completed": false },
-                { "title": "Bloque ADMIN", "completed": false },
-                { "title": "Bloque HOST (sólo REVIEW_CREATE)", "completed": false }
+                {
+                    "title": "Bloque SUPER_ADMIN",
+                    "completed": false
+                },
+                {
+                    "title": "Bloque ADMIN",
+                    "completed": false
+                },
+                {
+                    "title": "Bloque HOST (sólo REVIEW_CREATE)",
+                    "completed": false
+                }
             ],
             "tags": ["seed", "auth", "permissions"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -76,13 +109,26 @@
             "blockedBy": ["T-003"],
             "blocks": [],
             "subtasks": [
-                { "title": "pnpm db:seed:make", "completed": false },
-                { "title": "Insert idempotente de los 5 permisos", "completed": false },
-                { "title": "Verificar que check-seed-dual-write.sh pasa", "completed": false }
+                {
+                    "title": "pnpm db:seed:make",
+                    "completed": false
+                },
+                {
+                    "title": "Insert idempotente de los 5 permisos",
+                    "completed": false
+                },
+                {
+                    "title": "Verificar que check-seed-dual-write.sh pasa",
+                    "completed": false
+                }
             ],
             "tags": ["seed", "migration", "data-migration"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -100,7 +146,11 @@
             "subtasks": [],
             "tags": ["deps", "api"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -116,15 +166,34 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Columnas + tipos + defaults", "completed": false },
-                { "title": "FKs y onDelete", "completed": false },
-                { "title": "Índices simples y compuestos", "completed": false },
-                { "title": "Índice único parcial de PENDING", "completed": false },
-                { "title": "Relations", "completed": false }
+                {
+                    "title": "Columnas + tipos + defaults",
+                    "completed": false
+                },
+                {
+                    "title": "FKs y onDelete",
+                    "completed": false
+                },
+                {
+                    "title": "Índices simples y compuestos",
+                    "completed": false
+                },
+                {
+                    "title": "Índice único parcial de PENDING",
+                    "completed": false
+                },
+                {
+                    "title": "Relations",
+                    "completed": false
+                }
             ],
             "tags": ["db", "schema", "drizzle"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -144,14 +213,30 @@
                     "title": "Verificar el tipo de gastronomy_reviews.overallRating",
                     "completed": false
                 },
-                { "title": "Columnas + tipos", "completed": false },
-                { "title": "UNIQUE (hostUserId, hostTradeId)", "completed": false },
-                { "title": "Índices de moderationState", "completed": false },
-                { "title": "Relations", "completed": false }
+                {
+                    "title": "Columnas + tipos",
+                    "completed": false
+                },
+                {
+                    "title": "UNIQUE (hostUserId, hostTradeId)",
+                    "completed": false
+                },
+                {
+                    "title": "Índices de moderationState",
+                    "completed": false
+                },
+                {
+                    "title": "Relations",
+                    "completed": false
+                }
             ],
             "tags": ["db", "schema", "drizzle", "reviews"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -169,7 +254,11 @@
             "subtasks": [],
             "tags": ["db", "schema", "drizzle", "reviews"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -187,7 +276,11 @@
             "subtasks": [],
             "tags": ["db", "schema", "drizzle"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -203,13 +296,26 @@
             "blockedBy": ["T-006", "T-007", "T-008", "T-009"],
             "blocks": ["T-011", "T-018"],
             "subtasks": [
-                { "title": "pnpm db:generate", "completed": false },
-                { "title": "Verificar que no hay colisión de número", "completed": false },
-                { "title": "pnpm db:migrate en la DB del worktree", "completed": false }
+                {
+                    "title": "pnpm db:generate",
+                    "completed": false
+                },
+                {
+                    "title": "Verificar que no hay colisión de número",
+                    "completed": false
+                },
+                {
+                    "title": "pnpm db:migrate en la DB del worktree",
+                    "completed": false
+                }
             ],
             "tags": ["db", "migration"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -225,13 +331,26 @@
             "blockedBy": ["T-010"],
             "blocks": [],
             "subtasks": [
-                { "title": "CHECK de overallRating", "completed": false },
-                { "title": "CHECK de las dims del jsonb", "completed": false },
-                { "title": "CHECKs cross-column de status/timestamps", "completed": false }
+                {
+                    "title": "CHECK de overallRating",
+                    "completed": false
+                },
+                {
+                    "title": "CHECK de las dims del jsonb",
+                    "completed": false
+                },
+                {
+                    "title": "CHECKs cross-column de status/timestamps",
+                    "completed": false
+                }
             ],
             "tags": ["db", "migration", "extras"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -249,7 +368,11 @@
             "subtasks": [],
             "tags": ["schemas", "config"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -265,16 +388,26 @@
             "blockedBy": [],
             "blocks": ["T-064"],
             "subtasks": [
-                { "title": "Usuario host+proveedor en el baseline", "completed": false },
+                {
+                    "title": "Usuario host+proveedor en el baseline",
+                    "completed": false
+                },
                 {
                     "title": "Vincular ownerUserId de un host_trades de ejemplo",
                     "completed": false
                 },
-                { "title": "Documentar en packages/seed/CLAUDE.md", "completed": false }
+                {
+                    "title": "Documentar en packages/seed/CLAUDE.md",
+                    "completed": false
+                }
             ],
             "tags": ["seed", "testing"],
             "phase": "setup",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -290,14 +423,30 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-017", "T-019"],
             "subtasks": [
-                { "title": "Entity schema", "completed": false },
-                { "title": "Create input + create body .strict()", "completed": false },
-                { "title": "Access tiers", "completed": false },
-                { "title": "Admin-search", "completed": false }
+                {
+                    "title": "Entity schema",
+                    "completed": false
+                },
+                {
+                    "title": "Create input + create body .strict()",
+                    "completed": false
+                },
+                {
+                    "title": "Access tiers",
+                    "completed": false
+                },
+                {
+                    "title": "Admin-search",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "zod"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -313,17 +462,30 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-016", "T-017", "T-024"],
             "subtasks": [
-                { "title": "Entity schema", "completed": false },
+                {
+                    "title": "Entity schema",
+                    "completed": false
+                },
                 {
                     "title": "Create body .strict() con respectedBenefit obligatorio",
                     "completed": false
                 },
-                { "title": "Update schema", "completed": false },
-                { "title": "Access tiers + admin-search", "completed": false }
+                {
+                    "title": "Update schema",
+                    "completed": false
+                },
+                {
+                    "title": "Access tiers + admin-search",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "zod", "reviews"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -341,7 +503,11 @@
             "subtasks": [],
             "tags": ["schemas", "zod", "reviews"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -357,13 +523,26 @@
             "blockedBy": ["T-014", "T-015", "T-016"],
             "blocks": [],
             "subtasks": [
-                { "title": "Lista de campos prohibidos como const exportada", "completed": false },
-                { "title": "Guard test", "completed": false },
-                { "title": "Mutación de verificación", "completed": false }
+                {
+                    "title": "Lista de campos prohibidos como const exportada",
+                    "completed": false
+                },
+                {
+                    "title": "Guard test",
+                    "completed": false
+                },
+                {
+                    "title": "Mutación de verificación",
+                    "completed": false
+                }
             ],
             "tags": ["schemas", "testing", "guard"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -379,13 +558,26 @@
             "blockedBy": ["T-010"],
             "blocks": ["T-019", "T-024", "T-025"],
             "subtasks": [
-                { "title": "HostTradeBenefitUsageModel + finders", "completed": false },
-                { "title": "HostTradeReviewModel", "completed": false },
-                { "title": "HostTradeReviewReplyModel", "completed": false }
+                {
+                    "title": "HostTradeBenefitUsageModel + finders",
+                    "completed": false
+                },
+                {
+                    "title": "HostTradeReviewModel",
+                    "completed": false
+                },
+                {
+                    "title": "HostTradeReviewReplyModel",
+                    "completed": false
+                }
             ],
             "tags": ["db", "models"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -401,14 +593,30 @@
             "blockedBy": ["T-018", "T-014"],
             "blocks": ["T-020", "T-021", "T-030"],
             "subtasks": [
-                { "title": "Canal QR", "completed": false },
-                { "title": "Canal selector (validar vinculación)", "completed": false },
-                { "title": "Canal email lookup + HOST_NOT_FOUND", "completed": false },
-                { "title": "Sellado de expiresAt", "completed": false }
+                {
+                    "title": "Canal QR",
+                    "completed": false
+                },
+                {
+                    "title": "Canal selector (validar vinculación)",
+                    "completed": false
+                },
+                {
+                    "title": "Canal email lookup + HOST_NOT_FOUND",
+                    "completed": false
+                },
+                {
+                    "title": "Sellado de expiresAt",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "usages"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -424,15 +632,34 @@
             "blockedBy": ["T-019", "T-012"],
             "blocks": ["T-031"],
             "subtasks": [
-                { "title": "Guarda PROVIDER_REVOKED", "completed": false },
-                { "title": "Guarda DECLARATION_SUSPENDED", "completed": false },
-                { "title": "Guarda DECLARATION_BLOCKED", "completed": false },
-                { "title": "Guarda USAGE_PENDING_EXISTS", "completed": false },
-                { "title": "Test de orden entre guardas", "completed": false }
+                {
+                    "title": "Guarda PROVIDER_REVOKED",
+                    "completed": false
+                },
+                {
+                    "title": "Guarda DECLARATION_SUSPENDED",
+                    "completed": false
+                },
+                {
+                    "title": "Guarda DECLARATION_BLOCKED",
+                    "completed": false
+                },
+                {
+                    "title": "Guarda USAGE_PENDING_EXISTS",
+                    "completed": false
+                },
+                {
+                    "title": "Test de orden entre guardas",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "usages", "guards"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -448,15 +675,34 @@
             "blockedBy": ["T-019"],
             "blocks": ["T-022", "T-023", "T-024", "T-033", "T-042", "T-043", "T-057"],
             "subtasks": [
-                { "title": "Resolución de contraparte según declaredBy", "completed": false },
-                { "title": "confirm", "completed": false },
-                { "title": "reject", "completed": false },
-                { "title": "reject/undo", "completed": false },
-                { "title": "404 anti-oráculo en todos los caminos ajenos", "completed": false }
+                {
+                    "title": "Resolución de contraparte según declaredBy",
+                    "completed": false
+                },
+                {
+                    "title": "confirm",
+                    "completed": false
+                },
+                {
+                    "title": "reject",
+                    "completed": false
+                },
+                {
+                    "title": "reject/undo",
+                    "completed": false
+                },
+                {
+                    "title": "404 anti-oráculo en todos los caminos ajenos",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "usages", "state-machine"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -472,13 +718,26 @@
             "blockedBy": ["T-021", "T-012"],
             "blocks": ["T-038", "T-060"],
             "subtasks": [
-                { "title": "Conteo en ventana", "completed": false },
-                { "title": "Suspensión automática", "completed": false },
-                { "title": "Levantamiento por admin", "completed": false }
+                {
+                    "title": "Conteo en ventana",
+                    "completed": false
+                },
+                {
+                    "title": "Suspensión automática",
+                    "completed": false
+                },
+                {
+                    "title": "Levantamiento por admin",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "usages", "anti-abuse"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -494,13 +753,26 @@
             "blockedBy": ["T-021"],
             "blocks": ["T-028", "T-044", "T-052", "T-059"],
             "subtasks": [
-                { "title": "Query de agregación", "completed": false },
-                { "title": "Enganche en los hooks _after* de usos", "completed": false },
-                { "title": "Enganche en los hooks _after* de valoraciones", "completed": false }
+                {
+                    "title": "Query de agregación",
+                    "completed": false
+                },
+                {
+                    "title": "Enganche en los hooks _after* de usos",
+                    "completed": false
+                },
+                {
+                    "title": "Enganche en los hooks _after* de valoraciones",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "stats", "denormalization"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -516,15 +788,34 @@
             "blockedBy": ["T-018", "T-015", "T-021"],
             "blocks": ["T-025", "T-026", "T-027", "T-034", "T-036", "T-058"],
             "subtasks": [
-                { "title": "Gate de permiso", "completed": false },
-                { "title": "Gate de uso confirmado", "completed": false },
-                { "title": "Gate de auto-valoración", "completed": false },
-                { "title": "Gate de proveedor revocado", "completed": false },
-                { "title": "Guard de duplicado", "completed": false }
+                {
+                    "title": "Gate de permiso",
+                    "completed": false
+                },
+                {
+                    "title": "Gate de uso confirmado",
+                    "completed": false
+                },
+                {
+                    "title": "Gate de auto-valoración",
+                    "completed": false
+                },
+                {
+                    "title": "Gate de proveedor revocado",
+                    "completed": false
+                },
+                {
+                    "title": "Guard de duplicado",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "guards"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -542,7 +833,11 @@
             "subtasks": [],
             "tags": ["service-core", "reviews", "replies"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -558,13 +853,26 @@
             "blockedBy": ["T-024", "T-025"],
             "blocks": ["T-034", "T-065"],
             "subtasks": [
-                { "title": "Camino de edición con ownership", "completed": false },
-                { "title": "Re-moderación con moderateText", "completed": false },
-                { "title": "Marca reviewEditedAfterReply", "completed": false }
+                {
+                    "title": "Camino de edición con ownership",
+                    "completed": false
+                },
+                {
+                    "title": "Re-moderación con moderateText",
+                    "completed": false
+                },
+                {
+                    "title": "Marca reviewEditedAfterReply",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "reviews", "moderation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -582,7 +890,11 @@
             "subtasks": [],
             "tags": ["service-core", "moderation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -598,13 +910,26 @@
             "blockedBy": ["T-027", "T-023"],
             "blocks": ["T-037"],
             "subtasks": [
-                { "title": "moderateReview + recálculo", "completed": false },
-                { "title": "moderateReply", "completed": false },
-                { "title": "getPendingCount", "completed": false }
+                {
+                    "title": "moderateReview + recálculo",
+                    "completed": false
+                },
+                {
+                    "title": "moderateReply",
+                    "completed": false
+                },
+                {
+                    "title": "getPendingCount",
+                    "completed": false
+                }
             ],
             "tags": ["service-core", "moderation", "admin"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -622,7 +947,11 @@
             "subtasks": [],
             "tags": ["api", "qr"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -638,13 +967,26 @@
             "blockedBy": ["T-019"],
             "blocks": ["T-045", "T-046", "T-047", "T-061"],
             "subtasks": [
-                { "title": "POST /{slug}/usages", "completed": false },
-                { "title": "GET /usages/pending", "completed": false },
-                { "title": "GET /usages/pending-count", "completed": false }
+                {
+                    "title": "POST /{slug}/usages",
+                    "completed": false
+                },
+                {
+                    "title": "GET /usages/pending",
+                    "completed": false
+                },
+                {
+                    "title": "GET /usages/pending-count",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "protected"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -664,12 +1006,22 @@
                     "title": "POST mine/usages con los dos modos de identificación",
                     "completed": false
                 },
-                { "title": "GET mine/usages", "completed": false },
-                { "title": "GET mine/linked-hosts", "completed": false }
+                {
+                    "title": "GET mine/usages",
+                    "completed": false
+                },
+                {
+                    "title": "GET mine/linked-hosts",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "protected"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -687,7 +1039,11 @@
             "subtasks": [],
             "tags": ["api", "routes", "qr"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -703,13 +1059,26 @@
             "blockedBy": ["T-021"],
             "blocks": ["T-041", "T-046", "T-061", "T-065"],
             "subtasks": [
-                { "title": "POST confirm", "completed": false },
-                { "title": "POST reject", "completed": false },
-                { "title": "POST reject/undo", "completed": false }
+                {
+                    "title": "POST confirm",
+                    "completed": false
+                },
+                {
+                    "title": "POST reject",
+                    "completed": false
+                },
+                {
+                    "title": "POST reject/undo",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "protected"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -725,13 +1094,26 @@
             "blockedBy": ["T-024", "T-026"],
             "blocks": ["T-039", "T-041", "T-048", "T-049"],
             "subtasks": [
-                { "title": "POST reviews", "completed": false },
-                { "title": "PATCH reviews/{id}", "completed": false },
-                { "title": "GET my-review", "completed": false }
+                {
+                    "title": "POST reviews",
+                    "completed": false
+                },
+                {
+                    "title": "PATCH reviews/{id}",
+                    "completed": false
+                },
+                {
+                    "title": "GET my-review",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -749,7 +1131,11 @@
             "subtasks": [],
             "tags": ["api", "routes", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -767,7 +1153,11 @@
             "subtasks": [],
             "tags": ["api", "routes", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -783,13 +1173,26 @@
             "blockedBy": ["T-028"],
             "blocks": ["T-041", "T-055", "T-063"],
             "subtasks": [
-                { "title": "Listados con filtro de moderationState", "completed": false },
-                { "title": "Endpoints de moderate", "completed": false },
-                { "title": "pending-count", "completed": false }
+                {
+                    "title": "Listados con filtro de moderationState",
+                    "completed": false
+                },
+                {
+                    "title": "Endpoints de moderate",
+                    "completed": false
+                },
+                {
+                    "title": "pending-count",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "admin", "moderation"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -805,12 +1208,22 @@
             "blockedBy": ["T-022"],
             "blocks": ["T-056", "T-063"],
             "subtasks": [
-                { "title": "GET usages con filtros", "completed": false },
-                { "title": "POST declaration-suspension", "completed": false }
+                {
+                    "title": "GET usages con filtros",
+                    "completed": false
+                },
+                {
+                    "title": "POST declaration-suspension",
+                    "completed": false
+                }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -828,7 +1241,11 @@
             "subtasks": [],
             "tags": ["api", "rate-limit", "anti-abuse"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -844,14 +1261,30 @@
             "blockedBy": ["T-012"],
             "blocks": ["T-041", "T-043"],
             "subtasks": [
-                { "title": "6 componentes .tsx + barrel", "completed": false },
-                { "title": "6 NotificationType + cases del switch", "completed": false },
-                { "title": "Categorías TRANSACTIONAL", "completed": false },
-                { "title": "Asuntos en subject-builder", "completed": false }
+                {
+                    "title": "6 componentes .tsx + barrel",
+                    "completed": false
+                },
+                {
+                    "title": "6 NotificationType + cases del switch",
+                    "completed": false
+                },
+                {
+                    "title": "Categorías TRANSACTIONAL",
+                    "completed": false
+                },
+                {
+                    "title": "Asuntos en subject-builder",
+                    "completed": false
+                }
             ],
             "tags": ["notifications", "email", "templates"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -867,14 +1300,30 @@
             "blockedBy": ["T-040", "T-033", "T-034", "T-037"],
             "blocks": ["T-068"],
             "subtasks": [
-                { "title": "Envío al declarar", "completed": false },
-                { "title": "Envíos de confirmar y rechazar", "completed": false },
-                { "title": "Envío de valoración nueva", "completed": false },
-                { "title": "Envío de réplica moderada", "completed": false }
+                {
+                    "title": "Envío al declarar",
+                    "completed": false
+                },
+                {
+                    "title": "Envíos de confirmar y rechazar",
+                    "completed": false
+                },
+                {
+                    "title": "Envío de valoración nueva",
+                    "completed": false
+                },
+                {
+                    "title": "Envío de réplica moderada",
+                    "completed": false
+                }
             ],
             "tags": ["api", "notifications"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -892,7 +1341,11 @@
             "subtasks": [],
             "tags": ["api", "cron"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -910,7 +1363,11 @@
             "subtasks": [],
             "tags": ["api", "cron", "notifications"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -928,7 +1385,11 @@
             "subtasks": [],
             "tags": ["api", "cron", "stats"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -946,7 +1407,11 @@
             "subtasks": [],
             "tags": ["web", "astro", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -962,14 +1427,30 @@
             "blockedBy": ["T-030", "T-033"],
             "blocks": ["T-054"],
             "subtasks": [
-                { "title": "Listado de pendientes con acciones", "completed": false },
-                { "title": "Dialog de confirmación del rechazo", "completed": false },
-                { "title": "Historial con badges por estado", "completed": false },
-                { "title": "CTA a valorar", "completed": false }
+                {
+                    "title": "Listado de pendientes con acciones",
+                    "completed": false
+                },
+                {
+                    "title": "Dialog de confirmación del rechazo",
+                    "completed": false
+                },
+                {
+                    "title": "Historial con badges por estado",
+                    "completed": false
+                },
+                {
+                    "title": "CTA a valorar",
+                    "completed": false
+                }
             ],
             "tags": ["web", "react", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -987,7 +1468,11 @@
             "subtasks": [],
             "tags": ["web", "react", "ui", "a11y"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1003,14 +1488,30 @@
             "blockedBy": ["T-034"],
             "blocks": ["T-049", "T-054", "T-067"],
             "subtasks": [
-                { "title": "Radiogroup de estrellas accesible", "completed": false },
-                { "title": "Desglose colapsable", "completed": false },
-                { "title": "Booleano sin default", "completed": false },
-                { "title": "Validación con safeParse", "completed": false }
+                {
+                    "title": "Radiogroup de estrellas accesible",
+                    "completed": false
+                },
+                {
+                    "title": "Desglose colapsable",
+                    "completed": false
+                },
+                {
+                    "title": "Booleano sin default",
+                    "completed": false
+                },
+                {
+                    "title": "Validación con safeParse",
+                    "completed": false
+                }
             ],
             "tags": ["web", "react", "ui", "a11y", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1028,7 +1529,11 @@
             "subtasks": [],
             "tags": ["web", "react", "ui", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1044,14 +1549,30 @@
             "blockedBy": ["T-031", "T-032", "T-036"],
             "blocks": ["T-051", "T-054"],
             "subtasks": [
-                { "title": "Pestaña Usos con los dos modos de declaración", "completed": false },
-                { "title": "Pestaña Valoraciones", "completed": false },
-                { "title": "Pestaña Mi QR", "completed": false },
-                { "title": "Estado suspendido explícito", "completed": false }
+                {
+                    "title": "Pestaña Usos con los dos modos de declaración",
+                    "completed": false
+                },
+                {
+                    "title": "Pestaña Valoraciones",
+                    "completed": false
+                },
+                {
+                    "title": "Pestaña Mi QR",
+                    "completed": false
+                },
+                {
+                    "title": "Estado suspendido explícito",
+                    "completed": false
+                }
             ],
             "tags": ["web", "react", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1069,7 +1590,11 @@
             "subtasks": [],
             "tags": ["web", "react", "ui", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1087,7 +1612,11 @@
             "subtasks": [],
             "tags": ["web", "react", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1105,7 +1634,11 @@
             "subtasks": [],
             "tags": ["web", "react", "ui", "reviews"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1121,14 +1654,30 @@
             "blockedBy": ["T-045", "T-046", "T-047", "T-048", "T-050", "T-052", "T-053"],
             "blocks": [],
             "subtasks": [
-                { "title": "Claves es", "completed": false },
-                { "title": "Claves en y pt", "completed": false },
-                { "title": "Prefijo en CLIENT_I18N_KEY_PREFIXES", "completed": false },
-                { "title": "Correr el guard de claves", "completed": false }
+                {
+                    "title": "Claves es",
+                    "completed": false
+                },
+                {
+                    "title": "Claves en y pt",
+                    "completed": false
+                },
+                {
+                    "title": "Prefijo en CLIENT_I18N_KEY_PREFIXES",
+                    "completed": false
+                },
+                {
+                    "title": "Correr el guard de claves",
+                    "completed": false
+                }
             ],
             "tags": ["i18n", "web", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1144,13 +1693,26 @@
             "blockedBy": ["T-037"],
             "blocks": [],
             "subtasks": [
-                { "title": "Hooks de query y mutación", "completed": false },
-                { "title": "Cola de réplicas PENDING", "completed": false },
-                { "title": "Listado de valoraciones con filtro", "completed": false }
+                {
+                    "title": "Hooks de query y mutación",
+                    "completed": false
+                },
+                {
+                    "title": "Cola de réplicas PENDING",
+                    "completed": false
+                },
+                {
+                    "title": "Listado de valoraciones con filtro",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "react", "moderation"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1166,13 +1728,26 @@
             "blockedBy": ["T-038"],
             "blocks": [],
             "subtasks": [
-                { "title": "Tabla de usos con filtros", "completed": false },
-                { "title": "Vista de suspensiones", "completed": false },
-                { "title": "Acción de levantar con motivo", "completed": false }
+                {
+                    "title": "Tabla de usos con filtros",
+                    "completed": false
+                },
+                {
+                    "title": "Vista de suspensiones",
+                    "completed": false
+                },
+                {
+                    "title": "Acción de levantar con motivo",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "react"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1190,7 +1765,11 @@
             "subtasks": [],
             "tags": ["testing", "service-core", "unit"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1206,13 +1785,26 @@
             "blockedBy": ["T-024"],
             "blocks": ["T-064"],
             "subtasks": [
-                { "title": "Test por gate", "completed": false },
-                { "title": "Caso mixto", "completed": false },
-                { "title": "Mutación de verificación por gate", "completed": false }
+                {
+                    "title": "Test por gate",
+                    "completed": false
+                },
+                {
+                    "title": "Caso mixto",
+                    "completed": false
+                },
+                {
+                    "title": "Mutación de verificación por gate",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "service-core", "unit"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1230,7 +1822,11 @@
             "subtasks": [],
             "tags": ["testing", "service-core", "unit", "stats"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1248,7 +1844,11 @@
             "subtasks": [],
             "tags": ["testing", "service-core", "unit", "anti-abuse"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1266,7 +1866,11 @@
             "subtasks": [],
             "tags": ["testing", "api", "integration"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1284,7 +1888,11 @@
             "subtasks": [],
             "tags": ["testing", "api", "integration"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1302,7 +1910,11 @@
             "subtasks": [],
             "tags": ["testing", "api", "integration", "admin"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1318,14 +1930,30 @@
             "blockedBy": ["T-013", "T-058", "T-061"],
             "blocks": [],
             "subtasks": [
-                { "title": "AC-6", "completed": false },
-                { "title": "AC-15", "completed": false },
-                { "title": "AC-16 con el usuario seed doble rol", "completed": false },
-                { "title": "AC-17", "completed": false }
+                {
+                    "title": "AC-6",
+                    "completed": false
+                },
+                {
+                    "title": "AC-15",
+                    "completed": false
+                },
+                {
+                    "title": "AC-16 con el usuario seed doble rol",
+                    "completed": false
+                },
+                {
+                    "title": "AC-17",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "regression"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1341,13 +1969,26 @@
             "blockedBy": ["T-026", "T-027", "T-033"],
             "blocks": [],
             "subtasks": [
-                { "title": "AC-19", "completed": false },
-                { "title": "AC-22", "completed": false },
-                { "title": "AC-28 en los dos caminos", "completed": false }
+                {
+                    "title": "AC-19",
+                    "completed": false
+                },
+                {
+                    "title": "AC-22",
+                    "completed": false
+                },
+                {
+                    "title": "AC-28 en los dos caminos",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "regression", "moderation"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1363,13 +2004,26 @@
             "blockedBy": ["T-042", "T-043", "T-044"],
             "blocks": ["T-069"],
             "subtasks": [
-                { "title": "Cron de expiración", "completed": false },
-                { "title": "Cron de recordatorio idempotente", "completed": false },
-                { "title": "Cron de reconciliación", "completed": false }
+                {
+                    "title": "Cron de expiración",
+                    "completed": false
+                },
+                {
+                    "title": "Cron de recordatorio idempotente",
+                    "completed": false
+                },
+                {
+                    "title": "Cron de reconciliación",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "cron"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1387,7 +2041,11 @@
             "subtasks": [],
             "tags": ["testing", "a11y", "web"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1405,7 +2063,11 @@
             "subtasks": [],
             "tags": ["docs"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1421,13 +2083,26 @@
             "blockedBy": ["T-066"],
             "blocks": [],
             "subtasks": [
-                { "title": "Checklist de smoke local", "completed": false },
-                { "title": "Checklist de smoke staging", "completed": false },
-                { "title": "Aplicar los 2 labels a HOS-376", "completed": false }
+                {
+                    "title": "Checklist de smoke local",
+                    "completed": false
+                },
+                {
+                    "title": "Checklist de smoke staging",
+                    "completed": false
+                },
+                {
+                    "title": "Aplicar los 2 labels a HOS-376",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "smoke"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": null,
@@ -1437,9 +2112,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 69,
+        "pending": 68,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.4
     }

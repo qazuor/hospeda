@@ -2294,6 +2294,15 @@
         "hostTradeCategory": {
             "invalid": "La categoría de oficio seleccionada no es válida"
         },
+        "hostTradeUsageChannel": {
+            "invalid": "El canal de registro del uso no es válido"
+        },
+        "hostTradeUsageDeclaredBy": {
+            "invalid": "El origen de la declaración del uso no es válido"
+        },
+        "hostTradeUsageStatus": {
+            "invalid": "El estado del uso del beneficio no es válido"
+        },
         "invoiceStatus": {
             "invalid": "El invoice status no es válido"
         },

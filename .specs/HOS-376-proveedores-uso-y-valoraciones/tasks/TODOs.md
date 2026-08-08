@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 0/69 tareas (0%)
+## Progreso: 1/69 tareas (1%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -14,7 +14,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Fase `setup` — 13 tareas (complejidad promedio 1.9)
 
-- [ ] **T-001** (c2) — Crear los 3 enums de uso del beneficio en @repo/schemas
+- [x] **T-001** (c2) — Crear los 3 enums de uso del beneficio en @repo/schemas
   - Crear packages/schemas/src/enums/host-trade-usage-status.{enum,schema}.ts (PENDING|CONFIRMED|REJECTED|EXPIRED), host-trade-usage-declared-by.{enum,schema}.ts (PROVIDER|HOST) y host-trade-usa…
   - Bloqueada por: — · Bloquea a: T-006, T-007, T-014, T-015
 - [ ] **T-002** (c1) — Agregar los 5 permisos nuevos a PermissionEnum
