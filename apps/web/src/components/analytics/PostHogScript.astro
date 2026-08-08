@@ -18,7 +18,8 @@
  * 3. Skips when the key is empty (so locally-built preview / staging
  *    environments without the secret stay quiet).
  * 4. Loads the official PostHog stub which fetches `array.js` asynchronously
- *    and upgrades `window.posthog` to the real SDK.
+ *    and upgrades `window.posthog` to the real SDK — but DEFERS that fetch
+ *    until after `load` + idle (see "Deferred array.js fetch" below).
  * 5. Reads the `cookie-consent` cookie SYNCHRONOUSLY and boots PostHog in a
  *    hybrid mode: `memory` persistence before consent (anonymous, cookieless),
  *    then `localStorage+cookie` once analytics consent is granted.
@@ -37,6 +38,42 @@
  * on a staging trace (mobile, 4x CPU, Slow 4G): one request plus ~6 ms of main
  * thread. REMOVE THIS FLAG before shipping any PostHog survey — with it set,
  * surveys silently never render and the survey APIs return no data.
+ *
+ * Deferred array.js fetch (HOS-369):
+ * `array.js` is ~79 KB over the wire from a THIRD-PARTY origin (DNS + TLS on
+ * top of the bytes) and the upstream stub fetches it during head parsing, so it
+ * lands squarely inside the LCP window. On a Slow-4G mobile trace of the home
+ * page it was the single largest resource competing with the hero image, which
+ * is bandwidth-bound (~158 KB/s effective across 134 concurrent resources).
+ *
+ * The fetch is therefore deferred to `load` + `requestIdleCallback`, WITHOUT
+ * deferring the stub itself. That distinction is load-bearing: `trackEvent()`
+ * goes through `createBrowserAnalytics` in `@repo/analytics`, whose `capture()`
+ * SILENTLY NO-OPS when `window.posthog` has no `capture` method (it is
+ * try/catch-wrapped and returns early on a falsy client). Deferring the stub
+ * would therefore drop every event fired before idle with no error anywhere.
+ * Running the stub synchronously keeps `window.posthog` queueing exactly as it
+ * does today; only the network request moves.
+ *
+ * HOW the fetch is held back: the stub is handed a minimal `document` PROXY
+ * instead of the real `document`. It creates its <script> through the proxy and
+ * inserts it before `getElementsByTagName('script')[0]` — which the proxy
+ * answers with an anchor node living in a detached DocumentFragment. A script
+ * element inserted into a detached fragment is NOT "already started", so no
+ * fetch happens; moving it into `document.head` later starts it normally. This
+ * keeps the upstream minified stub byte-for-byte untouched (editing it is how
+ * the `define:vars` incident below shipped a silent prod failure) — the only
+ * change is the argument it receives.
+ *
+ * The flush has a FAIL-SAFE: if the proxy did not capture a `script[src]` (a
+ * future upstream stub could restructure how it injects), it builds the script
+ * itself from `api_host` and appends it. Analytics degrading to "loads a bit
+ * early" is acceptable; degrading to "never loads, no error" is not.
+ *
+ * Known trade-off: `capture_performance.web_vitals` now starts observing after
+ * idle. The web-vitals library uses buffered PerformanceObservers so LCP/FCP
+ * entries are still picked up retroactively, but attribution fidelity for very
+ * late-firing metrics may drop slightly. Accepted for a 79 KB critical-path win.
  *
  * Call sites (search, accommodation detail, signup, contact-host, newsletter)
  * use `trackEvent()` from `@/lib/analytics/posthog-client` which is a thin
@@ -76,7 +113,24 @@ const shouldRender = !isDev && posthogKey.length > 0;
 const snippetBody = `
 if (!window.__hospeda_posthog_initialized) {
     window.__hospeda_posthog_initialized = true;
-    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init me Te Ee Re capture De calculateEventProperties Oe register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Ce $e createPersonProfile Ie opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing _t debug L getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(document,window.posthog||[]);
+
+    // HOS-369 — hold back the array.js network request without holding back the
+    // stub. The anchor lives in a detached DocumentFragment, so the <script> the
+    // stub inserts before it never starts loading; \`flushPostHogScript\` moves it
+    // into the real head after idle. See the file header for the full rationale.
+    var __phHolder = document.createDocumentFragment();
+    var __phAnchor = document.createElement('script');
+    __phHolder.appendChild(__phAnchor);
+    var __phDoc = {
+        createElement: function (tagName) {
+            return document.createElement(tagName);
+        },
+        getElementsByTagName: function (tagName) {
+            return tagName === 'script' ? [__phAnchor] : document.getElementsByTagName(tagName);
+        }
+    };
+
+    !function(t,e){var o,n,p,r;e.__SV||(window.posthog=e,e._i=[],e.init=function(i,s,a){function g(t,e){var o=e.split(".");2==o.length&&(t=t[o[0]],e=o[1]);t[e]=function(){t.push([e].concat(Array.prototype.slice.call(arguments,0)))}}(p=t.createElement("script")).type="text/javascript",p.crossOrigin="anonymous",p.async=!0,p.src=s.api_host.replace(".i.posthog.com","-assets.i.posthog.com")+"/static/array.js",(r=t.getElementsByTagName("script")[0]).parentNode.insertBefore(p,r);var u=e;for(void 0!==a?u=e[a]=[]:a="posthog",u.people=u.people||[],u.toString=function(t){var e="posthog";return"posthog"!==a&&(e+="."+a),t||(e+=" (stub)"),e},u.people.toString=function(){return u.toString(1)+".people (stub)"},o="init me Te Ee Re capture De calculateEventProperties Oe register register_once register_for_session unregister unregister_for_session getFeatureFlag getFeatureFlagPayload isFeatureEnabled reloadFeatureFlags updateEarlyAccessFeatureEnrollment getEarlyAccessFeatures on onFeatureFlags onSurveysLoaded onSessionId getSurveys getActiveMatchingSurveys renderSurvey canRenderSurvey canRenderSurveyAsync identify setPersonProperties group resetGroups setPersonPropertiesForFlags resetPersonPropertiesForFlags setGroupPropertiesForFlags resetGroupPropertiesForFlags reset get_distinct_id getGroups get_session_id get_session_replay_url alias set_config startSessionRecording stopSessionRecording sessionRecordingStarted captureException loadToolbar get_property getSessionProperty Ce $e createPersonProfile Ie opt_in_capturing opt_out_capturing has_opted_in_capturing has_opted_out_capturing clear_opt_in_out_capturing _t debug L getPageViewId captureTraceFeedback captureTraceMetric".split(" "),n=0;n<o.length;n++)g(u,o[n]);e._i.push([i,s,a])},e.__SV=1)}(__phDoc,window.posthog||[]);
 
 (function () {
     function readAnalyticsConsent() {
@@ -144,6 +198,44 @@ if (!window.__hospeda_posthog_initialized) {
         var detail = event && event.detail;
         syncCaptureConsent(!!(detail && detail.analytics === true));
     });
+
+    // Move the stub's <script> from the detached fragment into the real head,
+    // which is what actually starts the array.js request. Idempotent.
+    function flushPostHogScript() {
+        if (window.__hospeda_posthog_script_flushed) {
+            return;
+        }
+        window.__hospeda_posthog_script_flushed = true;
+
+        var el = __phHolder.querySelector('script[src]');
+        if (!el) {
+            // Fail-safe: the upstream stub did not inject where the proxy could
+            // capture it. Build the request ourselves rather than let analytics
+            // die silently.
+            el = document.createElement('script');
+            el.type = 'text/javascript';
+            el.crossOrigin = 'anonymous';
+            el.async = true;
+            el.src =
+                ${JSON.stringify(posthogHost)}.replace('.i.posthog.com', '-assets.i.posthog.com') +
+                '/static/array.js';
+        }
+        document.head.appendChild(el);
+    }
+
+    function schedulePostHogScript() {
+        if (typeof window.requestIdleCallback === 'function') {
+            window.requestIdleCallback(flushPostHogScript, { timeout: 3000 });
+        } else {
+            window.setTimeout(flushPostHogScript, 1000);
+        }
+    }
+
+    if (document.readyState === 'complete') {
+        schedulePostHogScript();
+    } else {
+        window.addEventListener('load', schedulePostHogScript, { once: true });
+    }
 })();
 }
 `;
