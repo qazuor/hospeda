@@ -76,26 +76,6 @@ const HOS_376_CODES: ReadonlyArray<readonly [ServiceErrorCode, number]> = [
     [ServiceErrorCode.PROVIDER_REVOKED, 422]
 ];
 
-/**
- * Codes the legacy `"CODE: message"` path does NOT map, and that this guard
- * therefore does not assert.
- *
- * This is a PRE-EXISTING gap, not one introduced with the HOS-376 codes: all
- * three are correctly mapped on the `ServiceError` path and in
- * `ERROR_CODE_TO_HTTP`, and are missing only from `statusCodeMap`. The legacy
- * path is reached from exactly one place in the codebase today
- * (`routes/newsletter/admin/campaigns.ts`), so the gap is latent rather than
- * demonstrably live — which is why it is recorded here instead of quietly
- * fixed inside an unrelated change.
- *
- * The list must never grow. A new code belongs in every mapping site.
- */
-const KNOWN_LEGACY_PATH_GAPS: readonly ServiceErrorCode[] = [
-    ServiceErrorCode.QUOTA_EXCEEDED,
-    ServiceErrorCode.LIMIT_REACHED,
-    ServiceErrorCode.ENTITLEMENT_REQUIRED
-];
-
 describe('ServiceErrorCode → HTTP mapping', () => {
     it.each(
         Object.values(ServiceErrorCode)
@@ -114,8 +94,17 @@ describe('ServiceErrorCode → HTTP mapping', () => {
         }
     });
 
+    /**
+     * No exclusion list. The two paths must agree for EVERY code.
+     *
+     * There used to be one, holding QUOTA_EXCEEDED / LIMIT_REACHED /
+     * ENTITLEMENT_REQUIRED, which `statusCodeMap` never mapped — so a plain
+     * `Error("LIMIT_REACHED: ...")` answered 500 instead of 403. Closing that
+     * hole is what lets this assertion be total, and total is the point: an
+     * allowed-exceptions list is a place for the next gap to hide.
+     */
     it.each(
-        Object.values(ServiceErrorCode).filter((code) => !KNOWN_LEGACY_PATH_GAPS.includes(code))
+        Object.values(ServiceErrorCode)
     )('%s resolves identically on the legacy "CODE: message" path', (code) => {
         const viaServiceError = statusFor(new ServiceError(code, 'guard probe'));
         const viaLegacyString = statusFor(new Error(`${code}: guard probe`));
@@ -126,7 +115,18 @@ describe('ServiceErrorCode → HTTP mapping', () => {
         expect(statusFor(new ServiceError(code, 'guard probe'))).toBe(expected);
     });
 
-    it('keeps the documented legacy-path gap from growing', () => {
-        expect(KNOWN_LEGACY_PATH_GAPS).toHaveLength(3);
+    /**
+     * The three codes whose absence from `statusCodeMap` was the original gap.
+     * Named explicitly so a regression reads as "the entitlement refusal became
+     * a 500 again" rather than as one anonymous row in a parametrised list.
+     */
+    it.each([
+        [ServiceErrorCode.QUOTA_EXCEEDED, 429],
+        [ServiceErrorCode.LIMIT_REACHED, 403],
+        [ServiceErrorCode.ENTITLEMENT_REQUIRED, 403]
+    ] as ReadonlyArray<
+        readonly [ServiceErrorCode, number]
+    >)('%s survives the legacy path with its real status, not a 500', (code, expected) => {
+        expect(statusFor(new Error(`${code}: guard probe`))).toBe(expected);
     });
 });

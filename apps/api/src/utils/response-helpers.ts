@@ -573,6 +573,13 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.PROVIDER_TIMEOUT]: 504,
                 [ServiceErrorCode.PLAN_DISABLED]: 410,
                 [ServiceErrorCode.GONE]: 410,
+                // These three were missing, so a legacy `"CODE: message"` error
+                // carrying them fell through `?? 500` — an entitlement or limit
+                // refusal reaching the client as a server fault, which reads as
+                // "the site is broken" instead of "your plan does not cover this".
+                [ServiceErrorCode.QUOTA_EXCEEDED]: 429,
+                [ServiceErrorCode.LIMIT_REACHED]: 403,
+                [ServiceErrorCode.ENTITLEMENT_REQUIRED]: 403,
                 // Host-trade benefit usage + reviews (HOS-376 §7.5)
                 [ServiceErrorCode.HOST_NOT_FOUND]: 404,
                 [ServiceErrorCode.USAGE_PENDING_EXISTS]: 409,
