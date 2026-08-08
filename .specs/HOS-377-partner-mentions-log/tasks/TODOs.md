@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 29/32 tasks (91%)
+## Progress: 32/32 tasks (100%) ✅
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -235,16 +235,38 @@
 
 ### Testing Phase (2 tasks, avg 2.5)
 
-- [ ] **T-030** (complexity: 3) — Static copy guard for AC-3
+- [x] **T-030** (complexity: 3) — Static copy guard for AC-3 ✅
   - A constraint over every present and future string needs a guard, not N assertions
+  - ⚠ CI question resolved AGAINST `check:guards`: it is invoked by NO workflow and NO
+    git hook — it appears exactly once in the repo, in `package.json`. The predicate
+    therefore lives in `packages/i18n/test/partner-mention-copy.guard.test.ts`, which CI
+    reaches via `turbo run test` (verified: `@repo/i18n#test` IS in the turbo graph).
+    The shell script is a local convenience and is registered in `check:guards`
+  - ⚠ Terms match on a WORD BOUNDARY, not as substrings — "clic" sits inside "cíclico",
+    so a substring check would flag a legitimate word and the message would misstate
+    what the string contains. Accent-folded via NFD
+  - Mutation-verified 3× (alcance · accented estadísticas · impresiones)
   - Blocked by: T-025, T-029 · Blocks: none
 
-- [ ] **T-031** (complexity: 2) — AC-4: gold and silver render identically (and bronze)
+- [x] **T-031** (complexity: 2) — AC-4: gold and silver render identically (and bronze) ✅
+  - Payloads compared by SERIALIZATION, not field-by-field: a field list only covers the
+    fields somebody remembered to name, and a tier-dependent extra key slips through
+  - The fixture half alone passes trivially (no branch exists) and would keep passing if
+    one were added downstream, so a STATIC half scans all 15 feature files for a tier
+    reference in executable code, comments stripped
+  - 6 tests · mutation-verified (a planted `const tier` turns the static half red)
   - Blocked by: T-027 · Blocks: none
 
 ### Docs Phase (1 task, avg 1.0)
 
-- [ ] **T-032** (complexity: 1) — File the `partners.analytics` removal follow-up (R-3)
+- [x] **T-032** (complexity: 1) — File the `partners.analytics` removal follow-up (R-3) ✅
+  - **HOS-420** — Backlog, Low, `area-db`/`source-agent`/`kind-needs-spec`, linked as
+    `related` from HOS-377
+  - ⚠ CORRECTION to this task's own premise: "zero references outside the schema file"
+    is NOT accurate. Nothing READS the column, but it is declared or excluded in **4
+    source files plus 2 test fixtures** (`partner.dbschema.ts`, `partner.schema.ts`,
+    `partner.create.schema.ts`'s omit list, `partner.owner.schema.ts`'s strip list, and
+    two `__tests__` fixtures). The issue documents that real scope
   - Blocked by: none · Blocks: none
 
 ---

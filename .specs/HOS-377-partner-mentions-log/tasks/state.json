@@ -1090,98 +1090,98 @@
         {
             "id": "T-030",
             "title": "Static copy guard for AC-3 (forbidden vocabulary)",
-            "description": "AC-3 is a constraint over every string in the feature, present and future — that needs a GUARD, not N assertions. Add a script under scripts/ that fails when any i18n key under the partner-mentions namespaces (admin + web, all locales) contains 'alcance', 'impresion', 'clic' or 'estadistica' (accent- and case-insensitive). The failure message must state exactly what the predicate checks and nothing more. Register it in check:guards AND verify it actually runs in CI — being in check:guards does not imply that.",
-            "status": "pending",
+            "description": "AC-3 is a constraint over every string in the feature, present and future — that needs a GUARD, not N assertions. Add a script under scripts/ that fails when any i18n key under the partner-mentions namespaces (admin + web, all locales) contains 'alcance', 'impresion', 'clic' or 'estadistica' (accent- and case-insensitive). The failure message must state exactly what the predicate checks and nothing more. Register it in check:guards AND verify it actually runs in CI — being in check:guards does not imply that. DONE, and the CI question resolved AGAINST check:guards: it is invoked by NO workflow and NO git hook — it appears exactly once in the whole repo, in package.json. So the predicate lives in packages/i18n/test/partner-mention-copy.guard.test.ts, which CI reaches via `turbo run test` (verified: @repo/i18n#test IS in the turbo graph). scripts/check-partner-mention-copy.sh is a local convenience that delegates to the same test, and IS registered in check:guards. GOTCHA: terms match on a WORD BOUNDARY, not as substrings — 'clic' sits inside 'ciclico', so a substring check would flag a legitimate word and the message would misstate what the string contains. Accent-folded via NFD so 'estadísticas' cannot bypass it. Mutation-verified 3x (alcance, accented estadísticas, impresiones).",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-025", "T-029"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Guard script over the mention i18n namespaces",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutation-test it: plant a forbidden word, confirm red",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Register in check:guards and confirm CI runs it",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "guard"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T14:00:00.000Z",
+                "completed": "2026-08-08T14:15:00.000Z"
             }
         },
         {
             "id": "T-031",
             "title": "Test AC-4 — gold and silver render identically",
-            "description": "Assert no tier-based branching exists in the mentions feature: the same fixture rendered with tier 'gold' and tier 'silver' produces identical output, and the payload shape is identical. Tier affects only how often ops populates the log, never what is rendered. Also covers BRONZE (R-4) — it must not crash or render differently either.",
-            "status": "pending",
+            "description": "Assert no tier-based branching exists in the mentions feature: the same fixture rendered with tier 'gold' and tier 'silver' produces identical output, and the payload shape is identical. Tier affects only how often ops populates the log, never what is rendered. Also covers BRONZE (R-4) — it must not crash or render differently either. DONE: 6 tests in packages/service-core/test/services/partner/partner-mention.tier-blindness.test.ts. Payloads compared by SERIALIZATION, not field-by-field — a field list only covers the fields somebody remembered to name, and a tier-dependent extra key would slip through. Covers both read paths (listForOwner and listForPartner) since they have different shapes. Also asserts the tier is ABSENT from the payload entirely, which is the strongest form of 'the UI cannot branch on it'. The fixture half alone passes trivially (no branch exists today) and would keep passing if one were added downstream, so a STATIC half scans all 15 feature files for a tier reference in executable code, comments stripped. Mutation-verified: planting `const tier = 'GOLD'` in the web component turns it red naming the file and the term.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-027"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "gold vs silver identical render",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "bronze does not diverge or crash",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T14:00:00.000Z",
+                "completed": "2026-08-08T14:15:00.000Z"
             }
         },
         {
             "id": "T-032",
             "title": "File the partners.analytics removal follow-up (R-3)",
-            "description": "Create a Linear issue in team Hospeda to drop the dead partners.analytics jsonb column and the PartnerAnalytics interface (verified zero references outside the schema file). Deliberately NOT bundled into this spec's migration — leaving it beside partner_mentions invites confusion about which is the real source, but dropping a column is its own reviewable change. Label area-db, source-agent, kind-needs-spec.",
-            "status": "pending",
+            "description": "Create a Linear issue in team Hospeda to drop the dead partners.analytics jsonb column and the PartnerAnalytics interface (verified zero references outside the schema file). Deliberately NOT bundled into this spec's migration — leaving it beside partner_mentions invites confusion about which is the real source, but dropping a column is its own reviewable change. Label area-db, source-agent, kind-needs-spec. DONE: HOS-420, Backlog, priority Low, labelled area-db + source-agent + kind-needs-spec, linked as `related` from HOS-377. CORRECTION to this task's own premise: 'zero references outside the schema file' is NOT accurate. Nothing READS the column (verified across service-core, api, web, admin and seed — every .analytics hit there is sponsorship/cookie-consent/PostHog/host-dashboard, unrelated), but it is DECLARED OR EXCLUDED in 4 source files plus 2 test fixtures: partner.dbschema.ts (the column), partner.schema.ts (partnerAnalyticsSchema + the type + the entity field), partner.create.schema.ts (omit list), partner.owner.schema.ts (strip list), and two __tests__ fixtures. The issue documents that real scope, because removing the column without the strip-list entry leaves a list naming a field that no longer exists.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Create the Linear issue with context",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Link it from HOS-377",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "cleanup"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T14:00:00.000Z",
+                "completed": "2026-08-08T14:15:00.000Z"
             }
         }
     ],
