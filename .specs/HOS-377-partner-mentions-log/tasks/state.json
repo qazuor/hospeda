@@ -476,164 +476,164 @@
         {
             "id": "T-012",
             "title": "Admin route: POST /admin/partners/{partnerId}/mentions (batch create)",
-            "description": "apps/api/src/routes/partners/admin/mentions/create.ts following manual-payment.ts exactly: createAdminRoute, PermissionEnum.PARTNER_MANAGE, auditLog() with resourceType 'partner-mention'. Body validated by createPartnerMentionBatchSchema. Returns the created rows. Thin wrapper — all logic in the service.",
-            "status": "pending",
+            "description": "apps/api/src/routes/partners/admin/mentions/create.ts following manual-payment.ts exactly: createAdminRoute, PermissionEnum.PARTNER_MANAGE, auditLog() with resourceType 'partner-mention'. Body validated by createPartnerMentionBatchSchema. Returns the created rows. Thin wrapper — all logic in the service. DONE: the handler spreads the PARSED body with the path partnerId LAST, so the schema's stripping is what decides ownership; a route test pins that spread order against a body carrying a foreign partnerId and batchId. auditLog uses AuditEventType.BILLING_MUTATION, the only variant carrying resourceType/resourceId — same precedent as the sibling manual-payment.ts. Note it is in CRITICAL_AUDIT_EVENTS, so these land at Sentry warning level.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Route file with createAdminRoute",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "auditLog entry",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "OpenAPI response shape",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:50:00.000Z",
+                "completed": "2026-08-08T06:40:00.000Z"
             }
         },
         {
             "id": "T-013",
             "title": "Admin route: GET /admin/partners/{partnerId}/mentions (list)",
-            "description": "apps/api/src/routes/partners/admin/mentions/list.ts — paginated, newest-first, page+pageSize (never limit; createAdminListRoute rejects unknown params). Includes internalNote (admin surface).",
-            "status": "pending",
+            "description": "apps/api/src/routes/partners/admin/mentions/list.ts — paginated, newest-first, page+pageSize (never limit; createAdminListRoute rejects unknown params). Includes internalNote (admin surface). DONE: needed a real total, which the model did not have. Added PartnerMentionModel.countByPartner sharing its WHERE terms with findByPartner via a private builder, and listForPartner now returns { mentions, total } — a count applying fewer filters than the list would paginate against a different question. A route test pins that a 1-row page of a 137-row set reports 137, not 1.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "List route with pagination",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Newest-first ordering assertion",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:50:00.000Z",
+                "completed": "2026-08-08T06:40:00.000Z"
             }
         },
         {
             "id": "T-014",
             "title": "Admin route: PATCH /admin/partners/{partnerId}/mentions/{id}",
-            "description": "apps/api/src/routes/partners/admin/mentions/update.ts — correct a wrong date or a pasted-wrong link (OQ-6). createAdminRoute + PARTNER_MANAGE + auditLog. Must reject an id that belongs to a different partner (path partnerId is authoritative).",
-            "status": "pending",
+            "description": "apps/api/src/routes/partners/admin/mentions/update.ts — correct a wrong date or a pasted-wrong link (OQ-6). createAdminRoute + PARTNER_MANAGE + auditLog. Must reject an id that belongs to a different partner (path partnerId is authoritative). DONE: the rejection lives in the SERVICE, not the route — correct() now takes partnerId and calls assertMentionBelongsTo, so the guarantee travels with the data instead of depending on each caller. Throws NOT_FOUND rather than FORBIDDEN: PARTNER_MANAGE is global so this is a correctness boundary, not a privilege one, and a distinct code would confirm the row exists under another partner.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Update route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cross-partner id rejection",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:50:00.000Z",
+                "completed": "2026-08-08T06:40:00.000Z"
             }
         },
         {
             "id": "T-015",
             "title": "Admin route: DELETE /admin/partners/{partnerId}/mentions/{id}",
-            "description": "apps/api/src/routes/partners/admin/mentions/delete.ts — soft delete only (never hard). Same guards as PATCH, plus auditLog.",
-            "status": "pending",
+            "description": "apps/api/src/routes/partners/admin/mentions/delete.ts — soft delete only (never hard). Same guards as PATCH, plus auditLog. DONE: remove() takes partnerId and runs the same assertMentionBelongsTo check as correct(). The route returns a body (success/message) rather than nothing, because the factory answers 204 for an empty result and a silent 204 gives the admin UI nothing to confirm against.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": ["T-016"],
             "subtasks": [
                 {
                     "title": "Soft-delete route",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cross-partner id rejection",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:50:00.000Z",
+                "completed": "2026-08-08T06:40:00.000Z"
             }
         },
         {
             "id": "T-016",
             "title": "Mount the admin mentions route group and add e2e coverage",
-            "description": "Wire apps/api/src/routes/partners/admin/mentions/index.ts into the partners admin router. E2E tests: a 4-entry POST returns 4 rows with one shared batchId (AC-7); a caller without PARTNER_MANAGE gets 403; list is newest-first. NOTE: verify which vitest config actually runs these in CI — apps/api has THREE configs and a chunk of its e2e suite does not run in CI.",
-            "status": "pending",
+            "description": "Wire apps/api/src/routes/partners/admin/mentions/index.ts into the partners admin router. E2E tests: a 4-entry POST returns 4 rows with one shared batchId (AC-7); a caller without PARTNER_MANAGE gets 403; list is newest-first. NOTE: verify which vitest config actually runs these in CI — apps/api has THREE configs and a chunk of its e2e suite does not run in CI. DONE: the CI question resolved AGAINST test/e2e/ — `test:e2e` appears in no workflow, and CI runs `turbo run test`, which reaches only vitest.config.ts (include test/**/*.test.ts, excluding test/e2e/** and test/integration/**). The suite therefore lives at test/routes/partners/admin/mentions/mentions-routes.test.ts, 15 tests. Route factories are mocked as identity functions so each module's export IS its options object, which makes the declared path, method and permissions assertable alongside the handler. Also discovered and fixed: PartnerMentionService was never exported from the @repo/service-core barrel (services/index.ts exported only partner.service), so no route could import it.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012", "T-013", "T-014", "T-015"],
             "blocks": ["T-022"],
             "subtasks": [
                 {
                     "title": "Mount router",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "E2E batch + permission tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm the test file runs in CI",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "admin", "testing"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:50:00.000Z",
+                "completed": "2026-08-08T06:40:00.000Z"
             }
         },
         {

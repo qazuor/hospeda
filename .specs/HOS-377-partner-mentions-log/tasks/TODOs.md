@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 11/32 tasks (34%)
+## Progress: 16/32 tasks (50%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -87,21 +87,40 @@
 
 ### Integration Phase (18 tasks, avg 2.5)
 
-- [ ] **T-012** (complexity: 3) — `POST /admin/partners/{partnerId}/mentions` (batch create)
+- [x] **T-012** (complexity: 3) — `POST /admin/partners/{partnerId}/mentions` (batch create) ✅
+  - Handler spreads the PARSED body with the path `partnerId` LAST — that ordering is
+    what makes the schema's stripping decide ownership; a test pins it against a body
+    carrying a foreign `partnerId` + `batchId`
+  - ⚠ `auditLog` uses `BILLING_MUTATION` (the only variant with `resourceType`), which
+    is in `CRITICAL_AUDIT_EVENTS` → Sentry warning level. Same precedent as the sibling
+    `manual-payment.ts`
   - Blocked by: T-009 · Blocks: T-016
 
-- [ ] **T-013** (complexity: 2) — `GET /admin/partners/{partnerId}/mentions` (list)
-  - `page`+`pageSize`, never `limit`
+- [x] **T-013** (complexity: 2) — `GET /admin/partners/{partnerId}/mentions` (list) ✅
+  - `page`+`pageSize`, never `limit`; a test asserts `limit` is not a declared param
+  - Needed a real total the model did not have: added `countByPartner`, sharing its
+    WHERE terms with `findByPartner` via a private builder. `listForPartner` now
+    returns `{ mentions, total }`
   - Blocked by: T-010 · Blocks: T-016
 
-- [ ] **T-014** (complexity: 2) — `PATCH .../mentions/{id}`
+- [x] **T-014** (complexity: 2) — `PATCH .../mentions/{id}` ✅
+  - Cross-partner rejection lives in the SERVICE (`assertMentionBelongsTo`), not the
+    route, so it travels with the data. NOT_FOUND, not FORBIDDEN — `PARTNER_MANAGE` is
+    global, so this is correctness, and a distinct code would confirm the row exists
   - Blocked by: T-010 · Blocks: T-016
 
-- [ ] **T-015** (complexity: 2) — `DELETE .../mentions/{id}` (soft only)
+- [x] **T-015** (complexity: 2) — `DELETE .../mentions/{id}` (soft only) ✅
+  - Returns a body rather than nothing: the factory answers 204 on an empty result
   - Blocked by: T-010 · Blocks: T-016
 
-- [ ] **T-016** (complexity: 3) — Mount the admin route group + e2e coverage
-  - Confirm the test file actually runs in CI — `apps/api` has three vitest configs
+- [x] **T-016** (complexity: 3) — Mount the admin route group + e2e coverage ✅
+  - CI question resolved AGAINST `test/e2e/`: `test:e2e` is in NO workflow. CI runs
+    `turbo run test` → `vitest.config.ts` only. Suite lives at
+    `test/routes/partners/admin/mentions/mentions-routes.test.ts`, 15 tests
+  - Route factories mocked as identity fns, so the export IS the options object —
+    path, method and permissions become assertable alongside the handler
+  - ⚠ Found and fixed: `PartnerMentionService` was never exported from the
+    `@repo/service-core` barrel, so no route could import it
   - Blocked by: T-012, T-013, T-014, T-015 · Blocks: T-022
 
 - [ ] **T-017** (complexity: 3) — `GET /protected/partners/mine/mentions`
