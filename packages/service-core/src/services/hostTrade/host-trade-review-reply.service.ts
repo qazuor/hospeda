@@ -1,0 +1,317 @@
+import { HostTradeModel, HostTradeReviewModel, HostTradeReviewReplyModel } from '@repo/db';
+import type {
+    CountResponse,
+    HostTradeReview,
+    HostTradeReviewReply,
+    HostTradeReviewReplyAdminSearch
+} from '@repo/schemas';
+import {
+    HostTradeReviewReplyAdminSearchSchema,
+    HostTradeReviewReplyContentSchema,
+    HostTradeReviewReplyCreateInputSchema,
+    HostTradeReviewReplyUpdateInputSchema,
+    ModerationStatusEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
+import { z } from 'zod';
+import { BaseCrudService } from '../../base/base.crud.service';
+import type {
+    Actor,
+    PaginatedListOutput,
+    ServiceConfig,
+    ServiceContext,
+    ServiceOutput
+} from '../../types';
+import { ServiceError } from '../../types';
+import {
+    checkCanModerateHostTradeReviews,
+    checkCanViewAllHostTradeReviews
+} from './host-trade-review.permissions';
+
+/** Input for {@link HostTradeReviewReplyService.createReply}. */
+const createReplyInputSchema = z.object({
+    reviewId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    content: HostTradeReviewReplyContentSchema
+});
+
+/** Input for {@link HostTradeReviewReplyService.updateReply}. */
+const updateReplyInputSchema = z.object({
+    replyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    content: HostTradeReviewReplyContentSchema
+});
+
+/**
+ * Service for the provider's reply to a review (HOS-376 §6.4).
+ *
+ * Two properties define it.
+ *
+ * Authorisation is ROW OWNERSHIP, never a permission: an approved provider
+ * receives no role and no grant (AC-7 of HOS-278), so the only question is
+ * whether the reviewed listing is his. A review that is not answers NOT_FOUND
+ * rather than FORBIDDEN — the same rule the usage service follows — because a
+ * 403 would confirm the review exists and turn the endpoint into an oracle.
+ *
+ * And a reply is a RIGHT OF RESPONSE, not a thread: one per review, enforced by
+ * the UNIQUE index with a guard in front of it, editable by its author, and
+ * always subject to moderation before it reaches the directory.
+ */
+export class HostTradeReviewReplyService extends BaseCrudService<
+    HostTradeReviewReply,
+    HostTradeReviewReplyModel,
+    typeof HostTradeReviewReplyCreateInputSchema,
+    typeof HostTradeReviewReplyUpdateInputSchema,
+    typeof HostTradeReviewReplyAdminSearchSchema
+> {
+    static readonly ENTITY_NAME = 'hostTradeReviewReply';
+    protected readonly entityName = HostTradeReviewReplyService.ENTITY_NAME;
+    public readonly model: HostTradeReviewReplyModel;
+
+    public readonly createSchema = HostTradeReviewReplyCreateInputSchema;
+    public readonly updateSchema = HostTradeReviewReplyUpdateInputSchema;
+    public readonly searchSchema = HostTradeReviewReplyAdminSearchSchema;
+    protected readonly adminSearchSchema = HostTradeReviewReplyAdminSearchSchema;
+
+    private readonly reviewModel: HostTradeReviewModel;
+    private readonly hostTradeModel: HostTradeModel;
+
+    constructor(
+        ctx: ServiceConfig,
+        model?: HostTradeReviewReplyModel,
+        reviewModel?: HostTradeReviewModel,
+        hostTradeModel?: HostTradeModel
+    ) {
+        super(ctx, HostTradeReviewReplyService.ENTITY_NAME);
+        this.model = model ?? new HostTradeReviewReplyModel();
+        this.reviewModel = reviewModel ?? new HostTradeReviewModel();
+        this.hostTradeModel = hostTradeModel ?? new HostTradeModel();
+    }
+
+    protected override getSearchableColumns(): string[] {
+        return ['content'];
+    }
+
+    protected getDefaultListRelations() {
+        return undefined;
+    }
+
+    // --- Permission hooks -------------------------------------------------
+    //
+    // The generic CRUD surface is ADMIN-ONLY. The provider's own two operations
+    // do not come through it: they are `createReply` and `updateReply` below,
+    // authorised by ownership. Wiring `_canCreate` to a permission the provider
+    // does not hold is therefore correct, not an oversight.
+
+    protected _canCreate(actor: Actor): void {
+        checkCanModerateHostTradeReviews(actor);
+    }
+    protected _canUpdate(actor: Actor): void {
+        checkCanModerateHostTradeReviews(actor);
+    }
+    protected _canPatch(actor: Actor): void {
+        checkCanModerateHostTradeReviews(actor);
+    }
+    protected _canDelete(actor: Actor): void {
+        checkCanModerateHostTradeReviews(actor);
+    }
+    protected _canSoftDelete(actor: Actor): void {
+        checkCanModerateHostTradeReviews(actor);
+    }
+    protected _canHardDelete(actor: Actor): void {
+        checkCanModerateHostTradeReviews(actor);
+    }
+    protected _canRestore(actor: Actor): void {
+        checkCanModerateHostTradeReviews(actor);
+    }
+    protected _canUpdateVisibility(actor: Actor): void {
+        checkCanModerateHostTradeReviews(actor);
+    }
+    protected _canView(actor: Actor): void {
+        checkCanViewAllHostTradeReviews(actor);
+    }
+    protected _canList(actor: Actor): void {
+        checkCanViewAllHostTradeReviews(actor);
+    }
+    protected _canSearch(actor: Actor): void {
+        checkCanViewAllHostTradeReviews(actor);
+    }
+    protected _canCount(actor: Actor): void {
+        checkCanViewAllHostTradeReviews(actor);
+    }
+
+    protected async _executeSearch(
+        params: HostTradeReviewReplyAdminSearch,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<PaginatedListOutput<HostTradeReviewReply>> {
+        const { items, total } = await this.model.findAll(
+            this.buildReplyWhere(params),
+            undefined,
+            undefined,
+            ctx?.tx
+        );
+        return { items, total };
+    }
+
+    protected async _executeCount(
+        params: HostTradeReviewReplyAdminSearch,
+        _actor: Actor,
+        ctx: ServiceContext
+    ): Promise<CountResponse> {
+        const count = await this.model.count(this.buildReplyWhere(params), { tx: ctx?.tx });
+        return { count };
+    }
+
+    private buildReplyWhere(params: HostTradeReviewReplyAdminSearch): Record<string, unknown> {
+        const where: Record<string, unknown> = {};
+        if (params.reviewId) where.reviewId = params.reviewId;
+        if (params.authorUserId) where.authorUserId = params.authorUserId;
+        if (params.moderationState) where.moderationState = params.moderationState;
+        return where;
+    }
+
+    // --- The provider's two operations ------------------------------------
+
+    /**
+     * Answers a review of the actor's own listing (AC-21).
+     *
+     * The reply is born `PENDING` and this method does not say so: the state
+     * comes from the column default, so there is ONE place that decides it.
+     * T-027 layers `moderateText()` on top of that same default.
+     *
+     * @param input - The review being answered and the text.
+     * @param actor - The provider's owner account.
+     * @param ctx - Optional service context.
+     * @returns The created reply, awaiting moderation.
+     */
+    public async createReply(
+        input: { reviewId: string; content: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ reply: HostTradeReviewReply }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'createReply',
+            input: { ...input, actor },
+            schema: createReplyInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                const review = await this.requireAnswerableReview(
+                    validated.reviewId,
+                    validatedActor,
+                    ctx
+                );
+
+                // Defence in depth beside the UNIQUE index on `reviewId`: the
+                // index is the real guarantee, this turns the race loser's
+                // constraint violation into a meaningful 409.
+                // Defence in depth beside the UNIQUE index on `reviewId`: the
+                // index is the real guarantee, this turns the race loser's
+                // constraint violation into a meaningful 409.
+                const existing = await this.model.findOne({ reviewId: review.id }, ctx?.tx);
+                if (existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.ALREADY_EXISTS,
+                        'This review already has a reply'
+                    );
+                }
+
+                const reply = await this.model.create(
+                    {
+                        reviewId: review.id,
+                        authorUserId: validatedActor.id,
+                        content: validated.content,
+                        createdById: validatedActor.id,
+                        updatedById: validatedActor.id
+                    } as unknown as Partial<HostTradeReviewReply>,
+                    ctx?.tx
+                );
+
+                return { reply: reply as HostTradeReviewReply };
+            }
+        });
+    }
+
+    /**
+     * Rewrites the actor's own reply, which returns it to moderation (AC-23).
+     *
+     * The edited text leaves the directory until an admin clears it again, and
+     * the previous decision is WIPED rather than kept. It was made about text
+     * that no longer exists: left in place, the queue would show a reply
+     * "approved" at a timestamp that refers to something else, and a provider
+     * whose earlier version was rejected would keep reading a reason that no
+     * longer applies to anything he wrote.
+     *
+     * @param input - The reply id and its new text.
+     * @param actor - The provider's owner account.
+     * @param ctx - Optional service context.
+     * @returns The updated reply, back in `PENDING`.
+     */
+    public async updateReply(
+        input: { replyId: string; content: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ reply: HostTradeReviewReply }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateReply',
+            input: { ...input, actor },
+            schema: updateReplyInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                const reply = await this.model.findById(validated.replyId, ctx?.tx);
+                if (!reply || reply.deletedAt) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Reply not found');
+                }
+
+                // Ownership is re-derived from the listing rather than trusted
+                // from `authorUserId`: the column is frozen at writing time on
+                // purpose, so a listing that changed hands would otherwise let
+                // its former owner keep editing.
+                await this.requireAnswerableReview(reply.reviewId, validatedActor, ctx);
+
+                const updated = await this.model.update(
+                    { id: validated.replyId },
+                    {
+                        content: validated.content,
+                        moderationState: ModerationStatusEnum.PENDING,
+                        moderatedById: null,
+                        moderatedAt: null,
+                        moderationReason: null,
+                        updatedById: validatedActor.id
+                    } as unknown as Partial<HostTradeReviewReply>,
+                    ctx?.tx
+                );
+
+                return { reply: updated as HostTradeReviewReply };
+            }
+        });
+    }
+
+    /**
+     * Loads a review the actor is entitled to answer, or throws NOT_FOUND.
+     *
+     * Every refusal on this path is NOT_FOUND — missing review, deleted review,
+     * missing listing, somebody else's listing — so none of them can be told
+     * apart from outside.
+     */
+    private async requireAnswerableReview(
+        reviewId: string,
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<HostTradeReview> {
+        const notFound = () => new ServiceError(ServiceErrorCode.NOT_FOUND, 'Review not found');
+
+        const review = await this.reviewModel.findById(reviewId, ctx?.tx);
+        if (!review || review.deletedAt) {
+            throw notFound();
+        }
+
+        const provider = await this.hostTradeModel.findById(review.hostTradeId, ctx?.tx);
+        if (!provider || provider.deletedAt) {
+            throw notFound();
+        }
+        if (!provider.ownerUserId || provider.ownerUserId !== actor.id) {
+            throw notFound();
+        }
+
+        return review as HostTradeReview;
+    }
+}

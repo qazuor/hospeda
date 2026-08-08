@@ -1,8 +1,17 @@
+import type { HostTradeReviewReply } from '@repo/schemas';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { hostTradeReviewReplies } from '../../schemas/host-trade/host_trade_review_reply.dbschema.ts';
 
-/** Drizzle-inferred row shape for `host_trade_review_replies`. */
-type HostTradeReviewReplyRow = typeof hostTradeReviewReplies.$inferSelect;
+/**
+ * Row shape for `host_trade_review_replies`.
+ *
+ * The `@repo/schemas` entity, not `typeof table.$inferSelect`: Drizzle widens
+ * the pgEnum columns to `string`, which does not satisfy `BaseModel<TEntity>`
+ * once this model is bound to `BaseCrudService<HostTradeReviewReply, …>`. Same
+ * reason `HostTradeReviewModel` and `HostTradeBenefitUsageModel` were retyped
+ * when their services landed.
+ */
+type HostTradeReviewReplyRow = HostTradeReviewReply;
 
 /**
  * Model for the `host_trade_review_replies` table (HOS-376).
