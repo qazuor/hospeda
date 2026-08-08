@@ -927,6 +927,46 @@ value → indexable + the facet's dedicated-landing canonical (via
 > (unlike events/posts `categories`), so `?types=HOTEL,BOGUS` returns 200 (the bogus
 > value just matches nothing), not a 400. This is pre-existing and out of HOS-96 scope.
 
+### Partner pages: gold has one, silver does not (HOS-294)
+
+The public partner directory (`/{lang}/partners/`, a filtered grid) was retired
+by an owner decision and **is not coming back**. What replaced it is one page per
+partner at `/{lang}/partners/<slug>/`, granted only to the `gold` tier — that
+page is what separates the two paid partner plans, so the tier gate is a product
+decision, not an implementation detail.
+
+Four things a future reader would otherwise re-derive wrongly:
+
+- **The gate is three-state, not boolean.** `PartnerService.getPublicBySlug`
+  returns `found` / `gone` / `notFound`, and the route maps them to 200 / 410 /
+  404. `gone` means a gold partner that fails the visibility check (`ACTIVE` +
+  `active` subscription): it WAS published, so 410 tells crawlers to deindex it.
+  `notFound` means not gold, or no row — that URL was never served. Collapsing
+  the two renders identically in a browser and silently costs the deindex
+  signal. A gold partner downgraded to silver therefore 404s, deliberately: no
+  "was published" flag is stored, and the URL leaves the sitemap either way.
+- **`noindex` is never a literal.** `evaluatePartnerIndexability`
+  (`src/lib/seo/partner-indexable.ts`) is the ONE predicate, shared by the page
+  and `sitemap-dynamic.xml.ts`, so the sitemap cannot advertise a URL the page
+  serves `noindex`. It includes a minimum-content condition (a non-empty
+  description) to keep two-line pages out of the index.
+- **The carousel branches per tier, in both tracks.** `resolvePartnerLogoLink`
+  (`src/lib/partner-logo-link.ts`) decides the href: gold → its own page as a
+  plain internal link; anything else with a website → that site with
+  `rel="sponsored nofollow noopener"` in a new tab; neither → no link at all,
+  which is the normal day-one state since a freshly provisioned partner has
+  `websiteUrl = null`. `PartnersSection.astro` renders its logos TWICE (a visible
+  track and an `aria-hidden` duplicate for the seamless loop) and both must use
+  the resolver, or the halves drift.
+- **The tier is never rendered.** It decides whether the page exists and nothing
+  else. `partners.tiers.*` was deleted from i18n on purpose; `partners.types.*`
+  stays, because the page does show "Comercio" / "ONG" / "Institución".
+
+There is deliberately **no partner index page** (`/autores/<slug>/` is the same
+shape). Consequently `partner` has an entity cache tag but no collection tag; a
+partner write purges its own tag plus `home`, because the home carousel is the
+only surface that lists partners.
+
 ## Common Gotchas
 
 - **Locale param**: Access via `Astro.locals.locale` (validated by middleware), not `Astro.params.lang`

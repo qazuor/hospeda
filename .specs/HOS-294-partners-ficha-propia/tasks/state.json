@@ -878,74 +878,74 @@
             "id": "T-027",
             "title": "Run the repo guards and the full affected test suites",
             "description": "Before the PR: static-sitemap-pages.guard.test.ts, the i18n key guards, check-seed-dual-write.sh, and the endpoint-gate-matrix guard if the new route needs a row. Run the EXISTING tests of every file touched, not only the new ones — search the changed symbols in each package's test/ directory. Run each suite to completion; a scan truncated by a pipe reads as complete and is not.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-004", "T-014"],
             "blocks": ["T-028"],
             "subtasks": [
                 {
                     "title": "Run every repo guard",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Run existing tests of touched files",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Full typecheck across the monorepo",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "guards"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:23:50Z",
+                "completed": "2026-08-08T13:23:50Z"
             }
         },
         {
             "id": "T-028",
             "title": "Document the partner page in apps/web/CLAUDE.md",
             "description": "A short section covering the gold gate, the shared indexability predicate, the per-tier carousel rel contract, and the 410-vs-404 rule — the three things a future reader would otherwise re-derive wrongly. Also note in the root CLAUDE.md gotchas that partner tiers are gold/silver only since HOS-294.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-021", "T-023", "T-026", "T-027"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Write the apps/web/CLAUDE.md section",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Add the root gotcha line",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T13:23:50Z",
+                "completed": "2026-08-08T13:23:50Z"
             }
         }
     ],
     "summary": {
         "total": 28,
-        "pending": 6,
+        "pending": 4,
         "inProgress": 0,
-        "completed": 23,
+        "completed": 25,
         "blocked": 0,
         "averageComplexity": 2.0
     }
