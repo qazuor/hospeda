@@ -109,6 +109,14 @@ export default defineConfig({
         inlineStylesheets: 'never'
     },
     image: {
+        // Decorator around the built-in sharp service. It changes NO encoding
+        // behaviour — it only corrects the `format` sharp reports for AVIF
+        // output (`heif`), which is the field Astro's image endpoint turns into
+        // the `Content-Type`. Without it `/_image/?...&f=avif` is served as
+        // `image/heif`. Full rationale in the service file (HOS-369).
+        service: {
+            entrypoint: './src/lib/images/avif-mime-image-service.ts'
+        },
         // Built from ALLOWED_REMOTE_HOSTS (single source of truth shared with
         // the runtime SSRF guard `isAllowedRemoteHost()` in src/lib/media.ts).
         // `localhost` is HTTP for dev; the rest are HTTPS public CDNs.
