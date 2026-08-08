@@ -175,39 +175,39 @@
             "id": "T-006",
             "title": "Add PartnerService.getPublicBySlug with the three-state gold gate",
             "description": "New method in packages/service-core/src/services/partner/partner.service.ts wrapping PartnerModel.findBySlug (partner.model.ts:188 — it returns ANY partner regardless of visibility, so the gate must live here). Returns a three-state outcome so the route can distinguish 200 / 410 / 404 per spec D-3b: tier===GOLD && lifecycleState===ACTIVE && subscriptionStatus==='active' -> found; tier===GOLD failing visibility -> gone; tier!==GOLD or no row -> notFound. Tests: one case per state, and the failing-gate cases MUST use rows that EXIST — a nonexistent slug returns notFound before the gate ever runs and proves nothing.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-007"],
             "subtasks": [
                 {
                     "title": "Implement the three-state return type",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: gold + active -> found",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: existing gold, inactive -> gone",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit test: existing silver -> notFound",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "api"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:46:53Z",
+                "completed": "2026-08-08T04:51:40Z"
             }
         },
         {
@@ -943,9 +943,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 27,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 1,
+        "completed": 2,
         "blocked": 0,
         "averageComplexity": 2.0
     }
