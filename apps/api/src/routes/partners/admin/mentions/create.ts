@@ -13,6 +13,7 @@ import {
 } from '@repo/schemas';
 import { PartnerMentionService, ServiceError } from '@repo/service-core';
 import { z } from 'zod';
+import { createPartnerMentionNotifyPort } from '../../../../lib/partner-ports';
 import { getActorFromContext } from '../../../../utils/actor';
 import { AuditEventType, auditLog } from '../../../../utils/audit-logger';
 import { apiLogger } from '../../../../utils/logger';
@@ -35,7 +36,14 @@ export const adminCreatePartnerMentionsRoute = createAdminRoute({
     requestBody: createPartnerMentionBatchSchema,
     responseSchema: z.object({ mentions: z.array(partnerMentionSchema) }),
     handler: async (ctx, params, body) => {
-        const mentionService = new PartnerMentionService({ logger: apiLogger });
+        // The notifier is injected HERE rather than owned by the service: the
+        // transport, the `users`/`partners` reads and the email copy all live in
+        // this app, and `@repo/service-core` stays free of them. A context that
+        // injects none simply does not send (AC-9).
+        const mentionService = new PartnerMentionService({
+            logger: apiLogger,
+            notifier: createPartnerMentionNotifyPort()
+        });
         const actor = getActorFromContext(ctx);
         const partnerId = params.partnerId as string;
 
