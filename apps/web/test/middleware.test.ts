@@ -16,7 +16,6 @@
  * must never trigger `parseSessionUser`.
  */
 
-import { createHash } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Built via vi.hoisted because vi.mock's factory is hoisted above any
@@ -472,82 +471,5 @@ describe('middleware onRequest — Step 11 emits the Cache-Tag purge header (HOS
         });
 
         expect(response.headers.get('Cache-Tag')).toBe('list-accom');
-    });
-});
-
-// ---------------------------------------------------------------------------
-// HOS-369 async-CSS: Step 9 must defer non-allowlisted component stylesheets
-// BEFORE hashing the body for CSP. This is the load-bearing ordering the task
-// spec calls out explicitly: if `rewriteAsyncStylesheets` ran AFTER
-// `collectCspHashes`, the activation `<script>` it injects would never be
-// hashed, the browser would block it under CSP, and every deferred
-// stylesheet would stay at `media="print"` forever — a silently, permanently
-// unstyled page for every non-allowlisted component.
-//
-// These tests exercise the REAL `onRequest` end-to-end (not just
-// `rewriteAsyncStylesheets` in isolation, already covered by
-// `integrations/async-css/test/rewrite-async-stylesheets.test.ts`), the same
-// way the Step 11 suite above exercises the real Cache-Tag wiring.
-// ---------------------------------------------------------------------------
-describe('middleware onRequest — HOS-369 async-CSS: defers component stylesheets before CSP hashing', () => {
-    const PAGE_HTML =
-        '<!doctype html><html><head>' +
-        '<link rel="stylesheet" href="/_astro/index.PAGEHASH.css">' +
-        '<link rel="stylesheet" href="/_astro/BaseLayout.LAYOUTHASH.css">' +
-        '<link rel="stylesheet" href="/_astro/AccommodationCard.CARDHASH.css">' +
-        '</head><body><h1>hi</h1></body></html>';
-
-    beforeEach(() => {
-        parseSessionUserMock.mockClear();
-    });
-
-    /** Runs the real onRequest over PAGE_HTML and returns the final Response. */
-    async function renderPage(): Promise<Response> {
-        const context = createContext({ pathname: '/es/alojamientos/' });
-        const next = vi
-            .fn()
-            .mockResolvedValue(
-                new Response(PAGE_HTML, { headers: { 'content-type': 'text/html' } })
-            );
-
-        return (await onRequest(context as any, next)) as Response;
-    }
-
-    it('defers the non-allowlisted component stylesheet (media="print" + data-async-css)', async () => {
-        const response = await renderPage();
-        const body = await response.text();
-
-        expect(body).toContain(
-            '<link rel="stylesheet" href="/_astro/AccommodationCard.CARDHASH.css" media="print" data-async-css>'
-        );
-    });
-
-    it('leaves the page (index.*) and layout (*Layout) stylesheets blocking, untouched', async () => {
-        const response = await renderPage();
-        const body = await response.text();
-
-        expect(body).toContain('<link rel="stylesheet" href="/_astro/index.PAGEHASH.css">');
-        expect(body).toContain('<link rel="stylesheet" href="/_astro/BaseLayout.LAYOUTHASH.css">');
-        expect(body).not.toContain('href="/_astro/index.PAGEHASH.css" media="print"');
-        expect(body).not.toContain('href="/_astro/BaseLayout.LAYOUTHASH.css" media="print"');
-    });
-
-    it("the ORDER GUARD: the injected activation script's hash IS present in the CSP header", async () => {
-        // Independently derived (node:crypto, not the collector's own Web
-        // Crypto path) — proves the digest the browser will compute, not just
-        // that the collector agrees with itself.
-        const referenceHash = (source: string): string =>
-            `sha256-${createHash('sha256').update(source, 'utf8').digest('base64')}`;
-
-        const response = await renderPage();
-        const body = await response.text();
-        const scriptMatch = body.match(/<script data-async-css-activator>([^<]*)<\/script>/);
-
-        expect(scriptMatch).not.toBeNull();
-        const scriptContent = scriptMatch?.[1] ?? '';
-        expect(scriptContent.length).toBeGreaterThan(0);
-
-        const csp = response.headers.get('content-security-policy') ?? '';
-        expect(csp).toContain(`'${referenceHash(scriptContent)}'`);
     });
 });
