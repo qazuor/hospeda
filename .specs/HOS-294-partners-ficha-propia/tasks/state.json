@@ -610,101 +610,101 @@
             "id": "T-019",
             "title": "Create pages/[lang]/partners/[slug].astro (fetch, status, head)",
             "description": "SSR page: fetch via partnerApi.getBySlug, propagate 410 for gone and 404 for notFound (the pattern at alojamientos/[slug].astro:141), render SEOHead with noindex={!isIndexable} where isIndexable comes from evaluatePartnerIndexability — never a literal — and a self-referential canonical. The frontmatter must NOT read Astro.locals.user: the page is edge-cacheable and must be actor-blind (AC-13). Tests: SSR-HTML tests for 200/410/404 and a byte-identity test between anonymous and authenticated requests.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017", "T-018"],
             "blocks": ["T-021", "T-025", "T-026"],
             "subtasks": [
                 {
                     "title": "Frontmatter: fetch + status propagation",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "SEOHead with the predicate-driven noindex",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Actor-blindness test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "page", "seo"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:59:05Z",
+                "completed": "2026-08-08T05:59:05Z"
             }
         },
         {
             "id": "T-020",
             "title": "Add the detail page i18n keys in es/en/pt",
             "description": "New partners.detail.* keys in packages/i18n/src/locales/{es,en,pt}/partners.json: section headings for contact and social links, and the labels the page needs. No tier key. Since the page is a plain Astro page with no island, CLIENT_I18N_KEY_PREFIXES is NOT involved — but if an island is ever added here, its prefix must be registered there or the browser renders raw keys in production while dev looks fine.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-015"],
             "blocks": ["T-021"],
             "subtasks": [
                 {
                     "title": "Add keys to the three locales",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verify locale parity",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:59:05Z",
+                "completed": "2026-08-08T05:59:05Z"
             }
         },
         {
             "id": "T-021",
             "title": "Build the detail page markup and scoped styles",
             "description": "Single column, no hero, no gallery: logo, name, organization type (via partners.types.*), description, contact info, social links. It is a business card, not a listing. Vanilla CSS in a scoped <style> block with design tokens only — no hardcoded colors, uniform --radius-card. Every string through t(). Tests: SSR-HTML assertions for each rendered field, plus an assertion that the tier appears nowhere in the output (AC-1).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019", "T-020"],
             "blocks": ["T-028"],
             "subtasks": [
                 {
                     "title": "Markup for the six content blocks",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Scoped styles using tokens",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert the tier is never rendered",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "ui"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:59:05Z",
+                "completed": "2026-08-08T05:59:05Z"
             }
         },
         {
@@ -816,31 +816,31 @@
             "id": "T-025",
             "title": "Emit cache tags on the detail page response",
             "description": "The page response carries its own entity tag plus the CACHE_TAG_ALL catch-all at the head of the list (truncation drops the tail, and losing that one removes the response's last-resort purge path). No collection tag exists for partners by design. Tests: assert the emitted Cache-Tag header contains the namespaced entity tag and all, and never list-partner.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-009", "T-019"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Emit the tags on the page response",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Assert the header contents",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "cache"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:59:05Z",
+                "completed": "2026-08-08T05:59:05Z"
             }
         },
         {
@@ -943,9 +943,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 16,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 13,
+        "completed": 17,
         "blocked": 0,
         "averageComplexity": 2.0
     }

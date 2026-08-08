@@ -3,5 +3,12 @@
         "commerce": "Business",
         "ngo": "NGO",
         "institution": "Institution"
+    },
+    "detail": {
+        "metaTitle": "{name} — Hospeda partner",
+        "metaDescription": "Meet {name}, a Hospeda partner in the Entre Ríos Litoral.",
+        "contactHeading": "Contact",
+        "socialHeading": "Social",
+        "websiteLabel": "Website"
     }
 }
