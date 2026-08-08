@@ -83,10 +83,12 @@ const TYPE_OPTIONS: ReadonlyArray<{ value: PartnerTypeEnum; label: string }> = [
     { value: PartnerTypeEnum.INSTITUTION, label: 'Institución' }
 ];
 
+// Gold and silver are the only tiers. `bronze` was retired by HOS-294: it had
+// no plan and no price, and gold is the tier that grants the partner's own
+// public page at `/partners/<slug>/`.
 const TIER_OPTIONS: ReadonlyArray<{ value: PartnerTierEnum; label: string }> = [
     { value: PartnerTierEnum.GOLD, label: 'Gold' },
-    { value: PartnerTierEnum.SILVER, label: 'Silver' },
-    { value: PartnerTierEnum.BRONZE, label: 'Bronze' }
+    { value: PartnerTierEnum.SILVER, label: 'Silver' }
 ];
 
 // ---------------------------------------------------------------------------
