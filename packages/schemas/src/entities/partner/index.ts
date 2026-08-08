@@ -9,4 +9,5 @@ export * from './partner.query.schema.js';
 export * from './partner.schema.js';
 export * from './partner.update.schema.js';
 // Partner mentions log (HOS-377)
+export * from './partner-mention.create.schema.js';
 export * from './partner-mention.schema.js';
