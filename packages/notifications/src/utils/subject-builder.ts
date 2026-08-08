@@ -79,6 +79,12 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     // sit next to it.
     [NotificationType.PARTNER_UNPAID_NOTICE]: '{partnerName} todavía no está publicado',
 
+    // Mentions logged (HOS-377 AC-9). Says what was DONE and nothing about how
+    // it performed: "difundimos" is an action Hospeda actually took, whereas
+    // anything shaped like "el alcance de {partnerName}" promises a number the
+    // platform does not measure and will never be able to produce (AC-3).
+    [NotificationType.PARTNER_MENTIONS_LOGGED]: 'Difundimos {partnerName} el {mentionedAtLabel}',
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3)
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]:
         'Tu calendario de {providerLabel} dejó de sincronizarse — {accommodationName}',

@@ -88,6 +88,12 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // consequence on an arrangement the recipient entered, not marketing.
     [NotificationType.PARTNER_UNPAID_NOTICE]: NotificationCategory.TRANSACTIONAL,
 
+    // Mentions logged (HOS-377 AC-9) — TRANSACTIONAL: it reports work performed
+    // under the arrangement the partner is paying for, which is the thing they
+    // bought. Marketing would be Hospeda promoting itself; this is Hospeda
+    // reporting what it did for them.
+    [NotificationType.PARTNER_MENTIONS_LOGGED]: NotificationCategory.TRANSACTIONAL,
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3) — TRANSACTIONAL:
     // overbooking risk, always sent, never opted out of
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]: NotificationCategory.TRANSACTIONAL,
