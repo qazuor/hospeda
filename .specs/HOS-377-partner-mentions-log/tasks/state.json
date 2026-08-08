@@ -95,7 +95,7 @@
                 { "title": "Confirm zero residual drift via a second generate", "completed": true },
                 {
                     "title": "Re-run check-schema-drift.sh after the first commit",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["database", "migration"],

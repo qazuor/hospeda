@@ -37,8 +37,7 @@
 
 - [x] **T-004** (complexity: 2) — Generate and review the structural migration ✅
   - `0085_dizzy_jane_foster.sql` — purely additive; 0085 was unclaimed on every ref
-  - Zero residual drift (a second `db:generate` finds nothing)
-  - ⚠ `check-schema-drift.sh` still to be re-run after the first commit (needs a clean tree)
+  - Zero residual drift; `check-schema-drift.sh` green on a clean tree
   - Blocked by: T-003 · Blocks: T-008
 
 - [ ] **T-005** (complexity: 2) — Base `partnerMentionSchema`
