@@ -291,70 +291,70 @@
             "id": "T-010",
             "title": "Generar la migración estructural (pnpm db:generate)",
             "description": "Correr `pnpm db:generate` y commitear el .sql + el _journal.json resultantes. Verificar que el número de migración no colisiona con otro en vuelo (ver el gotcha de colisiones que se automergean en silencio). Correr `pnpm db:migrate` en la DB del worktree y confirmar que las 3 tablas, las 8 columnas y los 3 enums quedan aplicados. El drift guard bloquea CI si el schema TS cambió sin migración commiteada.",
-            "status": "in-progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-006", "T-007", "T-008", "T-009"],
             "blocks": ["T-011", "T-018"],
             "subtasks": [
                 {
                     "title": "pnpm db:generate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Verificar que no hay colisión de número",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "pnpm db:migrate en la DB del worktree",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "migration"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": "2026-08-08T05:20:31Z",
-                "completed": null
+                "completed": "2026-08-08T05:37:53Z"
             }
         },
         {
             "id": "T-011",
             "title": "Extras SQL: los CHECK que Drizzle no expresa",
             "description": "Archivo idempotente en packages/db/src/migrations/extras/: (a) overallRating BETWEEN 1 AND 5; (b) cada dimensión del jsonb rating dentro de 1-5 cuando el jsonb no es null; (c) cross-column: status='REJECTED' ⇒ rejectedAt IS NOT NULL, status='CONFIRMED' ⇒ confirmedAt IS NOT NULL. Aplicar con `pnpm db:apply-extras` y verificar que re-aplicarlo no falla. Tests: intentar insertar filas que violen cada CHECK y verificar el rechazo.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "CHECK de overallRating",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "CHECK de las dims del jsonb",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "CHECKs cross-column de status/timestamps",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["db", "migration", "extras"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:37:53Z",
+                "completed": "2026-08-08T05:37:53Z"
             }
         },
         {
@@ -2112,9 +2112,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 57,
-        "inProgress": 1,
-        "completed": 11,
+        "pending": 56,
+        "inProgress": 0,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.4
     }

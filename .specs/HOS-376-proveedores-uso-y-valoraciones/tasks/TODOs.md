@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 1/69 tareas (1%)
+## Progreso: 13/69 tareas (18%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -12,49 +12,49 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ---
 
-## Fase `setup` — 13 tareas (complejidad promedio 1.9)
+## Fase `setup` — 13/13 completadas (complejidad promedio 1.9)
 
 - [x] **T-001** (c2) — Crear los 3 enums de uso del beneficio en @repo/schemas
   - Crear packages/schemas/src/enums/host-trade-usage-status.{enum,schema}.ts (PENDING|CONFIRMED|REJECTED|EXPIRED), host-trade-usage-declared-by.{enum,schema}.ts (PROVIDER|HOST) y host-trade-usa…
   - Bloqueada por: — · Bloquea a: T-006, T-007, T-014, T-015
-- [ ] **T-002** (c1) — Agregar los 5 permisos nuevos a PermissionEnum
+- [x] **T-002** (c1) — Agregar los 5 permisos nuevos a PermissionEnum
   - En packages/schemas/src/enums/permission.enum.ts, junto al bloque HOST_TRADE_* existente (líneas ~943-950): HOST_TRADE_REVIEW_CREATE ('hostTrade.review.create'), HOST_TRADE_REVIEW_VIEW_ALL (…
   - Bloqueada por: — · Bloquea a: T-003
-- [ ] **T-003** (c2) — Baseline del seed: asignar los 5 permisos a HOST / ADMIN / SUPER_ADMIN
+- [x] **T-003** (c2) — Baseline del seed: asignar los 5 permisos a HOST / ADMIN / SUPER_ADMIN
   - En packages/seed/src/required/rolePermissions.seed.ts agregar: HOST → HOST_TRADE_REVIEW_CREATE (único que recibe); ADMIN y SUPER_ADMIN → los 5. Insertarlos en los bloques HOST_TRADE_* ya exi…
   - Bloqueada por: T-002 · Bloquea a: T-004
-- [ ] **T-004** (c2) — Data-migration del seed para los 5 permisos (dual-write OBLIGATORIO)
+- [x] **T-004** (c2) — Data-migration del seed para los 5 permisos (dual-write OBLIGATORIO)
   - Correr `pnpm db:seed:make hos376-host-trade-permissions` y escribir la data-migration que inserta los 5 role-permissions en entornos ya seedeados. SIN esto el baseline de T-003 sólo llega a …
   - Bloqueada por: T-003 · Bloquea a: —
-- [ ] **T-005** (c1) — Agregar la dependencia `qrcode` a apps/api
+- [x] **T-005** (c1) — Agregar la dependencia `qrcode` a apps/api
   - Instalar `qrcode` (+ tipos si el paquete no los trae) SOLO en apps/api. Fijar la versión verificando el registry. Verificar con el análisis de bundle que no aparece en apps/web (R-9: HOS-369…
   - Bloqueada por: — · Bloquea a: T-029
-- [ ] **T-006** (c3) — dbschema de host_trade_benefit_usages
+- [x] **T-006** (c3) — dbschema de host_trade_benefit_usages
   - packages/db/src/schemas/host-trade/host_trade_benefit_usage.dbschema.ts con todas las columnas de spec §7.1, FKs (hostTradeId cascade, hostUserId cascade), los índices simples y compuestos, …
   - Bloqueada por: T-001 · Bloquea a: T-010
-- [ ] **T-007** (c3) — dbschema de host_trade_reviews
+- [x] **T-007** (c3) — dbschema de host_trade_reviews
   - packages/db/src/schemas/host-trade/host_trade_review.dbschema.ts según spec §7.1: overallRating integer, rating jsonb nullable con las 3 dims, averageRating numeric(3,2) nullable, respectedB…
   - Bloqueada por: T-001 · Bloquea a: T-008, T-010
-- [ ] **T-008** (c2) — dbschema de host_trade_review_replies
+- [x] **T-008** (c2) — dbschema de host_trade_review_replies
   - packages/db/src/schemas/host-trade/host_trade_review_reply.dbschema.ts: reviewId UNIQUE FK cascade (una sola réplica por valoración), authorUserId, content, moderationState default PENDING, …
   - Bloqueada por: T-007 · Bloquea a: T-010
-- [ ] **T-009** (c2) — Agregar las 8 columnas nuevas a host_trades
+- [x] **T-009** (c2) — Agregar las 8 columnas nuevas a host_trades
   - En packages/db/src/schemas/host-trade/host_trade.dbschema.ts: confirmedUsesCount, distinctHostsCount, reviewsCount, benefitRespectedCount (integer NOT NULL default 0), averageRating (numeric…
   - Bloqueada por: — · Bloquea a: T-010
-- [ ] **T-010** (c2) — Generar la migración estructural (pnpm db:generate)
+- [x] **T-010** (c2) — Generar la migración estructural (pnpm db:generate)
   - Correr `pnpm db:generate` y commitear el .sql + el _journal.json resultantes. Verificar que el número de migración no colisiona con otro en vuelo (ver el gotcha de colisiones que se automerg…
   - Bloqueada por: T-006, T-007, T-008, T-009 · Bloquea a: T-011, T-018
-- [ ] **T-011** (c2) — Extras SQL: los CHECK que Drizzle no expresa
+- [x] **T-011** (c2) — Extras SQL: los CHECK que Drizzle no expresa
   - Archivo idempotente en packages/db/src/migrations/extras/: (a) overallRating BETWEEN 1 AND 5; (b) cada dimensión del jsonb rating dentro de 1-5 cuando el jsonb no es null; (c) cross-column: …
   - Bloqueada por: T-010 · Bloquea a: —
-- [ ] **T-012** (c1) — Constantes de configuración del dominio
+- [x] **T-012** (c1) — Constantes de configuración del dominio
   - En packages/schemas/src/entities/host-trade/: HOST_TRADE_USAGE_EXPIRY_DAYS=30, HOST_TRADE_USAGE_REMINDER_DAYS=10, HOST_TRADE_REJECTION_SUSPEND_THRESHOLD=3, HOST_TRADE_REJECTION_WINDOW_DAYS=9…
   - Bloqueada por: — · Bloquea a: T-020, T-022, T-040, T-052
-- [ ] **T-013** (c2) — Usuario seed que sea anfitrión Y proveedor a la vez
+- [x] **T-013** (c2) — Usuario seed que sea anfitrión Y proveedor a la vez
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 16 tareas (complejidad promedio 2.6)
+## Fase `core` — 0/16 completadas (complejidad promedio 2.6)
 
 - [ ] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -105,7 +105,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Helper en apps/api que, dado un host_trades.slug, genera el SVG del QR apuntando a {SITE_URL}/mi-cuenta/directorio-proveedores/{slug}/registrar-uso usando `qrcode`. Sin estado, sin tabla, si…
   - Bloqueada por: T-005 · Bloquea a: T-032
 
-## Fase `integration` — 27 tareas (complejidad promedio 2.5)
+## Fase `integration` — 0/27 completadas (complejidad promedio 2.5)
 
 - [ ] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -189,7 +189,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Ta…
   - Bloqueada por: T-038 · Bloquea a: —
 
-## Fase `testing` — 11 tareas (complejidad promedio 2.5)
+## Fase `testing` — 0/11 completadas (complejidad promedio 2.5)
 
 - [ ] **T-057** (c3) — Tests unitarios de la máquina de estados del uso
   - TODAS las transiciones válidas (PENDING→CONFIRMED, PENDING→REJECTED, PENDING→EXPIRED, REJECTED→PENDING por undo) y TODAS las inválidas (CONFIRMED→cualquier cosa, EXPIRED→cualquier cosa, dobl…
@@ -225,7 +225,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Verificar en NAVEGADOR, no sólo en vitest: el radiogroup de estrellas se opera con teclado y anuncia el valor; el <dialog> respeta el trap de foco y Escape; el pill del contador anuncia el n…
   - Bloqueada por: T-048 · Bloquea a: —
 
-## Fase `docs` — 2 tareas (complejidad promedio 1.5)
+## Fase `docs` — 0/2 completadas (complejidad promedio 1.5)
 
 - [ ] **T-068** (c2) — Documentación
   - Actualizar apps/api/docs/route-architecture.md con los tiers nuevos, docs/guides/review-moderation.md con la postura asimétrica y su fundamento, packages/seed/CLAUDE.md con el usuario de dob…
@@ -257,13 +257,6 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 `T-001 → T-007 → T-008 → T-010 → T-018 → T-019 → T-021 → T-024 → T-025 → T-027 → T-028 → T-037 → T-041 → T-068`
 
-Los enums (T-001) y el dbschema de valoraciones (T-007) están en la raíz de todo. Cualquier
-demora ahí se propaga entera.
+## Siguiente
 
-## Por dónde arrancar
-
-**T-001** (c2) — crea los 3 enums y desbloquea 4 tareas. En paralelo se pueden tomar T-002,
-T-005, T-009, T-012 y T-013, que no dependen de nada.
-
-**Ojo con T-004**: la data-migration del seed es obligatoria junto al baseline de T-003. El guard
-`check-seed-dual-write.sh` es fail-closed y bloquea el PR si falta.
+Fase `setup` completa. Las disponibles ahora: T-014, T-015, T-018, T-029, T-040
