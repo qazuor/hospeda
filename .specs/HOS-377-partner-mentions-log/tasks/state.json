@@ -639,71 +639,71 @@
         {
             "id": "T-017",
             "title": "Protected route: GET /protected/partners/mine/mentions",
-            "description": "Add to the EXISTING apps/api/src/routes/partners/protected/ group (alongside mine.ts), gated by ownership of the partners.ownerUserId row exactly as GET /protected/partners/mine already is — NOT by a permission (the partner door has no acquiredPermission and never will; spec §5). Returns rows grouped by batchId, newest-first, internalNote omitted.",
-            "status": "pending",
+            "description": "Add to the EXISTING apps/api/src/routes/partners/protected/ group (alongside mine.ts), gated by ownership of the partners.ownerUserId row exactly as GET /protected/partners/mine already is — NOT by a permission (the partner door has no acquiredPermission and never will; spec §5). Returns rows grouped by batchId, newest-first, internalNote omitted. DONE: mine-mentions.ts, handler exported standalone the same way handleGetMyPartner is. The route re-strips NOTHING — the service owns the mask, and a second hand-maintained one here is how the two drift. The batch shape needed a contract both the API and the web fetcher could share, so partnerMentionBatchSchema was added to @repo/schemas and service-core's hand-written PartnerMentionBatchView is now an alias of the inferred type.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-010"],
             "blocks": ["T-018", "T-026"],
             "subtasks": [
                 {
                     "title": "Route file in the protected group",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Ownership gate mirroring mine.ts",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Batch-grouped response shape",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "protected"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T06:45:00.000Z",
+                "completed": "2026-08-08T07:25:00.000Z"
             }
         },
         {
             "id": "T-018",
             "title": "Protected route tests — internalNote leak and ownership",
-            "description": "AC-11: assert internalNote is absent from the RESPONSE PAYLOAD, not merely unrendered by the UI. AC-10: a 3-row batch comes back as one grouped entry, not three. Ownership: a logged-in user who owns no partner gets an empty/404 result, and a user who owns partner A cannot read partner B's mentions. The ownership test needs a partner row that actually EXISTS and is owned by someone else — a nonexistent id returns 404 before the gate and proves nothing.",
-            "status": "pending",
+            "description": "AC-11: assert internalNote is absent from the RESPONSE PAYLOAD, not merely unrendered by the UI. AC-10: a 3-row batch comes back as one grouped entry, not three. Ownership: a logged-in user who owns no partner gets an empty/404 result, and a user who owns partner A cannot read partner B's mentions. The ownership test needs a partner row that actually EXISTS and is owned by someone else — a nonexistent id returns 404 before the gate and proves nothing. DONE: 8 tests. Two partner rows with two owners and two distinct logs, so the cross-owner case has something the filter must decline to return. The REAL service runs against stub models — a stubbed listForOwner would only prove the route forwards a value, while the stripping and the ownership filter ARE the thing under test. Leak assertions are on the SERIALIZED payload, so a note surfacing under an unexpected key still fails. Mutation-verified twice: neutralising the strip turns 2 red, neutralising the ownership filter turns 5 red.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "internalNote absent from payload",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Batch grouping assertion",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cross-owner denial with a real existing row",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "testing", "security"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T06:45:00.000Z",
+                "completed": "2026-08-08T07:25:00.000Z"
             }
         },
         {

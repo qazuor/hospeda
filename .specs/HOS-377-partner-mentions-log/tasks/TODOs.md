@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 16/32 tasks (50%)
+## Progress: 18/32 tasks (56%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -123,12 +123,22 @@
     `@repo/service-core` barrel, so no route could import it
   - Blocked by: T-012, T-013, T-014, T-015 · Blocks: T-022
 
-- [ ] **T-017** (complexity: 3) — `GET /protected/partners/mine/mentions`
-  - Ownership gate mirroring `mine.ts` — NOT a permission
+- [x] **T-017** (complexity: 3) — `GET /protected/partners/mine/mentions` ✅
+  - Ownership gate mirroring `mine.ts` — NOT a permission. Fails closed to an empty
+    list, never 403 (which would confirm a partner exists)
+  - The route re-strips NOTHING: the service owns the mask, and a second
+    hand-maintained one here is how the two drift apart
+  - Added `partnerMentionBatchSchema` to `@repo/schemas` as the shared batch contract;
+    service-core's `PartnerMentionBatchView` is now an alias of the inferred type
   - Blocked by: T-010 · Blocks: T-018, T-026
 
-- [ ] **T-018** (complexity: 3) — Protected route tests: `internalNote` leak + ownership
+- [x] **T-018** (complexity: 3) — Protected route tests: `internalNote` leak + ownership ✅
   - The cross-owner test needs a partner row that EXISTS, or 404 fires before the gate
+    — so the fixture has TWO owners with TWO real logs
+  - The REAL service runs against stub models; a stubbed `listForOwner` would prove
+    only that the route forwards a value
+  - Leak assertions are on the SERIALIZED payload, so a note under an unexpected key
+    still fails. 8 tests · mutation-verified twice (strip → 2 red, ownership → 5 red)
   - Blocked by: T-017 · Blocks: none
 
 - [ ] **T-019** (complexity: 2) — Notification type + email template
