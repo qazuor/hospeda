@@ -20,6 +20,12 @@ export const PUBLIC_CACHE_ENDPOINTS = [
     '/api/v1/public/amenities',
     '/api/v1/public/features',
     '/api/v1/public/attractions',
+    // HOS-294 T-008. Both partner reads are actor-blind: the list forces
+    // ACTIVE/active at the model, and the detail route's payload is the row
+    // itself with no branch on who is asking. Neither was classified at all
+    // before this, so the home carousel and the ficha were the one public
+    // surface with no cache policy.
+    '/api/v1/public/partners',
     '/api/v1/public/event-locations',
     '/api/v1/public/event-organizers',
     '/api/v1/public/exchange-rates',
