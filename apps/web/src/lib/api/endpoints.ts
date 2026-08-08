@@ -1867,10 +1867,29 @@ export const partnerApi = {
     list(params?: {
         readonly page?: number;
         readonly pageSize?: number;
-        readonly q?: string;
-        readonly type?: string;
-        readonly tier?: string;
     }): Promise<ApiResult<PaginatedResponse<PartnerPublic>>> {
         return apiClient.getList({ path: `${BASE}/partners`, params });
+    },
+
+    /**
+     * One gold partner's public detail payload.
+     *
+     * GET /api/v1/public/partners/{slug}
+     *
+     * The caller MUST distinguish the two failure statuses rather than treating
+     * any error as "missing" (HOS-294 D-3b):
+     *
+     * - `error.status === 410` — the page was published and is retired. The
+     *   page propagates 410 so crawlers deindex it.
+     * - `error.status === 404` — this URL was never served (a silver partner,
+     *   or no such row).
+     *
+     * Both are normal outcomes, not faults. `ApiError` already carries `status`,
+     * so no extra plumbing is needed here — only the discipline of reading it,
+     * the same way `alojamientos/[slug].astro` propagates 410 for soft-deleted
+     * accommodations.
+     */
+    getBySlug(slug: string): Promise<ApiResult<PartnerPublic>> {
+        return apiClient.get({ path: `${BASE}/partners/${encodeURIComponent(slug)}` });
     }
 };

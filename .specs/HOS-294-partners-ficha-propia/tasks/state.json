@@ -505,105 +505,105 @@
             "id": "T-016",
             "title": "Add partnerApi.getBySlug to the web API client",
             "description": "Extend partnerApi in apps/web/src/lib/api/endpoints.ts:1861 with getBySlug, returning ApiResult<PartnerPublic> and surfacing the 410 distinctly from the 404 so the page can propagate the right status. Never fetch() directly from a page. Tests: mock the client and assert 200 / 410 / 404 map to distinguishable results.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007"],
             "blocks": ["T-017", "T-024"],
             "subtasks": [
                 {
                     "title": "Add the endpoint wrapper",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Preserve the 410 vs 404 distinction",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Client tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "api-client"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:34:43Z",
+                "completed": "2026-08-08T05:34:43Z"
             }
         },
         {
             "id": "T-017",
             "title": "Add toPartnerDetailProps to transforms.ts",
             "description": "A NEW transform for the detail page — not a rename of the deleted toPartnerCardProps (spec D-7). Maps the public payload to the page's props: name, logoUrl, type, description, contactInfo, socialNetworks, websiteUrl. It must NOT carry tier or isFeatured. Tests: null/missing-field handling for every optional field, and an assertion that the output shape has no tier key.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-016"],
             "blocks": ["T-019"],
             "subtasks": [
                 {
                     "title": "Define the props type",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Implement the transform",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test null-field handling + absence of tier",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "transforms"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:34:43Z",
+                "completed": "2026-08-08T05:34:43Z"
             }
         },
         {
             "id": "T-018",
             "title": "Write evaluatePartnerIndexability, the shared page/sitemap predicate",
             "description": "New apps/web/src/lib/seo/partner-indexable.ts, modeled on author-indexable.ts. Returns { isIndexable } from: tier gold, lifecycleState ACTIVE, subscriptionStatus active, AND a minimum-content condition (non-empty description) — the last one is R-3's mitigation against indexing thin pages, the same judgment isThinDestination encodes. This ONE function is consumed by both the page (T-019) and the sitemap (T-024); that is the whole point. Tests: one case per failing condition plus the all-pass case.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-019", "T-024"],
             "subtasks": [
                 {
                     "title": "Implement the predicate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Include the minimum-content condition",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Unit tests per condition",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "seo"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:34:43Z",
+                "completed": "2026-08-08T05:34:43Z"
             }
         },
         {
@@ -943,9 +943,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 20,
+        "pending": 17,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 12,
         "blocked": 0,
         "averageComplexity": 2.0
     }
