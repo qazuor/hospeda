@@ -422,6 +422,23 @@ export const handleRouteError = (error: unknown, c: Context) => {
             case ServiceErrorCode.GONE:
                 statusCode = 410;
                 break;
+            // Host-trade benefit usage + reviews (HOS-376 §7.5)
+            case ServiceErrorCode.HOST_NOT_FOUND:
+                statusCode = 404;
+                break;
+            case ServiceErrorCode.USAGE_PENDING_EXISTS:
+            case ServiceErrorCode.REVIEW_ALREADY_EXISTS:
+                statusCode = 409;
+                break;
+            case ServiceErrorCode.DECLARATION_BLOCKED:
+            case ServiceErrorCode.DECLARATION_SUSPENDED:
+            case ServiceErrorCode.NO_CONFIRMED_USAGE:
+            case ServiceErrorCode.SELF_REVIEW_FORBIDDEN:
+                statusCode = 403;
+                break;
+            case ServiceErrorCode.PROVIDER_REVOKED:
+                statusCode = 422;
+                break;
             default:
                 statusCode = 500;
                 break;
@@ -555,7 +572,16 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.PROVIDER_RATE_LIMITED]: 503,
                 [ServiceErrorCode.PROVIDER_TIMEOUT]: 504,
                 [ServiceErrorCode.PLAN_DISABLED]: 410,
-                [ServiceErrorCode.GONE]: 410
+                [ServiceErrorCode.GONE]: 410,
+                // Host-trade benefit usage + reviews (HOS-376 §7.5)
+                [ServiceErrorCode.HOST_NOT_FOUND]: 404,
+                [ServiceErrorCode.USAGE_PENDING_EXISTS]: 409,
+                [ServiceErrorCode.DECLARATION_BLOCKED]: 403,
+                [ServiceErrorCode.DECLARATION_SUSPENDED]: 403,
+                [ServiceErrorCode.NO_CONFIRMED_USAGE]: 403,
+                [ServiceErrorCode.SELF_REVIEW_FORBIDDEN]: 403,
+                [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
+                [ServiceErrorCode.PROVIDER_REVOKED]: 422
             };
 
             const statusCode = statusCodeMap[code] ?? 500;
