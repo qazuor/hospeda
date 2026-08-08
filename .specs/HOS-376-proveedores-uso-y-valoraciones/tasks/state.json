@@ -828,43 +828,52 @@
             "id": "T-024",
             "title": "Servicio de valoraciones: creación con los 4 gates de elegibilidad",
             "description": "packages/service-core/src/services/hostTrade/host-trade-review.service.ts. Los 4 gates de spec §6.3, cada uno con su código de error: (1) permiso HOST_TRADE_REVIEW_CREATE; (2) existe uso CONFIRMED para el par → si no, NO_CONFIRMED_USAGE; (3) hostTrades.ownerUserId !== actor.id → si no, SELF_REVIEW_FORBIDDEN; (4) proveedor no revocado → PROVIDER_REVOKED. Más el guard ALREADY_EXISTS del par como defensa en profundidad además del índice único. Tests: un test por gate, aislado.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-018", "T-015", "T-021"],
             "blocks": ["T-025", "T-026", "T-027", "T-034", "T-036", "T-058"],
             "subtasks": [
                 {
                     "title": "Gate de permiso",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gate de uso confirmado",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gate de auto-valoración",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Gate de proveedor revocado",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Guard de duplicado",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "reviews", "guards"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:36:06.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:36:06.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T14:36:06.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T14:28:50Z",
+                "completed": "2026-08-08T14:36:06.000Z"
             }
         },
         {
@@ -2157,9 +2166,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 51,
+        "pending": 50,
         "inProgress": 0,
-        "completed": 18,
+        "completed": 19,
         "blocked": 0,
         "averageComplexity": 2.4
     }

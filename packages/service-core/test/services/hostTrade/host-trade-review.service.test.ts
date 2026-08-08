@@ -1,0 +1,258 @@
+/**
+ * @fileoverview The four eligibility gates for creating a review (T-024).
+ *
+ * Each gate gets its own isolated test: the fixture satisfies every OTHER gate
+ * and violates exactly one, so a passing test names the gate that actually
+ * fired rather than "something refused".
+ */
+import type { HostTradeBenefitUsageModel, HostTradeModel, HostTradeReviewModel } from '@repo/db';
+import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { HostTradeReviewService } from '../../../src/services/hostTrade/host-trade-review.service';
+import { ActorFactoryBuilder } from '../../factories/actorFactory';
+import { getMockId } from '../../factories/utilsFactory';
+import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
+
+const mockLogger = createLoggerMock();
+
+const HT_ID = getMockId('attraction', 'ht-rev-1');
+const OWNER_ID = getMockId('user', 'rev-owner');
+const HOST_ID = getMockId('user', 'rev-host');
+
+/** A host: holds the review permission the seed grants RoleEnum.HOST. */
+const hostActor = () =>
+    new ActorFactoryBuilder()
+        .withId(HOST_ID)
+        .withPermissions([PermissionEnum.HOST_TRADE_REVIEW_CREATE])
+        .build();
+
+const validBody = { overallRating: 4, respectedBenefit: true };
+
+function buildService(
+    options: {
+        provider?: Record<string, unknown> | null;
+        confirmedUsage?: Record<string, unknown> | null;
+        existingReview?: Record<string, unknown> | null;
+    } = {}
+) {
+    const model = createModelMock();
+    const hostTradeModel = createModelMock();
+    const usageModel = createModelMock();
+
+    hostTradeModel.findById = vi.fn(async () =>
+        options.provider === undefined
+            ? { id: HT_ID, ownerUserId: OWNER_ID, revokedAt: null, deletedAt: null }
+            : options.provider
+    );
+    usageModel.findConfirmedPair = vi.fn(async () =>
+        options.confirmedUsage === undefined ? { id: 'usage-1' } : options.confirmedUsage
+    );
+    model.findOne = vi.fn(async () => options.existingReview ?? null);
+    model.create = vi.fn(async (data: Record<string, unknown>) => ({ id: 'review-1', ...data }));
+
+    const service = new HostTradeReviewService(
+        { logger: mockLogger },
+        model as unknown as HostTradeReviewModel,
+        hostTradeModel as unknown as HostTradeModel,
+        usageModel as unknown as HostTradeBenefitUsageModel
+    );
+
+    return { service, model, usageModel };
+}
+
+beforeEach(() => {
+    vi.clearAllMocks();
+});
+
+describe('HostTradeReviewService.createReview — the happy path', () => {
+    it('creates the review when all four gates pass', async () => {
+        const { service, model } = buildService();
+
+        const result = await service.createReview(
+            { hostTradeId: HT_ID, ...validBody },
+            hostActor()
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(model.create).toHaveBeenCalled();
+    });
+
+    it('stamps the provider and the host from the path and the session', async () => {
+        const { service, model } = buildService();
+
+        await service.createReview({ hostTradeId: HT_ID, ...validBody }, hostActor());
+
+        const row = (model.create as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0]?.[0] as Record<string, unknown>;
+        expect(row.hostTradeId).toBe(HT_ID);
+        expect(row.hostUserId).toBe(HOST_ID);
+    });
+});
+
+describe('gate 1 — HOST_TRADE_REVIEW_CREATE', () => {
+    /** AC-15 — a provider-only account has no accommodations, so no HOST role. */
+    it('refuses an actor without the permission', async () => {
+        const { service, model } = buildService();
+        const providerOnly = new ActorFactoryBuilder().withId(OWNER_ID).withPermissions([]).build();
+
+        const result = await service.createReview(
+            { hostTradeId: HT_ID, ...validBody },
+            providerOnly
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+});
+
+describe('gate 2 — a confirmed usage must exist', () => {
+    it('answers NO_CONFIRMED_USAGE when the pair has none', async () => {
+        const { service, model } = buildService({ confirmedUsage: null });
+
+        const result = await service.createReview(
+            { hostTradeId: HT_ID, ...validBody },
+            hostActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NO_CONFIRMED_USAGE);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('looks the usage up for the acting host, not for anyone else', async () => {
+        const { service, usageModel } = buildService();
+
+        await service.createReview({ hostTradeId: HT_ID, ...validBody }, hostActor());
+
+        expect(usageModel.findConfirmedPair).toHaveBeenCalledWith(HT_ID, HOST_ID, undefined);
+    });
+});
+
+describe('gate 3 — self-review', () => {
+    /** AC-17 — fires even with the HOST role AND a confirmed usage. */
+    it('answers SELF_REVIEW_FORBIDDEN to the listing owner', async () => {
+        const { service, model } = buildService();
+        const ownerWhoIsAlsoHost = new ActorFactoryBuilder()
+            .withId(OWNER_ID)
+            .withPermissions([PermissionEnum.HOST_TRADE_REVIEW_CREATE])
+            .build();
+
+        const result = await service.createReview(
+            { hostTradeId: HT_ID, ...validBody },
+            ownerWhoIsAlsoHost
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SELF_REVIEW_FORBIDDEN);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Self-review is checked BEFORE the confirmed-usage gate. Both would refuse
+     * the owner, but only one of them is true forever: telling him to go get a
+     * confirmed usage sends him after something that would still not let him
+     * review his own listing.
+     */
+    it('reports SELF_REVIEW_FORBIDDEN rather than NO_CONFIRMED_USAGE when both apply', async () => {
+        const { service } = buildService({ confirmedUsage: null });
+        const owner = new ActorFactoryBuilder()
+            .withId(OWNER_ID)
+            .withPermissions([PermissionEnum.HOST_TRADE_REVIEW_CREATE])
+            .build();
+
+        const result = await service.createReview({ hostTradeId: HT_ID, ...validBody }, owner);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SELF_REVIEW_FORBIDDEN);
+    });
+
+    /** AC-16 — the same person may review a DIFFERENT provider. */
+    it('lets a host who also owns a listing review someone else', async () => {
+        const { service, model } = buildService({
+            provider: {
+                id: HT_ID,
+                ownerUserId: 'somebody-else',
+                revokedAt: null,
+                deletedAt: null
+            }
+        });
+        const dualRole = new ActorFactoryBuilder()
+            .withId(HOST_ID)
+            .withPermissions([PermissionEnum.HOST_TRADE_REVIEW_CREATE])
+            .build();
+
+        const result = await service.createReview({ hostTradeId: HT_ID, ...validBody }, dualRole);
+
+        expect(result.error).toBeUndefined();
+        expect(model.create).toHaveBeenCalled();
+    });
+});
+
+describe('gate 4 — the provider must still be listed', () => {
+    it('answers PROVIDER_REVOKED for a revoked listing', async () => {
+        const { service, model } = buildService({
+            provider: {
+                id: HT_ID,
+                ownerUserId: OWNER_ID,
+                revokedAt: new Date('2026-07-01T00:00:00Z'),
+                deletedAt: null
+            }
+        });
+
+        const result = await service.createReview(
+            { hostTradeId: HT_ID, ...validBody },
+            hostActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.PROVIDER_REVOKED);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('answers PROVIDER_REVOKED for a soft-deleted listing', async () => {
+        const { service, model } = buildService({
+            provider: {
+                id: HT_ID,
+                ownerUserId: OWNER_ID,
+                revokedAt: null,
+                deletedAt: new Date('2026-07-01T00:00:00Z')
+            }
+        });
+
+        const result = await service.createReview(
+            { hostTradeId: HT_ID, ...validBody },
+            hostActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.PROVIDER_REVOKED);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('answers NOT_FOUND for a provider that never existed', async () => {
+        const { service, model } = buildService({ provider: null });
+
+        const result = await service.createReview(
+            { hostTradeId: HT_ID, ...validBody },
+            hostActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+});
+
+describe('duplicate guard', () => {
+    /**
+     * Defence in depth beside the UNIQUE (hostUserId, hostTradeId) index. The
+     * index is the real guarantee; this exists so the client gets
+     * REVIEW_ALREADY_EXISTS instead of a raw constraint violation surfacing as
+     * a 500.
+     */
+    it('answers REVIEW_ALREADY_EXISTS when the pair already has one', async () => {
+        const { service, model } = buildService({ existingReview: { id: 'existing' } });
+
+        const result = await service.createReview(
+            { hostTradeId: HT_ID, ...validBody },
+            hostActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.REVIEW_ALREADY_EXISTS);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+});

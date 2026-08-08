@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 18/69 tareas (26%)
+## Progreso: 19/69 tareas (27%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 5/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 6/16 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -86,7 +86,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [ ] **T-023** (c3) — Recálculo de los 5 agregados denormalizados de host_trades
   - Con el molde de recalculateAndUpdateAccommodationStats: SQL de agregación desde TS que recalcula confirmedUsesCount, distinctHostsCount (COUNT DISTINCT hostUserId sobre CONFIRMED), reviewsCo…
   - Bloqueada por: T-021 · Bloquea a: T-028, T-044, T-052, T-059
-- [ ] **T-024** (c3) — Servicio de valoraciones: creación con los 4 gates de elegibilidad
+- [x] **T-024** (c3) — Servicio de valoraciones: creación con los 4 gates de elegibilidad
   - packages/service-core/src/services/hostTrade/host-trade-review.service.ts. Los 4 gates de spec §6.3, cada uno con su código de error: (1) permiso HOST_TRADE_REVIEW_CREATE; (2) existe uso CON…
   - Bloqueada por: T-018, T-015, T-021 · Bloquea a: T-025, T-026, T-027, T-034, T-036, T-058
 - [ ] **T-025** (c2) — Servicio de réplicas: crear y editar, siempre PENDING
@@ -262,6 +262,6 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 Fase `core` en curso (5/16). Las disponibles ahora: T-016, T-020, T-022, T-023,
 T-024, T-029, T-030, T-033, T-040, T-042, T-057.
 
-T-015 desbloqueó T-016 y T-024. El camino crítico está ahora en **T-024** (los 4
-gates de elegibilidad de la valoración), que ya tiene sus dos dependencias
-cerradas.
+T-024 (los 4 gates de elegibilidad) está cerrada: el corazón de seguridad del
+feature ya está puesto. El camino crítico sigue por **T-025** (réplica del
+proveedor), que exige T-016 — los schemas Zod de la réplica.
