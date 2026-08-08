@@ -312,36 +312,44 @@
         {
             "id": "T-008",
             "title": "Create PartnerMentionModel extending BaseModel",
-            "description": "packages/db/src/models/partner/partner-mention.model.ts extending BaseModel, with findByPartner (newest-first) and findByBatch. Soft-delete by default. Tests: packages/db/test/integration/partner-mention.model.integration.test.ts — insert, cascade delete when the parent partner is hard-deleted, newest-first ordering, soft-deleted rows excluded.",
-            "status": "pending",
+            "description": "packages/db/src/models/partner/partner-mention.model.ts extending BaseModel, with findByPartner (newest-first) and findByBatch. Soft-delete by default. Tests: packages/db/test/integration/partner-mention.model.integration.test.ts — insert, cascade delete when the parent partner is hard-deleted, newest-first ordering, soft-deleted rows excluded. DONE: createMany (takes the caller's tx — batch is all-or-nothing and the notification must fire post-commit), findByPartner (filters + pagination), findByBatch. 19 integration tests, all green against real Postgres. ORDERING DEFECT FOUND BY MUTATION: Postgres now() is TRANSACTION-scoped, so every row of one batch shares created_at to the microsecond. The original tie-break (mentionedAt, createdAt) was therefore NOT total and pagination could repeat a row; fixed by appending id. findByBatch's original asc(createdAt) could not express insertion order at all — replaced by asc(channel), which uses the pg enum DECLARATION order and reads the same in every batch. Two tests passed by luck before this was found; they now set createdAt explicitly / insert out of enum order.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-009", "T-010"],
             "subtasks": [
                 {
                     "title": "Model class + table binding",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "findByPartner / findByBatch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Integration tests incl. cascade + soft-delete",
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "title": "Total ordering (id tie-break) for stable pagination",
+                    "completed": true
+                },
+                {
+                    "title": "Canonical channel ordering inside a batch",
+                    "completed": true
                 }
             ],
             "tags": ["database", "model"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T02:40:00.000Z",
+                "completed": "2026-08-08T03:22:00.000Z"
             }
         },
         {
@@ -1167,9 +1175,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 25,
+        "pending": 24,
         "inProgress": 0,
-        "completed": 7,
+        "completed": 8,
         "blocked": 0,
         "averageComplexity": 2.4
     }

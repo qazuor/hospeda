@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 7/32 tasks (22%)
+## Progress: 8/32 tasks (25%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -60,8 +60,11 @@
   - ⚠ T-010 must re-validate the MERGED row — `{url: null}` alone is invisible to the patch schema
   - Blocked by: T-005 · Blocks: T-010
 
-- [ ] **T-008** (complexity: 3) — `PartnerMentionModel` extending `BaseModel`
-  - Integration tests: cascade on parent delete, newest-first, soft-delete exclusion
+- [x] **T-008** (complexity: 3) — `PartnerMentionModel` extending `BaseModel` ✅
+  - 19 integration tests against real Postgres (the FKs FIRE, not just declared)
+  - Ordering defect found by mutation: `now()` is transaction-scoped, so a batch's
+    rows share `created_at` — the tie-break needed `id` to be total
+  - `findByBatch` sorts by pg enum declaration order, not insertion order
   - Blocked by: T-003, T-004 · Blocks: T-009, T-010
 
 - [ ] **T-009** (complexity: 3) — `createBatch`: N rows, one transaction, server-side `batchId`
