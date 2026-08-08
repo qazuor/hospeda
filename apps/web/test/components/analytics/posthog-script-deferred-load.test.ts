@@ -53,14 +53,22 @@ function buildExecutableSnippet(): string {
         );
     }
 
-    const body = source
-        .slice(bodyStart, end)
-        // Astro resolves these at build time from import.meta.env.
-        .replaceAll('${JSON.stringify(posthogKey)}', JSON.stringify(TEST_KEY))
-        .replaceAll('${JSON.stringify(posthogHost)}', JSON.stringify(TEST_HOST))
-        .replaceAll('${JSON.stringify(appVersion)}', JSON.stringify('test'))
-        // Template-literal escapes become plain characters once Astro evaluates it.
-        .replaceAll('\\`', '`');
+    // These placeholders are matched LITERALLY: they are the un-evaluated
+    // `${...}` text of the .astro template that Astro fills in at build time.
+    // biome-ignore-start lint/suspicious/noTemplateCurlyInString: literal placeholders from the .astro source
+    const substitutions: ReadonlyArray<readonly [string, string]> = [
+        ['${JSON.stringify(posthogKey)}', JSON.stringify(TEST_KEY)],
+        ['${JSON.stringify(posthogHost)}', JSON.stringify(TEST_HOST)],
+        ['${JSON.stringify(appVersion)}', JSON.stringify('test')]
+    ];
+    // biome-ignore-end lint/suspicious/noTemplateCurlyInString: literal placeholders from the .astro source
+
+    let body = source.slice(bodyStart, end);
+    for (const [placeholder, value] of substitutions) {
+        body = body.replaceAll(placeholder, value);
+    }
+    // Template-literal escapes become plain characters once Astro evaluates it.
+    body = body.replaceAll('\\`', '`');
 
     if (body.includes('${')) {
         throw new Error(
