@@ -398,54 +398,58 @@
         {
             "id": "T-010",
             "title": "PartnerMentionService — list, update, soft-delete",
-            "description": "Add listForPartner (paginated, newest-first), update (single row correction), and softDelete to PartnerMentionService (closes OQ-6: mentions are editable, unlike social_publish_logs). Plus listForOwner for the partner-facing read path, resolving the partner from partners.ownerUserId and returning rows grouped by batchId with internalNote omitted. MUST re-validate the MERGED row on update: updatePartnerMentionSchema can only see the patch, so `{url: null}` with no channel field is legal to it while being illegal for a stored INSTAGRAM row. That gap is the service's to close (HOS-377 T-007 note).",
-            "status": "pending",
+            "description": "Add listForPartner (paginated, newest-first), update (single row correction), and softDelete to PartnerMentionService (closes OQ-6: mentions are editable, unlike social_publish_logs). Plus listForOwner for the partner-facing read path, resolving the partner from partners.ownerUserId and returning rows grouped by batchId with internalNote omitted. MUST re-validate the MERGED row on update: updatePartnerMentionSchema can only see the patch, so `{url: null}` with no channel field is legal to it while being illegal for a stored INSTAGRAM row. That gap is the service's to close (HOS-377 T-007 note). DONE: listForPartner (admin, takes the partner explicitly so an unscoped query is unreachable), listForOwner (ownership fails closed; strips admin fields via a DELETE derived from PARTNER_MENTION_ADMIN_ONLY_MASK, NOT a schema parse — hardening a read contract 500s the whole log on one legacy row), correct (re-validates the MERGED row, closing the T-007 gap) and remove (soft only). 21 tests.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-007", "T-008"],
             "blocks": ["T-011", "T-013", "T-014", "T-015", "T-017"],
             "subtasks": [
                 {
                     "title": "listForPartner paginated",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "update + softDelete",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "listForOwner grouped by batchId, internalNote stripped",
-                    "completed": false
+                    "completed": true
+                },
+                {
+                    "title": "Merged-row revalidation (closes the T-007 gap)",
+                    "completed": true
                 }
             ],
             "tags": ["service", "core"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:10:00.000Z",
+                "completed": "2026-08-08T04:45:00.000Z"
             }
         },
         {
             "id": "T-011",
             "title": "PartnerMentionService unit tests",
-            "description": "packages/service-core/test/services/partner/partner-mention.service.test.ts. MUST cover: (a) a 4-entry batch produces 4 rows sharing ONE batchId; (b) a 1-entry batch leaves batchId null; (c) a batchId present in the input is ignored, not persisted (R-5 — assert the stored value differs from the supplied one); (d) a partial failure rolls the whole batch back, leaving zero rows; (e) listForOwner never returns internalNote; (f) listForOwner returns nothing for a user who does not own the partner (fail closed). NOTE: createBatch coverage already landed with T-009 in test/services/partner/partner-mention.create-batch.test.ts (13 tests: batch identity, R-5, AC-9 notification cadence, permissions, sealed paths). T-011 therefore only needs the list/update/softDelete + listForOwner cases.",
-            "status": "pending",
+            "description": "packages/service-core/test/services/partner/partner-mention.service.test.ts. MUST cover: (a) a 4-entry batch produces 4 rows sharing ONE batchId; (b) a 1-entry batch leaves batchId null; (c) a batchId present in the input is ignored, not persisted (R-5 — assert the stored value differs from the supplied one); (d) a partial failure rolls the whole batch back, leaving zero rows; (e) listForOwner never returns internalNote; (f) listForOwner returns nothing for a user who does not own the partner (fail closed). NOTE: createBatch coverage already landed with T-009 in test/services/partner/partner-mention.create-batch.test.ts (13 tests: batch identity, R-5, AC-9 notification cadence, permissions, sealed paths). T-011 therefore only needs the list/update/softDelete + listForOwner cases. DONE: covered across the two service test files — partner-mention.create-batch.test.ts (13) and partner-mention.reads-and-corrections.test.ts (21). 79 tests green in test/services/partner/.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-010"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Batch grouping + null-for-single tests",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "R-5 client batchId ignored test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Transaction rollback test",
@@ -453,20 +457,20 @@
                 },
                 {
                     "title": "Ownership fail-closed test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service", "testing"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T04:10:00.000Z",
+                "completed": "2026-08-08T04:45:00.000Z"
             }
         },
         {
@@ -1183,9 +1187,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 23,
+        "pending": 21,
         "inProgress": 0,
-        "completed": 9,
+        "completed": 11,
         "blocked": 0,
         "averageComplexity": 2.4
     }

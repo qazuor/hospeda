@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 9/32 tasks (28%)
+## Progress: 11/32 tasks (34%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -73,11 +73,16 @@
   - 13 tests · mutation-verified (per-row notify + null batchId turns 4 red)
   - Blocked by: T-006, T-008 · Blocks: T-011, T-012, T-020
 
-- [ ] **T-010** (complexity: 2) — Service list / update / soft-delete + `listForOwner`
+- [x] **T-010** (complexity: 2) — Service list / update / soft-delete + `listForOwner` ✅
+  - `correct()` re-validates the MERGED row — closes the gap T-007 structurally could not
+  - `listForOwner` fails closed on ownership; admin fields stripped by DELETE, not by parse
+    (a read that validates 500s the whole log on one legacy row)
   - Blocked by: T-007, T-008 · Blocks: T-011, T-013, T-014, T-015, T-017
 
-- [ ] **T-011** (complexity: 3) — Service unit tests
-  - Batch grouping, R-5 client `batchId` ignored, rollback, ownership fail-closed
+- [x] **T-011** (complexity: 3) — Service unit tests ✅
+  - 34 tests across two files; 79 green in `test/services/partner/`
+  - ⚠ Transaction-rollback case NOT covered by the mocked suite — belongs in an
+    integration test (the model stub cannot roll anything back)
   - Blocked by: T-009, T-010 · Blocks: none
 
 ### Integration Phase (18 tasks, avg 2.5)
