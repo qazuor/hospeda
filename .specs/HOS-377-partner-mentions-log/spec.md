@@ -43,7 +43,7 @@ the team no artifact to point to when a partner asks "did you actually do it."
 - G-2: Make that recording quick to do at the moment the action happens, from the
   partner's admin detail page.
 - G-3: Show the partner a chronological, verifiable history of these actions in their
-  own account area, once that area exists (see R-1 — blocked by HOS-278 today).
+  own account area (unblocked — HOS-278 shipped the ownership link, see §5).
 - G-4: Show the partner's own measurable metrics (fiche views, carousel views) in a
   section that is visually and textually distinct from the mentions log, so the two
   are never confused.
@@ -58,9 +58,9 @@ the team no artifact to point to when a partner asks "did you actually do it."
   with expiring tokens for a feature serving a handful of partners.
 - NG-2: Showing any number that represents reach, impressions, or clicks for a manual
   action, anywhere, under any label.
-- NG-3: Building the partner↔user account link (HOS-278). This spec's admin side is
-  independent of it; the partner-facing `/mi-cuenta` view depends on it and is
-  explicitly blocked until it ships (see §10 R-1).
+- NG-3: Building the partner↔user account link — HOS-278 already shipped it
+  (`partners.ownerUserId` + `GET /protected/partners/mine`). This spec consumes it,
+  it does not build it.
 - NG-4: Building the partner's own fiche page `/partners/<slug>/` (HOS-294). The
   metrics section this spec asks to keep separate from the mentions log lives on that
   page once it exists; this spec does not create the page.
@@ -146,33 +146,44 @@ would most naturally live as its own model/service (`PartnerMentionModel`,
 to "the partner viewing their own data," because no partner-owned self-service
 surface exists yet (see next section).
 
-### Partner has no owner and no contact channel — confirmed, not assumed
+### Partner ownership and contact — RESOLVED by HOS-278 (re-verified 2026-08-07)
 
-Per HOS-278: *"Ni `partner` ni `host_trade` tienen dueño. `sponsorship.sponsorUserId`
-es el único que ya lo tiene."* Verified directly:
+> **This section originally recorded a hard blocker. It no longer holds.** The spec was
+> written 2026-08-02, when `partners` had neither an owner nor a contact channel. HOS-278
+> shipped both afterwards. Re-verified directly against the current branch:
 
-- `partners.dbschema.ts` has no `ownerUserId`/`userId` column of any kind.
-- `partners.dbschema.ts` has no `email` or any contact-info column at all.
-- `sponsorship.dbschema.ts` does have `sponsorUserId` (confirms the asymmetry).
-- `alliance_lead.dbschema.ts` has a `email` column (captured at lead time), but it is
-  never copied onto the resulting `partners` row today.
+- `partners.ownerUserId` **exists** — `packages/db/src/schemas/partner/partner.dbschema.ts:76`,
+  a nullable `uuid` FK → `users.id` (`onDelete: 'set null'`), with
+  `partners_ownerUserId_idx` and a `partnerOwner` relation (HOS-278 §6.5). Nullable on
+  purpose: a null owner makes the ownership filter fail CLOSED, and hand-curated partners
+  are meant to have no owner at all.
+- `partners.contactInfo` **exists** — a `jsonb` column typed `ContactInfo` (HOS-278 D3),
+  shallow-merged on update. `ContactInfoSchema`
+  (`packages/schemas/src/common/contact.schema.ts:33`) carries `personalEmail`,
+  `workEmail`, `whatsapp`, and a `preferredEmail` discriminator.
+- `GET|PATCH /api/v1/protected/partners/mine` **already exists**
+  (`apps/api/src/routes/partners/protected/mine.ts`) — the self-service read path this
+  spec assumed it would have to wait for.
 
-This means: (a) there is no user account to gate a `/mi-cuenta` view by today — that
-depends on HOS-278 shipping the partner↔account link; (b) there is no stored address
-to notify by email even if HOS-278 shipped a login-based link without also carrying
-the lead's email onto the partner row. Both are real gaps, not implementation
-shortcuts — see §10 R-1/R-2 and §11 OQ-2.
+Consequence for this spec: the partner-facing half is **not blocked**. The original
+shipping constraint ("admin-side first, web half later") is void — both halves can land
+together. See §10 R-1/R-2, now closed.
 
 ### `/mi-cuenta/aliados` today
 
 `apps/web/src/config/discovery-doors.ts`: the `partner` option inside the `partner`
-door has **no `acquiredPermission`**, by design — a documented consequence of HOS-277
-NG-1 (partner is a lead-only flow, never auto-provisioned). The page comment
-(`apps/web/src/pages/[lang]/mi-cuenta/aliados/index.astro`) states directly: partner
-"is not-yet-implemented" and renders a "Próximamente" CTA. Confirms HOS-278's own
-note: *"aunque el endpoint exista, esa página no puede mostrar 'aprobado'"* without
-touching that config. This spec's partner-facing view is therefore built against a
-page that, as of today, cannot even detect "this logged-in user is this partner."
+door has **no `acquiredPermission`**, and never will — a permanent consequence of
+HOS-277 NG-1 (partner is a lead-only flow, never auto-provisioned), not a gap awaiting
+a fix.
+
+That is not a blocker, because HOS-278 already solved this exact problem for
+`serviceProvider` (AC-7): an approved provider gets no permission and no role change,
+so the hub page instead fetches `GET /host-trades/mine` and treats **ownership of the
+row as the gate**. The file's own doc comment spells this out. `partner` now has the
+same two ingredients — `ownerUserId` on the row and a `/mine` endpoint — so the
+partner-facing view follows that established pattern verbatim: fetch
+`GET /protected/partners/mine`, and if it returns a row, the caller is that partner.
+No permission, no `acquiredPermission`, no config change.
 
 ### What's actually measurable: entity views + PostHog
 
@@ -245,6 +256,51 @@ Flag the `partners.analytics` column for removal as a follow-up cleanup (separat
 not blocking this spec) once this ships, so there is exactly one place a partner's
 "was I mentioned" story lives.
 
+### One row per channel, batched at the form — not an array column (owner, 2026-08-07)
+
+A single campaign usually runs across several networks at once, and the admin must be
+able to log all of them in **one** submission rather than repeating the form per
+network.
+
+The tempting shape — one row with `channels text[]` holding
+`[INSTAGRAM, FACEBOOK, TIKTOK]` — is **wrong**, and the URL is what breaks it. Each
+network is a different publication with a different link. An array of channels would
+need a parallel array of URLs kept positionally in sync, which is the same unbounded-
+blob anti-pattern §6 rejected for `partners.analytics`, one level down. It also
+destroys the only thing that makes this feature worth anything: *"con el link para ir a
+comprobarlo"*. A partner shown `Instagram, Facebook, TikTok — 12/8` with one link
+cannot verify two of the three.
+
+So the storage stays **one row per channel**, and the batching lives in the form and
+the endpoint:
+
+- The admin form's channel field is a **multi-select**; picking N channels reveals
+  **N URL inputs**, one per channel.
+- `POST .../mentions` accepts an **array of entries** and creates N rows in a single
+  transaction. One submit, N records.
+- All rows created by that submit share a generated **`batchId`** (uuid, nullable).
+
+`batchId` earns its column three times over:
+
+1. The partner-facing view groups by it — *"Campaña del 12/8 — Instagram, Facebook,
+   TikTok"* with the three links nested — instead of showing four loose entries dated
+   the same day.
+2. It makes the notification sane. The owner decided the partner is emailed **per
+   mention**; taken literally with multi-channel that is four emails for one campaign,
+   which is how a sender gets marked as spam. The rule is therefore **one email per
+   batch**, listing every channel with its link. Without `batchId` there is nothing to
+   group the send by.
+3. It cannot be reconstructed later. Once rows are written without it, which entries
+   were logged together is gone — no backfill can recover it, so the column has to
+   exist from the first migration or never.
+
+Per-channel URL requirements fall out of this for free (closing OQ-3): `url` is
+required for the channels that produce a public permalink (`INSTAGRAM`, `FACEBOOK`,
+`TWITTER`, `YOUTUBE`, `TIKTOK`, `NEWSLETTER`) and optional for `WHATSAPP` (a broadcast
+to a list has no public URL) and `OTHER`. Enforced in the Zod entry schema, which can
+see `channel` and `url` together per entry — an array-of-channels row could not have
+expressed this rule at all.
+
 ### Admin surface
 
 New route group `apps/api/src/routes/partners/admin/mentions/` mirroring
@@ -263,10 +319,10 @@ textarea) — loaded and submitted at the moment the admin actually performs the
 action, per the issue's stated goal ("carga desde el admin, en el momento en que se
 hace la acción").
 
-### Partner-facing surface (blocked on HOS-278)
+### Partner-facing surface (unblocked — HOS-278 shipped)
 
-Once HOS-278 links a partner to a user account, the natural home is under
-`/mi-cuenta/aliados` (today a "Próximamente" placeholder for `partner` — see §5). Two
+The home is `/mi-cuenta/aliados`, gated by ownership of the `partners.ownerUserId` row
+via `GET /protected/partners/mine`, following the `serviceProvider` pattern (§5). Two
 visually and textually separate blocks:
 
 - **"Bitácora de menciones"**: chronological list, channel icon + date + "Ver
@@ -300,36 +356,58 @@ one. Don't add a speculative `entityType` discriminator column to
 
 - `id` — uuid PK.
 - `partnerId` — uuid, FK → `partners.id`, `onDelete: 'cascade'`, not null.
-- `channel` — closed pg enum (values TBD, see §11 OQ-1) or `varchar`, not null.
+- `channel` — closed pg enum `PartnerMentionChannelPgEnum`, not null. **One channel per
+  row** — see §6 for why this is not an array.
+- `batchId` — uuid, **nullable**, no FK. Shared by every row written in one admin
+  submission; null for a single-channel entry. Groups the partner-facing view and the
+  notification (§6).
 - `mentionedAt` — the date the action actually happened (distinct from `createdAt`,
   the date the admin logged it — these can differ if entered after the fact).
-- `url` — `text`, nullability per §11 OQ-3 (issue text implies "always has a link,"
-  but WhatsApp broadcasts may not have one).
+- `url` — `text`, nullable at the DB level; required per-channel by the Zod entry
+  schema (§6). The DB column stays nullable because `WHATSAPP`/`OTHER` legitimately
+  have none, and a CHECK encoding the per-channel rule would have to be rewritten every
+  time a channel is added.
 - `internalNote` — `text`, nullable, admin-only (never rendered to the partner).
 - Standard audit columns matching `partners`: `createdAt`, `updatedAt`, `deletedAt`,
   `createdById`/`updatedById`/`deletedById` (uuid FK → `users.id`,
   `onDelete: 'set null'`).
 - Indexes: `(partnerId, mentionedAt desc)` for the primary "this partner's history,
-  newest first" access pattern; `(partnerId, deletedAt)` if soft-delete filtering
-  needs it.
+  newest first" access pattern; `(batchId)` for grouping; `(partnerId, deletedAt)` if
+  soft-delete filtering needs it.
 
-New Zod schemas in `@repo/schemas`: `partnerMentionSchema`,
-`createPartnerMentionSchema`, `updatePartnerMentionSchema`,
-`searchPartnerMentionSchema`, and (if the closed-enum path is chosen per OQ-1) a
-`PartnerMentionChannelEnum`.
+`PartnerMentionChannelPgEnum` — closed list, decided by the owner 2026-08-07 (closes
+OQ-1):
+
+```
+INSTAGRAM · FACEBOOK · TWITTER · YOUTUBE · TIKTOK · NEWSLETTER · WHATSAPP · OTHER
+```
+
+`PRESS` was considered in the original draft and **dropped** by the owner. `OTHER` is
+the escape hatch so an unanticipated channel never blocks logging. Adding a channel
+later is a one-value enum addition, which is exactly why the closed list was chosen
+over free text (see the issue: "Instagram"/"IG"/"instagram" would be three channels and
+group into nothing).
+
+New Zod schemas in `@repo/schemas`: `PartnerMentionChannelEnum`, `partnerMentionSchema`,
+`createPartnerMentionBatchSchema` (the array-of-entries body, carrying the per-channel
+URL requirement as a refinement on each entry), `updatePartnerMentionSchema`,
+`searchPartnerMentionSchema`.
 
 New admin endpoints (all under `/api/v1/admin/partners/{partnerId}/mentions`,
-`PermissionEnum.PARTNER_MANAGE`):
+`PermissionEnum.PARTNER_MANAGE` — closes OQ-4):
 
-- `POST /` — create a mention.
+- `POST /` — create **one or more** mentions in a single transaction. Body:
+  `{ mentionedAt, internalNote?, entries: [{ channel, url? }, ...] }`. Generates one
+  shared `batchId` when `entries.length > 1`. Returns the created rows.
 - `GET /` — paginated list for one partner, newest-first.
-- `PATCH /{id}` — correct a mention (per §11 OQ-6).
-- `DELETE /{id}` — soft-delete a mistakenly-logged mention (per §11 OQ-6).
+- `PATCH /{id}` — correct a single mention (closes OQ-6: editable).
+- `DELETE /{id}` — soft-delete a mistakenly-logged mention (closes OQ-6).
 
-New protected endpoint (blocked until HOS-278, shape TBD once the partner↔account
-link exists): `GET /api/v1/protected/partners/mine/mentions`, mirroring the
-`GET /protected/commerce/leads/mine` precedent HOS-278 documents for the equivalent
-commerce "mine" pattern.
+New protected endpoint — **no longer blocked** (see §5):
+`GET /api/v1/protected/partners/mine/mentions`, gated by ownership of the
+`partners.ownerUserId` row exactly as `GET /protected/partners/mine` already is, in
+the same route group (`apps/api/src/routes/partners/protected/`). Returns rows grouped
+by `batchId`, newest-first, with `internalNote` stripped.
 
 Migration: structural table → carril 1 (`packages/db/src/migrations/` via
 `pnpm db:generate` + `pnpm db:migrate`), not extras, not a seed data-migration (no
@@ -366,19 +444,37 @@ affordance.
 - AC-6: The `partner_mentions` schema and service are scoped cleanly enough (per §6)
   that a future sponsor equivalent doesn't require reshaping this table — documented
   in code comments, not necessarily built now.
+- AC-7: An admin can log a multi-network campaign in ONE submission — selecting N
+  channels reveals N URL fields, and saving writes N rows in a single transaction
+  sharing one `batchId`. Logging the same campaign must never require repeating the
+  form per network.
+- AC-8: A mention's `url` is required for `INSTAGRAM`, `FACEBOOK`, `TWITTER`,
+  `YOUTUBE`, `TIKTOK` and `NEWSLETTER`, and optional for `WHATSAPP` and `OTHER` —
+  enforced by the schema, with a regression test per branch of that rule.
+- AC-9: The partner is emailed **once per batch**, not once per row. A four-network
+  campaign produces exactly one email listing all four channels with their links. A
+  test asserts the send count for a multi-entry submission is 1.
+- AC-10: The partner-facing view renders a batch as ONE grouped entry (date + channel
+  list + one link each), not as N loose entries sharing a date.
+- AC-11: `internalNote` is never present in any partner-facing response payload —
+  asserted at the endpoint, not only hidden in the UI.
 
 ## 10. Risks
 
-- R-1: The partner-facing `/mi-cuenta` view cannot ship before HOS-278 links a
-  partner to a user account — `/mi-cuenta/aliados`'s `partner` option has no
-  `acquiredPermission` today and is hard-coded to render "Próximamente." Shipping
-  order matters: admin-side logging can go out independently, the partner-visible
-  half cannot.
-- R-2: There is no stored contact email on `partners` today. If the owner decides
-  (§11 OQ-2) that the partner should be notified when a mention is logged, that
-  requires either carrying the lead's email onto the partner row or waiting for
-  HOS-278's account link — "just add a notification" is not a same-spec addition
-  without one of those.
+- ~~R-1~~ **CLOSED (2026-08-07)**: the partner-facing view is no longer blocked.
+  HOS-278 shipped `partners.ownerUserId` and `GET /protected/partners/mine`, and
+  established the ownership-as-gate pattern for exactly this case (`serviceProvider`,
+  AC-7). Both halves ship together. See §5.
+- ~~R-2~~ **CLOSED (2026-08-07)**: `partners.contactInfo` (jsonb, `ContactInfo`) now
+  carries `personalEmail`/`workEmail`/`preferredEmail`, so there is a real address to
+  notify. **New residual risk in its place**: `contactInfo` is nullable and every field
+  inside it is `nullish`, so a hand-curated partner can have no reachable address at
+  all. The notification path must degrade silently (log and skip) rather than throw —
+  a partner with no email must not make logging a mention fail.
+- R-5: `batchId` must be generated server-side inside the transaction, not accepted
+  from the client. A client-supplied batch id would let one partner's mention be
+  grouped into another's batch, and the grouped partner-facing query is the read path
+  that would surface it.
 - R-3: Leaving the dead `partners.analytics` JSONB column in place alongside a new,
   intentionally-named `partner_mentions` table invites future confusion about which
   one is the real data source. Recommend a follow-up cleanup PR to drop it once this
@@ -390,27 +486,28 @@ affordance.
 
 ## 11. Open questions
 
-- OQ-1 (owner, verbatim from the issue's "A definir"): closed list of channels, or
-  free text? Recommend a closed pg enum (Instagram, newsletter/email, WhatsApp, press,
-  other), matching the codebase's existing convention for this exact shape
-  (`SocialPlatformPgEnum`), with an `OTHER` fallback so an unanticipated channel
-  doesn't block logging. Final call is the owner's.
-- OQ-2 (owner, verbatim from the issue): does the partner get notified when a new
-  mention is registered? Technically buildable (`notification.service.ts` accepts a
-  raw `recipientEmail`), but blocked on having *some* stored contact channel for the
-  partner — either HOS-278's account link or a new `email` column carried over from
-  `alliance_leads` at approval time. Needs an owner decision on which path, and
-  whether it's in-scope for this spec or a fast-follow.
-- OQ-3: is `url` required on every mention row? The issue's framing ("con el link
-  para ir a comprobarlo") implies yes, but a WhatsApp broadcast to a list has no
-  public URL to link. Needs a per-channel answer — possibly `url` required for
-  Instagram/press/newsletter, optional for WhatsApp.
-- OQ-4: which permission gates the admin mutation routes — reuse the existing
-  `PermissionEnum.PARTNER_MANAGE` (as `manual-payment.ts` does for its own partner
-  sub-action) or add a narrower `PARTNER_MENTION_MANAGE`? Recommend reusing
-  `PARTNER_MANAGE` (YAGNI — no evidence yet that mention-logging needs a narrower
-  role than the rest of partner admin).
-- OQ-5: how are "fiche views" and "carousel views" actually measured once they need
+> **OQ-1 through OQ-4, OQ-6 and OQ-7 are RESOLVED** (owner, 2026-08-02 in the Linear
+> issue and 2026-08-07 in session). They are kept below with their answers rather than
+> deleted, so the reasoning stays readable. **OQ-5 is the only one still open**, and it
+> belongs to HOS-294.
+
+- ~~OQ-1~~ **RESOLVED (owner, 2026-08-07)**: closed pg enum, eight values —
+  `INSTAGRAM`, `FACEBOOK`, `TWITTER`, `YOUTUBE`, `TIKTOK`, `NEWSLETTER`, `WHATSAPP`,
+  `OTHER`. The draft's `PRESS` was dropped; the four extra networks were added. `OTHER`
+  stays as the escape hatch. See §7.
+- ~~OQ-2~~ **RESOLVED (owner, 2026-08-02, Linear)**: yes, the partner is emailed, and
+  it is **in scope for this spec** — it is the moment the partner perceives they are
+  getting what they pay for. Now buildable: `partners.contactInfo` supplies the address
+  (§5) and `notification.service.ts` already accepts a raw `recipientEmail`. Follow the
+  transactional precedent (`COMMERCE_OWNER_CREDENTIALS`), bypassing preference opt-outs.
+  **Granularity: one email per `batchId`, not per row** — see §6 and AC-9.
+- ~~OQ-3~~ **RESOLVED (2026-08-07)**: per-channel, not global. Required for
+  `INSTAGRAM`/`FACEBOOK`/`TWITTER`/`YOUTUBE`/`TIKTOK`/`NEWSLETTER`; optional for
+  `WHATSAPP` and `OTHER`. Enforced in Zod per entry, DB column nullable. See §6/AC-8.
+- ~~OQ-4~~ **RESOLVED (2026-08-07)**: reuse `PermissionEnum.PARTNER_MANAGE`, as
+  `manual-payment.ts` does. No evidence mention-logging needs a narrower role, and
+  adding one now would be a permission with a single call site.
+- OQ-5 (**STILL OPEN — HOS-294's call, not this spec's**): how are "fiche views" and
   to render? Two real, non-exclusive options found in the codebase: (a) add `PARTNER`
   to `EntityTypeEnum` and start writing `entity_views` rows for the fiche once HOS-294
   ships it (consistent with how accommodations/posts/events are counted today), or
@@ -419,17 +516,15 @@ affordance.
   standalone "page." Recommend (a) for the fiche and (b) for the carousel, but this
   is properly HOS-294's decision to finalize once the fiche page exists — flagged
   here only because the issue asked this spec to identify what's measurable and how.
-- OQ-6: are mentions editable/soft-deletable by the admin after creation (this spec's
-  working assumption, matching `partners`'s own audit-column convention — an admin
-  fixing a wrong date or a pasted-wrong link), or should they be an immutable
-  append-only log once written (matching `social_publish_logs`'s convention for
-  system-generated records)? Recommend editable/soft-deletable since a human types
-  this in and typos happen; confirm with the owner before implementation.
-- OQ-7 (owner, verbatim from the issue): does this need to become a generalized
-  mechanism for sponsors now, or is "designed to not preclude it" (§6) sufficient
-  until HOS-107 unblocks sponsor work? Recommend deferring — sponsor work is
-  explicitly postponed in HOS-278, and building a shared abstraction against a single
-  consumer risks guessing the wrong shape.
+- ~~OQ-6~~ **RESOLVED (2026-08-07)**: editable and soft-deletable, per this spec's
+  working assumption. A human types these in and typos happen; `social_publish_logs`'s
+  append-only immutability is right for a machine-written dispatch log and wrong here.
+  Standard audit columns, `PATCH` and soft-`DELETE` endpoints.
+- ~~OQ-7~~ **RESOLVED (owner, 2026-08-02, Linear)**: defer. `partner_mentions` stays
+  partner-scoped with a real FK, same criterion HOS-372 used for per-vertical media —
+  dedicated before polymorphic. Sponsor is postponed behind HOS-107 and its model may
+  change in that refactor; designing for a frozen case today is guessing. Do NOT add a
+  speculative `entityType` discriminator.
 
 ## 12. Implementation notes
 
@@ -449,9 +544,13 @@ affordance.
 - File the `partners.analytics` column-removal cleanup as its own small follow-up
   once this ships (§10 R-3) — do not bundle it into this spec's migration to keep the
   diff focused on the new table.
-- The partner-facing `/mi-cuenta` half of this spec cannot be implemented until
-  HOS-278 ships the partner↔account link; sequence the admin-side work first so it
-  can ship independently.
+- The partner-facing half is **no longer sequenced behind HOS-278** — that shipped.
+  Both halves can land in the same cut. The `/mine` read path already exists in
+  `apps/api/src/routes/partners/protected/`; the mentions endpoint joins that group
+  rather than inventing a new gate.
+- `POST .../mentions` writes N rows in ONE transaction and generates `batchId`
+  server-side (R-5). The notification fires once per batch, after the transaction
+  commits — never inside it, so a mail failure cannot roll back a logged mention.
 
 ## 13. Linear
 

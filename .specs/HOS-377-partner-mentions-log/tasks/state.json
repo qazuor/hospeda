@@ -1,0 +1,736 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-377",
+    "title": "Partner mentions log — record manual promotion actions and show them to the partner",
+    "created": "2026-08-07T21:05:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Add PartnerMentionChannelEnum to @repo/schemas",
+            "description": "Create the 8-value channel enum in packages/schemas/src/enums/partner-mention-channel.enum.ts: INSTAGRAM, FACEBOOK, TWITTER, YOUTUBE, TIKTOK, NEWSLETTER, WHATSAPP, OTHER (spec §7, closes OQ-1). Export from the enums barrel. Tests: packages/schemas/test/enums/partner-mention-channel.enum.test.ts asserts the exact 8 members and that PRESS is absent (it was deliberately dropped by the owner). DONE: also shipped the .schema.ts companion (repo convention is a paired .enum.ts/.schema.ts), the zodError.enums.partnerMentionChannel.invalid key in es/en/pt (absent key = raw key rendered), and PARTNER_MENTION_CHANNELS_REQUIRING_URL + requiresMentionUrl, colocated with the enum so adding a channel forces a URL-rule decision in the same file. T-006 consumes that helper instead of restating the list.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-002", "T-005"],
+            "subtasks": [
+                { "title": "Create enum file with 8 values", "completed": true },
+                { "title": "Export from enums barrel", "completed": true },
+                { "title": "Membership test incl. absence of PRESS", "completed": true },
+                { "title": "Paired .schema.ts with nativeEnum + error key", "completed": true },
+                { "title": "zodError i18n key in es/en/pt", "completed": true },
+                { "title": "URL-requirement list + partition test", "completed": true }
+            ],
+            "tags": ["schemas", "enum"],
+            "phase": "setup",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T00:18:00.000Z",
+                "completed": "2026-08-08T00:32:00.000Z"
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add PartnerMentionChannelPgEnum to the db enum schema",
+            "description": "Add the matching pgEnum in packages/db/src/schemas/enums.dbschema.ts, values mirroring PartnerMentionChannelEnum exactly. Tests: extend the existing enum-parity test (or add one) asserting the pg enum members equal the Zod enum members — a drift here silently rejects inserts at runtime. DONE: pgEnum 'partner_mention_channel_enum' declared via enumToTuple; 4 in-process parity tests appended to packages/db/test/schemas/enums.dbschema.test.ts (the HOS-113 pattern, no DB needed). NOTE for later tasks: packages/db/test/enum-consistency.test.ts — the live-DB check over a hand-maintained list of 19 enums — is EXCLUDED in vitest.config.ts:55 and never runs. Do not rely on it; the in-process file is the coverage that executes.",
+            "status": "completed",
+            "complexity": 1,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-003"],
+            "subtasks": [
+                { "title": "Declare pgEnum", "completed": true },
+                { "title": "Parity test vs Zod enum", "completed": true },
+                {
+                    "title": "enumName literal assertion (hand-typed, not derived)",
+                    "completed": true
+                },
+                { "title": "TWITTER-not-X assertion", "completed": true }
+            ],
+            "tags": ["database", "enum"],
+            "phase": "setup",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T00:36:00.000Z",
+                "completed": "2026-08-08T00:48:00.000Z"
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Create the partner_mentions Drizzle table schema",
+            "description": "New file packages/db/src/schemas/partner/partner_mention.dbschema.ts per spec §7: id uuid PK; partnerId uuid FK -> partners.id onDelete cascade notNull; channel (pg enum) notNull; batchId uuid NULLABLE with no FK; mentionedAt timestamptz notNull; url text nullable; internalNote text nullable; full audit columns matching partners (createdAt/updatedAt/deletedAt + createdById/updatedById/deletedById -> users.id onDelete set null). Indexes: (partnerId, mentionedAt desc), (batchId), (partnerId, deletedAt). Add relations + InsertPartnerMention/SelectPartnerMention types. JSDoc MUST record why channel is singular and not an array (per-channel URL, spec §6) so nobody 'simplifies' it later, and why batchId is nullable and unreconstructable.",
+            "status": "completed",
+            "complexity": 3,
+            "blockedBy": ["T-002"],
+            "blocks": ["T-004", "T-008"],
+            "subtasks": [
+                { "title": "Table definition with all columns", "completed": true },
+                { "title": "Three indexes", "completed": true },
+                { "title": "Relations + inferred types", "completed": true },
+                { "title": "JSDoc: why singular channel, why nullable batchId", "completed": true },
+                { "title": "Export from schemas barrel", "completed": true },
+                { "title": "30 in-process getTableConfig tests", "completed": true }
+            ],
+            "tags": ["database", "schema"],
+            "phase": "core",
+            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T00:52:00.000Z",
+                "completed": "2026-08-08T01:18:00.000Z"
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Generate and review the structural migration",
+            "description": "Run pnpm --filter @repo/db db:generate and review the emitted SQL (carril 1 — structural, NOT extras, NOT a seed data-migration; spec §7). Verify the migration number does not collide with another in-flight branch and that _journal.json prevId chains correctly. Commit the generated file — the CI drift guard (scripts/check-schema-drift.sh) blocks the PR without it. DONE: 0085_dizzy_jane_foster.sql — purely additive (CREATE TYPE + CREATE TABLE + 4 ADD CONSTRAINT + 3 CREATE INDEX), no destructive statement. 0085 confirmed unclaimed across all refs before generating. Journal idx=85 appended, no duplicate idx. Zero residual drift: a second db:generate reports 'No schema changes'. OPEN: scripts/check-schema-drift.sh cannot run until these files are committed — it refuses to distinguish uncommitted work from drift. Re-run it right after the first commit.",
+            "status": "completed",
+            "complexity": 2,
+            "blockedBy": ["T-003"],
+            "blocks": ["T-008"],
+            "subtasks": [
+                { "title": "Run db:generate", "completed": true },
+                { "title": "Review SQL + check number collision", "completed": true },
+                { "title": "Verify _journal.json chain", "completed": true },
+                { "title": "Confirm zero residual drift via a second generate", "completed": true },
+                {
+                    "title": "Re-run check-schema-drift.sh after the first commit",
+                    "completed": false
+                }
+            ],
+            "tags": ["database", "migration"],
+            "phase": "core",
+            "qualityGate": { "lint": "n/a", "typecheck": "pass", "tests": "n/a" },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": "2026-08-08T01:20:00.000Z",
+                "completed": "2026-08-08T01:26:00.000Z"
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Add the base partnerMentionSchema in @repo/schemas",
+            "description": "packages/schemas/src/entities/partner/partner-mention.schema.ts — the full entity shape (id, partnerId, channel, batchId, mentionedAt, url, internalNote + audit fields), following the entity file convention. Tests: valid row parses; unknown channel rejected; batchId accepts null.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001"],
+            "blocks": ["T-006", "T-007"],
+            "subtasks": [
+                { "title": "Base schema + inferred type", "completed": false },
+                { "title": "Unit tests for parse/reject", "completed": false }
+            ],
+            "tags": ["schemas"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Add createPartnerMentionBatchSchema with the per-channel URL rule",
+            "description": "The batch body schema (spec §7): { mentionedAt, internalNote?, entries: [{ channel, url? }] } with entries min length 1. A refinement on EACH entry requires url for INSTAGRAM/FACEBOOK/TWITTER/YOUTUBE/TIKTOK/NEWSLETTER and allows it absent for WHATSAPP/OTHER (AC-8, closes OQ-3). Note: batchId is NOT part of the body — it is server-generated (R-5). Tests: one case per branch of the rule (8 channels, required-vs-optional), a multi-entry happy path, and an explicit assertion that a client-supplied batchId is stripped/rejected.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-009"],
+            "subtasks": [
+                { "title": "Batch body schema with entries array", "completed": false },
+                { "title": "Per-entry URL refinement", "completed": false },
+                { "title": "Test all 8 channel branches", "completed": false },
+                { "title": "Test client batchId is not accepted", "completed": false }
+            ],
+            "tags": ["schemas", "validation"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Add update and search schemas for partner mentions",
+            "description": "updatePartnerMentionSchema (single-row correction: channel/mentionedAt/url/internalNote, all optional) and searchPartnerMentionSchema (partnerId, channel filter, date range, pagination). Admin list uses page+pageSize, never limit. Tests: partial update parses; search rejects unknown params.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                { "title": "Update schema", "completed": false },
+                { "title": "Search schema with pagination", "completed": false },
+                { "title": "Unit tests", "completed": false }
+            ],
+            "tags": ["schemas"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Create PartnerMentionModel extending BaseModel",
+            "description": "packages/db/src/models/partner/partner-mention.model.ts extending BaseModel, with findByPartner (newest-first) and findByBatch. Soft-delete by default. Tests: packages/db/test/integration/partner-mention.model.integration.test.ts — insert, cascade delete when the parent partner is hard-deleted, newest-first ordering, soft-deleted rows excluded.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-004"],
+            "blocks": ["T-009", "T-010"],
+            "subtasks": [
+                { "title": "Model class + table binding", "completed": false },
+                { "title": "findByPartner / findByBatch", "completed": false },
+                { "title": "Integration tests incl. cascade + soft-delete", "completed": false }
+            ],
+            "tags": ["database", "model"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "PartnerMentionService.createBatch — N rows, one transaction, server-side batchId",
+            "description": "packages/service-core/src/services/partner/partner-mention.service.ts, kept SEPARATE from PartnerService (mirrors partner_subscriptions getting its own schema). createBatch writes one row per entry inside a single transaction, generating one shared batchId when entries.length > 1 and leaving it null for a single entry. The batchId is generated INSIDE the service — never read from input (R-5). Returns the created rows. Permission check via PermissionEnum.PARTNER_MANAGE, Result<T> return.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-006", "T-008"],
+            "blocks": ["T-011", "T-012", "T-020"],
+            "subtasks": [
+                { "title": "Service class scaffold + permissions", "completed": false },
+                { "title": "createBatch inside withTransaction", "completed": false },
+                { "title": "Server-side batchId generation", "completed": false }
+            ],
+            "tags": ["service", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "PartnerMentionService — list, update, soft-delete",
+            "description": "Add listForPartner (paginated, newest-first), update (single row correction), and softDelete to PartnerMentionService (closes OQ-6: mentions are editable, unlike social_publish_logs). Plus listForOwner for the partner-facing read path, resolving the partner from partners.ownerUserId and returning rows grouped by batchId with internalNote omitted.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008"],
+            "blocks": ["T-011", "T-013", "T-014", "T-015", "T-017"],
+            "subtasks": [
+                { "title": "listForPartner paginated", "completed": false },
+                { "title": "update + softDelete", "completed": false },
+                {
+                    "title": "listForOwner grouped by batchId, internalNote stripped",
+                    "completed": false
+                }
+            ],
+            "tags": ["service", "core"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "PartnerMentionService unit tests",
+            "description": "packages/service-core/test/services/partner/partner-mention.service.test.ts. MUST cover: (a) a 4-entry batch produces 4 rows sharing ONE batchId; (b) a 1-entry batch leaves batchId null; (c) a batchId present in the input is ignored, not persisted (R-5 — assert the stored value differs from the supplied one); (d) a partial failure rolls the whole batch back, leaving zero rows; (e) listForOwner never returns internalNote; (f) listForOwner returns nothing for a user who does not own the partner (fail closed).",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-010"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Batch grouping + null-for-single tests", "completed": false },
+                { "title": "R-5 client batchId ignored test", "completed": false },
+                { "title": "Transaction rollback test", "completed": false },
+                { "title": "Ownership fail-closed test", "completed": false }
+            ],
+            "tags": ["service", "testing"],
+            "phase": "core",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Admin route: POST /admin/partners/{partnerId}/mentions (batch create)",
+            "description": "apps/api/src/routes/partners/admin/mentions/create.ts following manual-payment.ts exactly: createAdminRoute, PermissionEnum.PARTNER_MANAGE, auditLog() with resourceType 'partner-mention'. Body validated by createPartnerMentionBatchSchema. Returns the created rows. Thin wrapper — all logic in the service.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Route file with createAdminRoute", "completed": false },
+                { "title": "auditLog entry", "completed": false },
+                { "title": "OpenAPI response shape", "completed": false }
+            ],
+            "tags": ["api", "admin"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Admin route: GET /admin/partners/{partnerId}/mentions (list)",
+            "description": "apps/api/src/routes/partners/admin/mentions/list.ts — paginated, newest-first, page+pageSize (never limit; createAdminListRoute rejects unknown params). Includes internalNote (admin surface).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "List route with pagination", "completed": false },
+                { "title": "Newest-first ordering assertion", "completed": false }
+            ],
+            "tags": ["api", "admin"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Admin route: PATCH /admin/partners/{partnerId}/mentions/{id}",
+            "description": "apps/api/src/routes/partners/admin/mentions/update.ts — correct a wrong date or a pasted-wrong link (OQ-6). createAdminRoute + PARTNER_MANAGE + auditLog. Must reject an id that belongs to a different partner (path partnerId is authoritative).",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Update route", "completed": false },
+                { "title": "Cross-partner id rejection", "completed": false }
+            ],
+            "tags": ["api", "admin"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Admin route: DELETE /admin/partners/{partnerId}/mentions/{id}",
+            "description": "apps/api/src/routes/partners/admin/mentions/delete.ts — soft delete only (never hard). Same guards as PATCH, plus auditLog.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-016"],
+            "subtasks": [
+                { "title": "Soft-delete route", "completed": false },
+                { "title": "Cross-partner id rejection", "completed": false }
+            ],
+            "tags": ["api", "admin"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Mount the admin mentions route group and add e2e coverage",
+            "description": "Wire apps/api/src/routes/partners/admin/mentions/index.ts into the partners admin router. E2E tests: a 4-entry POST returns 4 rows with one shared batchId (AC-7); a caller without PARTNER_MANAGE gets 403; list is newest-first. NOTE: verify which vitest config actually runs these in CI — apps/api has THREE configs and a chunk of its e2e suite does not run in CI.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-012", "T-013", "T-014", "T-015"],
+            "blocks": ["T-022"],
+            "subtasks": [
+                { "title": "Mount router", "completed": false },
+                { "title": "E2E batch + permission tests", "completed": false },
+                { "title": "Confirm the test file runs in CI", "completed": false }
+            ],
+            "tags": ["api", "admin", "testing"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Protected route: GET /protected/partners/mine/mentions",
+            "description": "Add to the EXISTING apps/api/src/routes/partners/protected/ group (alongside mine.ts), gated by ownership of the partners.ownerUserId row exactly as GET /protected/partners/mine already is — NOT by a permission (the partner door has no acquiredPermission and never will; spec §5). Returns rows grouped by batchId, newest-first, internalNote omitted.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010"],
+            "blocks": ["T-018", "T-026"],
+            "subtasks": [
+                { "title": "Route file in the protected group", "completed": false },
+                { "title": "Ownership gate mirroring mine.ts", "completed": false },
+                { "title": "Batch-grouped response shape", "completed": false }
+            ],
+            "tags": ["api", "protected"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Protected route tests — internalNote leak and ownership",
+            "description": "AC-11: assert internalNote is absent from the RESPONSE PAYLOAD, not merely unrendered by the UI. AC-10: a 3-row batch comes back as one grouped entry, not three. Ownership: a logged-in user who owns no partner gets an empty/404 result, and a user who owns partner A cannot read partner B's mentions. The ownership test needs a partner row that actually EXISTS and is owned by someone else — a nonexistent id returns 404 before the gate and proves nothing.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-017"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "internalNote absent from payload", "completed": false },
+                { "title": "Batch grouping assertion", "completed": false },
+                { "title": "Cross-owner denial with a real existing row", "completed": false }
+            ],
+            "tags": ["api", "testing", "security"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Add the partner-mention notification type and email template",
+            "description": "Add a NotificationType value in packages/notifications/src/types/notification.types.ts plus its email template: subject + a body listing every channel in the batch with its link. Transactional style (bypasses preference opt-outs), following the COMMERCE_OWNER_CREDENTIALS precedent. Copy must obey AC-3 — 'menciones', never 'estadísticas'/'alcance'.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-020"],
+            "subtasks": [
+                { "title": "NotificationType value", "completed": false },
+                { "title": "Email template with per-channel links", "completed": false },
+                { "title": "Template snapshot test", "completed": false }
+            ],
+            "tags": ["notifications"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Send one email per batch, after commit, degrading silently",
+            "description": "Wire the notification into createBatch: fires ONCE per batch (never once per row — AC-9), AFTER the transaction commits so a mail failure can never roll back a logged mention. Recipient resolved from partners.contactInfo (preferredEmail -> workEmail -> personalEmail). R-2 residual: contactInfo is nullable and every field inside is nullish, so a partner with no reachable address must be logged and SKIPPED — never throw, never fail the mention insert.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-009", "T-019"],
+            "blocks": ["T-021"],
+            "subtasks": [
+                { "title": "Post-commit hook, one send per batch", "completed": false },
+                { "title": "Recipient resolution from contactInfo", "completed": false },
+                { "title": "Silent degradation when no address exists", "completed": false }
+            ],
+            "tags": ["notifications", "service"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Notification tests — send count and no-email degradation",
+            "description": "AC-9: a 4-entry submission produces EXACTLY 1 send (assert the call count, not just 'a mail went out'). A partner with contactInfo = null still gets its 4 rows written and produces 0 sends with a logged warning. A mail transport that throws does NOT roll back the mentions. Use a real-shaped notification mock — a mock kinder than the service hides exactly this class of failure.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-020"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Send count === 1 for a 4-entry batch", "completed": false },
+                { "title": "Null contactInfo: rows written, 0 sends", "completed": false },
+                { "title": "Throwing transport does not roll back", "completed": false }
+            ],
+            "tags": ["notifications", "testing"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Admin: TanStack Query hooks for partner mentions",
+            "description": "apps/admin/src/features/partners/hooks/usePartnerMentions.ts — list query + create/update/delete mutations with cache invalidation, following the existing usePartnerQuery.ts pattern. Types from @repo/schemas, never redefined locally.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-016"],
+            "blocks": ["T-023", "T-024"],
+            "subtasks": [
+                { "title": "List query hook", "completed": false },
+                { "title": "Create/update/delete mutations + invalidation", "completed": false }
+            ],
+            "tags": ["admin", "data"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Admin: mentions list section on the partner detail page",
+            "description": "A 'Menciones' section below the existing partner fields: newest-first rows with a channel badge, date, an external-link icon opening the URL in a new tab, and the truncated internalNote with expand. Edit and delete affordances per row. Tailwind (admin), Shadcn components, icons from @repo/icons. Tests: renders rows newest-first; a WHATSAPP row with no URL renders without a broken link.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-022", "T-025"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "List component with badges + link-out", "completed": false },
+                { "title": "Row edit/delete affordances", "completed": false },
+                { "title": "Render tests incl. the no-URL channel", "completed": false }
+            ],
+            "tags": ["admin", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Admin: multi-channel mention form (AC-7)",
+            "description": "TanStack Form + safeParse against createPartnerMentionBatchSchema. A multi-select channel field: picking N channels reveals N URL inputs, one per channel, each labelled with its channel. Shared date and internal note. One submit posts all entries. Tests: selecting 3 channels renders 3 URL fields; submitting posts ONE request with 3 entries (not 3 requests); a missing URL on a channel that requires one blocks submit while WHATSAPP submits fine without it.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-022", "T-025"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Multi-select channel field", "completed": false },
+                { "title": "Dynamic per-channel URL inputs", "completed": false },
+                { "title": "Single-request submit", "completed": false },
+                { "title": "Validation tests both branches", "completed": false }
+            ],
+            "tags": ["admin", "ui", "forms"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Admin i18n keys for the mentions section",
+            "description": "Section heading, channel labels for all 8 enum values, form labels, empty state, validation messages. Keys under the admin namespace. Copy obeys AC-3: 'Menciones'/'Bitácora' only — no 'alcance', 'impresiones', 'clics', 'estadísticas'.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": ["T-023", "T-024", "T-030"],
+            "subtasks": [
+                { "title": "Channel labels x8", "completed": false },
+                { "title": "Section + form + empty-state copy", "completed": false }
+            ],
+            "tags": ["admin", "i18n"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Web: fetcher for the partner's own mentions",
+            "description": "apps/web fetcher hitting GET /api/v1/protected/partners/mine/mentions, typed from @repo/schemas. Handles the not-a-partner case as an empty result, not an error.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-017"],
+            "blocks": ["T-027"],
+            "subtasks": [
+                { "title": "Typed fetcher", "completed": false },
+                { "title": "Not-a-partner returns empty, not throw", "completed": false }
+            ],
+            "tags": ["web", "data"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Web: 'Bitácora de menciones' component, grouped by batch",
+            "description": "Chronological list where a batch renders as ONE entry — date + channel icons + a 'Ver publicación' link per channel (new tab) — not N loose entries sharing a date (AC-10). Empty state reads 'Todavía no registramos menciones', never anything implying a missing metric (AC-3). Vanilla CSS / CSS Modules (web — NOT Tailwind). Icons from @repo/icons. Tests: a 3-row batch renders one grouped entry with 3 links; a WHATSAPP entry renders with no link and no broken affordance.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-026", "T-029"],
+            "blocks": ["T-028", "T-031"],
+            "subtasks": [
+                { "title": "Grouped-by-batch rendering", "completed": false },
+                { "title": "Per-channel link-out", "completed": false },
+                { "title": "Empty state copy", "completed": false },
+                { "title": "Render tests incl. the no-URL channel", "completed": false }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Web: wire the bitácora into /mi-cuenta/aliados",
+            "description": "Render the mentions block on the partner door, gated by ownership via the /mine fetch — following the serviceProvider pattern (HOS-278 AC-7), NOT by adding an acquiredPermission to discovery-doors.ts (the partner option must never get one; HOS-277 NG-1). If the Astro island needs the session, confirm the segment is in SESSION_OPTIONAL_SEGMENTS (exact match, no prefix) or it renders logged-out.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-027"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Ownership-gated render on the aliados page", "completed": false },
+                { "title": "Do NOT touch discovery-doors acquiredPermission", "completed": false },
+                { "title": "Verify session segment if an island is used", "completed": false }
+            ],
+            "tags": ["web", "ui"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Web i18n keys + document the AC-5 separation constraint",
+            "description": "Web-side keys for the bitácora (heading, channel labels x8, 'Ver publicación', empty state) in es/en/pt. Verify the prefix is present in CLIENT_I18N_KEY_PREFIXES — a missing prefix ships raw keys in PROD while dev looks fine. Also: leave a code comment marking that the future 'Tus métricas' block (HOS-294, OQ-5) must NOT share a heading or a component with this one (AC-5), so the separation survives whoever builds it.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-027", "T-030"],
+            "subtasks": [
+                { "title": "es/en/pt keys", "completed": false },
+                { "title": "Confirm CLIENT_I18N_KEY_PREFIXES coverage", "completed": false },
+                { "title": "AC-5 separation comment for HOS-294", "completed": false }
+            ],
+            "tags": ["web", "i18n"],
+            "phase": "integration",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Static copy guard for AC-3 (forbidden vocabulary)",
+            "description": "AC-3 is a constraint over every string in the feature, present and future — that needs a GUARD, not N assertions. Add a script under scripts/ that fails when any i18n key under the partner-mentions namespaces (admin + web, all locales) contains 'alcance', 'impresion', 'clic' or 'estadistica' (accent- and case-insensitive). The failure message must state exactly what the predicate checks and nothing more. Register it in check:guards AND verify it actually runs in CI — being in check:guards does not imply that.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-025", "T-029"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Guard script over the mention i18n namespaces", "completed": false },
+                {
+                    "title": "Mutation-test it: plant a forbidden word, confirm red",
+                    "completed": false
+                },
+                { "title": "Register in check:guards and confirm CI runs it", "completed": false }
+            ],
+            "tags": ["testing", "guard"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Test AC-4 — gold and silver render identically",
+            "description": "Assert no tier-based branching exists in the mentions feature: the same fixture rendered with tier 'gold' and tier 'silver' produces identical output, and the payload shape is identical. Tier affects only how often ops populates the log, never what is rendered. Also covers BRONZE (R-4) — it must not crash or render differently either.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-027"],
+            "blocks": [],
+            "subtasks": [
+                { "title": "gold vs silver identical render", "completed": false },
+                { "title": "bronze does not diverge or crash", "completed": false }
+            ],
+            "tags": ["testing"],
+            "phase": "testing",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "File the partners.analytics removal follow-up (R-3)",
+            "description": "Create a Linear issue in team Hospeda to drop the dead partners.analytics jsonb column and the PartnerAnalytics interface (verified zero references outside the schema file). Deliberately NOT bundled into this spec's migration — leaving it beside partner_mentions invites confusion about which is the real source, but dropping a column is its own reviewable change. Label area-db, source-agent, kind-needs-spec.",
+            "status": "pending",
+            "complexity": 1,
+            "blockedBy": [],
+            "blocks": [],
+            "subtasks": [
+                { "title": "Create the Linear issue with context", "completed": false },
+                { "title": "Link it from HOS-377", "completed": false }
+            ],
+            "tags": ["docs", "cleanup"],
+            "phase": "docs",
+            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "timestamps": {
+                "created": "2026-08-07T21:05:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 32,
+        "pending": 28,
+        "inProgress": 0,
+        "completed": 4,
+        "blocked": 0,
+        "averageComplexity": 2.4
+    }
+}
