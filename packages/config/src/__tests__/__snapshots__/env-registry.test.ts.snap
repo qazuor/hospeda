@@ -24,7 +24,7 @@ exports[`ENV_REGISTRY > var count per category > should match expected distribut
   "monitoring": 8,
   "newsletter": 7,
   "social-automation": 1,
-  "system": 4,
+  "system": 5,
   "testing": 8,
 }
 `;
