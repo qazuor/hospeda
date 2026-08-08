@@ -1404,6 +1404,111 @@ slash; without it Astro's trailing-slash middleware returns a 301 and the POST
 body is lost. Not a defect — `CloudflareRevalidationAdapter` already documents
 it — but it will catch anyone hand-rolling a curl.
 
+**Wave B0 — Verify the client-side reconciliation. DONE (2026-08-08.)** Against
+staging, with a real session (`e2e-tourist@local.test`) established through the
+sign-in form, so no token was ever read or handled. Probes issued from inside
+the page.
+
+- **AC-B0-6 PASSED.** On `/es/alojamientos/` served `HIT` (`age` 16):
+  **zero `nonce=` occurrences** in the HTML, no `'nonce-` in the CSP, and **22
+  `sha256-` sources** in `script-src` (23 on a detail page — detail carries one
+  extra inline script). Re-checked on five page shapes (three catalogs, a
+  detail, a `page/2/`): zero nonces on every one. All three inline scripts still
+  execute: the theme FOUC script had already applied `data-theme="dark"` **by
+  `DOMContentLoaded`** (seeded via an `initScript` that wrote `localStorage`
+  before the document's own scripts ran), `__HOSPEDA_I18N__` is present, and
+  PostHog reports `__loaded`.
+
+  One CSP violation fires, and it is benign: `script-src` / `eval` from
+  `_astro/schemas.*.js`. That is Zod 4's own feature probe —
+  `try { Function('') } catch { return false }` — which catches its own failure
+  and takes the non-eval path. Not an inline script, and nothing breaks.
+
+- **AC-B0-3 PASSED, all six.** In every case the SSR emits the **guest**
+  variant and the authenticated affordance appears only after hydration, which
+  is exactly the property that makes the HTML shareable:
+
+  | component | SSR | after hydration |
+  |---|---|---|
+  | `ContactHost` | `#contact-name` / `-email` / `-phone` present | all three gone; `#contact-message` + "Enviar mensaje" |
+  | `CommentThreadIsland` | "Iniciá sesión para comentar" | `#comment-input` + "Comentar" |
+  | `SearchChatPanel` | absent entirely (mounts on drawer open) | `<textarea>` + `ai-search-char-count`, no `loginCtaSignIn` |
+  | `ExperienceReviews` | no CTA | `<p>Dejar reseña</p>` |
+  | `GastronomyReviewForm` | `<a>` "Iniciá sesión para opinar" | `<button>` "Dejar reseña" |
+  | `CompareModeToggle` | neutral | click opens the **upsell**, not the guest gate |
+
+  `CompareModeToggle` deserves its own note: `e2e-tourist` has no comparison
+  entitlement, so the upsell popover **is** its authenticated affordance. What
+  matters for this criterion is that the guest gate ("Iniciá sesión para
+  comparar") did not open — the island recognised the session on a page whose
+  SSR carried none.
+
+  Method note for whoever re-runs this: `<astro-island>` is `display: contents`,
+  so it has no layout box, `getBoundingClientRect()` returns zeros and
+  `scrollIntoView()` on the island itself **does not trigger `client:visible`**.
+  Scroll `island.firstElementChild`. The cheap check for "did it hydrate at
+  all?" is `performance.getEntriesByType('resource')` filtered by the chunk
+  name. Missing this reads as a broken component: the comment thread looked
+  stuck on the guest CTA for three probes before the scroll landed.
+
+- **AC-B0-5 PASSED, both directions, by mutation.**
+  *Direction (a), WB0-6's static guard:* injecting `Astro.locals.user` into
+  `[lang]/alojamientos/index.astro` → 2 failures; injecting
+  `Astro.request.headers.get('cookie')` into `[lang]/eventos/[slug].astro` → 1
+  failure. Clean tree: 21/21.
+  *Direction (b), `FavoriteButton.test.tsx`:* re-gating `useFavoriteStatus` on a
+  re-added `isAuthenticated` prop → 9 runtime failures.
+
+  **The mutation also found the guard for (b) was inert.** Two
+  `@ts-expect-error` assignments claimed a resurrected prop would surface as an
+  unused-directive error at typecheck. It would not: `apps/web/tsconfig.json`
+  lists only `src/**` under `include` and `vitest.config.ts` does not enable
+  `test.typecheck`, so **nothing in CI typechecks the test tree**. Verified:
+  re-adding `isAuthenticated?: boolean` to the interface left `pnpm typecheck`
+  at exit 0 and the file at 58/58 green. Replaced with a source assertion over
+  the props interface body (PR #2716), which catches the interface-only
+  mutation the runtime tests are blind to.
+
+- **AC-B0-7 PASSED as written — and it surfaced a larger, unrelated defect.**
+  CLS on the cached catalog route: **authenticated 0.4512 vs anonymous 0.4605**.
+  D-11's post-hydration swaps therefore contribute **no measurable shift**,
+  which is what this criterion asks.
+
+  But both arms are "Poor". The shift is session-independent and was traced to
+  **PR #2705** (async non-critical CSS): forcing the 15 `data-async-css` sheets
+  back to blocking at parse time drops the catalog from **0.4605 → 0.0000/0.0149**
+  and the home from **0.1661/0.1680 → 0.0039/0.0167**, with **no FCP cost** in
+  either direction. The dominant entry is `.acc-grid` going from `[y=0, h=0]` to
+  `[y=592, h=309]` when the activator flips `media` — the unstyled grid being
+  styled all at once. Reproducible with and without throttling. Reverted in
+  PR #2717 by owner decision.
+
+  Two measurement traps worth recording. CLS on a **second, immediate**
+  navigation to the same URL reads 0.0346 — measuring there hides the defect
+  entirely. And Cloudflare's `age` varies wildly per edge node: within one 51 s
+  window the same URLs reported ages of 44–55 and then 265–267, so `age` alone
+  is not an eviction signal.
+
+**AC-6 — write-side still OPEN, blocked on
+[HOS-422](https://linear.app/hospeda-beta/issue/HOS-422).** The purge half is
+verified (see W1-3). The remaining half — that a real content write makes the
+service emit the tags — could not be closed: **the admin event form cannot save
+at all**, returning a silent 400, which is HOS-422 and unrelated to this spec.
+
+Established on a post instead: the detail emits
+`preview:all,preview:post-<slug>,preview:post-<id>` and the list emits
+`preview:all,preview:list-post`; a manual purge of the two entity tags returns
+`{"ok":true,"purged":2}` and flips all three locales to `MISS` immediately, so
+**the tags work end to end**. What is *not* established is the write itself: on
+one trial, after a successful admin post save, the list went `MISS` while the
+three detail locales stayed `HIT` on a pre-write copy. That trial is not
+conclusive — the payload was byte-identical (a no-op save, only `updatedAt`
+moved), so a service that diffs could be skipping the entity purge legitimately.
+**The one remaining step** is a real content change on a post, re-reading the
+three locales within ~10 s. Do not warm every probe URL together: `s-maxage` is
+300 s, so a synchronised warm-up expires them all at once and contaminates the
+measurement window.
+
 **W1-4 — Redirect Rules at the edge. DONE, narrowed to one rule (2026-08-04,
 staging only).** Versioned at
 [`infra/cloudflare/rules/redirect-rules.md`](../../infra/cloudflare/rules/redirect-rules.md).
@@ -2197,10 +2302,19 @@ Wave B0 (added Rev 3):
   CTAs, compare mode.
 - **AC-B0-4** — A listing of N cards issues **one** `check-bulk` after
   hydration, not N `/check` calls. Asserted on the network log.
-- **AC-B0-5** — WB0-6's guard fails when session state is reintroduced into a
-  cacheable page, and fails when `FavoriteButton`'s reconciliation is re-gated
-  on an SSR prop. Non-vacuity demonstrated in both directions, per HOS-370's
-  precedent.
+- **AC-B0-5** — Two guards fail, one per direction, demonstrated by mutation and
+  not by reading them, per HOS-370's precedent: **WB0-6's static guard** fails
+  when session state is reintroduced into a cacheable page, and
+  **`FavoriteButton.test.tsx`** fails when `FavoriteButton`'s reconciliation is
+  re-gated on an SSR prop.
+
+  > Corrected 2026-08-08. The original text asked WB0-6's guard to catch both.
+  > It cannot, by design: that guard sweeps `src/pages` and the `.astro`
+  > components and **deliberately excludes React islands**, because resolving
+  > the visitor in the browser is the correct behaviour there (see the guard's
+  > own "What this guard does NOT cover"). Asking one guard to cover both
+  > directions would mean widening it to `.tsx` and flagging every legitimate
+  > client-side session read. Two guards, one invariant each.
 - **AC-B0-6** — After WB0-1, no `nonce=` attribute remains in the HTML of a
   cacheable page, the CSP header carries `sha256-` sources instead, and the
   page's inline scripts still execute (theme FOUC applies, i18n data present,
