@@ -127,7 +127,7 @@
             "biome check --write --no-errors-on-unmatched"
         ],
         "*.json": [
-            "biome format --write"
+            "biome format --write --no-errors-on-unmatched --files-ignore-unknown=true"
         ],
         "*.md": [
             "markdownlint-cli2 --config .markdownlint-cli2.jsonc --fix"
