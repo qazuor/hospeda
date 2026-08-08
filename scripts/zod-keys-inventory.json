@@ -1212,6 +1212,8 @@
         "zodError.hostTradeReview.rating.int",
         "zodError.hostTradeReview.rating.max",
         "zodError.hostTradeReview.rating.min",
+        "zodError.hostTradeReviewReply.content.max",
+        "zodError.hostTradeReviewReply.content.min",
         "zodError.hostTradeUsage.hostEmail.invalid",
         "zodError.hostTradeUsage.hostIdentifier.exactlyOne",
         "zodError.hostTradeUsage.note.max",
@@ -1813,7 +1815,7 @@
         "zodError.validation.sanitization.failed",
         "zodError.validation.zod.failed"
     ],
-    "total": 1812,
+    "total": 1814,
     "byNamespace": {
         "accommodation": 69,
         "accommodationAmenity": 4,
@@ -1858,6 +1860,7 @@
         "health": 14,
         "hostTrade": 12,
         "hostTradeReview": 5,
+        "hostTradeReviewReply": 2,
         "hostTradeUsage": 5,
         "location": 31,
         "ownerPromotion": 19,

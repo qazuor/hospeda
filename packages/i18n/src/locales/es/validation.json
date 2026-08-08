@@ -3173,6 +3173,12 @@
             "min": "La calificación mínima es {{min}}"
         }
     },
+    "hostTradeReviewReply": {
+        "content": {
+            "max": "La respuesta no puede superar los {{max}} caracteres",
+            "min": "La respuesta debe tener al menos {{min}} caracteres"
+        }
+    },
     "hostTradeUsage": {
         "hostEmail": {
             "invalid": "El email del anfitrión no es válido"

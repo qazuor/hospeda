@@ -3173,6 +3173,12 @@
             "min": "The lowest rating is {{min}}"
         }
     },
+    "hostTradeReviewReply": {
+        "content": {
+            "max": "The reply cannot exceed {{max}} characters",
+            "min": "The reply must be at least {{min}} characters long"
+        }
+    },
     "hostTradeUsage": {
         "hostEmail": {
             "invalid": "The host's email address is not valid"
