@@ -545,35 +545,44 @@
             "id": "T-017",
             "title": "Guard test de campos administrados no user-settable",
             "description": "Test estático con el molde de HOST_TRADE_OWNER_FORBIDDEN_FIELDS (host-trade.owner.schema.ts:79-94, que ya tiene su guard). Debe afirmar que moderationState, moderatedById, moderatedAt, moderationReason, confirmedAt, confirmedById, rejectedAt, rejectedById, status, expiresAt, reminderSentAt, editedAt, reviewEditedAfterReply, los 5 contadores denormalizados y declarationSuspended* NO están en ningún schema de create/update expuesto por HTTP. Mutación de verificación: agregar uno a mano al schema y confirmar que el guard se pone rojo.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-014", "T-015", "T-016"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Lista de campos prohibidos como const exportada",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Guard test",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutación de verificación",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["schemas", "testing", "guard"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T15:40:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T15:40:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T15:40:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T15:30:00Z",
+                "completed": "2026-08-08T15:40:00.000Z"
             }
         },
         {
@@ -2175,9 +2184,9 @@
     ],
     "summary": {
         "total": 69,
-        "pending": 49,
+        "pending": 48,
         "inProgress": 0,
-        "completed": 20,
+        "completed": 21,
         "blocked": 0,
         "averageComplexity": 2.4
     }

@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 20/69 tareas (29%)
+## Progreso: 21/69 tareas (30%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 7/16 completadas (complejidad promedio 2.6)
+## Fase `core` — 8/16 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -65,7 +65,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-016** (c2) — Zod schemas de la réplica
   - packages/schemas/src/entities/host-trade-review-reply/: entity, create body (content min 10 / max 1000), update, access tiers. moderationState y reviewEditedAfterReply nunca user-settable. T…
   - Bloqueada por: T-015 · Bloquea a: T-017, T-025
-- [ ] **T-017** (c2) — Guard test de campos administrados no user-settable
+- [x] **T-017** (c2) — Guard test de campos administrados no user-settable
   - Test estático con el molde de HOST_TRADE_OWNER_FORBIDDEN_FIELDS (host-trade.owner.schema.ts:79-94, que ya tiene su guard). Debe afirmar que moderationState, moderatedById, moderatedAt, moder…
   - Bloqueada por: T-014, T-015, T-016 · Bloquea a: —
 - [x] **T-018** (c2) — Modelos DB de las 3 tablas nuevas
@@ -259,9 +259,10 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (7/16). Las disponibles ahora: T-017, T-020, T-022, T-023,
-T-025, T-029, T-030, T-033, T-040, T-042, T-057.
+Fase `core` en curso (8/16). Las disponibles ahora: T-020, T-022, T-023, T-025,
+T-029, T-030, T-033, T-040, T-042, T-057.
 
-T-016 cerró los schemas Zod de la réplica, así que el camino crítico queda libre
-en **T-025** — el servicio de réplicas. T-017 (el guard de campos administrados)
-también se desbloqueó: ya existen los tres juegos de schemas que tiene que barrer.
+El bloque de schemas está cerrado (T-014 a T-017) y el camino crítico sigue por
+**T-025** — el servicio de réplicas. Antes de arrancarlo hay que retipar
+`HostTradeReviewReplyModel` sobre la entidad Zod: hoy usa `$inferSelect` y
+Drizzle ensancha el pgEnum a `string`, que no satisface `BaseCrudService`.
