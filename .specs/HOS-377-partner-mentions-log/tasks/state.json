@@ -13,16 +13,38 @@
             "blockedBy": [],
             "blocks": ["T-002", "T-005"],
             "subtasks": [
-                { "title": "Create enum file with 8 values", "completed": true },
-                { "title": "Export from enums barrel", "completed": true },
-                { "title": "Membership test incl. absence of PRESS", "completed": true },
-                { "title": "Paired .schema.ts with nativeEnum + error key", "completed": true },
-                { "title": "zodError i18n key in es/en/pt", "completed": true },
-                { "title": "URL-requirement list + partition test", "completed": true }
+                {
+                    "title": "Create enum file with 8 values",
+                    "completed": true
+                },
+                {
+                    "title": "Export from enums barrel",
+                    "completed": true
+                },
+                {
+                    "title": "Membership test incl. absence of PRESS",
+                    "completed": true
+                },
+                {
+                    "title": "Paired .schema.ts with nativeEnum + error key",
+                    "completed": true
+                },
+                {
+                    "title": "zodError i18n key in es/en/pt",
+                    "completed": true
+                },
+                {
+                    "title": "URL-requirement list + partition test",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "enum"],
             "phase": "setup",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": "2026-08-08T00:18:00.000Z",
@@ -38,17 +60,30 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-003"],
             "subtasks": [
-                { "title": "Declare pgEnum", "completed": true },
-                { "title": "Parity test vs Zod enum", "completed": true },
+                {
+                    "title": "Declare pgEnum",
+                    "completed": true
+                },
+                {
+                    "title": "Parity test vs Zod enum",
+                    "completed": true
+                },
                 {
                     "title": "enumName literal assertion (hand-typed, not derived)",
                     "completed": true
                 },
-                { "title": "TWITTER-not-X assertion", "completed": true }
+                {
+                    "title": "TWITTER-not-X assertion",
+                    "completed": true
+                }
             ],
             "tags": ["database", "enum"],
             "phase": "setup",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": "2026-08-08T00:36:00.000Z",
@@ -64,16 +99,38 @@
             "blockedBy": ["T-002"],
             "blocks": ["T-004", "T-008"],
             "subtasks": [
-                { "title": "Table definition with all columns", "completed": true },
-                { "title": "Three indexes", "completed": true },
-                { "title": "Relations + inferred types", "completed": true },
-                { "title": "JSDoc: why singular channel, why nullable batchId", "completed": true },
-                { "title": "Export from schemas barrel", "completed": true },
-                { "title": "30 in-process getTableConfig tests", "completed": true }
+                {
+                    "title": "Table definition with all columns",
+                    "completed": true
+                },
+                {
+                    "title": "Three indexes",
+                    "completed": true
+                },
+                {
+                    "title": "Relations + inferred types",
+                    "completed": true
+                },
+                {
+                    "title": "JSDoc: why singular channel, why nullable batchId",
+                    "completed": true
+                },
+                {
+                    "title": "Export from schemas barrel",
+                    "completed": true
+                },
+                {
+                    "title": "30 in-process getTableConfig tests",
+                    "completed": true
+                }
             ],
             "tags": ["database", "schema"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": "2026-08-08T00:52:00.000Z",
@@ -89,10 +146,22 @@
             "blockedBy": ["T-003"],
             "blocks": ["T-008"],
             "subtasks": [
-                { "title": "Run db:generate", "completed": true },
-                { "title": "Review SQL + check number collision", "completed": true },
-                { "title": "Verify _journal.json chain", "completed": true },
-                { "title": "Confirm zero residual drift via a second generate", "completed": true },
+                {
+                    "title": "Run db:generate",
+                    "completed": true
+                },
+                {
+                    "title": "Review SQL + check number collision",
+                    "completed": true
+                },
+                {
+                    "title": "Verify _journal.json chain",
+                    "completed": true
+                },
+                {
+                    "title": "Confirm zero residual drift via a second generate",
+                    "completed": true
+                },
                 {
                     "title": "Re-run check-schema-drift.sh after the first commit",
                     "completed": true
@@ -100,7 +169,11 @@
             ],
             "tags": ["database", "migration"],
             "phase": "core",
-            "qualityGate": { "lint": "n/a", "typecheck": "pass", "tests": "n/a" },
+            "qualityGate": {
+                "lint": "n/a",
+                "typecheck": "pass",
+                "tests": "n/a"
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": "2026-08-08T01:20:00.000Z",
@@ -116,15 +189,34 @@
             "blockedBy": ["T-001"],
             "blocks": ["T-006", "T-007"],
             "subtasks": [
-                { "title": "Base schema + inferred type", "completed": true },
-                { "title": "Unit tests for parse/reject", "completed": true },
-                { "title": "Id schemas + zodError i18n keys (es/en/pt)", "completed": true },
-                { "title": "Admin-only mask + partner-facing derived schema", "completed": true },
-                { "title": "Sliceability test (no refine on the base)", "completed": true }
+                {
+                    "title": "Base schema + inferred type",
+                    "completed": true
+                },
+                {
+                    "title": "Unit tests for parse/reject",
+                    "completed": true
+                },
+                {
+                    "title": "Id schemas + zodError i18n keys (es/en/pt)",
+                    "completed": true
+                },
+                {
+                    "title": "Admin-only mask + partner-facing derived schema",
+                    "completed": true
+                },
+                {
+                    "title": "Sliceability test (no refine on the base)",
+                    "completed": true
+                }
             ],
             "tags": ["schemas"],
             "phase": "core",
-            "qualityGate": { "lint": "pass", "typecheck": "pass", "tests": "pass" },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": "2026-08-08T01:30:00.000Z",
@@ -134,24 +226,44 @@
         {
             "id": "T-006",
             "title": "Add createPartnerMentionBatchSchema with the per-channel URL rule",
-            "description": "The batch body schema (spec §7): { mentionedAt, internalNote?, entries: [{ channel, url? }] } with entries min length 1. A refinement on EACH entry requires url for INSTAGRAM/FACEBOOK/TWITTER/YOUTUBE/TIKTOK/NEWSLETTER and allows it absent for WHATSAPP/OTHER (AC-8, closes OQ-3). Note: batchId is NOT part of the body — it is server-generated (R-5). Tests: one case per branch of the rule (8 channels, required-vs-optional), a multi-entry happy path, and an explicit assertion that a client-supplied batchId is stripped/rejected.",
-            "status": "pending",
+            "description": "The batch body schema (spec §7): { mentionedAt, internalNote?, entries: [{ channel, url? }] } with entries min length 1. A refinement on EACH entry requires url for INSTAGRAM/FACEBOOK/TWITTER/YOUTUBE/TIKTOK/NEWSLETTER and allows it absent for WHATSAPP/OTHER (AC-8, closes OQ-3). Note: batchId is NOT part of the body — it is server-generated (R-5). Tests: one case per branch of the rule (8 channels, required-vs-optional), a multi-entry happy path, and an explicit assertion that a client-supplied batchId is stripped/rejected. DONE: partnerMentionEntrySchema is .pick({channel,url}) off the entity + a superRefine that attaches the error to the ['url'] path (so the admin form with N url inputs can show it on the right one). Body = {mentionedAt, internalNote?, entries[min 1]}; partnerId comes from the URL path, batchId is server-generated — both absent from the shape and stripped by Zod. 36 tests. IMPORTANT for T-009: the R-5 guarantee holds only if the service inserts from the PARSED output; building an insert from the raw body bypasses the stripping entirely.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-005"],
             "blocks": ["T-009"],
             "subtasks": [
-                { "title": "Batch body schema with entries array", "completed": false },
-                { "title": "Per-entry URL refinement", "completed": false },
-                { "title": "Test all 8 channel branches", "completed": false },
-                { "title": "Test client batchId is not accepted", "completed": false }
+                {
+                    "title": "Batch body schema with entries array",
+                    "completed": true
+                },
+                {
+                    "title": "Per-entry URL refinement",
+                    "completed": true
+                },
+                {
+                    "title": "Test all 8 channel branches",
+                    "completed": true
+                },
+                {
+                    "title": "Test client batchId is not accepted",
+                    "completed": true
+                },
+                {
+                    "title": "Error path points at entries[i].url",
+                    "completed": true
+                }
             ],
             "tags": ["schemas", "validation"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T01:56:00.000Z",
+                "completed": "2026-08-08T02:14:00.000Z"
             }
         },
         {
@@ -163,13 +275,26 @@
             "blockedBy": ["T-005"],
             "blocks": ["T-010"],
             "subtasks": [
-                { "title": "Update schema", "completed": false },
-                { "title": "Search schema with pagination", "completed": false },
-                { "title": "Unit tests", "completed": false }
+                {
+                    "title": "Update schema",
+                    "completed": false
+                },
+                {
+                    "title": "Search schema with pagination",
+                    "completed": false
+                },
+                {
+                    "title": "Unit tests",
+                    "completed": false
+                }
             ],
             "tags": ["schemas"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -185,13 +310,26 @@
             "blockedBy": ["T-003", "T-004"],
             "blocks": ["T-009", "T-010"],
             "subtasks": [
-                { "title": "Model class + table binding", "completed": false },
-                { "title": "findByPartner / findByBatch", "completed": false },
-                { "title": "Integration tests incl. cascade + soft-delete", "completed": false }
+                {
+                    "title": "Model class + table binding",
+                    "completed": false
+                },
+                {
+                    "title": "findByPartner / findByBatch",
+                    "completed": false
+                },
+                {
+                    "title": "Integration tests incl. cascade + soft-delete",
+                    "completed": false
+                }
             ],
             "tags": ["database", "model"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -207,13 +345,26 @@
             "blockedBy": ["T-006", "T-008"],
             "blocks": ["T-011", "T-012", "T-020"],
             "subtasks": [
-                { "title": "Service class scaffold + permissions", "completed": false },
-                { "title": "createBatch inside withTransaction", "completed": false },
-                { "title": "Server-side batchId generation", "completed": false }
+                {
+                    "title": "Service class scaffold + permissions",
+                    "completed": false
+                },
+                {
+                    "title": "createBatch inside withTransaction",
+                    "completed": false
+                },
+                {
+                    "title": "Server-side batchId generation",
+                    "completed": false
+                }
             ],
             "tags": ["service", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -229,8 +380,14 @@
             "blockedBy": ["T-007", "T-008"],
             "blocks": ["T-011", "T-013", "T-014", "T-015", "T-017"],
             "subtasks": [
-                { "title": "listForPartner paginated", "completed": false },
-                { "title": "update + softDelete", "completed": false },
+                {
+                    "title": "listForPartner paginated",
+                    "completed": false
+                },
+                {
+                    "title": "update + softDelete",
+                    "completed": false
+                },
                 {
                     "title": "listForOwner grouped by batchId, internalNote stripped",
                     "completed": false
@@ -238,7 +395,11 @@
             ],
             "tags": ["service", "core"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -254,14 +415,30 @@
             "blockedBy": ["T-009", "T-010"],
             "blocks": [],
             "subtasks": [
-                { "title": "Batch grouping + null-for-single tests", "completed": false },
-                { "title": "R-5 client batchId ignored test", "completed": false },
-                { "title": "Transaction rollback test", "completed": false },
-                { "title": "Ownership fail-closed test", "completed": false }
+                {
+                    "title": "Batch grouping + null-for-single tests",
+                    "completed": false
+                },
+                {
+                    "title": "R-5 client batchId ignored test",
+                    "completed": false
+                },
+                {
+                    "title": "Transaction rollback test",
+                    "completed": false
+                },
+                {
+                    "title": "Ownership fail-closed test",
+                    "completed": false
+                }
             ],
             "tags": ["service", "testing"],
             "phase": "core",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -277,13 +454,26 @@
             "blockedBy": ["T-009"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Route file with createAdminRoute", "completed": false },
-                { "title": "auditLog entry", "completed": false },
-                { "title": "OpenAPI response shape", "completed": false }
+                {
+                    "title": "Route file with createAdminRoute",
+                    "completed": false
+                },
+                {
+                    "title": "auditLog entry",
+                    "completed": false
+                },
+                {
+                    "title": "OpenAPI response shape",
+                    "completed": false
+                }
             ],
             "tags": ["api", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -299,12 +489,22 @@
             "blockedBy": ["T-010"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "List route with pagination", "completed": false },
-                { "title": "Newest-first ordering assertion", "completed": false }
+                {
+                    "title": "List route with pagination",
+                    "completed": false
+                },
+                {
+                    "title": "Newest-first ordering assertion",
+                    "completed": false
+                }
             ],
             "tags": ["api", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -320,12 +520,22 @@
             "blockedBy": ["T-010"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Update route", "completed": false },
-                { "title": "Cross-partner id rejection", "completed": false }
+                {
+                    "title": "Update route",
+                    "completed": false
+                },
+                {
+                    "title": "Cross-partner id rejection",
+                    "completed": false
+                }
             ],
             "tags": ["api", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -341,12 +551,22 @@
             "blockedBy": ["T-010"],
             "blocks": ["T-016"],
             "subtasks": [
-                { "title": "Soft-delete route", "completed": false },
-                { "title": "Cross-partner id rejection", "completed": false }
+                {
+                    "title": "Soft-delete route",
+                    "completed": false
+                },
+                {
+                    "title": "Cross-partner id rejection",
+                    "completed": false
+                }
             ],
             "tags": ["api", "admin"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -362,13 +582,26 @@
             "blockedBy": ["T-012", "T-013", "T-014", "T-015"],
             "blocks": ["T-022"],
             "subtasks": [
-                { "title": "Mount router", "completed": false },
-                { "title": "E2E batch + permission tests", "completed": false },
-                { "title": "Confirm the test file runs in CI", "completed": false }
+                {
+                    "title": "Mount router",
+                    "completed": false
+                },
+                {
+                    "title": "E2E batch + permission tests",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm the test file runs in CI",
+                    "completed": false
+                }
             ],
             "tags": ["api", "admin", "testing"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -384,13 +617,26 @@
             "blockedBy": ["T-010"],
             "blocks": ["T-018", "T-026"],
             "subtasks": [
-                { "title": "Route file in the protected group", "completed": false },
-                { "title": "Ownership gate mirroring mine.ts", "completed": false },
-                { "title": "Batch-grouped response shape", "completed": false }
+                {
+                    "title": "Route file in the protected group",
+                    "completed": false
+                },
+                {
+                    "title": "Ownership gate mirroring mine.ts",
+                    "completed": false
+                },
+                {
+                    "title": "Batch-grouped response shape",
+                    "completed": false
+                }
             ],
             "tags": ["api", "protected"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -406,13 +652,26 @@
             "blockedBy": ["T-017"],
             "blocks": [],
             "subtasks": [
-                { "title": "internalNote absent from payload", "completed": false },
-                { "title": "Batch grouping assertion", "completed": false },
-                { "title": "Cross-owner denial with a real existing row", "completed": false }
+                {
+                    "title": "internalNote absent from payload",
+                    "completed": false
+                },
+                {
+                    "title": "Batch grouping assertion",
+                    "completed": false
+                },
+                {
+                    "title": "Cross-owner denial with a real existing row",
+                    "completed": false
+                }
             ],
             "tags": ["api", "testing", "security"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -428,13 +687,26 @@
             "blockedBy": [],
             "blocks": ["T-020"],
             "subtasks": [
-                { "title": "NotificationType value", "completed": false },
-                { "title": "Email template with per-channel links", "completed": false },
-                { "title": "Template snapshot test", "completed": false }
+                {
+                    "title": "NotificationType value",
+                    "completed": false
+                },
+                {
+                    "title": "Email template with per-channel links",
+                    "completed": false
+                },
+                {
+                    "title": "Template snapshot test",
+                    "completed": false
+                }
             ],
             "tags": ["notifications"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -450,13 +722,26 @@
             "blockedBy": ["T-009", "T-019"],
             "blocks": ["T-021"],
             "subtasks": [
-                { "title": "Post-commit hook, one send per batch", "completed": false },
-                { "title": "Recipient resolution from contactInfo", "completed": false },
-                { "title": "Silent degradation when no address exists", "completed": false }
+                {
+                    "title": "Post-commit hook, one send per batch",
+                    "completed": false
+                },
+                {
+                    "title": "Recipient resolution from contactInfo",
+                    "completed": false
+                },
+                {
+                    "title": "Silent degradation when no address exists",
+                    "completed": false
+                }
             ],
             "tags": ["notifications", "service"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -472,13 +757,26 @@
             "blockedBy": ["T-020"],
             "blocks": [],
             "subtasks": [
-                { "title": "Send count === 1 for a 4-entry batch", "completed": false },
-                { "title": "Null contactInfo: rows written, 0 sends", "completed": false },
-                { "title": "Throwing transport does not roll back", "completed": false }
+                {
+                    "title": "Send count === 1 for a 4-entry batch",
+                    "completed": false
+                },
+                {
+                    "title": "Null contactInfo: rows written, 0 sends",
+                    "completed": false
+                },
+                {
+                    "title": "Throwing transport does not roll back",
+                    "completed": false
+                }
             ],
             "tags": ["notifications", "testing"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -494,12 +792,22 @@
             "blockedBy": ["T-016"],
             "blocks": ["T-023", "T-024"],
             "subtasks": [
-                { "title": "List query hook", "completed": false },
-                { "title": "Create/update/delete mutations + invalidation", "completed": false }
+                {
+                    "title": "List query hook",
+                    "completed": false
+                },
+                {
+                    "title": "Create/update/delete mutations + invalidation",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "data"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -515,13 +823,26 @@
             "blockedBy": ["T-022", "T-025"],
             "blocks": [],
             "subtasks": [
-                { "title": "List component with badges + link-out", "completed": false },
-                { "title": "Row edit/delete affordances", "completed": false },
-                { "title": "Render tests incl. the no-URL channel", "completed": false }
+                {
+                    "title": "List component with badges + link-out",
+                    "completed": false
+                },
+                {
+                    "title": "Row edit/delete affordances",
+                    "completed": false
+                },
+                {
+                    "title": "Render tests incl. the no-URL channel",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -537,14 +858,30 @@
             "blockedBy": ["T-022", "T-025"],
             "blocks": [],
             "subtasks": [
-                { "title": "Multi-select channel field", "completed": false },
-                { "title": "Dynamic per-channel URL inputs", "completed": false },
-                { "title": "Single-request submit", "completed": false },
-                { "title": "Validation tests both branches", "completed": false }
+                {
+                    "title": "Multi-select channel field",
+                    "completed": false
+                },
+                {
+                    "title": "Dynamic per-channel URL inputs",
+                    "completed": false
+                },
+                {
+                    "title": "Single-request submit",
+                    "completed": false
+                },
+                {
+                    "title": "Validation tests both branches",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "ui", "forms"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -560,12 +897,22 @@
             "blockedBy": [],
             "blocks": ["T-023", "T-024", "T-030"],
             "subtasks": [
-                { "title": "Channel labels x8", "completed": false },
-                { "title": "Section + form + empty-state copy", "completed": false }
+                {
+                    "title": "Channel labels x8",
+                    "completed": false
+                },
+                {
+                    "title": "Section + form + empty-state copy",
+                    "completed": false
+                }
             ],
             "tags": ["admin", "i18n"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -581,12 +928,22 @@
             "blockedBy": ["T-017"],
             "blocks": ["T-027"],
             "subtasks": [
-                { "title": "Typed fetcher", "completed": false },
-                { "title": "Not-a-partner returns empty, not throw", "completed": false }
+                {
+                    "title": "Typed fetcher",
+                    "completed": false
+                },
+                {
+                    "title": "Not-a-partner returns empty, not throw",
+                    "completed": false
+                }
             ],
             "tags": ["web", "data"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -602,14 +959,30 @@
             "blockedBy": ["T-026", "T-029"],
             "blocks": ["T-028", "T-031"],
             "subtasks": [
-                { "title": "Grouped-by-batch rendering", "completed": false },
-                { "title": "Per-channel link-out", "completed": false },
-                { "title": "Empty state copy", "completed": false },
-                { "title": "Render tests incl. the no-URL channel", "completed": false }
+                {
+                    "title": "Grouped-by-batch rendering",
+                    "completed": false
+                },
+                {
+                    "title": "Per-channel link-out",
+                    "completed": false
+                },
+                {
+                    "title": "Empty state copy",
+                    "completed": false
+                },
+                {
+                    "title": "Render tests incl. the no-URL channel",
+                    "completed": false
+                }
             ],
             "tags": ["web", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -625,13 +998,26 @@
             "blockedBy": ["T-027"],
             "blocks": [],
             "subtasks": [
-                { "title": "Ownership-gated render on the aliados page", "completed": false },
-                { "title": "Do NOT touch discovery-doors acquiredPermission", "completed": false },
-                { "title": "Verify session segment if an island is used", "completed": false }
+                {
+                    "title": "Ownership-gated render on the aliados page",
+                    "completed": false
+                },
+                {
+                    "title": "Do NOT touch discovery-doors acquiredPermission",
+                    "completed": false
+                },
+                {
+                    "title": "Verify session segment if an island is used",
+                    "completed": false
+                }
             ],
             "tags": ["web", "ui"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -647,13 +1033,26 @@
             "blockedBy": [],
             "blocks": ["T-027", "T-030"],
             "subtasks": [
-                { "title": "es/en/pt keys", "completed": false },
-                { "title": "Confirm CLIENT_I18N_KEY_PREFIXES coverage", "completed": false },
-                { "title": "AC-5 separation comment for HOS-294", "completed": false }
+                {
+                    "title": "es/en/pt keys",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm CLIENT_I18N_KEY_PREFIXES coverage",
+                    "completed": false
+                },
+                {
+                    "title": "AC-5 separation comment for HOS-294",
+                    "completed": false
+                }
             ],
             "tags": ["web", "i18n"],
             "phase": "integration",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -669,16 +1068,26 @@
             "blockedBy": ["T-025", "T-029"],
             "blocks": [],
             "subtasks": [
-                { "title": "Guard script over the mention i18n namespaces", "completed": false },
+                {
+                    "title": "Guard script over the mention i18n namespaces",
+                    "completed": false
+                },
                 {
                     "title": "Mutation-test it: plant a forbidden word, confirm red",
                     "completed": false
                 },
-                { "title": "Register in check:guards and confirm CI runs it", "completed": false }
+                {
+                    "title": "Register in check:guards and confirm CI runs it",
+                    "completed": false
+                }
             ],
             "tags": ["testing", "guard"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -694,12 +1103,22 @@
             "blockedBy": ["T-027"],
             "blocks": [],
             "subtasks": [
-                { "title": "gold vs silver identical render", "completed": false },
-                { "title": "bronze does not diverge or crash", "completed": false }
+                {
+                    "title": "gold vs silver identical render",
+                    "completed": false
+                },
+                {
+                    "title": "bronze does not diverge or crash",
+                    "completed": false
+                }
             ],
             "tags": ["testing"],
             "phase": "testing",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -715,12 +1134,22 @@
             "blockedBy": [],
             "blocks": [],
             "subtasks": [
-                { "title": "Create the Linear issue with context", "completed": false },
-                { "title": "Link it from HOS-377", "completed": false }
+                {
+                    "title": "Create the Linear issue with context",
+                    "completed": false
+                },
+                {
+                    "title": "Link it from HOS-377",
+                    "completed": false
+                }
             ],
             "tags": ["docs", "cleanup"],
             "phase": "docs",
-            "qualityGate": { "lint": null, "typecheck": null, "tests": null },
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
                 "started": null,
@@ -730,9 +1159,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 27,
+        "pending": 26,
         "inProgress": 0,
-        "completed": 5,
+        "completed": 6,
         "blocked": 0,
         "averageComplexity": 2.4
     }

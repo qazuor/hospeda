@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 5/32 tasks (16%)
+## Progress: 6/32 tasks (19%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -46,8 +46,11 @@
   - 14 tests · mutation-verified (shrinking the mask turns 2 red)
   - Blocked by: T-001 · Blocks: T-006, T-007
 
-- [ ] **T-006** (complexity: 3) — `createPartnerMentionBatchSchema` + per-channel URL rule
-  - One test per branch of the 8-channel rule; `batchId` never accepted from the client
+- [x] **T-006** (complexity: 3) — `createPartnerMentionBatchSchema` + per-channel URL rule ✅
+  - Entry = `.pick({channel,url})` + superRefine reporting on the `['url']` path
+  - `partnerId` (path is authoritative) and `batchId` (server-generated) both stripped
+  - 36 tests · mutation-verified twice (URL rule → 5 red across two suites; entry pick → 1 red)
+  - ⚠ T-009 must insert from the PARSED output — the raw body bypasses the stripping
   - Blocked by: T-005 · Blocks: T-009
 
 - [ ] **T-007** (complexity: 2) — Update and search schemas
