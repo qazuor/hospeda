@@ -1,6 +1,6 @@
 # HOS-377: Partner mentions log — record manual promotion actions and show them to the partner
 
-## Progress: 18/32 tasks (56%)
+## Progress: 21/32 tasks (66%)
 
 **Average Complexity:** 2.4/3 (max)
 **Critical Path:** T-001 → T-002 → T-003 → T-004 → T-008 → T-010 → T-017 → T-026 → T-027 → T-028 (10 steps)
@@ -141,15 +141,31 @@
     still fails. 8 tests · mutation-verified twice (strip → 2 red, ownership → 5 red)
   - Blocked by: T-017 · Blocks: none
 
-- [ ] **T-019** (complexity: 2) — Notification type + email template
+- [x] **T-019** (complexity: 2) — Notification type + email template ✅
+  - `PartnerMentionsLoggedPayload` carries the WHOLE batch, so once-per-submission is
+    enforced by the type rather than by caller convention
+  - `channelLabel` is a human label resolved by the CALLER: `@repo/notifications`
+    deliberately has no `@repo/schemas` dep, and `providerLabel` already set that boundary
+  - 11 tests asserting AC-3 on the RENDERED html — banned words AND the softer phrasings
+    that promise the same measurement. Mutation-verified (injecting "alcance" → 2 red)
   - Blocked by: none · Blocks: T-020
 
-- [ ] **T-020** (complexity: 3) — One email per batch, after commit, degrading silently
+- [x] **T-020** (complexity: 3) — One email per batch, after commit, degrading silently ✅
   - `contactInfo` is nullable and all-nullish: no address must not fail the insert
+  - ⚠ `preferredEmail` is a PREFERENCE enum (`HOME`/`WORK`/`MOBILE`), NOT an address. It
+    selects between `workEmail`/`personalEmail` and then falls THROUGH — "write to me at
+    work" plus an empty work field is not a reason to go silent, and `MOBILE` names no
+    email column at all
+  - Writes to `contactInfo`, NOT the owner account the revoke port uses. Opposite
+    pressures: a revocation goes to the account precisely because the partner's own
+    details may be stale then
   - Blocked by: T-009, T-019 · Blocks: T-021
 
-- [ ] **T-021** (complexity: 3) — Notification tests: send count and degradation
-  - Assert count === 1 for a 4-entry batch, not merely "a mail went out"
+- [x] **T-021** (complexity: 3) — Notification tests: send count and degradation ✅
+  - Assert count === 1 for a 4-entry batch, not merely "a mail went out" — 15 tests,
+    mutation-verified (single send → per-mention loop turns the count test red)
+  - The throwing-transport case was ALREADY covered by T-009's `createBatch` suite and is
+    not duplicated: the service owns the swallow, the port owns the resolution
   - Blocked by: T-020 · Blocks: none
 
 - [ ] **T-022** (complexity: 2) — Admin TanStack Query hooks

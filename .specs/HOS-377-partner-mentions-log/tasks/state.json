@@ -709,106 +709,106 @@
         {
             "id": "T-019",
             "title": "Add the partner-mention notification type and email template",
-            "description": "Add a NotificationType value in packages/notifications/src/types/notification.types.ts plus its email template: subject + a body listing every channel in the batch with its link. Transactional style (bypasses preference opt-outs), following the COMMERCE_OWNER_CREDENTIALS precedent. Copy must obey AC-3 — 'menciones', never 'estadísticas'/'alcance'.",
-            "status": "pending",
+            "description": "Add a NotificationType value in packages/notifications/src/types/notification.types.ts plus its email template: subject + a body listing every channel in the batch with its link. Transactional style (bypasses preference opt-outs), following the COMMERCE_OWNER_CREDENTIALS precedent. Copy must obey AC-3 — 'menciones', never 'estadísticas'/'alcance'. DONE: PARTNER_MENTIONS_LOGGED + PartnerMentionsLoggedPayload (carries the WHOLE batch, so once-per-submission is enforced by the type, not by caller convention) + partner-mentions-logged.tsx + subject + TRANSACTIONAL category + dispatch case. channelLabel is a HUMAN LABEL resolved by the caller: @repo/notifications deliberately does not depend on @repo/schemas, and providerLabel on AccommodationCalendarFeedBrokenPayload already set that boundary. 11 tests asserting AC-3 on the RENDERED html (banned words AND softer phrasings that promise the same measurement); mutation-verified — injecting 'alcance' turns 2 red.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-020"],
             "subtasks": [
                 {
                     "title": "NotificationType value",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Email template with per-channel links",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Template snapshot test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["notifications"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T12:35:00.000Z",
+                "completed": "2026-08-08T12:50:00.000Z"
             }
         },
         {
             "id": "T-020",
             "title": "Send one email per batch, after commit, degrading silently",
-            "description": "Wire the notification into createBatch: fires ONCE per batch (never once per row — AC-9), AFTER the transaction commits so a mail failure can never roll back a logged mention. Recipient resolved from partners.contactInfo (preferredEmail -> workEmail -> personalEmail). R-2 residual: contactInfo is nullable and every field inside is nullish, so a partner with no reachable address must be logged and SKIPPED — never throw, never fail the mention insert.",
-            "status": "pending",
+            "description": "Wire the notification into createBatch: fires ONCE per batch (never once per row — AC-9), AFTER the transaction commits so a mail failure can never roll back a logged mention. Recipient resolved from partners.contactInfo (preferredEmail -> workEmail -> personalEmail). R-2 residual: contactInfo is nullable and every field inside is nullish, so a partner with no reachable address must be logged and SKIPPED — never throw, never fail the mention insert. DONE: createPartnerMentionNotifyPort in apps/api/src/lib/partner-ports.ts, injected at the create route so service-core stays free of the transport. GOTCHA: preferredEmail is a PREFERENCE enum (HOME/WORK/MOBILE), NOT an address — it selects between workEmail/personalEmail and then falls THROUGH, since a partner who said 'write to me at work' but only filled a personal address should still hear from us, and MOBILE names no email column at all. Writes to contactInfo, NOT the owner account the revoke port uses (opposite pressures: a revocation goes to the account because the partner's own details may be stale precisely then). userId is nullable — a partner may have no owner account yet.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-009", "T-019"],
             "blocks": ["T-021"],
             "subtasks": [
                 {
                     "title": "Post-commit hook, one send per batch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Recipient resolution from contactInfo",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Silent degradation when no address exists",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["notifications", "service"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T12:35:00.000Z",
+                "completed": "2026-08-08T12:50:00.000Z"
             }
         },
         {
             "id": "T-021",
             "title": "Notification tests — send count and no-email degradation",
-            "description": "AC-9: a 4-entry submission produces EXACTLY 1 send (assert the call count, not just 'a mail went out'). A partner with contactInfo = null still gets its 4 rows written and produces 0 sends with a logged warning. A mail transport that throws does NOT roll back the mentions. Use a real-shaped notification mock — a mock kinder than the service hides exactly this class of failure.",
-            "status": "pending",
+            "description": "AC-9: a 4-entry submission produces EXACTLY 1 send (assert the call count, not just 'a mail went out'). A partner with contactInfo = null still gets its 4 rows written and produces 0 sends with a logged warning. A mail transport that throws does NOT roll back the mentions. Use a real-shaped notification mock — a mock kinder than the service hides exactly this class of failure. DONE: 15 tests in apps/api/test/lib/partner-mention-notify-port.test.ts. Mutation-verified: turning the single send into a per-mention loop turns the count test red. The throwing-transport case was ALREADY covered by T-009's createBatch suite ('still returns the rows when the notifier THROWS') and is not duplicated here — the service owns the swallow, the port owns the resolution.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-020"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Send count === 1 for a 4-entry batch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Null contactInfo: rows written, 0 sends",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Throwing transport does not roll back",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["notifications", "testing"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-07T21:05:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T12:35:00.000Z",
+                "completed": "2026-08-08T12:50:00.000Z"
             }
         },
         {
