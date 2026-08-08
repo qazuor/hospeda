@@ -44,7 +44,8 @@ export const CACHE_TAG_ENTITY_PREFIXES = {
     gastronomy: 'gastro',
     experience: 'exp',
     attraction: 'attr',
-    pointOfInterest: 'poi'
+    pointOfInterest: 'poi',
+    partner: 'partner'
 } as const;
 
 /** An entity kind that can be addressed by a per-entity cache tag. */
@@ -67,6 +68,12 @@ export type CacheTagEntity = keyof typeof CACHE_TAG_ENTITY_PREFIXES;
  * the type would have added vocabulary nothing emits and nothing purges —
  * exactly the dead-tag failure this package exists to prevent, introduced in
  * the name of a type check.
+ *
+ * `partner` joined them for the same reason (HOS-294 D-2): a gold partner has
+ * its own page at `/partners/<slug>/`, and there is deliberately NO index of
+ * partners — the retired directory is not coming back. A partner write instead
+ * purges its own entity tag plus `home`, because the surface that lists
+ * partners is the home page's carousel.
  *
  * The half of the invariant that was load-bearing is kept: `satisfies` still
  * rejects a key that is not a real entity, so the two tables cannot drift into

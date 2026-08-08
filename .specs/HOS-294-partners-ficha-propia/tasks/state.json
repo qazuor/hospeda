@@ -280,35 +280,35 @@
             "id": "T-009",
             "title": "Add the partner entity prefix to the cache-tag vocabulary",
             "description": "packages/cache-tags/src/vocabulary.ts: add partner to CACHE_TAG_ENTITY_PREFIXES and deliberately NOT to CACHE_TAG_COLLECTIONS — there is no page listing partners, which is the documented rationale for attraction and pointOfInterest being absent from that map (vocabulary.ts:62-75). Inventing list-partner would add vocabulary nothing emits and nothing purges. Tests: update vocabulary.test.ts, whose existing assertions already walk both maps.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-010", "T-011", "T-025"],
             "subtasks": [
                 {
                     "title": "Add the prefix",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Confirm no collection tag is added",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Update vocabulary tests",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["cache-tags"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": "pass",
+                "typecheck": "pass",
+                "tests": "pass"
             },
             "timestamps": {
                 "created": "2026-08-08T03:20:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T05:40:39Z",
+                "completed": "2026-08-08T05:40:39Z"
             }
         },
         {
@@ -943,9 +943,9 @@
     ],
     "summary": {
         "total": 28,
-        "pending": 17,
+        "pending": 16,
         "inProgress": 0,
-        "completed": 12,
+        "completed": 13,
         "blocked": 0,
         "averageComplexity": 2.0
     }

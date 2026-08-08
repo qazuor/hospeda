@@ -139,7 +139,12 @@ describe('vocabulary tables', () => {
             .filter((entity) => !(entity in CACHE_TAG_COLLECTIONS))
             .sort();
 
-        expect(withoutCollection).toEqual(['attraction', 'pointOfInterest']);
+        // `partner` (HOS-294) belongs here for the same reason as the other
+        // two: the gold partner's page is reachable from the home carousel and
+        // the sitemap, and there is no partner index — the filtered directory
+        // was retired on purpose. A `list-partner` tag would be purged by
+        // nothing and emitted by nothing.
+        expect(withoutCollection).toEqual(['attraction', 'partner', 'pointOfInterest']);
     });
 
     it('emits only valid tags for every collection', () => {
