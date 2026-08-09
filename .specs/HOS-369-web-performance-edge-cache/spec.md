@@ -2405,6 +2405,42 @@ Wave B onward:
   cold against staging. Not met today: the cold profile in §6.6 measures
   **LCP ≈ 15,266 ms**. **HOS-369 does not close until it is.**
 
+  > **Re-measured 2026-08-09, after the #2705 revert was deployed. Still NOT
+  > met, but by 193 ms instead of 12,766.** Cold-cache recipe exactly as
+  > prescribed below, 3 runs, each in its own fresh `isolatedContext`:
+  >
+  > | run | LCP | TTFB | Load delay | Load duration | Render delay | CLS |
+  > |---|---|---|---|---|---|---|
+  > | 1 | 2,693 | 674 | 171 | 1,786 | 62 | 0.00 |
+  > | 2 | 2,536 | 40 | — | — | 2,496 | 0.00 |
+  > | 3 | 2,891 | 55 | 799 | 1,823 | 215 | 0.00 |
+  >
+  > **Median LCP 2,693 ms** against a 2,500 ms threshold. Run 2's LCP element
+  > was a text node (no resource, hence no load phases); runs 1 and 3 picked the
+  > hero image. **TBT was not measured in this pass** — the second half of the
+  > criterion is still open.
+  >
+  > **The two remaining levers, in order of size:**
+  >
+  > 1. **Render-blocking CSS — the `RenderBlocking` insight estimates
+  >    ~11.7–12.0 s of FCP savings on all three runs.** This is the direct cost
+  >    of reverting #2705: the sheets are back on the critical path. The answer
+  >    is NOT to re-defer all of them (that was #2705, and it bought a 0.45 CLS)
+  >    nor to leave every one blocking. It is to shrink what is critical —
+  >    inline the above-the-fold rules and defer only what provably does not
+  >    affect the first viewport, verified against CLS each time.
+  > 2. **The hero image transfer — ~1.8 s of `Load duration`** in both runs
+  >    where the image won LCP, with `ImageDelivery` reporting 34.8 kB of waste.
+  >    Note this is the transfer itself, not discovery: `Load delay` is 171 ms
+  >    and 799 ms. The "~750 ms load delay" recorded as the next block in the
+  >    prior session's handoff was measured on a WARM profile and does not
+  >    describe the cold one.
+  >
+  > **Do not trust a warm re-measurement of this criterion.** Three
+  > `reload: true` traces taken the same day reported a median LCP of 1,144 ms
+  > with `Load duration` of 1–2 ms — under one RTT, which the sanity check below
+  > correctly flags as cache rather than speed. The cold number is 2.4× that.
+
   Measured with a genuinely cold cache — `performance_start_trace(reload: true)`
   does NOT give one, it reuses the browser cache. The recipe that does:
   `new_page(url: "about:blank", isolatedContext: <n>)` → `emulate(…)` →
