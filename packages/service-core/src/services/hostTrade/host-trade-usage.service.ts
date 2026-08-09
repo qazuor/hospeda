@@ -486,11 +486,6 @@ export class HostTradeUsageService extends BaseCrudService<
                 // it. `reject` runs from PENDING and `undo` from REJECTED, so
                 // neither enters or leaves CONFIRMED — the day a confirmed
                 // usage becomes reversible, that path needs this line too.
-                // The ONLY transition that moves a counter, and it does not go
-                // through the base update, so `_afterUpdate` never fires for
-                // it. `reject` runs from PENDING and `undo` from REJECTED, so
-                // neither enters or leaves CONFIRMED — the day a confirmed
-                // usage becomes reversible, that path needs this line too.
                 await recalculateHostTradeAggregates({
                     hostTradeId: usage.hostTradeId,
                     tx: ctx?.tx
