@@ -47,7 +47,7 @@
         "astro": "^7.1.6",
         "better-auth": "^1.6.23",
         "clsx": "^2.1.1",
-        "dompurify": "^3.4.12",
+        "dompurify": "^3.4.13",
         "driver.js": "1.7.0",
         "embla-carousel-autoplay": "^8.6.0",
         "embla-carousel-react": "^8.6.0",

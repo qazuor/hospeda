@@ -78,7 +78,7 @@
         "class-variance-authority": "0.7.1",
         "clsx": "2.1.1",
         "cmdk": "^1.1.1",
-        "dompurify": "^3.4.12",
+        "dompurify": "^3.4.13",
         "driver.js": "^1.7.0",
         "leaflet": "^1.9.4",
         "p-limit": "^7.3.0",
