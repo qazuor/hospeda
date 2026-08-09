@@ -2484,8 +2484,16 @@ Wave B onward:
 - **AC-8** (rewritten 2026-08-05, owner decision) — **The home meets Lighthouse's
   "good" thresholds on mobile: `LCP ≤ 2,500 ms` and `TBT ≤ 200 ms`**, measured
   cold against staging. Not met today: the cold profile in §6.6 measures
-  **LCP ≈ 15,266 ms**. **HOS-369 does not close until it is.**
+  **LCP ≈ 15,266 ms**. ~~**HOS-369 does not close until it is.**~~
 
+  > **SPLIT OUT 2026-08-09, owner decision. This criterion no longer blocks
+  > HOS-369.** The cache lane is finished and the performance gain is already
+  > substantial (cold LCP 15,266 → 2,693 ms); what remains of LCP/TBT moves to
+  > **[HOS-423](https://linear.app/hospeda-beta/issue/HOS-423)**, which inherits
+  > this criterion verbatim along with every measurement and lever recorded
+  > below. Read the rest of AC-8 as the handover document it now is, not as a
+  > gate on this spec.
+  >
   > **Re-measured 2026-08-09, after the #2705 revert was deployed. Still NOT
   > met, but by 193 ms instead of 12,766.** Cold-cache recipe exactly as
   > prescribed below, 3 runs, each in its own fresh `isolatedContext`:
