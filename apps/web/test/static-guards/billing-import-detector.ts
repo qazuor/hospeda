@@ -17,14 +17,47 @@ import path from 'node:path';
 /** Absolute path of `apps/web/src`, the corpus root for every helper here. */
 export const WEB_SRC = path.resolve(__dirname, '../../src');
 
-/** The package whose barrel must never enter the client module graph. */
+/**
+ * The package whose barrel must never enter the client module graph.
+ *
+ * Kept as its own export because it names the ORIGINAL invariant (HOS-360) and
+ * the detector's own test corpus is written against it. New callers that mean
+ * "any forbidden package" want {@link FORBIDDEN_PACKAGES}.
+ */
 export const FORBIDDEN_PACKAGE = '@repo/billing';
+
+/**
+ * Every package barred from the client module graph.
+ *
+ * - `@repo/billing` (HOS-360) — its barrel drags in the MercadoPago adapter and
+ *   `@repo/logger`, which reads `process.env` at module scope. See the header
+ *   comment of `billing-barrel-client-isolation.test.ts`.
+ * - `@repo/config` (HOS-369 AC-5) — the env registry. Its entries carry
+ *   `exampleValue`, `howToObtain` and the `HOSPEDA_*` names, so reaching it from
+ *   an island ships internal env documentation to public browsers. Until now
+ *   this was covered only INDIRECTLY: the registry rode along inside
+ *   `@repo/billing`'s barrel, so barring the barrel happened to bar the
+ *   registry. A direct `import { … } from '@repo/config'` in an island was
+ *   never checked by anything.
+ *
+ * Verified on staging 2026-08-09: 51 production client chunks across 7 pages,
+ * 1.24 MB of JS, **zero** occurrences of any of the three tokens. This list is
+ * what keeps that true; the scan was a point-in-time measurement.
+ */
+export const FORBIDDEN_PACKAGES = ['@repo/billing', '@repo/config'] as const;
 
 /** Extensions tried, in order, when resolving an extensionless import. */
 const RESOLVE_SUFFIXES = ['', '.ts', '.tsx', '/index.ts', '/index.tsx'] as const;
 
-/** Matches `@repo/billing` and any subpath entry (`@repo/billing/plans`). */
-const FORBIDDEN_SPECIFIER = `${FORBIDDEN_PACKAGE}(?:/[^'"]*)?`;
+/**
+ * Matches any {@link FORBIDDEN_PACKAGES} entry and any subpath entry of one
+ * (`@repo/billing/plans`). The alternation is grouped so the optional subpath
+ * applies to every alternative, not just the last.
+ *
+ * No entry contains a regex metacharacter — `/` is not one inside a `RegExp`
+ * built from a string — so the names are interpolated as-is.
+ */
+const FORBIDDEN_SPECIFIER = `(?:${FORBIDDEN_PACKAGES.join('|')})(?:/[^'"]*)?`;
 
 /**
  * Source of the `import`/`export` … `from` prefix shared by every matcher here,
