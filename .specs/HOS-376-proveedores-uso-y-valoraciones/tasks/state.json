@@ -937,36 +937,45 @@
         {
             "id": "T-026",
             "title": "Servicio de valoraciones: edición del anfitrión con re-moderación",
-            "description": "Editar la propia valoración (patrón NUEVO en el repo: hoy ningún usuario puede editar su review, ACCOMMODATION_REVIEW_MODERATE es admin-only). Al editar: sellar editedAt, volver a pasar por moderateText(), y si existe réplica ponerle reviewEditedAfterReply=true SIN borrarla. Editar valoración ajena devuelve 404. Tests: AC-22 completo — editar deja la réplica viva con la marca puesta y la valoración re-moderada.",
-            "status": "pending",
+            "description": "Editar la propia valoración (patrón NUEVO en el repo: hoy ningún usuario puede editar su review, ACCOMMODATION_REVIEW_MODERATE es admin-only). Al editar: sellar editedAt, volver a pasar por moderateText(), y si existe réplica ponerle reviewEditedAfterReply=true SIN borrarla. Editar valoración ajena devuelve 404. Tests: AC-22 completo — editar deja la réplica viva con la marca puesta y la valoración re-moderada. CERRADA: la re-moderación corre SÓLO cuando cambió el TEXTO — re-scorear una edición de estrellas devolvería a APPROVED una valoración que un moderador REJECTEÓ. La marca de la réplica sí se pone en TODA edición.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-024", "T-025"],
             "blocks": ["T-034", "T-065"],
             "subtasks": [
                 {
                     "title": "Camino de edición con ownership",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Re-moderación con moderateText",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Marca reviewEditedAfterReply",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "reviews", "moderation"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T13:35:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T13:35:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T13:35:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-09T13:00:00Z",
+                "completed": "2026-08-09T13:35:00.000Z"
             }
         },
         {
