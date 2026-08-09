@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 27/70 tareas (39%)
+## Progreso: 29/70 tareas (41%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 14/17 completadas (complejidad promedio 2.6)
+## Fase `core` — 16/17 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -74,13 +74,13 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-019** (c3) — Servicio de usos: declaración por los 3 canales
   - packages/service-core/src/services/hostTrade/host-trade-usage.service.ts extendiendo BaseCrudService, Result<T>, runWithLoggingAndValidation. Crear el uso desde: QR (declaredBy=HOST, el acto…
   - Bloqueada por: T-018, T-014 · Bloquea a: T-020, T-021, T-030
-- [ ] **T-020** (c3) — Servicio de usos: guardas de declaración
+- [x] **T-020** (c3) — Servicio de usos: guardas de declaración
   - Antes de crear un uso, verificar en orden: PROVIDER_REVOKED (host_trades.revokedAt o soft-deleted), DECLARATION_SUSPENDED (declarationSuspendedAt), DECLARATION_BLOCKED (existe un REJECTED vi…
   - Bloqueada por: T-019, T-012 · Bloquea a: T-031
 - [x] **T-021** (c3) — Servicio de usos: confirmar, rechazar y revertir el rechazo
   - Resolver quién es la contraparte según declaredBy: si declaró el proveedor confirma el anfitrión, si declaró el anfitrión confirma el ownerUserId del proveedor. Cualquier otro actor obtiene …
   - Bloqueada por: T-019 · Bloquea a: T-022, T-023, T-024, T-033, T-042, T-043, T-057
-- [ ] **T-022** (c3) — Servicio de usos: suspensión automática por umbral de rechazos
+- [x] **T-022** (c3) — Servicio de usos: suspensión automática por umbral de rechazos
   - Al registrar un rechazo, contar los REJECTED de ese proveedor dentro de HOST_TRADE_REJECTION_WINDOW_DAYS. Si alcanza HOST_TRADE_REJECTION_SUSPEND_THRESHOLD, sellar declarationSuspendedAt con…
   - Bloqueada por: T-021, T-012, T-070 · Bloquea a: T-038, T-060
 - [x] **T-023** (c3) — Recálculo de los 5 agregados denormalizados de host_trades

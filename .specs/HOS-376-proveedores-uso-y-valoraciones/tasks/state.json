@@ -680,44 +680,53 @@
         {
             "id": "T-020",
             "title": "Servicio de usos: guardas de declaración",
-            "description": "Antes de crear un uso, verificar en orden: PROVIDER_REVOKED (host_trades.revokedAt o soft-deleted), DECLARATION_SUSPENDED (declarationSuspendedAt), DECLARATION_BLOCKED (existe un REJECTED vigente para ese par), USAGE_PENDING_EXISTS (ya hay un PENDING). El orden importa: el más específico al final. Tests: un caso por guarda, más un test de ORDEN que verifique que un proveedor revocado Y suspendido devuelve PROVIDER_REVOKED.",
-            "status": "pending",
+            "description": "Antes de crear un uso, verificar en orden: PROVIDER_REVOKED (host_trades.revokedAt o soft-deleted), DECLARATION_SUSPENDED (declarationSuspendedAt), DECLARATION_BLOCKED (existe un REJECTED vigente para ese par), USAGE_PENDING_EXISTS (ya hay un PENDING). El orden importa: el más específico al final. Tests: un caso por guarda, más un test de ORDEN que verifique que un proveedor revocado Y suspendido devuelve PROVIDER_REVOKED. CERRADA: DECLARATION_BLOCKED se escopea por LADO (declaredBy), no por id de usuario — un rechazo bloquea a quien declaró, y una ficha que cambia de dueño no puede lavar el bloqueo. USAGE_PENDING_EXISTS NO se escopea por lado: el UNIQUE parcial de la DB no mira quién lo abrió. La suspensión congela la FICHA, así que también corta el camino QR del anfitrión.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019", "T-012"],
             "blocks": ["T-031"],
             "subtasks": [
                 {
                     "title": "Guarda PROVIDER_REVOKED",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Guarda DECLARATION_SUSPENDED",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Guarda DECLARATION_BLOCKED",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Guarda USAGE_PENDING_EXISTS",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Test de orden entre guardas",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "usages", "guards"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T14:40:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T14:40:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T14:40:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-09T14:05:00Z",
+                "completed": "2026-08-09T14:40:00.000Z"
             }
         },
         {
@@ -775,36 +784,45 @@
         {
             "id": "T-022",
             "title": "Servicio de usos: suspensión automática por umbral de rechazos",
-            "description": "Al registrar un rechazo, contar los REJECTED de ese proveedor dentro de HOST_TRADE_REJECTION_WINDOW_DAYS. Si alcanza HOST_TRADE_REJECTION_SUSPEND_THRESHOLD, sellar declarationSuspendedAt con declarationSuspendedById=null (automático) y motivo. Un reject/undo descuenta y, si baja del umbral, NO levanta la suspensión sola (el levantamiento es acción de admin, explícito). Método aparte para que un admin la levante, registrando quién. Tests: 2 rechazos no suspenden, el 3ero sí; el undo del 3ero no la levanta; el admin la levanta y queda el ById.",
-            "status": "pending",
+            "description": "Al registrar un rechazo, contar los REJECTED de ese proveedor dentro de HOST_TRADE_REJECTION_WINDOW_DAYS. Si alcanza HOST_TRADE_REJECTION_SUSPEND_THRESHOLD, sellar declarationSuspendedAt con declarationSuspendedById=null (automático) y motivo. Un reject/undo descuenta y, si baja del umbral, NO levanta la suspensión sola (el levantamiento es acción de admin, explícito). Método aparte para que un admin la levante, registrando quién. Tests: 2 rechazos no suspenden, el 3ero sí; el undo del 3ero no la levanta; el admin la levanta y queda el ById. CERRADA: el levantamiento por admin devuelve la capacidad de declarar, NO una amnistía — los rechazos viejos siguen en la ventana, así que el siguiente rechazo re-suspende. Una amnistía real pediría una columna de fecha de limpieza que esta spec no migra; queda documentado en el JSDoc.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021", "T-012", "T-070"],
             "blocks": ["T-038", "T-060"],
             "subtasks": [
                 {
                     "title": "Conteo en ventana",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Suspensión automática",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Levantamiento por admin",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "usages", "anti-abuse"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T14:00:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T14:00:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T14:00:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-09T13:40:00Z",
+                "completed": "2026-08-09T14:00:00.000Z"
             }
         },
         {
