@@ -46,14 +46,42 @@ const hostActor = () =>
 /** Actor that owns the listing. Providers get no permission — ownership only. */
 const providerActor = () => new ActorFactoryBuilder().withId(OWNER_ID).withPermissions([]).build();
 
-function buildService(options: { isHost?: boolean } = {}) {
+function buildService(
+    options: {
+        isHost?: boolean;
+        hostTrade?: Record<string, unknown>;
+        /** A standing REJECTED usage for the pair, declared by this side. */
+        rejectedBy?: 'HOST' | 'PROVIDER';
+        /** An existing PENDING usage for the pair, opened by this side. */
+        pendingBy?: 'HOST' | 'PROVIDER';
+    } = {}
+) {
     const model = createModelMock();
     const hostTradeModel = createModelMock();
     const userModel = createModelMock();
 
     model.create = vi.fn(async (data: Record<string, unknown>) => ({ id: 'created', ...data }));
     model.findLinkedHosts = vi.fn(async () => [HOST_ID]);
-    hostTradeModel.findById = vi.fn(async () => makeHostTrade());
+    // The guards ask two different questions through `findOne`, and the fixture
+    // rows carry the side that opened them. The mock therefore honours a
+    // `declaredBy` filter when the query has one and ignores it when it does
+    // not — modelling the database rather than the caller's intent. A mock that
+    // answered "yes, a pending exists" regardless of the where would make the
+    // pending guard's scope untestable: narrowing it to one side would change
+    // nothing the tests can see.
+    const matchesSide = (where: Record<string, unknown>, side?: 'HOST' | 'PROVIDER') =>
+        side !== undefined && (where.declaredBy === undefined || where.declaredBy === side);
+
+    model.findOne = vi.fn(async (where: Record<string, unknown>) => {
+        if (where.status === 'REJECTED') {
+            return matchesSide(where, options.rejectedBy) ? { id: 'rejected-1' } : null;
+        }
+        if (where.status === 'PENDING') {
+            return matchesSide(where, options.pendingBy) ? { id: 'pending-1' } : null;
+        }
+        return null;
+    });
+    hostTradeModel.findById = vi.fn(async () => options.hostTrade ?? makeHostTrade());
     userModel.findOne = vi.fn(async () => null);
 
     const isHostUser = vi.fn(async () => options.isHost ?? true);
@@ -244,5 +272,224 @@ describe('HostTradeUsageService.declareAsProvider — the email channel', () => 
 
         expect(result.error).toBeDefined();
         expect(model.create).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Declaration guards (T-020)
+// ---------------------------------------------------------------------------
+
+const suspendedTrade = () =>
+    makeHostTrade({
+        declarationSuspendedAt: new Date('2026-08-01T00:00:00Z'),
+        declarationSuspendedById: null,
+        declarationSuspendReason: 'Automática'
+    });
+
+const hostDeclaration = { hostTradeId: HT_ID, servicedAt: '2026-08-01' };
+const providerDeclaration = { hostTradeId: HT_ID, hostUserId: HOST_ID, servicedAt: '2026-08-01' };
+
+describe('guard — PROVIDER_REVOKED', () => {
+    it('refuses a host declaring on a revoked listing', async () => {
+        const { service, model } = buildService({
+            hostTrade: makeHostTrade({ revokedAt: new Date('2026-07-01T00:00:00Z') })
+        });
+
+        const result = await service.declareAsHost(hostDeclaration, hostActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.PROVIDER_REVOKED);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses a provider declaring on his own soft-deleted listing', async () => {
+        const { service, model } = buildService({
+            hostTrade: makeHostTrade({ deletedAt: new Date('2026-07-01T00:00:00Z') })
+        });
+
+        const result = await service.declareAsProvider(providerDeclaration, providerActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.PROVIDER_REVOKED);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+});
+
+describe('guard — DECLARATION_SUSPENDED', () => {
+    it('refuses the suspended provider', async () => {
+        const { service, model } = buildService({ hostTrade: suspendedTrade() });
+
+        const result = await service.declareAsProvider(providerDeclaration, providerActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.DECLARATION_SUSPENDED);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The suspension freezes the LISTING, not one party's keyboard. A provider
+     * under review for fabricated declarations would otherwise keep accruing
+     * usages through the QR — the channel he controls the distribution of, and
+     * the easiest one to hand to a friendly host.
+     */
+    it('refuses a host declaring on a suspended listing too', async () => {
+        const { service, model } = buildService({ hostTrade: suspendedTrade() });
+
+        const result = await service.declareAsHost(hostDeclaration, hostActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.DECLARATION_SUSPENDED);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+});
+
+describe('guard — DECLARATION_BLOCKED', () => {
+    /** AC-9 — a standing rejection blocks the DECLARANT over that pair. */
+    it('refuses the provider re-declaring on a host who rejected him', async () => {
+        const { service, model } = buildService({ rejectedBy: 'PROVIDER' });
+
+        const result = await service.declareAsProvider(providerDeclaration, providerActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.DECLARATION_BLOCKED);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses the host re-declaring after the provider rejected him', async () => {
+        const { service, model } = buildService({ rejectedBy: 'HOST' });
+
+        const result = await service.declareAsHost(hostDeclaration, hostActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.DECLARATION_BLOCKED);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    /**
+     * THE MIXED CASE, and the reason the block is scoped by side. The host
+     * denying the provider's version does not cost the host his own voice: him
+     * declaring afterwards is precisely how a mistaken rejection gets corrected.
+     */
+    it('lets the host declare although the PROVIDER has a standing rejection', async () => {
+        const { service, model } = buildService({ rejectedBy: 'PROVIDER' });
+
+        const result = await service.declareAsHost(hostDeclaration, hostActor());
+
+        expect(result.error).toBeUndefined();
+        expect(model.create).toHaveBeenCalled();
+    });
+
+    /**
+     * Scoped by SIDE (`declaredBy`), never by the declarant's user id: a listing
+     * that changes hands would otherwise hand the new owner a clean slate on
+     * every pair the previous one was blocked from.
+     */
+    it('asks for the standing rejection by side, not by user id', async () => {
+        const { service, model } = buildService();
+
+        await service.declareAsProvider(providerDeclaration, providerActor());
+
+        expect(model.findOne).toHaveBeenCalledWith(
+            expect.objectContaining({
+                hostTradeId: HT_ID,
+                hostUserId: HOST_ID,
+                status: 'REJECTED',
+                declaredBy: 'PROVIDER',
+                deletedAt: null
+            }),
+            undefined
+        );
+    });
+});
+
+describe('guard — USAGE_PENDING_EXISTS', () => {
+    it('refuses the provider re-declaring over his own pending usage', async () => {
+        const { service, model } = buildService({ pendingBy: 'PROVIDER' });
+
+        const result = await service.declareAsProvider(providerDeclaration, providerActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.USAGE_PENDING_EXISTS);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    /**
+     * THE CROSS-SIDE CASE. Unlike the standing-rejection block, this guard is
+     * NOT scoped by side: one PENDING per pair is a partial UNIQUE index in the
+     * database, and the index does not care who opened it. Scoped by side, this
+     * refusal would be a 409 the database raises anyway — as a crash.
+     */
+    it('refuses the host although it was the PROVIDER who opened the pending one', async () => {
+        const { service, model } = buildService({ pendingBy: 'PROVIDER' });
+
+        const result = await service.declareAsHost(hostDeclaration, hostActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.USAGE_PENDING_EXISTS);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('asks for the pending usage without naming a side', async () => {
+        const { service, model } = buildService();
+
+        await service.declareAsProvider(providerDeclaration, providerActor());
+
+        const pendingQuery = (
+            model.findOne as unknown as { mock: { calls: unknown[][] } }
+        ).mock.calls
+            .map((call) => call[0] as Record<string, unknown>)
+            .find((where) => where.status === 'PENDING');
+        expect(pendingQuery).toBeDefined();
+        expect(pendingQuery).not.toHaveProperty('declaredBy');
+    });
+});
+
+/**
+ * The order is the point: several guards can be true at once, and the one that
+ * answers has to be the one whose remedy is furthest away. Telling a provider
+ * on a revoked listing to "wait for the pending usage to resolve" would send him
+ * after something that still would not let him declare.
+ */
+describe('guard order — most permanent wins', () => {
+    it('reports PROVIDER_REVOKED over DECLARATION_SUSPENDED', async () => {
+        const { service } = buildService({
+            hostTrade: makeHostTrade({
+                revokedAt: new Date('2026-07-01T00:00:00Z'),
+                declarationSuspendedAt: new Date('2026-08-01T00:00:00Z')
+            })
+        });
+
+        const result = await service.declareAsProvider(providerDeclaration, providerActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.PROVIDER_REVOKED);
+    });
+
+    it('reports DECLARATION_SUSPENDED over DECLARATION_BLOCKED', async () => {
+        const { service } = buildService({
+            hostTrade: suspendedTrade(),
+            rejectedBy: 'PROVIDER'
+        });
+
+        const result = await service.declareAsProvider(providerDeclaration, providerActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.DECLARATION_SUSPENDED);
+    });
+
+    it('reports DECLARATION_BLOCKED over USAGE_PENDING_EXISTS', async () => {
+        const { service } = buildService({ rejectedBy: 'PROVIDER', pendingBy: 'HOST' });
+
+        const result = await service.declareAsProvider(providerDeclaration, providerActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.DECLARATION_BLOCKED);
+    });
+
+    /**
+     * Ownership outranks every state guard. A stranger probing someone else's
+     * listing must not learn from the error code whether it is revoked,
+     * suspended or perfectly healthy.
+     */
+    it('answers NOT_FOUND, not PROVIDER_REVOKED, on somebody else’s revoked listing', async () => {
+        const { service } = buildService({
+            hostTrade: makeHostTrade({
+                ownerUserId: OTHER_ID,
+                revokedAt: new Date('2026-07-01T00:00:00Z')
+            })
+        });
+
+        const result = await service.declareAsProvider(providerDeclaration, providerActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 });

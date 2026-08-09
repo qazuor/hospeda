@@ -367,7 +367,16 @@ export class HostTradeUsageService extends BaseCrudService<
             execute: async (validated, validatedActor) => {
                 checkCanDeclareUsageAsHost(validatedActor);
 
-                await this.requireProvider(validated.hostTradeId, ctx);
+                const provider = await this.requireProvider(validated.hostTradeId, ctx);
+                this.assertListingAcceptsDeclarations(provider);
+                await this.assertPairAcceptsDeclaration(
+                    {
+                        hostTradeId: validated.hostTradeId,
+                        hostUserId: validatedActor.id,
+                        declaredBy: HostTradeUsageDeclaredByEnum.HOST
+                    },
+                    ctx
+                );
 
                 const usage = await this.persistDeclaration(
                     {
@@ -428,8 +437,22 @@ export class HostTradeUsageService extends BaseCrudService<
                     );
                 }
 
+                // Listing-wide guards run before the host is resolved: a
+                // suspended provider must not get to probe email addresses on
+                // his way to being refused anyway.
+                this.assertListingAcceptsDeclarations(provider);
+
                 const { hostUserId, creationChannel } = await this.resolveDeclaredHost(
                     validated,
+                    ctx
+                );
+
+                await this.assertPairAcceptsDeclaration(
+                    {
+                        hostTradeId: validated.hostTradeId,
+                        hostUserId,
+                        declaredBy: HostTradeUsageDeclaredByEnum.PROVIDER
+                    },
                     ctx
                 );
 
@@ -770,6 +793,109 @@ export class HostTradeUsageService extends BaseCrudService<
             throw new ServiceError(
                 ServiceErrorCode.VALIDATION_ERROR,
                 `Usage is ${usage.status}, expected ${expected}`
+            );
+        }
+    }
+
+    // --- Declaration guards (T-020) ---------------------------------------
+    //
+    // Four refusals, and THE ORDER IS THE POINT: several can be true at once,
+    // and the one that answers has to be the one whose remedy is furthest away.
+    // Telling a provider on a revoked listing to wait for his pending usage to
+    // resolve would send him after something that still would not let him
+    // declare. Most permanent first, most transient last.
+    //
+    // They are split in two because the provider path only learns WHICH host it
+    // is declaring on after resolving an email or a selector id, and the
+    // listing-wide half has to refuse before that resolution runs.
+
+    /**
+     * Listing-wide guards: `PROVIDER_REVOKED`, then `DECLARATION_SUSPENDED`.
+     *
+     * Both refuse EVERY channel, the host's QR included. That is a deliberate
+     * reading of a suspension: it freezes the LISTING, not one party's
+     * keyboard. A provider under review for fabricated declarations would
+     * otherwise keep accruing usages through the QR — the channel whose
+     * distribution he controls, and the easiest one to hand to a friendly host.
+     * The cost is real and accepted: an honest host cannot record a real service
+     * with a suspended provider until an admin lifts it.
+     */
+    private assertListingAcceptsDeclarations(provider: {
+        revokedAt?: Date | null;
+        deletedAt?: Date | null;
+        declarationSuspendedAt?: Date | null;
+    }): void {
+        if (provider.revokedAt || provider.deletedAt) {
+            throw new ServiceError(
+                ServiceErrorCode.PROVIDER_REVOKED,
+                'This provider is no longer listed'
+            );
+        }
+        if (provider.declarationSuspendedAt) {
+            throw new ServiceError(
+                ServiceErrorCode.DECLARATION_SUSPENDED,
+                'Declaration is suspended for this provider'
+            );
+        }
+    }
+
+    /**
+     * Pair-scoped guards: `DECLARATION_BLOCKED`, then `USAGE_PENDING_EXISTS`.
+     *
+     * The block is scoped by SIDE (`declaredBy`), never by the declarant's user
+     * id. Two reasons, and the second is the load-bearing one:
+     *
+     * - A rejection blocks whoever declared it (spec §6.2, the state diagram:
+     *   "bloquea al declarante sobre ese par"). The host denying the provider's
+     *   version does not cost the host his own voice — him declaring afterwards
+     *   is precisely how a mistaken rejection gets corrected.
+     * - A listing that changes hands would otherwise hand the new owner a clean
+     *   slate on every pair the previous one was blocked from, the same trap
+     *   `updateReply` avoids by re-deriving ownership instead of trusting a
+     *   frozen `authorUserId`.
+     *
+     * The pending guard is NOT scoped by side: one PENDING per pair is a partial
+     * UNIQUE index in the database (§7.1), so this is the friendly 409 in front
+     * of a constraint violation, and the index does not care who opened it.
+     */
+    private async assertPairAcceptsDeclaration(
+        pair: {
+            hostTradeId: string;
+            hostUserId: string;
+            declaredBy: HostTradeUsageDeclaredByEnum;
+        },
+        ctx?: ServiceContext
+    ): Promise<void> {
+        const standingRejection = await this.model.findOne(
+            {
+                hostTradeId: pair.hostTradeId,
+                hostUserId: pair.hostUserId,
+                status: HostTradeUsageStatusEnum.REJECTED,
+                declaredBy: pair.declaredBy,
+                deletedAt: null
+            },
+            ctx?.tx
+        );
+        if (standingRejection) {
+            throw new ServiceError(
+                ServiceErrorCode.DECLARATION_BLOCKED,
+                'A standing rejection blocks declaring on this host'
+            );
+        }
+
+        const pending = await this.model.findOne(
+            {
+                hostTradeId: pair.hostTradeId,
+                hostUserId: pair.hostUserId,
+                status: HostTradeUsageStatusEnum.PENDING,
+                deletedAt: null
+            },
+            ctx?.tx
+        );
+        if (pending) {
+            throw new ServiceError(
+                ServiceErrorCode.USAGE_PENDING_EXISTS,
+                'A pending usage already exists for this pair'
             );
         }
     }
