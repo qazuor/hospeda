@@ -1570,25 +1570,58 @@ the page.
   window the same URLs reported ages of 44–55 and then 265–267, so `age` alone
   is not an eviction signal.
 
-**AC-6 — write-side still OPEN, blocked on
-[HOS-422](https://linear.app/hospeda-beta/issue/HOS-422).** The purge half is
+**AC-6 — write-side CLOSED, and it found a defect:
+[HOS-424](https://linear.app/hospeda-beta/issue/HOS-424).** The purge half is
 verified (see W1-3). The remaining half — that a real content write makes the
-service emit the tags — could not be closed: **the admin event form cannot save
-at all**, returning a silent 400, which is HOS-422 and unrelated to this spec.
+service emit the tags — is now measured, and **it does not**: a real content
+edit purges the collection tag but leaves the entity's own detail page cached
+and stale in all three locales. Filed as HOS-424, High.
+
+Measured on a post, because **the admin event form cannot save at all** — a
+silent 400, which is [HOS-422](https://linear.app/hospeda-beta/issue/HOS-422)
+and unrelated to this spec. Changed the `summary` of
+`concepcion-del-uruguay-historia-rio-naturaleza` (209 → 208 chars):
+
+| URL | before | after |
+|---|---|---|
+| `/es/publicaciones/<slug>/` | `HIT` age 10 | **`HIT` age 19 — not evicted, old text** |
+| `/en/…` | `HIT` age 9 | **`HIT` age 18 — not evicted** |
+| `/pt/…` | `HIT` age 9 | **`HIT` age 18 — not evicted** |
+| `/es/publicaciones/` | `HIT` age 19 | **`MISS` — evicted** |
+| control `/es/alojamientos/` | `HIT` age 9 | `HIT` age 18 |
+| control `/es/eventos/` | `HIT` age 9 | `HIT` age 18 |
+
+The ages advanced exactly with wall clock (74 s elapsed, +9 on the ages), which
+is the proof the cached object was never re-fetched.
+
+**Two explanations are ruled out.** The tags are not wrong: a manual purge of
+`preview:post-<slug>` + `preview:post-<id>` returns `{"ok":true,"purged":2}` and
+evicts all three locales instantly. And it is not the no-op artefact that made
+the first attempt inconclusive — that run sent an identical payload, this one
+changed content, same result.
+
+The mapper is not at fault either: `entity-tag-mapper.ts:125-136` adds the
+entity tags for `post`. The pattern — collection purged, entity not — is exactly
+what a revalidation event reaching the mapper **without `slug` or `id`** would
+produce, since `buildEntityCacheTags` would then return nothing while
+`CACHE_TAG_COLLECTIONS.post` and `CACHE_TAG_HOME` survive. The cheap
+discriminator, not run: check whether `preview:home` IS purged by the same write.
 
 Established on a post instead: the detail emits
 `preview:all,preview:post-<slug>,preview:post-<id>` and the list emits
 `preview:all,preview:list-post`; a manual purge of the two entity tags returns
 `{"ok":true,"purged":2}` and flips all three locales to `MISS` immediately, so
-**the tags work end to end**. What is *not* established is the write itself: on
-one trial, after a successful admin post save, the list went `MISS` while the
-three detail locales stayed `HIT` on a pre-write copy. That trial is not
-conclusive — the payload was byte-identical (a no-op save, only `updatedAt`
-moved), so a service that diffs could be skipping the entity purge legitimately.
-**The one remaining step** is a real content change on a post, re-reading the
-three locales within ~10 s. Do not warm every probe URL together: `s-maxage` is
-300 s, so a synchronised warm-up expires them all at once and contaminates the
-measurement window.
+**the tags work end to end**. The write itself is the defect — confirmed on a
+second run with a real content change and filed as HOS-424; see the AC-6 block
+above for the measurements.
+
+Measurement protocol, since this is easy to get wrong: bring the three detail
+locales, the list and two unrelated controls to `HIT` with a SMALL `age` via a
+retrying fetch loop, then write, then re-read within ~10-20 s. **Do not warm
+every probe URL together and wait** — `s-maxage` is 300 s, so a synchronised
+warm-up expires them all at once and contaminates the window, which is exactly
+what invalidated the first attempt. Compare each URL against its own baseline,
+never against another URL: Cloudflare's `age` varies per edge node.
 
 **W1-4 — Redirect Rules at the edge. DONE, narrowed to one rule (2026-08-04,
 staging only).** Versioned at
