@@ -4,6 +4,18 @@
  * across `apps/web`: **client components in this app deliberately do not import
  * `@repo/billing`**.
  *
+ * **Extended by HOS-369 AC-5 to `@repo/config`.** The forbidden set now lives in
+ * `FORBIDDEN_PACKAGES`; everything below about reachability, erasure and the
+ * mutation suite applies to every entry. `@repo/config` is the env registry —
+ * its entries carry `exampleValue`, `howToObtain` and the `HOSPEDA_*` names, and
+ * AC-5 requires that none of those reach a production client chunk. Note what
+ * changed: the registry was ALREADY kept out, but only as a side effect of
+ * barring `@repo/billing`'s barrel, which re-exports it. A direct
+ * `import … from '@repo/config'` in an island was checked by nothing. Verified
+ * empirically on staging 2026-08-09 before the extension — 51 production client
+ * chunks across 7 pages, 1.24 MB of JS, zero occurrences of the three tokens —
+ * so this guard holds a property that is true today rather than fixing a leak.
+ *
  * `AnalyticsSection.client.tsx` and `PromotionList.client.tsx` hardcode their
  * entitlement wire strings as literals rather than import the enum, and
  * `hooks/useCompareGuard.ts` — a hook reachable from islands — does the same
@@ -150,6 +162,7 @@ import {
     countImportStatements,
     extractImportEdges,
     FORBIDDEN_PACKAGE,
+    FORBIDDEN_PACKAGES,
     findOffenders,
     hasRuntimeBillingImport,
     scanAstroHydration,
@@ -175,42 +188,61 @@ describe('HOS-360 guard internals — the detector itself', () => {
     // make the corpus scan below pass over a real violation and report nothing.
     // The corpus can only tell us "no offenders found"; these tell us the
     // finder works at all, in BOTH directions.
-    const runtimeForms = [
-        `import { EntitlementKey } from '${FORBIDDEN_PACKAGE}';`,
-        `import { EntitlementKey, type LimitKey } from '${FORBIDDEN_PACKAGE}';`,
-        `import EK, { type LimitKey } from '${FORBIDDEN_PACKAGE}';`,
-        `import ALL from '${FORBIDDEN_PACKAGE}';`,
-        `import * as billing from '${FORBIDDEN_PACKAGE}';`,
-        `import '${FORBIDDEN_PACKAGE}';`,
-        `import { EntitlementKey } from "${FORBIDDEN_PACKAGE}";`,
-        `import{EntitlementKey}from'${FORBIDDEN_PACKAGE}';`,
-        `import {} from '${FORBIDDEN_PACKAGE}';`,
-        `export { EntitlementKey } from '${FORBIDDEN_PACKAGE}';`,
-        `export * from '${FORBIDDEN_PACKAGE}';`,
-        `export * as billing from '${FORBIDDEN_PACKAGE}';`,
-        `const mod = await import('${FORBIDDEN_PACKAGE}');`,
-        `void import("${FORBIDDEN_PACKAGE}");`,
-        `import { OWNER_TRIAL_DAYS } from '${FORBIDDEN_PACKAGE}/plans';`
+    // Parametrised over FORBIDDEN_PACKAGES rather than written against
+    // `@repo/billing` alone. Adding `@repo/config` (HOS-369 AC-5) to the list
+    // must not be a name that quietly enforces nothing: every form below is now
+    // asserted for every package, so a broken alternation in
+    // FORBIDDEN_SPECIFIER fails here instead of going silently green. A future
+    // third entry inherits the whole matrix for free.
+    const runtimeFormsFor = (pkg: string) => [
+        `import { EntitlementKey } from '${pkg}';`,
+        `import { EntitlementKey, type LimitKey } from '${pkg}';`,
+        `import EK, { type LimitKey } from '${pkg}';`,
+        `import ALL from '${pkg}';`,
+        `import * as billing from '${pkg}';`,
+        `import '${pkg}';`,
+        `import { EntitlementKey } from "${pkg}";`,
+        `import{EntitlementKey}from'${pkg}';`,
+        `import {} from '${pkg}';`,
+        `export { EntitlementKey } from '${pkg}';`,
+        `export * from '${pkg}';`,
+        `export * as billing from '${pkg}';`,
+        `const mod = await import('${pkg}');`,
+        `void import("${pkg}");`,
+        `import { OWNER_TRIAL_DAYS } from '${pkg}/plans';`
     ];
 
-    const erasedForms = [
-        `import type { PlanCategory } from '${FORBIDDEN_PACKAGE}';`,
-        `import { type PlanCategory, type LimitKey } from '${FORBIDDEN_PACKAGE}';`,
-        `import type EntitlementKeys from '${FORBIDDEN_PACKAGE}';`,
-        `export type { PlanCategory } from '${FORBIDDEN_PACKAGE}';`
+    const erasedFormsFor = (pkg: string) => [
+        `import type { PlanCategory } from '${pkg}';`,
+        `import { type PlanCategory, type LimitKey } from '${pkg}';`,
+        `import type EntitlementKeys from '${pkg}';`,
+        `export type { PlanCategory } from '${pkg}';`
     ];
 
-    for (const form of runtimeForms) {
-        it(`flags a runtime import: ${form}`, () => {
-            expect(hasRuntimeBillingImport(stripComments(form))).toBe(true);
-        });
+    for (const pkg of FORBIDDEN_PACKAGES) {
+        for (const form of runtimeFormsFor(pkg)) {
+            it(`flags a runtime import: ${form}`, () => {
+                expect(hasRuntimeBillingImport(stripComments(form))).toBe(true);
+            });
+        }
+
+        for (const form of erasedFormsFor(pkg)) {
+            it(`allows a type-only import: ${form}`, () => {
+                expect(hasRuntimeBillingImport(stripComments(form))).toBe(false);
+            });
+        }
     }
 
-    for (const form of erasedForms) {
-        it(`allows a type-only import: ${form}`, () => {
-            expect(hasRuntimeBillingImport(stripComments(form))).toBe(false);
-        });
-    }
+    it('does not flag a package that merely shares a prefix with a forbidden one', () => {
+        // `@repo/config` must not make `@repo/configuration` (or any longer
+        // name) forbidden by accident. The subpath suffix is `/`-anchored, so a
+        // sibling package with a longer name has to fail to match.
+        for (const pkg of FORBIDDEN_PACKAGES) {
+            expect(
+                hasRuntimeBillingImport(stripComments(`import { A } from '${pkg}uration';`))
+            ).toBe(false);
+        }
+    });
 
     it('does not let an earlier statement bleed into the clause it reads', () => {
         // `[^'";=]` bounding the clause is what stops the lazy span from
@@ -601,20 +633,28 @@ describe('HOS-360 static guard — @repo/billing never enters the web client gra
         expect(visited.has(abs('lib/billing/fetch-plans.ts'))).toBe(false);
     });
 
-    it('no client island reaches @repo/billing at runtime', () => {
+    it('no client island reaches a forbidden package at runtime', () => {
         const report = offenders.map(({ chain }) => chain.join(' -> '));
 
+        // The message names the whole forbidden SET, not just @repo/billing.
+        // While it said "reaching @repo/billing" it was claiming less than the
+        // predicate checked: a planted @repo/config import failed this
+        // assertion while the text sent the reader hunting for a billing
+        // import that was not there.
         expect(
             report,
-            `Client islands reaching ${FORBIDDEN_PACKAGE}. Its barrel re-exports the ` +
-                'MercadoPago adapter, @repo/logger and the @repo/config env registry. In ' +
-                'dev the logger reads process.env at module scope and the island dies ' +
-                'during hydration with "process is not defined"; in production nothing is ' +
-                'tree-shaken, so the adapter, the logger category machinery and the ' +
-                'env-registry prose (HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN and its howToObtain ' +
-                'text included) all ship to public browsers. Use the wire string literal ' +
-                'instead (see the convention comment in AnalyticsSection.client.tsx), or ' +
-                '`import type` if you only need types.'
+            `Client islands reaching one of: ${FORBIDDEN_PACKAGES.join(', ')}.\n\n` +
+                `${FORBIDDEN_PACKAGE}: its barrel re-exports the MercadoPago adapter, ` +
+                '@repo/logger and the @repo/config env registry. In dev the logger reads ' +
+                'process.env at module scope and the island dies during hydration with ' +
+                '"process is not defined"; in production nothing is tree-shaken, so all of ' +
+                'it ships to public browsers. Use the wire string literal instead (see the ' +
+                'convention comment in AnalyticsSection.client.tsx), or `import type` if ' +
+                'you only need types.\n\n' +
+                '@repo/config: the env registry. Its entries carry exampleValue, ' +
+                'howToObtain and the HOSPEDA_* names, so reaching it from an island ships ' +
+                'internal env documentation to public browsers (HOS-369 AC-5). Read the ' +
+                'value through apps/web/src/lib/env.ts, or `import type`.'
         ).toEqual([]);
     });
 });
