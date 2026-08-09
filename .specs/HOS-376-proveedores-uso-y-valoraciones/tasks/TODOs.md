@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 25/70 tareas (36%)
+## Progreso: 26/70 tareas (37%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 12/17 completadas (complejidad promedio 2.6)
+## Fase `core` — 13/17 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -98,7 +98,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-027** (c2) — Integrar resolveInitialModerationState y moderateText para el dominio nuevo
   - Extender resolveInitialModerationState (packages/service-core/src/services/moderation/review-moderation.helpers.ts) con el entityType nuevo: valoración → APPROVED por default, réplica → PEND…
   - Bloqueada por: T-024, T-025 · Bloquea a: T-028, T-065
-- [ ] **T-028** (c3) — Servicio de moderación admin de valoraciones y réplicas
+- [x] **T-028** (c3) — Servicio de moderación admin de valoraciones y réplicas
   - moderateReview({id, decision, reason, actor}) y moderateReply(...) con gate HOST_TRADE_REVIEW_MODERATE, sellando moderationState/moderatedById/moderatedAt/moderationReason. Cada decisión sob…
   - Bloqueada por: T-027, T-023 · Bloquea a: T-037
 - [ ] **T-029** (c2) — Generación del SVG del QR server-side
@@ -263,12 +263,13 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 
 ## Siguiente
 
-Fase `core` en curso (12/17). Las disponibles ahora: T-020, T-022, T-026,
-T-028, T-029, T-030, T-033, T-040, T-042, T-052, T-057.
+Fase `core` en curso (13/17). Las disponibles ahora: T-020, T-022, T-026,
+T-029, T-030, T-033, T-037, T-040, T-042, T-052, T-057.
 
-T-070 cerró el hueco de las 8 columnas, así que **T-022** (suspensión) y
-**T-052** (stats en TradeCard) quedaron desbloqueadas. El camino crítico sigue
-por **T-028** — la moderación admin.
+Quedan 4 de `core`: **T-020** (guardas de declaración), **T-022** (suspensión
+automática), **T-026** (edición de la valoración — la otra mitad de AC-22) y
+**T-029** (SVG del QR). Con T-028 cerrada, **T-037** (endpoints admin) también
+quedó libre y abre la fase de integración.
 
 El camino crítico sigue por **T-028** — la moderación admin, que ya tiene lo
 que necesitaba: `recalculateHostTradeAggregates` para AC-27. T-026 sigue libre:

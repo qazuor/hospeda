@@ -1004,35 +1004,44 @@
             "id": "T-028",
             "title": "Servicio de moderación admin de valoraciones y réplicas",
             "description": "moderateReview({id, decision, reason, actor}) y moderateReply(...) con gate HOST_TRADE_REVIEW_MODERATE, sellando moderationState/moderatedById/moderatedAt/moderationReason. Cada decisión sobre una valoración dispara el recálculo de agregados (una que pasa de APPROVED a REJECTED tiene que salir del promedio — AC-27). Más getPendingCount para el badge del admin. Tests: AC-27; el conteo de pendientes sólo cuenta PENDING.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-027", "T-023"],
             "blocks": ["T-037"],
             "subtasks": [
                 {
                     "title": "moderateReview + recálculo",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "moderateReply",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "getPendingCount",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["service-core", "moderation", "admin"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T22:45:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T22:45:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-08T22:45:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-08T22:25:00Z",
+                "completed": "2026-08-08T22:45:00.000Z"
             }
         },
         {
@@ -2255,9 +2264,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 45,
+        "pending": 44,
         "inProgress": 0,
-        "completed": 25,
+        "completed": 26,
         "blocked": 0,
         "averageComplexity": 2.4
     }
