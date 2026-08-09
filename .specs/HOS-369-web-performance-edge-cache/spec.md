@@ -2440,6 +2440,48 @@ Wave B onward:
   > `reload: true` traces taken the same day reported a median LCP of 1,144 ms
   > with `Load duration` of 1–2 ms — under one RTT, which the sanity check below
   > correctly flags as cache rather than speed. The cold number is 2.4× that.
+  >
+  > **TBT — the other half, measured 2026-08-09. Also NOT met.** Same cold
+  > profile, `longtask` observer, blocking time summed after FCP:
+  >
+  > | run | TBT (all) | TBT (≤5 s after FCP) | FCP | LCP |
+  > |---|---|---|---|---|
+  > | 1 | 403 | 374 | 2,360 | 2,524 |
+  > | 2 | 513 | 479 | 2,372 | 2,840 |
+  > | 3 | 478 | 442 | 2,404 | 2,520 |
+  >
+  > **Median TBT 478 ms** against a 200 ms threshold.
+  >
+  > **TBT and LCP are separate problems here, and that is the useful part.**
+  > The blocking is a deterministic burst at ~6.5 s, ~7.1–7.3 s and ~8.5 s —
+  > the same four tasks in the same order on all three runs, roughly 4 s AFTER
+  > LCP. Nothing blocks before ~5.9 s. So no amount of LCP work will move TBT,
+  > and vice versa. That burst is post-load island hydration plus third
+  > parties; `longtask` attribution returns `unknown`, so isolating it needs a
+  > main-thread trace, not this observer.
+  >
+  > **What actually gates FCP: stylesheet COUNT, not CSS weight (2026-08-09).**
+  > Measured on the cold profile: **19 render-blocking stylesheets totalling
+  > 45 KB**. They are discovered early and all start together at ~800 ms, but
+  > the last one lands at 2,330 ms — and FCP is 2,404 ms, immediately after.
+  >
+  > 45 KB over Slow 4G's 1.6 Mbps is ~225 ms of transfer. It is taking ~1,500 ms
+  > of wall clock. The gap is per-request latency and connection contention
+  > across 19 requests, not bytes.
+  >
+  > **This is why #2705 was the wrong fix for the right problem.** Deferring the
+  > sheets did address the serialization, but by removing them from the first
+  > paint entirely — which is exactly what produced the 0.45 CLS. Bundling or
+  > inlining attacks the same 1.5 s with no CLS cost at all, because the styles
+  > still arrive before first paint. Try that before considering any deferral
+  > scheme again.
+  >
+  > Two smaller notes from the same pass: the two sheets that land at 7.0–8.2 s
+  > (`index.BTpp_eN0.css`, `feedback-overrides.CLF4mXio.css`) are JS-injected via
+  > `ensure-stylesheet.ts` and are NOT render-blocking. And the home HTML is
+  > 519,410 B uncompressed — above the 500 KB line of the retired predecessor
+  > criterion, which is recorded here only as a reminder that the retired
+  > criterion did not track speed in either direction.
 
   Measured with a genuinely cold cache — `performance_start_trace(reload: true)`
   does NOT give one, it reuses the browser cache. The recipe that does:
