@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 29/70 tareas (41%)
+## Progreso: 30/70 tareas (43%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -54,7 +54,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - La matriz de usuarios de prueba de SPEC-143 no tiene ninguno que sea host (con accommodations) y a la vez dueño de un host_trades. AC-16 y AC-17 lo necesitan. Agregarlo en packages/seed (bas…
   - Bloqueada por: — · Bloquea a: T-064
 
-## Fase `core` — 16/17 completadas (complejidad promedio 2.6)
+## Fase `core` — 17/17 completadas (complejidad promedio 2.6)
 
 - [x] **T-014** (c3) — Zod schemas del uso del beneficio
   - packages/schemas/src/entities/host-trade-usage/: entity schema, create input/body (el body NO acepta hostUserId ni status — vienen del path/actor/servidor), update, access tiers (public/prot…
@@ -101,7 +101,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-028** (c3) — Servicio de moderación admin de valoraciones y réplicas
   - moderateReview({id, decision, reason, actor}) y moderateReply(...) con gate HOST_TRADE_REVIEW_MODERATE, sellando moderationState/moderatedById/moderatedAt/moderationReason. Cada decisión sob…
   - Bloqueada por: T-027, T-023 · Bloquea a: T-037
-- [ ] **T-029** (c2) — Generación del SVG del QR server-side
+- [x] **T-029** (c2) — Generación del SVG del QR server-side
   - Helper en apps/api que, dado un host_trades.slug, genera el SVG del QR apuntando a {SITE_URL}/mi-cuenta/directorio-proveedores/{slug}/registrar-uso usando `qrcode`. Sin estado, sin tabla, si…
   - Bloqueada por: T-005 · Bloquea a: T-032
 
@@ -266,13 +266,23 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 Fase `core` en curso (13/17). Las disponibles ahora: T-020, T-022, T-026,
 T-029, T-030, T-033, T-037, T-040, T-042, T-052, T-057.
 
-Quedan 3 de `core`: **T-020** (guardas de declaración), **T-022** (suspensión
-automática) y **T-029** (SVG del QR). Con T-028 y T-026 cerradas, **T-037**
-(endpoints admin) y **T-034** (endpoints de valoración) quedaron libres, y la
-fase de integración está abierta.
+**La fase `core` está cerrada: 17/17.** Toda la lógica de dominio —modelos,
+máquina de estados de usos, guardas de declaración, suspensión por umbral,
+valoraciones, réplicas, moderación, agregados y el QR— está implementada y
+cubierta.
 
-AC-22 está completo de los dos lados: la réplica sobrevive a la edición del
-anfitrión con `reviewEditedAfterReply` puesto. La re-moderación de T-026 corre
-SÓLO cuando cambió el TEXTO — re-scorear una edición de estrellas devolvería a
-APPROVED una valoración que un moderador REJECTEÓ, y cambiar una estrella sería
-la forma de republicar un texto que un humano bajó.
+Sigue la fase `integration` (27 tareas), con **8 arranques en paralelo ya
+desbloqueados**: T-030 a T-037. El camino natural es T-034 (endpoints de
+valoración, que consume la edición de T-026) y T-037 (endpoints admin, que
+tiene que leer LAS DOS colas de moderación: la de valoraciones, que es backlog,
+y la de réplicas, que bloquea publicación).
+
+Tres decisiones de `core` que la fase de integración hereda y no debería
+reabrir:
+
+1. La re-moderación de una valoración editada corre SÓLO si cambió el TEXTO —
+   si no, cambiar una estrella republicaría un texto que un moderador bajó.
+2. `DECLARATION_BLOCKED` se escopea por LADO (`declaredBy`), no por id de
+   usuario; `USAGE_PENDING_EXISTS` no se escopea por lado en absoluto.
+3. Levantar una suspensión devuelve la capacidad de declarar, no una amnistía:
+   los rechazos viejos siguen contando dentro de la ventana.

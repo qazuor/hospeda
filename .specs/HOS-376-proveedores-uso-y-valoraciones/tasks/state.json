@@ -1074,8 +1074,8 @@
         {
             "id": "T-029",
             "title": "Generación del SVG del QR server-side",
-            "description": "Helper en apps/api que, dado un host_trades.slug, genera el SVG del QR apuntando a {SITE_URL}/mi-cuenta/directorio-proveedores/{slug}/registrar-uso usando `qrcode`. Sin estado, sin tabla, sin token: el slug ya es UNIQUE. Tests: el SVG generado contiene la URL esperada y es determinístico para el mismo slug.",
-            "status": "pending",
+            "description": "Helper en apps/api que, dado un host_trades.slug, genera el SVG del QR apuntando a {SITE_URL}/mi-cuenta/directorio-proveedores/{slug}/registrar-uso usando `qrcode`. Sin estado, sin tabla, sin token: el slug ya es UNIQUE. Tests: el SVG generado contiene la URL esperada y es determinístico para el mismo slug. CERRADA: sin estado ni token por diseño; el helper no puede depender del reloj ni de aleatoriedad porque el QR se imprime una vez. errorCorrectionLevel M (no L) para stickers rayados y fotos en ángulo.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-005"],
             "blocks": ["T-032"],
@@ -1083,14 +1083,23 @@
             "tags": ["api", "qr"],
             "phase": "core",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T15:25:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T15:25:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T15:25:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-09T14:50:00Z",
+                "completed": "2026-08-09T15:25:00.000Z"
             }
         },
         {
