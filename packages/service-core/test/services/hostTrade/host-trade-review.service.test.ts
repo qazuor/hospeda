@@ -5,7 +5,12 @@
  * and violates exactly one, so a passing test names the gate that actually
  * fired rather than "something refused".
  */
-import type { HostTradeBenefitUsageModel, HostTradeModel, HostTradeReviewModel } from '@repo/db';
+import type {
+    HostTradeBenefitUsageModel,
+    HostTradeModel,
+    HostTradeReviewModel,
+    HostTradeReviewReplyModel
+} from '@repo/db';
 import { ModerationStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -507,6 +512,366 @@ describe('HostTradeReviewService.moderateReview', () => {
         expect(recalculateHostTradeAggregates).toHaveBeenCalledWith(
             expect.objectContaining({ tx: ctx.tx })
         );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// The host editing their own review (T-026, AC-22)
+// ---------------------------------------------------------------------------
+
+const REPLY_ID = getMockId('feature', 'review-reply');
+const OTHER_HOST_ID = getMockId('user', 'rev-other-host');
+
+/** The stored review before the edit: a clean text, no breakdown, moderated. */
+const storedReview = () => ({
+    id: REVIEW_ID,
+    hostTradeId: HT_ID,
+    hostUserId: HOST_ID,
+    overallRating: 4,
+    rating: null,
+    averageRating: null,
+    respectedBenefit: true,
+    content: 'El trabajo original, prolijo.',
+    moderationState: ModerationStatusEnum.APPROVED,
+    moderatedById: MODERATOR_ID,
+    moderatedAt: new Date('2026-07-01T00:00:00Z'),
+    moderationReason: 'Revisada a mano',
+    editedAt: null,
+    deletedAt: null
+});
+
+function buildEditService(
+    options: {
+        review?: Record<string, unknown> | null;
+        reply?: Record<string, unknown> | null;
+    } = {}
+) {
+    const model = createModelMock();
+    const replyModel = createModelMock();
+
+    model.findById = vi.fn(async () =>
+        options.review === undefined ? storedReview() : options.review
+    );
+    model.update = vi.fn(async (_where: unknown, data: Record<string, unknown>) => ({
+        ...storedReview(),
+        ...data
+    }));
+    replyModel.findOne = vi.fn(async () => options.reply ?? null);
+    replyModel.update = vi.fn(async (_where: unknown, data: Record<string, unknown>) => ({
+        id: REPLY_ID,
+        ...data
+    }));
+
+    const service = new HostTradeReviewService(
+        { logger: mockLogger },
+        model as unknown as HostTradeReviewModel,
+        createModelMock() as unknown as HostTradeModel,
+        createModelMock() as unknown as HostTradeBenefitUsageModel,
+        replyModel as unknown as HostTradeReviewReplyModel
+    );
+
+    return { service, model, replyModel };
+}
+
+/** An approved reply, the AC-22 fixture: it must survive the host's edit. */
+const approvedReply = () => ({
+    id: REPLY_ID,
+    reviewId: REVIEW_ID,
+    moderationState: ModerationStatusEnum.APPROVED,
+    reviewEditedAfterReply: false,
+    deletedAt: null
+});
+
+/** Second argument of the first call to a mocked model method. */
+function firstPatch(mock: unknown): Record<string, unknown> {
+    return (mock as { mock: { calls: unknown[][] } }).mock.calls[0]?.[1] as Record<string, unknown>;
+}
+
+describe('HostTradeReviewService.updateReview — ownership', () => {
+    /**
+     * Every refusal here THROWS instead of returning an envelope because the
+     * calls carry a transaction — the base service's `if (ctx?.tx) throw`
+     * contract, same as the moderation tests above.
+     */
+    it('answers NOT_FOUND for somebody else’s review, never FORBIDDEN', async () => {
+        const { service, model } = buildEditService();
+        const intruder = new ActorFactoryBuilder()
+            .withId(OTHER_HOST_ID)
+            .withPermissions([PermissionEnum.HOST_TRADE_REVIEW_CREATE])
+            .build();
+
+        await expect(
+            service.updateReview({ reviewId: REVIEW_ID, overallRating: 1 }, intruder, txCtx())
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    it('answers NOT_FOUND for a review that does not exist', async () => {
+        const { service, model } = buildEditService({ review: null });
+
+        await expect(
+            service.updateReview({ reviewId: REVIEW_ID, overallRating: 1 }, hostActor(), txCtx())
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    it('answers NOT_FOUND for a soft-deleted review', async () => {
+        const { service, model } = buildEditService({
+            review: { ...storedReview(), deletedAt: new Date('2026-07-02T00:00:00Z') }
+        });
+
+        await expect(
+            service.updateReview({ reviewId: REVIEW_ID, overallRating: 1 }, hostActor(), txCtx())
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Editing is gated by ROW OWNERSHIP, not by a permission (§7.5: "auth +
+     * ownership"). A host who wrote the review keeps the right to edit it even
+     * if `HOST_TRADE_REVIEW_CREATE` were later revoked from the role.
+     */
+    it('lets the author edit without holding any permission', async () => {
+        const { service, model } = buildEditService();
+        const bareAuthor = new ActorFactoryBuilder().withId(HOST_ID).withPermissions([]).build();
+
+        const result = await service.updateReview(
+            { reviewId: REVIEW_ID, overallRating: 2 },
+            bareAuthor,
+            txCtx()
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(model.update).toHaveBeenCalled();
+    });
+});
+
+describe('HostTradeReviewService.updateReview — what it writes', () => {
+    it('stamps editedAt and the editor on every edit', async () => {
+        const { service, model } = buildEditService();
+
+        await service.updateReview({ reviewId: REVIEW_ID, overallRating: 2 }, hostActor(), txCtx());
+
+        const patch = firstPatch(model.update);
+        expect(patch.overallRating).toBe(2);
+        expect(patch.editedAt).toBeInstanceOf(Date);
+        expect(patch.updatedById).toBe(HOST_ID);
+    });
+
+    it('leaves untouched fields out of the patch', async () => {
+        const { service, model } = buildEditService();
+
+        await service.updateReview(
+            { reviewId: REVIEW_ID, respectedBenefit: false },
+            hostActor(),
+            txCtx()
+        );
+
+        const patch = firstPatch(model.update);
+        expect(patch.respectedBenefit).toBe(false);
+        expect(patch).not.toHaveProperty('overallRating');
+        expect(patch).not.toHaveProperty('content');
+    });
+
+    /** AC-20 — the derived average follows the breakdown it is derived from. */
+    it('recomputes averageRating when the breakdown changes', async () => {
+        const { service, model } = buildEditService();
+
+        await service.updateReview(
+            { reviewId: REVIEW_ID, rating: { workQuality: 5, punctuality: 4 } },
+            hostActor(),
+            txCtx()
+        );
+
+        expect(firstPatch(model.update).averageRating).toBe(4.5);
+    });
+
+    it('clears averageRating when the host drops the breakdown', async () => {
+        const { service, model } = buildEditService({
+            review: { ...storedReview(), rating: { workQuality: 5 }, averageRating: 5 }
+        });
+
+        await service.updateReview({ reviewId: REVIEW_ID, rating: null }, hostActor(), txCtx());
+
+        const patch = firstPatch(model.update);
+        expect(patch.rating).toBeNull();
+        expect(patch.averageRating).toBeNull();
+    });
+
+    /** The public card's numbers move with the stars, and this path never goes
+     * through the base update, so `_afterUpdate` would not fire for it. */
+    it('recalculates the listing aggregates inside the same transaction', async () => {
+        const ctx = txCtx();
+        const { service } = buildEditService();
+
+        await service.updateReview({ reviewId: REVIEW_ID, overallRating: 1 }, hostActor(), ctx);
+
+        expect(recalculateHostTradeAggregates).toHaveBeenCalledWith({
+            hostTradeId: HT_ID,
+            tx: ctx.tx
+        });
+    });
+});
+
+describe('HostTradeReviewService.updateReview — re-moderation', () => {
+    /** AC-22 — the edited text goes back through the engine. */
+    it('re-moderates a rewritten text and re-approves it when it is clean', async () => {
+        const { service, model } = buildEditService();
+
+        await service.updateReview(
+            { reviewId: REVIEW_ID, content: 'Lo corrijo: al final cumplió con el descuento.' },
+            hostActor(),
+            txCtx()
+        );
+
+        expect(moderateText).toHaveBeenCalledWith({
+            text: 'Lo corrijo: al final cumplió con el descuento.',
+            context: 'review'
+        });
+        expect(firstPatch(model.update).moderationState).toBe(ModerationStatusEnum.APPROVED);
+    });
+
+    it('holds a rewritten text that the engine flags', async () => {
+        vi.mocked(moderateText).mockResolvedValueOnce({ score: 1 } as never);
+        const { service, model } = buildEditService();
+
+        await service.updateReview(
+            { reviewId: REVIEW_ID, content: 'un texto con problemas nuevos' },
+            hostActor(),
+            txCtx()
+        );
+
+        expect(firstPatch(model.update).moderationState).toBe(ModerationStatusEnum.PENDING);
+    });
+
+    /**
+     * The previous decision was made about text that no longer exists, so it is
+     * wiped rather than kept — the same reasoning as `updateReply`.
+     */
+    it('wipes the previous moderation decision when the text changes', async () => {
+        const { service, model } = buildEditService();
+
+        await service.updateReview(
+            { reviewId: REVIEW_ID, content: 'Un texto completamente distinto.' },
+            hostActor(),
+            txCtx()
+        );
+
+        const patch = firstPatch(model.update);
+        expect(patch.moderatedById).toBeNull();
+        expect(patch.moderatedAt).toBeNull();
+        expect(patch.moderationReason).toBeNull();
+    });
+
+    /**
+     * THE LAUNDERING GUARD. Re-moderation is about the TEXT: an edit that does
+     * not touch it must not re-run the engine, because a review an admin
+     * REJECTED would come back APPROVED — turning "change one star" into a way
+     * of republishing a text a human took down.
+     */
+    it('does not re-moderate a star-only edit', async () => {
+        const { service, model } = buildEditService({
+            review: {
+                ...storedReview(),
+                moderationState: ModerationStatusEnum.REJECTED,
+                moderationReason: 'Menciona datos personales'
+            }
+        });
+
+        await service.updateReview({ reviewId: REVIEW_ID, overallRating: 5 }, hostActor(), txCtx());
+
+        expect(moderateText).not.toHaveBeenCalled();
+        const patch = firstPatch(model.update);
+        expect(patch).not.toHaveProperty('moderationState');
+        expect(patch).not.toHaveProperty('moderationReason');
+    });
+
+    it('does not re-moderate when the submitted text is identical', async () => {
+        const { service, model } = buildEditService();
+
+        await service.updateReview(
+            { reviewId: REVIEW_ID, content: storedReview().content, overallRating: 5 },
+            hostActor(),
+            txCtx()
+        );
+
+        expect(moderateText).not.toHaveBeenCalled();
+        expect(firstPatch(model.update)).not.toHaveProperty('moderationState');
+    });
+
+    /** A text removed altogether is a change like any other, and leaves nothing
+     * to score — so the engine is skipped and the default state applies. */
+    it('re-resolves the state without the engine when the text is removed', async () => {
+        const { service, model } = buildEditService();
+
+        await service.updateReview({ reviewId: REVIEW_ID, content: null }, hostActor(), txCtx());
+
+        expect(moderateText).not.toHaveBeenCalled();
+        expect(firstPatch(model.update).moderationState).toBe(ModerationStatusEnum.APPROVED);
+    });
+});
+
+describe('HostTradeReviewService.updateReview — the reply marker (AC-22)', () => {
+    /**
+     * The reply SURVIVES. Deleting the provider's words because the host
+     * changed his would be worse than a stale answer: with the marker the
+     * directory can say the reply answers an earlier version, and the provider
+     * can rewrite it.
+     */
+    it('marks an existing reply instead of deleting it', async () => {
+        const { service, replyModel } = buildEditService({ reply: approvedReply() });
+
+        await service.updateReview(
+            { reviewId: REVIEW_ID, content: 'Reescribo lo que había puesto antes.' },
+            hostActor(),
+            txCtx()
+        );
+
+        const [where, patch] = (replyModel.update as unknown as { mock: { calls: unknown[][] } })
+            .mock.calls[0] as [Record<string, unknown>, Record<string, unknown>];
+        expect(where).toEqual({ id: REPLY_ID });
+        expect(patch.reviewEditedAfterReply).toBe(true);
+        expect(patch).not.toHaveProperty('content');
+        expect(patch).not.toHaveProperty('moderationState');
+        expect(replyModel.softDelete).not.toHaveBeenCalled();
+        expect(replyModel.hardDelete).not.toHaveBeenCalled();
+    });
+
+    /** A star-only edit also makes the reply answer an older version. */
+    it('marks the reply even when only the stars moved', async () => {
+        const { service, replyModel } = buildEditService({ reply: approvedReply() });
+
+        await service.updateReview({ reviewId: REVIEW_ID, overallRating: 1 }, hostActor(), txCtx());
+
+        expect(firstPatch(replyModel.update).reviewEditedAfterReply).toBe(true);
+    });
+
+    it('does nothing to the reply when there is none', async () => {
+        const { service, replyModel } = buildEditService();
+
+        await service.updateReview({ reviewId: REVIEW_ID, overallRating: 1 }, hostActor(), txCtx());
+
+        expect(replyModel.update).not.toHaveBeenCalled();
+    });
+
+    it('leaves an already-marked reply alone', async () => {
+        const { service, replyModel } = buildEditService({
+            reply: { ...approvedReply(), reviewEditedAfterReply: true }
+        });
+
+        await service.updateReview({ reviewId: REVIEW_ID, overallRating: 1 }, hostActor(), txCtx());
+
+        expect(replyModel.update).not.toHaveBeenCalled();
+    });
+
+    it('does not resurrect a soft-deleted reply', async () => {
+        const { service, replyModel } = buildEditService({
+            reply: { ...approvedReply(), deletedAt: new Date('2026-07-03T00:00:00Z') }
+        });
+
+        await service.updateReview({ reviewId: REVIEW_ID, overallRating: 1 }, hostActor(), txCtx());
+
+        expect(replyModel.update).not.toHaveBeenCalled();
     });
 });
 

@@ -1,6 +1,16 @@
 import { moderateText } from '@repo/content-moderation';
-import { HostTradeBenefitUsageModel, HostTradeModel, HostTradeReviewModel } from '@repo/db';
-import type { CountResponse, HostTradeReview, HostTradeReviewAdminSearch } from '@repo/schemas';
+import {
+    HostTradeBenefitUsageModel,
+    HostTradeModel,
+    HostTradeReviewModel,
+    HostTradeReviewReplyModel
+} from '@repo/db';
+import type {
+    CountResponse,
+    HostTradeReview,
+    HostTradeReviewAdminSearch,
+    HostTradeReviewReply
+} from '@repo/schemas';
 import {
     HostTradeReviewAdminSearchSchema,
     HostTradeReviewCreateInputSchema,
@@ -54,6 +64,28 @@ const createReviewInputSchema = z.object({
     content: z.string().min(10).max(2000).nullish()
 });
 
+/**
+ * Input for {@link HostTradeReviewService.updateReview}.
+ *
+ * The same four fields the host authored, all optional: an absent key means
+ * "leave it alone", which is what makes a star-only edit distinguishable from a
+ * rewrite. `content` is nullish rather than optional because dropping the text
+ * altogether is a legitimate edit and has to be told apart from not touching it.
+ */
+const updateReviewInputSchema = z.object({
+    reviewId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    overallRating: z.number().int().min(1).max(5).optional(),
+    rating: z
+        .object({
+            workQuality: z.number().int().min(1).max(5).optional(),
+            punctuality: z.number().int().min(1).max(5).optional(),
+            treatment: z.number().int().min(1).max(5).optional()
+        })
+        .nullish(),
+    respectedBenefit: z.boolean().optional(),
+    content: z.string().min(10).max(2000).nullish()
+});
+
 /** Input for {@link HostTradeReviewService.moderateReview}. */
 const moderateReviewInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -87,17 +119,20 @@ export class HostTradeReviewService extends BaseCrudService<
 
     private readonly hostTradeModel: HostTradeModel;
     private readonly usageModel: HostTradeBenefitUsageModel;
+    private readonly replyModel: HostTradeReviewReplyModel;
 
     constructor(
         ctx: ServiceConfig,
         model?: HostTradeReviewModel,
         hostTradeModel?: HostTradeModel,
-        usageModel?: HostTradeBenefitUsageModel
+        usageModel?: HostTradeBenefitUsageModel,
+        replyModel?: HostTradeReviewReplyModel
     ) {
         super(ctx, HostTradeReviewService.ENTITY_NAME);
         this.model = model ?? new HostTradeReviewModel();
         this.hostTradeModel = hostTradeModel ?? new HostTradeModel();
         this.usageModel = usageModel ?? new HostTradeBenefitUsageModel();
+        this.replyModel = replyModel ?? new HostTradeReviewReplyModel();
     }
 
     protected override getSearchableColumns(): string[] {
@@ -512,6 +547,144 @@ export class HostTradeReviewService extends BaseCrudService<
                 return { review: created as HostTradeReview };
             }
         });
+    }
+
+    // --- Editing (T-026, AC-22) -------------------------------------------
+
+    /**
+     * Rewrites the actor's own review, and tells any existing reply about it.
+     *
+     * A pattern with no precedent in this repo: no other review is editable by
+     * its author. Three properties define it.
+     *
+     * ROW OWNERSHIP, not a permission (§7.5: "auth + ownership"). A review that
+     * belongs to somebody else answers NOT_FOUND rather than FORBIDDEN — the
+     * rule the whole domain follows, so the endpoint cannot be used to find out
+     * which reviews exist.
+     *
+     * RE-MODERATION IS ABOUT THE TEXT, so it only runs when the text actually
+     * changed. Re-running it on a star-only edit would be worse than wasteful:
+     * a review a moderator REJECTED would come back APPROVED, and changing one
+     * star would become a way of republishing a text a human took down. When
+     * the text does change, the previous decision is wiped — it was made about
+     * words that no longer exist, the same reasoning as `updateReply`.
+     *
+     * THE REPLY SURVIVES, marked (AC-22). Every edit marks it, stars included:
+     * a reply thanking someone for five stars answers an older version just as
+     * much as one answering a deleted paragraph. Deleting the provider's words
+     * because the host changed his would be worse than a stale answer — with
+     * the marker the directory says so and the provider can rewrite it.
+     *
+     * @param input - The review id plus whichever of the four authored fields
+     *   the host is changing. An absent key means "no change".
+     * @param actor - Must be the review's author.
+     * @param ctx - Optional service context. Its transaction is joined when
+     *   present; otherwise one is opened for the edit, the marker and the
+     *   recount together.
+     * @returns The edited review.
+     */
+    public async updateReview(
+        input: {
+            readonly reviewId: string;
+            readonly overallRating?: number;
+            readonly rating?: Record<string, number> | null;
+            readonly respectedBenefit?: boolean;
+            readonly content?: string | null;
+        },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ review: HostTradeReview }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateReview',
+            input: { ...input, actor },
+            schema: updateReviewInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                const run = async (execCtx: ServiceContext) => {
+                    const existing = await this.model.findById(validated.reviewId, execCtx.tx);
+                    if (
+                        !existing ||
+                        existing.deletedAt ||
+                        existing.hostUserId !== validatedActor.id
+                    ) {
+                        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Review not found');
+                    }
+
+                    const patch: Record<string, unknown> = {
+                        editedAt: new Date(),
+                        updatedById: validatedActor.id
+                    };
+
+                    if (validated.overallRating !== undefined) {
+                        patch.overallRating = validated.overallRating;
+                    }
+                    if (validated.respectedBenefit !== undefined) {
+                        patch.respectedBenefit = validated.respectedBenefit;
+                    }
+                    if (validated.rating !== undefined) {
+                        patch.rating = validated.rating ?? null;
+                        patch.averageRating = computeBreakdownAverage(validated.rating);
+                    }
+
+                    const newContent = validated.content ?? null;
+                    if (
+                        validated.content !== undefined &&
+                        newContent !== (existing.content ?? null)
+                    ) {
+                        patch.content = newContent;
+                        patch.moderationState = await resolveReviewModerationState(newContent);
+                        patch.moderatedById = null;
+                        patch.moderatedAt = null;
+                        patch.moderationReason = null;
+                    }
+
+                    const updated = await this.model.update(
+                        { id: validated.reviewId },
+                        patch as unknown as Partial<HostTradeReview>,
+                        execCtx.tx
+                    );
+
+                    await this.markReplyAsAnsweringAnOlderReview(validated.reviewId, execCtx);
+
+                    // The public average moves with the stars, and with a text
+                    // that re-moderation just pulled out of APPROVED. This path
+                    // never goes through the base update, so `_afterUpdate`
+                    // would not fire for it.
+                    await recalculateHostTradeAggregates({
+                        hostTradeId: existing.hostTradeId,
+                        tx: execCtx.tx
+                    });
+
+                    return { review: updated as HostTradeReview };
+                };
+
+                return ctx?.tx ? run(ctx) : withServiceTransaction(run);
+            }
+        });
+    }
+
+    /**
+     * Raises `reviewEditedAfterReply` on the review's reply, if it has a live
+     * one that is not already marked.
+     *
+     * The re-read of the flag is not an optimisation: writing `true` over
+     * `true` would move the reply's `updatedAt` on every subsequent edit, and
+     * the provider's dashboard reads that timestamp as "when I last wrote".
+     */
+    private async markReplyAsAnsweringAnOlderReview(
+        reviewId: string,
+        ctx: ServiceContext
+    ): Promise<void> {
+        const reply = await this.replyModel.findOne({ reviewId }, ctx.tx);
+        if (!reply || reply.deletedAt || reply.reviewEditedAfterReply) {
+            return;
+        }
+
+        await this.replyModel.update(
+            { id: reply.id },
+            { reviewEditedAfterReply: true } as unknown as Partial<HostTradeReviewReply>,
+            ctx.tx
+        );
     }
 }
 
