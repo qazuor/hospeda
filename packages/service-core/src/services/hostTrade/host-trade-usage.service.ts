@@ -1,10 +1,13 @@
 import { HostTradeBenefitUsageModel, HostTradeModel, UserModel } from '@repo/db';
 import type {
     CountResponse,
+    HostTrade,
     HostTradeBenefitUsage,
     HostTradeBenefitUsageAdminSearch
 } from '@repo/schemas';
 import {
+    HOST_TRADE_REJECTION_SUSPEND_THRESHOLD,
+    HOST_TRADE_REJECTION_WINDOW_DAYS,
     HOST_TRADE_USAGE_EXPIRY_DAYS,
     HostTradeBenefitUsageAdminSearchSchema,
     HostTradeBenefitUsageCreateInputSchema,
@@ -25,6 +28,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { withServiceTransaction } from '../../utils/transaction';
 import { getUserRoles } from '../user-role/user-role.service';
 import { recalculateHostTradeAggregates } from './host-trade-aggregates';
 import {
@@ -77,6 +81,11 @@ const usageIdInputSchema = z.object({
 /** Input for {@link HostTradeUsageService.rejectUsage}. */
 const rejectUsageInputSchema = usageIdInputSchema.extend({
     note: z.string().max(300).optional()
+});
+
+/** Input for {@link HostTradeUsageService.liftDeclarationSuspension}. */
+const liftSuspensionInputSchema = z.object({
+    hostTradeId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 
 const declareAsProviderInputSchema = z.object({
@@ -504,9 +513,15 @@ export class HostTradeUsageService extends BaseCrudService<
      * say "that never happened" would put friction on the one action the system
      * most needs people to take.
      *
+     * The rejection and the suspension it may trigger are ONE unit of work
+     * (T-022). Committing the rejection without its seal would leave a provider
+     * over the threshold that nothing marks as suspended, and the guard that
+     * refuses his next declaration reads the seal, not the count.
+     *
      * @param input - The usage id and an optional reason.
      * @param actor - Must be the counterpart of whoever declared it.
-     * @param ctx - Optional service context.
+     * @param ctx - Optional service context. Its transaction is joined when
+     *   present; otherwise one is opened for the pair.
      * @returns The rejected usage.
      */
     public async rejectUsage(
@@ -520,26 +535,139 @@ export class HostTradeUsageService extends BaseCrudService<
             schema: rejectUsageInputSchema,
             ctx,
             execute: async (validated, validatedActor) => {
-                const usage = await this.requireAnswerableBy(
-                    validated.usageId,
-                    validatedActor,
-                    ctx
-                );
-                this.requireStatus(usage, HostTradeUsageStatusEnum.PENDING);
+                const run = async (execCtx: ServiceContext) => {
+                    const usage = await this.requireAnswerableBy(
+                        validated.usageId,
+                        validatedActor,
+                        execCtx
+                    );
+                    this.requireStatus(usage, HostTradeUsageStatusEnum.PENDING);
 
-                const updated = await this.model.update(
-                    { id: validated.usageId },
+                    const updated = await this.model.update(
+                        { id: validated.usageId },
+                        {
+                            status: HostTradeUsageStatusEnum.REJECTED,
+                            rejectedAt: new Date(),
+                            rejectedById: validatedActor.id,
+                            rejectionNote: validated.note ?? null,
+                            updatedById: validatedActor.id
+                        } as unknown as Partial<HostTradeBenefitUsage>,
+                        execCtx.tx
+                    );
+
+                    await this.applyRejectionThreshold(usage.hostTradeId, execCtx);
+
+                    return { usage: updated as HostTradeBenefitUsage };
+                };
+
+                return ctx?.tx ? run(ctx) : withServiceTransaction(run);
+            }
+        });
+    }
+
+    /**
+     * Suspends declaration for a provider whose rejections reached the
+     * threshold (spec §6.5, AC-11).
+     *
+     * Counted EAGERLY, at rejection time, rather than lazily when he next tries
+     * to declare: the suspension is also a signal to the admin screen, and a
+     * flag that only materialises when the provider happens to come back would
+     * keep the pattern invisible for as long as he stays quiet.
+     *
+     * Two things it deliberately does NOT do:
+     *
+     * - It never re-stamps a provider who is already suspended. Re-stamping
+     *   would move the date an admin is reading and overwrite a reason a human
+     *   wrote with the generated one.
+     * - It does not run on `undoRejection`. Undoing drops that rejection out of
+     *   the count, but lifting the suspension is an explicit admin act
+     *   ({@link liftDeclarationSuspension}) — the host who reverted his own
+     *   rejection knows nothing about the other two that put the provider over
+     *   the line.
+     *
+     * KNOWN CONSEQUENCE: an admin who lifts a suspension gives back the ability
+     * to declare, not a clean slate — the old rejections stay inside the window,
+     * so the NEXT rejection re-suspends immediately. That is defensible (a new
+     * rejection after a human review is new evidence) but it is not free: giving
+     * the lift a real amnesty would need a "cleared at" column to count from,
+     * which no migration in this spec provides.
+     */
+    private async applyRejectionThreshold(hostTradeId: string, ctx: ServiceContext): Promise<void> {
+        const rejections = await this.model.countRejectionsInWindow(
+            hostTradeId,
+            HOST_TRADE_REJECTION_WINDOW_DAYS,
+            ctx.tx
+        );
+        if (rejections < HOST_TRADE_REJECTION_SUSPEND_THRESHOLD) {
+            return;
+        }
+
+        const provider = await this.hostTradeModel.findById(hostTradeId, ctx.tx);
+        if (!provider || provider.declarationSuspendedAt) {
+            return;
+        }
+
+        await this.hostTradeModel.update(
+            { id: hostTradeId },
+            {
+                declarationSuspendedAt: new Date(),
+                // NULL is load-bearing: it is what tells the admin screen no
+                // human decided this. An id here means a person acted.
+                declarationSuspendedById: null,
+                declarationSuspendReason: `Automatic: ${rejections} declarations rejected in the last ${HOST_TRADE_REJECTION_WINDOW_DAYS} days`
+            } as unknown as Partial<HostTrade>,
+            ctx.tx
+        );
+    }
+
+    /**
+     * Lifts a declaration suspension. Admin only (AC-12).
+     *
+     * Clears the whole trio, so `declarationSuspendedAt IS NULL` keeps meaning
+     * exactly one thing. The record of WHO lifted it is `updatedById` on the
+     * listing — the suspension columns describe the suspension, and leaving the
+     * previous suspender's id behind on a listing that is no longer suspended
+     * would be read as "an admin suspended this".
+     *
+     * Lifting a suspension that is not there succeeds without writing: that is
+     * the outcome the admin asked for, and an error would make a double-click on
+     * the admin screen look like a failure.
+     *
+     * @param input.hostTradeId - The provider whose suspension is being lifted.
+     * @param actor - Must hold `HOST_TRADE_USAGE_MANAGE`.
+     * @param ctx - Optional service context.
+     * @returns Whether a suspension was actually cleared.
+     */
+    public async liftDeclarationSuspension(
+        input: { hostTradeId: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ lifted: boolean }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'liftDeclarationSuspension',
+            input: { ...input, actor },
+            schema: liftSuspensionInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                checkCanManageUsages(validatedActor);
+
+                const provider = await this.requireProvider(validated.hostTradeId, ctx);
+                if (!provider.declarationSuspendedAt) {
+                    return { lifted: false };
+                }
+
+                await this.hostTradeModel.update(
+                    { id: validated.hostTradeId },
                     {
-                        status: HostTradeUsageStatusEnum.REJECTED,
-                        rejectedAt: new Date(),
-                        rejectedById: validatedActor.id,
-                        rejectionNote: validated.note ?? null,
+                        declarationSuspendedAt: null,
+                        declarationSuspendedById: null,
+                        declarationSuspendReason: null,
                         updatedById: validatedActor.id
-                    } as unknown as Partial<HostTradeBenefitUsage>,
+                    } as unknown as Partial<HostTrade>,
                     ctx?.tx
                 );
 
-                return { usage: updated as HostTradeBenefitUsage };
+                return { lifted: true };
             }
         });
     }

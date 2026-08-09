@@ -21,7 +21,7 @@ vi.mock('../../../src/services/hostTrade/host-trade-aggregates', () => ({
     }))
 }));
 
-import { ServiceErrorCode } from '@repo/schemas';
+import { HOST_TRADE_REJECTION_WINDOW_DAYS, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { recalculateHostTradeAggregates } from '../../../src/services/hostTrade/host-trade-aggregates';
 import { HostTradeUsageService } from '../../../src/services/hostTrade/host-trade-usage.service';
@@ -55,7 +55,13 @@ const makeUsage = (overrides: Record<string, unknown> = {}) => ({
     ...overrides
 });
 
-function buildService(usage: Record<string, unknown> = makeUsage()) {
+function buildService(
+    usage: Record<string, unknown> = makeUsage(),
+    options: {
+        rejectionsInWindow?: number;
+        provider?: Record<string, unknown> | null;
+    } = {}
+) {
     const model = createModelMock();
     const hostTradeModel = createModelMock();
     const userModel = createModelMock();
@@ -69,12 +75,26 @@ function buildService(usage: Record<string, unknown> = makeUsage()) {
             ...data
         })
     );
-    hostTradeModel.findById = vi.fn(async () => ({
-        id: HT_ID,
-        ownerUserId: OWNER_ID,
-        revokedAt: null,
-        deletedAt: null
-    }));
+    model.countRejectionsInWindow = vi.fn(async () => options.rejectionsInWindow ?? 0);
+    hostTradeModel.findById = vi.fn(async () =>
+        options.provider === undefined
+            ? {
+                  id: HT_ID,
+                  ownerUserId: OWNER_ID,
+                  revokedAt: null,
+                  deletedAt: null,
+                  declarationSuspendedAt: null,
+                  declarationSuspendedById: null,
+                  declarationSuspendReason: null
+              }
+            : options.provider
+    );
+    hostTradeModel.update = vi.fn(
+        async (_where: Record<string, unknown>, data: Record<string, unknown>) => ({
+            id: HT_ID,
+            ...data
+        })
+    );
 
     const service = new HostTradeUsageService(
         { logger: mockLogger },
@@ -84,8 +104,11 @@ function buildService(usage: Record<string, unknown> = makeUsage()) {
         async () => true
     );
 
-    return { service, model };
+    return { service, model, hostTradeModel };
 }
+
+/** A stub transaction, so the service joins it instead of opening its own. */
+const txCtx = () => ({ tx: {} as never });
 
 /** The patch handed to `model.update`. */
 function patch(model: ReturnType<typeof createModelMock>): Record<string, unknown> {
@@ -169,13 +192,20 @@ describe('confirmUsage', () => {
     });
 });
 
+/**
+ * Rejecting runs inside a transaction since T-022: the rejection and the
+ * suspension it may trigger are ONE unit of work. These calls therefore carry a
+ * ctx, and refusals THROW instead of returning an envelope — the base service's
+ * `if (ctx?.tx) throw error` contract.
+ */
 describe('rejectUsage', () => {
     it('seals rejectedAt, rejectedById and the note', async () => {
         const { service, model } = buildService();
 
         await service.rejectUsage(
             { usageId: USAGE_ID, note: 'Nunca vino a casa' },
-            actorOf(HOST_ID)
+            actorOf(HOST_ID),
+            txCtx()
         );
 
         const data = patch(model);
@@ -188,7 +218,7 @@ describe('rejectUsage', () => {
     it('accepts a rejection with no note — refusing must stay cheap', async () => {
         const { service, model } = buildService();
 
-        const result = await service.rejectUsage({ usageId: USAGE_ID }, actorOf(HOST_ID));
+        const result = await service.rejectUsage({ usageId: USAGE_ID }, actorOf(HOST_ID), txCtx());
 
         expect(result.error).toBeUndefined();
         expect(patch(model).rejectionNote).toBeNull();
@@ -197,9 +227,9 @@ describe('rejectUsage', () => {
     it('answers 404 for the declarant rejecting their own declaration', async () => {
         const { service, model } = buildService();
 
-        const result = await service.rejectUsage({ usageId: USAGE_ID }, actorOf(OWNER_ID));
-
-        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        await expect(
+            service.rejectUsage({ usageId: USAGE_ID }, actorOf(OWNER_ID), txCtx())
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
         expect(model.update).not.toHaveBeenCalled();
     });
 });
@@ -273,8 +303,211 @@ describe('aggregate recalculation', () => {
     it('does not recalculate after a rejection, which cannot change a counter', async () => {
         const { service } = buildService();
 
-        await service.rejectUsage({ usageId: USAGE_ID }, actorOf(HOST_ID));
+        await service.rejectUsage({ usageId: USAGE_ID }, actorOf(HOST_ID), txCtx());
 
         expect(recalculateHostTradeAggregates).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Automatic declaration suspension by rejection threshold (T-022, AC-11/AC-12)
+// ---------------------------------------------------------------------------
+
+const ADMIN_ID = getMockId('user', 'tx-admin');
+
+const adminActor = () =>
+    new ActorFactoryBuilder()
+        .withId(ADMIN_ID)
+        .withPermissions([PermissionEnum.HOST_TRADE_USAGE_MANAGE])
+        .build();
+
+/** The patch handed to `hostTradeModel.update`. */
+function providerPatch(model: ReturnType<typeof createModelMock>): Record<string, unknown> {
+    const call = (model.update as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
+    return call?.[1] as Record<string, unknown>;
+}
+
+describe('rejection threshold — the automatic suspension', () => {
+    /**
+     * Two is not a pattern. The threshold is above 1 deliberately (see
+     * HOST_TRADE_REJECTION_SUSPEND_THRESHOLD): one rejection can be a
+     * misunderstanding or a mis-tap on an email a host barely read.
+     */
+    it('does not suspend below the threshold', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage(), { rejectionsInWindow: 2 });
+
+        await service.rejectUsage({ usageId: USAGE_ID }, actorOf(HOST_ID), txCtx());
+
+        expect(hostTradeModel.update).not.toHaveBeenCalled();
+    });
+
+    it('suspends declaration when the rejection reaches the threshold', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage(), { rejectionsInWindow: 3 });
+
+        await service.rejectUsage({ usageId: USAGE_ID }, actorOf(HOST_ID), txCtx());
+
+        const [where, data] = (hostTradeModel.update as unknown as { mock: { calls: unknown[][] } })
+            .mock.calls[0] as [Record<string, unknown>, Record<string, unknown>];
+        expect(where).toEqual({ id: HT_ID });
+        expect(data.declarationSuspendedAt).toBeInstanceOf(Date);
+        expect(data.declarationSuspendReason).toEqual(expect.any(String));
+    });
+
+    /**
+     * NULL is not "unknown", it is the load-bearing marker for "the threshold
+     * did this, no human decided it" — the column comment says so, and the admin
+     * screen tells the two cases apart by exactly this.
+     */
+    it('leaves declarationSuspendedById NULL, which is what marks it automatic', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage(), { rejectionsInWindow: 3 });
+
+        await service.rejectUsage({ usageId: USAGE_ID }, actorOf(HOST_ID), txCtx());
+
+        expect(providerPatch(hostTradeModel).declarationSuspendedById).toBeNull();
+    });
+
+    it('counts over the configured window, not an ad-hoc one', async () => {
+        const { service, model } = buildService(makeUsage(), { rejectionsInWindow: 3 });
+
+        await service.rejectUsage({ usageId: USAGE_ID }, actorOf(HOST_ID), txCtx());
+
+        expect(model.countRejectionsInWindow).toHaveBeenCalledWith(
+            HT_ID,
+            HOST_TRADE_REJECTION_WINDOW_DAYS,
+            expect.anything()
+        );
+    });
+
+    /**
+     * A provider already suspended is left alone. Re-stamping would move the
+     * date an admin is looking at and, worse, overwrite the reason a human
+     * wrote with the generated one.
+     */
+    it('does not re-stamp a provider who is already suspended', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage(), {
+            rejectionsInWindow: 5,
+            provider: {
+                id: HT_ID,
+                ownerUserId: OWNER_ID,
+                revokedAt: null,
+                deletedAt: null,
+                declarationSuspendedAt: new Date('2026-07-01T00:00:00Z'),
+                declarationSuspendedById: ADMIN_ID,
+                declarationSuspendReason: 'Suspendido a mano tras una denuncia'
+            }
+        });
+
+        await service.rejectUsage({ usageId: USAGE_ID }, actorOf(HOST_ID), txCtx());
+
+        expect(hostTradeModel.update).not.toHaveBeenCalled();
+    });
+
+    /**
+     * AC-10 — undoing drops the rejection out of the count, but it does NOT lift
+     * a suspension that already landed. Lifting is an explicit admin act: the
+     * host who reverted his own rejection knows nothing about the other two that
+     * put the provider over the line.
+     */
+    it('does not lift the suspension when a rejection is undone', async () => {
+        const { service, hostTradeModel } = buildService(
+            makeUsage({
+                status: 'REJECTED',
+                rejectedAt: new Date('2026-08-01T00:00:00Z'),
+                rejectedById: HOST_ID
+            }),
+            {
+                rejectionsInWindow: 2,
+                provider: {
+                    id: HT_ID,
+                    ownerUserId: OWNER_ID,
+                    revokedAt: null,
+                    deletedAt: null,
+                    declarationSuspendedAt: new Date('2026-08-01T00:00:00Z'),
+                    declarationSuspendedById: null,
+                    declarationSuspendReason: 'Automática'
+                }
+            }
+        );
+
+        await service.undoRejection({ usageId: USAGE_ID }, actorOf(HOST_ID));
+
+        expect(hostTradeModel.update).not.toHaveBeenCalled();
+    });
+});
+
+describe('liftDeclarationSuspension — the admin act (AC-12)', () => {
+    const suspended = () => ({
+        id: HT_ID,
+        ownerUserId: OWNER_ID,
+        revokedAt: null,
+        deletedAt: null,
+        declarationSuspendedAt: new Date('2026-08-01T00:00:00Z'),
+        declarationSuspendedById: null,
+        declarationSuspendReason: 'Automática: 3 rechazos'
+    });
+
+    it('refuses an actor without HOST_TRADE_USAGE_MANAGE', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage(), { provider: suspended() });
+
+        const result = await service.liftDeclarationSuspension(
+            { hostTradeId: HT_ID },
+            actorOf(OWNER_ID)
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(hostTradeModel.update).not.toHaveBeenCalled();
+    });
+
+    it('clears the whole trio so the provider can declare again', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage(), { provider: suspended() });
+
+        const result = await service.liftDeclarationSuspension(
+            { hostTradeId: HT_ID },
+            adminActor()
+        );
+
+        expect(result.error).toBeUndefined();
+        const data = providerPatch(hostTradeModel);
+        expect(data.declarationSuspendedAt).toBeNull();
+        expect(data.declarationSuspendedById).toBeNull();
+        expect(data.declarationSuspendReason).toBeNull();
+    });
+
+    /** AC-12 — "queda registrado quién la levantó". */
+    it('records the admin who lifted it', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage(), { provider: suspended() });
+
+        await service.liftDeclarationSuspension({ hostTradeId: HT_ID }, adminActor());
+
+        expect(providerPatch(hostTradeModel).updatedById).toBe(ADMIN_ID);
+    });
+
+    it('answers NOT_FOUND for a listing that does not exist', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage(), { provider: null });
+
+        const result = await service.liftDeclarationSuspension(
+            { hostTradeId: HT_ID },
+            adminActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(hostTradeModel.update).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Lifting a suspension that is not there is the outcome the admin wanted, so
+     * it succeeds without writing. An error here would make a double-click on
+     * the admin screen look like a failure.
+     */
+    it('is a no-op when the provider is not suspended', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage());
+
+        const result = await service.liftDeclarationSuspension(
+            { hostTradeId: HT_ID },
+            adminActor()
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(hostTradeModel.update).not.toHaveBeenCalled();
     });
 });
