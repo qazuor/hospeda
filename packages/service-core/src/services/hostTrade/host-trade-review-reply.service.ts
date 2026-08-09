@@ -61,6 +61,13 @@ const createReplyInputSchema = z.object({
     content: HostTradeReviewReplyContentSchema
 });
 
+/** Input for {@link HostTradeReviewReplyService.moderateReply}. */
+const moderateReplyInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    decision: z.enum([ModerationStatusEnum.APPROVED, ModerationStatusEnum.REJECTED]),
+    reason: z.string().max(1000).optional()
+});
+
 /** Input for {@link HostTradeReviewReplyService.updateReply}. */
 const updateReplyInputSchema = z.object({
     replyId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -308,6 +315,100 @@ export class HostTradeReviewReplyService extends BaseCrudService<
                 );
 
                 return { reply: updated as HostTradeReviewReply };
+            }
+        });
+    }
+
+    // --- Admin moderation (T-028) -----------------------------------------
+
+    /**
+     * Approves or rejects a reply.
+     *
+     * Unlike {@link HostTradeReviewService.moderateReview}, this does NOT
+     * re-aggregate the listing: a reply is not counted anywhere. The five
+     * denormalised columns aggregate usages and reviews, so recomputing here
+     * would be three queries that cannot change a number.
+     *
+     * This is the queue that actually blocks publication — a PENDING review is
+     * already public, a PENDING reply is a provider waiting to be allowed to
+     * answer a complaint about him.
+     *
+     * @param input.id - The reply to moderate.
+     * @param input.decision - `APPROVED` or `REJECTED`.
+     * @param input.reason - Why. Cleared when absent, so an approval does not
+     *   keep the reason that justified a previous rejection.
+     * @param input.actor - Must hold `HOST_TRADE_REVIEW_MODERATE`.
+     * @param ctx - Optional service context.
+     * @returns The moderated reply.
+     */
+    public async moderateReply(
+        input: {
+            readonly id: string;
+            readonly decision: ModerationStatusEnum.APPROVED | ModerationStatusEnum.REJECTED;
+            readonly reason?: string;
+            readonly actor: Actor;
+        },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ reply: HostTradeReviewReply }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'moderateReply',
+            input,
+            schema: moderateReplyInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                checkCanModerateHostTradeReviews(validatedActor);
+
+                const existing = await this.model.findById(validated.id, ctx?.tx);
+                if (!existing || existing.deletedAt) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Reply not found: ${validated.id}`
+                    );
+                }
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    {
+                        moderationState: validated.decision,
+                        moderatedById: validatedActor.id,
+                        moderatedAt: new Date(),
+                        moderationReason: validated.reason ?? null
+                    } as unknown as Partial<HostTradeReviewReply>,
+                    ctx?.tx
+                );
+
+                return { reply: updated as HostTradeReviewReply };
+            }
+        });
+    }
+
+    /**
+     * How many replies are waiting for a human, for the admin badge.
+     *
+     * The badge must read this AND
+     * {@link HostTradeReviewService.getPendingCount} — a badge that counted
+     * only reviews would hide the one queue whose backlog keeps providers
+     * silenced.
+     *
+     * @param input.actor - Must hold `HOST_TRADE_REVIEW_MODERATE`.
+     * @param ctx - Optional service context.
+     */
+    public async getPendingCount(
+        input: { readonly actor: Actor },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<CountResponse>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getPendingCount',
+            input,
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor) => {
+                checkCanModerateHostTradeReviews(validatedActor);
+                const count = await this.model.count(
+                    { moderationState: ModerationStatusEnum.PENDING, deletedAt: null },
+                    { tx: ctx?.tx }
+                );
+                return { count };
             }
         });
     }

@@ -7,8 +7,20 @@
  * to PENDING and wipes the decision that approved the previous text.
  */
 import type { HostTradeModel, HostTradeReviewModel, HostTradeReviewReplyModel } from '@repo/db';
-import { ModerationStatusEnum, ServiceErrorCode } from '@repo/schemas';
+import { ModerationStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../../src/services/hostTrade/host-trade-aggregates', () => ({
+    recalculateHostTradeAggregates: vi.fn(async () => ({
+        aggregates: {
+            confirmedUsesCount: 0,
+            distinctHostsCount: 0,
+            reviewsCount: 0,
+            averageRating: 0,
+            benefitRespectedCount: 0
+        }
+    }))
+}));
 
 vi.mock('@repo/content-moderation', () => ({
     moderateText: vi.fn(async () => ({ score: 0 }))
@@ -24,6 +36,7 @@ vi.mock('../../../src/services/contentModeration/get-threshold-for-context.js', 
 }));
 
 import { moderateText } from '@repo/content-moderation';
+import { recalculateHostTradeAggregates } from '../../../src/services/hostTrade/host-trade-aggregates';
 import { HostTradeReviewReplyService } from '../../../src/services/hostTrade/host-trade-review-reply.service';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
 import { getMockId } from '../../factories/utilsFactory';
@@ -360,5 +373,104 @@ describe('HostTradeReviewReplyService.updateReply', () => {
 
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         expect(model.update).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Admin moderation (T-028)
+// ---------------------------------------------------------------------------
+
+const MODERATOR_ID = getMockId('user', 'reply-moderator');
+
+const moderatorActor = () =>
+    new ActorFactoryBuilder()
+        .withId(MODERATOR_ID)
+        .withPermissions([PermissionEnum.HOST_TRADE_REVIEW_MODERATE])
+        .build();
+
+describe('HostTradeReviewReplyService.moderateReply', () => {
+    it('refuses an actor without HOST_TRADE_REVIEW_MODERATE', async () => {
+        const { service, model } = buildService();
+
+        const result = await service.moderateReply({
+            id: REPLY_ID,
+            decision: ModerationStatusEnum.APPROVED,
+            actor: ownerActor()
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    it('answers NOT_FOUND for a reply that does not exist', async () => {
+        const { service, model } = buildService({ reply: null });
+
+        const result = await service.moderateReply({
+            id: REPLY_ID,
+            decision: ModerationStatusEnum.APPROVED,
+            actor: moderatorActor()
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    it('stamps the decision, the moderator, the time and the reason', async () => {
+        const { service, model } = buildService();
+
+        await service.moderateReply({
+            id: REPLY_ID,
+            decision: ModerationStatusEnum.REJECTED,
+            reason: 'Menciona la dirección del anfitrión',
+            actor: moderatorActor()
+        });
+
+        const [where, data] = (model.update as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0] as [Record<string, unknown>, Record<string, unknown>];
+        expect(where).toEqual({ id: REPLY_ID });
+        expect(data.moderationState).toBe(ModerationStatusEnum.REJECTED);
+        expect(data.moderatedById).toBe(MODERATOR_ID);
+        expect(data.moderatedAt).toBeInstanceOf(Date);
+        expect(data.moderationReason).toBe('Menciona la dirección del anfitrión');
+    });
+
+    /**
+     * A reply is not counted anywhere: the five denormalised columns aggregate
+     * usages and reviews only. Recomputing here would be three queries that
+     * cannot change a number.
+     */
+    it('does not touch the listing aggregates', async () => {
+        const { service } = buildService();
+
+        await service.moderateReply({
+            id: REPLY_ID,
+            decision: ModerationStatusEnum.APPROVED,
+            actor: moderatorActor()
+        });
+
+        expect(recalculateHostTradeAggregates).not.toHaveBeenCalled();
+    });
+});
+
+describe('HostTradeReviewReplyService.getPendingCount', () => {
+    it('refuses an actor without HOST_TRADE_REVIEW_MODERATE', async () => {
+        const { service } = buildService();
+
+        const result = await service.getPendingCount({ actor: ownerActor() });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+    });
+
+    it('counts only PENDING, non-deleted replies', async () => {
+        const { service, model } = buildService();
+        model.count = vi.fn(async () => 3);
+
+        const result = await service.getPendingCount({ actor: moderatorActor() });
+
+        expect(result.data?.count).toBe(3);
+        expect(model.count).toHaveBeenCalledWith(
+            { moderationState: ModerationStatusEnum.PENDING, deletedAt: null },
+            expect.anything()
+        );
     });
 });

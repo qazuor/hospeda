@@ -367,3 +367,167 @@ describe('aggregate recalculation', () => {
         expect(recalculateHostTradeAggregates).not.toHaveBeenCalled();
     });
 });
+
+// ---------------------------------------------------------------------------
+// Admin moderation (T-028)
+// ---------------------------------------------------------------------------
+
+const MODERATOR_ID = getMockId('user', 'rev-moderator');
+const REVIEW_ID = getMockId('feature', 'moderated-review');
+
+const moderatorActor = () =>
+    new ActorFactoryBuilder()
+        .withId(MODERATOR_ID)
+        .withPermissions([PermissionEnum.HOST_TRADE_REVIEW_MODERATE])
+        .build();
+
+/** A stub transaction, so the service joins it instead of opening its own. */
+const txCtx = () => ({ tx: {} as never });
+
+function buildModerationService(review: Record<string, unknown> | null = null) {
+    const model = createModelMock();
+    model.findById = vi.fn(async () =>
+        review === null ? { id: REVIEW_ID, hostTradeId: HT_ID, deletedAt: null } : review
+    );
+    model.update = vi.fn(async (_where: unknown, data: Record<string, unknown>) => ({
+        id: REVIEW_ID,
+        hostTradeId: HT_ID,
+        ...data
+    }));
+    model.count = vi.fn(async () => 7);
+
+    const service = new HostTradeReviewService(
+        { logger: mockLogger },
+        model as unknown as HostTradeReviewModel,
+        createModelMock() as unknown as HostTradeModel,
+        createModelMock() as unknown as HostTradeBenefitUsageModel
+    );
+
+    return { service, model };
+}
+
+describe('HostTradeReviewService.moderateReview', () => {
+    /**
+     * Both refusals THROW rather than returning an error envelope, because
+     * these calls carry a caller transaction. That is the base service's
+     * contract (`base.service.ts`: `if (ctx?.tx) throw error`) and it is the
+     * right one — swallowing the error into `{ error }` would let the caller's
+     * transaction commit around a decision that never happened.
+     */
+    it('refuses an actor without HOST_TRADE_REVIEW_MODERATE', async () => {
+        const { service, model } = buildModerationService();
+
+        await expect(
+            service.moderateReview(
+                { id: REVIEW_ID, decision: ModerationStatusEnum.REJECTED, actor: hostActor() },
+                txCtx()
+            )
+        ).rejects.toMatchObject({ code: ServiceErrorCode.FORBIDDEN });
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    it('answers NOT_FOUND for a review that does not exist', async () => {
+        const { service, model } = buildModerationService(null as never);
+        model.findById = vi.fn(async () => null);
+
+        await expect(
+            service.moderateReview(
+                { id: REVIEW_ID, decision: ModerationStatusEnum.APPROVED, actor: moderatorActor() },
+                txCtx()
+            )
+        ).rejects.toMatchObject({ code: ServiceErrorCode.NOT_FOUND });
+        expect(model.update).not.toHaveBeenCalled();
+    });
+
+    it('stamps the decision, the moderator, the time and the reason', async () => {
+        const { service, model } = buildModerationService();
+
+        await service.moderateReview(
+            {
+                id: REVIEW_ID,
+                decision: ModerationStatusEnum.REJECTED,
+                reason: 'Menciona datos personales',
+                actor: moderatorActor()
+            },
+            txCtx()
+        );
+
+        const [where, data] = (model.update as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0] as [Record<string, unknown>, Record<string, unknown>];
+        expect(where).toEqual({ id: REVIEW_ID });
+        expect(data.moderationState).toBe(ModerationStatusEnum.REJECTED);
+        expect(data.moderatedById).toBe(MODERATOR_ID);
+        expect(data.moderatedAt).toBeInstanceOf(Date);
+        expect(data.moderationReason).toBe('Menciona datos personales');
+    });
+
+    it('clears a stale reason when the decision carries none', async () => {
+        const { service, model } = buildModerationService();
+
+        await service.moderateReview(
+            { id: REVIEW_ID, decision: ModerationStatusEnum.APPROVED, actor: moderatorActor() },
+            txCtx()
+        );
+
+        const data = (model.update as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0]?.[1] as Record<string, unknown>;
+        expect(data.moderationReason).toBeNull();
+    });
+
+    /** AC-27 — a review leaving APPROVED has to leave the average with it. */
+    it('recalculates the listing aggregates after the decision', async () => {
+        const { service } = buildModerationService();
+
+        await service.moderateReview(
+            { id: REVIEW_ID, decision: ModerationStatusEnum.REJECTED, actor: moderatorActor() },
+            txCtx()
+        );
+
+        expect(recalculateHostTradeAggregates).toHaveBeenCalledWith(
+            expect.objectContaining({ hostTradeId: HT_ID })
+        );
+    });
+
+    /**
+     * The decision and the recount are ONE unit of work. Unlike the
+     * accommodation precedent — whose recount is bundled with a cache
+     * revalidation that cannot be rolled back — this one is pure SQL in the
+     * same database, so there is no reason to let it fail silently and leave a
+     * rejected review inside the public average.
+     */
+    it('runs the recount inside the caller’s transaction', async () => {
+        const ctx = txCtx();
+        const { service } = buildModerationService();
+
+        await service.moderateReview(
+            { id: REVIEW_ID, decision: ModerationStatusEnum.REJECTED, actor: moderatorActor() },
+            ctx
+        );
+
+        expect(recalculateHostTradeAggregates).toHaveBeenCalledWith(
+            expect.objectContaining({ tx: ctx.tx })
+        );
+    });
+});
+
+describe('HostTradeReviewService.getPendingCount', () => {
+    it('refuses an actor without HOST_TRADE_REVIEW_MODERATE', async () => {
+        const { service } = buildModerationService();
+
+        const result = await service.getPendingCount({ actor: hostActor() });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+    });
+
+    it('counts only PENDING, non-deleted reviews', async () => {
+        const { service, model } = buildModerationService();
+
+        const result = await service.getPendingCount({ actor: moderatorActor() });
+
+        expect(result.data?.count).toBe(7);
+        expect(model.count).toHaveBeenCalledWith(
+            { moderationState: ModerationStatusEnum.PENDING, deletedAt: null },
+            expect.anything()
+        );
+    });
+});

@@ -5,6 +5,7 @@ import {
     HostTradeReviewAdminSearchSchema,
     HostTradeReviewCreateInputSchema,
     HostTradeReviewUpdateInputSchema,
+    ModerationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import { z } from 'zod';
@@ -17,6 +18,7 @@ import type {
     ServiceOutput
 } from '../../types';
 import { ServiceError } from '../../types';
+import { withServiceTransaction } from '../../utils/transaction';
 import { getThresholdForContext } from '../contentModeration/get-threshold-for-context';
 import { resolveInitialModerationState } from '../moderation/review-moderation.helpers';
 import { recalculateHostTradeAggregates } from './host-trade-aggregates';
@@ -50,6 +52,13 @@ const createReviewInputSchema = z.object({
         .nullish(),
     respectedBenefit: z.boolean(),
     content: z.string().min(10).max(2000).nullish()
+});
+
+/** Input for {@link HostTradeReviewService.moderateReview}. */
+const moderateReviewInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    decision: z.enum([ModerationStatusEnum.APPROVED, ModerationStatusEnum.REJECTED]),
+    reason: z.string().max(1000).optional()
 });
 
 /**
@@ -270,6 +279,112 @@ export class HostTradeReviewService extends BaseCrudService<
         if (hostTradeId) {
             await recalculateHostTradeAggregates({ hostTradeId, tx: ctx?.tx });
         }
+    }
+
+    // --- Admin moderation (T-028) -----------------------------------------
+
+    /**
+     * Approves or rejects a review, and re-aggregates the listing (AC-27).
+     *
+     * The decision and the recount are ONE unit of work, which is a deliberate
+     * divergence from `AccommodationReviewService.moderateReview`. That one
+     * recounts on a best-effort basis because its recalculation is bundled with
+     * a cache revalidation that cannot be rolled back. This recount is pure SQL
+     * in the same database, so there is nothing to protect: letting it fail
+     * quietly would leave a REJECTED review inside the public average, and the
+     * only thing worse than a wrong number is a wrong number nobody can see.
+     *
+     * `lifecycleState` is untouched — moderation and lifecycle are orthogonal.
+     *
+     * @param input.id - The review to moderate.
+     * @param input.decision - `APPROVED` or `REJECTED`.
+     * @param input.reason - Why. Cleared when absent, so a re-approval does not
+     *   keep the reason that justified a previous rejection.
+     * @param input.actor - Must hold `HOST_TRADE_REVIEW_MODERATE`.
+     * @param ctx - Optional service context. Its transaction is joined when
+     *   present; otherwise one is opened for the pair.
+     * @returns The moderated review.
+     */
+    public async moderateReview(
+        input: {
+            readonly id: string;
+            readonly decision: ModerationStatusEnum.APPROVED | ModerationStatusEnum.REJECTED;
+            readonly reason?: string;
+            readonly actor: Actor;
+        },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ review: HostTradeReview }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'moderateReview',
+            input,
+            schema: moderateReviewInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                checkCanModerateHostTradeReviews(validatedActor);
+
+                const run = async (execCtx: ServiceContext) => {
+                    const existing = await this.model.findById(validated.id, execCtx.tx);
+                    if (!existing) {
+                        throw new ServiceError(
+                            ServiceErrorCode.NOT_FOUND,
+                            `Review not found: ${validated.id}`
+                        );
+                    }
+
+                    const updated = await this.model.update(
+                        { id: validated.id },
+                        {
+                            moderationState: validated.decision,
+                            moderatedById: validatedActor.id,
+                            moderatedAt: new Date(),
+                            moderationReason: validated.reason ?? null
+                        } as unknown as Partial<HostTradeReview>,
+                        execCtx.tx
+                    );
+
+                    await recalculateHostTradeAggregates({
+                        hostTradeId: existing.hostTradeId,
+                        tx: execCtx.tx
+                    });
+
+                    return { review: updated as HostTradeReview };
+                };
+
+                return ctx?.tx ? run(ctx) : withServiceTransaction(run);
+            }
+        });
+    }
+
+    /**
+     * How many reviews are waiting for a human, for the admin badge.
+     *
+     * Reviews are born APPROVED, so this queue is a BACKLOG, not a gate: a
+     * non-zero count means texts that `moderateText()` flagged are already
+     * public and waiting to be looked at. The reply queue is the blocking one —
+     * see `HostTradeReviewReplyService.getPendingCount`, which the badge must
+     * also read.
+     *
+     * @param input.actor - Must hold `HOST_TRADE_REVIEW_MODERATE`.
+     * @param ctx - Optional service context.
+     */
+    public async getPendingCount(
+        input: { readonly actor: Actor },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<CountResponse>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getPendingCount',
+            input,
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor) => {
+                checkCanModerateHostTradeReviews(validatedActor);
+                const count = await this.model.count(
+                    { moderationState: ModerationStatusEnum.PENDING, deletedAt: null },
+                    { tx: ctx?.tx }
+                );
+                return { count };
+            }
+        });
     }
 
     // --- Creation ---------------------------------------------------------
