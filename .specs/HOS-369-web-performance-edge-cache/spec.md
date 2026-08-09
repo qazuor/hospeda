@@ -989,6 +989,43 @@ policy is in force. This is where the GPTBot decision (§11 D-3) is actually
 expressed. Add a guard test asserting no user-agent appears in two groups with
 conflicting root rules.
 
+**WA-1 – WA-4 status confirmed 2026-08-09.** WA-5 already reported that Wave A
+worked, but the four tasks it measures were never individually marked, so this
+records where each one actually landed:
+
+- **WA-1 DONE** — `pages/robots.txt.ts:167` emits `buildFacetDisallowDirectives()`
+  from `lib/filters/facet-crawl-policy.ts`, key-scoped as the task required.
+- **WA-2 DONE** — `shouldNofollowFacetHref` is applied in
+  `components/shared/ui/FilterChips.astro:132` and, for the POI chips, in
+  `components/destination/DestinationPOIFilter.client.tsx:224` and `:245`, with
+  its own suite at `test/lib/filters/facet-crawl-policy.test.ts`. Searching the
+  chip components for the literal string `nofollow` finds nothing — the value is
+  produced by the helper — so do not conclude from a grep that this is missing.
+- **WA-4 DONE** — `test/pages/robots-txt.test.ts`.
+- **WA-3 VERIFIED, and its premise is wrong: do NOT wire the predicate.**
+
+WA-3 suspected the destination detail page "may not be wired into"
+`resolveFacetSeoDecision` and implied it should be. It is not wired — and it
+should stay that way. Measured on staging:
+
+| URL | canonical | robots |
+|---|---|---|
+| `/es/destinos/colon/` | `…/es/destinos/colon/` | `index,follow` |
+| `…/colon/?categories=GASTRONOMY` | `…/es/destinos/colon/` | `index,follow` |
+| `…/colon/?categories=GASTRONOMY,CULTURE` | `…/es/destinos/colon/` | `index,follow` |
+| control `/es/alojamientos/?types=HOTEL,CABIN` | `…/es/alojamientos/` | `noindex,follow` |
+
+The canonical WA-3 asks for **is** emitted, on every facet combination. What the
+page does not do is apply the listings' 2+-value `noindex`, and applying it
+would be a defect: on a listing a facet URL renders genuinely different content
+(the filter runs server-side), whereas on the destination detail the parameter
+is client-side-only shareability and changes nothing in the response. Verified
+byte-for-byte — `/es/destinos/colon/` and the same URL with
+`?categories=GASTRONOMY,CULTURE` differ by **2 bytes**, and the diff is the
+`astro-island` `prefix` counter (`r163` vs `r183`), not content. Marking a page
+`noindex` because of a parameter that never changed its output would drop a real
+indexable destination page out of the index.
+
 **WA-5 — Measure the effect before doing anything else. DONE 2026-08-03 — Wave A worked; C stays rejected.**
 Re-read AI Crawl Control after 48–72 h (crawlers must re-read `robots.txt` and
 drain their queues). Record the new per-crawler numbers against the §5.9
@@ -1061,6 +1098,50 @@ non-regression half of W0-2/W0-3. Follow the existing static-guard conventions
 in `apps/api/test/routes/isverified-badge-gate.guard.test.ts` — discovery by
 symbol reference, explicit non-vacuity check, and a documented statement of
 what the guard does **not** cover.
+
+**W0-3 ANSWERED, W0-4 DONE (2026-08-09) — but at the import boundary, not on
+the chunk. Owner decision.**
+
+*W0-3 — how `@repo/config` entered the client graph.* No `ANALYZE=1` run was
+needed: HOS-360 had already traced and measured the exact chain. The registry
+rode in through **`@repo/billing`'s barrel**, which re-exports it; the barrel
+was reachable from `MobileMenu.client.tsx`, which imported `EntitlementKey` for
+an entitlement-gated host CTA. Measured on the then-live chunk
+`_astro/MobileMenu.client.BFcCCpWR.js`: `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN`, its
+`howToObtain` text and the Redis/BullMQ/cron entries, all present, none
+tree-shakeable (neither `@repo/logger` nor `@repo/billing` declares
+`sideEffects: false`). So W0-2 was **not** a coincidence — it shipped HOS-311's
+revert of that CTA, which removed the import as collateral.
+
+*W0-4 — the guard.* Three options were weighed (extend the import guard; scan
+the built output; reword the criterion). The owner chose to **extend the
+existing HOS-360 detector**: `FORBIDDEN_PACKAGE` became `FORBIDDEN_PACKAGES`
+with `@repo/config` added (PR #2720).
+
+**The deviation from W0-4 as written, and why it is the right trade.** The task
+asks for a guard on the built chunk; this one asserts at the import boundary.
+The reason is where it runs: CI executes `Build` and `Unit Tests` as separate
+jobs, so a chunk scanner needs a new pipeline step wired after `Build` and can
+never be part of `pnpm test` locally — an enforcement point that is easy to let
+rot. The import guard runs in the fast lane on every PR and reuses machinery
+already proven non-vacuous.
+
+**What that costs, stated plainly**: a leak arriving by a route other than
+`@repo/billing` or `@repo/config` — a bare-specifier hop through another
+workspace package, say — is not covered. The detector's own header documents
+that blind spot.
+
+**Empirical baseline** (staging, 2026-08-09, before the guard landed): 51
+production client chunks across 7 pages, 1.24 MB of JS, **zero** occurrences of
+`exampleValue`, `howToObtain` or `HOSPEDA_`. The guard holds a property that is
+already true rather than fixing a live leak.
+
+**Non-vacuity**: the synthetic form matrix is parametrised over
+`FORBIDDEN_PACKAGES` (15 runtime × 4 erased forms per package), and a planted
+runtime `@repo/config` import in `MobileMenu.client.tsx` turns the corpus walk
+red. 78/78 on the file, 253/253 across all 17 static-guard files.
+
+**W0-2 remains open** — it is a promotion action, not implementation work.
 
 ### 6.3 Wave B0 — make the origin cacheable (Rev 3, new)
 
@@ -1489,25 +1570,58 @@ the page.
   window the same URLs reported ages of 44–55 and then 265–267, so `age` alone
   is not an eviction signal.
 
-**AC-6 — write-side still OPEN, blocked on
-[HOS-422](https://linear.app/hospeda-beta/issue/HOS-422).** The purge half is
+**AC-6 — write-side CLOSED, and it found a defect:
+[HOS-424](https://linear.app/hospeda-beta/issue/HOS-424).** The purge half is
 verified (see W1-3). The remaining half — that a real content write makes the
-service emit the tags — could not be closed: **the admin event form cannot save
-at all**, returning a silent 400, which is HOS-422 and unrelated to this spec.
+service emit the tags — is now measured, and **it does not**: a real content
+edit purges the collection tag but leaves the entity's own detail page cached
+and stale in all three locales. Filed as HOS-424, High.
+
+Measured on a post, because **the admin event form cannot save at all** — a
+silent 400, which is [HOS-422](https://linear.app/hospeda-beta/issue/HOS-422)
+and unrelated to this spec. Changed the `summary` of
+`concepcion-del-uruguay-historia-rio-naturaleza` (209 → 208 chars):
+
+| URL | before | after |
+|---|---|---|
+| `/es/publicaciones/<slug>/` | `HIT` age 10 | **`HIT` age 19 — not evicted, old text** |
+| `/en/…` | `HIT` age 9 | **`HIT` age 18 — not evicted** |
+| `/pt/…` | `HIT` age 9 | **`HIT` age 18 — not evicted** |
+| `/es/publicaciones/` | `HIT` age 19 | **`MISS` — evicted** |
+| control `/es/alojamientos/` | `HIT` age 9 | `HIT` age 18 |
+| control `/es/eventos/` | `HIT` age 9 | `HIT` age 18 |
+
+The ages advanced exactly with wall clock (74 s elapsed, +9 on the ages), which
+is the proof the cached object was never re-fetched.
+
+**Two explanations are ruled out.** The tags are not wrong: a manual purge of
+`preview:post-<slug>` + `preview:post-<id>` returns `{"ok":true,"purged":2}` and
+evicts all three locales instantly. And it is not the no-op artefact that made
+the first attempt inconclusive — that run sent an identical payload, this one
+changed content, same result.
+
+The mapper is not at fault either: `entity-tag-mapper.ts:125-136` adds the
+entity tags for `post`. The pattern — collection purged, entity not — is exactly
+what a revalidation event reaching the mapper **without `slug` or `id`** would
+produce, since `buildEntityCacheTags` would then return nothing while
+`CACHE_TAG_COLLECTIONS.post` and `CACHE_TAG_HOME` survive. The cheap
+discriminator, not run: check whether `preview:home` IS purged by the same write.
 
 Established on a post instead: the detail emits
 `preview:all,preview:post-<slug>,preview:post-<id>` and the list emits
 `preview:all,preview:list-post`; a manual purge of the two entity tags returns
 `{"ok":true,"purged":2}` and flips all three locales to `MISS` immediately, so
-**the tags work end to end**. What is *not* established is the write itself: on
-one trial, after a successful admin post save, the list went `MISS` while the
-three detail locales stayed `HIT` on a pre-write copy. That trial is not
-conclusive — the payload was byte-identical (a no-op save, only `updatedAt`
-moved), so a service that diffs could be skipping the entity purge legitimately.
-**The one remaining step** is a real content change on a post, re-reading the
-three locales within ~10 s. Do not warm every probe URL together: `s-maxage` is
-300 s, so a synchronised warm-up expires them all at once and contaminates the
-measurement window.
+**the tags work end to end**. The write itself is the defect — confirmed on a
+second run with a real content change and filed as HOS-424; see the AC-6 block
+above for the measurements.
+
+Measurement protocol, since this is easy to get wrong: bring the three detail
+locales, the list and two unrelated controls to `HIT` with a SMALL `age` via a
+retrying fetch loop, then write, then re-read within ~10-20 s. **Do not warm
+every probe URL together and wait** — `s-maxage` is 300 s, so a synchronised
+warm-up expires them all at once and contaminates the window, which is exactly
+what invalidated the first attempt. Compare each URL against its own baseline,
+never against another URL: Cloudflare's `age` varies per edge node.
 
 **W1-4 — Redirect Rules at the edge. DONE, narrowed to one rule (2026-08-04,
 staging only).** Versioned at
@@ -2403,8 +2517,16 @@ Wave B onward:
 - **AC-8** (rewritten 2026-08-05, owner decision) — **The home meets Lighthouse's
   "good" thresholds on mobile: `LCP ≤ 2,500 ms` and `TBT ≤ 200 ms`**, measured
   cold against staging. Not met today: the cold profile in §6.6 measures
-  **LCP ≈ 15,266 ms**. **HOS-369 does not close until it is.**
+  **LCP ≈ 15,266 ms**. ~~**HOS-369 does not close until it is.**~~
 
+  > **SPLIT OUT 2026-08-09, owner decision. This criterion no longer blocks
+  > HOS-369.** The cache lane is finished and the performance gain is already
+  > substantial (cold LCP 15,266 → 2,693 ms); what remains of LCP/TBT moves to
+  > **[HOS-423](https://linear.app/hospeda-beta/issue/HOS-423)**, which inherits
+  > this criterion verbatim along with every measurement and lever recorded
+  > below. Read the rest of AC-8 as the handover document it now is, not as a
+  > gate on this spec.
+  >
   > **Re-measured 2026-08-09, after the #2705 revert was deployed. Still NOT
   > met, but by 193 ms instead of 12,766.** Cold-cache recipe exactly as
   > prescribed below, 3 runs, each in its own fresh `isolatedContext`:
