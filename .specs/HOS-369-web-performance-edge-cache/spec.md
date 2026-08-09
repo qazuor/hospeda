@@ -989,6 +989,43 @@ policy is in force. This is where the GPTBot decision (§11 D-3) is actually
 expressed. Add a guard test asserting no user-agent appears in two groups with
 conflicting root rules.
 
+**WA-1 – WA-4 status confirmed 2026-08-09.** WA-5 already reported that Wave A
+worked, but the four tasks it measures were never individually marked, so this
+records where each one actually landed:
+
+- **WA-1 DONE** — `pages/robots.txt.ts:167` emits `buildFacetDisallowDirectives()`
+  from `lib/filters/facet-crawl-policy.ts`, key-scoped as the task required.
+- **WA-2 DONE** — `shouldNofollowFacetHref` is applied in
+  `components/shared/ui/FilterChips.astro:132` and, for the POI chips, in
+  `components/destination/DestinationPOIFilter.client.tsx:224` and `:245`, with
+  its own suite at `test/lib/filters/facet-crawl-policy.test.ts`. Searching the
+  chip components for the literal string `nofollow` finds nothing — the value is
+  produced by the helper — so do not conclude from a grep that this is missing.
+- **WA-4 DONE** — `test/pages/robots-txt.test.ts`.
+- **WA-3 VERIFIED, and its premise is wrong: do NOT wire the predicate.**
+
+WA-3 suspected the destination detail page "may not be wired into"
+`resolveFacetSeoDecision` and implied it should be. It is not wired — and it
+should stay that way. Measured on staging:
+
+| URL | canonical | robots |
+|---|---|---|
+| `/es/destinos/colon/` | `…/es/destinos/colon/` | `index,follow` |
+| `…/colon/?categories=GASTRONOMY` | `…/es/destinos/colon/` | `index,follow` |
+| `…/colon/?categories=GASTRONOMY,CULTURE` | `…/es/destinos/colon/` | `index,follow` |
+| control `/es/alojamientos/?types=HOTEL,CABIN` | `…/es/alojamientos/` | `noindex,follow` |
+
+The canonical WA-3 asks for **is** emitted, on every facet combination. What the
+page does not do is apply the listings' 2+-value `noindex`, and applying it
+would be a defect: on a listing a facet URL renders genuinely different content
+(the filter runs server-side), whereas on the destination detail the parameter
+is client-side-only shareability and changes nothing in the response. Verified
+byte-for-byte — `/es/destinos/colon/` and the same URL with
+`?categories=GASTRONOMY,CULTURE` differ by **2 bytes**, and the diff is the
+`astro-island` `prefix` counter (`r163` vs `r183`), not content. Marking a page
+`noindex` because of a parameter that never changed its output would drop a real
+indexable destination page out of the index.
+
 **WA-5 — Measure the effect before doing anything else. DONE 2026-08-03 — Wave A worked; C stays rejected.**
 Re-read AI Crawl Control after 48–72 h (crawlers must re-read `robots.txt` and
 drain their queues). Record the new per-crawler numbers against the §5.9
@@ -1061,6 +1098,50 @@ non-regression half of W0-2/W0-3. Follow the existing static-guard conventions
 in `apps/api/test/routes/isverified-badge-gate.guard.test.ts` — discovery by
 symbol reference, explicit non-vacuity check, and a documented statement of
 what the guard does **not** cover.
+
+**W0-3 ANSWERED, W0-4 DONE (2026-08-09) — but at the import boundary, not on
+the chunk. Owner decision.**
+
+*W0-3 — how `@repo/config` entered the client graph.* No `ANALYZE=1` run was
+needed: HOS-360 had already traced and measured the exact chain. The registry
+rode in through **`@repo/billing`'s barrel**, which re-exports it; the barrel
+was reachable from `MobileMenu.client.tsx`, which imported `EntitlementKey` for
+an entitlement-gated host CTA. Measured on the then-live chunk
+`_astro/MobileMenu.client.BFcCCpWR.js`: `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN`, its
+`howToObtain` text and the Redis/BullMQ/cron entries, all present, none
+tree-shakeable (neither `@repo/logger` nor `@repo/billing` declares
+`sideEffects: false`). So W0-2 was **not** a coincidence — it shipped HOS-311's
+revert of that CTA, which removed the import as collateral.
+
+*W0-4 — the guard.* Three options were weighed (extend the import guard; scan
+the built output; reword the criterion). The owner chose to **extend the
+existing HOS-360 detector**: `FORBIDDEN_PACKAGE` became `FORBIDDEN_PACKAGES`
+with `@repo/config` added (PR #2720).
+
+**The deviation from W0-4 as written, and why it is the right trade.** The task
+asks for a guard on the built chunk; this one asserts at the import boundary.
+The reason is where it runs: CI executes `Build` and `Unit Tests` as separate
+jobs, so a chunk scanner needs a new pipeline step wired after `Build` and can
+never be part of `pnpm test` locally — an enforcement point that is easy to let
+rot. The import guard runs in the fast lane on every PR and reuses machinery
+already proven non-vacuous.
+
+**What that costs, stated plainly**: a leak arriving by a route other than
+`@repo/billing` or `@repo/config` — a bare-specifier hop through another
+workspace package, say — is not covered. The detector's own header documents
+that blind spot.
+
+**Empirical baseline** (staging, 2026-08-09, before the guard landed): 51
+production client chunks across 7 pages, 1.24 MB of JS, **zero** occurrences of
+`exampleValue`, `howToObtain` or `HOSPEDA_`. The guard holds a property that is
+already true rather than fixing a live leak.
+
+**Non-vacuity**: the synthetic form matrix is parametrised over
+`FORBIDDEN_PACKAGES` (15 runtime × 4 erased forms per package), and a planted
+runtime `@repo/config` import in `MobileMenu.client.tsx` turns the corpus walk
+red. 78/78 on the file, 253/253 across all 17 static-guard files.
+
+**W0-2 remains open** — it is a promotion action, not implementation work.
 
 ### 6.3 Wave B0 — make the origin cacheable (Rev 3, new)
 
