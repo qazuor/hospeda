@@ -1,0 +1,1175 @@
+{
+    "version": "1.0",
+    "specRef": "HOS-318",
+    "title": "Editor de alojamiento — navegación por secciones (una sección, una página)",
+    "created": "2026-08-10T03:30:00.000Z",
+    "tasks": [
+        {
+            "id": "T-001",
+            "title": "Create the editor section registry as the single source of truth",
+            "description": "Create `apps/web/src/lib/editor/accommodation-editor-sections.ts` exporting `ACCOMMODATION_EDITOR_SECTIONS`: one readonly entry per section with `id`, `slug` (URL segment), `group` ('property'|'content'|'management'), and `labelKey` (i18n). The 10 slugs are datos, capacidad-precio, ubicacion, servicios, fotos, preguntas, contacto, calendario, traducciones, reputacion. Nav, hub and breadcrumbs ALL derive from this — no section list may be written twice. Tests: `apps/web/test/lib/editor/accommodation-editor-sections.test.ts` asserting exactly 10 entries, slugs unique, every group is one of the three literals, and every entry carries a labelKey.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-007", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Define the SectionGroup and EditorSection types",
+                    "completed": false
+                },
+                {
+                    "title": "Declare the 10 entries in nav order",
+                    "completed": false
+                },
+                {
+                    "title": "Write the registry unit test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "config"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-002",
+            "title": "Add i18n keys for section groups, breadcrumbs and hub",
+            "description": "Add to `packages/i18n` (es/en/pt) the keys `host.properties.editor.group.property|content|management`, `host.properties.editor.breadcrumb.properties`, and `host.properties.editor.hub.title|subtitle`. Reuse the existing `host.properties.editor.section.*` keys as page titles — do NOT duplicate them. en/pt fall back to es until translated, per apps/web convention. Tests: the repo's existing i18n key-parity guard must stay green across the three locales.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [],
+            "blocks": ["T-005", "T-007", "T-009"],
+            "subtasks": [
+                {
+                    "title": "Add the group + breadcrumb + hub keys to es",
+                    "completed": false
+                },
+                {
+                    "title": "Mirror into en and pt",
+                    "completed": false
+                },
+                {
+                    "title": "Run the i18n parity guard",
+                    "completed": false
+                }
+            ],
+            "tags": ["i18n"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-003",
+            "title": "Extract a shared SSR data loader for the editor pages",
+            "description": "Create `apps/web/src/lib/api/accommodation-editor-data.ts` exporting `loadAccommodationEditorData({ accommodationId, cookieHeader, need })`, where `need` selects which payloads to fetch (accommodation, catalog, faqs, media, translations). It MUST use `accommodationEditApi.getById` and the existing endpoint wrappers — the current `editar.astro` calls raw `fetch()` in its frontmatter, which violates apps/web's own rule ('NEVER call fetch() directly in pages'). Replicating that block across 10 pages would multiply the debt tenfold; this is the fix. Preserves today's 404/403/410 redirect branch. Tests: `apps/web/test/lib/api/accommodation-editor-data.test.ts` with a mocked client, asserting that a `need` of only ['accommodation'] issues NO catalog request, and that 410 still yields the redirect signal.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Define the RO-RO signature and the `need` selector",
+                    "completed": false
+                },
+                {
+                    "title": "Port the fetch block onto the endpoint wrappers",
+                    "completed": false
+                },
+                {
+                    "title": "Preserve the 404/403/410 redirect branch",
+                    "completed": false
+                },
+                {
+                    "title": "Write the loader unit test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "api"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-004",
+            "title": "Extract the edit form schema into per-section slices",
+            "description": "Move `AccommodationEditFormSchema` out of `AccommodationEditor.client.tsx` into `apps/web/src/components/host/editor/accommodation-edit-form.schema.ts`, and expose one slice per form page (basics, capacityPrice, location, services, contact). Build the slices BY COMPOSITION, never with `.pick()`/`.omit()`/`.partial()` on a schema carrying `.refine()` — Zod 4 rejects that (see HOS-425). Tests: `apps/web/test/components/host/editor/accommodation-edit-form.schema.test.ts` asserting each slice accepts its own fields, rejects an out-of-range value, and that composing all slices covers exactly the fields the old schema validated.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": [],
+            "blocks": ["T-019"],
+            "subtasks": [
+                {
+                    "title": "Move the schema to its own module",
+                    "completed": false
+                },
+                {
+                    "title": "Declare the 5 slices by composition",
+                    "completed": false
+                },
+                {
+                    "title": "Assert field-coverage parity with the old schema",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "schemas"],
+            "phase": "setup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-005",
+            "title": "Build EditorRouteNav — route links grouped, active from the URL",
+            "description": "Create `apps/web/src/components/host/editor/EditorRouteNav.client.tsx`: renders the T-001 registry as grouped `<a href>` links with a `<p>` group label per group, marking the current one with `aria-current=\"page\"` derived from the URL pathname. NO IntersectionObserver — the scrollspy dies here (D-9). Decide OQ-2 in this task: a new component (recommended, leaves EventEditor/PostEditor untouched) versus a mode flag on `EditorSectionNav`. Record the decision in the file's JSDoc. Tests: `apps/web/test/components/host/editor/EditorRouteNav.test.tsx` asserting 10 links in 3 labelled groups, exactly one `aria-current=\"page\"` for a given pathname, and no observer instantiation.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-010", "T-028"],
+            "subtasks": [
+                {
+                    "title": "Resolve OQ-2 and record it in the JSDoc",
+                    "completed": false
+                },
+                {
+                    "title": "Render grouped links from the registry",
+                    "completed": false
+                },
+                {
+                    "title": "Derive the active item from the pathname",
+                    "completed": false
+                },
+                {
+                    "title": "Write the nav test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-006",
+            "title": "Style the grouped route nav",
+            "description": "Create `EditorRouteNav.module.css` reusing the 220px sticky column geometry already in `AccommodationEditor.module.css` (`.navSlot`, `top: 110px`, `min-width: 1100px` breakpoint) so desktop keeps its current shape (D-1). Add group-label styling mirroring `AccountLayout`'s `account-nav__group-label`. Tokens only — no hardcoded colors, radii or spacing. Hidden below 1100px, where the hub is the nav instead.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Port the sticky column geometry",
+                    "completed": false
+                },
+                {
+                    "title": "Style group labels after account-nav__group-label",
+                    "completed": false
+                },
+                {
+                    "title": "Verify dark mode via tokens",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "css"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-007",
+            "title": "Build the editor hub list",
+            "description": "Create `apps/web/src/components/host/editor/EditorHub.astro`: renders the T-001 registry as 3 labelled groups of rows, each row an `<a>` with icon + text label (never icon alone) + a status second line + a chevron. Shown at `/editar/` on BOTH widths (D-8). Astro component, zero JS. Status strings arrive as a prop map from T-018 — this task renders whatever it is given. Tests: `apps/web/test/components/host/editor/EditorHub.test.ts` (source-assert per apps/web convention) covering 3 group headings, 10 rows, and that every row renders text beside its icon.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-011", "T-018", "T-029"],
+            "subtasks": [
+                {
+                    "title": "Render grouped rows from the registry",
+                    "completed": false
+                },
+                {
+                    "title": "Accept the status map prop",
+                    "completed": false
+                },
+                {
+                    "title": "Write the hub source test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-008",
+            "title": "Style the hub rows for the target user",
+            "description": "Create `EditorHub.module.css` (or a scoped style block). Rows must have a minimum 44px tap target, generous line spacing, a visible focus ring, and a second line in `--core-muted-foreground`. Tokens only. Explicitly sized for an older, non-technical host: large text, no icon-only affordances, obvious tappable area. Verify at 320px width — no horizontal scroll.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-011"],
+            "subtasks": [
+                {
+                    "title": "Row layout with 44px+ tap targets",
+                    "completed": false
+                },
+                {
+                    "title": "Focus-visible ring on every row",
+                    "completed": false
+                },
+                {
+                    "title": "Check 320px with no horizontal scroll",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "css", "a11y"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-009",
+            "title": "Build the editor breadcrumbs",
+            "description": "Create `apps/web/src/components/host/editor/EditorBreadcrumbs.astro` rendering `Mis propiedades › <accommodation name> › <section>` as a `<nav aria-label>` with an ordered list, the last crumb marked `aria-current=\"page\"`. On `/editar/` the third crumb is absent. Section labels come from the T-001 registry, never hardcoded. Always visible on every editor page — the target user must never have to infer where they are. Tests: source-assert for the nav landmark, the aria-current on the last crumb, and the two-crumb hub variant.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-001", "T-002"],
+            "blocks": ["T-010"],
+            "subtasks": [
+                {
+                    "title": "Render the crumb trail from the registry",
+                    "completed": false
+                },
+                {
+                    "title": "Handle the hub (two-crumb) variant",
+                    "completed": false
+                },
+                {
+                    "title": "Write the breadcrumbs source test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "component", "a11y"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-010",
+            "title": "Build the shared EditorSectionLayout shell",
+            "description": "Create `apps/web/src/layouts/EditorSectionLayout.astro`: wraps `AccountLayout` (UNCHANGED — AC-2/D-1), renders `EditorBreadcrumbs`, the `EditorRouteNav` in the 220px column, and a `<slot />` for the section body. Every one of the 10 section pages uses this, so the auth guard, the id param check and the loader call live here once instead of 10 times. Takes `accommodationId`, `sectionId`, and the loader `need` selector. Tests: source-assert that it renders AccountLayout without extra props and that the slot exists.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-003", "T-005", "T-006", "T-009"],
+            "blocks": [
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024"
+            ],
+            "subtasks": [
+                {
+                    "title": "Compose AccountLayout + breadcrumbs + nav + slot",
+                    "completed": false
+                },
+                {
+                    "title": "Centralize the auth guard and id-param check",
+                    "completed": false
+                },
+                {
+                    "title": "Wire the loader `need` selector through",
+                    "completed": false
+                },
+                {
+                    "title": "Write the layout source test",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "layout"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-011",
+            "title": "Convert editar.astro into the hub at editar/index.astro",
+            "description": "Astro cannot serve both `editar.astro` and `editar/index.astro` — the route collides. Git-move the file to `propiedades/[id]/editar/index.astro` and replace its body with the hub (`EditorHub`), keeping the auth guard and the id check. It MUST NOT redirect to the first section: a redirect traps the back button (sección → /editar/ → re-redirect), which is exactly the frustration D-8 exists to prevent. Until T-020..T-024 land, the old monolithic form temporarily lives at `editar/datos.astro` so nothing is unreachable mid-migration. Tests: source-assert that no `Astro.redirect` targets a section slug.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-008", "T-010"],
+            "blocks": ["T-012", "T-013", "T-014", "T-015", "T-016", "T-017", "T-031"],
+            "subtasks": [
+                {
+                    "title": "git mv editar.astro → editar/index.astro",
+                    "completed": false
+                },
+                {
+                    "title": "Render the hub, no redirect",
+                    "completed": false
+                },
+                {
+                    "title": "Park the monolithic form at editar/datos.astro",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no section redirect",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "routing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-012",
+            "title": "Move the photos section to its own route",
+            "description": "Create `propiedades/[id]/editar/fotos.astro` using `EditorSectionLayout` with `need: ['accommodation','media']`, rendering `PhotoSection` with `initialFeaturedImage`/`initialGallery`. PhotoSection already owns its saving — no form logic moves here. Remove the section from the monolith. Tests: source-assert that the page mounts PhotoSection and does NOT import CalendarSection/FaqSection/TranslationPanel.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": ["T-025", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Create the route on the shared layout",
+                    "completed": false
+                },
+                {
+                    "title": "Request only the media payload",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no foreign section imports",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "routing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-013",
+            "title": "Move the FAQs section to its own route",
+            "description": "Create `propiedades/[id]/editar/preguntas.astro` using `EditorSectionLayout` with `need: ['accommodation','faqs']`, rendering `FaqSection` with `initialFaqs` so it still paints real data on first paint (the HOS-393 SSR-first behavior must not regress). FaqSection already saves on its own. Remove from the monolith. Tests: source-assert the FAQ preload prop is still passed, plus no foreign section imports.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": ["T-025", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Create the route on the shared layout",
+                    "completed": false
+                },
+                {
+                    "title": "Preserve the SSR FAQ preload",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no foreign section imports",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "routing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-014",
+            "title": "Move the calendar section to its own route",
+            "description": "Create `propiedades/[id]/editar/calendario.astro` rendering `CalendarSection` still wrapped in `PlanEntitlementGate` (`can_use_calendar`). The route MUST exist for everyone and show the gate to whoever lacks the entitlement — a 404 would be worse, since the host would not understand why a section a peer has simply vanished. This is the single biggest JS win of the phase (35 KB off every other screen). Tests: source-assert the gate still wraps the section and that the route is not conditionally excluded.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": ["T-025", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Create the route on the shared layout",
+                    "completed": false
+                },
+                {
+                    "title": "Keep PlanEntitlementGate wrapping",
+                    "completed": false
+                },
+                {
+                    "title": "Assert the route is unconditional",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "routing", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-015",
+            "title": "Move the translations section to its own route",
+            "description": "Create `propiedades/[id]/editar/traducciones.astro` rendering `TranslationPanel` with `need: ['accommodation','translations']`. The nav item and the hub row appear ONLY when `translationData` is present, exactly as today. When absent, the route itself redirects to `/editar/` rather than rendering an empty shell. Remove from the monolith. Tests: source-assert the conditional and the redirect fallback.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": ["T-025", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Create the route on the shared layout",
+                    "completed": false
+                },
+                {
+                    "title": "Hide nav + hub row when data is absent",
+                    "completed": false
+                },
+                {
+                    "title": "Redirect to the hub when absent",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "routing", "i18n"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-016",
+            "title": "Move the external reputation section to its own route",
+            "description": "Create `propiedades/[id]/editar/reputacion.astro` rendering `ExternalReputationSection` (35 KB, fetches on its own). Remove from the monolith. Note HOS-216: this section's gate once blocked the whole editor's Save — with the form split, that class of coupling becomes structurally impossible, which is worth stating in the page JSDoc. Tests: source-assert no foreign section imports.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-011"],
+            "blocks": ["T-025", "T-026"],
+            "subtasks": [
+                {
+                    "title": "Create the route on the shared layout",
+                    "completed": false
+                },
+                {
+                    "title": "Note the HOS-216 decoupling in the JSDoc",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no foreign section imports",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "routing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-017",
+            "title": "Render the featured toggle at the foot of the hub",
+            "description": "Move `FeaturedToggleSection` to the bottom of `editar/index.astro`, with NO nav item and NO hub row (D-10) — it returns null for the majority of owners without the FEATURED_LISTING entitlement, so a nav item would dead-end. This preserves the exact rationale already written at `AccommodationEditor.client.tsx:748`. Tests: source-assert the component is present in the hub page and absent from the section registry.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011"],
+            "blocks": ["T-026"],
+            "subtasks": [
+                {
+                    "title": "Render it at the foot of the hub",
+                    "completed": false
+                },
+                {
+                    "title": "Assert it is absent from the registry",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "billing"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-018",
+            "title": "Compute the per-row status line on the hub",
+            "description": "Resolve OQ-3 first: inspect `PublishPrecheckPanel.astro`, which already computes what a property is missing in order to publish, and REUSE it if it fits rather than writing the logic twice. Produce a status map keyed by section id, feeding strings like '6 fotos', '12 seleccionados', '⚠ Sin coordenadas'. A warning state must be conveyed by text, not colour alone. Sections with nothing meaningful to report render no second line rather than a fake zero (the apps/web 'never render a misleading 0' rule). Tests: unit tests for the status resolver covering an empty gallery, a missing coordinate pair, and a section with no status.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-007"],
+            "blocks": ["T-029"],
+            "subtasks": [
+                {
+                    "title": "Audit PublishPrecheckPanel for reuse (OQ-3)",
+                    "completed": false
+                },
+                {
+                    "title": "Implement the status resolver",
+                    "completed": false
+                },
+                {
+                    "title": "Suppress the line rather than render a fake zero",
+                    "completed": false
+                },
+                {
+                    "title": "Write the resolver unit tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "logic"],
+            "phase": "core",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-019",
+            "title": "Build the shared useAccommodationSectionForm hook",
+            "description": "Create `apps/web/src/components/host/editor/useAccommodationSectionForm.ts`: owns per-section state, the partial PATCH diff against a resyncing baseline, `useZodForm` on the T-004 slice, `useUnsavedChangesGuard`, the no-changes toast, and the success toast. This is R-5's mitigation — write the pattern ONCE instead of copying it into 5 pages. Must preserve two behaviours from the monolith: the baseline resyncs after a successful save (HOS-190 F6, so reverting a just-saved field is still detected), and latitude/longitude always travel together (a payload with only one silently drops the coordinate update). Tests: hook tests covering empty-diff toast, baseline resync, the lat/long pairing, and that the guard goes quiet after save.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-004"],
+            "blocks": ["T-020", "T-021", "T-022", "T-023", "T-024", "T-030"],
+            "subtasks": [
+                {
+                    "title": "Port the diff + resyncing baseline",
+                    "completed": false
+                },
+                {
+                    "title": "Preserve the lat/long pairing rule",
+                    "completed": false
+                },
+                {
+                    "title": "Wire useZodForm + unsaved-changes guard",
+                    "completed": false
+                },
+                {
+                    "title": "Write the hook tests",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "hook"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-020",
+            "title": "Build the basic data section page",
+            "description": "Replace the parked monolith at `editar/datos.astro` with a real form page: name, summary, description (rich text), type, destination. Uses `EditorSectionLayout` + `useAccommodationSectionForm` on the basics slice. Needs the destinations catalog but NOT amenities/features. Max 5 fields (AC-5). Tests: renders the 5 fields, saves only those keys in the PATCH body.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-019"],
+            "blocks": ["T-026", "T-030"],
+            "subtasks": [
+                {
+                    "title": "Build the page on the shared layout + hook",
+                    "completed": false
+                },
+                {
+                    "title": "Request only the destinations catalog",
+                    "completed": false
+                },
+                {
+                    "title": "Assert the PATCH body carries only its own keys",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "form"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-021",
+            "title": "Build the capacity and price section page",
+            "description": "Create `editar/capacidad-precio.astro`: maxGuests, bedrooms, bathrooms, basePrice, currency. Uses the shared layout + hook on the capacityPrice slice. Needs no catalog at all — `need: ['accommodation']`. Careful with the nullable numeric fields: an explicit null (host clearing the field) must NOT coerce to 0, which is exactly what the original schema's comment warns about. Tests: renders 5 fields, clearing a field sends null rather than 0.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-019"],
+            "blocks": ["T-026", "T-030"],
+            "subtasks": [
+                {
+                    "title": "Build the page on the shared layout + hook",
+                    "completed": false
+                },
+                {
+                    "title": "Preserve null-vs-zero on clear",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no catalog request is issued",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "form"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-022",
+            "title": "Build the location section page",
+            "description": "Create `editar/ubicacion.astro` rendering `LocationPicker` full-width on the shared layout + hook (location slice). Split out precisely because an embedded map inside a long mobile scroll is the worst offender (D-4). Latitude and longitude MUST be sent together whenever either changes — the hook handles it, this page must not bypass it. Tests: dragging the marker produces a PATCH carrying both coordinates.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-010", "T-019"],
+            "blocks": ["T-026", "T-030"],
+            "subtasks": [
+                {
+                    "title": "Build the page on the shared layout + hook",
+                    "completed": false
+                },
+                {
+                    "title": "Give the map full width on mobile",
+                    "completed": false
+                },
+                {
+                    "title": "Assert both coordinates travel together",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "form", "map"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-023",
+            "title": "Build the services section page",
+            "description": "Create `editar/servicios.astro` rendering `AmenitiesSection` on the shared layout + hook (services slice), sending `{ amenityIds, featureIds }` via the partial PATCH. No new endpoint: the service already opens its own transaction when these arrive (SPEC-172), so this aligns the UI with a boundary the backend already draws. This is the ONLY page that should request the amenities/features catalogs — today every screen pays for them. Note: it does not fix HOS-218 (the /public/features request loop), it only shrinks its blast radius. Tests: the catalogs are requested here and nowhere else.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-019"],
+            "blocks": ["T-026", "T-030"],
+            "subtasks": [
+                {
+                    "title": "Build the page on the shared layout + hook",
+                    "completed": false
+                },
+                {
+                    "title": "Scope the catalog fetch to this page only",
+                    "completed": false
+                },
+                {
+                    "title": "Assert the PATCH carries only the two id arrays",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "form"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-024",
+            "title": "Build the contact and social section page",
+            "description": "Create `editar/contacto.astro`: phone, whatsapp, email, website plus the 6 social URLs, on the shared layout + hook (contact slice). Preserve the existing field-name translation — the form uses `<network>Url` keys while the HTTP payload uses the bare platform name, and both the error mapping and the clear-error path depend on it. Also settle OQ-1 here: whether this page sits under the 'Contenido' or 'La propiedad' group in the registry. Tests: a social validation error surfaces on the right field.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-010", "T-019"],
+            "blocks": ["T-026", "T-030"],
+            "subtasks": [
+                {
+                    "title": "Build the page on the shared layout + hook",
+                    "completed": false
+                },
+                {
+                    "title": "Preserve the social field-name mapping",
+                    "completed": false
+                },
+                {
+                    "title": "Settle OQ-1 (group placement)",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "form"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-025",
+            "title": "Add View Transitions between editor sections",
+            "description": "Ensure navigating between editor routes animates rather than flashing (R-3). The target user reads a hard page swap as 'the screen got away from me'. Verify `ClientRouter` covers these routes and add a named transition on the section body. MUST respect `prefers-reduced-motion`. Tests: source-assert the transition wiring and the reduced-motion guard.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-012", "T-013", "T-014", "T-015", "T-016"],
+            "blocks": ["T-031"],
+            "subtasks": [
+                {
+                    "title": "Confirm ClientRouter coverage on these routes",
+                    "completed": false
+                },
+                {
+                    "title": "Add the named section transition",
+                    "completed": false
+                },
+                {
+                    "title": "Respect prefers-reduced-motion",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "ux"],
+            "phase": "integration",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-026",
+            "title": "Delete the monolithic editor orchestrator",
+            "description": "Once all 10 routes render their own section, delete `AccommodationEditor.client.tsx` (783 lines) and `AccommodationEditor.module.css`, keeping any still-shared CSS by moving it (do NOT leave a dangling `composes:` — the `.card` class composes from `AccountSection.module.css` and other files may rely on that chain). Verify nothing still imports the deleted symbols before removing. Tests: the full apps/web suite stays green; a grep guard asserts no lingering import of the removed component.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": [
+                "T-012",
+                "T-013",
+                "T-014",
+                "T-015",
+                "T-016",
+                "T-017",
+                "T-020",
+                "T-021",
+                "T-022",
+                "T-023",
+                "T-024"
+            ],
+            "blocks": ["T-027", "T-032"],
+            "subtasks": [
+                {
+                    "title": "Verify there are no remaining importers",
+                    "completed": false
+                },
+                {
+                    "title": "Relocate the still-shared CSS",
+                    "completed": false
+                },
+                {
+                    "title": "Delete both files",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "cleanup"],
+            "phase": "cleanup",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-027",
+            "title": "Redistribute the existing editor tests across the new pages",
+            "description": "R-1: `apps/web/test/components/host/AccommodationEditor.test.tsx` and `accommodation-field-ids.test.tsx` assume all 13 sections render in one tree and WILL break. Redistribute their assertions to the per-page tests — do NOT delete coverage to make the suite green. The field-id test is especially load-bearing: it guards the Zod-key ↔ DOM-id derivation that HOS-385 built, so its assertions must survive per-page. Tests: every assertion in the two old files has a demonstrable new home.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-026"],
+            "blocks": ["T-032"],
+            "subtasks": [
+                {
+                    "title": "Inventory every assertion in both files",
+                    "completed": false
+                },
+                {
+                    "title": "Rehome the field-id derivation assertions",
+                    "completed": false
+                },
+                {
+                    "title": "Confirm no assertion was silently dropped",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-028",
+            "title": "Test the route nav's active state and observer removal",
+            "description": "Cover AC-3 and AC-9: for a given pathname exactly one link carries `aria-current=\"page\"`; every nav item is an `<a href>` pointing at a route (none is an in-page anchor); and `EditorRouteNav` instantiates no IntersectionObserver. Assert the LAST point by spying on the global constructor and asserting it was never called — a source grep for the string would pass on a renamed import.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-005"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Assert exactly one aria-current per pathname",
+                    "completed": false
+                },
+                {
+                    "title": "Assert no item is an in-page anchor",
+                    "completed": false
+                },
+                {
+                    "title": "Spy on IntersectionObserver and assert zero calls",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-029",
+            "title": "Test the hub structure and status lines",
+            "description": "Cover AC-4: the hub renders 10 rows in 3 labelled groups, each row links to its section route, and rows with a status render a second line. Include the negative case — a section with nothing to report renders NO second line rather than a placeholder zero.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-007", "T-018"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Assert 10 rows across 3 labelled groups",
+                    "completed": false
+                },
+                {
+                    "title": "Assert each row links to its route",
+                    "completed": false
+                },
+                {
+                    "title": "Assert the no-status row renders no second line",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-030",
+            "title": "Test per-section partial saving across the 5 forms",
+            "description": "Cover AC-6: each of the 5 form pages sends a PATCH containing ONLY its own fields, shows the success toast, and shows the no-changes toast on an empty diff. The highest-value assertion is the negative one: editing the price must NOT send `name`, `amenityIds` or any social field. That is the regression this whole split could plausibly introduce.",
+            "status": "pending",
+            "complexity": 3,
+            "blockedBy": ["T-019", "T-020", "T-021", "T-022", "T-023", "T-024"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Assert each page's PATCH body is scoped to its fields",
+                    "completed": false
+                },
+                {
+                    "title": "Assert editing one section never sends another's keys",
+                    "completed": false
+                },
+                {
+                    "title": "Assert both toast paths",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "testing"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-031",
+            "title": "Add a static guard that no page mounts a foreign section",
+            "description": "Cover AC-7 with a GUARD, not N per-page tests: walk `pages/[lang]/mi-cuenta/propiedades/[id]/editar/*.astro` and assert each imports only the section component its registry entry declares. A future 11th route then cannot silently re-import the calendar and undo the weight win. The guard's failure message must name the offending file and the foreign import — a message that claims more than the predicate proves is worse than no guard.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-011", "T-025"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Walk the editor route directory",
+                    "completed": false
+                },
+                {
+                    "title": "Cross-check imports against the registry",
+                    "completed": false
+                },
+                {
+                    "title": "Make the failure message name file + import",
+                    "completed": false
+                }
+            ],
+            "tags": ["web", "testing", "guard"],
+            "phase": "testing",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        },
+        {
+            "id": "T-032",
+            "title": "Document the editor routing pattern in apps/web/CLAUDE.md",
+            "description": "Add a 'Reusable Patterns' entry describing: the section registry as the single source of truth, the one-nav-item-equals-one-page rule and why (the older, non-technical host), that `/editar/` must never redirect (the back-button trap), and that EventEditor/PostEditor still run the old scrollspy so a future migration knows where the boundary is. Keep it short — this file is already long.",
+            "status": "pending",
+            "complexity": 2,
+            "blockedBy": ["T-026", "T-027"],
+            "blocks": [],
+            "subtasks": [
+                {
+                    "title": "Write the Reusable Patterns entry",
+                    "completed": false
+                },
+                {
+                    "title": "Note the EventEditor/PostEditor boundary",
+                    "completed": false
+                }
+            ],
+            "tags": ["docs"],
+            "phase": "docs",
+            "qualityGate": {
+                "lint": null,
+                "typecheck": null,
+                "tests": null
+            },
+            "timestamps": {
+                "created": "2026-08-10T03:30:00.000Z",
+                "started": null,
+                "completed": null
+            }
+        }
+    ],
+    "summary": {
+        "total": 32,
+        "pending": 32,
+        "inProgress": 0,
+        "completed": 0,
+        "blocked": 0,
+        "averageComplexity": 2.3
+    }
+}
