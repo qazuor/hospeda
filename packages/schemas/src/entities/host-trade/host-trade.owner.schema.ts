@@ -119,7 +119,21 @@ export const HostTradeOwnerViewSchema = HostTradeSchema.pick({
     scheduleText: true,
     isActive: true,
     revokedAt: true,
-    revokeReason: true
+    revokeReason: true,
+
+    /**
+     * Whether declaration is currently suspended, and why (HOS-376 §6.5).
+     *
+     * The provider MUST see both. A suspension he cannot see reads as a broken
+     * form: he tries to declare a usage, it refuses, and nothing on the page
+     * explains that it will keep refusing until an admin lifts it.
+     *
+     * `declarationSuspendedById` stays out — who moderated him is the
+     * moderator's identity, not his business, exactly as `revokedById` is
+     * already excluded above.
+     */
+    declarationSuspendedAt: true,
+    declarationSuspendReason: true
 });
 
 /** Inferred type for {@link HostTradeOwnerViewSchema}. */

@@ -19,6 +19,9 @@ import {
     GastronomyTypeEnum,
     HostTradeBenefitTypeEnum,
     HostTradeCategoryEnum,
+    HostTradeUsageChannelEnum,
+    HostTradeUsageDeclaredByEnum,
+    HostTradeUsageStatusEnum,
     InvoiceStatusEnum,
     LifecycleStatusEnum,
     MessageSenderTypeEnum,
@@ -115,6 +118,33 @@ export const HostTradeCategoryPgEnum = pgEnum(
 export const HostTradeBenefitTypePgEnum = pgEnum(
     'host_trade_benefit_type_enum',
     enumToTuple(HostTradeBenefitTypeEnum)
+);
+
+/**
+ * PostgreSQL enum for the lifecycle of a `host_trade_benefit_usages` row
+ * (HOS-376 §6.1). Values: PENDING, CONFIRMED, REJECTED, EXPIRED.
+ */
+export const HostTradeUsageStatusPgEnum = pgEnum(
+    'host_trade_usage_status_enum',
+    enumToTuple(HostTradeUsageStatusEnum)
+);
+
+/**
+ * PostgreSQL enum for which side declared a `host_trade_benefit_usages` row
+ * (HOS-376 §6.1). Values: PROVIDER, HOST. Determines who must confirm.
+ */
+export const HostTradeUsageDeclaredByPgEnum = pgEnum(
+    'host_trade_usage_declared_by_enum',
+    enumToTuple(HostTradeUsageDeclaredByEnum)
+);
+
+/**
+ * PostgreSQL enum for how a `host_trade_benefit_usages` row was created
+ * (HOS-376 §6.2). Values: QR, LINKED_SELECTOR, EMAIL_LOOKUP.
+ */
+export const HostTradeUsageChannelPgEnum = pgEnum(
+    'host_trade_usage_channel_enum',
+    enumToTuple(HostTradeUsageChannelEnum)
 );
 
 export const ExchangeRateSourcePgEnum = pgEnum(

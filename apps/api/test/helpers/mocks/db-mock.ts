@@ -1075,6 +1075,15 @@ export function createDbMock() {
         // route-level permission-gate tests.
         AllianceLeadModel: GenericMockModel,
 
+        // HOS-376: the benefit-usage + review half of the host-trade domain.
+        // Their services construct these at module scope when the routes load,
+        // and unlike HostTradeService they are NOT mocked in the service-core
+        // mock — the real service code runs in route tests, which is the point.
+        // (`HostTradeModel` is already declared further up.)
+        HostTradeBenefitUsageModel: GenericMockModel,
+        HostTradeReviewModel: GenericMockModel,
+        HostTradeReviewReplyModel: GenericMockModel,
+
         // SPEC-240: Experience singleton model instances. ExperienceService,
         // ExperienceReviewService, and the standalone FAQ helpers access these at module
         // scope (via service constructor or direct import). They are exported as singleton

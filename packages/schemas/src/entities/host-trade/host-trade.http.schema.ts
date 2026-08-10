@@ -25,7 +25,8 @@ import { HostTradeSchema } from './host-trade.schema.js';
  * Only operational data that hosts need is exposed.
  *
  * Fields included: id, slug, name, category, contact, benefit, destinationId,
- * is24h, scheduleText.
+ * is24h, scheduleText, plus the five denormalised stats the directory card
+ * renders (HOS-376 §7.2).
  */
 export const HostTradePublicSchema = HostTradeSchema.pick({
     id: true,
@@ -36,7 +37,21 @@ export const HostTradePublicSchema = HostTradeSchema.pick({
     benefit: true,
     destinationId: true,
     is24h: true,
-    scheduleText: true
+    scheduleText: true,
+
+    // The directory card's stats (HOS-376 §6.5). `distinctHostsCount` travels
+    // WITH `confirmedUsesCount` on purpose: the number of uses only means
+    // something read against the number of clients behind it.
+    confirmedUsesCount: true,
+    distinctHostsCount: true,
+    reviewsCount: true,
+    averageRating: true,
+    benefitRespectedCount: true
+
+    // The `declarationSuspended*` trio is deliberately absent. A suspension
+    // stops a provider DECLARING usages; it is not a public verdict, and
+    // "suspendido por declarar usos falsos" is not something the directory
+    // should say about a person to the hosts who might still hire him.
 });
 
 /**

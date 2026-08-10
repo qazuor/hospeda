@@ -28,6 +28,7 @@ import type { Accommodation } from '@repo/schemas';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import AccountLayout from '@/layouts/AccountLayout.astro';
@@ -140,9 +141,18 @@ const subtitle = t('host-trades.page.subtitle', 'Proveedores locales de confianz
 
 const isEmpty = trades.length === 0;
 
+// Access-denied copy. This state is reached ONLY by users who are not yet
+// hosts, so the CTA points at the "publicá en Hospeda" hub, not at the
+// subscription plans: the directory is a captation hook and is FREE for every
+// host — it is deliberately NOT gated by a paid plan (owner decision,
+// 2026-08-08; see `.specs/HOS-376-proveedores-uso-y-valoraciones/spec.md` §4
+// NG-5). The previous copy promised "necesitás un plan activo", a requirement
+// the backend never enforced, and sent the exact person we want to convert to
+// a pricing page instead of to onboarding.
 const accessDeniedTitle = t('host-trades.accessDenied.title', 'Esta sección es exclusiva para anfitriones');
-const accessDeniedMessage = t('host-trades.accessDenied.message', 'Para acceder al directorio de proveedores necesitás un plan de anfitrión activo.');
-const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscripción');
+const accessDeniedMessage = t('host-trades.accessDenied.message', 'El directorio es gratuito para quienes publican en Hospeda. Publicá tu alojamiento y accedé a proveedores locales de confianza, con beneficios exclusivos para anfitriones.');
+const accessDeniedCta = t('host-trades.accessDenied.cta', 'Publicá tu alojamiento');
+const accessDeniedCtaHref = buildUrl({ locale, path: 'mi-cuenta/publica' });
 ---
 
 <AccountLayout
@@ -163,7 +173,7 @@ const accessDeniedCta = t('host-trades.accessDenied.cta', 'Ver planes de suscrip
             </span>
             <h3 class="trades-page__access-denied-heading">{accessDeniedTitle}</h3>
             <p class="trades-page__access-denied-body">{accessDeniedMessage}</p>
-            <a href={`/${locale}/suscripcion`} class="trades-page__access-denied-cta">
+            <a href={accessDeniedCtaHref} class="trades-page__access-denied-cta">
                 {accessDeniedCta}
             </a>
         </div>

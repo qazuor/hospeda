@@ -12,10 +12,19 @@
  * in the normal suite. These in-process tests are the coverage that actually
  * executes — do not assume the live-DB file has your back.
  */
-import { PartnerMentionChannelEnum, PointOfInterestTypeEnum } from '@repo/schemas';
+import {
+    HostTradeUsageChannelEnum,
+    HostTradeUsageDeclaredByEnum,
+    HostTradeUsageStatusEnum,
+    PartnerMentionChannelEnum,
+    PointOfInterestTypeEnum
+} from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
 import {
+    HostTradeUsageChannelPgEnum,
+    HostTradeUsageDeclaredByPgEnum,
+    HostTradeUsageStatusPgEnum,
     PartnerMentionChannelPgEnum,
     PointOfInterestTypePgEnum
 } from '../../src/schemas/enums.dbschema.ts';
@@ -71,5 +80,66 @@ describe('PartnerMentionChannelPgEnum', () => {
         // one later is a data migration, not an edit.
         expect(PartnerMentionChannelPgEnum.enumValues).toContain('TWITTER');
         expect(PartnerMentionChannelPgEnum.enumValues).not.toContain('X');
+    });
+});
+
+// HOS-376 T-006/T-007/T-008 — host trade benefit usage enums.
+describe('HostTradeUsageStatusPgEnum', () => {
+    it('has SQL enum name host_trade_usage_status_enum', () => {
+        expect(HostTradeUsageStatusPgEnum.enumName).toBe('host_trade_usage_status_enum');
+    });
+
+    it('value tuple matches HostTradeUsageStatusEnum exactly (same values, same order)', () => {
+        const expected = Object.values(HostTradeUsageStatusEnum);
+        const actual = HostTradeUsageStatusPgEnum.enumValues;
+        expect(actual).toEqual(expected);
+    });
+
+    it('has exactly 4 values: PENDING, CONFIRMED, REJECTED, EXPIRED', () => {
+        expect(HostTradeUsageStatusPgEnum.enumValues).toHaveLength(4);
+        expect(HostTradeUsageStatusPgEnum.enumValues).toEqual([
+            'PENDING',
+            'CONFIRMED',
+            'REJECTED',
+            'EXPIRED'
+        ]);
+    });
+});
+
+describe('HostTradeUsageDeclaredByPgEnum', () => {
+    it('has SQL enum name host_trade_usage_declared_by_enum', () => {
+        expect(HostTradeUsageDeclaredByPgEnum.enumName).toBe('host_trade_usage_declared_by_enum');
+    });
+
+    it('value tuple matches HostTradeUsageDeclaredByEnum exactly (same values, same order)', () => {
+        const expected = Object.values(HostTradeUsageDeclaredByEnum);
+        const actual = HostTradeUsageDeclaredByPgEnum.enumValues;
+        expect(actual).toEqual(expected);
+    });
+
+    it('has exactly 2 values: PROVIDER, HOST', () => {
+        expect(HostTradeUsageDeclaredByPgEnum.enumValues).toHaveLength(2);
+        expect(HostTradeUsageDeclaredByPgEnum.enumValues).toEqual(['PROVIDER', 'HOST']);
+    });
+});
+
+describe('HostTradeUsageChannelPgEnum', () => {
+    it('has SQL enum name host_trade_usage_channel_enum', () => {
+        expect(HostTradeUsageChannelPgEnum.enumName).toBe('host_trade_usage_channel_enum');
+    });
+
+    it('value tuple matches HostTradeUsageChannelEnum exactly (same values, same order)', () => {
+        const expected = Object.values(HostTradeUsageChannelEnum);
+        const actual = HostTradeUsageChannelPgEnum.enumValues;
+        expect(actual).toEqual(expected);
+    });
+
+    it('has exactly 3 values: QR, LINKED_SELECTOR, EMAIL_LOOKUP', () => {
+        expect(HostTradeUsageChannelPgEnum.enumValues).toHaveLength(3);
+        expect(HostTradeUsageChannelPgEnum.enumValues).toEqual([
+            'QR',
+            'LINKED_SELECTOR',
+            'EMAIL_LOOKUP'
+        ]);
     });
 });

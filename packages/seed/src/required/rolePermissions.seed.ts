@@ -402,6 +402,15 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_TRADE_RESTORE,
         PermissionEnum.HOST_TRADE_HARD_DELETE,
 
+        // HOST_TRADE usage + reviews (HOS-376). Staff-only: reading the
+        // moderation queue, deciding on it, and lifting a provider's
+        // declaration suspension are all separate authorities.
+        PermissionEnum.HOST_TRADE_REVIEW_CREATE,
+        PermissionEnum.HOST_TRADE_REVIEW_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_REVIEW_MODERATE,
+        PermissionEnum.HOST_TRADE_USAGE_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_USAGE_MANAGE,
+
         // SOCIAL: Social media publish pipeline (SPEC-254) — full access.
         PermissionEnum.SOCIAL_POST_VIEW,
         PermissionEnum.SOCIAL_POST_CREATE,
@@ -746,6 +755,15 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_TRADE_RESTORE,
         PermissionEnum.HOST_TRADE_HARD_DELETE,
 
+        // HOST_TRADE usage + reviews (HOS-376). Staff-only: reading the
+        // moderation queue, deciding on it, and lifting a provider's
+        // declaration suspension are all separate authorities.
+        PermissionEnum.HOST_TRADE_REVIEW_CREATE,
+        PermissionEnum.HOST_TRADE_REVIEW_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_REVIEW_MODERATE,
+        PermissionEnum.HOST_TRADE_USAGE_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_USAGE_MANAGE,
+
         // SOCIAL: Social media publish pipeline (SPEC-254) — full access.
         PermissionEnum.SOCIAL_POST_VIEW,
         PermissionEnum.SOCIAL_POST_CREATE,
@@ -1084,7 +1102,14 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_SELF,
 
         // HOST_TRADE: read-only access to the admin-curated host trades directory (SPEC-241).
-        PermissionEnum.HOST_TRADE_VIEW
+        PermissionEnum.HOST_TRADE_VIEW,
+
+        // HOS-376: rating a provider requires being a real host. This is the
+        // ONLY one of the five HOS-376 permissions a non-staff role gets, and
+        // granting it here (rather than to USER) is what stops a user who is
+        // only a provider — a host_trades owner with no accommodations, who
+        // therefore never earns the HOST role — from rating a competitor.
+        PermissionEnum.HOST_TRADE_REVIEW_CREATE
     ],
 
     // ---------------------------------------------------------------------------

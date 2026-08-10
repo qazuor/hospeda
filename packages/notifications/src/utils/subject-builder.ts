@@ -69,6 +69,23 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.HOST_TRADE_REVOKED]:
         'Tu ficha {listingName} ya no aparece en el directorio de Hospeda',
 
+    // The usage chain (HOS-376). Each names the counterpart, because a busy
+    // provider or host has several of these open and the inbox line is the
+    // only place they can tell them apart before opening anything.
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REQUEST]:
+        '{counterpartName} registró un uso del beneficio: ¿nos lo confirmás?',
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REMINDER]:
+        'Sigue pendiente el uso del beneficio con {counterpartName}',
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMED]:
+        '{counterpartName} confirmó el uso del beneficio',
+    [NotificationType.HOST_TRADE_USAGE_REJECTED]:
+        '{counterpartName} no reconoció el uso del beneficio',
+    [NotificationType.HOST_TRADE_REVIEW_RECEIVED]: 'Recibiste una valoración en {listingName}',
+    // Says nothing about the outcome: the same subject serves an approval and a
+    // rejection, so a provider opening it is not braced for bad news before
+    // reading which it was.
+    [NotificationType.HOST_TRADE_REPLY_MODERATED]: 'Novedades sobre tu respuesta en Hospeda',
+
     // Partner revoked (HOS-278 R-4). Names the partner for the same reason,
     // and says "aliados" rather than "directorio": a partner was never in the
     // provider directory, so naming it would describe the wrong takedown.

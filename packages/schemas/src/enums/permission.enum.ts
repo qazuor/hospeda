@@ -949,6 +949,18 @@ export enum PermissionEnum {
     HOST_TRADE_HARD_DELETE = 'hostTrade.hardDelete', // Admin: permanently delete a trade entry.
     HOST_TRADE_VIEW_ALL = 'hostTrade.viewAll', // Admin: list all trades including inactive/soft-deleted.
 
+    // HOST_TRADE benefit usage + reviews (HOS-376). Split along the lines that
+    // matter operationally: seeing the moderation queue is not the authority to
+    // decide on it, and neither is the same as lifting an anti-abuse suspension.
+    // The provider's own actions (declare, confirm, reply) get NO permission —
+    // they are gated by row ownership via /protected/host-trades/mine, since an
+    // approved provider stays a plain USER (HOS-278 AC-7).
+    HOST_TRADE_REVIEW_CREATE = 'hostTrade.review.create', // Host: rate a provider they have a confirmed benefit usage with.
+    HOST_TRADE_REVIEW_VIEW_ALL = 'hostTrade.review.viewAll', // Admin: list reviews and replies in any moderation state.
+    HOST_TRADE_REVIEW_MODERATE = 'hostTrade.review.moderate', // Admin: approve/reject a review or a provider reply.
+    HOST_TRADE_USAGE_VIEW_ALL = 'hostTrade.usage.viewAll', // Admin: list benefit-usage records across all providers.
+    HOST_TRADE_USAGE_MANAGE = 'hostTrade.usage.manage', // Admin: apply or lift a provider's declaration suspension.
+
     // SOCIAL: Social media publish pipeline permissions (SPEC-254).
     // Governs the full editorial lifecycle: GPT draft ingestion → admin review → scheduling → Make.com dispatch.
     SOCIAL_POST_VIEW = 'socialPost.view', // Allows viewing social posts in the admin panel (list + detail).

@@ -134,6 +134,63 @@ export enum NotificationType {
      * party to, not something they can opt out of hearing.
      */
     HOST_TRADE_REVOKED = 'host_trade_revoked',
+    /**
+     * HOS-376 §6.6 — sent to whoever must confirm a declared benefit usage.
+     *
+     * The whole chain hangs off this one: a usage nobody confirms cannot ripen
+     * into a review, never moves the public counters, and expires in silence.
+     * If this notification does not land, the feature does not exist.
+     *
+     * TRANSACTIONAL: it asks the recipient to act on a record about them.
+     */
+    HOST_TRADE_USAGE_CONFIRMATION_REQUEST = 'host_trade_usage_confirmation_request',
+    /**
+     * HOS-376 AC-8 — the single day-10 nudge for a usage still waiting.
+     *
+     * One reminder, never a sequence: the record expires on its own at thirty
+     * days and expiring is a fine outcome, so chasing would turn a neutral
+     * timeout into pressure to confirm something half-remembered.
+     *
+     * TRANSACTIONAL, for the same reason as the request it repeats.
+     */
+    HOST_TRADE_USAGE_CONFIRMATION_REMINDER = 'host_trade_usage_confirmation_reminder',
+    /**
+     * HOS-376 §6.6 — sent to the declarant once the counterpart confirms.
+     *
+     * TRANSACTIONAL: it reports the resolution of something the recipient
+     * started.
+     */
+    HOST_TRADE_USAGE_CONFIRMED = 'host_trade_usage_confirmed',
+    /**
+     * HOS-376 §6.5 — sent to the declarant when the counterpart says it never
+     * happened.
+     *
+     * Consequential — a rejection blocks that side from re-declaring on the
+     * pair — so the declarant cannot be left to infer it from a row that
+     * quietly stopped counting.
+     *
+     * TRANSACTIONAL.
+     */
+    HOST_TRADE_USAGE_REJECTED = 'host_trade_usage_rejected',
+    /**
+     * HOS-376 §6.3 — sent to a provider when a host reviews their listing.
+     *
+     * TRANSACTIONAL: it reports something published about the recipient's own
+     * business, which they have a right of reply to.
+     */
+    HOST_TRADE_REVIEW_RECEIVED = 'host_trade_review_received',
+    /**
+     * HOS-376 AC-24 — sent to a provider when their reply is approved or
+     * rejected.
+     *
+     * The moderator's reason reaches the provider HERE and nowhere else: the
+     * protected read schema deliberately withholds it, so dropping it from
+     * this notification would leave a rejected provider with a reply that
+     * silently never appeared and no way to write a better one.
+     *
+     * TRANSACTIONAL.
+     */
+    HOST_TRADE_REPLY_MODERATED = 'host_trade_reply_moderated',
     PARTNER_REVOKED = 'partner_revoked',
     PARTNER_UNPAID_NOTICE = 'partner_unpaid_notice',
     /**
@@ -807,6 +864,93 @@ export interface HostTradeRevokedPayload extends BaseNotificationPayload {
  * rather than shared because the two arrangements differ: a provider left a
  * directory, a partner left the alliance surfaces they were paying for.
  */
+/**
+ * Payload for the HOST_TRADE_USAGE_CONFIRMATION_REQUEST notification.
+ *
+ * `counterpartName` is whoever the recipient is being asked about — the
+ * provider's listing when a provider declared, the host's name when a host
+ * did. One field rather than two because the endpoint that sends this is
+ * role-blind by design (§6.2): `declaredBy` on the row decides who is who.
+ */
+export interface HostTradeUsageConfirmationRequestPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REQUEST;
+    /** The other party in the record. */
+    readonly counterpartName: string;
+    /** ISO date the work is claimed to have happened. */
+    readonly servicedAt: string;
+    /** ISO timestamp at which the record expires unanswered. */
+    readonly expiresAt: string;
+    /** Where the recipient goes to answer. */
+    readonly actionUrl: string;
+}
+
+/** Payload for the HOST_TRADE_USAGE_CONFIRMATION_REMINDER notification (AC-8). */
+export interface HostTradeUsageConfirmationReminderPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REMINDER;
+    /** The other party in the record. */
+    readonly counterpartName: string;
+    /** ISO timestamp at which the record expires unanswered. */
+    readonly expiresAt: string;
+    /** Where the recipient goes to answer. */
+    readonly actionUrl: string;
+}
+
+/**
+ * Payload for the HOST_TRADE_USAGE_CONFIRMED notification.
+ *
+ * `canReview` is decided by the SENDER, not by the template: only a host may
+ * review, and a provider who declared on his own listing must not be invited
+ * to a form that would refuse him.
+ */
+export interface HostTradeUsageConfirmedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_USAGE_CONFIRMED;
+    /** The party who confirmed. */
+    readonly counterpartName: string;
+    /** Whether this recipient may now review the provider. */
+    readonly canReview: boolean;
+    /** Where the review form lives. Only meaningful when `canReview`. */
+    readonly reviewUrl?: string;
+}
+
+/** Payload for the HOST_TRADE_USAGE_REJECTED notification (§6.5). */
+export interface HostTradeUsageRejectedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_USAGE_REJECTED;
+    /** The party who rejected. */
+    readonly counterpartName: string;
+    /** The optional note they left. */
+    readonly note?: string;
+}
+
+/**
+ * Payload for the HOST_TRADE_REVIEW_RECEIVED notification (§6.3).
+ *
+ * Deliberately carries no excerpt of the review text: an excerpt in an inbox
+ * reads as the whole thing, and the case where that matters is exactly the
+ * complaint a provider would answer from a truncated quote.
+ */
+export interface HostTradeReviewReceivedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_REVIEW_RECEIVED;
+    /** The listing that was reviewed. */
+    readonly listingName: string;
+    /** Overall rating, 1-5. */
+    readonly overallRating: number;
+    /** Whether the host said the benefit was honoured. */
+    readonly respectedBenefit: boolean;
+    /** Where the provider reads it and answers. */
+    readonly actionUrl: string;
+}
+
+/** Payload for the HOST_TRADE_REPLY_MODERATED notification (AC-24). */
+export interface HostTradeReplyModeratedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_REPLY_MODERATED;
+    /** How the moderator resolved it. */
+    readonly outcome: 'approved' | 'rejected';
+    /** Why, when it was rejected. The only place the provider ever sees it. */
+    readonly reason?: string;
+    /** Where the provider sees or rewrites it. */
+    readonly actionUrl: string;
+}
+
 export interface PartnerRevokedPayload extends BaseNotificationPayload {
     readonly type: NotificationType.PARTNER_REVOKED;
     /** Display name of the partner that was taken down. */
@@ -969,6 +1113,12 @@ export type NotificationPayload =
     | AllianceClaimInvitePayload
     | AllianceLeadDecisionPayload
     | HostTradeRevokedPayload
+    | HostTradeUsageConfirmationRequestPayload
+    | HostTradeUsageConfirmationReminderPayload
+    | HostTradeUsageConfirmedPayload
+    | HostTradeUsageRejectedPayload
+    | HostTradeReviewReceivedPayload
+    | HostTradeReplyModeratedPayload
     | PartnerRevokedPayload
     | PartnerUnpaidNoticePayload
     | PartnerMentionsLoggedPayload

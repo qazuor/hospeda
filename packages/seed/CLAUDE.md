@@ -114,9 +114,22 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `host-premium@local.test` | HOST | `owner-premium` | MAX_ACCOMMODATIONS=10, MAX_PHOTOS=50, MAX_ACTIVE_PROMOTIONS=unlimited |
 | `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=50 (30 base + 20 addon). SPEC-143 #32 |
 | `host-trial@local.test` | HOST | `owner-basico` (status=`trialing`, 14d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c) |
+| `host-provider@local.test` | HOST | `owner-basico` | **Dual role**: also owns the `plomeria-litoral` host_trades listing. HOS-376 AC-16/AC-17 |
 | `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
 | `complex-pro@local.test` | CLIENT_MANAGER | `complex-pro` | mid complex |
 | `complex-premium@local.test` | CLIENT_MANAGER | `complex-premium` | top complex |
+
+**`host-provider@local.test` is the only account on both sides of the provider
+relationship** (HOS-376 T-013). It owns accommodations — which is what earns the
+`HOST` role and therefore the right to rate providers — AND owns a `host_trades`
+listing. AC-16 ("a host who is also a provider can rate OTHER providers") and
+AC-17 ("...but never their own listing") have no other account to exercise them.
+Ownership is attached by [`src/test-users/hostTradeOwnership.ts`](src/test-users/hostTradeOwnership.ts)
+rather than baked into the `src/data/hostTrade/` fixture, so a dev-only concern
+never enters the dual-write-guarded baseline. That module **refuses to steal a
+listing already owned by someone else** — on an environment where a real
+provider claimed it through the HOS-278 alliance flow, the seed logs a warning
+and leaves the row alone instead of locking that person out of their own ficha.
 
 All users share password `Password123!` and have `emailVerified=true`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json` with `admin@hospeda.com` / `superadmin@hospeda.com`).
 

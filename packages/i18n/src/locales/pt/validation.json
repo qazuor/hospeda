@@ -2294,6 +2294,15 @@
         "hostTradeCategory": {
             "invalid": "[PT] La categoría de oficio seleccionada no es válida"
         },
+        "hostTradeUsageChannel": {
+            "invalid": "[PT] El canal de registro del uso no es válido"
+        },
+        "hostTradeUsageDeclaredBy": {
+            "invalid": "[PT] El origen de la declaración del uso no es válido"
+        },
+        "hostTradeUsageStatus": {
+            "invalid": "[PT] El estado del uso del beneficio no es válido"
+        },
         "invoiceStatus": {
             "invalid": "[PT] El invoice status no es válido"
         },
@@ -3154,6 +3163,40 @@
         },
         "slug": {
             "min": "[PT] El slug debe tener al menos {{min}} caracteres"
+        }
+    },
+    "hostTradeReview": {
+        "content": {
+            "max": "O comentário não pode ultrapassar {{max}} caracteres",
+            "min": "O comentário deve ter pelo menos {{min}} caracteres"
+        },
+        "rating": {
+            "int": "A avaliação deve ser um número inteiro de estrelas",
+            "max": "A avaliação máxima é {{max}}",
+            "min": "A avaliação mínima é {{min}}"
+        }
+    },
+    "hostTradeReviewReply": {
+        "content": {
+            "max": "A resposta não pode ultrapassar {{max}} caracteres",
+            "min": "A resposta deve ter pelo menos {{min}} caracteres"
+        }
+    },
+    "hostTradeUsage": {
+        "hostEmail": {
+            "invalid": "O e-mail do anfitrião não é válido"
+        },
+        "hostIdentifier": {
+            "exactlyOne": "Escolha um anfitrião da lista ou informe o e-mail, mas não os dois"
+        },
+        "note": {
+            "max": "A nota não pode ultrapassar {{max}} caracteres"
+        },
+        "rejectionNote": {
+            "max": "O motivo da recusa não pode ultrapassar {{max}} caracteres"
+        },
+        "servicedAt": {
+            "format": "A data do serviço deve usar o formato AAAA-MM-DD"
         }
     },
     "location": {

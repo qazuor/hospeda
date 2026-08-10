@@ -17,7 +17,23 @@ export const CreateHostTradeSchema = HostTradeSchema.omit({
     createdById: true,
     updatedById: true,
     deletedAt: true,
-    deletedById: true
+    deletedById: true,
+
+    // HOS-376 §7.2 — server-managed, and this schema is built by OMITTING
+    // rather than allowlisting, so leaving them out here is what keeps them
+    // out of the admin create body. The counters are recomputed from the rows
+    // that exist (an admin typing one would be overwritten by the next
+    // recalculation anyway), and a suspension is applied by the
+    // rejection-threshold cron or by its own admin endpoint, never by a
+    // generic create. `HOST_TRADE_DOMAIN_MANAGED_FIELDS` guards this.
+    confirmedUsesCount: true,
+    distinctHostsCount: true,
+    reviewsCount: true,
+    averageRating: true,
+    benefitRespectedCount: true,
+    declarationSuspendedAt: true,
+    declarationSuspendedById: true,
+    declarationSuspendReason: true
 }).extend({
     /**
      * URL-safe slug. Optional on creation — the API generates one from `name`
