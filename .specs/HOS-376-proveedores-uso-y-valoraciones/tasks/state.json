@@ -1105,78 +1105,96 @@
         {
             "id": "T-030",
             "title": "Endpoints del anfitrión: declarar por QR y listar pendientes",
-            "description": "apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar las route factories del repo y ResponseFactory. Tests de integración: éxito, 401 sin sesión, 403 sin rol HOST, 422 con proveedor revocado, 404 con slug inexistente.",
-            "status": "pending",
+            "description": "apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar las route factories del repo y ResponseFactory. Tests de integración: éxito, 401 sin sesión, 403 sin rol HOST, 422 con proveedor revocado, 404 con slug inexistente. CERRADA: tests a nivel REQUEST (Hono real + createErrorHandler real), no unitarios de handler — el status que assertean es el que despacha la app. Destapó dos bloqueos previos: los servicios de HOS-376 NO estaban exportados del barrel de @repo/service-core (ninguna ruta podía construirlos) y faltaban sus modelos en el db-mock de apps/api. El orden de registro de rutas resultó ser defensa en profundidad, no la garantía: Hono prioriza segmento estático sobre :slug igual.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-019"],
             "blocks": ["T-045", "T-046", "T-047", "T-061"],
             "subtasks": [
                 {
                     "title": "POST /{slug}/usages",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "GET /usages/pending",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "GET /usages/pending-count",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "protected"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T23:20:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T23:20:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-09T23:20:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-09T22:20:00Z",
+                "completed": "2026-08-09T23:20:00.000Z"
             }
         },
         {
             "id": "T-031",
             "title": "Endpoints del proveedor: declarar, listar usos y anfitriones vinculados",
-            "description": "POST /protected/host-trades/mine/usages (body acepta hostUserId O hostEmail), GET /protected/host-trades/mine/usages (filtro por status, paginado), GET /protected/host-trades/mine/linked-hosts (sólo pares con uso CONFIRMED). Autorización por ownership de fila, sin PermissionEnum, igual que /host-trades/mine. Tests: sin ficha propia devuelve 404; email inexistente devuelve HOST_NOT_FOUND; linked-hosts no incluye anfitriones sin uso confirmado.",
-            "status": "pending",
+            "description": "POST /protected/host-trades/mine/usages (body acepta hostUserId O hostEmail), GET /protected/host-trades/mine/usages (filtro por status, paginado), GET /protected/host-trades/mine/linked-hosts (sólo pares con uso CONFIRMED). Autorización por ownership de fila, sin PermissionEnum, igual que /host-trades/mine. Tests: sin ficha propia devuelve 404; email inexistente devuelve HOST_NOT_FOUND; linked-hosts no incluye anfitriones sin uso confirmado. CERRADA: linked-hosts devuelve id + nombre y NUNCA email — servido ya no es consentimiento para entregar una direccion guardada, y un email ahi convierte un dropdown en un export de contactos. El label degrada displayName → nombre completo → id (una entrada sin label es inclickeable). Destapo HOS-425: el route factory descarta el superRefine del body en Zod 4, asi que el handler re-parsea con el mismo schema.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-020"],
             "blocks": ["T-039", "T-050", "T-062"],
             "subtasks": [
                 {
                     "title": "POST mine/usages con los dos modos de identificación",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "GET mine/usages",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "GET mine/linked-hosts",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "protected"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T00:05:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T00:05:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T00:05:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-09T23:25:00Z",
+                "completed": "2026-08-10T00:05:00.000Z"
             }
         },
         {
             "id": "T-032",
             "title": "Endpoint GET /protected/host-trades/mine/qr",
-            "description": "Devuelve el SVG del QR de la ficha propia. Ownership de fila. Tests: 404 sin ficha propia; el SVG apunta al slug correcto.",
-            "status": "pending",
+            "description": "Devuelve el SVG del QR de la ficha propia. Ownership de fila. Tests: 404 sin ficha propia; el SVG apunta al slug correcto. CERRADA: el SVG viaja como campo JSON junto con la URL en texto, no como image/svg+xml — el dashboard lo inlinea y un proveedor que no puede escanear su propio codigo necesita leer el destino. HALLAZGO: un archivo de ruta en disco SIN registrar igual rompe el guard de endpoint-gate-matrix, que escanea el filesystem y no el router.",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-029"],
             "blocks": ["T-050"],
@@ -1184,14 +1202,23 @@
             "tags": ["api", "routes", "qr"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T00:25:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T00:25:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T00:25:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T00:10:00Z",
+                "completed": "2026-08-10T00:25:00.000Z"
             }
         },
         {

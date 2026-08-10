@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 30/70 tareas (43%)
+## Progreso: 33/70 tareas (47%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,15 +109,15 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 0/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 3/27 completadas (complejidad promedio 2.5)
 
-- [ ] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
+- [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
   - Bloqueada por: T-019 · Bloquea a: T-045, T-046, T-047, T-061
-- [ ] **T-031** (c3) — Endpoints del proveedor: declarar, listar usos y anfitriones vinculados
+- [x] **T-031** (c3) — Endpoints del proveedor: declarar, listar usos y anfitriones vinculados
   - POST /protected/host-trades/mine/usages (body acepta hostUserId O hostEmail), GET /protected/host-trades/mine/usages (filtro por status, paginado), GET /protected/host-trades/mine/linked-hos…
   - Bloqueada por: T-020 · Bloquea a: T-039, T-050, T-062
-- [ ] **T-032** (c1) — Endpoint GET /protected/host-trades/mine/qr
+- [x] **T-032** (c1) — Endpoint GET /protected/host-trades/mine/qr
   - Devuelve el SVG del QR de la ficha propia. Ownership de fila. Tests: 404 sin ficha propia; el SVG apunta al slug correcto.
   - Bloqueada por: T-029 · Bloquea a: T-050
 - [ ] **T-033** (c3) — Endpoints compartidos: confirm, reject y reject/undo
