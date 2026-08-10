@@ -164,6 +164,21 @@ describe('detector behaviour (non-vacuity)', () => {
         expect(violatesTagRule({ source })).toBe(true);
     });
 
+    it('catches the header name in any casing, because HTTP does', () => {
+        // Header names are case-insensitive on the wire, so `'cache-control'`
+        // caches exactly as hard as `'Cache-Control'` — and lowercase is the
+        // idiom this codebase already writes elsewhere (`'content-type'` in
+        // pages/api/revalidate.ts). A case-SENSITIVE detector therefore lets
+        // the most natural spelling through, which is a fail-open in the one
+        // guard whose entire job is closure: the response would be edge-cached
+        // carrying no tag, so nothing could ever purge it.
+        for (const name of ['cache-control', 'Cache-Control', 'CACHE-CONTROL']) {
+            const source = `return new Response(body, { headers: { '${name}': 'public, s-maxage=300' } });`;
+            expect(classifyCacheControl({ source }).kind, name).toBe('cacheable');
+            expect(violatesTagRule({ source }), name).toBe(true);
+        }
+    });
+
     it('catches a template literal value', () => {
         // Assembled rather than written literally: the `${` sequence is the
         // thing under test — it is source text the detector must handle — and
