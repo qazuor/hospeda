@@ -1586,7 +1586,7 @@
             "id": "T-042",
             "title": "Cron de expiración de usos a los 30 días",
             "description": "apps/api/src/cron/jobs/host-trade-usage-expiry.job.ts, diario: PENDING con expiresAt <= now() → EXPIRED. NO notifica a nadie (el silencio no acusa) y NO suma a ninguna estadística. Registrar el conteo procesado. Tests: un uso vencido pasa a EXPIRED y no toca los contadores; uno de 29 días no se toca.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-021"],
             "blocks": ["T-066"],
@@ -1594,21 +1594,30 @@
             "tags": ["api", "cron"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T07:10:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T07:10:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T07:10:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T06:45:00Z",
+                "completed": "2026-08-10T07:10:00.000Z"
             }
         },
         {
             "id": "T-043",
             "title": "Cron de recordatorio al día 10",
             "description": "host-trade-usage-reminder.job.ts, diario: PENDING con createdAt <= now() - HOST_TRADE_USAGE_REMINDER_DAYS y reminderSentAt IS NULL → enviar el recordatorio y sellar reminderSentAt. La idempotencia depende del sellado. Tests: corre dos días seguidos y manda UN solo mail (AC-8).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-040", "T-021"],
             "blocks": ["T-066"],
@@ -1616,21 +1625,30 @@
             "tags": ["api", "cron", "notifications"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T07:15:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T07:15:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T07:15:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T06:45:00Z",
+                "completed": "2026-08-10T07:15:00.000Z"
             }
         },
         {
             "id": "T-044",
             "title": "Cron semanal de reconciliación de agregados",
             "description": "host-trade-stats-reconcile.job.ts con el molde de featured-by-entitlement-reconcile.job.ts: recalcula los 5 contadores de todos los host_trades y corrige la deriva, registrando qué corrigió (AC-29). Backstop de R-6. Tests: con un contador corrompido a mano, el job lo corrige y lo loguea.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-023"],
             "blocks": ["T-066"],
@@ -1638,14 +1656,23 @@
             "tags": ["api", "cron", "stats"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T07:20:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T07:20:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T07:20:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T06:45:00Z",
+                "completed": "2026-08-10T07:20:00.000Z"
             }
         },
         {
@@ -2408,9 +2435,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 28,
+        "pending": 25,
         "inProgress": 0,
-        "completed": 42,
+        "completed": 45,
         "blocked": 0,
         "averageComplexity": 2.4
     }

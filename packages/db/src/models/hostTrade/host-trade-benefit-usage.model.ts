@@ -1,5 +1,5 @@
 import type { HostTradeBenefitUsage } from '@repo/schemas';
-import { and, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import { and, count, desc, eq, gte, isNull, lte, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { hostTradeBenefitUsages } from '../../schemas/host-trade/host_trade_benefit_usage.dbschema.ts';
 import { users } from '../../schemas/user/user.dbschema.ts';
@@ -312,6 +312,94 @@ export class HostTradeBenefitUsageModel extends BaseModelImpl<HostTradeBenefitUs
      * @returns Number of rejections inside the window.
      * @throws DbError if the query fails.
      */
+    /**
+     * The PENDING rows whose confirmation window has run out.
+     *
+     * Returns ids only: the expiry cron writes a status and notifies NOBODY
+     * (§7.6 — silence is not an accusation), so it has no use for the rest of
+     * the row and no reason to drag it across the wire.
+     *
+     * @param now - The moment to measure against. Injected rather than read
+     *   from the clock so a test can place a row on either side of it.
+     * @param tx - Optional transaction client.
+     * @returns The ids of every usage that should expire.
+     */
+    async findExpirableIds(now: Date, tx?: DrizzleClient): Promise<string[]> {
+        const db = this.getClient(tx);
+        const logContext = { now: now.toISOString() };
+
+        try {
+            const rows = await db
+                .select({ id: hostTradeBenefitUsages.id })
+                .from(hostTradeBenefitUsages)
+                .where(
+                    and(
+                        eq(hostTradeBenefitUsages.status, 'PENDING'),
+                        isNull(hostTradeBenefitUsages.deletedAt),
+                        lte(hostTradeBenefitUsages.expiresAt, now)
+                    )
+                );
+
+            try {
+                logQuery(this.entityName, 'findExpirableIds', logContext, rows);
+            } catch {}
+
+            return rows.map((row) => row.id);
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findExpirableIds', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findExpirableIds', logContext, err.message);
+        }
+    }
+
+    /**
+     * The PENDING rows old enough to deserve their one nudge, and not yet sent.
+     *
+     * `reminderSentAt IS NULL` is not an optimisation — it IS the idempotency
+     * (AC-8). The cron runs daily and every row it returns stays old enough
+     * forever, so without that predicate a forgotten confirmation would be
+     * chased every morning until it expired.
+     *
+     * @param createdBefore - Rows created at or before this moment qualify.
+     * @param tx - Optional transaction client.
+     * @returns Full rows: the reminder email needs the counterpart and dates.
+     */
+    async findRemindable(
+        createdBefore: Date,
+        tx?: DrizzleClient
+    ): Promise<HostTradeBenefitUsageRow[]> {
+        const db = this.getClient(tx);
+        const logContext = { createdBefore: createdBefore.toISOString() };
+
+        try {
+            const rows = await db
+                .select()
+                .from(hostTradeBenefitUsages)
+                .where(
+                    and(
+                        eq(hostTradeBenefitUsages.status, 'PENDING'),
+                        isNull(hostTradeBenefitUsages.deletedAt),
+                        isNull(hostTradeBenefitUsages.reminderSentAt),
+                        lte(hostTradeBenefitUsages.createdAt, createdBefore)
+                    )
+                );
+
+            try {
+                logQuery(this.entityName, 'findRemindable', logContext, rows);
+            } catch {}
+
+            return rows as unknown as HostTradeBenefitUsageRow[];
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findRemindable', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findRemindable', logContext, err.message);
+        }
+    }
+
     async countRejectionsInWindow(
         hostTradeId: string,
         windowDays: number,

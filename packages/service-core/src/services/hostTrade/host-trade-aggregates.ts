@@ -69,6 +69,31 @@ export async function recalculateHostTradeAggregates(params: {
     const { hostTradeId, tx } = params;
     const db = tx ?? getDb();
 
+    const aggregates = await computeHostTradeAggregates({ hostTradeId, tx });
+
+    await db.update(hostTrades).set(aggregates).where(eq(hostTrades.id, hostTradeId));
+
+    return { aggregates };
+}
+
+/**
+ * Computes the five aggregates WITHOUT persisting them.
+ *
+ * Split out of {@link recalculateHostTradeAggregates} so the weekly
+ * reconciliation can compare stored against real, and so its `dryRun` is a real
+ * read rather than a write it promises not to have made.
+ *
+ * @param params.hostTradeId - The listing to measure.
+ * @param params.tx - Optional transaction client.
+ * @returns What the rows currently add up to.
+ */
+export async function computeHostTradeAggregates(params: {
+    hostTradeId: string;
+    tx?: DrizzleClient;
+}): Promise<HostTradeAggregates> {
+    const { hostTradeId, tx } = params;
+    const db = tx ?? getDb();
+
     const [usageRow] = await db
         .select({
             confirmedUsesCount: sql<number>`count(*)::int`,
@@ -100,15 +125,84 @@ export async function recalculateHostTradeAggregates(params: {
             )
         );
 
-    const aggregates: HostTradeAggregates = {
+    return {
         confirmedUsesCount: usageRow?.confirmedUsesCount ?? 0,
         distinctHostsCount: usageRow?.distinctHostsCount ?? 0,
         reviewsCount: reviewRow?.reviewsCount ?? 0,
         averageRating: reviewRow?.averageRating ?? 0,
         benefitRespectedCount: reviewRow?.benefitRespectedCount ?? 0
     };
+}
 
-    await db.update(hostTrades).set(aggregates).where(eq(hostTrades.id, hostTradeId));
+/** One listing whose stored counters did not match the recomputed ones. */
+export interface HostTradeAggregateDrift {
+    /** The listing that was wrong. */
+    readonly hostTradeId: string;
+    /** What the row said before. */
+    readonly stored: Partial<HostTradeAggregates>;
+    /** What the rows actually add up to. */
+    readonly recomputed: HostTradeAggregates;
+}
 
-    return { aggregates };
+/**
+ * Recomputes every listing's counters and reports the ones that had drifted
+ * (HOS-376 T-044, AC-29).
+ *
+ * THE BACKSTOP, NOT THE MECHANISM (R-6). Every write that can move a counter
+ * already recomputes it, so a healthy week corrects nothing — and that is the
+ * point: a run that reports drift is evidence one of those write paths has a
+ * hole. Without this, a wrong number is invisible, because nothing about
+ * "37 usos" says it should have said 36.
+ *
+ * `dryRun` reads and compares without writing, so the weekly check can be run
+ * against production to SEE the drift before deciding to paper over it.
+ *
+ * @param params.dryRun - Compare only; do not persist corrections.
+ * @returns How many listings were checked, and every one that was wrong.
+ */
+export async function reconcileAllHostTradeAggregates(params?: {
+    dryRun?: boolean;
+}): Promise<{ checked: number; corrected: HostTradeAggregateDrift[] }> {
+    const db = getDb();
+    const rows = await db
+        .select({
+            id: hostTrades.id,
+            confirmedUsesCount: hostTrades.confirmedUsesCount,
+            distinctHostsCount: hostTrades.distinctHostsCount,
+            reviewsCount: hostTrades.reviewsCount,
+            averageRating: hostTrades.averageRating,
+            benefitRespectedCount: hostTrades.benefitRespectedCount
+        })
+        .from(hostTrades);
+
+    const corrected: HostTradeAggregateDrift[] = [];
+
+    for (const row of rows) {
+        const recomputed = await computeHostTradeAggregates({ hostTradeId: row.id });
+
+        const stored = {
+            confirmedUsesCount: row.confirmedUsesCount,
+            distinctHostsCount: row.distinctHostsCount,
+            reviewsCount: row.reviewsCount,
+            averageRating: Number(row.averageRating ?? 0),
+            benefitRespectedCount: row.benefitRespectedCount
+        };
+
+        const drifted =
+            stored.confirmedUsesCount !== recomputed.confirmedUsesCount ||
+            stored.distinctHostsCount !== recomputed.distinctHostsCount ||
+            stored.reviewsCount !== recomputed.reviewsCount ||
+            stored.benefitRespectedCount !== recomputed.benefitRespectedCount ||
+            Math.abs(stored.averageRating - recomputed.averageRating) > 0.001;
+
+        if (!drifted) continue;
+
+        corrected.push({ hostTradeId: row.id, stored, recomputed });
+
+        if (!params?.dryRun) {
+            await db.update(hostTrades).set(recomputed).where(eq(hostTrades.id, row.id));
+        }
+    }
+
+    return { checked: rows.length, corrected };
 }

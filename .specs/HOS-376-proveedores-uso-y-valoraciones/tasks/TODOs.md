@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 42/70 tareas (60%)
+## Progreso: 45/70 tareas (64%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 12/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 15/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -147,13 +147,13 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-041** (c3) — Cablear los envíos de mail en los flujos
   - Vía apps/api/src/utils/notification-helper.ts (trySendNotification): al declarar → pedido de confirmación a la contraparte; al confirmar → aviso al declarante; al rechazar → aviso al declara…
   - Bloqueada por: T-040, T-033, T-034, T-037 · Bloquea a: T-068
-- [ ] **T-042** (c2) — Cron de expiración de usos a los 30 días
+- [x] **T-042** (c2) — Cron de expiración de usos a los 30 días
   - apps/api/src/cron/jobs/host-trade-usage-expiry.job.ts, diario: PENDING con expiresAt <= now() → EXPIRED. NO notifica a nadie (el silencio no acusa) y NO suma a ninguna estadística. Registrar…
   - Bloqueada por: T-021 · Bloquea a: T-066
-- [ ] **T-043** (c2) — Cron de recordatorio al día 10
+- [x] **T-043** (c2) — Cron de recordatorio al día 10
   - host-trade-usage-reminder.job.ts, diario: PENDING con createdAt <= now() - HOST_TRADE_USAGE_REMINDER_DAYS y reminderSentAt IS NULL → enviar el recordatorio y sellar reminderSentAt. La idempo…
   - Bloqueada por: T-040, T-021 · Bloquea a: T-066
-- [ ] **T-044** (c2) — Cron semanal de reconciliación de agregados
+- [x] **T-044** (c2) — Cron semanal de reconciliación de agregados
   - host-trade-stats-reconcile.job.ts con el molde de featured-by-entitlement-reconcile.job.ts: recalcula los 5 contadores de todos los host_trades y corrige la deriva, registrando qué corrigió …
   - Bloqueada por: T-023 · Bloquea a: T-066
 - [ ] **T-045** (c2) — Página de aterrizaje del QR (registrar uso)

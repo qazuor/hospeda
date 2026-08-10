@@ -129,6 +129,40 @@ export async function notifyUsageDeclared(usage: UsageForNotification): Promise<
 }
 
 /**
+ * The single day-10 nudge for a usage still waiting (AC-8).
+ *
+ * Same recipient rule as the request it repeats: `declaredBy` decides. The
+ * caller stamps the row AFTER this resolves — see the reminder cron for why
+ * that order is the one that matters.
+ */
+export async function notifyUsageReminder(usage: UsageForNotification): Promise<void> {
+    await safely('usage-reminder', async () => {
+        const listing = await loadListing(usage.hostTradeId);
+        if (!listing) return;
+
+        const declaredByProvider = usage.declaredBy === 'PROVIDER';
+        const recipient = await loadRecipient(
+            declaredByProvider ? usage.hostUserId : listing.ownerUserId
+        );
+        if (!recipient) return;
+
+        const counterpartName = declaredByProvider
+            ? listing.name
+            : ((await loadRecipient(usage.hostUserId))?.name ?? 'Un anfitrión');
+
+        await trySendNotification({
+            type: NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REMINDER,
+            recipientEmail: recipient.email,
+            recipientName: recipient.name,
+            userId: recipient.id,
+            counterpartName,
+            expiresAt: String(usage.expiresAt ?? ''),
+            actionUrl: declaredByProvider ? inboxUrl() : providerPanelUrl()
+        });
+    });
+}
+
+/**
  * Tells the declarant their usage was confirmed.
  *
  * The review invitation rides along ONLY for a host declarant: a provider

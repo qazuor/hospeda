@@ -9,6 +9,7 @@ import {
     HOST_TRADE_REJECTION_SUSPEND_THRESHOLD,
     HOST_TRADE_REJECTION_WINDOW_DAYS,
     HOST_TRADE_USAGE_EXPIRY_DAYS,
+    HOST_TRADE_USAGE_REMINDER_DAYS,
     HostTradeBenefitUsageAdminSearchSchema,
     HostTradeBenefitUsageCreateInputSchema,
     HostTradeBenefitUsageUpdateInputSchema,
@@ -944,6 +945,80 @@ export class HostTradeUsageService extends BaseCrudService<
      * @param ctx - Optional service context.
      * @returns Whether a suspension was actually cleared.
      */
+    // --- Cron surface (T-042, T-043) --------------------------------------
+
+    /**
+     * Expires every PENDING usage whose window has run out (T-042).
+     *
+     * NOBODY IS TOLD. Expiry is the outcome of silence, and silence is not an
+     * accusation (§6.6): mailing both parties to announce that nothing happened
+     * would turn a neutral timeout into a reproach, and the row it describes
+     * never counted for anything in the first place.
+     *
+     * The aggregates are NOT recomputed either, and that is not an oversight —
+     * only CONFIRMED usages are counted, so a row moving PENDING → EXPIRED
+     * cannot change a number. Recomputing would be one query per listing to
+     * write back what was already there.
+     *
+     * Runs OUTSIDE any actor: it is the clock acting, not a person, so there is
+     * no permission to check and no id to stamp.
+     *
+     * @param input.now - The moment to measure against, injectable for tests.
+     * @returns How many rows expired.
+     */
+    public async expireOverdueUsages(input?: { now?: Date }): Promise<{ expired: number }> {
+        const now = input?.now ?? new Date();
+        const ids = await this.model.findExpirableIds(now);
+
+        for (const id of ids) {
+            await this.model.update({ id }, {
+                status: HostTradeUsageStatusEnum.EXPIRED
+            } as unknown as Partial<HostTradeBenefitUsage>);
+        }
+
+        return { expired: ids.length };
+    }
+
+    /**
+     * The usages due their one reminder (T-043, AC-8).
+     *
+     * Returns rows rather than sending anything: the email lives in `apps/api`
+     * with the transport, and this package must not learn about it. The caller
+     * stamps each one with {@link markReminderSent} after its send.
+     *
+     * @param input.now - The moment to measure against, injectable for tests.
+     * @returns The rows to remind about.
+     */
+    public async listRemindableUsages(input?: {
+        now?: Date;
+    }): Promise<{ items: HostTradeBenefitUsage[] }> {
+        const now = input?.now ?? new Date();
+        const createdBefore = new Date(
+            now.getTime() - HOST_TRADE_USAGE_REMINDER_DAYS * 24 * 60 * 60 * 1000
+        );
+
+        const items = await this.model.findRemindable(createdBefore);
+        return { items };
+    }
+
+    /**
+     * Stamps a usage as reminded.
+     *
+     * THE STAMP IS THE IDEMPOTENCY (AC-8). The cron runs daily and every row it
+     * finds stays old enough forever, so a reminder that is sent but not
+     * stamped is chased again tomorrow, and the next day, until the row
+     * expires — one nudge becomes twenty. Stamping AFTER the send is deliberate
+     * in the other direction: a stamp written first would silence a reminder
+     * that never left.
+     *
+     * @param input.usageId - The row that was just reminded about.
+     */
+    public async markReminderSent(input: { usageId: string }): Promise<void> {
+        await this.model.update({ id: input.usageId }, {
+            reminderSentAt: new Date()
+        } as unknown as Partial<HostTradeBenefitUsage>);
+    }
+
     /**
      * Suspends a provider's ability to declare, by an admin's decision (T-038).
      *
