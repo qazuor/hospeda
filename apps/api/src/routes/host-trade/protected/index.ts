@@ -12,6 +12,11 @@ import {
     protectedListOwnUsagesRoute
 } from './mine-usages';
 import {
+    protectedConfirmUsageRoute,
+    protectedRejectUsageRoute,
+    protectedUndoRejectionRoute
+} from './usage-transitions';
+import {
     protectedCountPendingUsagesRoute,
     protectedDeclareUsageRoute,
     protectedListPendingUsagesRoute
@@ -50,6 +55,20 @@ protectedRouter.route('/', protectedDeclareUsageAsProviderRoute);
 protectedRouter.route('/', protectedListOwnUsagesRoute);
 protectedRouter.route('/', protectedListLinkedHostsRoute);
 protectedRouter.route('/', protectedGetMyQrRoute);
+
+// The shared transitions (HOS-376 T-033). Role-blind by design: `declaredBy`
+// on the row decides who may answer, so one pair of endpoints serves a host and
+// a provider identically.
+//
+// `/reject/undo` sits before `/reject` for tidiness, NOT because it changes
+// anything — measured, same as the `/usages/pending` case above: Hono's
+// selected router resolves by specificity, so the longer path wins whatever the
+// registration sequence. Ordering here buys a safety margin against a
+// first-match-wins router, nothing more. The request-level tests are what
+// guarantee the undo reaches the undo.
+protectedRouter.route('/', protectedConfirmUsageRoute);
+protectedRouter.route('/', protectedUndoRejectionRoute);
+protectedRouter.route('/', protectedRejectUsageRoute);
 
 protectedRouter.route('/', protectedDeclareUsageRoute);
 
