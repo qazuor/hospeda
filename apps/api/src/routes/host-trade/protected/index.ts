@@ -11,6 +11,7 @@ import {
     protectedListLinkedHostsRoute,
     protectedListOwnUsagesRoute
 } from './mine-usages';
+import { protectedCreateReplyRoute, protectedUpdateReplyRoute } from './replies';
 import {
     protectedCreateReviewRoute,
     protectedGetMyReviewRoute,
@@ -83,6 +84,12 @@ protectedRouter.route('/', protectedRejectUsageRoute);
 protectedRouter.route('/', protectedUpdateReviewRoute);
 protectedRouter.route('/', protectedCreateReviewRoute);
 protectedRouter.route('/', protectedGetMyReviewRoute);
+
+// The provider's right of reply (HOS-376 T-035). `/reviews/{id}/reply` shares
+// its verb with `/{id}/reviews` and differs only in shape, so it is registered
+// ahead of it for the same defence-in-depth reason as the pair above.
+protectedRouter.route('/', protectedCreateReplyRoute);
+protectedRouter.route('/', protectedUpdateReplyRoute);
 
 protectedRouter.route('/', protectedDeclareUsageRoute);
 
