@@ -109,5 +109,8 @@
             "title": "Você é dono de uma hospedagem ou parceiro da Hospeda?",
             "body": "Colaborar como editor também pode gerar benefícios na sua assinatura. Candidate-se e conte seu caso — vamos avaliar e entrar em contato com os detalhes."
         }
+    },
+    "breadcrumb": {
+        "joinUs": "Junte-se"
     }
 }

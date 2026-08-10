@@ -73,7 +73,13 @@ describe('colaborar/editores/index.astro (editor recruitment page, HOS-277)', ()
         it('renders BaseLayout, SEOHead and Breadcrumbs, matching the sumate/* landings molde', () => {
             expect(src).toContain('BaseLayout');
             expect(src).toContain('SEOHead');
+            // Mounting `Breadcrumbs` proves nothing: it drops the last item and
+            // renders an empty trail when only "Inicio" would remain, so this
+            // assertion passed for the whole time the trail emitted zero HTML.
+            // The level count and the matching BreadcrumbList live in
+            // `alliance-lead-landings.test.ts`.
             expect(src).toContain('Breadcrumbs');
+            expect(src).toContain('BreadcrumbJsonLd');
         });
     });
 });
