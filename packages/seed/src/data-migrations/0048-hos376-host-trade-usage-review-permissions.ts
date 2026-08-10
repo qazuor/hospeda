@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0046-hos376-host-trade-usage-review-permissions
+ * Data migration: 0048-hos376-host-trade-usage-review-permissions
  *
  * Companion delta for HOS-376 T-004. The seed's `ROLE_PERMISSIONS` constant
  * (`packages/seed/src/required/rolePermissions.seed.ts`) has already been edited
@@ -48,7 +48,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0046-hos376-host-trade-usage-review-permissions',
+    name: '0048-hos376-host-trade-usage-review-permissions',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

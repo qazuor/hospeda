@@ -1,15 +1,15 @@
 /**
  * @fileoverview
- * Unit tests for the `0046-hos376-host-trade-usage-review-permissions` data
+ * Unit tests for the `0048-hos376-host-trade-usage-review-permissions` data
  * migration, using a mocked insert chain — no real database connection. Same
  * style as `0039-event-organizer-permissions.test.ts`.
  *
- * @module test/data-migrations/0046-hos376-host-trade-usage-review-permissions
+ * @module test/data-migrations/0048-hos376-host-trade-usage-review-permissions
  */
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0046-hos376-host-trade-usage-review-permissions.js';
+import * as migration from '../../src/data-migrations/0048-hos376-host-trade-usage-review-permissions.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -71,17 +71,17 @@ function buildCtx(insertedRows: unknown[]): {
     return { ctx, readInsertValues };
 }
 
-describe('0046-hos376 permissions — meta', () => {
+describe('0048-hos376 permissions — meta', () => {
     it('exports the expected required/additive meta shape', () => {
         expect(migration.meta).toEqual({
-            name: '0046-hos376-host-trade-usage-review-permissions',
+            name: '0048-hos376-host-trade-usage-review-permissions',
             group: 'required',
             destructive: false
         });
     });
 });
 
-describe('0046-hos376 permissions — exported lists shape', () => {
+describe('0048-hos376 permissions — exported lists shape', () => {
     it('staff receives all five HOS-376 permissions', () => {
         expect(STAFF_PERMISSIONS).toEqual([
             PermissionEnum.HOST_TRADE_REVIEW_CREATE,
@@ -111,7 +111,7 @@ describe('0046-hos376 permissions — exported lists shape', () => {
     });
 });
 
-describe('0046-hos376 permissions — no drift against the seed', () => {
+describe('0048-hos376 permissions — no drift against the seed', () => {
     it('every SUPER_ADMIN grant is present in the seed', () => {
         const perms = ROLE_PERMISSIONS[RoleEnum.SUPER_ADMIN] ?? [];
         for (const permission of STAFF_PERMISSIONS) {
@@ -146,7 +146,7 @@ describe('0046-hos376 permissions — no drift against the seed', () => {
     });
 });
 
-describe('0046-hos376 permissions — up()', () => {
+describe('0048-hos376 permissions — up()', () => {
     it('inserts all 11 (role, permission) pairs', async () => {
         const insertedRows = GRANTS.map((g) => ({ ...g }));
         const { ctx, readInsertValues } = buildCtx(insertedRows);
