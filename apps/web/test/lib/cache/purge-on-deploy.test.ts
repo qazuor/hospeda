@@ -119,6 +119,17 @@ describe('the purge it issues', () => {
         }
     });
 
+    it('logs the tag it purged, which is the only operational evidence it ran', async () => {
+        // Greppable in `hops logs web`. Without this line a working purge and a
+        // silently skipped one look identical from the outside.
+        const pending = schedulePurgeOnDeploy();
+        await runAllTimers();
+        await pending;
+
+        expect(console.info).toHaveBeenCalledWith(expect.stringContaining('prod:all'));
+        expect(console.info).toHaveBeenCalledWith(expect.stringContaining('deploy cache purge OK'));
+    });
+
     it('authenticates with the configured token', async () => {
         const pending = schedulePurgeOnDeploy();
         await runAllTimers();
@@ -248,6 +259,8 @@ describe('failure handling', () => {
         expect(console.error).toHaveBeenCalledWith(
             expect.stringContaining('deploy cache purge FAILED')
         );
+        // Names the tag left stale, not just that something failed.
+        expect(console.error).toHaveBeenCalledWith(expect.stringContaining('prod:all'));
     });
 
     it('survives a network error instead of throwing', async () => {
@@ -268,10 +281,15 @@ describe('failure handling', () => {
         await pending;
 
         expect(fetchMock).toHaveBeenCalledTimes(DEPLOY_PURGE_MAX_ATTEMPTS);
-        expect(captureMessage).toHaveBeenCalledWith(
-            expect.stringContaining('[HOS-427]'),
-            expect.objectContaining({ level: 'error' })
-        );
+
+        // The alert has to be ACTIONABLE at 3 AM: which namespace is stale, and
+        // why Cloudflare refused. Asserting only the `[HOS-427]` prefix would
+        // pass for a message that says nothing.
+        const [message, options] = captureMessage.mock.calls[0] as [string, { level: string }];
+        expect(message).toContain('[HOS-427]');
+        expect(message).toContain('prod:all');
+        expect(message).toContain('403');
+        expect(options.level).toBe('error');
     });
 
     it('spaces retries out rather than hammering the shared rate limit', async () => {

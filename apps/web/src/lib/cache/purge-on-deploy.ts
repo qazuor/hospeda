@@ -25,6 +25,17 @@
  * success. So the purge waits {@link DEPLOY_PURGE_SETTLE_MS} first — long past
  * the observed overlap, still a small fraction of the 300 s `s-maxage`.
  *
+ * WHAT THE DELAY DOES NOT GUARANTEE. The clock starts when this process serves
+ * its FIRST REQUEST, so the real latency is (time until something reaches the
+ * origin) + the settle delay, and the first term has no upper bound. On a fully
+ * cached site with no traffic, a deploy at 03:00 may not purge until the first
+ * revalidation wakes the origin. That is never worse than the status quo — the
+ * stale window is bounded by the TTL either way — but it is weaker than "purges
+ * 45 s after every deploy", and it gets weaker as TTLs rise, which is exactly
+ * what HOS-426 intends to do next. The fix is not in this file: enabling
+ * Coolify's healthcheck (already configured, just disabled) makes the container
+ * receive a probe immediately and turns the first term into a constant.
+ *
  * WHY IT NEVER THROWS AND NEVER EXITS. A failed purge degrades to exactly the
  * behaviour we have today (stale for up to ~15 min). Crashing the server over
  * it would trade that for a real outage, and would loop against the container
@@ -236,6 +247,15 @@ async function settleThenPurge({
  * The caller must NOT await it — the triggering response is served normally
  * while the purge settles and runs in the background.
  *
+ * NEVER THROWS, BY CONSTRUCTION RATHER THAN BY LUCK. The whole synchronous path
+ * is wrapped, so the caller's `void schedulePurgeOnDeploy()` cannot turn a cache
+ * concern into a failed request. That wrapper is not currently reachable — every
+ * callee happens to be total today — but the latch is set before the plan is
+ * computed (it has to be, or concurrent first requests would not collapse), so
+ * a future throw in {@link planDeployPurge} would otherwise cost BOTH a 500 on
+ * that request AND a permanently burned latch: that container would never purge
+ * again, and nothing would retry.
+ *
  * @returns A promise that settles when the purge finishes, or `null` when this
  *   call was a no-op (already fired, or this deployment does not purge). Tests
  *   await the promise; the middleware ignores it.
@@ -246,7 +266,13 @@ export function schedulePurgeOnDeploy(): Promise<void> | null {
     // purge, not one each.
     started = true;
 
-    const plan = planDeployPurge();
+    let plan: DeployPurgePlan;
+    try {
+        plan = planDeployPurge();
+    } catch (error) {
+        console.error('[web] deploy cache purge planning threw unexpectedly:', error);
+        return null;
+    }
 
     if (plan.kind === 'skip') {
         // Deliberately visible: a deployment that is NOT purging should say so

@@ -86,6 +86,38 @@ describe('the Cloudflare purge request is built in exactly one place', () => {
     });
 });
 
+describe('the middleware actually calls the purge', () => {
+    // Without this, the entire feature can be deleted and every behavioural test
+    // still passes: they all exercise `schedulePurgeOnDeploy()` directly, so
+    // nothing notices that no one calls it. The only production symptom would be
+    // stale HTML for a TTL after every deploy — silent, delayed, and invisible
+    // to CI, which is precisely the failure class this spec exists to remove.
+    // Same shape as the `initIconSprite` assertions in test/lib/icon-sprite.test.ts.
+    const middleware = fs.readFileSync(path.join(WEB_SRC, 'middleware.ts'), 'utf8');
+
+    it('imports it', () => {
+        expect(middleware).toContain(
+            "import { schedulePurgeOnDeploy } from './lib/cache/purge-on-deploy'"
+        );
+    });
+
+    it('invokes it inside the request handler', () => {
+        expect(middleware).toMatch(/^\s{4}void schedulePurgeOnDeploy\(\);$/m);
+    });
+
+    it('invokes it before the static-asset early return', () => {
+        // The static-asset branch returns without reaching the rest of the
+        // handler, so a call placed after it would never run for the probe or
+        // for any asset request — and could miss the first request entirely.
+        const callIndex = middleware.indexOf('void schedulePurgeOnDeploy();');
+        const earlyReturnIndex = middleware.indexOf('if (isStaticAssetRoute(');
+
+        expect(callIndex).toBeGreaterThan(-1);
+        expect(earlyReturnIndex).toBeGreaterThan(-1);
+        expect(callIndex).toBeLessThan(earlyReturnIndex);
+    });
+});
+
 describe('the deploy purge can never flush the whole zone', () => {
     it.each([
         'purge_everything',

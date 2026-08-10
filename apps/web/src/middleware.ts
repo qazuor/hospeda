@@ -150,11 +150,17 @@ if (import.meta.env.SSR) {
 export const onRequest = defineMiddleware(async (context, next) => {
     // Step -1: Take this process's one shot at purging the edge cache for the
     // deploy that started it (HOS-427). Deliberately the FIRST thing in the
-    // handler, before the static-asset early return, so the container's very
-    // first request — which in practice is Coolify's healthcheck — starts the
-    // clock. It no-ops on every subsequent call, never awaits, and never
-    // throws; the purge itself settles and runs in the background. See
-    // `./lib/cache/purge-on-deploy.ts` for why it waits before firing.
+    // handler, before the static-asset early return, so that whatever request
+    // reaches this container first starts the clock.
+    //
+    // Note what that is today: `health_check_enabled` is FALSE on the web
+    // resources and the Dockerfile declares no HEALTHCHECK, so there is no
+    // probe — the first request is the first real one to reach the origin.
+    // Enabling Coolify's healthcheck (configured, just off) is what would make
+    // it a probe and the timing deterministic; see the module for why that
+    // matters more once HOS-426 raises the TTLs.
+    //
+    // No-ops on every subsequent call, never awaits, and never throws.
     void schedulePurgeOnDeploy();
 
     const path = context.url.pathname;
