@@ -19,6 +19,7 @@ import {
 } from './reviews';
 import { adminRevokeHostTradeRoute } from './revoke';
 import { adminUpdateHostTradeRoute } from './update';
+import { adminListHostTradeUsagesRoute, adminSetDeclarationSuspensionRoute } from './usages';
 
 const adminRouter = createRouter();
 
@@ -29,6 +30,12 @@ adminRouter.route('/', adminListHostTradeReviewsRoute);
 adminRouter.route('/', adminModerateHostTradeReviewRoute);
 adminRouter.route('/', adminListHostTradeRepliesRoute);
 adminRouter.route('/', adminModerateHostTradeReplyRoute);
+
+// The usage audit screen and the declaration suspension (HOS-376 T-038).
+// `usages` is a literal segment, registered before the parameterised routes for
+// the same defence-in-depth reason as the queues above.
+adminRouter.route('/', adminListHostTradeUsagesRoute);
+adminRouter.route('/', adminSetDeclarationSuspensionRoute);
 
 // GET / - List all host-trade entries (including deleted)
 adminRouter.route('/', adminListHostTradesRoute);
