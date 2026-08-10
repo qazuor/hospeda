@@ -32,6 +32,7 @@ import {
 import { HostTradeService, HostTradeUsageService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { providerDeclarationRateLimit } from '../../../middlewares/host-trade-rate-limits';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -179,7 +180,10 @@ export const protectedDeclareUsageAsProviderRoute = createProtectedRoute({
     handler: async (ctx: Context, _params: unknown, body: unknown) =>
         handleDeclareUsageAsProvider(ctx, body),
     options: {
-        customRateLimit: { requests: 20, windowMs: 60_000 }
+        customRateLimit: { requests: 20, windowMs: 60_000 },
+        // The channel-aware budget (T-039): the email fallback is the spray
+        // vector, so it runs out long before the selector does.
+        middlewares: [providerDeclarationRateLimit]
     }
 });
 

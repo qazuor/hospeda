@@ -32,6 +32,7 @@ import {
 import { HostTradeService, HostTradeUsageService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { hostDeclarationRateLimit } from '../../../middlewares/host-trade-rate-limits';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -135,7 +136,10 @@ export const protectedDeclareUsageRoute = createProtectedRoute({
     handler: async (ctx: Context, params: Record<string, unknown>, body: unknown) =>
         handleDeclareUsageBySlug(ctx, params, body),
     options: {
-        customRateLimit: { requests: 20, windowMs: 60_000 }
+        customRateLimit: { requests: 20, windowMs: 60_000 },
+        // A typo guard rather than a defence: this is the host declaring about
+        // himself, behind the directory's own permission (T-039).
+        middlewares: [hostDeclarationRateLimit]
     }
 });
 

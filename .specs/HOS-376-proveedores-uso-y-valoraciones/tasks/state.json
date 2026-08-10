@@ -1459,7 +1459,7 @@
             "id": "T-039",
             "title": "Rate limits de declaración y valoración",
             "description": "createSlidingWindowPerUserRateLimit en: POST mine/usages (más estricto en el canal EMAIL_LOOKUP, que es el vector de spray), POST {slug}/usages y POST reviews. Valores iniciales conservadores, documentados. Tests: superar el límite devuelve 429; el límite del canal email es más estricto que el del selector.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-031", "T-034"],
             "blocks": ["T-062"],
@@ -1467,14 +1467,23 @@
             "tags": ["api", "rate-limit", "anti-abuse"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T05:30:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T05:30:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T05:30:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T05:15:00Z",
+                "completed": "2026-08-10T05:30:00.000Z"
             }
         },
         {
@@ -2381,9 +2390,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 31,
+        "pending": 30,
         "inProgress": 0,
-        "completed": 39,
+        "completed": 40,
         "blocked": 0,
         "averageComplexity": 2.4
     }

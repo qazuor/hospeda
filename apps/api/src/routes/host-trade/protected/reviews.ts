@@ -42,6 +42,7 @@ import {
 import { HostTradeReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { hostTradeReviewRateLimit } from '../../../middlewares/host-trade-rate-limits';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -159,7 +160,10 @@ export const protectedCreateReviewRoute = createProtectedRoute({
     handler: async (ctx: Context, params: Record<string, unknown>, body: unknown) =>
         handleCreateReview(ctx, params, body),
     options: {
-        customRateLimit: { requests: 10, windowMs: 60_000 }
+        customRateLimit: { requests: 10, windowMs: 60_000 },
+        // Bounds the cost of hammering the endpoint to discover which
+        // host/provider pairs exist (T-039).
+        middlewares: [hostTradeReviewRateLimit]
     }
 });
 
