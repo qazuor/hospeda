@@ -18,7 +18,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { AccommodationEditFormSchema } from '@/components/host/AccommodationEditor.client';
+import { AccommodationEditFormSchema } from '@/components/host/editor/accommodation-edit-form.schema';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 

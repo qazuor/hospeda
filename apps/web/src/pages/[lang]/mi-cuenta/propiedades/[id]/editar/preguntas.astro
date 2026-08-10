@@ -1,0 +1,45 @@
+---
+/**
+ * @file preguntas.astro
+ * @description FAQ section of the accommodation editor (HOS-318 T-013).
+ *
+ * FAQs are preloaded server-side so `FaqSection` paints real data on first
+ * paint — HOS-393's SSR-first behaviour, which must not regress just because the
+ * section moved to its own route. `FaqSection` owns its own persistence.
+ */
+
+import { FaqSection } from '@/components/host/editor/FaqSection.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'preguntas',
+	need: ['faqs', 'translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="preguntas"
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.section.faqs', 'Preguntas frecuentes')}
+>
+	<FaqSection
+		locale={locale}
+		accommodationId={accommodationId}
+		initialFaqs={data.faqs}
+		client:load
+	/>
+</EditorSectionLayout>

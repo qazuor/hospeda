@@ -1,0 +1,178 @@
+---
+/**
+ * @file EditorHub.astro
+ * @description The editor's landing page: every section as a row (HOS-318 T-007).
+ *
+ * Rendered at `…/editar/` on BOTH viewports (D-8). On narrow screens it IS the
+ * navigation — there is no persistent sidebar there. On desktop it doubles as a
+ * status summary of the property, which is why it is a real page and not a
+ * redirect to the first section. A redirect would also trap the back button
+ * (section → hub → re-redirect).
+ *
+ * Zero JavaScript.
+ *
+ * Design constraints, all driven by the audience (largely older, non-technical
+ * hosts): every row is a 44px+ tap target, every icon sits BESIDE its text and
+ * never replaces it, and warnings say what is wrong in words rather than relying
+ * on colour.
+ */
+
+import {
+	ACCOMMODATION_EDITOR_SECTIONS,
+	buildEditorSectionUrl,
+	EDITOR_SECTION_GROUP_LABEL_KEYS,
+	EDITOR_SECTION_GROUPS,
+} from '@/lib/editor/accommodation-editor-sections';
+import type { EditorSectionStatus } from '@/lib/editor/editor-hub-status-model';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly accommodationId: string;
+	readonly hasTranslations: boolean;
+	/** Status lines keyed by section id. A missing key renders no second line. */
+	readonly statuses: Readonly<Record<string, EditorSectionStatus>>;
+}
+
+const { locale, accommodationId, hasTranslations, statuses } = Astro.props;
+const { t } = createTranslations(locale);
+
+const visible = ACCOMMODATION_EDITOR_SECTIONS.filter(
+	(section) => section.id !== 'translations' || hasTranslations,
+);
+
+const groups = EDITOR_SECTION_GROUPS.map((group) => ({
+	group,
+	headingKey: EDITOR_SECTION_GROUP_LABEL_KEYS[group],
+	sections: visible.filter((section) => section.group === group),
+})).filter((entry) => entry.sections.length > 0);
+---
+
+<div class="editor-hub">
+	{groups.map((entry) => (
+		<section class="editor-hub__group" aria-labelledby={`hub-group-${entry.group}`}>
+			<h2 class="editor-hub__group-heading" id={`hub-group-${entry.group}`}>
+				{t(entry.headingKey)}
+			</h2>
+			<ul class="editor-hub__list">
+				{entry.sections.map((section) => {
+					const status = statuses[section.id];
+					return (
+						<li class="editor-hub__item">
+							<a
+								class="editor-hub__row"
+								href={buildEditorSectionUrl({ locale, accommodationId, section })}
+							>
+								<span class="editor-hub__text">
+									<span class="editor-hub__title">{t(section.labelKey)}</span>
+									{status && (
+										<span
+											class:list={[
+												'editor-hub__status',
+												{ 'editor-hub__status--warning': status.tone === 'warning' },
+											]}
+										>
+											{t(status.labelKey, undefined, status.params)}
+										</span>
+									)}
+								</span>
+								<span class="editor-hub__chevron" aria-hidden="true">›</span>
+							</a>
+						</li>
+					);
+				})}
+			</ul>
+		</section>
+	))}
+</div>
+
+<style>
+	.editor-hub {
+		max-width: 720px;
+	}
+
+	.editor-hub__group + .editor-hub__group {
+		margin-top: var(--space-6, 2rem);
+	}
+
+	.editor-hub__group-heading {
+		margin: 0 0 var(--space-2, 0.5rem);
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--core-muted-foreground);
+	}
+
+	.editor-hub__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		border-radius: var(--radius-card, 24px);
+		overflow: hidden;
+		background-color: var(--core-card);
+		box-shadow: var(--shadow-card);
+	}
+
+	.editor-hub__item + .editor-hub__item .editor-hub__row {
+		border-top: 1px solid var(--border);
+	}
+
+	.editor-hub__row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-3, 1rem);
+		/* Tap target well above the 44px floor: this editor's audience is older
+		   and often on a phone, where a cramped row is a missed tap. */
+		min-height: 56px;
+		padding: 0.875rem 1.25rem;
+		text-decoration: none;
+		color: inherit;
+		transition: background-color 150ms ease-out;
+	}
+
+	.editor-hub__row:hover {
+		background-color: var(--surface-warm);
+	}
+
+	.editor-hub__row:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: -2px;
+	}
+
+	.editor-hub__text {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		min-width: 0;
+	}
+
+	.editor-hub__title {
+		font-family: var(--font-sans);
+		font-size: 1rem;
+		font-weight: 500;
+		color: var(--core-foreground);
+	}
+
+	.editor-hub__status {
+		font-family: var(--font-sans);
+		font-size: 0.8125rem;
+		color: var(--core-muted-foreground);
+	}
+
+	/* The warning's own text already carries the marker, so colour is
+	   reinforcement and never the only signal. */
+	.editor-hub__status--warning {
+		color: var(--brand-accent);
+	}
+
+	.editor-hub__chevron {
+		flex-shrink: 0;
+		font-size: 1.25rem;
+		line-height: 1;
+		color: var(--core-muted-foreground);
+	}
+</style>

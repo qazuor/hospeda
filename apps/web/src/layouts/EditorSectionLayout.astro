@@ -1,0 +1,104 @@
+---
+/**
+ * @file EditorSectionLayout.astro
+ * @description Shared shell for every accommodation editor page (HOS-318 T-010).
+ *
+ * Wraps `AccountLayout` — UNCHANGED, and that is the point. HOS-318 D-1 rejected
+ * a "focus mode" that retracts the account sidebar inside the editor: for an
+ * older, non-technical host, a menu that transforms itself according to where
+ * you are is disorienting. The sidebar looks and behaves identically inside the
+ * editor and outside it.
+ *
+ * All eleven editor pages (the hub plus ten sections) render through here, so
+ * the auth guard, the id-param check, the data load and the redirect branches
+ * are written once instead of eleven times.
+ *
+ * Usage from a page:
+ * ```astro
+ * const result = await resolveEditorSectionPage({ astro: Astro, sectionSlug: 'fotos', need: ['media'] });
+ * if (result.redirect) return result.redirect;
+ * ```
+ */
+
+import EditorBreadcrumbs from '@/components/host/editor/EditorBreadcrumbs.astro';
+import EditorRouteNav from '@/components/host/editor/EditorRouteNav.astro';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly accommodationId: string;
+	readonly accommodationName: string;
+	/** `null` on the hub, where no section is active. */
+	readonly currentSectionId: string | null;
+	/** `null` on the hub. Drives the last breadcrumb. */
+	readonly currentSectionSlug: string | null;
+	readonly hasTranslations: boolean;
+	readonly title: string;
+	readonly description?: string;
+}
+
+const {
+	locale,
+	accommodationId,
+	accommodationName,
+	currentSectionId,
+	currentSectionSlug,
+	hasTranslations,
+	title,
+	description,
+} = Astro.props;
+---
+
+<AccountLayout locale={locale} title={title} description={description}>
+	<main class="section">
+		<div class="section__container">
+			<EditorBreadcrumbs
+				locale={locale}
+				accommodationId={accommodationId}
+				accommodationName={accommodationName}
+				currentSectionSlug={currentSectionSlug}
+			/>
+
+			<div class="editor-shell">
+				<div class="editor-shell__nav">
+					<EditorRouteNav
+						locale={locale}
+						accommodationId={accommodationId}
+						currentSectionId={currentSectionId}
+						hasTranslations={hasTranslations}
+					/>
+				</div>
+
+				<div class="editor-shell__body">
+					<slot />
+				</div>
+			</div>
+		</div>
+	</main>
+</AccountLayout>
+
+<style>
+	/* Same two-column geometry the pre-split editor used (220px nav from
+	   1100px up). Desktop must not visibly change shape — see D-1. */
+	.editor-shell {
+		display: block;
+	}
+
+	.editor-shell__body {
+		max-width: 720px;
+	}
+
+	@media (min-width: 1100px) {
+		.editor-shell {
+			display: grid;
+			grid-template-columns: 220px 1fr;
+			gap: var(--space-8, 32px);
+			align-items: start;
+		}
+
+		.editor-shell__body {
+			max-width: none;
+		}
+	}
+</style>

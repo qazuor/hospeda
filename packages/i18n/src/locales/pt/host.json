@@ -535,7 +535,18 @@
             },
             "hub": {
                 "title": "Editar propriedade",
-                "subtitle": "Escolha o que você quer editar"
+                "subtitle": "Escolha o que você quer editar",
+                "status": {
+                    "missingDescription": "⚠ Falta a descrição",
+                    "missingPrice": "⚠ Sem preço",
+                    "guests": "Até {{count}} hóspedes",
+                    "missingCoordinates": "⚠ Sem localização no mapa",
+                    "selected": "{{count}} selecionados",
+                    "photos": "{{count}} fotos",
+                    "missingPhotos": "⚠ Sem fotos",
+                    "faqs": "{{count}} perguntas",
+                    "missingContact": "⚠ Sem dados de contato"
+                }
             }
         },
         "empty": {

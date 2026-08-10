@@ -1,0 +1,43 @@
+---
+/**
+ * @file capacidad-precio.astro
+ * @description Capacity and price section of the editor (HOS-318 T-021).
+ *
+ * Needs no catalog at all — this page issues exactly one request.
+ */
+
+import { CapacityPricingForm } from '@/components/host/editor/forms/CapacityPricingForm.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'capacidad-precio',
+	need: ['translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="capacidad-precio"
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.section.capacityPricing', 'Capacidad y precio')}
+>
+	<CapacityPricingForm
+		locale={locale}
+		accommodationId={accommodationId}
+		initialData={data.accommodation}
+		client:load
+	/>
+</EditorSectionLayout>

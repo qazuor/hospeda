@@ -1,0 +1,52 @@
+---
+/**
+ * @file traducciones.astro
+ * @description Translations section of the accommodation editor (HOS-318 T-015).
+ *
+ * Conditional: the nav item and the hub row only appear when translation data
+ * exists, and this route redirects to the hub when it does not — rendering an
+ * empty shell would be a dead end reached from a link that should not have been
+ * shown in the first place.
+ */
+
+import { TranslationPanel } from '@/components/host/editor/TranslationPanel.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { buildEditorHubUrl } from '@/lib/editor/accommodation-editor-sections';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'traducciones',
+	need: ['translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+
+if (data.translations === null) {
+	return Astro.redirect(buildEditorHubUrl({ locale, accommodationId }));
+}
+
+const { t } = createTranslations(locale);
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="traducciones"
+	hasTranslations={true}
+	title={t('host.properties.editor.translation.sectionTitle', 'Traducciones')}
+>
+	<TranslationPanel
+		locale={locale}
+		accommodationId={accommodationId}
+		translations={data.translations}
+		client:load
+	/>
+</EditorSectionLayout>
