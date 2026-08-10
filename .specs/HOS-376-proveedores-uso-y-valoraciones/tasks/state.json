@@ -1374,36 +1374,45 @@
         {
             "id": "T-037",
             "title": "Endpoints admin de valoraciones y réplicas",
-            "description": "GET /admin/host-trades/reviews (HOST_TRADE_REVIEW_VIEW_ALL, filtro moderationState, paginación page+pageSize NO limit), POST /admin/host-trades/reviews/{id}/moderate, GET /admin/host-trades/replies, POST /admin/host-trades/replies/{id}/moderate (ambos HOST_TRADE_REVIEW_MODERATE), GET /admin/moderation/host-trade-reviews/pending-count. Tests: 403 sin permiso; moderar recalcula los agregados.",
-            "status": "pending",
+            "description": "GET /admin/host-trades/reviews (HOST_TRADE_REVIEW_VIEW_ALL, filtro moderationState, paginación page+pageSize NO limit), POST /admin/host-trades/reviews/{id}/moderate, GET /admin/host-trades/replies, POST /admin/host-trades/replies/{id}/moderate (ambos HOST_TRADE_REVIEW_MODERATE), GET /admin/moderation/host-trade-reviews/pending-count. Tests: 403 sin permiso; moderar recalcula los agregados. CERRADA: 4 rutas en apps/api/src/routes/host-trade/admin/reviews.ts mas el badge en routes/moderation/admin/host-trade-reviews-pending-count.ts. LAS DOS COLAS SE REPORTAN SEPARADAS, y ese es el diseno del endpoint: una valoracion nace APPROVED, asi que su pila pendiente es BACKLOG y nadie espera; una replica nace PENDING, asi que su pila son proveedores que no pueden responder una queja sobre su propio negocio hasta que un humano los libere. Sumadas en un solo numero, 40 items inofensivos se ven identicos a 40 proveedores bloqueados. El total se devuelve igual porque un badge necesita un numero. El gate va EN LA RUTA, a diferencia del reviews-pending-count de SPEC-166 que lo dejo afuera porque sus dos conteos responden a permisos distintos (OR); aca los dos responden a HOST_TRADE_REVIEW_MODERATE, o sea que no hay respuesta parcial que dar. Ningun listado admin fuerza estado de moderacion: una cola achicada a APPROVED no tendria nada que moderar (regla opuesta a la de T-036, y por eso listForDirectory no reusa _executeSearch). PENDING no se acepta como decision: es un estado, no un veredicto, y ofrecerlo dejaria parquear algo en la cola sin registro de quien lo movio ni por que. Mutacion: 3 aplicadas, 3 mataron test (colapsar las colas, achicar la cola admin a APPROVED, aceptar PENDING como veredicto). HALLAZGO: el route factory VALIDA el payload de respuesta contra el schema declarado y da 500 con 'Response payload does not match declared schema' — los fixtures de test tienen que ser entidades COMPLETAS, no stubs.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-028"],
             "blocks": ["T-041", "T-055", "T-063"],
             "subtasks": [
                 {
                     "title": "Listados con filtro de moderationState",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Endpoints de moderate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "pending-count",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "admin", "moderation"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T04:10:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T04:10:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T04:10:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T03:40:00Z",
+                "completed": "2026-08-10T04:10:00.000Z"
             }
         },
         {
@@ -2363,9 +2372,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 33,
+        "pending": 32,
         "inProgress": 0,
-        "completed": 37,
+        "completed": 38,
         "blocked": 0,
         "averageComplexity": 2.4
     }

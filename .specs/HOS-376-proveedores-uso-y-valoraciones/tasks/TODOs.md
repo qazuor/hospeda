@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 37/70 tareas (53%)
+## Progreso: 38/70 tareas (54%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 7/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 8/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -132,7 +132,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-036** (c2) — Endpoint GET /protected/host-trades/{id}/reviews
   - Listado de valoraciones del proveedor para el directorio. Fuerza moderationState=APPROVED y deletedAt IS NULL DESPUÉS del spread de filtros del caller (imposible de bypassear por query param…
   - Bloqueada por: T-024, T-025 · Bloquea a: T-050, T-053
-- [ ] **T-037** (c3) — Endpoints admin de valoraciones y réplicas
+- [x] **T-037** (c3) — Endpoints admin de valoraciones y réplicas
   - GET /admin/host-trades/reviews (HOST_TRADE_REVIEW_VIEW_ALL, filtro moderationState, paginación page+pageSize NO limit), POST /admin/host-trades/reviews/{id}/moderate, GET /admin/host-trades/…
   - Bloqueada por: T-028 · Bloquea a: T-041, T-055, T-063
 - [ ] **T-038** (c3) — Endpoints admin de usos y suspensión de declaración
@@ -271,10 +271,10 @@ máquina de estados de usos, guardas de declaración, suspensión por umbral,
 valoraciones, réplicas, moderación, agregados y el QR— está implementada y
 cubierta.
 
-Sigue la fase `integration` (27 tareas, 7 cerradas). Con T-034, T-035 y T-036
-adentro, el camino natural es T-037 (endpoints admin, que tiene que leer LAS
-DOS colas de moderación: la de valoraciones, que es backlog, y la de réplicas,
-que bloquea publicación) y T-038 (admin de usos + suspensión).
+Sigue la fase `integration` (27 tareas, 8 cerradas). Cerrada toda la capa de
+rutas de valoraciones y réplicas (T-034 a T-037), el camino natural es T-038
+(admin de usos + suspensión) y de ahí los templates de mail (T-040) con su
+cableado (T-041).
 
 Pendiente sin tarea asignada: `GET /protected/host-trades/mine/reviews`
 (spec 7.5, tabla del proveedor) no lo crea ninguna tarea. T-051 lo necesita.
