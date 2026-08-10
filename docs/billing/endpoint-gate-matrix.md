@@ -490,6 +490,10 @@
 | `DELETE /api/v1/admin/host-trades/{id}/hard` | `host-trade/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/host-trades/{id}/restore` | `host-trade/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
 | `POST /api/v1/admin/host-trades/{id}/revoke` | `host-trade/admin/revoke.ts` | none | - | n/a | HOS-278 R-4. Admin write; PermissionEnum-gated (HOST_TRADE_DELETE — it removes a provider from the directory, nearer to deletion than to an edit). Action-POST rather than DELETE because the reason is required and Hono discards a DELETE body |
+| `GET /api/v1/admin/host-trades/reviews` | `host-trade/admin/reviews.ts` | none | - | n/a | HOS-376 T-037, the review moderation queue. Staff bypass entitlements (INV-6), so the gate is `HOST_TRADE_REVIEW_VIEW_ALL` only. Deliberately forces NO moderation state — a queue narrowed to APPROVED would have nothing to moderate, which is the opposite of the directory listing's rule |
+| `POST /api/v1/admin/host-trades/reviews/{id}/moderate` | `host-trade/admin/reviews.ts` | none | - | n/a | HOS-376 T-037. `HOST_TRADE_REVIEW_MODERATE`. Rejecting recomputes the listing's aggregates in the same transaction (AC-27), so the public card can never show a count that includes a review nobody can read |
+| `GET /api/v1/admin/host-trades/replies` | `host-trade/admin/reviews.ts` | none | - | n/a | HOS-376 T-037, the reply moderation queue. `HOST_TRADE_REVIEW_VIEW_ALL`. Unlike the review queue this one BLOCKS publication: a provider waiting here cannot answer a complaint about his business |
+| `POST /api/v1/admin/host-trades/replies/{id}/moderate` | `host-trade/admin/reviews.ts` | none | - | n/a | HOS-376 T-037. `HOST_TRADE_REVIEW_MODERATE`. No aggregate recount — a reply is not counted anywhere, so recomputing would be three queries that cannot change a number |
 | `POST /api/v1/admin/host-trades/{id}/review-benefit` | `host-trade/admin/review-benefit.ts` | none | - | n/a | HOS-278 AC-8. Admin write; PermissionEnum-gated (HOST_TRADE_UPDATE). Resolves the pending benefit edit a provider submitted from /mi-cuenta |
 | **EVENT-LOCATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/event-locations` | `event-location/admin/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
@@ -697,6 +701,7 @@
 | **MODERATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/moderation/pending-count` | `moderation/admin/pending-count.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
 | `GET /api/v1/admin/moderation/reviews/pending-count` | `moderation/admin/reviews-pending-count.ts` | none | - | n/a | Admin moderation — OR-gated (ACCOMMODATION_REVIEW_MODERATE or DESTINATION_REVIEW_MODERATE; SPEC-166 §7) |
+| `GET /api/v1/admin/moderation/host-trade-reviews/pending-count` | `moderation/admin/host-trade-reviews-pending-count.ts` | none | - | n/a | HOS-376 T-037. Gated on the route by `HOST_TRADE_REVIEW_MODERATE`, unlike the SPEC-166 row above: both of its counts answer to the SAME permission, so there is no partial answer to give an actor who lacks it. Reports the two queues separately on purpose — a pending review is backlog (reviews publish on creation) while a pending reply is a provider blocked from answering a complaint |
 | **CONTENT MODERATION — ADMIN** | | | | | |
 | `GET /api/v1/admin/content-moderation/health` | `content-moderation/admin/health.ts` | none | - | n/a | Admin ops read; PermissionEnum-gated (MODERATION_TERM_VIEW) — no billing entitlement on provider/cache telemetry |
 | `GET /api/v1/admin/content-moderation/terms` | `content-moderation/admin/terms/list.ts` | none | - | n/a | Admin read; PermissionEnum-gated (MODERATION_TERM_VIEW) |

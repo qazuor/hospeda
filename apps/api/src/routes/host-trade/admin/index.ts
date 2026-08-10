@@ -11,10 +11,24 @@ import { adminListHostTradesRoute } from './list';
 import { adminPatchHostTradeRoute } from './patch';
 import { adminRestoreHostTradeRoute } from './restore';
 import { adminReviewHostTradeBenefitRoute } from './review-benefit';
+import {
+    adminListHostTradeRepliesRoute,
+    adminListHostTradeReviewsRoute,
+    adminModerateHostTradeReplyRoute,
+    adminModerateHostTradeReviewRoute
+} from './reviews';
 import { adminRevokeHostTradeRoute } from './revoke';
 import { adminUpdateHostTradeRoute } from './update';
 
 const adminRouter = createRouter();
+
+// The two moderation queues (HOS-376 T-037). Registered before `/{id}` for the
+// same defence-in-depth reason as the protected side: `reviews` and `replies`
+// are literal segments a parameterised route would happily swallow.
+adminRouter.route('/', adminListHostTradeReviewsRoute);
+adminRouter.route('/', adminModerateHostTradeReviewRoute);
+adminRouter.route('/', adminListHostTradeRepliesRoute);
+adminRouter.route('/', adminModerateHostTradeReplyRoute);
 
 // GET / - List all host-trade entries (including deleted)
 adminRouter.route('/', adminListHostTradesRoute);
