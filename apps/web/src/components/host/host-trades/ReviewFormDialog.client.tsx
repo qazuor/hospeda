@@ -27,7 +27,7 @@
 
 import { HostTradeReviewCreateBodySchema } from '@repo/schemas';
 import { useEffect, useId, useRef, useState } from 'react';
-import type { HostTradeReviewBreakdown } from '@/lib/api/endpoints-protected';
+import type { HostTradeReview, HostTradeReviewBreakdown } from '@/lib/api/endpoints-protected';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import { cn } from '@/lib/cn';
@@ -94,6 +94,9 @@ export function ReviewFormDialog({
     const [submitting, setSubmitting] = useState(false);
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
     const [published, setPublished] = useState<'APPROVED' | 'PENDING' | null>(null);
+    const [loading, setLoading] = useState(true);
+    /** The review already on file, or null. Decides create vs edit. */
+    const [existing, setExisting] = useState<HostTradeReview | null>(null);
 
     // Opened imperatively so the browser supplies the focus trap and Escape.
     // `showModal` is guarded because jsdom does not implement it, and an
@@ -109,8 +112,102 @@ export function ReviewFormDialog({
         }
     }, []);
 
+    // Reads back whatever the host already wrote, which is what decides between
+    // publishing and editing. A FAILED read falls through to the create form
+    // rather than blocking: refusing to open would leave the host unable to say
+    // anything at all, and if a review does exist the create call still answers
+    // 409 REVIEW_ALREADY_EXISTS with its own copy.
+    useEffect(() => {
+        let cancelled = false;
+
+        void (async () => {
+            const result = await hostTradesApi.getMyReview({ hostTradeId });
+            if (cancelled) return;
+
+            const review = result.ok ? result.data.review : null;
+            if (review) {
+                setExisting(review);
+                setOverallRating(review.overallRating);
+                setRespectedBenefit(review.respectedBenefit);
+                setBreakdown(review.rating ?? {});
+                setContent(review.content ?? '');
+            }
+            setLoading(false);
+        })();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [hostTradeId]);
+
     function setDimension(key: BreakdownKey, value: number) {
         setBreakdown((current) => ({ ...current, [key]: value }));
+    }
+
+    /**
+     * Sends an edit as a DIFF — only the fields the host actually changed.
+     *
+     * This is the load-bearing half of edit mode. Changing the TEXT re-runs
+     * moderation and can pull the review out of the directory until it is
+     * approved again, so resending an untouched `content` would turn a
+     * star-only edit into a rewrite, and could hand back as APPROVED a text a
+     * moderator had already rejected.
+     */
+    async function saveEdit(input: {
+        existing: HostTradeReview;
+        overallRating: number;
+        respectedBenefit: boolean;
+        scored: Record<string, number>;
+        trimmed: string;
+    }) {
+        const previousBreakdown = input.existing.rating ?? {};
+        const patch: Record<string, unknown> = {};
+
+        if (input.overallRating !== input.existing.overallRating) {
+            patch.overallRating = input.overallRating;
+        }
+        if (input.respectedBenefit !== input.existing.respectedBenefit) {
+            patch.respectedBenefit = input.respectedBenefit;
+        }
+        if (JSON.stringify(input.scored) !== JSON.stringify(previousBreakdown)) {
+            patch.rating = Object.keys(input.scored).length > 0 ? input.scored : null;
+        }
+        if (input.trimmed !== (input.existing.content ?? '')) {
+            // An emptied comment is a deletion, not an absence: `null` clears
+            // the column, whereas omitting the key would leave the old text up.
+            patch.content = input.trimmed.length > 0 ? input.trimmed : null;
+        }
+
+        if (Object.keys(patch).length === 0) {
+            setErrorMessage(
+                t('host-trades.review.errors.noChanges', 'No cambiaste nada de tu valoración.')
+            );
+            return;
+        }
+
+        setSubmitting(true);
+        const result = await hostTradesApi.updateReview({
+            reviewId: input.existing.id,
+            body: patch
+        });
+        setSubmitting(false);
+
+        if (!result.ok) {
+            setErrorMessage(
+                translateApiError({
+                    error: result.error,
+                    t,
+                    fallback: t(
+                        'host-trades.review.errors.generic',
+                        'No pudimos publicar tu valoración. Probá de nuevo en un momento.'
+                    )
+                })
+            );
+            return;
+        }
+
+        setPublished(result.data.review.moderationState === 'PENDING' ? 'PENDING' : 'APPROVED');
+        onSaved();
     }
 
     async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
@@ -152,6 +249,11 @@ export function ReviewFormDialog({
         const scored = Object.fromEntries(
             Object.entries(breakdown).filter(([, value]) => typeof value === 'number')
         );
+
+        if (existing) {
+            await saveEdit({ existing, overallRating, respectedBenefit, scored, trimmed });
+            return;
+        }
 
         const body = {
             overallRating,
@@ -210,10 +312,18 @@ export function ReviewFormDialog({
                 className={styles.title}
                 id={titleId}
             >
-                {t('host-trades.review.title', 'Valorar a {{name}}', { name: providerName })}
+                {existing
+                    ? t('host-trades.review.editTitle', 'Editar tu valoración de {{name}}', {
+                          name: providerName
+                      })
+                    : t('host-trades.review.title', 'Valorar a {{name}}', { name: providerName })}
             </h2>
 
-            {published ? (
+            {loading ? (
+                <p className={styles.successBody}>
+                    {t('host-trades.review.loading', 'Buscando si ya lo valoraste…')}
+                </p>
+            ) : published ? (
                 <div
                     className={styles.success}
                     role="status"
@@ -411,7 +521,9 @@ export function ReviewFormDialog({
                         >
                             {submitting
                                 ? t('host-trades.review.submitting', 'Publicando…')
-                                : t('host-trades.review.submit', 'Publicar valoración')}
+                                : existing
+                                  ? t('host-trades.review.save', 'Guardar cambios')
+                                  : t('host-trades.review.submit', 'Publicar valoración')}
                         </button>
                     </div>
                 </form>
