@@ -2292,6 +2292,27 @@ export const hostTradesApi = {
     },
 
     /**
+     * How many usages await the caller's confirmation (HOS-376 T-047).
+     *
+     * Backs the navigation badge, and counts the SAME rows
+     * {@link hostTradesApi.listPendingUsages} returns — a badge showing 3 over a
+     * list of 1 is worse than either number being wrong alone.
+     *
+     * @param params - `cookieHeader` when calling from SSR; omit in the browser.
+     * @returns The pending count.
+     */
+    countPendingUsages({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<{ readonly count: number }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/usages/pending-count`,
+            cookieHeader
+        });
+    },
+
+    /**
      * Confirms a usage the counterpart declared.
      *
      * Anything that is not the caller's to answer — someone else's row, or one

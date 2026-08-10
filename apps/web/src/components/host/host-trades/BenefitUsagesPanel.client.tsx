@@ -26,6 +26,7 @@ import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { BenefitUsageCard } from './BenefitUsageCard';
+import { BENEFIT_USAGES_UPDATED_EVENT } from './BenefitUsagesCountPill.client';
 import styles from './BenefitUsagesPanel.module.css';
 
 /** Rows per page, matching what the page asked for server-side. */
@@ -156,6 +157,12 @@ export function BenefitUsagesPanel({
             }
 
             await refreshAll();
+
+            // Tells the navigation badge to re-read. The two are separate
+            // islands with no shared store, and the badge must clear the moment
+            // the usage is RESOLVED — not when this page happens to be opened.
+            window.dispatchEvent(new CustomEvent(BENEFIT_USAGES_UPDATED_EVENT));
+
             setBusyId(null);
         },
         [busyId, genericError, refreshAll, t]

@@ -30,10 +30,17 @@ const ISLAND_PATH = resolve(
     '../../src/components/host/host-trades/BenefitUsagesPanel.client.tsx'
 );
 const CARD_PATH = resolve(__dirname, '../../src/components/host/host-trades/BenefitUsageCard.tsx');
+const PILL_PATH = resolve(
+    __dirname,
+    '../../src/components/host/host-trades/BenefitUsagesCountPill.client.tsx'
+);
+const ACCOUNT_LAYOUT_PATH = resolve(__dirname, '../../src/layouts/AccountLayout.astro');
 
 const pageSrc = readFileSync(PAGE_PATH, 'utf8');
 const islandSrc = readFileSync(ISLAND_PATH, 'utf8');
 const cardSrc = readFileSync(CARD_PATH, 'utf8');
+const pillSrc = readFileSync(PILL_PATH, 'utf8');
+const accountLayoutSrc = readFileSync(ACCOUNT_LAYOUT_PATH, 'utf8');
 
 /** Resolves a dotted `host-trades.*` key against the Spanish catalog. */
 function resolveEsKey(dottedKey: string): unknown {
@@ -170,5 +177,44 @@ describe('usos-de-beneficio — reachability', () => {
 
     it('has a label for that nav item in the Spanish catalog', () => {
         expect((esAccount as { nav: Record<string, string> }).nav.benefitUsages).toBeTruthy();
+    });
+
+    it('mounts the count badge on that nav item (T-047)', () => {
+        expect(accountLayoutSrc).toContain(
+            "item.id === 'benefitUsages' && <BenefitUsagesCountPill locale={locale} client:idle />"
+        );
+        expect(accountLayoutSrc).toContain(
+            "import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';"
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// The badge's rule (T-047)
+// ---------------------------------------------------------------------------
+
+describe('usos-de-beneficio — the nav badge clears on resolve, not on view', () => {
+    it('makes no "mark as seen" CALL, which is what the whats-new molde has', () => {
+        // The rule of §6.6, as a guard: a badge that cleared on view would hide
+        // a usage still waiting for an answer.
+        //
+        // Scoped to call expressions, not to the word. A bare /seen/i over the
+        // file flags the JSDoc that EXPLAINS why no such call exists — the guard
+        // would then be reporting its own documentation as the defect, and the
+        // only way to make it pass would be to delete the explanation.
+        expect(pillSrc).not.toMatch(/\b(markSeen|markAllSeen|useWhatsNew)\s*\(/);
+        expect(pillSrc).toContain('countPendingUsages()');
+    });
+
+    it('re-reads when the panel announces a resolved usage', () => {
+        // Both halves: the panel emits and the badge listens on the same name.
+        expect(islandSrc).toContain('BENEFIT_USAGES_UPDATED_EVENT');
+        expect(islandSrc).toContain('window.dispatchEvent');
+        expect(pillSrc).toContain('addEventListener(BENEFIT_USAGES_UPDATED_EVENT');
+    });
+
+    it('states the count in the accessible label, not only as a glyph', () => {
+        expect(pillSrc).toContain('aria-label={label}');
+        expect(resolveEsKey('host-trades.usages.badge.pendingCount')).toBeTruthy();
     });
 });

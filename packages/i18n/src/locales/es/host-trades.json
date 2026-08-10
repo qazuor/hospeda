@@ -126,6 +126,9 @@
         "errors": {
             "load": "No pudimos cargar tus usos del beneficio. Probá recargar la página.",
             "action": "No pudimos completar la acción. Probá de nuevo en un momento."
+        },
+        "badge": {
+            "pendingCount": "{{count}} usos esperan tu confirmación"
         }
     }
 }
