@@ -112,6 +112,13 @@ const pendingInboxInputSchema = z.object({
     pageSize: z.number().int().min(1).max(100).default(20)
 });
 
+/** Input for {@link HostTradeUsageService.listForHost}. */
+const hostUsageListInputSchema = z.object({
+    status: z.enum(HostTradeUsageStatusEnum).optional(),
+    page: z.number().int().min(1).default(1),
+    pageSize: z.number().int().min(1).max(100).default(20)
+});
+
 /** Input for {@link HostTradeUsageService.listForProvider}. */
 const providerUsageListInputSchema = z.object({
     hostTradeId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -656,6 +663,68 @@ export class HostTradeUsageService extends BaseCrudService<
                 requireSession(validatedActor);
                 const count = await this.model.countPendingForUser(validatedActor.id, ctx?.tx);
                 return { count };
+            }
+        });
+    }
+
+    /**
+     * Every usage recorded against this host, newest first — his own record.
+     *
+     * DISTINCT FROM {@link listPendingForHost}, and the difference is the reason
+     * this exists. The inbox is scoped to `declaredBy = 'PROVIDER'`, because a
+     * usage the host declared himself waits on the PROVIDER, not on him. That is
+     * right for an inbox and wrong as the only read a host has: it left a host
+     * who declared through the QR with nowhere to see what he had just recorded,
+     * and left the "review this provider" call to action with no CONFIRMED row to
+     * hang off.
+     *
+     * So no `declaredBy` filter here, deliberately.
+     *
+     * Authorised by having a session and nothing more, for the same reason as the
+     * inbox: the rows are already scoped to the caller, so a permission could
+     * only decide whether a host may read his own history — and it would lock out
+     * someone whose directory perk lapsed while confirmed usages stayed on file.
+     *
+     * @param input.status - Optional state filter. Absent means every state.
+     * @param input.page - 1-based page number.
+     * @param input.pageSize - Rows per page.
+     * @param actor - The host whose record is being read.
+     * @param ctx - Optional service context.
+     * @returns The page of usages plus the unpaginated total.
+     */
+    public async listForHost(
+        input: {
+            status?: HostTradeUsageStatusEnum;
+            page: number;
+            pageSize: number;
+        },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsage[]; total: number }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listForHost',
+            input: { ...input, actor },
+            schema: hostUsageListInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                requireSession(validatedActor);
+
+                const where: Record<string, unknown> = {
+                    hostUserId: validatedActor.id,
+                    deletedAt: null
+                };
+                if (validated.status) {
+                    where.status = validated.status;
+                }
+
+                const { items, total } = await this.model.findAll(
+                    where,
+                    { page: validated.page, pageSize: validated.pageSize },
+                    undefined,
+                    ctx?.tx
+                );
+
+                return { items: items as HostTradeBenefitUsage[], total };
             }
         });
     }

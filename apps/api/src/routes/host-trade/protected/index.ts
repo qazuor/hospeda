@@ -27,6 +27,7 @@ import {
 import {
     protectedCountPendingUsagesRoute,
     protectedDeclareUsageRoute,
+    protectedListHostUsagesRoute,
     protectedListPendingUsagesRoute
 } from './usages';
 
@@ -55,6 +56,13 @@ protectedRouter.route('/', protectedUpdateMyHostTradeRoute);
 // `test/routes/host-trade/usages.test.ts`.
 protectedRouter.route('/', protectedListPendingUsagesRoute);
 protectedRouter.route('/', protectedCountPendingUsagesRoute);
+
+// The host's own record (HOS-376 T-046). `/usages` is ONE segment, exactly like
+// the parameterised `GET /{slug}` registered at the bottom, so `usages` is a
+// candidate slug — the same shape as the `/mine` case, not the longer-path cases
+// above. Registered here, well ahead of it, and asserted by request in
+// `test/routes/host-trade/usages.test.ts`.
+protectedRouter.route('/', protectedListHostUsagesRoute);
 
 // The provider's own side (HOS-376 T-031). `/mine/usages` overlaps `/{slug}/usages`
 // exactly as `/usages/pending` does — "mine" is a candidate `:slug` — so it is

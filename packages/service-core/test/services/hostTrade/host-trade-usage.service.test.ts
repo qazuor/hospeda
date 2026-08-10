@@ -13,7 +13,7 @@
  */
 import type { HostTradeBenefitUsageModel, HostTradeModel, UserModel } from '@repo/db';
 import { hostTradeBenefitUsages } from '@repo/db';
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { HostTradeUsageStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostTradeUsageService } from '../../../src/services/hostTrade/host-trade-usage.service';
 import { ActorFactoryBuilder } from '../../factories/actorFactory';
@@ -687,5 +687,101 @@ describe('HostTradeUsageService.applyDeclarationSuspension (T-038)', () => {
 
         expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
         expect(hostTradeModel.update).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// The host's own usages (T-046)
+// ---------------------------------------------------------------------------
+
+describe('HostTradeUsageService.listForHost — the host’s own record', () => {
+    /** A service whose `findAll` records its arguments and answers a fixed page. */
+    function buildListService() {
+        const { service, model } = buildService();
+        model.findAll = vi.fn(async () => ({
+            items: [{ id: 'usage-1', hostUserId: HOST_ID, status: 'CONFIRMED' }],
+            total: 1
+        }));
+        return { service, model };
+    }
+
+    /** The `where` object handed to `findAll`. */
+    function whereOf(model: ReturnType<typeof createModelMock>): Record<string, unknown> {
+        const call = (model.findAll as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
+        return call?.[0] as Record<string, unknown>;
+    }
+
+    it('scopes to the caller and excludes soft-deleted rows', async () => {
+        const { service, model } = buildListService();
+
+        const res = await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(res.error).toBeUndefined();
+        expect(res.data?.total).toBe(1);
+        expect(whereOf(model)).toEqual({ hostUserId: HOST_ID, deletedAt: null });
+    });
+
+    it('does NOT filter by declaredBy, unlike the pending inbox', async () => {
+        // This is the whole point of the method. The inbox is scoped to
+        // `declaredBy = 'PROVIDER'` because a host's own declaration waits on the
+        // provider, not on him — correct for an inbox, and the reason a host had
+        // no way to see his own QR declaration at all.
+        const { service, model } = buildListService();
+
+        await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(whereOf(model)).not.toHaveProperty('declaredBy');
+    });
+
+    it('filters by status when one is asked for', async () => {
+        const { service, model } = buildListService();
+
+        await service.listForHost(
+            { status: HostTradeUsageStatusEnum.CONFIRMED, page: 1, pageSize: 20 },
+            hostActor()
+        );
+
+        expect(whereOf(model).status).toBe(HostTradeUsageStatusEnum.CONFIRMED);
+    });
+
+    it('returns every state when no status is given', async () => {
+        const { service, model } = buildListService();
+
+        await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(whereOf(model)).not.toHaveProperty('status');
+    });
+
+    it('forwards the page window rather than letting findAll default it', async () => {
+        // `findAll` defaults to 20 rows; a caller asking for page 3 that silently
+        // got page 1 would render a history that never advances.
+        const { service, model } = buildListService();
+
+        await service.listForHost({ page: 3, pageSize: 5 }, hostActor());
+
+        const call = (model.findAll as unknown as { mock: { calls: unknown[][] } }).mock.calls[0];
+        expect(call?.[1]).toEqual({ page: 3, pageSize: 5 });
+    });
+
+    it('refuses an unauthenticated caller', async () => {
+        const { service } = buildListService();
+        const guest = new ActorFactoryBuilder().withId('').withPermissions([]).build();
+
+        const res = await service.listForHost({ page: 1, pageSize: 20 }, guest);
+
+        expect(res.error).toBeDefined();
+    });
+
+    it('needs no HOST_TRADE_* permission — the rows are already the caller’s', async () => {
+        // Same reasoning as the pending inbox: a permission here would only decide
+        // whether a host may read his own history, and would lock out someone
+        // whose directory perk lapsed while confirmed usages stayed on file.
+        const { service, model } = buildListService();
+        const noPerms = new ActorFactoryBuilder().withId(HOST_ID).withPermissions([]).build();
+
+        const res = await service.listForHost({ page: 1, pageSize: 20 }, noPerms);
+
+        expect(res.error).toBeUndefined();
+        expect(whereOf(model).hostUserId).toBe(HOST_ID);
     });
 });

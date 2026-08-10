@@ -26,6 +26,8 @@ import {
     CountResponseSchema,
     HostTradeBenefitUsageHostCreateBodySchema,
     HostTradeBenefitUsageProtectedSchema,
+    type HostTradeUsageStatusEnum,
+    HostTradeUsageStatusEnumSchema,
     PermissionEnum,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -108,6 +110,37 @@ export async function handleListPendingUsages(ctx: Context, query: Record<string
     };
 }
 
+/**
+ * Reads the caller's whole usage record. Exported standalone for testability.
+ *
+ * Distinct from {@link handleListPendingUsages}: the inbox is scoped to
+ * declarations made BY A PROVIDER, because a usage the host declared himself
+ * waits on the provider rather than on him. Right for an inbox, and the reason a
+ * host who declared through the QR previously had nowhere at all to see it.
+ */
+export async function handleListHostUsages(ctx: Context, query: Record<string, unknown>) {
+    const actor = getActorFromContext(ctx);
+    const { page, pageSize } = extractPaginationParams(query ?? {});
+
+    const result = await usageService.listForHost(
+        {
+            status: query.status as HostTradeUsageStatusEnum | undefined,
+            page,
+            pageSize
+        },
+        actor
+    );
+
+    if (result.error) {
+        throw new ServiceError(result.error.code, result.error.message);
+    }
+
+    return {
+        items: result.data?.items ?? [],
+        pagination: getPaginationResponse(result.data?.total ?? 0, { page, pageSize })
+    };
+}
+
 /** Reads the caller's pending count. Exported standalone for testability. */
 export async function handleCountPendingUsages(ctx: Context) {
     const actor = getActorFromContext(ctx);
@@ -170,6 +203,42 @@ export const protectedListPendingUsagesRoute = createProtectedListRoute({
         _body: Record<string, unknown>,
         query?: Record<string, unknown>
     ) => handleListPendingUsages(ctx, query ?? {}),
+    options: {
+        customRateLimit: { requests: 60, windowMs: 60_000 }
+    }
+});
+
+/**
+ * GET /api/v1/protected/host-trades/usages
+ *
+ * The host's own record: every usage naming him, whatever its state and whoever
+ * declared it, newest first. Filterable by `status`.
+ *
+ * NOT a widened `/usages/pending`. That path answers "what awaits your action"
+ * and its definition — declarations by a provider, still PENDING — is shared with
+ * the navigation badge. This one answers "what is on my file", which includes the
+ * host's own declarations and the CONFIRMED rows the review call-to-action hangs
+ * off. Collapsing the two would make the badge count a history.
+ *
+ * Auth-only, like the inbox: the rows are already scoped to `hostUserId`.
+ */
+export const protectedListHostUsagesRoute = createProtectedListRoute({
+    method: 'get',
+    path: '/usages',
+    summary: 'List your own benefit usages',
+    description:
+        'Returns every benefit usage recorded against the authenticated host, newest first, whoever declared it, optionally filtered by status. Unlike /usages/pending this includes the host’s own declarations and the confirmed history the review action depends on.',
+    tags: ['HostTrades'],
+    requestQuery: {
+        status: HostTradeUsageStatusEnumSchema.optional()
+    },
+    responseSchema: HostTradeBenefitUsageProtectedSchema,
+    handler: async (
+        ctx: Context,
+        _params: Record<string, unknown>,
+        _body: Record<string, unknown>,
+        query?: Record<string, unknown>
+    ) => handleListHostUsages(ctx, query ?? {}),
     options: {
         customRateLimit: { requests: 60, windowMs: 60_000 }
     }
