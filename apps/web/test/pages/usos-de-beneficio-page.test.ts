@@ -34,12 +34,17 @@ const PILL_PATH = resolve(
     __dirname,
     '../../src/components/host/host-trades/BenefitUsagesCountPill.client.tsx'
 );
+const REVIEW_PATH = resolve(
+    __dirname,
+    '../../src/components/host/host-trades/ReviewFormDialog.client.tsx'
+);
 const ACCOUNT_LAYOUT_PATH = resolve(__dirname, '../../src/layouts/AccountLayout.astro');
 
 const pageSrc = readFileSync(PAGE_PATH, 'utf8');
 const islandSrc = readFileSync(ISLAND_PATH, 'utf8');
 const cardSrc = readFileSync(CARD_PATH, 'utf8');
 const pillSrc = readFileSync(PILL_PATH, 'utf8');
+const reviewSrc = readFileSync(REVIEW_PATH, 'utf8');
 const accountLayoutSrc = readFileSync(ACCOUNT_LAYOUT_PATH, 'utf8');
 
 /** Resolves a dotted `host-trades.*` key against the Spanish catalog. */
@@ -119,17 +124,25 @@ describe('usos-de-beneficio page — i18n', () => {
     it.each([
         ['page', () => collectHostTradeKeys(pageSrc)],
         ['island', () => collectHostTradeKeys(islandSrc)],
-        ['card', () => collectHostTradeKeys(cardSrc)]
+        ['card', () => collectHostTradeKeys(cardSrc)],
+        ['review dialog', () => collectHostTradeKeys(reviewSrc)]
     ])('resolves every %s key against the Spanish catalog', (_name, keys) => {
         for (const key of keys()) {
             expect(resolveEsKey(key), `missing i18n key: ${key}`).toBeTruthy();
         }
     });
 
-    it('registers the island’s prefix for the production dictionary subset', () => {
-        // Without this the island renders raw dotted keys in PRODUCTION while
-        // dev looks perfect, because dev ships the whole dictionary.
-        expect(CLIENT_I18N_KEY_PREFIXES).toContain('host-trades.usages');
+    it.each([
+        'host-trades.usages',
+        'host-trades.review'
+    ])('registers %s for the production dictionary subset', (prefix) => {
+        // Without this the islands render raw dotted keys in PRODUCTION
+        // while dev looks perfect, because dev ships the whole dictionary.
+        expect(CLIENT_I18N_KEY_PREFIXES).toContain(prefix);
+    });
+
+    it('never passes an empty fallback in the review dialog either', () => {
+        expect(reviewSrc).not.toMatch(/t\(\s*['"][^'"]+['"]\s*,\s*''\s*\)/);
     });
 
     it.each([

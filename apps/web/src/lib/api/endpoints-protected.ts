@@ -20,6 +20,7 @@ import type {
     HostTradeBenefitTypeEnum,
     HostTradeCategoryEnum,
     HostTradeOwnerUpdate,
+    HostTradeReviewCreateBody,
     KeepSelections,
     LinkPreapprovalResponse,
     OccupancySourceEnum,
@@ -2133,6 +2134,37 @@ export interface BenefitUsageTransitionResponse {
     readonly usage: BenefitUsage;
 }
 
+/** The optional three-dimension breakdown a host may add to a review. */
+export interface HostTradeReviewBreakdown {
+    readonly workQuality?: number;
+    readonly punctuality?: number;
+    readonly treatment?: number;
+}
+
+/**
+ * A host's review of a provider, as its author reads it back (HOS-376 T-048).
+ *
+ * A read allowlist mirroring `HostTradeReviewProtectedSchema`, same precedent
+ * as {@link MyHostTrade}. `moderationState` is here because it is what the
+ * screen must tell the author: a review that `moderateText()` pushed to
+ * PENDING is written but not yet visible in the directory, and silence about
+ * that reads as "it did not save".
+ */
+export interface HostTradeReview {
+    readonly id: string;
+    readonly hostTradeId: string;
+    readonly hostUserId: string;
+    readonly overallRating: number;
+    readonly rating: HostTradeReviewBreakdown | null;
+    readonly averageRating: number | null;
+    readonly respectedBenefit: boolean;
+    readonly content: string | null;
+    readonly moderationState: string;
+    readonly editedAt: string | null;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
 /**
  * Reads of the `host_trades` directory, plus a provider's self-service
  * view/edit of their OWN listing.
@@ -2288,6 +2320,31 @@ export const hostTradesApi = {
             path: `${PROTECTED}/host-trades/usages/pending`,
             params: { page, pageSize },
             cookieHeader
+        });
+    },
+
+    /**
+     * Publishes the caller's review of a provider (HOS-376 T-048).
+     *
+     * The provider comes from the path and the host from the session, so the
+     * body carries neither. Four server-side gates can refuse it, each with its
+     * own code and its own copy: `403 NO_CONFIRMED_USAGE`,
+     * `403 SELF_REVIEW_FORBIDDEN`, `409 REVIEW_ALREADY_EXISTS` and
+     * `422 PROVIDER_REVOKED`.
+     *
+     * @param params - The provider `hostTradeId` and the review body.
+     * @returns The published review, or a typed error to branch on.
+     */
+    createReview({
+        hostTradeId,
+        body
+    }: {
+        hostTradeId: string;
+        body: HostTradeReviewCreateBody;
+    }): Promise<ApiResult<{ readonly review: HostTradeReview }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/${encodeURIComponent(hostTradeId)}/reviews`,
+            body
         });
     },
 

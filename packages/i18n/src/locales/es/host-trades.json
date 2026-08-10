@@ -130,5 +130,44 @@
         "badge": {
             "pendingCount": "{{count}} usos esperan tu confirmación"
         }
+    },
+    "review": {
+        "title": "Valorar a {{name}}",
+        "overall": {
+            "legend": "Puntuación general",
+            "one": "1 estrella",
+            "many": "{{count}} estrellas"
+        },
+        "benefit": {
+            "legend": "¿Te respetó el beneficio para anfitriones?",
+            "yes": "Sí",
+            "no": "No"
+        },
+        "breakdown": {
+            "summary": "Detalle por aspecto (opcional)",
+            "workQuality": "Calidad del trabajo",
+            "punctuality": "Puntualidad",
+            "treatment": "Trato"
+        },
+        "content": {
+            "label": "Comentario (opcional)",
+            "placeholder": "Contá cómo fue el trabajo. Lo van a leer otros anfitriones."
+        },
+        "submit": "Publicar valoración",
+        "submitting": "Publicando…",
+        "cancel": "Cancelar",
+        "success": {
+            "published": "Listo, tu valoración ya está publicada en el directorio.",
+            "pending": "Guardamos tu valoración y quedó en revisión. Se publica en el directorio cuando la aprueben.",
+            "close": "Cerrar"
+        },
+        "errors": {
+            "ratingRequired": "Elegí una puntuación general.",
+            "benefitRequired": "Contanos si el proveedor respetó el beneficio.",
+            "contentTooShort": "El comentario tiene que tener al menos {{min}} caracteres, o podés dejarlo vacío.",
+            "invalid": "Revisá los datos de la valoración antes de publicarla.",
+            "generic": "No pudimos publicar tu valoración. Probá de nuevo en un momento."
+        },
+        "cta": "Valorar a {{name}}"
     }
 }
