@@ -1884,40 +1884,49 @@
         {
             "id": "T-050",
             "title": "Pestañas del proveedor en /mi-cuenta/proveedor",
-            "description": "Extender la ficha existente con tres pestañas: Usos (declarar por selector o email + pendientes marcados como tales + historial), Valoraciones (listado con acción de responder), Mi QR (preview + descarga del SVG + instrucción de uso). El estado suspendido se muestra explícito con el motivo y qué hacer. Reusar HostTradeEditForm.client.tsx y sus helpers sin romperlos.",
-            "status": "pending",
+            "description": "Extender la ficha existente con tres pestañas: Usos (declarar por selector o email + pendientes marcados como tales + historial), Valoraciones (listado con acción de responder), Mi QR (preview + descarga del SVG + instrucción de uso). El estado suspendido se muestra explícito con el motivo y qué hacer. Reusar HostTradeEditForm.client.tsx y sus helpers sin romperlos. AMPLIADO con aprobacion del owner: la pestana Valoraciones no tenia endpoint — spec §7.5 declara GET /mine/reviews y ninguna tarea lo creo. Se agrego, y NO es un duplicado del GET /{id}/reviews: ese anula toda replica que no este APPROVED, correcto para un anfitrion que mira el directorio y equivocado para el autor de la replica, a quien le diria que lo que escribio no existe. La regla es asimetrica: la VALORACION se ve solo publicada, la REPLICA en cualquier estado. Las dos queries del modelo son metodos separados en vez de uno con flag, porque la diferencia entre ambos es exactamente 'puede verse una replica no aprobada' y un booleano deja publicar una PENDING a un argumento de distancia. UI: las pestanas viven en la URL (?tab=), asi solo se renderiza la isla activa y solo se pide su data — ademas de quedar linkeable, que importa porque ahi se avisa la suspension. El QR se renderiza como <img> con data URL en lugar de inyectar markup: el navegador deshabilita scripts dentro de un SVG cargado como imagen, y la CSP ya admite data: en img-src. La descarga se arma desde el markup ya presente porque un <a download> al endpoint iria sin cookie (otro origen) y guardaria un 401 en el disco del proveedor.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-031", "T-032", "T-036"],
             "blocks": ["T-051", "T-054"],
             "subtasks": [
                 {
                     "title": "Pestaña Usos con los dos modos de declaración",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pestaña Valoraciones",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Pestaña Mi QR",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Estado suspendido explícito",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "react", "ui"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T21:10:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T21:10:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T21:10:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T20:10:00.000Z",
+                "completed": "2026-08-10T21:10:00.000Z"
             }
         },
         {
@@ -2497,9 +2506,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 21,
-        "inProgress": 0,
-        "completed": 49,
+        "pending": 19,
+        "inProgress": 1,
+        "completed": 50,
         "blocked": 0,
         "averageComplexity": 2.4
     }
