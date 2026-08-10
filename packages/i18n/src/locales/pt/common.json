@@ -167,5 +167,6 @@
         "byline": "Foto por",
         "onProvider": "no {{provider}}",
         "ariaLabel": "Perfil de {{photographer}} no {{provider}}"
-    }
+    },
+    "breadcrumbs": "Trilha de navegação"
 }
