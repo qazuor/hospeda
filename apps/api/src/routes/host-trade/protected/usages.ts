@@ -26,6 +26,7 @@ import {
     CountResponseSchema,
     HostTradeBenefitUsageHostCreateBodySchema,
     HostTradeBenefitUsageProtectedSchema,
+    HostTradeBenefitUsageWithProviderSchema,
     type HostTradeUsageStatusEnum,
     HostTradeUsageStatusEnumSchema,
     PermissionEnum,
@@ -194,9 +195,9 @@ export const protectedListPendingUsagesRoute = createProtectedListRoute({
     path: '/usages/pending',
     summary: 'List the usages awaiting the caller’s confirmation',
     description:
-        'Returns the PENDING usages a provider declared about the authenticated host, newest first. Own declarations are excluded — those wait on the provider, not on the caller.',
+        'Returns the PENDING usages a provider declared about the authenticated host, newest first, each carrying the declaring provider’s identity. Own declarations are excluded — those wait on the provider, not on the caller.',
     tags: ['HostTrades'],
-    responseSchema: HostTradeBenefitUsageProtectedSchema,
+    responseSchema: HostTradeBenefitUsageWithProviderSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,
@@ -227,12 +228,12 @@ export const protectedListHostUsagesRoute = createProtectedListRoute({
     path: '/usages',
     summary: 'List your own benefit usages',
     description:
-        'Returns every benefit usage recorded against the authenticated host, newest first, whoever declared it, optionally filtered by status. Unlike /usages/pending this includes the host’s own declarations and the confirmed history the review action depends on.',
+        'Returns every benefit usage recorded against the authenticated host, newest first, whoever declared it, optionally filtered by status, each carrying the provider’s identity. Unlike /usages/pending this includes the host’s own declarations and the confirmed history the review action depends on.',
     tags: ['HostTrades'],
     requestQuery: {
         status: HostTradeUsageStatusEnumSchema.optional()
     },
-    responseSchema: HostTradeBenefitUsageProtectedSchema,
+    responseSchema: HostTradeBenefitUsageWithProviderSchema,
     handler: async (
         ctx: Context,
         _params: Record<string, unknown>,

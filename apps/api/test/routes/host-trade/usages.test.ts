@@ -96,6 +96,24 @@ const MOCK_USAGE = {
 };
 
 /**
+ * The same row as the HOST-facing lists answer it: with the provider named.
+ *
+ * Both list routes declare the enriched schema, and the route factory validates
+ * the response payload — so a service that stopped attaching `hostTrade` fails
+ * these routes with a 500 rather than quietly serving rows the UI can only show
+ * as a uuid.
+ */
+const MOCK_USAGE_WITH_PROVIDER = {
+    ...MOCK_USAGE,
+    hostTrade: {
+        id: HT_ID,
+        slug: 'plomero-centro',
+        name: 'Plomero Centro',
+        category: 'PLOMERIA'
+    }
+};
+
+/**
  * An app carrying the REAL error handler, so a status assertion measures the
  * shipped mapping rather than one invented for the test.
  */
@@ -122,9 +140,9 @@ beforeEach(() => {
     vi.clearAllMocks();
     mockGetByField.mockResolvedValue({ data: { id: HT_ID, slug: 'plomero-centro' } });
     mockDeclareAsHost.mockResolvedValue({ data: { usage: MOCK_USAGE } });
-    mockListPending.mockResolvedValue({ data: { items: [MOCK_USAGE], total: 1 } });
+    mockListPending.mockResolvedValue({ data: { items: [MOCK_USAGE_WITH_PROVIDER], total: 1 } });
     mockCountPending.mockResolvedValue({ data: { count: 3 } });
-    mockListForHost.mockResolvedValue({ data: { items: [MOCK_USAGE], total: 1 } });
+    mockListForHost.mockResolvedValue({ data: { items: [MOCK_USAGE_WITH_PROVIDER], total: 1 } });
 });
 
 describe('routing — the inbox must not be read as a slug', () => {
@@ -364,6 +382,23 @@ describe('GET /protected/host-trades/usages — the host’s own record', () => 
         expect(body.data.items).toHaveLength(1);
         expect(body.data.pagination.total).toBe(1);
         expect(mockListForHost).toHaveBeenCalledTimes(1);
+    });
+
+    it('serves the provider’s identity on the row, not just its id', async () => {
+        // Without it the history renders a uuid: the host cannot resolve the name
+        // himself, because the directory list he can read is scoped to the
+        // destinations he currently hosts in and drops revoked providers.
+        const app = buildApp();
+
+        const res = await app.request('/usages', { method: 'GET' });
+
+        const body = await res.json();
+        expect(body.data.items[0].hostTrade).toEqual({
+            id: HT_ID,
+            slug: 'plomero-centro',
+            name: 'Plomero Centro',
+            category: 'PLOMERIA'
+        });
     });
 
     it('forwards a status filter to the service', async () => {

@@ -3,7 +3,9 @@ import type {
     CountResponse,
     HostTrade,
     HostTradeBenefitUsage,
-    HostTradeBenefitUsageAdminSearch
+    HostTradeBenefitUsageAdminSearch,
+    HostTradeBenefitUsageWithProvider,
+    HostTradeUsageProviderRef
 } from '@repo/schemas';
 import {
     HOST_TRADE_REJECTION_SUSPEND_THRESHOLD,
@@ -617,7 +619,7 @@ export class HostTradeUsageService extends BaseCrudService<
         input: { page: number; pageSize: number },
         actor: Actor,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsage[]; total: number }>> {
+    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsageWithProvider[]; total: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listPendingForHost',
             input: { page: input.page, pageSize: input.pageSize, actor },
@@ -635,7 +637,10 @@ export class HostTradeUsageService extends BaseCrudService<
                     this.model.countPendingForUser(validatedActor.id, ctx?.tx)
                 ]);
 
-                return { items: items as HostTradeBenefitUsage[], total };
+                return {
+                    items: await this.attachProviders(items as HostTradeBenefitUsage[], ctx),
+                    total
+                };
             }
         });
     }
@@ -700,7 +705,7 @@ export class HostTradeUsageService extends BaseCrudService<
         },
         actor: Actor,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsage[]; total: number }>> {
+    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsageWithProvider[]; total: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listForHost',
             input: { ...input, actor },
@@ -724,9 +729,60 @@ export class HostTradeUsageService extends BaseCrudService<
                     ctx?.tx
                 );
 
-                return { items: items as HostTradeBenefitUsage[], total };
+                return {
+                    items: await this.attachProviders(items as HostTradeBenefitUsage[], ctx),
+                    total
+                };
             }
         });
+    }
+
+    /**
+     * Attaches each row's provider identity, for the HOST-facing lists.
+     *
+     * ONE query for the whole page, never `findById` per row: a page of 20 rows
+     * would otherwise be 20 sequential round trips, and rows repeat providers
+     * (the same plumber across a season), so the ids are de-duplicated first.
+     *
+     * A row whose provider does not resolve keeps its place with `hostTrade:
+     * null`. Dropping it would silently shorten a history that `total` still
+     * counts; throwing would fail a whole page over one missing name. It should
+     * not happen — the FK cascades and soft-deleted rows still come back from
+     * `findByIds` — which is exactly why it must not be load-bearing.
+     *
+     * The provider side has no equivalent need: its rows all name the SAME
+     * listing (its own), and what it lacks is the host's name, which
+     * {@link listLinkedHosts} already resolves through its own join.
+     *
+     * @param items - The page of usage rows, in order.
+     * @param ctx - Optional service context, for transaction propagation.
+     * @returns The same rows, in the same order, each carrying its provider.
+     */
+    private async attachProviders(
+        items: HostTradeBenefitUsage[],
+        ctx?: ServiceContext
+    ): Promise<HostTradeBenefitUsageWithProvider[]> {
+        if (items.length === 0) return [];
+
+        const ids = [...new Set(items.map((item) => item.hostTradeId))];
+        const providers = await this.hostTradeModel.findByIds(ids, ctx?.tx);
+
+        const byId = new Map<string, HostTradeUsageProviderRef>(
+            providers.map((provider) => [
+                provider.id,
+                {
+                    id: provider.id,
+                    slug: provider.slug,
+                    name: provider.name,
+                    category: provider.category
+                }
+            ])
+        );
+
+        return items.map((item) => ({
+            ...item,
+            hostTrade: byId.get(item.hostTradeId) ?? null
+        }));
     }
 
     // --- The provider's own usages and selector (T-031) -------------------

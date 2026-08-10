@@ -31,6 +31,7 @@ const makeHostTrade = (overrides: Record<string, unknown> = {}) => ({
     id: HT_ID,
     slug: 'plomero-centro',
     name: 'Plomero Centro',
+    category: 'PLOMERIA',
     ownerUserId: OWNER_ID,
     revokedAt: null,
     deletedAt: null,
@@ -58,7 +59,9 @@ function buildService(
     } = {}
 ) {
     const model = createModelMock();
-    const hostTradeModel = createModelMock();
+    // `findByIds` is not part of the default mock surface, but the host-facing
+    // lists resolve every provider on a page through it in a single query.
+    const hostTradeModel = createModelMock(['findByIds']);
     const userModel = createModelMock();
 
     model.create = vi.fn(async (data: Record<string, unknown>) => ({ id: 'created', ...data }));
@@ -83,6 +86,9 @@ function buildService(
         return null;
     });
     hostTradeModel.findById = vi.fn(async () => options.hostTrade ?? makeHostTrade());
+    hostTradeModel.findByIds = vi.fn(async (ids: readonly string[]) =>
+        ids.map((id) => makeHostTrade({ id }))
+    );
     userModel.findOne = vi.fn(async () => null);
 
     const isHostUser = vi.fn(async () => options.isHost ?? true);
@@ -783,5 +789,103 @@ describe('HostTradeUsageService.listForHost — the host’s own record', () => 
 
         expect(res.error).toBeUndefined();
         expect(whereOf(model).hostUserId).toBe(HOST_ID);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Provider identity on the host's lists (T-046)
+// ---------------------------------------------------------------------------
+
+/**
+ * A usage row names its provider by id and nothing else, which is unrenderable:
+ * the host would be asked to confirm work done by `a3f9…-8c21`. The host cannot
+ * resolve the name from the directory either — that list is scoped to the
+ * destinations he currently hosts in and drops revoked providers, so exactly the
+ * oldest rows would keep the raw uuid. Both host-facing lists therefore attach
+ * the provider's identity server-side.
+ */
+describe('HostTradeUsageService — provider identity on the host’s lists', () => {
+    const OTHER_HT_ID = getMockId('attraction', 'ht-usage-2');
+
+    /** Two rows naming two different providers, plus a repeat of the first. */
+    function buildEnrichedService() {
+        const { service, model, hostTradeModel } = buildService();
+        const page = [
+            { id: 'usage-1', hostTradeId: HT_ID, hostUserId: HOST_ID, status: 'PENDING' },
+            { id: 'usage-2', hostTradeId: OTHER_HT_ID, hostUserId: HOST_ID, status: 'CONFIRMED' },
+            { id: 'usage-3', hostTradeId: HT_ID, hostUserId: HOST_ID, status: 'REJECTED' }
+        ];
+        model.findAll = vi.fn(async () => ({ items: page, total: page.length }));
+        model.findPendingForUser = vi.fn(async () => page);
+        model.countPendingForUser = vi.fn(async () => page.length);
+        return { service, model, hostTradeModel };
+    }
+
+    /** The id list handed to `findByIds` on its only call. */
+    function idsAskedFor(hostTradeModel: ReturnType<typeof createModelMock>): string[] {
+        const call = (hostTradeModel.findByIds as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0];
+        return [...((call?.[0] as string[]) ?? [])].sort();
+    }
+
+    it('attaches the provider’s identity to every row of the history', async () => {
+        const { service } = buildEnrichedService();
+
+        const res = await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(res.error).toBeUndefined();
+        expect(res.data?.items[0]?.hostTrade).toEqual({
+            id: HT_ID,
+            slug: 'plomero-centro',
+            name: 'Plomero Centro',
+            category: 'PLOMERIA'
+        });
+        expect(res.data?.items[1]?.hostTrade?.id).toBe(OTHER_HT_ID);
+    });
+
+    it('attaches the same identity to the pending inbox', async () => {
+        // The inbox is the screen that asks "did this happen?", so it is the one
+        // that most needs to name who is asking.
+        const { service } = buildEnrichedService();
+
+        const res = await service.listPendingForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(res.error).toBeUndefined();
+        expect(res.data?.items[0]?.hostTrade?.name).toBe('Plomero Centro');
+    });
+
+    it('resolves the whole page in ONE query, with each id asked for once', async () => {
+        // The alternative — findById per row — is N sequential round trips for a
+        // page, and three rows naming two providers would issue three of them.
+        const { service, hostTradeModel } = buildEnrichedService();
+
+        await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(hostTradeModel.findByIds).toHaveBeenCalledTimes(1);
+        expect(idsAskedFor(hostTradeModel)).toEqual([HT_ID, OTHER_HT_ID].sort());
+        expect(hostTradeModel.findById).not.toHaveBeenCalled();
+    });
+
+    it('keeps the row with a null identity when the provider does not resolve', async () => {
+        // Dropping the row would silently shorten a history that `total` still
+        // counts; throwing would fail the whole page over one unresolved name.
+        const { service, hostTradeModel } = buildEnrichedService();
+        hostTradeModel.findByIds = vi.fn(async () => []);
+
+        const res = await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(res.error).toBeUndefined();
+        expect(res.data?.items).toHaveLength(3);
+        expect(res.data?.items[0]?.hostTrade).toBeNull();
+    });
+
+    it('asks for nothing when the page is empty', async () => {
+        const { service, model, hostTradeModel } = buildEnrichedService();
+        model.findAll = vi.fn(async () => ({ items: [], total: 0 }));
+
+        const res = await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(res.data?.items).toEqual([]);
+        expect(hostTradeModel.findByIds).not.toHaveBeenCalled();
     });
 });
