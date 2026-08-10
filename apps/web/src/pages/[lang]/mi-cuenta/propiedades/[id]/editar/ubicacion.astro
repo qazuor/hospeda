@@ -1,0 +1,44 @@
+---
+/**
+ * @file ubicacion.astro
+ * @description Location section of the accommodation editor (HOS-318 T-022).
+ *
+ * Its own page because a map is a full-screen interaction, and an embedded map
+ * inside a long mobile scroll is the worst offender of the pre-split layout.
+ */
+
+import { LocationForm } from '@/components/host/editor/forms/LocationForm.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'ubicacion',
+	need: ['translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="ubicacion"
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.section.location', 'Ubicación')}
+>
+	<LocationForm
+		locale={locale}
+		accommodationId={accommodationId}
+		initialData={data.accommodation}
+		client:load
+	/>
+</EditorSectionLayout>

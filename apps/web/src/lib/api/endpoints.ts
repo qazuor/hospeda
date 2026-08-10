@@ -409,6 +409,13 @@ export const amenitiesApi = {
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
         /**
+         * SPEC-266: scope the catalog to one vertical. The accommodation editor
+         * needs `accommodation` so gastronomy/experience amenities stay out of
+         * its checkbox group. Added in HOS-318 — without it the editor page had
+         * to bypass this wrapper with a raw `fetch`, which apps/web forbids.
+         */
+        applicableVertical?: 'accommodation' | 'gastronomy' | 'experience';
+        /**
          * HOS-103: opt in to the short-TTL SSR cache. Pass
          * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added
          * the accommodations listing surfaces, whose catalog reads are fixed and
@@ -433,6 +440,8 @@ export const featuresApi = {
         isFeatured?: boolean;
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
+        /** SPEC-266: scope the catalog to one vertical. See `amenitiesApi.list`. */
+        applicableVertical?: 'accommodation' | 'gastronomy' | 'experience';
         /**
          * HOS-103: opt in to the short-TTL SSR cache. Pass
          * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added

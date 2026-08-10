@@ -1,0 +1,50 @@
+---
+/**
+ * @file servicios.astro
+ * @description Amenities and features section of the editor (HOS-318 T-023).
+ *
+ * The ONLY editor page that requests the amenity/feature catalogs. Before the
+ * split, every screen paid for them — including the one where you edit the
+ * price.
+ *
+ * Note: this does NOT fix HOS-218 (the `GET /public/features` request loop). It
+ * only shrinks that bug's blast radius from every editor screen to this one.
+ */
+
+import { ServicesForm } from '@/components/host/editor/forms/ServicesForm.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'servicios',
+	need: ['catalog', 'translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="servicios"
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.section.amenities', 'Servicios y comodidades')}
+>
+	<ServicesForm
+		locale={locale}
+		accommodationId={accommodationId}
+		initialData={data.accommodation}
+		amenities={data.amenities}
+		features={data.features}
+		client:load
+	/>
+</EditorSectionLayout>

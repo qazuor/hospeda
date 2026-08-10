@@ -1,0 +1,45 @@
+---
+/**
+ * @file fotos.astro
+ * @description Photo section of the accommodation editor (HOS-318 T-012).
+ *
+ * `PhotoSection` already persists every change against its own endpoints, so no
+ * form logic moved here — this page only loads the media and mounts it.
+ */
+
+import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'fotos',
+	need: ['media', 'translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="fotos"
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.section.photos', 'Fotos')}
+>
+	<PhotoSection
+		locale={locale}
+		accommodationId={accommodationId}
+		initialFeaturedImage={data.featuredImage}
+		initialGallery={data.gallery}
+		client:load
+	/>
+</EditorSectionLayout>

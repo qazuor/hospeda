@@ -1,0 +1,53 @@
+---
+/**
+ * @file calendario.astro
+ * @description Calendar section of the accommodation editor (HOS-318 T-014).
+ *
+ * The biggest single weight win of the split: `CalendarSection` is the heaviest
+ * component in the editor, and it now loads only on this route instead of on
+ * every screen.
+ *
+ * The route exists for EVERYONE and shows the entitlement gate to whoever lacks
+ * `can_use_calendar`. A 404 would be worse: the host would not understand why a
+ * section a peer has simply vanished, and would have no path to find out it is
+ * a plan feature.
+ */
+
+import { CalendarSection } from '@/components/host/editor/CalendarSection.client';
+import { PlanEntitlementGate } from '@/components/host/editor/PlanEntitlementGate.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'calendario',
+	need: ['translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="calendario"
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.section.calendar', 'Calendario')}
+>
+	<PlanEntitlementGate
+		entitlementKey="can_use_calendar"
+		locale={locale}
+		upgradeUrl="/suscriptores/planes/"
+		client:load
+	>
+		<CalendarSection locale={locale} accommodationId={accommodationId} client:load />
+	</PlanEntitlementGate>
+</EditorSectionLayout>

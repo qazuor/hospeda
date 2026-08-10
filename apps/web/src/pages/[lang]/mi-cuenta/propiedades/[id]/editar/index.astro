@@ -1,0 +1,106 @@
+---
+/**
+ * @file index.astro
+ * @description The accommodation editor hub (HOS-318 T-011).
+ *
+ * Lists every section as a row with a status line. Rendered on BOTH viewports:
+ * on mobile it is the navigation, on desktop it doubles as a status summary of
+ * the property.
+ *
+ * It deliberately does NOT redirect to the first section. A redirect here traps
+ * the back button — from a section, "back" lands on the hub, which bounces
+ * forward again — and a back button that does not work is the single most
+ * frustrating thing for this editor's audience (HOS-318 D-8).
+ */
+
+import EditorHub from '@/components/host/editor/EditorHub.astro';
+import { FeaturedToggleSection } from '@/components/host/editor/FeaturedToggleSection.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveEditorSectionStatuses } from '@/lib/editor/editor-hub-status-model';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: null,
+	need: ['media', 'faqs', 'translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId } = resolution;
+const { t } = createTranslations(locale);
+const accommodation = data.accommodation;
+
+const statuses = resolveEditorSectionStatuses({
+	input: {
+		hasDescription: Boolean(accommodation.description),
+		maxGuests: accommodation.maxGuests ?? null,
+		basePrice: accommodation.basePrice ?? null,
+		hasCoordinates: accommodation.latitude !== null && accommodation.longitude !== null,
+		amenityCount: accommodation.amenityIds.length,
+		featureCount: accommodation.featureIds.length,
+		photoCount: data.gallery.length + (data.featuredImage ? 1 : 0),
+		faqCount: data.faqs.length,
+		hasContact: Boolean(
+			accommodation.phone || accommodation.whatsapp || accommodation.email || accommodation.website,
+		),
+	},
+});
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={accommodation.name}
+	currentSectionId={null}
+	currentSectionSlug={null}
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.hub.title', 'Editar propiedad')}
+	description={t('host.properties.editor.pageDescription', 'Editar información de tu propiedad')}
+>
+	<h1 class="editor-hub-page__title">{accommodation.name}</h1>
+	<p class="editor-hub-page__subtitle">
+		{t('host.properties.editor.hub.subtitle', 'Elegí qué querés editar')}
+	</p>
+
+	<EditorHub
+		locale={locale}
+		accommodationId={accommodationId}
+		hasTranslations={data.translations !== null}
+		statuses={statuses}
+	/>
+
+	{/*
+	 * HOS-318 D-10: the featured toggle gets no nav item and no hub row. It
+	 * returns null for every owner without a live FEATURED_LISTING entitlement,
+	 * so a row would dead-end for the majority. Rendered here at the foot, where
+	 * its absence leaves no hole.
+	 */}
+	<div class="editor-hub-page__extra">
+		<FeaturedToggleSection locale={locale} accommodationId={accommodationId} client:visible />
+	</div>
+</EditorSectionLayout>
+
+<style>
+	.editor-hub-page__title {
+		margin: 0 0 0.25rem;
+		font-family: var(--font-heading);
+		font-size: 1.75rem;
+		font-weight: 600;
+		color: var(--core-foreground);
+	}
+
+	.editor-hub-page__subtitle {
+		margin: 0 0 var(--space-5, 1.5rem);
+		font-family: var(--font-sans);
+		color: var(--core-muted-foreground);
+	}
+
+	.editor-hub-page__extra {
+		max-width: 720px;
+		margin-top: var(--space-6, 2rem);
+	}
+</style>
