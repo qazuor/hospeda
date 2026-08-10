@@ -2045,14 +2045,114 @@ export interface MyHostTradeResponse {
 }
 
 /**
- * Provider self-service view/edit of their OWN `host_trades` listing.
+ * The host-facing read shape of a directory provider.
  *
- * Auth-only (no permission — HOS-278 AC-7): an approved service provider is
- * an ordinary tourist account with no role/permission change, so ownership of
- * the row is the only gate. `mine()` answers `{ trade: null }` rather than an
- * error when the caller owns none, mirroring {@link allianceLeadsApi.mine}.
+ * Mirrors `HostTradePublicSchema` field-for-field — the same read-allowlist
+ * precedent as {@link MyHostTrade}: the web declares its own interface rather
+ * than importing the Zod-inferred type, so a schema change surfaces here as a
+ * typecheck failure instead of silently reshaping a rendered page.
+ */
+export interface DirectoryProvider {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly category: HostTradeCategoryEnum;
+    readonly contact: string;
+    readonly benefit: string;
+    readonly destinationId: string;
+    readonly is24h: boolean;
+    readonly scheduleText: string | null;
+    readonly confirmedUsesCount: number;
+    readonly distinctHostsCount: number;
+    readonly reviewsCount: number;
+    readonly averageRating: number;
+    readonly benefitRespectedCount: number;
+}
+
+/** Response envelope for `GET /protected/host-trades/{slug}`. */
+export interface DirectoryProviderResponse {
+    readonly hostTrade: DirectoryProvider;
+}
+
+/** Response envelope for the QR declaration. */
+export interface DeclaredUsageResponse {
+    readonly usage: {
+        readonly id: string;
+        readonly status: string;
+        readonly servicedAt: string;
+        readonly expiresAt: string;
+    };
+}
+
+/**
+ * Reads of the `host_trades` directory, plus a provider's self-service
+ * view/edit of their OWN listing.
+ *
+ * `mine`/`updateMine` are auth-only (no permission — HOS-278 AC-7): an approved
+ * service provider is an ordinary tourist account with no role/permission
+ * change, so ownership of the row is the only gate. `mine()` answers
+ * `{ trade: null }` rather than an error when the caller owns none, mirroring
+ * {@link allianceLeadsApi.mine}.
+ *
+ * `getBySlug` is the other half — a HOST reading a provider, gated by the
+ * directory's own `HOST_TRADE_VIEW` permission.
  */
 export const hostTradesApi = {
+    /**
+     * Reads one directory provider by the slug a QR encodes (HOS-376 T-045).
+     *
+     * Two failures are distinct and both are expected: `404` when no listing
+     * carries the slug, and `422 PROVIDER_REVOKED` when the listing was taken
+     * down. Callers must branch on them separately — a host holding last
+     * season's flyer needs to be told which one happened. The directory list
+     * (`GET /protected/host-trades`) cannot answer either question: it takes no
+     * slug filter, and in it a revoked listing and one belonging to another
+     * destination are the same observation — absent.
+     *
+     * @param params - The provider `slug`, plus `cookieHeader` when calling from SSR.
+     * @returns The host-facing provider view, or a typed error to branch on.
+     */
+    getBySlug({
+        slug,
+        cookieHeader
+    }: {
+        slug: string;
+        cookieHeader?: string;
+    }): Promise<ApiResult<DirectoryProviderResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/${encodeURIComponent(slug)}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Declares a benefit usage from the host side — the QR path (HOS-376 §6.2a).
+     *
+     * Carries no identifiers: the provider comes from the slug in the URL and
+     * the host IS the session. The usage is created `PENDING` and waits for the
+     * provider to confirm.
+     *
+     * @param params - The provider `slug`, the `servicedAt` calendar date
+     *   (`YYYY-MM-DD` — a plain string, never a `Date`, because the column is a
+     *   Postgres `date` and coercing would shift the day backwards for every
+     *   UTC-3 caller), and an optional `note`.
+     * @returns The created usage, or a typed error (`409 USAGE_PENDING_EXISTS`,
+     *   `403 DECLARATION_BLOCKED` / `DECLARATION_SUSPENDED`, `422 PROVIDER_REVOKED`).
+     */
+    declareUsage({
+        slug,
+        servicedAt,
+        note
+    }: {
+        slug: string;
+        servicedAt: string;
+        note?: string;
+    }): Promise<ApiResult<DeclaredUsageResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/${encodeURIComponent(slug)}/usages`,
+            body: note ? { servicedAt, note } : { servicedAt }
+        });
+    },
     /**
      * Fetches the caller's own listing, or `null`.
      *

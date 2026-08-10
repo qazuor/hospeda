@@ -1,0 +1,157 @@
+/**
+ * Styles for RegisterUsageForm.client.tsx (HOS-376 T-045).
+ *
+ * Every value is a design token from `global.css` — hardcoding any colour here
+ * would break dark mode, which is driven entirely by token redefinition.
+ */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5, 1.25rem);
+    padding: var(--space-6, 1.5rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card, 24px);
+}
+
+/* ── Fields ── */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+.input,
+.textarea {
+    width: 100%;
+    /* 44px keeps the tap target within the AA touch guideline; the directory's
+       audience skews older and largely mobile. */
+    min-height: 44px;
+    padding: 0.625rem 0.875rem;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-md, 10px);
+}
+
+.textarea {
+    resize: vertical;
+}
+
+.input:focus-visible,
+.textarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}
+
+.hint {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Submit ── */
+
+.submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--accent-foreground, #ffffff);
+    background-color: var(--brand-accent);
+    border: none;
+    border-radius: var(--radius-pill, 9999px);
+    cursor: pointer;
+    transition: opacity var(--duration-normal, 0.4s) ease-out;
+}
+
+.submit:hover:not(:disabled) {
+    opacity: 0.88;
+}
+
+.submit:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.footnote {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Error ──
+   The design system has no `danger` token, so the literal oklch values match
+   the ones the sibling host-trade pages already use for error copy. */
+
+.error {
+    margin: 0;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: oklch(0.55 0.22 25);
+    background-color: oklch(0.55 0.22 25 / 0.08);
+    border: 1px solid oklch(0.85 0.05 25 / 0.4);
+    border-radius: var(--radius-md, 10px);
+}
+
+/* ── Success ── */
+
+.success {
+    align-items: center;
+    text-align: center;
+}
+
+.successTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--core-foreground);
+}
+
+.successBody {
+    max-width: 46ch;
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-muted-foreground);
+}
+
+.primaryLink {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.625rem 1.25rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--primary-foreground, #ffffff);
+    text-decoration: none;
+    white-space: nowrap;
+    background-color: var(--brand-primary);
+    border-radius: var(--radius-pill, 9999px);
+    transition: opacity var(--duration-normal, 0.4s) ease-out;
+}
+
+.primaryLink:hover {
+    opacity: 0.88;
+}

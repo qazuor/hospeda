@@ -181,6 +181,10 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'host-trades.emptyState',
     'host-trades.filter',
     'host-trades.page',
+    // The QR landing page's form island (HOS-376 T-045). Without this prefix the
+    // island renders raw dotted keys in production — dev ships the whole
+    // dictionary and hides the omission entirely.
+    'host-trades.registerUsage',
     'host.dashboard',
     'host.form',
     'host.importFromUrl',

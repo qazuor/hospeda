@@ -34,5 +34,48 @@
         "PLAGAS": "Controle de pragas",
         "INTERNET": "Internet / TV",
         "ALBANILERIA": "Alvenaria"
+    },
+    "registerUsage": {
+        "title": "Registrar uso do benefício",
+        "subtitle": "Registre que você usou o benefício de {{name}}. Vamos pedir que confirme.",
+        "subtitleFallback": "Registro de uso de um benefício do diretório de fornecedores.",
+        "backToDirectory": "Voltar ao diretório",
+        "form": {
+            "date": {
+                "label": "Em que dia foi o serviço?",
+                "hint": "Já vem com a data de hoje. Altere se o serviço foi em outro dia."
+            },
+            "note": {
+                "label": "Observação (opcional)",
+                "placeholder": "Por exemplo: troca de fechadura no apartamento 3.",
+                "counter": "Restam {{remaining}} caracteres."
+            },
+            "submit": "Registrar o uso",
+            "submitting": "Registrando…",
+            "footnote": "Vamos pedir a {{name}} que confirme. Até que confirme, o registro fica pendente."
+        },
+        "errors": {
+            "dateRequired": "Escolha o dia do serviço.",
+            "dateFuture": "O serviço não pode ser no futuro.",
+            "generic": "Não conseguimos registrar o uso. Tente novamente em instantes."
+        },
+        "success": {
+            "title": "Pronto, registramos",
+            "body": "Pedimos a {{name}} que confirme o uso. Quando confirmar, você poderá avaliá-lo.",
+            "cta": "Ver meus usos do benefício"
+        },
+        "notFound": {
+            "title": "Não encontramos este fornecedor",
+            "body": "O código que você escaneou não corresponde a nenhum fornecedor do diretório. Verifique se é o código correto."
+        },
+        "revoked": {
+            "title": "Este fornecedor já não está no diretório",
+            "body": "Ele já não faz parte do diretório, portanto não é possível registrar usos do seu benefício. Fale com a gente em caso de dúvida."
+        },
+        "loadError": {
+            "title": "Não conseguimos carregar o fornecedor",
+            "body": "Houve um problema ao carregar os dados. Tente recarregar a página.",
+            "retry": "Tentar novamente"
+        }
     }
 }
