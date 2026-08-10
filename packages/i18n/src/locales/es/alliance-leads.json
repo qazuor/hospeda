@@ -109,5 +109,8 @@
             "title": "¿Sos dueño de un alojamiento o partner de Hospeda?",
             "body": "Colaborar como editor también puede sumarte beneficios en tu suscripción. Postulate y contanos tu caso — lo evaluamos y te contactamos con los detalles."
         }
+    },
+    "breadcrumb": {
+        "joinUs": "Sumate"
     }
 }

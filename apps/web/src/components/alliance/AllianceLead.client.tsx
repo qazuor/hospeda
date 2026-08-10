@@ -55,6 +55,7 @@ import {
     validateAllianceLeadSpecificFields
 } from '@/lib/forms/alliance-lead-message';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
+import { useScrollIntoViewWhen } from '@/lib/forms/use-scroll-into-view-when';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AllianceLead.module.css';
@@ -272,6 +273,12 @@ export function AllianceLead({
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
 
+    // The confirmation is SHORTER than the form it replaces, so it renders above
+    // the applicant's scroll offset and they are left looking at the footer with
+    // no sign the submission worked. Focus moves with it because the submit
+    // button that held focus no longer exists after the swap.
+    const { ref: successRef } = useScrollIntoViewWhen<HTMLDivElement>({ active: isSuccess });
+
     // `benefitValue` only means something for the two numeric benefit types
     // (HOS-278 §6.4) — hidden otherwise, so an applicant offering `TWO_FOR_ONE`
     // is never asked for a number that would trip the backend's "non-numeric
@@ -419,6 +426,7 @@ export function AllianceLead({
         return (
             <div
                 className={styles.success}
+                ref={successRef}
                 role="alert"
                 aria-live="assertive"
             >

@@ -2808,13 +2808,44 @@ Added in Rev 2:
 
 ### 11.2 Still open
 
-- **OQ-1** — Should HOS-128 be closed as superseded by this spec, or kept as a
-  sub-scope? This spec absorbs its goal and adds causes it never contemplated;
-  its "gated on real traffic" trigger is now overtaken by measurement. Owner
-  decision, still pending.
-- **OQ-2** — TTL values for the newly cached routes. The existing 300 s / 600 s
-  (listings) and 300 s / 60 s (pricing) are unexamined defaults. Content that
-  changes rarely (legal, `nosotros`) can take far longer.
+Rev 4 (2026-08-10) closed seven of the ten. Two of the remaining three are not
+answerable from a keyboard — they need the cache running in production — and the
+third is an implementation task, not a question.
+
+- ~~**OQ-1** — Should HOS-128 be closed as superseded by this spec, or kept as a
+  sub-scope?~~ **RESOLVED 2026-08-06 → D-14, and already executed.** HOS-128 was
+  cancelled that day with a full close-out note recording that this spec absorbed
+  its goal and additionally resolved both of its "MUST sign off" safety
+  conditions (personalization, and the CSP nonce under caching — closed by the
+  move to content hashes, not accepted as risk). Its "gated on real traffic"
+  trigger was overtaken by measurement: the traffic that forced the work was
+  crawlers, not users. Reconfirmed by the owner 2026-08-10; only this section was
+  stale.
+- ~~**OQ-2** — TTL values for the newly cached routes.~~ **RESOLVED Rev 4 → D-15**
+  (owner, 2026-08-10): raise them aggressively — statics to 24 h, catalog to 1 h,
+  detail to 1 h. **The decision is made; the implementation is sequenced, because
+  two prerequisites make a long TTL actively harmful today.** Both were found
+  while scoping the change, not before it:
+    1. **Nothing purges on deploy.** The W2-2 pages (`nosotros`, the three legal
+       pages, `beneficios`, `funcionalidades`, `colaborar/*`, `contacto`,
+       `preguntas-frecuentes`) change *only* on deploy and carry `site-config`,
+       whose only purger is a content write. Their `s-maxage` IS the post-deploy
+       staleness window — at 300 s that is a shrug, at 86 400 s a corrected legal
+       text is wrong for a day. A deploy-time purge is a prerequisite, not a
+       follow-up.
+    2. **HOS-424 is open**: a content write purges the collection tag but not the
+       entity tag, so an edited detail page is already stale for the full TTL.
+       Raising detail from 300 s to 3 600 s multiplies an existing defect by 12.
+  There is also no per-class TTL to set: `applyCacheHeaders` takes no TTL
+  argument and every caller shares one constant
+  (`LISTING_CACHE_S_MAXAGE_SECONDS = 300` in `apps/web/src/lib/cache/listing-cache.ts`),
+  so "different TTLs per page class" is an API change, not a number change.
+  Tracked in order: **HOS-427** (deploy-time purge — it had been cited as "known
+  debt" by both HOS-401 and HOS-426 without ever being owned by an issue), then
+  **HOS-424**, then **HOS-426** for the raise itself. HOS-427 blocks HOS-426.
+  Note for whoever implements HOS-427: purge by the namespace catch-all tag, not
+  `purge_everything` — staging and production share the zone, so a whole-zone
+  flush from a staging deploy empties production's cache (§7).
 - ~~**OQ-3** — Accept the shared CSP nonce under caching, or move the affected
   pages to a hash-based inline strategy?~~ **RESOLVED Rev 3 → D-9** (move to
   content hashes, via our own injector, not Astro's `security.csp`). See §5.13.
@@ -2822,31 +2853,59 @@ Added in Rev 2:
   staging of three apps plus Coolify, at 2.4–2.8 load average with 1.1 GB RAM
   free and 2.6 GB of swap in use. **Rev 2: not answerable until A and B land** —
   the current load is crawler-driven, so sizing cannot be judged against it.
-- **OQ-5** — Should staging be moved off the production box entirely?
-- **OQ-6** — The zone is on the **Free** plan (confirmed Rev 2). Does Free
-  support the needed Cache Rule / Redirect Rule count? Tiered Cache and Cache
-  Reserve are paid features and are **not** available at this tier — if either is
-  wanted, that is a plan-upgrade decision.
-- **OQ-8** (Rev 3) — Tag granularity. `accom-<id>` per entity is obvious; the
-  open call is whether listings carry one coarse `list-accom` tag (simple, but
-  every accommodation edit evicts every listing page and all their pagination
-  variants) or per-page tags (precise, but the collector must know which page a
-  card landed on). Start coarse and measure; recorded so the choice is
-  deliberate rather than accidental.
-- **OQ-9** (Rev 3) — Does anything else bake per-request non-determinism into
-  the HTML besides the CSP nonce? The audit found the nonce because it was
-  looked for. A byte-identical cached response tolerates none, and WB0-6's guard
-  should cover the general case, not just `Astro.locals.user`.
+  **Rev 4: still open, and now precisely gated** — it becomes answerable once
+  PR #2723 promotes `staging` to `main` and the production Cache Rules are
+  applied, which is the same event that unblocks AC-4. Answer it with the same
+  `docker stats` / `/proc/loadavg` sampling as the baseline, not by estimate.
+- ~~**OQ-5** — Should staging be moved off the production box entirely?~~
+  **RESOLVED Rev 4 → D-16** (owner, 2026-08-10): no. The coexistence is accepted
+  as permanent and the question leaves the board. If sizing becomes a real
+  constraint after the cache lands, it comes back as its own issue rather than
+  as an open question on this spec.
+- ~~**OQ-6** — The zone is on the **Free** plan (confirmed Rev 2). Does Free
+  support the needed Cache Rule / Redirect Rule count?~~ **RESOLVED Rev 4 by
+  counting, not by decision.** Free allows **10 Cache Rules** per zone
+  ([Cloudflare docs](https://developers.cloudflare.com/cache/how-to/cache-rules/),
+  availability table). This spec versioned **two** Cache Rules
+  (`HOS-369 W1-2 - staging catalog + subscriber`, `HOS-369 - staging /_image/
+  endpoint`) and **one** Redirect Rule (`HOS-369 W1-4 - staging root to default
+  locale`), all scoped to staging. Replicating them for production lands at 4 of
+  10 Cache Rules — no quota pressure, now or after another wave. Tiered Cache and
+  Cache Reserve remain paid-tier features and are **not** available here, but
+  nothing shipped depends on either; that stays a plan-upgrade decision if it is
+  ever wanted for its own sake.
+- ~~**OQ-8** (Rev 3) — Tag granularity: one coarse `list-accom` tag or per-page
+  tags?~~ **RESOLVED Rev 4 by implementation.** Coarse, exactly as the question
+  proposed ("start coarse and measure"): `CACHE_TAG_COLLECTIONS` in
+  `packages/cache-tags/src/vocabulary.ts` defines six collection tags
+  (`list-accom`, `list-dest`, `list-event`, `list-post`, `list-gastro`,
+  `list-exp`) alongside the per-entity tags from `buildEntityCacheTag`. The
+  measurement half already returned its finding: **HOS-424** — a write purges the
+  collection tag but not the entity tag. Per-page tags stay unbuilt, and should
+  stay unbuilt until a measured eviction cost justifies them.
+- ~~**OQ-9** (Rev 3) — Does anything else bake per-request non-determinism into
+  the HTML besides the CSP nonce?~~ **RESOLVED Rev 4 by measurement, not by
+  audit.** Two guards ship on staging — `cacheable-pages-are-session-blind.guard.test.ts`
+  and `cacheable-routes-parse-no-session.guard.test.ts` — and AC-1/AC-2/AC-6 all
+  passed against live cached responses. The nonce remains the only per-request
+  non-determinism ever found, and D-9 closed it. This is evidence of absence
+  under the traffic actually exercised, not a proof; a new dynamic value would be
+  caught by the guards only if it flows through the session, so the general case
+  is still guarded by AC-2 re-verification after every wave.
 - **OQ-10** (Rev 3) — Once a path is genuinely auth-blind, do we remove the
   session-cookie bypass from its Cache Rule, or keep it as belt-and-braces? D-8
   says removal only after prod verification, but does not say it must be
   removed. Keeping it costs logged-in users the cache; removing it makes the
-  guard the only thing standing between a regression and a leak.
-- **OQ-7** — Is the `hospeda_vid` cookie churn worth fixing? The SSR client does
-  not return the cookie the API sets, so the API mints a new visitor id on every
-  internal call — ~38/second (§12.2). Harmless for caching (the web origin sets
-  no cookies of its own) but it makes `hospeda_vid` useless as an analytics
-  dimension and adds a `Set-Cookie` to every API response.
+  guard the only thing standing between a regression and a leak. **Rev 4: still
+  open by design** — D-8 conditions removal on production verification, which has
+  not happened yet. Decide it after AC-2 is re-verified against production, never
+  before.
+- ~~**OQ-7** — Is the `hospeda_vid` cookie churn worth fixing?~~ **RESOLVED
+  2026-08-06 — promoted out of this spec.** The owner answered yes and it is
+  tracked as **HOS-405** (Backlog, Medium), which carries the full description,
+  the ~38/second measurement and the warning that propagating the cookie from SSR
+  is the same mechanism that can reintroduce personalization into a cacheable
+  response. It is no longer an open question here.
 
 ## 12. Implementation notes
 

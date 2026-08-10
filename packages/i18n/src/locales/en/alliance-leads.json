@@ -109,5 +109,8 @@
             "title": "Are you an accommodation owner or Hospeda partner?",
             "body": "Collaborating as an editor can also unlock benefits on your subscription. Apply and tell us your case — we'll review it and reach out with the details."
         }
+    },
+    "breadcrumb": {
+        "joinUs": "Join us"
     }
 }
