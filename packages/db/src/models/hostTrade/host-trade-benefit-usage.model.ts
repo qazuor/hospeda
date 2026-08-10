@@ -2,6 +2,7 @@ import type { HostTradeBenefitUsage } from '@repo/schemas';
 import { and, count, desc, eq, gte, isNull, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { hostTradeBenefitUsages } from '../../schemas/host-trade/host_trade_benefit_usage.dbschema.ts';
+import { users } from '../../schemas/user/user.dbschema.ts';
 import type { DrizzleClient } from '../../types.ts';
 import { DbError } from '../../utils/error.ts';
 import { logError, logQuery } from '../../utils/logger.ts';
@@ -34,8 +35,7 @@ export class HostTradeBenefitUsageModel extends BaseModelImpl<HostTradeBenefitUs
     }
 
     /**
-     * Returns the pending usages that are waiting on THIS user to act,
-     * newest first.
+     * The rows that are waiting on THIS user to act.
      *
      * Scoped to `declaredBy = 'PROVIDER'` on purpose. A `PENDING` row the host
      * declared himself is waiting on the *provider*, so it is not actionable by
@@ -43,31 +43,49 @@ export class HostTradeBenefitUsageModel extends BaseModelImpl<HostTradeBenefitUs
      * by viewing (spec §6.6). Including his own declarations would produce a
      * badge he is structurally unable to clear.
      *
+     * Shared by the list and the count so the two can never disagree about what
+     * "pending for me" means: a badge showing 3 over a page listing 1 is worse
+     * than either number being wrong on its own.
+     */
+    private pendingForUserCondition(hostUserId: string) {
+        return and(
+            eq(hostTradeBenefitUsages.hostUserId, hostUserId),
+            eq(hostTradeBenefitUsages.status, 'PENDING'),
+            eq(hostTradeBenefitUsages.declaredBy, 'PROVIDER'),
+            isNull(hostTradeBenefitUsages.deletedAt)
+        );
+    }
+
+    /**
+     * Returns the pending usages that are waiting on THIS user to act,
+     * newest first.
+     *
      * @param hostUserId - The host whose inbox is being read.
+     * @param pagination - Optional 1-based page window. Absent means every row.
      * @param tx - Optional transaction client.
      * @returns Pending usages awaiting this host's confirmation.
      * @throws DbError if the query fails.
      */
     async findPendingForUser(
         hostUserId: string,
+        pagination?: { page: number; pageSize: number },
         tx?: DrizzleClient
     ): Promise<HostTradeBenefitUsageRow[]> {
         const db = this.getClient(tx);
-        const logContext = { hostUserId };
+        const logContext = { hostUserId, pagination };
 
         try {
-            const results = await db
+            const query = db
                 .select()
                 .from(hostTradeBenefitUsages)
-                .where(
-                    and(
-                        eq(hostTradeBenefitUsages.hostUserId, hostUserId),
-                        eq(hostTradeBenefitUsages.status, 'PENDING'),
-                        eq(hostTradeBenefitUsages.declaredBy, 'PROVIDER'),
-                        isNull(hostTradeBenefitUsages.deletedAt)
-                    )
-                )
+                .where(this.pendingForUserCondition(hostUserId))
                 .orderBy(desc(hostTradeBenefitUsages.createdAt));
+
+            const results = pagination
+                ? await query
+                      .limit(pagination.pageSize)
+                      .offset((pagination.page - 1) * pagination.pageSize)
+                : await query;
 
             try {
                 logQuery(this.entityName, 'findPendingForUser', logContext, results);
@@ -80,6 +98,39 @@ export class HostTradeBenefitUsageModel extends BaseModelImpl<HostTradeBenefitUs
                 logError(this.entityName, 'findPendingForUser', logContext, err);
             } catch {}
             throw new DbError(this.entityName, 'findPendingForUser', logContext, err.message);
+        }
+    }
+
+    /**
+     * Counts the pending usages waiting on this user, for the nav badge and for
+     * the list's total.
+     *
+     * @param hostUserId - The host whose inbox is being counted.
+     * @param tx - Optional transaction client.
+     * @returns How many rows await this host's confirmation.
+     * @throws DbError if the query fails.
+     */
+    async countPendingForUser(hostUserId: string, tx?: DrizzleClient): Promise<number> {
+        const db = this.getClient(tx);
+        const logContext = { hostUserId };
+
+        try {
+            const results = await db
+                .select({ value: count() })
+                .from(hostTradeBenefitUsages)
+                .where(this.pendingForUserCondition(hostUserId));
+
+            try {
+                logQuery(this.entityName, 'countPendingForUser', logContext, results);
+            } catch {}
+
+            return results[0]?.value ?? 0;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'countPendingForUser', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'countPendingForUser', logContext, err.message);
         }
     }
 
@@ -176,6 +227,72 @@ export class HostTradeBenefitUsageModel extends BaseModelImpl<HostTradeBenefitUs
                 logError(this.entityName, 'findLinkedHosts', logContext, err);
             } catch {}
             throw new DbError(this.entityName, 'findLinkedHosts', logContext, err.message);
+        }
+    }
+
+    /**
+     * The same linked hosts as {@link findLinkedHosts}, carrying the name the
+     * selector needs to render.
+     *
+     * A join rather than the id list plus a lookup per row: a provider with
+     * forty past clients would otherwise cost forty round trips to draw one
+     * dropdown.
+     *
+     * THE SELECT LIST IS THE PRIVACY BOUNDARY. Id and name only — never the
+     * email. "Already served" is not consent to hand over a stored address, and
+     * a provider who needs the email channel already has the address; what he
+     * must not receive is an export of every past client's contact details.
+     *
+     * @param hostTradeId - The provider whose selector is being filled.
+     * @param tx - Optional transaction client.
+     * @returns Distinct hosts with a confirmed usage, most recent first.
+     * @throws DbError if the query fails.
+     */
+    async findLinkedHostsWithNames(
+        hostTradeId: string,
+        tx?: DrizzleClient
+    ): Promise<
+        {
+            id: string;
+            displayName: string | null;
+            firstName: string | null;
+            lastName: string | null;
+        }[]
+    > {
+        const db = this.getClient(tx);
+        const logContext = { hostTradeId };
+
+        try {
+            const results = await db
+                .select({
+                    id: users.id,
+                    displayName: users.displayName,
+                    firstName: users.firstName,
+                    lastName: users.lastName
+                })
+                .from(hostTradeBenefitUsages)
+                .innerJoin(users, eq(users.id, hostTradeBenefitUsages.hostUserId))
+                .where(
+                    and(
+                        eq(hostTradeBenefitUsages.hostTradeId, hostTradeId),
+                        eq(hostTradeBenefitUsages.status, 'CONFIRMED'),
+                        isNull(hostTradeBenefitUsages.deletedAt)
+                    )
+                )
+                .groupBy(users.id, users.displayName, users.firstName, users.lastName)
+                .orderBy(sql`max(${hostTradeBenefitUsages.confirmedAt}) desc`);
+
+            try {
+                logQuery(this.entityName, 'findLinkedHostsWithNames', logContext, results);
+            } catch {}
+
+            return results;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findLinkedHostsWithNames', logContext, err);
+            } catch {}
+            throw new DbError(this.entityName, 'findLinkedHostsWithNames', logContext, err.message);
         }
     }
 

@@ -60,6 +60,15 @@ export * from './gastronomy';
 export * from './geocoding';
 export * from './hostTrade/host-trade.permissions';
 export * from './hostTrade/host-trade.service';
+// The HOS-376 half of the domain. Without these the services exist but are
+// unreachable from `@repo/service-core`, so no API route can construct one —
+// which is exactly how they shipped invisible until T-030 needed them.
+export * from './hostTrade/host-trade-aggregates';
+export * from './hostTrade/host-trade-review.permissions';
+export * from './hostTrade/host-trade-review.service';
+export * from './hostTrade/host-trade-review-reply.service';
+export * from './hostTrade/host-trade-usage.permissions';
+export * from './hostTrade/host-trade-usage.service';
 export * from './media';
 export * from './moderation';
 export * from './newsletter';

@@ -88,6 +88,60 @@ const liftSuspensionInputSchema = z.object({
     hostTradeId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
 });
 
+/**
+ * Input for {@link HostTradeUsageService.listPendingForHost}.
+ *
+ * The page window and nothing else. `hostUserId` is deliberately absent: the
+ * inbox is the actor's, so a field for it here would be a field a client could
+ * fill in with somebody else's id.
+ */
+const pendingInboxInputSchema = z.object({
+    page: z.number().int().min(1).default(1),
+    pageSize: z.number().int().min(1).max(100).default(20)
+});
+
+/** Input for {@link HostTradeUsageService.listForProvider}. */
+const providerUsageListInputSchema = z.object({
+    hostTradeId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    status: z.enum(HostTradeUsageStatusEnum).optional(),
+    page: z.number().int().min(1).default(1),
+    pageSize: z.number().int().min(1).max(100).default(20)
+});
+
+/**
+ * The label the selector shows for a linked host.
+ *
+ * Falls back through display name → full name → the id itself. The id is ugly
+ * and deliberate: a selector entry with an empty label is unclickable, and a
+ * provider can still pick the right row by elimination, which beats a blank
+ * line he cannot act on at all.
+ */
+function resolveHostLabel(row: {
+    id: string;
+    displayName: string | null;
+    firstName: string | null;
+    lastName: string | null;
+}): string {
+    if (row.displayName) return row.displayName;
+    const fullName = [row.firstName, row.lastName].filter(Boolean).join(' ').trim();
+    return fullName || row.id;
+}
+
+/**
+ * Asserts there is a session behind the call.
+ *
+ * The inbox reads are authorised by the actor's own identity — the rows are
+ * already scoped to him — so the only thing left to check is that there IS an
+ * actor. Without this, an anonymous request would query the inbox of `undefined`
+ * and answer an empty list, which reads as "you have nothing pending" rather
+ * than "you are not logged in".
+ */
+function requireSession(actor: Actor): void {
+    if (!actor?.id) {
+        throw new ServiceError(ServiceErrorCode.UNAUTHORIZED, 'Authentication required');
+    }
+}
+
 const declareAsProviderInputSchema = z.object({
     ...declareBaseShape,
     hostUserId: z.string().uuid().optional(),
@@ -470,6 +524,177 @@ export class HostTradeUsageService extends BaseCrudService<
                 );
 
                 return { usage };
+            }
+        });
+    }
+
+    // --- The host's pending inbox (T-030) ---------------------------------
+
+    /**
+     * The pending usages awaiting THIS host's confirmation, newest first.
+     *
+     * Scoped to the actor, never to a parameter. A `hostUserId` the client
+     * could pass would turn a page about your own pending confirmations into a
+     * reader for anybody else's — and the rows name a provider, a date and a
+     * free-text note about work done at that person's address.
+     *
+     * Authorised by having a session and nothing more: the rows are already
+     * scoped to the caller, so a permission would only decide whether a host
+     * may read his own inbox.
+     *
+     * @param input - The 1-based page window.
+     * @param actor - The host whose inbox is being read.
+     * @param ctx - Optional service context.
+     * @returns The page of pending usages plus the unpaginated total.
+     */
+    public async listPendingForHost(
+        input: { page: number; pageSize: number },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsage[]; total: number }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listPendingForHost',
+            input: { page: input.page, pageSize: input.pageSize, actor },
+            schema: pendingInboxInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                requireSession(validatedActor);
+
+                const [items, total] = await Promise.all([
+                    this.model.findPendingForUser(
+                        validatedActor.id,
+                        { page: validated.page, pageSize: validated.pageSize },
+                        ctx?.tx
+                    ),
+                    this.model.countPendingForUser(validatedActor.id, ctx?.tx)
+                ]);
+
+                return { items: items as HostTradeBenefitUsage[], total };
+            }
+        });
+    }
+
+    /**
+     * How many usages await this host's confirmation, for the nav badge.
+     *
+     * Shares the model's definition of "pending for me" with
+     * {@link listPendingForHost} — a badge showing 3 over a page listing 1 is
+     * worse than either number being wrong on its own.
+     *
+     * @param actor - The host whose badge is being read.
+     * @param ctx - Optional service context.
+     */
+    public async countPendingForHost(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<CountResponse>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'countPendingForHost',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validated, validatedActor) => {
+                requireSession(validatedActor);
+                const count = await this.model.countPendingForUser(validatedActor.id, ctx?.tx);
+                return { count };
+            }
+        });
+    }
+
+    // --- The provider's own usages and selector (T-031) -------------------
+
+    /**
+     * Every usage recorded against a listing, newest first.
+     *
+     * The listing is a PARAMETER rather than resolved here, because the caller
+     * (the `/mine/usages` route) has already had to load its own ficha to know
+     * it exists at all — resolving it twice would double the query for nothing.
+     * The route is what enforces "your own listing"; this method is the read.
+     *
+     * @param input.hostTradeId - The listing whose usages are being read.
+     * @param input.status - Optional state filter. Absent means every state:
+     *   the provider's history, not just his queue.
+     * @param actor - The provider's owner account.
+     * @param ctx - Optional service context.
+     */
+    public async listForProvider(
+        input: {
+            hostTradeId: string;
+            status?: HostTradeUsageStatusEnum;
+            page: number;
+            pageSize: number;
+        },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsage[]; total: number }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listForProvider',
+            input: { ...input, actor },
+            schema: providerUsageListInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                requireSession(validatedActor);
+
+                const where: Record<string, unknown> = {
+                    hostTradeId: validated.hostTradeId,
+                    deletedAt: null
+                };
+                if (validated.status) {
+                    where.status = validated.status;
+                }
+
+                const { items, total } = await this.model.findAll(
+                    where,
+                    { page: validated.page, pageSize: validated.pageSize },
+                    undefined,
+                    ctx?.tx
+                );
+
+                return { items: items as HostTradeBenefitUsage[], total };
+            }
+        });
+    }
+
+    /**
+     * The hosts this provider may declare on directly — the scoped selector.
+     *
+     * Only pairs with a CONFIRMED usage, and that scope IS the privacy
+     * property: the list exposes nobody the provider has not already served, so
+     * it cannot be used to browse the host base.
+     *
+     * The payload carries a name and never an email. "Already served" is not
+     * consent to hand over a stored address, and a provider who needs the email
+     * channel already has the address — what he must not receive is an export
+     * of every past client's contact details.
+     *
+     * @param input.hostTradeId - The listing whose selector is being filled.
+     * @param actor - The provider's owner account.
+     * @param ctx - Optional service context.
+     */
+    public async listLinkedHosts(
+        input: { hostTradeId: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ hosts: { id: string; displayName: string }[] }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listLinkedHosts',
+            input: { ...input, actor },
+            schema: liftSuspensionInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                requireSession(validatedActor);
+
+                const rows = await this.model.findLinkedHostsWithNames(
+                    validated.hostTradeId,
+                    ctx?.tx
+                );
+
+                return {
+                    hosts: rows.map((row) => ({
+                        id: row.id,
+                        displayName: resolveHostLabel(row)
+                    }))
+                };
             }
         });
     }

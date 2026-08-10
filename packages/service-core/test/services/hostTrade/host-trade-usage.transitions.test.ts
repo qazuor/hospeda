@@ -511,3 +511,217 @@ describe('liftDeclarationSuspension — the admin act (AC-12)', () => {
         expect(hostTradeModel.update).not.toHaveBeenCalled();
     });
 });
+
+// ---------------------------------------------------------------------------
+// The host's pending inbox (T-030)
+// ---------------------------------------------------------------------------
+
+describe('listPendingForHost', () => {
+    function buildInbox(rows: Record<string, unknown>[] = [], total = rows.length) {
+        const model = createModelMock();
+        model.findPendingForUser = vi.fn(async () => rows);
+        model.countPendingForUser = vi.fn(async () => total);
+
+        const service = new HostTradeUsageService(
+            { logger: mockLogger },
+            model as unknown as HostTradeBenefitUsageModel,
+            createModelMock() as unknown as HostTradeModel,
+            createModelMock() as unknown as UserModel,
+            async () => true
+        );
+        return { service, model };
+    }
+
+    it('returns the rows and the total for the acting host', async () => {
+        const { service, model } = buildInbox([makeUsage()], 7);
+
+        const result = await service.listPendingForHost(
+            { page: 1, pageSize: 10 },
+            actorOf(HOST_ID)
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.items).toHaveLength(1);
+        expect(result.data?.total).toBe(7);
+        expect(model.findPendingForUser).toHaveBeenCalledWith(
+            HOST_ID,
+            { page: 1, pageSize: 10 },
+            undefined
+        );
+    });
+
+    /**
+     * The inbox is the actor's, never a parameter. A `hostUserId` the caller
+     * could pass would turn a page about your own pending confirmations into a
+     * reader for anyone else's.
+     */
+    it('scopes to the actor, never to a caller-supplied id', async () => {
+        const { service, model } = buildInbox();
+
+        await service.listPendingForHost(
+            { page: 1, pageSize: 10, hostUserId: OWNER_ID } as never,
+            actorOf(HOST_ID)
+        );
+
+        expect(model.findPendingForUser).toHaveBeenCalledWith(
+            HOST_ID,
+            expect.anything(),
+            undefined
+        );
+    });
+
+    it('refuses an actor with no session', async () => {
+        const { service, model } = buildInbox();
+        const anonymous = new ActorFactoryBuilder().withId('').withPermissions([]).build();
+
+        const result = await service.listPendingForHost({ page: 1, pageSize: 10 }, anonymous);
+
+        expect(result.error).toBeDefined();
+        expect(model.findPendingForUser).not.toHaveBeenCalled();
+    });
+
+    it('counts the badge from the same definition as the list', async () => {
+        const { service, model } = buildInbox([], 4);
+
+        const result = await service.countPendingForHost(actorOf(HOST_ID));
+
+        expect(result.data?.count).toBe(4);
+        expect(model.countPendingForUser).toHaveBeenCalledWith(HOST_ID, undefined);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// The provider's own usages and selector (T-031)
+// ---------------------------------------------------------------------------
+
+describe('listForProvider', () => {
+    function buildProviderList(rows: Record<string, unknown>[] = [], total = rows.length) {
+        const model = createModelMock();
+        model.findAll = vi.fn(async () => ({ items: rows, total }));
+        model.count = vi.fn(async () => total);
+
+        const service = new HostTradeUsageService(
+            { logger: mockLogger },
+            model as unknown as HostTradeBenefitUsageModel,
+            createModelMock() as unknown as HostTradeModel,
+            createModelMock() as unknown as UserModel,
+            async () => true
+        );
+        return { service, model };
+    }
+
+    it('scopes every row to the listing it was told about', async () => {
+        const { service, model } = buildProviderList([makeUsage()]);
+
+        const result = await service.listForProvider(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            actorOf(OWNER_ID)
+        );
+
+        expect(result.error).toBeUndefined();
+        const where = (model.findAll as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0]?.[0] as Record<string, unknown>;
+        expect(where.hostTradeId).toBe(HT_ID);
+        expect(where.deletedAt).toBeNull();
+    });
+
+    it('filters by status when one is given', async () => {
+        const { service, model } = buildProviderList();
+
+        await service.listForProvider(
+            { hostTradeId: HT_ID, status: 'PENDING' as never, page: 1, pageSize: 10 },
+            actorOf(OWNER_ID)
+        );
+
+        const where = (model.findAll as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0]?.[0] as Record<string, unknown>;
+        expect(where.status).toBe('PENDING');
+    });
+
+    /** No status means every state — the provider's history, not just his queue. */
+    it('does not filter by status when none is given', async () => {
+        const { service, model } = buildProviderList();
+
+        await service.listForProvider(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            actorOf(OWNER_ID)
+        );
+
+        const where = (model.findAll as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0]?.[0] as Record<string, unknown>;
+        expect(where).not.toHaveProperty('status');
+    });
+});
+
+describe('listLinkedHosts', () => {
+    function buildSelector(rows: Record<string, unknown>[] = []) {
+        const model = createModelMock();
+        model.findLinkedHostsWithNames = vi.fn(async () => rows);
+
+        const service = new HostTradeUsageService(
+            { logger: mockLogger },
+            model as unknown as HostTradeBenefitUsageModel,
+            createModelMock() as unknown as HostTradeModel,
+            createModelMock() as unknown as UserModel,
+            async () => true
+        );
+        return { service, model };
+    }
+
+    it('prefers the display name the host chose', async () => {
+        const { service } = buildSelector([
+            { id: HOST_ID, displayName: 'Casa del Río', firstName: 'Ana', lastName: 'Pérez' }
+        ]);
+
+        const result = await service.listLinkedHosts({ hostTradeId: HT_ID }, actorOf(OWNER_ID));
+
+        expect(result.data?.hosts).toEqual([{ id: HOST_ID, displayName: 'Casa del Río' }]);
+    });
+
+    it('falls back to the full name when there is no display name', async () => {
+        const { service } = buildSelector([
+            { id: HOST_ID, displayName: null, firstName: 'Ana', lastName: 'Pérez' }
+        ]);
+
+        const result = await service.listLinkedHosts({ hostTradeId: HT_ID }, actorOf(OWNER_ID));
+
+        expect(result.data?.hosts[0]?.displayName).toBe('Ana Pérez');
+    });
+
+    /**
+     * A selector entry with an empty label is unclickable. Falling back to the
+     * id is ugly and deliberate: the provider can still pick the right row by
+     * elimination, which beats a blank line he cannot act on at all.
+     */
+    it('never returns an empty label', async () => {
+        const { service } = buildSelector([
+            { id: HOST_ID, displayName: null, firstName: null, lastName: null }
+        ]);
+
+        const result = await service.listLinkedHosts({ hostTradeId: HT_ID }, actorOf(OWNER_ID));
+
+        expect(result.data?.hosts[0]?.displayName).toBe(HOST_ID);
+    });
+
+    /**
+     * THE PRIVACY BOUNDARY. The selector may say who, never how to reach them:
+     * "already served" is not consent to hand over a stored address, and an
+     * email in this payload turns a dropdown into a contact-list export.
+     */
+    it('never leaks an email, even when the row carries one', async () => {
+        const { service } = buildSelector([
+            {
+                id: HOST_ID,
+                displayName: 'Casa del Río',
+                firstName: null,
+                lastName: null,
+                email: 'ana@example.com'
+            }
+        ]);
+
+        const result = await service.listLinkedHosts({ hostTradeId: HT_ID }, actorOf(OWNER_ID));
+
+        expect(JSON.stringify(result.data?.hosts)).not.toContain('ana@example.com');
+        expect(result.data?.hosts[0]).not.toHaveProperty('email');
+    });
+});
