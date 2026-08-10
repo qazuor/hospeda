@@ -1,4 +1,4 @@
-import type { HostTradeReview } from '@repo/schemas';
+import type { HostTradeReview, ModerationStatusEnum } from '@repo/schemas';
 import { and, desc, eq, isNull } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { hostTradeReviews } from '../../schemas/host-trade/host_trade_review.dbschema.ts';
@@ -32,6 +32,35 @@ export type HostTradeReviewWithAuthorAndReply = {
     reply: {
         id: string;
         content: string;
+        reviewEditedAfterReply: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+    } | null;
+};
+
+/**
+ * One row of the OWNER's listing: the same review, and his own answer with the
+ * moderation state attached.
+ *
+ * The extra two fields are the whole difference. In the directory shape an
+ * unapproved reply is simply absent, which is right for a reader and wrong for
+ * its author — he needs to see that what he wrote is in review, or why it was
+ * turned down.
+ */
+export type HostTradeReviewWithOwnerReply = {
+    review: HostTradeReviewRow;
+    author: {
+        id: string;
+        displayName: string | null;
+        firstName: string | null;
+        lastName: string | null;
+        image: string | null;
+    } | null;
+    reply: {
+        id: string;
+        content: string;
+        moderationState: ModerationStatusEnum;
+        moderationReason: string | null;
         reviewEditedAfterReply: boolean;
         createdAt: Date;
         updatedAt: Date;
@@ -161,6 +190,112 @@ export class HostTradeReviewModel extends BaseModelImpl<HostTradeReviewRow> {
             throw new DbError(
                 this.entityName,
                 'findAllWithAuthorAndReply',
+                logContext,
+                err.message
+            );
+        }
+    }
+
+    /**
+     * The OWNER's listing: the same reviews, with the answer in whatever state
+     * it is actually in (HOS-376 §7.5 `/mine/reviews`).
+     *
+     * A SEPARATE METHOD RATHER THAN A FLAG on {@link findAllWithAuthorAndReply},
+     * deliberately. The difference between the two is exactly "may an unapproved
+     * reply be seen", and a boolean parameter makes that one mistaken argument
+     * away from publishing a PENDING answer to the whole directory. As two
+     * methods, the directory read is structurally incapable of returning one.
+     *
+     * The provider needs the state because he is the author: a reply that is
+     * still in moderation, or that was turned down, must show as such. The
+     * alternative — the directory shape, which nulls an unapproved reply — tells
+     * its own author that the answer he wrote does not exist.
+     *
+     * @param where - Filters, already decided by the caller.
+     * @param options - Page window. Unpaginated when absent.
+     * @param tx - Optional transaction client.
+     * @returns The page and the total matching the same `where`.
+     */
+    async findAllForOwnerWithReplyState(
+        where: Record<string, unknown>,
+        options?: { page?: number; pageSize?: number },
+        tx?: DrizzleClient
+    ): Promise<{ items: HostTradeReviewWithOwnerReply[]; total: number }> {
+        const db = this.getClient(tx);
+        const safeWhere = where ?? {};
+        const page = options?.page;
+        const pageSize = options?.pageSize;
+        const logContext = { where: safeWhere, page, pageSize };
+
+        try {
+            const whereClause = buildWhereClause(safeWhere, this.table);
+
+            const baseQuery = db
+                .select({
+                    review: hostTradeReviews,
+                    author: {
+                        id: users.id,
+                        displayName: users.displayName,
+                        firstName: users.firstName,
+                        lastName: users.lastName,
+                        image: users.image
+                    },
+                    reply: {
+                        id: hostTradeReviewReplies.id,
+                        content: hostTradeReviewReplies.content,
+                        moderationState: hostTradeReviewReplies.moderationState,
+                        moderationReason: hostTradeReviewReplies.moderationReason,
+                        reviewEditedAfterReply: hostTradeReviewReplies.reviewEditedAfterReply,
+                        createdAt: hostTradeReviewReplies.createdAt,
+                        updatedAt: hostTradeReviewReplies.updatedAt
+                    }
+                })
+                .from(hostTradeReviews)
+                .leftJoin(users, eq(users.id, hostTradeReviews.hostUserId))
+                // No moderation predicate: the author of the reply is the one
+                // reading. Soft-deleted answers stay out, because those are gone
+                // rather than pending.
+                .leftJoin(
+                    hostTradeReviewReplies,
+                    and(
+                        eq(hostTradeReviewReplies.reviewId, hostTradeReviews.id),
+                        isNull(hostTradeReviewReplies.deletedAt)
+                    )
+                )
+                .where(whereClause)
+                .orderBy(desc(hostTradeReviews.createdAt));
+
+            const rows =
+                page !== undefined && pageSize !== undefined
+                    ? await baseQuery.limit(pageSize).offset((page - 1) * pageSize)
+                    : await baseQuery;
+
+            const total =
+                page !== undefined && pageSize !== undefined
+                    ? await this.count(safeWhere, { tx })
+                    : rows.length;
+
+            const result = {
+                // DRIZZLE-LIMITATION: the joined select returns Drizzle's own
+                // nested row shape, whose enum columns widen to `string`; the
+                // exported type is the domain-typed one.
+                items: rows as unknown as HostTradeReviewWithOwnerReply[],
+                total
+            };
+
+            try {
+                logQuery(this.entityName, 'findAllForOwnerWithReplyState', logContext, result);
+            } catch {}
+
+            return result;
+        } catch (error) {
+            const err = error instanceof Error ? error : new Error(String(error));
+            try {
+                logError(this.entityName, 'findAllForOwnerWithReplyState', logContext, err);
+            } catch {}
+            throw new DbError(
+                this.entityName,
+                'findAllForOwnerWithReplyState',
                 logContext,
                 err.message
             );
