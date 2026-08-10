@@ -1,5 +1,5 @@
 {
-  "id": "dfec3b50-bf3d-4a8d-81bf-3d364057bfa5",
+  "id": "64eb989b-fd63-479d-a0c0-5820ab8e5e8b",
   "prevId": "727ff2c4-d96c-48fa-856e-f16d85bd6eed",
   "version": "7",
   "dialect": "postgresql",
@@ -17918,6 +17918,212 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.partner_mentions": {
+      "name": "partner_mentions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "partner_id": {
+          "name": "partner_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "channel": {
+          "name": "channel",
+          "type": "partner_mention_channel_enum",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "batch_id": {
+          "name": "batch_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "mentioned_at": {
+          "name": "mentioned_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "url": {
+          "name": "url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "internal_note": {
+          "name": "internal_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "deleted_at": {
+          "name": "deleted_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by_id": {
+          "name": "created_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by_id": {
+          "name": "updated_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "deleted_by_id": {
+          "name": "deleted_by_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "partnerMentions_partnerId_mentionedAt_idx": {
+          "name": "partnerMentions_partnerId_mentionedAt_idx",
+          "columns": [
+            {
+              "expression": "partner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "mentioned_at",
+              "isExpression": false,
+              "asc": false,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "partnerMentions_batchId_idx": {
+          "name": "partnerMentions_batchId_idx",
+          "columns": [
+            {
+              "expression": "batch_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "partnerMentions_partnerId_deletedAt_idx": {
+          "name": "partnerMentions_partnerId_deletedAt_idx",
+          "columns": [
+            {
+              "expression": "partner_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "deleted_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "partner_mentions_partner_id_partners_id_fk": {
+          "name": "partner_mentions_partner_id_partners_id_fk",
+          "tableFrom": "partner_mentions",
+          "tableTo": "partners",
+          "columnsFrom": [
+            "partner_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "partner_mentions_created_by_id_users_id_fk": {
+          "name": "partner_mentions_created_by_id_users_id_fk",
+          "tableFrom": "partner_mentions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "created_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "partner_mentions_updated_by_id_users_id_fk": {
+          "name": "partner_mentions_updated_by_id_users_id_fk",
+          "tableFrom": "partner_mentions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "updated_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        },
+        "partner_mentions_deleted_by_id_users_id_fk": {
+          "name": "partner_mentions_deleted_by_id_users_id_fk",
+          "tableFrom": "partner_mentions",
+          "tableTo": "users",
+          "columnsFrom": [
+            "deleted_by_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.partner_subscriptions": {
       "name": "partner_subscriptions",
       "schema": "",
@@ -31920,6 +32126,20 @@
         "rejected"
       ]
     },
+    "public.partner_mention_channel_enum": {
+      "name": "partner_mention_channel_enum",
+      "schema": "public",
+      "values": [
+        "INSTAGRAM",
+        "FACEBOOK",
+        "TWITTER",
+        "YOUTUBE",
+        "TIKTOK",
+        "NEWSLETTER",
+        "WHATSAPP",
+        "OTHER"
+      ]
+    },
     "public.partner_subscription_status_enum": {
       "name": "partner_subscription_status_enum",
       "schema": "public",
@@ -31934,7 +32154,6 @@
       "name": "partner_tier_enum",
       "schema": "public",
       "values": [
-        "bronze",
         "silver",
         "gold"
       ]
