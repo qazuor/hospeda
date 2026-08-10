@@ -1268,36 +1268,45 @@
         {
             "id": "T-034",
             "title": "Endpoints de valoración: crear, editar y leer la propia",
-            "description": "POST /protected/host-trades/{id}/reviews (gate HOST_TRADE_REVIEW_CREATE), PATCH /protected/host-trades/reviews/{id} (ownership, 404 si es ajena), GET /protected/host-trades/{id}/my-review (devuelve {review: null} si no tiene). Tests: los códigos NO_CONFIRMED_USAGE, SELF_REVIEW_FORBIDDEN y REVIEW_ALREADY_EXISTS salen por HTTP con el status correcto.",
-            "status": "pending",
+            "description": "POST /protected/host-trades/{id}/reviews (gate HOST_TRADE_REVIEW_CREATE), PATCH /protected/host-trades/reviews/{id} (ownership, 404 si es ajena), GET /protected/host-trades/{id}/my-review (devuelve {review: null} si no tiene). Tests: los códigos NO_CONFIRMED_USAGE, SELF_REVIEW_FORBIDDEN y REVIEW_ALREADY_EXISTS salen por HTTP con el status correcto. CERRADA: tres endpoints con TRES autorizaciones distintas — crear exige HOST_TRADE_REVIEW_CREATE (gate 1 de 6.3), editar y leer la propia son auth + ownership de fila, porque la fila ya está escopeada a la sesión y un permiso sólo decidiría si un anfitrión puede tocar lo que él mismo escribió. Los otros tres gates quedan en el servicio: son hechos sobre filas y una precopia en la ruta derivaría. Se agregó getMyReview al servicio (no existía) — devuelve null, no 404, porque la ausencia es estado ordinario. El PATCH reenvía SÓLO las claves que el anfitrión mandó: rellenar las intactas con undefined haría que una edición de estrellas pareciera reescritura de texto y devolvería a APPROVED una valoración que un moderador rechazó. Mutación: 7 aplicadas, 5 mataron test; una era código muerto (un requireSession local, redundante con validateActor del runner base) y se BORRÓ; la otra era equivalente bajo el mock (el ?? null de my-review) y se endureció el test hasta matarla. Se agregó test de registración sobre el router real: los otros 20 tests montan las rutas a mano y quedarían verdes con un archivo que index.ts nunca registra.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-024", "T-026"],
             "blocks": ["T-039", "T-041", "T-048", "T-049"],
             "subtasks": [
                 {
                     "title": "POST reviews",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "PATCH reviews/{id}",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "GET my-review",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "reviews"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T02:05:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T02:05:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T02:05:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T01:15:00Z",
+                "completed": "2026-08-10T02:05:00.000Z"
             }
         },
         {
@@ -2336,9 +2345,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 44,
+        "pending": 35,
         "inProgress": 0,
-        "completed": 26,
+        "completed": 35,
         "blocked": 0,
         "averageComplexity": 2.4
     }
