@@ -3,6 +3,7 @@
  * Requires authentication and HOST_TRADE_VIEW permission
  */
 import { createRouter } from '../../../utils/create-app';
+import { protectedListProviderReviewsRoute } from './directory-reviews';
 import { protectedListHostTradesRoute } from './list';
 import { protectedGetMyHostTradeRoute, protectedUpdateMyHostTradeRoute } from './mine';
 import { protectedGetMyQrRoute } from './mine-qr';
@@ -90,6 +91,9 @@ protectedRouter.route('/', protectedGetMyReviewRoute);
 // ahead of it for the same defence-in-depth reason as the pair above.
 protectedRouter.route('/', protectedCreateReplyRoute);
 protectedRouter.route('/', protectedUpdateReplyRoute);
+
+// The directory's own review listing (HOS-376 T-036).
+protectedRouter.route('/', protectedListProviderReviewsRoute);
 
 protectedRouter.route('/', protectedDeclareUsageRoute);
 
