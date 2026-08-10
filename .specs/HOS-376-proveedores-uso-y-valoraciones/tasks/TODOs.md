@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 45/70 tareas (64%)
+## Progreso: 46/70 tareas (66%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 15/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 16/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -156,9 +156,10 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-044** (c2) — Cron semanal de reconciliación de agregados
   - host-trade-stats-reconcile.job.ts con el molde de featured-by-entitlement-reconcile.job.ts: recalcula los 5 contadores de todos los host_trades y corrige la deriva, registrando qué corrigió …
   - Bloqueada por: T-023 · Bloquea a: T-066
-- [ ] **T-045** (c2) — Página de aterrizaje del QR (registrar uso)
+- [x] **T-045** (c2) — Página de aterrizaje del QR (registrar uso)
   - apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro. Sin sesión redirige a login y vuelve. Muestra el proveedor, pide fecha del servicio y nota opcion…
   - Bloqueada por: T-030 · Bloquea a: T-054
+  - Amplió la superficie de la API con aprobación del owner: `GET /protected/host-trades/{slug}`, que §7.5 no declaraba. Sin él la página no puede mostrar el proveedor ni distinguir revocado de inexistente. Lo reusa T-053.
 - [ ] **T-046** (c3) — Sección /mi-cuenta/usos-de-beneficio
   - Página + isla React: pendientes arriba con Confirmar / Rechazar (rechazar pide confirmación en un <dialog> y aclara que es reversible), historial abajo con badges por estado, y CTA a valorar…
   - Bloqueada por: T-030, T-033 · Bloquea a: T-054
@@ -271,13 +272,25 @@ máquina de estados de usos, guardas de declaración, suspensión por umbral,
 valoraciones, réplicas, moderación, agregados y el QR— está implementada y
 cubierta.
 
-Sigue la fase `integration` (27 tareas, 9 cerradas). Cerrada TODA la capa de
-rutas del dominio (T-030 a T-038), el camino natural son los templates de mail
-(T-040) y su cableado (T-041), que es lo que hace que el anfitrión se entere —
-el eslabón donde §6.6 dice que se corta toda la cadena.
+Sigue la fase `integration` (27 tareas, 16 cerradas). Cerrada TODA la capa de
+rutas del dominio (T-030 a T-038), los 6 mails y su cableado (T-040/T-041), los
+3 crons (T-042 a T-044) y la primera pantalla, la del QR (T-045). El camino
+natural es seguir por la UI del anfitrión: T-046 (sección de usos) y T-047
+(contador en la nav), que son las otras dos capas de §6.6 — el eslabón donde la
+spec dice que se corta toda la cadena.
 
-Pendiente sin tarea asignada: `GET /protected/host-trades/mine/reviews`
-(spec 7.5, tabla del proveedor) no lo crea ninguna tarea. T-051 lo necesita.
+Huecos de contrato que la spec no declaró y la UI sí necesita. Son dos y ya
+tienen el mismo diagnóstico:
+
+1. `GET /protected/host-trades/{slug}` — CERRADO en T-045 con aprobación del
+   owner. La §7.5 no lo listaba, pero sin él la página del QR no puede mostrar
+   el proveedor ni distinguir "revocado" de "no existe": el listado del
+   directorio está escopeado por destino y no filtra por slug, así que las dos
+   cosas se ven igual (ausente). Quedó como 404 vs 422 `PROVIDER_REVOKED`, con
+   la suspensión deliberadamente afuera de la lectura porque
+   `declarationSuspended*` no es un veredicto público. Lo va a reusar T-053.
+2. `GET /protected/host-trades/mine/reviews` — SIGUE ABIERTO. Está en §7.5
+   (tabla del proveedor) pero ninguna tarea lo crea. T-051 lo necesita.
 
 Tres decisiones de `core` que la fase de integración hereda y no debería
 reabrir:

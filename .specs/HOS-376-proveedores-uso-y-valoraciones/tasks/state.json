@@ -1678,23 +1678,32 @@
         {
             "id": "T-045",
             "title": "Página de aterrizaje del QR (registrar uso)",
-            "description": "apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro. Sin sesión redirige a login y vuelve. Muestra el proveedor, pide fecha del servicio y nota opcional, y confirma. Pantalla de error explícita si el proveedor está revocado o no existe. CSS Modules colocados, NADA de Tailwind. Verificar que el segmento esté en SESSION_OPTIONAL_SEGMENTS si hace falta (match exacto, sin prefijo).",
-            "status": "pending",
+            "description": "apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro. Sin sesión redirige a login y vuelve. Muestra el proveedor, pide fecha del servicio y nota opcional, y confirma. Pantalla de error explícita si el proveedor está revocado o no existe. CSS Modules colocados, NADA de Tailwind. RESUELTO sobre SESSION_OPTIONAL_SEGMENTS: no hace falta tocarlo, porque matchea el SEGUNDO segmento del path, que acá es mi-cuenta y ya está en PROTECTED_SEGMENTS. AMPLIADO con aprobación del owner: la spec §7.5 no declaraba ningún GET de un proveedor por slug y la página lo necesita para mostrarlo y para distinguir revocado de inexistente, así que se agregó GET /protected/host-trades/{slug} — 404 y 422 PROVIDER_REVOKED como estados distintos, suspensión deliberadamente fuera de la lectura. Lo va a reusar T-053.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-030"],
             "blocks": ["T-054"],
             "subtasks": [],
-            "tags": ["web", "astro", "ui"],
+            "tags": ["web", "astro", "ui", "api"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T13:05:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T13:05:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T13:05:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T12:05:00.000Z",
+                "completed": "2026-08-10T13:05:00.000Z"
             }
         },
         {
@@ -2435,9 +2444,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 25,
+        "pending": 24,
         "inProgress": 0,
-        "completed": 45,
+        "completed": 46,
         "blocked": 0,
         "averageComplexity": 2.4
     }
