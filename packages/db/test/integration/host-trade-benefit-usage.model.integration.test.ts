@@ -126,7 +126,7 @@ describe('HostTradeBenefitUsageModel.findPendingForUser', () => {
 
             await tx.insert(hostTradeBenefitUsages).values([older, newer]);
 
-            const results = await model.findPendingForUser(hostId, tx);
+            const results = await model.findPendingForUser(hostId, undefined, tx);
 
             expect(results.map((r) => r.id)).toEqual([newer.id, older.id]);
         });
@@ -146,7 +146,7 @@ describe('HostTradeBenefitUsageModel.findPendingForUser', () => {
             });
             await tx.insert(hostTradeBenefitUsages).values(ownDeclaration);
 
-            const results = await model.findPendingForUser(hostId, tx);
+            const results = await model.findPendingForUser(hostId, undefined, tx);
 
             expect(results.map((r) => r.id)).not.toContain(ownDeclaration.id);
         });
@@ -177,7 +177,7 @@ describe('HostTradeBenefitUsageModel.findPendingForUser', () => {
 
             await tx.insert(hostTradeBenefitUsages).values([confirmed, rejected, expired]);
 
-            const results = await model.findPendingForUser(hostId, tx);
+            const results = await model.findPendingForUser(hostId, undefined, tx);
 
             expect(results).toEqual([]);
         });
@@ -190,7 +190,7 @@ describe('HostTradeBenefitUsageModel.findPendingForUser', () => {
             const deleted = usageFixture(tradeId, hostId, { deletedAt: new Date() });
             await tx.insert(hostTradeBenefitUsages).values(deleted);
 
-            const results = await model.findPendingForUser(hostId, tx);
+            const results = await model.findPendingForUser(hostId, undefined, tx);
 
             expect(results.map((r) => r.id)).not.toContain(deleted.id);
         });
@@ -199,7 +199,7 @@ describe('HostTradeBenefitUsageModel.findPendingForUser', () => {
     it('returns [] for a user with no pending usages', async () => {
         await withTestTransaction(async (tx) => {
             const { hostId } = await seedProviderAndHost(tx);
-            const results = await model.findPendingForUser(hostId, tx);
+            const results = await model.findPendingForUser(hostId, undefined, tx);
             expect(results).toEqual([]);
         });
     });
