@@ -12,6 +12,7 @@
  * than 403.
  */
 import type { HostTradeBenefitUsageModel, HostTradeModel, UserModel } from '@repo/db';
+import { hostTradeBenefitUsages } from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { HostTradeUsageService } from '../../../src/services/hostTrade/host-trade-usage.service';
@@ -491,5 +492,200 @@ describe('guard order — most permanent wins', () => {
         const result = await service.declareAsProvider(providerDeclaration, providerActor());
 
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+    });
+});
+
+describe('HostTradeUsageService — the admin usage search (T-038)', () => {
+    /**
+     * The model mock's default `getTable()` returns `{}`, which makes the base
+     * `adminList` reject every sort field before it reaches the query. The REAL
+     * table is handed over instead, so these tests exercise the base's actual
+     * where-building rather than a stub of it.
+     */
+    function buildSearchService() {
+        const model = createModelMock();
+        model.getTable = vi.fn(() => hostTradeBenefitUsages);
+        model.findAll = vi.fn(async () => ({ items: [], total: 0 }));
+        model.count = vi.fn(async () => 0);
+
+        const service = new HostTradeUsageService(
+            { logger: mockLogger },
+            model as unknown as HostTradeBenefitUsageModel
+        );
+
+        return { service, model };
+    }
+
+    const auditorActor = () =>
+        new ActorFactoryBuilder()
+            .withId(OTHER_ID)
+            .withPermissions([
+                PermissionEnum.ACCESS_PANEL_ADMIN,
+                PermissionEnum.HOST_TRADE_USAGE_VIEW_ALL
+            ])
+            .build();
+
+    const lastWhere = (model: ReturnType<typeof createModelMock>) =>
+        (model.findAll as unknown as { mock: { calls: unknown[][] } }).mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+
+    /**
+     * THE ONE THIS OVERRIDE EXISTS FOR. `status` is a key `AdminSearchBaseSchema`
+     * RESERVES: the base reads it as a lifecycle filter and writes
+     * `where.lifecycleState`, a column this table does not have. `buildWhereClause`
+     * then warns and SKIPS the unknown key, so without the override
+     * `?status=REJECTED` would answer with every usage in the system — filtered by
+     * nothing, green in every test, and wrong only in production.
+     */
+    it('filters by the usage state machine, not by a lifecycle column', async () => {
+        const { service, model } = buildSearchService();
+
+        await service.adminList(auditorActor(), { status: 'REJECTED' } as never);
+
+        expect(lastWhere(model).status).toBe('REJECTED');
+        expect(lastWhere(model).lifecycleState).toBeUndefined();
+    });
+
+    /**
+     * The filter built for abuse triage: the email fallback is the only channel
+     * a provider can drive without the host being present (R-5), so isolating it
+     * is how a suspected spam pattern gets read.
+     */
+    it('filters by creationChannel so the email fallback can be audited', async () => {
+        const { service, model } = buildSearchService();
+
+        await service.adminList(auditorActor(), { creationChannel: 'EMAIL_LOOKUP' } as never);
+
+        expect(lastWhere(model).creationChannel).toBe('EMAIL_LOOKUP');
+    });
+
+    it('filters by provider', async () => {
+        const { service, model } = buildSearchService();
+
+        await service.adminList(auditorActor(), { hostTradeId: HT_ID } as never);
+
+        expect(lastWhere(model).hostTradeId).toBe(HT_ID);
+    });
+
+    /** Comes free from the base; asserted because the audit screen relies on it. */
+    it('maps the date range onto the createdAt column', async () => {
+        const { service, model } = buildSearchService();
+
+        await service.adminList(auditorActor(), {
+            createdAfter: '2026-07-01T00:00:00.000Z',
+            createdBefore: '2026-07-31T23:59:59.000Z'
+        } as never);
+
+        expect(lastWhere(model).createdAt_gte).toBeDefined();
+        expect(lastWhere(model).createdAt_lte).toBeDefined();
+    });
+
+    it('refuses an actor without HOST_TRADE_USAGE_VIEW_ALL', async () => {
+        const { service, model } = buildSearchService();
+        const outsider = new ActorFactoryBuilder()
+            .withId(OTHER_ID)
+            .withPermissions([PermissionEnum.ACCESS_PANEL_ADMIN])
+            .build();
+
+        const result = await service.adminList(outsider, {} as never);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(model.findAll).not.toHaveBeenCalled();
+    });
+});
+
+describe('HostTradeUsageService.applyDeclarationSuspension (T-038)', () => {
+    const adminActor = () =>
+        new ActorFactoryBuilder()
+            .withId(OTHER_ID)
+            .withPermissions([PermissionEnum.HOST_TRADE_USAGE_MANAGE])
+            .build();
+
+    const lastPatch = (hostTradeModel: ReturnType<typeof createModelMock>) =>
+        (hostTradeModel.update as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0]?.[1] as Record<string, unknown>;
+
+    it('suspends the provider and records the reason', async () => {
+        const { service, hostTradeModel } = buildService();
+
+        const result = await service.applyDeclarationSuspension(
+            { hostTradeId: HT_ID, reason: 'Declaraciones por email sin confirmar.' },
+            adminActor()
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(lastPatch(hostTradeModel).declarationSuspendedAt).toBeInstanceOf(Date);
+        expect(lastPatch(hostTradeModel).declarationSuspendReason).toBe(
+            'Declaraciones por email sin confirmar.'
+        );
+    });
+
+    /**
+     * THE DIFFERENCE FROM THE AUTOMATIC PATH. The threshold suspension writes
+     * `declarationSuspendedById: null` on purpose — NULL is what tells the admin
+     * screen that no human decided it. An admin-applied one must carry the id,
+     * or the two become indistinguishable and nobody can be asked why.
+     */
+    it('stamps the acting admin, unlike the automatic threshold suspension', async () => {
+        const { service, hostTradeModel } = buildService();
+
+        await service.applyDeclarationSuspension(
+            { hostTradeId: HT_ID, reason: 'Motivo.' },
+            adminActor()
+        );
+
+        expect(lastPatch(hostTradeModel).declarationSuspendedById).toBe(OTHER_ID);
+    });
+
+    it('refuses an actor without HOST_TRADE_USAGE_MANAGE', async () => {
+        const { service, hostTradeModel } = buildService();
+
+        const result = await service.applyDeclarationSuspension(
+            { hostTradeId: HT_ID, reason: 'Motivo.' },
+            hostActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(hostTradeModel.update).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Built by hand rather than through `buildService`: its `hostTrade` option
+     * is resolved with `??`, so passing `null` falls through to the default
+     * fixture and the absent-listing case cannot be expressed there.
+     */
+    it('answers NOT_FOUND for a listing that does not exist', async () => {
+        const model = createModelMock();
+        const hostTradeModel = createModelMock();
+        hostTradeModel.findById = vi.fn(async () => null);
+
+        const service = new HostTradeUsageService(
+            { logger: mockLogger },
+            model as unknown as HostTradeBenefitUsageModel,
+            hostTradeModel as unknown as HostTradeModel
+        );
+
+        const result = await service.applyDeclarationSuspension(
+            { hostTradeId: HT_ID, reason: 'Motivo.' },
+            adminActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
+        expect(hostTradeModel.update).not.toHaveBeenCalled();
+    });
+
+    /** A reason is what the provider is owed when he asks why. */
+    it('requires a reason', async () => {
+        const { service, hostTradeModel } = buildService();
+
+        const result = await service.applyDeclarationSuspension(
+            { hostTradeId: HT_ID, reason: '' },
+            adminActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect(hostTradeModel.update).not.toHaveBeenCalled();
     });
 });

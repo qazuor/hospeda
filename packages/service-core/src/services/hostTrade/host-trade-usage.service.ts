@@ -89,6 +89,17 @@ const liftSuspensionInputSchema = z.object({
 });
 
 /**
+ * Input for {@link HostTradeUsageService.applyDeclarationSuspension}.
+ *
+ * The reason is mandatory and non-empty: a suspension takes away a provider's
+ * ability to record work at all, and he is owed an answer when he asks why.
+ */
+const applySuspensionInputSchema = z.object({
+    hostTradeId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    reason: z.string().min(1).max(1000)
+});
+
+/**
  * Input for {@link HostTradeUsageService.listPendingForHost}.
  *
  * The page window and nothing else. `hostUserId` is deliberately absent: the
@@ -287,6 +298,53 @@ export class HostTradeUsageService extends BaseCrudService<
         if (params.declaredBy) where.declaredBy = params.declaredBy;
         if (params.creationChannel) where.creationChannel = params.creationChannel;
         return where;
+    }
+
+    /**
+     * Rescues the `status` filter from the base's lifecycle handling (T-038).
+     *
+     * `status` is a key `AdminSearchBaseSchema` RESERVES. `adminList` pulls it
+     * out of the entity filters and writes `where.lifecycleState` from it,
+     * because for every other entity that is what `status` means. This one
+     * OVERRIDES it with the usage state machine (`PENDING`/`CONFIRMED`/
+     * `REJECTED`/`EXPIRED`), and `host_trade_benefit_usages` has no
+     * `lifecycleState` column at all.
+     *
+     * WITHOUT THIS OVERRIDE THE FILTER DISAPPEARS SILENTLY. `buildWhereClause`
+     * warns about an unknown column and SKIPS it — it only throws when every
+     * key is unknown, and `deletedAt` is always there to keep it quiet. So
+     * `?status=REJECTED` would answer with every usage in the system: filtered
+     * by nothing, green in every test, wrong only in production.
+     *
+     * The fix is deliberately local. Teaching the base to check the column's
+     * existence would touch the admin listing of some thirty services to
+     * correct one entity that renamed a reserved key.
+     *
+     * @param params - The query the base assembled.
+     * @returns The page, with `status` restored as an entity filter.
+     */
+    protected override async _executeAdminSearch(
+        params: Parameters<
+            BaseCrudService<
+                HostTradeBenefitUsage,
+                HostTradeBenefitUsageModel,
+                typeof HostTradeBenefitUsageCreateInputSchema,
+                typeof HostTradeBenefitUsageUpdateInputSchema,
+                typeof HostTradeBenefitUsageAdminSearchSchema
+            >['_executeAdminSearch']
+        >[0]
+    ): Promise<PaginatedListOutput<HostTradeBenefitUsage>> {
+        const { where, entityFilters, ...rest } = params;
+        const { lifecycleState, ...cleanWhere } = where as Record<string, unknown>;
+
+        return super._executeAdminSearch({
+            ...rest,
+            where: cleanWhere,
+            entityFilters: {
+                ...entityFilters,
+                ...(lifecycleState === undefined ? {} : { status: lifecycleState })
+            }
+        });
     }
 
     // --- Aggregate upkeep (T-023) -----------------------------------------
@@ -886,6 +944,58 @@ export class HostTradeUsageService extends BaseCrudService<
      * @param ctx - Optional service context.
      * @returns Whether a suspension was actually cleared.
      */
+    /**
+     * Suspends a provider's ability to declare, by an admin's decision (T-038).
+     *
+     * THE ID IS WHAT SEPARATES THIS FROM THE AUTOMATIC PATH. The threshold
+     * suspension writes `declarationSuspendedById: null` on purpose — NULL is
+     * how the admin screen knows no human decided it. An admin-applied one
+     * carries the actor's id, so the two can be told apart and somebody can be
+     * asked why.
+     *
+     * The reason is REQUIRED here, unlike the rejection note. A rejection is a
+     * private "that never happened" between two parties, and friction on it
+     * would cost the system its one honest control (§6.5). A suspension takes
+     * away a provider's ability to record work at all, and he is owed an answer
+     * when he asks why.
+     *
+     * @param input.hostTradeId - The provider being suspended.
+     * @param input.reason - Why. Shown to whoever reviews the suspension.
+     * @param actor - Must hold `HOST_TRADE_USAGE_MANAGE`.
+     * @param ctx - Optional service context.
+     * @returns Nothing beyond success; the listing carries the new state.
+     */
+    public async applyDeclarationSuspension(
+        input: { hostTradeId: string; reason: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ suspended: true }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'applyDeclarationSuspension',
+            input: { ...input, actor },
+            schema: applySuspensionInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                checkCanManageUsages(validatedActor);
+
+                await this.requireProvider(validated.hostTradeId, ctx);
+
+                await this.hostTradeModel.update(
+                    { id: validated.hostTradeId },
+                    {
+                        declarationSuspendedAt: new Date(),
+                        declarationSuspendedById: validatedActor.id,
+                        declarationSuspendReason: validated.reason,
+                        updatedById: validatedActor.id
+                    } as unknown as Partial<HostTrade>,
+                    ctx?.tx
+                );
+
+                return { suspended: true as const };
+            }
+        });
+    }
+
     public async liftDeclarationSuspension(
         input: { hostTradeId: string },
         actor: Actor,
