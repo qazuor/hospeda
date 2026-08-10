@@ -1709,12 +1709,16 @@
         {
             "id": "T-046",
             "title": "Sección /mi-cuenta/usos-de-beneficio",
-            "description": "Página + isla React: pendientes arriba con Confirmar / Rechazar (rechazar pide confirmación en un <dialog> y aclara que es reversible), historial abajo con badges por estado, y CTA a valorar desde un uso confirmado. Estados de carga con skeleton y de error con mensaje traducido. CSS Modules.",
-            "status": "pending",
+            "description": "Página + isla React: pendientes arriba con Confirmar / Rechazar (rechazar pide confirmación en un <dialog> y aclara que es reversible), historial abajo con badges por estado, y CTA a valorar desde un uso confirmado. Estados de carga con skeleton y de error con mensaje traducido. CSS Modules. AMPLIADO con aprobación del owner: el anfitrión NO tenía ninguna lectura de sus propios usos — el inbox filtra declaredBy=PROVIDER (correcto para un inbox, pero era la única lectura que tenía), así que el historial y el CTA a valorar no tenían de dónde leer, y la declaración por QR de T-045 quedaba invisible para quien la hizo. Se agregó GET /protected/host-trades/usages con filtro de estado y SIN filtro de declaredBy (commit cfe4d7072). Deliberadamente NO se amplió /usages/pending: esa ruta responde 'qué espera tu acción' y su definición la comparte el badge de la nav.",
+            "status": "in_progress",
             "complexity": 3,
             "blockedBy": ["T-030", "T-033"],
             "blocks": ["T-054"],
             "subtasks": [
+                {
+                    "title": "Endpoint de los usos propios del anfitrión (ampliación)",
+                    "completed": true
+                },
                 {
                     "title": "Listado de pendientes con acciones",
                     "completed": false
@@ -1741,7 +1745,7 @@
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
+                "started": "2026-08-10T15:35:00.000Z",
                 "completed": null
             }
         },
@@ -2444,8 +2448,8 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 24,
-        "inProgress": 0,
+        "pending": 23,
+        "inProgress": 1,
         "completed": 46,
         "blocked": 0,
         "averageComplexity": 2.4
