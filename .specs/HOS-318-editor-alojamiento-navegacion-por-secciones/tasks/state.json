@@ -8,35 +8,35 @@
             "id": "T-001",
             "title": "Create the editor section registry as the single source of truth",
             "description": "Create `apps/web/src/lib/editor/accommodation-editor-sections.ts` exporting `ACCOMMODATION_EDITOR_SECTIONS`: one readonly entry per section with `id`, `slug` (URL segment), `group` ('property'|'content'|'management'), and `labelKey` (i18n). The 10 slugs are datos, capacidad-precio, ubicacion, servicios, fotos, preguntas, contacto, calendario, traducciones, reputacion. Nav, hub and breadcrumbs ALL derive from this — no section list may be written twice. Tests: `apps/web/test/lib/editor/accommodation-editor-sections.test.ts` asserting exactly 10 entries, slugs unique, every group is one of the three literals, and every entry carries a labelKey.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": [],
             "blocks": ["T-005", "T-007", "T-009"],
             "subtasks": [
                 {
                     "title": "Define the SectionGroup and EditorSection types",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Declare the 10 entries in nav order",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Write the registry unit test",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "config"],
             "phase": "setup",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-10T03:30:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T03:35:00.000Z",
+                "completed": "2026-08-10T03:41:00.000Z"
             }
         },
         {
@@ -1166,9 +1166,9 @@
     ],
     "summary": {
         "total": 32,
-        "pending": 32,
+        "pending": 31,
         "inProgress": 0,
-        "completed": 0,
+        "completed": 1,
         "blocked": 0,
         "averageComplexity": 2.3
     }
