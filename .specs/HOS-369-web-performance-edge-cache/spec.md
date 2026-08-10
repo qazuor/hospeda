@@ -2839,9 +2839,13 @@ third is an implementation task, not a question.
   There is also no per-class TTL to set: `applyCacheHeaders` takes no TTL
   argument and every caller shares one constant
   (`LISTING_CACHE_S_MAXAGE_SECONDS = 300` in `apps/web/src/lib/cache/listing-cache.ts`),
-  so "different TTLs per page class" is an API change, not a number change. All
-  three pieces — deploy-time purge, HOS-424, then the TTL raise — are tracked as
-  **HOS-426**, in that order.
+  so "different TTLs per page class" is an API change, not a number change.
+  Tracked in order: **HOS-427** (deploy-time purge — it had been cited as "known
+  debt" by both HOS-401 and HOS-426 without ever being owned by an issue), then
+  **HOS-424**, then **HOS-426** for the raise itself. HOS-427 blocks HOS-426.
+  Note for whoever implements HOS-427: purge by the namespace catch-all tag, not
+  `purge_everything` — staging and production share the zone, so a whole-zone
+  flush from a staging deploy empties production's cache (§7).
 - ~~**OQ-3** — Accept the shared CSP nonce under caching, or move the affected
   pages to a hash-based inline strategy?~~ **RESOLVED Rev 3 → D-9** (move to
   content hashes, via our own injector, not Astro's `security.csp`). See §5.13.
