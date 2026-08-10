@@ -976,3 +976,137 @@ describe('HostTradeReviewService.getMyReview — reading your own review back (T
         expect(model.findOne).not.toHaveBeenCalled();
     });
 });
+
+describe('HostTradeReviewService.listForDirectory — what the directory may show (T-036)', () => {
+    /**
+     * Builds a service whose model records the `where` it was handed, which is
+     * the only thing this layer decides. What that `where` DOES to the rows is
+     * SQL, and is proven against a real database in
+     * `packages/db/test/integration/host-trade-review-directory.integration.test.ts`.
+     */
+    function buildDirectoryService() {
+        const model = createModelMock();
+        model.findAllWithAuthorAndReply = vi.fn(async () => ({ items: [], total: 0 }));
+
+        const service = new HostTradeReviewService(
+            { logger: mockLogger },
+            model as unknown as HostTradeReviewModel
+        );
+
+        return { service, model };
+    }
+
+    const lastWhere = (model: ReturnType<typeof createModelMock>) =>
+        (model.findAllWithAuthorAndReply as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0]?.[0] as Record<string, unknown>;
+
+    /**
+     * A host reading the directory. Holds `HOST_TRADE_VIEW` — the directory's
+     * own gate — which is a DIFFERENT permission from the one that lets him
+     * write a review.
+     */
+    const directoryReader = () =>
+        new ActorFactoryBuilder()
+            .withId(HOST_ID)
+            .withPermissions([PermissionEnum.HOST_TRADE_VIEW])
+            .build();
+
+    it('scopes the read to the provider named in the path', async () => {
+        const { service, model } = buildDirectoryService();
+
+        await service.listForDirectory(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            directoryReader()
+        );
+
+        expect(lastWhere(model).hostTradeId).toBe(HT_ID);
+    });
+
+    it('forces APPROVED and excludes soft-deleted rows', async () => {
+        const { service, model } = buildDirectoryService();
+
+        await service.listForDirectory(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            directoryReader()
+        );
+
+        expect(lastWhere(model).moderationState).toBe(ModerationStatusEnum.APPROVED);
+        expect(lastWhere(model).deletedAt).toBeNull();
+    });
+
+    /**
+     * THE PROPERTY THAT MATTERS: a `?moderationState=PENDING` must not turn
+     * this endpoint into a window onto the moderation queue.
+     *
+     * What this pins is the INPUT SCHEMA, which does not declare those keys, so
+     * Zod strips them before the handler runs. It is deliberately NOT a test of
+     * the post-spread assignment order — mutation testing showed that reversing
+     * that order changes nothing while the schema strips first, so a test
+     * claiming to cover it would be claiming more than it proves.
+     */
+    it('drops a caller-supplied moderationState before it can widen the read', async () => {
+        const { service, model } = buildDirectoryService();
+
+        await service.listForDirectory(
+            {
+                hostTradeId: HT_ID,
+                page: 1,
+                pageSize: 10,
+                moderationState: ModerationStatusEnum.PENDING,
+                deletedAt: 'anything'
+            } as never,
+            directoryReader()
+        );
+
+        expect(lastWhere(model).moderationState).toBe(ModerationStatusEnum.APPROVED);
+        expect(lastWhere(model).deletedAt).toBeNull();
+    });
+
+    it('passes the page window through', async () => {
+        const { service, model } = buildDirectoryService();
+
+        await service.listForDirectory(
+            { hostTradeId: HT_ID, page: 3, pageSize: 5 },
+            directoryReader()
+        );
+
+        const pagination = (
+            model.findAllWithAuthorAndReply as unknown as { mock: { calls: unknown[][] } }
+        ).mock.calls[0]?.[1];
+        expect(pagination).toEqual({ page: 3, pageSize: 5 });
+    });
+
+    /**
+     * A directory read, so it takes the directory's own gate. A provider
+     * reading his OWN reviews holds no such permission — that is what
+     * `/mine/reviews` is for, and it is a different endpoint.
+     */
+    it('refuses an actor without HOST_TRADE_VIEW', async () => {
+        const { service, model } = buildDirectoryService();
+        const outsider = new ActorFactoryBuilder().withId(HOST_ID).withPermissions([]).build();
+
+        const result = await service.listForDirectory(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            outsider
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(model.findAllWithAuthorAndReply).not.toHaveBeenCalled();
+    });
+
+    it('returns the rows and the total the model reports', async () => {
+        const { service, model } = buildDirectoryService();
+        model.findAllWithAuthorAndReply = vi.fn(async () => ({
+            items: [{ review: { id: 'review-1' }, author: null, reply: null }],
+            total: 1
+        }));
+
+        const result = await service.listForDirectory(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            directoryReader()
+        );
+
+        expect(result.data?.total).toBe(1);
+        expect(result.data?.items).toHaveLength(1);
+    });
+});

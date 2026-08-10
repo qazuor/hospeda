@@ -3,7 +3,8 @@ import {
     HostTradeBenefitUsageModel,
     HostTradeModel,
     HostTradeReviewModel,
-    HostTradeReviewReplyModel
+    HostTradeReviewReplyModel,
+    type HostTradeReviewWithAuthorAndReply
 } from '@repo/db';
 import type {
     CountResponse,
@@ -31,6 +32,7 @@ import { ServiceError } from '../../types';
 import { withServiceTransaction } from '../../utils/transaction';
 import { getThresholdForContext } from '../contentModeration/get-threshold-for-context';
 import { resolveInitialModerationState } from '../moderation/review-moderation.helpers';
+import { checkCanViewHostTrade } from './host-trade.permissions';
 import { recalculateHostTradeAggregates } from './host-trade-aggregates';
 import {
     checkCanCreateHostTradeReview,
@@ -84,6 +86,20 @@ const updateReviewInputSchema = z.object({
         .nullish(),
     respectedBenefit: z.boolean().optional(),
     content: z.string().min(10).max(2000).nullish()
+});
+
+/**
+ * Input for {@link HostTradeReviewService.listForDirectory}.
+ *
+ * The provider and a page window. `moderationState` is deliberately absent —
+ * not because a caller cannot send it (the service overrides whatever arrives),
+ * but because DECLARING it would advertise a filter this endpoint must never
+ * honour.
+ */
+const listForDirectoryInputSchema = z.object({
+    hostTradeId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    page: z.number().int().min(1).default(1),
+    pageSize: z.number().int().min(1).max(100).default(20)
 });
 
 /**
@@ -430,6 +446,67 @@ export class HostTradeReviewService extends BaseCrudService<
                     { tx: ctx?.tx }
                 );
                 return { count };
+            }
+        });
+    }
+
+    // --- The directory listing (T-036) ------------------------------------
+
+    /**
+     * The reviews a signed-in host may read on a provider's card.
+     *
+     * WHAT KEEPS A `?moderationState=PENDING` FROM TURNING THE DIRECTORY INTO A
+     * WINDOW ONTO THE MODERATION QUEUE is that `listForDirectoryInputSchema`
+     * does not DECLARE those keys, so Zod strips them before `execute` ever
+     * runs. That is the guarantee, and it is the one under test.
+     *
+     * The forced values are still assigned AFTER the spread — the pattern
+     * `accommodationReview._executeSearch` uses — but be clear about what that
+     * buys here: with the schema stripping first, `filters` cannot contain them
+     * either way, so the ordering is unexercised belt-and-braces. Mutation
+     * testing confirms it: reversing the order breaks nothing today. It earns
+     * its place only the day somebody widens the input schema, which is exactly
+     * the day it would otherwise become a hole.
+     *
+     * Note this does NOT reuse `_executeSearch`, which belongs to the ADMIN
+     * path on this service and must keep returning every moderation state for
+     * the queue screen (T-037). One method cannot be both.
+     *
+     * Gated on `HOST_TRADE_VIEW`, the directory's own gate — these rows are the
+     * directory. A provider reading his OWN reviews holds no such permission;
+     * that is a different endpoint (§7.5 `/mine/reviews`).
+     *
+     * @param input - The provider, the page window, and any caller filters
+     *   (which cannot widen the read).
+     * @param actor - Must hold `HOST_TRADE_VIEW`.
+     * @param ctx - Optional service context.
+     * @returns The page of reviews, each with its author and its public reply.
+     */
+    public async listForDirectory(
+        input: { readonly hostTradeId: string; readonly page: number; readonly pageSize: number },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: HostTradeReviewWithAuthorAndReply[]; total: number }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listForDirectory',
+            input: { ...input, actor },
+            schema: listForDirectoryInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                checkCanViewHostTrade(validatedActor);
+
+                const { page, pageSize, ...filters } = validated;
+                const where: Record<string, unknown> = { ...filters };
+                where.moderationState = ModerationStatusEnum.APPROVED;
+                where.deletedAt = null;
+
+                const { items, total } = await this.model.findAllWithAuthorAndReply(
+                    where,
+                    { page, pageSize },
+                    ctx?.tx
+                );
+
+                return { items, total };
             }
         });
     }
