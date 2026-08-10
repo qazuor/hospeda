@@ -28,6 +28,7 @@ import { createTranslations } from '@/lib/i18n';
 import { BenefitUsageCard } from './BenefitUsageCard';
 import { BENEFIT_USAGES_UPDATED_EVENT } from './BenefitUsagesCountPill.client';
 import styles from './BenefitUsagesPanel.module.css';
+import { ReviewFormDialog } from './ReviewFormDialog.client';
 
 /** Rows per page, matching what the page asked for server-side. */
 const PAGE_SIZE = 20;
@@ -95,6 +96,7 @@ export function BenefitUsagesPanel({
 
     const [rejectTarget, setRejectTarget] = useState<BenefitUsage | null>(null);
     const [rejectionNote, setRejectionNote] = useState('');
+    const [reviewTarget, setReviewTarget] = useState<BenefitUsage | null>(null);
 
     const genericError = t(
         'host-trades.usages.errors.action',
@@ -356,6 +358,7 @@ export function BenefitUsagesPanel({
                                 busy={busyId === usage.id}
                                 key={usage.id}
                                 locale={locale}
+                                onReview={setReviewTarget}
                                 onUndoRejection={handleUndo}
                                 usage={usage}
                             />
@@ -435,6 +438,22 @@ export function BenefitUsagesPanel({
                         </button>
                     </div>
                 </dialog>
+            ) : null}
+
+            {reviewTarget?.hostTrade ? (
+                <ReviewFormDialog
+                    hostTradeId={reviewTarget.hostTrade.id}
+                    locale={locale}
+                    onClose={() => setReviewTarget(null)}
+                    onSaved={() => {
+                        // The review does not change any usage, so the lists stay
+                        // as they are. The dialog keeps showing its own outcome —
+                        // whether it published or went to moderation — until the
+                        // host closes it.
+                        setErrorMessage(null);
+                    }}
+                    providerName={reviewTarget.hostTrade.name}
+                />
             ) : null}
         </div>
     );

@@ -1,0 +1,245 @@
+/**
+ * Styles for ReviewFormDialog.client.tsx (HOS-376 T-048).
+ *
+ * Every value is a design token. The radio inputs stay in the DOM and in the
+ * accessibility tree — they are visually replaced by the star glyph, never
+ * `display: none`, which would take them out of the tab order and undo the
+ * keyboard operability the control exists to provide.
+ */
+
+.dialog {
+    width: min(34rem, calc(100vw - 2rem));
+    padding: var(--space-6, 1.5rem);
+    color: var(--core-foreground);
+    background-color: var(--core-card);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card, 24px);
+}
+
+.dialog::backdrop {
+    background-color: oklch(0 0 0 / 0.45);
+}
+
+.title {
+    margin: 0 0 var(--space-4, 1rem);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.25rem;
+}
+
+.legend {
+    padding: 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+/* ── Star groups ── */
+
+.starGroup,
+.benefitGroup {
+    margin: 0 0 var(--space-5, 1.25rem);
+    padding: 0;
+    border: none;
+}
+
+.starRow {
+    display: flex;
+    gap: var(--space-1, 0.25rem);
+}
+
+.star {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    /* 44px keeps the tap target within the AA touch guideline. */
+    min-width: 44px;
+    min-height: 44px;
+    padding: var(--space-1, 0.25rem);
+    cursor: pointer;
+}
+
+/* Visually replaced by the glyph, but still focusable and still announced. */
+.starInput {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+}
+
+.starGlyph {
+    font-size: 1.5rem;
+    line-height: 1;
+    color: var(--core-foreground-a25);
+    transition: color var(--duration-normal, 0.4s) ease-out;
+}
+
+.star:hover .starGlyph,
+.starInput:checked ~ .starGlyph {
+    color: var(--brand-accent);
+}
+
+/* The focus ring has to live on the glyph, since the input itself is clipped. */
+.starInput:focus-visible ~ .starGlyph {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.starValue {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Yes / no ── */
+
+.choice {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    min-height: 44px;
+    margin-right: var(--space-4, 1rem);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+/* ── Breakdown ── */
+
+.breakdown {
+    margin-bottom: var(--space-5, 1.25rem);
+    padding: var(--space-3, 0.75rem);
+    background-color: var(--core-background);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-md, 10px);
+}
+
+.breakdownSummary {
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.dimension {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-3, 0.75rem);
+}
+
+.dimensionLabel {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Comment ── */
+
+.contentLabel {
+    display: block;
+    margin-bottom: var(--space-2, 0.5rem);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+.textarea {
+    width: 100%;
+    min-height: 88px;
+    padding: 0.625rem 0.875rem;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-md, 10px);
+    resize: vertical;
+}
+
+.textarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}
+
+/* ── Actions ── */
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-4, 1rem);
+}
+
+.primaryAction,
+.secondaryAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.5rem 1.125rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill, 9999px);
+    cursor: pointer;
+    transition: opacity var(--duration-normal, 0.4s) ease-out;
+}
+
+.primaryAction {
+    color: var(--accent-foreground, #ffffff);
+    background-color: var(--brand-accent);
+}
+
+.secondaryAction {
+    color: var(--core-foreground);
+    background-color: transparent;
+    border-color: var(--core-foreground-a08);
+}
+
+.primaryAction:hover:not(:disabled),
+.secondaryAction:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.primaryAction:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+/* ── Outcomes ── */
+
+.success {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4, 1rem);
+}
+
+.successBody {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-muted-foreground);
+}
+
+/* The design system has no `danger` token; these literals match the ones the
+   sibling host-trade surfaces already use for error copy. */
+
+.error {
+    margin: var(--space-4, 1rem) 0 0;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: oklch(0.55 0.22 25);
+    background-color: oklch(0.55 0.22 25 / 0.08);
+    border: 1px solid oklch(0.85 0.05 25 / 0.4);
+    border-radius: var(--radius-md, 10px);
+}

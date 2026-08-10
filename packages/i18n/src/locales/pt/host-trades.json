@@ -130,5 +130,44 @@
         "badge": {
             "pendingCount": "{{count}} usos aguardando sua confirmação"
         }
+    },
+    "review": {
+        "title": "Avaliar {{name}}",
+        "overall": {
+            "legend": "Nota geral",
+            "one": "1 estrela",
+            "many": "{{count}} estrelas"
+        },
+        "benefit": {
+            "legend": "O benefício para anfitriões foi respeitado?",
+            "yes": "Sim",
+            "no": "Não"
+        },
+        "breakdown": {
+            "summary": "Detalhe por aspecto (opcional)",
+            "workQuality": "Qualidade do trabalho",
+            "punctuality": "Pontualidade",
+            "treatment": "Atendimento"
+        },
+        "content": {
+            "label": "Comentário (opcional)",
+            "placeholder": "Conte como foi o trabalho. Outros anfitriões vão ler."
+        },
+        "submit": "Publicar avaliação",
+        "submitting": "Publicando…",
+        "cancel": "Cancelar",
+        "success": {
+            "published": "Pronto, sua avaliação já está publicada no diretório.",
+            "pending": "Salvamos sua avaliação e ela está em revisão. Será publicada no diretório quando for aprovada.",
+            "close": "Fechar"
+        },
+        "errors": {
+            "ratingRequired": "Escolha uma nota geral.",
+            "benefitRequired": "Conte se o fornecedor respeitou o benefício.",
+            "contentTooShort": "O comentário precisa ter pelo menos {{min}} caracteres, ou você pode deixá-lo vazio.",
+            "invalid": "Revise os dados da avaliação antes de publicá-la.",
+            "generic": "Não conseguimos publicar sua avaliação. Tente novamente em instantes."
+        },
+        "cta": "Avaliar {{name}}"
     }
 }

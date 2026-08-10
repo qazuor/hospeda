@@ -330,6 +330,44 @@ describe('BenefitUsagesPanel — undoing a rejection', () => {
 });
 
 // ---------------------------------------------------------------------------
+// The review call-to-action (T-048 wiring)
+// ---------------------------------------------------------------------------
+
+describe('BenefitUsagesPanel — the review call-to-action', () => {
+    it('offers reviewing from a CONFIRMED row', async () => {
+        const user = userEvent.setup();
+        renderPanel({ pending: [], history: [makeUsage({ status: 'CONFIRMED' })] });
+
+        await user.click(within(history()).getByRole('button', { name: /valorar/i }));
+
+        expect(await screen.findByText(/puntuación general/i)).toBeInTheDocument();
+    });
+
+    it.each([
+        'PENDING',
+        'REJECTED',
+        'EXPIRED'
+    ] as const)('offers nothing to review on a %s row', (status) => {
+        // The gate is the spec's hardest precondition: no confirmed usage,
+        // no review. Offering the button anyway would send the host to a
+        // dialog whose only possible answer is 403 NO_CONFIRMED_USAGE.
+        renderPanel({ pending: [], history: [makeUsage({ status })] });
+
+        expect(within(history()).queryByRole('button', { name: /valorar/i })).toBeNull();
+    });
+
+    it('does not offer it on a CONFIRMED row whose provider did not resolve', () => {
+        // The dialog needs the provider's id to post to and its name to show.
+        renderPanel({
+            pending: [],
+            history: [makeUsage({ status: 'CONFIRMED', hostTrade: null })]
+        });
+
+        expect(within(history()).queryByRole('button', { name: /valorar/i })).toBeNull();
+    });
+});
+
+// ---------------------------------------------------------------------------
 // History filter
 // ---------------------------------------------------------------------------
 

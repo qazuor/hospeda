@@ -25,6 +25,8 @@ interface BenefitUsageCardProps {
     readonly onConfirm?: (usage: BenefitUsage) => void;
     readonly onReject?: (usage: BenefitUsage) => void;
     readonly onUndoRejection?: (usage: BenefitUsage) => void;
+    /** Opens the review dialog. Absent in the inbox, where nothing is confirmed yet. */
+    readonly onReview?: (usage: BenefitUsage) => void;
 }
 
 /** Badge class per state, so the four are visually distinguishable at a glance. */
@@ -57,7 +59,8 @@ export function BenefitUsageCard({
     busy = false,
     onConfirm,
     onReject,
-    onUndoRejection
+    onUndoRejection,
+    onReview
 }: BenefitUsageCardProps) {
     const { t } = createTranslations(locale);
 
@@ -77,6 +80,12 @@ export function BenefitUsageCard({
     );
 
     const showUndo = canUndoRejection(usage);
+
+    // Reviewing needs a CONFIRMED usage — the spec's hardest precondition — and
+    // a provider the dialog can address. Offering it otherwise would walk the
+    // host into a dialog whose only possible answer is 403 NO_CONFIRMED_USAGE.
+    const showReview =
+        usage.status === 'CONFIRMED' && usage.hostTrade !== null && onReview !== undefined;
 
     return (
         <li className={styles.card}>
@@ -117,7 +126,7 @@ export function BenefitUsageCard({
                 </p>
             ) : null}
 
-            {answerable || showUndo ? (
+            {answerable || showUndo || showReview ? (
                 <div className={styles.cardActions}>
                     {answerable ? (
                         <>
@@ -148,6 +157,19 @@ export function BenefitUsageCard({
                             type="button"
                         >
                             {t('host-trades.usages.actions.undoRejection', 'Deshacer el rechazo')}
+                        </button>
+                    ) : null}
+
+                    {showReview ? (
+                        <button
+                            className={styles.primaryAction}
+                            disabled={busy}
+                            onClick={() => onReview?.(usage)}
+                            type="button"
+                        >
+                            {t('host-trades.review.cta', 'Valorar a {{name}}', {
+                                name: providerName
+                            })}
                         </button>
                     ) : null}
                 </div>
