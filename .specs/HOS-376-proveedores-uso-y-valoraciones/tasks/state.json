@@ -1312,8 +1312,8 @@
         {
             "id": "T-035",
             "title": "Endpoints de réplica: crear y editar",
-            "description": "POST /protected/host-trades/reviews/{id}/reply y PATCH /protected/host-trades/replies/{id}. Ownership del proveedor; ajeno devuelve 404. Tests: la réplica creada NO aparece en el listado público hasta ser aprobada (AC-21).",
-            "status": "pending",
+            "description": "POST /protected/host-trades/reviews/{id}/reply y PATCH /protected/host-trades/replies/{id}. Ownership del proveedor; ajeno devuelve 404. Tests: la réplica creada NO aparece en el listado público hasta ser aprobada (AC-21). CERRADA: ambas auth-only + ownership de fila (HOS-278 AC-7 otra vez — un proveedor aprobado no tiene ningún HOST_TRADE_*, y exigir uno lo callaría en la única página que lleva una queja sobre su propio negocio). Toda ruta ajena responde 404. El body del PATCH exige content, a diferencia del PATCH parcial de la valoración: este recurso tiene UN campo editable, así que un body vacío no llevaría cambio y aun así devolvería a PENDING una respuesta publicada. AC-21 en esta capa se afirma acotado y con esa etiqueta puesta: la respuesta vuelve PENDING porque lo decidió el servicio y la ruta no lo tocó — que una réplica PENDING quede FUERA del listado se afirma donde vive el listado, en T-036. Mutación: 4 aplicadas, 4 mataron test (content opcional en el PATCH, id leído del param equivocado, desregistrar la ruta del router real, y la ruta pisando moderationState a APPROVED).",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-025"],
             "blocks": ["T-051"],
@@ -1321,14 +1321,23 @@
             "tags": ["api", "routes", "reviews"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T02:40:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T02:40:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T02:40:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T02:15:00Z",
+                "completed": "2026-08-10T02:40:00.000Z"
             }
         },
         {
@@ -2345,9 +2354,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 35,
+        "pending": 34,
         "inProgress": 0,
-        "completed": 35,
+        "completed": 36,
         "blocked": 0,
         "averageComplexity": 2.4
     }

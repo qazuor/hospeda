@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 35/70 tareas (50%)
+## Progreso: 36/70 tareas (51%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 5/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 6/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -126,7 +126,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-034** (c3) — Endpoints de valoración: crear, editar y leer la propia
   - POST /protected/host-trades/{id}/reviews (gate HOST_TRADE_REVIEW_CREATE), PATCH /protected/host-trades/reviews/{id} (ownership, 404 si es ajena), GET /protected/host-trades/{id}/my-review (d…
   - Bloqueada por: T-024, T-026 · Bloquea a: T-039, T-041, T-048, T-049
-- [ ] **T-035** (c2) — Endpoints de réplica: crear y editar
+- [x] **T-035** (c2) — Endpoints de réplica: crear y editar
   - POST /protected/host-trades/reviews/{id}/reply y PATCH /protected/host-trades/replies/{id}. Ownership del proveedor; ajeno devuelve 404. Tests: la réplica creada NO aparece en el listado púb…
   - Bloqueada por: T-025 · Bloquea a: T-051
 - [ ] **T-036** (c2) — Endpoint GET /protected/host-trades/{id}/reviews
@@ -271,11 +271,14 @@ máquina de estados de usos, guardas de declaración, suspensión por umbral,
 valoraciones, réplicas, moderación, agregados y el QR— está implementada y
 cubierta.
 
-Sigue la fase `integration` (27 tareas, 5 cerradas). Con T-034 adentro, el
-camino natural es T-035 (réplicas), T-036 (el listado del directorio, que
-fuerza `moderationState=APPROVED` DESPUÉS del spread de filtros del caller) y
-T-037 (endpoints admin, que tiene que leer LAS DOS colas de moderación: la de
+Sigue la fase `integration` (27 tareas, 6 cerradas). Con T-034 y T-035
+adentro, el camino natural es T-036 (el listado del directorio, que fuerza
+`moderationState=APPROVED` DESPUÉS del spread de filtros del caller) y T-037
+(endpoints admin, que tiene que leer LAS DOS colas de moderación: la de
 valoraciones, que es backlog, y la de réplicas, que bloquea publicación).
+
+Pendiente sin tarea asignada: `GET /protected/host-trades/mine/reviews`
+(spec 7.5, tabla del proveedor) no lo crea ninguna tarea. T-051 lo necesita.
 
 Tres decisiones de `core` que la fase de integración hereda y no debería
 reabrir:
