@@ -243,7 +243,9 @@
                 "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes",
                 "externalReputation": "Reputação externa",
                 "featuredToggle": "[PT] Destacado",
-                "calendar": "Calendário"
+                "calendar": "Calendário",
+                "capacityPricing": "Capacidade e preço",
+                "contactSocial": "Contato e redes"
             },
             "sectionNav": {
                 "ariaLabel": "Navegação de seções do formulário"
@@ -522,6 +524,18 @@
                 "icalErrorPrefix": "Não conseguimos ler esse calendário:",
                 "reconnectIcal": "Reconectar",
                 "reconnectIcalHelp": "Cole novamente a URL corrigida do calendário para reconectá-lo."
+            },
+            "group": {
+                "property": "A propriedade",
+                "content": "Conteúdo",
+                "management": "Gestão"
+            },
+            "breadcrumb": {
+                "properties": "Minhas propriedades"
+            },
+            "hub": {
+                "title": "Editar propriedade",
+                "subtitle": "Escolha o que você quer editar"
             }
         },
         "empty": {

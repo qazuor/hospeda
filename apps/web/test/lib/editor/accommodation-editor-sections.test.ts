@@ -7,6 +7,8 @@
  * surface and forgotten on the others.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     ACCOMMODATION_EDITOR_SECTIONS,
@@ -17,6 +19,37 @@ import {
     findEditorSectionBySlug,
     getVisibleEditorSections
 } from '@/lib/editor/accommodation-editor-sections';
+
+/**
+ * The real `es` dictionary. Asserting the key SHAPE (that it starts with the
+ * right prefix) is not enough — an invented key passes that and then renders
+ * raw in the UI. These tests resolve every key against the actual JSON.
+ */
+const HOST_ES = JSON.parse(
+    readFileSync(
+        resolve(__dirname, '../../../../../packages/i18n/src/locales/es/host.json'),
+        'utf8'
+    )
+) as Record<string, unknown>;
+
+/**
+ * Resolves a dotted i18n key against the loaded dictionary.
+ *
+ * @param key - Full key including the `host.` namespace prefix.
+ * @returns The resolved string, or `undefined` when any segment is missing.
+ */
+function resolveHostKey(key: string): string | undefined {
+    // The `host.` prefix names the file itself, so it is not a path segment.
+    const path = key.replace(/^host\./, '').split('.');
+    let current: unknown = HOST_ES;
+
+    for (const segment of path) {
+        if (typeof current !== 'object' || current === null) return undefined;
+        current = (current as Record<string, unknown>)[segment];
+    }
+
+    return typeof current === 'string' ? current : undefined;
+}
 
 describe('ACCOMMODATION_EDITOR_SECTIONS', () => {
     it('should declare exactly the ten sections the spec defines', () => {
@@ -61,6 +94,37 @@ describe('ACCOMMODATION_EDITOR_SECTIONS', () => {
         for (const section of ACCOMMODATION_EDITOR_SECTIONS) {
             expect(section.labelKey).toMatch(/^host\.properties\.editor\./);
         }
+    });
+
+    it('should resolve every section label key against the real es dictionary', () => {
+        // The prefix assertion above only checks the key's SHAPE. This one is
+        // the guard that matters: a key that does not exist renders raw in the
+        // nav, the hub and the breadcrumbs at once.
+        for (const section of ACCOMMODATION_EDITOR_SECTIONS) {
+            expect(
+                resolveHostKey(section.labelKey),
+                `missing i18n key for section "${section.id}": ${section.labelKey}`
+            ).toBeTruthy();
+        }
+    });
+
+    it('should resolve every group heading key against the real es dictionary', () => {
+        for (const group of EDITOR_SECTION_GROUPS) {
+            const key = EDITOR_SECTION_GROUP_LABEL_KEYS[group];
+
+            expect(
+                resolveHostKey(key),
+                `missing i18n key for group "${group}": ${key}`
+            ).toBeTruthy();
+        }
+    });
+
+    it('should give each section a distinct label (no two nav items read alike)', () => {
+        const labels = ACCOMMODATION_EDITOR_SECTIONS.map((section) =>
+            resolveHostKey(section.labelKey)
+        );
+
+        expect(new Set(labels).size).toBe(labels.length);
     });
 
     it('should use lowercase kebab-case slugs (they are URL segments)', () => {

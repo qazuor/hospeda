@@ -243,7 +243,9 @@
                 "photosDescription": "Upload photos of your property to attract more guests",
                 "externalReputation": "External reputation",
                 "featuredToggle": "[EN] Destacado",
-                "calendar": "Calendar"
+                "calendar": "Calendar",
+                "capacityPricing": "Capacity and price",
+                "contactSocial": "Contact and social"
             },
             "sectionNav": {
                 "ariaLabel": "Form section navigation"
@@ -522,6 +524,18 @@
                 "icalErrorPrefix": "We couldn't read that calendar:",
                 "reconnectIcal": "Reconnect",
                 "reconnectIcalHelp": "Paste the corrected calendar URL to reconnect it."
+            },
+            "group": {
+                "property": "The property",
+                "content": "Content",
+                "management": "Management"
+            },
+            "breadcrumb": {
+                "properties": "My properties"
+            },
+            "hub": {
+                "title": "Edit property",
+                "subtitle": "Choose what you want to edit"
             }
         },
         "empty": {

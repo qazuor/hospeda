@@ -243,7 +243,9 @@
                 "photosDescription": "Subí fotos de tu propiedad para atraer más huéspedes",
                 "externalReputation": "Reputación externa",
                 "featuredToggle": "Destacado",
-                "calendar": "Calendario"
+                "calendar": "Calendario",
+                "capacityPricing": "Capacidad y precio",
+                "contactSocial": "Contacto y redes"
             },
             "sectionNav": {
                 "ariaLabel": "Navegación de secciones del formulario"
@@ -522,6 +524,18 @@
                 "icalErrorPrefix": "No pudimos leer el calendario:",
                 "reconnectIcal": "Reconectar",
                 "reconnectIcalHelp": "Volvé a pegar la URL corregida del calendario para reconectarlo."
+            },
+            "group": {
+                "property": "La propiedad",
+                "content": "Contenido",
+                "management": "Gestión"
+            },
+            "breadcrumb": {
+                "properties": "Mis propiedades"
+            },
+            "hub": {
+                "title": "Editar propiedad",
+                "subtitle": "Elegí qué querés editar"
             }
         },
         "empty": {

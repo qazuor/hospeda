@@ -67,7 +67,9 @@ export const ACCOMMODATION_EDITOR_SECTIONS: readonly EditorSection[] = [
         id: 'capacityPricing',
         slug: 'capacidad-precio',
         group: 'property',
-        labelKey: 'host.properties.editor.section.capacity'
+        // Not `section.capacity` — that key reads just "Capacidad", while this
+        // page also owns the price fields.
+        labelKey: 'host.properties.editor.section.capacityPricing'
     },
     {
         id: 'location',
@@ -97,7 +99,9 @@ export const ACCOMMODATION_EDITOR_SECTIONS: readonly EditorSection[] = [
         id: 'contact',
         slug: 'contacto',
         group: 'content',
-        labelKey: 'host.properties.editor.section.contact'
+        // Not `section.contact` — this page absorbs the former standalone
+        // "Redes sociales" section too, so the label has to cover both.
+        labelKey: 'host.properties.editor.section.contactSocial'
     },
     {
         id: 'calendar',
