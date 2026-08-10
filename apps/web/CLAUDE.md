@@ -824,6 +824,42 @@ React island at `src/components/account/MoveToCollectionModal.client.tsx`. Wired
 
 React island at `src/components/account/CollectionDetailActions.client.tsx`. Mounted with `client:load` from `pages/[lang]/mi-cuenta/favoritos/colecciones/[id].astro` to power the Edit + Delete buttons in the collection detail header. Edit reuses `CreateEditCollectionModal` in EDIT mode and reloads the page on save so the header reflects the new name/color/icon. Delete uses `window.confirm()` (MVP) and calls `userBookmarkCollectionsApi.delete`; on success it shows a success toast and redirects to `/{lang}/mi-cuenta/favoritos/`. Test selectors: `data-testid="collection-actions-edit"`, `collection-actions-delete`.
 
+### Accommodation editor: one section, one page (HOS-318)
+
+`/{lang}/mi-cuenta/propiedades/{id}/editar/` is **eleven routes** — a hub plus
+ten sections — not one page. Four things a future reader would otherwise
+re-derive wrongly:
+
+- **The registry is the single source of truth.**
+  `src/lib/editor/accommodation-editor-sections.ts` declares every section's id,
+  URL slug, group and label key. The route nav, the hub list and the breadcrumbs
+  ALL derive from it. Adding a section means adding an entry plus its
+  `.astro` file — never editing three lists.
+- **One nav item = one page, no exceptions.** The rule exists because the
+  audience is largely older, non-technical hosts: a nav where some items navigate
+  and others scroll, with nothing on screen announcing the difference, is worse
+  than a long page. For the same reason a "focus mode" that retracts the account
+  sidebar inside the editor was evaluated and **rejected** — `AccountLayout` must
+  look and behave identically inside the editor and outside it.
+- **`/editar/` must never redirect to a section.** A redirect traps the back
+  button (section → hub → forward again). The hub is a real page on both
+  viewports; on mobile it IS the navigation, on desktop it doubles as a status
+  summary.
+- **Only this editor uses route nav.** `EditorRouteNav.astro` (zero JS, active
+  item from the URL) is the accommodation editor's. `EditorSectionNav.client.tsx`
+  — the `IntersectionObserver` scrollspy — is still live and still correct for
+  `EventEditor` and `PostEditor`, which remain single-page. When those migrate,
+  they adopt the route nav and the scrollspy goes.
+
+Saving is per page: five small forms on a shared
+`useAccommodationSectionForm`, each sending a partial PATCH of **only its own
+fields** (`ownFields`). Every page holds the whole entity for rendering, because
+the section components take the complete object — so a diff that walked the
+object instead of `ownFields` would ship stale data and clobber another
+section. `test/pages/editor-routes.test.ts` guards the flip side: no page may
+import a section component it does not own, which is what keeps the calendar
+(the heaviest component in the editor) off the other ten routes.
+
 ### WaveHeader (detail + listing top band, HOS-84)
 
 `src/components/shared/ui/WaveHeader.astro` renders the solid `--surface-header` band at

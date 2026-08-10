@@ -159,6 +159,29 @@ describe('editor routes — section isolation (AC-7)', () => {
     });
 });
 
+describe('editor routes — navigation feel (T-025)', () => {
+    it('should inherit View Transitions through the layout chain', () => {
+        // Every editor page renders through EditorSectionLayout → AccountLayout
+        // → BaseLayout, and BaseLayout mounts ClientRouter. So navigating
+        // between sections animates instead of flashing — a hard page swap
+        // reads to this editor's audience as "the screen got away from me".
+        // Asserted here so a future layout change cannot quietly drop it.
+        const base = readFileSync(resolve(__dirname, '../../src/layouts/BaseLayout.astro'), 'utf8');
+        const account = readFileSync(
+            resolve(__dirname, '../../src/layouts/AccountLayout.astro'),
+            'utf8'
+        );
+        const editor = readFileSync(
+            resolve(__dirname, '../../src/layouts/EditorSectionLayout.astro'),
+            'utf8'
+        );
+
+        expect(base).toContain('<ClientRouter />');
+        expect(account).toContain('BaseLayout');
+        expect(editor).toContain('AccountLayout');
+    });
+});
+
 describe('editor routes — preserved behaviours', () => {
     it('should preload FAQs on the questions route (HOS-393 SSR-first)', () => {
         const source = readRoute('preguntas.astro');
