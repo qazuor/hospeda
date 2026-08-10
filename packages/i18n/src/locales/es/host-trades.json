@@ -34,5 +34,48 @@
         "PLAGAS": "Control de plagas",
         "INTERNET": "Internet / TV",
         "ALBANILERIA": "Albañilería"
+    },
+    "registerUsage": {
+        "title": "Registrar uso del beneficio",
+        "subtitle": "Registrá que usaste el beneficio de {{name}}. Le pedimos que lo confirme.",
+        "subtitleFallback": "Registro de uso de un beneficio del directorio de proveedores.",
+        "backToDirectory": "Volver al directorio",
+        "form": {
+            "date": {
+                "label": "¿Qué día fue el servicio?",
+                "hint": "Ya viene con la fecha de hoy. Cambiala si el servicio fue otro día."
+            },
+            "note": {
+                "label": "Nota (opcional)",
+                "placeholder": "Por ejemplo: cambio de cerradura en el departamento 3.",
+                "counter": "Te quedan {{remaining}} caracteres."
+            },
+            "submit": "Registrar el uso",
+            "submitting": "Registrando…",
+            "footnote": "Le vamos a pedir a {{name}} que confirme. Hasta que lo haga, el registro queda pendiente."
+        },
+        "errors": {
+            "dateRequired": "Elegí el día del servicio.",
+            "dateFuture": "El servicio no puede ser en el futuro.",
+            "generic": "No pudimos registrar el uso. Probá de nuevo en un momento."
+        },
+        "success": {
+            "title": "Listo, lo registramos",
+            "body": "Le pedimos a {{name}} que confirme el uso. Cuando lo haga, vas a poder valorarlo.",
+            "cta": "Ver mis usos del beneficio"
+        },
+        "notFound": {
+            "title": "No encontramos este proveedor",
+            "body": "El código que escaneaste no corresponde a ningún proveedor del directorio. Revisá que sea el código correcto."
+        },
+        "revoked": {
+            "title": "Este proveedor ya no está en el directorio",
+            "body": "Ya no forma parte del directorio, así que no podés registrar usos de su beneficio. Si tenés dudas, escribinos."
+        },
+        "loadError": {
+            "title": "No pudimos cargar el proveedor",
+            "body": "Hubo un problema al cargar los datos. Probá recargar la página.",
+            "retry": "Reintentar"
+        }
     }
 }

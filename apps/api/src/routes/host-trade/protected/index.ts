@@ -4,6 +4,7 @@
  */
 import { createRouter } from '../../../utils/create-app';
 import { protectedListProviderReviewsRoute } from './directory-reviews';
+import { protectedGetHostTradeBySlugRoute } from './get-by-slug';
 import { protectedListHostTradesRoute } from './list';
 import { protectedGetMyHostTradeRoute, protectedUpdateMyHostTradeRoute } from './mine';
 import { protectedGetMyQrRoute } from './mine-qr';
@@ -96,5 +97,15 @@ protectedRouter.route('/', protectedUpdateReplyRoute);
 protectedRouter.route('/', protectedListProviderReviewsRoute);
 
 protectedRouter.route('/', protectedDeclareUsageRoute);
+
+// The single-provider read the QR landing page runs on (HOS-376 T-045). It is
+// registered LAST of all, and here the ordering is less theoretical than the
+// cases above: `GET /{slug}` is ONE segment long, exactly like the literal
+// `GET /mine`, so `mine` is a candidate slug rather than a longer or shorter
+// path that specificity separates on its own. `test/routes/host-trade/
+// get-by-slug.test.ts` asserts by request that `/mine` still reaches the
+// own-listing handler with both mounted, and that a real slug still reaches
+// this one.
+protectedRouter.route('/', protectedGetHostTradeBySlugRoute);
 
 export { protectedRouter as protectedHostTradeRoutes };

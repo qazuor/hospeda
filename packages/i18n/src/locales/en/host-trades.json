@@ -34,5 +34,48 @@
         "PLAGAS": "Pest control",
         "INTERNET": "Internet / TV",
         "ALBANILERIA": "Masonry"
+    },
+    "registerUsage": {
+        "title": "Record benefit use",
+        "subtitle": "Record that you used {{name}}'s benefit. We'll ask them to confirm it.",
+        "subtitleFallback": "Record the use of a benefit from the provider directory.",
+        "backToDirectory": "Back to the directory",
+        "form": {
+            "date": {
+                "label": "What day was the service?",
+                "hint": "Today's date is filled in. Change it if the service was another day."
+            },
+            "note": {
+                "label": "Note (optional)",
+                "placeholder": "For example: lock replacement in apartment 3.",
+                "counter": "{{remaining}} characters left."
+            },
+            "submit": "Record the use",
+            "submitting": "Recording…",
+            "footnote": "We'll ask {{name}} to confirm. Until they do, the record stays pending."
+        },
+        "errors": {
+            "dateRequired": "Pick the day of the service.",
+            "dateFuture": "The service cannot be in the future.",
+            "generic": "We couldn't record the use. Please try again in a moment."
+        },
+        "success": {
+            "title": "Done, we recorded it",
+            "body": "We asked {{name}} to confirm the use. Once they do, you'll be able to review them.",
+            "cta": "See my benefit uses"
+        },
+        "notFound": {
+            "title": "We couldn't find this provider",
+            "body": "The code you scanned doesn't match any provider in the directory. Check that it's the right code."
+        },
+        "revoked": {
+            "title": "This provider is no longer in the directory",
+            "body": "They're no longer part of the directory, so you can't record uses of their benefit. Get in touch if you have questions."
+        },
+        "loadError": {
+            "title": "We couldn't load the provider",
+            "body": "Something went wrong loading the data. Try reloading the page.",
+            "retry": "Try again"
+        }
     }
 }

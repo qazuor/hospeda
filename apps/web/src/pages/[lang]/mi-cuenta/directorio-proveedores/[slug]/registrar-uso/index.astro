@@ -1,0 +1,333 @@
+---
+/**
+ * @file mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro
+ * @description Landing page for a provider's QR code (HOS-376 T-045, §6.2a).
+ *
+ * The QR encodes THIS url and nothing else — no token, no expiry, no secret.
+ * `host_trades.slug` is already UNIQUE, and the host's identity is their own
+ * session, which is exactly why the QR is the primary declaration channel: the
+ * identification problem the other two channels solve does not arise here.
+ *
+ * Auth: the page sits under `/mi-cuenta/*`, which middleware protects and
+ * redirects to login for, returning here afterwards. `SESSION_OPTIONAL_SEGMENTS`
+ * is deliberately NOT involved — it matches the SECOND path segment, which here
+ * is `mi-cuenta`, already covered by `PROTECTED_SEGMENTS`. The in-page guard
+ * below is the safety net for an SSR edge case where middleware did not run,
+ * following the sibling directory page.
+ *
+ * Three terminal states are rendered instead of the form, and they are three
+ * because the host may be holding a sticker printed a season ago:
+ *   - 404          → no provider carries this slug
+ *   - 422 REVOKED  → the provider was taken down (the row survives, HOS-278 R-4)
+ *   - other errors → transient, offer a retry
+ *
+ * @route     /[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/
+ * @rendering SSR (prerender = false — requires an authenticated host)
+ */
+
+import { LockIcon, WrenchIcon } from '@repo/icons';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import accountSectionStyles from '@/components/account/AccountSection.module.css';
+import { RegisterUsageForm } from '@/components/host/host-trades/RegisterUsageForm.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import { hostTradesApi } from '@/lib/api/endpoints-protected';
+import type { DirectoryProvider } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { webLogger as logger } from '@/lib/logger';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// Safety net: middleware already protects /mi-cuenta/* and comes back here.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+const slug = Astro.params.slug;
+if (!slug) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/directorio-proveedores' }));
+}
+
+// ---------------------------------------------------------------------------
+// Today, in the market's own timezone.
+//
+// The Node server runs on UTC, so `new Date().toISOString()` rolls over to
+// tomorrow at 21:00 local time — a host recording an evening service would be
+// handed a date one day ahead and then blocked by the form's own future-date
+// guard. `en-CA` is used purely because it formats as `YYYY-MM-DD`, the exact
+// shape `serviced_at` (a Postgres `date`) expects.
+// ---------------------------------------------------------------------------
+
+const MARKET_TIMEZONE = 'America/Argentina/Buenos_Aires';
+const today = new Intl.DateTimeFormat('en-CA', {
+    timeZone: MARKET_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+}).format(new Date());
+
+// ---------------------------------------------------------------------------
+// Read the provider the QR named.
+// ---------------------------------------------------------------------------
+
+type LoadOutcome = 'ok' | 'notFound' | 'revoked' | 'error';
+
+let provider: DirectoryProvider | null = null;
+let outcome: LoadOutcome = 'error';
+
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const result = await hostTradesApi.getBySlug({ slug, cookieHeader });
+
+if (result.ok) {
+    provider = result.data.hostTrade;
+    outcome = 'ok';
+} else if (result.error.status === 404) {
+    outcome = 'notFound';
+} else if (result.error.code === 'PROVIDER_REVOKED') {
+    // Matched on the CODE rather than the 422 status: 422 is also what a
+    // validation failure would use, and those are two different screens.
+    outcome = 'revoked';
+} else {
+    outcome = 'error';
+    logger.error(
+        '[registrar-uso] Could not load provider',
+        `slug=${slug} status=${result.error.status} code=${result.error.code ?? 'none'}`
+    );
+}
+
+// ---------------------------------------------------------------------------
+// i18n
+// ---------------------------------------------------------------------------
+
+const { t } = createTranslations(locale);
+
+const title = t('host-trades.registerUsage.title', 'Registrar uso del beneficio');
+const subtitle =
+    outcome === 'ok' && provider
+        ? t(
+              'host-trades.registerUsage.subtitle',
+              'Registrá que usaste el beneficio de {{name}}. Le pedimos que lo confirme.',
+              { name: provider.name }
+          )
+        : t(
+              'host-trades.registerUsage.subtitleFallback',
+              'Registro de uso de un beneficio del directorio de proveedores.'
+          );
+
+const directoryHref = buildUrl({ locale, path: 'mi-cuenta/directorio-proveedores' });
+const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver al directorio');
+---
+
+<AccountLayout
+    locale={locale}
+    title={title}
+    description={subtitle}
+    activeSection="directorio-proveedores"
+>
+    <AccountPageHeader title={title} description={subtitle} />
+
+    {outcome === 'ok' && provider ? (
+        <div class="register-usage__stack">
+            {/* Provider identity card — the host has to see WHO they are
+                    declaring about before they confirm anything. */}
+            <div class:list={['register-usage__provider', accountSectionStyles.branded]}>
+                <span class="register-usage__provider-icon" aria-hidden="true">
+                    <WrenchIcon size={32} weight="duotone" />
+                </span>
+                <div class="register-usage__provider-body">
+                    <h2 class="register-usage__provider-name">{provider.name}</h2>
+                    <p class="register-usage__provider-category">
+                        {t(`host-trades.categories.${provider.category}`, provider.category)}
+                    </p>
+                    <p class="register-usage__provider-benefit">
+                        <span class="register-usage__provider-benefit-label">
+                            {t('host-trades.card.benefit', 'Beneficio para hosts')}
+                        </span>
+                        {provider.benefit}
+                    </p>
+                </div>
+            </div>
+
+            <RegisterUsageForm
+                client:load
+                locale={locale}
+                providerSlug={provider.slug}
+                providerName={provider.name}
+                today={today}
+            />
+        </div>
+    ) : (
+        <div class:list={['register-usage__terminal', accountSectionStyles.branded]} role="alert">
+            <span class="register-usage__terminal-icon" aria-hidden="true">
+                <LockIcon size={40} weight="duotone" />
+            </span>
+            <h2 class="register-usage__terminal-heading">
+                {outcome === 'revoked'
+                    ? t(
+                          'host-trades.registerUsage.revoked.title',
+                          'Este proveedor ya no está en el directorio'
+                      )
+                    : outcome === 'notFound'
+                      ? t(
+                            'host-trades.registerUsage.notFound.title',
+                            'No encontramos este proveedor'
+                        )
+                      : t(
+                            'host-trades.registerUsage.loadError.title',
+                            'No pudimos cargar el proveedor'
+                        )}
+            </h2>
+            <p class="register-usage__terminal-body">
+                {outcome === 'revoked'
+                    ? t(
+                          'host-trades.registerUsage.revoked.body',
+                          'Ya no forma parte del directorio, así que no podés registrar usos de su beneficio. Si tenés dudas, escribinos.'
+                      )
+                    : outcome === 'notFound'
+                      ? t(
+                            'host-trades.registerUsage.notFound.body',
+                            'El código que escaneaste no corresponde a ningún proveedor del directorio. Revisá que sea el código correcto.'
+                        )
+                      : t(
+                            'host-trades.registerUsage.loadError.body',
+                            'Hubo un problema al cargar los datos. Probá recargar la página.'
+                        )}
+            </p>
+            {outcome === 'error' ? (
+                <a href={Astro.url.pathname} class="register-usage__terminal-cta">
+                    {t('host-trades.registerUsage.loadError.retry', 'Reintentar')}
+                </a>
+            ) : (
+                <a href={directoryHref} class="register-usage__terminal-cta">{backToDirectory}</a>
+            )}
+        </div>
+    )}
+</AccountLayout>
+
+<style>
+    .register-usage__stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5, 1.25rem);
+    }
+
+    /* ── Provider identity card ── */
+
+    .register-usage__provider {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-6, 1.5rem);
+        background-color: var(--core-card);
+        border: 1px solid var(--core-foreground-a08);
+        border-radius: var(--radius-card, 24px);
+    }
+
+    .register-usage__provider-icon {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        color: var(--brand-primary);
+    }
+
+    .register-usage__provider-body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1, 0.25rem);
+    }
+
+    .register-usage__provider-name {
+        margin: 0;
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: var(--core-foreground);
+    }
+
+    .register-usage__provider-category {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .register-usage__provider-benefit {
+        margin: var(--space-2, 0.5rem) 0 0;
+        font-family: var(--font-sans);
+        font-size: var(--text-body, 1rem);
+        color: var(--core-foreground);
+    }
+
+    .register-usage__provider-benefit-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--brand-accent);
+    }
+
+    /* ── Terminal states (not found / revoked / load error) ── */
+
+    .register-usage__terminal {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-12, 3rem) var(--space-8, 2rem);
+        background-color: var(--core-card);
+        border: 1px solid var(--core-foreground-a08);
+        border-radius: var(--radius-card, 24px);
+        text-align: center;
+    }
+
+    .register-usage__terminal-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--core-muted-foreground);
+    }
+
+    .register-usage__terminal-heading {
+        margin: 0;
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: var(--core-foreground);
+    }
+
+    .register-usage__terminal-body {
+        max-width: 46ch;
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: var(--text-body, 1rem);
+        color: var(--core-muted-foreground);
+    }
+
+    .register-usage__terminal-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0.625rem 1.25rem;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9375rem;
+        color: var(--primary-foreground, #ffffff);
+        text-decoration: none;
+        white-space: nowrap;
+        background-color: var(--brand-primary);
+        border-radius: var(--radius-pill, 9999px);
+        transition: opacity 150ms ease-out;
+    }
+
+    .register-usage__terminal-cta:hover {
+        opacity: 0.88;
+    }
+</style>
