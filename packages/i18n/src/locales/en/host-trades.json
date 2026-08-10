@@ -173,5 +173,67 @@
         "editTitle": "Edit your review of {{name}}",
         "save": "Save changes",
         "loading": "Checking whether you already reviewed them…"
+    },
+    "provider": {
+        "usages": {
+            "form": {
+                "title": "Record a benefit usage",
+                "channel": "Who did you serve?",
+                "channelSelector": "A client who already confirmed a usage",
+                "channelEmail": "Someone new, by email",
+                "host": "Host",
+                "hostPlaceholder": "Choose one…",
+                "email": "Host's email",
+                "emailHint": "It has to be the email they registered with on Hospeda. If it does not match, we tell you right away.",
+                "date": "What day was the service?",
+                "note": "Note (optional)",
+                "submit": "Record the usage",
+                "submitting": "Recording…",
+                "success": "Done. We asked the host to confirm it; until then it stays pending and does not count towards your numbers."
+            },
+            "list": {
+                "title": "Recorded usages",
+                "empty": "You have not recorded any benefit usage yet.",
+                "declaredByYou": "You recorded it",
+                "declaredByHost": "The host recorded it"
+            },
+            "suspended": {
+                "title": "You cannot record usages right now",
+                "help": "Write to us so we can review it. Your already-confirmed usages still count."
+            },
+            "errors": {
+                "hostRequired": "Choose who you served.",
+                "emailRequired": "Enter the host's email.",
+                "dateRequired": "Choose the day of the service.",
+                "dateFuture": "The service cannot be in the future.",
+                "generic": "We could not record the usage. Please try again in a moment."
+            }
+        },
+        "reviews": {
+            "title": "Reviews",
+            "empty": "There are no reviews of your listing yet. They appear when a host with a confirmed usage reviews you.",
+            "anonymous": "A host",
+            "rating": "{{count}} out of 5 stars",
+            "benefitYes": "Says you honoured the benefit",
+            "benefitNo": "Says you did NOT honour the benefit",
+            "yourReply": "Your reply",
+            "noReply": "You have not answered this review yet.",
+            "pendingHelp": "We review it before publishing. It is not visible in the directory yet.",
+            "rejectedReason": "Reason: {{reason}}",
+            "editedAfterReply": "The host edited their review after your reply.",
+            "replyState": {
+                "PENDING": "In review",
+                "APPROVED": "Published",
+                "REJECTED": "Rejected"
+            }
+        },
+        "qr": {
+            "title": "Your QR code",
+            "help": "Print it or show it on your phone. The host scans it with their camera and records the usage themselves: you do not need to ask for details or record it yourself.",
+            "alt": "QR code leading to the page for recording a usage of your benefit",
+            "encodes": "Leads to: {{url}}",
+            "download": "Download the QR",
+            "downloaded": "Done, we downloaded it as SVG."
+        }
     }
 }

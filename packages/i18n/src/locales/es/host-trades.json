@@ -173,5 +173,67 @@
         "editTitle": "Editar tu valoración de {{name}}",
         "save": "Guardar cambios",
         "loading": "Buscando si ya lo valoraste…"
+    },
+    "provider": {
+        "usages": {
+            "form": {
+                "title": "Registrar un uso del beneficio",
+                "channel": "¿A quién atendiste?",
+                "channelSelector": "Un cliente que ya me confirmó un uso",
+                "channelEmail": "Alguien nuevo, por su email",
+                "host": "Anfitrión",
+                "hostPlaceholder": "Elegí uno…",
+                "email": "Email del anfitrión",
+                "emailHint": "Tiene que ser el email con el que se registró en Hospeda. Si no coincide, te lo avisamos en el momento.",
+                "date": "¿Qué día fue el servicio?",
+                "note": "Nota (opcional)",
+                "submit": "Registrar el uso",
+                "submitting": "Registrando…",
+                "success": "Listo. Le pedimos al anfitrión que lo confirme; hasta entonces queda pendiente y no suma a tus números."
+            },
+            "list": {
+                "title": "Usos registrados",
+                "empty": "Todavía no registraste ningún uso del beneficio.",
+                "declaredByYou": "Lo registraste vos",
+                "declaredByHost": "Lo registró el anfitrión"
+            },
+            "suspended": {
+                "title": "No podés registrar usos por ahora",
+                "help": "Escribinos para revisarlo. Tus usos ya confirmados siguen contando."
+            },
+            "errors": {
+                "hostRequired": "Elegí a quién atendiste.",
+                "emailRequired": "Escribí el email del anfitrión.",
+                "dateRequired": "Elegí el día del servicio.",
+                "dateFuture": "El servicio no puede ser en el futuro.",
+                "generic": "No pudimos registrar el uso. Probá de nuevo en un momento."
+            }
+        },
+        "reviews": {
+            "title": "Valoraciones",
+            "empty": "Todavía no hay valoraciones sobre tu ficha. Aparecen cuando un anfitrión con un uso confirmado te valora.",
+            "anonymous": "Un anfitrión",
+            "rating": "{{count}} de 5 estrellas",
+            "benefitYes": "Dice que respetaste el beneficio",
+            "benefitNo": "Dice que NO respetaste el beneficio",
+            "yourReply": "Tu respuesta",
+            "noReply": "Todavía no respondiste esta valoración.",
+            "pendingHelp": "La revisamos antes de publicarla. Todavía no se ve en el directorio.",
+            "rejectedReason": "Motivo: {{reason}}",
+            "editedAfterReply": "El anfitrión editó su valoración después de tu respuesta.",
+            "replyState": {
+                "PENDING": "En revisión",
+                "APPROVED": "Publicada",
+                "REJECTED": "Rechazada"
+            }
+        },
+        "qr": {
+            "title": "Tu código QR",
+            "help": "Imprimilo o mostralo en el celular. El anfitrión lo escanea con la cámara y registra el uso él mismo: no hace falta que le pidas datos ni que lo cargues vos.",
+            "alt": "Código QR que lleva a la página para registrar un uso de tu beneficio",
+            "encodes": "Lleva a: {{url}}",
+            "download": "Descargar el QR",
+            "downloaded": "Listo, lo descargamos como SVG."
+        }
     }
 }
