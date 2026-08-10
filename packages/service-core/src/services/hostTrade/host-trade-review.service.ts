@@ -86,6 +86,18 @@ const updateReviewInputSchema = z.object({
     content: z.string().min(10).max(2000).nullish()
 });
 
+/**
+ * Input for {@link HostTradeReviewService.getMyReview}.
+ *
+ * The provider and nothing else. `hostUserId` is deliberately absent: the
+ * review being read back is the actor's, so a field for it here would be a
+ * field a client could fill in with somebody else's id — the same reasoning as
+ * the usage inbox's input schema.
+ */
+const getMyReviewInputSchema = z.object({
+    hostTradeId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' })
+});
+
 /** Input for {@link HostTradeReviewService.moderateReview}. */
 const moderateReviewInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -418,6 +430,59 @@ export class HostTradeReviewService extends BaseCrudService<
                     { tx: ctx?.tx }
                 );
                 return { count };
+            }
+        });
+    }
+
+    // --- Reading your own (T-034) -----------------------------------------
+
+    /**
+     * Returns the actor's own review of one provider, or `null`.
+     *
+     * ABSENCE IS AN ORDINARY STATE, not a failure: most host/provider pairs
+     * have no review, and the card that calls this needs to know whether to
+     * offer "write one" or "edit yours". A `NOT_FOUND` here would make the
+     * common case look like an error to every caller.
+     *
+     * AUTH-ONLY (§7.5), one step looser than creating: the row is already
+     * scoped to the session, so a permission could only decide whether a host
+     * may read something he wrote himself — and it would lock out a host whose
+     * directory perk lapsed while his review was still published.
+     *
+     * The scope comes from the SESSION, never from the request. The path
+     * carries the provider and the actor carries the host; a `hostUserId`
+     * parameter here would be a field a client could fill with someone else's
+     * id. There is no session guard of its own — `runWithLoggingAndValidation`
+     * runs `validateActor()` before `execute`, so an anonymous call is refused
+     * UNAUTHORIZED and never reaches the lookup. A local re-check was written
+     * here and removed: mutation testing showed it could not fail.
+     *
+     * @param input.hostTradeId - The provider whose review is being read back.
+     * @param actor - The host. Must be signed in.
+     * @param ctx - Optional service context.
+     * @returns `{ review }`, `null` when this host has not reviewed them.
+     */
+    public async getMyReview(
+        input: { readonly hostTradeId: string },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ review: HostTradeReview | null }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getMyReview',
+            input: { ...input, actor },
+            schema: getMyReviewInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                const review = await this.model.findOne(
+                    {
+                        hostTradeId: validated.hostTradeId,
+                        hostUserId: validatedActor.id,
+                        deletedAt: null
+                    },
+                    ctx?.tx
+                );
+
+                return { review: (review as HostTradeReview) ?? null };
             }
         });
     }

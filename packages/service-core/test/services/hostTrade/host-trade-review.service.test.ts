@@ -896,3 +896,83 @@ describe('HostTradeReviewService.getPendingCount', () => {
         );
     });
 });
+
+describe('HostTradeReviewService.getMyReview — reading your own review back (T-034)', () => {
+    /**
+     * The endpoint the host's provider card calls before it decides whether to
+     * offer "write a review" or "edit yours". Absence is an ORDINARY state here,
+     * not a failure: most pairs have no review.
+     */
+    it('answers null instead of an error when the host has not reviewed yet', async () => {
+        const { service } = buildService({ existingReview: null });
+
+        const result = await service.getMyReview({ hostTradeId: HT_ID }, hostActor());
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.review).toBeNull();
+    });
+
+    it('returns the review the actor wrote for that provider', async () => {
+        const { service } = buildService({
+            existingReview: { id: 'review-1', hostTradeId: HT_ID, hostUserId: HOST_ID }
+        });
+
+        const result = await service.getMyReview({ hostTradeId: HT_ID }, hostActor());
+
+        expect(result.data?.review).toMatchObject({ id: 'review-1' });
+    });
+
+    /**
+     * The lookup is scoped by the SESSION, never by anything the caller sent:
+     * the path carries the provider, the actor carries the host. Scoped by
+     * `hostTradeId` alone this would hand back a stranger's review.
+     */
+    it('scopes the lookup to the actor and skips soft-deleted rows', async () => {
+        const { service, model } = buildService({ existingReview: null });
+
+        await service.getMyReview({ hostTradeId: HT_ID }, hostActor());
+
+        expect(model.findOne).toHaveBeenCalledWith(
+            { hostTradeId: HT_ID, hostUserId: HOST_ID, deletedAt: null },
+            undefined
+        );
+    });
+
+    /**
+     * Auth-only (spec §7.5). Reading back your own row is not the directory
+     * perk: a host whose `HOST_TRADE_REVIEW_CREATE` lapsed must still be able to
+     * see — and therefore edit — what he already published.
+     */
+    it('does not require HOST_TRADE_REVIEW_CREATE', async () => {
+        const { service } = buildService({
+            existingReview: { id: 'review-1', hostTradeId: HT_ID, hostUserId: HOST_ID }
+        });
+        const permissionless = new ActorFactoryBuilder()
+            .withId(HOST_ID)
+            .withPermissions([])
+            .build();
+
+        const result = await service.getMyReview({ hostTradeId: HT_ID }, permissionless);
+
+        expect(result.error).toBeUndefined();
+        expect(result.data?.review).toMatchObject({ id: 'review-1' });
+    });
+
+    /**
+     * The refusal comes from the base runner's `validateActor()`, not from a
+     * guard inside the method — one was written and removed, because mutation
+     * testing showed it could not fail. What this pins is that `getMyReview`
+     * stays INSIDE `runWithLoggingAndValidation`: a "fast path" that read the
+     * model directly would answer `null` to an anonymous caller, which reads as
+     * "you have not reviewed them" rather than "you are not logged in".
+     */
+    it('refuses a call with no session behind it', async () => {
+        const { service, model } = buildService();
+        const anonymous = new ActorFactoryBuilder().withId('').withPermissions([]).build();
+
+        const result = await service.getMyReview({ hostTradeId: HT_ID }, anonymous);
+
+        expect(result.error?.code).toBe(ServiceErrorCode.UNAUTHORIZED);
+        expect(model.findOne).not.toHaveBeenCalled();
+    });
+});
