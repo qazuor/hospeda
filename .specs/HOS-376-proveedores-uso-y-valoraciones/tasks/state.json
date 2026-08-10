@@ -1343,8 +1343,8 @@
         {
             "id": "T-036",
             "title": "Endpoint GET /protected/host-trades/{id}/reviews",
-            "description": "Listado de valoraciones del proveedor para el directorio. Fuerza moderationState=APPROVED y deletedAt IS NULL DESPUÉS del spread de filtros del caller (imposible de bypassear por query param, igual que _executeSearch de accommodationReview). Incluye la réplica sólo si está APPROVED, y el flag reviewEditedAfterReply. Enriquecer con nombre/avatar del anfitrión. Tests: una valoración PENDING no aparece; una réplica PENDING no aparece pero la valoración sí.",
-            "status": "pending",
+            "description": "Listado de valoraciones del proveedor para el directorio. Fuerza moderationState=APPROVED y deletedAt IS NULL DESPUÉS del spread de filtros del caller (imposible de bypassear por query param, igual que _executeSearch de accommodationReview). Incluye la réplica sólo si está APPROVED, y el flag reviewEditedAfterReply. Enriquecer con nombre/avatar del anfitrión. Tests: una valoración PENDING no aparece; una réplica PENDING no aparece pero la valoración sí. CERRADA en TRES capas, y cada regla se afirma donde vive. (1) DB: HostTradeReviewModel.findAllWithAuthorAndReply. La condición de la réplica es un predicado de JOIN, NO un filtro: una respuesta sin aprobar tiene que sacar la RESPUESTA y dejar la VALORACIÓN. Escrita como WHERE — el error obvio — se lleva puesta también la valoración, o sea que un proveedor enterraría una queja con sólo responderla y dejar la réplica en la cola. Las dos versiones tipan igual y las dos pasan cualquier test unitario sobre el objeto where, así que la cobertura es un test de INTEGRACIÓN contra Postgres real (6 casos); mover la condición al WHERE pone 5 en rojo. (2) service-core: listForDirectory, gate HOST_TRADE_VIEW (el del directorio, NO el de moderación). Lo que impide un moderationState=PENDING es que el input schema NO DECLARA esa clave, así que Zod la strippea antes del execute. El force post-spread quedó igual, como defensa en profundidad, pero documentado como lo que es: mutación probada, invertir el orden no rompe nada mientras el schema strippee primero. NO reusa _executeSearch, que es el camino ADMIN y tiene que seguir devolviendo todos los estados para T-037. (3) apps/api: GET /{id}/reviews. El factory de listas RECHAZA un query param no declarado en vez de descartarlo — medido, no supuesto: da 400 y el servicio nunca se llama. Mutación: 4 aplicadas, 4 mataron test. Consecuencia deliberada: un proveedor leyendo las valoraciones de su PROPIA ficha no tiene HOST_TRADE_VIEW y no pasa por acá — eso es /mine/reviews, que sigue sin tarea asignada.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-024", "T-025"],
             "blocks": ["T-050", "T-053"],
@@ -1352,14 +1352,23 @@
             "tags": ["api", "routes", "reviews"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T03:30:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T03:30:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T03:30:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T02:45:00Z",
+                "completed": "2026-08-10T03:30:00.000Z"
             }
         },
         {
@@ -2354,9 +2363,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 34,
+        "pending": 33,
         "inProgress": 0,
-        "completed": 36,
+        "completed": 37,
         "blocked": 0,
         "averageComplexity": 2.4
     }
