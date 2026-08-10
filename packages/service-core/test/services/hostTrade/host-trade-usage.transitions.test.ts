@@ -63,7 +63,9 @@ function buildService(
     } = {}
 ) {
     const model = createModelMock();
-    const hostTradeModel = createModelMock();
+    // `findByIds` is outside the default mock surface: the host-facing lists use
+    // it to name each row's provider in a single query.
+    const hostTradeModel = createModelMock(['findByIds']);
     const userModel = createModelMock();
 
     model.findById = vi.fn(async () => usage);
@@ -88,6 +90,14 @@ function buildService(
                   declarationSuspendReason: null
               }
             : options.provider
+    );
+    hostTradeModel.findByIds = vi.fn(async (ids: readonly string[]) =>
+        ids.map((id) => ({
+            id,
+            slug: 'plomero-centro',
+            name: 'Plomero Centro',
+            category: 'PLOMERIA'
+        }))
     );
     hostTradeModel.update = vi.fn(
         async (_where: Record<string, unknown>, data: Record<string, unknown>) => ({
@@ -522,10 +532,22 @@ describe('listPendingForHost', () => {
         model.findPendingForUser = vi.fn(async () => rows);
         model.countPendingForUser = vi.fn(async () => total);
 
+        // The inbox names the provider of every row it returns, so its listing
+        // model needs the batch read even in a test that only asserts paging.
+        const hostTradeModel = createModelMock(['findByIds']);
+        hostTradeModel.findByIds = vi.fn(async (ids: readonly string[]) =>
+            ids.map((id) => ({
+                id,
+                slug: 'plomero-centro',
+                name: 'Plomero Centro',
+                category: 'PLOMERIA'
+            }))
+        );
+
         const service = new HostTradeUsageService(
             { logger: mockLogger },
             model as unknown as HostTradeBenefitUsageModel,
-            createModelMock() as unknown as HostTradeModel,
+            hostTradeModel as unknown as HostTradeModel,
             createModelMock() as unknown as UserModel,
             async () => true
         );

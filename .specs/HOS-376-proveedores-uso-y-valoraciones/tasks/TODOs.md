@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 46/70 tareas (66%)
+## Progreso: 47/70 tareas cerradas + 1 en curso (67%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 16/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 17/27 completadas, T-046 en curso (le falta sólo el CTA a valorar, que va con T-048) (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -160,12 +160,17 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro. Sin sesión redirige a login y vuelve. Muestra el proveedor, pide fecha del servicio y nota opcion…
   - Bloqueada por: T-030 · Bloquea a: T-054
   - Amplió la superficie de la API con aprobación del owner: `GET /protected/host-trades/{slug}`, que §7.5 no declaraba. Sin él la página no puede mostrar el proveedor ni distinguir revocado de inexistente. Lo reusa T-053.
-- [ ] **T-046** (c3) — Sección /mi-cuenta/usos-de-beneficio
+- [~] **T-046** (c3, EN CURSO) — Sección /mi-cuenta/usos-de-beneficio
   - Página + isla React: pendientes arriba con Confirmar / Rechazar (rechazar pide confirmación en un <dialog> y aclara que es reversible), historial abajo con badges por estado, y CTA a valorar…
   - Bloqueada por: T-030, T-033 · Bloquea a: T-054
-- [ ] **T-047** (c2) — Contador de pendientes en la navegación de /mi-cuenta
+  - **Backend LISTO** (commit cfe4d7072): `listForHost` + `GET /protected/host-trades/usages` con filtro de estado. Amplió la API con aprobación del owner, porque el anfitrión NO tenía lectura de sus propios usos — el inbox filtra `declaredBy=PROVIDER`, así que ni el historial ni el CTA a valorar tenían de dónde leer, y la declaración por QR de T-045 quedaba invisible para quien la hizo.
+  - **Segunda ampliación** (commit 77439373f, aprobada por el owner): las dos listas del anfitrión adjuntan `hostTrade {id, slug, name, category}`. Sin eso la pantalla le pedía confirmar trabajo hecho por un uuid, y el host no puede resolver el nombre del lado del cliente (el directorio se escopea a sus destinos actuales y excluye revocados). Un `findByIds` de-duplicado por página; `hostTrade` es nullable a propósito para que un proveedor irresoluble sea una etiqueta neutra y no un 500 de toda la página.
+  - **UI LISTA** (commit ba0b6c7c4): página SSR que lee ambas listas, isla con inbox + historial + badges, `<dialog>` de rechazo que aclara que es reversible, y **deshacer** en las filas que rechazó el propio anfitrión — derivado de `declaredBy`, porque el payload trae `rejectedAt` pero no `rejectedById`.
+  - **Queda abierto el CTA a valorar**, a propósito: necesita el diálogo de T-048 y se cablea con esa tarea. Un botón antes de eso sería scaffold muerto (§5).
+- [x] **T-047** (c2) — Contador de pendientes en la navegación de /mi-cuenta
   - Clonar el molde de apps/web/src/components/shared/whats-new/WhatsNewCountPill.client.tsx. Consume GET /usages/pending-count. SE APAGA AL RESOLVER, NO AL VER — si se apagara al mirar, el pend…
   - Bloqueada por: T-030 · Bloquea a: T-054
+  - Cerrada en el commit 3670d8a8d. El panel y el pill son islas separadas sin store compartido: el panel emite un `CustomEvent` en `window` tras cada transición y el pill re-lee, que es lo que hace que el conteo baje AL RESOLVER y no al mirar. Sin ninguna llamada de mark-as-seen, con guard estático que lo verifica. Una lectura fallida no renderiza nada en lugar de un cero.
 - [ ] **T-048** (c3) — Formulario de valoración
   - Isla React en <dialog> nativo: estrellas 1-5 para overallRating como radiogroup operable por teclado con label textual por valor (no sólo iconos), desglose de las 3 dimensiones COLAPSADO por…
   - Bloqueada por: T-034 · Bloquea a: T-049, T-054, T-067
@@ -272,7 +277,7 @@ máquina de estados de usos, guardas de declaración, suspensión por umbral,
 valoraciones, réplicas, moderación, agregados y el QR— está implementada y
 cubierta.
 
-Sigue la fase `integration` (27 tareas, 16 cerradas). Cerrada TODA la capa de
+Sigue la fase `integration` (27 tareas, 17 cerradas, T-046 en curso sólo por el CTA a valorar). Cerrada TODA la capa de
 rutas del dominio (T-030 a T-038), los 6 mails y su cableado (T-040/T-041), los
 3 crons (T-042 a T-044) y la primera pantalla, la del QR (T-045). El camino
 natural es seguir por la UI del anfitrión: T-046 (sección de usos) y T-047
@@ -289,7 +294,16 @@ tienen el mismo diagnóstico:
    cosas se ven igual (ausente). Quedó como 404 vs 422 `PROVIDER_REVOKED`, con
    la suspensión deliberadamente afuera de la lectura porque
    `declarationSuspended*` no es un veredicto público. Lo va a reusar T-053.
-2. `GET /protected/host-trades/mine/reviews` — SIGUE ABIERTO. Está en §7.5
+2. `GET /protected/host-trades/usages` — CERRADO en T-046 con aprobación del
+   owner. El anfitrión no tenía NINGUNA lectura de sus propios usos: el inbox
+   (`/usages/pending`) filtra `declaredBy = 'PROVIDER'`, que es correcto para un
+   inbox —lo que declaró el anfitrión espera al proveedor— pero era la única
+   lectura que tenía. Consecuencia que ya estaba en staging: quien declaraba por
+   QR no veía su propia declaración en ninguna parte. Sin filtro de `declaredBy`
+   y con filtro de estado opcional. NO se amplió `/usages/pending`: su definición
+   la comparte el badge de la nav, y mezclarlas haría que el badge cuente un
+   historial.
+3. `GET /protected/host-trades/mine/reviews` — SIGUE ABIERTO. Está en §7.5
    (tabla del proveedor) pero ninguna tarea lo crea. T-051 lo necesita.
 
 Tres decisiones de `core` que la fase de integración hereda y no debería

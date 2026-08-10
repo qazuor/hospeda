@@ -185,6 +185,8 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     // island renders raw dotted keys in production — dev ships the whole
     // dictionary and hides the omission entirely.
     'host-trades.registerUsage',
+    // The benefit-usage panel (HOS-376 T-046), for the same reason.
+    'host-trades.usages',
     'host.dashboard',
     'host.form',
     'host.importFromUrl',

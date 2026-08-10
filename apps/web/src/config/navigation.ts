@@ -31,6 +31,7 @@ import {
     MegaphoneIcon,
     NewsletterIcon,
     OffersIcon,
+    ReceiptIcon,
     SearchIcon,
     SettingsIcon,
     SparkleIcon,
@@ -264,6 +265,13 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 i18nKey: 'account.nav.tradeDirectory',
                 href: 'mi-cuenta/directorio-proveedores',
                 icon: WrenchIcon,
+                surfaces: FULL_SURFACES
+            },
+            {
+                id: 'benefitUsages',
+                i18nKey: 'account.nav.benefitUsages',
+                href: 'mi-cuenta/usos-de-beneficio',
+                icon: ReceiptIcon,
                 surfaces: FULL_SURFACES
             }
         ]

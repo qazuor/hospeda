@@ -33,12 +33,14 @@ import { Hono } from 'hono';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppBindings } from '../../../src/types';
 
-const { mockGetByField, mockDeclareAsHost, mockListPending, mockCountPending } = vi.hoisted(() => ({
-    mockGetByField: vi.fn(),
-    mockDeclareAsHost: vi.fn(),
-    mockListPending: vi.fn(),
-    mockCountPending: vi.fn()
-}));
+const { mockGetByField, mockDeclareAsHost, mockListPending, mockCountPending, mockListForHost } =
+    vi.hoisted(() => ({
+        mockGetByField: vi.fn(),
+        mockDeclareAsHost: vi.fn(),
+        mockListPending: vi.fn(),
+        mockCountPending: vi.fn(),
+        mockListForHost: vi.fn()
+    }));
 
 vi.mock('@repo/service-core', async (importActual) => {
     const actual = await importActual<typeof import('@repo/service-core')>();
@@ -51,7 +53,8 @@ vi.mock('@repo/service-core', async (importActual) => {
             return {
                 declareAsHost: mockDeclareAsHost,
                 listPendingForHost: mockListPending,
-                countPendingForHost: mockCountPending
+                countPendingForHost: mockCountPending,
+                listForHost: mockListForHost
             };
         })
     };
@@ -64,6 +67,7 @@ vi.mock('../../../src/utils/logger.js', () => ({
 const {
     protectedCountPendingUsagesRoute,
     protectedDeclareUsageRoute,
+    protectedListHostUsagesRoute,
     protectedListPendingUsagesRoute
 } = await import('../../../src/routes/host-trade/protected/usages.js');
 
@@ -92,6 +96,24 @@ const MOCK_USAGE = {
 };
 
 /**
+ * The same row as the HOST-facing lists answer it: with the provider named.
+ *
+ * Both list routes declare the enriched schema, and the route factory validates
+ * the response payload — so a service that stopped attaching `hostTrade` fails
+ * these routes with a 500 rather than quietly serving rows the UI can only show
+ * as a uuid.
+ */
+const MOCK_USAGE_WITH_PROVIDER = {
+    ...MOCK_USAGE,
+    hostTrade: {
+        id: HT_ID,
+        slug: 'plomero-centro',
+        name: 'Plomero Centro',
+        category: 'PLOMERIA'
+    }
+};
+
+/**
  * An app carrying the REAL error handler, so a status assertion measures the
  * shipped mapping rather than one invented for the test.
  */
@@ -108,6 +130,7 @@ function buildApp(
 
     app.route('/', protectedListPendingUsagesRoute);
     app.route('/', protectedCountPendingUsagesRoute);
+    app.route('/', protectedListHostUsagesRoute);
     app.route('/', protectedDeclareUsageRoute);
 
     return app;
@@ -117,8 +140,9 @@ beforeEach(() => {
     vi.clearAllMocks();
     mockGetByField.mockResolvedValue({ data: { id: HT_ID, slug: 'plomero-centro' } });
     mockDeclareAsHost.mockResolvedValue({ data: { usage: MOCK_USAGE } });
-    mockListPending.mockResolvedValue({ data: { items: [MOCK_USAGE], total: 1 } });
+    mockListPending.mockResolvedValue({ data: { items: [MOCK_USAGE_WITH_PROVIDER], total: 1 } });
     mockCountPending.mockResolvedValue({ data: { count: 3 } });
+    mockListForHost.mockResolvedValue({ data: { items: [MOCK_USAGE_WITH_PROVIDER], total: 1 } });
 });
 
 describe('routing — the inbox must not be read as a slug', () => {
@@ -327,5 +351,128 @@ describe('GET /usages/pending-count', () => {
         const res = await app.request('/usages/pending-count');
 
         expect(res.status).toBe(200);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// GET /usages — the host's own record (T-046)
+// ---------------------------------------------------------------------------
+
+/**
+ * The input `listForHost` was called with.
+ *
+ * Asserts the call happened before reading it, so a route that silently never
+ * reaches the service fails on that fact rather than on an undefined index.
+ */
+function listForHostInput(): Record<string, unknown> {
+    const call = mockListForHost.mock.calls[0];
+    expect(call, 'listForHost was never called').toBeDefined();
+    return (call as unknown[])[0] as Record<string, unknown>;
+}
+
+describe('GET /protected/host-trades/usages — the host’s own record', () => {
+    it('returns the caller’s usages, paginated', async () => {
+        const app = buildApp();
+
+        const res = await app.request('/usages', { method: 'GET' });
+
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.success).toBe(true);
+        expect(body.data.items).toHaveLength(1);
+        expect(body.data.pagination.total).toBe(1);
+        expect(mockListForHost).toHaveBeenCalledTimes(1);
+    });
+
+    it('serves the provider’s identity on the row, not just its id', async () => {
+        // Without it the history renders a uuid: the host cannot resolve the name
+        // himself, because the directory list he can read is scoped to the
+        // destinations he currently hosts in and drops revoked providers.
+        const app = buildApp();
+
+        const res = await app.request('/usages', { method: 'GET' });
+
+        const body = await res.json();
+        expect(body.data.items[0].hostTrade).toEqual({
+            id: HT_ID,
+            slug: 'plomero-centro',
+            name: 'Plomero Centro',
+            category: 'PLOMERIA'
+        });
+    });
+
+    it('forwards a status filter to the service', async () => {
+        const app = buildApp();
+
+        await app.request('/usages?status=CONFIRMED', { method: 'GET' });
+
+        expect(listForHostInput()).toMatchObject({ status: 'CONFIRMED' });
+    });
+
+    it('asks for every state when no status is given', async () => {
+        const app = buildApp();
+
+        await app.request('/usages', { method: 'GET' });
+
+        expect(listForHostInput().status).toBeUndefined();
+    });
+
+    it('rejects a status outside the enum rather than passing it through', async () => {
+        const app = buildApp();
+
+        const res = await app.request('/usages?status=BOGUS', { method: 'GET' });
+
+        expect(res.status).toBe(400);
+        expect(mockListForHost).not.toHaveBeenCalled();
+    });
+
+    it('reads the record of a host holding no HOST_TRADE_* permission', async () => {
+        // The rows are already scoped to the caller. A permission here would only
+        // decide whether a host may read his own history, and would lock out
+        // someone whose directory perk lapsed while confirmed usages stayed on
+        // file — the same reasoning as the pending inbox.
+        const app = buildApp([]);
+
+        const res = await app.request('/usages', { method: 'GET' });
+
+        expect(res.status).toBe(200);
+        expect(mockListForHost).toHaveBeenCalledTimes(1);
+    });
+
+    it('surfaces a service error instead of an empty list', async () => {
+        // An empty list reads as "you have no usages", which is a different and
+        // much worse answer than "something went wrong".
+        mockListForHost.mockResolvedValue({
+            error: { code: ServiceErrorCode.UNAUTHORIZED, message: 'Authentication required' }
+        });
+        const app = buildApp();
+
+        const res = await app.request('/usages', { method: 'GET' });
+
+        expect(res.status).toBe(401);
+    });
+});
+
+describe('routing — /usages must not be read as a slug', () => {
+    it('reaches the host record, not the declaration route', async () => {
+        const app = buildApp();
+
+        const res = await app.request('/usages', { method: 'GET' });
+
+        expect(res.status).toBe(200);
+        // The proof is WHICH service method ran: a GET on `/usages` must never
+        // resolve to the provider whose slug is "usages".
+        expect(mockListForHost).toHaveBeenCalledTimes(1);
+        expect(mockGetByField).not.toHaveBeenCalled();
+    });
+
+    it('still reaches the pending inbox at /usages/pending', async () => {
+        const app = buildApp();
+
+        const res = await app.request('/usages/pending', { method: 'GET' });
+
+        expect(res.status).toBe(200);
+        expect(mockListPending).toHaveBeenCalledTimes(1);
+        expect(mockListForHost).not.toHaveBeenCalled();
     });
 });

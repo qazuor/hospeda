@@ -1,4 +1,6 @@
-import type { z } from 'zod';
+import { z } from 'zod';
+import { HostTradeIdSchema } from '../../common/id.schema.js';
+import { HostTradeCategoryEnumSchema } from '../../enums/host-trade-category.schema.js';
 import { HostTradeBenefitUsageSchema } from './host-trade-usage.schema.js';
 
 /**
@@ -48,6 +50,47 @@ export const HostTradeBenefitUsageProtectedSchema = HostTradeBenefitUsageSchema.
 
 /** Inferred type for {@link HostTradeBenefitUsageProtectedSchema}. */
 export type HostTradeBenefitUsageProtected = z.infer<typeof HostTradeBenefitUsageProtectedSchema>;
+
+/**
+ * The provider's identity, as a host's own usage rows carry it.
+ *
+ * Four fields and no more: enough to name the provider, link to its QR landing
+ * page and label its trade. Everything else about a listing — the benefit text,
+ * the contact, the counters — belongs to the directory read, and duplicating it
+ * onto every usage row would make the two drift.
+ */
+export const HostTradeUsageProviderRefSchema = z.object({
+    id: HostTradeIdSchema,
+    slug: z.string().min(1),
+    name: z.string().min(1),
+    category: HostTradeCategoryEnumSchema
+});
+
+/** Inferred type for {@link HostTradeUsageProviderRefSchema}. */
+export type HostTradeUsageProviderRef = z.infer<typeof HostTradeUsageProviderRefSchema>;
+
+/**
+ * A usage as the HOST's own screens read it: the row plus who the provider is.
+ *
+ * The plain row names its provider by uuid, which is unrenderable — the inbox
+ * would ask a host to confirm work done by `a3f9…-8c21`. The host cannot resolve
+ * it client-side either: the directory list is scoped to the destinations he
+ * currently hosts in and excludes revoked listings, so precisely the oldest rows
+ * would keep the raw id.
+ *
+ * `hostTrade` is NULLABLE rather than required. The FK cascades, so an
+ * unresolvable provider should not happen — but the route factory validates the
+ * response payload, and a required field would turn one unresolved name into a
+ * 500 for the whole page instead of one row rendering a neutral label.
+ */
+export const HostTradeBenefitUsageWithProviderSchema = HostTradeBenefitUsageProtectedSchema.extend({
+    hostTrade: HostTradeUsageProviderRefSchema.nullable()
+});
+
+/** Inferred type for {@link HostTradeBenefitUsageWithProviderSchema}. */
+export type HostTradeBenefitUsageWithProvider = z.infer<
+    typeof HostTradeBenefitUsageWithProviderSchema
+>;
 
 /**
  * ADMIN ACCESS SCHEMA

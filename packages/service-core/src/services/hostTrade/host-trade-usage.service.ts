@@ -3,7 +3,9 @@ import type {
     CountResponse,
     HostTrade,
     HostTradeBenefitUsage,
-    HostTradeBenefitUsageAdminSearch
+    HostTradeBenefitUsageAdminSearch,
+    HostTradeBenefitUsageWithProvider,
+    HostTradeUsageProviderRef
 } from '@repo/schemas';
 import {
     HOST_TRADE_REJECTION_SUSPEND_THRESHOLD,
@@ -108,6 +110,13 @@ const applySuspensionInputSchema = z.object({
  * fill in with somebody else's id.
  */
 const pendingInboxInputSchema = z.object({
+    page: z.number().int().min(1).default(1),
+    pageSize: z.number().int().min(1).max(100).default(20)
+});
+
+/** Input for {@link HostTradeUsageService.listForHost}. */
+const hostUsageListInputSchema = z.object({
+    status: z.enum(HostTradeUsageStatusEnum).optional(),
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(100).default(20)
 });
@@ -610,7 +619,7 @@ export class HostTradeUsageService extends BaseCrudService<
         input: { page: number; pageSize: number },
         actor: Actor,
         ctx?: ServiceContext
-    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsage[]; total: number }>> {
+    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsageWithProvider[]; total: number }>> {
         return this.runWithLoggingAndValidation({
             methodName: 'listPendingForHost',
             input: { page: input.page, pageSize: input.pageSize, actor },
@@ -628,7 +637,10 @@ export class HostTradeUsageService extends BaseCrudService<
                     this.model.countPendingForUser(validatedActor.id, ctx?.tx)
                 ]);
 
-                return { items: items as HostTradeBenefitUsage[], total };
+                return {
+                    items: await this.attachProviders(items as HostTradeBenefitUsage[], ctx),
+                    total
+                };
             }
         });
     }
@@ -658,6 +670,119 @@ export class HostTradeUsageService extends BaseCrudService<
                 return { count };
             }
         });
+    }
+
+    /**
+     * Every usage recorded against this host, newest first — his own record.
+     *
+     * DISTINCT FROM {@link listPendingForHost}, and the difference is the reason
+     * this exists. The inbox is scoped to `declaredBy = 'PROVIDER'`, because a
+     * usage the host declared himself waits on the PROVIDER, not on him. That is
+     * right for an inbox and wrong as the only read a host has: it left a host
+     * who declared through the QR with nowhere to see what he had just recorded,
+     * and left the "review this provider" call to action with no CONFIRMED row to
+     * hang off.
+     *
+     * So no `declaredBy` filter here, deliberately.
+     *
+     * Authorised by having a session and nothing more, for the same reason as the
+     * inbox: the rows are already scoped to the caller, so a permission could
+     * only decide whether a host may read his own history — and it would lock out
+     * someone whose directory perk lapsed while confirmed usages stayed on file.
+     *
+     * @param input.status - Optional state filter. Absent means every state.
+     * @param input.page - 1-based page number.
+     * @param input.pageSize - Rows per page.
+     * @param actor - The host whose record is being read.
+     * @param ctx - Optional service context.
+     * @returns The page of usages plus the unpaginated total.
+     */
+    public async listForHost(
+        input: {
+            status?: HostTradeUsageStatusEnum;
+            page: number;
+            pageSize: number;
+        },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: HostTradeBenefitUsageWithProvider[]; total: number }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listForHost',
+            input: { ...input, actor },
+            schema: hostUsageListInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                requireSession(validatedActor);
+
+                const where: Record<string, unknown> = {
+                    hostUserId: validatedActor.id,
+                    deletedAt: null
+                };
+                if (validated.status) {
+                    where.status = validated.status;
+                }
+
+                const { items, total } = await this.model.findAll(
+                    where,
+                    { page: validated.page, pageSize: validated.pageSize },
+                    undefined,
+                    ctx?.tx
+                );
+
+                return {
+                    items: await this.attachProviders(items as HostTradeBenefitUsage[], ctx),
+                    total
+                };
+            }
+        });
+    }
+
+    /**
+     * Attaches each row's provider identity, for the HOST-facing lists.
+     *
+     * ONE query for the whole page, never `findById` per row: a page of 20 rows
+     * would otherwise be 20 sequential round trips, and rows repeat providers
+     * (the same plumber across a season), so the ids are de-duplicated first.
+     *
+     * A row whose provider does not resolve keeps its place with `hostTrade:
+     * null`. Dropping it would silently shorten a history that `total` still
+     * counts; throwing would fail a whole page over one missing name. It should
+     * not happen — the FK cascades and soft-deleted rows still come back from
+     * `findByIds` — which is exactly why it must not be load-bearing.
+     *
+     * The provider side has no equivalent need: its rows all name the SAME
+     * listing (its own), and what it lacks is the host's name, which
+     * {@link listLinkedHosts} already resolves through its own join.
+     *
+     * @param items - The page of usage rows, in order.
+     * @param ctx - Optional service context, for transaction propagation.
+     * @returns The same rows, in the same order, each carrying its provider.
+     */
+    private async attachProviders(
+        items: HostTradeBenefitUsage[],
+        ctx?: ServiceContext
+    ): Promise<HostTradeBenefitUsageWithProvider[]> {
+        if (items.length === 0) return [];
+
+        const ids = [...new Set(items.map((item) => item.hostTradeId))];
+        const providers = await this.hostTradeModel.findByIds(ids, ctx?.tx);
+
+        const byId = new Map<string, HostTradeUsageProviderRef>(
+            providers.map((provider) => [
+                provider.id,
+                {
+                    id: provider.id,
+                    slug: provider.slug,
+                    name: provider.name,
+                    category: provider.category
+                }
+            ])
+        );
+
+        return items.map((item) => ({
+            ...item,
+            hostTrade: byId.get(item.hostTradeId) ?? null
+        }));
     }
 
     // --- The provider's own usages and selector (T-031) -------------------

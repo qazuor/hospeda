@@ -77,5 +77,58 @@
             "body": "Something went wrong loading the data. Try reloading the page.",
             "retry": "Try again"
         }
+    },
+    "usages": {
+        "title": "Benefit usages",
+        "subtitle": "Confirm the usages providers record, and review your history.",
+        "pending": {
+            "title": "Waiting for your confirmation",
+            "empty": "You have no usages waiting to be confirmed."
+        },
+        "history": {
+            "title": "History",
+            "empty": "No usages recorded yet.",
+            "loadMore": "Show more",
+            "filterLabel": "Filter by status"
+        },
+        "filters": {
+            "ALL": "All",
+            "PENDING": "Pending",
+            "CONFIRMED": "Confirmed",
+            "REJECTED": "Rejected",
+            "EXPIRED": "Expired"
+        },
+        "status": {
+            "PENDING": "Pending",
+            "CONFIRMED": "Confirmed",
+            "REJECTED": "Rejected",
+            "EXPIRED": "Expired"
+        },
+        "card": {
+            "unknownProvider": "Directory provider",
+            "servicedOn": "Service on {{date}}",
+            "declaredByYou": "You recorded it",
+            "declaredByProvider": "The provider recorded it",
+            "rejectionNote": "Reason for rejection: {{note}}"
+        },
+        "actions": {
+            "confirm": "Confirm",
+            "reject": "Reject",
+            "undoRejection": "Undo rejection"
+        },
+        "reject": {
+            "title": "Reject this usage?",
+            "body": "We will let {{name}} know this usage did not happen. You can undo it later — rejecting is reversible.",
+            "noteLabel": "Tell them why (optional)",
+            "cancel": "Back",
+            "confirm": "Yes, reject"
+        },
+        "errors": {
+            "load": "We could not load your benefit usages. Try reloading the page.",
+            "action": "We could not complete the action. Please try again in a moment."
+        },
+        "badge": {
+            "pendingCount": "{{count}} usages waiting for your confirmation"
+        }
     }
 }
