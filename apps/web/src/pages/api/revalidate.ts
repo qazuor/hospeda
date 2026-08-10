@@ -59,9 +59,7 @@ import {
 } from '@repo/cache-tags';
 import type { APIRoute } from 'astro';
 import { getCacheTagEnvironment } from '@/lib/cache/cache-tag-environment';
-
-const CLOUDFLARE_PURGE_ENDPOINT = (zoneId: string) =>
-    `https://api.cloudflare.com/client/v4/zones/${zoneId}/purge_cache`;
+import { type CloudflarePurgeInstruction, purgeCloudflare } from '@/lib/cache/cloudflare-purge';
 
 /**
  * Cloudflare accepts at most 100 operations per purge request on Free/Pro/
@@ -79,10 +77,14 @@ function jsonError(body: Record<string, unknown>, status: number): Response {
     });
 }
 
-/** The purge instruction, once validated. */
-type PurgeInstruction =
-    | { readonly kind: 'tags'; readonly tags: readonly string[] }
-    | { readonly kind: 'everything' };
+/**
+ * The purge instruction, once validated.
+ *
+ * Aliased from the shared purge module rather than redeclared: this endpoint and
+ * the deploy purge must agree on what "purge everything" means, and two
+ * independently-maintained copies of that union is how they would stop agreeing.
+ */
+type PurgeInstruction = CloudflarePurgeInstruction;
 
 /**
  * Parse and validate the request body.
@@ -218,43 +220,26 @@ export const POST: APIRoute = async ({ request }) => {
         return jsonError({ error: 'invalid_request', detail: instruction.error }, 400);
     }
 
-    const purgeBody =
-        instruction.kind === 'everything' ? { purge_everything: true } : { tags: instruction.tags };
-
-    const purgeRes = await fetch(CLOUDFLARE_PURGE_ENDPOINT(cfZoneId), {
-        method: 'POST',
-        headers: {
-            authorization: `Bearer ${cfApiToken}`,
-            'content-type': 'application/json'
-        },
-        body: JSON.stringify(purgeBody)
+    // The request itself — including the envelope check that makes a Cloudflare
+    // `200 { success: false }` count as a failure — lives in
+    // `lib/cache/cloudflare-purge.ts`, shared with the deploy purge (HOS-427).
+    // Two hand-rolled copies of that check is exactly how one of them ends up
+    // trusting a 200 that evicted nothing.
+    const outcome = await purgeCloudflare({
+        zoneId: cfZoneId,
+        apiToken: cfApiToken,
+        instruction
     });
 
-    if (!purgeRes.ok) {
-        const detail = await purgeRes.text().catch(() => '<no body>');
-        return jsonError(
-            { error: 'cloudflare_purge_failed', status: purgeRes.status, detail },
-            502
-        );
-    }
-
-    // A 2xx is not proof the purge happened. Cloudflare's v4 API answers with an
-    // envelope — `{ success, errors[], result }` — and uses `success: false` on
-    // a 200 for several validation and entitlement failures. Trusting the status
-    // line alone would report a purge that evicted nothing as a success, log it
-    // as a success, and leave the content stale for its whole TTL: exactly the
-    // silent failure mode this wave exists to remove (spec §5.11.3, §5.11.5).
-    const envelope = (await purgeRes.json().catch(() => null)) as {
-        success?: unknown;
-        errors?: unknown;
-    } | null;
-
-    if (envelope === null || envelope.success !== true) {
+    if (!outcome.ok) {
         return jsonError(
             {
-                error: 'cloudflare_purge_rejected',
-                status: purgeRes.status,
-                detail: envelope?.errors ?? '<unparseable response body>'
+                error:
+                    outcome.kind === 'http'
+                        ? 'cloudflare_purge_failed'
+                        : 'cloudflare_purge_rejected',
+                status: outcome.status,
+                detail: outcome.detail
             },
             502
         );

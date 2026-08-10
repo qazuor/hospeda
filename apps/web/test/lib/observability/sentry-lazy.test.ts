@@ -34,7 +34,13 @@ const SRC_ROOT = join(APP_ROOT, 'src');
  */
 const SERVER_ONLY_ALLOWLIST = new Set([
     'lib/middleware-helpers.ts',
-    'lib/internal-bypass-report.ts'
+    'lib/internal-bypass-report.ts',
+    // HOS-427. Reached only from `src/middleware.ts`, which is SSR-only, so it
+    // cannot pull the SDK into a browser bundle. It cannot use the lazy facade
+    // either: that is a BROWSER facade (`SentryBrowserApi`, populated by
+    // `sentry.client.config.ts`), so on the server it would silently no-op —
+    // and this is the alert that says a deploy left the edge cache stale.
+    'lib/cache/purge-on-deploy.ts'
 ]);
 
 function collectSourceFiles(dir: string, acc: string[] = []): string[] {

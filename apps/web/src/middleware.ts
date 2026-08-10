@@ -24,6 +24,7 @@
 import { defineMiddleware } from 'astro:middleware';
 import { CACHE_TAG_HEADER_NAME, serializeCacheTags } from '@repo/cache-tags';
 import { collectCspHashes } from '../integrations/csp-hash-collector';
+import { schedulePurgeOnDeploy } from './lib/cache/purge-on-deploy';
 import { isEdgeCacheableControl } from './lib/cache/response-cache';
 import {
     getInternalApiUrl,
@@ -147,6 +148,21 @@ if (import.meta.env.SSR) {
  * Main middleware handler for all requests in the web application.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
+    // Step -1: Take this process's one shot at purging the edge cache for the
+    // deploy that started it (HOS-427). Deliberately the FIRST thing in the
+    // handler, before the static-asset early return, so that whatever request
+    // reaches this container first starts the clock.
+    //
+    // Note what that is today: `health_check_enabled` is FALSE on the web
+    // resources and the Dockerfile declares no HEALTHCHECK, so there is no
+    // probe — the first request is the first real one to reach the origin.
+    // Enabling Coolify's healthcheck (configured, just off) is what would make
+    // it a probe and the timing deterministic; see the module for why that
+    // matters more once HOS-426 raises the TTLs.
+    //
+    // No-ops on every subsequent call, never awaits, and never throws.
+    void schedulePurgeOnDeploy();
+
     const path = context.url.pathname;
 
     // Step 0: Open the cache-tag collector for this request. Created before any

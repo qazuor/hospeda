@@ -68,11 +68,16 @@ import { LISTING_CACHEABLE_CONTROL, LISTING_PRIVATE_CONTROL } from './listing-ca
  * flush cannot reach: silently unpurgeable until its TTL, which is the failure
  * mode this file was built to make impossible.
  *
+ * Exported since HOS-427 for its second, symmetric consumer: the deploy purge
+ * (`./purge-on-deploy.ts`) has to name exactly the tag this file attaches, and
+ * a purge that rebuilt the string itself could drift from the one being emitted
+ * and match nothing while reporting success. One definition, both sides.
+ *
  * @param params.environment - The already-resolved deployment environment.
  * @returns The namespaced catch-all, or `null` if it cannot be built (which
  *   `namespaceCacheTag` only reports for an unusable tag, and `all` is not).
  */
-function buildCatchAllTag({
+export function buildCatchAllTag({
     environment
 }: {
     readonly environment: CacheTagEnvironment;
