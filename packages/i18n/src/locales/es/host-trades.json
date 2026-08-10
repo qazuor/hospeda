@@ -77,5 +77,55 @@
             "body": "Hubo un problema al cargar los datos. Probá recargar la página.",
             "retry": "Reintentar"
         }
+    },
+    "usages": {
+        "title": "Usos del beneficio",
+        "subtitle": "Confirmá los usos que registran los proveedores y consultá tu historial.",
+        "pending": {
+            "title": "Esperan tu confirmación",
+            "empty": "No tenés usos pendientes de confirmar."
+        },
+        "history": {
+            "title": "Historial",
+            "empty": "Todavía no hay usos registrados.",
+            "loadMore": "Ver más",
+            "filterLabel": "Filtrar por estado"
+        },
+        "filters": {
+            "ALL": "Todos",
+            "PENDING": "Pendientes",
+            "CONFIRMED": "Confirmados",
+            "REJECTED": "Rechazados",
+            "EXPIRED": "Vencidos"
+        },
+        "status": {
+            "PENDING": "Pendiente",
+            "CONFIRMED": "Confirmado",
+            "REJECTED": "Rechazado",
+            "EXPIRED": "Vencido"
+        },
+        "card": {
+            "unknownProvider": "Proveedor del directorio",
+            "servicedOn": "Servicio del {{date}}",
+            "declaredByYou": "Lo registraste vos",
+            "declaredByProvider": "Lo registró el proveedor",
+            "rejectionNote": "Motivo del rechazo: {{note}}"
+        },
+        "actions": {
+            "confirm": "Confirmar",
+            "reject": "Rechazar",
+            "undoRejection": "Deshacer el rechazo"
+        },
+        "reject": {
+            "title": "¿Rechazar este uso?",
+            "body": "Le vamos a avisar a {{name}} que este uso no ocurrió. Podés deshacerlo después: el rechazo es reversible.",
+            "noteLabel": "Contale por qué (opcional)",
+            "cancel": "Volver",
+            "confirm": "Sí, rechazar"
+        },
+        "errors": {
+            "load": "No pudimos cargar tus usos del beneficio. Probá recargar la página.",
+            "action": "No pudimos completar la acción. Probá de nuevo en un momento."
+        }
     }
 }

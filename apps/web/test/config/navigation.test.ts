@@ -311,7 +311,8 @@ describe('getNavForSurface + isVisibleByPermissions (client gating, exact)', () 
             'properties',
             'ownerMessages',
             'promotions',
-            'providerDirectory'
+            'providerDirectory',
+            'benefitUsages'
         ]);
     });
 

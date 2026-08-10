@@ -2084,6 +2084,55 @@ export interface DeclaredUsageResponse {
     };
 }
 
+/** The four states of the usage machine (HOS-376 §6.1). */
+export type BenefitUsageStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'EXPIRED';
+
+/** Which side opened the record — and therefore which side must answer it. */
+export type BenefitUsageDeclaredBy = 'PROVIDER' | 'HOST';
+
+/**
+ * A benefit usage as the HOST's own screens read it (HOS-376 T-046).
+ *
+ * A read allowlist mirroring `HostTradeBenefitUsageWithProviderSchema`, same
+ * precedent as {@link MyHostTrade}: the web declares its own interface so a
+ * schema change surfaces here as a typecheck failure instead of silently
+ * reshaping a rendered page.
+ *
+ * `hostTrade` is nullable because the API declares it nullable — the FK cascades
+ * so it should always resolve, which is precisely why nothing here may depend on
+ * it being present.
+ */
+export interface BenefitUsage {
+    readonly id: string;
+    readonly hostTradeId: string;
+    readonly hostUserId: string;
+    readonly declaredBy: BenefitUsageDeclaredBy;
+    readonly declaredById: string;
+    readonly creationChannel: string;
+    readonly status: BenefitUsageStatus;
+    /** Calendar date of the service, as `YYYY-MM-DD` — never a `Date`. */
+    readonly servicedAt: string;
+    readonly note: string | null;
+    readonly expiresAt: string;
+    readonly confirmedAt: string | null;
+    readonly rejectedAt: string | null;
+    readonly rejectionNote: string | null;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+    /** Who the provider is. Null only if the listing could not be resolved. */
+    readonly hostTrade: {
+        readonly id: string;
+        readonly slug: string;
+        readonly name: string;
+        readonly category: HostTradeCategoryEnum;
+    } | null;
+}
+
+/** Response envelope shared by the three usage transitions. */
+export interface BenefitUsageTransitionResponse {
+    readonly usage: BenefitUsage;
+}
+
 /**
  * Reads of the `host_trades` directory, plus a provider's self-service
  * view/edit of their OWN listing.
@@ -2183,6 +2232,119 @@ export const hostTradesApi = {
      */
     updateMine(body: HostTradeOwnerUpdate): Promise<ApiResult<{ readonly trade: MyHostTrade }>> {
         return apiClient.patch({ path: `${PROTECTED}/host-trades/mine`, body });
+    },
+
+    /**
+     * The caller's whole benefit-usage record, newest first (HOS-376 T-046).
+     *
+     * NOT the same list as {@link hostTradesApi.listPendingUsages}, and the
+     * difference is deliberate: this one includes the host's own declarations
+     * (which wait on the provider, not on him) and the CONFIRMED rows the review
+     * action hangs off. The inbox answers "what awaits your action" and shares
+     * that definition with the navigation badge.
+     *
+     * @param params - Optional `status` filter, page window, and `cookieHeader`
+     *   when calling from SSR.
+     * @returns The page of usages plus its pagination envelope.
+     */
+    listUsages({
+        status,
+        page,
+        pageSize,
+        cookieHeader
+    }: {
+        status?: BenefitUsageStatus;
+        page?: number;
+        pageSize?: number;
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<PaginatedResponse<BenefitUsage>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/host-trades/usages`,
+            params: { status, page, pageSize },
+            cookieHeader
+        });
+    },
+
+    /**
+     * The usages awaiting the caller's own confirmation (HOS-376 T-046/T-047).
+     *
+     * Scoped to declarations made BY A PROVIDER: a usage the host declared
+     * himself is not waiting on him. The navigation badge counts these same
+     * rows, so the two can never disagree.
+     *
+     * @param params - Page window, and `cookieHeader` when calling from SSR.
+     * @returns The page of pending usages plus its pagination envelope.
+     */
+    listPendingUsages({
+        page,
+        pageSize,
+        cookieHeader
+    }: {
+        page?: number;
+        pageSize?: number;
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<PaginatedResponse<BenefitUsage>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/host-trades/usages/pending`,
+            params: { page, pageSize },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Confirms a usage the counterpart declared.
+     *
+     * Anything that is not the caller's to answer — someone else's row, or one
+     * the caller declared himself — answers 404, never 403, so the endpoint
+     * cannot be used to probe which ids exist.
+     *
+     * @param params - The usage `id`.
+     * @returns The confirmed usage, or a typed error.
+     */
+    confirmUsage({ id }: { id: string }): Promise<ApiResult<BenefitUsageTransitionResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/usages/${encodeURIComponent(id)}/confirm`
+        });
+    },
+
+    /**
+     * Rejects a usage the counterpart declared.
+     *
+     * The note stays optional on purpose: rejection is the control that keeps
+     * the public counter honest, and demanding a written explanation to say
+     * "that never happened" taxes the one action the system most needs people
+     * to take.
+     *
+     * @param params - The usage `id` and an optional `note`.
+     * @returns The rejected usage, or a typed error.
+     */
+    rejectUsage({
+        id,
+        note
+    }: {
+        id: string;
+        note?: string;
+    }): Promise<ApiResult<BenefitUsageTransitionResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/usages/${encodeURIComponent(id)}/reject`,
+            body: note ? { note } : {}
+        });
+    },
+
+    /**
+     * Returns a rejection to PENDING — only for the account that rejected it.
+     *
+     * This is what makes rejecting safe to offer: it is reversible, so a host
+     * who refuses a usage by mistake is not left having damaged a provider's
+     * standing with no way back.
+     *
+     * @param params - The usage `id`.
+     * @returns The usage, back in PENDING, or a typed error.
+     */
+    undoUsageRejection({ id }: { id: string }): Promise<ApiResult<BenefitUsageTransitionResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/usages/${encodeURIComponent(id)}/reject/undo`
+        });
     }
 };
 

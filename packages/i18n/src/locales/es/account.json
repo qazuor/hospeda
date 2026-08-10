@@ -85,7 +85,8 @@
         "hostDashboard": "Panel del anfitrión",
         "properties": "Mis alojamientos",
         "promotions": "Mis promociones",
-        "tradeDirectory": "Directorio de proveedores"
+        "tradeDirectory": "Directorio de proveedores",
+        "benefitUsages": "Usos del beneficio"
     },
     "doors": {
         "sectionLabel": "Descubrí más",

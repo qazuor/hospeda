@@ -85,7 +85,8 @@
         "hostDashboard": "Host dashboard",
         "properties": "My accommodations",
         "promotions": "My promotions",
-        "tradeDirectory": "Provider directory"
+        "tradeDirectory": "Provider directory",
+        "benefitUsages": "Benefit usages"
     },
     "doors": {
         "sectionLabel": "Discover more",

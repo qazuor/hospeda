@@ -77,5 +77,55 @@
             "body": "Houve um problema ao carregar os dados. Tente recarregar a página.",
             "retry": "Tentar novamente"
         }
+    },
+    "usages": {
+        "title": "Usos do benefício",
+        "subtitle": "Confirme os usos que os fornecedores registram e consulte seu histórico.",
+        "pending": {
+            "title": "Aguardam sua confirmação",
+            "empty": "Você não tem usos pendentes de confirmação."
+        },
+        "history": {
+            "title": "Histórico",
+            "empty": "Ainda não há usos registrados.",
+            "loadMore": "Ver mais",
+            "filterLabel": "Filtrar por status"
+        },
+        "filters": {
+            "ALL": "Todos",
+            "PENDING": "Pendentes",
+            "CONFIRMED": "Confirmados",
+            "REJECTED": "Recusados",
+            "EXPIRED": "Vencidos"
+        },
+        "status": {
+            "PENDING": "Pendente",
+            "CONFIRMED": "Confirmado",
+            "REJECTED": "Recusado",
+            "EXPIRED": "Vencido"
+        },
+        "card": {
+            "unknownProvider": "Fornecedor do diretório",
+            "servicedOn": "Serviço de {{date}}",
+            "declaredByYou": "Você registrou",
+            "declaredByProvider": "O fornecedor registrou",
+            "rejectionNote": "Motivo da recusa: {{note}}"
+        },
+        "actions": {
+            "confirm": "Confirmar",
+            "reject": "Recusar",
+            "undoRejection": "Desfazer a recusa"
+        },
+        "reject": {
+            "title": "Recusar este uso?",
+            "body": "Vamos avisar {{name}} de que este uso não aconteceu. Você pode desfazer depois: a recusa é reversível.",
+            "noteLabel": "Conte o motivo (opcional)",
+            "cancel": "Voltar",
+            "confirm": "Sim, recusar"
+        },
+        "errors": {
+            "load": "Não conseguimos carregar seus usos do benefício. Tente recarregar a página.",
+            "action": "Não conseguimos concluir a ação. Tente novamente em instantes."
+        }
     }
 }
