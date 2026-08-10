@@ -111,25 +111,12 @@ describe('middleware.ts — prerendered CSP emission guard (SPEC-142 T-004)', ()
         expect(buildIdx).toBeGreaterThan(collectIdx);
     });
 
-    it('modifies the response body via rewriteAsyncStylesheets (HOS-369 async-CSS, supersedes WB0-1 read-only)', () => {
-        // WB0-1 originally reconstructed the Response over the SAME
-        // `originalBody` string the collector read, deliberately unmodified.
-        // HOS-369's async-CSS pass intentionally changed that: the body is now
-        // rewritten (component stylesheets deferred, an activation <script>
-        // injected) BEFORE hashing — see the order guard below for why.
-        expect(MIDDLEWARE_SRC).toContain('new Response(rewrittenBody');
-        expect(MIDDLEWARE_SRC).not.toContain('new Response(originalBody');
-    });
-
-    it('the ORDER GUARD: rewriteAsyncStylesheets runs BEFORE collectCspHashes', () => {
-        // If this order were inverted, the activation <script>
-        // `rewriteAsyncStylesheets` injects would never be hashed, the browser
-        // would block it under CSP, and every deferred component stylesheet
-        // would stay at `media="print"` — permanently unstyled — forever.
-        const rewriteIdx = MIDDLEWARE_SRC.indexOf('rewriteAsyncStylesheets({');
-        const collectIdx = MIDDLEWARE_SRC.indexOf('await collectCspHashes(');
-        expect(rewriteIdx).toBeGreaterThan(0);
-        expect(collectIdx).toBeGreaterThan(rewriteIdx);
+    it('never modifies the response body — the collector only reads it', () => {
+        // The nonce era rewrote the HTML through parse5 serialization. Nothing
+        // may reintroduce a body rewrite: the Response must be reconstructed
+        // over the SAME string the walker read.
+        expect(MIDDLEWARE_SRC).toContain('new Response(originalBody');
+        expect(MIDDLEWARE_SRC).not.toContain('rewrittenBody');
     });
 });
 

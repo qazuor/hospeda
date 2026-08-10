@@ -6,8 +6,12 @@
  * - the annual price is DERIVED from the monthly one by the same "2 months
  *   free" rule every other plan in the file follows, so a hand-edit that
  *   breaks the ratio shows up here instead of in someone's invoice;
- * - BRONZE maps to no plan on purpose, and silently defaulting it to silver
- *   would bill a partner for a tier they were never given.
+ * - every tier the enum declares has an entry here, so a tier added without a
+ *   plan resolves by decision rather than by accident.
+ *
+ * The second point used to be about BRONZE mapping to no plan. HOS-294 removed
+ * that tier, so no tier maps to null any more — see the config's own header for
+ * what that means for `isPartnerTierSellable`.
  */
 
 import { PartnerTierEnum } from '@repo/schemas';
@@ -78,12 +82,18 @@ describe('PARTNER_TIER_PLAN_SLUG', () => {
         expect(resolvePartnerTierPlanSlug({ tier: PartnerTierEnum.GOLD })).toBe('partner-gold');
     });
 
-    it('maps BRONZE to null rather than defaulting it to a paid tier', () => {
-        // Arrange — §6.3 sells silver and gold only. Defaulting bronze to
-        // silver would charge a partner for a tier nobody gave them; the null
-        // reaches `send-link`'s existing 422, which says something actionable.
-        expect(resolvePartnerTierPlanSlug({ tier: PartnerTierEnum.BRONZE })).toBeNull();
-        expect(isPartnerTierSellable({ tier: PartnerTierEnum.BRONZE })).toBe(false);
+    it('leaves no tier without a plan, now that BRONZE is gone', () => {
+        // Arrange — BRONZE was the only tier that mapped to null, and HOS-294
+        // removed it from the enum. This asserts the CURRENT truth plainly
+        // rather than leaving a stale test that pretended to cover a
+        // non-sellable tier: today every tier is sellable, so
+        // `isPartnerTierSellable` cannot return false. If a non-sellable tier is
+        // ever reintroduced, this test is what should fail and force the
+        // decision back into the open.
+        for (const tier of Object.values(PartnerTierEnum)) {
+            expect(resolvePartnerTierPlanSlug({ tier })).not.toBeNull();
+            expect(isPartnerTierSellable({ tier })).toBe(true);
+        }
     });
 
     it('names every tier the enum declares, so a new one cannot be forgotten', () => {

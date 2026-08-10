@@ -249,6 +249,8 @@ jobs:
         run: bash scripts/check-no-inline-nonce.sh
       - name: Check web loading-state patterns (SPEC-228)
         run: bash scripts/check-web-loading-patterns.sh
+      - name: Check partner-mentions copy for metric vocabulary (HOS-377 AC-3)
+        run: bash scripts/check-partner-mention-copy.sh
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."

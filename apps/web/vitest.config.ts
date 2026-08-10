@@ -27,6 +27,10 @@ export default defineConfig({
             // imported and its `onRequest` exercised directly in tests
             // (see `test/middleware.test.ts`).
             'astro:middleware': resolve(__dirname, 'test/stubs/astro-middleware.ts'),
+            // Same story for `getImage`, which `hero-images.ts` uses to build
+            // the hero srcsets. The stub emits deterministic `/_image/?...`
+            // URLs so the generated candidate strings can be asserted on.
+            'astro:assets': resolve(__dirname, 'test/stubs/astro-assets.ts'),
             '@': resolve(__dirname, 'src'),
             '@repo/config': resolve(rootDir, 'packages/config/src'),
             '@repo/icons': resolve(rootDir, 'packages/icons/src'),

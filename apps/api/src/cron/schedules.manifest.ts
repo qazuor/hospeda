@@ -67,6 +67,30 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Send the daily price-drop and promo-offer digest email to subscribed tourists.'
     },
     {
+        name: 'host-trade-usage-expiry',
+        displayName: 'Vencimiento de usos del beneficio',
+        category: 'content',
+        schedule: '15 4 * * *',
+        description:
+            'Expire PENDING benefit usages whose 30-day confirmation window has run out. Notifies nobody: silence is not an accusation (HOS-376 §6.6).'
+    },
+    {
+        name: 'host-trade-usage-reminder',
+        displayName: 'Recordatorio de usos del beneficio',
+        category: 'notifications',
+        schedule: '30 4 * * *',
+        description:
+            'Send the single day-10 reminder for a benefit usage still awaiting an answer, then stamp it so it is never chased again (HOS-376 AC-8).'
+    },
+    {
+        name: 'host-trade-stats-reconcile',
+        displayName: 'Reconciliación de contadores de proveedores',
+        category: 'content',
+        schedule: '0 5 * * 1',
+        description:
+            'Recompute the five denormalised host-trade counters and report drift. A backstop: every write already recomputes them, so a run that corrects something is evidence of a hole (HOS-376 AC-29).'
+    },
+    {
         name: 'app-log-purge',
         displayName: 'Purga de logs de aplicación',
         category: 'system',

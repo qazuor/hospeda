@@ -27,6 +27,25 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+/**
+ * Escapes every regex metacharacter in a literal so it can be interpolated
+ * into a `new RegExp(...)` source safely.
+ *
+ * Replaces a narrower per-call `.replace()` that escaped ONLY the dot —
+ * enough for today's tags (`CACHE_TAG_COLLECTIONS.destination`), which contain
+ * no other metacharacter, but flagged by CodeQL as *Incomplete string escaping
+ * or encoding* because it does not escape the backslash. The alert is correct
+ * on its own terms: the narrow version is only safe for as long as nobody adds
+ * a tag with a `+`, `(`, `[` or `\` in it, and nothing enforced that.
+ *
+ * `\\` is escaped FIRST inside the character class — a replacement that emitted
+ * `\.` for a dot but left a literal backslash alone would produce `\\.`, which
+ * matches a backslash followed by any character rather than the intended
+ * literal.
+ */
+const escapeRegExpLiteral = (literal: string): string =>
+    literal.replace(/[\\.*+?^${}()|[\]]/g, '\\$&');
+
 /** A page, the tag it must declare, and how it decides cacheability. */
 interface CatalogPage {
     readonly path: string;
@@ -201,7 +220,7 @@ describe('catalog pages — edge cacheability (HOS-369 W2-3)', () => {
         // Escaped for the `.` in `CACHE_TAG_COLLECTIONS.destination`, and
         // word-anchored so a longer identifier containing this one cannot
         // pass — `toContain` would also accept `…destinationSomething`.
-        expect(args).toMatch(new RegExp(`\\b${tag.replace(/\./g, '\\.')}\\b`));
+        expect(args).toMatch(new RegExp(`\\b${escapeRegExpLiteral(tag)}\\b`));
     });
 
     it.each(
@@ -285,7 +304,7 @@ describe('W2-4 pages — cacheable now that their purge chain exists (HOS-369)',
         tag
     }) => {
         const args = callArgsOf(readPage(path), 'applyCacheHeaders');
-        expect(args).toMatch(new RegExp(`\\b${tag.replace(/\./g, '\\.')}\\b`));
+        expect(args).toMatch(new RegExp(`\\b${escapeRegExpLiteral(tag)}\\b`));
     });
 
     it.each(

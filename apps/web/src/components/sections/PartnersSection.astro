@@ -12,6 +12,7 @@
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { PartnerData } from '@/data/types';
+import { resolvePartnerLogoLink } from '@/lib/partner-logo-link';
 
 interface Props {
   /** Active locale used to resolve translations. */
@@ -23,6 +24,21 @@ interface Props {
 const { locale, partners = [] } = Astro.props;
 
 const { t } = createTranslations(locale);
+
+/**
+ * Each logo paired with its resolved link (HOS-294 D-1).
+ *
+ * Computed ONCE and reused by both tracks below. The marquee renders its logos
+ * twice — a visible track and an `aria-hidden` duplicate that makes the loop
+ * seamless — and resolving the link separately in each would let the two halves
+ * disagree, which is a bug nobody sees until the animation wraps around.
+ */
+const items = partners.map((partner) => ({
+    partner,
+    link: resolvePartnerLogoLink({ partner, locale }),
+    logoWidth: Math.round(60 * partner.aspectRatio),
+    aspectStyle: `aspect-ratio: ${partner.aspectRatio}`
+}));
 ---
 
 {partners.length > 0 && (
@@ -46,14 +62,12 @@ const { t } = createTranslations(locale);
   <div class="partners-marquee" data-reveal="up">
     <div class="partners-track">
       <!-- First set of logos (visible, accessible) -->
-      {partners.map((partner) => {
-        const logoWidth = Math.round(60 * partner.aspectRatio);
-        const aspectStyle = `aspect-ratio: ${partner.aspectRatio}`;
-        return partner.url ? (
+      {items.map(({ partner, link, logoWidth, aspectStyle }) => (
+        link.href ? (
           <a
-            href={partner.url}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={link.href}
+            target={link.target}
+            rel={link.rel}
             class="partner-logo-link"
             aria-label={partner.name}
           >
@@ -79,17 +93,15 @@ const { t } = createTranslations(locale);
               style={aspectStyle}
             />
           </div>
-        );
-      })}
+        )
+      ))}
       <!-- Duplicate set for seamless infinite loop (decorative, hidden from AT) -->
-      {partners.map((partner) => {
-        const logoWidth = Math.round(60 * partner.aspectRatio);
-        const aspectStyle = `aspect-ratio: ${partner.aspectRatio}`;
-        return partner.url ? (
+      {items.map(({ partner, link, logoWidth, aspectStyle }) => (
+        link.href ? (
           <a
-            href={partner.url}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={link.href}
+            target={link.target}
+            rel={link.rel}
             class="partner-logo-link"
             aria-hidden="true"
             tabindex="-1"
@@ -116,8 +128,8 @@ const { t } = createTranslations(locale);
               style={aspectStyle}
             />
           </div>
-        );
-      })}
+        )
+      ))}
     </div>
   </div>
 </section>

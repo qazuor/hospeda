@@ -27,8 +27,8 @@ import type {
     GastronomyDetailData,
     GastronomyOpeningHoursEntry,
     GastronomySocialNetworks,
-    PartnerCardData,
     PartnerData,
+    PartnerDetailData,
     ReviewCardData
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
@@ -2706,25 +2706,31 @@ export function toExperienceDetailPageProps({
 }
 
 /**
- * Transforms a raw API partner item to PartnerCardData props.
+ * Transforms a raw API partner item into the gold partner's detail props.
+ *
+ * Written fresh rather than adapted from the directory's card transform
+ * (HOS-294 D-7): that one carried the tier, `isFeatured` and a clamped
+ * description, all of which belonged to the retired listing.
+ *
+ * `tier` is deliberately not mapped. It decides whether this page exists at
+ * all — a decision already made by the API before the payload gets here — and
+ * is never shown to a reader.
  *
  * @param item - Raw partner object from the public API
  * @param locale - Active locale for i18n field resolution
- * @returns Typed PartnerCardData for the partner card component
+ * @returns Typed PartnerDetailData for the partner detail page
  */
-export function toPartnerCardProps({
+export function toPartnerDetailProps({
     item,
     locale = 'es'
 }: {
     readonly item: Record<string, unknown>;
     readonly locale?: string;
-}): PartnerCardData {
+}): PartnerDetailData {
     return {
-        id: String(item.id || ''),
         slug: String(item.slug || ''),
         name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
         type: String(item.type || ''),
-        tier: String(item.tier || ''),
         description:
             item.description == null
                 ? null
@@ -2734,9 +2740,14 @@ export function toPartnerCardProps({
                   ),
         logoUrl: item.logoUrl == null ? null : String(item.logoUrl),
         websiteUrl: item.websiteUrl == null ? null : String(item.websiteUrl),
-        isFeatured: Boolean(item.isFeatured),
-        startsAt: item.startsAt == null ? null : String(item.startsAt),
-        endsAt: item.endsAt == null ? null : String(item.endsAt)
+        contactInfo:
+            item.contactInfo == null
+                ? null
+                : (item.contactInfo as Readonly<Record<string, unknown>>),
+        socialNetworks:
+            item.socialNetworks == null
+                ? null
+                : (item.socialNetworks as Readonly<Record<string, unknown>>)
     };
 }
 
@@ -2764,6 +2775,11 @@ export function toPartnerData({ item }: { readonly item: Record<string, unknown>
         name: String(item.name || ''),
         logoPath: String(item.logoUrl || ''),
         url: item.websiteUrl == null ? undefined : String(item.websiteUrl),
+        // Both carried for the tier branch in `PartnersSection` (HOS-294 D-1):
+        // a gold logo links to `/partners/<slug>/`, a silver one to its own
+        // site. Neither is ever rendered as text.
+        slug: item.slug == null ? undefined : String(item.slug),
+        tier: item.tier == null ? undefined : String(item.tier),
         aspectRatio: DEFAULT_PARTNER_LOGO_ASPECT_RATIO
     };
 }

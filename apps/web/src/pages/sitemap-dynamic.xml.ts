@@ -25,6 +25,7 @@
 import { AccommodationTypeEnum } from '@repo/schemas';
 import type { APIRoute } from 'astro';
 import { getApiUrl, getSiteUrl } from '../lib/env';
+import { evaluatePartnerIndexability } from '../lib/seo/partner-indexable';
 import {
     buildLocalizedUrlEntries,
     buildUrlsetDocument,
@@ -303,7 +304,8 @@ export const GET: APIRoute = async () => {
         experiences,
         attractions,
         pointsOfInterest,
-        authors
+        authors,
+        partners
     ] = await Promise.allSettled([
         fetchAllEntities(apiUrl, `${base}/accommodations`),
         fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
@@ -317,7 +319,9 @@ export const GET: APIRoute = async () => {
         // `test/pages/sitemap-dynamic.test.ts` stub `fetch` positionally with
         // `mockImplementationOnce`, so a new fetch anywhere above would shift
         // every later entity onto the wrong stub.
-        fetchAllEntities(apiUrl, `${base}/authors`)
+        fetchAllEntities(apiUrl, `${base}/authors`),
+        // Partners (HOS-294) — appended for exactly the same reason.
+        fetchAllEntities(apiUrl, `${base}/partners`)
     ]);
 
     const resolvedAccommodations =
@@ -331,6 +335,7 @@ export const GET: APIRoute = async () => {
     const resolvedPointsOfInterest =
         pointsOfInterest.status === 'fulfilled' ? pointsOfInterest.value : [];
     const resolvedAuthors = authors.status === 'fulfilled' ? authors.value : [];
+    const resolvedPartners = partners.status === 'fulfilled' ? partners.value : [];
 
     const entries: string[] = [];
 
@@ -476,6 +481,33 @@ export const GET: APIRoute = async () => {
             siteUrl,
             pathFn: (slug) => `/autores/${slug}/`,
             changefreq: 'weekly',
+            priority: 0.6
+        })
+    );
+
+    // Partners: /partners/{slug}/ — ONLY the gold ones that pass the shared
+    // indexability predicate (HOS-294 D-3). `evaluatePartnerIndexability` is the
+    // SAME function the page uses to decide its own `noindex`, which is the
+    // whole point: deciding it a second time here is how a sitemap ends up
+    // advertising a URL the page then serves `noindex`.
+    //
+    // Note this filter is NOT redundant with the API's own. The public LIST
+    // returns every visible partner regardless of tier, because the home
+    // carousel needs the silver ones too — and a silver partner has no page.
+    entries.push(
+        ...buildEntriesForEntity({
+            items: resolvedPartners.filter(
+                (item) =>
+                    evaluatePartnerIndexability(
+                        // TYPE-WORKAROUND: `EntityItem` models only what every
+                        // entity shares (slug + updatedAt); these four fields are
+                        // specific to the partner payload.
+                        item as unknown as Parameters<typeof evaluatePartnerIndexability>[0]
+                    ).isIndexable
+            ),
+            siteUrl,
+            pathFn: (slug) => `/partners/${slug}/`,
+            changefreq: 'monthly',
             priority: 0.6
         })
     );

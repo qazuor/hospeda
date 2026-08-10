@@ -2,6 +2,7 @@ import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import { PartnerMentionsSection } from '@/features/partners/components/PartnerMentionsSection';
 import {
     usePartnerQuery,
     useRegisterPartnerManualPaymentMutation,
@@ -138,6 +139,8 @@ function PartnerViewPage() {
                         </button>
                     </div>
                 </div>
+
+                <PartnerMentionsSection partnerId={partner.id} />
             </div>
         </RoutePermissionGuard>
     );

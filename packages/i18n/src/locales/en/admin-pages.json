@@ -1488,5 +1488,67 @@
             "setFeaturedFailed": "Could not set the cover photo. Please try again.",
             "uploadFailed": "Could not upload the image. Please try again."
         }
+    },
+    "partnerMentions": {
+        "title": "Mentions log",
+        "description": "A record of the promotion actions the team took for this partner, with a link to each publication.",
+        "empty": "No promotion has been logged for this partner yet.",
+        "loading": "Loading the log…",
+        "channels": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "TWITTER": "Twitter",
+            "YOUTUBE": "YouTube",
+            "TIKTOK": "TikTok",
+            "NEWSLETTER": "Newsletter",
+            "WHATSAPP": "WhatsApp",
+            "OTHER": "Other channel"
+        },
+        "fields": {
+            "mentionedAt": "Promotion date",
+            "channel": "Channel",
+            "channels": "Channels",
+            "url": "Link to the publication",
+            "urlPlaceholder": "https://…",
+            "internalNote": "Internal note",
+            "internalNotePlaceholder": "Team only. The partner never sees this.",
+            "internalNoteHelp": "Context for the team. It is never shown or emailed to the partner."
+        },
+        "form": {
+            "title": "Log a promotion",
+            "description": "Pick every channel of the same campaign: they are saved together and the partner gets a single notice.",
+            "selectChannels": "Select at least one channel",
+            "urlRequired": "This channel needs a link to the publication.",
+            "urlOptional": "Optional: this channel has no public link.",
+            "submit": "Log promotion",
+            "submitting": "Logging…",
+            "cancel": "Cancel"
+        },
+        "actions": {
+            "add": "Log promotion",
+            "edit": "Correct",
+            "save": "Save changes",
+            "saving": "Saving…",
+            "remove": "Remove",
+            "viewPublication": "View the publication",
+            "noPublicationLink": "No public link"
+        },
+        "remove": {
+            "title": "Remove this promotion?",
+            "description": "It stops appearing in the partner log. The record is kept along with who removed it.",
+            "confirm": "Remove"
+        },
+        "messages": {
+            "created_one": "Promotion logged and the partner was notified.",
+            "created_other": "Logged {{count}} promotions and sent the partner a single notice.",
+            "updated": "Promotion corrected.",
+            "removed": "Promotion removed from the log."
+        },
+        "errors": {
+            "loadFailed": "We could not load the log.",
+            "createFailed": "We could not log the promotion. Please try again.",
+            "updateFailed": "We could not save the correction. Please try again.",
+            "removeFailed": "We could not remove the promotion. Please try again."
+        }
     }
 }

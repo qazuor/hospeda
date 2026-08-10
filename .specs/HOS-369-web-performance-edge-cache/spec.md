@@ -989,6 +989,43 @@ policy is in force. This is where the GPTBot decision (§11 D-3) is actually
 expressed. Add a guard test asserting no user-agent appears in two groups with
 conflicting root rules.
 
+**WA-1 – WA-4 status confirmed 2026-08-09.** WA-5 already reported that Wave A
+worked, but the four tasks it measures were never individually marked, so this
+records where each one actually landed:
+
+- **WA-1 DONE** — `pages/robots.txt.ts:167` emits `buildFacetDisallowDirectives()`
+  from `lib/filters/facet-crawl-policy.ts`, key-scoped as the task required.
+- **WA-2 DONE** — `shouldNofollowFacetHref` is applied in
+  `components/shared/ui/FilterChips.astro:132` and, for the POI chips, in
+  `components/destination/DestinationPOIFilter.client.tsx:224` and `:245`, with
+  its own suite at `test/lib/filters/facet-crawl-policy.test.ts`. Searching the
+  chip components for the literal string `nofollow` finds nothing — the value is
+  produced by the helper — so do not conclude from a grep that this is missing.
+- **WA-4 DONE** — `test/pages/robots-txt.test.ts`.
+- **WA-3 VERIFIED, and its premise is wrong: do NOT wire the predicate.**
+
+WA-3 suspected the destination detail page "may not be wired into"
+`resolveFacetSeoDecision` and implied it should be. It is not wired — and it
+should stay that way. Measured on staging:
+
+| URL | canonical | robots |
+|---|---|---|
+| `/es/destinos/colon/` | `…/es/destinos/colon/` | `index,follow` |
+| `…/colon/?categories=GASTRONOMY` | `…/es/destinos/colon/` | `index,follow` |
+| `…/colon/?categories=GASTRONOMY,CULTURE` | `…/es/destinos/colon/` | `index,follow` |
+| control `/es/alojamientos/?types=HOTEL,CABIN` | `…/es/alojamientos/` | `noindex,follow` |
+
+The canonical WA-3 asks for **is** emitted, on every facet combination. What the
+page does not do is apply the listings' 2+-value `noindex`, and applying it
+would be a defect: on a listing a facet URL renders genuinely different content
+(the filter runs server-side), whereas on the destination detail the parameter
+is client-side-only shareability and changes nothing in the response. Verified
+byte-for-byte — `/es/destinos/colon/` and the same URL with
+`?categories=GASTRONOMY,CULTURE` differ by **2 bytes**, and the diff is the
+`astro-island` `prefix` counter (`r163` vs `r183`), not content. Marking a page
+`noindex` because of a parameter that never changed its output would drop a real
+indexable destination page out of the index.
+
 **WA-5 — Measure the effect before doing anything else. DONE 2026-08-03 — Wave A worked; C stays rejected.**
 Re-read AI Crawl Control after 48–72 h (crawlers must re-read `robots.txt` and
 drain their queues). Record the new per-crawler numbers against the §5.9
@@ -1061,6 +1098,50 @@ non-regression half of W0-2/W0-3. Follow the existing static-guard conventions
 in `apps/api/test/routes/isverified-badge-gate.guard.test.ts` — discovery by
 symbol reference, explicit non-vacuity check, and a documented statement of
 what the guard does **not** cover.
+
+**W0-3 ANSWERED, W0-4 DONE (2026-08-09) — but at the import boundary, not on
+the chunk. Owner decision.**
+
+*W0-3 — how `@repo/config` entered the client graph.* No `ANALYZE=1` run was
+needed: HOS-360 had already traced and measured the exact chain. The registry
+rode in through **`@repo/billing`'s barrel**, which re-exports it; the barrel
+was reachable from `MobileMenu.client.tsx`, which imported `EntitlementKey` for
+an entitlement-gated host CTA. Measured on the then-live chunk
+`_astro/MobileMenu.client.BFcCCpWR.js`: `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN`, its
+`howToObtain` text and the Redis/BullMQ/cron entries, all present, none
+tree-shakeable (neither `@repo/logger` nor `@repo/billing` declares
+`sideEffects: false`). So W0-2 was **not** a coincidence — it shipped HOS-311's
+revert of that CTA, which removed the import as collateral.
+
+*W0-4 — the guard.* Three options were weighed (extend the import guard; scan
+the built output; reword the criterion). The owner chose to **extend the
+existing HOS-360 detector**: `FORBIDDEN_PACKAGE` became `FORBIDDEN_PACKAGES`
+with `@repo/config` added (PR #2720).
+
+**The deviation from W0-4 as written, and why it is the right trade.** The task
+asks for a guard on the built chunk; this one asserts at the import boundary.
+The reason is where it runs: CI executes `Build` and `Unit Tests` as separate
+jobs, so a chunk scanner needs a new pipeline step wired after `Build` and can
+never be part of `pnpm test` locally — an enforcement point that is easy to let
+rot. The import guard runs in the fast lane on every PR and reuses machinery
+already proven non-vacuous.
+
+**What that costs, stated plainly**: a leak arriving by a route other than
+`@repo/billing` or `@repo/config` — a bare-specifier hop through another
+workspace package, say — is not covered. The detector's own header documents
+that blind spot.
+
+**Empirical baseline** (staging, 2026-08-09, before the guard landed): 51
+production client chunks across 7 pages, 1.24 MB of JS, **zero** occurrences of
+`exampleValue`, `howToObtain` or `HOSPEDA_`. The guard holds a property that is
+already true rather than fixing a live leak.
+
+**Non-vacuity**: the synthetic form matrix is parametrised over
+`FORBIDDEN_PACKAGES` (15 runtime × 4 erased forms per package), and a planted
+runtime `@repo/config` import in `MobileMenu.client.tsx` turns the corpus walk
+red. 78/78 on the file, 253/253 across all 17 static-guard files.
+
+**W0-2 remains open** — it is a promotion action, not implementation work.
 
 ### 6.3 Wave B0 — make the origin cacheable (Rev 3, new)
 
@@ -1403,6 +1484,144 @@ resolves to a different one. `POST /api/revalidate/` **requires** the trailing
 slash; without it Astro's trailing-slash middleware returns a 301 and the POST
 body is lost. Not a defect — `CloudflareRevalidationAdapter` already documents
 it — but it will catch anyone hand-rolling a curl.
+
+**Wave B0 — Verify the client-side reconciliation. DONE (2026-08-08.)** Against
+staging, with a real session (`e2e-tourist@local.test`) established through the
+sign-in form, so no token was ever read or handled. Probes issued from inside
+the page.
+
+- **AC-B0-6 PASSED.** On `/es/alojamientos/` served `HIT` (`age` 16):
+  **zero `nonce=` occurrences** in the HTML, no `'nonce-` in the CSP, and **22
+  `sha256-` sources** in `script-src` (23 on a detail page — detail carries one
+  extra inline script). Re-checked on five page shapes (three catalogs, a
+  detail, a `page/2/`): zero nonces on every one. All three inline scripts still
+  execute: the theme FOUC script had already applied `data-theme="dark"` **by
+  `DOMContentLoaded`** (seeded via an `initScript` that wrote `localStorage`
+  before the document's own scripts ran), `__HOSPEDA_I18N__` is present, and
+  PostHog reports `__loaded`.
+
+  One CSP violation fires, and it is benign: `script-src` / `eval` from
+  `_astro/schemas.*.js`. That is Zod 4's own feature probe —
+  `try { Function('') } catch { return false }` — which catches its own failure
+  and takes the non-eval path. Not an inline script, and nothing breaks.
+
+- **AC-B0-3 PASSED, all six.** In every case the SSR emits the **guest**
+  variant and the authenticated affordance appears only after hydration, which
+  is exactly the property that makes the HTML shareable:
+
+  | component | SSR | after hydration |
+  |---|---|---|
+  | `ContactHost` | `#contact-name` / `-email` / `-phone` present | all three gone; `#contact-message` + "Enviar mensaje" |
+  | `CommentThreadIsland` | "Iniciá sesión para comentar" | `#comment-input` + "Comentar" |
+  | `SearchChatPanel` | absent entirely (mounts on drawer open) | `<textarea>` + `ai-search-char-count`, no `loginCtaSignIn` |
+  | `ExperienceReviews` | no CTA | `<p>Dejar reseña</p>` |
+  | `GastronomyReviewForm` | `<a>` "Iniciá sesión para opinar" | `<button>` "Dejar reseña" |
+  | `CompareModeToggle` | neutral | click opens the **upsell**, not the guest gate |
+
+  `CompareModeToggle` deserves its own note: `e2e-tourist` has no comparison
+  entitlement, so the upsell popover **is** its authenticated affordance. What
+  matters for this criterion is that the guest gate ("Iniciá sesión para
+  comparar") did not open — the island recognised the session on a page whose
+  SSR carried none.
+
+  Method note for whoever re-runs this: `<astro-island>` is `display: contents`,
+  so it has no layout box, `getBoundingClientRect()` returns zeros and
+  `scrollIntoView()` on the island itself **does not trigger `client:visible`**.
+  Scroll `island.firstElementChild`. The cheap check for "did it hydrate at
+  all?" is `performance.getEntriesByType('resource')` filtered by the chunk
+  name. Missing this reads as a broken component: the comment thread looked
+  stuck on the guest CTA for three probes before the scroll landed.
+
+- **AC-B0-5 PASSED, both directions, by mutation.**
+  *Direction (a), WB0-6's static guard:* injecting `Astro.locals.user` into
+  `[lang]/alojamientos/index.astro` → 2 failures; injecting
+  `Astro.request.headers.get('cookie')` into `[lang]/eventos/[slug].astro` → 1
+  failure. Clean tree: 21/21.
+  *Direction (b), `FavoriteButton.test.tsx`:* re-gating `useFavoriteStatus` on a
+  re-added `isAuthenticated` prop → 9 runtime failures.
+
+  **The mutation also found the guard for (b) was inert.** Two
+  `@ts-expect-error` assignments claimed a resurrected prop would surface as an
+  unused-directive error at typecheck. It would not: `apps/web/tsconfig.json`
+  lists only `src/**` under `include` and `vitest.config.ts` does not enable
+  `test.typecheck`, so **nothing in CI typechecks the test tree**. Verified:
+  re-adding `isAuthenticated?: boolean` to the interface left `pnpm typecheck`
+  at exit 0 and the file at 58/58 green. Replaced with a source assertion over
+  the props interface body (PR #2716), which catches the interface-only
+  mutation the runtime tests are blind to.
+
+- **AC-B0-7 PASSED as written — and it surfaced a larger, unrelated defect.**
+  CLS on the cached catalog route: **authenticated 0.4512 vs anonymous 0.4605**.
+  D-11's post-hydration swaps therefore contribute **no measurable shift**,
+  which is what this criterion asks.
+
+  But both arms are "Poor". The shift is session-independent and was traced to
+  **PR #2705** (async non-critical CSS): forcing the 15 `data-async-css` sheets
+  back to blocking at parse time drops the catalog from **0.4605 → 0.0000/0.0149**
+  and the home from **0.1661/0.1680 → 0.0039/0.0167**, with **no FCP cost** in
+  either direction. The dominant entry is `.acc-grid` going from `[y=0, h=0]` to
+  `[y=592, h=309]` when the activator flips `media` — the unstyled grid being
+  styled all at once. Reproducible with and without throttling. Reverted in
+  PR #2717 by owner decision.
+
+  Two measurement traps worth recording. CLS on a **second, immediate**
+  navigation to the same URL reads 0.0346 — measuring there hides the defect
+  entirely. And Cloudflare's `age` varies wildly per edge node: within one 51 s
+  window the same URLs reported ages of 44–55 and then 265–267, so `age` alone
+  is not an eviction signal.
+
+**AC-6 — write-side CLOSED, and it found a defect:
+[HOS-424](https://linear.app/hospeda-beta/issue/HOS-424).** The purge half is
+verified (see W1-3). The remaining half — that a real content write makes the
+service emit the tags — is now measured, and **it does not**: a real content
+edit purges the collection tag but leaves the entity's own detail page cached
+and stale in all three locales. Filed as HOS-424, High.
+
+Measured on a post, because **the admin event form cannot save at all** — a
+silent 400, which is [HOS-422](https://linear.app/hospeda-beta/issue/HOS-422)
+and unrelated to this spec. Changed the `summary` of
+`concepcion-del-uruguay-historia-rio-naturaleza` (209 → 208 chars):
+
+| URL | before | after |
+|---|---|---|
+| `/es/publicaciones/<slug>/` | `HIT` age 10 | **`HIT` age 19 — not evicted, old text** |
+| `/en/…` | `HIT` age 9 | **`HIT` age 18 — not evicted** |
+| `/pt/…` | `HIT` age 9 | **`HIT` age 18 — not evicted** |
+| `/es/publicaciones/` | `HIT` age 19 | **`MISS` — evicted** |
+| control `/es/alojamientos/` | `HIT` age 9 | `HIT` age 18 |
+| control `/es/eventos/` | `HIT` age 9 | `HIT` age 18 |
+
+The ages advanced exactly with wall clock (74 s elapsed, +9 on the ages), which
+is the proof the cached object was never re-fetched.
+
+**Two explanations are ruled out.** The tags are not wrong: a manual purge of
+`preview:post-<slug>` + `preview:post-<id>` returns `{"ok":true,"purged":2}` and
+evicts all three locales instantly. And it is not the no-op artefact that made
+the first attempt inconclusive — that run sent an identical payload, this one
+changed content, same result.
+
+The mapper is not at fault either: `entity-tag-mapper.ts:125-136` adds the
+entity tags for `post`. The pattern — collection purged, entity not — is exactly
+what a revalidation event reaching the mapper **without `slug` or `id`** would
+produce, since `buildEntityCacheTags` would then return nothing while
+`CACHE_TAG_COLLECTIONS.post` and `CACHE_TAG_HOME` survive. The cheap
+discriminator, not run: check whether `preview:home` IS purged by the same write.
+
+Established on a post instead: the detail emits
+`preview:all,preview:post-<slug>,preview:post-<id>` and the list emits
+`preview:all,preview:list-post`; a manual purge of the two entity tags returns
+`{"ok":true,"purged":2}` and flips all three locales to `MISS` immediately, so
+**the tags work end to end**. The write itself is the defect — confirmed on a
+second run with a real content change and filed as HOS-424; see the AC-6 block
+above for the measurements.
+
+Measurement protocol, since this is easy to get wrong: bring the three detail
+locales, the list and two unrelated controls to `HIT` with a SMALL `age` via a
+retrying fetch loop, then write, then re-read within ~10-20 s. **Do not warm
+every probe URL together and wait** — `s-maxage` is 300 s, so a synchronised
+warm-up expires them all at once and contaminates the window, which is exactly
+what invalidated the first attempt. Compare each URL against its own baseline,
+never against another URL: Cloudflare's `age` varies per edge node.
 
 **W1-4 — Redirect Rules at the edge. DONE, narrowed to one rule (2026-08-04,
 staging only).** Versioned at
@@ -2161,10 +2380,31 @@ Wave A (added Rev 2):
 
 Wave B0 (added Rev 3):
 
-- **AC-B0-1** — For a given catalog URL, the SSR HTML is **byte-identical**
-  whether requested with or without a valid session cookie. Asserted by diffing
-  two real responses, not by reasoning about the code. This is the single
-  criterion that makes the cookie bypass redundant.
+- **AC-B0-1** — For a given catalog URL, the SSR HTML is **identical modulo
+  per-request tracing metadata** whether requested with or without a valid
+  session cookie. Asserted by diffing two real responses, not by reasoning about
+  the code. This is the single criterion that makes the cookie bypass redundant.
+
+  **VERIFIED 2026-08-08 on staging** (`/es/alojamientos/`, real session for
+  `e2e-tourist@local.test`, two `fetch`es from the page context with
+  `credentials: 'include'` and `'omit'`). Both bodies carry
+  `data-user-authenticated="false"` — the SSR is session-blind even with a valid
+  cookie. After normalising the `sentry-trace` / `baggage` metas the two are
+  **byte-identical**: 519,787 bytes each, zero remaining differences. Neither
+  body contains the account email, `data-user-authenticated="true"`, or
+  `isAuthenticated:true`. `cf-cache-status` was `DYNAMIC` for the session request
+  and `HIT` for the anonymous one.
+
+  **"Byte-identical" was corrected to "identical modulo per-request tracing
+  metadata" because the original wording is unachievable, not because the
+  implementation fell short.** `@sentry/astro` injects a `sentry-trace` meta with
+  a fresh trace id on every render. Two **anonymous** renders of the same URL are
+  therefore not byte-identical either — measured: same first-difference offset
+  (105), lengths differing by one byte. A criterion no passing implementation can
+  satisfy is a criterion that will eventually be waved through, so it is stated
+  in the form that can actually be checked. What must NOT be relaxed is the
+  substance: the diff has to be run on real responses, and anything outside the
+  tracing metas is a failure.
 - **AC-B0-2** — On a **cached anonymous** page, a logged-in visitor sees their
   real favorites after hydration, and clicking a heart does **not** open the
   guest login popover. This is the exact failure the current
@@ -2176,10 +2416,19 @@ Wave B0 (added Rev 3):
   CTAs, compare mode.
 - **AC-B0-4** — A listing of N cards issues **one** `check-bulk` after
   hydration, not N `/check` calls. Asserted on the network log.
-- **AC-B0-5** — WB0-6's guard fails when session state is reintroduced into a
-  cacheable page, and fails when `FavoriteButton`'s reconciliation is re-gated
-  on an SSR prop. Non-vacuity demonstrated in both directions, per HOS-370's
-  precedent.
+- **AC-B0-5** — Two guards fail, one per direction, demonstrated by mutation and
+  not by reading them, per HOS-370's precedent: **WB0-6's static guard** fails
+  when session state is reintroduced into a cacheable page, and
+  **`FavoriteButton.test.tsx`** fails when `FavoriteButton`'s reconciliation is
+  re-gated on an SSR prop.
+
+  > Corrected 2026-08-08. The original text asked WB0-6's guard to catch both.
+  > It cannot, by design: that guard sweeps `src/pages` and the `.astro`
+  > components and **deliberately excludes React islands**, because resolving
+  > the visitor in the browser is the correct behaviour there (see the guard's
+  > own "What this guard does NOT cover"). Asking one guard to cover both
+  > directions would mean widening it to `.tsx` and flagging every legitimate
+  > client-side session read. Two guards, one invariant each.
 - **AC-B0-6** — After WB0-1, no `nonce=` attribute remains in the HTML of a
   cacheable page, the CSP header carries `sha256-` sources instead, and the
   page's inline scripts still execute (theme FOUC applies, i18n data present,
@@ -2195,22 +2444,166 @@ Wave B onward:
   cookie returns `BYPASS` (or `DYNAMIC`), never `HIT`, and its body contains
   that user's state.
 - **AC-3** — A URL with filter params (`?amenities=…`) is not cached.
-- **AC-4** — `hospeda-web-prod` idles below 10 % CPU across five `docker stats`
-  samples with no traffic.
+- **AC-4** (reworded 2026-08-08) — `hospeda-web-prod` shows a **median CPU of
+  0 % and a p90 under 1 %** across at least 30 `docker stats` samples taken
+  during normal production traffic. Occasional spikes are expected and do not
+  fail the criterion: they are individual origin renders.
+
+  **VERIFIED 2026-08-08**: 30 samples of container
+  `xv55ojdh2we9snulfsylql66-040250619247` — 21/30 at exactly 0.00 %, median
+  0.00 %, p90 0.17 %, mean 0.97 %, one sample above 10 % (max 27.86 %). Memory
+  steady at ~190–275 MiB of 7.7 GiB.
+
+  **The original wording — "below 10 % across five samples with no traffic" —
+  cannot be executed on prod, which is why it is replaced.** Two independent
+  reasons, both measured rather than assumed. (1) Production always has traffic;
+  there is no no-traffic window to sample. (2) The web container **does not log
+  requests at all**, so a no-traffic window could not be demonstrated even if one
+  occurred: a GET issued directly to the container over its own network (status
+  200, TTFB 344 ms) leaves nothing in `docker logs`. Five samples were also too
+  few to distinguish an idle baseline from a render spike — the first five taken
+  here read 0.60 / 0.00 / 0.00 / **21.31** / 0.00, which the old criterion would
+  have failed while the container was in fact idle. The intent (the origin is no
+  longer burning CPU because everything reaches it) is what the distribution
+  above measures.
 - **AC-5** — No production client chunk contains `exampleValue`,
   `howToObtain`, or `HOSPEDA_*` variable definitions, enforced by a CI guard
   that demonstrably fails when the leak is reintroduced.
-- **AC-6** (revised Rev 3) — `POST /api/revalidate` issues a `tags: [...]`
-  purge. Editing one event does not evict `/_astro/*` assets (verify `age` on a
-  static asset survives the purge), **and** evicts that event's detail page in
-  all three locales **plus** the listing's `?page=2` variant — the case
+- **AC-6** (revised Rev 3; pagination form corrected 2026-08-08) —
+  `POST /api/revalidate` issues a `tags: [...]` purge. Editing one event does not
+  evict `/_astro/*` assets (verify `age` on a static asset survives the purge),
+  **and** evicts that event's detail page in all three locales **plus** the
+  listing's **page-2 variant `/{lang}/eventos/page/2/`** — the case
   purge-by-URL provably could not reach (§5.11.2).
-- **AC-7** — `https://hospeda.com.ar/` resolves to `/es/` at the edge
-  (`cf-cache-status` present on the 301, no origin hit).
+
+  **VERIFIED 2026-08-08 on staging.** Purged the three tags an event write emits
+  (`preview:event-<slug>`, `preview:event-<id>`, `preview:list-event` — see
+  `entity-tag-mapper.ts`), response `{"ok":true,"purged":3}`:
+
+  | URL | before | after |
+  |---|---|---|
+  | `/es/eventos/concierto-jazz/` | `HIT` age 88 | **`MISS`** |
+  | `/en/eventos/concierto-jazz/` | `HIT` age 88 | **`MISS`** |
+  | `/pt/eventos/concierto-jazz/` | `HIT` age 87 | **`MISS`** |
+  | `/es/eventos/page/2/` | `HIT` age 55 | **`MISS`** |
+  | `/_astro/page.5Z8Kdn8n.js` | `HIT` age 37,386 | `HIT` age **37,506** |
+
+  The asset's `age` kept counting from the same origin fetch, which is the
+  evidence that it was not evicted — a re-fetch would have reset it to 0.
+
+  **Why "`?page=2` variant" became "`/page/2/`".** Pagination on these listings
+  is URL-segment based; `?page=2` is only the internal `Astro.rewrite` target and
+  is not a URL any visitor or crawler receives. Measured: `/es/eventos/page/2/`
+  is `HIT`, while `/es/eventos/?page=2` is `DYNAMIC` — the origin marks it
+  cacheable but no Cache Rule matches the query form. Written the old way, the AC
+  asks you to verify eviction of a URL that is never cached in the first place,
+  which passes trivially and proves nothing.
+- **AC-7** (corrected 2026-08-08) — `https://hospeda.com.ar/` resolves to `/es/`
+  at the edge: the `301` carries **only Cloudflare headers** (`server`,
+  `cf-ray`) and **no origin headers**, proving it never reached the app.
+
+  **The previous wording — "`cf-cache-status` present on the 301" — was
+  inverted.** Cloudflare Redirect Rules short-circuit *before* the cache, so they
+  never emit `cf-cache-status`; its presence on a 301 is precisely the signal
+  that the request DID reach the origin. Measured both sides on staging:
+
+  | 301 | headers | verdict |
+  |---|---|---|
+  | apex `/` (Redirect Rule) | `server`, `cf-ray` only — zero origin headers | never hits origin ✅ |
+  | `/es/alojamientos` (no trailing slash, origin middleware) | `x-robots-tag`, `content-length`, `alt-svc`, **`cf-cache-status: BYPASS`** | hits origin |
+
+  As written, the AC would have passed the failing case and failed the passing
+  one. **VERIFIED 2026-08-08** under the corrected wording.
 - **AC-8** (rewritten 2026-08-05, owner decision) — **The home meets Lighthouse's
   "good" thresholds on mobile: `LCP ≤ 2,500 ms` and `TBT ≤ 200 ms`**, measured
   cold against staging. Not met today: the cold profile in §6.6 measures
-  **LCP ≈ 15,266 ms**. **HOS-369 does not close until it is.**
+  **LCP ≈ 15,266 ms**. ~~**HOS-369 does not close until it is.**~~
+
+  > **SPLIT OUT 2026-08-09, owner decision. This criterion no longer blocks
+  > HOS-369.** The cache lane is finished and the performance gain is already
+  > substantial (cold LCP 15,266 → 2,693 ms); what remains of LCP/TBT moves to
+  > **[HOS-423](https://linear.app/hospeda-beta/issue/HOS-423)**, which inherits
+  > this criterion verbatim along with every measurement and lever recorded
+  > below. Read the rest of AC-8 as the handover document it now is, not as a
+  > gate on this spec.
+  >
+  > **Re-measured 2026-08-09, after the #2705 revert was deployed. Still NOT
+  > met, but by 193 ms instead of 12,766.** Cold-cache recipe exactly as
+  > prescribed below, 3 runs, each in its own fresh `isolatedContext`:
+  >
+  > | run | LCP | TTFB | Load delay | Load duration | Render delay | CLS |
+  > |---|---|---|---|---|---|---|
+  > | 1 | 2,693 | 674 | 171 | 1,786 | 62 | 0.00 |
+  > | 2 | 2,536 | 40 | — | — | 2,496 | 0.00 |
+  > | 3 | 2,891 | 55 | 799 | 1,823 | 215 | 0.00 |
+  >
+  > **Median LCP 2,693 ms** against a 2,500 ms threshold. Run 2's LCP element
+  > was a text node (no resource, hence no load phases); runs 1 and 3 picked the
+  > hero image. **TBT was not measured in this pass** — the second half of the
+  > criterion is still open.
+  >
+  > **The two remaining levers, in order of size:**
+  >
+  > 1. **Render-blocking CSS — the `RenderBlocking` insight estimates
+  >    ~11.7–12.0 s of FCP savings on all three runs.** This is the direct cost
+  >    of reverting #2705: the sheets are back on the critical path. The answer
+  >    is NOT to re-defer all of them (that was #2705, and it bought a 0.45 CLS)
+  >    nor to leave every one blocking. It is to shrink what is critical —
+  >    inline the above-the-fold rules and defer only what provably does not
+  >    affect the first viewport, verified against CLS each time.
+  > 2. **The hero image transfer — ~1.8 s of `Load duration`** in both runs
+  >    where the image won LCP, with `ImageDelivery` reporting 34.8 kB of waste.
+  >    Note this is the transfer itself, not discovery: `Load delay` is 171 ms
+  >    and 799 ms. The "~750 ms load delay" recorded as the next block in the
+  >    prior session's handoff was measured on a WARM profile and does not
+  >    describe the cold one.
+  >
+  > **Do not trust a warm re-measurement of this criterion.** Three
+  > `reload: true` traces taken the same day reported a median LCP of 1,144 ms
+  > with `Load duration` of 1–2 ms — under one RTT, which the sanity check below
+  > correctly flags as cache rather than speed. The cold number is 2.4× that.
+  >
+  > **TBT — the other half, measured 2026-08-09. Also NOT met.** Same cold
+  > profile, `longtask` observer, blocking time summed after FCP:
+  >
+  > | run | TBT (all) | TBT (≤5 s after FCP) | FCP | LCP |
+  > |---|---|---|---|---|
+  > | 1 | 403 | 374 | 2,360 | 2,524 |
+  > | 2 | 513 | 479 | 2,372 | 2,840 |
+  > | 3 | 478 | 442 | 2,404 | 2,520 |
+  >
+  > **Median TBT 478 ms** against a 200 ms threshold.
+  >
+  > **TBT and LCP are separate problems here, and that is the useful part.**
+  > The blocking is a deterministic burst at ~6.5 s, ~7.1–7.3 s and ~8.5 s —
+  > the same four tasks in the same order on all three runs, roughly 4 s AFTER
+  > LCP. Nothing blocks before ~5.9 s. So no amount of LCP work will move TBT,
+  > and vice versa. That burst is post-load island hydration plus third
+  > parties; `longtask` attribution returns `unknown`, so isolating it needs a
+  > main-thread trace, not this observer.
+  >
+  > **What actually gates FCP: stylesheet COUNT, not CSS weight (2026-08-09).**
+  > Measured on the cold profile: **19 render-blocking stylesheets totalling
+  > 45 KB**. They are discovered early and all start together at ~800 ms, but
+  > the last one lands at 2,330 ms — and FCP is 2,404 ms, immediately after.
+  >
+  > 45 KB over Slow 4G's 1.6 Mbps is ~225 ms of transfer. It is taking ~1,500 ms
+  > of wall clock. The gap is per-request latency and connection contention
+  > across 19 requests, not bytes.
+  >
+  > **This is why #2705 was the wrong fix for the right problem.** Deferring the
+  > sheets did address the serialization, but by removing them from the first
+  > paint entirely — which is exactly what produced the 0.45 CLS. Bundling or
+  > inlining attacks the same 1.5 s with no CLS cost at all, because the styles
+  > still arrive before first paint. Try that before considering any deferral
+  > scheme again.
+  >
+  > Two smaller notes from the same pass: the two sheets that land at 7.0–8.2 s
+  > (`index.BTpp_eN0.css`, `feedback-overrides.CLF4mXio.css`) are JS-injected via
+  > `ensure-stylesheet.ts` and are NOT render-blocking. And the home HTML is
+  > 519,410 B uncompressed — above the 500 KB line of the retired predecessor
+  > criterion, which is recorded here only as a reminder that the retired
+  > criterion did not track speed in either direction.
 
   Measured with a genuinely cold cache — `performance_start_trace(reload: true)`
   does NOT give one, it reuses the browser cache. The recipe that does:

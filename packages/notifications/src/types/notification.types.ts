@@ -194,6 +194,18 @@ export enum NotificationType {
     PARTNER_REVOKED = 'partner_revoked',
     PARTNER_UNPAID_NOTICE = 'partner_unpaid_notice',
     /**
+     * HOS-377 AC-9 — the team logged one or more promotion actions for a
+     * partner, and this tells them so, with a link to each publication.
+     *
+     * Sent ONCE per submission, never once per row: a campaign that ran on four
+     * networks is one thing that happened, and four emails about it is spam.
+     *
+     * TRANSACTIONAL: it reports work performed under the arrangement the
+     * partner is paying for. It is a record of actions taken, NOT a performance
+     * report — see the template for why that distinction is load-bearing.
+     */
+    PARTNER_MENTIONS_LOGGED = 'partner_mentions_logged',
+    /**
      * HOS-176 Increment A — advance notice sent to a subscriber before a plan
      * price INCREASE is applied to their MercadoPago preapproval.
      *
@@ -948,6 +960,46 @@ export interface PartnerRevokedPayload extends BaseNotificationPayload {
 }
 
 /**
+ * One logged promotion action, as the email renders it (HOS-377).
+ *
+ * `channelLabel` is a HUMAN LABEL resolved by the caller, not an enum value.
+ * This package does not depend on `@repo/schemas` and must not start doing so
+ * for a display string — the same reason
+ * {@link AccommodationCalendarFeedBrokenPayload} takes `providerLabel` rather
+ * than a provider enum.
+ */
+export interface PartnerMentionEntryPayload {
+    /** e.g. "Instagram", "Newsletter". Rendered verbatim. */
+    readonly channelLabel: string;
+    /**
+     * Link to the publication, when the channel produces one.
+     *
+     * Absent for a WhatsApp broadcast or an "other" channel, which have no
+     * public permalink. The template renders those as a plain line rather than
+     * a dead link — a link that goes nowhere is worse than no link on an email
+     * whose entire promise is that the partner can go and check.
+     */
+    readonly url?: string | null;
+}
+
+/**
+ * Payload for the PARTNER_MENTIONS_LOGGED notification (HOS-377 AC-9).
+ *
+ * Carries the WHOLE submission, because one submission is one email. A payload
+ * shaped around a single mention would make the once-per-batch guarantee a
+ * caller convention instead of something the type enforces.
+ */
+export interface PartnerMentionsLoggedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.PARTNER_MENTIONS_LOGGED;
+    /** Display name of the partner that was promoted. */
+    readonly partnerName: string;
+    /** When the promotion happened — already formatted for display. */
+    readonly mentionedAtLabel: string;
+    /** Every channel in the submission, in canonical order. Never empty. */
+    readonly mentions: readonly PartnerMentionEntryPayload[];
+}
+
+/**
  * Payload for the PARTNER_UNPAID_NOTICE notification (HOS-278 R-3).
  *
  * The one-time nudge before an unpaid partner listing is archived. Sent by the
@@ -1069,5 +1121,6 @@ export type NotificationPayload =
     | HostTradeReplyModeratedPayload
     | PartnerRevokedPayload
     | PartnerUnpaidNoticePayload
+    | PartnerMentionsLoggedPayload
     | AccommodationCalendarFeedBrokenPayload
     | PlanPriceChangeNoticePayload;

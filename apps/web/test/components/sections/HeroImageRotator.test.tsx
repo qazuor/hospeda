@@ -239,6 +239,86 @@ describe('HeroImageRotator.client.tsx', () => {
         });
     });
 
+    // HOS-369: AVIF is ~40% lighter than WebP on the hero (17,9 kB vs 29,0 kB at
+    // 800w), but Safari before 16.4 cannot decode it — and this is the LCP
+    // element, so an AVIF-only hero would leave those visitors with no hero at
+    // all. AVIF is therefore offered through <source type="image/avif"> with the
+    // WebP candidates kept on the <img>.
+    describe('AVIF with WebP fallback (HOS-369)', () => {
+        const withAvif = [
+            {
+                src: '/a.webp',
+                alt: 'A',
+                srcset: '/a-800.webp 800w',
+                avifSrcset: '/a-800.avif 800w'
+            },
+            { src: '/b.webp', alt: 'B', srcset: '/b-800.webp 800w', avifSrcset: '/b-800.avif 800w' }
+        ] as const;
+
+        afterEach(() => {
+            cleanup();
+        });
+
+        it('wraps each slide in <picture> and offers AVIF first', () => {
+            const { container } = render(<HeroImageRotator images={withAvif} />);
+            const pictures = [...container.querySelectorAll('picture')];
+
+            expect(pictures).toHaveLength(2);
+            const firstSource = pictures[0]?.querySelector('source');
+            expect(firstSource?.getAttribute('type')).toBe('image/avif');
+            expect(firstSource?.getAttribute('srcset')).toBe('/a-800.avif 800w');
+        });
+
+        it('keeps the WebP candidates on the <img> so non-AVIF browsers still paint', () => {
+            const { container } = render(<HeroImageRotator images={withAvif} />);
+            const img = container.querySelector('img');
+
+            expect(
+                img?.getAttribute('srcset'),
+                'The <img> inside <picture> is the fallback Safari < 16.4 uses. If it ever ' +
+                    'carries AVIF, or nothing, those visitors lose the LCP element entirely.'
+            ).toBe('/a-800.webp 800w');
+            expect(img?.getAttribute('src')).toBe('/a.webp');
+        });
+
+        it('applies the off-screen fetch gate to <source> as well as <img>', () => {
+            const { container } = render(<HeroImageRotator images={withAvif} />);
+            const sourceSrcSets = [...container.querySelectorAll('source')].map((el) =>
+                el.getAttribute('srcset')
+            );
+
+            expect(sourceSrcSets[0]).toBe('/a-800.avif 800w');
+            expect(
+                sourceSrcSets[1],
+                'A <source srcset> inside <picture> is enough on its own for the browser to ' +
+                    'start the download. Gating only the <img> would silently restore the eager ' +
+                    'off-screen fetch that the LCP gate exists to prevent.'
+            ).toBeNull();
+        });
+
+        it('opens the <source> gate together with the <img> gate on interaction', () => {
+            const { container } = render(<HeroImageRotator images={withAvif} />);
+
+            act(() => {
+                window.dispatchEvent(new Event('pointerdown'));
+            });
+
+            const sourceSrcSets = [...container.querySelectorAll('source')].map((el) =>
+                el.getAttribute('srcset')
+            );
+            expect(sourceSrcSets).toEqual(['/a-800.avif 800w', '/b-800.avif 800w']);
+        });
+
+        it('emits no <source> when a slide has no AVIF candidates', () => {
+            const { container } = render(
+                <HeroImageRotator images={[{ src: '/a.webp', alt: 'A' }] as const} />
+            );
+
+            expect(container.querySelectorAll('source')).toHaveLength(0);
+            expect(container.querySelector('img')?.getAttribute('src')).toBe('/a.webp');
+        });
+    });
+
     describe('named export', () => {
         it('should export HeroImageRotator as named export', () => {
             expect(src).toContain('export function HeroImageRotator');

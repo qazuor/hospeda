@@ -13,6 +13,7 @@ import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createPublicListRoute } from '../../../utils/route-factory';
+import { publicGetPartnerBySlugRoute } from './get-by-slug.js';
 
 /**
  * GET /api/v1/public/partners
@@ -55,5 +56,8 @@ const publicListPartnersRoute = createPublicListRoute({
 
 const router = createRouter();
 router.route('/', publicListPartnersRoute);
+// Registered AFTER the list so the bare `/` collection route is matched by its
+// own handler and never swallowed by the `{slug}` param route.
+router.route('/', publicGetPartnerBySlugRoute);
 
 export { router as publicPartnersRoutes };

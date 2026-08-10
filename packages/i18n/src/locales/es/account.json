@@ -1390,5 +1390,23 @@
                 "youtube": "YouTube"
             }
         }
+    },
+    "partnerMentions": {
+        "title": "Bitácora de menciones",
+        "subtitle": "Todo lo que difundimos sobre vos, con el enlace a cada publicación para que puedas verificarlo.",
+        "empty": "Todavía no registramos menciones.",
+        "emptyHelp": "Cuando difundamos tu ficha, cada acción va a aparecer acá con su enlace.",
+        "viewPublication": "Ver publicación",
+        "noPublicationLink": "Sin enlace público",
+        "channels": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "TWITTER": "Twitter",
+            "YOUTUBE": "YouTube",
+            "TIKTOK": "TikTok",
+            "NEWSLETTER": "Newsletter",
+            "WHATSAPP": "WhatsApp",
+            "OTHER": "Otro canal"
+        }
     }
 }

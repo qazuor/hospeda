@@ -1390,5 +1390,23 @@
                 "youtube": "YouTube"
             }
         }
+    },
+    "partnerMentions": {
+        "title": "Registro de menções",
+        "subtitle": "Tudo o que divulgamos sobre você, com o link de cada publicação para que possa verificar.",
+        "empty": "Ainda não registramos menções.",
+        "emptyHelp": "Quando divulgarmos sua ficha, cada ação vai aparecer aqui com o seu link.",
+        "viewPublication": "Ver publicação",
+        "noPublicationLink": "Sem link público",
+        "channels": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "TWITTER": "Twitter",
+            "YOUTUBE": "YouTube",
+            "TIKTOK": "TikTok",
+            "NEWSLETTER": "Newsletter",
+            "WHATSAPP": "WhatsApp",
+            "OTHER": "Outro canal"
+        }
     }
 }

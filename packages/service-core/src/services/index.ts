@@ -74,6 +74,7 @@ export * from './moderation';
 export * from './newsletter';
 export * from './owner-promotion';
 export * from './partner/partner.service';
+export * from './partner/partner-mention.service';
 export * from './permission/permission.effects';
 export * from './permission/permission.service';
 export * from './platformSettings/index.js';
