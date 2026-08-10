@@ -134,7 +134,7 @@
 
 .badgeExpired {
     color: var(--core-muted-foreground);
-    background-color: oklch(from var(--core-foreground) l c h / 0.08);
+    background-color: var(--core-foreground-a08);
 }
 
 /* ── Actions ── */
@@ -275,7 +275,7 @@
 
 .skeleton {
     height: 108px;
-    background-color: oklch(from var(--core-foreground) l c h / 0.06);
+    background-color: var(--core-foreground-a05);
     border-radius: var(--radius-card, 24px);
     animation: usage-skeleton-pulse 1.4s ease-in-out infinite;
 }
