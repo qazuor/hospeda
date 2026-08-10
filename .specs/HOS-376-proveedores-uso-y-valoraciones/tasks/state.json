@@ -1844,22 +1844,40 @@
         {
             "id": "T-049",
             "title": "Modo edición de la valoración y cartel de réplica desactualizada",
-            "description": "Si el anfitrión ya valoró, el mismo formulario abre precargado en modo edición y hace PATCH. En el listado público, cuando reviewEditedAfterReply es true, mostrar el cartel 'la valoración fue editada después de esta respuesta' junto a la réplica. Tests: el formulario precarga los valores existentes; el cartel aparece sólo con el flag en true.",
-            "status": "pending",
+            "description": "Si el anfitrión ya valoró, el mismo formulario abre precargado en modo edición y hace PATCH. En el listado público, cuando reviewEditedAfterReply es true, mostrar el cartel 'la valoración fue editada después de esta respuesta' junto a la réplica. Tests: el formulario precarga los valores existentes; el cartel aparece sólo con el flag en true. MODO EDICION IMPLEMENTADO: ReviewFormDialog lee my-review al abrir y decide entre publicar y editar; una lectura fallida cae al formulario de creacion en vez de bloquear, porque negarse a abrir dejaria al anfitrion sin poder decir nada y el POST igual responde 409 con copy propia. El PATCH manda un DIFF, no el formulario entero: cambiar el TEXTO re-corre moderacion y puede bajar la valoracion del directorio, asi que reenviar un content intacto convertiria una edicion de estrellas en una reescritura y podria devolver como APPROVED un texto que un moderador bajo. Un comentario vaciado viaja como null (borrado), no ausente. LA SEGUNDA MITAD — el cartel de replica desactualizada — NO entra: vive en el listado publico de valoraciones, que lo construye T-053. El grafo no declara esa dependencia y deberia: no se puede renderizar un cartel en un listado que no existe.",
+            "status": "in_progress",
             "complexity": 2,
-            "blockedBy": ["T-048", "T-034"],
+            "blockedBy": ["T-048", "T-034", "T-053"],
             "blocks": [],
-            "subtasks": [],
+            "subtasks": [
+                {
+                    "title": "Modo edicion: precarga + PATCH con diff",
+                    "completed": true
+                },
+                {
+                    "title": "Cartel de replica desactualizada (se cablea con T-053)",
+                    "completed": false
+                }
+            ],
             "tags": ["web", "react", "ui", "reviews"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T20:05:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T20:05:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T20:05:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
+                "started": "2026-08-10T19:30:00.000Z",
                 "completed": null
             }
         },
