@@ -1,0 +1,140 @@
+---
+/**
+ * @file EditorRouteNav.astro
+ * @description Sticky section navigation for the accommodation editor (HOS-318).
+ *
+ * ## Why this exists next to EditorSectionNav
+ *
+ * `EditorSectionNav.client.tsx` scroll-spies anchors inside ONE long page, and
+ * `EventEditor` / `PostEditor` still work that way — so it stays, untouched
+ * (HOS-318 OQ-2). This component is its route-based counterpart for the
+ * accommodation editor, where every section is now its own page. When the other
+ * two editors migrate, they adopt this and the old one goes.
+ *
+ * ## Why it ships zero JavaScript
+ *
+ * The old nav needed React solely for the `IntersectionObserver` scrollspy. With
+ * routes, the active item is just the current page — known at render time. So
+ * this is a plain Astro component: no island, no hydration, no bundle.
+ *
+ * Hidden below the two-column breakpoint. On narrow viewports the hub at
+ * `…/editar/` IS the navigation — a persistent sidebar there would eat the
+ * screen the form needs.
+ */
+
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildEditorNavModel } from '@/lib/editor/editor-route-nav-model';
+
+interface Props {
+	readonly locale: SupportedLocale;
+	readonly accommodationId: string;
+	/** `null` on the hub, where no section is active. */
+	readonly currentSectionId: string | null;
+	readonly hasTranslations: boolean;
+}
+
+const { locale, accommodationId, currentSectionId, hasTranslations } = Astro.props;
+const { t } = createTranslations(locale);
+
+const groups = buildEditorNavModel({
+	locale,
+	accommodationId,
+	currentSectionId,
+	hasTranslations,
+});
+---
+
+<nav
+	class="editor-route-nav"
+	aria-label={t('host.properties.editor.sectionNav.ariaLabel', 'Navegación de secciones del formulario')}
+>
+	{groups.map((group) => (
+		<div class="editor-route-nav__group">
+			<p class="editor-route-nav__group-label">{t(group.headingKey)}</p>
+			<ul class="editor-route-nav__list">
+				{group.links.map((link) => (
+					<li class="editor-route-nav__item">
+						<a
+							href={link.href}
+							class:list={[
+								'editor-route-nav__link',
+								{ 'editor-route-nav__link--active': link.isActive },
+							]}
+							aria-current={link.isActive ? 'page' : undefined}
+						>
+							{t(link.labelKey)}
+						</a>
+					</li>
+				))}
+			</ul>
+		</div>
+	))}
+</nav>
+
+<style>
+	/* Geometry deliberately matches the pre-split `.navSlot` (220px, sticky at
+	   110px, from 1100px up) so desktop keeps the exact shape it has today —
+	   the point of HOS-318 D-1 is that the layout does NOT visibly change. */
+	.editor-route-nav {
+		display: none;
+	}
+
+	@media (min-width: 1100px) {
+		.editor-route-nav {
+			display: block;
+			position: sticky;
+			top: 110px;
+		}
+	}
+
+	.editor-route-nav__group + .editor-route-nav__group {
+		margin-top: var(--space-5, 1.5rem);
+	}
+
+	/* Mirrors the account sidebar's group label, so the two navigations on
+	   screen read as one system rather than two conventions. */
+	.editor-route-nav__group-label {
+		margin: 0 0 var(--space-2, 0.5rem);
+		padding: 0 0.75rem;
+		font-family: var(--font-sans);
+		font-size: 0.75rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--core-muted-foreground);
+	}
+
+	.editor-route-nav__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.editor-route-nav__link {
+		display: block;
+		padding: 0.5rem 0.75rem;
+		border-radius: var(--radius-md, 10px);
+		font-family: var(--font-sans);
+		font-size: 0.9375rem;
+		color: var(--core-muted-foreground);
+		text-decoration: none;
+		transition: background-color 150ms ease-out, color 150ms ease-out;
+	}
+
+	.editor-route-nav__link:hover {
+		background-color: var(--surface-warm);
+		color: var(--core-foreground);
+	}
+
+	.editor-route-nav__link:focus-visible {
+		outline: 2px solid var(--brand-primary);
+		outline-offset: 2px;
+	}
+
+	.editor-route-nav__link--active {
+		background-color: var(--surface-warm);
+		color: var(--brand-primary);
+		font-weight: 600;
+	}
+</style>
