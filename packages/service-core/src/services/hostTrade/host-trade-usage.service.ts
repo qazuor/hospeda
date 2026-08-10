@@ -793,6 +793,7 @@ export class HostTradeUsageService extends BaseCrudService<
                         confirmedAt: new Date(),
                         confirmedById: validatedActor.id,
                         updatedById: validatedActor.id
+                        // TYPE-WORKAROUND: a state-machine transition writes status and its stamps, none of which the update schema declares
                     } as unknown as Partial<HostTradeBenefitUsage>,
                     ctx?.tx
                 );
@@ -858,6 +859,7 @@ export class HostTradeUsageService extends BaseCrudService<
                             rejectedById: validatedActor.id,
                             rejectionNote: validated.note ?? null,
                             updatedById: validatedActor.id
+                            // TYPE-WORKAROUND: a state-machine transition writes status and its stamps, none of which the update schema declares
                         } as unknown as Partial<HostTradeBenefitUsage>,
                         execCtx.tx
                     );
@@ -922,6 +924,7 @@ export class HostTradeUsageService extends BaseCrudService<
                 // human decided this. An id here means a person acted.
                 declarationSuspendedById: null,
                 declarationSuspendReason: `Automatic: ${rejections} declarations rejected in the last ${HOST_TRADE_REJECTION_WINDOW_DAYS} days`
+                // TYPE-WORKAROUND: the suspension trio lives on the listing and is server-decided, so it is absent from the host-trade update schema
             } as unknown as Partial<HostTrade>,
             ctx.tx
         );
@@ -973,6 +976,7 @@ export class HostTradeUsageService extends BaseCrudService<
         for (const id of ids) {
             await this.model.update({ id }, {
                 status: HostTradeUsageStatusEnum.EXPIRED
+                // TYPE-WORKAROUND: expiry writes status, which the update schema does not declare because it is a transition rather than an edit
             } as unknown as Partial<HostTradeBenefitUsage>);
         }
 
@@ -1016,6 +1020,7 @@ export class HostTradeUsageService extends BaseCrudService<
     public async markReminderSent(input: { usageId: string }): Promise<void> {
         await this.model.update({ id: input.usageId }, {
             reminderSentAt: new Date()
+            // TYPE-WORKAROUND: reminderSentAt is stamped by the cron and never by a client, so the update schema omits it
         } as unknown as Partial<HostTradeBenefitUsage>);
     }
 
@@ -1062,6 +1067,7 @@ export class HostTradeUsageService extends BaseCrudService<
                         declarationSuspendedById: validatedActor.id,
                         declarationSuspendReason: validated.reason,
                         updatedById: validatedActor.id
+                        // TYPE-WORKAROUND: the suspension trio is server-decided and therefore absent from the host-trade update schema
                     } as unknown as Partial<HostTrade>,
                     ctx?.tx
                 );
@@ -1096,6 +1102,7 @@ export class HostTradeUsageService extends BaseCrudService<
                         declarationSuspendedById: null,
                         declarationSuspendReason: null,
                         updatedById: validatedActor.id
+                        // TYPE-WORKAROUND: clearing the suspension trio writes the same server-decided columns the update schema omits
                     } as unknown as Partial<HostTrade>,
                     ctx?.tx
                 );
@@ -1144,6 +1151,7 @@ export class HostTradeUsageService extends BaseCrudService<
                         rejectedById: null,
                         rejectionNote: null,
                         updatedById: validatedActor.id
+                        // TYPE-WORKAROUND: undoing a rejection clears status and its stamps, all transition columns the update schema does not declare
                     } as unknown as Partial<HostTradeBenefitUsage>,
                     ctx?.tx
                 );
@@ -1404,6 +1412,7 @@ export class HostTradeUsageService extends BaseCrudService<
                 expiresAt,
                 createdById: data.declaredById,
                 updatedById: data.declaredById
+                // TYPE-WORKAROUND: creation stamps status, expiresAt and the channel, all decided server-side and absent from the create schema
             } as unknown as Partial<HostTradeBenefitUsage>,
             ctx?.tx
         );

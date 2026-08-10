@@ -255,6 +255,7 @@ export class HostTradeReviewReplyService extends BaseCrudService<
                         moderationState,
                         createdById: validatedActor.id,
                         updatedById: validatedActor.id
+                        // TYPE-WORKAROUND: the moderation columns are absent from the update schema on purpose, so a create that stamps them cannot be typed as the model's Partial<Entity>
                     } as unknown as Partial<HostTradeReviewReply>,
                     ctx?.tx
                 );
@@ -310,6 +311,7 @@ export class HostTradeReviewReplyService extends BaseCrudService<
                         moderatedAt: null,
                         moderationReason: null,
                         updatedById: validatedActor.id
+                        // TYPE-WORKAROUND: returning a reply to PENDING writes moderation columns the update schema deliberately does not declare
                     } as unknown as Partial<HostTradeReviewReply>,
                     ctx?.tx
                 );
@@ -373,6 +375,7 @@ export class HostTradeReviewReplyService extends BaseCrudService<
                         moderatedById: validatedActor.id,
                         moderatedAt: new Date(),
                         moderationReason: validated.reason ?? null
+                        // TYPE-WORKAROUND: a moderation decision writes the four moderation columns, which the update schema deliberately withholds from generic patches
                     } as unknown as Partial<HostTradeReviewReply>,
                     ctx?.tx
                 );

@@ -401,6 +401,7 @@ export class HostTradeReviewService extends BaseCrudService<
                             moderatedById: validatedActor.id,
                             moderatedAt: new Date(),
                             moderationReason: validated.reason ?? null
+                            // TYPE-WORKAROUND: a moderation decision writes the four moderation columns, which the update schema deliberately withholds from generic patches
                         } as unknown as Partial<HostTradeReview>,
                         execCtx.tx
                     );
@@ -674,6 +675,7 @@ export class HostTradeReviewService extends BaseCrudService<
                         moderationState,
                         createdById: validatedActor.id,
                         updatedById: validatedActor.id
+                        // TYPE-WORKAROUND: creation stamps moderationState and averageRating, both server-decided and therefore absent from the client-facing create schema
                     } as unknown as Partial<HostTradeReview>,
                     ctx?.tx
                 );
@@ -782,6 +784,7 @@ export class HostTradeReviewService extends BaseCrudService<
 
                     const updated = await this.model.update(
                         { id: validated.reviewId },
+                        // TYPE-WORKAROUND: the patch is assembled key by key so an absent field means no change, which leaves it a plain record rather than the entity's Partial
                         patch as unknown as Partial<HostTradeReview>,
                         execCtx.tx
                     );
@@ -824,6 +827,7 @@ export class HostTradeReviewService extends BaseCrudService<
 
         await this.replyModel.update(
             { id: reply.id },
+            // TYPE-WORKAROUND: reviewEditedAfterReply is a marker the update schema withholds from clients, so only a cast can set it
             { reviewEditedAfterReply: true } as unknown as Partial<HostTradeReviewReply>,
             ctx.tx
         );

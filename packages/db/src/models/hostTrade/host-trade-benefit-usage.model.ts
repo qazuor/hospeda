@@ -390,6 +390,9 @@ export class HostTradeBenefitUsageModel extends BaseModelImpl<HostTradeBenefitUs
                 logQuery(this.entityName, 'findRemindable', logContext, rows);
             } catch {}
 
+            // DRIZZLE-LIMITATION: Drizzle infers the pgEnum columns as plain
+            // `string`, which does not satisfy the `@repo/schemas` entity this
+            // model is typed on.
             return rows as unknown as HostTradeBenefitUsageRow[];
         } catch (error) {
             const err = error instanceof Error ? error : new Error(String(error));

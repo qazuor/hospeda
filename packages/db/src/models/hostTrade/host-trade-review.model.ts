@@ -141,6 +141,9 @@ export class HostTradeReviewModel extends BaseModelImpl<HostTradeReviewRow> {
                     : rows.length;
 
             const result = {
+                // DRIZZLE-LIMITATION: the joined select returns Drizzle's own
+                // nested row shape, whose enum columns widen to `string`; the
+                // exported type is the domain-typed one.
                 items: rows as unknown as HostTradeReviewWithAuthorAndReply[],
                 total
             };
