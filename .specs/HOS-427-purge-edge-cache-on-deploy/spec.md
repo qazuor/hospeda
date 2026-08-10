@@ -185,6 +185,45 @@ There is no versioned Coolify configuration in the repo — build settings,
 healthchecks and any "post-deployment command" live only in the dashboard, the
 same asymmetry `infra/cloudflare/README.md:10-11` documents for Cache Rules.
 
+### 5.7 How Coolify actually deploys this app (verified 2026-08-10)
+
+Read from the Coolify API (`GET /api/v1/applications/xv55ojdh2we9snulfsylql66`,
+Coolify 4.1.2) and from the stored deployment log of the last real
+`hospeda-web-prod` deploy:
+
+```text
+Rolling update started.
+Container xv55ojdh2we9snulfsylql66-040250619247  Created
+Container xv55ojdh2we9snulfsylql66-040250619247  Starting
+Container xv55ojdh2we9snulfsylql66-040250619247  Started
+New container started.
+Removing old containers.
+Rolling update completed.
+```
+
+Three facts follow, and all three constrain the design:
+
+1. **Coolify performs a rolling update: the new container starts BEFORE the old
+   one is removed.** There is a real overlap window in which both containers
+   exist and the reverse proxy can route to either.
+2. **Nothing gates that window.** `health_check_enabled = False` on this
+   application, so Coolify goes straight from "Started" (the process was
+   launched) to "Removing old containers" — it never waits for the new container
+   to be *ready*, only for it to be *started*.
+3. **`post_deployment_command` and `pre_deployment_command` are both `None`** —
+   no dashboard hook exists today, confirming §6.1's rejection of that option is
+   not merely stylistic.
+
+Also verified, and both feeding §6.3 and §6.6:
+
+- Every Coolify resource runs **exactly one container** — `hospeda-web-prod` and
+  `hospeda-web-staging` are single-replica. One deploy is one purge, never a burst.
+- All required variables are present on both web resources:
+  `CLOUDFLARE_ZONE_ID`, `CLOUDFLARE_API_TOKEN`, `HOSPEDA_REVALIDATION_SECRET`,
+  and `HOSPEDA_DEPLOY_ENV` — which reads `prod` on `hospeda-web-prod` and
+  `preview` on `hospeda-web-staging`. So the tags this spec purges are literally
+  `prod:all` and `preview:all`.
+
 ## 6. Proposed design
 
 ### 6.1 Decision: purge from the web container as it starts serving
@@ -214,16 +253,33 @@ self-check pattern already used by `getCacheTagEnvironment()` and by
 `reportInternalBypassSelfCheck` in `src/middleware.ts` — module-level work that
 runs once, logs once, and is never repeated per request.
 
-Preferred anchor: **the first request the process serves** (middleware), not bare
-module load. Reasons:
+Anchor: **the first request the process serves** (middleware), not bare module
+load. It proves the process is up and routable, and it needs no Dockerfile or
+build-pipeline change.
 
-- it proves the process is actually up and routable, so the purge cannot land
-  while the container is still starting;
-- it is naturally after any traffic swap Coolify performs (see OQ-1);
-- it needs no Dockerfile or build-pipeline change.
+**The first request is necessary but NOT sufficient.** §5.7 established that
+Coolify overlaps the two containers: the new one starts while the old one is
+still running and still reachable by the proxy. A purge fired on the new
+container's very first request can therefore be followed by a request routed to
+the **old** container, which re-populates the edge with the previous build's HTML
+— the purge succeeds, the log says so, and the site stays stale. That failure is
+silent and would make this entire spec a no-op.
+
+So the purge fires on a **settle delay** after the first served request: wait a
+bounded interval (order of 30-60 s) before issuing it. The delay is chosen so
+that:
+
+- it comfortably exceeds the observed "New container started → Removing old
+  containers" gap, which is effectively immediate (no health gate);
+- it stays a small fraction of the 300 s `s-maxage`, so the staleness this spec
+  removes is still removed for essentially the whole window.
 
 The purge must be dispatched **without blocking the request** — the triggering
-response is served normally while the purge runs.
+response is served normally, and the timer runs detached.
+
+An implementation that skips this delay will appear to work in every test (the
+Cloudflare call is made, with the right tag) while failing in production for the
+only reason that matters. Treat AC-12 as the load-bearing acceptance criterion.
 
 ### 6.3 Preconditions (all must hold, else no-op quietly)
 
@@ -297,8 +353,8 @@ No database changes. No schema changes. No migrations.
 
 This spec adds no variable to the registry, but it **does** make the two
 Cloudflare vars load-bearing for a code path that was previously only reachable
-from the API. Whether they are actually set on `hospeda-web-prod` and
-`hospeda-web-staging` must be verified before this ships (OQ-3).
+from the API. All four are confirmed present on both web resources (§5.7,
+OQ-3) — no Coolify change is needed to ship this.
 
 **Cloudflare contract** (unchanged, reused):
 
@@ -351,14 +407,22 @@ the previous one's.
   then confirm the first `GET` after the deploy returns `cf-cache-status: MISS`
   and the second returns `HIT`. Must be probed with `GET` — `curl -I` sends HEAD,
   which never matches the Cache Rule and always reports `DYNAMIC`.
+- **AC-12** — The purge is issued only after the settle delay, never on the first
+  request itself, and the delay is longer than the container overlap window
+  (§5.7). Verified two ways: a unit test asserting no Cloudflare call is made
+  before the delay elapses, and the AC-11 end-to-end check reading the **new**
+  build's copy — not the old one — on the first `MISS`. AC-11 passing while
+  AC-12 is unimplemented is exactly the silent failure described in §6.2.
 
 ## 10. Risks
 
-- **R-1 — Purging before the traffic swap.** If Coolify starts the new container
-  while the old one still serves, a purge fired at new-container boot would let
-  the edge re-cache the OLD build's HTML, leaving the site stale with no second
-  purge coming. Mitigated by anchoring to the first served request (§6.2) rather
-  than module load; must still be verified (OQ-1).
+- **R-1 — Purging during the container overlap. CONFIRMED REAL, not theoretical.**
+  §5.7 verified that Coolify starts the new container before removing the old
+  one, with no health gate between the two. A purge landing inside that window
+  lets a request served by the OLD container re-populate the edge, and no second
+  purge is coming. This is the highest-severity risk in this spec because it
+  fails *silently*: every log line and every test reports success. Mitigated by
+  the settle delay in §6.2 and asserted by AC-12.
 - **R-2 — Rate-limit collision.** The deploy purge spends from the same 5/min
   Cloudflare budget as `RevalidationService`. A deploy landing during a burst of
   entity writes can 403. Mitigated by bounded retry with 12 s-aware backoff
@@ -378,21 +442,42 @@ the previous one's.
 
 ## 11. Open questions
 
-- **OQ-1 — Does Coolify perform a zero-downtime swap for `hospeda-web-prod` /
-  `hospeda-web-staging`, and if so, at what point does traffic move to the new
-  container?** This decides whether "first served request" is genuinely after the
-  swap. Verify against the Coolify deployment settings before implementing;
-  if the old container can still be serving when the new one takes its first
-  request, the anchor needs to move to the healthcheck-passing signal instead.
-- **OQ-2 — How many replicas does the web app run per environment?** One replica
-  makes this one request. More than one turns each deploy into a burst, and §6.6
-  would need a coordination mechanism (or acceptance that the extra calls 403 and
-  get logged).
-- **OQ-3 — Are `CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN` actually set on
-  `hospeda-web-prod` and `hospeda-web-staging`?** Both are `required: false` in
-  the registry, and a prior env-registry audit flagged missing Cloudflare vars on
-  the web resources. If unset, this ships as a silent no-op. Check with
-  `hops env-list web --target=prod|staging`.
+All three questions raised when this spec was drafted were resolved against the
+live VPS on 2026-08-10, before implementation started. Kept here with their
+answers because each one changed the design.
+
+- **OQ-1 — Does Coolify overlap the old and new containers? — RESOLVED: YES.**
+  It performs a rolling update (new container Created → Starting → Started →
+  "Removing old containers"), and `health_check_enabled = False` means nothing
+  gates the gap. See §5.7 for the deployment log. **This inverted the design:**
+  the original "purge on first served request" anchor was unsafe on its own, and
+  §6.2 now requires a settle delay. Recorded as R-1 and AC-12.
+- **OQ-2 — How many replicas per environment? — RESOLVED: one.** Every Coolify
+  resource on the VPS runs exactly one container, `hospeda-web-prod` and
+  `hospeda-web-staging` included. One deploy is one purge; the burst/403 concern
+  in §6.6 does not apply today. It would return if replicas are ever added.
+- **OQ-3 — Are the Cloudflare variables set on both web resources? — RESOLVED:
+  yes, all of them.** `CLOUDFLARE_ZONE_ID`, `CLOUDFLARE_API_TOKEN`,
+  `HOSPEDA_REVALIDATION_SECRET` are present on `hospeda-web-prod` and
+  `hospeda-web-staging`, and `HOSPEDA_DEPLOY_ENV` reads `prod` and `preview`
+  respectively. So this does not ship as a silent no-op, and the tags are
+  `prod:all` / `preview:all`. (The prior env-registry note about missing
+  Cloudflare vars on the web resources is stale.)
+
+### 11.1 Findings outside this spec's scope
+
+Two things surfaced while resolving the above. Neither blocks this spec; both
+deserve their own Linear issue.
+
+- **`health_check_enabled = False` on `hospeda-web-prod`.** Coolify removes the
+  old container once the new one has *started*, not once it is *ready*. Astro
+  Node standalone needs a moment to bind its port, so every deploy plausibly has
+  a brief window serving 502s. Not measured here — worth measuring, and worth
+  enabling the healthcheck (`health_check_path` is already configured as `GET /`,
+  just disabled).
+- **`COOLIFY_API_TOKEN` is stored unquoted** in `scripts/server-tools/.env.local`
+  on the VPS and contains a character the shell interprets, so `source`-ing that
+  file both breaks and echoes part of the value. Quote it.
 
 ## 12. Implementation notes
 
