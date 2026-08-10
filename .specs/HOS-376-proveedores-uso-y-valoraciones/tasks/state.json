@@ -1418,32 +1418,41 @@
         {
             "id": "T-038",
             "title": "Endpoints admin de usos y suspensión de declaración",
-            "description": "GET /admin/host-trades/usages (HOST_TRADE_USAGE_VIEW_ALL, filtros por status, hostTradeId, creationChannel, rango de fechas) y POST /admin/host-trades/{id}/declaration-suspension (HOST_TRADE_USAGE_MANAGE, aplicar o levantar con motivo). Tests: levantar la suspensión registra el declarationSuspendedById del admin (AC-12); filtrar por creationChannel=EMAIL_LOOKUP permite auditar el fallback.",
-            "status": "pending",
+            "description": "GET /admin/host-trades/usages (HOST_TRADE_USAGE_VIEW_ALL, filtros por status, hostTradeId, creationChannel, rango de fechas) y POST /admin/host-trades/{id}/declaration-suspension (HOST_TRADE_USAGE_MANAGE, aplicar o levantar con motivo). Tests: levantar la suspensión registra el declarationSuspendedById del admin (AC-12); filtrar por creationChannel=EMAIL_LOOKUP permite auditar el fallback. CERRADA. HALLAZGO QUE FRENO LA TAREA Y SE RESOLVIO CON DECISION DEL OWNER: el filtro `status` NUNCA habria llegado al query. BaseCrudRead.adminList destructura `status` FUERA de entityFilters y hace where.lifecycleState = status, porque para todo otro entity eso significa `status`. Este schema lo OVERRIDEA con el enum de la maquina de estados del uso, y host_trade_benefit_usages no tiene columna lifecycleState. buildWhereClause con key desconocida la loguea con warn y la SALTEA (solo tira si TODAS son desconocidas, y va deletedAt: null). O sea: ?status=REJECTED habria devuelto TODOS los usos, verde en cualquier test, mal solo en produccion. No era bug vivo — la ruta no existia — la trampa nacia CON T-038. Opcion elegida por el owner: override de _executeAdminSearch en HostTradeUsageService que descarta el lifecycleState espurio y reinyecta `status` como filtro de entidad. Local a proposito: ensenarle a la base a chequear la existencia de la columna tocaria el listado admin de unos 30 servicios para corregir un entity que renombro una key reservada. Se agrego applyDeclarationSuspension (antes solo existia el camino AUTOMATICO privado y el lift): sella declarationSuspendedById con el id del admin, mientras que el automatico lo deja NULL a proposito — NULL es como la pantalla sabe que ningun humano decidio. El motivo es OBLIGATORIO al suspender (a diferencia de la nota de rechazo, que es opcional para no ponerle friccion al unico control honesto). Suspender y levantar comparten UN endpoint con el body decidiendo cual, para que una pantalla no termine con un boton de suspender que levanta en silencio. Sobre AC-12: la spec dice: queda registrado QUIEN la levanto, y liftDeclarationSuspension lo registra en updatedById a proposito; esta descripcion nombraba mal la columna (decia declarationSuspendedById). Manda la spec, el servicio ya estaba bien. Mutacion: 4 aplicadas, 4 mataron test (suspension admin escribiendo id NULL, override sin reinyectar status, sacar el re-parse de HOS-425, invertir suspend/lift). La mutacion del re-parse CONFIRMA HOS-425 en vivo para esta ruta: sin el, una suspension sin motivo pasa el factory.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-022"],
             "blocks": ["T-056", "T-063"],
             "subtasks": [
                 {
                     "title": "GET usages con filtros",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "POST declaration-suspension",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T05:05:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T05:05:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T05:05:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T04:20:00Z",
+                "completed": "2026-08-10T05:05:00.000Z"
             }
         },
         {
@@ -2372,9 +2381,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 32,
+        "pending": 31,
         "inProgress": 0,
-        "completed": 38,
+        "completed": 39,
         "blocked": 0,
         "averageComplexity": 2.4
     }
