@@ -175,9 +175,11 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Isla React en <dialog> nativo: estrellas 1-5 para overallRating como radiogroup operable por teclado con label textual por valor (no sólo iconos), desglose de las 3 dimensiones COLAPSADO por…
   - Bloqueada por: T-034 · Bloquea a: T-049, T-054, T-067
   - `ReviewFormDialog.client.tsx`. Las estrellas son radios NATIVOS con `aria-label` textual por valor: navegación por flechas gratis, y el input queda clipeado pero **nunca** `display: none`, que lo sacaría del orden de tabulación. Desglose en un `<details>` colapsado. El booleano no tiene default y el submit se niega hasta que se responda. Un desglose intacto se **omite** del body en vez de viajar como objeto de `undefined`s: el body es `.strict()` y el agregado lee distinto `null` que vacío. `safeParse` del schema compartido es el último gate, pero los tres rechazos alcanzables se chequean antes con copy propia, porque los mensajes del schema son claves i18n del traductor de la API.
-- [ ] **T-049** (c2) — Modo edición de la valoración y cartel de réplica desactualizada
+- [~] **T-049** (c2, EN CURSO) — Modo edición de la valoración y cartel de réplica desactualizada
   - Si el anfitrión ya valoró, el mismo formulario abre precargado en modo edición y hace PATCH. En el listado público, cuando reviewEditedAfterReply es true, mostrar el cartel 'la valoración fu…
-  - Bloqueada por: T-048, T-034 · Bloquea a: —
+  - Bloqueada por: T-048, T-034, **T-053 (agregada)** · Bloquea a: —
+  - **Modo edición LISTO**: el diálogo lee `my-review` al abrir y decide entre publicar y editar; una lectura fallida cae al formulario de creación en vez de bloquear (negarse a abrir dejaría al anfitrión sin poder decir nada, y el POST igual responde 409 con copy propia). El `PATCH` manda un **diff**, no el formulario entero: cambiar el TEXTO re-corre moderación y puede bajar la valoración del directorio, así que reenviar un `content` intacto convertiría una edición de estrellas en una reescritura — y podría devolver como `APPROVED` un texto que un moderador bajó. Un comentario vaciado viaja como `null` (borrado), no ausente.
+  - **Falta el cartel de réplica desactualizada**, y no por olvido: vive en el listado público de valoraciones, que lo construye T-053. El grafo no declaraba esa dependencia y ahora sí — no se puede renderizar un cartel en un listado que no existe.
 - [ ] **T-050** (c3) — Pestañas del proveedor en /mi-cuenta/proveedor
   - Extender la ficha existente con tres pestañas: Usos (declarar por selector o email + pendientes marcados como tales + historial), Valoraciones (listado con acción de responder), Mi QR (previ…
   - Bloqueada por: T-031, T-032, T-036 · Bloquea a: T-051, T-054

@@ -22,13 +22,15 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockListUsages, mockListPending, mockConfirm, mockReject, mockUndo } = vi.hoisted(() => ({
-    mockListUsages: vi.fn(),
-    mockListPending: vi.fn(),
-    mockConfirm: vi.fn(),
-    mockReject: vi.fn(),
-    mockUndo: vi.fn()
-}));
+const { mockListUsages, mockListPending, mockConfirm, mockReject, mockUndo, mockGetMyReview } =
+    vi.hoisted(() => ({
+        mockListUsages: vi.fn(),
+        mockListPending: vi.fn(),
+        mockConfirm: vi.fn(),
+        mockReject: vi.fn(),
+        mockUndo: vi.fn(),
+        mockGetMyReview: vi.fn()
+    }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     hostTradesApi: {
@@ -36,7 +38,10 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         listPendingUsages: (...args: unknown[]) => mockListPending(...args),
         confirmUsage: (...args: unknown[]) => mockConfirm(...args),
         rejectUsage: (...args: unknown[]) => mockReject(...args),
-        undoUsageRejection: (...args: unknown[]) => mockUndo(...args)
+        undoUsageRejection: (...args: unknown[]) => mockUndo(...args),
+        // The review dialog reads this back on open to decide between
+        // publishing and editing, so the panel's mock has to answer it.
+        getMyReview: (...args: unknown[]) => mockGetMyReview(...args)
     }
 }));
 
@@ -136,6 +141,8 @@ beforeEach(() => {
     });
     mockReject.mockResolvedValue({ ok: true, data: { usage: makeUsage({ status: 'REJECTED' }) } });
     mockUndo.mockResolvedValue({ ok: true, data: { usage: makeUsage() } });
+    mockGetMyReview.mockReset();
+    mockGetMyReview.mockResolvedValue({ ok: true, data: { review: null } });
 });
 
 afterEach(() => {

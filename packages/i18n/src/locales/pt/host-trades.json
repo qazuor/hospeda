@@ -166,8 +166,12 @@
             "benefitRequired": "Conte se o fornecedor respeitou o benefício.",
             "contentTooShort": "O comentário precisa ter pelo menos {{min}} caracteres, ou você pode deixá-lo vazio.",
             "invalid": "Revise os dados da avaliação antes de publicá-la.",
-            "generic": "Não conseguimos publicar sua avaliação. Tente novamente em instantes."
+            "generic": "Não conseguimos publicar sua avaliação. Tente novamente em instantes.",
+            "noChanges": "Você não alterou nada na sua avaliação."
         },
-        "cta": "Avaliar {{name}}"
+        "cta": "Avaliar {{name}}",
+        "editTitle": "Editar sua avaliação de {{name}}",
+        "save": "Salvar alterações",
+        "loading": "Verificando se você já avaliou…"
     }
 }

@@ -166,8 +166,12 @@
             "benefitRequired": "Tell us whether the provider honoured the benefit.",
             "contentTooShort": "The comment needs at least {{min}} characters, or you can leave it empty.",
             "invalid": "Check the review details before publishing it.",
-            "generic": "We could not publish your review. Please try again in a moment."
+            "generic": "We could not publish your review. Please try again in a moment.",
+            "noChanges": "You did not change anything in your review."
         },
-        "cta": "Review {{name}}"
+        "cta": "Review {{name}}",
+        "editTitle": "Edit your review of {{name}}",
+        "save": "Save changes",
+        "loading": "Checking whether you already reviewed them…"
     }
 }

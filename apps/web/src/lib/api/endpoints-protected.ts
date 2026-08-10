@@ -21,6 +21,7 @@ import type {
     HostTradeCategoryEnum,
     HostTradeOwnerUpdate,
     HostTradeReviewCreateBody,
+    HostTradeReviewUpdateBody,
     KeepSelections,
     LinkPreapprovalResponse,
     OccupancySourceEnum,
@@ -2344,6 +2345,55 @@ export const hostTradesApi = {
     }): Promise<ApiResult<{ readonly review: HostTradeReview }>> {
         return apiClient.postProtected({
             path: `${PROTECTED}/host-trades/${encodeURIComponent(hostTradeId)}/reviews`,
+            body
+        });
+    },
+
+    /**
+     * Reads back the caller's own review of a provider (HOS-376 T-049).
+     *
+     * Answers `{ review: null }` rather than 404 when none exists — that is an
+     * ordinary state, and it is what decides between "write a review" and "edit
+     * yours".
+     *
+     * @param params - The provider `hostTradeId`, plus `cookieHeader` from SSR.
+     * @returns The caller's review, or null.
+     */
+    getMyReview({
+        hostTradeId,
+        cookieHeader
+    }: {
+        hostTradeId: string;
+        cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly review: HostTradeReview | null }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/${encodeURIComponent(hostTradeId)}/my-review`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Edits the caller's own review (HOS-376 T-049).
+     *
+     * ONLY THE FIELDS SENT ARE CHANGED, and that is load-bearing rather than a
+     * convenience: changing the TEXT re-runs moderation and can pull the review
+     * out of the directory until it is approved again. Resending an untouched
+     * `content` would therefore turn a star-only edit into a rewrite — and could
+     * hand back as APPROVED a text a moderator had rejected. Callers must send a
+     * diff, never the whole form.
+     *
+     * @param params - The `reviewId` and the changed fields only.
+     * @returns The updated review, or a typed error (404 when it is not yours).
+     */
+    updateReview({
+        reviewId,
+        body
+    }: {
+        reviewId: string;
+        body: HostTradeReviewUpdateBody;
+    }): Promise<ApiResult<{ readonly review: HostTradeReview }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/host-trades/reviews/${encodeURIComponent(reviewId)}`,
             body
         });
     },

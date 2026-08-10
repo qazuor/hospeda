@@ -22,11 +22,17 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockCreateReview } = vi.hoisted(() => ({ mockCreateReview: vi.fn() }));
+const { mockCreateReview, mockGetMyReview, mockUpdateReview } = vi.hoisted(() => ({
+    mockCreateReview: vi.fn(),
+    mockGetMyReview: vi.fn(),
+    mockUpdateReview: vi.fn()
+}));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     hostTradesApi: {
-        createReview: (...args: unknown[]) => mockCreateReview(...args)
+        createReview: (...args: unknown[]) => mockCreateReview(...args),
+        getMyReview: (...args: unknown[]) => mockGetMyReview(...args),
+        updateReview: (...args: unknown[]) => mockUpdateReview(...args)
     }
 }));
 
@@ -52,17 +58,51 @@ function submittedBody(): Record<string, unknown> {
     return mockCreateReview.mock.calls[0][0].body as Record<string, unknown>;
 }
 
+/**
+ * Waits for the read-back to finish and the form to render.
+ *
+ * The dialog asks `my-review` before it can know whether it is publishing or
+ * editing, so nothing is on screen synchronously.
+ */
+async function formReady() {
+    return screen.findByRole('group', { name: /puntuación general/i });
+}
+
 /** Fills the two mandatory answers: 4 stars and "respected the benefit". */
 async function fillMandatory(user: ReturnType<typeof userEvent.setup>) {
     await user.click(screen.getByRole('radio', { name: /4 estrellas/i }));
     await user.click(screen.getByRole('radio', { name: /^sí$/i }));
 }
 
+/** An existing review, as `my-review` hands it back. */
+const EXISTING_REVIEW = {
+    id: 'review-1',
+    hostTradeId: PROVIDER_ID,
+    hostUserId: '11111111-1111-4111-8111-111111111111',
+    overallRating: 3,
+    rating: { punctuality: 2 },
+    averageRating: 2,
+    respectedBenefit: false,
+    content: 'Tardó bastante en venir la primera vez.',
+    moderationState: 'APPROVED',
+    editedAt: null,
+    createdAt: '2026-08-01T00:00:00.000Z',
+    updatedAt: '2026-08-01T00:00:00.000Z'
+};
+
 beforeEach(() => {
     mockCreateReview.mockReset();
+    mockGetMyReview.mockReset();
+    mockUpdateReview.mockReset();
     mockCreateReview.mockResolvedValue({
         ok: true,
         data: { review: { id: 'review-1', moderationState: 'APPROVED' } }
+    });
+    // Nothing written yet — the create path, which most tests exercise.
+    mockGetMyReview.mockResolvedValue({ ok: true, data: { review: null } });
+    mockUpdateReview.mockResolvedValue({
+        ok: true,
+        data: { review: { ...EXISTING_REVIEW, moderationState: 'APPROVED' } }
     });
 });
 
@@ -75,19 +115,19 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 
 describe('ReviewFormDialog — the stars', () => {
-    it('exposes five radios with a textual label each, not bare icons', () => {
+    it('exposes five radios with a textual label each, not bare icons', async () => {
         renderDialog();
 
-        const stars = screen.getByRole('group', { name: /puntuación general/i });
+        const stars = await formReady();
         expect(within(stars).getAllByRole('radio')).toHaveLength(5);
         expect(within(stars).getByRole('radio', { name: /1 estrella/i })).toBeInTheDocument();
         expect(within(stars).getByRole('radio', { name: /5 estrellas/i })).toBeInTheDocument();
     });
 
-    it('starts with no star chosen, so nothing is submitted by omission', () => {
+    it('starts with no star chosen, so nothing is submitted by omission', async () => {
         renderDialog();
 
-        const stars = screen.getByRole('group', { name: /puntuación general/i });
+        const stars = await formReady();
         for (const radio of within(stars).getAllByRole('radio')) {
             expect(radio).not.toBeChecked();
         }
@@ -96,6 +136,7 @@ describe('ReviewFormDialog — the stars', () => {
     it('is operable from the keyboard', async () => {
         const user = userEvent.setup();
         renderDialog();
+        await formReady();
 
         const first = screen.getByRole('radio', { name: /1 estrella/i });
         first.focus();
@@ -110,8 +151,9 @@ describe('ReviewFormDialog — the stars', () => {
 // ---------------------------------------------------------------------------
 
 describe('ReviewFormDialog — the benefit question', () => {
-    it('offers an explicit yes/no with neither preselected', () => {
+    it('offers an explicit yes/no with neither preselected', async () => {
         renderDialog();
+        await formReady();
 
         const group = screen.getByRole('group', { name: /beneficio/i });
         expect(within(group).getByRole('radio', { name: /^sí$/i })).not.toBeChecked();
@@ -121,6 +163,7 @@ describe('ReviewFormDialog — the benefit question', () => {
     it('refuses to submit until it is answered, without spending a request', async () => {
         const user = userEvent.setup();
         renderDialog();
+        await formReady();
 
         await user.click(screen.getByRole('radio', { name: /4 estrellas/i }));
         await user.click(screen.getByRole('button', { name: /publicar/i }));
@@ -132,6 +175,7 @@ describe('ReviewFormDialog — the benefit question', () => {
     it('submits false when the host says the benefit was not honoured', async () => {
         const user = userEvent.setup();
         renderDialog();
+        await formReady();
 
         await user.click(screen.getByRole('radio', { name: /4 estrellas/i }));
         await user.click(screen.getByRole('radio', { name: /^no$/i }));
@@ -150,6 +194,7 @@ describe('ReviewFormDialog — what it refuses to send', () => {
     it('refuses to submit without a star rating', async () => {
         const user = userEvent.setup();
         renderDialog();
+        await formReady();
 
         await user.click(screen.getByRole('radio', { name: /^sí$/i }));
         await user.click(screen.getByRole('button', { name: /publicar/i }));
@@ -163,6 +208,7 @@ describe('ReviewFormDialog — what it refuses to send', () => {
         // request to be told the same thing in a language the host did not pick.
         const user = userEvent.setup();
         renderDialog();
+        await formReady();
 
         await fillMandatory(user);
         await user.type(screen.getByLabelText(/comentario/i), 'corto');
@@ -178,8 +224,9 @@ describe('ReviewFormDialog — what it refuses to send', () => {
 // ---------------------------------------------------------------------------
 
 describe('ReviewFormDialog — the optional breakdown', () => {
-    it('starts collapsed', () => {
+    it('starts collapsed', async () => {
         renderDialog();
+        await formReady();
 
         // Queried through the summary rather than by role+name: jsdom does not
         // derive a `<details>` accessible name from its `<summary>`, so a
@@ -191,6 +238,7 @@ describe('ReviewFormDialog — the optional breakdown', () => {
     it('omits `rating` entirely when the host left the breakdown alone', async () => {
         const user = userEvent.setup();
         renderDialog();
+        await formReady();
 
         await fillMandatory(user);
         await user.click(screen.getByRole('button', { name: /publicar/i }));
@@ -204,6 +252,7 @@ describe('ReviewFormDialog — the optional breakdown', () => {
     it('sends only the dimensions the host actually scored', async () => {
         const user = userEvent.setup();
         renderDialog();
+        await formReady();
 
         await fillMandatory(user);
         await user.click(screen.getByText(/detalle/i));
@@ -224,6 +273,7 @@ describe('ReviewFormDialog — outcomes', () => {
         const onSaved = vi.fn();
         const user = userEvent.setup();
         renderDialog({ onSaved });
+        await formReady();
 
         await fillMandatory(user);
         await user.type(screen.getByLabelText(/comentario/i), 'Vino el mismo día y resolvió todo.');
@@ -248,6 +298,7 @@ describe('ReviewFormDialog — outcomes', () => {
         const onSaved = vi.fn();
         const user = userEvent.setup();
         renderDialog({ onSaved });
+        await formReady();
 
         await fillMandatory(user);
         await user.click(screen.getByRole('button', { name: /publicar/i }));
@@ -263,6 +314,7 @@ describe('ReviewFormDialog — outcomes', () => {
         });
         const user = userEvent.setup();
         renderDialog();
+        await formReady();
 
         await fillMandatory(user);
         await user.click(screen.getByRole('button', { name: /publicar/i }));
@@ -277,6 +329,7 @@ describe('ReviewFormDialog — outcomes', () => {
         });
         const user = userEvent.setup();
         renderDialog();
+        await formReady();
 
         await fillMandatory(user);
         await user.type(screen.getByLabelText(/comentario/i), 'Un texto que no quiero reescribir.');
@@ -292,10 +345,125 @@ describe('ReviewFormDialog — outcomes', () => {
         const onClose = vi.fn();
         const user = userEvent.setup();
         renderDialog({ onClose });
+        await formReady();
 
         await user.click(screen.getByRole('button', { name: /cancelar/i }));
 
         expect(onClose).toHaveBeenCalledTimes(1);
         expect(mockCreateReview).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Edit mode (T-049)
+// ---------------------------------------------------------------------------
+
+describe('ReviewFormDialog — editing an existing review', () => {
+    /** Renders with a review already on file, and waits for it to load. */
+    async function renderEditing(overrides: { onSaved?: () => void } = {}) {
+        mockGetMyReview.mockResolvedValue({ ok: true, data: { review: EXISTING_REVIEW } });
+        const result = renderDialog(overrides);
+        await screen.findByRole('button', { name: /guardar/i });
+        return result;
+    }
+
+    it('preloads every value the host had written', async () => {
+        await renderEditing();
+
+        expect(screen.getByRole('radio', { name: /3 estrellas/i })).toBeChecked();
+        expect(screen.getByRole('radio', { name: /^no$/i })).toBeChecked();
+        expect(screen.getByLabelText(/comentario/i)).toHaveValue(EXISTING_REVIEW.content);
+        expect(screen.getByRole('radio', { name: /puntualidad: 2/i })).toBeChecked();
+    });
+
+    it('sends ONLY the field that changed', async () => {
+        // The decisive one. Changing the TEXT re-runs moderation and can pull
+        // the review out of the directory; resending an untouched `content`
+        // would turn a star-only edit into a rewrite, and could hand back as
+        // APPROVED a text a moderator had already rejected.
+        const user = await renderEditing().then(() => userEvent.setup());
+
+        await user.click(screen.getByRole('radio', { name: /5 estrellas/i }));
+        await user.click(screen.getByRole('button', { name: /guardar/i }));
+
+        await waitFor(() => expect(mockUpdateReview).toHaveBeenCalledTimes(1));
+        expect(mockUpdateReview.mock.calls[0][0]).toEqual({
+            reviewId: EXISTING_REVIEW.id,
+            body: { overallRating: 5 }
+        });
+    });
+
+    it('sends the text when the text is what changed', async () => {
+        // The complementary case: without it, "sends only what changed" would
+        // also pass on a form that never sends anything at all.
+        const user = await renderEditing().then(() => userEvent.setup());
+
+        const textarea = screen.getByLabelText(/comentario/i);
+        await user.clear(textarea);
+        await user.type(textarea, 'Al final volvió y lo resolvió bien.');
+        await user.click(screen.getByRole('button', { name: /guardar/i }));
+
+        await waitFor(() => expect(mockUpdateReview).toHaveBeenCalledTimes(1));
+        expect(mockUpdateReview.mock.calls[0][0].body).toEqual({
+            content: 'Al final volvió y lo resolvió bien.'
+        });
+    });
+
+    it('creates nothing while editing', async () => {
+        const user = await renderEditing().then(() => userEvent.setup());
+
+        await user.click(screen.getByRole('radio', { name: /5 estrellas/i }));
+        await user.click(screen.getByRole('button', { name: /guardar/i }));
+
+        await waitFor(() => expect(mockUpdateReview).toHaveBeenCalled());
+        expect(mockCreateReview).not.toHaveBeenCalled();
+    });
+
+    it('says there is nothing to save when nothing was touched', async () => {
+        const user = await renderEditing().then(() => userEvent.setup());
+
+        await user.click(screen.getByRole('button', { name: /guardar/i }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent(/no cambiaste/i);
+        expect(mockUpdateReview).not.toHaveBeenCalled();
+    });
+
+    it('warns that editing the text sends the review back to moderation', async () => {
+        mockUpdateReview.mockResolvedValue({
+            ok: true,
+            data: { review: { ...EXISTING_REVIEW, moderationState: 'PENDING' } }
+        });
+        const user = await renderEditing().then(() => userEvent.setup());
+
+        const textarea = screen.getByLabelText(/comentario/i);
+        await user.clear(textarea);
+        await user.type(textarea, 'Un texto nuevo y distinto del anterior.');
+        await user.click(screen.getByRole('button', { name: /guardar/i }));
+
+        expect(await screen.findByRole('status')).toHaveTextContent(/revisión/i);
+    });
+
+    it('offers publishing, not saving, when there is no review yet', async () => {
+        const user = userEvent.setup();
+        renderDialog();
+
+        await waitFor(() => expect(mockGetMyReview).toHaveBeenCalledTimes(1));
+        expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /guardar/i })).toBeNull();
+        await user.click(screen.getByRole('button', { name: /cancelar/i }));
+    });
+
+    it('treats a failed read-back as "no review yet" rather than blocking', async () => {
+        // Refusing to open on a read failure would leave the host unable to say
+        // anything; the create path still answers 409 if one does exist, with
+        // its own copy.
+        mockGetMyReview.mockResolvedValue({
+            ok: false,
+            error: { status: 500, code: 'INTERNAL_ERROR', message: 'boom' }
+        });
+        renderDialog();
+
+        await waitFor(() => expect(mockGetMyReview).toHaveBeenCalled());
+        expect(await screen.findByRole('button', { name: /publicar/i })).toBeInTheDocument();
     });
 });

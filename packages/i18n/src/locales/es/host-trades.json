@@ -166,8 +166,12 @@
             "benefitRequired": "Contanos si el proveedor respetó el beneficio.",
             "contentTooShort": "El comentario tiene que tener al menos {{min}} caracteres, o podés dejarlo vacío.",
             "invalid": "Revisá los datos de la valoración antes de publicarla.",
-            "generic": "No pudimos publicar tu valoración. Probá de nuevo en un momento."
+            "generic": "No pudimos publicar tu valoración. Probá de nuevo en un momento.",
+            "noChanges": "No cambiaste nada de tu valoración."
         },
-        "cta": "Valorar a {{name}}"
+        "cta": "Valorar a {{name}}",
+        "editTitle": "Editar tu valoración de {{name}}",
+        "save": "Guardar cambios",
+        "loading": "Buscando si ya lo valoraste…"
     }
 }
