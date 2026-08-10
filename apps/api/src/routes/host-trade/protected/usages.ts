@@ -32,6 +32,7 @@ import {
 import { HostTradeService, HostTradeUsageService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { notifyUsageDeclared } from '../../../lib/host-trade-notifications';
 import { hostDeclarationRateLimit } from '../../../middlewares/host-trade-rate-limits';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -79,6 +80,12 @@ export async function handleDeclareUsageBySlug(
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
+    }
+
+    // Fire-and-forget (T-041): the row is already written, so a transport
+    // outage must never turn a recorded usage into a failed request.
+    if (result.data?.usage) {
+        void notifyUsageDeclared(result.data.usage as never);
     }
 
     return { usage: result.data?.usage };

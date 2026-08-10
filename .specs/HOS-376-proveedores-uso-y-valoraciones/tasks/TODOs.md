@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 41/70 tareas (59%)
+## Progreso: 42/70 tareas (60%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 11/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 12/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -144,7 +144,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-040** (c3) — Los 6 templates de mail del dominio
   - packages/notifications/src/templates/host-trade/: usage-confirmation-request, usage-confirmation-reminder, usage-confirmed, usage-rejected, review-received, reply-moderated. React Email, ESP…
   - Bloqueada por: T-012 · Bloquea a: T-041, T-043
-- [ ] **T-041** (c3) — Cablear los envíos de mail en los flujos
+- [x] **T-041** (c3) — Cablear los envíos de mail en los flujos
   - Vía apps/api/src/utils/notification-helper.ts (trySendNotification): al declarar → pedido de confirmación a la contraparte; al confirmar → aviso al declarante; al rechazar → aviso al declara…
   - Bloqueada por: T-040, T-033, T-034, T-037 · Bloquea a: T-068
 - [ ] **T-042** (c2) — Cron de expiración de usos a los 30 días

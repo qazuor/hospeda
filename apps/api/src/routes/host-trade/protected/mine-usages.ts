@@ -32,6 +32,7 @@ import {
 import { HostTradeService, HostTradeUsageService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { notifyUsageDeclared } from '../../../lib/host-trade-notifications';
 import { providerDeclarationRateLimit } from '../../../middlewares/host-trade-rate-limits';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -118,6 +119,13 @@ export async function handleDeclareUsageAsProvider(ctx: Context, body: unknown) 
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
+    }
+
+    // Fire-and-forget (T-041). The host learning about this is what the whole
+    // chain hangs on (§6.6), but the way to honour that is retries and the
+    // reminder cron — never failing a declaration that is already recorded.
+    if (result.data?.usage) {
+        void notifyUsageDeclared(result.data.usage as never);
     }
 
     return { usage: result.data?.usage };

@@ -33,6 +33,7 @@ import {
 import { HostTradeUsageService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { notifyUsageConfirmed, notifyUsageRejected } from '../../../lib/host-trade-notifications';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -55,6 +56,12 @@ export async function handleConfirmUsage(ctx: Context, params: Record<string, un
         throw new ServiceError(result.error.code, result.error.message);
     }
 
+    // Fire-and-forget (T-041): tells the declarant, and invites the review
+    // when the declarant is the one who may write it.
+    if (result.data?.usage) {
+        void notifyUsageConfirmed(result.data.usage as never);
+    }
+
     return { usage: result.data?.usage };
 }
 
@@ -70,6 +77,13 @@ export async function handleRejectUsage(
     const result = await usageService.rejectUsage({ usageId: params.id as string, note }, actor);
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
+    }
+
+    // Fire-and-forget (T-041). A rejection blocks that side from re-declaring
+    // on the pair, so the declarant cannot be left to infer it from a row that
+    // quietly stopped counting.
+    if (result.data?.usage) {
+        void notifyUsageRejected(result.data.usage as never, note);
     }
 
     return { usage: result.data?.usage };

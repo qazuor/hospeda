@@ -42,6 +42,7 @@ import {
 import { HostTradeReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { notifyReviewCreated } from '../../../lib/host-trade-notifications';
 import { hostTradeReviewRateLimit } from '../../../middlewares/host-trade-rate-limits';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -90,6 +91,12 @@ export async function handleCreateReview(
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
+    }
+
+    // Fire-and-forget (T-041): the provider hears about what was published on
+    // his own listing, which is what makes the right of reply usable.
+    if (result.data?.review) {
+        void notifyReviewCreated(result.data.review as never);
     }
 
     return { review: result.data?.review };

@@ -37,6 +37,7 @@ import {
 } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { notifyReplyModerated } from '../../../lib/host-trade-notifications';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
@@ -192,6 +193,17 @@ export const adminModerateHostTradeReplyRoute = createAdminRoute({
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
+        }
+
+        // Fire-and-forget (T-041, AC-24). This email is the ONLY place a
+        // rejected provider ever sees the moderator's reason: the protected
+        // read schema withholds it on purpose.
+        if (result.data?.reply) {
+            void notifyReplyModerated({
+                reviewId: (result.data.reply as { reviewId: string }).reviewId,
+                outcome: decision === ModerationStatusEnum.APPROVED ? 'approved' : 'rejected',
+                reason
+            });
         }
 
         return { reply: result.data?.reply };

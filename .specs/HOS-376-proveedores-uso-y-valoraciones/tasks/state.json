@@ -1538,39 +1538,48 @@
             "id": "T-041",
             "title": "Cablear los envíos de mail en los flujos",
             "description": "Vía apps/api/src/utils/notification-helper.ts (trySendNotification): al declarar → pedido de confirmación a la contraparte; al confirmar → aviso al declarante; al rechazar → aviso al declarante; al crearse una valoración → aviso al proveedor; al moderarse una réplica → aviso al proveedor con el motivo si fue rechazo. Recordar que es fire-and-forget y traga errores: NUNCA hacer que el flujo dependa del resultado. Tests: cada flujo dispara exactamente un envío del tipo esperado (con el transporte mock).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-040", "T-033", "T-034", "T-037"],
             "blocks": ["T-068"],
             "subtasks": [
                 {
                     "title": "Envío al declarar",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Envíos de confirmar y rechazar",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Envío de valoración nueva",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Envío de réplica moderada",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "notifications"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T06:40:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T06:40:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T06:40:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T06:10:00Z",
+                "completed": "2026-08-10T06:40:00.000Z"
             }
         },
         {
@@ -2399,9 +2408,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 29,
+        "pending": 28,
         "inProgress": 0,
-        "completed": 41,
+        "completed": 42,
         "blocked": 0,
         "averageComplexity": 2.4
     }
