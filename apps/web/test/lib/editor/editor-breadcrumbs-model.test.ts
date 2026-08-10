@@ -1,116 +1,83 @@
 /**
  * @file editor-breadcrumbs-model.test.ts
- * @description Guards the editor breadcrumb trail (HOS-318 T-009).
+ * @description Guards the editor's breadcrumb input (HOS-318 T-009).
+ *
+ * Rendering belongs to the shared `Breadcrumbs.astro`; this only builds the
+ * items it consumes. That component drops the LAST item (it is the page's own
+ * `<h1>`) and prepends "Inicio", so what these tests pin is the full trail — the
+ * visible result is one item shorter by design.
  */
 
 import { describe, expect, it } from 'vitest';
-import { ACCOMMODATION_EDITOR_SECTIONS } from '@/lib/editor/accommodation-editor-sections';
-import { buildEditorBreadcrumbs } from '@/lib/editor/editor-breadcrumbs-model';
+import { buildEditorBreadcrumbItems } from '@/lib/editor/editor-breadcrumbs-model';
 
 /** Builds a trail with defaults for the case under test. */
-function build(currentSectionSlug: string | null) {
-    return buildEditorBreadcrumbs({
-        locale: 'es',
+function build(currentSectionSlug: string | null, sectionLabel = 'Fotos') {
+    return buildEditorBreadcrumbItems({
         accommodationId: 'acc-uuid',
         accommodationName: 'Casa del Sol',
-        currentSectionSlug
+        currentSectionSlug,
+        propertiesLabel: 'Mis propiedades',
+        sectionLabel
     });
 }
 
-describe('buildEditorBreadcrumbs — hub', () => {
-    it('should render two crumbs', () => {
-        expect(build(null)).toHaveLength(2);
+describe('buildEditorBreadcrumbItems — hub', () => {
+    it('should end at the accommodation, which is the hub page itself', () => {
+        const items = build(null);
+
+        expect(items).toHaveLength(2);
+        expect(items[1]?.label).toBe('Casa del Sol');
     });
 
-    it('should make the accommodation the current crumb', () => {
-        const crumbs = build(null);
-
-        expect(crumbs[1]?.isCurrent).toBe(true);
-        expect(crumbs[1]?.label).toBe('Casa del Sol');
+    it('should not give the last item a path (it is the current page)', () => {
+        // A path here would render the current page as a link to itself once
+        // the shared component stops dropping it.
+        expect(build(null)[1]?.path).toBeUndefined();
     });
 
-    it('should not link the current crumb to itself', () => {
-        expect(build(null)[1]?.href).toBeNull();
-    });
-
-    it('should link back to the properties list', () => {
-        expect(build(null)[0]?.href).toBe('/es/mi-cuenta/propiedades/');
+    it('should link the properties level', () => {
+        expect(build(null)[0]?.path).toBe('mi-cuenta/propiedades');
     });
 });
 
-describe('buildEditorBreadcrumbs — section page', () => {
-    it('should render three crumbs', () => {
+describe('buildEditorBreadcrumbItems — section page', () => {
+    it('should render three levels', () => {
         expect(build('fotos')).toHaveLength(3);
     });
 
-    it('should make the section the current crumb', () => {
-        const crumbs = build('fotos');
+    it('should put the section last, with no path', () => {
+        const items = build('fotos', 'Fotos');
 
-        expect(crumbs[2]?.isCurrent).toBe(true);
-        expect(crumbs[2]?.href).toBeNull();
+        expect(items[2]?.label).toBe('Fotos');
+        expect(items[2]?.path).toBeUndefined();
     });
 
-    it('should turn the accommodation crumb into a link back to the hub', () => {
-        const crumbs = build('fotos');
-
-        expect(crumbs[1]?.isCurrent).toBe(false);
-        expect(crumbs[1]?.href).toBe('/es/mi-cuenta/propiedades/acc-uuid/editar/');
+    it('should turn the accommodation into a link back to the hub', () => {
+        expect(build('fotos')[1]?.path).toBe('mi-cuenta/propiedades/acc-uuid/editar');
     });
 
-    it('should mark exactly one crumb as current, for every section', () => {
-        for (const section of ACCOMMODATION_EDITOR_SECTIONS) {
-            const current = build(section.slug).filter((crumb) => crumb.isCurrent);
-
-            expect(current, `section ${section.slug}`).toHaveLength(1);
-        }
+    it('should use the section label the caller resolved', () => {
+        // The label comes from the page title, already translated — this module
+        // never touches i18n.
+        expect(build('calendario', 'Calendario')[2]?.label).toBe('Calendario');
     });
 
-    it('should label the last crumb with the section label key', () => {
-        for (const section of ACCOMMODATION_EDITOR_SECTIONS) {
-            const crumbs = build(section.slug);
+    it('should never give the last item a path, for any section', () => {
+        for (const slug of ['fotos', 'calendario', 'datos', 'contacto']) {
+            const items = build(slug);
 
-            expect(crumbs[2]?.labelKey, `section ${section.slug}`).toBe(section.labelKey);
+            expect(items[items.length - 1]?.path, `slug ${slug}`).toBeUndefined();
         }
     });
 });
 
-describe('buildEditorBreadcrumbs — robustness', () => {
-    it('should degrade to the hub trail for an unknown slug', () => {
-        // A bad URL segment must not produce a crumb naming a section that does
-        // not exist.
-        const crumbs = build('no-existe');
-
-        expect(crumbs).toHaveLength(2);
-        expect(crumbs[1]?.isCurrent).toBe(true);
-    });
-
-    it('should give every crumb exactly one of label or labelKey', () => {
-        for (const crumb of build('calendario')) {
-            const hasLabel = crumb.label !== undefined;
-            const hasKey = crumb.labelKey !== undefined;
-
-            expect(hasLabel !== hasKey).toBe(true);
-        }
-    });
-
-    it('should never link the last crumb', () => {
-        for (const slug of [null, 'fotos', 'calendario', 'no-existe']) {
-            const crumbs = build(slug);
-
-            expect(crumbs[crumbs.length - 1]?.href, `slug ${slug}`).toBeNull();
-        }
-    });
-
-    it('should honour the locale on every link', () => {
-        const crumbs = buildEditorBreadcrumbs({
-            locale: 'en',
-            accommodationId: 'acc-uuid',
-            accommodationName: 'Casa del Sol',
-            currentSectionSlug: 'fotos'
-        });
-
-        for (const crumb of crumbs) {
-            if (crumb.href) expect(crumb.href.startsWith('/en/')).toBe(true);
+describe('buildEditorBreadcrumbItems — paths are relative', () => {
+    it('should not embed a locale prefix (buildUrl adds it downstream)', () => {
+        // A path starting with `/es/` would be double-prefixed into
+        // `/es/es/mi-cuenta/...` by the shared component's buildUrl call.
+        for (const item of build('fotos')) {
+            if (item.path) expect(item.path.startsWith('/')).toBe(false);
         }
     });
 });

@@ -58,14 +58,10 @@ const statuses = resolveEditorSectionStatuses({
 	currentSectionId={null}
 	currentSectionSlug={null}
 	hasTranslations={data.translations !== null}
-	title={t('host.properties.editor.hub.title', 'Editar propiedad')}
+	title={accommodation.name}
+	subtitle={t('host.properties.editor.hub.subtitle', 'Elegí qué querés editar')}
 	description={t('host.properties.editor.pageDescription', 'Editar información de tu propiedad')}
 >
-	<h1 class="editor-hub-page__title">{accommodation.name}</h1>
-	<p class="editor-hub-page__subtitle">
-		{t('host.properties.editor.hub.subtitle', 'Elegí qué querés editar')}
-	</p>
-
 	<EditorHub
 		locale={locale}
 		accommodationId={accommodationId}
@@ -85,22 +81,8 @@ const statuses = resolveEditorSectionStatuses({
 </EditorSectionLayout>
 
 <style>
-	.editor-hub-page__title {
-		margin: 0 0 0.25rem;
-		font-family: var(--font-heading);
-		font-size: 1.75rem;
-		font-weight: 600;
-		color: var(--core-foreground);
-	}
-
-	.editor-hub-page__subtitle {
-		margin: 0 0 var(--space-5, 1.5rem);
-		font-family: var(--font-sans);
-		color: var(--core-muted-foreground);
-	}
-
 	.editor-hub-page__extra {
 		max-width: 720px;
-		margin-top: var(--space-6, 2rem);
+		margin-top: var(--space-5, 1.5rem);
 	}
 </style>

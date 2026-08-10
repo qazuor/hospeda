@@ -9,7 +9,9 @@
  * redirect to the first section. A redirect would also trap the back button
  * (section → hub → re-redirect).
  *
- * Zero JavaScript.
+ * Each group is an `AccountSectionCard`, the same surface every other
+ * `/mi-cuenta` page uses, so the hub reads as part of the account area rather
+ * than as a bespoke screen. Zero JavaScript.
  *
  * Design constraints, all driven by the audience (largely older, non-technical
  * hosts): every row is a 44px+ tap target, every icon sits BESIDE its text and
@@ -17,6 +19,7 @@
  * on colour.
  */
 
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import {
 	ACCOMMODATION_EDITOR_SECTIONS,
 	buildEditorSectionUrl,
@@ -51,10 +54,7 @@ const groups = EDITOR_SECTION_GROUPS.map((group) => ({
 
 <div class="editor-hub">
 	{groups.map((entry) => (
-		<section class="editor-hub__group" aria-labelledby={`hub-group-${entry.group}`}>
-			<h2 class="editor-hub__group-heading" id={`hub-group-${entry.group}`}>
-				{t(entry.headingKey)}
-			</h2>
+		<AccountSectionCard title={t(entry.headingKey)}>
 			<ul class="editor-hub__list">
 				{entry.sections.map((section) => {
 					const status = statuses[section.id];
@@ -83,43 +83,30 @@ const groups = EDITOR_SECTION_GROUPS.map((group) => ({
 					);
 				})}
 			</ul>
-		</section>
+		</AccountSectionCard>
 	))}
 </div>
 
 <style>
 	.editor-hub {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-5, 1.5rem);
 		max-width: 720px;
-	}
-
-	.editor-hub__group + .editor-hub__group {
-		margin-top: var(--space-6, 2rem);
-	}
-
-	.editor-hub__group-heading {
-		margin: 0 0 var(--space-2, 0.5rem);
-		font-family: var(--font-sans);
-		font-size: 0.8125rem;
-		font-weight: 600;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-		color: var(--core-muted-foreground);
 	}
 
 	.editor-hub__list {
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		border-radius: var(--radius-card, 24px);
-		overflow: hidden;
-		background-color: var(--core-card);
-		box-shadow: var(--shadow-card);
 	}
 
 	.editor-hub__item + .editor-hub__item .editor-hub__row {
 		border-top: 1px solid var(--border);
 	}
 
+	/* Rows bleed to the card's edges so the hover/focus surface covers the full
+	   width, while the text keeps the card's own inner rhythm. */
 	.editor-hub__row {
 		display: flex;
 		align-items: center;
@@ -128,7 +115,8 @@ const groups = EDITOR_SECTION_GROUPS.map((group) => ({
 		/* Tap target well above the 44px floor: this editor's audience is older
 		   and often on a phone, where a cramped row is a missed tap. */
 		min-height: 56px;
-		padding: 0.875rem 1.25rem;
+		padding: 0.875rem 0.5rem;
+		border-radius: var(--radius-md, 10px);
 		text-decoration: none;
 		color: inherit;
 		transition: background-color 150ms ease-out;
@@ -159,7 +147,7 @@ const groups = EDITOR_SECTION_GROUPS.map((group) => ({
 
 	.editor-hub__status {
 		font-family: var(--font-sans);
-		font-size: 0.8125rem;
+		font-size: var(--text-body-sm, 0.8125rem);
 		color: var(--core-muted-foreground);
 	}
 

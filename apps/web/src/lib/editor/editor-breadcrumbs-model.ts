@@ -1,85 +1,62 @@
 /**
  * @file editor-breadcrumbs-model.ts
- * @description Pure view model for the editor breadcrumbs (HOS-318 T-009).
+ * @description Builds the breadcrumb input for the editor pages (HOS-318 T-009).
  *
- * The breadcrumbs are not decoration here. The editor's audience is largely
- * older, non-technical hosts, and the whole navigation redesign rests on the
- * user always knowing where they are and how to get back. So the trail renders
- * on every editor page, including the hub.
+ * This does NOT render a trail. Rendering belongs to the shared
+ * `components/shared/navigation/Breadcrumbs.astro`, which the whole site already
+ * uses — an editor-specific breadcrumb component would have been a second
+ * convention with its own styling, drifting from the first.
+ *
+ * That component's contract, which this function feeds:
+ *  - the caller passes the FULL trail with the current page LAST,
+ *  - it drops the current page (already the page's `<h1>`),
+ *  - it prepends "Inicio" itself.
+ *
+ * So `Mis propiedades › Casa del Sol › Fotos` renders as
+ * `Inicio › Mis propiedades › Casa del Sol`.
  */
 
-import {
-    buildEditorHubUrl,
-    type EditorSection,
-    findEditorSectionBySlug
-} from '@/lib/editor/accommodation-editor-sections';
-import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-/** One crumb in the trail. */
-export interface EditorBreadcrumb {
-    /** Literal text (the accommodation's name) when set. */
-    readonly label?: string;
-    /** i18n key, when the label is translatable. Exactly one of the two is set. */
-    readonly labelKey?: string;
-    /** `null` on the last crumb — the current page is not a link to itself. */
-    readonly href: string | null;
-    readonly isCurrent: boolean;
-}
-
-// ---------------------------------------------------------------------------
-// Model
-// ---------------------------------------------------------------------------
+import type { BreadcrumbInputItem } from '@/lib/navigation/breadcrumb-trail';
 
 /**
- * Builds the breadcrumb trail for an editor page.
+ * Builds the editor's breadcrumb trail input.
  *
- * Two crumbs on the hub (`Mis propiedades › <name>`), three on a section page
- * (`… › <section>`). The last crumb is never a link.
- *
- * @param params - Locale, accommodation identity, and the active section slug.
- * @returns The crumbs, outermost first.
+ * @param params - Accommodation identity, the active section, and the resolved
+ * labels (resolved by the caller, which owns the `t` function).
+ * @returns The full trail, current page last, for `Breadcrumbs.astro`.
  */
-export function buildEditorBreadcrumbs({
-    locale,
+export function buildEditorBreadcrumbItems({
     accommodationId,
     accommodationName,
-    currentSectionSlug
+    currentSectionSlug,
+    propertiesLabel,
+    sectionLabel
 }: {
-    readonly locale: SupportedLocale;
     readonly accommodationId: string;
     readonly accommodationName: string;
-    /** `null` on the hub. An unknown slug degrades to the hub trail. */
+    /** `null` on the hub, where the accommodation itself is the current page. */
     readonly currentSectionSlug: string | null;
-}): readonly EditorBreadcrumb[] {
-    const section: EditorSection | undefined =
-        currentSectionSlug === null
-            ? undefined
-            : findEditorSectionBySlug({ slug: currentSectionSlug });
-
-    const hubUrl = buildEditorHubUrl({ locale, accommodationId });
-
-    const crumbs: EditorBreadcrumb[] = [
-        {
-            labelKey: 'host.properties.editor.breadcrumb.properties',
-            href: buildUrl({ locale, path: 'mi-cuenta/propiedades' }),
-            isCurrent: false
-        },
-        {
-            label: accommodationName,
-            // On the hub this crumb IS the current page, so it stops being a link.
-            href: section ? hubUrl : null,
-            isCurrent: !section
-        }
+    readonly propertiesLabel: string;
+    /** Label of the current section. Ignored on the hub. */
+    readonly sectionLabel: string;
+}): readonly BreadcrumbInputItem[] {
+    const items: BreadcrumbInputItem[] = [
+        { label: propertiesLabel, path: 'mi-cuenta/propiedades' }
     ];
 
-    if (section) {
-        crumbs.push({ labelKey: section.labelKey, href: null, isCurrent: true });
+    if (currentSectionSlug === null) {
+        // On the hub the accommodation IS the current page, so it is the last
+        // item — the shared component drops it and the visible trail ends at
+        // "Mis propiedades".
+        items.push({ label: accommodationName });
+        return items;
     }
 
-    return crumbs;
+    items.push({
+        label: accommodationName,
+        path: `mi-cuenta/propiedades/${accommodationId}/editar`
+    });
+    items.push({ label: sectionLabel });
+
+    return items;
 }

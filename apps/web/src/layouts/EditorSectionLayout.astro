@@ -9,21 +9,26 @@
  * you are is disorienting. The sidebar looks and behaves identically inside the
  * editor and outside it.
  *
+ * It also follows the same *content* conventions as the rest of `/mi-cuenta`:
+ * `AccountLayout` renders its children directly, with `AccountPageHeader` as the
+ * page's single `<h1>`. It deliberately does NOT wrap anything in
+ * `<main class="section">` — that class carries `padding-block: var(--space-section)`
+ * (120px), which is the public-site section rhythm and pushes every account page
+ * far down the viewport. The pre-split editor did wrap itself that way; this does
+ * not.
+ *
  * All eleven editor pages (the hub plus ten sections) render through here, so
  * the auth guard, the id-param check, the data load and the redirect branches
  * are written once instead of eleven times.
- *
- * Usage from a page:
- * ```astro
- * const result = await resolveEditorSectionPage({ astro: Astro, sectionSlug: 'fotos', need: ['media'] });
- * if (result.redirect) return result.redirect;
- * ```
  */
 
-import EditorBreadcrumbs from '@/components/host/editor/EditorBreadcrumbs.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import EditorRouteNav from '@/components/host/editor/EditorRouteNav.astro';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import AccountLayout from '@/layouts/AccountLayout.astro';
+import { buildEditorBreadcrumbItems } from '@/lib/editor/editor-breadcrumbs-model';
 import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -36,6 +41,8 @@ interface Props {
 	readonly hasTranslations: boolean;
 	readonly title: string;
 	readonly description?: string;
+	/** Optional subtitle under the page heading. */
+	readonly subtitle?: string;
 }
 
 const {
@@ -47,38 +54,48 @@ const {
 	hasTranslations,
 	title,
 	description,
+	subtitle,
 } = Astro.props;
+
+const { t } = createTranslations(locale);
+
+// The shared Breadcrumbs component takes the FULL trail (current page last),
+// drops the current page itself — it is already the <h1> — and prepends Inicio.
+const breadcrumbItems = buildEditorBreadcrumbItems({
+	accommodationId,
+	accommodationName,
+	currentSectionSlug,
+	propertiesLabel: t('host.properties.editor.breadcrumb.properties', 'Mis propiedades'),
+	sectionLabel: title,
+});
 ---
 
-<AccountLayout locale={locale} title={title} description={description}>
-	<main class="section">
-		<div class="section__container">
-			<EditorBreadcrumbs
+<AccountLayout locale={locale} title={title} description={description} activeSection="propiedades">
+	<Breadcrumbs locale={locale} items={breadcrumbItems} class="editor-shell__crumbs" />
+
+	<AccountPageHeader title={title} description={subtitle} />
+
+	<div class="editor-shell">
+		<div class="editor-shell__nav">
+			<EditorRouteNav
 				locale={locale}
 				accommodationId={accommodationId}
-				accommodationName={accommodationName}
-				currentSectionSlug={currentSectionSlug}
+				currentSectionId={currentSectionId}
+				hasTranslations={hasTranslations}
 			/>
-
-			<div class="editor-shell">
-				<div class="editor-shell__nav">
-					<EditorRouteNav
-						locale={locale}
-						accommodationId={accommodationId}
-						currentSectionId={currentSectionId}
-						hasTranslations={hasTranslations}
-					/>
-				</div>
-
-				<div class="editor-shell__body">
-					<slot />
-				</div>
-			</div>
 		</div>
-	</main>
+
+		<div class="editor-shell__body">
+			<slot />
+		</div>
+	</div>
 </AccountLayout>
 
 <style>
+	.editor-shell__crumbs {
+		margin-bottom: var(--space-3, 1rem);
+	}
+
 	/* Same two-column geometry the pre-split editor used (220px nav from
 	   1100px up). Desktop must not visibly change shape — see D-1. */
 	.editor-shell {
