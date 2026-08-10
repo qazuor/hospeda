@@ -12,6 +12,11 @@ import {
     protectedListOwnUsagesRoute
 } from './mine-usages';
 import {
+    protectedCreateReviewRoute,
+    protectedGetMyReviewRoute,
+    protectedUpdateReviewRoute
+} from './reviews';
+import {
     protectedConfirmUsageRoute,
     protectedRejectUsageRoute,
     protectedUndoRejectionRoute
@@ -69,6 +74,15 @@ protectedRouter.route('/', protectedGetMyQrRoute);
 protectedRouter.route('/', protectedConfirmUsageRoute);
 protectedRouter.route('/', protectedUndoRejectionRoute);
 protectedRouter.route('/', protectedRejectUsageRoute);
+
+// The host's review of a provider (HOS-376 T-034). `/reviews/{id}` is a
+// literal-first path exactly like `/usages/pending`, so it is registered ahead
+// of the parameterised `/{id}/reviews` for the same defence-in-depth reason —
+// the two never collide today because they differ in method, and this ordering
+// is what keeps that true if either ever gains the other's verb.
+protectedRouter.route('/', protectedUpdateReviewRoute);
+protectedRouter.route('/', protectedCreateReviewRoute);
+protectedRouter.route('/', protectedGetMyReviewRoute);
 
 protectedRouter.route('/', protectedDeclareUsageRoute);
 
