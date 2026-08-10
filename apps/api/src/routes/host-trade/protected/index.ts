@@ -5,6 +5,17 @@
 import { createRouter } from '../../../utils/create-app';
 import { protectedListHostTradesRoute } from './list';
 import { protectedGetMyHostTradeRoute, protectedUpdateMyHostTradeRoute } from './mine';
+import { protectedGetMyQrRoute } from './mine-qr';
+import {
+    protectedDeclareUsageAsProviderRoute,
+    protectedListLinkedHostsRoute,
+    protectedListOwnUsagesRoute
+} from './mine-usages';
+import {
+    protectedCountPendingUsagesRoute,
+    protectedDeclareUsageRoute,
+    protectedListPendingUsagesRoute
+} from './usages';
 
 const protectedRouter = createRouter();
 
@@ -16,5 +27,30 @@ protectedRouter.route('/', protectedListHostTradesRoute);
 // ordinary account, and the host-directory read perk is a different thing.
 protectedRouter.route('/', protectedGetMyHostTradeRoute);
 protectedRouter.route('/', protectedUpdateMyHostTradeRoute);
+
+// Literal paths before the parameterised one (HOS-376 T-030).
+//
+// MEASURED, not assumed: with this order inverted, `GET /usages/pending` still
+// reaches the inbox — Hono's selected router gives a static segment precedence
+// over `:slug` regardless of registration sequence. So this order is DEFENCE IN
+// DEPTH, not the thing that makes routing correct. It is kept because which
+// router `SmartRouter` picks is Hono's decision, not a contract we hold, and a
+// first-match-wins router would read `/usages/pending` as "declare a usage on
+// the provider whose slug is `usages`" — a 404-shaped mystery, not a crash.
+//
+// What actually guarantees the behaviour is the request-level test in
+// `test/routes/host-trade/usages.test.ts`.
+protectedRouter.route('/', protectedListPendingUsagesRoute);
+protectedRouter.route('/', protectedCountPendingUsagesRoute);
+
+// The provider's own side (HOS-376 T-031). `/mine/usages` overlaps `/{slug}/usages`
+// exactly as `/usages/pending` does — "mine" is a candidate `:slug` — so it is
+// registered ahead of it for the same defence-in-depth reason.
+protectedRouter.route('/', protectedDeclareUsageAsProviderRoute);
+protectedRouter.route('/', protectedListOwnUsagesRoute);
+protectedRouter.route('/', protectedListLinkedHostsRoute);
+protectedRouter.route('/', protectedGetMyQrRoute);
+
+protectedRouter.route('/', protectedDeclareUsageRoute);
 
 export { protectedRouter as protectedHostTradeRoutes };
