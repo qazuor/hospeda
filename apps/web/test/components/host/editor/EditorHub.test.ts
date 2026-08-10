@@ -38,9 +38,12 @@ describe('EditorHub.astro — structure (AC-4)', () => {
         expect(CODE).toContain('hasTranslations');
     });
 
-    it('should render a heading per group, associated with its list', () => {
-        expect(CODE).toContain('aria-labelledby');
-        expect(CODE).toContain('editor-hub__group-heading');
+    it('should render each group as the canonical account card', () => {
+        // Not a bespoke <section>: AccountSectionCard is the surface every other
+        // /mi-cuenta page uses, and it owns the group's <h2>. Rolling our own
+        // here is what made the hub read as a foreign screen.
+        expect(CODE).toContain('AccountSectionCard');
+        expect(CODE).toContain('title={t(entry.headingKey)}');
     });
 });
 

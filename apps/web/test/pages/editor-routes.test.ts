@@ -159,6 +159,57 @@ describe('editor routes — section isolation (AC-7)', () => {
     });
 });
 
+describe('editor pages follow the /mi-cuenta conventions', () => {
+    const LAYOUT = readFileSync(
+        resolve(__dirname, '../../src/layouts/EditorSectionLayout.astro'),
+        'utf8'
+    );
+
+    /** Strips comments — an absence claim must be made against code, not prose. */
+    function codeOf(source: string): string {
+        return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|\s)\/\/.*$/gm, '');
+    }
+
+    it('should NOT wrap content in the public-site section wrapper', () => {
+        // `.section` carries `padding-block: var(--space-section)` — 120px, the
+        // public-site rhythm. The pre-split editor used it and every editor page
+        // started far down the viewport. Account pages render their content
+        // directly inside AccountLayout instead.
+        expect(codeOf(LAYOUT)).not.toMatch(/class="section"/);
+        expect(codeOf(LAYOUT)).not.toMatch(/class="section__container"/);
+
+        for (const file of ROUTE_FILES) {
+            expect(
+                codeOf(readRoute(file)),
+                `${file} reintroduces the .section wrapper`
+            ).not.toMatch(/class="section"/);
+        }
+    });
+
+    it('should have a comment-stripper that actually strips (guard on the guard)', () => {
+        // The assertion above is only meaningful if codeOf really drops
+        // comments — the layout's own JSDoc explains why it avoids `.section`.
+        expect(LAYOUT).toContain('class="section"');
+        expect(codeOf(LAYOUT).length).toBeLessThan(LAYOUT.length);
+    });
+
+    it('should use the canonical account page header for its single h1', () => {
+        expect(LAYOUT).toContain('AccountPageHeader');
+    });
+
+    it('should render no bespoke h1 on any route', () => {
+        // AccountPageHeader owns that role; a second one would give the page two
+        // top-level headings.
+        for (const file of ROUTE_FILES) {
+            expect(readRoute(file), `${file} renders its own <h1>`).not.toMatch(/<h1[\s>]/);
+        }
+    });
+
+    it('should use the shared breadcrumbs component, not a bespoke one', () => {
+        expect(LAYOUT).toContain("from '@/components/shared/navigation/Breadcrumbs.astro'");
+    });
+});
+
 describe('editor routes — navigation feel (T-025)', () => {
     it('should inherit View Transitions through the layout chain', () => {
         // Every editor page renders through EditorSectionLayout → AccountLayout
