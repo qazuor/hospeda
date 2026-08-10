@@ -30,12 +30,18 @@ import {
     PlanPriceChangeNotice,
     PurchaseConfirmation,
     RenewalReminder,
+    ReplyModerated,
+    ReviewReceived,
     SubscriptionAccessEndingSoon,
     SubscriptionCancelConfirmed,
     SubscriptionCancelled,
     SubscriptionPaused,
     SubscriptionReactivated,
-    TrialEndingReminder
+    TrialEndingReminder,
+    UsageConfirmationReminder,
+    UsageConfirmationRequest,
+    UsageConfirmed,
+    UsageRejected
 } from '../templates/index.js';
 import { formatDate } from '../templates/utils/index.js';
 import type { EmailTransport } from '../transports/email/email-transport.interface.js';
@@ -51,7 +57,13 @@ import type {
     CommerceOwnerCredentialsPayload,
     ContactSubmissionPayload,
     FeedbackReportPayload,
+    HostTradeReplyModeratedPayload,
+    HostTradeReviewReceivedPayload,
     HostTradeRevokedPayload,
+    HostTradeUsageConfirmationReminderPayload,
+    HostTradeUsageConfirmationRequestPayload,
+    HostTradeUsageConfirmedPayload,
+    HostTradeUsageRejectedPayload,
     NotificationPayload,
     PartnerRevokedPayload,
     PartnerUnpaidNoticePayload,
@@ -612,6 +624,67 @@ export class NotificationService {
                     recipientName,
                     programLabel: p.programLabel,
                     outcome: p.outcome
+                });
+            }
+
+            case 'host_trade_usage_confirmation_request': {
+                const p = payload as HostTradeUsageConfirmationRequestPayload;
+                return UsageConfirmationRequest({
+                    recipientName,
+                    counterpartName: p.counterpartName,
+                    servicedAtLabel: formatDate({ dateString: p.servicedAt }),
+                    expiresAtLabel: formatDate({ dateString: p.expiresAt }),
+                    actionUrl: p.actionUrl
+                });
+            }
+
+            case 'host_trade_usage_confirmation_reminder': {
+                const p = payload as HostTradeUsageConfirmationReminderPayload;
+                return UsageConfirmationReminder({
+                    recipientName,
+                    counterpartName: p.counterpartName,
+                    expiresAtLabel: formatDate({ dateString: p.expiresAt }),
+                    actionUrl: p.actionUrl
+                });
+            }
+
+            case 'host_trade_usage_confirmed': {
+                const p = payload as HostTradeUsageConfirmedPayload;
+                return UsageConfirmed({
+                    recipientName,
+                    counterpartName: p.counterpartName,
+                    canReview: p.canReview,
+                    reviewUrl: p.reviewUrl
+                });
+            }
+
+            case 'host_trade_usage_rejected': {
+                const p = payload as HostTradeUsageRejectedPayload;
+                return UsageRejected({
+                    recipientName,
+                    counterpartName: p.counterpartName,
+                    note: p.note
+                });
+            }
+
+            case 'host_trade_review_received': {
+                const p = payload as HostTradeReviewReceivedPayload;
+                return ReviewReceived({
+                    recipientName,
+                    listingName: p.listingName,
+                    overallRating: p.overallRating,
+                    respectedBenefit: p.respectedBenefit,
+                    actionUrl: p.actionUrl
+                });
+            }
+
+            case 'host_trade_reply_moderated': {
+                const p = payload as HostTradeReplyModeratedPayload;
+                return ReplyModerated({
+                    recipientName,
+                    outcome: p.outcome,
+                    reason: p.reason,
+                    actionUrl: p.actionUrl
                 });
             }
 

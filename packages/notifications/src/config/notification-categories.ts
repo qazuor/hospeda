@@ -80,6 +80,15 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Listing revoked (HOS-278 R-4) — TRANSACTIONAL: it reports a change to an
     // arrangement the recipient is party to, not something to opt out of.
     [NotificationType.HOST_TRADE_REVOKED]: NotificationCategory.TRANSACTIONAL,
+    // The benefit-usage and review chain (HOS-376). All TRANSACTIONAL: each one
+    // reports or asks about a record the recipient is party to, not content
+    // they chose to hear about.
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REQUEST]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REMINDER]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.HOST_TRADE_USAGE_REJECTED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.HOST_TRADE_REVIEW_RECEIVED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.HOST_TRADE_REPLY_MODERATED]: NotificationCategory.TRANSACTIONAL,
 
     // Partner revoked (HOS-278 R-4) — TRANSACTIONAL for the same reason.
     [NotificationType.PARTNER_REVOKED]: NotificationCategory.TRANSACTIONAL,

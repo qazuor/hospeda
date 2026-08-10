@@ -1490,39 +1490,48 @@
             "id": "T-040",
             "title": "Los 6 templates de mail del dominio",
             "description": "packages/notifications/src/templates/host-trade/: usage-confirmation-request, usage-confirmation-reminder, usage-confirmed, usage-rejected, review-received, reply-moderated. React Email, ESPAÑOL HARDCODEADO sin i18n (como los ~40 existentes). Cada uno requiere: el .tsx, la entrada en el barrel, un NotificationType nuevo, un case en el switch de NotificationService.selectTemplate(), su categoría TRANSACTIONAL en config/notification-categories.ts y su asunto en utils/subject-builder.ts. Tests: render de cada template con props de ejemplo, verificando que el CTA apunta a la URL correcta.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-012"],
             "blocks": ["T-041", "T-043"],
             "subtasks": [
                 {
                     "title": "6 componentes .tsx + barrel",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "6 NotificationType + cases del switch",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Categorías TRANSACTIONAL",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Asuntos en subject-builder",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["notifications", "email", "templates"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T06:05:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T06:05:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T06:05:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T05:35:00Z",
+                "completed": "2026-08-10T06:05:00.000Z"
             }
         },
         {
@@ -2390,9 +2399,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 30,
+        "pending": 29,
         "inProgress": 0,
-        "completed": 40,
+        "completed": 41,
         "blocked": 0,
         "averageComplexity": 2.4
     }
