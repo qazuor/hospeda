@@ -1710,7 +1710,7 @@
             "id": "T-046",
             "title": "Sección /mi-cuenta/usos-de-beneficio",
             "description": "Página + isla React: pendientes arriba con Confirmar / Rechazar (rechazar pide confirmación en un <dialog> y aclara que es reversible), historial abajo con badges por estado, y CTA a valorar desde un uso confirmado. Estados de carga con skeleton y de error con mensaje traducido. CSS Modules. AMPLIADO con aprobación del owner: el anfitrión NO tenía ninguna lectura de sus propios usos — el inbox filtra declaredBy=PROVIDER (correcto para un inbox, pero era la única lectura que tenía), así que el historial y el CTA a valorar no tenían de dónde leer, y la declaración por QR de T-045 quedaba invisible para quien la hizo. Se agregó GET /protected/host-trades/usages con filtro de estado y SIN filtro de declaredBy (commit cfe4d7072). Deliberadamente NO se amplió /usages/pending: esa ruta responde 'qué espera tu acción' y su definición la comparte el badge de la nav. SEGUNDA AMPLIACION con aprobación del owner: los usos del anfitrión nombraban al proveedor sólo por uuid y el host no puede resolverlo del lado del cliente (el directorio está escopeado a sus destinos actuales y excluye revocados, justo las filas viejas), así que GET /usages y GET /usages/pending ahora adjuntan hostTrade {id, slug, name, category}, resuelto con un findByIds de-duplicado por página; nullable a propósito, para que un proveedor irresoluble sea una etiqueta neutra y no un 500 de toda la página (commit 77439373f). El CTA a valorar NO entra acá: necesita el diálogo de valoración de T-048 y se cablea con esa tarea, para no shipear un botón muerto.",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-030", "T-033"],
             "blocks": ["T-054"],
@@ -1736,8 +1736,8 @@
                     "completed": true
                 },
                 {
-                    "title": "CTA a valorar (se cablea con T-048)",
-                    "completed": false
+                    "title": "CTA a valorar (cableado con T-048)",
+                    "completed": true
                 }
             ],
             "tags": ["web", "react", "ui"],
@@ -1759,7 +1759,7 @@
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": "2026-08-10T15:35:00.000Z",
-                "completed": null
+                "completed": "2026-08-10T19:20:00.000Z"
             }
         },
         {
@@ -1796,40 +1796,49 @@
         {
             "id": "T-048",
             "title": "Formulario de valoración",
-            "description": "Isla React en <dialog> nativo: estrellas 1-5 para overallRating como radiogroup operable por teclado con label textual por valor (no sólo iconos), desglose de las 3 dimensiones COLAPSADO por defecto, booleano de beneficio como sí/no explícito SIN default preseleccionado, texto opcional. Validación con el schema de @repo/schemas vía safeParse. CSS Modules. Tests: no se puede enviar sin overallRating ni sin el booleano. INCLUYE el CTA a valorar de T-046: la subtarea quedó abierta ahí a propósito porque sin este diálogo sería un botón muerto, y la spec §5 marca el scaffold muerto como anti-patrón. Al cerrar T-048 hay que cablearlo en BenefitUsagesPanel sobre las filas CONFIRMED y tildar la subtarea de T-046.",
-            "status": "pending",
+            "description": "Isla React en <dialog> nativo: estrellas 1-5 para overallRating como radiogroup operable por teclado con label textual por valor (no sólo iconos), desglose de las 3 dimensiones COLAPSADO por defecto, booleano de beneficio como sí/no explícito SIN default preseleccionado, texto opcional. Validación con el schema de @repo/schemas vía safeParse. CSS Modules. Tests: no se puede enviar sin overallRating ni sin el booleano. INCLUYE el CTA a valorar de T-046: la subtarea quedó abierta ahí a propósito porque sin este diálogo sería un botón muerto, y la spec §5 marca el scaffold muerto como anti-patrón. Al cerrar T-048 hay que cablearlo en BenefitUsagesPanel sobre las filas CONFIRMED y tildar la subtarea de T-046. IMPLEMENTADO: ReviewFormDialog.client.tsx. Las estrellas son radios NATIVOS con aria-label textual por valor (navegacion por flechas gratis, y el input queda clipeado pero NUNCA display:none, que lo sacaria del orden de tabulacion). El desglose es un <details> colapsado. El booleano no tiene default y el submit se niega hasta que se responda. Un desglose intacto se OMITE del body en lugar de viajar como objeto de undefineds: el body es .strict() y el agregado lee distinto null que vacio. safeParse del schema compartido es el ultimo gate, pero los tres rechazos alcanzables se chequean antes con copy propia, porque los mensajes del schema son claves i18n del traductor de la API. El CTA se cablea en la tarjeta solo si el uso esta CONFIRMED Y el proveedor resolvio.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-034"],
             "blocks": ["T-049", "T-054", "T-067"],
             "subtasks": [
                 {
                     "title": "Radiogroup de estrellas accesible",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Desglose colapsable",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Booleano sin default",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Validación con safeParse",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["web", "react", "ui", "a11y", "reviews"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T19:25:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T19:25:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T19:25:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T18:55:00.000Z",
+                "completed": "2026-08-10T19:25:00.000Z"
             }
         },
         {
@@ -2470,9 +2479,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 22,
-        "inProgress": 1,
-        "completed": 47,
+        "pending": 21,
+        "inProgress": 0,
+        "completed": 49,
         "blocked": 0,
         "averageComplexity": 2.4
     }

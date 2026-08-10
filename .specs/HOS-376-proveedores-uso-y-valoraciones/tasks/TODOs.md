@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 47/70 tareas cerradas + 1 en curso (67%)
+## Progreso: 49/70 tareas cerradas (70%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 17/27 completadas, T-046 en curso (le falta sólo el CTA a valorar, que va con T-048) (complejidad promedio 2.5)
+## Fase `integration` — 19/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -160,20 +160,21 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - apps/web/src/pages/[lang]/mi-cuenta/directorio-proveedores/[slug]/registrar-uso/index.astro. Sin sesión redirige a login y vuelve. Muestra el proveedor, pide fecha del servicio y nota opcion…
   - Bloqueada por: T-030 · Bloquea a: T-054
   - Amplió la superficie de la API con aprobación del owner: `GET /protected/host-trades/{slug}`, que §7.5 no declaraba. Sin él la página no puede mostrar el proveedor ni distinguir revocado de inexistente. Lo reusa T-053.
-- [~] **T-046** (c3, EN CURSO) — Sección /mi-cuenta/usos-de-beneficio
+- [x] **T-046** (c3) — Sección /mi-cuenta/usos-de-beneficio
   - Página + isla React: pendientes arriba con Confirmar / Rechazar (rechazar pide confirmación en un <dialog> y aclara que es reversible), historial abajo con badges por estado, y CTA a valorar…
   - Bloqueada por: T-030, T-033 · Bloquea a: T-054
   - **Backend LISTO** (commit cfe4d7072): `listForHost` + `GET /protected/host-trades/usages` con filtro de estado. Amplió la API con aprobación del owner, porque el anfitrión NO tenía lectura de sus propios usos — el inbox filtra `declaredBy=PROVIDER`, así que ni el historial ni el CTA a valorar tenían de dónde leer, y la declaración por QR de T-045 quedaba invisible para quien la hizo.
   - **Segunda ampliación** (commit 77439373f, aprobada por el owner): las dos listas del anfitrión adjuntan `hostTrade {id, slug, name, category}`. Sin eso la pantalla le pedía confirmar trabajo hecho por un uuid, y el host no puede resolver el nombre del lado del cliente (el directorio se escopea a sus destinos actuales y excluye revocados). Un `findByIds` de-duplicado por página; `hostTrade` es nullable a propósito para que un proveedor irresoluble sea una etiqueta neutra y no un 500 de toda la página.
   - **UI LISTA** (commit ba0b6c7c4): página SSR que lee ambas listas, isla con inbox + historial + badges, `<dialog>` de rechazo que aclara que es reversible, y **deshacer** en las filas que rechazó el propio anfitrión — derivado de `declaredBy`, porque el payload trae `rejectedAt` pero no `rejectedById`.
-  - **Queda abierto el CTA a valorar**, a propósito: necesita el diálogo de T-048 y se cablea con esa tarea. Un botón antes de eso sería scaffold muerto (§5).
+  - **CTA a valorar cableado con T-048**: aparece sólo si el uso está `CONFIRMED` **y** el proveedor resolvió — sin las dos cosas el botón llevaría a un diálogo cuya única respuesta posible es `403 NO_CONFIRMED_USAGE`.
 - [x] **T-047** (c2) — Contador de pendientes en la navegación de /mi-cuenta
   - Clonar el molde de apps/web/src/components/shared/whats-new/WhatsNewCountPill.client.tsx. Consume GET /usages/pending-count. SE APAGA AL RESOLVER, NO AL VER — si se apagara al mirar, el pend…
   - Bloqueada por: T-030 · Bloquea a: T-054
   - Cerrada en el commit 3670d8a8d. El panel y el pill son islas separadas sin store compartido: el panel emite un `CustomEvent` en `window` tras cada transición y el pill re-lee, que es lo que hace que el conteo baje AL RESOLVER y no al mirar. Sin ninguna llamada de mark-as-seen, con guard estático que lo verifica. Una lectura fallida no renderiza nada en lugar de un cero.
-- [ ] **T-048** (c3) — Formulario de valoración
+- [x] **T-048** (c3) — Formulario de valoración
   - Isla React en <dialog> nativo: estrellas 1-5 para overallRating como radiogroup operable por teclado con label textual por valor (no sólo iconos), desglose de las 3 dimensiones COLAPSADO por…
   - Bloqueada por: T-034 · Bloquea a: T-049, T-054, T-067
+  - `ReviewFormDialog.client.tsx`. Las estrellas son radios NATIVOS con `aria-label` textual por valor: navegación por flechas gratis, y el input queda clipeado pero **nunca** `display: none`, que lo sacaría del orden de tabulación. Desglose en un `<details>` colapsado. El booleano no tiene default y el submit se niega hasta que se responda. Un desglose intacto se **omite** del body en vez de viajar como objeto de `undefined`s: el body es `.strict()` y el agregado lee distinto `null` que vacío. `safeParse` del schema compartido es el último gate, pero los tres rechazos alcanzables se chequean antes con copy propia, porque los mensajes del schema son claves i18n del traductor de la API.
 - [ ] **T-049** (c2) — Modo edición de la valoración y cartel de réplica desactualizada
   - Si el anfitrión ya valoró, el mismo formulario abre precargado en modo edición y hace PATCH. En el listado público, cuando reviewEditedAfterReply es true, mostrar el cartel 'la valoración fu…
   - Bloqueada por: T-048, T-034 · Bloquea a: —
@@ -277,7 +278,7 @@ máquina de estados de usos, guardas de declaración, suspensión por umbral,
 valoraciones, réplicas, moderación, agregados y el QR— está implementada y
 cubierta.
 
-Sigue la fase `integration` (27 tareas, 17 cerradas, T-046 en curso sólo por el CTA a valorar). Cerrada TODA la capa de
+Sigue la fase `integration` (27 tareas, 19 cerradas). Cerrada TODA la capa de
 rutas del dominio (T-030 a T-038), los 6 mails y su cableado (T-040/T-041), los
 3 crons (T-042 a T-044) y la primera pantalla, la del QR (T-045). El camino
 natural es seguir por la UI del anfitrión: T-046 (sección de usos) y T-047
