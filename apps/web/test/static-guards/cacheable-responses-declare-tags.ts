@@ -36,9 +36,17 @@ export function stripComments({ source }: { readonly source: string }): string {
  * Every place a source file writes the `Cache-Control` header, in either of the
  * two shapes this app uses: `headers.set('Cache-Control', <value>)` and a
  * `{ 'Cache-Control': <value> }` entry in a `Response` init.
+ *
+ * Case-INSENSITIVE, and that flag is load-bearing rather than defensive. HTTP
+ * header names are case-insensitive, so `{ 'cache-control': 'public, s-maxage=300' }`
+ * is edge-cached exactly as hard as the capitalised spelling — and lowercase is
+ * the idiom already used elsewhere in this app (`'content-type'` in
+ * `pages/api/revalidate.ts`). Without the flag, the most natural spelling walks
+ * straight past the one guard whose entire purpose is closure, and the response
+ * ships cacheable with no tag, so nothing can ever purge it.
  */
 const CACHE_CONTROL_WRITE =
-    /['"]Cache-Control['"]\s*[,:]\s*(`[^`]*`|'[^']*'|"[^"]*"|[A-Za-z_$][\w$.]*)/g;
+    /['"]Cache-Control['"]\s*[,:]\s*(`[^`]*`|'[^']*'|"[^"]*"|[A-Za-z_$][\w$.]*)/gi;
 
 /** Anything that produces cache tags for the response being written. */
 const TAG_PRODUCERS: ReadonlyArray<RegExp> = [
