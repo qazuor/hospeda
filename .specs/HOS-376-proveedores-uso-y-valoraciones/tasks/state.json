@@ -1224,36 +1224,45 @@
         {
             "id": "T-033",
             "title": "Endpoints compartidos: confirm, reject y reject/undo",
-            "description": "POST /protected/host-trades/usages/{id}/confirm, /reject (body {note?}) y /reject/undo. El servicio resuelve quién es la contraparte; el endpoint NO discrimina por rol. Todo camino ajeno devuelve 404, nunca 403. Tests de integración: confirmar el propio uso declarado → 404 (AC-6); confirmar un uso de otra gente → 404; rechazar y verificar el bloqueo del par (AC-9); undo (AC-10).",
-            "status": "pending",
+            "description": "POST /protected/host-trades/usages/{id}/confirm, /reject (body {note?}) y /reject/undo. El servicio resuelve quién es la contraparte; el endpoint NO discrimina por rol. Todo camino ajeno devuelve 404, nunca 403. Tests de integración: confirmar el propio uso declarado → 404 (AC-6); confirmar un uso de otra gente → 404; rechazar y verificar el bloqueo del par (AC-9); undo (AC-10). CERRADA: las rutas son ROLE-BLIND a proposito — declaredBy en la fila decide quien es la contraparte, y una cuenta que es host Y proveedor a la vez no tiene un rol unico sobre el cual ramificar. Hay un test parametrizado sobre las tres formas de rol, incluida esa. Toda negativa es 404, nunca 403.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-021"],
             "blocks": ["T-041", "T-046", "T-061", "T-065"],
             "subtasks": [
                 {
                     "title": "POST confirm",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "POST reject",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "POST reject/undo",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["api", "routes", "protected"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T00:50:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T00:50:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-10T00:50:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-10T00:35:00Z",
+                "completed": "2026-08-10T00:50:00.000Z"
             }
         },
         {
