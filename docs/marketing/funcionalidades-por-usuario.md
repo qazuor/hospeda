@@ -1,0 +1,242 @@
+# Hospeda — Funcionalidades por tipo de usuario
+
+> Base para el plan de contenido de redes.
+> Fuente: catálogo de código del 2026-07-08 + delta verificado contra `origin/staging` al 2026-08-11.
+> **Semáforo**: 🟢 disponible hoy · 🟡 en curso · 🔴 definido pero NO construido
+
+---
+
+## El semáforo NO excluye — asigna prioridad
+
+**Toda funcionalidad entra a la lista de publicaciones, exista o no.** Lo que cambia es cuándo se produce:
+
+| Semáforo | Prioridad | Significado |
+|---|---|---|
+| 🟢 disponible hoy | 1 a 4 | Se prioriza por valor comercial, no por disponibilidad |
+| 🟡 en curso | **5** | Pieza escrita y diseñada, **guardada sin publicar** hasta que salga a producción |
+| 🔴 no construido | **5** | Idem. El día que se construya, el contenido ya está listo |
+
+**Prioridad 5 = No hacer aún.** Extiende la escala original (1 urgente · 2 primer mes · 3 mes 2-3 · 4 algún día) con un quinto nivel que significa *bloqueado por producto, no por importancia*. El contenido se piensa igual: cuando la feature sale, la publicación ya existe y se dispara el mismo día.
+
+### Reglas que sí son innegociables
+
+1. **Cero precios en las imágenes.** La grilla nueva (HOS-301) está decidida pero no implementada. Todo precio va a landing, nunca horneado en una placa.
+2. **Una pieza de Prioridad 5 no se publica** hasta que la funcionalidad esté en producción y con smoke pasado. Se produce, se guarda, se espera.
+3. Excepción: la categoría **Novedades** puede publicar lo 🔴 como *roadmap*, siempre con la palabra "próximamente" adelante y nunca en tiempo presente.
+
+---
+
+## Idiomas — la plataforma está en tres
+
+**es · en · pt**, con español por defecto. Los tres están construidos y funcionando, no son promesa.
+
+Esto abre dos segmentos que hoy no se están trabajando:
+
+- **Portugués** — brasileños. Concepción del Uruguay está sobre el río, y el Litoral es corredor natural de entrada.
+- **Inglés** — turismo internacional de naturaleza y **pesca deportiva en el Río Uruguay**, extranjeros residentes en Argentina, y SEO internacional que hoy no tiene competencia en la región.
+
+Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` por defecto, `es/en/pt` donde valga la producción triple). Evita decidirlo pieza por pieza sobre la marcha.
+
+---
+
+## 1. Visitante anónimo — sin cuenta
+
+**El 100% del catálogo es navegable sin registrarse.** Solo `/mi-cuenta/*` exige sesión. Este es el ángulo de marketing más fuerte y más desaprovechado: *no te pedimos nada para mirar*.
+
+### Descubrimiento
+
+- 🟢 Buscar y listar alojamientos con filtros: tipo, precio, huéspedes, dormitorios/baños, rating, amenities, wifi, pileta, parking, pet-friendly, radio geográfico
+- 🟢 Ordenar por nombre, fecha, rating, cantidad de reseñas, destacado, "más guardado", precio, distancia — hasta 5 criterios combinados
+- 🟢 Vista de lista y **vista de mapa** (por área visible del mapa)
+- 🟢 Ficha completa de alojamiento: galería, amenities, ubicación
+- 🟢 Alojamientos por destino · similares · top-rated del destino
+- 🟢 Búsqueda global unificada: alojamientos + destinos + eventos + notas, todo junto
+- 🟢 Buscador con IA en lenguaje natural — **visible para todos, pero pide login al usarlo**
+
+### Destinos y lugares
+
+- 🟢 Destinos con jerarquía navegable (país → región → ciudad), breadcrumb
+- 🟢 **Clima y pronóstico a 16 días** + condiciones en vivo por destino
+- 🟢 Mapa de destinos con coordenadas exactas
+- 🟢 Atracciones del destino
+- 🟢 **Puntos de interés (POI)** con mapa multi-marcador en la ficha del destino
+
+### Contenido
+
+- 🟢 Eventos: listado, próximos, por organizador y ubicación, con comentarios (lectura)
+- 🟢 Blog / notas turísticas: destacados, por categoría, relacionados, tags
+- 🟢 Gastronomía y Experiencias: listados, ficha, reseñas, FAQs
+- 🟢 **Página pública de autor** `/autores/<slug>/` — quién escribe cada nota
+- 🟢 Feeds RSS de eventos y publicaciones
+- 🟢 Perfil público del anfitrión con todos sus alojamientos
+
+### Confianza
+
+- 🟢 Reseñas públicas (solo aprobadas)
+- 🟢 **Reputación externa agregada**: ratings de Booking + Airbnb + Google en un solo lugar
+- 🟢 Contador "N personas lo guardaron"
+- 🟢 Ofertas y promociones del anfitrión, con badge en listado y ficha
+- 🟢 Testimonios en la home
+
+### Contacto sin cuenta
+
+- 🟢 **Consulta anónima al anfitrión** — iniciar conversación sin registrarse
+- 🟢 Seguir y responder el hilo **por magic link al mail**, sin crear cuenta
+- 🟢 Formulario de contacto general (13 tipos: soporte, prensa, publicar, reportar…)
+- 🟢 Formularios "Colaborar": reportar info, enviar fotos, postularse como editor
+- 🟢 Enviar feedback / reporte de bug con hasta 5 imágenes
+- 🟢 Suscripción a newsletter con doble opt-in y baja en 1 clic
+- 🟢 Lead comercial "sumar mi negocio"
+
+### Otros
+
+- 🟢 Tres idiomas: **es / en / pt**
+- 🟢 Conversión de moneda / tasas de cambio
+- 🟢 SEO técnico completo: sitemap dinámico, robots, llms.txt, Open Graph
+
+**Ángulos de contenido**: "Mirá todo sin registrarte" · "Escribile al anfitrión sin crear cuenta" · "El clima de tu escapada, a 16 días" · "Booking, Airbnb y Google juntos en una sola ficha"
+
+---
+
+## 2. Turista con cuenta — Free / Plus / VIP
+
+| Funcionalidad | Free | Plus | VIP |
+|---|---|---|---|
+| Guardar favoritos | 5 | 25 | ∞ |
+| Colecciones (listas temáticas) | – | 10 | 25 |
+| Comparar alojamientos lado a lado | – | 3 | 5 |
+| Alertas de precio | – | 5 | ∞ |
+| Historial de búsquedas | – | 50 | 200 |
+| Recomendaciones personalizadas | – | 🟢 | 🟢 |
+| Ofertas exclusivas | – | 🟢 | 🟢 |
+| Acceso VIP a promociones | – | – | 🟢 |
+| Ver WhatsApp del anfitrión | – | 🟢 | 🟢 |
+| WhatsApp directo | – | – | 🟢 |
+| Buscador con IA (consultas/mes) | 10 | 50 | 200 |
+| Chat IA con el alojamiento (consultas/mes) | 10 | 50 | 200 |
+| Soporte prioritario | – | – | 🟢 |
+
+**Siempre gratis, en todos los planes**: escribir y leer reseñas · mensajes con anfitriones (bandeja, hilos, no leídos) · perfil, avatar y preferencias · ver mi plan y límites · gestionar newsletter · comentar y dar like en posts y eventos · novedades.
+
+🔴 Adjuntar fotos a reseñas — el gate existe, la pantalla no.
+
+**Ángulos**: "Guardá tus favoritos gratis" · "Te avisamos cuando baja el precio" · "Compará 3 cabañas lado a lado" · "Preguntale en criollo: cabaña con pileta para 4 cerca del río"
+
+---
+
+## 3. Anfitrión (Host) — Básico / Pro / Premium
+
+**El gancho**: 🟢 **14 días gratis sin tarjeta**. No se pide método de pago para arrancar y los datos se conservan al vencer. Con el código `FREEMONTH`, 30 días más.
+
+| Funcionalidad | Básico | Pro | Premium |
+|---|---|---|---|
+| Alojamientos publicables | 1 | 3 | 10 |
+| Fotos por alojamiento | 15 | 30 | 50 |
+| Promociones activas | 2 | 5 | ∞ |
+| Descripción enriquecida y video | – | 🟢 | 🟢 |
+| Estadísticas avanzadas | – | 🟢 | 🟢 |
+| Listado destacado (featured) | con addon | 🟢 | 🟢 |
+| Insignia de verificación | – | – | 🟢 |
+| Branding personalizado | – | – | 🟢 |
+| Soporte prioritario | – | 🟢 | 🟢 |
+| Importar ficha con IA (por mes) | 10 | 50 | 250 |
+| IA para mejorar textos (por mes) | 50 | 250 | 1.250 |
+| IA para traducir (por mes) | 200 | 1.000 | 5.000 |
+| IA: chat para huéspedes (por mes) | 50 | 250 | 1.250 |
+
+**Incluido en todos los planes**: editar datos, amenities, FAQs y ubicación · SEO editable de la ficha · estadísticas básicas (vistas, tasa de respuesta, consultas) · conectar reputación externa (Google, Booking…) · **el pack completo de turista VIP** (favoritos ∞, comparador, alertas ∞, colecciones 25, historial 200, IA 200/mes).
+
+**Addons**: Visibility Boost (destacar 1 alojamiento 7 o 30 días, pago único) · Fotos extra +20 · Alojamientos extra +5.
+
+🟡 **Directorio de proveedores y oficios** (HOS-376) — plomería, gas, electricidad, cerrajería, climatización, limpieza. Con registro de uso del beneficio y valoraciones. En curso → **Prioridad 5**: producir las piezas ahora, publicar cuando salga.
+
+🔴 Responder reseñas · calendario de disponibilidad · sync con Google Calendar/iCal · mostrar WhatsApp en la ficha → **Prioridad 5**.
+
+**Ángulos**: "14 días gratis, sin tarjeta" · "Pegá el link de Airbnb y la IA completa tu ficha" · "Tu ficha en 3 idiomas con un clic" · "Sos anfitrión y además viajás VIP gratis"
+
+---
+
+## 4. Gastronomía y Experiencias
+
+Dominio de facturación **separado** del de alojamientos. La ficha es pública mientras la suscripción esté activa. El alta la gestiona el equipo (todavía sin checkout self-service).
+
+- 🟢 Ficha pública propia con fotos, descripción rica, horarios, contacto, redes, menú o precios
+- 🟢 Aparecer en listados y búsquedas
+- 🟢 Reseñas moderadas y FAQs propias
+- 🟢 Edición autogestionada de todo el contenido operativo
+- 🟢 SEO de la ficha con editor dedicado
+- 🟢 Lead público "sumar mi negocio"
+
+Diferencia: Experiencia usa precio "desde / a consultar" y se oculta del detalle si no tiene suscripción activa.
+
+**Ángulos**: "Tu restaurante donde la gente planea el viaje" · "Ficha propia, reseñas y buen Google" · "Vos editás, sin depender de nadie"
+
+---
+
+## 5. Partners auspiciantes — ACTUALIZADO (HOS-294 + HOS-278)
+
+⚠️ **Todo lo que decía el catálogo viejo acá quedó obsoleto.**
+
+- 🟢 Dos tiers: **gold y silver**. Bronze ya no existe.
+- 🟢 **Solo gold tiene página propia** `/partners/<slug>/`. Es exactamente lo que separa un tier del otro.
+- 🟢 Silver: presencia en el carrusel y el logo linkea **afuera**, al sitio propio del partner.
+- 🟢 **Ya hay self-service**: catálogo de planes, alta, claim, baja. Ya no es 100% gestionado por el equipo.
+- 🟢 Registro de menciones del partner (HOS-377)
+- ❌ El directorio filtrado `/partners/` **fue retirado por decisión del dueño y hoy 404ea**. No linkearlo en ninguna pieza.
+- El tier nunca se muestra públicamente.
+
+**Ángulos**: "Tu marca donde el turismo del Litoral se encuentra" · "Página propia dentro de Hospeda" (solo gold)
+
+---
+
+## 6. Sponsors de contenido
+
+- 🟢 Crear y editar patrocinios de posts y eventos, autogestionado
+- 🟢 Panel propio: overview, sponsorships, analíticas, facturas
+- 🟢 Niveles y paquetes a elegir (catálogo administrado por el equipo)
+
+**Ángulos**: "Patrociná las notas que la región lee" · "Panel propio con analíticas y facturas"
+
+---
+
+## 7. Editores y autores de contenido — NUEVO (HOS-374 / 375 / 318 / 393)
+
+Público que **no estaba** en el catálogo viejo y hoy tiene producto propio.
+
+- 🟢 **Crear posts y eventos desde el sitio web**, sin entrar al admin (editor de confianza)
+- 🟢 **Página pública de autor** `/autores/<slug>/` con sus notas y eventos
+- 🟢 Cuenta de editor con identidad visual y navegación por secciones propia
+- 🟢 Editor de FAQs asistido por IA, con visibilidad por canal
+- 🟢 Postulación pública "quiero ser editor" desde los formularios de Colaborar
+
+**Ángulos**: "Escribí sobre tu ciudad y firmá con tu nombre" · "Tenés tu página de autor" · convocatoria abierta de redactores
+
+---
+
+## 8. Transversal — todos los usuarios
+
+- 🟢 Tres idiomas (es / en / pt), español por defecto
+- 🟢 SEO en todas las entidades: título y descripción propios, OG, sitemap dinámico, llms.txt
+- 🟢 Newsletter con doble opt-in y gestión desde la cuenta
+- 🟢 Códigos promocionales: `LANZAMIENTO50`, `BIENVENIDO30`, `FREEMONTH`, y comp gratis-para-siempre
+- 🟢 Clima y pronóstico por destino
+- 🟢 Novedades / release notes filtradas por rol
+
+---
+
+## 9. 🔴 Definido pero NO construido — todo esto va a Prioridad 5
+
+| Ítem | Estado real |
+|---|---|
+| Tarjeta turista | **No existe en el código.** Ni empezada. |
+| Servicios turísticos (vertical) | Solo permisos reservados. Sin entidad ni pantallas. |
+| Planes multi-propiedad / hotel | 3 planes completos en código pero **desactivados**. |
+| Responder reseñas | Gate listo, pantalla no. |
+| Calendario de disponibilidad + sync iCal/Google | Gate listo, pantalla no. |
+| WhatsApp en la ficha del alojamiento | Falta el campo en la base. |
+| Fotos en las reseñas | Gate listo, pantalla no. |
+| Asistente de IA para soporte | Definido, sin otorgar a ningún plan. |
+
+**Cada uno de estos ítems genera su publicación igual**, escrita y diseñada, con Prioridad 5. Quedan en la carpeta lista para disparar el día que la funcionalidad salga a producción. La única que puede publicarse antes es la categoría **Novedades**, y solo en clave de roadmap: "próximamente", nunca en tiempo presente.
+
+Riesgo a tener presente: si una de estas se cancela o cambia de forma (los planes multi-propiedad, por ejemplo, están desactivados y podrían no volver), la pieza producida se descarta. Es trabajo de diseño que puede tirarse — vale la pena para calendario y WhatsApp, que están casi listos; menos para la tarjeta turista, que no tiene ni una línea escrita.
