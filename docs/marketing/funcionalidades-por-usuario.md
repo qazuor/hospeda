@@ -126,9 +126,11 @@ Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` p
 
 ## 3. Anfitrión — Básico / Pro / Premium
 
-**El gancho**: 🟢 **30 días gratis sin tarjeta**. No se pide método de pago para arrancar y los datos se conservan al vencer.
+**El gancho**: 🟢 **30 días sin que se te cobre nada**. Los datos se conservan al vencer.
 
-> Los días de prueba se configuran en la base de datos, no en el código. El número que vale es el que está cargado en producción — verificar ahí antes de imprimir nada, no en el código fuente.
+> ⚠️ **La tarjeta SÍ se pide al registrarse**, antes de la prueba. Se carga al principio y recién se cobra cuando terminan los 30 días. Antes no se pedía; cambió. **Nunca comunicar "sin tarjeta"** — es una promesa que se rompe en el momento del alta, que es el peor lugar para perder a alguien.
+>
+> Los días de prueba se configuran en la base de datos, no en el código. Verificar ahí antes de imprimir nada.
 
 | Funcionalidad | Básico | Pro | Premium |
 |---|---|---|---|
@@ -150,15 +152,21 @@ Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` p
 
 **Adicionales que se pueden sumar**: Visibility Boost destacar un alojamiento por 7 o 30 días (pago único) · 20 fotos más · 5 alojamientos más.
 
-🟢 **Calendario de disponibilidad con sincronización** (HOS-157) — se conecta con Google Calendar y con otros calendarios por archivo `.ics`. Las fechas ocupadas se bloquean solas y evita reservas dobles. **Existe y funciona.**
+🟢 **Calendario de disponibilidad con sincronización** (HOS-157) — se conecta con **Google, Airbnb, Booking y cualquier calendario estándar**. Las fechas ocupadas se bloquean solas y evita reservas dobles.
 
 🟢 **WhatsApp del anfitrión** — el dato está en la ficha del alojamiento y las consultas pueden llegar por ahí.
 
-🟡 **Directorio de proveedores y oficios** (HOS-376) — plomería, gas, electricidad, cerrajería, climatización, limpieza. Con registro de uso del beneficio y valoraciones. Confirmar si ya está disponible.
+🟢 **Directorio de proveedores y oficios** (HOS-376) — plomería, gas, electricidad, cerrajería, climatización, limpieza. Con registro de uso del beneficio y valoraciones. Disponible.
+
+🟢 **Cobros por Mercado Pago** — suscripciones y adicionales se pagan con Mercado Pago, con tarjeta o con dinero en cuenta. Argumento de confianza fuerte para el mercado argentino, y más importante ahora que la tarjeta se pide antes de la prueba.
+
+🟢 **Preparado para que las IA lo recomienden** — además del posicionamiento en Google, todo el portal está optimizado para que los asistentes de inteligencia artificial encuentren y recomienden el sitio, sus destinos y sus alojamientos. Prácticamente ninguna plataforma de la región lo está.
 
 🔴 **Responder reseñas** — todavía no está. El permiso existe, la pantalla no. Confirmado el 11/08/2026.
 
-**Ángulos**: "30 días gratis, sin tarjeta" · "Pegá el link de Airbnb y la IA completa tu ficha" · "Tu ficha en 3 idiomas con un clic" · "Sos anfitrión y además viajás VIP gratis"
+**Ángulos**: "30 días sin que se te cobre nada" · "Pegá el link y la IA completa tu ficha" · "Tu ficha en 3 idiomas con un clic" · "Sos anfitrión y además viajás VIP gratis" · "Que las IA te recomienden"
+
+**Qué marcas se pueden nombrar**: en **calendarios**, sí — Google, Airbnb, Booking. En **importar la ficha**, no se nombran Airbnb ni Booking: se dice "Google, Mercado Libre y otras plataformas de alquiler".
 
 ---
 

@@ -86,6 +86,8 @@ Se usan los de Phosphor — <https://phosphoricons.com/>
 5. **Ningún destino se destaca sobre los demás.** Somos de Concepción del Uruguay y es por donde arrancamos a conseguir clientes, pero eso es un dato interno, no una línea editorial. Cuando hablamos del territorio, hablamos del **Litoral** o de **Entre Ríos**, no de una ciudad.
 6. **Los cuerpos van cortos.** Dos renglones como máximo. Si el texto obliga a achicar la tipografía o a apretar la diagramación, hay que recortarlo, no achicar la letra. Informativo pero breve: lo largo va en el pie de la publicación, no adentro de la imagen.
 7. **Nunca listamos todos los destinos.** Se nombran algunos y se cierra con "y muchos más". Una lista completa queda vieja apenas se suma uno nuevo, y hay que rehacer la placa.
+8. **Nunca decimos "sin tarjeta".** La tarjeta se carga al registrarse; lo que no se cobra es el primer mes. Se dice **"no se te cobra nada durante 30 días"**.
+9. **Ninguna placa lleva cupones de descuento.** Los códigos se entregan a mano, a personas o momentos puntuales.
 
 ### Destinos
 
@@ -294,13 +296,13 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Tipo**: Imagen única
 - **Aspect Ratio**: 9:16, 4:5 y 2:3
 - **Título**: Llevá tu alojamiento a la vidriera del Litoral.
-- **Cuerpo**: Publicá en 10 segundos importando tu ficha. Sin poner la tarjeta de crédito. Tus alquileres, tus reglas, tus huéspedes.
-- **Idea**: Es la placa más importante de todo el plan, tiene que ser imposible de malinterpretar. Lo que más pesa visualmente es **"sin poner la tarjeta"**: destacarlo con color, subrayado o recuadro para que se despegue del resto. Lo demás va chico. Si hay que elegir qué se lee primero de lejos, es eso.
+- **Cuerpo**: Publicá en 10 segundos importando tu ficha. 30 días sin pagar nada. Tus alquileres, tus reglas, tus huéspedes.
+- **Idea**: Es la placa más importante de todo el plan, tiene que ser imposible de malinterpretar. Lo que más pesa visualmente es **"30 días sin pagar nada"**: destacarlo con color, subrayado o recuadro para que se despegue del resto. Lo demás va chico. Si hay que elegir qué se lee primero de lejos, es eso.
 - **Foto/s**: Opcional y en segundo plano: el interior de una cabaña bien puesta, muy clarita o al 20% de opacidad, solo como textura de fondo. Que no compita con el texto.
 - **CTA**: Sumá tu propiedad en hospeda.com.ar
 - **Idioma**: Español
 - **Nota**: la versión 2:3 es para mandarla por WhatsApp a los dueños, uno por uno. Va a ser la que más circule, más que la de las publicaciones.
-- **Cupón**: si va cupón, se escribe en la placa. Confirmar cuál corresponde antes de diseñar.
+- **Cuidado con la tarjeta**: **no decir "sin tarjeta"**. Hoy la tarjeta se carga al registrarse, aunque no se cobre nada hasta el día 31. Prometer lo contrario genera un abandono seguro en el momento del alta, que es el peor lugar para perder a alguien. El mensaje correcto es *no se te cobra nada durante 30 días* — que es igual de fuerte y además es cierto.
 
 ---
 
@@ -310,11 +312,12 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Tipo**: Imagen única
 - **Aspect Ratio**: 9:16, 4:5 y 2:3
 - **Título**: Queremos que lo pruebes.
-- **Cuerpo**: Te regalamos 30 días de prueba gratis. Entrás, elegís tu plan, publicás tu alojamiento y lo probás sin gastar un peso.
+- **Cuerpo**: Te regalamos 30 días de prueba. Entrás, elegís tu plan, publicás tu alojamiento y no se te cobra nada hasta el día 31.
 - **Idea**: Placa de invitación, más cálida que la 12.1. El **30** bien grande como protagonista, y el resto del texto abajo, chico. Fondo de color pleno de la paleta. Sin foto.
 - **Foto/s**: Ninguna.
 - **CTA**: Entrá a hospeda.com.ar, hacé clic en "Publicar mi alojamiento" y poné tu propiedad en el mapa turístico de la región.
 - **Idioma**: Español
+- **Cuidado con la tarjeta**: ver la nota de la 12.1. Acá el "no se te cobra nada hasta el día 31" hace todo el trabajo y es preferible a decir "gratis" a secas, porque adelanta que en algún momento sí se cobra.
 
 ---
 
@@ -325,13 +328,14 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Aspect Ratio**: 4:5
 - **Título**: Tu alojamiento, más fácil de lo que pensás.
 - **Items**:
-  1. **Carga automática** — Pegá el link de tu aviso de Airbnb o Booking y la inteligencia artificial arma tu ficha sola.
+  1. **Carga automática** — Pegá el link de tu aviso de Google, Mercado Libre u otras plataformas de alquiler y la inteligencia artificial arma tu ficha sola.
   2. **Contacto 100% directo** — Sin comisiones intermedias. Las consultas van directo a tu WhatsApp o a tu mail.
-  3. **Calendario sincronizado** — Conectá tu Google Calendar para evitar reservas dobles.
+  3. **Calendario sincronizado** — Conectá Google, Airbnb, Booking o cualquier calendario para evitar reservas dobles.
 - **Idea**: En la versión carrusel, una imagen por motivo, con un ícono de Phosphor grande arriba y el texto abajo. En la versión listado, los tres motivos en una sola placa, uno debajo del otro, con el mismo ícono más chico a la izquierda. Mismo contenido, dos armados.
 - **Foto/s**: Sin fotos. Íconos de Phosphor sobre fondos de color de la paleta, uno distinto por motivo.
-- **CTA**: Publicá gratis tus primeros 30 días en hospeda.com.ar
+- **CTA**: Publicá tus primeros 30 días en hospeda.com.ar
 - **Idioma**: Español
+- **Con qué marcas se puede y con cuáles no**: en el punto del **calendario sí se nombran** Google, Airbnb y Booking, porque son las que efectivamente se conectan. En el punto de **importar la ficha no se nombran Airbnb ni Booking**: ahí se dice "Google, Mercado Libre y otras plataformas de alquiler".
 
 ---
 
@@ -454,12 +458,14 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Tipo**: Imagen única
 - **Aspect Ratio**: 9:16 y 4:5
 - **Tag Line**: Se acabaron las reservas dobles
-- **Título**: Conectá tu Google Calendar y no repitas fechas nunca más.
+- **Título**: Conectá tus calendarios y no repitas fechas nunca más.
+- **Subtítulo**: Google, Airbnb, Booking y cualquier otro.
 - **Cuerpo**: Las fechas ocupadas se bloquean solas. Sin planillas ni anotar en un cuaderno.
-- **Idea**: Un calendario con las fechas ocupadas marcadas, y el gesto de sincronización entre dos calendarios como elemento central. La sensación tiene que ser de tranquilidad, no de complejidad.
+- **Idea**: Varios calendarios entrando a uno solo — ese es el mensaje entero y se entiende sin leer. Los logos de Google, Airbnb y Booking chiquitos de un lado, y del otro el calendario de Hospeda con las fechas ya bloqueadas. La sensación tiene que ser de tranquilidad, no de complejidad.
 - **Foto/s**: Captura de pantalla real del calendario de la plataforma con fechas ocupadas cargadas.
-- **CTA**: Publicá gratis tus primeros 30 días en hospeda.com.ar
+- **CTA**: Publicá tus primeros 30 días en hospeda.com.ar
 - **Idioma**: Español
+- **Marcas**: acá **sí se nombran** Airbnb y Booking, porque son calendarios que realmente se conectan. Se sincroniza con Google, con Airbnb, con Booking y con cualquier calendario que use el formato estándar.
 
 ---
 
@@ -480,9 +486,9 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 
 #### 12.13 · Directorio de oficios
 
-- **Prioridad**: **5** — no publicar todavía
+- **Prioridad**: 1
 - **Tipo**: Listado de puntos
-- **Aspect Ratio**: 4:5
+- **Aspect Ratio**: 4:5 y 2:3
 - **Tag Line**: Un beneficio para anfitriones
 - **Título**: Se rompió el termotanque un domingo.
 - **Subtítulo**: Tenés a quién llamar.
@@ -490,9 +496,9 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Items**: Plomería · Gas · Electricidad · Cerrajería · Aire acondicionado · Limpieza
 - **Idea**: La lista de oficios con íconos de Phosphor, sobre un fondo que transmita el apuro del momento, pero cotidiano y solucionable, no una catástrofe. El título juega con el problema real del anfitrión un domingo a la mañana.
 - **Foto/s**: Ninguna, o una foto bien neutra de herramientas.
-- **CTA**: A definir cuando salga la función
+- **CTA**: Sumá tu propiedad en hospeda.com.ar
 - **Idioma**: Español
-- **Por qué está frenada**: el directorio está en construcción. Se diseña ahora y se publica cuando esté disponible.
+- **Nota**: es un beneficio que ninguna otra plataforma da, y le habla al anfitrión en un momento de dolor muy concreto. Vale la pena también como historia suelta, sin campaña: el termotanque un domingo lo vivió todo el que alquila.
 
 ---
 
@@ -534,15 +540,59 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 
 ---
 
+#### 12.16 · Pagás con Mercado Pago
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: Como estás acostumbrado
+- **Título**: Pagás con Mercado Pago.
+- **Subtítulo**: Con tarjeta o con plata de tu cuenta.
+- **Cuerpo**: Los cobros los maneja Mercado Pago. Nosotros no guardamos los datos de tu tarjeta.
+- **Idea**: Placa de tranquilidad, no de venta. El logo de Mercado Pago tiene que verse claramente — es el elemento que hace el trabajo. Diseño sobrio, mucho aire, nada de flechas ni signos de exclamación: acá se transmite seriedad, y cualquier exceso gráfico juega en contra.
+- **Foto/s**: Ninguna. Logo de Mercado Pago sobre fondo plano de la paleta.
+- **CTA**: Sumá tu propiedad en hospeda.com.ar
+- **Idioma**: Español
+- **Por qué esta pieza importa más de lo que parece**: ahora la tarjeta se carga al registrarse, antes de la prueba. Eso mete una duda nueva justo en el peor momento — "¿le doy mi tarjeta a una plataforma que no conozco?". Que el cobro lo maneje Mercado Pago desactiva esa duda de una, sobre todo con un dueño de cabaña que no compra software por internet. **Y lo de pagar con dinero en cuenta no es un detalle**: para mucha gente es la diferencia entre poder pagar y no poder.
+- **Dónde más usarlo**: además de esta placa, conviene que el logo de Mercado Pago aparezca como sello chico en las piezas que hablan de la prueba o del alta (12.1 y 12.2). Ahí es donde aparece la objeción.
+
+---
+
+#### 12.17 · Que las IA te recomienden
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Ya no se busca solo en Google
+- **Título**: Cuando le preguntan a una IA dónde dormir, queremos que aparezcas vos.
+- **Cuerpo**: Preparamos todo el portal para que los asistentes de inteligencia artificial encuentren y recomienden lo que está publicado acá.
+- **Idea**: Una conversación con un asistente de inteligencia artificial donde alguien pregunta *"¿dónde me puedo quedar en Colón un fin de semana?"* y la respuesta menciona un alojamiento. El formato de chat se reconoce al instante. Que se entienda que la recomendación es espontánea, no un aviso pago.
+- **Foto/s**: Ninguna. Se arma con el aspecto de una conversación de chat.
+- **CTA**: Sumá tu propiedad en hospeda.com.ar
+- **Idioma**: Español
+- **Por qué es un diferencial**: cada vez más gente arma el viaje preguntándole a un asistente en vez de buscar en Google. El portal está preparado para eso — no solo para el buscador tradicional — y prácticamente ninguna plataforma de la región lo está. Es un argumento que en un año va a ser obvio y hoy todavía sorprende.
+- **Ojo con la promesa**: no se puede garantizar que una IA recomiende un alojamiento puntual, igual que nadie garantiza el primer puesto en Google. El mensaje es que **el portal está preparado** para que eso pase, no que pase siempre. Cuidar que el texto no se lea como una garantía.
+
+---
+
+## Definiciones tomadas
+
+Decisiones ya cerradas. Se respetan salvo aviso.
+
+| Tema | Definición |
+|---|---|
+| **Cupones de descuento** | **No se publica ninguno.** Los cupones se entregan a personas puntuales o en momentos puntuales, nunca en una publicación abierta. Ninguna placa lleva código de descuento. |
+| **Nombrar otras plataformas — calendarios** | **Sí se nombran.** Google, Airbnb, Booking y cualquier otro calendario estándar, porque son los que efectivamente se conectan. |
+| **Nombrar otras plataformas — importar la ficha** | **No se nombran Airbnb ni Booking.** Se dice "Google, Mercado Libre y otras plataformas de alquiler". |
+| **Tarjeta de crédito** | **Se pide al registrarse**, antes de la prueba. No se cobra nada hasta que terminan los 30 días. Cambió respecto de antes: **nunca decir "sin tarjeta"**. |
+| **Días de prueba** | 30 días. |
+| **Directorio de oficios** | Disponible. La pieza 12.13 quedó en prioridad 1. |
+
+---
+
 ## Temas a resolver
 
-Cosas que frenan la producción de alguna pieza y necesitan una definición.
-
-| Tema | Qué hay que definir | Piezas afectadas |
-|---|---|---|
-| **Cupón de descuento** | Cuál es el código vigente y hasta cuándo vale. | 12.1 |
-| **Uso de nombres de otras plataformas** | Aparecen Airbnb, Booking y Google en placas publicitarias. Conviene que alguien lo revise. | 12.3, 12.4 |
-| **Directorio de oficios** | Confirmar si ya está disponible para anfitriones. Si lo está, la pieza 12.13 pasa a prioridad 1. | 12.13 |
+Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pieza.
 
 ---
 
@@ -561,7 +611,7 @@ Cosas que frenan la producción de alguna pieza y necesitan una definición.
 | C · Atracción | 9. Lugares para visitar | ⬜ pendiente |
 | C · Atracción | 10. Eventos y agenda | ⬜ pendiente |
 | C · Atracción | 11. Gastronomía de la región | ⬜ pendiente |
-| D · Conversión | 12. Sumar alojamientos y negocios | ✅ 15 piezas |
+| D · Conversión | 12. Sumar alojamientos y negocios | ✅ 17 piezas |
 | D · Conversión | 13. Confianza y testimonios | ⬜ pendiente |
 | D · Conversión | 14. Tutoriales y ayuda | ⬜ pendiente (acá va el instructivo de carga de alojamientos) |
 | E · Recurrentes | 15. Campañas | ⬜ pendiente |
