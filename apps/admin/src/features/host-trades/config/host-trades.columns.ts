@@ -9,33 +9,28 @@ import { useDeleteHostTradeMutation } from '../hooks/useHostTradeQuery';
 import type { HostTradeListItem } from '../schemas/host-trades.schemas';
 
 /**
- * Localized labels for each HostTradeCategoryEnum value.
- * Keys mirror the enum values; translations live in admin-entities.
+ * Badge options for the category column, labelled from the shared dictionary.
+ *
+ * The labels used to be a hardcoded `Record<HostTradeCategoryEnum, string>` of
+ * Spanish names in this file, and by the time it was removed three of the
+ * thirteen had already drifted from `host-trades.categories.*`: the admin read
+ * "Pileta / Jardín", "Plagas" and "Internet" where the public directory read
+ * "Pileta y Jardín", "Control de plagas" and "Internet / TV". Two copies of the
+ * same words only ever diverge.
+ *
+ * `host-trades` is a SHARED namespace, so the admin reads the same entry the
+ * directory renders — the category means the same thing on both screens, and
+ * translating it twice is how they stop agreeing.
+ *
+ * @param t - Translation function from `useTranslations()`.
+ * @returns One badge option per enum value, in enum order.
  */
-const CATEGORY_LABELS: Record<HostTradeCategoryEnum, string> = {
-    [HostTradeCategoryEnum.CERRAJERIA]: 'Cerrajería',
-    [HostTradeCategoryEnum.PLOMERIA]: 'Plomería',
-    [HostTradeCategoryEnum.ELECTRICIDAD]: 'Electricidad',
-    [HostTradeCategoryEnum.GAS]: 'Gas',
-    [HostTradeCategoryEnum.CLIMATIZACION]: 'Climatización',
-    [HostTradeCategoryEnum.LIMPIEZA]: 'Limpieza',
-    [HostTradeCategoryEnum.FLETES]: 'Fletes',
-    [HostTradeCategoryEnum.VIDRIERIA]: 'Vidriería',
-    [HostTradeCategoryEnum.CARPINTERIA]: 'Carpintería',
-    [HostTradeCategoryEnum.PILETA_JARDIN]: 'Pileta / Jardín',
-    [HostTradeCategoryEnum.PLAGAS]: 'Plagas',
-    [HostTradeCategoryEnum.INTERNET]: 'Internet',
-    [HostTradeCategoryEnum.ALBANILERIA]: 'Albañilería'
-};
-
-/**
- * Badge color mapping for host-trade categories.
- */
-const CATEGORY_BADGE_OPTIONS = Object.values(HostTradeCategoryEnum).map((value) => ({
-    value,
-    label: CATEGORY_LABELS[value] ?? value,
-    color: BadgeColor.TEAL
-}));
+const buildCategoryBadgeOptions = (t: ColumnTFunction) =>
+    Object.values(HostTradeCategoryEnum).map((value) => ({
+        value,
+        label: t(`host-trades.categories.${value}`),
+        color: BadgeColor.TEAL
+    }));
 
 /**
  * Builds the TanStack Table column definitions for the host-trades list page.
@@ -70,7 +65,7 @@ export const createHostTradesColumns = (
         accessorKey: 'category',
         enableSorting: true,
         columnType: ColumnType.BADGE,
-        badgeOptions: CATEGORY_BADGE_OPTIONS
+        badgeOptions: buildCategoryBadgeOptions(t)
     },
     {
         id: 'contact',
