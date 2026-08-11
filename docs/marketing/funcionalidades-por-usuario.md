@@ -230,11 +230,13 @@ Público que **no estaba** en el catálogo viejo y hoy tiene producto propio.
 ## 8. Transversal — todos los usuarios
 
 - 🟢 Tres idiomas (es / en / pt), español por defecto
-- 🟢 SEO en todas las entidades: título y descripción propios, OG, sitemap dinámico, llms.txt
-- 🟢 Newsletter con doble opt-in y gestión desde la cuenta
-- 🟢 Códigos promocionales: `LANZAMIENTO50`, `BIENVENIDO30`, `FREEMONTH`, y comp gratis-para-siempre
+- 🟢 Preparado para aparecer bien en Google: título y descripción por entidad, buena vista al compartir un link, mapa del sitio
+- 🟢 **Preparado para que las IA lo recomienden** — el portal, sus destinos y sus alojamientos
+- 🟢 Novedades por mail, con confirmación y baja en un clic
+- 🟢 **Cobros por Mercado Pago**, con tarjeta o dinero en cuenta
 - 🟢 Clima y pronóstico por destino
-- 🟢 Novedades / release notes filtradas por rol
+- 🟢 Novedades de la plataforma, filtradas según el tipo de usuario
+- ⚠️ Existen códigos promocionales, pero **no se comunican en redes**: se entregan a mano, a personas o momentos puntuales
 
 ---
 
