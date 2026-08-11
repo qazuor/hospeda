@@ -157,7 +157,7 @@ describe('counterpart resolution', () => {
     });
 
     /** AC-6 — the declarant may not confirm their own declaration. */
-    it('answers 404 when the declarant confirms their own declaration', async () => {
+    it('AC-6: answers 404 when the declarant confirms their own declaration', async () => {
         const { service, model } = buildService(makeUsage({ declaredBy: 'PROVIDER' }));
 
         const result = await service.confirmUsage({ usageId: USAGE_ID }, actorOf(OWNER_ID));

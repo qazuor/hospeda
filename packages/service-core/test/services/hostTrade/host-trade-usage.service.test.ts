@@ -389,7 +389,7 @@ describe('guard — SELF_USAGE_FORBIDDEN', () => {
 });
 
 describe('guard — PROVIDER_REVOKED', () => {
-    it('refuses a host declaring on a revoked listing', async () => {
+    it('AC-28: refuses a host declaring on a revoked listing', async () => {
         const { service, model } = buildService({
             hostTrade: makeHostTrade({ revokedAt: new Date('2026-07-01T00:00:00Z') })
         });

@@ -124,7 +124,7 @@ describe('HostTradeReviewService.createReview — the happy path', () => {
 
 describe('gate 1 — HOST_TRADE_REVIEW_CREATE', () => {
     /** AC-15 — a provider-only account has no accommodations, so no HOST role. */
-    it('refuses an actor without the permission', async () => {
+    it('AC-15: refuses a provider-only account, which holds no HOST role', async () => {
         const { service, model } = buildService();
         const providerOnly = new ActorFactoryBuilder().withId(OWNER_ID).withPermissions([]).build();
 
@@ -162,7 +162,7 @@ describe('gate 2 — a confirmed usage must exist', () => {
 
 describe('gate 3 — self-review', () => {
     /** AC-17 — fires even with the HOST role AND a confirmed usage. */
-    it('answers SELF_REVIEW_FORBIDDEN to the listing owner', async () => {
+    it('AC-17: refuses the owner reviewing his own listing, HOST role and confirmed usage notwithstanding', async () => {
         const { service, model } = buildService();
         const ownerWhoIsAlsoHost = new ActorFactoryBuilder()
             .withId(OWNER_ID)
@@ -197,7 +197,7 @@ describe('gate 3 — self-review', () => {
     });
 
     /** AC-16 — the same person may review a DIFFERENT provider. */
-    it('lets a host who also owns a listing review someone else', async () => {
+    it('AC-16: lets an account that is host AND provider review a DIFFERENT provider', async () => {
         const { service, model } = buildService({
             provider: {
                 id: HT_ID,
@@ -219,7 +219,7 @@ describe('gate 3 — self-review', () => {
 });
 
 describe('gate 4 — the provider must still be listed', () => {
-    it('answers PROVIDER_REVOKED for a revoked listing', async () => {
+    it('AC-28: answers PROVIDER_REVOKED when the reviewed provider was delisted', async () => {
         const { service, model } = buildService({
             provider: {
                 id: HT_ID,
@@ -312,7 +312,7 @@ describe('initial moderation state', () => {
     });
 
     /** AC-19 — content moderation overrides the APPROVED default. */
-    it('holds a flagged review for a human', async () => {
+    it('AC-19: holds a flagged text for a human, overriding the APPROVED default', async () => {
         vi.mocked(moderateText).mockResolvedValueOnce({ score: 1 } as never);
         const { service, model } = buildService();
 
@@ -740,7 +740,7 @@ describe('HostTradeReviewService.updateReview — what it writes', () => {
 
 describe('HostTradeReviewService.updateReview — re-moderation', () => {
     /** AC-22 — the edited text goes back through the engine. */
-    it('re-moderates a rewritten text and re-approves it when it is clean', async () => {
+    it('AC-22: re-moderates a rewritten text and re-approves it when it is clean', async () => {
         const { service, model } = buildEditService();
 
         await service.updateReview(
@@ -843,7 +843,7 @@ describe('HostTradeReviewService.updateReview — the reply marker (AC-22)', () 
      * directory can say the reply answers an earlier version, and the provider
      * can rewrite it.
      */
-    it('marks an existing reply instead of deleting it', async () => {
+    it('AC-22: marks an existing reply instead of deleting it, and seals reviewEditedAfterReply', async () => {
         const { service, replyModel } = buildEditService({ reply: approvedReply() });
 
         await service.updateReview(
