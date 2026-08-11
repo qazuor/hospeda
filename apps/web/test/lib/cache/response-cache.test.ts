@@ -19,20 +19,25 @@
  * asserted here as part of each expected tag LIST rather than in a separate
  * case, so an emitter that stopped adding it — or added it in the wrong
  * position — fails these tests too, not only the dedicated guard.
+ *
+ * `CACHEABLE_CONTROL` below is a literal, not `resolveCacheableControl({
+ * cacheClass: 'catalog' })` — a fixture computed by the code under test cannot
+ * fail when that code changes (HOS-426). `'catalog'` is the class these tests
+ * exercise: their tags (`list-accom`) are the accommodation collection tag.
  */
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { _resetCacheTagEnvironment } from '../../../src/lib/cache/cache-tag-environment';
-import {
-    LISTING_CACHEABLE_CONTROL,
-    LISTING_PRIVATE_CONTROL
-} from '../../../src/lib/cache/listing-cache';
+import { LISTING_PRIVATE_CONTROL } from '../../../src/lib/cache/listing-cache';
 import {
     applyCacheHeaders,
     buildStaticCacheHeaders,
     declareCacheTags,
     isEdgeCacheableControl
 } from '../../../src/lib/cache/response-cache';
+
+/** The `catalog` cache class's `Cache-Control`, pinned as a literal (HOS-426). */
+const CACHEABLE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600';
 
 /** Minimal stand-in for the request-scoped locals the helpers touch. */
 function makeLocals(): App.Locals {
@@ -174,12 +179,13 @@ describe('applyCacheHeaders', () => {
             locals,
             headers,
             cacheable: true,
+            cacheClass: 'catalog',
             tags: ['list-accom']
         });
 
-        expect(headers.get('Cache-Control')).toBe(LISTING_CACHEABLE_CONTROL);
+        expect(headers.get('Cache-Control')).toBe(CACHEABLE_CONTROL);
         expect(result).toEqual({
-            cacheControl: LISTING_CACHEABLE_CONTROL,
+            cacheControl: CACHEABLE_CONTROL,
             cacheable: true,
             tagCount: 1
         });
@@ -200,6 +206,7 @@ describe('applyCacheHeaders', () => {
             locals,
             headers,
             cacheable: true,
+            cacheClass: 'catalog',
             tags: ['list-accom']
         });
 
@@ -216,6 +223,7 @@ describe('applyCacheHeaders', () => {
             locals,
             headers,
             cacheable: false,
+            cacheClass: 'catalog',
             tags: ['list-accom']
         });
 
@@ -236,6 +244,7 @@ describe('applyCacheHeaders', () => {
             locals,
             headers,
             cacheable: true,
+            cacheClass: 'catalog',
             tags: ['']
         });
 
@@ -247,7 +256,7 @@ describe('applyCacheHeaders', () => {
 
 describe('isEdgeCacheableControl', () => {
     it.each([
-        [LISTING_CACHEABLE_CONTROL, true],
+        [CACHEABLE_CONTROL, true],
         ['public, max-age=3600', true],
         ['s-maxage=300, stale-while-revalidate=60', true],
         [LISTING_PRIVATE_CONTROL, false],
