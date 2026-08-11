@@ -171,6 +171,7 @@
             "noChanges": "You did not change anything in your review."
         },
         "cta": "Review {{name}}",
+        "ctaEdit": "Edit your review of {{name}}",
         "editTitle": "Edit your review of {{name}}",
         "save": "Save changes",
         "loading": "Checking whether you already reviewed them…"

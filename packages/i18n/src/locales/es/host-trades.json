@@ -171,6 +171,7 @@
             "noChanges": "No cambiaste nada de tu valoración."
         },
         "cta": "Valorar a {{name}}",
+        "ctaEdit": "Editar tu valoración de {{name}}",
         "editTitle": "Editar tu valoración de {{name}}",
         "save": "Guardar cambios",
         "loading": "Buscando si ya lo valoraste…"
