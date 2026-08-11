@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 59/70 tareas cerradas (84%)
+## Progreso: 60/70 tareas cerradas (86%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -205,7 +205,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Ta…
   - Bloqueada por: T-038 · Bloquea a: —
 
-## Fase `testing` — 3/11 completadas (complejidad promedio 2.5)
+## Fase `testing` — 4/11 completadas (complejidad promedio 2.5)
 
 - [x] **T-057** (c3) — Tests unitarios de la máquina de estados del uso
   - TODAS las transiciones válidas (PENDING→CONFIRMED, PENDING→REJECTED, PENDING→EXPIRED, REJECTED→PENDING por undo) y TODAS las inválidas (CONFIRMED→cualquier cosa, EXPIRED→cualquier cosa, dobl…
@@ -216,7 +216,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-059** (c2) — Tests unitarios del recálculo de agregados
   - distinctHostsCount con usos repetidos del mismo anfitrión (el caso que más fácil se implementa mal); valoración PENDING que no suma; valoración soft-deleted que no suma; benefitRespectedCoun…
   - Bloqueada por: T-023 · Bloquea a: —
-- [ ] **T-060** (c2) — Tests unitarios del umbral y la ventana de suspensión
+- [x] **T-060** (c2) — Tests unitarios del umbral y la ventana de suspensión
   - 2 rechazos no suspenden y el 3ero sí (AC-11); un rechazo fuera de la ventana de 90 días no cuenta; el undo del que gatilló NO levanta la suspensión sola; el admin la levanta y queda registra…
   - Bloqueada por: T-022 · Bloquea a: —
 - [ ] **T-061** (c3) — Tests de integración de los endpoints del anfitrión y compartidos
