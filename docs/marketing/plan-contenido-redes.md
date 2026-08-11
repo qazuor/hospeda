@@ -3098,3 +3098,25 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | E · Recurrentes | 16. Novedades | ✅ 2 plantillas |
 | E · Recurrentes | 17. Pedidos de colaboración | ✅ 6 piezas |
 | E · Recurrentes | 18. **De anfitrión a anfitrión** | ✅ 8 piezas · serie abierta |
+
+**Total: 147 piezas en 18 categorías.** Las 18 categorías están escritas.
+
+### Por dónde empezar
+
+Producir las 147 de una es imposible y no hace falta. El orden que rinde:
+
+1. **Las de prioridad 1 de la categoría 12** (sumar alojamientos) — sin oferta publicada no hay nada que mostrarle al turista. Empezar por la 12.1, que es la que más circula por WhatsApp.
+2. **La 7.1** (sumar oficios) y **la 17.1** (pedir fotos) — destraban otras categorías: sin oficios el directorio no existe, sin fotos no arranca destinos.
+3. **Las campañas de fin de año y verano** (15.1, 15.2, 15.3) — tienen fecha y se producen en septiembre y octubre. Si se pasan, se pasaron.
+4. **Las presentaciones de los 7 destinos principales** (8.1 a 8.7) — el contenido que trae tráfico.
+5. **El resto**, por prioridad.
+
+### Lo que está pendiente de vos
+
+| Qué | Dónde |
+|---|---|
+| Escribir los errores reales del primer año | 18.8 |
+| Revisar los textos de las ciudades chicas | 8.1 a 8.22, los marcados con ⚠️ |
+| Verificar fechas de feriados y vedas de pesca | Categoría 15 |
+| Confirmar las cuatro afirmaciones de transparencia | 2.2 |
+| Conseguir el material fotográfico | Todas, pero sobre todo la categoría 8 |
