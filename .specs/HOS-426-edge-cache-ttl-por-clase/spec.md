@@ -125,8 +125,14 @@ the two pairs were written independently.
   deploy purge below.
 - **Collection tags** — purged correctly on a content write. Verified on staging
   (HOS-424's own evidence table: the post list WAS evicted).
-- **Entity tags** — NOT purged on a content write. This is HOS-424, open, In
-  Progress, no commits yet.
+- **Entity tags** — were NOT purged on a content write. This was HOS-424, which
+  **merged into `staging` as PR #2746 on 2026-08-10**, while this spec was being
+  written: the fix forwards the entity id on post, event and destination
+  revalidation, and makes the purge adapter read the endpoint's verdict rather
+  than the status line. The issue sits in **In Review pending a staging smoke**
+  (edit a post, confirm both tags and a non-NULL `entity_id` in
+  `revalidation_log`) — so the code is in, the field verification is not. §6.3
+  and the delivery plan treat `detail` as gated on that smoke, not on the merge.
 - **Deploy** — HOS-427 shipped (PR #2739, merged): the web container purges the
   namespace catch-all tag once per deploy, 45 s after it serves its first
   request. This closes prerequisite 1 as stated in the Linear issue.
@@ -182,21 +188,68 @@ The Linear issue treats HOS-424 as blocking the whole raise. It does not:
   evicted in the same write that failed to evict the detail pages).
 - **`static` is NOT blocked.** HOS-427 landed; the deploy purge is its
   invalidation path, and nothing else changes those pages.
-- **`detail` IS blocked.** Its invalidation is the entity tag, which is exactly
-  what HOS-424 reports as broken. Raising it to 3 600 s multiplies a live defect
-  by 12.
+- **`detail` IS gated.** Its invalidation is the entity tag, which is exactly
+  what HOS-424 reported as broken. Raising it to 3 600 s before that is fixed
+  multiplies a live defect by 12.
 
-So this can ship in two slices: `static` + `catalog` + `home` first, `detail`
-once HOS-424 closes. Whether to actually split is OQ-1.
+So this ships in slices: `static` + `catalog` + `home` + `pricing` first,
+`detail` after. HOS-424's fix merged mid-spec (§5.4), which moves `detail`'s
+gate from "waiting on a fix" to "waiting on the smoke that proves the fix" —
+a much shorter wait, but not the same thing as done. The distinction matters
+here more than usual: HOS-424 was found precisely because a purge that looked
+correct in code was not evicting anything in the field, so a code-only
+confirmation is the kind of evidence that already failed once on this exact
+mechanism.
 
-### 6.4 The static guard
+### 6.4 Folding pricing in closes a live fail-open
 
-Extend or mirror `test/static-guards/cacheable-responses-carry-catch-all.test.ts`
-so that every `applyCacheHeaders` call under `src/pages` passes a `cacheClass`
-drawn from the vocabulary. Per the repo's guard convention, the assertion
-message must claim exactly what the predicate proves — "this call passes a
-cacheClass literal", not "this page has the right TTL", which a source scan
-cannot know.
+The four `suscriptores/*` pages were outside `applyCacheHeaders`: they set
+`Cache-Control` with `Astro.response.headers.set(...)` and called
+`declareCacheTags` as a **separate statement**. Those two statements can
+disagree. `declareCacheTags` returns `tagCount: 0` when the deployment namespace
+cannot be resolved, and the header assignment neither knows nor cares — the
+result is a cacheable response carrying no purge tag, which is content nothing
+can evict for the full TTL, with nothing reporting it.
+
+That is precisely the failure `applyCacheHeaders` was built to make
+unrepresentable, and its file header says so: marking a response cacheable and
+tagging it for purge are the same decision, so they are the same call. Migrating
+these four pages is therefore not just TTL bookkeeping (G-5) — it removes the
+last four responses in the app that could go out cacheable-but-unpurgeable.
+
+Two behaviour deltas come with it, both intended:
+
+- The header gains `public`, which the hand-written version omitted. Safe here:
+  none of the four reads `Astro.locals.user`, and `suscriptores` is not in
+  `SESSION_OPTIONAL_SEGMENTS`, so the middleware never resolves a session on
+  these routes. They are session-blind by construction, not by discipline.
+- When the namespace cannot resolve, these pages now demote to
+  `private, no-cache` instead of emitting an unpurgeable cacheable response.
+
+Their SWR stays at 60 s rather than snapping to the site's 600 s, so PR A
+changes no TTL. Reconciling that outlier happens in PR B, deliberately, where a
+TTL change is what the diff is about.
+
+### 6.5 The static guard
+
+The obvious guard — "every call passes a `cacheClass` from the vocabulary" —
+turned out to be worth nothing. `cacheClass` is required and typed as
+`CacheClass`, and `astro check` runs in CI, so both halves of that claim are
+compile errors already. A test asserting them would only confirm what the
+compiler proves.
+
+What no type can express is whether the declared class matches the page's
+invalidation mechanism, and the honest signal for that is the tag. So the guard
+(`test/static-guards/cache-class-matches-tag.test.ts`) asserts a **biconditional
+over the three classes that map 1:1 to a distinctive tag**: `site-config` ⟺
+`static`, `home` ⟺ `home`, `pricing` ⟺ `pricing`, in both directions.
+
+`catalog` and `detail` are deliberately excluded. A listing scoped to one entity
+(`destinos/[slug]/eventos/`) legitimately carries both a collection tag and that
+entity's tags, so no source-level rule separates it from a detail page without
+lying — and per the repo's guard convention, the message may not claim more than
+the predicate proves. Telling those two apart stays a reviewer's judgment against
+the §5.2 table.
 
 ## 7. Data model / contracts
 
@@ -230,13 +283,16 @@ staleness windows and origin load.
 - **AC-3** — A cacheable static page responds with `s-maxage=86400`, a catalog
   page with `s-maxage=3600`, measured on a real response, not asserted from
   source.
-- **AC-4** — The `detail` class ships only after HOS-424 is closed (or, if
-  OQ-1 says otherwise, ships at 300 s and is raised in a follow-up).
+- **AC-4** — The `detail` class is raised only after HOS-424's staging smoke
+  passes — an edited post's own detail page observably evicted at the edge, not
+  merely a merged fix. Until then it ships at today's value.
 - **AC-5** — The pricing pages resolve their TTL from the same vocabulary; the
   two orphan constants in `fetch-plans.ts` are gone.
-- **AC-6** — A static guard fails when a cacheable page under `src/pages` calls
-  `applyCacheHeaders` without a `cacheClass`. Mutation-tested: introduce the
-  omission and confirm the guard goes red.
+- **AC-6** — A static guard fails when a page's declared class contradicts its
+  tag, in either direction, for the three classes where that is decidable
+  (§6.5). Mutation-tested: flip one page's class and confirm the guard goes red.
+  "Passes a valid `cacheClass` at all" is NOT an acceptance criterion — the
+  compiler already enforces it, and a test restating it proves nothing.
 - **AC-7** — No comment in `apps/web` states a TTL that the code no longer
   emits. Includes the file headers of `listing-cache.ts`, `purge-on-deploy.ts`
   and `static-pages-cache.test.ts`, all of which argue from the 300 s value
@@ -275,27 +331,53 @@ staleness windows and origin load.
 
 ## 11. Open questions
 
-- **OQ-1** — Ship in two slices (`static`+`catalog`+`home` now, `detail` after
-  HOS-424), or hold everything until HOS-424 closes? **Recommendation: two
-  slices.** The mechanism lands and gets exercised on the classes that are
-  provably safe, and `detail` becomes a one-line change afterwards.
-- **OQ-2** — What TTL for the **home**? D-15 does not mention it. It is neither
-  copy-only nor a catalog listing: it aggregates featured content across
-  entities and carries only the `home` tag. **Recommendation: treat it as
-  `catalog` (1 h)** — it changes when content changes, and its tag is purged by
-  the platform-settings writer.
-- **OQ-3** — What TTL for **pricing**? Today 300 s / 60 s. Plan changes are
-  rare, but a wrong price is worse than stale copy. **Recommendation: 1 h with
-  the `pricing` tag as the purge path**, matching catalog, only if a plan write
-  actually purges `CACHE_TAG_PRICING` — to be verified, not assumed.
-- **OQ-4** — Does SWR scale with the TTL (2×, giving 48 h on statics) or get
-  capped? **Recommendation: cap SWR at 1 h for every class.** Its purpose is
-  absorbing the revalidation round-trip, not extending the staleness budget, and
-  a 48 h stale-serve window undercuts the deploy purge.
-- **OQ-5** — Is enabling the Coolify healthcheck (R-1) a blocker for this spec,
-  or does it get its own issue? **Recommendation: its own issue, blocking the
-  `static` slice only.** It is a dashboard action with its own verification and
-  does not belong in a code PR.
+All five were resolved by the owner on 2026-08-10, delegating to the
+recommendations as written. Recorded here rather than deleted, because the
+reasoning is what a future reader needs.
+
+- ~~**OQ-1** — Ship in two slices, or hold everything until HOS-424 closes?~~
+  **RESOLVED → two slices.** `static` + `catalog` + `home` + `pricing` first;
+  `detail` once HOS-424 closes. The mechanism lands and gets exercised on the
+  classes that are provably safe, and `detail` becomes a one-line change.
+- ~~**OQ-2** — What TTL for the home?~~ **RESOLVED → treat it as `catalog`
+  (1 h).** It changes when content changes, and its tag has a live purger.
+- ~~**OQ-3** — What TTL for pricing?~~ **RESOLVED → 1 h.** The purge chain was
+  verified rather than assumed: `plan.service.ts:81` purges `CACHE_TAG_PRICING`
+  on a plan write, and the four pages declare that tag. See §6.4 for the
+  fail-open this uncovered on the way.
+- ~~**OQ-4** — Does SWR scale with the TTL, or get capped?~~ **RESOLVED → cap
+  SWR at 1 h for every class.** Its purpose is absorbing the revalidation
+  round-trip, not extending the staleness budget; a 48 h stale-serve window
+  would undercut the deploy purge that makes the 24 h static TTL defensible.
+- ~~**OQ-5** — Is the Coolify healthcheck a blocker, or its own issue?~~
+  **RESOLVED → its own issue: HOS-428**, blocking the `static` class only. It is
+  a dashboard action with its own verification and does not belong in a code PR.
+
+### 11.1 Resulting budgets
+
+| Class | `s-maxage` | `swr` | Ships in | Gated on |
+|---|---|---|---|---|
+| `static` | 86 400 | 3 600 | slice 2 | HOS-428 (healthcheck) |
+| `catalog` | 3 600 | 3 600 | slice 2 | — |
+| `home` | 3 600 | 3 600 | slice 2 | — |
+| `pricing` | 3 600 | 3 600 | slice 2 | — |
+| `detail` | 3 600 | 3 600 | slice 3 | HOS-424's staging smoke |
+
+## 11.2 Delivery: three PRs, not one
+
+A change that touches the cache headers of the whole public site should not mix
+"refactor an API across 40 files" with "change what the edge serves" in one
+reviewable unit. Split:
+
+- **PR A — the mechanism, at today's behaviour.** Introduce the class
+  vocabulary with EVERY class resolving to the current value, add the required
+  parameter, classify all call sites, fold pricing in, add the guard, fix the
+  comments. Large diff, zero response changes. If something here is wrong, it is
+  wrong in a way the typecheck or the guard catches, not in production.
+- **PR B — the values.** Edit `cache-classes.ts` and the tests that pin the
+  numbers. Small diff, real behaviour change, reviewable on its own. Everything
+  except `detail`.
+- **PR C — `detail`.** One budget, after HOS-424's staging smoke passes.
 
 ## 12. Implementation notes
 
@@ -316,6 +398,8 @@ staleness windows and origin load.
 Canonical tracking:
 HOS-426
 
-Blocked by: HOS-424 (`detail` class only).
-Prerequisite closed: HOS-427 (deploy purge) — PR #2739.
+Blocked by: HOS-428 (Coolify healthcheck) for the `static` class; HOS-424's
+staging smoke for the `detail` class.
+Prerequisites merged: HOS-427 (deploy purge) — PR #2739; HOS-424 (entity-tag
+purge) — PR #2746, smoke pending.
 Parent decision: HOS-369 §11.2 D-15.
