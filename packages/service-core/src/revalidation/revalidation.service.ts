@@ -931,15 +931,18 @@ export class RevalidationService {
     /**
      * Extracts a stable entity identifier from the change event.
      *
-     * For accommodation events, returns the canonical UUID (`event.id`) when
-     * available — this is what gets written to `revalidation_log.entity_id`.
-     * Returning undefined (e.g. when a call site doesn't supply `id` yet) is
-     * expected and results in a NULL `entity_id` in the log row (no mixing of
+     * Returns the canonical UUID (`event.id`) when the call site supplied one —
+     * this is what gets written to `revalidation_log.entity_id`. Returning
+     * undefined results in a NULL `entity_id` in the log row (no mixing of
      * UUIDs and slugs in the same column).
      *
-     * For other entity types (destination, event, post), the hook does not yet
-     * forward `id`, so this returns undefined. Follow-up work per SPEC-246
-     * will add `id` propagation to those hooks.
+     * All four content types (accommodation, destination, event, post) forward
+     * `id` since HOS-424. Before that only `accommodation` did, and this
+     * function's own comment claimed otherwise — which is how it went unnoticed
+     * that a post write purged `post-<slug>` but never `post-<id>`, while the
+     * detail page tags itself with both. Do not weaken a call site back to
+     * slug-only: the missing tag fails silently, since the purge still reports
+     * success for the tags it did carry.
      *
      * Returns undefined when no specific entity instance is identifiable.
      */
@@ -952,8 +955,7 @@ export class RevalidationService {
                 // The canonical UUID when the call site had one; undefined
                 // otherwise. The slug is deliberately NOT used as a fallback —
                 // mixing UUIDs and slugs in one column makes `entity_id`
-                // unqueryable. All four content types carry `id` on
-                // EntityChangeData since HOS-369 W1-1.
+                // unqueryable.
                 return event.id;
             case 'accommodation_review':
             case 'destination_review':

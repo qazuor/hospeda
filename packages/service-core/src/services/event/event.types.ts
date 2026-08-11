@@ -8,10 +8,17 @@ export interface EventHookState extends Record<string, unknown> {
      * that `_beforeUpdate` can fetch the pre-update entity (SPEC-212 AC-5).
      */
     updateId?: string;
-    /** Entity data captured before soft-delete for post-delete side effects. */
-    deletedEvent?: { slug: string };
-    /** Entity data captured before restore for post-restore side effects. */
-    restoredEvent?: { slug: string };
+    /**
+     * Entity identifiers captured before soft-delete for post-delete side effects.
+     *
+     * Both identifiers are captured because the detail page tags itself with
+     * BOTH (`event-<slug>` and `event-<id>`), and the row is gone by the time
+     * the `_after*` hook runs — so whatever is not captured here can never be
+     * purged.
+     */
+    deletedEvent?: { slug: string; id: string };
+    /** Entity identifiers captured before restore for post-restore side effects. */
+    restoredEvent?: { slug: string; id: string };
     /** ID of the entity being hard-deleted, used for Cloudinary media cleanup. */
     deletedEntityId?: string;
     /**

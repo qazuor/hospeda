@@ -2038,6 +2038,16 @@ export interface MyHostTrade {
     /** Set once the listing has been taken down (HOS-278 R-4) — the row survives. */
     readonly revokedAt: string | null;
     readonly revokeReason: string | null;
+    /**
+     * Set while the listing may not declare usages (HOS-376 §6.5).
+     *
+     * Distinct from `revokedAt`: a revoked listing is gone from the directory,
+     * a suspended one is still listed and still accrues confirmations — it just
+     * cannot open new declarations. `declarationSuspendedById` is deliberately
+     * not here: who moderated is the moderator's business, not the provider's.
+     */
+    readonly declarationSuspendedAt: string | null;
+    readonly declarationSuspendReason: string | null;
 }
 
 /** Response envelope for `GET /protected/host-trades/mine`. */
@@ -2133,6 +2143,43 @@ export interface BenefitUsage {
 /** Response envelope shared by the three usage transitions. */
 export interface BenefitUsageTransitionResponse {
     readonly usage: BenefitUsage;
+}
+
+/**
+ * One entry of the provider's declaration selector (HOS-376 §6.2b).
+ *
+ * A name and an id, never an email. "Already served" is not consent to hand
+ * over a stored address, and a provider who needs the email channel already has
+ * the address — what he must not receive is an export of past clients' contacts.
+ */
+export interface LinkedHost {
+    readonly id: string;
+    readonly displayName: string;
+}
+
+/**
+ * A review of the caller's own listing, with his answer (HOS-376 T-050).
+ *
+ * The reply carries its `moderationState` — the one thing the directory shape
+ * omits — because its author is the one reading: an answer awaiting moderation
+ * has to read as "in review", never as absent.
+ */
+export interface OwnerReviewRow {
+    readonly review: HostTradeReview;
+    readonly author: {
+        readonly id: string;
+        readonly displayName: string | null;
+        readonly image: string | null;
+    } | null;
+    readonly reply: {
+        readonly id: string;
+        readonly content: string;
+        readonly moderationState: 'PENDING' | 'APPROVED' | 'REJECTED';
+        readonly moderationReason: string | null;
+        readonly reviewEditedAfterReply: boolean;
+        readonly createdAt: string;
+        readonly updatedAt: string;
+    } | null;
 }
 
 /** The optional three-dimension breakdown a host may add to a review. */
@@ -2346,6 +2393,135 @@ export const hostTradesApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/host-trades/${encodeURIComponent(hostTradeId)}/reviews`,
             body
+        });
+    },
+
+    /**
+     * Declares a usage from the PROVIDER side (HOS-376 T-050, §6.2b/c).
+     *
+     * Exactly one host identifier travels: `hostUserId` from the scoped
+     * selector, or `hostEmail` from the fallback. Sending both is refused by the
+     * API, and sending the email of somebody who is not a host answers
+     * `404 HOST_NOT_FOUND` explicitly rather than opaquely — a typo is the most
+     * frequent failure here, and hiding it would make the provider wait 30 days
+     * for a confirmation that can never arrive.
+     *
+     * @param params - The service date, one host identifier, and an optional note.
+     * @returns The created usage, or a typed error to branch on.
+     */
+    declareUsageAsProvider({
+        servicedAt,
+        hostUserId,
+        hostEmail,
+        note
+    }: {
+        servicedAt: string;
+        hostUserId?: string;
+        hostEmail?: string;
+        note?: string;
+    }): Promise<ApiResult<DeclaredUsageResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/mine/usages`,
+            body: {
+                servicedAt,
+                ...(hostUserId ? { hostUserId } : {}),
+                ...(hostEmail ? { hostEmail } : {}),
+                ...(note ? { note } : {})
+            }
+        });
+    },
+
+    /**
+     * The usages recorded on the caller's own listing (HOS-376 T-050).
+     *
+     * @param params - Optional `status` filter, page window, `cookieHeader` from SSR.
+     * @returns The page of usages plus its pagination envelope.
+     */
+    listOwnUsages({
+        status,
+        page,
+        pageSize,
+        cookieHeader
+    }: {
+        status?: BenefitUsageStatus;
+        page?: number;
+        pageSize?: number;
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<PaginatedResponse<BenefitUsage>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/host-trades/mine/usages`,
+            params: { status, page, pageSize },
+            cookieHeader
+        });
+    },
+
+    /**
+     * The hosts the caller may declare on directly (HOS-376 T-050, §6.2b).
+     *
+     * Scoped to pairs with a CONFIRMED usage, and that scope IS the privacy
+     * property: it lists nobody the provider has not already served. The payload
+     * carries a display name and never an email.
+     *
+     * @param params - `cookieHeader` when calling from SSR.
+     * @returns The selector's contents.
+     */
+    listLinkedHosts({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<{ readonly hosts: readonly LinkedHost[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/mine/linked-hosts`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * The caller's own QR (HOS-376 T-050, §6.2a).
+     *
+     * The URL travels alongside the image because a provider who cannot scan
+     * his own code — printing from a machine with no camera, or working out why
+     * a scan lands nowhere — needs to read the destination as text.
+     *
+     * @param params - `cookieHeader` when calling from SSR.
+     * @returns The SVG markup, the URL it encodes, and the slug.
+     */
+    getMyQr({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<
+        ApiResult<{ readonly svg: string; readonly url: string; readonly slug: string }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/mine/qr`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * The reviews written about the caller's own listing (HOS-376 T-050).
+     *
+     * NOT the directory read: here the caller's own reply arrives in whatever
+     * moderation state it is in, which is what lets the panel say "in review"
+     * instead of showing nothing where the answer should be.
+     *
+     * @param params - Page window, and `cookieHeader` when calling from SSR.
+     * @returns The page of reviews plus its pagination envelope.
+     */
+    listOwnReviews({
+        page,
+        pageSize,
+        cookieHeader
+    }: {
+        page?: number;
+        pageSize?: number;
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<PaginatedResponse<OwnerReviewRow>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/host-trades/mine/reviews`,
+            params: { page, pageSize },
+            cookieHeader
         });
     },
 

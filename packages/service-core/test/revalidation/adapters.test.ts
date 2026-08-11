@@ -39,7 +39,12 @@ describe('CloudflareRevalidationAdapter', () => {
     it('returns success when fetch returns 200', async () => {
         vi.stubGlobal(
             'fetch',
-            vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' })
+            vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                json: async () => ({ ok: true, purged: 1 })
+            })
         );
         const adapter = new CloudflareRevalidationAdapter({
             secret: SECRET,
@@ -65,6 +70,53 @@ describe('CloudflareRevalidationAdapter', () => {
         expect(result.error).toContain('404');
     });
 
+    // HOS-424 regression. The adapter used to derive `success` from the status
+    // line alone and never read the body, so a purge the endpoint explicitly
+    // declined was written to `revalidation_log` as `status = 'success'`. The
+    // endpoint only answers `{ ok: true }` after checking Cloudflare's own
+    // envelope (a Cloudflare 200 can mean "purged nothing"), so the body is the
+    // verdict and the status line is not.
+    it('returns failure when the endpoint answers 200 but does not confirm the purge', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                json: async () => ({ ok: false, error: 'cloudflare_purge_rejected' })
+            })
+        );
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
+            siteUrl: SITE_URL
+        });
+        const result = await adapter.revalidate({ tag: TEST_TAG });
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('did not confirm');
+        expect(result.error).toContain('cloudflare_purge_rejected');
+    });
+
+    it('returns failure when the endpoint answers 200 with an unparseable body', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                json: async () => {
+                    throw new SyntaxError('Unexpected token < in JSON at position 0');
+                }
+            })
+        );
+        const adapter = new CloudflareRevalidationAdapter({
+            secret: SECRET,
+            siteUrl: SITE_URL
+        });
+        const result = await adapter.revalidate({ tag: TEST_TAG });
+        expect(result.success).toBe(false);
+        expect(result.error).toContain('unparseable response body');
+    });
+
     it('returns failure on network error without throwing', async () => {
         vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
         const adapter = new CloudflareRevalidationAdapter({
@@ -77,7 +129,12 @@ describe('CloudflareRevalidationAdapter', () => {
     });
 
     it('POSTs to /api/revalidate/ (trailing slash) with the secret in the query string', async () => {
-        const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
+        const mockFetch = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            json: async () => ({ ok: true, purged: 1 })
+        });
         vi.stubGlobal('fetch', mockFetch);
         const adapter = new CloudflareRevalidationAdapter({
             secret: SECRET,
@@ -93,7 +150,12 @@ describe('CloudflareRevalidationAdapter', () => {
     });
 
     it('strips a trailing slash from siteUrl when building the request URL', async () => {
-        const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
+        const mockFetch = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            json: async () => ({ ok: true, purged: 1 })
+        });
         vi.stubGlobal('fetch', mockFetch);
         const adapter = new CloudflareRevalidationAdapter({
             secret: SECRET,
@@ -107,7 +169,12 @@ describe('CloudflareRevalidationAdapter', () => {
     it('returns the tag in the result', async () => {
         vi.stubGlobal(
             'fetch',
-            vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' })
+            vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                json: async () => ({ ok: true, purged: 1 })
+            })
         );
         const adapter = new CloudflareRevalidationAdapter({
             secret: SECRET,
@@ -118,7 +185,12 @@ describe('CloudflareRevalidationAdapter', () => {
     });
 
     it('sends the tag in the request body as { tags: [...] }', async () => {
-        const mockFetch = vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
+        const mockFetch = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            statusText: 'OK',
+            json: async () => ({ ok: true, purged: 1 })
+        });
         vi.stubGlobal('fetch', mockFetch);
         const adapter = new CloudflareRevalidationAdapter({
             secret: SECRET,
@@ -180,9 +252,12 @@ describe('CloudflareRevalidationAdapter', () => {
 
     describe('revalidateMany', () => {
         it('makes a single purge call for up to 100 tags and reports the same result for each', async () => {
-            const mockFetch = vi
-                .fn()
-                .mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                json: async () => ({ ok: true, purged: 1 })
+            });
             vi.stubGlobal('fetch', mockFetch);
             const adapter = new CloudflareRevalidationAdapter({
                 secret: SECRET,
@@ -198,9 +273,12 @@ describe('CloudflareRevalidationAdapter', () => {
         });
 
         it('chunks a batch over the 100-tags-per-request limit into multiple requests', async () => {
-            const mockFetch = vi
-                .fn()
-                .mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                json: async () => ({ ok: true, purged: 1 })
+            });
             vi.stubGlobal('fetch', mockFetch);
             const adapter = new CloudflareRevalidationAdapter({
                 secret: SECRET,
@@ -254,7 +332,12 @@ describe('CloudflareRevalidationAdapter', () => {
         it('echoes input tags into result objects', async () => {
             vi.stubGlobal(
                 'fetch',
-                vi.fn().mockResolvedValue({ ok: true, status: 200, statusText: 'OK' })
+                vi.fn().mockResolvedValue({
+                    ok: true,
+                    status: 200,
+                    statusText: 'OK',
+                    json: async () => ({ ok: true, purged: 1 })
+                })
             );
             const adapter = new CloudflareRevalidationAdapter({
                 secret: SECRET,
@@ -268,9 +351,12 @@ describe('CloudflareRevalidationAdapter', () => {
 
     describe('purgeEverything', () => {
         it('POSTs { purgeEverything: true, reason } and returns a result targeting WHOLE_ZONE_TARGET', async () => {
-            const mockFetch = vi
-                .fn()
-                .mockResolvedValue({ ok: true, status: 200, statusText: 'OK' });
+            const mockFetch = vi.fn().mockResolvedValue({
+                ok: true,
+                status: 200,
+                statusText: 'OK',
+                json: async () => ({ ok: true, purged: 1 })
+            });
             vi.stubGlobal('fetch', mockFetch);
             const adapter = new CloudflareRevalidationAdapter({
                 secret: SECRET,

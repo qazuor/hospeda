@@ -4,7 +4,8 @@ import {
     HostTradeModel,
     HostTradeReviewModel,
     HostTradeReviewReplyModel,
-    type HostTradeReviewWithAuthorAndReply
+    type HostTradeReviewWithAuthorAndReply,
+    type HostTradeReviewWithOwnerReply
 } from '@repo/db';
 import type {
     CountResponse,
@@ -504,6 +505,66 @@ export class HostTradeReviewService extends BaseCrudService<
                 const { items, total } = await this.model.findAllWithAuthorAndReply(
                     where,
                     { page, pageSize },
+                    ctx?.tx
+                );
+
+                return { items, total };
+            }
+        });
+    }
+
+    /**
+     * The provider's own reviews, for his account panel (§7.5 `/mine/reviews`).
+     *
+     * ASYMMETRIC BY DESIGN, and the asymmetry is the reason this exists at all:
+     *
+     * - The REVIEW is shown only once it is public (`APPROVED`). One still in
+     *   moderation is not published, and handing it to the person it is about
+     *   would surface a complaint that may yet be rejected.
+     * - His own REPLY is shown in whatever state it is in, through
+     *   {@link HostTradeReviewModel.findAllForOwnerWithReplyState}. The
+     *   directory query nulls an unapproved answer, which is right for a reader
+     *   and wrong for its author: it would tell the provider that the reply he
+     *   just wrote does not exist — the exact failure §8 names.
+     *
+     * AUTH-ONLY, like the rest of `/mine/*`: an approved provider holds no
+     * `HOST_TRADE_*` permission (HOS-278 AC-7), so ownership of the row is the
+     * only gate there can be. The ROUTE resolves "your own listing" and hands
+     * the id down; re-resolving it here would double the query for nothing —
+     * the same division as `HostTradeUsageService.listForProvider`.
+     *
+     * @param input.hostTradeId - The listing whose reviews are being read.
+     * @param input.page - 1-based page number.
+     * @param input.pageSize - Rows per page.
+     * @param actor - The provider's owner account.
+     * @param ctx - Optional service context.
+     * @returns The page of reviews, each with its author and his own answer.
+     */
+    public async listForOwner(
+        input: { readonly hostTradeId: string; readonly page: number; readonly pageSize: number },
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ items: HostTradeReviewWithOwnerReply[]; total: number }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listForOwner',
+            input: { ...input, actor },
+            schema: listForDirectoryInputSchema,
+            ctx,
+            execute: async (validated, validatedActor) => {
+                if (!validatedActor?.id) {
+                    throw new ServiceError(
+                        ServiceErrorCode.UNAUTHORIZED,
+                        'Authentication required'
+                    );
+                }
+
+                const { items, total } = await this.model.findAllForOwnerWithReplyState(
+                    {
+                        hostTradeId: validated.hostTradeId,
+                        moderationState: ModerationStatusEnum.APPROVED,
+                        deletedAt: null
+                    },
+                    { page: validated.page, pageSize: validated.pageSize },
                     ctx?.tx
                 );
 

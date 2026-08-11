@@ -1305,7 +1305,8 @@
             "contact": "Se quiser mais detalhes, entre em contato com a gente."
         },
         "errors": {
-            "fetchFailed": "Não conseguimos carregar sua ficha de fornecedor. Recarregue a página para tentar novamente."
+            "fetchFailed": "Não conseguimos carregar sua ficha de fornecedor. Recarregue a página para tentar novamente.",
+            "panelFailed": "Não conseguimos carregar esta seção. Recarregue a página para tentar novamente."
         },
         "form": {
             "title": "Editar minha ficha de fornecedor",
@@ -1334,6 +1335,16 @@
             "errors": {
                 "saveFailed": "Não foi possível salvar as mudanças"
             }
+        },
+        "tabs": {
+            "label": "Seções da sua ficha",
+            "ficha": "Minha ficha",
+            "usos": "Usos",
+            "valoraciones": "Avaliações",
+            "qr": "Meu QR"
+        },
+        "suspended": {
+            "noReason": "Suspendemos temporariamente o registro de usos a partir da sua ficha."
         }
     },
     "partner": {
