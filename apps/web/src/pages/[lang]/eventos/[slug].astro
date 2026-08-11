@@ -3,9 +3,10 @@
  * @file eventos/[slug].astro
  * @description Event detail page with Event JSON-LD and EventStatus mapping.
  * @route /{lang}/eventos/{slug}/
- * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
- *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
- *   per request by the `applyCacheHeaders` call below, not by this comment.
+ * @rendering SSR + Cloudflare edge cache — TTL from the `detail` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
@@ -95,6 +96,7 @@ applyCacheHeaders({
 	// No usable entity tag means nothing could purge this page, and an
 	// unpurgeable cached page is worse than an uncached one.
 	cacheable: primaryEventTag !== undefined,
+	cacheClass: 'detail',
 	tags:
 		primaryEventTag !== undefined
 			? [primaryEventTag, ...extraEventTags]

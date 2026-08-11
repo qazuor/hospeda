@@ -7,14 +7,13 @@
  *
  * Fetches pricing from the public API at runtime (SSR) so that operator
  * price edits in admin are reflected without a site redeploy (SPEC-168 D3).
- * Cache-Control: s-maxage=300, stale-while-revalidate=60 lets Cloudflare
- * serve cached HTML for up to 5 minutes while revalidating in the background.
- * T-017 will add a Cloudflare cache purge on plan save to force immediate
- * refresh after an admin edit.
+ * The edge caches the rendered HTML; how long for comes from the `pricing`
+ * cache class (`lib/cache/cache-classes.ts`), and a plan write purges it via
+ * `PlanService.triggerPricingRevalidation`.
  *
  * @route /{lang}/suscriptores/turistas/
  * @rendering SSR (prerender=false) — fetches /api/v1/public/plans at request
- *   time; Cache-Control: s-maxage=300, stale-while-revalidate=60.
+ *   time; edge-cacheable, TTL from the `pricing` cache class.
  */
 
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
@@ -26,14 +25,9 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { getIntlLocale } from '@/lib/pricing-plans';
 import { buildUrl } from '@/lib/urls';
-import {
-	fetchPublicPlans,
-	filterPlansByCategory,
-	PRICING_CACHE_MAX_AGE_SECONDS,
-	PRICING_CACHE_SWR_SECONDS,
-} from '@/lib/billing/fetch-plans';
+import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
 import { CACHE_TAG_PRICING } from '@repo/cache-tags';
-import { declareCacheTags } from '@/lib/cache/response-cache';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { BeachUmbrellaIcon, CompassIcon, SunIcon } from '@repo/icons';
 
 export const prerender = false;
@@ -41,19 +35,22 @@ export const prerender = false;
 const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
 const { t } = createTranslations(locale);
 
-// Set Cache-Control so Cloudflare caches the rendered HTML at the CDN edge.
-// s-maxage=300: serve from cache for up to 5 minutes.
-// stale-while-revalidate=60: revalidate in the background while serving stale.
-// T-017 adds a targeted purge on plan save for immediate invalidation.
-Astro.response.headers.set(
-	'Cache-Control',
-	`s-maxage=${PRICING_CACHE_MAX_AGE_SECONDS}, stale-while-revalidate=${PRICING_CACHE_SWR_SECONDS}`
-);
-
-// Tag the cached response so a plan write purges exactly these pages instead of
-// flushing the whole zone (HOS-369 W1-1). `PlanService.triggerPricingRevalidation`
+// Cache at the edge, tagged so a plan write purges exactly these pages instead
+// of flushing the whole zone (HOS-369 W1-1). `PlanService.triggerPricingRevalidation`
 // is the writer that purges `pricing`.
-declareCacheTags({ locals: Astro.locals, tags: [CACHE_TAG_PRICING] });
+//
+// This goes through `applyCacheHeaders` rather than setting the header directly
+// (HOS-426): setting `Cache-Control` and declaring the tags as two independent
+// statements meant a namespace that failed to resolve produced a cacheable
+// response with NO purge tag — cached content nothing could evict, and nothing
+// would report it. `applyCacheHeaders` demotes to private in that case.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	cacheClass: 'pricing',
+	tags: [CACHE_TAG_PRICING]
+});
 
 // Fetch active plans from the public API endpoint at runtime.
 const fetchResult = await fetchPublicPlans();

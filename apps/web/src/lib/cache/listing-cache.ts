@@ -65,36 +65,23 @@
  * On-demand freshness is handled by `POST /api/revalidate`, which purges the
  * cache TAGS a write affects (HOS-369 W1-1 — it used to flush the whole zone on
  * any content write, which would have made this cache empty itself). The TTL
- * below only bounds staleness in the case a purge is missed.
+ * only bounds staleness in the case a purge is missed.
+ *
+ * THE TTL IS NO LONGER DECIDED HERE. This file used to own the site's single
+ * `s-maxage` pair, which every cacheable page shared regardless of what could
+ * change it. Since HOS-426 the budget comes from the page's cache CLASS
+ * (`./cache-classes.ts`) and this file is back to what its name says: the
+ * predicates deciding whether an accommodation listing response is shareable at
+ * all. What remains here is `LISTING_PRIVATE_CONTROL`, the demotion value,
+ * which is a cacheability answer rather than a TTL.
  *
  * Which tags a response carries is declared through `applyCacheHeaders`
  * (`./response-cache.ts`) — the only thing that may mark a response cacheable,
  * and which cannot do so without them.
  */
 
-/** `s-maxage` in seconds — how long Cloudflare serves the cached HTML. */
-export const LISTING_CACHE_S_MAXAGE_SECONDS = 300;
-
-/** `stale-while-revalidate` window in seconds. */
-export const LISTING_CACHE_SWR_SECONDS = 600;
-
-/** `Cache-Control` value for a shareable, edge-cacheable listing response. */
-export const LISTING_CACHEABLE_CONTROL = `public, s-maxage=${LISTING_CACHE_S_MAXAGE_SECONDS}, stale-while-revalidate=${LISTING_CACHE_SWR_SECONDS}`;
-
 /** `Cache-Control` value for a per-user / non-shareable listing response. */
 export const LISTING_PRIVATE_CONTROL = 'private, no-cache';
-
-/**
- * Resolve the `Cache-Control` header value for an accommodation listing/map
- * SSR response.
- *
- * @param params.cacheable - Whether this specific response is safe to share
- *   from the Cloudflare edge (anonymous, indexable, unfiltered).
- * @returns The header value to set via `Astro.response.headers.set`.
- */
-export function resolveListingCacheControl({ cacheable }: { readonly cacheable: boolean }): string {
-    return cacheable ? LISTING_CACHEABLE_CONTROL : LISTING_PRIVATE_CONTROL;
-}
 
 /**
  * Default children context value. A value away from this DOES narrow the

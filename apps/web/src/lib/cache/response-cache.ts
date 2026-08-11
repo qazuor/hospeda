@@ -53,8 +53,9 @@ import {
     namespaceCacheTags,
     serializeCacheTags
 } from '@repo/cache-tags';
+import { type CacheClass, resolveCacheableControl } from './cache-classes.js';
 import { getCacheTagEnvironment } from './cache-tag-environment.js';
-import { LISTING_CACHEABLE_CONTROL, LISTING_PRIVATE_CONTROL } from './listing-cache.js';
+import { LISTING_PRIVATE_CONTROL } from './listing-cache.js';
 
 /**
  * The environment catch-all every cacheable response carries in addition to its
@@ -220,10 +221,17 @@ export function buildStaticCacheHeaders({
  * an empty string built from missing data, and the deployment namespace being
  * unresolvable (HOS-369 W1-2), which disables tagging process-wide.
  *
+ * The TTL comes from `cacheClass`, not from a number written here or at the call
+ * site — see `cache-classes.ts` for why the budget is per class and why the
+ * parameter has no default (HOS-426).
+ *
  * @param params.locals - `Astro.locals` for the current request.
  * @param params.headers - `Astro.response.headers`.
  * @param params.cacheable - Whether this response is safe to share from the edge
  *   (anonymous, indexable, unfiltered — see `listing-cache.ts`).
+ * @param params.cacheClass - What kind of page this is, which decides how long
+ *   the edge may serve it. Pick the class matching what invalidates the page,
+ *   which is the same thing as the tag it declares.
  * @param params.tags - Tags that must purge this response when it is cacheable.
  * @returns The applied `Cache-Control`, the effective cacheability, and the tag count.
  */
@@ -231,11 +239,13 @@ export function applyCacheHeaders({
     locals,
     headers,
     cacheable,
+    cacheClass,
     tags
 }: {
     readonly locals: App.Locals;
     readonly headers: Headers;
     readonly cacheable: boolean;
+    readonly cacheClass: CacheClass;
     readonly tags: CacheTagList;
 }): AppliedCacheHeaders {
     if (!cacheable) {
@@ -249,8 +259,9 @@ export function applyCacheHeaders({
         return { cacheControl: LISTING_PRIVATE_CONTROL, cacheable: false, tagCount: 0 };
     }
 
-    headers.set('Cache-Control', LISTING_CACHEABLE_CONTROL);
-    return { cacheControl: LISTING_CACHEABLE_CONTROL, cacheable: true, tagCount };
+    const cacheControl = resolveCacheableControl({ cacheClass });
+    headers.set('Cache-Control', cacheControl);
+    return { cacheControl, cacheable: true, tagCount };
 }
 
 /**

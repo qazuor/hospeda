@@ -68,6 +68,7 @@ applyCacheHeaders({
 	cacheable:
 		!url.searchParams.has('types') &&
 		!hasActiveAccommodationListingFilters({ searchParams: url.searchParams }),
+	cacheClass: 'catalog',
 	tags: [CACHE_TAG_COLLECTIONS.accommodation]
 });
 

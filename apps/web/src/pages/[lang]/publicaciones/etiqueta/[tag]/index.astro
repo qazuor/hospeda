@@ -14,9 +14,10 @@
  *  4. Filter posts via GET /api/v1/public/posts?tags={postTagId}.
  *
  * @route /{lang}/publicaciones/etiqueta/{tag}/
- * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
- *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
- *   per request by the `applyCacheHeaders` call below, not by this comment.
+ * @rendering SSR + Cloudflare edge cache — TTL from the `catalog` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
@@ -64,13 +65,15 @@ const tagId = matchedTag.id;
 // counter-example to that comment — renaming a tag changes the heading here and
 // purges the accommodation listing instead. The list itself is driven by post
 // writes, which `list-post` covers, so the exposure is the heading going stale
-// for at most the 300s TTL. Fixing it means revisiting that mapper case, which
-// is out of scope for a page-side wave.
+// for at most the `catalog` cache class's TTL (see `lib/cache/cache-classes.ts`).
+// Fixing it means revisiting that mapper case, which is out of scope for a
+// page-side wave.
 applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	// `/…/page/N/` rewrites into this route with `?page=N`.
 	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	cacheClass: 'catalog',
 	tags: [CACHE_TAG_COLLECTIONS.post]
 });
 
