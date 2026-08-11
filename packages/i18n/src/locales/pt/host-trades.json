@@ -128,7 +128,8 @@
             "action": "Não conseguimos concluir a ação. Tente novamente em instantes."
         },
         "badge": {
-            "pendingCount": "{{count}} usos aguardando sua confirmação"
+            "pendingCount_one": "{{count}} uso aguardando sua confirmação",
+            "pendingCount_other": "{{count}} usos aguardando sua confirmação"
         }
     },
     "review": {
