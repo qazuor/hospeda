@@ -271,7 +271,7 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Tag Line**: Seguimos creciendo
 - **Título**: ¿No encontrás tu destino?
 - **Subtítulo**: Escribinos y lo sumamos.
-- **Cuerpo**: La lista no está cerrada. Si tu ciudad todavía no está, contanos y lo sumamos.
+- **Cuerpo**: La lista no está cerrada. Si tu pueblo todavía no está, contanos y lo sumamos.
 - **Idea**: Un mapa con los destinos marcados y un espacio vacío señalado con un signo de pregunta o un marcador punteado, como diciendo "acá falta el tuyo". El gesto de la placa es de invitación, no de disculpa: no es que nos falten lugares, es que estamos creciendo y decidís vos cuál sigue.
 - **Foto/s**: Ninguna. Ilustración de mapa, en la misma línea gráfica que la 1.6.
 - **CTA**: Escribinos desde hospeda.com.ar y sumamos tu destino
@@ -803,7 +803,7 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Qué lo diferencia** — el ángulo que hace que ese destino no sea intercambiable con otro. Si alguien reescribe el texto, esto es lo que hay que defender.
 - **Atracciones** — la lista ya investigada, que alimenta la 8.23 ("5 cosas para hacer en…"). No hace falta buscar nada más.
 
-> ⚠️ **Todo esto salió de fuentes públicas de turismo, no de conocer los lugares.** Está para que nadie arranque de cero, no para publicarse sin leer. Revisar antes de diseñar: que siga siendo cierto, que no suene genérico, y que no prometa infraestructura que una ciudad chica no tiene.
+> ⚠️ **Todo esto salió de fuentes públicas de turismo, no de conocer los lugares.** Está para que nadie arranque de cero, no para publicarse sin leer. Revisar antes de diseñar: que siga siendo cierto, que no suene genérico, y que no prometa infraestructura que un pueblo chico no tiene.
 
 ---
 
@@ -870,11 +870,11 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Título**: San José
 - **Subtítulo**: La primera colonia agrícola del país.
 - **Cuerpo**: Suizos, franceses e italianos levantaron esto. Hoy tiene playa, termas y museo propio.
-- **Idea**: El ángulo es la historia, así que la foto tiene que mostrar la ciudad, no la playa — para eso ya está Colón al lado. Casas antiguas, el museo, algo que se vea con pasado.
+- **Idea**: El ángulo es la historia, así que la foto tiene que mostrar el pueblo, no la playa — para eso ya está Colón al lado. Casas antiguas, el museo, algo que se vea con pasado.
 - **Foto/s**: El casco histórico, o la Casa Celia Vernaz.
 - **CTA**: Conocé San José en hospeda.com.ar
 - **Idioma**: Español
-- **Qué lo diferencia**: es el origen de la colonización agrícola argentina, y eso se ve en la ciudad. A 4 km de Colón, pero con historia propia y mucho menos ruido.
+- **Qué lo diferencia**: es el origen de la colonización agrícola argentina, y eso se ve en el pueblo. A 4 km de Colón, pero con historia propia y mucho menos ruido.
 - **Atracciones**: Museo Histórico Regional · Casa Celia Vernaz (quesos artesanales y productos regionales) · complejo termal de 36 hectáreas con toboganes · playa de arena sobre el río Uruguay · kayak, pesca y deportes náuticos · Fiesta de la Colonización.
 
 ---
@@ -892,7 +892,7 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Foto/s**: El parque termal rodeado de verde, con vapor sobre el agua.
 - **CTA**: Conocé Villa Elisa en hospeda.com.ar
 - **Idioma**: Español
-- **Qué lo diferencia**: es termas puras, sin playa que compita. Está entre las localidades turísticas destacadas del país y tiene un tren histórico que no tiene nadie más.
+- **Qué lo diferencia**: es termas puras, sin playa que compita. Está entre los pueblos turísticos destacados del país y tiene un tren histórico que no tiene nadie más.
 - **Atracciones**: complejo termal (41 hectáreas, 10 piscinas a 38°, lago artificial de 4 hectáreas) · Tren Histórico de Villa Elisa · circuitos urbanos y rurales en bici · senderos y pesca.
 
 ---
@@ -979,8 +979,8 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Tag Line**: Río y campo
 - **Título**: Gualeguay
 - **Subtítulo**: Adoquines, río y estancias.
-- **Cuerpo**: Una de las ciudades más antiguas de la provincia, sobre su propio río.
-- **Idea**: Cuidado con que se confunda con Gualeguaychú: son destinos distintos y los nombres se parecen. La foto tiene que ser claramente de ciudad antigua —adoquines, casas coloniales— y no de playa ni de carnaval.
+- **Cuerpo**: Uno de los pueblos más antiguos de la provincia, sobre su propio río.
+- **Idea**: Cuidado con que se confunda con Gualeguaychú: son destinos distintos y los nombres se parecen. La foto tiene que ser claramente de pueblo antiguo —adoquines, casas coloniales— y no de playa ni de carnaval.
 - **Foto/s**: Una calle de adoquines del centro, o el río Gualeguay.
 - **CTA**: Conocé Gualeguay en hospeda.com.ar
 - **Idioma**: Español
@@ -997,7 +997,7 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Tag Line**: Lago y campo
 - **Título**: Santa Ana
 - **Subtítulo**: El lago, la pesca y las estancias de Urquiza.
-- **Cuerpo**: Una ciudad del norte pegada al lago de Salto Grande, con historia de campo.
+- **Cuerpo**: Un pueblo del norte pegado al lago de Salto Grande, con historia de campo.
 - **Idea**: Foto del lago con el campo alrededor. Es un destino de bajo perfil: la placa tiene que ser honesta y tranquila, no vender más de lo que hay.
 - **Foto/s**: El lago de Salto Grande, o el paisaje rural.
 - **CTA**: Conocé Santa Ana en hospeda.com.ar
@@ -1052,7 +1052,7 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Título**: Caseros
 - **Subtítulo**: A seis kilómetros del palacio de Urquiza.
 - **Cuerpo**: El Palacio San José al lado, y un carnaval que se toma en serio.
-- **Idea**: La foto es el Palacio, aunque no esté en la ciudad: es lo que trae gente a Caseros. Que quede claro en el texto que el palacio está cerca, no adentro.
+- **Idea**: La foto es el Palacio, aunque no esté en el pueblo: es lo que trae gente a Caseros. Que quede claro en el texto que el palacio está cerca, no adentro.
 - **Foto/s**: El Palacio San José.
 - **CTA**: Conocé Caseros en hospeda.com.ar
 - **Idioma**: Español
@@ -1069,7 +1069,7 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Tag Line**: Puerta de Entre Ríos
 - **Título**: Ceibas
 - **Subtítulo**: Donde empieza la ruta 14.
-- **Cuerpo**: La primera localidad entrerriana viniendo desde el sur. Pesca, monte y parada de viaje.
+- **Cuerpo**: El primer pueblo entrerriano viniendo desde el sur. Pesca, monte y parada de viaje.
 - **Idea**: El ángulo del kilómetro cero es lo único memorable que tiene, así que se usa: un cartel de ruta, el asfalto, la idea de arranque de viaje. Le habla al que ya está manejando.
 - **Foto/s**: La ruta 14, un cartel de ruta, o el monte.
 - **CTA**: Conocé Ceibas en hospeda.com.ar
@@ -1104,7 +1104,7 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Aspect Ratio**: 9:16 y 4:5
 - **Tag Line**: Patrimonio inglés
 - **Título**: Pueblo Liebig
-- **Subtítulo**: Una ciudad inglesa que fue una fábrica.
+- **Subtítulo**: Un pueblo inglés que fue una fábrica.
 - **Cuerpo**: Lo levantó una compañía inglesa en 1903. Las casas siguen ahí, intactas.
 - **Idea**: Visualmente es de los más ricos de la serie: la arquitectura inglesa en medio de Entre Ríos descoloca, y esa sorpresa es el gancho. Foto de las casas en fila o del frigorífico, en lo posible con luz que resalte el ladrillo.
 - **Foto/s**: Las filas de casas de obreros, o el viejo frigorífico.
@@ -1146,9 +1146,9 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Foto/s**: El templo parroquial, un arroyo, o una mesa de pastas caseras.
 - **CTA**: Conocé San Justo en hospeda.com.ar
 - **Idioma**: Español
-- **Qué lo diferencia**: no tiene atractivos turísticos organizados, y eso es exactamente lo que ofrece. Una localidad de 300 habitantes donde sobrevive el dialecto, las pastas caseras y el vino propio.
+- **Qué lo diferencia**: no tiene atractivos turísticos organizados, y eso es exactamente lo que ofrece. Un pueblo de 300 habitantes donde sobrevive el dialecto, las pastas caseras y el vino propio.
 - **Atracciones**: templo parroquial Nuestra Señora de los Dolores · arroyos de agua limpia para el verano · monte de espinillos · la tradición italiana viva (pastas caseras, vino casero, dialecto véneto).
-- **Ojo**: no prometer infraestructura que no existe. Es una localidad chica, no un destino con servicios.
+- **Ojo**: no prometer infraestructura que no existe. Es un pueblo, no un destino con servicios.
 
 ---
 
@@ -1162,7 +1162,7 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Subtítulo**: La capital nacional del arroz.
 - **Cuerpo**: Arrozales hasta el horizonte y el circuito de las viejas colonias judías.
 - **Qué lo diferencia**: es la capital nacional del arroz y forma parte del circuito de las siete antiguas colonias judías de la región, una historia que casi no se cuenta.
-- **Idea**: Los arrozales inundados con el reflejo del cielo son de las imágenes más lindas y menos vistas de la provincia. Ese es el gancho visual, no el casco urbano.
+- **Idea**: Los arrozales inundados con el reflejo del cielo son de las imágenes más lindas y menos vistas de la provincia. Ese es el gancho visual, no el pueblo.
 - **Foto/s**: Los arrozales inundados, con el cielo reflejado.
 - **CTA**: Conocé San Salvador en hospeda.com.ar
 - **Idioma**: Español
@@ -1196,7 +1196,7 @@ Cada pieza trae además dos campos que no van en la placa pero alimentan al rest
 - **Tag Line**: Pueblo con todo
 - **Título**: Urdinarrain
 - **Subtítulo**: Bicicleta, arena blanca y dulce de leche premiado.
-- **Cuerpo**: Cuatro museos, fiestas todo el año y una ciudad que se puso entre las mejores del país.
+- **Cuerpo**: Cuatro museos, fiestas todo el año y un pueblo que se puso entre los mejores del país.
 - **Idea**: Tiene más para mostrar que muchos destinos grandes y casi nadie lo sabe — el tono es de descubrimiento. Si la placa logra que alguien diga "no sabía que existía", funcionó.
 - **Foto/s**: El balneario Arenas Blancas, la Fiesta del Caballo, o el museo agrícola a cielo abierto.
 - **CTA**: Conocé Urdinarrain en hospeda.com.ar
@@ -1315,7 +1315,7 @@ Es el formato que más se guarda de toda la categoría: la gente lo usa para pla
 - **Items**:
   1. **Pasar el día en las termas** — 41 hectáreas y 10 piscinas a 38 grados
   2. **Subirse al Tren Histórico** — un paseo que no tiene ningún otro destino de la provincia
-  3. **Recorrer la ciudad en bici** — circuitos urbanos señalizados
+  3. **Recorrer el pueblo en bici** — circuitos urbanos señalizados
   4. **Salir al campo** — circuitos rurales y senderos
   5. **Pescar o descansar junto al lago** — el lago artificial de 4 hectáreas dentro del complejo
 - **Idea**: Todo gira alrededor de las termas, así que el tren y los circuitos en bici son los que hacen que la pieza no sea monotemática. Darles peso.
@@ -1564,7 +1564,7 @@ Para el resto, alcanza con la presentación y con aparecer en las piezas de "dó
 - **Foto/s**: Una foto histórica o del lugar del que se habla.
 - **CTA**: Descubrí *(destino)* en hospeda.com.ar
 - **Idioma**: Español
-- **Verificar antes de publicar**: un dato histórico mal contado en una ciudad chica te lo corrigen en diez minutos y en público. Chequearlo con alguien del lugar.
+- **Verificar antes de publicar**: un dato histórico mal contado en un pueblo chico te lo corrigen en diez minutos y en público. Chequearlo con alguien del lugar.
 
 ---
 
@@ -1584,7 +1584,7 @@ Para el resto, alcanza con la presentación y con aparecer en las piezas de "dó
 - **Foto/s**: Una representativa de cada destino.
 - **CTA**: Elegí el tuyo en hospeda.com.ar
 - **Idioma**: Español
-- **Cuidado político**: en una región donde los municipios compiten por turismo, dejar mal parada a una ciudad es un problema real. El eje siempre es *"depende de qué busques"*, nunca *"este es mejor"*.
+- **Cuidado político**: en una región donde los municipios compiten por turismo, dejar mal parado a un pueblo es un problema real. El eje siempre es *"depende de qué busques"*, nunca *"este es mejor"*.
 
 ---
 
@@ -1596,7 +1596,7 @@ Para el resto, alcanza con la presentación y con aparecer en las piezas de "dó
 2. **Pedirlas.** Los municipios y las oficinas de turismo suelen tener bancos de fotos y las ceden a cambio de la mención. Es la vía más rápida para los 22. También sirve pedirle a la gente que mande las suyas — eso es la categoría 17.
 3. **Fotos de los alojamientos publicados.** Ya están cargadas y muchas muestran el entorno. Sirve para tapar agujeros, con permiso del dueño.
 
-**Nunca sacar fotos de internet sin permiso.** Además del problema legal, el fotógrafo de una ciudad chica reconoce su foto al toque, y ese es un conflicto que no vale la pena.
+**Nunca sacar fotos de internet sin permiso.** Además del problema legal, el fotógrafo de un pueblo chico reconoce su foto al toque, y ese es un conflicto que no vale la pena.
 
 ---
 
@@ -1607,7 +1607,7 @@ La categoría que más convierte y la que más depende de material que hoy no te
 - **Lo que se puede hacer desde el día uno**, sin un solo cliente: mostrar la cara, mostrar el producto real, contar los hitos.
 - **Lo que necesita gente adentro**: testimonios, casos, antes y después. Se produce cuando haya con quién.
 
-> 🚫 **Un testimonio no se inventa jamás.** Ni "basado en un caso real", ni redactado por nosotros y firmado por otro, ni una foto de banco de imágenes con un nombre inventado. Además de ser mentirle a la gente, en un mercado chico donde todos se conocen, el día que alguien pregunta "¿quién es este?" se termina la credibilidad de la marca entera. Sin material real, la pieza no se hace: se espera.
+> 🚫 **Un testimonio no se inventa jamás.** Ni "basado en un caso real", ni redactado por nosotros y firmado por otro, ni una foto de banco de imágenes con un nombre inventado. Además de ser mentirle a la gente, en un mercado de pueblo donde todos se conocen, el día que alguien pregunta "¿quién es este?" se termina la credibilidad de la marca entera. Sin material real, la pieza no se hace: se espera.
 
 #### Cómo conseguir el material
 
@@ -1945,14 +1945,14 @@ Contenido con fecha de vencimiento. Es la única categoría donde **llegar tarde
 - **Aspect Ratio**: 9:16 y 4:5
 - **Tag Line**: Verano
 - **Título**: El verano del Litoral empieza acá.
-- **Cuerpo**: Playas de río, termas y ciudades con todo para pasar unos días.
+- **Cuerpo**: Playas de río, termas y pueblos con todo para pasar unos días.
 - **Items**:
   1. **Portada** — "El verano del Litoral empieza acá"
   2. **Playas de arena** — sobre el río Uruguay, gratuitas y a la sombra
   3. **Termas todo el año** — para los días que no dan ganas de playa
   4. **Pueblos para recorrer** — historia, museos y fiestas por toda la provincia
 - **Idea**: Es la campaña más importante del año y la que más se va a reciclar. Conviene diseñarla como sistema —mismo tratamiento visual reutilizable en varias piezas— y no como una placa suelta. Fotos con luz de verano fuerte, saturadas, con gente.
-- **Foto/s**: Playa, termas y ciudades. Todas con gente disfrutando, no paisajes vacíos.
+- **Foto/s**: Playa, termas y pueblos. Todas con gente disfrutando, no paisajes vacíos.
 - **CTA**: Armá tu verano en hospeda.com.ar
 - **Idioma**: Español, inglés y portugués
 - **Nota**: es la única campaña que justifica hacerla en los tres idiomas. El verano es cuando llegan los brasileños y los de afuera.
@@ -1987,9 +1987,9 @@ Contenido con fecha de vencimiento. Es la única categoría donde **llegar tarde
   1. **Portada** — "El Litoral tiene el carnaval más grande del país"
   2. **Gualeguaychú** — el Carnaval del País, en el primer corsódromo de Argentina
   3. **Concepción del Uruguay** — más de un siglo de corsos
-  4. **Caseros y la zona** — los carnavales de la microrregión Caminos del Palacio
+  4. **Caseros y los pueblos** — los carnavales de la microrregión Caminos del Palacio
 - **Idea**: El ángulo diferencial es que **no es un solo carnaval**. Gualeguaychú se lleva toda la atención, y mostrar que hay corsos en varios lugares es información nueva para casi todos. Fotos nocturnas, color, movimiento.
-- **Foto/s**: Corsódromo de Gualeguaychú, corsos de Concepción y de las localidades de la zona.
+- **Foto/s**: Corsódromo de Gualeguaychú, corsos de Concepción y de los pueblos.
 - **CTA**: Buscá dónde quedarte en hospeda.com.ar
 - **Idioma**: Español
 - **Verificar**: las fechas de cada corso antes de publicar. Cambian todos los años.
@@ -2062,7 +2062,7 @@ Contenido con fecha de vencimiento. Es la única categoría donde **llegar tarde
 - **Aspect Ratio**: 4:5
 - **Tag Line**: Todo el año
 - **Título**: Acá siempre hay una fiesta.
-- **Cuerpo**: Cada ciudad tiene la suya, y todas valen el viaje.
+- **Cuerpo**: Cada pueblo tiene la suya, y todas valen el viaje.
 - **Items**:
   - **Fiesta Nacional de la Artesanía** — Colón
   - **Fiesta Nacional del Lago** — Federación
