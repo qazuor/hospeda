@@ -28,8 +28,17 @@ overrides:
   "@vitest/coverage-v8": "4.1.10"
   "@vitest/ui": "4.1.9"
   # 3.1.2 is vulnerable to both host-confusion advisories (failed IDN
-  # canonicalization and literal backslash). 3.1.4 patches both.
-  fast-uri: "3.1.4"
+  # canonicalization and literal backslash); 3.1.4 patched those two.
+  # GHSA-7p8r-x3mc-p8w7 (high) then landed on 3.1.4 itself, so this exact pin
+  # became the thing installing the vulnerable version — same failure mode as
+  # brace-expansion and js-yaml below. An exact pin cannot absorb a follow-up
+  # advisory, so this is now a floor rather than a pin.
+  #
+  # Scoped to the 3.x line on purpose. The advisory range is ">=3.0.0 <3.1.5",
+  # so 3.1.5 clears it — a bare ">=3.1.5" additionally resolved the tree onto
+  # 4.1.2, forcing a semver major onto ajv@8.20.0 (the only consumer), which
+  # declares the 3.x line. Fixing an advisory must not smuggle in a major.
+  "fast-uri@>=3.0.0 <4": ">=3.1.5 <4"
   devalue: ">=5.8.1"
   seroval: ">=1.4.1"
   tar: ">=7.5.11"
@@ -102,12 +111,20 @@ overrides:
   picomatch: ">=2.3.2"
   "picomatch@^4.0.0": ">=4.0.4"
   kysely: ">=0.28.17"
+  # Three advisories land on the installed 10.2.0: GHSA-mwp4-54f8-5fhr (high,
+  # patched 10.3.1) plus GHSA-22jq-vg5j-6vgg (10.2.1) and GHSA-4xrf-jv44-h6hh
+  # (10.2.2). 10.3.1 is the only floor that clears all three. Transitive only
+  # (socks-proxy-agent), so no Dependabot PR can ever reach it — an override is
+  # the only route.
+  ip-address: ">=10.3.1"
   svgo: ">=4.0.1"
   next: ">=16.2.3"
   drizzle-orm: ">=0.45.2"
   "@opentelemetry/api": "1.9.1"
   "@remix-run/node": ">=2.17.2"
-  "@remix-run/router": ">=1.23.2"
+  # GHSA-2j2x-hqr9-3h42: the previous ">=1.23.2" floor was resolving the tree
+  # onto 1.23.2, which the advisory covers. Raised to the patched 1.23.3.
+  "@remix-run/router": ">=1.23.3"
   "@remix-run/server-runtime": ">=2.17.5"
   esbuild: ">=0.28.1"
   "@tanstack/form-core": "0.42.1"
