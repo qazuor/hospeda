@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 56/70 tareas cerradas (80%)
+## Progreso: 57/70 tareas cerradas (81%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -205,9 +205,9 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Ta…
   - Bloqueada por: T-038 · Bloquea a: —
 
-## Fase `testing` — 0/11 completadas (complejidad promedio 2.5)
+## Fase `testing` — 1/11 completadas (complejidad promedio 2.5)
 
-- [ ] **T-057** (c3) — Tests unitarios de la máquina de estados del uso
+- [x] **T-057** (c3) — Tests unitarios de la máquina de estados del uso
   - TODAS las transiciones válidas (PENDING→CONFIRMED, PENDING→REJECTED, PENDING→EXPIRED, REJECTED→PENDING por undo) y TODAS las inválidas (CONFIRMED→cualquier cosa, EXPIRED→cualquier cosa, dobl…
   - Bloqueada por: T-021 · Bloquea a: —
 - [ ] **T-058** (c3) — Tests unitarios de los 4 gates de elegibilidad, cada uno aislado
