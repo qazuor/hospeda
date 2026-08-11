@@ -110,6 +110,12 @@ overrides:
   flatted: ">=3.4.2"
   picomatch: ">=2.3.2"
   "picomatch@^4.0.0": ">=4.0.4"
+  # GHSA-fxqj-rqcc-2cmp (<=8.5.22). #2757 bumped the direct dependency to
+  # 8.5.26, which did NOT close the advisory: tsup > postcss-load-config still
+  # resolves 8.5.20. A direct bump never reaches a transitive path, so the
+  # alert stayed open behind a merged "fix". Bounded below 9 so a future
+  # postcss 9 consumer is not dragged across a major.
+  "postcss@<8.5.23": ">=8.5.23 <9"
   kysely: ">=0.28.17"
   # Three advisories land on the installed 10.2.0: GHSA-mwp4-54f8-5fhr (high,
   # patched 10.3.1) plus GHSA-22jq-vg5j-6vgg (10.2.1) and GHSA-4xrf-jv44-h6hh
