@@ -1895,6 +1895,189 @@ Piezas que enseñan a usar la plataforma. Sirven dos veces: convencen al que dud
 
 ---
 
+## E · RECURRENTES
+
+### Categoría 15 — Campañas
+
+Contenido con fecha de vencimiento. Es la única categoría donde **llegar tarde equivale a no hacerlo**: una campaña de verano publicada en enero le habla a gente que ya reservó en noviembre.
+
+#### La regla de los dos meses
+
+**Una campaña se produce dos meses antes de que la gente empiece a buscar, no cuando arranca la temporada.** El que planea un verano lo decide en noviembre; el que planea un finde largo, tres o cuatro semanas antes.
+
+| Campaña | Cuándo la busca la gente | Cuándo hay que producirla |
+|---|---|---|
+| Fiestas de fin de año | Noviembre | **Septiembre** |
+| Verano | Noviembre y diciembre | **Septiembre / octubre** |
+| Carnavales del Litoral | Diciembre y enero | **Octubre / noviembre** |
+| Semana Santa | Febrero | **Diciembre** |
+| Vacaciones de invierno | Mayo y junio | **Marzo / abril** |
+| Termas | Marzo a agosto | **Enero / febrero** |
+| Fin de semana largo | 3 o 4 semanas antes | Plantilla lista todo el año |
+| Pesca | Según temporada y vedas | Confirmar calendario |
+
+> **Hoy es agosto.** Lo urgente es producir **fiestas de fin de año y verano**, que se publican en septiembre y octubre. Las termas de este año ya pasaron; la próxima ventana es enero.
+>
+> ⚠️ **Ninguna fecha de feriado ni de veda de pesca está confirmada en este documento.** Antes de publicar cualquier campaña con fechas, verificar el calendario oficial de feriados del año y, para pesca, la normativa de veda vigente en Entre Ríos. Publicar un finde largo que no existe, o invitar a pescar en veda, son errores caros.
+
+---
+
+#### 15.1 · Fin de año en el Litoral
+
+- **Prioridad**: 1 — producir en septiembre
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Fin de año
+- **Título**: Este año, las fiestas frente al río.
+- **Subtítulo**: Casas y cabañas para toda la familia.
+- **Cuerpo**: Alojamientos grandes, con parrilla y lugar para todos. Se reservan temprano.
+- **Idea**: Le habla al que organiza la reunión familiar, no al que viaja solo. La foto tiene que mostrar **capacidad**: mesa larga, patio, parrilla. El mensaje implícito es "entran todos".
+- **Foto/s**: Una mesa larga al aire libre, o una casa grande con patio y parrilla.
+- **CTA**: Reservá tu lugar en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 15.2 · Verano en el Litoral
+
+- **Prioridad**: 1 — producir en septiembre u octubre
+- **Tipo**: Carrusel (4 imágenes)
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Verano
+- **Título**: El verano del Litoral empieza acá.
+- **Cuerpo**: Playas de río, termas y pueblos con todo para pasar unos días.
+- **Items**:
+  1. **Portada** — "El verano del Litoral empieza acá"
+  2. **Playas de arena** — sobre el río Uruguay, gratuitas y a la sombra
+  3. **Termas todo el año** — para los días que no dan ganas de playa
+  4. **Pueblos para recorrer** — historia, museos y fiestas por toda la provincia
+- **Idea**: Es la campaña más importante del año y la que más se va a reciclar. Conviene diseñarla como sistema —mismo tratamiento visual reutilizable en varias piezas— y no como una placa suelta. Fotos con luz de verano fuerte, saturadas, con gente.
+- **Foto/s**: Playa, termas y pueblos. Todas con gente disfrutando, no paisajes vacíos.
+- **CTA**: Armá tu verano en hospeda.com.ar
+- **Idioma**: Español, inglés y portugués
+- **Nota**: es la única campaña que justifica hacerla en los tres idiomas. El verano es cuando llegan los brasileños y los de afuera.
+
+---
+
+#### 15.3 · Reservá antes de que se llene
+
+- **Prioridad**: 1 — producir en septiembre u octubre
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: Verano
+- **Título**: Los mejores se reservan en noviembre.
+- **Subtítulo**: No esperes a diciembre.
+- **Cuerpo**: Las casas grandes y las de primera línea vuelan primero. Mirá lo que hay ahora.
+- **Idea**: La pieza de urgencia de la campaña de verano. **La urgencia tiene que ser real** — si en diciembre todavía hay lugar en todos lados, esta placa quema credibilidad. Usarla solo si efectivamente se está llenando.
+- **Foto/s**: Una casa linda sobre el río, con luz de verano.
+- **CTA**: Mirá la disponibilidad en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 15.4 · Carnavales del Litoral
+
+- **Prioridad**: 1 — producir en octubre o noviembre
+- **Tipo**: Carrusel (4 imágenes)
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Carnaval
+- **Título**: El Litoral tiene el carnaval más grande del país.
+- **Cuerpo**: Y no es uno solo: hay corsos por toda la provincia.
+- **Items**:
+  1. **Portada** — "El Litoral tiene el carnaval más grande del país"
+  2. **Gualeguaychú** — el Carnaval del País, en el primer corsódromo de Argentina
+  3. **Concepción del Uruguay** — más de un siglo de corsos
+  4. **Caseros y los pueblos** — los carnavales de la microrregión Caminos del Palacio
+- **Idea**: El ángulo diferencial es que **no es un solo carnaval**. Gualeguaychú se lleva toda la atención, y mostrar que hay corsos en varios lugares es información nueva para casi todos. Fotos nocturnas, color, movimiento.
+- **Foto/s**: Corsódromo de Gualeguaychú, corsos de Concepción y de los pueblos.
+- **CTA**: Buscá dónde quedarte en hospeda.com.ar
+- **Idioma**: Español
+- **Verificar**: las fechas de cada corso antes de publicar. Cambian todos los años.
+
+---
+
+#### 15.5 · Fin de semana largo — plantilla
+
+- **Prioridad**: 1 — plantilla lista todo el año
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: *(el finde largo que toque)*
+- **Título**: Tres días. ¿Adónde vas?
+- **Subtítulo**: El Litoral está a unas horas.
+- **Cuerpo**: *(según la época: playa, termas o carnaval)*
+- **Idea**: **Es plantilla porque se repite varias veces al año.** Se diseña una vez, se cambia la fecha y la foto según la temporada, y se publica tres o cuatro semanas antes de cada uno. Es de las piezas más rentables del plan: mucho uso, un solo diseño.
+- **Foto/s**: Varía según la época del año. Conviene tener tres versiones guardadas: verano, otoño-invierno y primavera.
+- **CTA**: Buscá tu escapada en hospeda.com.ar
+- **Idioma**: Español
+- **⚠️ Antes de cada publicación**: confirmar la fecha exacta del feriado en el calendario oficial. Publicar un finde largo que no existe, o con la fecha corrida, es de los errores que más se comparten por lo mal que quedan.
+
+---
+
+#### 15.6 · Termas del Litoral
+
+- **Prioridad**: 2 — producir en enero o febrero
+- **Tipo**: Carrusel (4 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Temporada termal
+- **Título**: Cuando refresca, el Litoral se pone mejor.
+- **Cuerpo**: Seis destinos con termas, cada uno con lo suyo.
+- **Items**:
+  1. **Portada** — "Cuando refresca, el Litoral se pone mejor"
+  2. **Federación y Concordia** — las más grandes, con el lago al lado
+  3. **Villa Elisa y Colón** — parques termales entre el campo y el río
+  4. **Chajarí y Villaguay** — el norte, más tranquilo, con perfil terapéutico
+- **Idea**: Resignifica el otoño y el invierno, que es cuando el turismo de playa muere. **Mostrar el vapor y el contraste con el frío** es todo el mensaje: agua caliente al aire libre con el día gris atrás.
+- **Foto/s**: Piscinas termales con vapor, en día fresco. Que se vea el contraste.
+- **CTA**: Elegí tus termas en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 15.7 · Pesca en el río Uruguay
+
+- **Prioridad**: 2 — confirmar calendario de temporada
+- **Tipo**: Imagen única **y** Carrusel (4 imágenes)
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Pesca
+- **Título**: Dorado, pejerrey y tararira.
+- **Subtítulo**: El río Uruguay y el delta, de punta a punta.
+- **Cuerpo**: Guías locales, campings sobre el agua y alojamientos que entienden al pescador.
+- **Items**:
+  1. **Portada** — "Dorado, pejerrey y tararira"
+  2. **Villa Paranacito** — pesca en el delta, con guías que conocen los pesqueros
+  3. **Ibicuy** — paraje agreste, para el que busca el delta sin nada alrededor
+  4. **Ceibas y la costa** — pesca de costa y embarcada sobre el río Uruguay
+- **Idea**: Es la campaña más segmentada de todas y por eso puede ser mucho más específica: el pescador quiere saber qué especie, dónde y con quién. **Nada de fotos genéricas de atardecer**: fotos de pesca real, de gente con la caña.
+- **Foto/s**: Pesca real en el delta y sobre el río. Amanecer o atardecer sobre el agua.
+- **CTA**: Buscá dónde quedarte en hospeda.com.ar
+- **Idioma**: Español
+- **⚠️ Antes de publicar**: verificar la normativa de veda vigente en Entre Ríos y las especies permitidas. **Invitar a pescar en veda, o una especie protegida, es un problema serio** — legal y de imagen. Si hay veda, la campaña se corre o se enfoca en las especies habilitadas.
+
+---
+
+#### 15.8 · Las fiestas del Litoral
+
+- **Prioridad**: 3
+- **Tipo**: Listado de puntos **y** Carrusel
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Todo el año
+- **Título**: Acá siempre hay una fiesta.
+- **Cuerpo**: Cada pueblo tiene la suya, y todas valen el viaje.
+- **Items**:
+  - **Fiesta Nacional de la Artesanía** — Colón
+  - **Fiesta Nacional del Lago** — Federación
+  - **Fiesta Provincial del Caballo** — Urdinarrain, último fin de semana de enero
+  - **Fiesta de las Carrozas Náuticas** — Villa Paranacito
+  - **Fiesta de la Colonización** — San José
+  - **Fiesta Regional de la Cerveza y Encuentro del Acordeón** — Urdinarrain
+- **Idea**: Muestra que la provincia tiene agenda todo el año, no solo en verano. Sirve como pieza suelta y también como base para publicar cada fiesta por separado cuando se acerque su fecha.
+- **Foto/s**: Una por fiesta, en la versión carrusel. Fotos de gente, no de carteles.
+- **CTA**: Mirá la agenda en hospeda.com.ar
+- **Idioma**: Español
+- **⚠️ Verificar fechas**: las fiestas cambian de fecha año a año. Confirmar cada una antes de publicar, y no poner fechas en la placa si no se van a actualizar.
+
+---
+
 ### Categoría 18 — De anfitrión a anfitrión
 
 **Una serie, no piezas sueltas.** Consejos de oficio para el que alquila: cómo sacar mejores fotos, cómo poner el precio, cómo recibir, qué hacer cuando algo sale mal. No hablan de Hospeda ni venden nada.
@@ -2129,7 +2312,7 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | D · Conversión | 12. Sumar alojamientos y negocios | ✅ 17 piezas |
 | D · Conversión | 13. Confianza y testimonios | ✅ 7 piezas |
 | D · Conversión | 14. Tutoriales y ayuda | ✅ 7 piezas |
-| E · Recurrentes | 15. Campañas | ⬜ pendiente |
+| E · Recurrentes | 15. Campañas | ✅ 8 piezas + calendario de producción |
 | E · Recurrentes | 16. Novedades | ⬜ pendiente |
 | E · Recurrentes | 17. Pedidos de colaboración | ⬜ pendiente |
 | E · Recurrentes | 18. **De anfitrión a anfitrión** | ✅ 8 piezas · serie abierta |
