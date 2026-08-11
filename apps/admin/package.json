@@ -86,7 +86,7 @@
         "react": "19.2.8",
         "react-dom": "19.2.8",
         "react-leaflet": "^5.0.0",
-        "recharts": "^3.9.0",
+        "recharts": "^3.10.1",
         "solid-js": "1.9.14",
         "tailwind-merge": "3.6.0",
         "tailwindcss": "4.3.3",
