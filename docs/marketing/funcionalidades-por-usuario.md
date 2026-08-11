@@ -16,13 +16,13 @@
 | 🟡 en curso | **5** | Pieza escrita y diseñada, **guardada sin publicar** hasta que salga a producción |
 | 🔴 no construido | **5** | Idem. El día que se construya, el contenido ya está listo |
 
-**Prioridad 5 = No hacer aún.** Extiende la escala original (1 urgente · 2 primer mes · 3 mes 2-3 · 4 algún día) con un quinto nivel que significa *bloqueado por producto, no por importancia*. El contenido se piensa igual: cuando la feature sale, la publicación ya existe y se dispara el mismo día.
+**Prioridad 5 = No hacer aún.** Extiende la escala original (1 urgente · 2 primer mes · 3 mes 2-3 · 4 algún día) con un quinto nivel que significa *bloqueado por producto, no por importancia*. El contenido se piensa igual: cuando la funcionalidad sale, la publicación ya existe y se dispara el mismo día.
 
 ### Reglas que sí son innegociables
 
-1. **Cero precios en las imágenes.** La grilla nueva (HOS-301) está decidida pero no implementada. Todo precio va a landing, nunca horneado en una placa.
-2. **Una pieza de Prioridad 5 no se publica** hasta que la funcionalidad esté en producción y con smoke pasado. Se produce, se guarda, se espera.
-3. Excepción: la categoría **Novedades** puede publicar lo 🔴 como *roadmap*, siempre con la palabra "próximamente" adelante y nunca en tiempo presente.
+1. **Cero precios en las imágenes.** La grilla nueva (HOS-301) está decidida pero no implementada. Los precios se mencionan solamente en la página web, nunca dentro de una imagen.
+2. **Una pieza de Prioridad 5 no se publica** hasta que la funcionalidad esté disponible y probada en la plataforma. Se produce, se guarda, se espera.
+3. Excepción: la categoría **Novedades** puede publicar lo 🔴 como *lo que se viene*, siempre con la palabra "próximamente" adelante y nunca en tiempo presente.
 
 ---
 
@@ -45,17 +45,17 @@ Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` p
 
 ### Descubrimiento
 
-- 🟢 Buscar y listar alojamientos con filtros: tipo, precio, huéspedes, dormitorios/baños, rating, amenities, wifi, pileta, parking, pet-friendly, radio geográfico
-- 🟢 Ordenar por nombre, fecha, rating, cantidad de reseñas, destacado, "más guardado", precio, distancia — hasta 5 criterios combinados
+- 🟢 Buscar y listar alojamientos con filtros: tipo, precio, huéspedes, dormitorios/baños, rating, comodidades, wifi, pileta, estacionamiento, acepta mascotas, distancia en el mapa
+- 🟢 Ordenar por nombre, fecha, puntaje, cantidad de opiniones, destacado, "más guardado", precio, distancia — hasta 5 criterios combinados
 - 🟢 Vista de lista y **vista de mapa** (por área visible del mapa)
-- 🟢 Ficha completa de alojamiento: galería, amenities, ubicación
-- 🟢 Alojamientos por destino · similares · top-rated del destino
+- 🟢 Ficha completa de alojamiento: galería de fotos, comodidades, ubicación
+- 🟢 Alojamientos por destino · similares · los mejor puntuados del destino
 - 🟢 Búsqueda global unificada: alojamientos + destinos + eventos + notas, todo junto
 - 🟢 Buscador con IA en lenguaje natural — **visible para todos, pero pide login al usarlo**
 
 ### Destinos y lugares
 
-- 🟢 Destinos con jerarquía navegable (país → región → ciudad), breadcrumb
+- 🟢 Destinos con jerarquía navegable (país → región → ciudad), con ruta de navegación
 - 🟢 **Clima y pronóstico a 16 días** + condiciones en vivo por destino
 - 🟢 Mapa de destinos con coordenadas exactas
 - 🟢 Atracciones del destino
@@ -64,35 +64,35 @@ Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` p
 ### Contenido
 
 - 🟢 Eventos: listado, próximos, por organizador y ubicación, con comentarios (lectura)
-- 🟢 Blog / notas turísticas: destacados, por categoría, relacionados, tags
-- 🟢 Gastronomía y Experiencias: listados, ficha, reseñas, FAQs
+- 🟢 Blog y notas turísticas: destacadas, por categoría, relacionadas, con etiquetas
+- 🟢 Gastronomía y experiencias: listados, ficha, opiniones y preguntas frecuentes
 - 🟢 **Página pública de autor** `/autores/<slug>/` — quién escribe cada nota
-- 🟢 Feeds RSS de eventos y publicaciones
+- 🟢 Suscripción por RSS a eventos y publicaciones
 - 🟢 Perfil público del anfitrión con todos sus alojamientos
 
 ### Confianza
 
-- 🟢 Reseñas públicas (solo aprobadas)
-- 🟢 **Reputación externa agregada**: ratings de Booking + Airbnb + Google en un solo lugar
+- 🟢 Opiniones públicas (solo las aprobadas)
+- 🟢 **Reputación externa agregada**: puntajes de Booking, Airbnb y Google en un solo lugar
 - 🟢 Contador "N personas lo guardaron"
-- 🟢 Ofertas y promociones del anfitrión, con badge en listado y ficha
+- 🟢 Ofertas y promociones del anfitrión, con un distintivo en el listado y en la ficha
 - 🟢 Testimonios en la home
 
 ### Contacto sin cuenta
 
 - 🟢 **Consulta anónima al anfitrión** — iniciar conversación sin registrarse
-- 🟢 Seguir y responder el hilo **por magic link al mail**, sin crear cuenta
+- 🟢 Seguir y responder el hilo **con un enlace que llega al mail**, sin crear cuenta
 - 🟢 Formulario de contacto general (13 tipos: soporte, prensa, publicar, reportar…)
 - 🟢 Formularios "Colaborar": reportar info, enviar fotos, postularse como editor
-- 🟢 Enviar feedback / reporte de bug con hasta 5 imágenes
-- 🟢 Suscripción a newsletter con doble opt-in y baja en 1 clic
-- 🟢 Lead comercial "sumar mi negocio"
+- 🟢 Reportar un problema o mandar una sugerencia con hasta 5 imágenes
+- 🟢 Suscripción a novedades por mail, con confirmación y baja en un clic
+- 🟢 Formulario "sumar mi negocio"
 
 ### Otros
 
 - 🟢 Tres idiomas: **es / en / pt**
 - 🟢 Conversión de moneda / tasas de cambio
-- 🟢 SEO técnico completo: sitemap dinámico, robots, llms.txt, Open Graph
+- 🟢 Preparado para aparecer bien en Google y para verse lindo al compartir un link
 
 **Ángulos de contenido**: "Mirá todo sin registrarte" · "Escribile al anfitrión sin crear cuenta" · "El clima de tu escapada, a 16 días" · "Booking, Airbnb y Google juntos en una sola ficha"
 
@@ -118,15 +118,17 @@ Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` p
 
 **Siempre gratis, en todos los planes**: escribir y leer reseñas · mensajes con anfitriones (bandeja, hilos, no leídos) · perfil, avatar y preferencias · ver mi plan y límites · gestionar newsletter · comentar y dar like en posts y eventos · novedades.
 
-🔴 Adjuntar fotos a reseñas — el gate existe, la pantalla no.
+🔴 Adjuntar fotos a reseñas — el permiso existe, la pantalla no.
 
 **Ángulos**: "Guardá tus favoritos gratis" · "Te avisamos cuando baja el precio" · "Compará 3 cabañas lado a lado" · "Preguntale en criollo: cabaña con pileta para 4 cerca del río"
 
 ---
 
-## 3. Anfitrión (Host) — Básico / Pro / Premium
+## 3. Anfitrión — Básico / Pro / Premium
 
-**El gancho**: 🟢 **14 días gratis sin tarjeta**. No se pide método de pago para arrancar y los datos se conservan al vencer. Con el código `FREEMONTH`, 30 días más.
+**El gancho**: 🟢 **30 días gratis sin tarjeta**. No se pide método de pago para arrancar y los datos se conservan al vencer.
+
+> Los días de prueba se configuran en la base de datos, no en el código. El número que vale es el que está cargado en producción — verificar ahí antes de imprimir nada, no en el código fuente.
 
 | Funcionalidad | Básico | Pro | Premium |
 |---|---|---|---|
@@ -135,24 +137,28 @@ Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` p
 | Promociones activas | 2 | 5 | ∞ |
 | Descripción enriquecida y video | – | 🟢 | 🟢 |
 | Estadísticas avanzadas | – | 🟢 | 🟢 |
-| Listado destacado (featured) | con addon | 🟢 | 🟢 |
+| Aparecer destacado | con un adicional | 🟢 | 🟢 |
 | Insignia de verificación | – | – | 🟢 |
-| Branding personalizado | – | – | 🟢 |
+| Identidad visual propia | – | – | 🟢 |
 | Soporte prioritario | – | 🟢 | 🟢 |
 | Importar ficha con IA (por mes) | 10 | 50 | 250 |
 | IA para mejorar textos (por mes) | 50 | 250 | 1.250 |
 | IA para traducir (por mes) | 200 | 1.000 | 5.000 |
 | IA: chat para huéspedes (por mes) | 50 | 250 | 1.250 |
 
-**Incluido en todos los planes**: editar datos, amenities, FAQs y ubicación · SEO editable de la ficha · estadísticas básicas (vistas, tasa de respuesta, consultas) · conectar reputación externa (Google, Booking…) · **el pack completo de turista VIP** (favoritos ∞, comparador, alertas ∞, colecciones 25, historial 200, IA 200/mes).
+**Incluido en todos los planes**: editar datos, comodidades, preguntas frecuentes y ubicación · editar cómo se ve la ficha en Google · estadísticas básicas (vistas, tasa de respuesta, consultas) · conectar los puntajes que ya tenés en Google, Booking y otros · **el paquete completo de turista VIP** (favoritos ∞, comparador, alertas ∞, colecciones 25, historial 200, IA 200/mes).
 
-**Addons**: Visibility Boost (destacar 1 alojamiento 7 o 30 días, pago único) · Fotos extra +20 · Alojamientos extra +5.
+**Adicionales que se pueden sumar**: Visibility Boost destacar un alojamiento por 7 o 30 días (pago único) · 20 fotos más · 5 alojamientos más.
 
-🟡 **Directorio de proveedores y oficios** (HOS-376) — plomería, gas, electricidad, cerrajería, climatización, limpieza. Con registro de uso del beneficio y valoraciones. En curso → **Prioridad 5**: producir las piezas ahora, publicar cuando salga.
+🟢 **Calendario de disponibilidad con sincronización** (HOS-157) — se conecta con Google Calendar y con otros calendarios por archivo `.ics`. Las fechas ocupadas se bloquean solas y evita reservas dobles. **Existe y funciona.**
 
-🔴 Responder reseñas · calendario de disponibilidad · sync con Google Calendar/iCal · mostrar WhatsApp en la ficha → **Prioridad 5**.
+🟢 **WhatsApp del anfitrión** — el dato está en la ficha del alojamiento y las consultas pueden llegar por ahí.
 
-**Ángulos**: "14 días gratis, sin tarjeta" · "Pegá el link de Airbnb y la IA completa tu ficha" · "Tu ficha en 3 idiomas con un clic" · "Sos anfitrión y además viajás VIP gratis"
+🟡 **Directorio de proveedores y oficios** (HOS-376) — plomería, gas, electricidad, cerrajería, climatización, limpieza. Con registro de uso del beneficio y valoraciones. Confirmar si ya está disponible.
+
+❓ Responder reseñas — sin verificar. Confirmar antes de comunicarlo.
+
+**Ángulos**: "30 días gratis, sin tarjeta" · "Pegá el link de Airbnb y la IA completa tu ficha" · "Tu ficha en 3 idiomas con un clic" · "Sos anfitrión y además viajás VIP gratis"
 
 ---
 
@@ -173,23 +179,23 @@ Diferencia: Experiencia usa precio "desde / a consultar" y se oculta del detalle
 
 ---
 
-## 5. Partners auspiciantes — ACTUALIZADO (HOS-294 + HOS-278)
+## 5. Marcas auspiciantes — ACTUALIZADO (HOS-294 + HOS-278)
 
 ⚠️ **Todo lo que decía el catálogo viejo acá quedó obsoleto.**
 
-- 🟢 Dos tiers: **gold y silver**. Bronze ya no existe.
-- 🟢 **Solo gold tiene página propia** `/partners/<slug>/`. Es exactamente lo que separa un tier del otro.
-- 🟢 Silver: presencia en el carrusel y el logo linkea **afuera**, al sitio propio del partner.
+- 🟢 Dos niveles: **oro y plata**. El bronce ya no existe.
+- 🟢 **Solo el nivel oro tiene página propia** `/partners/<slug>/`. Es exactamente lo que separa un tier del otro.
+- 🟢 Plata: presencia en el carrusel y el logo linkea **afuera**, al sitio propio del partner.
 - 🟢 **Ya hay self-service**: catálogo de planes, alta, claim, baja. Ya no es 100% gestionado por el equipo.
 - 🟢 Registro de menciones del partner (HOS-377)
 - ❌ El directorio filtrado `/partners/` **fue retirado por decisión del dueño y hoy 404ea**. No linkearlo en ninguna pieza.
-- El tier nunca se muestra públicamente.
+- El nivel nunca se muestra públicamente.
 
-**Ángulos**: "Tu marca donde el turismo del Litoral se encuentra" · "Página propia dentro de Hospeda" (solo gold)
+**Ángulos**: "Tu marca donde el turismo del Litoral se encuentra" · "Página propia dentro de Hospeda" (solo nivel oro)
 
 ---
 
-## 6. Sponsors de contenido
+## 6. Patrocinadores de contenido
 
 - 🟢 Crear y editar patrocinios de posts y eventos, autogestionado
 - 🟢 Panel propio: overview, sponsorships, analíticas, facturas
@@ -231,11 +237,11 @@ Público que **no estaba** en el catálogo viejo y hoy tiene producto propio.
 | Tarjeta turista | **No existe en el código.** Ni empezada. |
 | Servicios turísticos (vertical) | Solo permisos reservados. Sin entidad ni pantallas. |
 | Planes multi-propiedad / hotel | 3 planes completos en código pero **desactivados**. |
-| Responder reseñas | Gate listo, pantalla no. |
-| Calendario de disponibilidad + sync iCal/Google | Gate listo, pantalla no. |
-| WhatsApp en la ficha del alojamiento | Falta el campo en la base. |
-| Fotos en las reseñas | Gate listo, pantalla no. |
+| Fotos en las reseñas | El permiso está, la pantalla no. |
 | Asistente de IA para soporte | Definido, sin otorgar a ningún plan. |
+| Responder reseñas | **Sin verificar.** Confirmar antes de comunicarlo. |
+
+> **Advertencia sobre esta lista.** El catálogo del que salió estaba fechado el 08/07/2026 y ya tenía tres errores: daba por inexistentes el calendario con sincronización, el WhatsApp en la ficha y decía 14 días de prueba en vez de 30. Los tres estaban construidos. Antes de descartar cualquier funcionalidad de esta tabla, verificarla contra la plataforma real — esta lista envejece rápido.
 
 **Cada uno de estos ítems genera su publicación igual**, escrita y diseñada, con Prioridad 5. Quedan en la carpeta lista para disparar el día que la funcionalidad salga a producción. La única que puede publicarse antes es la categoría **Novedades**, y solo en clave de roadmap: "próximamente", nunca en tiempo presente.
 
