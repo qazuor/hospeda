@@ -16,9 +16,10 @@
  * - publishedAfter   — ISO yyyy-mm-dd lower bound on `publishedAt`
  * - publishedBefore  — ISO yyyy-mm-dd upper bound on `publishedAt`
  *
- * Rendering strategy: SSR + Cloudflare edge cache — `public, s-maxage=300,
- * stale-while-revalidate=600`, purged by cache tag. Eligibility is decided per
- * request by the `applyCacheHeaders` call below, not by this comment.
+ * Rendering strategy: SSR + Cloudflare edge cache — TTL from the `catalog`
+ * cache class (see `lib/cache/cache-classes.ts`), purged by cache tag.
+ * Eligibility is decided per request by the `applyCacheHeaders` call below,
+ * not by this comment.
  * Pagination is URL-based (server-side), so there is NO client-side loading
  * state. Skeleton cards are shown only in the `hasError` branch as a visual
  * placeholder alongside the ErrorBanner — never as a JS loading indicator.
@@ -284,6 +285,7 @@ applyCacheHeaders({
     locals: Astro.locals,
     headers: Astro.response.headers,
     cacheable: !facetSeoDecision.noindex && !hasOtherPostFilters,
+    cacheClass: 'catalog',
     tags: [CACHE_TAG_COLLECTIONS.post]
 });
 

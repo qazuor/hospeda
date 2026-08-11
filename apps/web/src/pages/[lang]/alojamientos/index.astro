@@ -4,9 +4,10 @@
  * @description Accommodations listing page with filter sidebar, card grid,
  * pagination, and ItemList JSON-LD structured data.
  * @route /{lang}/alojamientos/
- * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
- *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
- *   per request by the `applyCacheHeaders` call below, not by this comment.
+ * @rendering SSR + Cloudflare edge cache — TTL from the `catalog` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
@@ -504,6 +505,7 @@ applyCacheHeaders({
 	cacheable:
 		!facetSeoDecision.noindex &&
 		!hasActiveAccommodationListingFilters({ searchParams: url.searchParams }),
+	cacheClass: 'catalog',
 	tags: [CACHE_TAG_COLLECTIONS.accommodation]
 });
 

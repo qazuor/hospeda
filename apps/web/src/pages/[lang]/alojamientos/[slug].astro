@@ -158,7 +158,8 @@ const accommodation = toAccommodationDetailPageProps({ item: rawAccommodation, l
 // Content pulled in from other entities (similar stays, the owner's other
 // properties, related posts and events, reviews, promotions, nearby POIs) is
 // therefore not purge-addressable from here. It goes stale for at most the
-// 300s TTL, which is the trade this scoping buys.
+// `detail` cache class's TTL (see `lib/cache/cache-classes.ts`), which is the
+// trade this scoping buys.
 const entityCacheTags = buildEntityCacheTags({
 	entity: 'accommodation',
 	slug,
@@ -179,6 +180,7 @@ applyCacheHeaders({
 	//  - no usable entity tag means nothing could purge this page, and an
 	//    unpurgeable cached page is worse than an uncached one.
 	cacheable: Astro.url.search === '' && primaryCacheTag !== undefined,
+	cacheClass: 'detail',
 	// Only read when `cacheable` is true, which requires `primaryCacheTag`.
 	// The other branch exists to satisfy the non-empty tuple type and is never
 	// applied, because `applyCacheHeaders` returns before touching tags.

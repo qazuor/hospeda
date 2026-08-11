@@ -62,6 +62,7 @@ applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	cacheable: true,
+	cacheClass: 'home',
 	tags: [CACHE_TAG_HOME]
 });
 

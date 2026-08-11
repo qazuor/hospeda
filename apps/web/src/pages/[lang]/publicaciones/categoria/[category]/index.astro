@@ -3,9 +3,10 @@
  * @file publicaciones/categoria/[category]/index.astro
  * @description Posts filtered by category.
  * @route /{lang}/publicaciones/categoria/{category}/
- * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
- *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
- *   per request by the `applyCacheHeaders` call below, not by this comment.
+ * @rendering SSR + Cloudflare edge cache — TTL from the `catalog` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
@@ -46,6 +47,7 @@ applyCacheHeaders({
 	headers: Astro.response.headers,
 	// `/…/page/N/` rewrites into this route with `?page=N`.
 	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	cacheClass: 'catalog',
 	tags: [CACHE_TAG_COLLECTIONS.post]
 });
 

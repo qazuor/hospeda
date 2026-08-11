@@ -56,6 +56,7 @@ applyCacheHeaders({
 	// changing the SSR HTML. Anything beyond pagination makes the render an
 	// arbitrary slice and stays private.
 	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	cacheClass: 'catalog',
 	tags: [CACHE_TAG_COLLECTIONS.experience]
 });
 
