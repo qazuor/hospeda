@@ -35,7 +35,8 @@
  * 2. `billing_plans.metadata.{monthlyPriceArs,annualPriceArs,monthlyPriceUsdRef}`
  *    (the JSONB mirror the seeder writes at INSERT).
  * 3. The active `billing_prices.unitAmount` rows (`currency='ARS'`,
- *    `intervalCount=1`) for `billingInterval='month'` and `'year'`.
+ *    `intervalCount=1`, `active=true`) for `billingInterval='month'` and
+ *    `'year'`.
  *
  * Carrier 3 is the load-bearing one: `mapDbToPlan()` reads the PUBLIC price off
  * `billing_prices.unitAmount`, not off the typed column — so skipping it would
@@ -138,6 +139,12 @@ async function repriceInterval(input: {
                 eq(billingPrices.currency, 'ARS'),
                 eq(billingPrices.billingInterval, billingInterval),
                 eq(billingPrices.intervalCount, 1),
+                // Match the read path exactly: `mapDbToPlan()` only ever looks at
+                // the ACTIVE row. `updatePlan`'s annual branch can leave an
+                // orphaned inactive row behind (nulling then re-setting an annual
+                // price re-inserts rather than reactivating), and repricing a dead
+                // row would be meaningless.
+                eq(billingPrices.active, true),
                 eq(billingPrices.unitAmount, oldAmount)
             )
         )
