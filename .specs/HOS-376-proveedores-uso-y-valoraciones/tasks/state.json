@@ -2303,7 +2303,7 @@
             "id": "T-062",
             "title": "Tests de integración de los endpoints del proveedor y del rate limit",
             "description": "T-031, T-032 y T-039: ownership, HOST_NOT_FOUND explícito, linked-hosts que excluye pares sin uso confirmado, 429 al superar el límite, y que el límite del canal EMAIL_LOOKUP sea más estricto que el del selector.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-031", "T-039"],
             "blocks": [],
@@ -2311,14 +2311,23 @@
             "tags": ["testing", "api", "integration"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T23:38:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T23:38:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T23:38:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-11T23:20:00.000Z",
+                "completed": "2026-08-11T23:38:00.000Z"
             }
         },
         {
@@ -2578,9 +2587,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 8,
+        "pending": 7,
         "inProgress": 0,
-        "completed": 62,
+        "completed": 63,
         "blocked": 0,
         "averageComplexity": 2.4
     }
