@@ -9,6 +9,9 @@
 
 .dialog {
     width: min(34rem, calc(100vw - 2rem));
+    /* Restore native <dialog> centering — a global reset zeroes margins,
+       which would otherwise pin the dialog to the top-left corner. */
+    margin: auto;
     padding: var(--space-6, 1.5rem);
     color: var(--core-foreground);
     background-color: var(--core-card);
