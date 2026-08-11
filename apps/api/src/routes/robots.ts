@@ -10,9 +10,10 @@
  * The indexable content, sitemap, and blog RSS feed all live on the web app,
  * which serves its own robots.txt.
  */
-import { z } from '@hono/zod-openapi';
+
 import type { Context } from 'hono';
 import { createSimpleRoute } from '../utils/route-factory';
+import { z } from '../utils/zod';
 
 const ROBOTS_TXT = `User-agent: *
 Disallow: /

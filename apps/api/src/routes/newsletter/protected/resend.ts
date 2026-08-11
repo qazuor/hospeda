@@ -11,12 +11,12 @@
  * internally by NewsletterSubscriberService.resendVerification).
  */
 
-import { z } from '@hono/zod-openapi';
 import type { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { z } from '../../../utils/zod';
 import { getDefaultNewsletterService } from './_singletons';
 
 const ResendResponseSchema = z.object({ sent: z.literal(true) });

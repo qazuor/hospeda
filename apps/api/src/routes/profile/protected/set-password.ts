@@ -12,13 +12,13 @@
  * `set_password_prompted = true` on the user row.
  */
 
-import type { z } from '@hono/zod-openapi';
 import { ServiceErrorCode, SetPasswordBodySchema, SetPasswordResponseSchema } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getAuth } from '../../../lib/auth';
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import type { z } from '../../../utils/zod';
 import { getDefaultUserService } from './_singletons';
 
 /**

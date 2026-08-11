@@ -18,7 +18,16 @@
     "card": {
         "is24h": "Available 24/7",
         "benefit": "Host benefit",
-        "contact": "Contact"
+        "contact": "Contact",
+        "stats": {
+            "ratingLabel": "{{rating}} out of 5 stars",
+            "reviews_one": "{{count}} review",
+            "reviews_other": "{{count}} reviews",
+            "uses_one": "{{count}} use",
+            "uses_other": "{{count}} uses",
+            "hosts_one": "{{count}} host",
+            "hosts_other": "{{count}} hosts"
+        }
     },
     "categories": {
         "CERRAJERIA": "Locksmith",

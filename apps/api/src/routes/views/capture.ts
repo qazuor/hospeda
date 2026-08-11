@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 import { CaptureViewBodySchema, ServiceErrorCode } from '@repo/schemas';
 import { entityViewService } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -8,6 +7,7 @@ import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { createSimpleRoute } from '../../utils/route-factory';
 import { computeVisitorHash } from '../../utils/visitor-hash';
+import { z } from '../../utils/zod';
 
 // ---------------------------------------------------------------------------
 // Response schema

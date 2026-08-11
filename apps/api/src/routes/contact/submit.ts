@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 import type { NotificationPayload } from '@repo/notifications';
 import { NotificationType } from '@repo/notifications';
 import { ContactSubmitSchema, ServiceErrorCode } from '@repo/schemas';
@@ -9,6 +8,7 @@ import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { sendNotification } from '../../utils/notification-helper';
 import { createSimpleRoute } from '../../utils/route-factory';
+import { z } from '../../utils/zod';
 
 /**
  * Contact form response schema.

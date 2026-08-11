@@ -2,7 +2,7 @@
  * Metrics routes
  * Endpoints for exposing application metrics
  */
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
 import {
     MetricsOperationResponseSchema,
     MetricsSuccessResponseSchema,
@@ -17,6 +17,7 @@ import {
     resetMetrics
 } from '../../middlewares/metrics';
 import { createRouter } from '../../utils/create-app';
+import { z } from '../../utils/zod';
 
 // Get all metrics endpoint
 const getMetricsRoute = createRoute({
