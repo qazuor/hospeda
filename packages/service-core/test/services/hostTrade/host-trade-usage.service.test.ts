@@ -575,6 +575,66 @@ describe('guard order — most permanent wins', () => {
     });
 
     /**
+     * SELF_USAGE_FORBIDDEN sits BETWEEN the listing-wide half and the pair half,
+     * because the host it is about only exists once `resolveDeclaredHost` has
+     * run. Both of its neighbours are pinned below: a chain is only ordered if
+     * every adjacent pair is, and the guard added last is the one whose position
+     * nothing else asserts.
+     */
+    it('reports DECLARATION_SUSPENDED over SELF_USAGE_FORBIDDEN', async () => {
+        const { service } = buildService({
+            hostTrade: makeHostTrade({
+                declarationSuspendedAt: new Date('2026-08-01T00:00:00Z')
+            })
+        });
+
+        const result = await service.declareAsProvider(
+            { hostTradeId: HT_ID, hostUserId: OWNER_ID, servicedAt: '2026-08-01' },
+            providerActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.DECLARATION_SUSPENDED);
+    });
+
+    it('reports SELF_USAGE_FORBIDDEN over DECLARATION_BLOCKED', async () => {
+        const { service, model } = buildService({ rejectedBy: 'PROVIDER', pendingBy: 'PROVIDER' });
+        // The owner has to survive host resolution to reach the guard being
+        // measured — otherwise the selector answers HOST_NOT_FOUND first and the
+        // test would pass on the wrong refusal.
+        model.findLinkedHosts = vi.fn(async () => [OWNER_ID]);
+
+        const result = await service.declareAsProvider(
+            { hostTradeId: HT_ID, hostUserId: OWNER_ID, servicedAt: '2026-08-01' },
+            providerActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SELF_USAGE_FORBIDDEN);
+    });
+
+    /**
+     * The pairwise cases above each hold exactly two conditions true. This one
+     * holds ALL of them at once — the shape a real abandoned listing actually
+     * has, since a provider who was revoked was usually suspended first and left
+     * rejections and a pending row behind. The answer must still be the refusal
+     * whose remedy is furthest away, not whichever check happens to run first.
+     */
+    it('reports PROVIDER_REVOKED when every condition is true at once', async () => {
+        const { service, model } = buildService({
+            hostTrade: makeHostTrade({
+                revokedAt: new Date('2026-07-01T00:00:00Z'),
+                declarationSuspendedAt: new Date('2026-08-01T00:00:00Z')
+            }),
+            rejectedBy: 'PROVIDER',
+            pendingBy: 'PROVIDER'
+        });
+
+        const result = await service.declareAsProvider(providerDeclaration, providerActor());
+
+        expect(result.error?.code).toBe(ServiceErrorCode.PROVIDER_REVOKED);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    /**
      * Ownership outranks every state guard. A stranger probing someone else's
      * listing must not learn from the error code whether it is revoked,
      * suspended or perfectly healthy.
