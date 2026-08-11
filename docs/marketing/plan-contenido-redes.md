@@ -750,7 +750,7 @@ Conviene acompañar la temporada: el destino termal en invierno, el de río en v
 - **Cuerpo**: En el centro de la provincia, sobre el arroyo. Pueblo de a pie y de a caballo.
 - **Foto**: A definir con material del lugar.
 
-**San Justo** ⚠️⚠️
+###### San Justo ⚠️⚠️
 
 - **Tag Line**: San Justo, Entre Ríos
 - **Título**: *(a escribir)*
