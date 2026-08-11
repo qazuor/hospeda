@@ -73,22 +73,37 @@ NO ubicar partes importantes del personaje donde puedan quedar ocultas por la in
 de Instagram o TikTok. Ante la duda, componer más chico y más al centro.
 ```
 
-### El personaje
+### Hospedín, el personaje
 
-Es el logo de Hospeda con cuerpo y cara. Aparece en la mayoría de los videos como presentador o como hilo conductor.
+Es el logo de Hospeda con cuerpo y cara. Se llama **Hospedín**, y aparece en los videos generados como presentador o hilo conductor.
 
-> ⚠️ **Antes de generar el primer video hay que escribir la descripción fija del personaje.** Un párrafo cerrado con: colores exactos, proporciones, forma de la cara, ojos, si tiene brazos y piernas, ropa si usa, y estilo de render. **Ese párrafo se pega igual en todos los prompts, siempre.**
+**La descripción fija del personaje vive en su propio documento**: [`personaje-hospedin.md`](personaje-hospedin.md). Está aparte porque es larga y porque se usa en cada prompt sin modificar una coma. **Cuando un prompt diga `[DESCRIPCIÓN DE HOSPEDÍN]`, se pega ese documento entero.**
+
+Las **imágenes de referencia** del personaje están en la misma carpeta que estos documentos. Se usan siempre las mismas: son las que dan consistencia entre generaciones.
+
+> ⚠️ **Por qué esto es lo más importante de toda la producción.** Las herramientas generativas no recuerdan nada entre una generación y la siguiente. Lo único que hace que Hospedín sea el mismo en el video de enero y en el de julio es repetir exactamente la misma descripción y partir siempre de la misma imagen de referencia. Si en algún prompt se resume la descripción "para que entre", el personaje cambia y la serie se rompe.
+
+### Las dos series de video
+
+Hay **dos formatos con funciones distintas** y no compiten entre sí:
+
+| | **Serie con Hospedín** | **Serie con persona a cámara** |
+|---|---|---|
+| Quién aparece | El personaje generado | Una persona real hablando |
+| Duración | 10 a 25 segundos | 25 a 50 segundos |
+| Para qué sirve | Gancho, demostrar una función, historias | Explicar, dar confianza, institucional |
+| Dónde | Historias y WhatsApp, sobre todo | Publicaciones |
+| Costo de producción | Generación + edición | Filmación + edición |
+
+**Cuándo usar cuál**: si el mensaje es "mirá qué fácil es esto", va Hospedín. Si el mensaje es "te explico por qué hicimos esto", va una persona. Una función se demuestra; una idea se cuenta.
+
+### Quién graba las pantallas
+
+Las graba un super administrador, que tiene acceso a todo.
+
+> ⚠️ **Cuidado con esto, que es un problema real.** La pantalla de un super administrador **no es la que ve un anfitrión**: tiene opciones, menús y datos que el usuario común no tiene. Grabar con esa vista y mostrársela a un dueño de alojamiento genera dos problemas — le enseña una interfaz que después no va a encontrar, y puede dejar a la vista información interna de la plataforma o datos de otros usuarios.
 >
-> Es el punto más importante de toda la producción: si el personaje cambia de un video a otro —o peor, de un plano a otro dentro del mismo video— la pieza se cae. Las herramientas generativas no recuerdan nada entre generaciones: lo único que da consistencia es repetir la misma descripción y usar siempre la misma imagen de referencia.
-
-**Además de la descripción escrita hace falta un juego de imágenes de referencia**, generadas una vez y guardadas para reusar:
-
-- De frente, de perfil y de tres cuartos
-- Expresiones: neutra, contenta, sorprendida, señalando
-- Cuerpo entero y busto
-- Sobre fondo neutro, para poder recortarlo
-
-**Conviene ponerle nombre.** Facilita hablar de él en la producción y, si en algún momento se lo usa como personaje reconocible, ya está bautizado.
+> **Grabar siempre desde una cuenta de anfitrión de verdad**, aunque sea una creada para eso. Y antes de publicar, mirar el video completo buscando datos que no deberían salir: nombres, correos, teléfonos, importes, identificadores internos.
 
 ### Herramientas
 
