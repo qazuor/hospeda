@@ -261,5 +261,51 @@
             "download": "Descargar el QR",
             "downloaded": "Listo, lo descargamos como SVG."
         }
+    },
+    "moderation": {
+        "title": "Moderación de proveedores",
+        "subtitle": "Dos colas con significados distintos: una réplica pendiente bloquea a un proveedor, una valoración pendiente no bloquea a nadie.",
+        "replies": {
+            "title": "Respuestas pendientes",
+            "help": "Un proveedor no puede responder una queja sobre su propio negocio hasta que se apruebe. Esta cola es la prioritaria.",
+            "empty": "No hay respuestas esperando revisión.",
+            "onReview": "Responde a la valoración {{id}}",
+            "editedAfterReply": "El anfitrión editó su valoración después de esta respuesta."
+        },
+        "reviews": {
+            "title": "Valoraciones",
+            "help": "Se publican al crearse, así que esta cola es un backlog: nada espera por ella.",
+            "empty": "No hay valoraciones para revisar.",
+            "benefitYes": "Respetó el beneficio",
+            "benefitNo": "NO respetó el beneficio",
+            "noContent": "Sin comentario escrito."
+        },
+        "filters": {
+            "stateLabel": "Estado de moderación",
+            "all": "Todos",
+            "PENDING": "Pendientes",
+            "APPROVED": "Aprobadas",
+            "REJECTED": "Rechazadas"
+        },
+        "state": {
+            "PENDING": "Pendiente",
+            "APPROVED": "Aprobada",
+            "REJECTED": "Rechazada"
+        },
+        "actions": {
+            "approve": "Aprobar",
+            "reject": "Rechazar",
+            "reasonLabel": "Motivo (opcional, se lo mostramos a quien la escribió)",
+            "reasonPlaceholder": "Por ejemplo: incluye datos personales de terceros."
+        },
+        "errors": {
+            "load": "No pudimos cargar la cola. Probá recargar la página.",
+            "moderate": "No pudimos guardar la decisión. Probá de nuevo."
+        },
+        "pagination": {
+            "status": "Página {{page}} de {{total}}",
+            "previous": "Anteriores",
+            "next": "Siguientes"
+        }
     }
 }
