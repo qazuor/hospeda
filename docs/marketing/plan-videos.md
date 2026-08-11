@@ -32,6 +32,47 @@ En cada video se detalla qué formatos hay que hacer. Casi siempre se produce un
 
    **La regla práctica**: si la transición se nota más que lo que muestra, está mal. Y si hay dudas, corte seco.
 
+### Composición y zonas seguras
+
+**Todo se genera en vertical 9:16 (1080 × 1920) salvo que el video diga otra cosa.**
+
+El problema: Instagram y TikTok dibujan su propia interfaz encima del video. Si el personaje está bien compuesto pero le cae el nombre de usuario en la cara o los botones de la app sobre la mano, el video queda arruinado y no hay forma de arreglarlo sin volver a generar.
+
+**Zonas que quedan tapadas en 1080 × 1920:**
+
+| Zona | Cuánto | Qué la tapa |
+|---|---|---|
+| Arriba | ~250 px | Avatar, nombre de usuario, barra de progreso |
+| Abajo | ~420 px | Descripción, botones, campo de respuesta |
+| Derecha | ~180 px | Columna de íconos de TikTok: me gusta, comentar, compartir |
+| Izquierda | ~60 px | Margen |
+
+**Queda utilizable el centro del cuadro, aproximadamente entre los 250 y los 1470 píxeles de alto.** Ahí va todo lo que importa: la cara del personaje, sus manos, el gesto, el objeto que sostiene.
+
+**Y esa zona central hay que compartirla** con los subtítulos, los títulos, los elementos gráficos, el logo y el llamado a la acción. Por eso los planos se generan con aire de sobra: es preferible que el personaje quede un poco chico a que haya que recortarlo después.
+
+#### Bloque de composición para pegar en los prompts
+
+Va en **todos** los prompts de generación, igual que la descripción del personaje:
+
+```
+FORMATO: video vertical 9:16, 1080 x 1920. Si no se indica otro formato, este.
+
+ZONAS SEGURAS — la composición tiene que dejar libres:
+- 250 px superiores (los tapa la interfaz de la app)
+- 420 px inferiores (los tapan botones y descripción)
+- 180 px del borde derecho (columna de íconos de TikTok)
+
+Todo lo importante del personaje —cara, manos, gesto, objetos que sostenga— tiene que
+quedar dentro del centro del cuadro, entre los 250 y los 1470 px de alto.
+
+Dejar además espacio libre dentro de esa zona central para superponer después:
+subtítulos, título, elementos gráficos, logo y llamado a la acción.
+
+NO ubicar partes importantes del personaje donde puedan quedar ocultas por la interfaz
+de Instagram o TikTok. Ante la duda, componer más chico y más al centro.
+```
+
 ### El personaje
 
 Es el logo de Hospeda con cuerpo y cara. Aparece en la mayoría de los videos como presentador o como hilo conductor.
@@ -165,6 +206,13 @@ Luz: pareja y suave, sin sombras duras.
 Estilo: [MISMO ESTILO DE RENDER QUE LA REFERENCIA], colores planos, sin fotorrealismo.
 Sin texto en la imagen.
 Resolución alta: la imagen tiene que aguantar un acercamiento fuerte hacia el teléfono.
+
+FORMATO Y ZONAS SEGURAS: video vertical 9:16, 1080 x 1920. La composición tiene que
+dejar libres los 250 px superiores, los 420 px inferiores y los 180 px del borde
+derecho, que quedan tapados por la interfaz de Instagram y TikTok. Todo lo importante
+del personaje —cara, manos, gesto, el teléfono— dentro del centro del cuadro, entre
+los 250 y los 1470 px de alto, y con espacio libre para superponer subtítulos, título,
+logo y llamado a la acción. Ante la duda, componer más chico y más al centro.
 ```
 
 ##### Personaje — Plano B (ChatGPT o ComfyUI, imagen fija)
@@ -184,6 +232,13 @@ Luz: pareja y suave, sin sombras duras.
 Estilo: [MISMO ESTILO DE RENDER QUE LA REFERENCIA], colores planos, sin fotorrealismo.
 Sin texto en la imagen.
 Resolución alta: la imagen tiene que aguantar el alejamiento desde el teléfono.
+
+FORMATO Y ZONAS SEGURAS: video vertical 9:16, 1080 x 1920. La composición tiene que
+dejar libres los 250 px superiores, los 420 px inferiores y los 180 px del borde
+derecho, que quedan tapados por la interfaz de Instagram y TikTok. Todo lo importante
+del personaje —cara, manos, gesto, el teléfono— dentro del centro del cuadro, entre
+los 250 y los 1470 px de alto, y con espacio libre para superponer subtítulos, título,
+logo y llamado a la acción. Ante la duda, componer más chico y más al centro.
 ```
 
 > **El teléfono tiene que estar en la misma posición, ángulo y tamaño en los dos planos.**
@@ -205,6 +260,16 @@ tiene que quedar quieto para poder componerle la pantalla y hacer el acercamient
 
 Cámara fija. Fondo fijo. Sin zoom, sin desplazamiento, sin cambios de iluminación.
 El personaje no se deforma ni cambia de color en ningún momento.
+
+FORMATO Y ZONAS SEGURAS: video vertical 9:16, 1080 x 1920. La composición tiene que
+dejar libres los 250 px superiores, los 420 px inferiores y los 180 px del borde
+derecho, que quedan tapados por la interfaz de Instagram y TikTok. Todo lo importante
+del personaje —cara, manos, gesto, el teléfono— dentro del centro del cuadro, entre
+los 250 y los 1470 px de alto, y con espacio libre para superponer subtítulos, título,
+logo y llamado a la acción. Ante la duda, componer más chico y más al centro.
+
+El encuadre no se altera: el personaje tiene que seguir respetando las zonas seguras
+durante toda la animación, no solo en el primer cuadro.
 ```
 
 > **Por qué el movimiento tiene que ser mínimo**: cuanto más se le pide a un modelo generativo, más se aleja de la referencia. Un gesto chico sale consistente; una acción compleja devuelve un personaje que ya no es el mismo. **Si un plano necesita movimiento grande, conviene resolverlo con animación tradicional sobre la imagen fija**, no generándolo.
