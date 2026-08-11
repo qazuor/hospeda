@@ -7,10 +7,11 @@
  * instead of erroring (HOS-109 T-011). Registered BEFORE `getBySlug` so Hono
  * matches this static path ahead of the `/slug/:slug` param route.
  */
-import { z } from '@hono/zod-openapi';
+
 import type { Context } from 'hono';
 import { env } from '../../../utils/env';
 import { createSimpleRoute } from '../../../utils/route-factory';
+import { z } from '../../../utils/zod';
 
 /** Default-locale blog RSS feed on the web app. */
 const buildWebRssUrl = (): string => {

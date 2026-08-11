@@ -7,7 +7,7 @@
  * 5 requests/minute. Same contract as the post variant, but events have no
  * counter (AC-26), so no `posts.comments` update occurs.
  */
-import type { z } from '@hono/zod-openapi';
+
 import {
     CreateCommentBodySchema,
     EntityCommentSchema,
@@ -24,6 +24,7 @@ import {
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createProtectedRoute } from '../../../../utils/route-factory';
+import type { z } from '../../../../utils/zod';
 
 /** Per-user hourly write budget: 30 comment submissions per hour. */
 const writeCommentRateLimit = createSlidingWindowPerUserRateLimit({

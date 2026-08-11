@@ -33,7 +33,6 @@
  * @see HOS-67 (SPEC-297d) G-6
  */
 
-import { z } from '@hono/zod-openapi';
 import {
     MakeWebhookResponseSchema,
     PermissionEnum,
@@ -43,6 +42,7 @@ import {
 import { z as zodCore } from 'zod';
 import { getDecryptedSocialCredential } from '../../../services/social-credential-vault.service';
 import { createAdminRoute } from '../../../utils/route-factory';
+import { z } from '../../../utils/zod';
 
 /** Outbound auth header Hospeda sends on every Make.com dispatch POST. */
 const MAKE_AUTH_HEADER_NAME = 'x-make-apikey';

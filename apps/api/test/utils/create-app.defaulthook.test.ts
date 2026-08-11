@@ -9,8 +9,9 @@
  * mocked so they do not call process.exit in the test environment.
  */
 
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
 import { describe, expect, it, vi } from 'vitest';
+import { z } from '../../src/utils/zod';
 
 // ---------------------------------------------------------------------------
 // Mock every middleware that performs top-level side effects (env validation,
