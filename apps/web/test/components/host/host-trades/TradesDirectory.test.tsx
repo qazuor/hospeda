@@ -376,6 +376,24 @@ describe('TradeCard — basic render', () => {
         expect(screen.getByText('Juan Plomero')).toBeInTheDocument();
     });
 
+    it('links the name to the provider page (HOS-376 T-053)', () => {
+        // The name IS the way in: nothing else on the card reaches the detail
+        // page, so losing this link makes the page unreachable from the
+        // directory without breaking anything visible.
+        render(
+            <TradeCard
+                trade={tradePlomeria}
+                locale="es"
+            />
+        );
+
+        const link = screen.getByRole('link', { name: 'Juan Plomero' });
+        expect(link).toHaveAttribute(
+            'href',
+            `/es/mi-cuenta/directorio-proveedores/${tradePlomeria.slug}/`
+        );
+    });
+
     it('renders the benefit text', () => {
         // Arrange / Act
         render(

@@ -178,6 +178,9 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'home.searchBar',
     'host-trades.card',
     'host-trades.categories',
+    // The provider detail page's review list (HOS-376 T-053), for the same
+    // reason as the islands below.
+    'host-trades.directory',
     'host-trades.emptyState',
     'host-trades.filter',
     'host-trades.page',

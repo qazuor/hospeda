@@ -1,0 +1,215 @@
+/**
+ * Styles for the directory's public review list (HOS-376 T-053).
+ *
+ * A sibling of `ProviderPanels.module.css` rather than a reuse of it: the two
+ * surfaces look alike because they show the same rows, but they answer to
+ * different readers — one to the provider about his own listing, one to a host
+ * choosing whom to call — and a shared file would make every change to either
+ * a change to both. `composes` is deliberately not used here: it loses against
+ * a module's own resets, and this file owns its cascade end to end.
+ */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+.sectionTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.0625rem;
+    color: var(--core-foreground);
+}
+
+/* ── The list ── */
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    transition: opacity var(--duration-normal, 0.4s) ease-out;
+}
+
+/* Paging keeps the read rows on screen and dims them, rather than swapping in
+   a skeleton: the reviews ARE the page, and blanking them to announce a load
+   costs more than the wait it reports. */
+.listLoading {
+    opacity: 0.55;
+}
+
+.reviewCard {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-4, 1rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-md, 10px);
+}
+
+.rowHeader {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.rowTitle,
+.replyLabel {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+.rowMeta {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.rowBody {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-foreground);
+    line-height: 1.55;
+}
+
+.stars {
+    font-size: 0.9375rem;
+    line-height: 1;
+    color: var(--brand-accent);
+}
+
+/* ── The optional three-dimension detail ── */
+
+.breakdown {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem) var(--space-4, 1rem);
+    margin: 0;
+}
+
+.breakdownItem {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.375rem;
+}
+
+.breakdownLabel {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--core-muted-foreground);
+}
+
+.breakdownValue {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+}
+
+/* ── The provider's answer ── */
+
+.replyBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+    padding-left: var(--space-3, 0.75rem);
+    border-left: 3px solid var(--core-foreground-a08);
+}
+
+/* ── Paging ── */
+
+.pagination {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-3, 0.75rem);
+}
+
+.pageButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.5rem 1rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.875rem;
+    color: var(--core-foreground);
+    cursor: pointer;
+    background-color: transparent;
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-pill, 9999px);
+    transition: background-color var(--duration-normal, 0.4s) ease-out;
+}
+
+.pageButton:hover:not(:disabled) {
+    background-color: var(--core-foreground-a08);
+}
+
+.pageButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+.pageButton:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.pageStatus {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── States ── */
+
+.empty {
+    margin: 0;
+    padding: var(--space-6, 1.5rem);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-muted-foreground);
+    text-align: center;
+    background-color: var(--core-card);
+    border: 1px dashed var(--core-foreground-a08);
+    border-radius: var(--radius-card, 24px);
+}
+
+.error {
+    margin: 0;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: oklch(0.55 0.22 25);
+    background-color: oklch(0.55 0.22 25 / 0.08);
+    border: 1px solid oklch(0.85 0.05 25 / 0.4);
+    border-radius: var(--radius-md, 10px);
+}
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+    border: 0;
+}
