@@ -575,6 +575,145 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 
 ---
 
+### Categoría 13 — Confianza y testimonios
+
+La categoría que más convierte y la que más depende de material que hoy no tenemos. Por eso está partida en dos:
+
+- **Lo que se puede hacer desde el día uno**, sin un solo cliente: mostrar la cara, mostrar el producto real, contar los hitos.
+- **Lo que necesita gente adentro**: testimonios, casos, antes y después. Se produce cuando haya con quién.
+
+> 🚫 **Un testimonio no se inventa jamás.** Ni "basado en un caso real", ni redactado por nosotros y firmado por otro, ni una foto de banco de imágenes con un nombre inventado. Además de ser mentirle a la gente, en un mercado de pueblo donde todos se conocen, el día que alguien pregunta "¿quién es este?" se termina la credibilidad de la marca entera. Sin material real, la pieza no se hace: se espera.
+
+#### Cómo conseguir el material
+
+Esto vale más que las placas. Sin un método para juntar testimonios, la categoría nunca arranca.
+
+- **Pedilo en el mejor momento**, no cuando te acordás: apenas alguien publica su primer alojamiento, cuando recibe su primera consulta, o cuando le entra la primera reserva. Ahí está contento y se acuerda de lo que sintió.
+- **Preguntá cosas concretas**, no "¿qué te pareció?". Preguntá *"¿cuánto tardaste en publicar?"*, *"¿qué pensabas antes de arrancar?"*, *"¿qué le dirías a alguien que está dudando?"*. Las respuestas a esas tres son un testimonio armado.
+- **Pedí permiso por escrito** para usar el nombre, la foto y el alojamiento. Una vez, por mensaje, y guardalo.
+- **Grabá un audio si se puede.** La gente habla mucho mejor de lo que escribe, y de un audio de dos minutos salen tres placas.
+- **Guardá todo en un solo lugar**, aunque no lo uses ya. El testimonio que no anotaste en el momento no se recupera.
+
+---
+
+#### 13.1 · La cara de los que estamos atrás
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Quiénes somos
+- **Título**: Atrás de Hospeda hay gente, no una empresa.
+- **Cuerpo**: Nos podés escribir y te contestamos nosotros.
+- **Idea**: Se puede hacer hoy mismo, sin ningún cliente: es confianza pura, sin testimonios. Una foto real del equipo, sin producción de agencia, sin pose de foto corporativa. Nombres y nada más. En un mercado donde todos se conocen, la cara vale más que cualquier argumento.
+- **Foto/s**: Foto real del equipo. Natural, en un lugar de la región, no en una oficina. Que se vea gente de acá.
+- **CTA**: Escribinos desde hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 13.2 · El primero
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Un hito
+- **Título**: Se publicó el primer alojamiento en Hospeda.
+- **Cuerpo**: Gracias por confiar cuando todavía no había nada.
+- **Idea**: Se publica el día que pase, no antes. Un hito chico contado con emoción funciona mejor que un anuncio grande contado con marketing. Mostrar la ficha real del alojamiento y agradecer con nombre y apellido, si el dueño da el permiso.
+- **Foto/s**: La foto principal del alojamiento en cuestión, con permiso del dueño.
+- **CTA**: Sumate en hospeda.com.ar
+- **Idioma**: Español
+- **Cuándo**: el día que se publique el primer alojamiento de verdad. Es una pieza de una sola vez y sirve para arrancar la relación con ese primer cliente, que probablemente después sea el primer testimonio.
+
+---
+
+#### 13.3 · Testimonio de anfitrión — plantilla
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: Lo dice un anfitrión
+- **Título**: *(la frase textual del anfitrión, entre comillas)*
+- **Subtítulo**: *(nombre · su alojamiento · su ciudad)*
+- **Cuerpo**: *(no lleva: la frase es todo)*
+- **Idea**: **Es una plantilla, no una pieza suelta.** Se diseña una vez y se rellena cada vez que llega un testimonio nuevo. La frase entre comillas ocupa el centro, grande. Abajo, la foto del anfitrión —chica, redonda— con su nombre, su alojamiento y su ciudad. Nada más: sin logo grande, sin adornos, sin la palabra "testimonio". Cuanto más se parezca a una captura de algo que alguien dijo, más creíble es.
+- **Foto/s**: Foto real de la persona, o de ella en su alojamiento. Sacada con celular está perfecto: acá la prolijidad juega en contra.
+- **CTA**: Sumá tu propiedad en hospeda.com.ar
+- **Idioma**: Español
+- **Cómo se usa**: la gracia es que sea repetible. Se arma el diseño una vez y después es cambiar la frase y la foto — diez minutos por testimonio. Rotar las ciudades para que no parezca que solo funciona en un lado.
+
+---
+
+#### 13.4 · Testimonio de turista — plantilla
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Lo dice quien viajó
+- **Título**: *(la frase textual del turista, entre comillas)*
+- **Subtítulo**: *(nombre · dónde se quedó)*
+- **Cuerpo**: *(no lleva)*
+- **Idea**: Misma plantilla que la 13.3 pero con otro color de acento, para que se distingan a simple vista las dos series. Acá la foto ideal no es la persona: es **la foto del viaje** —el lugar, la vista, el mate en la galería— con la frase encima.
+- **Foto/s**: Foto del viaje del turista, con permiso. Las fotos de vacaciones de la gente común funcionan mejor que cualquier producción.
+- **CTA**: Encontrá tu lugar en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 13.5 · Antes y después de una ficha
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (3 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Un caso real
+- **Título**: La misma cabaña, contada de dos formas.
+- **Cuerpo**: Mismas fotos, misma casa. Cambió cómo se muestra.
+- **Items**:
+  1. "Así estaba publicada" — la ficha pobre, con dos fotos y tres líneas
+  2. "Así quedó" — la ficha completa, con la descripción trabajada
+  3. "Qué cambió" — los tres o cuatro arreglos concretos que se hicieron
+- **Idea**: Es la pieza que mejor demuestra el valor sin necesidad de que nadie diga nada bueno de nosotros: **el trabajo se ve solo**. Y no necesita testimonio, solo un cliente que preste su ficha. Que el contraste entre la placa 1 y la 2 sea evidente de lejos.
+- **Foto/s**: Capturas reales de la ficha antes y después, con permiso del dueño.
+- **CTA**: Sumá tu propiedad en hospeda.com.ar
+- **Idioma**: Español
+- **Nota**: es el testimonio más fácil de conseguir, porque no le pedís a nadie que hable bien de vos — le pedís permiso para mostrar un trabajo que ya hiciste.
+
+---
+
+#### 13.6 · Los números
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única de listado de puntos
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Cómo venimos
+- **Título**: *(el hito que toque: "Ya somos 50 alojamientos")*
+- **Cuerpo**: Gracias a todos los que se sumaron.
+- **Items**: Los números reales que haya en el momento: alojamientos publicados, destinos, consultas enviadas, gente que visitó el sitio.
+- **Idea**: Números grandes, poco texto, mucho aire. **Solo números reales**, aunque sean chicos: "somos 12 alojamientos" contado con orgullo funciona mejor que un número inflado que después no se sostiene. Se repite cada vez que se cruza un hito redondo.
+- **Foto/s**: Ninguna. Puramente numérica.
+- **CTA**: Sumate en hospeda.com.ar
+- **Idioma**: Español
+- **Cuándo**: recién cuando los números den para mostrarse. Publicar "ya somos 3 alojamientos" hace el efecto contrario.
+
+---
+
+#### 13.7 · Un día de un anfitrión
+
+- **Prioridad**: 3
+- **Tipo**: Carrusel (5 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Historias de la región
+- **Título**: *(el nombre del anfitrión y su lugar)*
+- **Cuerpo**: Cómo es tener un alojamiento en el Litoral, contado por quien lo vive.
+- **Items**: Los momentos de la historia: cómo empezó, qué le costó al principio, qué es lo que más le gusta, qué le diría a alguien que está por arrancar, y una foto de su lugar.
+- **Idea**: El formato más largo de la categoría y el que mejor construye comunidad. No habla de Hospeda: habla de la persona. La marca aparece solo al final, chiquita. Es contenido que el propio anfitrión comparte con orgullo, y ahí está el verdadero alcance.
+- **Foto/s**: Fotos de la persona en su alojamiento, en su rutina. Reportaje, no producción.
+- **CTA**: Conocé más historias en hospeda.com.ar
+- **Idioma**: Español
+- **Cómo conseguirlo**: sale de una charla de veinte minutos, grabada. De un audio salen las cinco placas y de paso queda material para tres piezas más.
+
+---
+
 ### Categoría 14 — Tutoriales y ayuda
 
 Piezas que enseñan a usar la plataforma. Sirven dos veces: convencen al que duda porque le muestran que es fácil, y después se reusan como respuesta cuando alguien pregunta cómo se hace. Son las que más se guardan y se reenvían.
@@ -957,7 +1096,7 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | C · Atracción | 10. Eventos y agenda | ⬜ pendiente |
 | C · Atracción | 11. Gastronomía de la región | ⬜ pendiente |
 | D · Conversión | 12. Sumar alojamientos y negocios | ✅ 17 piezas |
-| D · Conversión | 13. Confianza y testimonios | ⬜ pendiente |
+| D · Conversión | 13. Confianza y testimonios | ✅ 7 piezas |
 | D · Conversión | 14. Tutoriales y ayuda | ✅ 7 piezas |
 | E · Recurrentes | 15. Campañas | ⬜ pendiente |
 | E · Recurrentes | 16. Novedades | ⬜ pendiente |
