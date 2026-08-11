@@ -2157,35 +2157,44 @@
             "id": "T-058",
             "title": "Tests unitarios de los 4 gates de elegibilidad, cada uno aislado",
             "description": "Un test por gate, con el resto de las condiciones satisfechas, para que la falla identifique el gate exacto. Incluye el caso mixto: un actor que cumple 3 de 4 falla por el que corresponde. Mutación de verificación: comentar cada gate de a uno y confirmar que exactamente su test se pone rojo.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-024"],
             "blocks": ["T-064"],
             "subtasks": [
                 {
                     "title": "Test por gate",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Caso mixto",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Mutación de verificación por gate",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "service-core", "unit"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T22:26:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T22:26:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T22:26:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-11T22:22:00.000Z",
+                "completed": "2026-08-11T22:26:00.000Z"
             }
         },
         {
@@ -2533,9 +2542,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 13,
+        "pending": 12,
         "inProgress": 0,
-        "completed": 57,
+        "completed": 58,
         "blocked": 0,
         "averageComplexity": 2.4
     }
