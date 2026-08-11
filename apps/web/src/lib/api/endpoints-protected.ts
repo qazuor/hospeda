@@ -2171,15 +2171,47 @@ export interface OwnerReviewRow {
         readonly displayName: string | null;
         readonly image: string | null;
     } | null;
-    readonly reply: {
-        readonly id: string;
-        readonly content: string;
-        readonly moderationState: 'PENDING' | 'APPROVED' | 'REJECTED';
-        readonly moderationReason: string | null;
-        readonly reviewEditedAfterReply: boolean;
-        readonly createdAt: string;
-        readonly updatedAt: string;
-    } | null;
+    readonly reply: OwnerReviewReply | null;
+}
+
+/** The moderation states a reply can be read in. */
+export type ReplyModerationState = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+/**
+ * A reply as the provider's own panel reads it (`GET /mine/reviews`).
+ *
+ * Carries `moderationReason`, which the directory tier does not: the rejected
+ * author is the one person who needs to know why.
+ */
+export interface OwnerReviewReply {
+    readonly id: string;
+    readonly content: string;
+    readonly moderationState: ReplyModerationState;
+    readonly moderationReason: string | null;
+    readonly reviewEditedAfterReply: boolean;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
+/**
+ * A reply as the two WRITE endpoints hand it back (HOS-376 T-051).
+ *
+ * Deliberately NOT {@link OwnerReviewReply}: this shape mirrors
+ * `HostTradeReviewReplyProtectedSchema`, which carries `reviewId` and omits
+ * `moderationReason`. The omission is not a gap to paper over — a reply that was
+ * just created or just edited has NO standing moderation decision (editing
+ * discards the previous one, AC-23), so the only honest reason to show
+ * alongside it is none. A caller merging this into a panel row supplies
+ * `moderationReason: null` explicitly, rather than carrying a stale one over.
+ */
+export interface SavedReviewReply {
+    readonly id: string;
+    readonly reviewId: string;
+    readonly content: string;
+    readonly moderationState: ReplyModerationState;
+    readonly reviewEditedAfterReply: boolean;
+    readonly createdAt: string;
+    readonly updatedAt: string;
 }
 
 /** The optional three-dimension breakdown a host may add to a review. */
@@ -2570,6 +2602,54 @@ export const hostTradesApi = {
     }): Promise<ApiResult<{ readonly review: HostTradeReview }>> {
         return apiClient.patch({
             path: `${PROTECTED}/host-trades/reviews/${encodeURIComponent(reviewId)}`,
+            body
+        });
+    },
+
+    /**
+     * Answers a review of the caller's own listing (HOS-376 T-051, §6.4).
+     *
+     * One reply per review, never a thread: a second attempt answers 409. A
+     * review that is not on the caller's listing answers 404, never 403 — the
+     * caller must not learn that a review he cannot answer exists.
+     *
+     * @param params - The `reviewId` being answered and the reply text.
+     * @returns The created reply, born awaiting moderation.
+     */
+    replyToReview({
+        reviewId,
+        body
+    }: {
+        reviewId: string;
+        body: { readonly content: string };
+    }): Promise<ApiResult<{ readonly reply: SavedReviewReply }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/reviews/${encodeURIComponent(reviewId)}/reply`,
+            body
+        });
+    },
+
+    /**
+     * Rewrites the caller's own reply (HOS-376 T-051, AC-23).
+     *
+     * THE EDIT RETURNS THE REPLY TO MODERATION and discards the previous
+     * decision, which was made about text that no longer exists. For a published
+     * reply that means leaving the directory until it is cleared again — a
+     * consequence the caller has to be told about before it is offered, not
+     * after.
+     *
+     * @param params - The `replyId` and the rewritten text.
+     * @returns The updated reply, back in PENDING.
+     */
+    updateReply({
+        replyId,
+        body
+    }: {
+        replyId: string;
+        body: { readonly content: string };
+    }): Promise<ApiResult<{ readonly reply: SavedReviewReply }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/host-trades/replies/${encodeURIComponent(replyId)}`,
             body
         });
     },
