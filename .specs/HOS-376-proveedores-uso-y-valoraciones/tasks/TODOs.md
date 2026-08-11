@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 50/70 tareas cerradas + 1 en curso (71%)
+## Progreso: 53/70 tareas cerradas + 1 en curso (76%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -198,7 +198,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [ ] **T-054** (c3) — Namespace i18n del dominio en es/en/pt
   - Todas las cadenas de la UI web y admin en @repo/i18n, en los 3 locales. Verificar que el prefijo del namespace esté en CLIENT_I18N_KEY_PREFIXES — si falta, en producción salen las claves cru…
   - Bloqueada por: T-045, T-046, T-047, T-048, T-050, T-052, T-053 · Bloquea a: —
-- [ ] **T-055** (c3) — Admin: cola de moderación de réplicas y valoraciones
+- [x] **T-055** (c3) — Admin: cola de moderación de réplicas y valoraciones
   - apps/admin/src/routes/_authed/host-trades/: cola de réplicas PENDING (la prioritaria, porque bloquea publicación) y listado de valoraciones con filtro de moderationState. Hooks con el molde …
   - Bloqueada por: T-037 · Bloquea a: —
 - [ ] **T-056** (c3) — Admin: listado de usos y gestión de suspensiones
