@@ -23,9 +23,13 @@ export interface PromoCodeDefinition {
      *   discount is rejected at checkout (a $0 preapproval is invalid in MP).
      *   `discountPercent` / `durationCycles` are ignored for this type.
      *
-     * Master plan Decision 4 (SPEC-122): for monthly recurring, the ONLY
-     * promo type supported in MVP is `free_trial_extension`. Discount-type
-     * promos remain limited to addon purchases and annual upfront flows.
+     * Historical note: master plan Decision 4 (SPEC-122) limited monthly
+     * recurring to `free_trial_extension` only, with discounts restricted to
+     * addon purchases and annual upfront flows. SPEC-262 superseded that — the
+     * promo effect engine applies multi-cycle discounts to recurring
+     * subscriptions by mutating the MercadoPago preapproval amount and counting
+     * the remaining cycles down on `billing_subscriptions.promo_effect_remaining_cycles`
+     * (see `promo-code.renewal.ts`). Do not rely on the old restriction.
      */
     type?: 'discount' | 'free_trial_extension' | 'comp';
     /** Discount percentage (0-100). Required for `type: 'discount'`. */
@@ -67,6 +71,13 @@ export const HOSPEDA_FREE_CODE: PromoCodeDefinition = {
     isActive: true
 };
 
+/**
+ * Launch discount: 50% off the first 3 billing cycles.
+ *
+ * Expires at the end of 2026-12-31 in Argentina (UTC-3), i.e. the instant below
+ * in UTC. Owner decision (HOS-301, 2026-08-11): a launch promo with no expiry
+ * is not a launch promo — its 100 redemptions would stay claimable years later.
+ */
 export const LANZAMIENTO_50_CODE: PromoCodeDefinition = {
     code: 'LANZAMIENTO50',
     description: '50% launch discount. First 3 months.',
@@ -74,7 +85,7 @@ export const LANZAMIENTO_50_CODE: PromoCodeDefinition = {
     isPermanent: false,
     durationCycles: 3,
     maxRedemptions: 100,
-    expiresAt: null,
+    expiresAt: new Date('2027-01-01T02:59:59.999Z'),
     restrictedToPlans: null,
     newUserOnly: true,
     isActive: true
@@ -105,9 +116,12 @@ export const BIENVENIDO_30_CODE: PromoCodeDefinition = {
  *
  * - It applies to monthly AND annual — both intervals are the same preapproval
  *   now. The trial stays expressed in days regardless of the cadence.
- * - On a plan that declares no trial (tourist tiers) it grants nothing and the
- *   checkout reports `promoCodeIgnored`. Trials are host-only (ADR-009), and an
- *   extension has nothing to lengthen there.
+ * - On a plan that declares no trial it grants nothing and the checkout reports
+ *   `promoCodeIgnored` — an extension has nothing to lengthen. This no longer
+ *   describes the tourist tiers: HOS-210 gave `tourist-plus` and `tourist-vip`
+ *   a real trial (14 days, raised to 30 by HOS-301 D1), and
+ *   `resolveCheckoutFreeTrialDays` reads `hasTrial`/`trialDays` off the plan
+ *   without looking at its category. So this code DOES extend a tourist trial.
  * - It cannot gift a free month to an existing paying subscriber:
  *   `applyPromoCode` rejects a trial_extension unless the subscription is
  *   `trialing`, and a trial is one-per-customer for life. See HOS-180 for the

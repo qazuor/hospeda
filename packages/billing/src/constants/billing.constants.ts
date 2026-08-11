@@ -11,11 +11,16 @@ export const COMPLEX_TRIAL_DAYS = 14;
 /**
  * Trial period for self-service tourist plans (tourist-plus / tourist-vip).
  *
- * Owner decision (SMOKE-19-07, HOS-210): all self-service tourist plans get the
- * same 14-day card-first trial as owner plans. Aliased to OWNER_TRIAL_DAYS so the
- * tourist tier can never drift from the owner tier.
+ * Owner decision (HOS-301 D1, 2026-08-11): the tourist tier gets a 30-day
+ * card-first trial while the owner tier stays at 14.
+ *
+ * This supersedes HOS-210 / SMOKE-19-07, which had aliased this to
+ * `OWNER_TRIAL_DAYS` precisely so the two tiers could not drift apart. D1 makes
+ * the divergence deliberate, so the alias is gone: raising the tourist trial
+ * through it would have silently tripled the owner trial too. Keep this a
+ * literal — the two tiers are independent commercial decisions now.
  */
-export const TOURIST_TRIAL_DAYS = OWNER_TRIAL_DAYS;
+export const TOURIST_TRIAL_DAYS = 30;
 
 /**
  * Reference constant for the initial-payment grace window, in days.

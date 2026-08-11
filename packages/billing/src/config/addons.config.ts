@@ -61,8 +61,8 @@ export const EXTRA_ACCOMMODATIONS_ADDON: AddonDefinition = {
     name: 'Extra Accommodations Pack (+5)',
     description: 'Adds 5 additional accommodations to your plan. Renews monthly.',
     billingType: 'recurring',
-    priceArs: 1000000, // ARS $10,000/month
-    annualPriceArs: 9600000, // ARS $96,000/year (20% annual discount)
+    priceArs: 1300000, // ARS $13,000/month — HOS-301 D1
+    annualPriceArs: 13000000, // ARS $130,000/year (ten months, matching the owner plans) — HOS-301 D1
     durationDays: null,
     affectsLimitKey: LimitKey.MAX_ACCOMMODATIONS,
     limitIncrease: 5,
