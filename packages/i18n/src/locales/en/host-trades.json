@@ -1,7 +1,11 @@
 {
     "page": {
         "title": "Service directory",
-        "subtitle": "Trusted local providers for your accommodation"
+        "subtitle": "Trusted local providers for your accommodation",
+        "error": {
+            "fetchError": "The list could not be loaded. Try reloading the page.",
+            "retry": "Retry"
+        }
     },
     "filter": {
         "all": "All"
