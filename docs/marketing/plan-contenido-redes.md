@@ -616,172 +616,235 @@ Conviene acompañar la temporada: el destino termal en invierno, el de río en v
 - **CTA (vale para las 22)**: Conocé *(destino)* en hospeda.com.ar
 - **Idioma**: Español
 
-> ⚠️ **Antes de diseñar, leer esto.** Los textos de abajo están escritos para que el diseñador no tenga que investigar nada. Los de las ciudades grandes son sólidos. **Los de los pueblos chicos hay que revisarlos con alguien que conozca el lugar** — están marcados con ⚠️. Un pueblo mal descripto en una placa pública se nota al toque y lo corrigen en los comentarios.
+Cada destino trae, además del texto de la placa:
+
+- **Qué lo diferencia** — el ángulo que hace que ese destino no sea intercambiable con otro. Es lo que hay que defender si el texto se reescribe.
+- **Atracciones** — la lista para alimentar la plantilla 8.2 ("5 cosas para hacer en…"). Ya está investigada: no hace falta buscar nada más.
+
+> ⚠️ **Todo esto salió de fuentes públicas de turismo, no de conocimiento propio del lugar.** Está para que nadie arranque de cero, no para publicarse sin leer. **Revisar antes de diseñar**: verificar que lo que se afirma siga siendo cierto, y sumar el detalle que solo sabe el que estuvo ahí — ese detalle es el que hace que la placa la comparta la gente del pueblo.
+
+---
 
 ##### Principales
 
 ###### Colón
 
 - **Tag Line**: Colón, Entre Ríos
-- **Título**: Playas de arena sobre el río Uruguay.
-- **Cuerpo**: Termas, artesanías y la puerta de entrada al Palmar. El destino más elegido de la costa.
-- **Foto**: La playa sobre el río, o la costanera al atardecer.
+- **Título**: Diez kilómetros de playa sobre el río Uruguay.
+- **Cuerpo**: Termas, arena y las palmeras de El Palmar a un rato de auto. El destino más elegido de la costa.
+- **Qué lo diferencia**: tiene la hilera de balnearios de agua dulce más importante del país, y son gratuitos. Es el único que combina playa, termas y parque nacional en el mismo viaje.
+- **Atracciones**: playas y balnearios sobre el río Uruguay · complejo termal (13 piscinas, cubiertas y al aire libre, con toboganes) · Parque Nacional El Palmar · Fiesta Nacional de la Artesanía · bodegas de la zona · deportes náuticos y excursiones a las islas.
+- **Foto**: la playa a pleno, o la costanera al atardecer.
 
 ###### Concepción del Uruguay
 
 - **Tag Line**: Concepción del Uruguay
-- **Título**: Historia, playa y el carnaval más antiguo.
-- **Cuerpo**: Playas sobre el río, patrimonio histórico y vida universitaria. La ciudad más antigua de la provincia.
-- **Foto**: Banco Pelay, o el casco histórico.
+- **Título**: La playa más extensa de Sudamérica está acá.
+- **Cuerpo**: Banco Pelay, historia en cada esquina y un carnaval con más de un siglo.
+- **Qué lo diferencia**: es la única que mezcla playa grande con patrimonio histórico nacional y vida universitaria. No es solo un lugar de verano.
+- **Atracciones**: Banco Pelay (el balneario ribereño más extenso de Sudamérica, a 5 km del centro) · Isla del Puerto · Paso Vera · Basílica Inmaculada Concepción · Colegio del Uruguay · Museo Casa Delio Panizza · Palacio Santa Cándida · Palacio San José (cerca) · carnaval.
+- **Foto**: Banco Pelay a pleno verano, o el casco histórico.
 
 ###### Gualeguaychú
 
 - **Tag Line**: Gualeguaychú
-- **Título**: El carnaval más grande del país.
-- **Cuerpo**: Verano de corsos y playas, termas todo el año. Cerca de Buenos Aires y con todo para quedarse.
-- **Foto**: El corsódromo en plena noche de carnaval.
+- **Título**: Acá nació el corsódromo.
+- **Cuerpo**: El carnaval más grande del país, playas de río y termas todo el año.
+- **Qué lo diferencia**: el corsódromo fue el primero de Argentina, y el carnaval le da una identidad que ningún otro destino de la provincia tiene. Además es el más cerca de Buenos Aires.
+- **Atracciones**: Corsódromo y Carnaval del País · balneario Ñandubaysal · Termas del Guaychú · bodegas artesanales y enoturismo · Mercado del Munilla · la Vieja Estación · museos del centro.
+- **Foto**: el corsódromo en plena noche de carnaval.
 
 ###### San José
 
 - **Tag Line**: San José, Entre Ríos
 - **Título**: La primera colonia agrícola del país.
-- **Cuerpo**: Historia de inmigrantes, playa sobre el río y la tranquilidad de un pueblo, a minutos de Colón.
-- **Foto**: El casco histórico o la costanera.
+- **Cuerpo**: Suizos, franceses e italianos levantaron esto. Hoy tiene playa, termas y museo propio.
+- **Qué lo diferencia**: es el origen de la colonización agrícola argentina, y eso se ve en el pueblo. A 4 km de Colón, pero con historia propia y mucho menos ruido.
+- **Atracciones**: Museo Histórico Regional · Casa Celia Vernaz (quesos artesanales y productos regionales) · complejo termal de 36 hectáreas con toboganes · playa de arena sobre el río Uruguay · kayak, pesca y deportes náuticos · Fiesta de la Colonización.
+- **Foto**: el casco histórico, o la playa.
 
 ###### Villa Elisa
 
 - **Tag Line**: Villa Elisa
-- **Título**: Termas en medio del campo.
-- **Cuerpo**: Aguas termales, silencio y verde. Para descansar de verdad, sin multitudes.
-- **Foto**: El parque termal rodeado de verde.
+- **Título**: Cuarenta hectáreas de termas y silencio.
+- **Cuerpo**: Diez piscinas, un lago y campo alrededor. Para descansar sin multitudes.
+- **Qué lo diferencia**: es termas puras, sin playa que compita. Está entre los pueblos turísticos destacados del país y tiene un tren histórico que no tiene nadie más.
+- **Atracciones**: complejo termal (41 hectáreas, 10 piscinas a 38°, lago artificial de 4 hectáreas) · Tren Histórico de Villa Elisa · circuitos urbanos y rurales en bici · senderos y pesca.
+- **Foto**: el parque termal rodeado de verde.
 
 ###### Federación
 
 - **Tag Line**: Federación
 - **Título**: La ciudad que se mudó entera.
-- **Cuerpo**: Se levantó de nuevo cuando la represa tapó la vieja. Hoy es el destino termal más conocido del Litoral.
-- **Foto**: El parque termal con el lago de fondo.
+- **Cuerpo**: La vieja quedó bajo el lago. La nueva es el destino termal más conocido del Litoral.
+- **Qué lo diferencia**: ninguna otra ciudad de la provincia tiene esta historia. Se levantó de cero en 1979 cuando la represa de Salto Grande tapó la original, y sus termas fueron las primeras de Entre Ríos.
+- **Atracciones**: parque termal (13 piscinas de 32 a 42°, 11 hectáreas, primeras de la provincia) · lago de Salto Grande (78 mil hectáreas, con playas) · Museo de los Asentamientos · Museo de la Imagen y Museo de las Termas · reserva Chaviyú y bosque El Aromito (avistaje de aves) · Fiesta Nacional del Lago · las casas de diseño piramidal de la ciudad nueva.
+- **Foto**: el parque termal con el lago de fondo.
 
 ###### Concordia
 
 - **Tag Line**: Concordia
-- **Título**: Termas, lago y playas de río.
-- **Cuerpo**: La segunda ciudad de la provincia. Salto Grande, citrus y el parque termal más grande de la zona.
-- **Foto**: El lago de Salto Grande, o las termas.
+- **Título**: Un castillo, un lago enorme y tres complejos termales.
+- **Cuerpo**: La segunda ciudad de la provincia, con playas de río y el lago de Salto Grande al lado.
+- **Qué lo diferencia**: tiene el castillo de San Carlos, que según la leyenda inspiró parte de *El Principito*. Y es la única con tres complejos termales distintos para elegir.
+- **Atracciones**: Castillo San Carlos y Parque San Carlos (98 hectáreas, a cinco minutos del centro) · lago de Salto Grande (783 km²) · tres complejos termales: Concordia, del Ayuí y Punta Viracho · playas sobre el río Uruguay · Parque Mitre · la zona citrícola.
+- **Foto**: el castillo de San Carlos, o el lago.
+
+---
 
 ##### Segunda tanda
 
 ###### Chajarí
 
 - **Tag Line**: Chajarí
-- **Título**: Termas en el corazón del citrus.
-- **Cuerpo**: Naranjas, mandarinas y aguas termales en el norte entrerriano. Tranquilo y a mano.
-- **Foto**: El parque termal, o las plantaciones de citrus.
+- **Título**: Termas en el medio de los naranjales.
+- **Cuerpo**: Agua a 40 grados, mandarinas hasta donde ves y el norte entrerriano a mano.
+- **Qué lo diferencia**: es el corazón del citrus entrerriano. Las termas están en un parque de 42 hectáreas y al lado está el pueblo de las mandarinas.
+- **Atracciones**: complejo termal (42 hectáreas sobre la ruta 14, agua a 40,3°, 6 piscinas) · Villa del Rosario, "el pueblo de las mandarinas" · Museo IvyMaräEy · Museo Regional Camila Quiroga · pesca en el lago de Salto Grande · campings.
+- **Foto**: el parque termal, o los naranjales.
 
 ###### Villaguay
 
 - **Tag Line**: Villaguay
 - **Título**: El centro exacto de Entre Ríos.
-- **Cuerpo**: Termas, campo y buena mesa, en el medio de la provincia. Parada obligada si la cruzás.
-- **Foto**: El parque termal, o el paisaje de campo.
+- **Cuerpo**: Termas con perfil terapéutico, campo alrededor y parada obligada si cruzás la provincia.
+- **Qué lo diferencia**: sus aguas son hipertermales y de mineralización fuerte — el enfoque es terapéutico, no recreativo. Va gente que busca tratamiento, no toboganes.
+- **Atracciones**: Parque Termal Villaguay (aguas hipertermales, indicadas para afecciones respiratorias, dermatológicas, articulares y circulatorias) · turismo rural · la ubicación central para recorrer la provincia.
+- **Foto**: el parque termal.
 
-###### Gualeguay ⚠️
+###### Gualeguay
 
 - **Tag Line**: Gualeguay
-- **Título**: Río, tradición y pueblo de verdad.
-- **Cuerpo**: Uno de los pueblos más antiguos de la provincia, sobre su propio río. Historia, pesca y calma.
-- **Foto**: El río Gualeguay, o el centro histórico.
+- **Título**: Adoquines, río y campo.
+- **Cuerpo**: Uno de los pueblos más antiguos de la provincia, sobre su propio río.
+- **Qué lo diferencia**: conserva el trazado colonial con calles de adoquines y casas antiguas. Y tiene una oferta fuerte de turismo rural en estancias, que no es lo mismo que las termas de todos los demás.
+- **Atracciones**: costas del río Gualeguay · turismo rural en antiguas residencias de campo · pesca deportiva · avistaje de aves y senderismo · diez circuitos de cicloturismo · casco histórico con calles de adoquines.
+- **Foto**: el río, o una calle de adoquines del centro.
 
-###### Santa Ana ⚠️
+###### Santa Ana
 
 - **Tag Line**: Santa Ana, Entre Ríos
-- **Título**: El norte, sin apuro.
-- **Cuerpo**: Un pueblo chico del norte entrerriano, cerca de las termas y lejos del ruido.
-- **Foto**: A definir con material del lugar.
+- **Título**: El lago, la pesca y las estancias de Urquiza.
+- **Cuerpo**: Un pueblo del norte pegado al lago de Salto Grande, con historia de campo.
+- **Qué lo diferencia**: su historia está ligada a las estancias de Urquiza, y hoy eso se traduce en turismo rural con el lago al lado.
+- **Atracciones**: lago de Salto Grande (deportes acuáticos y pesca) · turismo rural en campos productivos · campings y alojamientos de campo.
+- **Foto**: el lago, o el paisaje rural.
 
 ###### Villa Paranacito
 
 - **Tag Line**: Villa Paranacito
-- **Título**: El delta entrerriano.
-- **Cuerpo**: Islas, arroyos y casas sobre pilotes. Se llega en auto y se recorre en lancha.
-- **Foto**: Las casas sobre pilotes, o un arroyo entre la vegetación.
+- **Título**: La Venecia argentina.
+- **Cuerpo**: Se llega en auto y se recorre en lancha. Casas sobre pilotes, arroyos y monte.
+- **Qué lo diferencia**: no hay otro destino así en la provincia. La gente vive sobre los canales y se mueve en lancha — no es una postal, es la vida cotidiana. Y está a menos de tres horas de Buenos Aires.
+- **Atracciones**: paseos en lancha entre arroyos · pesca de dorado, pejerrey y tararira · kayak · avistaje de aves y safaris fotográficos · las casas sobre pilotes · Fiesta de las Carrozas Náuticas.
+- **Foto**: las casas sobre pilotes, o un arroyo entre la vegetación.
 
-###### Ibicuy ⚠️
+###### Ibicuy
 
 - **Tag Line**: Ibicuy
-- **Título**: Islas, pesca y silencio.
-- **Cuerpo**: El sur profundo de Entre Ríos, entre humedales y arroyos. Para pescar y desconectar.
-- **Foto**: El río o los humedales.
+- **Título**: Pesca, islas y nada de ruido.
+- **Cuerpo**: El sur profundo de Entre Ríos, entre el delta del Paraná y los humedales.
+- **Qué lo diferencia**: es paraje agreste de verdad — el destino más elegido por pescadores que buscan el delta sin infraestructura turística encima.
+- **Atracciones**: pesca deportiva en el delta del Paraná · campings sobre el río · caminos rurales para avistaje de aves y fauna · paseos en lancha.
+- **Foto**: el río, o los humedales.
+
+---
 
 ##### Resto
 
-###### Caseros ⚠️
+###### Caseros
 
 - **Tag Line**: Caseros, Entre Ríos
-- **Título**: A pasos del Palacio San José.
-- **Cuerpo**: Un pueblo chico con la historia de Urquiza a la vuelta de la esquina.
-- **Foto**: El Palacio San José.
+- **Título**: A seis kilómetros del palacio de Urquiza.
+- **Cuerpo**: El Palacio San José al lado, y un carnaval que se toma en serio.
+- **Qué lo diferencia**: es la base para visitar el Palacio San José, que fue el primer edificio del país con agua corriente y luz de gas. Y tiene los carnavales más fuertes de la microrregión Caminos del Palacio.
+- **Atracciones**: Palacio San José (museo y monumento nacional, entrada y visita guiada gratuitas, cerrado los lunes) · carnavales de enero y febrero · Molino San Nicolás · Parroquia San Miguel Arcángel · el circuito Caminos del Palacio.
+- **Foto**: el Palacio San José.
 
-###### Ceibas ⚠️
+###### Ceibas
 
 - **Tag Line**: Ceibas
-- **Título**: La puerta de entrada a Entre Ríos.
-- **Cuerpo**: El primer pueblo cuando entrás por la ruta. Pesca, monte y parada clásica de viaje.
-- **Foto**: A definir con material del lugar.
+- **Título**: Donde empieza la ruta 14.
+- **Cuerpo**: El primer pueblo entrerriano viniendo desde el sur. Pesca, monte y parada de viaje.
+- **Qué lo diferencia**: es el kilómetro cero de la ruta 14 — el punto por donde entra todo el que va al Litoral. Parada clásica de viaje que también funciona como destino de pesca.
+- **Atracciones**: pesca en el río Uruguay · paseos en lancha · caminos rurales para avistaje de aves y fauna · el paso obligado de la ruta 14.
+- **Foto**: el monte, el río o la ruta.
 
-###### Larroque ⚠️
+###### Larroque
 
 - **Tag Line**: Larroque
-- **Título**: Pueblo chico, vida tranquila.
-- **Cuerpo**: Campo entrerriano puro, a media hora de Gualeguaychú.
-- **Foto**: A definir con material del lugar.
+- **Título**: Playas de arena blanca sin nadie.
+- **Cuerpo**: A media hora de Gualeguaychú, con la calma que allá no vas a encontrar.
+- **Qué lo diferencia**: tiene playas de arena blanca y vegetación autóctona, pero sin el movimiento de Gualeguaychú. Es la alternativa tranquila a 50 km del carnaval.
+- **Atracciones**: playas de arenas blancas · vegetación autóctona · campos de cultivo y paisaje rural · cercanía a Gualeguaychú.
+- **Foto**: la playa, o el paisaje de campo.
 
 ###### Pueblo Liebig
 
 - **Tag Line**: Pueblo Liebig
-- **Título**: Un pueblo que fue una fábrica.
-- **Cuerpo**: El viejo frigorífico y sus casas inglesas, intactos. Patrimonio industrial a minutos de Colón.
-- **Foto**: El frigorífico o las casas del pueblo.
+- **Título**: Un pueblo inglés que fue una fábrica.
+- **Cuerpo**: Lo levantó una compañía inglesa en 1903. Las casas siguen ahí, intactas.
+- **Qué lo diferencia**: es patrimonio industrial vivo. Trazado urbano inglés del siglo XIX, las casas de los obreros, los chalets de los jefes, y un monumento al corned beef en la plaza. No hay nada parecido en la provincia.
+- **Atracciones**: el viejo frigorífico y su Centro de Interpretación · las filas de casas de obreros y los chalets de ejecutivos · Paseo de la Manga · Capilla del Sagrado Corazón · el monumento al corned beef · playas y pesca sobre el río Uruguay · Parque Nacional El Palmar a 25 km.
+- **Foto**: el frigorífico, o las casas del pueblo.
 
-###### Rosario del Tala ⚠️
+###### Rosario del Tala
 
 - **Tag Line**: Rosario del Tala
-- **Título**: Campo, río y tradición.
-- **Cuerpo**: En el centro de la provincia, sobre el arroyo. Pueblo de a pie y de a caballo.
-- **Foto**: A definir con material del lugar.
+- **Título**: Uno de los balnearios más lindos de Entre Ríos.
+- **Cuerpo**: A orillas del río Gualeguay, con bancos de arena y monte alrededor.
+- **Qué lo diferencia**: el balneario Delio Panizza está considerado entre los más bellos de la provincia, y casi nadie lo tiene en el radar.
+- **Atracciones**: balneario Delio Panizza (a 5 km, sobre la ruta 39) · parque balneario municipal con camping, kayak y SUP · la Vieja Calera y su chimenea · Casa de Martiniano Leguizamón · Museo Municipal · Parroquia Nuestra Señora del Rosario · Plaza Libertad · cabalgatas, cicloturismo y pesca.
+- **Foto**: el balneario Delio Panizza, o el río.
 
-###### San Justo ⚠️⚠️
+###### San Justo
 
 - **Tag Line**: San Justo, Entre Ríos
-- **Título**: *(a escribir)*
-- **Cuerpo**: *(a escribir)*
-- **Foto**: A definir.
-- **Nota**: **no tengo información confiable de este destino.** El texto lo tiene que escribir alguien que lo conozca. No inventar.
+- **Título**: Trescientos habitantes y pastas caseras.
+- **Cuerpo**: Lo fundaron italianos del Véneto en 1906. Todavía se escucha el dialecto entre los mayores.
+- **Qué lo diferencia**: **no tiene atractivos turísticos organizados, y esa es la propuesta.** Es un pueblo de 300 habitantes donde sobrevive el dialecto, las pastas caseras y el vino propio. Vender esto como "destino turístico" sería falso: se vende como lo que es, un lugar donde no pasa nada.
+- **Atracciones**: templo parroquial Nuestra Señora de los Dolores · arroyos de agua limpia para el verano · monte de espinillos · la tradición italiana viva (pastas caseras, vino casero, dialecto).
+- **Foto**: el templo, un arroyo, o una mesa de pastas caseras.
+- **Ojo**: es el destino más chico de todos. No prometer infraestructura que no existe.
 
-###### San Salvador ⚠️
+###### San Salvador
 
 - **Tag Line**: San Salvador
 - **Título**: La capital nacional del arroz.
-- **Cuerpo**: Un pueblo del norte entrerriano con identidad propia y campo hasta donde llega la vista.
-- **Foto**: Los arrozales.
+- **Cuerpo**: Arrozales hasta el horizonte y el circuito de las viejas colonias judías.
+- **Qué lo diferencia**: es la capital nacional del arroz y forma parte del circuito de las siete antiguas colonias judías de la región, que es una historia que casi no se cuenta.
+- **Atracciones**: los arrozales y la producción arrocera · circuito de las colonias judías (junto con Concordia, General Campos y Ubajay) · circuitos turísticos guiados gratuitos, a pie, en bus o en bici.
+- **Foto**: los arrozales.
 
-###### Ubajay ⚠️
+###### Ubajay
 
 - **Tag Line**: Ubajay
-- **Título**: A la entrada de El Palmar.
-- **Cuerpo**: El pueblo más cercano al Parque Nacional. Base tranquila para conocer las palmeras.
-- **Foto**: Las palmeras yatay de El Palmar.
+- **Título**: Una estación inglesa intacta, a las puertas de El Palmar.
+- **Cuerpo**: El museo ferroviario más completo de la provincia, y el parque nacional al lado.
+- **Qué lo diferencia**: su estación de tren se conserva original y funciona como museo, con documentos desde 1914, telégrafo y mobiliario propio. Es única en Entre Ríos. Y es la puerta de entrada a El Palmar.
+- **Atracciones**: Museo Histórico Regional La Estación (arquitectura inglesa, conservada original) · Refugio de Vida Silvestre La Aurora del Palmar · Parque Nacional El Palmar · circuito Antiguo Pueblo Palmar · circuito de las colonias judías del Arroyo Grande.
+- **Foto**: la estación de tren, o las palmeras yatay.
 
-###### Urdinarrain ⚠️
+###### Urdinarrain
 
 - **Tag Line**: Urdinarrain
-- **Título**: Colonia, campo y calma.
-- **Cuerpo**: Un pueblo de colonos a media hora de Gualeguaychú, con su propio ritmo.
-- **Foto**: A definir con material del lugar.
-
-> **Los marcados con ⚠️ hay que revisarlos** antes de diseñar: son pueblos chicos y lo que escribí es lo que se sabe de afuera. El que conoce el lugar va a encontrar algo mucho mejor que decir, y ese detalle es el que hace que la placa la comparta la gente del pueblo. **San Justo está sin texto a propósito**: no tengo información confiable y prefiero dejarlo vacío antes que inventar.
+- **Título**: Bicicleta, playa de arena blanca y dulce de leche premiado.
+- **Cuerpo**: Un pueblo con cuatro museos, fiestas todo el año y ganas de que lo descubran.
+- **Qué lo diferencia**: quedó entre los ocho lugares argentinos elegidos para el premio Best Tourism Village de la Organización Mundial del Turismo. Tiene más para hacer que muchos destinos grandes, y casi nadie lo sabe.
+- **Atracciones**: balneario Arenas Blancas sobre el río Gualeguay · cuatro museos, incluido el Museo Regional Agrícola a cielo abierto · circuitos históricos autoguiados y circuito de la fe · circuitos rurales y viñedos · Fiesta Provincial del Caballo (último finde de enero) · Encuentro del Acordeón · Fiesta Regional de la Cerveza · Fiesta del Inmigrante · el dulce de leche premiado.
+- **Foto**: el balneario Arenas Blancas, la fiesta del caballo, o el museo agrícola a cielo abierto.
 
 ---
+
+##### Nota sobre estos textos
+
+Todo lo de arriba salió de sitios públicos de turismo: los portales oficiales de la provincia y los municipios, y notas periodísticas. Sirve para que el diseñador no arranque de cero y para que quien revise tenga con qué comparar. **No reemplaza saber del lugar.**
+
+Tres cosas a chequear antes de publicar cada una:
+
+1. **Que siga siendo cierto.** Un complejo termal que cerró o una fiesta que cambió de fecha son errores caros.
+2. **Que no sea genérico.** Si el texto podría aplicarse a cualquier pueblo, falta el detalle propio.
+3. **Que no prometa de más.** Los pueblos chicos tienen encanto pero poca infraestructura: se vende la calma, no servicios que no hay.
 
 #### 8.2 · Qué hacer en el destino — plantilla
 
@@ -791,12 +854,12 @@ Conviene acompañar la temporada: el destino termal en invierno, el de río en v
 - **Tag Line**: *(nombre del destino)*
 - **Título**: 5 cosas para hacer en *(destino)*.
 - **Cuerpo**: *(una línea)*
-- **Items**: Los cinco lugares o actividades del destino. **Salen de los lugares ya cargados en la plataforma**, no de buscar en internet.
+- **Items**: Los cinco lugares o actividades del destino. **Ya están listados en la 8.1**, en el campo "Atracciones" de cada uno. No hace falta investigar nada: elegir los cinco mejores de esa lista.
 - **Idea**: El formato que más se guarda de toda la categoría: la gente lo usa para planear. En la versión listado, los cinco con un ícono de Phosphor cada uno. En la versión carrusel, una foto por lugar. La versión carrusel rinde más pero necesita cinco fotos buenas; la de listado se puede hacer con una sola.
 - **Foto/s**: Una por lugar en la versión carrusel. Una general en la versión listado.
 - **CTA**: Descubrí *(destino)* en hospeda.com.ar
 - **Idioma**: Español
-- **De dónde sale el contenido**: los lugares de interés ya están cargados en la plataforma con su descripción. No hay que investigar nada, hay que entrar y elegir los cinco mejores.
+- **De dónde sale el contenido**: de las atracciones listadas en la 8.1, y de los lugares de interés ya cargados en la plataforma con su descripción.
 
 ---
 
@@ -1420,7 +1483,7 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | B · Producto | 5. Gastronomía y experiencias | ⬜ pendiente |
 | B · Producto | 6. Auspiciantes, patrocinadores y redactores | ⬜ pendiente |
 | B · Producto | 7. Oficios y proveedores | ⬜ pendiente |
-| C · Atracción | 8. Destinos | ✅ 22 presentaciones escritas + 6 plantillas |
+| C · Atracción | 8. Destinos | ✅ 22 destinos investigados + 6 plantillas |
 | C · Atracción | 9. Lugares para visitar | ⬜ pendiente |
 | C · Atracción | 10. Eventos y agenda | ⬜ pendiente |
 | C · Atracción | 11. Gastronomía de la región | ⬜ pendiente |
