@@ -43,7 +43,10 @@ vi.mock('../../src/utils/env', () => ({
 
 const {
     HOST_TRADE_DECLARE_EMAIL_MAX,
+    HOST_TRADE_DECLARE_HOST_MAX,
     HOST_TRADE_DECLARE_SELECTOR_MAX,
+    HOST_TRADE_RATE_WINDOW_MS,
+    HOST_TRADE_REVIEW_MAX,
     createProviderDeclarationRateLimit
 } = await import('../../src/middlewares/host-trade-rate-limits.js');
 
@@ -153,5 +156,39 @@ describe('the email fallback is budgeted apart from the selector', () => {
 
     it('leaves the email budget far below the selector one', () => {
         expect(HOST_TRADE_DECLARE_EMAIL_MAX).toBeLessThan(HOST_TRADE_DECLARE_SELECTOR_MAX);
+    });
+});
+
+/**
+ * The numbers themselves (T-062).
+ *
+ * Every case above drives its loop from the constant it is testing, which makes
+ * the whole suite blind to the VALUE: raise the email budget from 10 to 500 and
+ * each of them still passes, including the spread check, as long as it stays
+ * under the selector. The spray budget would be gone and nothing would say so.
+ *
+ * These are therefore written as LITERALS on purpose. They are not asserting
+ * that 10 is the right number — the module says the values are conservative and
+ * meant to be revisited with real traffic. They are making a change to them
+ * DELIBERATE: whoever edits the budget edits this line too, and has to look at
+ * the reasoning while doing it.
+ */
+describe('the budgets are the documented ones', () => {
+    it.each([
+        ['email fallback', HOST_TRADE_DECLARE_EMAIL_MAX, 10],
+        ['scoped selector', HOST_TRADE_DECLARE_SELECTOR_MAX, 60],
+        ['host QR', HOST_TRADE_DECLARE_HOST_MAX, 20],
+        ['review write', HOST_TRADE_REVIEW_MAX, 20]
+    ])('%s is %i per window', (_label, actual, expected) => {
+        expect(actual).toBe(expected);
+    });
+
+    /**
+     * A budget is only a budget together with the window it refills over. Ten
+     * an hour bounds a spray; ten a minute is 600 an hour and bounds nothing,
+     * and no case above can tell those apart.
+     */
+    it('refills over an hour, which is what makes the numbers mean anything', () => {
+        expect(HOST_TRADE_RATE_WINDOW_MS).toBe(3_600_000);
     });
 });
