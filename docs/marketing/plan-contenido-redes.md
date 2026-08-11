@@ -280,6 +280,70 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 
 ---
 
+### Categoría 2 — Institucional
+
+Quiénes somos y para qué existe Hospeda. Es la categoría más chica del plan, y a propósito: la identidad se construye mejor con hechos —los consejos de la 18, los testimonios de la 13— que hablando de uno mismo.
+
+**Ojo con la superposición.** Estas piezas están repartidas y no van todas juntas: la 1.9 cuenta que somos del Litoral y del rubro, la 12.15 le habla al anfitrión desde ese lugar, y la 13.1 muestra la cara. Esta categoría es solo lo que no entra en ninguna de esas.
+
+---
+
+#### 2.1 · Por qué existe Hospeda
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (4 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Por qué
+- **Título**: Nadie estaba mostrando el Litoral como se merece.
+- **Cuerpo**: Así que lo hicimos nosotros.
+- **Items**:
+  1. **Portada** — "Nadie estaba mostrando el Litoral como se merece"
+  2. **El problema** — "Para armar una escapada acá había que buscar en diez lugares distintos"
+  3. **Lo que faltaba** — "Los alojamientos chicos y los negocios de la zona no tenían dónde mostrarse"
+  4. **Lo que hicimos** — "Una plataforma de la región, para la región"
+- **Idea**: Es la historia de origen y funciona porque es verdadera y concreta. **Nada de misión, visión ni valores** — eso no lo lee nadie. Se cuenta el problema real que había y qué se hizo.
+- **Foto/s**: De la región, cotidianas. Nada de fotos de equipo trabajando ni de gente señalando una pantalla.
+- **CTA**: Conocé Hospeda en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 2.2 · Lo que sí y lo que no
+
+- **Prioridad**: 3
+- **Tipo**: Listado de puntos
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Cómo trabajamos
+- **Título**: Cómo funciona Hospeda.
+- **Cuerpo**: Para que no queden dudas.
+- **Items**:
+  - **No cobramos comisión por reserva** — el trato es directo entre vos y el anfitrión
+  - **No somos intermediarios** — no manejamos el pago del alojamiento
+  - **Los cobros de la plataforma van por Mercado Pago** — con tarjeta o dinero en cuenta
+  - **Las opiniones son de gente real** — moderadas, pero no editadas a nuestro gusto
+- **Idea**: Aclara de entrada lo que la gente asume mal por comparación con otras plataformas. Diseño sobrio, casi de documento: acá la seriedad es el mensaje.
+- **Foto/s**: Ninguna.
+- **CTA**: hospeda.com.ar
+- **Idioma**: Español
+- **Verificar antes de publicar**: que las cuatro afirmaciones sean exactas. Es la pieza del plan donde una imprecisión cuesta más caro, porque es justamente la que promete transparencia.
+
+---
+
+#### 2.3 · Aniversarios y hitos — plantilla
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: *(la ocasión)*
+- **Título**: *(el hito: "Un año de Hospeda", "Mil alojamientos publicados")*
+- **Cuerpo**: Gracias a los que se sumaron cuando esto era una idea.
+- **Idea**: Plantilla para cada aniversario o número redondo. El agradecimiento tiene que sonar personal, no corporativo: quien escribe es una persona, no una empresa. Se cruza con la 13.6, que cuenta los números.
+- **Foto/s**: Del equipo, de la región, o una composición con fotos de alojamientos publicados.
+- **CTA**: hospeda.com.ar
+- **Idioma**: Español
+
+---
+
 ## B · PRODUCTO POR AUDIENCIA
 
 ### Categoría 3 — Turistas
@@ -455,6 +519,269 @@ Las tres piezas que más convierten son favoritos, comparador y alertas de preci
 - **CTA**: Mirá los planes en hospeda.com.ar
 - **Idioma**: Español
 - **Por qué sin precios**: la lista de precios está por cambiar. Una placa con números queda vieja y hay que rehacerla; una que muestra beneficios sirve igual después del cambio.
+
+---
+
+### Categoría 4 — Anfitriones que ya publicaron
+
+**No es captación, es retención.** La categoría 12 le habla al que todavía no está; esta le habla al que ya publicó y no está aprovechando ni la mitad de lo que pagó.
+
+Es la que menos se piensa y la que más plata cuida: **es mucho más barato que alguien no se vaya a conseguir uno nuevo**. Y el que usa más funciones renueva.
+
+Se diferencia de la categoría 18 en que allá se enseña el oficio y acá se enseña la plataforma.
+
+---
+
+#### 4.1 · ¿Hace cuánto no mirás tus estadísticas?
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: Para anfitriones
+- **Título**: ¿Sabés cuánta gente vio tu ficha este mes?
+- **Subtítulo**: Está en tu panel, y capaz nunca lo miraste.
+- **Cuerpo**: Vistas, consultas y cuántos te guardaron. Todo lo que necesitás para saber si va bien.
+- **Idea**: La pregunta del título es el gancho, porque la respuesta honesta de casi todos es "no". Mostrar el panel real con números concretos.
+- **Foto/s**: Captura real del panel de estadísticas.
+- **CTA**: Entrá a tu panel en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 4.2 · Actualizá tus fotos antes de la temporada
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 2:3
+- **Tag Line**: Para anfitriones
+- **Título**: Tus fotos son de hace dos veranos.
+- **Subtítulo**: Se nota, y te cuesta consultas.
+- **Cuerpo**: Cambiá las que quedaron viejas antes de que empiece la temporada.
+- **Idea**: Es un recordatorio con fecha: se publica en octubre, antes del verano, y de nuevo antes de Semana Santa. **Directo pero sin retar** — el tono es de colega que avisa, no de plataforma que reclama.
+- **Foto/s**: Un antes y después del mismo ambiente.
+- **CTA**: Actualizá tu ficha en hospeda.com.ar
+- **Idioma**: Español
+- **Se combina con**: la 18.1, que enseña cómo sacarlas. Primero el recordatorio, después el consejo.
+
+---
+
+#### 4.3 · Poné una oferta para el finde largo
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 2:3
+- **Tag Line**: Para anfitriones
+- **Título**: Viene un finde largo. ¿Tenés fechas libres?
+- **Subtítulo**: Armá una oferta y aparecé destacado.
+- **Cuerpo**: Se hace en dos minutos desde tu panel.
+- **Idea**: Recordatorio oportuno, se publica tres semanas antes de cada fin de semana largo. Es la pieza que más agradece el anfitrión porque le resuelve un problema concreto en el momento justo.
+- **Foto/s**: Captura del listado con una oferta destacada.
+- **CTA**: Creá tu oferta en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 4.4 · Funciones que capaz no sabías que tenías
+
+- **Prioridad**: 3
+- **Tipo**: Carrusel (5 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Para anfitriones
+- **Título**: Cinco cosas que tu plan ya incluye.
+- **Cuerpo**: Y que capaz nunca usaste.
+- **Items**:
+  1. **Traducir tu ficha** — al inglés y al portugués, con un clic
+  2. **Mejorar tus textos con inteligencia artificial** — reescribe lo que le pongas
+  3. **Conectar tus opiniones de Google** — para no empezar de cero
+  4. **Sincronizar tu calendario** — con Google, Airbnb, Booking o el que uses
+  5. **Editar cómo te ve Google** — título y descripción de tu ficha
+- **Idea**: Ataca el problema real de que la gente paga un plan y usa el 20%. Cada punto con la captura de dónde está la función, para que se pueda ir a buscarla al toque.
+- **Foto/s**: Capturas reales de cada función.
+- **CTA**: Entrá a tu panel en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 4.5 · Contestá rápido
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 2:3
+- **Tag Line**: Para anfitriones
+- **Título**: Tenés consultas sin responder.
+- **Subtítulo**: El que pregunta y no recibe respuesta, reserva en otro lado.
+- **Cuerpo**: Mirá tu bandeja. Se contesta desde el celular.
+- **Idea**: Recordatorio incómodo pero útil. **El tono tiene que ser de aviso, no de reto** — si suena a reproche, el anfitrión se enoja con la plataforma en vez de con su propia demora.
+- **Foto/s**: Captura de la bandeja con mensajes sin leer.
+- **CTA**: Respondé desde hospeda.com.ar
+- **Idioma**: Español
+- **Nota**: si en algún momento se puede mandar esto como aviso personalizado a quien tiene consultas sin responder, funciona mucho mejor que como publicación abierta.
+
+---
+
+### Categoría 5 — Gastronomía y experiencias
+
+Para los que ya tienen su ficha publicada: restaurantes, bodegas, parrillas, paseos y experiencias. Igual que la categoría 4, esto es **retención**, no captación — captar es la 12.6.
+
+Es un público chico pero de trato directo, así que el formato 2:3 para WhatsApp importa tanto como las publicaciones.
+
+---
+
+#### 5.1 · Tu carta cambió, tu ficha no
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 2:3
+- **Tag Line**: Para gastronómicos
+- **Título**: ¿Tu ficha dice lo mismo que hace seis meses?
+- **Subtítulo**: Los horarios y la carta se editan cuando quieras.
+- **Cuerpo**: No depende de nosotros. Entrás a tu panel y lo cambiás vos.
+- **Idea**: El mensaje clave es la autonomía: mucha gente cree que para cambiar algo tiene que pedirlo. Mostrar el panel de edición.
+- **Foto/s**: Captura real de la edición de la ficha.
+- **CTA**: Actualizá tu ficha en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 5.2 · Respondé las preguntas de siempre
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Para gastronómicos
+- **Título**: ¿Tienen opción sin gluten? ¿Se puede ir con perro?
+- **Subtítulo**: Contestalo una vez en tus preguntas frecuentes.
+- **Cuerpo**: Las que te preguntan todos los días, respondidas de antemano en tu ficha.
+- **Idea**: Los dos ejemplos del título hacen todo el trabajo porque son preguntas reales que reciben todos los días. Ahorra tiempo y mejora la ficha al mismo tiempo.
+- **Foto/s**: Captura de la sección de preguntas frecuentes.
+- **CTA**: Editá tus preguntas en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 5.3 · Las opiniones también son tuyas
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Para gastronómicos
+- **Título**: Pediles a tus clientes que dejen su opinión.
+- **Subtítulo**: Una ficha con opiniones se elige mucho más.
+- **Cuerpo**: Alcanza con avisarles cuando pagan que están en Hospeda.
+- **Idea**: Es un pedido con beneficio directo para el negocio, así que se explica en términos de él, no nuestros. Se puede sugerir algo concreto: un cartelito en la mesa o en el mostrador.
+- **Foto/s**: Una ficha con varias opiniones cargadas.
+- **CTA**: Mirá tu ficha en hospeda.com.ar
+- **Idioma**: Español
+- **Idea extra**: producir un cartelito imprimible para que lo pongan en la mesa. Es material físico, no una placa, pero rinde más que cualquier publicación.
+
+---
+
+### Categoría 6 — Marcas, patrocinadores y redactores
+
+Tres públicos chicos que comparten formato y volumen bajo. No mueven el negocio, pero cada uno aporta algo que no se consigue de otra forma: las marcas ponen plata, los patrocinadores financian el contenido, y los redactores lo producen.
+
+**Datos importantes antes de escribir nada de esto:**
+
+- Los niveles de marca auspiciante son **oro y plata**. El bronce no existe.
+- **Solo el nivel oro tiene página propia** dentro de Hospeda. El plata tiene presencia en el carrusel y su logo lleva al sitio propio de la marca.
+- **El nivel nunca se muestra públicamente.** No se dice quién es oro y quién es plata.
+- **El directorio de auspiciantes fue retirado y esa dirección ya no existe.** No linkearlo en ninguna pieza.
+- El alta de auspiciantes ya es autogestionada.
+
+---
+
+#### 6.1 · Tu marca donde se planean las escapadas
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: Para marcas
+- **Título**: Tu marca donde el turismo del Litoral se encuentra.
+- **Subtítulo**: Con página propia dentro de Hospeda.
+- **Cuerpo**: Presencia frente a miles de personas que están armando su viaje por la región.
+- **Idea**: Le habla a empresas e instituciones de la zona. Tono más formal que el resto del plan, pero sin caer en lenguaje corporativo. La versión 2:3 es la que se manda directo a un contacto comercial.
+- **Foto/s**: Captura real de una página de marca auspiciante dentro de la plataforma.
+- **CTA**: Sumá tu marca en hospeda.com.ar
+- **Idioma**: Español
+- **Ojo con la promesa**: la página propia es del nivel oro. Si la pieza promete página y el contacto contrata el otro nivel, arranca mal la relación. Conviene que el texto diga "con página propia" solo en la versión que se manda para el nivel oro.
+
+---
+
+#### 6.2 · Patrociná lo que la región lee
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 4:5 y 2:3
+- **Tag Line**: Para patrocinadores
+- **Título**: Poné tu marca en las notas que la región lee.
+- **Subtítulo**: Con panel propio, métricas y facturas a la vista.
+- **Cuerpo**: Elegís qué patrocinar, con qué paquete, y seguís los resultados vos mismo.
+- **Idea**: El diferencial frente a la publicidad tradicional es la autogestión: se ve lo que se paga y lo que rinde. Mostrar el panel real con sus números.
+- **Foto/s**: Captura real del panel de patrocinador.
+- **CTA**: Escribinos desde hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 6.3 · Tu página de autor
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Para quienes escriben
+- **Título**: Todo lo que escribís, en una página con tu nombre.
+- **Subtítulo**: Tus notas y tus eventos, juntos.
+- **Cuerpo**: Firmás lo que publicás y la gente puede seguir todo lo tuyo desde un solo lugar.
+- **Idea**: Le habla a quien **ya** escribe en la plataforma, para que lo aproveche y lo comparta. La convocatoria a nuevos redactores es la 17.3; esta es para los que ya están.
+- **Foto/s**: Captura real de una página de autor.
+- **CTA**: Mirá tu página en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+### Categoría 7 — Oficios y proveedores
+
+Plomeros, gasistas, electricistas, cerrajeros, técnicos de aire y servicios de limpieza que quieran estar en el directorio que usan los anfitriones.
+
+**Es la contracara de la 12.13**: allá se le muestra el directorio al anfitrión, acá se convoca a quienes lo integran. Sin oficios cargados el beneficio no existe, así que esta categoría va primero.
+
+Público muy concreto y de trato directo: **el formato 2:3 para WhatsApp es el que más va a circular**, más que cualquier publicación.
+
+---
+
+#### 7.1 · Sumate al directorio de oficios
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: Para oficios de la zona
+- **Título**: ¿Sos plomero, gasista o electricista?
+- **Subtítulo**: Sumate al directorio que usan los anfitriones de la región.
+- **Cuerpo**: Los dueños de alojamientos necesitan a alguien de confianza cuando algo se rompe. Que te encuentren.
+- **Idea**: Le habla directo al oficio, con las palabras que usa el oficio. **Nada de "proveedor de servicios"** — plomero, gasista, electricista. Diseño simple y legible: este público no mira redes con detenimiento.
+- **Foto/s**: Herramientas de trabajo, o alguien trabajando. Real, no de banco de imágenes.
+- **CTA**: Sumate desde hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 7.2 · Clientes que se repiten
+
+- **Prioridad**: 2
+- **Tipo**: Listado de puntos
+- **Aspect Ratio**: 4:5 y 2:3
+- **Tag Line**: Para oficios de la zona
+- **Título**: Un alojamiento no te llama una vez sola.
+- **Cuerpo**: Por qué conviene estar en el directorio.
+- **Items**:
+  - Los alojamientos tienen desperfectos todo el año, no una vez
+  - Te encuentran cuando te necesitan, sin que hagas publicidad
+  - Las valoraciones de otros anfitriones te traen los siguientes
+  - Trabajás con gente que paga y que vuelve
+- **Idea**: El argumento no es visibilidad genérica, es **cliente recurrente** — que es lo que de verdad le interesa a alguien que vive de un oficio. Un alojamiento que te llamó una vez te llama toda la temporada.
+- **Foto/s**: Ninguna, o herramientas.
+- **CTA**: Sumate desde hospeda.com.ar
+- **Idioma**: Español
 
 ---
 
@@ -2558,12 +2885,12 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | Bloque | Categoría | Estado |
 |---|---|---|
 | A · Marca | 1. Genéricas de marca | ✅ 10 piezas |
-| A · Marca | 2. Institucional | ⬜ pendiente |
+| A · Marca | 2. Institucional | ✅ 3 piezas |
 | B · Producto | 3. Turistas | ✅ 10 piezas |
-| B · Producto | 4. Alojamientos | ⬜ pendiente |
-| B · Producto | 5. Gastronomía y experiencias | ⬜ pendiente |
-| B · Producto | 6. Auspiciantes, patrocinadores y redactores | ⬜ pendiente |
-| B · Producto | 7. Oficios y proveedores | ⬜ pendiente |
+| B · Producto | 4. Anfitriones que ya publicaron | ✅ 5 piezas |
+| B · Producto | 5. Gastronomía y experiencias | ✅ 3 piezas |
+| B · Producto | 6. Marcas, patrocinadores y redactores | ✅ 3 piezas |
+| B · Producto | 7. Oficios y proveedores | ✅ 2 piezas |
 | C · Atracción | 8. Destinos | ✅ 35 piezas escritas + 5 plantillas |
 | C · Atracción | 9. Lugares para visitar | ⬜ pendiente |
 | C · Atracción | 10. Eventos y agenda | ✅ 5 plantillas |
