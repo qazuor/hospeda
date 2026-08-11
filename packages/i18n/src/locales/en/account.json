@@ -1305,7 +1305,8 @@
             "contact": "If you'd like more details, reach out and we'll explain."
         },
         "errors": {
-            "fetchFailed": "We couldn't load your provider listing. Reload the page to try again."
+            "fetchFailed": "We couldn't load your provider listing. Reload the page to try again.",
+            "panelFailed": "We could not load this section. Reload the page to try again."
         },
         "form": {
             "title": "Edit my provider listing",
@@ -1334,6 +1335,16 @@
             "errors": {
                 "saveFailed": "We couldn't save your changes"
             }
+        },
+        "tabs": {
+            "label": "Sections of your listing",
+            "ficha": "My listing",
+            "usos": "Usages",
+            "valoraciones": "Reviews",
+            "qr": "My QR"
+        },
+        "suspended": {
+            "noReason": "We have temporarily suspended usage recording from your listing."
         }
     },
     "partner": {

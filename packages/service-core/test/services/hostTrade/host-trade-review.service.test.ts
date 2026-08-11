@@ -1110,3 +1110,126 @@ describe('HostTradeReviewService.listForDirectory — what the directory may sho
         expect(result.data?.items).toHaveLength(1);
     });
 });
+
+// ---------------------------------------------------------------------------
+// The provider's own listing (T-050, spec §7.5 `/mine/reviews`)
+// ---------------------------------------------------------------------------
+
+/**
+ * The read behind the provider's "Valoraciones" tab.
+ *
+ * Its rule is ASYMMETRIC, and that asymmetry is the whole point: the REVIEW is
+ * shown only once it is public, while the provider's own REPLY is shown in
+ * whatever state it is in. A reply is written by the person reading, so hiding
+ * an unapproved one tells its own author that what he wrote does not exist —
+ * the exact failure the spec names ("va a creer que se perdió"). A review under
+ * moderation is the opposite case: it is not public yet, and surfacing it would
+ * show the provider a complaint that may still be rejected.
+ */
+describe('HostTradeReviewService.listForOwner — the provider’s own reviews (T-050)', () => {
+    function buildOwnerService() {
+        const model = createModelMock(['findAllForOwnerWithReplyState']);
+        model.findAllForOwnerWithReplyState = vi.fn(async () => ({ items: [], total: 0 }));
+        model.findAllWithAuthorAndReply = vi.fn(async () => ({ items: [], total: 0 }));
+
+        const service = new HostTradeReviewService(
+            { logger: mockLogger },
+            model as unknown as HostTradeReviewModel
+        );
+
+        return { service, model };
+    }
+
+    const ownerWhere = (model: ReturnType<typeof createModelMock>) =>
+        (model.findAllForOwnerWithReplyState as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0]?.[0] as Record<string, unknown>;
+
+    /** The provider's owner account. Providers hold no HOST_TRADE_* permission. */
+    const providerOwner = () =>
+        new ActorFactoryBuilder().withId(OWNER_ID).withPermissions([]).build();
+
+    it('scopes the read to the listing the route resolved', async () => {
+        const { service, model } = buildOwnerService();
+
+        await service.listForOwner({ hostTradeId: HT_ID, page: 1, pageSize: 10 }, providerOwner());
+
+        expect(ownerWhere(model).hostTradeId).toBe(HT_ID);
+    });
+
+    it('shows only the reviews that are actually published about him', async () => {
+        const { service, model } = buildOwnerService();
+
+        await service.listForOwner({ hostTradeId: HT_ID, page: 1, pageSize: 10 }, providerOwner());
+
+        expect(ownerWhere(model).moderationState).toBe(ModerationStatusEnum.APPROVED);
+        expect(ownerWhere(model).deletedAt).toBeNull();
+    });
+
+    it('reads through the owner query, so his own pending reply survives', async () => {
+        // The directory query nulls any reply that is not APPROVED. Using it
+        // here would hide the provider's answer from the provider himself.
+        const { service, model } = buildOwnerService();
+
+        await service.listForOwner({ hostTradeId: HT_ID, page: 1, pageSize: 10 }, providerOwner());
+
+        expect(model.findAllForOwnerWithReplyState).toHaveBeenCalledTimes(1);
+        expect(model.findAllWithAuthorAndReply).not.toHaveBeenCalled();
+    });
+
+    it('needs no HOST_TRADE_* permission — ownership is the gate, upstream', async () => {
+        const { service } = buildOwnerService();
+
+        const result = await service.listForOwner(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            providerOwner()
+        );
+
+        expect(result.error).toBeUndefined();
+    });
+
+    it('refuses an unauthenticated caller', async () => {
+        const { service, model } = buildOwnerService();
+        const guest = new ActorFactoryBuilder().withId('').withPermissions([]).build();
+
+        const result = await service.listForOwner(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            guest
+        );
+
+        expect(result.error).toBeDefined();
+        expect(model.findAllForOwnerWithReplyState).not.toHaveBeenCalled();
+    });
+
+    it('forwards the page window rather than letting the model default it', async () => {
+        const { service, model } = buildOwnerService();
+
+        await service.listForOwner({ hostTradeId: HT_ID, page: 3, pageSize: 5 }, providerOwner());
+
+        const call = (
+            model.findAllForOwnerWithReplyState as unknown as { mock: { calls: unknown[][] } }
+        ).mock.calls[0];
+        expect(call?.[1]).toEqual({ page: 3, pageSize: 5 });
+    });
+
+    it('returns the rows and the total the model reports', async () => {
+        const { service, model } = buildOwnerService();
+        model.findAllForOwnerWithReplyState = vi.fn(async () => ({
+            items: [
+                {
+                    review: { id: 'review-1' },
+                    author: null,
+                    reply: { id: 'reply-1', moderationState: 'PENDING' }
+                }
+            ],
+            total: 1
+        }));
+
+        const result = await service.listForOwner(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            providerOwner()
+        );
+
+        expect(result.data?.total).toBe(1);
+        expect(result.data?.items[0]?.reply?.moderationState).toBe('PENDING');
+    });
+});

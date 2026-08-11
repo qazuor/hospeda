@@ -1,0 +1,366 @@
+/**
+ * @file ProviderPanels.test.tsx
+ * @description Tests for the provider's three account panels (HOS-376 T-050).
+ *
+ * What is pinned here is what each panel exists to get right:
+ *
+ *  - EXACTLY ONE host identifier leaves the declaration form. The API refuses a
+ *    body carrying both, so a form that sent an empty second field would fail
+ *    every declaration for a reason the provider cannot see.
+ *  - A suspended listing shows the REASON and no form. Taking away someone's
+ *    ability to record work without saying why is the one thing this must not do.
+ *  - A PENDING reply reads as "in review", never as absent. The directory
+ *    listing hides it; showing that to its own author says "it was lost".
+ *  - The QR is rendered as an image with a data URL, not injected as markup.
+ */
+
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+const { mockDeclare, mockListOwnUsages } = vi.hoisted(() => ({
+    mockDeclare: vi.fn(),
+    mockListOwnUsages: vi.fn()
+}));
+
+vi.mock('@/lib/api/endpoints-protected', () => ({
+    hostTradesApi: {
+        declareUsageAsProvider: (...args: unknown[]) => mockDeclare(...args),
+        listOwnUsages: (...args: unknown[]) => mockListOwnUsages(...args)
+    }
+}));
+
+import { ProviderQrPanel } from '../../../../src/components/host/host-trades/ProviderQrPanel.client';
+import { ProviderReviewsPanel } from '../../../../src/components/host/host-trades/ProviderReviewsPanel.client';
+import { ProviderUsagesPanel } from '../../../../src/components/host/host-trades/ProviderUsagesPanel.client';
+
+const TODAY = '2026-08-10';
+const HOST_ID = '11111111-1111-4111-8111-111111111111';
+
+const LINKED_HOSTS = [{ id: HOST_ID, displayName: 'Ana Anfitriona' }];
+
+function makeUsage(overrides: Record<string, unknown> = {}) {
+    return {
+        id: 'usage-1',
+        hostTradeId: '22222222-2222-4222-8222-222222222222',
+        hostUserId: HOST_ID,
+        declaredBy: 'PROVIDER',
+        declaredById: '33333333-3333-4333-8333-333333333333',
+        creationChannel: 'LINKED_SELECTOR',
+        status: 'PENDING',
+        servicedAt: '2026-08-01',
+        note: null,
+        expiresAt: '2026-09-01T00:00:00.000Z',
+        confirmedAt: null,
+        rejectedAt: null,
+        rejectionNote: null,
+        createdAt: '2026-08-01T00:00:00.000Z',
+        updatedAt: '2026-08-01T00:00:00.000Z',
+        hostTrade: null,
+        ...overrides
+    } as never;
+}
+
+function renderUsages(overrides: Record<string, unknown> = {}) {
+    return render(
+        <ProviderUsagesPanel
+            initialLinkedHosts={LINKED_HOSTS}
+            initialTotal={0}
+            initialUsages={[]}
+            locale="es"
+            today={TODAY}
+            {...overrides}
+        />
+    );
+}
+
+beforeEach(() => {
+    mockDeclare.mockReset();
+    mockListOwnUsages.mockReset();
+    mockDeclare.mockResolvedValue({ ok: true, data: { usage: makeUsage() } });
+    mockListOwnUsages.mockResolvedValue({
+        ok: true,
+        data: { items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } }
+    });
+});
+
+afterEach(() => {
+    vi.clearAllMocks();
+});
+
+// ---------------------------------------------------------------------------
+// Usos
+// ---------------------------------------------------------------------------
+
+describe('ProviderUsagesPanel — declaring', () => {
+    it('sends the selected host id and NOT an email', async () => {
+        const user = userEvent.setup();
+        renderUsages();
+
+        await user.selectOptions(screen.getByLabelText(/anfitrión/i), HOST_ID);
+        await user.click(screen.getByRole('button', { name: /registrar el uso/i }));
+
+        await waitFor(() => expect(mockDeclare).toHaveBeenCalledTimes(1));
+        const body = mockDeclare.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(body.hostUserId).toBe(HOST_ID);
+        // The API refuses a body carrying both identifiers.
+        expect(body).not.toHaveProperty('hostEmail');
+    });
+
+    it('sends the email and NOT a host id on the fallback channel', async () => {
+        const user = userEvent.setup();
+        renderUsages();
+
+        await user.click(screen.getByRole('radio', { name: /alguien nuevo/i }));
+        await user.type(screen.getByLabelText(/email del anfitrión/i), 'ana@example.com');
+        await user.click(screen.getByRole('button', { name: /registrar el uso/i }));
+
+        await waitFor(() => expect(mockDeclare).toHaveBeenCalledTimes(1));
+        const body = mockDeclare.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(body.hostEmail).toBe('ana@example.com');
+        expect(body).not.toHaveProperty('hostUserId');
+    });
+
+    it('defaults to the email channel when nobody is linked yet', () => {
+        // A selector with no options is a dead end on the very first job, which
+        // is exactly when the fallback is the only channel that works.
+        renderUsages({ initialLinkedHosts: [] });
+
+        expect(screen.getByRole('radio', { name: /alguien nuevo/i })).toBeChecked();
+        expect(screen.getByRole('radio', { name: /ya me confirmó/i })).toBeDisabled();
+    });
+
+    it('refuses a future service date without spending a request', async () => {
+        const user = userEvent.setup();
+        renderUsages();
+
+        await user.selectOptions(screen.getByLabelText(/anfitrión/i), HOST_ID);
+        const date = screen.getByLabelText(/qué día fue el servicio/i);
+        await user.clear(date);
+        await user.type(date, '2026-12-31');
+        await user.click(screen.getByRole('button', { name: /registrar el uso/i }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent(/no puede ser en el futuro/i);
+        expect(mockDeclare).not.toHaveBeenCalled();
+    });
+
+    it('surfaces the explicit refusal for an email that is nobody', async () => {
+        mockDeclare.mockResolvedValue({
+            ok: false,
+            error: { status: 404, code: 'HOST_NOT_FOUND', message: 'no such host' }
+        });
+        const user = userEvent.setup();
+        renderUsages();
+
+        await user.click(screen.getByRole('radio', { name: /alguien nuevo/i }));
+        await user.type(screen.getByLabelText(/email del anfitrión/i), 'typo@example.com');
+        await user.click(screen.getByRole('button', { name: /registrar el uso/i }));
+
+        expect(await screen.findByRole('alert')).toBeInTheDocument();
+        expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+});
+
+describe('ProviderUsagesPanel — a suspended listing', () => {
+    it('replaces the form with the reason', async () => {
+        renderUsages({ suspendedReason: 'Tres anfitriones rechazaron tus registros.' });
+
+        expect(screen.getByRole('alert')).toHaveTextContent(/tres anfitriones/i);
+        expect(screen.queryByRole('button', { name: /registrar el uso/i })).toBeNull();
+    });
+
+    it('still shows the record, because confirmed usages keep counting', () => {
+        renderUsages({
+            suspendedReason: 'Motivo cualquiera.',
+            initialUsages: [makeUsage({ status: 'CONFIRMED' })],
+            initialTotal: 1
+        });
+
+        expect(screen.getByText('Confirmado')).toBeInTheDocument();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Valoraciones
+// ---------------------------------------------------------------------------
+
+function reviewRow(reply: Record<string, unknown> | null) {
+    return {
+        review: {
+            id: 'review-1',
+            hostTradeId: '22222222-2222-4222-8222-222222222222',
+            hostUserId: HOST_ID,
+            overallRating: 4,
+            rating: null,
+            averageRating: null,
+            respectedBenefit: true,
+            content: 'Vino el mismo día.',
+            moderationState: 'APPROVED',
+            editedAt: null,
+            createdAt: '2026-08-01T00:00:00.000Z',
+            updatedAt: '2026-08-01T00:00:00.000Z'
+        },
+        author: { id: HOST_ID, displayName: 'Ana Anfitriona', image: null },
+        reply
+    } as never;
+}
+
+describe('ProviderReviewsPanel', () => {
+    it('shows a PENDING reply as in review, never as missing', () => {
+        // The directory listing hides an unapproved answer. Doing that here
+        // would tell its own author that what he wrote does not exist.
+        render(
+            <ProviderReviewsPanel
+                initialReviews={[
+                    reviewRow({
+                        id: 'reply-1',
+                        content: 'Gracias por la devolución.',
+                        moderationState: 'PENDING',
+                        moderationReason: null,
+                        reviewEditedAfterReply: false,
+                        createdAt: '2026-08-02T00:00:00.000Z',
+                        updatedAt: '2026-08-02T00:00:00.000Z'
+                    })
+                ]}
+                initialTotal={1}
+                locale="es"
+            />
+        );
+
+        expect(screen.getByText('En revisión')).toBeInTheDocument();
+        expect(screen.getByText(/gracias por la devolución/i)).toBeInTheDocument();
+        expect(screen.getByText(/todavía no se ve en el directorio/i)).toBeInTheDocument();
+    });
+
+    it('shows why a reply was turned down', () => {
+        render(
+            <ProviderReviewsPanel
+                initialReviews={[
+                    reviewRow({
+                        id: 'reply-1',
+                        content: 'Respuesta',
+                        moderationState: 'REJECTED',
+                        moderationReason: 'Incluía la dirección del anfitrión.',
+                        reviewEditedAfterReply: false,
+                        createdAt: '2026-08-02T00:00:00.000Z',
+                        updatedAt: '2026-08-02T00:00:00.000Z'
+                    })
+                ]}
+                initialTotal={1}
+                locale="es"
+            />
+        );
+
+        expect(screen.getByText('Rechazada')).toBeInTheDocument();
+        expect(screen.getByText(/dirección del anfitrión/i)).toBeInTheDocument();
+    });
+
+    it('says so when a review has no answer yet', () => {
+        render(
+            <ProviderReviewsPanel
+                initialReviews={[reviewRow(null)]}
+                initialTotal={1}
+                locale="es"
+            />
+        );
+
+        expect(screen.getByText(/todavía no respondiste/i)).toBeInTheDocument();
+    });
+
+    it('reports the benefit answer, which is what the feature exists to expose', () => {
+        const row = reviewRow(null) as unknown as { review: { respectedBenefit: boolean } };
+        row.review.respectedBenefit = false;
+
+        render(
+            <ProviderReviewsPanel
+                initialReviews={[row as never]}
+                initialTotal={1}
+                locale="es"
+            />
+        );
+
+        expect(screen.getByText(/NO respetaste el beneficio/i)).toBeInTheDocument();
+    });
+
+    it('renders an empty state rather than a bare heading', () => {
+        render(
+            <ProviderReviewsPanel
+                initialReviews={[]}
+                initialTotal={0}
+                locale="es"
+            />
+        );
+
+        expect(screen.getByText(/todavía no hay valoraciones/i)).toBeInTheDocument();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Mi QR
+// ---------------------------------------------------------------------------
+
+describe('ProviderQrPanel', () => {
+    const SVG = '<svg xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1"/></svg>';
+    const URL_TARGET =
+        'https://hospeda.com.ar/es/mi-cuenta/directorio-proveedores/plomero/registrar-uso';
+
+    it('renders the code as an image, not as injected markup', () => {
+        // An <img> with a data URL cannot execute script inside the SVG, which
+        // injecting the same markup into the DOM could.
+        const { container } = render(
+            <ProviderQrPanel
+                locale="es"
+                slug="plomero"
+                svg={SVG}
+                targetUrl={URL_TARGET}
+            />
+        );
+
+        const image = screen.getByRole('img');
+        expect(image.getAttribute('src')).toMatch(/^data:image\/svg\+xml/);
+        expect(container.querySelector('svg')).toBeNull();
+    });
+
+    it('shows the encoded URL as text, for a provider who cannot scan it', () => {
+        render(
+            <ProviderQrPanel
+                locale="es"
+                slug="plomero"
+                svg={SVG}
+                targetUrl={URL_TARGET}
+            />
+        );
+
+        expect(
+            screen.getByText(new RegExp(URL_TARGET.replace(/[/.]/g, '\\$&')))
+        ).toBeInTheDocument();
+    });
+
+    it('names the downloaded file after the listing', async () => {
+        // The anchor is created for the click and discarded, so it is captured
+        // here rather than queried out of the DOM.
+        const created: HTMLAnchorElement[] = [];
+        const realCreateElement = document.createElement.bind(document);
+        const spy = vi.spyOn(document, 'createElement').mockImplementation(((tag: string) => {
+            const element = realCreateElement(tag);
+            if (tag === 'a') created.push(element as HTMLAnchorElement);
+            return element;
+        }) as typeof document.createElement);
+
+        const user = userEvent.setup();
+        render(
+            <ProviderQrPanel
+                locale="es"
+                slug="plomero"
+                svg={SVG}
+                targetUrl={URL_TARGET}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /descargar/i }));
+
+        expect(created.at(-1)?.download).toBe('qr-plomero.svg');
+        expect(created.at(-1)?.href).toMatch(/^data:image\/svg\+xml/);
+        spy.mockRestore();
+    });
+});

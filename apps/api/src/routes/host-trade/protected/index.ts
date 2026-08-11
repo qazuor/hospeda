@@ -8,6 +8,7 @@ import { protectedGetHostTradeBySlugRoute } from './get-by-slug';
 import { protectedListHostTradesRoute } from './list';
 import { protectedGetMyHostTradeRoute, protectedUpdateMyHostTradeRoute } from './mine';
 import { protectedGetMyQrRoute } from './mine-qr';
+import { protectedListOwnReviewsRoute } from './mine-reviews';
 import {
     protectedDeclareUsageAsProviderRoute,
     protectedListLinkedHostsRoute,
@@ -71,6 +72,13 @@ protectedRouter.route('/', protectedDeclareUsageAsProviderRoute);
 protectedRouter.route('/', protectedListOwnUsagesRoute);
 protectedRouter.route('/', protectedListLinkedHostsRoute);
 protectedRouter.route('/', protectedGetMyQrRoute);
+
+// The provider's own review listing (HOS-376 T-050, spec §7.5). `/mine/reviews`
+// overlaps the parameterised `/{id}/reviews` — "mine" is a candidate `:id` —
+// so it is registered ahead of it, and asserted by request in
+// `test/routes/host-trade/mine-reviews.test.ts`. It is NOT the directory read:
+// this one returns the caller's own reply in whatever moderation state it is in.
+protectedRouter.route('/', protectedListOwnReviewsRoute);
 
 // The shared transitions (HOS-376 T-033). Role-blind by design: `declaredBy`
 // on the row decides who may answer, so one pair of endpoints serves a host and

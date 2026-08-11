@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 49/70 tareas cerradas (70%)
+## Progreso: 50/70 tareas cerradas + 1 en curso (71%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 19/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 20/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -180,9 +180,12 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Bloqueada por: T-048, T-034, **T-053 (agregada)** · Bloquea a: —
   - **Modo edición LISTO**: el diálogo lee `my-review` al abrir y decide entre publicar y editar; una lectura fallida cae al formulario de creación en vez de bloquear (negarse a abrir dejaría al anfitrión sin poder decir nada, y el POST igual responde 409 con copy propia). El `PATCH` manda un **diff**, no el formulario entero: cambiar el TEXTO re-corre moderación y puede bajar la valoración del directorio, así que reenviar un `content` intacto convertiría una edición de estrellas en una reescritura — y podría devolver como `APPROVED` un texto que un moderador bajó. Un comentario vaciado viaja como `null` (borrado), no ausente.
   - **Falta el cartel de réplica desactualizada**, y no por olvido: vive en el listado público de valoraciones, que lo construye T-053. El grafo no declaraba esa dependencia y ahora sí — no se puede renderizar un cartel en un listado que no existe.
-- [ ] **T-050** (c3) — Pestañas del proveedor en /mi-cuenta/proveedor
+- [x] **T-050** (c3) — Pestañas del proveedor en /mi-cuenta/proveedor
   - Extender la ficha existente con tres pestañas: Usos (declarar por selector o email + pendientes marcados como tales + historial), Valoraciones (listado con acción de responder), Mi QR (previ…
-  - Bloqueada por: T-031, T-032, T-036 · Bloquea a: T-051, T-054
+  - Bloqueada por: T-031, T-032, T-036 · Bloquea a: T-051
+  - **Amplió la API con aprobación del owner**: la pestaña Valoraciones no tenía endpoint. `GET /mine/reviews` estaba en spec §7.5 y ninguna tarea lo creaba. NO es un duplicado del `GET /{id}/reviews`: ese anula toda réplica que no esté `APPROVED` — correcto para un anfitrión mirando el directorio, y equivocado para el autor de la réplica, a quien le diría que lo que escribió no existe. La regla es **asimétrica**: la valoración se ve sólo publicada, la réplica en cualquier estado. Las dos queries del modelo son métodos separados en vez de uno con flag, porque la diferencia es exactamente "¿puede verse una réplica no aprobada?" y un booleano deja publicar una `PENDING` a un argumento de distancia.
+  - **Las pestañas viven en la URL** (`?tab=`): así se renderiza sólo la isla activa y se pide sólo su data, además de quedar linkeable — que importa porque ahí se avisa la suspensión.
+  - **El QR se renderiza como `<img>` con data URL**, no inyectando markup: el navegador deshabilita scripts dentro de un SVG cargado como imagen, y la CSP ya admite `data:` en `img-src`. La descarga se arma desde el markup ya presente, porque un `<a download>` al endpoint iría sin cookie (otro origen) y guardaría un 401 en el disco del proveedor., T-054
 - [ ] **T-051** (c2) — Responder una valoración desde el panel del proveedor
   - Formulario de réplica en la pestaña Valoraciones, con aviso claro de que la respuesta pasa por revisión antes de publicarse (si no, el proveedor va a creer que se perdió). Estado visible: en…
   - Bloqueada por: T-035, T-050 · Bloquea a: —
@@ -280,7 +283,7 @@ máquina de estados de usos, guardas de declaración, suspensión por umbral,
 valoraciones, réplicas, moderación, agregados y el QR— está implementada y
 cubierta.
 
-Sigue la fase `integration` (27 tareas, 19 cerradas). Cerrada TODA la capa de
+Sigue la fase `integration` (27 tareas, 20 cerradas). Cerrada TODA la capa de
 rutas del dominio (T-030 a T-038), los 6 mails y su cableado (T-040/T-041), los
 3 crons (T-042 a T-044) y la primera pantalla, la del QR (T-045). El camino
 natural es seguir por la UI del anfitrión: T-046 (sección de usos) y T-047
