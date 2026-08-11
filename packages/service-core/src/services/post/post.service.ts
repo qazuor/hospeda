@@ -633,7 +633,8 @@ export class PostService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -671,7 +672,8 @@ export class PostService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -714,7 +716,8 @@ export class PostService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -733,7 +736,8 @@ export class PostService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
             ctx.hookState.restoredPost = {
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             };
         }
         return id;
@@ -748,7 +752,8 @@ export class PostService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: restored?.slug
+                slug: restored?.slug,
+                id: restored?.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -767,7 +772,8 @@ export class PostService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedPost = {
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             };
         }
         return id;
@@ -782,7 +788,8 @@ export class PostService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: deleted?.slug
+                slug: deleted?.slug,
+                id: deleted?.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -801,7 +808,8 @@ export class PostService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
             ctx.hookState.deletedPost = {
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             };
             ctx.hookState.deletedEntityId = id;
         }
@@ -817,7 +825,8 @@ export class PostService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
-                slug: deleted?.slug
+                slug: deleted?.slug,
+                id: deleted?.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -1598,7 +1607,8 @@ export class PostService extends BaseCrudService<
                 try {
                     getRevalidationService()?.scheduleRevalidation({
                         entityType: 'post',
-                        slug: updated.slug
+                        slug: updated.slug,
+                        id: updated.id
                     });
                 } catch (error) {
                     PostService.revalidationLogger.warn(

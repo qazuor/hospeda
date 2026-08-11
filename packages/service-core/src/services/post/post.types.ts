@@ -5,10 +5,17 @@
 export interface PostHookState extends Record<string, unknown> {
     /** ID being updated.. set in update() override, read in _beforeUpdate. */
     updateId?: string;
-    /** Post data captured before soft-delete for post-delete side effects. */
-    deletedPost?: { slug: string };
-    /** Post data captured before restore for post-restore side effects. */
-    restoredPost?: { slug: string };
+    /**
+     * Post identifiers captured before soft-delete for post-delete side effects.
+     *
+     * Both identifiers are captured because the detail page tags itself with
+     * BOTH (`post-<slug>` and `post-<id>`), and the row is gone by the time the
+     * `_after*` hook runs — so whatever is not captured here can never be
+     * purged.
+     */
+    deletedPost?: { slug: string; id: string };
+    /** Post identifiers captured before restore for post-restore side effects. */
+    restoredPost?: { slug: string; id: string };
     /** ID of the entity being hard-deleted, used for Cloudinary media cleanup. */
     deletedEntityId?: string;
     /**
