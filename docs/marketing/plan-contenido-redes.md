@@ -905,12 +905,18 @@ Por qué es la categoría más valiosa del plan:
 - **Tag Line**: De anfitrión a anfitrión #8
 - **Título**: Los errores que cometimos el primer año.
 - **Cuerpo**: Para que no los repitas vos.
-- **Items**: **A completar con los errores reales.** Esta es la pieza que más necesita la experiencia propia: cinco cosas concretas que salieron mal el primer año de alquilar. Cuanto más específicas y más incómodas, mejor funciona.
+- **Items** (⚠️ **ejemplos del formato, no son los errores reales — hay que reemplazarlos**):
+  1. **Portada** — "Los errores que cometimos el primer año"
+  2. "Puse el precio mirando el hotel del centro, no las cabañas de al lado."
+  3. "No avisé que la última cuadra es de tierra. Me lo comieron en la primera reseña."
+  4. "Acepté una reserva por teléfono sin seña. No vino nadie."
+  5. "Contestaba las consultas cuando podía. Perdí un finde largo entero."
+  6. "Saqué las fotos con el celular a las dos de la tarde."
 - **Idea**: La pieza más honesta de la serie y probablemente la que mejor rinda. Funciona porque nadie cuenta sus errores en redes. El tono es de confesión, con humor, sin dramatizar. Visualmente simple: texto sobre color, sin fotos que distraigan.
 - **Foto/s**: Ninguna.
 - **CTA**: Seguinos para más consejos · hospeda.com.ar
 - **Idioma**: Español
-- **Antes de diseñar**: los ítems los tiene que escribir alguien que haya vivido ese primer año. No se pueden inventar: un error inventado se nota al instante y tira abajo la credibilidad de toda la serie.
+- **⚠️ NO DISEÑAR CON ESTOS TEXTOS**: los cinco errores de arriba están inventados para mostrar el formato y el tono. Los reales los escribe alguien que vivió ese primer año alquilando. Un error inventado se nota al instante y tira abajo la credibilidad de toda la serie. Cuanto más específicos e incómodos sean los verdaderos, mejor funciona la pieza.
 
 ---
 
