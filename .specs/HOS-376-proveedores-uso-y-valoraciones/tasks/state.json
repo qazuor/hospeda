@@ -2007,40 +2007,49 @@
         {
             "id": "T-054",
             "title": "Namespace i18n del dominio en es/en/pt",
-            "description": "Todas las cadenas de la UI web y admin en @repo/i18n, en los 3 locales. Verificar que el prefijo del namespace esté en CLIENT_I18N_KEY_PREFIXES — si falta, en producción salen las claves crudas y en dev no se nota porque se sirve el diccionario entero. Correr el guard de claves i18n del repo.",
-            "status": "pending",
+            "description": "Todas las cadenas de la UI web y admin en @repo/i18n, en los 3 locales. Verificar que el prefijo del namespace esté en CLIENT_I18N_KEY_PREFIXES — si falta, en producción salen las claves crudas y en dev no se nota porque se sirve el diccionario entero. Correr el guard de claves i18n del repo. RESUELTO: el barrido encontró 2 defectos REALES y un tercero que se reporta sin tocar. (1) La página del directorio llamaba a host.properties.empty.fetchError y host.properties.error.retry, dos claves que NO EXISTEN — copiadas de la página de propiedades. El fallback inline no vacío lo tapaba: en en/pt el visitante veía texto en ESPAÑOL. Las claves ahora viven en host-trades.page.error.* en los 3 locales. (2) La columna de categoría del admin tenía su propio Record de 13 nombres en español, bajo un comentario que afirmaba que las traducciones vivían en admin-entities. TRES ya habían derivado del diccionario compartido: el admin decía Pileta / Jardín, Plagas e Internet donde el directorio público decía Pileta y Jardín, Control de plagas e Internet / TV. Ahora lee host-trades.categories.*, con un test que afirma que el label ES la clave (el stub de t devuelve lo que recibe, así que un literal no matchea). (3) NO TOCADO, para decisión del owner: features/host-trades/config/sections/basic-info.consolidated.ts tiene los ~25 labels/descripciones/placeholders del formulario admin en español hardcodeado — pero es el patrón de TODOS los basic-info.consolidated.ts del admin, así que cambiar sólo éste lo desviaría del resto. VERIFICADO Y CORRECTO, no tocado: los 212 fallbacks inline t(key, texto) del web son el patrón dominante del repo (2456 llamadas con fallback contra 276 sin), y están documentados en RegisterUsageForm como deliberados — un fallback vacío mostraría la clave cruda en prod. Los 10 prefijos host-trades.* que alcanzan el browser están declarados y el guard bidireccional de i18n-client-namespaces pasa; accessDenied y moderation quedan afuera con razón (SSR de Astro y admin). Parity es/en/pt verde sobre 222 claves, y cero claves referenciadas sin definir.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-045", "T-046", "T-047", "T-048", "T-050", "T-052", "T-053"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Claves es",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Claves en y pt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Prefijo en CLIENT_I18N_KEY_PREFIXES",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Correr el guard de claves",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "web", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T21:55:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T21:55:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T21:55:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-11T21:20:00Z",
+                "completed": "2026-08-11T21:55:00.000Z"
             }
         },
         {
@@ -2560,9 +2569,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 10,
+        "pending": 9,
         "inProgress": 0,
-        "completed": 60,
+        "completed": 61,
         "blocked": 0,
         "averageComplexity": 2.4
     }

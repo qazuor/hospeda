@@ -105,9 +105,9 @@ export const OWNER_BASICO_PLAN: PlanDefinition = {
     name: 'Basic',
     description: 'Basic plan for individual property owners. Ideal for getting started.',
     category: 'owner',
-    monthlyPriceArs: 1500000, // ARS $15,000 (in cents)
-    annualPriceArs: 15000000, // ARS $150,000/year (2 months free)
-    monthlyPriceUsdRef: 15,
+    monthlyPriceArs: 1800000, // ARS $18,000 (in cents) — HOS-301 D1
+    annualPriceArs: 18000000, // ARS $180,000/year (2 months free) — HOS-301 D1
+    monthlyPriceUsdRef: 18,
     hasTrial: true,
     trialDays: OWNER_TRIAL_DAYS,
     isDefault: true,
@@ -198,9 +198,9 @@ export const OWNER_PREMIUM_PLAN: PlanDefinition = {
     name: 'Premium',
     description: 'Premium plan with all features, custom branding, and unlimited promotions.',
     category: 'owner',
-    monthlyPriceArs: 7500000, // ARS $75,000
-    annualPriceArs: 75000000, // ARS $750,000/year
-    monthlyPriceUsdRef: 75,
+    monthlyPriceArs: 6500000, // ARS $65,000 — HOS-301 D1
+    annualPriceArs: 65000000, // ARS $650,000/year (2 months free) — HOS-301 D1
+    monthlyPriceUsdRef: 65,
     hasTrial: true,
     trialDays: OWNER_TRIAL_DAYS,
     isDefault: false,
@@ -454,7 +454,11 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
     trialDays: TOURIST_TRIAL_DAYS,
     isDefault: false,
     sortOrder: 2,
-    isActive: true,
+    // HOS-301 D1: the tourist tier ships with a single paid plan (tourist-vip).
+    // Deactivated rather than deleted, exactly like the complex-* plans: the
+    // definition stays in ALL_PLANS so existing subscriptions keep resolving
+    // their entitlements, and reversing the decision is a one-line change.
+    isActive: false,
     entitlements: [
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
