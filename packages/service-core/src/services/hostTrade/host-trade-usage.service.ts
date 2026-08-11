@@ -8,8 +8,10 @@ import type {
     CountResponse,
     HostTrade,
     HostTradeBenefitUsage,
+    HostTradeBenefitUsageAdmin,
     HostTradeBenefitUsageAdminSearch,
     HostTradeBenefitUsageWithProvider,
+    HostTradeUsageHostRef,
     HostTradeUsageProviderRef
 } from '@repo/schemas';
 import {
@@ -278,6 +280,66 @@ export class HostTradeUsageService extends BaseCrudService<
     }
 
     /**
+     * Resolves each row's provider and host into displayable refs.
+     *
+     * An id that does not resolve yields `null` on that side and the row keeps
+     * its place. Dropping it would shorten a page `total` still counts, and
+     * throwing would fail the audit over one missing name — while the row whose
+     * parties cannot be named is arguably the one worth looking at.
+     *
+     * @param items - The page of usage rows, in order.
+     * @param ctx - Optional service context, for transaction propagation.
+     * @returns The same rows, in the same order, each naming both sides.
+     */
+    private async attachAdminParties(
+        items: HostTradeBenefitUsage[],
+        ctx?: ServiceContext
+    ): Promise<HostTradeBenefitUsageAdmin[]> {
+        if (items.length === 0) return [];
+
+        const tradeIds = [...new Set(items.map((item) => item.hostTradeId))];
+        const hostIds = [...new Set(items.map((item) => item.hostUserId))];
+
+        const [providers, hosts] = await Promise.all([
+            this.hostTradeModel.findByIds(tradeIds, ctx?.tx),
+            this.userModel.findByIds(hostIds, ctx?.tx)
+        ]);
+
+        const providerById = new Map<string, HostTradeUsageProviderRef>(
+            providers.map((provider) => [
+                provider.id,
+                {
+                    id: provider.id,
+                    slug: provider.slug,
+                    name: provider.name,
+                    category: provider.category
+                }
+            ])
+        );
+
+        const hostById = new Map<string, HostTradeUsageHostRef>(
+            hosts.map((host) => [
+                host.id,
+                {
+                    id: host.id,
+                    displayName: resolveHostLabel({
+                        id: host.id,
+                        displayName: host.displayName ?? null,
+                        firstName: host.firstName ?? null,
+                        lastName: host.lastName ?? null
+                    })
+                }
+            ])
+        );
+
+        return items.map((item) => ({
+            ...item,
+            hostTrade: providerById.get(item.hostTradeId) ?? null,
+            host: hostById.get(item.hostUserId) ?? null
+        }));
+    }
+
+    /**
      * Executes the usage search.
      *
      * Every filter maps directly to a column, so the `where` clause is built by
@@ -339,8 +401,13 @@ export class HostTradeUsageService extends BaseCrudService<
      * existence would touch the admin listing of some thirty services to
      * correct one entity that renamed a reserved key.
      *
+     * It ALSO names both parties of every row (T-056) — see
+     * {@link HostTradeUsageService.attachAdminParties}. Two unrelated concerns
+     * share this method because `adminList` returns `_executeAdminSearch`
+     * verbatim: there is no `_afterAdminList` hook to hang the enrichment on.
+     *
      * @param params - The query the base assembled.
-     * @returns The page, with `status` restored as an entity filter.
+     * @returns The page, with `status` restored as a filter and both sides named.
      */
     protected override async _executeAdminSearch(
         params: Parameters<
@@ -356,7 +423,7 @@ export class HostTradeUsageService extends BaseCrudService<
         const { where, entityFilters, ...rest } = params;
         const { lifecycleState, ...cleanWhere } = where as Record<string, unknown>;
 
-        return super._executeAdminSearch({
+        const result = await super._executeAdminSearch({
             ...rest,
             where: cleanWhere,
             entityFilters: {
@@ -364,6 +431,8 @@ export class HostTradeUsageService extends BaseCrudService<
                 ...(lifecycleState === undefined ? {} : { status: lifecycleState })
             }
         });
+
+        return { ...result, items: await this.attachAdminParties(result.items, params.ctx) };
     }
 
     // --- Aggregate upkeep (T-023) -----------------------------------------

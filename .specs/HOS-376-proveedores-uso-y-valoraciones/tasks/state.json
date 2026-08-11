@@ -2081,36 +2081,45 @@
         {
             "id": "T-056",
             "title": "Admin: listado de usos y gestión de suspensiones",
-            "description": "Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Table + TanStack Query. El filtro por creationChannel=EMAIL_LOOKUP es el que permite auditar el fallback de spray.",
-            "status": "pending",
+            "description": "Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Table + TanStack Query. El filtro por creationChannel=EMAIL_LOOKUP es el que permite auditar el fallback de spray. RESUELTO: la vista de suspendidos NO tenía de dónde leer — T-038 construyó el POST para aplicar/levantar pero ninguna query devolvía quiénes están suspendidos, así que AC-11 y AC-12 eran incumplibles. Se agregó el filtro `declarationSuspended` a HostTradeAdminSearchSchema, traducido en HostTradeService._executeAdminSearch a IS NULL / IS NOT NULL (el where key-value no puede expresarlo) y REMOVIDO de los entityFilters, porque si queda el base lo mergea como columna inexistente. El `false` se trata como condición propia: son preguntas opuestas y un false caído devolvería el directorio entero bajo el título contrario. Además el listado admin de usos devolvía la fila cruda (dos uuids por línea), así que se le adjuntan `hostTrade` y `host` — una query por lado por página con ids deduplicados, ambos nullable para que un nombre sin resolver no tire la página. CONTRA EL ENUNCIADO: levantar NO pide motivo. El endpoint de T-038 exige motivo para suspender y no acepta ninguno para levantar; pedirlo y descartarlo sería poner palabras en un campo que nadie lee de vuelta. La pantalla SÍ suspende además de levantar (mismo endpoint, un booleano, un solo dialog: así no puede nacer un botón de suspender que postee un lift). Las reglas que son ausencias (no ofrecer suspender sobre un proveedor sin nombre resuelto o ya suspendido) viven en módulo puro, no en el JSX. El sidebar padre pasó a `exact: true` porque la ruta nueva cuelga de él y si no se encienden los dos ítems juntos. Las 4 keys de status se reusan del namespace compartido `host-trades`; el resto del copy vive en `admin-pages` para no engordar el bundle del web.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-038"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Tabla de usos con filtros",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Vista de suspensiones",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Acción de levantar con motivo",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "react"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T20:10:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T20:10:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T20:10:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-11T19:05:00Z",
+                "completed": "2026-08-11T20:10:00.000Z"
             }
         },
         {
@@ -2515,9 +2524,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 15,
+        "pending": 14,
         "inProgress": 0,
-        "completed": 55,
+        "completed": 56,
         "blocked": 0,
         "averageComplexity": 2.4
     }
