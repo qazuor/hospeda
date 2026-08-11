@@ -1932,8 +1932,8 @@
         {
             "id": "T-051",
             "title": "Responder una valoración desde el panel del proveedor",
-            "description": "Formulario de réplica en la pestaña Valoraciones, con aviso claro de que la respuesta pasa por revisión antes de publicarse (si no, el proveedor va a creer que se perdió). Estado visible: en revisión / publicada / rechazada con motivo. Tests: tras enviar, la réplica se muestra como 'en revisión'.",
-            "status": "pending",
+            "description": "Formulario de réplica en la pestaña Valoraciones, con aviso claro de que la respuesta pasa por revisión antes de publicarse (si no, el proveedor va a creer que se perdió). Estado visible: en revisión / publicada / rechazada con motivo. Tests: tras enviar, la réplica se muestra como 'en revisión'. IMPLEMENTADO en PR #2755 como formulario INLINE en la card, no dialog (decision del owner): la replica se escribe contra una queja concreta y un modal tapa el texto que hay que responder justo cuando hay que responderlo. El copy se BIFURCA entre crear y editar porque las consecuencias difieren: crear avisa que la replica nace PENDING; editar avisa que SALE del directorio hasta que la aprueben de nuevo (AC-23), que es peor sorpresa para quien corrige un typo en una respuesta ya publicada. El merge de la replica guardada vive en una funcion PURA (mergeSavedReply) y no en un updater inline, porque la regla que carga es INVISIBLE a una asercion renderizada: ambos caminos de escritura descartan la decision de moderacion vigente, asi que la fila debe soltar moderationReason — pero la fila solo imprime un motivo mientras esta REJECTED y una replica recien guardada siempre es PENDING, de modo que una asercion a nivel panel pasa de las dos formas. No es hipotesis: el test del panel se escribio asi primero y la mutacion SOBREVIVIO. Las cotas de longitud se espejan como literales (no se importan de @repo/schemas, que meteria Zod en un panel que hoy no lo embarca) y un guard estatico las ata al schema.",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-035", "T-050"],
             "blocks": [],
@@ -1941,14 +1941,23 @@
             "tags": ["web", "react", "ui", "reviews"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T04:10:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T04:10:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T04:10:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-11T02:30:00.000Z",
+                "completed": "2026-08-11T04:10:00.000Z"
             }
         },
         {
