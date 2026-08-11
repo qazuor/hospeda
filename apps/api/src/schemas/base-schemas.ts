@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { z } from '../utils/zod';
 
 /**
  * Base schemas for common API patterns

@@ -12,12 +12,12 @@
  * NOT a full user profile endpoint.
  */
 
-import { z } from '@hono/zod-openapi';
 import { accounts, eq, getDb, users as usersTable } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { z } from '../../../utils/zod';
 
 /** Response schema for the profile status endpoint. */
 const ProfileStatusResponseSchema = z.object({

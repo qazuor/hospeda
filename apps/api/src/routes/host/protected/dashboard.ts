@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 /**
  * Host Dashboard Protected Endpoint
  *
@@ -20,6 +19,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { z } from '../../../utils/zod';
 
 /**
  * Host dashboard aggregated response schema.

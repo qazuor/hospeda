@@ -1,4 +1,3 @@
-import { z } from '@hono/zod-openapi';
 /**
  * Public user by slug endpoint
  * Returns minimal public profile fields for an author page
@@ -14,6 +13,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { createPublicRoute } from '../../../utils/route-factory.js';
+import { z } from '../../../utils/zod';
 
 const userService = new UserService({ logger: apiLogger });
 

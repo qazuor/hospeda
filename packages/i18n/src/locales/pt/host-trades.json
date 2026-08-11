@@ -18,7 +18,16 @@
     "card": {
         "is24h": "Disponível 24h",
         "benefit": "Benefício para anfitriões",
-        "contact": "Contatar"
+        "contact": "Contatar",
+        "stats": {
+            "ratingLabel": "{{rating}} de 5 estrelas",
+            "reviews_one": "{{count}} avaliação",
+            "reviews_other": "{{count}} avaliações",
+            "uses_one": "{{count}} uso",
+            "uses_other": "{{count}} usos",
+            "hosts_one": "{{count}} anfitrião",
+            "hosts_other": "{{count}} anfitriões"
+        }
     },
     "categories": {
         "CERRAJERIA": "Chaveiro",
