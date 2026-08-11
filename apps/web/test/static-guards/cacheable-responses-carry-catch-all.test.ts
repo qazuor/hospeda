@@ -159,6 +159,7 @@ describe('every emitter puts the catch-all on the response', () => {
             locals,
             headers: new Headers(),
             cacheable: true,
+            cacheClass: 'catalog',
             tags: ['list-accom']
         });
 

@@ -91,6 +91,7 @@ applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	cacheable: primaryPoiTag !== undefined,
+	cacheClass: 'detail',
 	// No collection tag exists to fall back to; the id tag is always present
 	// because `poiId` comes from the fetched row.
 	tags: primaryPoiTag !== undefined ? [primaryPoiTag, ...extraPoiTags] : [`poi-${poiId}`]

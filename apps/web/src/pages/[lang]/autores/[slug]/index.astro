@@ -6,10 +6,10 @@
  * "Eventos" — both visible at once (HOS-375 §6.3). Not a merged feed and not
  * tabs: the two content types keep their own cards and their own pagination.
  * @route /{lang}/autores/{slug}/
- * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
- *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
- *   per request by the `applyCacheHeaders` call below (only the posts-pagination
- *   URLs qualify — see the comment there), not by this line.
+ * @rendering SSR + Cloudflare edge cache — TTL from the `catalog` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below (only the
+ *   posts-pagination URLs qualify — see the comment there), not by this line.
  *
  * ## Pagination contract with the two rewrite routes
  *
@@ -125,7 +125,8 @@ const author = authorResult.data;
 // Tagged `list-post` only. The AUTHOR is a user, and `user` has no entry in the
 // tag vocabulary or in `entity-tag-mapper.ts` — so an author renaming their
 // display name does not purge this page; the heading goes stale for at most the
-// 300s TTL. Post writes, which change the list itself, do purge it.
+// `catalog` cache class's TTL (see `lib/cache/cache-classes.ts`). Post writes,
+// which change the list itself, do purge it.
 //
 // `hasOnlyPaginationParams` accepts `page` and nothing else, so
 // `/autores/<slug>/` and `/autores/<slug>/page/N/` (which rewrites here with
@@ -137,6 +138,7 @@ applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	cacheClass: 'catalog',
 	tags: [CACHE_TAG_COLLECTIONS.post],
 });
 

@@ -3,9 +3,10 @@
  * @file destinos/atraccion/[slug]/index.astro
  * @description Destinations that offer a given attraction.
  * @route /{lang}/destinos/atraccion/{slug}/
- * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
- *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
- *   per request by the `applyCacheHeaders` call below, not by this comment.
+ * @rendering SSR + Cloudflare edge cache — TTL from the `detail` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  *
  * An attraction is a taxonomy term ("Termas", "Playa Fluvial"), not a place:
  * the whole catalog is `isBuiltin`, and its `description` defines the category
@@ -55,9 +56,10 @@ const description = String(attraction.description || '');
 // `list-attr`).
 //
 // The destination cards rendered below are not addressable from here — a
-// destination rename leaves them stale for at most the 300s TTL. The reverse
-// direction IS covered: `AttractionService` fans out over every related
-// destination when this attraction changes.
+// destination rename leaves them stale for at most the `detail` cache class's
+// TTL (see `lib/cache/cache-classes.ts`). The reverse direction IS covered:
+// `AttractionService` fans out over every related destination when this
+// attraction changes.
 const attractionCacheTags = buildEntityCacheTags({
 	entity: 'attraction',
 	slug,
@@ -69,6 +71,7 @@ applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	cacheable: primaryAttractionTag !== undefined,
+	cacheClass: 'detail',
 	// Unlike every other detail page, the fallback arm cannot be a collection
 	// tag — there is none. It falls back to the id tag, which is always
 	// present here because `attractionId` comes from the fetched row.

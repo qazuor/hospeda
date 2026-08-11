@@ -4,9 +4,10 @@
  * @description Destination detail page with hierarchical catch-all routing.
  * Handles paths like /destinos/entre-rios/ and /destinos/entre-rios/colon/.
  * @route /{lang}/destinos/{...path}/
- * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
- *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
- *   per request by the `applyCacheHeaders` call below, not by this comment.
+ * @rendering SSR + Cloudflare edge cache — TTL from the `detail` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
@@ -116,10 +117,10 @@ const destId = String(dest.id || '');
 // Known gap, deliberately accepted: this page also renders points of interest,
 // and neither `pointOfInterest` nor `attraction` exists in the tag vocabulary
 // or calls the revalidation service at all. A POI edit therefore does not purge
-// this page — it goes stale for at most the 300s TTL. Closing that needs the
-// purge chain built first (the same work `/destinos/lugar/` and
-// `/destinos/atraccion/` are waiting on, which is why those two are NOT
-// cacheable yet).
+// this page — it goes stale for at most the `detail` cache class's TTL (see
+// `lib/cache/cache-classes.ts`). Closing that needs the purge chain built first
+// (the same work `/destinos/lugar/` and `/destinos/atraccion/` are waiting on,
+// which is why those two are NOT cacheable yet).
 const destinationCacheTags = buildEntityCacheTags({
 	entity: 'destination',
 	slug,
@@ -133,6 +134,7 @@ applyCacheHeaders({
 	// No usable entity tag means nothing could purge this page, and an
 	// unpurgeable cached page is worse than an uncached one.
 	cacheable: primaryDestinationTag !== undefined,
+	cacheClass: 'detail',
 	tags:
 		primaryDestinationTag !== undefined
 			? [primaryDestinationTag, ...extraDestinationTags]
