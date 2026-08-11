@@ -155,6 +155,38 @@ describe('every usage endpoint is built by an authenticated factory', () => {
     });
 });
 
+/**
+ * The three write budgets (T-062).
+ *
+ * `host-trade-rate-limits.test.ts` proves each limiter REFUSES at its budget,
+ * driving requests through a purpose-built app. What it cannot prove is that
+ * the limiter is attached to anything: it constructs its own. And the route
+ * suites cannot prove it either, because they mount the route handlers on a
+ * bare Hono app without the factory's middleware chain.
+ *
+ * So a `middlewares: [...]` line deleted from a route would leave both suites
+ * green and the endpoint unlimited — the failure mode of a rate limit is that
+ * nothing happens, which is also what success looks like from inside a test
+ * that never exhausts it.
+ */
+describe('every write path declares its rate limit', () => {
+    const BUDGETED_ROUTES = [
+        ['usages.ts', 'protectedDeclareUsageRoute', 'hostDeclarationRateLimit'],
+        ['mine-usages.ts', 'protectedDeclareUsageAsProviderRoute', 'providerDeclarationRateLimit'],
+        ['reviews.ts', 'protectedCreateReviewRoute', 'hostTradeReviewRateLimit']
+    ] as const;
+
+    it.each(BUDGETED_ROUTES)('%s: %s wires %s', (file, name, limiter) => {
+        const route = loadRoutes(file).find((r) => r.name === name);
+
+        // Named explicitly rather than skipped: a renamed export must fail
+        // here, not quietly stop being checked.
+        expect(route, `${name} not found in ${file}`).toBeDefined();
+        expect(declaresKey(route?.config ?? '', 'middlewares')).toBe(true);
+        expect(route?.config).toContain(limiter);
+    });
+});
+
 describe('the shared transitions declare no permission', () => {
     const transitions = ALL_USAGE_ROUTES.filter((r) =>
         (TRANSITION_ROUTES as readonly string[]).includes(r.name)
