@@ -278,6 +278,44 @@
     outline-offset: 2px;
 }
 
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+    align-items: center;
+}
+
+.secondaryAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.5rem 1.125rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    background-color: transparent;
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-pill, 9999px);
+    cursor: pointer;
+    transition: background-color var(--duration-normal, 0.4s) ease-out;
+}
+
+.secondaryAction:hover:not(:disabled) {
+    background-color: var(--core-foreground-a08);
+}
+
+.secondaryAction:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.secondaryAction:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
 .notice {
     display: flex;
     flex-direction: column;
