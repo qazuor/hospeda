@@ -51,7 +51,24 @@ test.describe('E2E-02: favorite toggle on detail page + public counter @p0 @favo
         userId = null;
     });
 
-    async function getFirstAccommodation(): Promise<{
+    /**
+     * The accommodation this spec bookmarks and counts.
+     *
+     * Deliberately the SECOND seeded accommodation, not the first (HOS-431).
+     * Fourteen @p0 specs resolve "the first ACTIVE/PUBLIC accommodation ordered
+     * by created_at" and several of them bookmark it — `e2e-01-favorite-toggle-card`,
+     * `spec-096/e2e-03-favorite-toggle`, `guest-03-register-favorites`,
+     * `e2e-03-collections-crud`. Toggling is harmless for them because they only
+     * assert their own bookmark's presence. This spec is the one that asserts the
+     * PUBLIC COUNT, so any concurrent bookmark on the same row moves the number
+     * between its two reads — that is what produced `Expected: 4 Received: 3` on
+     * one attempt and `Expected: 3 Received: 4` on the retry.
+     *
+     * `OFFSET 1` rather than `ORDER BY created_at DESC`: `acc-01-publish-discover`
+     * CREATES accommodations during the run, so "the newest" is not a stable
+     * target, while "the second oldest" is.
+     */
+    async function getDedicatedAccommodation(): Promise<{
         readonly id: string;
         readonly slug: string;
     } | null> {
@@ -61,6 +78,7 @@ test.describe('E2E-02: favorite toggle on detail page + public counter @p0 @favo
                AND visibility = 'PUBLIC'
                AND deleted_at IS NULL
              ORDER BY created_at ASC
+             OFFSET 1
              LIMIT 1`
         );
         return rows[0] ?? null;
@@ -68,9 +86,12 @@ test.describe('E2E-02: favorite toggle on detail page + public counter @p0 @favo
 
     test('AC-09.3 — public count endpoint works without auth', async ({ page }) => {
         // Arrange
-        const acc = await getFirstAccommodation();
+        const acc = await getDedicatedAccommodation();
         if (!acc) {
-            test.fixme(true, 'No active public accommodation in seed');
+            test.fixme(
+                true,
+                'Seed has fewer than 2 active public accommodations (HOS-431: this spec uses the second)'
+            );
             return;
         }
 
@@ -89,9 +110,12 @@ test.describe('E2E-02: favorite toggle on detail page + public counter @p0 @favo
 
     test('AC-09.1 — guest can see counter text on detail page', async ({ page }) => {
         // Arrange
-        const acc = await getFirstAccommodation();
+        const acc = await getDedicatedAccommodation();
         if (!acc) {
-            test.fixme(true, 'No active public accommodation in seed');
+            test.fixme(
+                true,
+                'Seed has fewer than 2 active public accommodations (HOS-431: this spec uses the second)'
+            );
             return;
         }
 
@@ -120,9 +144,12 @@ test.describe('E2E-02: favorite toggle on detail page + public counter @p0 @favo
 
     test('AC-01.1 — authenticated toggle on detail page changes heart state', async ({ page }) => {
         // Arrange
-        const acc = await getFirstAccommodation();
+        const acc = await getDedicatedAccommodation();
         if (!acc) {
-            test.fixme(true, 'No active public accommodation in seed');
+            test.fixme(
+                true,
+                'Seed has fewer than 2 active public accommodations (HOS-431: this spec uses the second)'
+            );
             return;
         }
 
@@ -172,9 +199,12 @@ test.describe('E2E-02: favorite toggle on detail page + public counter @p0 @favo
 
     test('AC-09.2 — counter on detail page reflects bookmark after toggle', async ({ page }) => {
         // Arrange
-        const acc = await getFirstAccommodation();
+        const acc = await getDedicatedAccommodation();
         if (!acc) {
-            test.fixme(true, 'No active public accommodation in seed');
+            test.fixme(
+                true,
+                'Seed has fewer than 2 active public accommodations (HOS-431: this spec uses the second)'
+            );
             return;
         }
 
