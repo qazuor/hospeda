@@ -14,7 +14,6 @@ import {
     buildProfileCompletionRedirect,
     buildSetPasswordRedirect,
     extractLocaleFromPath,
-    generateCspNonce,
     IMAGE_ENDPOINT_CACHE_CONTROL,
     isAdminBypassUser,
     isAuthRoute,
@@ -58,6 +57,46 @@ describe('extractLocaleFromPath', () => {
     it('should extract rest of path correctly', () => {
         const result = extractLocaleFromPath({ path: '/en/mi-cuenta/perfil/' });
         expect(result).toEqual({ locale: 'en', restOfPath: '/mi-cuenta/perfil/' });
+    });
+
+    // Regression: the first segment used to be consumed unconditionally when it
+    // was not a supported locale, so a path with NO locale segment at all lost
+    // its first segment. `/destinos/colon/` redirected to `/es/colon/`, a 404.
+    // The two cases are distinguished by SHAPE: a language tag is two letters
+    // (optionally with a region), a route segment is a word.
+    it('should keep the whole path when the first segment is not shaped like a locale', () => {
+        expect(extractLocaleFromPath({ path: '/destinos/colon/' })).toEqual({
+            locale: null,
+            restOfPath: '/destinos/colon/'
+        });
+        expect(extractLocaleFromPath({ path: '/alojamientos/' })).toEqual({
+            locale: null,
+            restOfPath: '/alojamientos/'
+        });
+    });
+
+    it('should still strip a segment that IS shaped like a locale but is unsupported', () => {
+        // `/fr/...` is a genuine unsupported locale: the visitor asked for
+        // French, so the segment is replaced rather than kept.
+        expect(extractLocaleFromPath({ path: '/fr/alojamientos/' })).toEqual({
+            locale: null,
+            restOfPath: '/alojamientos/'
+        });
+        expect(extractLocaleFromPath({ path: '/it/' })).toEqual({
+            locale: null,
+            restOfPath: '/'
+        });
+    });
+
+    it('should treat a regional language tag as a locale segment', () => {
+        expect(extractLocaleFromPath({ path: '/en-US/alojamientos/' })).toEqual({
+            locale: null,
+            restOfPath: '/alojamientos/'
+        });
+        expect(extractLocaleFromPath({ path: '/pt-BR/eventos/' })).toEqual({
+            locale: null,
+            restOfPath: '/eventos/'
+        });
     });
 });
 
@@ -260,6 +299,31 @@ describe('buildLocaleRedirect', () => {
         const result = buildLocaleRedirect({ restOfPath: 'alojamientos/' });
         expect(result).toBe('/es/alojamientos/');
     });
+
+    // Regression: this helper was the only redirect builder in the middleware
+    // that dropped the query string. Steps 3, 3.1 and 3.2 all append
+    // `context.url.search`; Step 4 did not, so every locale-less URL lost its
+    // parameters in the 301 — `/?utm_source=newsletter` arrived at a bare
+    // `/es/` and the campaign attribution was gone before analytics saw it.
+    it('should preserve the query string when one is supplied', () => {
+        const result = buildLocaleRedirect({
+            restOfPath: '/',
+            search: '?utm_source=newsletter&utm_campaign=verano'
+        });
+        expect(result).toBe('/es/?utm_source=newsletter&utm_campaign=verano');
+    });
+
+    it('should preserve the query string on a nested path', () => {
+        const result = buildLocaleRedirect({ restOfPath: '/alojamientos/', search: '?page=2' });
+        expect(result).toBe('/es/alojamientos/?page=2');
+    });
+
+    it('should emit no stray separator when there is no query string', () => {
+        // `URL.search` is '' (not undefined) for a query-less URL, so the empty
+        // case is the common one and must not produce a trailing '?'.
+        expect(buildLocaleRedirect({ restOfPath: '/', search: '' })).toBe('/es/');
+        expect(buildLocaleRedirect({ restOfPath: '/' })).toBe('/es/');
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -317,57 +381,74 @@ describe('REQ-19 regression guard: buildLoginRedirect (auth redirect) must remai
     });
 });
 
-describe('generateCspNonce', () => {
-    it('should generate a non-empty string', () => {
-        const nonce = generateCspNonce();
-        expect(nonce).toBeTruthy();
-        expect(nonce.length).toBeGreaterThan(0);
-    });
-
-    it('should generate unique nonces', () => {
-        const a = generateCspNonce();
-        const b = generateCspNonce();
-        expect(a).not.toBe(b);
-    });
-
-    it('should be valid base64', () => {
-        const nonce = generateCspNonce();
-        expect(() => atob(nonce)).not.toThrow();
-    });
-});
+/**
+ * A response with no inline blocks. Most `buildCspHeader` assertions below are
+ * about host allowlists and static directives, which are independent of the
+ * per-response hashes — spelling out empty lists at every call site would bury
+ * what each test is actually checking.
+ */
+const NO_HASHES = { scriptHashes: [] as readonly string[], styleHashes: [] as readonly string[] };
 
 describe('buildCspHeader', () => {
-    it('should include nonce in script-src and style-src', () => {
-        const header = buildCspHeader({ nonce: 'test123' });
-        expect(header).toContain("'nonce-test123'");
-        expect(header).toContain('script-src');
-        expect(header).toContain('style-src');
+    it('should emit the supplied inline-script hashes as script-src sources', () => {
+        const header = buildCspHeader({
+            scriptHashes: ['sha256-SCRIPTHASH'],
+            styleHashes: []
+        });
+        const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
+        expect(scriptSrc).toContain("'sha256-SCRIPTHASH'");
+    });
+
+    it('should emit the supplied inline-style hashes as style-src sources', () => {
+        const header = buildCspHeader({ scriptHashes: [], styleHashes: ['sha256-STYLEHASH'] });
+        const styleSrc = header.split('; ').find((d) => d.startsWith('style-src ')) ?? '';
+        expect(styleSrc).toContain("'sha256-STYLEHASH'");
+    });
+
+    it('should not put script hashes in style-src, nor style hashes in script-src', () => {
+        const header = buildCspHeader({
+            scriptHashes: ['sha256-SCRIPTHASH'],
+            styleHashes: ['sha256-STYLEHASH']
+        });
+        const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
+        const styleSrc = header.split('; ').find((d) => d.startsWith('style-src ')) ?? '';
+        expect(scriptSrc).not.toContain('STYLEHASH');
+        expect(styleSrc).not.toContain('SCRIPTHASH');
+    });
+
+    it('should leave no dangling separator when a hash list is empty', () => {
+        const header = buildCspHeader({ scriptHashes: [], styleHashes: [] });
+        expect(header).not.toContain('  ');
+        expect(header).not.toContain(' ;');
     });
 
     it('should include API URL in connect-src when provided', () => {
-        const header = buildCspHeader({ nonce: 'x', apiUrl: 'https://api.example.com' });
+        const header = buildCspHeader({ ...NO_HASHES, apiUrl: 'https://api.example.com' });
         expect(header).toContain('https://api.example.com');
     });
 
     it('should omit API URL from connect-src when empty', () => {
-        const header = buildCspHeader({ nonce: 'x', apiUrl: '' });
+        const header = buildCspHeader({ ...NO_HASHES, apiUrl: '' });
         expect(header).not.toContain("connect-src 'self'  ");
     });
 
     it('should omit API URL from connect-src when undefined', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         expect(header).toContain("connect-src 'self'");
     });
 
     it('should include sentry report-uri when provided', () => {
-        const header = buildCspHeader({ nonce: 'x', sentryReportUri: 'https://sentry.io/report' });
+        const header = buildCspHeader({
+            ...NO_HASHES,
+            sentryReportUri: 'https://sentry.io/report'
+        });
         expect(header).toContain('report-uri https://sentry.io/report');
     });
 
     it('keeps https://*.sentry.io in connect-src when the tunnel is OFF (default)', () => {
         // SPEC-181 follow-up: with no first-party Sentry tunnel, the browser SDK
         // reports directly to *.sentry.io, so the CSP must still allow it.
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
         expect(connectSrc).toContain('https://*.sentry.io');
     });
@@ -376,7 +457,7 @@ describe('buildCspHeader', () => {
         // SPEC-181 follow-up: when PUBLIC_SENTRY_TUNNEL is set, envelopes go
         // through the same-origin /api/event path (covered by 'self'); the
         // external host must NOT appear or ad-blockers regain a host to block.
-        const header = buildCspHeader({ nonce: 'x', sentryTunnelEnabled: true });
+        const header = buildCspHeader({ ...NO_HASHES, sentryTunnelEnabled: true });
         const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src ')) ?? '';
         expect(connectSrc).not.toContain('sentry.io');
         // 'self' still covers the same-origin tunnel path.
@@ -384,14 +465,14 @@ describe('buildCspHeader', () => {
     });
 
     it('should allow OpenStreetMap tile hosts in img-src and connect-src (SPEC-097)', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         expect(header).toContain('https://*.tile.openstreetmap.org');
         expect(header).toContain('https://*.openstreetmap.org');
     });
 
     it('should NOT include external PostHog hosts — analytics is proxied first-party via /api/relay (SPEC-181)', () => {
         // Arrange
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
 
         // Act / Assert — directive-scoped checks (not just substring presence
         // anywhere in the header) so accidental cross-directive leaks fail.
@@ -409,17 +490,18 @@ describe('buildCspHeader', () => {
         expect(connectSrc).not.toContain('us-assets.i.posthog.com');
         expect(imgSrc).not.toContain('us.i.posthog.com');
 
-        // script-src stays on strict-dynamic with the request nonce.
-        expect(scriptSrc).toContain("'nonce-x' 'strict-dynamic'");
+        // script-src carries 'self' (which covers the same-origin /api/relay
+        // path the PostHog bootstrapper injects its SDK from).
+        expect(scriptSrc).toContain("'self'");
     });
 
     it('should not include report-uri when not provided', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         expect(header).not.toContain('report-uri');
     });
 
     it('should restrict img-src to specific domains', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         expect(header).toContain('img-src');
         // The CSP only allowlists the origins we actually fetch from (Cloudinary,
         // simpleicons, OpenStreetMap tiles, plus any apiUrl). It does NOT fall
@@ -428,7 +510,7 @@ describe('buildCspHeader', () => {
     });
 
     it('should allowlist res.cloudinary.com in img-src', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         const imgSrc = header.split('; ').find((d) => d.startsWith('img-src'));
         expect(imgSrc).toBeDefined();
         expect(imgSrc).toContain('https://res.cloudinary.com');
@@ -439,7 +521,7 @@ describe('buildCspHeader', () => {
         // shared with astro.config.mjs image.remotePatterns and the SSRF guard.
         // Any host added there must also be reachable from CSP img-src,
         // otherwise the browser blocks the image and Sentry receives a report.
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
         for (const host of ALLOWED_REMOTE_HOSTS) {
             if (host === 'localhost') continue;
@@ -452,19 +534,19 @@ describe('buildCspHeader', () => {
         // @repo/auth-ui renders it via plain <img>. Without these hosts the
         // navbar avatar gets blocked for signed-in users (or generates CSP
         // reports while the policy is Report-Only).
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         const imgSrc = header.split('; ').find((d) => d.startsWith('img-src ')) ?? '';
         expect(imgSrc).toContain('https://lh3.googleusercontent.com');
         expect(imgSrc).toContain('https://platform-lookaside.fbsbx.com');
     });
 
     it('should use exact cloudinary hostname, not a wildcard', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         expect(header).not.toContain('https://*.cloudinary.com');
     });
 
     it('should allow blob: in img-src for AvatarUpload previews', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         const imgSrc = header.split('; ').find((d) => d.startsWith('img-src'));
         expect(imgSrc).toBeDefined();
         expect(imgSrc).toContain('blob:');
@@ -474,11 +556,12 @@ describe('buildCspHeader', () => {
         // The Astro client runtime injects an inline <style> at hydration with
         // the fixed content `astro-island,astro-slot,astro-static-slot{display:contents}`.
         // Hash-allowed in style-src because the injection happens via JS after
-        // the middleware nonce rewrite. The hash is stable (CSS is hardcoded
+        // the response was sent, so the walker never sees it. The hash is
+        // stable (CSS is hardcoded
         // in Astro's runtime), so a regression here would indicate Astro
         // upstream changed the inlined CSS — bump the hash and update the
         // comment in buildCspHeader.
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         const styleSrc = header.split('; ').find((d) => d.startsWith('style-src ')) ?? '';
         expect(styleSrc).toContain("'sha256-vv9IoKo7BSLbWcUHr3tNmfNVmm5L/9Cfn2H6LMk7/ow='");
     });
@@ -486,9 +569,9 @@ describe('buildCspHeader', () => {
     it('should allow inline style attributes via style-src-attr', () => {
         // Inline style="..." attributes (used for tokenized colors on cards
         // and per-card transition-delay in the stagger pattern) cannot use a
-        // nonce by CSP spec. We override only -attr with 'unsafe-inline' so
-        // <style> blocks remain nonce-gated.
-        const header = buildCspHeader({ nonce: 'x' });
+        // hash by CSP spec. We override only -attr with 'unsafe-inline' so
+        // <style> blocks remain hash-gated.
+        const header = buildCspHeader({ ...NO_HASHES });
         const attrDirective = header.split('; ').find((d) => d.startsWith('style-src-attr ')) ?? '';
         expect(attrDirective).toContain("'unsafe-inline'");
     });
@@ -496,36 +579,53 @@ describe('buildCspHeader', () => {
     it('should not leak unsafe-inline into directives other than style-src-attr', () => {
         // The lax override on -attr must NOT bleed into script-src, the main
         // style-src (which gates <style> blocks), or any other directive.
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         const directives = header.split('; ').filter((d) => !d.startsWith('style-src-attr '));
         for (const d of directives) {
             expect(d).not.toContain("'unsafe-inline'");
         }
     });
 
-    // SPEC-047 (rewritten in SPEC-140): lock the script-src security
-    // posture — self + nonce + strict-dynamic + NO 'unsafe-inline'. The
-    // SPEC-047 original asserted exact-string equality which made any new
-    // https: host (e.g. PostHog ingestion hosts in SPEC-140) regress the
-    // test. With 'strict-dynamic' present, host allowlists in script-src
-    // are IGNORED by browsers per CSP3, so additional https: tokens are
-    // decoration / documentation — the security claim still holds.
-    it('script-src must have self + nonce + strict-dynamic and no unsafe-inline', () => {
-        const header = buildCspHeader({ nonce: 'abc123' });
+    // SPEC-047 (rewritten in SPEC-140, again in HOS-369 WB0-1): lock the
+    // script-src security posture — self + per-response content hashes + NO
+    // 'unsafe-inline' and NO 'strict-dynamic'. The SPEC-047 original asserted
+    // exact-string equality which made any new https: host (e.g. PostHog
+    // ingestion hosts in SPEC-140) regress the test.
+    it('script-src must have self + the response hashes and no unsafe-inline', () => {
+        const header = buildCspHeader({ scriptHashes: ['sha256-abc123'], styleHashes: [] });
         const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src '));
         expect(scriptSrc).toBeDefined();
         expect(scriptSrc).toContain("'self'");
-        expect(scriptSrc).toContain("'nonce-abc123'");
-        expect(scriptSrc).toContain("'strict-dynamic'");
+        expect(scriptSrc).toContain("'sha256-abc123'");
         expect(scriptSrc).not.toContain('unsafe-inline');
     });
 
-    it('style-src must use nonce-based policy without unsafe-inline', () => {
-        const header = buildCspHeader({ nonce: 'abc123' });
+    it("script-src must NOT carry 'strict-dynamic' — it would make 'self' inert (HOS-369 D-9)", () => {
+        // With 'strict-dynamic', browsers ignore 'self' and every host source,
+        // allowing only nonce/hash-tagged scripts. A hash cannot vouch for an
+        // external <script src> (that needs `integrity`, which Astro does not
+        // emit), so every /_astro/*.js island bundle would be blocked.
+        const header = buildCspHeader({ scriptHashes: ['sha256-abc123'], styleHashes: [] });
+        const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
+        expect(scriptSrc).not.toContain("'strict-dynamic'");
+    });
+
+    it('style-src must use hash-based policy without unsafe-inline', () => {
+        const header = buildCspHeader({ scriptHashes: [], styleHashes: ['sha256-abc123'] });
         const styleSrc = header.split('; ').find((d) => d.startsWith('style-src '));
         expect(styleSrc).toBeDefined();
-        expect(styleSrc).toContain("'nonce-abc123'");
+        expect(styleSrc).toContain("'sha256-abc123'");
         expect(styleSrc).not.toContain('unsafe-inline');
+    });
+
+    it('no directive may carry a nonce source — the migration removed them (HOS-369 D-9)', () => {
+        // A nonce cached at the edge is a static, publicly readable token for
+        // the whole TTL. See spec §5.13.
+        const header = buildCspHeader({
+            scriptHashes: ['sha256-abc123'],
+            styleHashes: ['sha256-def456']
+        });
+        expect(header).not.toContain("'nonce-");
     });
 
     // SPEC-046 GAP-046-12 + SPEC-301: lock the embed surface. The ONLY origin we
@@ -534,27 +634,34 @@ describe('buildCspHeader', () => {
     // other embed origin stays blocked, and frame-ancestors 'none' still stops
     // others from embedding us — the frame story stays explicit in both directions.
     it('must restrict frame-src to the Cloudflare Turnstile host only (GAP-046-12, SPEC-301)', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         const frameSrc = header.split('; ').find((d) => d.startsWith('frame-src '));
         expect(frameSrc).toBe('frame-src https://challenges.cloudflare.com');
     });
 
     // SPEC-301 regression: the feedback form's Turnstile widget injects its
-    // script from https://challenges.cloudflare.com. It must appear in script-src
-    // as the fallback for browsers that do not honor 'strict-dynamic'.
+    // script from https://challenges.cloudflare.com — a cross-origin host that
+    // 'self' does not cover, so it must appear in script-src explicitly.
     it('must allowlist the Cloudflare Turnstile host in script-src (SPEC-301)', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
         expect(scriptSrc).toContain('https://challenges.cloudflare.com');
     });
 
     // SPEC-046 GAP-046-11 follow-up: the manual Cloudflare Web Analytics
     // snippet (BaseLayout.astro) loads beacon.min.js from
-    // static.cloudflareinsights.com (handled by script-src strict-dynamic
-    // + nonce), then POSTs Core Web Vitals telemetry to
-    // cloudflareinsights.com — that endpoint must be reachable.
+    // static.cloudflareinsights.com, then POSTs Core Web Vitals telemetry to
+    // cloudflareinsights.com. TWO different hosts in TWO different directives;
+    // both are required or the beacon dies silently (HOS-369 WB0-1 — it used to
+    // ride on 'strict-dynamic' via the nonce stamped on external tags).
+    it('must allowlist static.cloudflareinsights.com in script-src for the CF Web Analytics beacon', () => {
+        const header = buildCspHeader({ ...NO_HASHES });
+        const scriptSrc = header.split('; ').find((d) => d.startsWith('script-src ')) ?? '';
+        expect(scriptSrc).toContain('https://static.cloudflareinsights.com');
+    });
+
     it('must allowlist cloudflareinsights.com in connect-src for CF Web Analytics RUM beacon', () => {
-        const header = buildCspHeader({ nonce: 'x' });
+        const header = buildCspHeader({ ...NO_HASHES });
         const connectSrc = header.split('; ').find((d) => d.startsWith('connect-src '));
         expect(connectSrc).toBeDefined();
         expect(connectSrc).toContain('https://cloudflareinsights.com');
@@ -679,10 +786,32 @@ describe('isSessionOptionalRoute', () => {
         expect(isSessionOptionalRoute({ path: '/es/publicar-otra-cosa/' })).toBe(false);
     });
 
-    it('returns true for the pre-existing session-optional segments', () => {
-        expect(isSessionOptionalRoute({ path: '/es/alojamientos/' })).toBe(true);
-        expect(isSessionOptionalRoute({ path: '/es/gastronomia/' })).toBe(true);
+    it('returns true for the segments that still need the session', () => {
         expect(isSessionOptionalRoute({ path: '/es/feedback/' })).toBe(true);
+        expect(isSessionOptionalRoute({ path: '/es/guest/' })).toBe(true);
+    });
+
+    it('returns FALSE for the cacheable catalog families (HOS-369 W1-2a)', () => {
+        // Inverted: these six used to be session-optional because their pages
+        // needed the visitor. Wave B0 moved all of that into the browser, and
+        // they were removed — because parsing the session here is what lets the
+        // SHELL (Header/Footer/BaseLayout) bake the visitor's name and e-mail
+        // into island props, i.e. into the HTML an edge cache would then hand
+        // to the next visitor. See
+        // test/lib/cacheable-routes-parse-no-session.guard.test.ts.
+        for (const family of [
+            'alojamientos',
+            'destinos',
+            'eventos',
+            'publicaciones',
+            'gastronomia',
+            'experiencias'
+        ]) {
+            expect(
+                isSessionOptionalRoute({ path: `/es/${family}/` }),
+                `${family} must not parse the session — it is edge-cacheable`
+            ).toBe(false);
+        }
     });
 
     it('returns false for fully public routes', () => {
@@ -1066,7 +1195,8 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
                     name: 'Multi Hat',
                     email: 'multi@test',
                     image: 'https://img.test/a.png',
-                    roles: ['USER', 'HOST', 'COMMERCE_OWNER']
+                    roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+                    permissions: ['post.create', 'post.update.own']
                 },
                 isAuthenticated: true
             }
@@ -1077,8 +1207,67 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
             name: 'Multi Hat',
             email: 'multi@test',
             roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
+            permissions: ['post.create', 'post.update.own'],
             image: 'https://img.test/a.png',
             mustChangePassword: false
+        });
+    });
+
+    // HOS-374 OQ-1: the "trusted editor" is two per-user grants in
+    // `user_permission` layered on the plain EDITOR role, never a role of its
+    // own — so a role-only session cannot tell the two apart, and every gate
+    // that must (the publish/delete controls in /mi-cuenta, ABSENT rather than
+    // disabled for a plain editor per OQ-3) reads this set instead.
+    it('carries the granular permission set, which roles cannot stand in for', async () => {
+        mockAuthMe({
+            data: {
+                actor: {
+                    id: 'u1',
+                    email: 'trusted@test',
+                    roles: ['EDITOR'],
+                    permissions: ['post.create', 'post.update.own', 'post.publish.own']
+                },
+                isAuthenticated: true
+            }
+        });
+
+        const user = await parseSessionUser({ cookieHeader: COOKIE });
+
+        // Two actors with the IDENTICAL role set differ only here.
+        expect(user?.roles).toEqual(['EDITOR']);
+        expect(user?.permissions).toContain('post.publish.own');
+    });
+
+    it('falls back to an EMPTY permission set when the payload omits it', async () => {
+        // Fail closed: a gate reading this must deny, never grant, on a
+        // malformed payload. Mirrors the same rule for `roles`.
+        mockAuthMe({
+            data: {
+                actor: { id: 'u1', email: 'u@test', roles: ['EDITOR'] },
+                isAuthenticated: true
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            permissions: []
+        });
+    });
+
+    it('drops non-string entries instead of forwarding a partial set', async () => {
+        mockAuthMe({
+            data: {
+                actor: {
+                    id: 'u1',
+                    email: 'u@test',
+                    roles: ['EDITOR'],
+                    permissions: ['post.create', 42, null, 'post.publish.own']
+                },
+                isAuthenticated: true
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            permissions: ['post.create', 'post.publish.own']
         });
     });
 

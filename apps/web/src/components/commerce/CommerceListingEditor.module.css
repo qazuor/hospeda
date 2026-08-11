@@ -1,128 +1,28 @@
 /**
- * Commerce owner listing editor styles.
+ * Commerce owner listing editor — orchestrator chrome only.
  *
  * Mirrors the visual language of the accommodation host editor
- * (`components/host/editor/*`): a centered reading column, section titles with a
- * bottom divider, card-elevated inputs with a focus ring, amenity chips, a
- * sticky-feeling action bar with a pill primary button, and banner-style
- * success/error feedback. Kept as plain CSS modules per web conventions.
+ * (`components/host/editor/*`): one card per section, a sticky-feeling action
+ * bar with a pill primary button, and banner-style feedback. Kept as plain CSS
+ * modules per web conventions.
+ *
+ * HOS-258: the field primitives moved to `editor/editor-fields.module.css` and
+ * the section-specific rules to the matching `editor/*Section.module.css`. What
+ * remains here is what the orchestrator itself renders — the form shell, the
+ * action bar, and the form-level error banner.
  */
 
+/* The form fills its account-layout column. It used to be a 720px column
+   centered inside a single full-width AccountSectionCard, which read fine
+   while the card was the outer frame. Since HOS-371 made every SECTION a card
+   (see `.section` in `editor/editor-fields.module.css`), keeping that width
+   would have shrunk the cards themselves: they would sit inset from the page
+   header above and from the full-width FAQ card directly below, on the same
+   page, at two visibly different widths. */
 .editor {
     display: flex;
     flex-direction: column;
     gap: var(--space-6);
-    max-width: 720px;
-    margin: 0 auto;
-}
-
-.section {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-    margin: 0;
-    padding: 0;
-    border: none;
-}
-
-/* Section title — heading with a bottom divider, matching the host editor. */
-.label {
-    margin: 0 0 var(--space-1);
-    padding-bottom: var(--space-2);
-    border-bottom: 1px solid var(--border);
-    font-family: var(--font-heading, var(--font-sans));
-    font-size: var(--text-body, 1rem);
-    font-weight: 600;
-    color: var(--core-foreground);
-}
-
-.textarea,
-.input {
-    width: 100%;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 0.625rem);
-    background: var(--core-card, var(--core-background));
-    color: var(--core-foreground);
-    font-family: var(--font-sans);
-    font-size: var(--text-body, 1rem);
-    transition:
-        border-color 150ms ease,
-        box-shadow 150ms ease;
-}
-
-.textarea {
-    padding: var(--space-3);
-    resize: vertical;
-    min-height: 7rem;
-}
-
-.input {
-    padding: var(--space-2) var(--space-3);
-}
-
-.textarea:focus-visible,
-.input:focus-visible {
-    outline: 2px solid var(--brand-primary, var(--core-foreground));
-    outline-offset: 2px;
-    border-color: var(--brand-primary, var(--core-foreground));
-    box-shadow: 0 0 0 3px var(--brand-primary-a15, rgba(99, 102, 241, 0.18));
-}
-
-/* Amenity / feature chips — bordered, card-filled, hover-highlighted. */
-.checkbox {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md, 0.625rem);
-    background: var(--core-card, var(--core-background));
-    font-size: var(--text-body-sm, 0.9375rem);
-    color: var(--core-foreground);
-    cursor: pointer;
-    transition:
-        border-color 150ms ease,
-        background-color 150ms ease;
-}
-
-.checkbox:hover {
-    border-color: var(--brand-primary, var(--core-foreground));
-    background: var(--surface-warm, var(--core-card, var(--core-background)));
-}
-
-.checkbox input {
-    accent-color: var(--brand-primary, var(--core-foreground));
-    width: 1rem;
-    height: 1rem;
-    flex-shrink: 0;
-}
-
-.days {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.day {
-    display: flex;
-    align-items: center;
-    gap: var(--space-3);
-    flex-wrap: wrap;
-    padding: var(--space-2) 0;
-    border-bottom: 1px solid var(--border);
-}
-
-.dayLabel {
-    min-width: 3rem;
-    font-weight: 600;
-    font-size: var(--text-body-sm, 0.9375rem);
-    color: var(--core-foreground);
-}
-
-.shift {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
 }
 
 /* Action bar — top divider, right-aligned, pill buttons. */
@@ -176,139 +76,19 @@
     border-color: var(--brand-primary, var(--core-foreground));
 }
 
-/* Banner-style feedback (full-width, colored background). */
-.success,
+/* Form-level error banner. Duplicated from `editor-fields.module.css` rather
+   than imported: this is the only rule the orchestrator shares with the
+   sections, and importing a second module here for one class would make the
+   form shell depend on the field layer it deliberately does not use. */
 .error {
     margin: 0;
     padding: var(--space-3) var(--space-4);
     border-radius: var(--radius-md, 0.625rem);
     border: 1px solid transparent;
     font-size: var(--text-body-sm, 0.9375rem);
-}
-
-.success {
-    background: var(--success-a15, rgba(21, 128, 61, 0.12));
-    border-color: var(--success-a30, rgba(21, 128, 61, 0.28));
-    color: var(--success, #15803d);
-}
-
-.error {
     background: var(--destructive-a15, rgba(185, 28, 28, 0.12));
     border-color: var(--destructive-a35, rgba(185, 28, 28, 0.28));
     color: var(--destructive, #b91c1c);
-}
-
-.hint {
-    margin: 0;
-    color: var(--core-muted-foreground);
-    font-size: var(--text-body-xs, 0.8125rem);
-}
-
-.media {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-.mediaGroup {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-}
-
-.mediaGallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
-    gap: var(--space-3);
-}
-
-.mediaThumb {
-    position: relative;
-    aspect-ratio: 4 / 3;
-    border-radius: var(--radius-md, 0.625rem);
-    overflow: hidden;
-    border: 1px solid var(--border);
-}
-
-.mediaImage {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display: block;
-}
-
-.mediaRemove {
-    position: absolute;
-    top: var(--space-1);
-    right: var(--space-1);
-    width: 1.5rem;
-    height: 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: none;
-    border-radius: 50%;
-    background: rgba(0, 0, 0, 0.6);
-    color: #fff;
-    font-size: 1rem;
-    line-height: 1;
-    cursor: pointer;
-}
-
-.mediaAdd {
-    aspect-ratio: 4 / 3;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px dashed var(--border);
-    border-radius: var(--radius-md, 0.625rem);
-    background: transparent;
-    color: var(--core-muted-foreground, var(--core-foreground));
-    font-size: var(--text-h3, 1.5rem);
-    cursor: pointer;
-    transition:
-        border-color 150ms ease,
-        color 150ms ease;
-}
-
-.mediaAdd:hover:not(:disabled) {
-    border-color: var(--brand-primary, var(--core-foreground));
-    color: var(--brand-primary, var(--core-foreground));
-}
-
-.mediaAdd:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.mediaHint {
-    color: var(--core-muted-foreground, var(--core-foreground));
-    font-size: var(--text-body-xs, 0.8125rem);
-}
-
-.mediaFileInput {
-    display: none;
-}
-
-.catalog {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-4);
-}
-
-.catalogGroup {
-    border: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-}
-
-.catalogGrid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: var(--space-2);
 }
 
 @media (max-width: 480px) {

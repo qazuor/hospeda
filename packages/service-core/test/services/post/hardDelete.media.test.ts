@@ -21,7 +21,11 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 
 describe('PostService.hardDelete — media cleanup (T-065)', () => {
     let service: PostService;
@@ -39,7 +43,13 @@ describe('PostService.hardDelete — media cleanup (T-065)', () => {
         modelMock = createTypedModelMock(PostModel, ['findById', 'hardDelete']);
         loggerMock = createLoggerMock();
         provider = new InMemoryImageProvider();
-        service = new PostService({ logger: loggerMock }, modelMock, provider);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            provider,
+            undefined,
+            makePostMediaModelStub() as never
+        );
         post = createMockPost();
         postId = post.id;
         actor = createActor({ permissions: [PermissionEnum.POST_HARD_DELETE] });
@@ -79,7 +89,13 @@ describe('PostService.hardDelete — media cleanup (T-065)', () => {
     });
 
     it('does NOT call the provider when no mediaProvider is injected', async () => {
-        const serviceNoProvider = new PostService({ logger: loggerMock }, modelMock);
+        const serviceNoProvider = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
         const deleteSpy = vi.spyOn(provider, 'deleteByPrefix');
 
         const result = await serviceNoProvider.hardDelete(actor, postId);

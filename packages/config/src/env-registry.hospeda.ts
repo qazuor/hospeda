@@ -1522,6 +1522,25 @@ export const HOSPEDA_ENV_VARS = [
             'Sentry → Settings → Account → User Auth Tokens → Create New Token. Scopes mínimos: `project:releases`, `org:read`, `project:read`. Lo usan @sentry/astro (web), @sentry/vite-plugin (admin) y @sentry/esbuild-plugin (api) en build-time para subir los source maps y así los stack traces en producción salgan simbolicados. Si falta, el upload se saltea en silencio. El org slug `qazuor` y los project slugs por app (`hospeda-web`, `hospeda-admin`, `hospeda-api`) están hardcoded en cada config de build — el mismo token (org-scoped) sirve para los tres.'
     },
     {
+        name: 'ASTRO_KEY',
+        description:
+            'Stable encryption key for the props Astro passes to server islands (web, build time)',
+        descriptionEs:
+            'Clave de cifrado estable para las props que Astro pasa a los server islands (web, build time)',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx=',
+        apps: ['web'],
+        category: 'system',
+        stage: 'build',
+        helpUrl: 'https://docs.astro.build/en/guides/server-islands/#reusing-the-encryption-key',
+        howToObtain:
+            'Run `pnpm astro create-key` inside apps/web and copy the printed value. Use a DIFFERENT key per environment (staging vs production) — it is cryptographic material. Without it Astro generates a fresh key on every build; because the HTML is edge-cached (s-maxage=300, stale-while-revalidate=600) and nothing purges the cache on deploy, for up to ~15 minutes after a release a visitor can receive cached HTML whose `/_server-islands/...?e=` payload was encrypted with the key of the previous build, which the new origin cannot decrypt. Symptom: the "próximos eventos" section on the home fails or hangs on its skeleton. Build-time only — it is baked into the server bundle and never read at runtime, so it must be set as a BUILD variable in Coolify, and `apps/web/Dockerfile` must keep declaring `ARG ASTRO_KEY` or Coolify drops it silently.',
+        howToObtainEs:
+            'Corré `pnpm astro create-key` dentro de apps/web y copiá el valor que imprime. Usá una clave DISTINTA por entorno (staging y producción) — es material criptográfico. Sin ella Astro genera una clave nueva en cada build; como el HTML se cachea en el edge (s-maxage=300, stale-while-revalidate=600) y nada purga el caché en el deploy, hasta ~15 minutos después de una release un visitante puede recibir HTML cacheado cuyo payload `/_server-islands/...?e=` fue cifrado con la clave del build anterior, que el origen nuevo no puede descifrar. Síntoma: la sección "próximos eventos" de la home falla o se queda colgada en su skeleton. Es build-time únicamente — se hornea en el server bundle y nunca se lee en runtime, así que hay que setearla como variable de BUILD en Coolify, y `apps/web/Dockerfile` tiene que seguir declarando `ARG ASTRO_KEY` o Coolify la descarta en silencio.'
+    },
+    {
         name: 'WEEKLY_RESTART_HEARTBEAT_URL',
         description:
             "Optional heartbeat-ping URL (e.g. healthchecks.io / Cronitor) hit by scripts/server-tools/weekly-restart.sh after a successful weekly app-restart + Docker prune cycle, so an external monitor can alert if the cron stops firing. NOT read by any Node app process — read directly by the bash script from the crontab environment on the VPS host. Setting it in a Coolify app's env vars panel has no effect for this purpose; it must be exported in the operator's crontab (or a sourced env file the cron job loads) on the host.",
@@ -2264,20 +2283,20 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_DEPLOY_ENV',
         description:
-            'Explicit deploy-environment identifier consumed by @repo/media server-side environment resolution to pick the media provider config. Optional — when unset, the environment is inferred from NODE_ENV (production→prod, test→test, otherwise dev).',
+            'Explicit deploy-environment identifier with TWO consumers: @repo/media server-side environment resolution (Cloudinary folder isolation), and the Cloudflare cache-tag namespace (HOS-369) prefixed to every tag the web app emits and the API purges (prod:list-accom, preview:home). Staging and production share ONE Cloudflare zone, so the API and the web app of the same deployment MUST carry the identical value — a mismatch makes every purge match nothing while reporting success. Only inferable for local runs (NODE_ENV=test→test, development/unset→dev); on any deployment running NODE_ENV=production (staging AND production both do) it is required, because guessing prod would make staging evict production.',
         descriptionEs:
-            'Identificador explícito del entorno de deploy que usa la resolución de entorno server-side de @repo/media para elegir la config del proveedor de medios. Opcional — si no se setea, el entorno se infiere de NODE_ENV (production→prod, test→test, si no dev).',
+            'Identificador explícito del entorno de deploy con DOS consumidores: la resolución de entorno server-side de @repo/media (aislamiento de carpetas en Cloudinary) y el namespace de cache-tags de Cloudflare (HOS-369) que prefija cada tag que emite la web y que purga la API (prod:list-accom, preview:home). Staging y producción comparten UNA zona de Cloudflare, así que la API y la web del mismo deploy DEBEN tener el mismo valor — si no coinciden, cada purga no matchea nada pero reporta éxito. Solo se infiere en local (NODE_ENV=test→test, development/sin setear→dev); en cualquier deploy con NODE_ENV=production (staging Y producción lo usan) es obligatoria, porque adivinar prod haría que staging borre el cache de producción.',
         type: 'enum',
         required: false,
         secret: false,
         enumValues: ['dev', 'test', 'preview', 'prod'],
         exampleValue: 'dev',
-        apps: ['api'],
+        apps: ['api', 'web'],
         category: 'core',
         howToObtain:
-            'Set per deployment target when NODE_ENV alone cannot distinguish the media environment (e.g. a preview build). Valid values: dev, test, preview, prod.',
+            'Set on EVERY deployment, and set the SAME value on that deployment\'s API and web resources: "prod" on hospeda-api-prod + hospeda-web-prod, "preview" on hospeda-api-staging + hospeda-web-staging. Valid values: dev, test, preview, prod.',
         howToObtainEs:
-            'Setear por target de deploy cuando NODE_ENV por sí solo no alcanza para distinguir el entorno de medios (ej. un build de preview). Valores válidos: dev, test, preview, prod.'
+            'Setear en TODOS los deploys, y con el MISMO valor en los recursos API y web de ese deploy: "prod" en hospeda-api-prod + hospeda-web-prod, "preview" en hospeda-api-staging + hospeda-web-staging. Valores válidos: dev, test, preview, prod.'
     },
     {
         name: 'HOSPEDA_QZPAY_TEST_CONTROL_ENABLED',

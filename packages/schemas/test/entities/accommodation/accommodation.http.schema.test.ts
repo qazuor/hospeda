@@ -546,27 +546,78 @@ describe('AccommodationUpdateHttpSchema — summary, amenityIds, featureIds, med
         expect(result.success).toBe(true);
     });
 
-    it('should accept media with featuredImage and gallery in update schema', () => {
+    // ── HOS-372: photos are rejected on update, not silently discarded ──
+    //
+    // These previously asserted `success: true`. The payload parsed, the route
+    // answered 200, and `AccommodationService.update` stripped every photo
+    // field before writing — so the API reported success for work it never did.
+    // Photos belong to `accommodation_media` and are managed through the
+    // granular media endpoints.
+
+    it('should reject media.featuredImage in update schema', () => {
         const result = AccommodationUpdateHttpSchema.safeParse({
             media: {
-                featuredImage: { url: 'https://example.com/img.jpg' },
+                featuredImage: { url: 'https://example.com/img.jpg' }
+            }
+        });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]?.message).toBe(
+            'zodError.accommodation.media.photosNotUpdatable'
+        );
+    });
+
+    it('should reject media.gallery in update schema', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({
+            media: {
                 gallery: [
                     { url: 'https://example.com/g1.jpg' },
                     { url: 'https://example.com/g2.jpg', moderationState: 'APPROVED' }
                 ]
             }
         });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]?.message).toBe(
+            'zodError.accommodation.media.photosNotUpdatable'
+        );
+    });
+
+    it('should reject media.archivedGallery in update schema', () => {
+        // Never declared on the HTTP schema, but the service strips it too —
+        // `.strict()` is what stops it from arriving unnoticed.
+        const result = AccommodationUpdateHttpSchema.safeParse({
+            media: { archivedGallery: [{ url: 'https://example.com/a1.jpg' }] }
+        });
+        expect(result.success).toBe(false);
+    });
+
+    it('should still accept media.videos in update schema', () => {
+        // Videos are NOT relational (HOS-372 decision): they are external
+        // YouTube/Vimeo URLs, so the bulk update path remains their write path.
+        const result = AccommodationUpdateHttpSchema.safeParse({
+            media: { videos: [{ url: 'https://youtube.com/watch?v=abc' }] }
+        });
         expect(result.success).toBe(true);
     });
 
-    it('should accept media without moderationState on images', () => {
-        // Client sends images without moderationState — converter supplies APPROVED default
+    it('should accept an update payload with no media key at all', () => {
         const result = AccommodationUpdateHttpSchema.safeParse({
-            media: {
-                featuredImage: { url: 'https://example.com/img.jpg' }
-            }
+            summary: 'A short but valid summary here'
         });
         expect(result.success).toBe(true);
+    });
+
+    it('should still reject photos after .partial(), as the PATCH route applies it', () => {
+        // `protected/patch.ts` registers `AccommodationUpdateHttpSchema.partial()`.
+        // `.partial()` only wraps the OUTER object's members in optional, so the
+        // inner refinement must survive — if it did not, PATCH would keep the
+        // silent-discard behavior PUT just lost.
+        const result = AccommodationUpdateHttpSchema.partial().safeParse({
+            media: { gallery: [{ url: 'https://example.com/g1.jpg' }] }
+        });
+        expect(result.success).toBe(false);
+        expect(result.error?.issues[0]?.message).toBe(
+            'zodError.accommodation.media.photosNotUpdatable'
+        );
     });
 });
 
@@ -634,114 +685,103 @@ describe('httpToDomainAccommodationUpdate — amenityIds, featureIds (SPEC-208)'
     });
 });
 
-describe('httpToDomainAccommodationUpdate — media conversion with APPROVED default (SPEC-208)', () => {
-    it('should apply moderationState APPROVED when image has no moderationState', () => {
+// ---------------------------------------------------------------------------
+// HOS-372: the UPDATE converter maps the HTTP `media` object onto the domain's
+// top-level `videos` field. The domain update surface has no `media` field at
+// all — the JSONB column is gone, photos live in `accommodation_media`, and the
+// photo keys are already rejected at the edge by `HttpMediaUpdateSchema`.
+//
+// CREATE is unaffected and still converts a full media object: `_afterCreate`
+// shadow-writes it into the relational rows. Its coverage lives above.
+// ---------------------------------------------------------------------------
+
+describe('httpToDomainAccommodationUpdate — media maps to top-level videos (HOS-372)', () => {
+    it('maps media.videos onto the videos field with APPROVED defaulted', () => {
         const result = httpToDomainAccommodationUpdate({
-            media: {
-                featuredImage: { url: 'https://example.com/hero.jpg' }
-            }
+            media: { videos: [{ url: 'https://youtu.be/abc' }] }
         });
 
-        const media = result.media as
-            | { featuredImage?: { url: string; moderationState: string } }
-            | undefined;
-        expect(media?.featuredImage?.url).toBe('https://example.com/hero.jpg');
-        expect(media?.featuredImage?.moderationState).toBe('APPROVED');
+        expect(result.videos).toHaveLength(1);
+        expect(result.videos?.[0]?.url).toBe('https://youtu.be/abc');
+        expect(result.videos?.[0]?.moderationState).toBe('APPROVED');
     });
 
-    it('should preserve client-supplied moderationState when present', () => {
+    it('preserves a client-supplied moderationState on a video', () => {
         const result = httpToDomainAccommodationUpdate({
-            media: {
-                featuredImage: { url: 'https://example.com/hero.jpg', moderationState: 'PENDING' }
-            }
+            media: { videos: [{ url: 'https://youtu.be/abc', moderationState: 'PENDING' }] }
         });
 
-        const media = result.media as
-            | { featuredImage?: { url: string; moderationState: string } }
-            | undefined;
-        expect(media?.featuredImage?.moderationState).toBe('PENDING');
+        expect(result.videos?.[0]?.moderationState).toBe('PENDING');
     });
 
-    it('should apply APPROVED default to gallery items without moderationState', () => {
+    it('never emits a media field', () => {
         const result = httpToDomainAccommodationUpdate({
-            media: {
-                gallery: [
-                    { url: 'https://example.com/g1.jpg' },
-                    { url: 'https://example.com/g2.jpg', moderationState: 'APPROVED' }
-                ]
-            }
+            media: { videos: [{ url: 'https://youtu.be/abc' }] }
         });
 
-        const media = result.media as
-            | {
-                  gallery?: Array<{ url: string; moderationState: string }>;
-              }
-            | undefined;
-        const gallery = media?.gallery ?? [];
-        expect(gallery[0]?.moderationState).toBe('APPROVED');
-        expect(gallery[1]?.moderationState).toBe('APPROVED');
+        expect(result).not.toHaveProperty('media');
     });
 
-    it('should leave media undefined when not provided', () => {
+    it('leaves videos undefined when media is not provided', () => {
         const result = httpToDomainAccommodationUpdate({ name: 'Hotel' });
-        expect(result.media).toBeUndefined();
+        expect(result.videos).toBeUndefined();
+        expect(result).not.toHaveProperty('media');
     });
 
-    it('should handle null media', () => {
+    it('clears videos when the client sends media: null', () => {
         const result = httpToDomainAccommodationUpdate({ media: null });
-        expect(result.media).toBeNull();
+        // Strictly null — undefined would mean "no change", null means "clear".
+        expect(result.videos).toBeNull();
+    });
+
+    it('leaves videos untouched when media carries no videos key', () => {
+        // A payload that spoke only about photos has nothing to say about videos.
+        // Emitting an empty array here would wipe them.
+        const result = httpToDomainAccommodationUpdate({ media: {} });
+        expect(result.videos).toBeUndefined();
+    });
+
+    it('clears videos when the client sends an explicit empty array', () => {
+        const result = httpToDomainAccommodationUpdate({ media: { videos: [] } });
+        expect(result.videos).toEqual([]);
     });
 });
 
-// ---------------------------------------------------------------------------
-// Fix 1 regression (SPEC-208 review): null featuredImage must clear the field
-// ---------------------------------------------------------------------------
+describe('httpToDomainAccommodationCreate — videos reach their own column (HOS-372)', () => {
+    const baseCreate = baseCreatePayload;
 
-describe('httpToDomainAccommodationUpdate — null featuredImage clears field (SPEC-208 fix 1)', () => {
-    it('should produce featuredImage === null (not undefined) when client sends null', () => {
-        const result = httpToDomainAccommodationUpdate({
-            media: {
-                featuredImage: null,
-                gallery: [{ url: 'https://x.test/y.jpg' }]
-            }
+    it('emits videos alongside media so they survive the insert', () => {
+        // `media` is kept on create for the photo shadow-write into
+        // `accommodation_media`, but the key is dropped on the way to the INSERT
+        // and the shadow-write ignores videos — so the column emission is the
+        // only path videos have.
+        const result = httpToDomainAccommodationCreate({
+            ...baseCreate,
+            media: { videos: [{ url: 'https://youtu.be/abc' }] }
         });
 
-        const media = result.media as
-            | {
-                  featuredImage: null | undefined;
-                  gallery: Array<{ url: string; moderationState: string }>;
-              }
-            | null
-            | undefined;
-        // Must be strictly null — undefined would mean "no change", null means "clear"
-        expect(media?.featuredImage).toBeNull();
-        expect(media?.gallery).toHaveLength(1);
-        expect(media?.gallery?.[0]?.moderationState).toBe('APPROVED');
+        expect(result.videos).toHaveLength(1);
+        expect(result.videos?.[0]?.url).toBe('https://youtu.be/abc');
+        expect(result.videos?.[0]?.moderationState).toBe('APPROVED');
     });
 
-    it('should preserve client-supplied moderationState PENDING in gallery items', () => {
-        const result = httpToDomainAccommodationUpdate({
-            media: {
-                featuredImage: null,
-                gallery: [
-                    { url: 'https://x.test/y.jpg', moderationState: 'PENDING' },
-                    { url: 'https://x.test/z.jpg' }
-                ]
-            }
+    it('still emits media so the photo shadow-write keeps working', () => {
+        const result = httpToDomainAccommodationCreate({
+            ...baseCreate,
+            media: { featuredImage: { url: 'https://example.com/hero.jpg' } }
         });
 
-        const media = result.media as
-            | {
-                  featuredImage: null | undefined;
-                  gallery: Array<{ url: string; moderationState: string }>;
-              }
-            | null
-            | undefined;
-        expect(media?.featuredImage).toBeNull();
-        // PENDING is preserved on the first item
-        expect(media?.gallery?.[0]?.moderationState).toBe('PENDING');
-        // APPROVED is defaulted on the second item
-        expect(media?.gallery?.[1]?.moderationState).toBe('APPROVED');
+        const media = result.media as { featuredImage?: { url: string } } | undefined;
+        expect(media?.featuredImage?.url).toBe('https://example.com/hero.jpg');
+    });
+
+    it('leaves videos undefined when media carries no videos key', () => {
+        const result = httpToDomainAccommodationCreate({
+            ...baseCreate,
+            media: { featuredImage: { url: 'https://example.com/hero.jpg' } }
+        });
+
+        expect(result.videos).toBeUndefined();
     });
 });
 

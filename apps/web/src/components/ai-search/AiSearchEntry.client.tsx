@@ -81,7 +81,6 @@ const useIsomorphicLayoutEffect = typeof window === 'undefined' ? useEffect : us
 export interface AiSearchEntryProps {
     readonly locale: SupportedLocale;
     readonly apiUrl: string;
-    readonly isAuthenticated: boolean;
     readonly currentUrl: string;
     readonly destinations?: Readonly<Record<string, string>>;
     readonly pageType?: string;
@@ -98,7 +97,6 @@ export interface AiSearchEntryProps {
  * <AiSearchEntry
  *   locale={locale}
  *   apiUrl={import.meta.env.PUBLIC_API_URL}
- *   isAuthenticated={isAuthenticated}
  *   currentUrl={Astro.url.href}
  *   client:load
  * />
@@ -107,7 +105,6 @@ export interface AiSearchEntryProps {
 export function AiSearchEntry({
     locale,
     apiUrl,
-    isAuthenticated,
     currentUrl,
     destinations,
     pageType
@@ -331,7 +328,6 @@ export function AiSearchEntry({
                             <SearchChatPanel
                                 locale={locale}
                                 apiUrl={apiUrl}
-                                isAuthenticated={isAuthenticated}
                                 currentUrl={currentUrl}
                                 destinations={destinations}
                                 pageType={pageType}

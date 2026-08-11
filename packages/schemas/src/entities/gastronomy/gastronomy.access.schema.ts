@@ -55,6 +55,7 @@ export const GastronomyPublicSchema = GastronomySchema.pick({
 
     // Media (public safe)
     media: true,
+    videos: true,
 
     // Review aggregates (public)
     averageRating: true,
@@ -165,6 +166,7 @@ export const GastronomyProtectedSchema = GastronomySchema.pick({
     isFeatured: true,
     destinationId: true,
     media: true,
+    videos: true,
     averageRating: true,
     reviewsCount: true,
     rating: true,

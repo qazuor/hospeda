@@ -6,8 +6,11 @@
  * resequences the remaining visible rows to a dense 0-based `sortOrder`.
  * Both operations run in a single transaction inside the service.
  *
- * Does NOT touch Cloudinary — deleting the binary is a separate concern
- * orchestrated by the caller. Only the DB row is affected.
+ * Deletes the Cloudinary binary as well (HOS-372): the service is constructed
+ * with the media provider so the asset is removed BEFORE the row, aborting the
+ * whole operation if storage fails rather than leaving a permanently-billed
+ * orphan. The service is built inside the handler, not at module scope, because
+ * `getMediaProvider()` must run after `initializeMediaProvider()` at startup.
  */
 
 import {
@@ -17,11 +20,10 @@ import {
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { getMediaProvider } from '../../../services/media';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
-
-const accommodationService = new AccommodationService({ logger: apiLogger });
 
 /**
  * DELETE /api/v1/admin/accommodations/:id/media/:mediaId
@@ -39,7 +41,7 @@ export const adminRemoveMediaRoute = createAdminRoute({
     summary: 'Remove photo from accommodation gallery (admin)',
     description:
         'Soft-delete a media row and resequence remaining visible photos. ' +
-        'Does not touch Cloudinary. Requires admin-panel access; the service ' +
+        'Deletes the Cloudinary asset before the row. Requires admin-panel access; the service ' +
         'layer enforces UPDATE_ANY or (UPDATE_OWN + ownership).',
     tags: ['Accommodations', 'Media'],
     requestParams: {
@@ -49,6 +51,11 @@ export const adminRemoveMediaRoute = createAdminRoute({
     responseSchema: DeleteResultSchema,
     handler: async (ctx: Context, params: Record<string, unknown>) => {
         const actor = getActorFromContext(ctx);
+        const accommodationService = new AccommodationService(
+            { logger: apiLogger },
+            undefined,
+            getMediaProvider()
+        );
 
         const result = await accommodationService.removeMedia(actor, {
             accommodationId: params.id as string,

@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
+import type { DrizzleClient } from '@repo/db';
 import { accounts, getDb, UserModel, userRole, users } from '@repo/db';
 import { PermissionEnum, RoleEnum, RoleGrantReason } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, asc, eq, isNull } from 'drizzle-orm';
 import superAdminInput from '../data/user/required/super-admin-user.json';
 import { STATUS_ICONS } from './icons.js';
 import { logger } from './logger.js';
@@ -51,14 +52,42 @@ async function grantSuperAdminRole(userId: string): Promise<void> {
  * `users` with an `IS NULL` deleted filter so a soft-deleted account can never
  * be adopted as the seeding actor — same shape as `required/aiPrompts.seed.ts`.
  *
+ * ## Why the `ORDER BY` is load-bearing, not cosmetic
+ *
+ * `LIMIT 1` without an `ORDER BY` picks whatever row Postgres happens to hand
+ * back first. On a database holding a single super admin that is stable by
+ * accident; on one holding several — a real environment where a second staff
+ * account was promoted — it can change between runs for reasons no caller
+ * controls (plan choice, physical row order after a `VACUUM`, a concurrent
+ * update moving a tuple).
+ *
+ * That turns a specific data-migration failure into a reachable one rather
+ * than a theoretical one. `0042-reattribute-imported-events.ts` resolves its
+ * fallback actor through {@link findSuperAdminActor}, and by design it THROWS
+ * when the actor it resolves is not the one `0027`/`0028` ran as. A
+ * non-deterministic pick therefore does not merely choose a different-but-fine
+ * actor: it aborts `0042` and blocks `0043`/`0044` from ever applying.
+ *
+ * `createdAt ASC` is the tiebreak because it is the one column here that is
+ * both immutable and monotonic — "the FIRST super admin this database ever
+ * had", which is by construction the one the earliest migrations ran as. `id`
+ * (a random UUID) is stable but arbitrary, and `email`/`displayName` are both
+ * mutable. `id ASC` is appended as a second key because `created_at` is not
+ * unique — two accounts promoted in the same seed run can share a timestamp,
+ * which would put the ambiguity straight back.
+ *
+ * @param db - Drizzle client to read through. Callers holding an explicit
+ *   client (the data-migration runner) must pass it: `getDb()`'s singleton
+ *   lives on whichever `@repo/db` module copy the importer resolved, which is
+ *   not necessarily the one the caller initialized.
  * @returns The super admin's id/displayName/email, or `null` when none exists.
  */
-async function findExistingSuperAdmin(): Promise<{
+async function findExistingSuperAdmin(db: DrizzleClient): Promise<{
     id: string;
     displayName: string | null;
     email: string;
 } | null> {
-    const rows = await getDb()
+    const rows = await db
         .select({
             id: users.id,
             displayName: users.displayName,
@@ -67,9 +96,44 @@ async function findExistingSuperAdmin(): Promise<{
         .from(userRole)
         .innerJoin(users, eq(users.id, userRole.userId))
         .where(and(eq(userRole.role, RoleEnum.SUPER_ADMIN), isNull(users.deletedAt)))
+        // Deterministic pick — see the JSDoc. Never drop this: `LIMIT 1` without
+        // it makes the resolved actor depend on Postgres' physical row order.
+        .orderBy(asc(users.createdAt), asc(users.id))
         .limit(1);
 
     return rows[0] ?? null;
+}
+
+/**
+ * Resolves the existing super admin as an {@link Actor}, WITHOUT creating one
+ * and without any of {@link loadSuperAdminAndGetActor}'s side effects (no
+ * credential-account write, no role self-heal).
+ *
+ * Exists for callers that need an acting super admin but must never
+ * MANUFACTURE one — specifically the versioned data-migration runner
+ * (`data-migrations/runner.ts`). The seed pipeline bootstraps the well-known
+ * `superadmin@hospeda.com` account on purpose; a migration run must not, or a
+ * curated production seed (`--required --exclude=users`, which deliberately
+ * skips exactly that account) would grow a predictable admin credential as a
+ * silent side effect of running migrations.
+ *
+ * @param args - RO-RO input. `db` defaults to the `getDb()` singleton; pass an
+ *   explicit client when you hold one (see {@link findExistingSuperAdmin}).
+ * @returns The super admin actor, or `null` when no super admin exists.
+ */
+export async function findSuperAdminActor(
+    args: { readonly db?: DrizzleClient } = {}
+): Promise<Actor | null> {
+    const existing = await findExistingSuperAdmin(args.db ?? getDb());
+    if (!existing) {
+        return null;
+    }
+
+    return {
+        id: existing.id,
+        roles: [RoleEnum.SUPER_ADMIN],
+        permissions: Object.values(PermissionEnum)
+    };
 }
 
 /**
@@ -197,7 +261,7 @@ export async function loadSuperAdminAndGetActor(): Promise<Actor> {
 
         // Check if super admin already exists (HOS-296: a `user_role` join, not
         // a `users.role` column filter — see `findExistingSuperAdmin`).
-        const existingSuperAdmin = await findExistingSuperAdmin();
+        const existingSuperAdmin = await findExistingSuperAdmin(getDb());
 
         if (existingSuperAdmin) {
             logger.success({

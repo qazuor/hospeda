@@ -6,6 +6,7 @@ import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { eventTabs, PageTabs } from '@/components/layout/PageTabs';
 import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
+import { ContentStatePanel } from '@/features/content/components/ContentStatePanel';
 import { TranslationSection } from '@/features/content/components/TranslationSection';
 import { EventQualityScore } from '@/features/events/components/EventQualityScore';
 import { useEventPage } from '@/features/events/hooks/useEventPage';
@@ -80,6 +81,20 @@ function EventEditPage() {
                         entityId={id}
                     />
                 </div>
+                {entityData.entity && (
+                    <ContentStatePanel
+                        entityType="event"
+                        entityId={id}
+                        entityName={(entityData.entity as { name?: string }).name ?? ''}
+                        visibility={(entityData.entity as { visibility?: string }).visibility}
+                        moderationState={
+                            (entityData.entity as { moderationState?: string }).moderationState
+                        }
+                        lifecycleState={
+                            (entityData.entity as { lifecycleState?: string }).lifecycleState
+                        }
+                    />
+                )}
                 <EntityPageBase
                     entityType="event"
                     entityId={id}

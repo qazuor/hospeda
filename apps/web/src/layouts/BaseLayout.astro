@@ -18,6 +18,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl, getDeployVersion, getTurnstileSiteKey, isFeedbackEnabled } from '@/lib/env';
 import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
+import { FEEDBACK_NAV_BOOTSTRAP_SNIPPET } from '@/lib/feedback/feedback-nav-bootstrap.snippet';
 import { ClientRouter } from 'astro:transitions';
 import Header from './Header.astro';
 import Footer from './Footer.astro';
@@ -26,6 +27,7 @@ import SkipToContent from '@/components/shared/navigation/SkipToContent.astro';
 import ScrollToTop from '@/components/shared/navigation/ScrollToTop.astro';
 import NavigationProgress from '@/components/shared/navigation/NavigationProgress.astro';
 import I18nClientData from '@/components/shared/I18nClientData.astro';
+import IconSpriteClientData from '@/components/shared/IconSpriteClientData.astro';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
 import { CookieConsentBanner } from '@/components/legal/CookieConsentBanner.client';
@@ -35,15 +37,18 @@ import { GuestPreferenceNudge } from '@/components/shared/preferences/GuestPrefe
 import { AuthedPreferenceSync } from '@/components/shared/preferences/AuthedPreferenceSync.client';
 import { FeedbackHeadlessHost } from '@/components/feedback/FeedbackHeadlessHost.client';
 import { PaginationLoading } from '@/components/shared/feedback/PaginationLoading.client';
-import '@/styles/global.css';
-// Static stylesheet for the @repo/feedback widget. Imported here so Astro/Vite
-// tracks it as a page-level CSS asset and preserves it across view transitions
-// (a runtime-injected style tag would be dropped when Astro swaps the head).
-import '@repo/feedback/styles.css';
-// App-level overrides: map @repo/feedback tokens onto the Hospeda brand palette
-// and lift the FAB above the ScrollToTop button. Loaded after the package CSS
-// so the override selectors win without needing higher specificity.
-import '@/styles/feedback-overrides.css';
+import CriticalStyles from '@/components/shared/CriticalStyles.astro';
+// @repo/feedback's package stylesheet and the Hospeda brand-token overrides
+// (`@/styles/feedback-overrides.css`) are NOT imported here (HOS-369 W3-5).
+// `FeedbackHeadlessHost` hydrates with `client:idle` and cannot be interacted
+// with until then, so both stylesheets are attached at runtime from its mount
+// effect via `loadFeedbackStyles()` (components/feedback/load-feedback-styles.ts)
+// instead of shipping render-blocking in every page's <head>. That loader also
+// re-attaches both sheets, IN ORDER, on every `astro:after-swap` — a
+// runtime-injected `<link>` is dropped by Astro's head-swap on navigation, and
+// this island is `transition:persist`ed so it never remounts to notice. See
+// the loader's file header for the full explanation, including why the
+// package sheet must attach strictly before the overrides sheet.
 // Static stylesheet for the inline CollectionPickerPopover React island.
 // Imported here (not as a CSS Module co-located with the island) so the styles
 // are bundled into the page's main stylesheet and survive ClientRouter swaps.
@@ -64,7 +69,6 @@ const {
 	description = 'Descubrí alojamientos en el Litoral Entrerriano',
 } = Astro.props;
 
-const cspNonce = Astro.locals.cspNonce ?? '';
 const cookiesPolicyUrl = buildUrl({ locale, path: 'legal/cookies' });
 
 const feedbackEnabled = isFeedbackEnabled();
@@ -90,6 +94,10 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
+		<!-- HOS-369: global.css inlined as critical CSS (see CriticalStyles.astro
+		     for why this must be byte-identical across all four layouts). -->
+		<CriticalStyles />
+
 		<!--
 		  Named slot for scripts that MUST run before ANY other head content:
 		  analytics snippets, the feedback nav bootstrap, and cross-origin
@@ -100,6 +108,24 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		  before it can leak. Empty on every other page.
 		-->
 		<slot name="head-early" />
+
+		<!--
+		  HOS-369 Wave D: the client translation dictionary, as a hashed
+		  immutable asset. It MUST live in <head>: a parser-inserted
+		  `<script defer>` only runs before the deferred module scripts that
+		  hydrate islands if it comes first in document order. From <body> it
+		  would sit after the islands rendered above it, and those would
+		  hydrate against an empty dictionary.
+		-->
+		<I18nClientData locale={locale} />
+
+		<!--
+		  HOS-369 W3-6: the icon sprite's URL, for islands that render icons
+		  after hydration. Inline and classic, so it executes during parse —
+		  before any island's deferred hydration module can ask @repo/icons
+		  where the sprite lives and be told "nowhere".
+		-->
+		<IconSpriteClientData />
 
 		<!-- SPEC-157 REQ-18: browser UI chrome matches the brand blue. The light
 		     value matches site.webmanifest theme_color; the dark variant keeps the
@@ -127,9 +153,9 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		<link rel="manifest" href="/site.webmanifest" />
 
 		<!-- Google Fonts: Geologica, Roboto, Caveat (non-blocking with preload + swap) -->
-		<FontsLoader cspNonce={cspNonce} />
+		<FontsLoader />
 
-		<ThemeFoucScript cspNonce={cspNonce} />
+		<ThemeFoucScript />
 
 		<!-- SPEC-157 REQ-10: the full-page opacity:0 font gate was removed.
 		     Fonts load with font-display: swap (see FontsLoader), which prevents
@@ -139,56 +165,20 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<ClientRouter />
 
+		{/*
+		  Feedback nav-history bootstrap (Opción A). Captures navigation BEFORE
+		  the FAB island hydrates with client:idle, persists to sessionStorage
+		  so the FAB picks it up on hydration and across full-page reloads.
+
+		  The source MUST come through `set:html` from a constant. Astro treats
+		  the children of an `is:inline` script as raw text, so writing the JS
+		  directly here (wrapped in a template literal to survive this expression
+		  container) emitted the wrapper verbatim and the browser parsed a block
+		  statement around a template literal — valid JS, zero effect. The
+		  bootstrap silently never ran. See the snippet file's JSDoc.
+		*/}
 		{feedbackEnabled && (
-			<script is:inline nonce={cspNonce}>{`
-				/* Feedback nav-history bootstrap (Opción A).
-				   Captures navigation BEFORE the FAB island hydrates with
-				   client:idle, persists to sessionStorage so the FAB picks
-				   it up on hydration and across full-page reloads. */
-				(function () {
-					if (window.__hospedaFeedbackBootstrapped) return;
-					window.__hospedaFeedbackBootstrapped = true;
-					var SS_KEY = '__hospeda_feedback_nav__';
-					var MAX = 10;
-					function read() {
-						try {
-							var raw = sessionStorage.getItem(SS_KEY);
-							var parsed = raw ? JSON.parse(raw) : [];
-							return Array.isArray(parsed) ? parsed : [];
-						} catch (e) { return []; }
-					}
-					function write(nav) {
-						try { sessionStorage.setItem(SS_KEY, JSON.stringify(nav)); } catch (e) {}
-					}
-					function push(url) {
-						if (!url) return;
-						var nav = read();
-						if (nav[nav.length - 1] === url) return;
-						nav.push(url);
-						if (nav.length > MAX) nav = nav.slice(-MAX);
-						write(nav);
-					}
-					function current() {
-						try { return location.pathname + location.search; }
-						catch (e) { return ''; }
-					}
-					push(current());
-					var origPush = history.pushState;
-					var origReplace = history.replaceState;
-					history.pushState = function () {
-						var r = origPush.apply(this, arguments);
-						push(current());
-						return r;
-					};
-					history.replaceState = function () {
-						var r = origReplace.apply(this, arguments);
-						push(current());
-						return r;
-					};
-					window.addEventListener('popstate', function () { push(current()); });
-					document.addEventListener('astro:after-swap', function () { push(current()); });
-				})();
-			`}</script>
+			<script is:inline set:html={FEEDBACK_NAV_BOOTSTRAP_SNIPPET} />
 		)}
 
 		<!--
@@ -197,7 +187,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		  calls trackEvent(). Renders nothing in dev mode or when the project
 		  key is unset (e.g. locally-built previews without the secret).
 		-->
-		<PostHogScript cspNonce={cspNonce} />
+		<PostHogScript />
 
 		<!-- Named slot for page-specific head content (SEOHead, JSON-LD, etc.) -->
 		<slot name="head" />
@@ -219,12 +209,14 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 
 		<!--
 		  Cloudflare Web Analytics (manual snippet).
-		  We use the manual setup (NOT the auto-inject) so this <script> tag
-		  receives the per-request CSP nonce via our middleware-driven walker
-		  (SPEC-046 T-002). `strict-dynamic` in script-src then propagates
-		  trust to the loaded beacon.min.js. The beacon POSTs Core Web Vitals
-		  telemetry to https://cloudflareinsights.com — that host must be
-		  present in `connect-src` (added in buildCspHeader, SPEC-046 follow-up).
+		  We use the manual setup (NOT the auto-inject) so the tag is part of our
+		  own SSR HTML and its CSP story is explicit. It is an EXTERNAL script,
+		  so no content hash can cover it (HOS-369 WB0-1 dropped 'strict-dynamic'
+		  along with the nonce): https://static.cloudflareinsights.com is
+		  allowlisted in `script-src` for exactly this tag. The beacon then POSTs
+		  Core Web Vitals telemetry to https://cloudflareinsights.com — a
+		  DIFFERENT host, present in `connect-src`. Both live in buildCspHeader;
+		  dropping either one kills the beacon silently.
 
 		  Only emitted in production builds: in local dev the beacon's POST to
 		  cloudflareinsights.com is rejected by CORS (origin localhost), spamming
@@ -242,7 +234,6 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 		}
 	</head>
 	<body>
-		<I18nClientData locale={locale} />
 		<NavigationProgress locale={locale} />
 		<SkipToContent locale={locale} />
 		<Header locale={locale} />
@@ -335,12 +326,15 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 				clearCompareModeIfOutsideSection(window.location.pathname);
 				initScrollReveal();
 				initParallax();
-				// Lazy-load GLightbox only when elements with [data-glightbox] exist on the page
+				// Lazy-load GLightbox only when elements with [data-glightbox] exist
+				// on the page. The import goes through `@/lib/load-glightbox`, which
+				// pulls in the stylesheet too: importing the CSS directly from this
+				// inline script put it in the page's stylesheet list, so the 11 KB
+				// shipped as a render-blocking <link> on every page despite this
+				// guard (HOS-369 W3-5).
 				if (document.querySelector('[data-glightbox]')) {
-					const [{ default: GLightbox }] = await Promise.all([
-						import('glightbox'),
-						import('glightbox/dist/css/glightbox.min.css'),
-					]);
+					const { loadGlightbox } = await import('@/lib/load-glightbox');
+					const GLightbox = await loadGlightbox();
 					GLightbox({
 						selector: '[data-glightbox]',
 						touchNavigation: true,

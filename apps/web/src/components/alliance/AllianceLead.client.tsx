@@ -6,11 +6,21 @@
  * Collects generic applicant info (`contactName`, `email`, `phone`,
  * free-text `message`) plus a small set of kind-specific fields (business
  * name, website, portfolio links, etc. — see
- * `@/lib/forms/alliance-lead-message.ts`). The kind-specific fields are
- * front-only: on submit they are serialized with human-readable labels into
- * the single `message` string the backend persists (HOS-277 §7.3), so the
- * payload sent to `POST /api/v1/public/alliance/leads` only ever carries
+ * `@/lib/forms/alliance-lead-message.ts`). For `partner`/`sponsor`/`editor`
+ * these kind-specific fields are front-only: on submit they are serialized
+ * with human-readable labels into the single `message` string the backend
+ * persists (HOS-277 §7.3), so the payload only ever carries
  * `{ kind, contactName, email, phone?, message, _hp? }`.
+ *
+ * `service_provider` is the deliberate exception (HOS-278 §6.4): approving
+ * that kind materializes a `host_trades` directory row, so its structured
+ * fields (`businessName`, `category`, `destinationId`, `benefitType`,
+ * `benefitValue`, `benefitText`) are typed payload columns instead — sent as
+ * their own top-level keys, NOT serialized into `message`. Only `website`
+ * still goes through the free-text `message` path for that kind too.
+ * `partner` gets the same treatment for `businessName` + `partnerType`
+ * (HOS-278 §6.3/§7, provisioning slice D) — `website` and `partnershipType`
+ * stay free text for that kind, same as before.
  *
  * Includes a honeypot `_hp` field for spam rejection, mirroring
  * `CommerceLead.client.tsx`. Rate-limit (429) and generic API errors surface
@@ -22,15 +32,30 @@
 
 import { CheckCircleIcon } from '@repo/icons';
 import type { AllianceLeadCreateInput, AllianceLeadKind } from '@repo/schemas';
-import { AllianceLeadCreateInputSchema } from '@repo/schemas';
-import { type ChangeEvent, type FormEvent, useState } from 'react';
+import {
+    AllianceLeadCreateInputSchema,
+    HostTradeBenefitTypeEnum,
+    HostTradeCategoryEnum,
+    hostTradeBenefitTypeRequiresValue,
+    PartnerTypeEnum
+} from '@repo/schemas';
+import { type ChangeEvent, type FormEvent, useEffect, useState } from 'react';
+import type { TranslationFn } from '@/lib/api-errors';
+import {
+    type AuthMeSnapshot,
+    fetchAuthMe,
+    readCachedAuthMe,
+    writeCachedAuthMe
+} from '@/lib/auth-cache';
 import {
     ALLIANCE_LEAD_SPECIFIC_FIELDS,
     type AllianceLeadSpecificValues,
+    buildAllianceLeadTypedFields,
     serializeAllianceLeadMessage,
     validateAllianceLeadSpecificFields
 } from '@/lib/forms/alliance-lead-message';
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
+import { useScrollIntoViewWhen } from '@/lib/forms/use-scroll-into-view-when';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './AllianceLead.module.css';
@@ -41,12 +66,85 @@ const API_BASE = (import.meta.env.PUBLIC_API_URL ?? '').replace(/\/$/, '');
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
+/** The signed-in visitor, once resolved in the browser. */
+export interface AllianceLeadCurrentUser {
+    /** Display name, when the account has one. */
+    readonly name: string | null;
+    /** Account email — the address the application will be filed under. */
+    readonly email: string | null;
+}
+
+/** A single destination option for the `service_provider` coverage select. */
+export interface AllianceLeadDestinationOption {
+    /** Destination UUID — becomes `host_trades.destination_id` on approval. */
+    readonly id: string;
+    /** Display name shown in the select. */
+    readonly name: string;
+}
+
 /** Props for the AllianceLead island. */
 export interface AllianceLeadProps {
     /** Active locale for i18n. */
     readonly locale: SupportedLocale;
     /** Which "aliados" program this form submits for. Fixed per landing page. */
     readonly kind: AllianceLeadKind;
+    /**
+     * TEST-ONLY seam: pre-resolved visitor, bypassing the `/auth/me` lookup.
+     *
+     * Production callers MUST NOT pass this. The visitor is resolved in the
+     * BROWSER (see the mount effect below) precisely so the four landing pages
+     * stay session-blind: `colaborar/editores` is one of the twelve pages
+     * HOS-369 W2-2 made edge-cacheable, and an SSR-personalized prop there
+     * would bake one applicant's email into HTML Cloudflare then serves to
+     * everyone for the whole 300s TTL.
+     */
+    readonly currentUser?: AllianceLeadCurrentUser | null;
+    /**
+     * Destination options for the `service_provider` "coverage area" select
+     * (HOS-278 §6.4). Fetched SSR by `sumate/proveedor/index.astro` (a plain
+     * SSR page, not edge-cached — unlike `currentUser` above there is no
+     * cache-poisoning concern) and passed down, so the island never fetches
+     * this itself. Optional/defaulted to `[]` so the other three landing
+     * pages, which never pass it, keep working unchanged.
+     */
+    readonly destinations?: ReadonlyArray<AllianceLeadDestinationOption>;
+}
+
+/** A single `<option>` for a kind-specific select field. */
+interface SpecificSelectOption {
+    readonly value: string;
+    readonly label: string;
+}
+
+/** `category` select options — the closed {@link HostTradeCategoryEnum} set. */
+function getCategoryOptions(t: TranslationFn): readonly SpecificSelectOption[] {
+    return Object.values(HostTradeCategoryEnum).map((value) => ({
+        value,
+        label: t(`host-trades.categories.${value}`, value)
+    }));
+}
+
+/** `benefitType` select options — the closed {@link HostTradeBenefitTypeEnum} set. */
+function getBenefitTypeOptions(t: TranslationFn): readonly SpecificSelectOption[] {
+    return Object.values(HostTradeBenefitTypeEnum).map((value) => ({
+        value,
+        label: t(`alliance-leads.form.benefitTypeOptions.${value}`, value)
+    }));
+}
+
+/** `partnerType` select options — the closed {@link PartnerTypeEnum} set (HOS-278 §6.3/§7). */
+function getPartnerTypeOptions(t: TranslationFn): readonly SpecificSelectOption[] {
+    return Object.values(PartnerTypeEnum).map((value) => ({
+        value,
+        label: t(`alliance-leads.form.partnerTypeOptions.${value}`, value)
+    }));
+}
+
+/** `destinationId` select options — from the `destinations` prop (runtime data, not an enum). */
+function getDestinationOptions(
+    destinations: ReadonlyArray<AllianceLeadDestinationOption>
+): readonly SpecificSelectOption[] {
+    return destinations.map((d) => ({ value: d.id, label: d.name }));
 }
 
 interface GenericFields {
@@ -86,20 +184,117 @@ const KIND_NAMESPACE: Record<AllianceLeadKind, string> = {
  *
  * @param props - Component props (see {@link AllianceLeadProps})
  */
-export function AllianceLead({ locale, kind }: AllianceLeadProps) {
+export function AllianceLead({
+    locale,
+    kind,
+    currentUser = null,
+    destinations = []
+}: AllianceLeadProps) {
     const { t } = createTranslations(locale);
 
     const namespaceKey = KIND_NAMESPACE[kind];
     const formTitleKey = `alliance-leads.${namespaceKey}.form.heading`;
     const specificFields = ALLIANCE_LEAD_SPECIFIC_FIELDS[kind];
+    // Message is optional for the other three kinds (they still have a free
+    // text box to fill in), but for `service_provider` all six structured
+    // fields moved OUT of `message` (HOS-278 §6.4) — leaving nothing to
+    // satisfy the schema's `.min(10)` unless the free text itself becomes
+    // required.
+    const isMessageRequired = kind === 'service_provider';
+
+    const [visitor, setVisitor] = useState<AllianceLeadCurrentUser | null>(currentUser);
+
+    // A session can carry an empty email, so "signed in" is not the same as
+    // "we know where to file this". Only a real address replaces the field —
+    // otherwise the applicant would be left with no way to give us one.
+    const accountEmail = visitor?.email?.trim() ?? '';
+    const usesAccountEmail = accountEmail.length > 0;
 
     const [fields, setFields] = useState<GenericFields>(INITIAL_GENERIC_FIELDS);
+
+    // Resolve the visitor in the BROWSER, not on the server (HOS-278 AC-1).
+    //
+    // These pages must stay session-blind: `colaborar/editores` is edge-cached
+    // (HOS-369 W2-2), so a personalized SSR response there would be handed to
+    // every subsequent visitor for the whole TTL. Reading `/auth/me` after
+    // hydration is the pattern Wave B0 established for exactly this reason —
+    // `UserMenu` and `NewsletterForm` already do it, and the shared cache means
+    // this usually costs no request at all.
+    //
+    // Consequence, and it is intended: a signed-in applicant sees the email
+    // field for the frame before resolution lands. A cached page cannot know
+    // who you are; anything typed into it in that frame is discarded in favour
+    // of the account address, which is what AC-1 asks for.
+    useEffect(() => {
+        if (currentUser !== null) return;
+
+        let cancelled = false;
+
+        const apply = (snapshot: AuthMeSnapshot): void => {
+            if (cancelled || !snapshot.isAuthenticated || !snapshot.user) return;
+            setVisitor({ name: snapshot.user.name ?? null, email: snapshot.user.email ?? null });
+        };
+
+        const cached = readCachedAuthMe();
+        if (cached) {
+            apply(cached);
+            return;
+        }
+
+        void fetchAuthMe()
+            .then((snapshot) => {
+                if (cancelled) return;
+                writeCachedAuthMe(snapshot);
+                apply(snapshot);
+            })
+            // `fetchAuthMe` resolves a guest snapshot rather than rejecting, so
+            // this only fires on something genuinely unexpected. Staying
+            // anonymous is the safe outcome: the applicant is asked for an
+            // address, exactly as an anonymous visitor would be.
+            .catch(() => undefined);
+
+        return () => {
+            cancelled = true;
+        };
+    }, [currentUser]);
+
+    // Seed the contact name once the visitor resolves, without clobbering
+    // anything already typed — resolution can land after the applicant has
+    // started filling the form.
+    useEffect(() => {
+        const name = visitor?.name?.trim();
+        if (!name) return;
+        setFields((prev) => (prev.contactName === '' ? { ...prev, contactName: name } : prev));
+    }, [visitor]);
     const [specificValues, setSpecificValues] = useState<AllianceLeadSpecificValues>({});
     const [hp, setHp] = useState('');
     const [errors, setErrors] = useState<FieldErrors>({});
     const [formError, setFormError] = useState<string | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isSuccess, setIsSuccess] = useState(false);
+
+    // The confirmation is SHORTER than the form it replaces, so it renders above
+    // the applicant's scroll offset and they are left looking at the footer with
+    // no sign the submission worked. Focus moves with it because the submit
+    // button that held focus no longer exists after the swap.
+    const { ref: successRef } = useScrollIntoViewWhen<HTMLDivElement>({ active: isSuccess });
+
+    // `benefitValue` only means something for the two numeric benefit types
+    // (HOS-278 §6.4) — hidden otherwise, so an applicant offering `TWO_FOR_ONE`
+    // is never asked for a number that would trip the backend's "non-numeric
+    // type rejects a value" rule.
+    const benefitValueApplicable =
+        kind === 'service_provider' &&
+        hostTradeBenefitTypeRequiresValue(
+            (specificValues.benefitType ?? '') as HostTradeBenefitTypeEnum
+        );
+    const visibleSpecificFields = specificFields.filter(
+        (field) => field.name !== 'benefitValue' || benefitValueApplicable
+    );
+    const categoryOptions = getCategoryOptions(t);
+    const benefitTypeOptions = getBenefitTypeOptions(t);
+    const partnerTypeOptions = getPartnerTypeOptions(t);
+    const destinationOptions = getDestinationOptions(destinations);
 
     function handleChange(e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void {
         const { name, value } = e.currentTarget;
@@ -110,7 +305,7 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
         setFormError(null);
     }
 
-    function handleSpecificChange(e: ChangeEvent<HTMLInputElement>): void {
+    function handleSpecificChange(e: ChangeEvent<HTMLInputElement | HTMLSelectElement>): void {
         const { name, value } = e.currentTarget;
         setSpecificValues((prev) => ({ ...prev, [name]: value }));
         if (errors[name]) {
@@ -136,18 +331,40 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
             t
         });
 
+        const typedFields = buildAllianceLeadTypedFields({ kind, specificValues });
+
         const payload: AllianceLeadCreateInput = {
             kind,
             contactName: fields.contactName,
-            email: fields.email,
+            // The account address wins over anything in state when there is
+            // one: the field it came from is not rendered, so state cannot have
+            // drifted, and this keeps the submitted address and the session
+            // that links the lead in agreement.
+            email: usesAccountEmail ? accountEmail : fields.email,
             phone: fields.phone || undefined,
-            message
+            message,
+            ...typedFields
         };
 
         const parsed = AllianceLeadCreateInputSchema.safeParse(payload);
 
         const schemaErrors = parsed.success ? {} : zodIssuesToFieldErrors(parsed.error.issues, t);
-        const combinedErrors = { ...specificErrors, ...schemaErrors };
+
+        // Message is required for `service_provider` (see `isMessageRequired`
+        // above). Spread last so this clear "required" message always wins
+        // over the schema's generic `.min(10)` wording when the field is
+        // totally empty.
+        const freeTextErrors: FieldErrors =
+            isMessageRequired && fields.freeText.trim().length === 0
+                ? {
+                      message: t(
+                          'alliance-leads.form.validation.messageRequired',
+                          'Contanos brevemente sobre tu servicio.'
+                      )
+                  }
+                : {};
+
+        const combinedErrors = { ...specificErrors, ...schemaErrors, ...freeTextErrors };
 
         if (Object.keys(combinedErrors).length > 0) {
             setErrors(combinedErrors);
@@ -160,6 +377,11 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
             const res = await fetch(`${API_BASE}/api/v1/public/alliance/leads`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                // Load-bearing for AC-1. The web app and the API are on
+                // different origins, so without this the session cookie is not
+                // sent, the API resolves a guest actor, and a signed-in
+                // applicant's lead arrives unlinked — silently, with a 200.
+                credentials: 'include',
                 body: JSON.stringify({ ...(parsed.success ? parsed.data : payload), _hp: hp })
             });
 
@@ -204,6 +426,7 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
         return (
             <div
                 className={styles.success}
+                ref={successRef}
                 role="alert"
                 aria-live="assertive"
             >
@@ -287,45 +510,55 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
                 )}
             </div>
 
-            {/* Email */}
-            <div className={styles.field}>
-                <label
-                    className={styles.label}
-                    htmlFor="al-email"
-                >
-                    {t('alliance-leads.form.fields.email', 'Correo electrónico')}
-                    <span
-                        className={styles.required}
-                        aria-hidden="true"
+            {/* Email — not asked for at all when the visitor is signed in (AC-1) */}
+            {usesAccountEmail ? (
+                <p className={styles.accountEmailNotice}>
+                    {t(
+                        'alliance-leads.form.accountEmailNotice',
+                        'Vamos a usar el correo de tu cuenta:'
+                    )}{' '}
+                    <strong>{accountEmail}</strong>
+                </p>
+            ) : (
+                <div className={styles.field}>
+                    <label
+                        className={styles.label}
+                        htmlFor="al-email"
                     >
-                        *
-                    </span>
-                </label>
-                <input
-                    id="al-email"
-                    type="email"
-                    name="email"
-                    value={fields.email}
-                    onChange={handleChange}
-                    className={`${styles.input}${errors.email ? ` ${styles.inputError}` : ''}`}
-                    autoComplete="email"
-                    aria-describedby={errors.email ? 'al-email-error' : undefined}
-                    aria-invalid={!!errors.email}
-                    required
-                />
-                {errors.email && (
-                    <p
-                        id="al-email-error"
-                        className={styles.errorMsg}
-                        role="alert"
-                    >
-                        {t(
-                            'alliance-leads.form.validation.email',
-                            'Ingresá un correo electrónico válido.'
-                        )}
-                    </p>
-                )}
-            </div>
+                        {t('alliance-leads.form.fields.email', 'Correo electrónico')}
+                        <span
+                            className={styles.required}
+                            aria-hidden="true"
+                        >
+                            *
+                        </span>
+                    </label>
+                    <input
+                        id="al-email"
+                        type="email"
+                        name="email"
+                        value={fields.email}
+                        onChange={handleChange}
+                        className={`${styles.input}${errors.email ? ` ${styles.inputError}` : ''}`}
+                        autoComplete="email"
+                        aria-describedby={errors.email ? 'al-email-error' : undefined}
+                        aria-invalid={!!errors.email}
+                        required
+                    />
+                    {errors.email && (
+                        <p
+                            id="al-email-error"
+                            className={styles.errorMsg}
+                            role="alert"
+                        >
+                            {t(
+                                'alliance-leads.form.validation.email',
+                                'Ingresá un correo electrónico válido.'
+                            )}
+                        </p>
+                    )}
+                </div>
+            )}
 
             {/* Phone (optional) */}
             <div className={styles.field}>
@@ -359,55 +592,119 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
 
             {/* Kind-specific fields */}
             <h3 className={styles.sectionTitle}>{t(formTitleKey, 'Contanos más')}</h3>
-            {specificFields.map((field) => (
-                <div
-                    key={field.name}
-                    className={styles.field}
-                >
-                    <label
-                        className={styles.label}
-                        htmlFor={`al-${field.name}`}
-                    >
-                        {t(`alliance-leads.form.fields.${field.name}`, field.name)}
-                        {field.required && (
-                            <span
-                                className={styles.required}
-                                aria-hidden="true"
-                            >
-                                *
-                            </span>
-                        )}
-                    </label>
-                    <input
-                        id={`al-${field.name}`}
-                        type={field.type === 'url' ? 'url' : 'text'}
-                        name={field.name}
-                        value={specificValues[field.name] ?? ''}
-                        onChange={handleSpecificChange}
-                        className={`${styles.input}${errors[field.name] ? ` ${styles.inputError}` : ''}`}
-                        aria-describedby={errors[field.name] ? `al-${field.name}-error` : undefined}
-                        aria-invalid={!!errors[field.name]}
-                        required={field.required}
-                    />
-                    {errors[field.name] && (
-                        <p
-                            id={`al-${field.name}-error`}
-                            className={styles.errorMsg}
-                            role="alert"
-                        >
-                            {errors[field.name]}
-                        </p>
-                    )}
-                </div>
-            ))}
+            {visibleSpecificFields.map((field) => {
+                const fieldId = `al-${field.name}`;
+                const errorId = `${fieldId}-error`;
+                const hasError = !!errors[field.name];
+                const options =
+                    field.name === 'category'
+                        ? categoryOptions
+                        : field.name === 'benefitType'
+                          ? benefitTypeOptions
+                          : field.name === 'destinationId'
+                            ? destinationOptions
+                            : field.name === 'partnerType'
+                              ? partnerTypeOptions
+                              : null;
 
-            {/* Free-text message (optional) */}
+                return (
+                    <div
+                        key={field.name}
+                        className={styles.field}
+                    >
+                        <label
+                            className={styles.label}
+                            htmlFor={fieldId}
+                        >
+                            {t(`alliance-leads.form.fields.${field.name}`, field.name)}
+                            {field.required && (
+                                <span
+                                    className={styles.required}
+                                    aria-hidden="true"
+                                >
+                                    *
+                                </span>
+                            )}
+                        </label>
+                        {field.type === 'select' && options ? (
+                            <select
+                                id={fieldId}
+                                name={field.name}
+                                value={specificValues[field.name] ?? ''}
+                                onChange={handleSpecificChange}
+                                className={`${styles.select}${hasError ? ` ${styles.inputError}` : ''}`}
+                                aria-describedby={hasError ? errorId : undefined}
+                                aria-invalid={hasError}
+                                required={field.required}
+                            >
+                                <option value="">
+                                    {t(
+                                        `alliance-leads.form.placeholders.${field.name}`,
+                                        'Seleccioná una opción'
+                                    )}
+                                </option>
+                                {options.map((option) => (
+                                    <option
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                        ) : (
+                            <input
+                                id={fieldId}
+                                type={
+                                    field.type === 'url'
+                                        ? 'url'
+                                        : field.type === 'number'
+                                          ? 'number'
+                                          : 'text'
+                                }
+                                name={field.name}
+                                value={specificValues[field.name] ?? ''}
+                                onChange={handleSpecificChange}
+                                className={`${styles.input}${hasError ? ` ${styles.inputError}` : ''}`}
+                                aria-describedby={hasError ? errorId : undefined}
+                                aria-invalid={hasError}
+                                required={field.required}
+                                {...(field.type === 'number' ? { min: 1, step: 1 } : {})}
+                            />
+                        )}
+                        {hasError && (
+                            <p
+                                id={errorId}
+                                className={styles.errorMsg}
+                                role="alert"
+                            >
+                                {errors[field.name]}
+                            </p>
+                        )}
+                    </div>
+                );
+            })}
+
+            {/* Free-text message (required for service_provider, optional otherwise) */}
             <div className={styles.field}>
                 <label
                     className={styles.label}
                     htmlFor="al-message"
                 >
-                    {t('alliance-leads.form.fields.message', 'Contanos más (opcional)')}
+                    {isMessageRequired
+                        ? t(
+                              'alliance-leads.form.fields.messageRequired',
+                              'Contanos sobre tu servicio'
+                          )
+                        : t('alliance-leads.form.fields.message', 'Contanos más (opcional)')}
+                    {isMessageRequired && (
+                        <span
+                            className={styles.required}
+                            aria-hidden="true"
+                        >
+                            *
+                        </span>
+                    )}
                 </label>
                 <textarea
                     id="al-message"
@@ -418,6 +715,7 @@ export function AllianceLead({ locale, kind }: AllianceLeadProps) {
                     rows={4}
                     aria-describedby={errors.message ? 'al-message-error' : undefined}
                     aria-invalid={!!errors.message}
+                    required={isMessageRequired}
                 />
                 {errors.message && (
                     <p

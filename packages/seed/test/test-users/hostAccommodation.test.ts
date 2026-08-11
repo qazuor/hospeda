@@ -70,11 +70,13 @@ describe('buildHostAccommodationPrice', () => {
 describe('buildHostAccommodationCoreFields', () => {
     const hostEmails = Object.keys(ACCOMMODATION_TYPE_BY_EMAIL);
 
-    it('should cover all 5 HOST test-user emails with a distinct accommodation type', () => {
+    // 6 since HOS-376 T-013 added `host-provider@local.test`, the dual-role
+    // account that is a HOST and also owns a host_trades listing.
+    it('should cover all 6 HOST test-user emails with a distinct accommodation type', () => {
         // Assert
-        expect(hostEmails).toHaveLength(5);
+        expect(hostEmails).toHaveLength(6);
         const types = new Set(Object.values(ACCOMMODATION_TYPE_BY_EMAIL));
-        expect(types.size).toBe(5);
+        expect(types.size).toBe(6);
     });
 
     it.each(

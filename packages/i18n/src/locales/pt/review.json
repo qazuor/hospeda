@@ -55,7 +55,9 @@
         "title": "Sua avaliação",
         "canLeaveReview": "Você falou com o anfitrião. Compartilhe sua experiência para ajudar outros viajantes.",
         "cta": "Deixar avaliação",
-        "locked": "Para deixar uma avaliação, primeiro fale com o anfitrião pelo botão de contato."
+        "locked": "Para deixar uma avaliação, primeiro fale com o anfitrião pelo botão de contato.",
+        "signInCta": "Entre para avaliar",
+        "signInHint": "Você precisa de uma conta para deixar sua avaliação."
     },
     "destinationSidebar": {
         "title": "Sua opinião",

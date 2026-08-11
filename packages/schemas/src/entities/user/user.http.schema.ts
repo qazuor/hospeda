@@ -170,6 +170,10 @@ export const httpToDomainUserCreate = (httpData: UserCreateHttp): UserCreateInpu
     permissions: [], // Default empty permissions array
     lifecycleState: LifecycleStatusEnum.ACTIVE, // Default lifecycle state
     visibility: VisibilityEnum.PUBLIC, // Default visibility
+    // HOS-375: anyone signing up through the HTTP surface is a person. A system
+    // account is only ever created by a seed fixture or a data-migration, so
+    // this is `false` here by construction rather than by policy.
+    isSystemAccount: false,
 
     // Map contact info. Omit mobilePhone when the phone field is absent instead of
     // injecting a bogus placeholder number (HOS-190) — mobilePhone is optional and

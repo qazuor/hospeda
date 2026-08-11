@@ -14,6 +14,7 @@ import { DeleteRowButton } from '@/components/entity-list/DeleteRowButton';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { EntityViewContent } from '@/components/entity-pages/EntityViewContent';
 import { FaqManager } from '@/components/faqs/FaqManager';
+import { gastronomyTabs, PageTabs } from '@/components/layout/PageTabs';
 import { OwnerSelect } from '@/components/selects/OwnerSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -221,6 +222,11 @@ function GastronomyViewPage() {
 
     return (
         <div className="space-y-4">
+            <PageTabs
+                tabs={gastronomyTabs}
+                basePath={`/gastronomies/${id}`}
+            />
+
             {/* px-6 mirrors the EntityPageBase content inset so the delete row
                 and assign-owner card align with the entity card below instead of
                 sitting full-bleed against the page edges. */}

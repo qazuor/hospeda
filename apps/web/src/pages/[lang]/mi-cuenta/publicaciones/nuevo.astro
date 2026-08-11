@@ -1,0 +1,57 @@
+---
+/**
+ * @file mi-cuenta/publicaciones/nuevo.astro
+ * @description Editor self-service post create page (HOS-374 §5.2.2). Mounts
+ * `PostCreateForm`, which collects the minimum required fields and redirects
+ * to the real editor (`[id]/editar.astro`) on success.
+ *
+ * Two gates, matching this route's siblings (`index.astro`, `[id]/editar.astro`):
+ *  1. Session — middleware AND this page, matching the `/mi-cuenta` convention.
+ *  2. Role — `hasPostsNavAccess` (POST_CREATE), the same gate the listing and
+ *     the editor already use.
+ *
+ * @route     /[lang]/mi-cuenta/publicaciones/nuevo/
+ * @rendering SSR (prerender = false — authenticated, editor-only)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import { PostCreateForm } from '@/components/post/editor/PostCreateForm.client';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { hasPostsNavAccess } from '@/lib/nav-gating';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+if (!hasPostsNavAccess({ roles: user.roles })) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+const title = t('account.myContent.posts.create.pageTitle', 'Nueva publicación');
+const subtitle = t(
+    'account.myContent.posts.create.subtitle',
+    'Completá lo básico ahora — vas a poder sumar fotos y más detalles después en el editor.'
+);
+---
+
+<AccountLayout locale={locale} title={title} description={subtitle} activeSection="publicaciones">
+    <AccountPageHeader title={title} description={subtitle} />
+
+    <AccountSectionCard>
+        <PostCreateForm
+            client:load
+            locale={locale}
+        />
+    </AccountSectionCard>
+</AccountLayout>

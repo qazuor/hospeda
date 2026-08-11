@@ -1,0 +1,1 @@
+ALTER TABLE "partners" ADD COLUMN "unpaid_notice_sent_at" timestamp with time zone;

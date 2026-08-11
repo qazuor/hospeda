@@ -47,6 +47,7 @@ import { inArray, type SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudRelatedService } from '../../base/base.crud.related.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
+import { getRevalidationService } from '../../revalidation';
 import {
     type Actor,
     type AdminSearchExecuteParams,
@@ -72,6 +73,16 @@ import {
     checkCanViewPointOfInterest
 } from './point-of-interest.permissions';
 
+/**
+ * Page size used when resolving a POI's destination relations for a cache
+ * purge. `MAX_PAGE_SIZE` in `@repo/db`'s base model, which is the ceiling
+ * `findAll` clamps to — asking for more silently gets this anyway.
+ *
+ * NOT the model default (20): a POI belongs to an unbounded number of
+ * destinations, and truncating the list produces a purge that reports success
+ * while leaving destination pages stale.
+ */
+const REVALIDATION_RELATION_PAGE_SIZE = 200;
 /**
  * Upper bound for a single destination's POI-relation lookup in
  * {@link PointOfInterestService.resolveDestinationIdFilter}, and for the
@@ -149,6 +160,130 @@ export class PointOfInterestService extends BaseCrudRelatedService<
      * below to resolve them the same way `_executeSearch` does.
      */
     public readonly adminSearchSchema = PointOfInterestAdminSearchSchema;
+
+    // -----------------------------------------------------------------------
+    // Edge cache revalidation (HOS-369 W2-4)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Every destination that shows this POI, as slugs, for the purge payload.
+     *
+     * The relation is genuinely many-to-many
+     * (`r_destination_point_of_interest`), and the destination detail page
+     * renders its POIs, so ONE POI edit has to evict N destination pages.
+     *
+     * **`pageSize` is passed explicitly and that is load-bearing.** `findAll`
+     * defaults to 20 rows (`DEFAULT_PAGE_SIZE` in `base.model.ts`). Colón alone
+     * carries 57 POIs, and the reverse direction is just as unbounded — so the
+     * default would have purged the first 20 destinations and left the rest
+     * stale, silently, because the purge still reports success. When the
+     * relation count exceeds even the 200-row cap the shortfall is logged
+     * rather than swallowed: a partial purge that nobody can see is the exact
+     * failure mode this whole wave exists to avoid.
+     *
+     * @param pointOfInterestId - The changed POI.
+     * @returns Destination slugs, possibly empty.
+     */
+    private async _resolveDestinationSlugsForRevalidation(
+        pointOfInterestId: string
+    ): Promise<readonly string[]> {
+        const { items: relations, total } = await this.relatedModel.findAll(
+            { pointOfInterestId },
+            { pageSize: REVALIDATION_RELATION_PAGE_SIZE }
+        );
+
+        if (total > relations.length) {
+            this.logger.warn(
+                { pointOfInterestId, total, fetched: relations.length },
+                'POI has more destination relations than the purge page size; some destination pages will stay stale until their TTL expires'
+            );
+        }
+
+        const destinationIds = relations
+            .map((relation) => (relation as { destinationId?: unknown }).destinationId)
+            .filter((id): id is string => typeof id === 'string' && id.length > 0);
+
+        if (destinationIds.length === 0) return [];
+
+        const destinations = await Promise.all(
+            destinationIds.map((id) => this.destinationModel.findById(id))
+        );
+
+        return destinations
+            .map((destination) => (destination as { slug?: unknown } | null)?.slug)
+            .filter((slug): slug is string => typeof slug === 'string' && slug.length > 0);
+    }
+
+    /**
+     * Schedule a cache purge for this POI and every destination showing it.
+     *
+     * Never blocking: revalidation is a side effect of a content write, and a
+     * Cloudflare outage must not fail the write that triggered it.
+     *
+     * @param entity - The POI as it now stands after the write.
+     * @param extraDestinationSlugs - Destinations that must be purged even
+     *   though the live relation table no longer links them to this POI. Only
+     *   `removePointOfInterestFromDestination` needs this: by the time the
+     *   purge runs the link row is gone, so the destination whose page still
+     *   renders the POI is precisely the one
+     *   {@link _resolveDestinationSlugsForRevalidation} can no longer see.
+     */
+    private async _schedulePointOfInterestRevalidation(
+        entity: PointOfInterest,
+        extraDestinationSlugs: readonly string[] = []
+    ): Promise<void> {
+        try {
+            const linkedSlugs = await this._resolveDestinationSlugsForRevalidation(entity.id);
+            const destinationSlugs = [...new Set([...linkedSlugs, ...extraDestinationSlugs])];
+
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'pointOfInterest',
+                id: entity.id,
+                slug: entity.slug,
+                destinationSlugs
+            });
+        } catch (error) {
+            this.logger.warn(
+                { error, entityType: 'pointOfInterest' },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+    }
+
+    /**
+     * Schedule a cache purge after a POI ↔ destination LINK changes.
+     *
+     * Editing the link mutates the destination detail page just as surely as
+     * editing the POI itself does — the page renders its POI list server-side,
+     * and that list is `PRIMARY`-only, so even a `PRIMARY`/`NEARBY` flip adds
+     * or removes an entry. Linking, unlinking, and re-kinding therefore all
+     * have to purge, and until HOS-369 none of them did: only `_afterCreate`
+     * and `_afterUpdate` on the POI row were wired up, leaving relation edits
+     * to sit stale behind the edge cache until the TTL expired.
+     *
+     * @param pointOfInterest - The POI on either side of the changed link.
+     * @param destinationSlug - The destination on the other side, passed
+     *   explicitly so an unlink still purges the page it just changed.
+     */
+    private async _scheduleRelationRevalidation(
+        pointOfInterest: PointOfInterest,
+        destinationSlug: string | undefined
+    ): Promise<void> {
+        await this._schedulePointOfInterestRevalidation(
+            pointOfInterest,
+            destinationSlug ? [destinationSlug] : []
+        );
+    }
+
+    protected async _afterCreate(entity: PointOfInterest): Promise<PointOfInterest> {
+        await this._schedulePointOfInterestRevalidation(entity);
+        return entity;
+    }
+
+    protected async _afterUpdate(entity: PointOfInterest): Promise<PointOfInterest> {
+        await this._schedulePointOfInterestRevalidation(entity);
+        return entity;
+    }
 
     protected getDefaultListRelations() {
         return undefined;
@@ -364,6 +499,12 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     }
                     fullRelation = found;
                 }
+
+                await this._scheduleRelationRevalidation(
+                    pointOfInterest as PointOfInterest,
+                    (destination as { slug?: string }).slug
+                );
+
                 return { relation: fullRelation as DestinationPointOfInterestRelation };
             }
         });
@@ -422,37 +563,46 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                         'Point of interest relation not found for this destination'
                     );
                 }
-                // Remove the relation (soft delete)
-                const relation = await this.relatedModel.softDelete(
+                // Remove the relation.
+                //
+                // `hardDelete`, not `softDelete`: this is a pure join table with
+                // three columns and no `deleted_at`, and `BaseModel.softDelete`
+                // THROWS on a table without one. Every unlink used to fail with
+                // a DbError from the model layer, unconditionally — the unit
+                // tests missed it because they mock the model and hand back a
+                // relation, so the stub succeeded where the real model cannot.
+                // A join row also has no history worth preserving: the link
+                // either exists or it does not.
+                const deletedCount = await this.relatedModel.hardDelete(
                     {
                         destinationId: destinationId as DestinationIdType,
                         pointOfInterestId: pointOfInterestId as PointOfInterestIdType
                     },
                     execCtx?.tx
                 );
-                if (typeof relation === 'number' || typeof relation === 'string' || !relation) {
-                    const fullRelation = await this.relatedModel.findOne(
-                        {
-                            destinationId: destinationId as DestinationIdType,
-                            pointOfInterestId: pointOfInterestId as PointOfInterestIdType
-                        },
-                        execCtx?.tx
-                    );
-                    if (!fullRelation) {
-                        throw new ServiceError(
-                            ServiceErrorCode.INTERNAL_ERROR,
-                            'Failed to remove relation'
-                        );
-                    }
-                    return { relation: fullRelation };
-                }
-                if (!relation) {
+
+                if (deletedCount === 0) {
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         'Failed to remove relation'
                     );
                 }
-                return { relation: relation as DestinationPointOfInterestRelation };
+
+                // Purged only once the delete is confirmed: a no-op delete
+                // changed no page, so there is nothing to evict.
+                await this._scheduleRelationRevalidation(
+                    pointOfInterest as PointOfInterest,
+                    (destination as { slug?: string }).slug
+                );
+
+                // `existing` — the row as it was BEFORE the delete, already read
+                // above for the NOT_FOUND guard. The caller is told what was
+                // removed, which is the only shape that still means anything:
+                // re-reading the row after a hard delete can only ever return
+                // null. The old code did exactly that re-read (correct under a
+                // soft delete, where the row survives) and would now throw
+                // INTERNAL_ERROR on every successful unlink.
+                return { relation: existing as DestinationPointOfInterestRelation };
             }
         });
     }
@@ -538,6 +688,12 @@ export class PointOfInterestService extends BaseCrudRelatedService<
                     }
                     fullRelation = found;
                 }
+
+                await this._scheduleRelationRevalidation(
+                    pointOfInterest as PointOfInterest,
+                    (destination as { slug?: string }).slug
+                );
+
                 return { relation: fullRelation as DestinationPointOfInterestRelation };
             }
         });

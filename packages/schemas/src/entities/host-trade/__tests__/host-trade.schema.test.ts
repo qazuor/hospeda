@@ -2,7 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { HostTradeCategoryEnum } from '../../../enums/host-trade-category.enum.js';
 import { HostTradeAdminSearchSchema } from '../host-trade.admin-search.schema.js';
 import { CreateHostTradeSchema, UpdateHostTradeSchema } from '../host-trade.crud.schema.js';
-import { HostTradePublicSchema } from '../host-trade.http.schema.js';
+import { HostTradeAdminSchema, HostTradePublicSchema } from '../host-trade.http.schema.js';
+import { HostTradeOwnerViewSchema } from '../host-trade.owner.schema.js';
 import { HostTradeSchema } from '../host-trade.schema.js';
 
 // ============================================================================
@@ -123,9 +124,15 @@ describe('HostTradeSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject an empty benefit string', () => {
+        it('should ACCEPT an empty benefit string, which is now the fine print', () => {
+            // Deliberate contract change (HOS-278 §6.4): `benefit` stopped being
+            // the benefit and became the conditions attached to a structured
+            // one. An offer with no conditions has no fine print, and the old
+            // `.min(1)` would only have forced a placeholder character into the
+            // column. Relaxing a rule is additive — everything that parsed
+            // before still parses.
             const result = HostTradeSchema.safeParse({ ...VALID_FULL_HOST_TRADE, benefit: '' });
-            expect(result.success).toBe(false);
+            expect(result.success).toBe(true);
         });
 
         it('should reject a non-UUID id', () => {
@@ -522,5 +529,140 @@ describe('HostTradeAdminSearchSchema', () => {
             const result = HostTradeAdminSearchSchema.safeParse({ destinationId: 'city-abc' });
             expect(result.success).toBe(false);
         });
+    });
+});
+
+// ============================================================================
+// HOS-376 §7.2 — the aggregate and suspension columns (T-070)
+// ============================================================================
+
+const AGGREGATE_FIELDS = [
+    'confirmedUsesCount',
+    'distinctHostsCount',
+    'reviewsCount',
+    'averageRating',
+    'benefitRespectedCount'
+] as const;
+
+const SUSPENSION_FIELDS = [
+    'declarationSuspendedAt',
+    'declarationSuspendedById',
+    'declarationSuspendReason'
+] as const;
+
+describe('HostTradeSchema — HOS-376 columns', () => {
+    it('parses a listing carrying all eight', () => {
+        const result = HostTradeSchema.safeParse({
+            ...VALID_FULL_HOST_TRADE,
+            confirmedUsesCount: 34,
+            distinctHostsCount: 21,
+            reviewsCount: 12,
+            averageRating: 4.6,
+            benefitRespectedCount: 11,
+            declarationSuspendedAt: new Date('2026-08-01T00:00:00Z'),
+            declarationSuspendedById: USER_UUID,
+            declarationSuspendReason: 'Tres rechazos en 90 días'
+        });
+
+        expect(result.success).toBe(true);
+    });
+
+    /**
+     * Additive-only: the columns are NOT NULL in the database, but making them
+     * required here would reject every shape written before they existed —
+     * cached payloads, fixtures, historic rows. See the schema compat policy.
+     */
+    it('still parses a listing that carries none of them', () => {
+        expect(HostTradeSchema.safeParse(VALID_FULL_HOST_TRADE).success).toBe(true);
+    });
+
+    /** `numeric` comes back from the pg driver as a string. */
+    it('accepts an averageRating the driver returned as a string', () => {
+        const result = HostTradeSchema.safeParse({
+            ...VALID_FULL_HOST_TRADE,
+            averageRating: '4.33'
+        });
+
+        expect(result.success).toBe(true);
+        if (result.success) expect(result.data.averageRating).toBe(4.33);
+    });
+
+    it.each(
+        AGGREGATE_FIELDS.filter((field) => field !== 'averageRating')
+    )('rejects a negative %s', (field) => {
+        const result = HostTradeSchema.safeParse({ ...VALID_FULL_HOST_TRADE, [field]: -1 });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects an averageRating above 5', () => {
+        const result = HostTradeSchema.safeParse({ ...VALID_FULL_HOST_TRADE, averageRating: 6 });
+        expect(result.success).toBe(false);
+    });
+
+    it('accepts a listing that was never suspended', () => {
+        const result = HostTradeSchema.safeParse({
+            ...VALID_FULL_HOST_TRADE,
+            declarationSuspendedAt: null,
+            declarationSuspendedById: null,
+            declarationSuspendReason: null
+        });
+
+        expect(result.success).toBe(true);
+    });
+});
+
+describe('read tiers — HOS-376 columns', () => {
+    /** §6.5 — "34 usos · 21 anfitriones" is the anti-collusion signal. */
+    it.each(AGGREGATE_FIELDS)('the host-facing tier serves %s', (field) => {
+        expect(Object.keys(HostTradePublicSchema.shape)).toContain(field);
+    });
+
+    /**
+     * The directory never learns a provider is suspended. "Suspendido por
+     * declarar usos falsos" is a public conviction the system should not
+     * publish — the suspension only stops him declaring, it does not brand him
+     * in front of the hosts who might still hire him.
+     */
+    it.each(SUSPENSION_FIELDS)('the host-facing tier hides %s', (field) => {
+        expect(Object.keys(HostTradePublicSchema.shape)).not.toContain(field);
+    });
+
+    it.each([
+        'declarationSuspendedAt',
+        'declarationSuspendReason'
+    ])('the owner view shows the provider %s', (field) => {
+        expect(Object.keys(HostTradeOwnerViewSchema.shape)).toContain(field);
+    });
+
+    /** Who suspended him is the moderator's identity, not his business. */
+    it('the owner view hides the suspending admin', () => {
+        expect(Object.keys(HostTradeOwnerViewSchema.shape)).not.toContain(
+            'declarationSuspendedById'
+        );
+    });
+
+    it.each([...AGGREGATE_FIELDS, ...SUSPENSION_FIELDS])('the admin tier carries %s', (field) => {
+        expect(Object.keys(HostTradeAdminSchema.shape)).toContain(field);
+    });
+});
+
+describe('write shapes — HOS-376 columns', () => {
+    /**
+     * Create/Update are built by OMITTING audit fields from the entity, not by
+     * allowlisting, so these columns would flow straight into the admin create
+     * body unless they are omitted explicitly.
+     */
+    it.each([
+        ...AGGREGATE_FIELDS,
+        ...SUSPENSION_FIELDS
+    ])('CreateHostTradeSchema does not declare %s', (field) => {
+        expect(Object.keys(CreateHostTradeSchema.shape)).not.toContain(field);
+    });
+
+    it.each([
+        ...AGGREGATE_FIELDS,
+        ...SUSPENSION_FIELDS
+    ])('UpdateHostTradeSchema does not declare %s', (field) => {
+        expect(Object.keys(UpdateHostTradeSchema.shape)).not.toContain(field);
     });
 });

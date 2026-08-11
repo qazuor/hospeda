@@ -1,0 +1,45 @@
+---
+/**
+ * @file autores/[slug]/eventos/page/[page].astro
+ * @description Events pagination for the author page. Mirror of the posts
+ * pagination route, rewriting to `autores/[slug]/index.astro` with
+ * `?eventsPage=<n>` instead of `?page=<n>` (HOS-375 §6.3).
+ * @route /{lang}/autores/{slug}/eventos/page/{page}/
+ *
+ * The events block gets its OWN sub-route rather than sharing `?page` with the
+ * posts block so that neither block's tail collides with the other's: the same
+ * `/page/<n>/` segment cannot mean "posts page n" and "events page n" at once.
+ *
+ * Nothing redirects here — this route is new. It exists because the measured
+ * top author has 52 events (44 public in production); a fixed cap on the events
+ * block would hide 40 of them from exactly the person this page is meant to
+ * reward.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl, buildUrlWithParams } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { slug, page: pageParam } = Astro.params;
+
+if (!slug) return new Response(null, { status: 404 });
+
+const page = Number(pageParam);
+
+if (!Number.isInteger(page) || page < 1) {
+	return new Response(null, { status: 404 });
+}
+
+const authorPath = `autores/${slug}`;
+
+// Page 1 of the events block is the profile page, NOT `/eventos/` — the events
+// block has no standalone page-1 URL of its own. `/eventos/index.astro` sends
+// its own visitors to the same place, so both entry points agree.
+if (page === 1) {
+	return Astro.redirect(buildUrl({ locale, path: authorPath }), 301);
+}
+
+return Astro.rewrite(
+	buildUrlWithParams({ locale, path: authorPath, params: { eventsPage: String(page) } })
+);
+---

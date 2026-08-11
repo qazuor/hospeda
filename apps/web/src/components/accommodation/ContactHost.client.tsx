@@ -14,6 +14,7 @@ import { CreateConversationAnonSchema } from '@repo/schemas';
 import { useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import type { ApiErrorShape } from '@/lib/api-errors';
@@ -22,6 +23,7 @@ import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { useAccommodationConversation } from '@/store/accommodation-conversation-store';
 import styles from './ContactHost.module.css';
 
 /**
@@ -60,8 +62,6 @@ interface ContactHostUser {
 
 interface ContactHostProps {
     readonly accommodation: ContactHostAccommodation;
-    readonly currentUser: ContactHostUser | null;
-    readonly existingConversationId: string | null;
     readonly locale: SupportedLocale;
     /**
      * Optional pre-filled text for the message textarea. Used when the visitor
@@ -152,14 +152,24 @@ function resolveInitiateFailureMessage({
 /**
  * ContactHost island — renders a contact form or link depending on auth state.
  */
-export function ContactHost({
-    accommodation,
-    currentUser,
-    existingConversationId,
-    locale,
-    initialMessage
-}: ContactHostProps) {
+export function ContactHost({ accommodation, locale, initialMessage }: ContactHostProps) {
     const { t } = createTranslations(locale);
+
+    // Session resolved client-side (HOS-369 WB0-4). Until it resolves the form
+    // renders in its anonymous mode — name and e-mail fields visible — and the
+    // fields collapse once a session is confirmed. Hooks must run before the
+    // early return below, so this call stays above it.
+    const { user } = useAccountPermissions();
+
+    // Existing-conversation lookup, also client-side since WB0-7. Shares one
+    // request with ReviewSidebarCard (see the store's JSDoc). Until it settles
+    // — and whenever it fails — `conversationId` is null and the form is
+    // rendered instead of the "view thread" link. That degradation is safe: the
+    // protected `initiate` route is idempotent, so a send from this state
+    // returns the existing conversation rather than creating a second one.
+    const { conversationId: existingConversationId } = useAccommodationConversation({
+        accommodationId: accommodation.id
+    });
 
     // Only render for active, non-deleted accommodations
     if (accommodation.lifecycleState !== 'ACTIVE' || accommodation.deletedAt) {
@@ -167,7 +177,7 @@ export function ContactHost({
     }
 
     // --- Mode C: authenticated user with an existing conversation ---
-    if (currentUser && existingConversationId) {
+    if (user && existingConversationId) {
         const threadUrl = buildUrl({
             locale,
             path: `mi-cuenta/consultas/${existingConversationId}`
@@ -188,7 +198,7 @@ export function ContactHost({
     return (
         <ContactForm
             accommodation={accommodation}
-            currentUser={currentUser}
+            currentUser={user}
             locale={locale}
             t={t}
             initialMessage={initialMessage}

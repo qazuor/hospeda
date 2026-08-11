@@ -44,6 +44,8 @@ export * from './destinationReview/destinationReview.service';
 export type { DestinationReviewHookState } from './destinationReview/destinationReview.types';
 export * from './entityComment/entityComment.service';
 export * from './entityView/index.js';
+export * from './event/event.media';
+export * from './event/event.media-read';
 export * from './event/event.service';
 export type { EventHookState } from './event/event.types';
 export * from './eventLocation/eventLocation.service';
@@ -58,16 +60,28 @@ export * from './gastronomy';
 export * from './geocoding';
 export * from './hostTrade/host-trade.permissions';
 export * from './hostTrade/host-trade.service';
+// The HOS-376 half of the domain. Without these the services exist but are
+// unreachable from `@repo/service-core`, so no API route can construct one —
+// which is exactly how they shipped invisible until T-030 needed them.
+export * from './hostTrade/host-trade-aggregates';
+export * from './hostTrade/host-trade-review.permissions';
+export * from './hostTrade/host-trade-review.service';
+export * from './hostTrade/host-trade-review-reply.service';
+export * from './hostTrade/host-trade-usage.permissions';
+export * from './hostTrade/host-trade-usage.service';
 export * from './media';
 export * from './moderation';
 export * from './newsletter';
 export * from './owner-promotion';
 export * from './partner/partner.service';
+export * from './partner/partner-mention.service';
 export * from './permission/permission.effects';
 export * from './permission/permission.service';
 export * from './platformSettings/index.js';
 export * from './poi-category/point-of-interest-category.service';
 export * from './point-of-interest/point-of-interest.service';
+export * from './post/post.media';
+export * from './post/post.media-read';
 export * from './post/post.service';
 export type { PostHookState } from './post/post.types';
 export * from './postSponsor/postSponsor.service';

@@ -27,7 +27,6 @@ import {
     DEFAULT_EXPERIENCE_TYPES
 } from '@/lib/commerce-listing-summary';
 import { experiencesApi, destinationsApi } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toExperienceCardProps } from '@/lib/api/transforms';
 import { getExperienceTypeIcon } from '@/lib/experience-type-icons';
 import { createTranslations } from '@/lib/i18n';
@@ -35,9 +34,31 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { buildToggleParamHref } from '@/lib/filters/toggle-query-param';
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
-const isAuthenticated = Boolean(Astro.locals.user);
+
+// --- Edge cacheability (HOS-369 W2-4) ---
+// Newly cacheable: until W2-4 built the purge chain, `experience` had no tag
+// vocabulary, no `entity-tag-mapper` case, and its service never called the
+// revalidation service — so caching this page would have shipped a response
+// nothing could evict.
+//
+// Tagged with the collection: this IS a listing, so every experience write
+// must evict it.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// This listing accepts `q`, `type`, `destinationId`, `isFeatured`,
+	// `minRating`, `sortBy` — all read in the frontmatter, all
+	// changing the SSR HTML. Anything beyond pagination makes the render an
+	// arbitrary slice and stays private.
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	cacheClass: 'catalog',
+	tags: [CACHE_TAG_COLLECTIONS.experience]
+});
 
 const url = Astro.url;
 
@@ -96,35 +117,17 @@ const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 
 // --- Transform to card props ---
-type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
 
 const baseCards = items.map((item) =>
     toExperienceCardProps({ item: item as unknown as Record<string, unknown>, locale })
 );
 
 // --- SSR bulk-check favorites for authenticated users ---
-let favoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
-if (isAuthenticated && baseCards.length > 0) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const bulkResult = await userBookmarksApi.checkBulk({
-            entityType: 'EXPERIENCE',
-            entityIds: baseCards.map((card) => card.id),
-            cookieHeader
-        });
-        if (bulkResult.ok) {
-            favoriteChecks = bulkResult.data.checks;
-        }
-    } catch {
-        // graceful degradation — FavoriteButton will single-check on mount
-    }
-}
 
-const cards = baseCards.map((card) => {
-    const entry = favoriteChecks[card.id];
-    if (!entry) return card;
-    return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
-});
+// HOS-369 WB0-5: favourite state is per-user, so it is no longer resolved
+// here — the hearts resolve it themselves after hydration, once per page load
+// for the whole grid (`store/favorites-store`).
+const cards = baseCards;
 
 // --- Experience types for filter (from the confirmed enum) ---
 const EXPERIENCE_TYPES = [
@@ -347,7 +350,6 @@ const itemListEntries = cards.map((card) => ({
                     <ExperienceCard
                         data={card}
                         locale={locale}
-                        isAuthenticated={isAuthenticated}
                         eager={i < 3}
                     />
                 </div>

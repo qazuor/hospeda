@@ -3,7 +3,10 @@
  * @file eventos/[slug].astro
  * @description Event detail page with Event JSON-LD and EventStatus mapping.
  * @route /{lang}/eventos/{slug}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — TTL from the `detail` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
@@ -22,7 +25,6 @@ import EventDetailOrganizerCard from '@/components/event/EventDetailOrganizerCar
 import EventDetailTagsRow from '@/components/event/EventDetailTagsRow.astro';
 import ImageAttribution from '@/components/shared/ImageAttribution.astro';
 import { eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventDetailProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -30,6 +32,8 @@ import { pickLocalizedSeo } from '@/lib/seo';
 import { Image } from 'astro:assets';
 import { renderContent } from '@/lib/render-content';
 
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { slug } = Astro.params;
@@ -58,6 +62,7 @@ const {
 	location,
 	pricing,
 	organizer,
+	author,
 	tags,
 	seo,
 	isCancelled,
@@ -70,14 +75,38 @@ const {
 const seoTitle = pickLocalizedSeo({ stored: seo.title, fallback: name, locale });
 const seoDescription = pickLocalizedSeo({ stored: seo.description, fallback: summary, locale });
 
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After the 404/410 guards, so an error response is never marked shareable,
+// and after `eventId` is destructured so both tags are available.
+//
+// Addressed by its OWN two tags and deliberately NOT by `list-event`: a detail
+// page is not a listing, and the collection tag would make every event write
+// evict every other event's page. Same call as the accommodation detail (W1-6)
+// and the destination detail.
+const eventCacheTags = buildEntityCacheTags({
+	entity: 'event',
+	slug,
+	id: eventId
+});
+const [primaryEventTag, ...extraEventTags] = eventCacheTags;
+
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// No usable entity tag means nothing could purge this page, and an
+	// unpurgeable cached page is worse than an uncached one.
+	cacheable: primaryEventTag !== undefined,
+	cacheClass: 'detail',
+	tags:
+		primaryEventTag !== undefined
+			? [primaryEventTag, ...extraEventTags]
+			: [CACHE_TAG_COLLECTIONS.event]
+});
+
 // --- Auth ---
-const userId = Astro.locals.user?.id ?? null;
-const isAuthenticated = userId !== null;
 
 // --- Bookmark count + favorite status (graceful degradation) ---
 let bookmarkCount: number | undefined;
-let initialIsFavorited: boolean | undefined;
-let initialBookmarkId: string | null = null;
 
 if (eventId) {
 	try {
@@ -92,22 +121,6 @@ if (eventId) {
 		// Graceful degradation: counter not shown if fetch fails
 	}
 
-	if (isAuthenticated) {
-		try {
-			const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-			const statusResult = await userBookmarksApi.checkStatus({
-				entityId: eventId,
-				entityType: 'EVENT',
-				cookieHeader
-			});
-			if (statusResult.ok) {
-				initialIsFavorited = statusResult.data.isFavorited;
-				initialBookmarkId = statusResult.data.bookmarkId;
-			}
-		} catch {
-			// Graceful degradation: FavoriteButton hydrates itself on mount
-		}
-	}
 }
 
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
@@ -216,11 +229,9 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 			locationName={location.name}
 			isPast={isPast}
 			isCancelled={isCancelled}
+			author={author ?? null}
 			bookmarkCount={bookmarkCount}
 			locale={locale}
-			isAuthenticated={isAuthenticated}
-			initialIsFavorited={initialIsFavorited}
-			initialBookmarkId={initialBookmarkId}
 		/>
 	</Fragment>
 
@@ -267,9 +278,7 @@ const featuredIsPlaceholder = featuredImage.url.includes('placeholder');
 			entityType="EVENT"
 			entityId={eventId}
 			locale={locale}
-			isAuthenticated={isAuthenticated}
 			currentUrl={Astro.url.href}
-			currentUserName={Astro.locals.user?.name ?? null}
 		/>
 
 		<!-- Tags row (only when tags exist) -->

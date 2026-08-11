@@ -69,7 +69,10 @@ const fallbackUser = {
 	city: null as string | null,
 	province: null as string | null,
 	country: null as string | null,
-	postalCode: null as string | null
+	postalCode: null as string | null,
+	// HOS-375 §6.7: opt-in, so the fallback shape must be OFF. A failed GET
+	// must never make the form look like the user had already consented.
+	publicProfileShowSocialNetworks: false
 };
 
 let initialUser = fallbackUser;
@@ -102,6 +105,7 @@ try {
 			const socialNetworks = asRecord(data.socialNetworks);
 			const location = asRecord(data.location);
 			const profile = asRecord(data.profile);
+			const settings = asRecord(data.settings);
 
 			// Helper — read a top-level field first, then a JSONB fallback.
 			const pickString = (top: unknown, jsonbValue: unknown): string | null => {
@@ -158,7 +162,14 @@ try {
 				city: pickString(data.city, location?.city),
 				province: pickString(data.province, location?.region),
 				country: pickString(data.country, location?.country),
-				postalCode: pickString(data.postalCode, location?.postalCode)
+				postalCode: pickString(data.postalCode, location?.postalCode),
+
+				// Flattened out of the `settings` JSONB the same way `phone` is
+				// flattened out of `contactInfo`. `=== true` and not a truthy
+				// check: the key is absent for every user who has never chosen,
+				// and HOS-375 §6.7 makes that OFF.
+				publicProfileShowSocialNetworks:
+					settings?.publicProfileShowSocialNetworks === true
 			};
 		}
 	}

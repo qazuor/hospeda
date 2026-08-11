@@ -245,8 +245,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * default 5) — gives avatars a cap of their own, replacing a hardcoded byte
  * literal in the upload route. Deliberately lower than the entity-photo cap
  * because avatars are cropped to a thumbnail. 274 + 1 = 275.
+ *
+ * +1 = ASTRO_KEY (HOS-401, system category, optional, build-stage, web only) —
+ * stable encryption key for server-island props. Without it Astro derives a new
+ * key per build, so edge-cached HTML can carry a payload the next build cannot
+ * decrypt. Consumed by Astro itself at build time, never by our runtime, so it
+ * is deliberately absent from serverEnvSchema. 275 + 1 = 276.
  */
-const EXPECTED_VAR_COUNT = 275;
+const EXPECTED_VAR_COUNT = 276;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

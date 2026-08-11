@@ -104,7 +104,11 @@ export const VideoGalleryField = React.forwardRef<HTMLInputElement, VideoGallery
         const descriptionId = description ? `${fieldId}-description` : undefined;
         const helperId = helper ? `${fieldId}-helper` : undefined;
 
-        const items = value;
+        // HOS-372: coalesce rather than rely on the `value = []` parameter default.
+        // The field now reads the top-level `videos` column, which is NULLABLE, and a
+        // parameter default only fires on `undefined` — a null went straight through
+        // and crashed the whole edit page on `.length`.
+        const items = value ?? [];
 
         const handleAddVideo = () => {
             const url = draftUrl.trim();

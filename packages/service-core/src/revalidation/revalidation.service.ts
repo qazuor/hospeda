@@ -1,43 +1,59 @@
 /**
- * Revalidation service — schedules and executes Astro ISR cache revalidation.
+ * Revalidation service — schedules and executes Cloudflare cache-tag purges.
  *
- * Slightly over the 500-line guideline; split deferred (reviewed SPEC-167 T-023).
+ * HOS-369 W1-1 turned this service from URL-path purging to cache-tag purging.
+ * Every "path" concept below is now a "tag" (what to invalidate) or a "target"
+ * (what the adapter/log actually recorded). Three target shapes exist, and the
+ * `revalidation_log.target` column is how they are told apart afterwards:
+ * `<env>:<tag>` for an ordinary purge and for an environment flush
+ * (`prod:all`), `*` for a whole-zone flush, and `?:all` for an environment
+ * flush that could not be addressed at all. See `entity-tag-mapper.ts` for the
+ * entity→tag mapping this service delegates to.
+ *
+ * Well over the 500-line guideline — most of it prose, since nearly every
+ * decision here has a silent failure mode behind it. The split was reviewed and
+ * deferred (SPEC-167 T-023) and is still deferred: the natural seam is
+ * scheduling/debounce vs purging, and moving either half while the purge
+ * semantics are actively changing would make the diffs unreviewable.
  *
  * @module revalidation/revalidation.service
  */
 
+import type { CacheTagEnvironment } from '@repo/cache-tags';
+import { CACHE_TAG_ALL, namespaceCacheTags } from '@repo/cache-tags';
 import type { RevalidationConfigRecord } from '@repo/db';
 import { RevalidationConfigModel, RevalidationLogModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
-import type { RevalidatePathResult, RevalidationAdapter } from './adapters/revalidation.adapter.js';
-import type { EntityChangeData } from './entity-path-mapper.js';
-import { getAffectedPaths } from './entity-path-mapper.js';
+import type {
+    RevalidateTargetResult,
+    RevalidationAdapter
+} from './adapters/revalidation.adapter.js';
+import {
+    UNRESOLVED_ENVIRONMENT_TARGET,
+    WHOLE_ZONE_TARGET
+} from './adapters/revalidation.adapter.js';
+import type { EntityChangeData } from './entity-change.types.js';
+import { getAffectedCacheTags } from './entity-tag-mapper.js';
 
 /**
  * Resolver that queries the database for entities of a specific type.
- * Used by {@link RevalidationService} to look up published entities
- * when performing type-level or entity-level revalidation.
  *
- * Implementations live in the API layer (not service-core) because
- * they depend on concrete DB models.
+ * No longer consulted by {@link RevalidationService.revalidateByEntityType} /
+ * `resolveTagsForEntityType` (HOS-369 W1-1) — the collection tag for a type
+ * already covers every listing/facet page that could show one of its members,
+ * so enumerating every published row to build per-entity tags is both
+ * redundant (each entity purges its own tag from its own write hook) and
+ * dangerous (Cloudflare's Free-plan tag-purge rate limit is 5 requests/minute;
+ * a cron walking hundreds of rows would blow through it in seconds).
+ *
+ * The type and the `resolveById` half are kept: the `/revalidate/entity` admin
+ * route still resolves a single entity by id before computing its tags.
  */
 export interface EntityResolver {
     /**
-     * Returns {@link EntityChangeData} for all published/active entities
-     * of the given type. Used by {@link RevalidationService.revalidateByEntityType}
-     * to discover individual detail page paths.
-     *
-     * @param params - Object containing the entity type to resolve
-     * @returns Array of entity change data objects, one per published entity
-     */
-    readonly resolveByType: (params: {
-        readonly entityType: EntityChangeData['entityType'];
-    }) => Promise<ReadonlyArray<EntityChangeData>>;
-
-    /**
      * Returns {@link EntityChangeData} for a single entity by type and ID.
      * Used by the `/revalidate/entity` endpoint to look up a specific entity
-     * before revalidating its paths.
+     * before revalidating its tags.
      *
      * @param params - Object containing entity type and entity ID
      * @returns The entity change data, or null if not found
@@ -47,9 +63,6 @@ export interface EntityResolver {
         readonly entityId: string;
     }) => Promise<EntityChangeData | null>;
 }
-
-/** Default maximum number of entity types to revalidate per cron run */
-const DEFAULT_MAX_CRON_REVALIDATIONS = 500;
 
 /** Default retention period for revalidation log entries in days */
 const DEFAULT_LOG_RETENTION_DAYS = 30;
@@ -65,17 +78,6 @@ export interface RevalidationServiceConfig {
      */
     readonly debounceMs?: number;
     /**
-     * Supported locales for URL path generation.
-     * Used by getAffectedPaths to generate locale-prefixed paths.
-     */
-    readonly locales: ReadonlyArray<string>;
-    /**
-     * Maximum number of entity types to revalidate per cron job run.
-     * Prevents runaway revalidation in large deployments.
-     * Defaults to 500.
-     */
-    readonly maxCronRevalidations?: number;
-    /**
      * Number of days to retain revalidation log entries before cleanup.
      * Used by the cron job to delete old log entries.
      * Defaults to 30.
@@ -83,10 +85,27 @@ export interface RevalidationServiceConfig {
     readonly logRetentionDays?: number;
     /**
      * Optional entity resolver for looking up published entities from the database.
-     * When provided, {@link RevalidationService.revalidateByEntityType} queries
-     * individual entity detail pages instead of just generic listing paths.
+     * Used by the `/revalidate/entity` route (via {@link RevalidationService.getEntityResolver})
+     * to resolve a single entity's tags; no longer consulted by the cron
+     * backstop (see {@link EntityResolver}).
      */
     readonly entityResolver?: EntityResolver;
+    /**
+     * Deployment environment every purged tag is namespaced by (HOS-369 W1-2).
+     *
+     * `staging.hospeda.com.ar` and `hospeda.com.ar` are ONE Cloudflare zone, so
+     * an unqualified `list-accom` purge from staging evicts production's cache.
+     * The value MUST be derived from `HOSPEDA_DEPLOY_ENV` through
+     * `resolveCacheTagEnvironment` — the same function the web app calls — or
+     * the purge will address tags nothing ever emitted and report success.
+     *
+     * `undefined` means the environment could not be resolved at startup. In
+     * that state NO tag is purgeable and every purge is a no-op: purging
+     * unnamespaced tags would hit nothing, and guessing a namespace could hit
+     * the wrong environment. `initializeRevalidationService` pairs this state
+     * with a no-op adapter and an error log; it is never a normal condition.
+     */
+    readonly cacheTagEnvironment?: CacheTagEnvironment;
 }
 
 /** Trigger source for revalidation log entries */
@@ -98,9 +117,9 @@ interface ConfigCacheEntry {
     readonly expiresAt: number;
 }
 
-/** Pending entity debounce state: accumulated paths and the timer reference */
+/** Pending entity debounce state: accumulated tags and the timer reference */
 interface PendingEntityDebounce {
-    readonly paths: Set<string>;
+    readonly tags: Set<string>;
     readonly entityType: string;
     /**
      * Canonical UUID written to `revalidation_log.entity_id` when the bucket
@@ -134,11 +153,35 @@ const CONFIG_CACHE_TTL_MS = 60_000; // 60 seconds
  */
 const PURGE_COALESCE_MS = 50;
 
-/** One entity's worth of paths awaiting the next shared purge. */
+/**
+ * Minimum spacing between two coalesced purge requests, in milliseconds.
+ *
+ * Cloudflare's tag-purge ceiling on the Free plan is 5 requests per minute
+ * (spec §5.11.2), i.e. one per 12 s. The 50 ms window above absorbs scheduler
+ * skew between siblings enqueued in the same tick; it does nothing for writes
+ * that arrive SECONDS apart, which is the normal case — each entity has its own
+ * debounce bucket (`accommodation` is seeded at 5 s), so six hosts saving six
+ * listings over fifteen seconds produced six separate purge requests.
+ *
+ * Under `purge_everything` exceeding the limit was self-correcting: a dropped
+ * flush was repaired by the next successful one, because every flush covered
+ * everything. With tags it is not — the tags of a rejected request are disjoint
+ * from the next request's, so whatever it carried stays cached until its TTL.
+ * That is why this exists, and why it DELAYS rather than drops: pending groups
+ * keep accumulating in `pendingPurgeGroups` and go out together on the next
+ * permitted flush.
+ *
+ * Cost: under sustained write pressure a purge can wait up to 12 s beyond its
+ * debounce. That is strictly better than the alternative, which is a purge that
+ * returns 429 and evicts nothing.
+ */
+const MIN_PURGE_INTERVAL_MS = 12_000;
+
+/** One entity's worth of cache tags awaiting the next shared purge. */
 interface PendingPurgeGroup {
     readonly entityType: string;
     readonly entityId: string | undefined;
-    readonly paths: readonly string[];
+    readonly tags: readonly string[];
     readonly reason?: string;
 }
 
@@ -146,20 +189,19 @@ interface PendingPurgeGroup {
 const LOG_WRITE_CONCURRENCY = 20;
 
 /**
- * Central service for on-demand ISR page revalidation.
+ * Central service for on-demand Cloudflare cache-tag purging.
  *
  * Responsibilities:
  * - Reads per-entity-type config from `revalidation_config` (with 60 s in-memory cache)
  * - Debounces rapid successive change events for the same entity (keyed by entityType:entityId)
- * - Writes audit entries to `revalidation_log` after every revalidation attempt
- * - Uses the injected adapter for actual HTTP calls (Cloudflare cache purge or no-op)
+ * - Writes audit entries to `revalidation_log` after every purge attempt
+ * - Uses the injected adapter for actual HTTP calls (Cloudflare tag purge or no-op)
  *
  * All revalidation triggered by hooks is fire-and-forget -- never blocks CRUD operations.
  */
 export class RevalidationService {
     private readonly adapter: RevalidationAdapter;
-    private readonly localesConfig: ReadonlyArray<string>;
-    private readonly maxCronRevalidationsConfig: number;
+    private readonly cacheTagEnvironment: CacheTagEnvironment | undefined;
     private readonly logRetentionDaysConfig: number;
     private readonly entityResolverInstance: EntityResolver | undefined;
     private readonly pendingTimers = new Map<string, PendingEntityDebounce>();
@@ -174,6 +216,12 @@ export class RevalidationService {
      * "one purge at a time", and concurrency is the whole thing being fixed.
      */
     private purgeInFlight: Promise<unknown> = Promise.resolve();
+    /**
+     * When the last coalesced purge started, used to keep requests at least
+     * {@link MIN_PURGE_INTERVAL_MS} apart. Zero means "none yet", which makes
+     * the first purge of the process fire on the plain coalescing window.
+     */
+    private lastPurgeStartedAt = 0;
     private readonly configCache = new Map<string, ConfigCacheEntry>();
     private readonly logModel: RevalidationLogModel;
     private readonly configModel: RevalidationConfigModel;
@@ -181,29 +229,11 @@ export class RevalidationService {
 
     constructor(config: RevalidationServiceConfig) {
         this.adapter = config.adapter;
-        this.localesConfig = config.locales;
-        this.maxCronRevalidationsConfig =
-            config.maxCronRevalidations ?? DEFAULT_MAX_CRON_REVALIDATIONS;
+        this.cacheTagEnvironment = config.cacheTagEnvironment;
         this.logRetentionDaysConfig = config.logRetentionDays ?? DEFAULT_LOG_RETENTION_DAYS;
         this.entityResolverInstance = config.entityResolver;
         this.logModel = new RevalidationLogModel();
         this.configModel = new RevalidationConfigModel();
-    }
-
-    /**
-     * Returns the configured locales for URL path generation.
-     * @returns Readonly array of locale codes (e.g. ['es', 'en', 'pt'])
-     */
-    getLocales(): ReadonlyArray<string> {
-        return this.localesConfig;
-    }
-
-    /**
-     * Returns the maximum number of entity types to revalidate per cron run.
-     * @returns The configured max or the default (500)
-     */
-    getMaxCronRevalidations(): number {
-        return this.maxCronRevalidationsConfig;
     }
 
     /**
@@ -212,6 +242,20 @@ export class RevalidationService {
      */
     getLogRetentionDays(): number {
         return this.logRetentionDaysConfig;
+    }
+
+    /**
+     * Name of the adapter this service is wired to.
+     *
+     * Exposed for the admin health check, which reports what it can observe
+     * WITHOUT spending one of Cloudflare's 5 tag-purge requests per minute
+     * (HOS-369 W1-1). A `NoOpRevalidationAdapter` here means invalidation is
+     * silently disabled — the missing-secret fallback in `adapter-factory.ts`.
+     *
+     * @returns The adapter's `name`.
+     */
+    getAdapterName(): string {
+        return this.adapter.name;
     }
 
     /**
@@ -226,7 +270,7 @@ export class RevalidationService {
     }
 
     /**
-     * Schedule revalidation for pages affected by an entity change event.
+     * Schedule revalidation for cache tags affected by an entity change event.
      *
      * Before scheduling, reads the entity-type config from the database (with 60 s cache).
      * Returns immediately without doing anything if:
@@ -236,7 +280,7 @@ export class RevalidationService {
      *
      * Uses entity-level debouncing: multiple calls for the same entity (keyed by
      * `entityType:entityId` or just `entityType`) within the debounce window are merged
-     * into a single batch revalidation of all accumulated paths.
+     * into a single batch purge of all accumulated tags.
      * Fire-and-forget -- never throws, never blocks.
      *
      * @param event - Discriminated union describing the changed entity with contextual data
@@ -272,87 +316,89 @@ export class RevalidationService {
     }
 
     /**
-     * Immediately revalidate all paths for a given entity type (no debounce).
+     * Immediately purges every cache tag for a given entity type (no debounce).
      * Used by the scheduled cron job and manual admin triggers.
      *
-     * When an {@link EntityResolver} is configured, queries the database for all
-     * published entities of the given type and computes paths for each individual
-     * entity (detail pages + listing pages). This provides precise revalidation
-     * instead of only revalidating generic listing pages.
-     *
-     * Falls back to generic listing-only path computation when no resolver is available.
-     *
      * @param params - Object containing entity type and optional trigger
-     * @param params.entityType - The entity type whose pages should all be revalidated
+     * @param params.entityType - The entity type whose tags should all be purged
      * @param params.trigger - Trigger source for the log entry (defaults to 'cron')
-     * @returns Array of results, one per revalidated path
+     * @returns Array of results, one per purged tag
      */
     async revalidateByEntityType(params: {
         readonly entityType: EntityChangeData['entityType'];
         readonly trigger?: RevalidationTrigger;
-    }): Promise<ReadonlyArray<RevalidatePathResult>> {
+    }): Promise<ReadonlyArray<RevalidateTargetResult>> {
         const { entityType, trigger = 'cron' } = params;
 
-        const paths = await this.resolvePathsForEntityType({ entityType });
-        return this.revalidatePaths({ paths, triggeredBy: 'system', trigger, entityType });
+        const tags = this.resolveTagsForEntityType({ entityType });
+        return this.revalidateTags({ tags, triggeredBy: 'system', trigger, entityType });
     }
 
     /**
-     * Resolves every page path affected by an entity type, without purging.
+     * Resolves every cache tag affected by an entity type, without purging.
      *
      * Split out of {@link revalidateByEntityType} so {@link revalidateEntityTypesBatch}
-     * can gather paths across several types and then purge ONCE (HOS-297).
+     * can gather tags across several types and then purge ONCE (HOS-297).
      *
-     * Uses the entity resolver for precise per-entity paths when one is configured,
-     * capped at `maxCronRevalidations`; falls back to the type's generic listing
-     * paths when there is no resolver, when the resolver throws, or when it resolves
-     * to nothing.
+     * Deliberately a PURE call into {@link getAffectedCacheTags} — no
+     * {@link EntityResolver}, no DB enumeration, no per-run cap. This is a
+     * behaviour change from the path-based cron (which walked every published
+     * entity of a type): the collection tag already invalidates every listing
+     * surface for that type, so enumerating rows to build per-entity tags on
+     * top of it would be redundant AND would risk exceeding Cloudflare's
+     * Free-plan tag-purge rate limit (5 requests/minute) on a large table.
+     * Per-entity staleness is caught by that entity's own write hook
+     * (`scheduleRevalidation`), not by this cron path.
      *
-     * @param params.entityType - Entity type to resolve paths for.
-     * @returns Deduplicated paths. Never throws.
+     * @param params.entityType - Entity type to resolve tags for.
+     * @returns Deduplicated cache tags for the type. Never throws.
      */
-    private async resolvePathsForEntityType(params: {
+    private resolveTagsForEntityType(params: {
         readonly entityType: EntityChangeData['entityType'];
-    }): Promise<string[]> {
+    }): readonly string[] {
         const { entityType } = params;
+        return this.toNamespacedTags(getAffectedCacheTags({ entityType } as EntityChangeData));
+    }
 
-        if (this.entityResolverInstance) {
-            try {
-                const entities = await this.entityResolverInstance.resolveByType({ entityType });
-                const allPaths = new Set<string>();
-
-                // Limit entities to maxCronRevalidations to prevent runaway revalidation
-                const limitedEntities = entities.slice(0, this.maxCronRevalidationsConfig);
-
-                for (const entity of limitedEntities) {
-                    const entityPaths = getAffectedPaths(entity, this.localesConfig);
-                    for (const p of entityPaths) {
-                        allPaths.add(p);
-                    }
-                }
-
-                if (allPaths.size > 0) {
-                    return [...allPaths];
-                }
-            } catch (error) {
+    /**
+     * Qualify bare vocabulary tags with this deployment's namespace.
+     *
+     * Applied at every point where tags ENTER the service, not at the point
+     * where they leave for the adapter. That choice makes the namespaced form
+     * the only one that exists downstream, so `purgeGroupsOnce`'s
+     * result-matching, the `revalidation_log.target` rows and the adapter all
+     * speak about the same string — the audit trail records what was actually
+     * purged rather than what was asked for. `namespaceCacheTag` is idempotent
+     * for its own environment, which is what makes it safe for the entry points
+     * to overlap (`revalidateByEntityType` → `revalidateTags`).
+     *
+     * When the environment is unresolved this returns nothing, so no purge is
+     * attempted at all. Purging the bare tags instead would evict nothing (the
+     * emitter never wrote them) while logging success; purging a guessed
+     * namespace could evict the other environment.
+     *
+     * @param tags - Bare cache tags from the entity mapper or from a caller.
+     * @returns Namespaced tags, deduplicated, in input order.
+     */
+    private toNamespacedTags(tags: ReadonlyArray<string>): readonly string[] {
+        if (this.cacheTagEnvironment === undefined) {
+            if (tags.length > 0) {
                 this.logger.error(
-                    `[RevalidationService] EntityResolver failed for type "${entityType}", falling back to generic paths: ${error instanceof Error ? error.message : String(error)}`
+                    '[RevalidationService] Dropping cache-tag purge: the deployment namespace is unresolved (set HOSPEDA_DEPLOY_ENV to prod | preview | dev | test)'
                 );
             }
+            return [];
         }
-
-        // Fallback: no resolver, resolver failed, or resolver returned nothing.
-        return [
-            ...new Set(getAffectedPaths({ entityType } as EntityChangeData, this.localesConfig))
-        ];
+        return namespaceCacheTags({ environment: this.cacheTagEnvironment, tags });
     }
 
     /**
      * Revalidates SEVERAL entity types in a single cache purge (HOS-297).
      *
-     * The adapter's purge invalidates the whole zone in one call, so calling
-     * {@link revalidateByEntityType} once per entity type — as the page-revalidation
-     * cron used to — fires N identical zone purges per run where one would do.
+     * The adapter's purge invalidates every listed tag in as few upstream
+     * requests as possible, so calling {@link revalidateByEntityType} once per
+     * entity type — as the page-revalidation cron used to — fires N separate
+     * purge round-trips per run where one would do.
      *
      * To be precise about what this does and does not fix: those N cron purges were
      * `await`-sequential, so they were waste and rate-budget consumption, NOT the
@@ -368,53 +414,53 @@ export class RevalidationService {
      * each carrying the shared outcome.
      *
      * @param params.entityTypes - Entity types to revalidate together. Duplicates are
-     *   ignored; a type that resolves to no paths is skipped (no purge, no log).
+     *   ignored; a type that resolves to no tags is skipped (no purge, no log).
      * @param params.trigger - Trigger source recorded on every log entry (default `'cron'`).
      * @returns Results grouped per entity type, in input order (types that resolved to
-     *   no paths are omitted).
+     *   no tags are omitted).
      */
     async revalidateEntityTypesBatch(params: {
         readonly entityTypes: ReadonlyArray<EntityChangeData['entityType']>;
         readonly trigger?: RevalidationTrigger;
     }): Promise<
-        ReadonlyArray<{ entityType: string; results: ReadonlyArray<RevalidatePathResult> }>
+        ReadonlyArray<{ entityType: string; results: ReadonlyArray<RevalidateTargetResult> }>
     > {
         const { entityTypes, trigger = 'cron' } = params;
 
-        // Resolve every type's paths BEFORE purging, so the single purge below
+        // Resolve every type's tags BEFORE purging, so the single purge below
         // covers the whole run.
-        const perType: Array<{ entityType: string; paths: string[] }> = [];
-        const zeroPathTypes: string[] = [];
+        const perType: Array<{ entityType: string; tags: string[] }> = [];
+        const zeroTagTypes: string[] = [];
         const seenTypes = new Set<string>();
 
         for (const entityType of entityTypes) {
             if (seenTypes.has(entityType)) continue;
             seenTypes.add(entityType);
 
-            const paths = await this.resolvePathsForEntityType({ entityType });
-            if (paths.length > 0) {
-                perType.push({ entityType, paths });
+            const tags = this.resolveTagsForEntityType({ entityType });
+            if (tags.length > 0) {
+                perType.push({ entityType, tags: [...tags] });
             } else {
                 // Reported with empty results rather than dropped: a caller that
                 // derives counters from this (the cron does) would otherwise see
                 // the type vanish from the run's accounting entirely, and a dry
                 // run would report a different total than the real one.
-                zeroPathTypes.push(entityType);
+                zeroTagTypes.push(entityType);
             }
         }
 
-        const skipped = zeroPathTypes.map((entityType) => ({
+        const skipped = zeroTagTypes.map((entityType) => ({
             entityType,
-            results: [] as ReadonlyArray<RevalidatePathResult>
+            results: [] as ReadonlyArray<RevalidateTargetResult>
         }));
 
         if (perType.length === 0) return skipped;
 
         const purged = await this.purgeGroupsOnce({
-            groups: perType.map(({ entityType, paths }) => ({
+            groups: perType.map(({ entityType, tags }) => ({
                 entityType,
                 entityId: undefined,
-                paths
+                tags
             })),
             trigger,
             triggeredBy: 'system'
@@ -434,6 +480,14 @@ export class RevalidationService {
 
         if (this.purgeFlushTimer !== undefined) return;
 
+        // Wait out whatever remains of the rate-limit interval since the last
+        // flush, but never less than the coalescing window. At low write volume
+        // the remainder is already negative and this is the plain 50 ms hop;
+        // under pressure the extra wait is what turns a burst that would be
+        // rejected into one request that is accepted (see MIN_PURGE_INTERVAL_MS).
+        const sinceLastPurge = Date.now() - this.lastPurgeStartedAt;
+        const delay = Math.max(PURGE_COALESCE_MS, MIN_PURGE_INTERVAL_MS - sinceLastPurge);
+
         this.purgeFlushTimer = setTimeout(() => {
             this.purgeFlushTimer = undefined;
 
@@ -444,6 +498,7 @@ export class RevalidationService {
                 .then(() => {
                     const groups = this.pendingPurgeGroups.splice(0);
                     if (groups.length === 0) return undefined;
+                    this.lastPurgeStartedAt = Date.now();
                     return this.purgeGroupsOnce({ groups, trigger: 'hook' });
                 })
                 .catch((error: unknown) => {
@@ -452,7 +507,7 @@ export class RevalidationService {
                     );
                     return undefined;
                 });
-        }, PURGE_COALESCE_MS);
+        }, delay);
 
         // NOT unref'd, deliberately. The debounce timer that precedes this one is
         // ref'd, so the process already paid up to `debounceSeconds` of liveness
@@ -468,17 +523,17 @@ export class RevalidationService {
      * This is the single choke point for "many things changed, purge once"
      * (HOS-297). Two details are load-bearing:
      *
-     *  - Outcomes are matched back to their own path rather than assuming the
+     *  - Outcomes are matched back to their own tag rather than assuming the
      *    whole batch shares one verdict. `RevalidationAdapter.revalidateMany` is
-     *    contractually per-path (`Promise.allSettled`, one result per path); only
-     *    the Cloudflare zone-purge adapter happens to return a uniform result
-     *    today. A path with no matching result is recorded as failed with an
-     *    explicit message rather than silently inheriting someone else's verdict.
+     *    contractually per-tag (one result per input tag); only a uniform-outcome
+     *    adapter happens to return the same result for every tag today. A tag
+     *    with no matching result is recorded as failed with an explicit message
+     *    rather than silently inheriting someone else's verdict.
      *  - Log writes are awaited with bounded concurrency. A run can carry
-     *    thousands of paths, and firing every insert unawaited in one tick just
+     *    thousands of tags, and firing every insert unawaited in one tick just
      *    relocates the burst this method exists to remove onto Postgres.
      *
-     * @param params.groups - Per-entity/per-type path groups sharing this purge.
+     * @param params.groups - Per-entity/per-type tag groups sharing this purge.
      * @param params.trigger - Trigger recorded on every audit row.
      * @param params.triggeredBy - Log attribution (defaults to `'system'`).
      * @returns Per-group results, in input order.
@@ -488,56 +543,56 @@ export class RevalidationService {
         readonly trigger: RevalidationTrigger;
         readonly triggeredBy?: string;
     }): Promise<
-        ReadonlyArray<{ entityType: string; results: ReadonlyArray<RevalidatePathResult> }>
+        ReadonlyArray<{ entityType: string; results: ReadonlyArray<RevalidateTargetResult> }>
     > {
         const { groups, trigger, triggeredBy = 'system' } = params;
 
-        const unionedPaths = [...new Set(groups.flatMap((group) => [...group.paths]))];
-        if (unionedPaths.length === 0) return [];
+        const unionedTags = [...new Set(groups.flatMap((group) => [...group.tags]))];
+        if (unionedTags.length === 0) return [];
 
-        const purgeResults = await this.adapter.revalidateMany({ paths: unionedPaths });
-        const byPath = new Map(purgeResults.map((result) => [result.path, result]));
+        const purgeResults = await this.adapter.revalidateMany({ tags: unionedTags });
+        const byTarget = new Map(purgeResults.map((result) => [result.target, result]));
 
-        // The adapter contract is one result per path, in input order. Prefer
-        // matching by path (so a per-path adapter is reported per path), but fall
-        // back to POSITION when the counts line up and the path simply did not
-        // match — an adapter that normalises paths (trailing slash, encoding)
-        // would otherwise flip a fully successful purge to 100% failed, which is
-        // a worse failure than the shared-verdict bug this replaced.
-        const canMatchByIndex = purgeResults.length === unionedPaths.length;
-        if (canMatchByIndex && byPath.size === 0 && unionedPaths.length > 0) {
+        // The adapter contract is one result per tag, in input order. Prefer
+        // matching by tag (so a per-tag adapter is reported per tag), but fall
+        // back to POSITION when the counts line up and the tag simply did not
+        // match — an adapter that normalises tags would otherwise flip a fully
+        // successful purge to 100% failed, which is a worse failure than the
+        // shared-verdict bug this replaced.
+        const canMatchByIndex = purgeResults.length === unionedTags.length;
+        if (canMatchByIndex && byTarget.size === 0 && unionedTags.length > 0) {
             this.logger.warn(
-                `[RevalidationService] ${this.adapter.name} returned no recognisable paths; falling back to positional matching`
+                `[RevalidationService] ${this.adapter.name} returned no recognisable tags; falling back to positional matching`
             );
         }
 
-        const resultForPath = (path: string, index: number): RevalidatePathResult => {
-            const matched = byPath.get(path);
-            if (matched !== undefined) return { ...matched, path };
+        const resultForTag = (tag: string, index: number): RevalidateTargetResult => {
+            const matched = byTarget.get(tag);
+            if (matched !== undefined) return { ...matched, target: tag };
 
             const positional = canMatchByIndex ? purgeResults[index] : undefined;
-            if (positional !== undefined) return { ...positional, path };
+            if (positional !== undefined) return { ...positional, target: tag };
 
             return {
-                path,
+                target: tag,
                 success: false,
                 durationMs: 0,
-                error: `${this.adapter.name} returned no result for this path (${purgeResults.length} result(s) for ${unionedPaths.length} path(s))`
+                error: `${this.adapter.name} returned no result for this tag (${purgeResults.length} result(s) for ${unionedTags.length} tag(s))`
             };
         };
 
-        const unionIndexByPath = new Map(unionedPaths.map((path, index) => [path, index]));
+        const unionIndexByTag = new Map(unionedTags.map((tag, index) => [tag, index]));
 
         const pendingWrites: Array<() => Promise<void>> = [];
         const grouped = groups.map((group) => {
-            const results: RevalidatePathResult[] = [...group.paths].map((path) =>
-                resultForPath(path, unionIndexByPath.get(path) ?? -1)
+            const results: RevalidateTargetResult[] = [...group.tags].map((tag) =>
+                resultForTag(tag, unionIndexByTag.get(tag) ?? -1)
             );
 
             for (const result of results) {
                 pendingWrites.push(() =>
                     this.writeLog({
-                        path: result.path,
+                        target: result.target,
                         entityType: group.entityType,
                         entityId: group.entityId,
                         trigger,
@@ -573,12 +628,16 @@ export class RevalidationService {
     }
 
     /**
-     * Immediately revalidate a specific list of paths (no debounce).
+     * Immediately purges a specific list of cache tags (no debounce).
      * Used by the manual revalidation endpoint.
-     * Writes one log entry per path after completion.
+     * Writes one log entry per tag after completion.
      *
-     * @param params - Object containing paths and optional metadata for logging
-     * @param params.paths - Array of URL paths to revalidate
+     * @param params - Object containing tags and optional metadata for logging
+     * @param params.tags - Cache tags to purge. Bare vocabulary tags are
+     *   namespaced by this deployment's environment before they reach the
+     *   adapter; tags already carrying THIS namespace pass through unchanged,
+     *   and tags carrying another environment's namespace are dropped rather
+     *   than rewritten (HOS-369 W1-2).
      * @param params.triggeredBy - User ID or 'system' for log attribution
      * @param params.reason - Optional human-readable reason (stored in log metadata)
      * @param params.trigger - Trigger source for the log entry (defaults to 'hook')
@@ -586,18 +645,18 @@ export class RevalidationService {
      * @param params.entityId - Canonical UUID of the entity that triggered revalidation.
      *   When provided, written to `revalidation_log.entity_id` for precise audit querying.
      *   Undefined results in a NULL `entity_id` (expected for types that don't yet supply it).
-     * @returns Array of results, one per revalidated path
+     * @returns Array of results, one per purged tag
      */
-    async revalidatePaths(params: {
-        readonly paths: ReadonlyArray<string>;
+    async revalidateTags(params: {
+        readonly tags: ReadonlyArray<string>;
         readonly triggeredBy?: string;
         readonly reason?: string;
         readonly trigger?: RevalidationTrigger;
         readonly entityType?: string;
         readonly entityId?: string;
-    }): Promise<ReadonlyArray<RevalidatePathResult>> {
+    }): Promise<ReadonlyArray<RevalidateTargetResult>> {
         const {
-            paths,
+            tags: rawTags,
             triggeredBy,
             reason,
             trigger = 'hook',
@@ -605,20 +664,21 @@ export class RevalidationService {
             entityId
         } = params;
 
-        if (paths.length === 0) return [];
+        const tags = this.toNamespacedTags(rawTags);
+        if (tags.length === 0) return [];
 
-        const results = await this.adapter.revalidateMany({ paths });
+        const results = await this.adapter.revalidateMany({ tags });
 
         // Log results and surface errors
         for (const result of results) {
             if (!result.success) {
                 this.logger.error(
-                    `[RevalidationService] Failed to revalidate path "${result.path}" via ${this.adapter.name}: ${result.error}`
+                    `[RevalidationService] Failed to revalidate tag "${result.target}" via ${this.adapter.name}: ${result.error}`
                 );
             }
             // Write audit log entry -- best-effort, never throw
             void this.writeLog({
-                path: result.path,
+                target: result.target,
                 entityType,
                 entityId,
                 trigger,
@@ -631,6 +691,181 @@ export class RevalidationService {
         }
 
         return results;
+    }
+
+    /**
+     * The tag a flush of THIS deployment addresses (`prod:all`, `preview:all`),
+     * or {@link UNRESOLVED_ENVIRONMENT_TARGET} when the namespace is unresolved.
+     *
+     * Exposed so a caller that must report a flush it could not even attempt
+     * (the admin route's failure branches) names the same thing the audit row
+     * does, instead of falling back to `*` and claiming a zone flush.
+     *
+     * @returns The environment catch-all tag, or the unresolved sentinel.
+     */
+    getEnvironmentFlushTarget(): string {
+        if (this.cacheTagEnvironment === undefined) return UNRESOLVED_ENVIRONMENT_TARGET;
+        return this.toNamespacedTags([CACHE_TAG_ALL])[0] ?? UNRESOLVED_ENVIRONMENT_TARGET;
+    }
+
+    /**
+     * Flushes everything THIS deployment cached, by purging the environment
+     * catch-all tag (`prod:all`) that every cacheable response carries.
+     *
+     * NOT a zone flush any more. `staging.hospeda.com.ar` and `hospeda.com.ar`
+     * are one Cloudflare zone and `purge_everything` has no scoped form, so the
+     * old implementation emptied production's cache every time staging deployed
+     * (and vice versa). Purging one namespaced tag reaches exactly the same
+     * responses within this environment — the emitter puts `<env>:all` on every
+     * one of them (`apps/web/src/lib/cache/response-cache.ts`) — and reaches
+     * none of the other environment's. {@link purgeWholeZone} is still there for
+     * the case that genuinely needs the zone.
+     *
+     * Writes exactly ONE audit row, targeting the tag it purged, rather than one
+     * row per tag: there is only ever one tag.
+     *
+     * UNRESOLVED ENVIRONMENT: returns a failed result and writes a `skipped`
+     * row targeting {@link UNRESOLVED_ENVIRONMENT_TARGET}. It deliberately does
+     * NOT fall back to {@link purgeWholeZone}. Escalating a flush that cannot be
+     * scoped into one that hits both environments would be strictly worse than
+     * the bug this replaced, and it would do it exactly when the operator has
+     * the least evidence about which deployment they are talking to.
+     *
+     * Still a SEPARATE method from {@link revalidateTags}, not a flag on it, so
+     * "purge everything" can never be reached by accident from a content write.
+     *
+     * @param params.reason - Human-readable justification, recorded in the log.
+     * @param params.triggeredBy - User id or 'system' for log attribution.
+     * @param params.trigger - Trigger source for the log entry (defaults to 'manual').
+     * @returns The result, targeting `<env>:all` (or the unresolved sentinel).
+     */
+    async purgeEverything(
+        params: {
+            readonly reason?: string;
+            readonly triggeredBy?: string;
+            readonly trigger?: RevalidationTrigger;
+        } = {}
+    ): Promise<RevalidateTargetResult> {
+        const { reason, triggeredBy, trigger = 'manual' } = params;
+
+        // Read the environment directly rather than through `toNamespacedTags`,
+        // whose own error log would otherwise fire alongside the more specific
+        // one below and describe the same event twice.
+        const tag =
+            this.cacheTagEnvironment === undefined
+                ? undefined
+                : this.toNamespacedTags([CACHE_TAG_ALL])[0];
+
+        if (tag === undefined) {
+            const error =
+                'Cannot flush this environment: the deployment cache-tag namespace is unresolved (set HOSPEDA_DEPLOY_ENV to prod | preview | dev | test). Refusing to fall back to a whole-zone purge, which would also flush the other environment sharing this Cloudflare zone.';
+            this.logger.error(`[RevalidationService] ${error}`);
+
+            void this.writeLog({
+                target: UNRESOLVED_ENVIRONMENT_TARGET,
+                entityType: 'manual',
+                trigger,
+                triggeredBy,
+                status: 'skipped',
+                durationMs: 0,
+                errorMessage: error,
+                metadata: reason ? { reason } : undefined
+            });
+
+            return {
+                target: UNRESOLVED_ENVIRONMENT_TARGET,
+                success: false,
+                durationMs: 0,
+                error
+            };
+        }
+
+        const [purged] = await this.adapter.revalidateMany({ tags: [tag] });
+        const result: RevalidateTargetResult =
+            purged === undefined
+                ? {
+                      target: tag,
+                      success: false,
+                      durationMs: 0,
+                      error: `${this.adapter.name} returned no result for the environment catch-all tag`
+                  }
+                : { ...purged, target: tag };
+
+        if (!result.success) {
+            this.logger.error(
+                `[RevalidationService] Environment flush failed via ${this.adapter.name} for "${tag}": ${result.error}`
+            );
+        }
+
+        // Best-effort, never throw -- mirrors the per-tag log write above.
+        void this.writeLog({
+            target: result.target,
+            entityType: 'manual',
+            trigger,
+            triggeredBy,
+            status: result.success ? 'success' : 'failed',
+            durationMs: result.durationMs,
+            errorMessage: result.error,
+            metadata: reason ? { reason } : undefined
+        });
+
+        return result;
+    }
+
+    /**
+     * Flushes the ENTIRE Cloudflare zone — both deployments — via the adapter's
+     * own `purgeEverything`.
+     *
+     * The emergency escape hatch, and nothing routine calls it. It exists for
+     * the cases a tag purge genuinely cannot cover: a Cache Rule change that
+     * altered the cache key, objects cached before tagging shipped, or a
+     * suspected corruption where trusting the tags is the thing in doubt.
+     *
+     * It is unscoped BY NATURE: Cloudflare offers no per-environment
+     * `purge_everything`, so running this from staging also empties production.
+     * That is why it is a separate, explicitly named method instead of a flag on
+     * {@link purgeEverything} — reading a call site tells you which one it is,
+     * and no content write, cron or admin flush can reach it by accident.
+     *
+     * Writes exactly ONE audit row targeting {@link WHOLE_ZONE_TARGET} (`*`),
+     * which is what distinguishes it in the log from an environment flush's
+     * `<env>:all` row.
+     *
+     * @param params.reason - Human-readable justification, recorded in the log.
+     * @param params.triggeredBy - User id or 'system' for log attribution.
+     * @param params.trigger - Trigger source for the log entry (defaults to 'manual').
+     * @returns The adapter's result, targeting `*`.
+     */
+    async purgeWholeZone(
+        params: {
+            readonly reason?: string;
+            readonly triggeredBy?: string;
+            readonly trigger?: RevalidationTrigger;
+        } = {}
+    ): Promise<RevalidateTargetResult> {
+        const { reason, triggeredBy, trigger = 'manual' } = params;
+
+        const result = await this.adapter.purgeEverything({ reason });
+
+        if (!result.success) {
+            this.logger.error(
+                `[RevalidationService] Whole-zone purge failed via ${this.adapter.name}: ${result.error}`
+            );
+        }
+
+        // Best-effort, never throw -- mirrors the per-tag log write above.
+        void this.writeLog({
+            target: WHOLE_ZONE_TARGET,
+            entityType: 'manual',
+            trigger,
+            triggeredBy,
+            status: result.success ? 'success' : 'failed',
+            durationMs: result.durationMs,
+            errorMessage: result.error,
+            metadata: reason ? { reason } : undefined
+        });
+
+        return result;
     }
 
     // ---------------------------------------------------------------------------
@@ -648,12 +883,27 @@ export class RevalidationService {
         try {
             const config = await this.getEntityConfig(event.entityType);
 
-            if (!config) return; // No config -- skip revalidation
+            if (!config) {
+                // A MISSING row is not a configuration choice — it is an entity
+                // type whose purge chain was wired without the row that turns it
+                // on, and until HOS-369 that failed in total silence: no log
+                // here, no `revalidation_log` entry (writeLog runs downstream),
+                // and a fire-and-forget caller that sees a successful write
+                // either way. Four entity types purged nothing for an entire
+                // wave because of it. `enabled: false` and
+                // `autoRevalidateOnChange: false` below stay quiet by contrast:
+                // those rows exist, so somebody chose them.
+                this.logger.warn(
+                    { entityType: event.entityType },
+                    'No revalidation_config row for this entity type — skipping purge. Its cache tags will never be evicted until a row is added (see seed data-migration 0036).'
+                );
+                return;
+            }
             if (!config.enabled) return; // Disabled for this entity type
             if (!config.autoRevalidateOnChange) return; // Auto-revalidation turned off
 
             const effectiveDebounceMs = config.debounceSeconds * 1000;
-            const paths = getAffectedPaths(event, this.localesConfig);
+            const tags = this.toNamespacedTags(getAffectedCacheTags(event));
 
             // Two distinct identifiers, deliberately decoupled:
             // - debounceKeyId: per-entity bucket key (slug) so edits to different
@@ -664,7 +914,7 @@ export class RevalidationService {
             const entityId = this.extractEntityId(event);
 
             this.debounceEntity({
-                paths,
+                tags,
                 entityType: event.entityType,
                 debounceKeyId,
                 entityId,
@@ -681,27 +931,32 @@ export class RevalidationService {
     /**
      * Extracts a stable entity identifier from the change event.
      *
-     * For accommodation events, returns the canonical UUID (`event.id`) when
-     * available — this is what gets written to `revalidation_log.entity_id`.
-     * Returning undefined (e.g. when a call site doesn't supply `id` yet) is
-     * expected and results in a NULL `entity_id` in the log row (no mixing of
+     * Returns the canonical UUID (`event.id`) when the call site supplied one —
+     * this is what gets written to `revalidation_log.entity_id`. Returning
+     * undefined results in a NULL `entity_id` in the log row (no mixing of
      * UUIDs and slugs in the same column).
      *
-     * For other entity types (destination, event, post), the hook does not yet
-     * forward `id`, so this returns undefined. Follow-up work per SPEC-246
-     * will add `id` propagation to those hooks.
+     * All four content types (accommodation, destination, event, post) forward
+     * `id` since HOS-424. Before that only `accommodation` did, and this
+     * function's own comment claimed otherwise — which is how it went unnoticed
+     * that a post write purged `post-<slug>` but never `post-<id>`, while the
+     * detail page tags itself with both. Do not weaken a call site back to
+     * slug-only: the missing tag fails silently, since the purge still reports
+     * success for the tags it did carry.
      *
      * Returns undefined when no specific entity instance is identifiable.
      */
     private extractEntityId(event: EntityChangeData): string | undefined {
         switch (event.entityType) {
             case 'accommodation':
-                // Prefer the canonical UUID; falls back to undefined if not supplied.
-                // Slug is intentionally NOT used here to avoid mixing identifiers.
-                return event.id;
             case 'destination':
             case 'event':
             case 'post':
+                // The canonical UUID when the call site had one; undefined
+                // otherwise. The slug is deliberately NOT used as a fallback —
+                // mixing UUIDs and slugs in one column makes `entity_id`
+                // unqueryable.
+                return event.id;
             case 'accommodation_review':
             case 'destination_review':
                 // These hooks don't yet forward a canonical UUID — addressed as
@@ -750,18 +1005,18 @@ export class RevalidationService {
      * available, falling back to just `${entityType}`. The bucket key is kept
      * separate from `entityId` (the UUID written to the log) so distinct entities
      * of the same type never share a debounce bucket.
-     * Accumulates all paths for the entity and fires a single batch revalidation
+     * Accumulates all tags for the entity and fires a single batch purge
      * when the debounce timer expires.
      */
     private debounceEntity(params: {
-        readonly paths: readonly string[];
+        readonly tags: readonly string[];
         readonly entityType: string;
         readonly debounceKeyId: string | undefined;
         readonly entityId: string | undefined;
         readonly debounceMs: number;
         readonly reason?: string;
     }): void {
-        const { paths, entityType, debounceKeyId, entityId, debounceMs, reason } = params;
+        const { tags, entityType, debounceKeyId, entityId, debounceMs, reason } = params;
         const key = debounceKeyId ? `${entityType}:${debounceKeyId}` : entityType;
 
         // HOS-297: ONE fire callback, shared by both arming sites below.
@@ -778,7 +1033,7 @@ export class RevalidationService {
             this.enqueuePurgeGroup({
                 entityType,
                 entityId: entry.entityId,
-                paths: Array.from(entry.paths),
+                tags: Array.from(entry.tags),
                 ...(reason === undefined ? {} : { reason })
             });
         };
@@ -788,7 +1043,7 @@ export class RevalidationService {
             // Create a new debounce entry. entityId is pinned here; later calls
             // in the same window only set it when still undefined (see above).
             const entry: PendingEntityDebounce = {
-                paths: new Set(paths),
+                tags: new Set(tags),
                 entityType,
                 entityId,
                 timer: setTimeout(() => fireIntoSharedPurgeWindow(entry), debounceMs)
@@ -796,9 +1051,9 @@ export class RevalidationService {
 
             this.pendingTimers.set(key, entry);
         } else {
-            // Accumulate new paths into the existing debounce entry
-            for (const path of paths) {
-                existing.paths.add(path);
+            // Accumulate new tags into the existing debounce entry
+            for (const tag of tags) {
+                existing.tags.add(tag);
             }
             // First-write-wins: keep the UUID from the first call in the window
             // that supplied one, so a later id-less call (e.g. _afterCreate) for
@@ -808,7 +1063,7 @@ export class RevalidationService {
             }
             clearTimeout(existing.timer);
 
-            // Reset the timer with accumulated paths — through the SAME shared
+            // Reset the timer with accumulated tags — through the SAME shared
             // callback as the creation branch above.
             existing.timer = setTimeout(() => fireIntoSharedPurgeWindow(existing), debounceMs);
         }
@@ -844,11 +1099,14 @@ export class RevalidationService {
     /**
      * Writes one log entry to `revalidation_log`. Best-effort -- errors are swallowed.
      *
+     * @param params.target - The cache tag purged (`prod:accom-x`, `prod:all`),
+     *   `*` for a whole-zone flush, or `?:all` for an environment flush that
+     *   could not be addressed. Written to `revalidation_log.target`.
      * @param params.entityId - Canonical UUID of the entity that triggered revalidation.
      *   Written to `revalidation_log.entity_id`. Pass undefined to leave the column NULL.
      */
     private async writeLog(params: {
-        readonly path: string;
+        readonly target: string;
         readonly entityType: string;
         readonly entityId?: string;
         readonly trigger: RevalidationTrigger;
@@ -860,7 +1118,7 @@ export class RevalidationService {
     }): Promise<void> {
         try {
             await this.logModel.create({
-                path: params.path,
+                target: params.target,
                 entityType: params.entityType,
                 entityId: params.entityId ?? null,
                 trigger: params.trigger,
@@ -872,7 +1130,7 @@ export class RevalidationService {
             });
         } catch (error) {
             this.logger.error(
-                `[RevalidationService] Failed to write revalidation log for path "${params.path}": ${error instanceof Error ? error.message : String(error)}`
+                `[RevalidationService] Failed to write revalidation log for target "${params.target}": ${error instanceof Error ? error.message : String(error)}`
             );
         }
     }

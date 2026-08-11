@@ -72,6 +72,26 @@ ARG PUBLIC_SENTRY_ENVIRONMENT
 # NOT be forwarded to the runner stage — it is only needed at build time.
 ARG SENTRY_AUTH_TOKEN
 ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN
+# HOS-401: stable encryption key for the props Astro passes to server islands.
+# Same shape as SENTRY_AUTH_TOKEN above — build-time only, deliberately NOT
+# forwarded to the runner stage: Astro bakes the key into the server bundle
+# during `astro build` and never reads the variable at runtime.
+#
+# Without it Astro generates a fresh key on every build. That matters here
+# because the HTML is edge-cached (`s-maxage=300, stale-while-revalidate=600`)
+# and nothing purges the cache on deploy, so for up to ~15 minutes after a
+# release a visitor can receive cached HTML whose `/_server-islands/...?e=`
+# payload was encrypted with the PREVIOUS build's key — which the new origin
+# cannot decrypt. The blast radius today is `NextEventsSection` on the home,
+# the only remaining `server:defer` island.
+#
+# Declaring the ARG is half the fix and the half that is easy to miss: Coolify
+# only forwards a --build-arg for ARGs this file declares, so setting the value
+# in Coolify WITHOUT this line bakes it empty and silently changes nothing (see
+# the PUBLIC_* comment above — that is exactly how PostHog and client-side
+# Sentry ended up dead in production).
+ARG ASTRO_KEY
+ENV ASTRO_KEY=$ASTRO_KEY
 ENV HOSPEDA_API_URL=$HOSPEDA_API_URL \
     HOSPEDA_SITE_URL=$HOSPEDA_SITE_URL \
     HOSPEDA_ADMIN_URL=$HOSPEDA_ADMIN_URL \

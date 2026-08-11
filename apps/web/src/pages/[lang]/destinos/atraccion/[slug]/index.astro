@@ -3,7 +3,10 @@
  * @file destinos/atraccion/[slug]/index.astro
  * @description Destinations that offer a given attraction.
  * @route /{lang}/destinos/atraccion/{slug}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — TTL from the `detail` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  *
  * An attraction is a taxonomy term ("Termas", "Playa Fluvial"), not a place:
  * the whole catalog is `isBuiltin`, and its `description` defines the category
@@ -29,9 +32,10 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
+import { buildEntityCacheTags } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
-const isAuthenticated = Boolean(Astro.locals.user);
 const { slug } = Astro.params;
 if (!slug) return new Response(null, { status: 404 });
 
@@ -42,6 +46,40 @@ const attraction = result.data as Record<string, unknown>;
 const attractionId = String(attraction.id || '');
 const name = String(attraction.name || '');
 const description = String(attraction.description || '');
+
+// --- Edge cacheability (HOS-369 W2-4) ---
+// After the 404/410 guard, so an error response is never marked shareable.
+//
+// Two tags, no collection: `attraction` has a detail page but nothing lists
+// attractions, which is why `CACHE_TAG_COLLECTIONS` has no entry for it (that
+// table became PARTIAL in W2-4 precisely so this case would not need a fake
+// `list-attr`).
+//
+// The destination cards rendered below are not addressable from here — a
+// destination rename leaves them stale for at most the `detail` cache class's
+// TTL (see `lib/cache/cache-classes.ts`). The reverse direction IS covered:
+// `AttractionService` fans out over every related destination when this
+// attraction changes.
+const attractionCacheTags = buildEntityCacheTags({
+	entity: 'attraction',
+	slug,
+	id: attractionId
+});
+const [primaryAttractionTag, ...extraAttractionTags] = attractionCacheTags;
+
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: primaryAttractionTag !== undefined,
+	cacheClass: 'detail',
+	// Unlike every other detail page, the fallback arm cannot be a collection
+	// tag — there is none. It falls back to the id tag, which is always
+	// present here because `attractionId` comes from the fetched row.
+	tags:
+		primaryAttractionTag !== undefined
+			? [primaryAttractionTag, ...extraAttractionTags]
+			: [`attr-${attractionId}`]
+});
 
 const destinationsResult = await attractionsApi.getDestinations({ id: attractionId });
 const hasError = !destinationsResult.ok;
@@ -126,7 +164,6 @@ const itemListItems = cards.map((card) => ({
 						destination={card}
 						locale={locale}
 						variant="grid"
-						isAuthenticated={isAuthenticated}
 					/>
 				</div>
 			))}

@@ -11,8 +11,10 @@
  * - Pages use SSR (`prerender = false`, no `getStaticPaths`).
  * - Pages import from `@/lib/billing/fetch-plans` (runtime helper).
  * - Pages do NOT import `ALL_PLANS` from `@repo/billing`.
- * - Cache-Control header is set on `Astro.response.headers`.
- * - The cache constants are referenced (ensuring values are not hard-coded).
+ * - Cache-Control is set through `applyCacheHeaders`, declaring the `pricing`
+ *   cache class and the `CACHE_TAG_PRICING` tag (HOS-426) — not by hand and
+ *   not from local `PRICING_CACHE_*` constants, which were deleted once the
+ *   TTL moved to `src/lib/cache/cache-classes.ts`.
  * - Plans are filtered by the correct category (`owner` / `tourist`).
  * - Fallback (empty array) is applied when `fetchResult.ok` is false.
  */
@@ -76,23 +78,26 @@ describe('Owner pricing page (suscriptores/planes/index.astro)', () => {
         });
     });
 
-    describe('cache headers', () => {
-        it('sets Cache-Control on Astro.response.headers', () => {
-            expect(ownerSrc).toContain('Astro.response.headers.set');
-            expect(ownerSrc).toContain("'Cache-Control'");
+    describe('cache headers (HOS-426)', () => {
+        it('sets Cache-Control through applyCacheHeaders, not by hand', () => {
+            expect(ownerSrc).toContain("from '@/lib/cache/response-cache'");
+            expect(ownerSrc).toContain('applyCacheHeaders({');
+            expect(ownerSrc).toContain('headers: Astro.response.headers');
+            expect(ownerSrc).not.toContain('Astro.response.headers.set');
         });
 
-        it('uses PRICING_CACHE_MAX_AGE_SECONDS constant', () => {
-            expect(ownerSrc).toContain('PRICING_CACHE_MAX_AGE_SECONDS');
+        it('declares the `pricing` cache class', () => {
+            expect(ownerSrc).toMatch(/cacheClass:\s*'pricing'/);
         });
 
-        it('uses PRICING_CACHE_SWR_SECONDS constant', () => {
-            expect(ownerSrc).toContain('PRICING_CACHE_SWR_SECONDS');
+        it('declares the CACHE_TAG_PRICING tag', () => {
+            expect(ownerSrc).toContain("from '@repo/cache-tags'");
+            expect(ownerSrc).toContain('CACHE_TAG_PRICING');
         });
 
-        it('sets both s-maxage and stale-while-revalidate directives', () => {
-            expect(ownerSrc).toContain('s-maxage=');
-            expect(ownerSrc).toContain('stale-while-revalidate=');
+        it('does NOT reference the deleted local pricing cache constants', () => {
+            expect(ownerSrc).not.toContain('PRICING_CACHE_MAX_AGE_SECONDS');
+            expect(ownerSrc).not.toContain('PRICING_CACHE_SWR_SECONDS');
         });
     });
 
@@ -154,23 +159,26 @@ describe('Tourist pricing page (suscriptores/turistas/index.astro)', () => {
         });
     });
 
-    describe('cache headers', () => {
-        it('sets Cache-Control on Astro.response.headers', () => {
-            expect(touristSrc).toContain('Astro.response.headers.set');
-            expect(touristSrc).toContain("'Cache-Control'");
+    describe('cache headers (HOS-426)', () => {
+        it('sets Cache-Control through applyCacheHeaders, not by hand', () => {
+            expect(touristSrc).toContain("from '@/lib/cache/response-cache'");
+            expect(touristSrc).toContain('applyCacheHeaders({');
+            expect(touristSrc).toContain('headers: Astro.response.headers');
+            expect(touristSrc).not.toContain('Astro.response.headers.set');
         });
 
-        it('uses PRICING_CACHE_MAX_AGE_SECONDS constant', () => {
-            expect(touristSrc).toContain('PRICING_CACHE_MAX_AGE_SECONDS');
+        it('declares the `pricing` cache class', () => {
+            expect(touristSrc).toMatch(/cacheClass:\s*'pricing'/);
         });
 
-        it('uses PRICING_CACHE_SWR_SECONDS constant', () => {
-            expect(touristSrc).toContain('PRICING_CACHE_SWR_SECONDS');
+        it('declares the CACHE_TAG_PRICING tag', () => {
+            expect(touristSrc).toContain("from '@repo/cache-tags'");
+            expect(touristSrc).toContain('CACHE_TAG_PRICING');
         });
 
-        it('sets both s-maxage and stale-while-revalidate directives', () => {
-            expect(touristSrc).toContain('s-maxage=');
-            expect(touristSrc).toContain('stale-while-revalidate=');
+        it('does NOT reference the deleted local pricing cache constants', () => {
+            expect(touristSrc).not.toContain('PRICING_CACHE_MAX_AGE_SECONDS');
+            expect(touristSrc).not.toContain('PRICING_CACHE_SWR_SECONDS');
         });
     });
 
@@ -202,12 +210,9 @@ describe('fetch-plans helper (src/lib/billing/fetch-plans.ts)', () => {
         expect(helperSrc).toContain('export function filterPlansByCategory');
     });
 
-    it('exports PRICING_CACHE_MAX_AGE_SECONDS constant', () => {
-        expect(helperSrc).toContain('export const PRICING_CACHE_MAX_AGE_SECONDS');
-    });
-
-    it('exports PRICING_CACHE_SWR_SECONDS constant', () => {
-        expect(helperSrc).toContain('export const PRICING_CACHE_SWR_SECONDS');
+    it('does NOT export pricing cache TTL constants (HOS-426: TTL moved to cache-classes.ts)', () => {
+        expect(helperSrc).not.toContain('PRICING_CACHE_MAX_AGE_SECONDS');
+        expect(helperSrc).not.toContain('PRICING_CACHE_SWR_SECONDS');
     });
 
     it('exports PublicPlanData interface', () => {

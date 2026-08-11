@@ -42,7 +42,8 @@ is a package-level quick reference only.
 `src/data-migrations/NNNN-slug.ts` — one file per migration, numbered like Drizzle's own
 `NNNN_name.sql`, applied once each and tracked in the `seed_migrations` ledger table
 (`packages/db/src/schemas/seed-migrations/`, preserved across `--reset`). Every module
-exports a `meta` object (`name`, `group: 'required' | 'example'`, optional `destructive`) and
+exports a `meta` object (`name`, `group: 'required' | 'example'`, optional `destructive`,
+optional `contentOnly`) and
 an `up(ctx)` function receiving `ctx.db` (transaction-scoped), `ctx.models`, `ctx.services`,
 `ctx.actor`, and `ctx.helpers.safeDelete` (FK-guarded, operator-edit-aware hard delete — never
 issue a raw `DELETE` from a migration).
@@ -57,8 +58,18 @@ pnpm db:seed:migrate:status       # Print applied/pending status per migration
 
 `pnpm db:fresh` / `pnpm db:fresh-dev` already chain
 `pnpm --filter @repo/seed seed --data-migrate --baseline-stamp` after the main seed, so a
-fresh local DB never re-runs a migration's `up()` for real — it is stamped applied directly,
-since the baseline fixtures already reflect the post-migration end state.
+fresh local DB does not re-run a migration's `up()` for real — it is stamped applied
+directly, since the baseline fixtures already reflect the post-migration end state.
+
+**Exception — `meta.contentOnly: true` (HOS-375 G-10).** A migration whose rows have NO
+fixture baseline (real blog posts, imported event batches: the migration file IS the only
+source of that content) is NOT stamped. `--baseline-stamp` leaves it pending and then falls
+through to a real `runMigrations()` for exactly those — otherwise a fresh build would ledger
+it applied with its content never created, and the ledger would block it forever. Ledger
+result reads `'ok'` for content-only migrations and `'baseline-stamp'` for the rest. Set the
+flag on any migration you write whose content no fixture reproduces; it is declared on the
+migration precisely so no external list of names has to be kept in sync. Full explanation in
+the [author guide](../../docs/guides/seed-data-migrations.md#the-contentonly-flag-migrations-with-no-fixture-baseline).
 
 ### The dual-write rule (MANDATORY)
 
@@ -103,9 +114,22 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `host-premium@local.test` | HOST | `owner-premium` | MAX_ACCOMMODATIONS=10, MAX_PHOTOS=50, MAX_ACTIVE_PROMOTIONS=unlimited |
 | `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=50 (30 base + 20 addon). SPEC-143 #32 |
 | `host-trial@local.test` | HOST | `owner-basico` (status=`trialing`, 14d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c) |
+| `host-provider@local.test` | HOST | `owner-basico` | **Dual role**: also owns the `plomeria-litoral` host_trades listing. HOS-376 AC-16/AC-17 |
 | `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
 | `complex-pro@local.test` | CLIENT_MANAGER | `complex-pro` | mid complex |
 | `complex-premium@local.test` | CLIENT_MANAGER | `complex-premium` | top complex |
+
+**`host-provider@local.test` is the only account on both sides of the provider
+relationship** (HOS-376 T-013). It owns accommodations — which is what earns the
+`HOST` role and therefore the right to rate providers — AND owns a `host_trades`
+listing. AC-16 ("a host who is also a provider can rate OTHER providers") and
+AC-17 ("...but never their own listing") have no other account to exercise them.
+Ownership is attached by [`src/test-users/hostTradeOwnership.ts`](src/test-users/hostTradeOwnership.ts)
+rather than baked into the `src/data/hostTrade/` fixture, so a dev-only concern
+never enters the dual-write-guarded baseline. That module **refuses to steal a
+listing already owned by someone else** — on an environment where a real
+provider claimed it through the HOS-278 alliance flow, the seed logs a warning
+and leaves the row alone instead of locking that person out of their own ficha.
 
 All users share password `Password123!` and have `emailVerified=true`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json` with `admin@hospeda.com` / `superadmin@hospeda.com`).
 
@@ -166,6 +190,39 @@ pnpm db:seed:ready-user <email>     # e.g. pnpm db:seed:ready-user host-basico@l
 ```
 
 > Note: the web **cookie-consent** banner is NOT covered here — it is a pure browser cookie with no user-row state, so the seed cannot touch it. In manual local browsing it is a one-time click (persists ~1 year); for e2e it is pre-seeded via `apps/e2e/fixtures/browser-helpers.ts` (`seedCookieConsent`).
+
+## System accounts: `isSystemAccount` in user fixtures (HOS-375)
+
+Any user fixture — or any seeder, script, or data-migration — that creates an account
+representing the **platform** rather than a person MUST set `isSystemAccount: true`.
+Today that is `src/data/user/required/admin-user.json` and `super-admin-user.json`;
+tomorrow it is any importer, bot, or integration identity someone adds.
+
+`users.is_system_account` is `NOT NULL DEFAULT false`, so **forgetting the key is silent**:
+the account is created and treated as a person. What it gates is the public author surface
+— the web author page (`/autores/<slug>/`) excludes system accounts from its indexability
+predicate and from the sitemap. A forgotten flag on a staff-shaped account can publish
+`/es/autores/super-admin-user/`, titled "Super Admin", to Google.
+
+Two things to know before touching this:
+
+- **It is a stored flag, never a live role check.** Roles are mutable and this property is
+  not: evaluating `SUPER_ADMIN`/`ADMIN` at read time would unpublish a real editor's author
+  page the moment they are promoted, and publish a staff account the moment one is demoted.
+  Role decides the value exactly once, at backfill time
+  (`src/data-migrations/0040-system-account-flag-staff.ts`), resolved **by email**.
+- **The fixture key is guarded.** `test/required-staff-system-account.test.ts` asserts more
+  than the two fixture values: it asserts the key survives `UserCreateInputSchema`, the
+  schema `UserService.create` parses through. That extra assertion exists because a fixture
+  key CAN silently stop working — `users.seed.ts`'s own JSDoc records `role` staying in the
+  JSON long after the column was dropped, with nothing failing, because Zod strips unknown
+  keys and Drizzle's `.values()` iterates table columns rather than object keys.
+
+The editorial author (`editorial@hospeda.com.ar`, created by
+`0025-seed-real-blog-posts`) is deliberately **not** a system account: it is a real
+editorial voice with a public author page at `/autores/equipo-hospeda/`.
+
+Column-side detail in [packages/db/CLAUDE.md](../db/CLAUDE.md); full rationale in HOS-375 §6.10.1.
 
 ## Role Permission Gotchas
 

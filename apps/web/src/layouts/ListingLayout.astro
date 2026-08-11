@@ -68,7 +68,6 @@ const resolvedDescription = description ?? 'Descubrí alojamientos en el Litoral
 const hasLeftFilters = showFilters && filterPosition === 'left';
 const hasTopFilters = showFilters && filterPosition === 'top';
 
-const cspNonce = Astro.locals.cspNonce ?? '';
 
 // BETA-22: the results-summary sentence used to render inside the sticky
 // WaveHeader band (via ListingPageHeader), detached from the filters/results
@@ -245,7 +244,7 @@ const resultsSummaryLabel =
 	}
 </style>
 
-<script is:inline nonce={cspNonce}>
+<script is:inline>
 	/**
 	 * Same-path partial swap for listing pages.
 	 *

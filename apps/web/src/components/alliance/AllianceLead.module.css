@@ -34,6 +34,22 @@
     gap: var(--space-2, 0.5rem);
 }
 
+/*
+ * Shown in place of the email field for a signed-in applicant (HOS-278 AC-1):
+ * the address is stated, not requested.
+ */
+.accountEmailNotice {
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    background-color: var(--brand-primary-a10);
+    border: 1px solid var(--brand-primary-a20);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: var(--text-body-sm);
+    color: var(--core-foreground);
+    line-height: 1.5;
+    margin: 0;
+}
+
 .label {
     font-family: var(--font-sans);
     font-size: var(--text-body-sm);

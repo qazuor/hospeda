@@ -61,6 +61,15 @@
         "FORBIDDEN": "You don't have permission to do this.",
         "NOT_FOUND": "We couldn't find what you were looking for.",
         "GONE": "This content is no longer available.",
+        "HOST_NOT_FOUND": "We couldn't find a host with that email address. Please check the spelling.",
+        "USAGE_PENDING_EXISTS": "There is already a record awaiting confirmation with this person.",
+        "DECLARATION_BLOCKED": "You can't record usages with this host because they rejected an earlier one.",
+        "DECLARATION_SUSPENDED": "Your account can't record usages right now. An administrator will review it.",
+        "NO_CONFIRMED_USAGE": "You need a confirmed benefit usage before you can review this provider.",
+        "SELF_REVIEW_FORBIDDEN": "You can't review your own directory listing.",
+        "SELF_USAGE_FORBIDDEN": "You can't record a benefit usage on your own listing.",
+        "REVIEW_ALREADY_EXISTS": "You already reviewed this provider. You can edit your review.",
+        "PROVIDER_REVOKED": "This provider is no longer part of the directory.",
         "ALREADY_EXISTS": "That resource already exists.",
         "INTERNAL_ERROR": "Something went wrong on our side. Please try again in a moment.",
         "NETWORK_ERROR": "We couldn't reach the server. Please try again.",
@@ -167,5 +176,6 @@
         "byline": "Photo by",
         "onProvider": "on {{provider}}",
         "ariaLabel": "{{photographer}}'s profile on {{provider}}"
-    }
+    },
+    "breadcrumbs": "Breadcrumb"
 }

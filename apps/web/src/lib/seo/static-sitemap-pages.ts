@@ -59,7 +59,12 @@ export const STATIC_SITEMAP_PAGES: readonly StaticSitemapPage[] = [
     { path: '/sumate/partner/', changefreq: 'monthly', priority: 0.6 },
     { path: '/sumate/proveedor/', changefreq: 'monthly', priority: 0.6 },
     { path: '/sumate/sponsor/', changefreq: 'monthly', priority: 0.6 },
-    { path: '/partners/', changefreq: 'monthly', priority: 0.6 },
+    // `/partners/` is gone (HOS-294 D-4). The filtered directory was deleted and
+    // the URL now 404s; a gold partner's own page is emitted by the DYNAMIC
+    // sitemap instead, since it is DB-driven. Note that the guard below cannot
+    // catch this line on its own: it walks `src/pages/[lang]` and fails on a
+    // page that is classified nowhere, but an entry here whose page was deleted
+    // is invisible to it — it would have kept advertising a 404 with CI green.
     { path: '/colaborar/', changefreq: 'monthly', priority: 0.6 },
     { path: '/colaborar/editores/', changefreq: 'monthly', priority: 0.5 },
     { path: '/colaborar/fotos/', changefreq: 'monthly', priority: 0.5 },

@@ -1,0 +1,376 @@
+/**
+ * Shared styles for the provider account panels (HOS-376 T-050):
+ * `ProviderUsagesPanel`, `ProviderReviewsPanel` and `ProviderQrPanel`.
+ *
+ * Every value is a design token. The badge colours reuse the same literals as
+ * the host-side panel so a CONFIRMED usage looks identical on both sides of the
+ * same record — the two screens describe the same rows to different people.
+ */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 1.5rem);
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+}
+
+.sectionTitle,
+.formTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.0625rem;
+    color: var(--core-foreground);
+}
+
+/* ── Declaration form ── */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+    padding: var(--space-5, 1.25rem);
+    background-color: var(--core-background);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card, 24px);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.channelGroup {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+.label {
+    padding: 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+.choice {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+    min-height: 44px;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    cursor: pointer;
+}
+
+.input,
+.textarea {
+    width: 100%;
+    /* 44px keeps the tap target within the AA touch guideline. */
+    min-height: 44px;
+    padding: 0.625rem 0.875rem;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    color: var(--core-foreground);
+    background-color: var(--core-card);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-md, 10px);
+}
+
+.textarea {
+    resize: vertical;
+}
+
+.input:focus-visible,
+.textarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}
+
+.hint {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+/* ── Lists ── */
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.row,
+.reviewCard {
+    display: flex;
+    padding: var(--space-4, 1rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-md, 10px);
+}
+
+.row {
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+}
+
+.reviewCard {
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+}
+
+.rowHeader {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2, 0.5rem);
+}
+
+.rowTitle,
+.replyLabel {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+.rowMeta {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.rowBody {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-foreground);
+}
+
+.stars {
+    font-size: 0.9375rem;
+    line-height: 1;
+    color: var(--brand-accent);
+}
+
+.replyBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+    padding-left: var(--space-3, 0.75rem);
+    border-left: 3px solid var(--core-foreground-a08);
+}
+
+.empty {
+    margin: 0;
+    padding: var(--space-6, 1.5rem);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-muted-foreground);
+    text-align: center;
+    background-color: var(--core-card);
+    border: 1px dashed var(--core-foreground-a08);
+    border-radius: var(--radius-card, 24px);
+}
+
+/* ── Badges ── */
+
+.badge {
+    flex-shrink: 0;
+    padding: 0.25rem 0.625rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    border-radius: var(--radius-pill, 9999px);
+}
+
+.badgePending {
+    color: oklch(0.45 0.13 75);
+    background-color: oklch(0.75 0.15 75 / 0.18);
+}
+
+.badgeConfirmed {
+    color: oklch(0.45 0.13 150);
+    background-color: oklch(0.7 0.15 150 / 0.18);
+}
+
+.badgeRejected {
+    color: oklch(0.5 0.2 25);
+    background-color: oklch(0.55 0.22 25 / 0.12);
+}
+
+.badgeExpired {
+    color: var(--core-muted-foreground);
+    background-color: var(--core-foreground-a08);
+}
+
+/* ── QR ── */
+
+.qrFrame {
+    display: flex;
+    align-self: flex-start;
+    padding: var(--space-4, 1rem);
+    background-color: #ffffff;
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-md, 10px);
+}
+
+/* White stays literal: a QR needs maximum contrast against its dark modules,
+   and a themed surface behind it would break scanning in dark mode. */
+
+.qrImage {
+    width: 220px;
+    max-width: 100%;
+    height: auto;
+}
+
+/* ── Actions and messages ── */
+
+.primaryAction {
+    display: inline-flex;
+    align-self: flex-start;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.5rem 1.125rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--accent-foreground, #ffffff);
+    background-color: var(--brand-accent);
+    border: none;
+    border-radius: var(--radius-pill, 9999px);
+    cursor: pointer;
+    transition: opacity var(--duration-normal, 0.4s) ease-out;
+}
+
+.primaryAction:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.primaryAction:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+.primaryAction:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3, 0.75rem);
+    align-items: center;
+}
+
+.secondaryAction {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    padding: 0.5rem 1.125rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    background-color: transparent;
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-pill, 9999px);
+    cursor: pointer;
+    transition: background-color var(--duration-normal, 0.4s) ease-out;
+}
+
+.secondaryAction:hover:not(:disabled) {
+    background-color: var(--core-foreground-a08);
+}
+
+.secondaryAction:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.secondaryAction:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+.notice {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-4, 1rem);
+    background-color: oklch(0.55 0.22 25 / 0.08);
+    border: 1px solid oklch(0.85 0.05 25 / 0.4);
+    border-radius: var(--radius-md, 10px);
+}
+
+.noticeTitle {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: oklch(0.5 0.2 25);
+}
+
+.noticeBody {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+/* The design system has no `danger` token; these literals match the ones the
+   sibling host-trade surfaces already use for error copy. */
+
+.error {
+    margin: 0;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: oklch(0.55 0.22 25);
+    background-color: oklch(0.55 0.22 25 / 0.08);
+    border: 1px solid oklch(0.85 0.05 25 / 0.4);
+    border-radius: var(--radius-md, 10px);
+}
+
+.success {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+/* Kept in the accessibility tree; `display: none` would remove it. */
+
+.srOnly {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+    border: 0;
+}

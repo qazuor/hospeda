@@ -1,8 +1,16 @@
 /**
  * @file DestinationReviewSidebarCard.client.tsx
  * @description Island on the destination detail page that lets an
- * authenticated visitor submit a review. Auth gating is handled at the page
- * level — this component always shows the "Dejar reseña" CTA.
+ * authenticated visitor submit a review.
+ *
+ * Auth gating is resolved CLIENT-SIDE (HOS-369 WB0-7). The page used to branch
+ * on `Astro.locals.user` and render either this card or the sign-in CTA, which
+ * baked the visitor into HTML that must be edge-cacheable. Now the page always
+ * mounts this island and passes the anonymous variant as slot children; the
+ * island renders those children until `useAccountPermissions` resolves a real
+ * session, then swaps itself in. Per D-11 the SSR — and therefore cached —
+ * output is always the ANONYMOUS branch: the authenticated markup is never
+ * rendered-and-hidden, because that would leak the shape of private UI.
  *
  * Two render variants:
  * - `card` (default): sidebar card with title + hint + CTA button.
@@ -17,7 +25,16 @@
  * - 409 ALREADY_EXISTS → specific "alreadyReviewed" copy.
  */
 
-import { type FormEvent, useCallback, useEffect, useId, useRef, useState } from 'react';
+import {
+    type FormEvent,
+    type ReactNode,
+    useCallback,
+    useEffect,
+    useId,
+    useRef,
+    useState
+} from 'react';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -138,24 +155,37 @@ interface DestinationReviewSidebarCardProps {
     readonly apiUrl: string;
     /** `card` renders the sidebar card; `inline` renders just the CTA button. */
     readonly variant?: 'card' | 'inline';
+    /**
+     * Anonymous fallback, supplied by the page as the island's slot children
+     * (`DestinationReviewSignInCta.astro`). This is what the server renders and
+     * what the edge caches; it is replaced only once a session is resolved in
+     * the browser. Sized to match this card so the swap costs no layout shift.
+     */
+    readonly children?: ReactNode;
 }
 
 /**
  * Review submission island for a destination.
  *
- * Always shows the "Dejar reseña" CTA (auth gating happens at page level).
- * The form opens in a native <dialog> for automatic focus-trap and ESC.
+ * Renders `children` (the sign-in CTA) until a session resolves client-side,
+ * then shows the "Dejar reseña" CTA. The form opens in a native <dialog> for
+ * automatic focus-trap and ESC.
  *
- * @param props - Destination context, API base URL, and render variant
+ * @param props - Destination context, API base URL, render variant, and the
+ *   anonymous fallback children
  */
 export function DestinationReviewSidebarCard({
     destinationId,
     destinationName,
     locale,
     apiUrl,
-    variant = 'card'
+    variant = 'card',
+    children
 }: DestinationReviewSidebarCardProps) {
     const { t } = createTranslations(locale);
+    // Simple mode (no `initialUser`): `user` starts null, so the anonymous
+    // branch below is what renders on the server and on first paint.
+    const { user } = useAccountPermissions();
     const dialogRef = useRef<HTMLDialogElement>(null);
     // Two instances of this island coexist on the page (sidebar card + inline
     // CTA in the reviews section) — scope every DOM id per instance.
@@ -292,6 +322,11 @@ export function DestinationReviewSidebarCard({
     );
 
     const ctaLabel = t('review.destinationSidebar.cta', 'Dejar reseña');
+
+    // Every hook above runs unconditionally (Rules of Hooks); the gate is the
+    // first thing after them. `user === null` covers both a real guest and the
+    // not-yet-resolved window, and both must show the anonymous variant.
+    if (!user) return <>{children}</>;
 
     return (
         <>

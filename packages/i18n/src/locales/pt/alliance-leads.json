@@ -5,7 +5,9 @@
             "email": "E-mail",
             "phone": "Telefone (opcional)",
             "message": "Conte mais (opcional)",
+            "messageRequired": "Conte sobre seu serviço",
             "businessName": "Nome do negócio",
+            "partnerType": "Tipo de organização",
             "website": "Site",
             "partnershipType": "Tipo de parceria",
             "sponsorshipInterest": "Interesse de patrocínio",
@@ -13,8 +15,31 @@
             "coverageArea": "Área de cobertura",
             "portfolioLinks": "Links do seu portfólio (opcional)",
             "topics": "Temas sobre os quais gostaria de escrever",
-            "experience": "Experiência anterior (opcional)"
+            "experience": "Experiência anterior (opcional)",
+            "category": "Categoria do serviço",
+            "destinationId": "Localidade onde você atende",
+            "benefitType": "Benefício para os anfitriões",
+            "benefitValue": "Valor do benefício",
+            "benefitText": "Condições do benefício (opcional)"
         },
+        "placeholders": {
+            "category": "Selecione uma categoria",
+            "destinationId": "Selecione uma localidade",
+            "benefitType": "Selecione um benefício",
+            "partnerType": "Selecione um tipo de organização"
+        },
+        "benefitTypeOptions": {
+            "PERCENTAGE": "Desconto percentual",
+            "FIXED_AMOUNT": "Desconto de valor fixo",
+            "TWO_FOR_ONE": "Leve 2 pague 1",
+            "SPECIAL_CONDITION": "Condição especial"
+        },
+        "partnerTypeOptions": {
+            "commerce": "Comércio",
+            "ngo": "ONG",
+            "institution": "Instituição"
+        },
+        "accountEmailNotice": "Vamos usar o e-mail da sua conta:",
         "messageIntro": "Mensagem:",
         "submit": "Enviar solicitação",
         "submitting": "Enviando...",
@@ -24,7 +49,9 @@
         "validation": {
             "required": "Este campo é obrigatório.",
             "email": "Digite um e-mail válido.",
-            "url": "Digite uma URL válida (começando com http:// ou https://)."
+            "url": "Digite uma URL válida (começando com http:// ou https://).",
+            "number": "Digite um número inteiro positivo.",
+            "messageRequired": "Conte brevemente sobre seu serviço."
         }
     },
     "partner": {
@@ -82,5 +109,8 @@
             "title": "Você é dono de uma hospedagem ou parceiro da Hospeda?",
             "body": "Colaborar como editor também pode gerar benefícios na sua assinatura. Candidate-se e conte seu caso — vamos avaliar e entrar em contato com os detalhes."
         }
+    },
+    "breadcrumb": {
+        "joinUs": "Junte-se"
     }
 }

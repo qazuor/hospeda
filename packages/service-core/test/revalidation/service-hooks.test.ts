@@ -4,7 +4,7 @@
  * Unit tests verifying that CRUD lifecycle hooks (_afterCreate, _afterUpdate,
  * _afterSoftDelete, _afterHardDelete, _afterRestore) call
  * `getRevalidationService()?.scheduleRevalidation()` with the correct entity type
- * and optional context fields (slug, category, tagSlugs, accommodationType, destinationSlug).
+ * and optional context fields (slug, destinationSlug).
  *
  * Covers 4 representative services: accommodation, destination, event, tag.
  * The pattern is identical across all 8 services — exhaustive coverage of all 8
@@ -14,7 +14,10 @@
  *  1. `scheduleRevalidation` is called with the right `entityType` after create/update.
  *  2. `scheduleRevalidation` is called (without `entitySlug`) after soft/hard delete.
  *  3. `scheduleRevalidation` is called with correct context after restore.
- *  4. Optional context fields (slug, category, tagSlugs, etc.) are passed correctly.
+ *  4. Optional context fields (slug, destinationSlug) are passed correctly. Facet
+ *     context (category, tagSlugs, accommodationType) is NOT forwarded since
+ *     HOS-369 W1-1 — the collection cache tag covers every facet page for that
+ *     entity type, so `EntityChangeData` no longer carries it.
  *  5. Optional chaining — if `getRevalidationService()` returns `undefined` no error is thrown.
  *  6. Fire-and-forget — the hook does NOT await the revalidation result (the service
  *     method resolves even when `scheduleRevalidation` is a no-op async function).
@@ -180,7 +183,7 @@ describe('AccommodationService — revalidation hooks', () => {
         );
     });
 
-    it('passes slug and accommodationType to scheduleRevalidation after _afterCreate', async () => {
+    it('passes slug to scheduleRevalidation after _afterCreate', async () => {
         const actor = createAdminActor();
         const mockAccommodation = createMockAccommodation({
             slug: 'hotel-test',
@@ -191,11 +194,13 @@ describe('AccommodationService — revalidation hooks', () => {
 
         await service.create(actor, createInput);
 
+        // HOS-369 W1-1: accommodationType is no longer forwarded -- the collection
+        // cache tag (list-accom) covers every type-filter page, so a per-type
+        // context field is dead weight in the slimmer EntityChangeData.
         expect(mockScheduleRevalidation).toHaveBeenCalledWith(
             expect.objectContaining({
                 entityType: 'accommodation',
-                slug: 'hotel-test',
-                accommodationType: 'hotel'
+                slug: 'hotel-test'
             })
         );
     });
@@ -571,7 +576,7 @@ describe('EventService — revalidation hooks', () => {
         );
     });
 
-    it('passes category to scheduleRevalidation after _afterCreate', async () => {
+    it('passes slug to scheduleRevalidation after _afterCreate', async () => {
         // Arrange
         const actor = createActor({ permissions: [PermissionEnum.EVENT_CREATE] });
         const mockEvent = createMockEvent({
@@ -600,11 +605,13 @@ describe('EventService — revalidation hooks', () => {
 
         // Assert
         expect(result.error).toBeUndefined();
+        // HOS-369 W1-1: category is no longer forwarded -- the collection cache
+        // tag (list-event) covers every category-filter page, so a per-category
+        // context field is dead weight in the slimmer EntityChangeData.
         expect(mockScheduleRevalidation).toHaveBeenCalledWith(
             expect.objectContaining({
                 entityType: 'event',
-                slug: 'festival-test',
-                category: 'festival'
+                slug: 'festival-test'
             })
         );
     });

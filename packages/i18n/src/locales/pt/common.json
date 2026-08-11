@@ -61,6 +61,15 @@
         "FORBIDDEN": "Voce não tem permissão para fazer isso.",
         "NOT_FOUND": "Não encontramos o que voce procurava.",
         "GONE": "Este conteúdo já não está disponível.",
+        "HOST_NOT_FOUND": "Não encontramos nenhum anfitrião com esse e-mail. Confira se está escrito corretamente.",
+        "USAGE_PENDING_EXISTS": "Já existe um registro aguardando confirmação com essa pessoa.",
+        "DECLARATION_BLOCKED": "Voce não pode registrar usos com este anfitrião porque ele recusou um registro anterior.",
+        "DECLARATION_SUSPENDED": "Sua conta não pode registrar usos no momento. Um administrador vai revisar.",
+        "NO_CONFIRMED_USAGE": "Voce precisa de um uso do benefício confirmado para avaliar este fornecedor.",
+        "SELF_REVIEW_FORBIDDEN": "Voce não pode avaliar a sua própria ficha do diretório.",
+        "SELF_USAGE_FORBIDDEN": "Voce não pode registrar um uso do benefício da sua própria ficha.",
+        "REVIEW_ALREADY_EXISTS": "Voce já avaliou este fornecedor. Voce pode editar a sua avaliação.",
+        "PROVIDER_REVOKED": "Este fornecedor não faz mais parte do diretório.",
         "ALREADY_EXISTS": "Esse recurso já existe.",
         "INTERNAL_ERROR": "Algo deu errado do nosso lado. Tente novamente em instantes.",
         "NETWORK_ERROR": "Não conseguimos conectar ao servidor. Tente novamente.",
@@ -167,5 +176,6 @@
         "byline": "Foto por",
         "onProvider": "no {{provider}}",
         "ariaLabel": "Perfil de {{photographer}} no {{provider}}"
-    }
+    },
+    "breadcrumbs": "Trilha de navegação"
 }

@@ -1,3 +1,7 @@
+export type { ComposeContentMediaInput } from './content-media-compose';
+export { composeContentMedia } from './content-media-compose';
+export type { DeletableMediaRow, DeleteMediaAssetOutcome } from './delete-media-asset';
+export { deleteMediaAssetOrThrow, resolveDeletablePublicId } from './delete-media-asset';
 export type {
     ImageImportServiceConfig,
     ImportStockImageInput,

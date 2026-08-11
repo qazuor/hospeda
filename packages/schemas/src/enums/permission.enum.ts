@@ -223,6 +223,13 @@ export enum PermissionEnum {
     EVENT_VIEW_DRAFT = 'event.view.draft', // Allows viewing draft events.
     EVENT_VIEW_ALL = 'event.viewAll', // Allows viewing all events.
     EVENT_LOCATION_MANAGE = 'event.location.manage', // Allows managing event locations catalog.
+    // Author-scoped variants (HOS-374). The flat EVENT_UPDATE/EVENT_DELETE above
+    // remain the unscoped "any" side; these grant the same verb over the actor's
+    // OWN content only, matched on authorId.
+    EVENT_VIEW_OWN = 'event.view.own', // Allows viewing events the actor authored.
+    EVENT_UPDATE_OWN = 'event.update.own', // Allows updating events the actor authored.
+    EVENT_DELETE_OWN = 'event.delete.own', // Allows deleting events the actor authored.
+    EVENT_PUBLISH_OWN = 'event.publish.own', // Allows publishing and unpublishing events the actor authored.
 
     // POST: Permissions related to blog posts and articles
     POST_CREATE = 'post.create', // Allows creating a new post.
@@ -246,6 +253,13 @@ export enum PermissionEnum {
     POST_VIEW_DRAFT = 'post.view.draft', // Allows viewing draft posts.
     POST_VIEW_ALL = 'post.viewAll', // Allows viewing all posts.
     POST_SPONSORSHIP_MANAGE = 'post.sponsorship.manage', // Allows managing post sponsorships/contracts.
+    // Author-scoped variants (HOS-374). The flat POST_UPDATE/POST_DELETE above
+    // remain the unscoped "any" side; these grant the same verb over the actor's
+    // OWN content only, matched on authorId.
+    POST_VIEW_OWN = 'post.view.own', // Allows viewing posts the actor authored.
+    POST_UPDATE_OWN = 'post.update.own', // Allows updating posts the actor authored.
+    POST_DELETE_OWN = 'post.delete.own', // Allows deleting posts the actor authored.
+    POST_PUBLISH_OWN = 'post.publish.own', // Allows publishing and unpublishing posts the actor authored.
 
     // USER: Permissions related to user management and actions
     USER_READ_ALL = 'user.read.all', // Allows reading all user profiles.
@@ -934,6 +948,18 @@ export enum PermissionEnum {
     HOST_TRADE_RESTORE = 'hostTrade.restore', // Admin: restore a soft-deleted trade entry.
     HOST_TRADE_HARD_DELETE = 'hostTrade.hardDelete', // Admin: permanently delete a trade entry.
     HOST_TRADE_VIEW_ALL = 'hostTrade.viewAll', // Admin: list all trades including inactive/soft-deleted.
+
+    // HOST_TRADE benefit usage + reviews (HOS-376). Split along the lines that
+    // matter operationally: seeing the moderation queue is not the authority to
+    // decide on it, and neither is the same as lifting an anti-abuse suspension.
+    // The provider's own actions (declare, confirm, reply) get NO permission —
+    // they are gated by row ownership via /protected/host-trades/mine, since an
+    // approved provider stays a plain USER (HOS-278 AC-7).
+    HOST_TRADE_REVIEW_CREATE = 'hostTrade.review.create', // Host: rate a provider they have a confirmed benefit usage with.
+    HOST_TRADE_REVIEW_VIEW_ALL = 'hostTrade.review.viewAll', // Admin: list reviews and replies in any moderation state.
+    HOST_TRADE_REVIEW_MODERATE = 'hostTrade.review.moderate', // Admin: approve/reject a review or a provider reply.
+    HOST_TRADE_USAGE_VIEW_ALL = 'hostTrade.usage.viewAll', // Admin: list benefit-usage records across all providers.
+    HOST_TRADE_USAGE_MANAGE = 'hostTrade.usage.manage', // Admin: apply or lift a provider's declaration suspension.
 
     // SOCIAL: Social media publish pipeline permissions (SPEC-254).
     // Governs the full editorial lifecycle: GPT draft ingestion → admin review → scheduling → Make.com dispatch.

@@ -3,7 +3,10 @@
  * @file destinos/[slug]/eventos/index.astro
  * @description Events within a destination, filtered via event_locations.destination_id.
  * @route /{lang}/destinos/{slug}/eventos/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — TTL from the `catalog` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
@@ -14,17 +17,17 @@ import EmptyState from '@/components/shared/feedback/EmptyState.astro';
 import ErrorBanner from '@/components/shared/feedback/ErrorBanner.astro';
 import Pagination from '@/components/shared/feedback/Pagination.astro';
 import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { slug } = Astro.params;
-const isAuthenticated = Boolean(Astro.locals.user);
 if (!slug) return new Response(null, { status: 404 });
 
 const destResult = await destinationsApi.getBySlug({ slug });
@@ -32,6 +35,24 @@ if (!destResult.ok) return new Response(null, { status: 404 });
 const dest = destResult.data as Record<string, unknown>;
 const destId = String(dest.id || '');
 const destName = String(dest.name || slug);
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After the two 404 guards, so an error response is never marked shareable.
+// Same two-tag reasoning as the sibling accommodations listing: an event write
+// in this destination changes it (`list-event`), and so does a destination
+// rename (`dest-<slug>`, interpolated into the heading and title).
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// `/…/page/N/` rewrites into this route with `?page=N`, so an empty-query
+	// check would stop caching every paginated page.
+	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	cacheClass: 'catalog',
+	tags: [
+		CACHE_TAG_COLLECTIONS.event,
+		...buildEntityCacheTags({ entity: 'destination', slug, id: destId })
+	]
+});
 
 const page = Math.max(1, Number(Astro.url.searchParams.get('page')) || 1);
 const pageSize = 9;
@@ -43,35 +64,10 @@ const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toEventCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
-// --- Bulk favorite pre-check (eliminates N+1 per card on mount) -----------
-type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
-let eventFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
-if (isAuthenticated && cards.length > 0) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const bulkResult = await userBookmarksApi.checkBulk({
-            entityType: 'EVENT',
-            entityIds: cards.map((card) => card.id),
-            cookieHeader
-        });
-        if (bulkResult.ok) {
-            eventFavoriteChecks = bulkResult.data.checks;
-        } else {
-            webLogger.warn('Bulk bookmark check failed on destination events listing; falling back to per-card hydration', {
-                error: bulkResult.error
-            });
-        }
-    } catch (error) {
-        webLogger.warn('Bulk bookmark check threw on destination events listing; falling back to per-card hydration', {
-            error: error instanceof Error ? error.message : String(error)
-        });
-    }
-}
-const resolvedCards = cards.map((card) => {
-    const entry = eventFavoriteChecks[card.id];
-    if (!entry) return card;
-    return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
-});
+// HOS-369 WB0-5: favourite state is per-user, so it is no longer resolved
+// here — the hearts resolve it themselves after hydration, once per page
+// load for the whole grid (`store/favorites-store`).
+const resolvedCards = cards;
 
 const baseUrl = buildUrl({ locale, path: `destinos/${slug}/eventos` });
 
@@ -105,7 +101,7 @@ const breadcrumbItems = [
 		<div class="events-grid">
 			{resolvedCards.map((card, i) => (
 				<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-					<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
+					<EventCardHorizontal data={card} locale={locale} />
 				</div>
 			))}
 		</div>

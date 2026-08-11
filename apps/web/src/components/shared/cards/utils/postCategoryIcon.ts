@@ -50,7 +50,7 @@ const FALLBACK_ICON: ComponentType<IconProps> = FileTextIcon;
  * Post category → icon component. Keyed by the uppercase
  * {@link PostCategoryEnum} value the API returns.
  */
-const POST_CATEGORY_ICON_COMPONENTS: Readonly<Record<string, ComponentType<IconProps>>> = {
+export const POST_CATEGORY_ICON_COMPONENTS: Readonly<Record<string, ComponentType<IconProps>>> = {
     [PostCategoryEnum.EVENTS]: EventIcon,
     [PostCategoryEnum.CULTURE]: CulturalCenterIcon,
     [PostCategoryEnum.GASTRONOMY]: RestaurantIcon,

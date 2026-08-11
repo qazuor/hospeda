@@ -86,8 +86,13 @@ import type { IconProps } from '../types';
  *
  * Keys mirror the strings emitted by `packages/seed/src/data/attraction/*.json`
  * exactly (lowercase).
+ *
+ * Exported (not just {@link getAttractionIcon}) so build tooling can enumerate
+ * every glyph this map can resolve to without knowing the slug set — see
+ * `apps/web/scripts/build-icon-manifest.ts`, which reads this map directly to
+ * subset the icon sprite to what a data-driven attraction lookup can reach.
  */
-const ATTRACTION_ICONS: Readonly<Record<string, ComponentType<IconProps>>> = {
+export const ATTRACTION_ICONS: Readonly<Record<string, ComponentType<IconProps>>> = {
     account_balance: GovernmentBuildingIcon,
     agriculture: AgriculturalCenterIcon,
     anchor: RecreationalBoatingIcon,

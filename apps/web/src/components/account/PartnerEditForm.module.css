@@ -1,0 +1,173 @@
+/* PartnerEditForm.module.css */
+/* Scoped styles for the PartnerEditForm React island (HOS-278 D3). */
+/* Same recipe as HostTradeEditForm.module.css — the two forms are siblings by
+   design, so they must not drift visually. ALL values use CSS custom
+   properties from global.css. */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+}
+
+/* ── Section card ──────────────────────────────────────────────────────── */
+/* Canonical "section card" recipe, shared with ProfileEditForm.module.css and HostTradeEditForm.module.css. */
+
+.section {
+    composes: card from "./AccountSection.module.css";
+}
+
+.sectionTitle {
+    composes: cardTitle from "./AccountSection.module.css";
+}
+
+/* ── Fields grid ───────────────────────────────────────────────────────── */
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-4, 16px);
+}
+
+@media (min-width: 640px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ── Field ─────────────────────────────────────────────────────────────── */
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+    margin-top: var(--space-4, 16px);
+}
+
+.field:first-of-type {
+    margin-top: 0;
+}
+
+.label {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+}
+
+.input,
+.select,
+.textarea {
+    width: 100%;
+    padding: var(--space-2, 8px) var(--space-3, 12px);
+    background-color: var(--core-background);
+    color: var(--core-foreground);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    line-height: 1.5;
+    transition:
+        border-color var(--duration-normal, 0.4s) ease,
+        box-shadow var(--duration-normal, 0.4s) ease;
+    box-sizing: border-box;
+}
+
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-color: var(--brand-primary);
+    box-shadow: 0 0 0 3px var(--brand-primary-a15);
+}
+
+.input:disabled,
+.select:disabled,
+.textarea:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+}
+
+.textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.hint {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0 0 var(--space-3, 12px);
+}
+
+/* ── Live / pending benefit readouts ──────────────────────────────────── */
+
+.liveBox,
+.pendingBox {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1, 4px);
+    padding: var(--space-3, 12px);
+    border-radius: var(--radius-button, 8px);
+    margin-bottom: var(--space-4, 16px);
+}
+
+.liveBox {
+    background-color: var(--surface-warm);
+    border: 1px solid var(--core-foreground-a08);
+}
+
+.pendingBox {
+    background-color: var(--brand-accent-a08);
+    border: 1px dashed var(--brand-accent-a30);
+}
+
+.liveBoxLabel,
+.pendingBoxLabel {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    color: var(--core-muted-foreground);
+}
+
+.pendingBoxLabel {
+    color: var(--brand-accent);
+}
+
+.liveBoxText,
+.pendingBoxText {
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+/* ── Form feedback banner ──────────────────────────────────────────────── */
+
+.feedbackBanner {
+    padding: var(--space-3, 12px) var(--space-4, 16px);
+    border-radius: var(--radius-button, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.9rem;
+}
+
+.feedbackBannerError {
+    background-color: var(--destructive-a10);
+    color: var(--destructive, oklch(0.6 0.2 25));
+    border: 1px solid var(--destructive-a25);
+}
+
+/* ── Submit row ────────────────────────────────────────────────────────── */
+
+.submitRow {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3, 12px);
+}
+
+.submitBtn {
+    composes: primary from "./AccountButton.module.css";
+}

@@ -54,7 +54,7 @@ import styles from './ToastViewport.module.css';
  * Icon shown to the left of the toast message per variant. Gives the user a
  * clear visual cue beyond the (subtle) border accent.
  */
-const VARIANT_ICON: Record<Toast['type'], ComponentType<IconProps>> = {
+export const VARIANT_ICON: Record<Toast['type'], ComponentType<IconProps>> = {
     success: CheckCircleIcon,
     error: XCircleIcon,
     warning: AlertTriangleIcon,

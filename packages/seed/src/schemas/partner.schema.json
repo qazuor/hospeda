@@ -28,7 +28,7 @@
         },
         "tier": {
             "type": "string",
-            "enum": ["bronze", "silver", "gold"],
+            "enum": ["silver", "gold"],
             "description": "Partner tier (PartnerTierEnum)"
         },
         "logoUrl": {

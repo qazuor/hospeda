@@ -14,7 +14,8 @@ import { adminPatchUserRoute } from './patch';
 import {
     adminAssignUserPermissionRoute,
     adminGetUserPermissionsRoute,
-    adminRevokeUserPermissionRoute
+    adminRevokeUserPermissionRoute,
+    adminSetTrustedEditorRoute
 } from './permissions';
 import { adminRestoreUserRoute } from './restore';
 import { adminGetUserRolesRoute, adminGrantUserRoleRoute, adminRevokeUserRoleRoute } from './roles';
@@ -43,6 +44,16 @@ app.route('/', adminUserOptionsRoute);
 app.route('/', adminGetUserPermissionsRoute);
 app.route('/', adminAssignUserPermissionRoute);
 app.route('/', adminRevokeUserPermissionRoute);
+
+// Atomic trusted-editor action (HOS-374 §5.1.2 / OQ-1). Same reason as above:
+// registered BEFORE the /:id routes so "trusted-editor" is never matched as a
+// bare /:id segment.
+// A single PUT carries the desired state (`{ trusted }`) rather than a
+// POST/DELETE pair: route middlewares are per PATH and method-agnostic, so a
+// pair here would both run the first-registered route's gate. See the route's
+// own JSDoc.
+// PUT /:id/trusted-editor
+app.route('/', adminSetTrustedEditorRoute);
 
 // Multi-role management (HOS-296). Registered BEFORE the /:id routes for the
 // same reason as the permission overrides above: "roles" and "role-grants" must

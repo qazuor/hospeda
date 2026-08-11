@@ -1,15 +1,18 @@
-import { AccommodationModel, HostTradeModel } from '@repo/db';
+import { AccommodationModel, HostTradeModel, type SelectHostTrade } from '@repo/db';
 import type {
     CountResponse,
     CreateHostTrade,
     HostTrade,
+    HostTradeOwnerUpdate,
     HostTradeQuery,
     UpdateHostTrade
 } from '@repo/schemas';
 import {
     CreateHostTradeSchema,
     HostTradeAdminSearchSchema,
+    HostTradeOwnerUpdateSchema,
     HostTradeQuerySchema,
+    RoleEnum,
     ServiceErrorCode,
     UpdateHostTradeSchema
 } from '@repo/schemas';
@@ -35,6 +38,84 @@ import {
     checkCanViewHostTrade,
     checkCanViewOrViewAll
 } from './host-trade.permissions';
+
+/**
+ * The `where` key that scopes a read to a single owner.
+ *
+ * Typed against the table's row shape ON PURPOSE, mirroring
+ * `APPLICANT_SCOPE_KEY` in the alliance-lead service. `buildWhereClause`
+ * silently DROPS a key the table does not have, so a typo — or a future column
+ * rename — would not fail. It would quietly remove the ownership filter and
+ * turn "my listing" into "the first listing in the table". Binding the literal
+ * to `keyof SelectHostTrade` turns that runtime footgun into a build error.
+ */
+const OWNER_SCOPE_KEY: keyof SelectHostTrade = 'ownerUserId';
+
+/** The only value `benefit_review_state` ever holds while an edit is waiting. */
+const HOST_TRADE_BENEFIT_REVIEW_PENDING = 'pending';
+
+/**
+ * Input for {@link HostTradeService.revoke}.
+ *
+ * `reason` is REQUIRED. A revocation with no reason recorded is exactly the
+ * audit gap R-4 exists to close — the row survives precisely so the question
+ * "why is this provider no longer listed?" has an answer.
+ */
+const revokeHostTradeInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    reason: z
+        .string()
+        .min(1, { message: 'zodError.hostTrade.revokeReason.required' })
+        .max(1000, { message: 'zodError.hostTrade.revokeReason.max' })
+});
+
+/** Input for {@link HostTradeService.reviewPendingBenefit}. */
+const reviewPendingBenefitInputSchema = z.object({
+    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
+    decision: z.enum(['approve', 'reject'], {
+        message: 'zodError.hostTrade.benefitReview.decision.invalid'
+    })
+});
+
+/**
+ * Port for telling a provider their listing was taken down (HOS-278 R-4).
+ *
+ * Injected rather than imported, for the same reason the alliance ports are:
+ * `@repo/service-core` has no business knowing about an email transport.
+ * Omitting it silences the notification (tests, preview environments) without
+ * changing the revocation itself, which is the durable outcome.
+ */
+export interface HostTradeRevokeNotifyPort {
+    /**
+     * Announces the revocation to the listing's owner.
+     *
+     * Called fire-and-forget AFTER the row is already written: a mail server
+     * having a bad afternoon must not roll back an admin's decision, and an
+     * admin watching a spinner must not be waiting on Resend.
+     *
+     * @param input - Who owns it, what it was called, and why it came down.
+     */
+    notifyRevoked: (input: {
+        readonly hostTradeId: string;
+        readonly ownerUserId: string;
+        readonly listingName: string;
+        readonly reason: string;
+    }) => Promise<void>;
+}
+
+/**
+ * Resolves the actor to the account id a listing may be owned by, or null.
+ *
+ * An anonymous or guest actor carries a sentinel id that is not a real `users`
+ * row. Returning null for it means the ownership filter is never built from a
+ * value that could coincidentally match — the read simply resolves to nothing,
+ * which is the same answer a real user who owns no listing gets.
+ */
+const resolveOwnerUserId = (actor: Actor): string | null => {
+    const isAnonymous =
+        actor.roles.length === 0 || actor.roles.every((role) => role === RoleEnum.GUEST);
+    return isAnonymous ? null : actor.id;
+};
 
 /**
  * Service for managing the host-trades directory.
@@ -95,14 +176,23 @@ export class HostTradeService extends BaseCrudService<
         return undefined;
     }
 
+    /**
+     * Port used to tell a provider their listing was revoked (R-4). Null in
+     * tests and preview environments, which silences the email without
+     * changing the revocation.
+     */
+    private readonly revokeNotifier: HostTradeRevokeNotifyPort | null;
+
     constructor(
         ctx: ServiceConfig,
         model?: HostTradeModel,
-        accommodationModel?: AccommodationModel
+        accommodationModel?: AccommodationModel,
+        revokeNotifier?: HostTradeRevokeNotifyPort | null
     ) {
         super(ctx, HostTradeService.ENTITY_NAME);
         this.model = model ?? new HostTradeModel();
         this.accommodationModel = accommodationModel ?? new AccommodationModel();
+        this.revokeNotifier = revokeNotifier ?? null;
     }
 
     // --- Permission hooks ---
@@ -390,6 +480,344 @@ export class HostTradeService extends BaseCrudService<
                 const trades = await this.model.findForHost(distinctDestinationIds, ctx?.tx);
 
                 return { trades };
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Owner self-service (HOS-278 AC-7 .. AC-10)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Returns the listing the authenticated actor OWNS, or null.
+     *
+     * Deliberately has NO permission gate. AC-7 requires a provider to reach
+     * their own ficha without `HOST_TRADE_VIEW` and without a host
+     * subscription — the provider is an ordinary tourist account that happens
+     * to have had an application approved, and demanding the directory-reading
+     * permission would lock them out of their own listing.
+     *
+     * Ownership IS the gate, and it fails closed: the query is scoped by
+     * `ownerUserId` to the actor's own id, and an actor with no real identity
+     * matches the same nothing an actor who owns no listing does. Both get
+     * null — never a 403, which would confirm a listing exists, and never a
+     * 404, which would make "no listing yet" look like a broken page.
+     *
+     * @param actor - The authenticated actor.
+     * @param ctx - Optional service execution context.
+     * @returns `{ trade }`, null when the actor owns none.
+     */
+    public async getOwn(
+        actor: Actor,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ trade: HostTrade | null }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'getOwn',
+            input: { actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_validatedInput, a) => {
+                const ownerUserId = resolveOwnerUserId(a);
+                if (ownerUserId === null) {
+                    return { trade: null };
+                }
+
+                const trade = await this.model.findOne({ [OWNER_SCOPE_KEY]: ownerUserId }, ctx?.tx);
+
+                return { trade: trade ?? null };
+            }
+        });
+    }
+
+    /**
+     * Applies a provider's edit to their OWN listing.
+     *
+     * Two destinations, decided per field and not by the caller:
+     *
+     * - **Operational** (`contact`, `scheduleText`, `is24h`) apply immediately.
+     *   This is the information that goes stale and that only the provider can
+     *   keep current; routing it through an admin queue would make the
+     *   directory less accurate, not more.
+     * - **Benefit** goes to the PENDING columns and waits for review (AC-8).
+     *   The benefit is the provider's consideration for being listed, so the
+     *   vetted one stays live and public until an admin approves the new one.
+     *   Nothing here ever writes the live benefit columns.
+     *
+     * The identity fields are not rejected here — they never arrive.
+     * `HostTradeOwnerUpdateSchema` does not declare them, so Zod strips them at
+     * parse time (AC-9).
+     *
+     * @param actor - The authenticated owner.
+     * @param input - The fields being changed.
+     * @param ctx - Optional service execution context.
+     * @returns The updated listing.
+     * @throws `NOT_FOUND` when the actor owns no listing.
+     */
+    public async updateOwn(
+        actor: Actor,
+        input: HostTradeOwnerUpdate,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ trade: HostTrade }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateOwn',
+            input: { actor, ...input },
+            schema: HostTradeOwnerUpdateSchema,
+            ctx,
+            execute: async (validated, a) => {
+                const ownerUserId = resolveOwnerUserId(a);
+                if (ownerUserId === null) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'No host trade listing is owned by this account'
+                    );
+                }
+
+                const existing = await this.model.findOne(
+                    { [OWNER_SCOPE_KEY]: ownerUserId },
+                    ctx?.tx
+                );
+
+                // AC-10 lives here, and it is the SAME lookup as AC-7: there is
+                // no id in the request at all, so there is no "other provider's
+                // listing" to address. Reading someone else's is not forbidden,
+                // it is unreachable.
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'No host trade listing is owned by this account'
+                    );
+                }
+
+                const { benefitType, benefitValue, benefitText, ...operational } = validated;
+                const hasBenefitEdit =
+                    benefitType !== undefined ||
+                    benefitValue !== undefined ||
+                    benefitText !== undefined;
+
+                const updated = await this.model.update(
+                    { id: existing.id },
+                    {
+                        ...operational,
+                        updatedById: a.id,
+                        ...(hasBenefitEdit
+                            ? {
+                                  pendingBenefitType: benefitType ?? null,
+                                  pendingBenefitValue: benefitValue ?? null,
+                                  pendingBenefitText: benefitText ?? null,
+                                  benefitReviewState: HOST_TRADE_BENEFIT_REVIEW_PENDING
+                              }
+                            : {})
+                    },
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'No host trade listing is owned by this account'
+                    );
+                }
+
+                return { trade: updated };
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Admin: revoke (HOS-278 R-4) and benefit review (AC-8)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Revokes a listing: makes it invisible while KEEPING the row.
+     *
+     * R-4 was decided as "revoke, not undo". The row survives, the reason and
+     * the admin who decided are recorded, and the provider is told. Deleting
+     * instead would destroy the only evidence that the provider was ever
+     * approved, and the audit question that follows a revocation ("who took
+     * this down, and why?") would have no answer.
+     *
+     * Deliberately NOT `softDelete`. A soft-deleted row disappears from admin
+     * queries too; a revoked one must stay in front of the admins who revoked
+     * it. `isActive` is the visibility switch this table already had — the trio
+     * is what turns flipping it into a decision with an author.
+     *
+     * Gated by `HOST_TRADE_DELETE` rather than `HOST_TRADE_UPDATE`: it removes
+     * a provider from the directory, which is nearer to deletion than to an
+     * edit, and the stricter of the two permissions is the safer default.
+     *
+     * @param actor - The admin revoking.
+     * @param input - `{ id, reason }` — the reason is required, not optional.
+     * @param ctx - Optional service execution context.
+     * @returns The revoked listing.
+     */
+    public async revoke(
+        actor: Actor,
+        input: { readonly id: string; readonly reason: string },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ trade: HostTrade }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'revoke',
+            input: { actor, ...input },
+            schema: revokeHostTradeInputSchema,
+            ctx,
+            execute: async (validated, a) => {
+                checkCanDeleteHostTrade(a);
+
+                const existing = await this.model.findById(validated.id, ctx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Host trade not found: ${validated.id}`
+                    );
+                }
+
+                // Re-revoking is a no-op rather than an error: it would
+                // otherwise overwrite the ORIGINAL reason and author with
+                // whoever pressed the button second, quietly rewriting the
+                // audit trail this whole mechanism exists to keep.
+                if (existing.revokedAt) {
+                    return { trade: existing };
+                }
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    {
+                        isActive: false,
+                        revokedAt: new Date(),
+                        revokedById: a.id,
+                        revokeReason: validated.reason,
+                        updatedById: a.id
+                    },
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Host trade not found: ${validated.id}`
+                    );
+                }
+
+                if (updated.ownerUserId === null || updated.ownerUserId === undefined) {
+                    // Nobody to write to. Listings that predate HOS-278 were
+                    // admin-curated and belong to no account, and an approved
+                    // application whose applicant never confirmed their email
+                    // provisions one the same way. Logged rather than silent:
+                    // "the provider was not told" is a real outcome an admin
+                    // may need to act on by hand.
+                    this.logger.info(
+                        { hostTradeId: updated.id },
+                        '[host-trade] revoked a listing with no owner — nobody was notified'
+                    );
+                } else if (this.revokeNotifier !== null) {
+                    // AFTER the write, and deliberately NOT awaited. The
+                    // revocation is the durable outcome; the email reports it.
+                    // Awaiting would let a slow transport hold an admin's UI
+                    // open, and throwing would surface a delivery problem as a
+                    // failed revocation the admin would then retry — which the
+                    // re-revoke guard turns into a no-op anyway, so the retry
+                    // would not even re-send.
+                    const ownerUserId = updated.ownerUserId;
+                    void this.revokeNotifier
+                        .notifyRevoked({
+                            hostTradeId: updated.id,
+                            ownerUserId,
+                            listingName: updated.name,
+                            reason: validated.reason
+                        })
+                        .catch((error: unknown) => {
+                            this.logger.error(
+                                {
+                                    hostTradeId: updated.id,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                '[host-trade] revocation notice failed to send'
+                            );
+                        });
+                }
+
+                return { trade: updated };
+            }
+        });
+    }
+
+    /**
+     * Resolves a pending benefit edit (AC-8).
+     *
+     * Approving COPIES the pending values onto the live ones; rejecting
+     * DISCARDS them. Either way the pending columns and the marker are cleared,
+     * which is why `benefit_review_state` has only one value — what remains
+     * after a review is a listing with nothing pending, not a listing in an
+     * "approved edit" state.
+     *
+     * @param actor - The admin reviewing.
+     * @param input - `{ id, decision }`.
+     * @param ctx - Optional service execution context.
+     * @returns The listing after the review.
+     */
+    public async reviewPendingBenefit(
+        actor: Actor,
+        input: { readonly id: string; readonly decision: 'approve' | 'reject' },
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<{ trade: HostTrade }>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'reviewPendingBenefit',
+            input: { actor, ...input },
+            schema: reviewPendingBenefitInputSchema,
+            ctx,
+            execute: async (validated, a) => {
+                checkCanUpdateHostTrade(a);
+
+                const existing = await this.model.findById(validated.id, ctx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Host trade not found: ${validated.id}`
+                    );
+                }
+
+                if (!existing.benefitReviewState) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        'This listing has no pending benefit edit to review'
+                    );
+                }
+
+                const cleared = {
+                    pendingBenefitType: null,
+                    pendingBenefitValue: null,
+                    pendingBenefitText: null,
+                    benefitReviewState: null,
+                    updatedById: a.id
+                };
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    validated.decision === 'approve'
+                        ? {
+                              ...cleared,
+                              benefitType: existing.pendingBenefitType,
+                              benefitValue: existing.pendingBenefitValue,
+                              // The pending FINE PRINT becomes the live one. An
+                              // edit that cleared it legitimately leaves an
+                              // empty string, not the previous conditions —
+                              // keeping the old prose beside a new benefit is
+                              // how a listing ends up promising terms nobody
+                              // agreed to.
+                              benefit: existing.pendingBenefitText ?? ''
+                          }
+                        : cleared,
+                    ctx?.tx
+                );
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Host trade not found: ${validated.id}`
+                    );
+                }
+
+                return { trade: updated };
             }
         });
     }

@@ -688,6 +688,37 @@ documented convention deviation — do not "fix" them by adding BaseModel column
 Apply this pattern only for tables that are: (a) append-only, (b) never user-owned or
 role-scoped for CRUD, and (c) high-write enough that audit column overhead is measurable.
 
+## `users.is_system_account` — service accounts (HOS-375)
+
+`users.is_system_account boolean NOT NULL DEFAULT false` marks an account that represents
+the **platform** rather than a person. Today: `superadmin@hospeda.com` and
+`admin@hospeda.com`.
+
+**Any code path that creates a service account — an importer, a bot, an integration user,
+a future automation identity — MUST set `isSystemAccount: true` at creation.** The column
+defaults to `false`, so a service account created without it is treated as a person.
+
+What that costs: the flag is what keeps an account out of the public author surface. The
+web author page (`/autores/<slug>/`) excludes system accounts from its indexability
+predicate and from the sitemap, so a forgotten flag can publish
+`/es/autores/super-admin-user/` — titled "Super Admin" — to Google. Eligibility also
+requires published content plus a bio plus an avatar, which a bot will not have, so the
+residual risk is small. It is not zero, which is why the flag is set explicitly in the
+fixtures rather than inferred at runtime.
+
+**Why a stored column and not a role check.** The role is mutable and this property is
+not. Evaluating `SUPER_ADMIN`/`ADMIN` live would mean promoting a real editor silently
+unpublishes their author page and drops it from the sitemap, and demoting a staff account
+publishes it — an indexed URL appearing or vanishing as a side effect of a permissions
+change nobody connected to SEO. Role is consulted exactly once, at backfill time
+(`packages/seed/src/data-migrations/0040-system-account-flag-staff.ts`), to decide the
+initial value; never at read time.
+
+Note this is **content curation, not authorization**: the `PermissionEnum` convention does
+not apply to it. Do not "fix" a system-account check by routing it through a permission.
+
+See HOS-375 §6.10.1 and the seed-side rule in [packages/seed/CLAUDE.md](../seed/CLAUDE.md).
+
 ## Notes
 
 - Models are stateless - create new instances as needed

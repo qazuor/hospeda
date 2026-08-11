@@ -27,8 +27,8 @@ import type {
     GastronomyDetailData,
     GastronomyOpeningHoursEntry,
     GastronomySocialNetworks,
-    PartnerCardData,
     PartnerData,
+    PartnerDetailData,
     ReviewCardData
 } from '@/data/types';
 import { getInitialsFromName } from '../avatar-utils';
@@ -37,7 +37,8 @@ import {
     extractFeaturedImage,
     extractFeaturedImageUrl,
     extractGalleryItems,
-    extractGalleryUrls
+    extractGalleryUrls,
+    toRenderableImageUrl
 } from '../media';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
 
@@ -702,21 +703,30 @@ export function toArticleCardProps({
     }
 
     const authorObj = item.author as Record<string, unknown> | undefined;
-    const resolvedAuthorName = String(
-        item.authorName ||
-            authorObj?.displayName ||
-            [authorObj?.firstName, authorObj?.lastName].filter(Boolean).join(' ') ||
-            ''
-    );
-    // Fallback when the public posts endpoint does not JOIN the author table
-    // (tracked under the backend author-join spec). Keeps the UI complete and
-    // signals editorial ownership rather than leaving the byline empty.
+    // `displayName` is the ONLY name this payload carries: every public post
+    // route strips its response through `PostPublicSchema`, whose `author` is
+    // the narrow `PostAuthorPublicSchema` (id, displayName, slug, image).
+    // `firstName`/`lastName` are deliberately NOT exposed — this used to fall
+    // back to `firstName + lastName`, which published an author's legal name on
+    // every article card, including the HOS-375 author page's own posts block,
+    // for anyone whose `display_name` was empty. That is a real production
+    // state: Better Auth writes the column directly, bypassing the Zod write
+    // schemas, so `''` and `null` both exist. Same resolution as the event
+    // byline in `toEventDetailProps` below.
+    const resolvedAuthorName = String(item.authorName || authorObj?.displayName || '').trim();
+    // Fallback when the public posts endpoint does not JOIN the author table,
+    // or when the author never chose a display name. Keeps the UI complete and
+    // signals editorial ownership rather than leaving the byline empty — and,
+    // unlike a legal-name fallback, publishes nothing about the person.
     const authorName = resolvedAuthorName || 'Equipo Hospeda';
-    const authorAvatar = item.authorAvatar
-        ? String(item.authorAvatar)
-        : authorObj?.image
-          ? String(authorObj.image)
-          : undefined;
+    // `PostAuthorPublicSchema.image` asserts type but NOT URL format on purpose
+    // (HOS-375): `users.image` is written outside Zod by Better Auth, and a
+    // strict response schema would fail-close the whole listing to a 500. The
+    // schema therefore hands the raw stored value through, and dropping a value
+    // the browser cannot load is this transform's job — otherwise a junk string
+    // reaches `<img src>` and renders a broken-image icon on every card.
+    const authorAvatar =
+        toRenderableImageUrl(item.authorAvatar) ?? toRenderableImageUrl(authorObj?.image);
 
     const { featuredImage } = processEntityImages({
         item,
@@ -1578,6 +1588,35 @@ export function toEventDetailProps({
         };
     }
 
+    // --- Author (HOS-375 G-7) ---
+    // Distinct from the organizer above: the organizer runs the event, the
+    // author is the contributor who wrote it up and the only one with a public
+    // page at `/autores/<slug>/`.
+    const authorObj = item.author as Record<string, unknown> | undefined;
+    let author: EventDetailData['author'];
+
+    if (authorObj?.id) {
+        // `displayName` is the ONLY name this payload carries: every public event
+        // route strips its response through `EventPublicSchema`, whose `author` is
+        // the narrow `EventAuthorPublicSchema` (id, displayName, slug, image).
+        // `firstName`/`lastName` are deliberately NOT exposed — an author who never
+        // set a display name gets no byline rather than having their legal name
+        // published. Posts now follow the same rule: `PostPublicSchema.author` is
+        // the equally narrow `PostAuthorPublicSchema`, and `toArticleCardProps`
+        // above resolves the byline the same way.
+        const authorName = String(authorObj.displayName || '').trim();
+
+        // An author with no resolvable name would render an empty byline —
+        // worse than none at all, so it is dropped entirely.
+        if (authorName) {
+            author = {
+                id: String(authorObj.id),
+                name: authorName,
+                slug: authorObj.slug ? String(authorObj.slug) : null
+            };
+        }
+    }
+
     // --- SEO ---
     const seoObj = item.seo as Record<string, unknown> | undefined;
     const rawKeywords = seoObj?.keywords;
@@ -1620,6 +1659,7 @@ export function toEventDetailProps({
             coordinates
         },
         organizer,
+        author,
         contactEmail: contactObj?.email
             ? String(contactObj.email)
             : item.contactEmail
@@ -2086,6 +2126,230 @@ export function transformOwnerPromotionList({
 }
 
 // ---------------------------------------------------------------------------
+// Editor own-content list transforms (HOS-374 Phase 2 2C-1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Transforms a raw `GET /protected/posts` item into `PostEditListItem`
+ * (the card data for `/mi-cuenta/publicaciones`).
+ *
+ * `moderationState`/`visibility`/`lifecycleState` fall back to their most
+ * conservative values (`PENDING`/`PRIVATE`/`DRAFT`) when missing from the raw
+ * item — never to a value that would read as "safe to show publicly".
+ *
+ * @param item - Raw post object from `postEditApi.listOwn`
+ * @returns Typed `PostEditListItem` for `EditableContentCard`
+ *
+ * @example
+ * ```ts
+ * const result = await postEditApi.listOwn({ cookieHeader });
+ * if (result.ok) {
+ *   const cards = transformPostEditCardList({ items: result.data.items });
+ * }
+ * ```
+ */
+export function transformPostEditCard({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').PostEditListItem {
+    return {
+        id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        title: String(item.title ?? ''),
+        moderationState: String(
+            item.moderationState ?? 'PENDING'
+        ) as import('./types').EditorContentModerationState,
+        visibility: String(
+            item.visibility ?? 'PRIVATE'
+        ) as import('./types').EditorContentVisibility,
+        lifecycleState: String(
+            item.lifecycleState ?? 'DRAFT'
+        ) as import('./types').EditorContentLifecycleState,
+        updatedAt: String(item.updatedAt ?? item.createdAt ?? '')
+    };
+}
+
+/**
+ * Transforms a paginated raw `GET /protected/posts` response into a typed
+ * list of `PostEditListItem`.
+ *
+ * @param items - Array of raw API response items
+ * @returns Array of typed PostEditListItem objects
+ */
+export function transformPostEditCardList({
+    items
+}: {
+    readonly items: ReadonlyArray<Record<string, unknown>>;
+}): ReadonlyArray<import('./types').PostEditListItem> {
+    return items.map((item) => transformPostEditCard({ item }));
+}
+
+/**
+ * Transforms a raw `GET /protected/events` item into `EventEditListItem`
+ * (the card data for `/mi-cuenta/eventos`). Mirrors
+ * {@link transformPostEditCard} field for field, except `name` replaces
+ * `title` (the event schema's own field name).
+ *
+ * @param item - Raw event object from `eventEditApi.listOwn`
+ * @returns Typed `EventEditListItem` for `EditableContentCard`
+ *
+ * @example
+ * ```ts
+ * const result = await eventEditApi.listOwn({ cookieHeader });
+ * if (result.ok) {
+ *   const cards = transformEventEditCardList({ items: result.data.items });
+ * }
+ * ```
+ */
+export function transformEventEditCard({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').EventEditListItem {
+    return {
+        id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        name: String(item.name ?? ''),
+        moderationState: String(
+            item.moderationState ?? 'PENDING'
+        ) as import('./types').EditorContentModerationState,
+        visibility: String(
+            item.visibility ?? 'PRIVATE'
+        ) as import('./types').EditorContentVisibility,
+        lifecycleState: String(
+            item.lifecycleState ?? 'DRAFT'
+        ) as import('./types').EditorContentLifecycleState,
+        updatedAt: String(item.updatedAt ?? item.createdAt ?? '')
+    };
+}
+
+/**
+ * Transforms a paginated raw `GET /protected/events` response into a typed
+ * list of `EventEditListItem`.
+ *
+ * @param items - Array of raw API response items
+ * @returns Array of typed EventEditListItem objects
+ */
+export function transformEventEditCardList({
+    items
+}: {
+    readonly items: ReadonlyArray<Record<string, unknown>>;
+}): ReadonlyArray<import('./types').EventEditListItem> {
+    return items.map((item) => transformEventEditCard({ item }));
+}
+
+// ---------------------------------------------------------------------------
+// Editor own-content detail transforms (HOS-374 Phase 2 2C-2)
+// ---------------------------------------------------------------------------
+
+/**
+ * Transforms a raw `GET /protected/posts/:id` payload into `PostEditDetail`
+ * (the editor's initial data at `/mi-cuenta/publicaciones/[id]/editar`).
+ *
+ * Two deliberate asymmetries with {@link transformPostEditCard}:
+ *  - The three state columns fall back to their most CONSERVATIVE values
+ *    (`PENDING`/`PRIVATE`/`DRAFT`), same as the card — never to a value that
+ *    would read as "already live", which here would also unlock the wrong
+ *    edit-lock branch.
+ *  - `readingTimeMinutes` and `relatedDestinationId` fall back to `null`, NOT
+ *    to `0`/`''`. Those two are the form's "cleared" values, and a `0` reading
+ *    time would ship in the very first PATCH as a real (invalid) edit the
+ *    author never made.
+ *
+ * @param item - Raw post object from `postEditApi.getById`
+ * @returns Typed `PostEditDetail` for the `PostEditor` island
+ *
+ * @example
+ * ```ts
+ * const result = await postEditApi.getById({ id, cookieHeader });
+ * if (result.ok) {
+ *   const post = transformPostEditDetail({ item: result.data });
+ * }
+ * ```
+ */
+export function transformPostEditDetail({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').PostEditDetail {
+    return {
+        id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        title: String(item.title ?? ''),
+        summary: String(item.summary ?? ''),
+        content: String(item.content ?? ''),
+        category: String(item.category ?? ''),
+        readingTimeMinutes:
+            typeof item.readingTimeMinutes === 'number' ? item.readingTimeMinutes : null,
+        relatedDestinationId:
+            typeof item.relatedDestinationId === 'string' ? item.relatedDestinationId : null,
+        moderationState: String(
+            item.moderationState ?? 'PENDING'
+        ) as import('./types').EditorContentModerationState,
+        visibility: String(
+            item.visibility ?? 'PRIVATE'
+        ) as import('./types').EditorContentVisibility,
+        lifecycleState: String(
+            item.lifecycleState ?? 'DRAFT'
+        ) as import('./types').EditorContentLifecycleState
+    };
+}
+
+/**
+ * Transforms a raw `GET /protected/events/:id` payload into `EventEditDetail`
+ * (the editor's initial data at `/mi-cuenta/eventos/[id]/editar`).
+ *
+ * The `date` sub-object is flattened here rather than in the component: the API
+ * carries `{ start, end, precision }` while the form holds three independent
+ * scalars, and `precision` decides whether the schedule fields are editable at
+ * all (HOS-280 — see `ScheduleSection`).
+ *
+ * `datePrecision` falls back to `'EXACT'`, matching the schema's own default
+ * for every event that predates the column.
+ *
+ * @param item - Raw event object from `eventEditApi.getById`
+ * @returns Typed `EventEditDetail` for the `EventEditor` island
+ */
+export function transformEventEditDetail({
+    item
+}: {
+    readonly item: Record<string, unknown>;
+}): import('./types').EventEditDetail {
+    const date = (item.date ?? {}) as Record<string, unknown>;
+    const organizer = (item.organizer ?? null) as Record<string, unknown> | null;
+    const location = (item.location ?? null) as Record<string, unknown> | null;
+
+    const isoOrNull = (value: unknown): string | null => {
+        if (typeof value === 'string') return value;
+        if (value instanceof Date) return value.toISOString();
+        return null;
+    };
+
+    return {
+        id: String(item.id ?? ''),
+        slug: String(item.slug ?? ''),
+        name: String(item.name ?? ''),
+        description: String(item.description ?? ''),
+        category: String(item.category ?? ''),
+        startDate: isoOrNull(date.start),
+        endDate: isoOrNull(date.end),
+        datePrecision: date.precision === 'MONTH' ? 'MONTH' : 'EXACT',
+        organizerName: typeof organizer?.name === 'string' ? organizer.name : null,
+        locationName: typeof location?.name === 'string' ? location.name : null,
+        moderationState: String(
+            item.moderationState ?? 'PENDING'
+        ) as import('./types').EditorContentModerationState,
+        visibility: String(
+            item.visibility ?? 'PRIVATE'
+        ) as import('./types').EditorContentVisibility,
+        lifecycleState: String(
+            item.lifecycleState ?? 'DRAFT'
+        ) as import('./types').EditorContentLifecycleState
+    };
+}
+
+// ---------------------------------------------------------------------------
 // Gastronomy transforms (SPEC-239)
 // ---------------------------------------------------------------------------
 
@@ -2442,25 +2706,31 @@ export function toExperienceDetailPageProps({
 }
 
 /**
- * Transforms a raw API partner item to PartnerCardData props.
+ * Transforms a raw API partner item into the gold partner's detail props.
+ *
+ * Written fresh rather than adapted from the directory's card transform
+ * (HOS-294 D-7): that one carried the tier, `isFeatured` and a clamped
+ * description, all of which belonged to the retired listing.
+ *
+ * `tier` is deliberately not mapped. It decides whether this page exists at
+ * all — a decision already made by the API before the payload gets here — and
+ * is never shown to a reader.
  *
  * @param item - Raw partner object from the public API
  * @param locale - Active locale for i18n field resolution
- * @returns Typed PartnerCardData for the partner card component
+ * @returns Typed PartnerDetailData for the partner detail page
  */
-export function toPartnerCardProps({
+export function toPartnerDetailProps({
     item,
     locale = 'es'
 }: {
     readonly item: Record<string, unknown>;
     readonly locale?: string;
-}): PartnerCardData {
+}): PartnerDetailData {
     return {
-        id: String(item.id || ''),
         slug: String(item.slug || ''),
         name: resolveI18nText((item.nameI18n as I18nTextLike | string) ?? item.name, locale),
         type: String(item.type || ''),
-        tier: String(item.tier || ''),
         description:
             item.description == null
                 ? null
@@ -2470,9 +2740,14 @@ export function toPartnerCardProps({
                   ),
         logoUrl: item.logoUrl == null ? null : String(item.logoUrl),
         websiteUrl: item.websiteUrl == null ? null : String(item.websiteUrl),
-        isFeatured: Boolean(item.isFeatured),
-        startsAt: item.startsAt == null ? null : String(item.startsAt),
-        endsAt: item.endsAt == null ? null : String(item.endsAt)
+        contactInfo:
+            item.contactInfo == null
+                ? null
+                : (item.contactInfo as Readonly<Record<string, unknown>>),
+        socialNetworks:
+            item.socialNetworks == null
+                ? null
+                : (item.socialNetworks as Readonly<Record<string, unknown>>)
     };
 }
 
@@ -2500,6 +2775,11 @@ export function toPartnerData({ item }: { readonly item: Record<string, unknown>
         name: String(item.name || ''),
         logoPath: String(item.logoUrl || ''),
         url: item.websiteUrl == null ? undefined : String(item.websiteUrl),
+        // Both carried for the tier branch in `PartnersSection` (HOS-294 D-1):
+        // a gold logo links to `/partners/<slug>/`, a silver one to its own
+        // site. Neither is ever rendered as text.
+        slug: item.slug == null ? undefined : String(item.slug),
+        tier: item.tier == null ? undefined : String(item.tier),
         aspectRatio: DEFAULT_PARTNER_LOGO_ASPECT_RATIO
     };
 }

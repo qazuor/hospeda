@@ -39,15 +39,27 @@ DECLARE
     updated_count integer := 0;
 BEGIN
     -- -------------------------------------------------------------------------
-    -- Guard: skip silently if the accommodations table doesn't exist yet.
+    -- Guard: skip silently unless the `accommodations.media` COLUMN exists.
+    --
+    -- Guarding on the TABLE is not enough (HOS-372). The table outlives the
+    -- column: once the cutover drops `media`, the UPDATE below references a
+    -- column that no longer exists, this whole DO block raises, and because
+    -- `db:apply-extras` runs the files as one batch, EVERY later extras file is
+    -- skipped too. Guarding on the column makes this a clean no-op instead.
+    --
+    -- Returning early is what keeps that safe: PL/pgSQL plans a statement on its
+    -- FIRST EXECUTION, not when the block is entered, so the UPDATE is never
+    -- planned and never resolves the missing column. Verified against a real
+    -- database, not assumed.
     -- -------------------------------------------------------------------------
     IF NOT EXISTS (
         SELECT 1
-        FROM information_schema.tables
+        FROM information_schema.columns
         WHERE table_schema = 'public'
           AND table_name = 'accommodations'
+          AND column_name = 'media'
     ) THEN
-        RAISE NOTICE '021: accommodations table does not exist, skipping strip.';
+        RAISE NOTICE '021: accommodations.media column does not exist, skipping strip.';
         RETURN;
     END IF;
 

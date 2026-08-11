@@ -150,7 +150,10 @@ export const ExperienceOwnerUpdateInputSchema = ExperienceSchema.pick({
     openingHours: true,
     contactInfo: true,
     socialNetworks: true,
-    media: true,
+    // HOS-372: `media` is not writable — the `media` JSONB column was dropped.
+    // Photos are written through the relational `experience_media` endpoints and
+    // videos through this top-level column.
+    videos: true,
     isPriceOnRequest: true,
     priceFrom: true,
     priceUnit: true,
@@ -289,7 +292,13 @@ export const ExperienceUpdateInputSchema = z
                 reviewsCount: true,
                 averageRating: true,
                 // Subscription lifecycle hook — use toggleSubscription route instead.
-                hasActiveSubscription: true
+                hasActiveSubscription: true,
+                // HOS-372: the `media` JSONB column was dropped. Photos live in
+                // `experience_media` and are written through the relational media
+                // endpoints; videos travel as the top-level `videos` column, which
+                // stays writable here. `media` remains a RESPONSE field, composed
+                // from the rows on the way out — it is only the write side that goes.
+                media: true
             }).shape
         )
     )

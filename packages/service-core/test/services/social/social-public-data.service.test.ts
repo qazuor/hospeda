@@ -13,11 +13,14 @@
  *     forwarded to both models.
  *   - Empty result set from both models is handled gracefully — `{ items: [] }`,
  *     no error.
+ *   - HOS-372: an accommodation's `imageUrl` is sourced from the relational
+ *     `accommodation_media` table, NOT from the `accommodations.media` JSONB
+ *     column (whose photo keys no longer exist post-021 strip migration).
  *
  * HOS-66 T-022 (G-10).
  */
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     type GetPublicDataInput,
     SocialPublicDataService
@@ -65,9 +68,37 @@ function buildDestinationRow(overrides: Record<string, unknown> = {}) {
 // Service factory
 // ---------------------------------------------------------------------------
 
+/**
+ * Builds a relational `accommodation_media` row as returned by
+ * `AccommodationMediaModel.findByAccommodations`.
+ */
+function buildMediaRow(overrides: Record<string, unknown> = {}) {
+    return {
+        id: '00000000-0000-4000-8000-000000000201',
+        accommodationId: ACCOMMODATION_ID,
+        url: 'https://cdn.example.com/relational-featured.jpg',
+        moderationState: 'APPROVED',
+        state: 'visible',
+        isFeatured: true,
+        sortOrder: 0,
+        caption: null,
+        description: null,
+        alt: null,
+        publicId: null,
+        attribution: null,
+        archivedAt: null,
+        ...overrides
+    };
+}
+
 interface BuildServiceOptions {
     accommodationModel?: ReturnType<typeof createModelMock>;
     destinationModel?: ReturnType<typeof createModelMock>;
+    /**
+     * Rows the `accommodation_media` batch finder resolves to, keyed by
+     * accommodation id. Defaults to an empty Map (no relational rows).
+     */
+    mediaRowsByAccommodationId?: Map<string, unknown[]>;
 }
 
 function buildService(opts: BuildServiceOptions = {}) {
@@ -87,12 +118,19 @@ function buildService(opts: BuildServiceOptions = {}) {
             return m;
         })();
 
+    const accommodationMediaModel = {
+        findByAccommodations: vi
+            .fn()
+            .mockResolvedValue(opts.mediaRowsByAccommodationId ?? new Map())
+    };
+
     const service = new SocialPublicDataService(
         accommodationModel as never,
-        destinationModel as never
+        destinationModel as never,
+        accommodationMediaModel as never
     );
 
-    return { service, accommodationModel, destinationModel };
+    return { service, accommodationModel, destinationModel, accommodationMediaModel };
 }
 
 // ---------------------------------------------------------------------------
@@ -185,6 +223,96 @@ describe('SocialPublicDataService.getPublicData', () => {
                     imageUrl: null
                 }
             ]);
+        });
+    });
+
+    describe('relational media sourcing (HOS-372)', () => {
+        it('should source imageUrl from accommodation_media, not from the media JSONB column', async () => {
+            // Arrange — mirrors production post-021: the JSONB column no longer
+            // carries photo keys, the relational table holds the real featured row.
+            const accommodationModel = createModelMock();
+            accommodationModel.findAll.mockResolvedValue({
+                items: [buildAccommodationRow({ media: { videos: [] } })],
+                total: 1
+            });
+            const destinationModel = createModelMock();
+            destinationModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            const { service, accommodationMediaModel } = buildService({
+                accommodationModel,
+                destinationModel,
+                mediaRowsByAccommodationId: new Map([[ACCOMMODATION_ID, [buildMediaRow()]]])
+            });
+
+            // Act
+            const result = await service.getPublicData();
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.items[0]?.imageUrl).toBe(
+                'https://cdn.example.com/relational-featured.jpg'
+            );
+            expect(accommodationMediaModel.findByAccommodations).toHaveBeenCalledWith(
+                expect.objectContaining({ accommodationIds: [ACCOMMODATION_ID] })
+            );
+        });
+
+        it('should return a null imageUrl when there are no relational rows and no JSONB fallback', async () => {
+            // Arrange — the real post-021 shape: JSONB carries videos only.
+            const accommodationModel = createModelMock();
+            accommodationModel.findAll.mockResolvedValue({
+                items: [buildAccommodationRow({ media: { videos: [] } })],
+                total: 1
+            });
+            const destinationModel = createModelMock();
+            destinationModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            const { service } = buildService({
+                accommodationModel,
+                destinationModel,
+                mediaRowsByAccommodationId: new Map()
+            });
+
+            // Act
+            const result = await service.getPublicData();
+
+            // Assert
+            expect(result.error).toBeUndefined();
+            expect(result.data?.items[0]?.imageUrl).toBeNull();
+        });
+
+        it('should preserve the JSONB media when composition yields nothing (withComposedMedia contract)', async () => {
+            // Arrange — `withComposedMedia` deliberately keeps the original `media`
+            // value when the composed object is empty, to avoid a null -> {} shape
+            // drift that would break the T-015-d golden test. Documented here so the
+            // fallback is not silently removed: it means a legacy JSONB featuredImage
+            // WOULD still surface. Harmless in production only because the
+            // `021-accommodation-media-strip-blob-photos` migration already removed
+            // those keys — if that ever stops being true, this is the leak path.
+            const accommodationModel = createModelMock();
+            accommodationModel.findAll.mockResolvedValue({
+                items: [
+                    buildAccommodationRow({
+                        media: {
+                            featuredImage: { url: 'https://cdn.example.com/legacy-jsonb.jpg' }
+                        }
+                    })
+                ],
+                total: 1
+            });
+            const destinationModel = createModelMock();
+            destinationModel.findAll.mockResolvedValue({ items: [], total: 0 });
+            const { service } = buildService({
+                accommodationModel,
+                destinationModel,
+                mediaRowsByAccommodationId: new Map()
+            });
+
+            // Act
+            const result = await service.getPublicData();
+
+            // Assert
+            expect(result.data?.items[0]?.imageUrl).toBe(
+                'https://cdn.example.com/legacy-jsonb.jpg'
+            );
         });
     });
 

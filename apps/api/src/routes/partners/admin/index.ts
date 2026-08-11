@@ -4,5 +4,7 @@ export { adminGetPartnerRoute } from './get.js';
 export { adminListPartnersRoute } from './list.js';
 export { adminListPartnerPlansRoute } from './list-plans.js';
 export { adminManualPaymentRoute } from './manual-payment.js';
+export { adminReviewPartnerContentRoute } from './review-content.js';
+export { adminRevokePartnerRoute } from './revoke.js';
 export { adminSendPaymentLinkRoute } from './send-link.js';
 export { adminUpdatePartnerRoute } from './update.js';

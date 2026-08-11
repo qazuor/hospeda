@@ -5,6 +5,6 @@
 
 // Date schemas (types are exported from schemas)
 export * from './event.date.schema.js';
-
+export * from './event.media.schema.js';
 // Price schemas (types are exported from schemas)
 export * from './event.price.schema.js';

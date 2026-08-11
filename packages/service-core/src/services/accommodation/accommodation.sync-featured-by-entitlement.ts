@@ -45,7 +45,7 @@
 import type { DrizzleClient } from '@repo/db';
 import { accommodations, and, eq, getDb, isNull } from '@repo/db';
 import { notInArray } from 'drizzle-orm';
-import type { EntityChangeData } from '../../revalidation/entity-path-mapper.js';
+import type { EntityChangeData } from '../../revalidation/entity-change.types.js';
 import { getRevalidationService } from '../../revalidation/revalidation-init.js';
 import { serviceLogger } from '../../utils/service-logger';
 import {

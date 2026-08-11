@@ -20,12 +20,6 @@ interface Props {
     readonly data: ExperienceCardData;
     readonly locale: SupportedLocale;
     /**
-     * Whether the current user is authenticated.
-     * Forwarded to FavoriteButton to decide between toggle-favorite or
-     * auth-required popover. Defaults to false (guest user).
-     */
-    readonly isAuthenticated?: boolean;
-    /**
      * When true the card image renders with `loading="eager"` and
      * `fetchpriority="high"` — set this on cards in the first visible row
      * so the browser treats them as LCP candidates. Defaults to false.
@@ -33,7 +27,7 @@ interface Props {
     readonly eager?: boolean;
 }
 
-const { data, locale, isAuthenticated = false, eager = false } = Astro.props;
+const { data, locale, eager = false } = Astro.props;
 const { t } = createTranslations(locale);
 
 const detailUrl = buildUrl({ locale, path: `experiencias/${data.slug}/` });
@@ -66,7 +60,6 @@ const featuredLabel = t('experience.card.featured', 'Destacada');
                 decoding="async"
                 class="exp-card__img"
                 data-fallback="/assets/images/placeholder-experience.svg"
-                transition:name={`experience-${data.slug}`}
             />
 
             <!-- NEW corner badge -->
@@ -92,13 +85,10 @@ const featuredLabel = t('experience.card.featured', 'Destacada');
                     client:visible
                     entityId={data.id}
                     entityType="EXPERIENCE"
-                    initialIsFavorited={data.isFavorited}
-                    initialBookmarkId={data.favoriteBookmarkId ?? null}
                     count={data.bookmarkCount}
                     variant="standalone"
                     showCount={true}
                     locale={locale}
-                    isAuthenticated={isAuthenticated}
                 />
             </div>
 

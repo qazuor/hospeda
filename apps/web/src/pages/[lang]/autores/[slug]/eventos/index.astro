@@ -1,0 +1,29 @@
+---
+/**
+ * @file autores/[slug]/eventos/index.astro
+ * @description Permanent redirect from the events pagination BASE to the author
+ * profile, which is where page 1 of the events block actually lives
+ * (HOS-375 §6.3).
+ * @route /{lang}/autores/{slug}/eventos/
+ *
+ * The profile page never emits this href — `Pagination` renders the current
+ * page as text rather than a link, so on page 1 the base is not a link at all.
+ * But from `/eventos/page/2/` the "Anterior" control DOES point here, because
+ * the component's page-1 href is the bare base. Without this file that control
+ * would 404 on every author with more than one page of events.
+ *
+ * A redirect, not a copy of the profile: a second URL rendering the same
+ * content is a duplicate Google would have to reconcile, and the events block
+ * has no content that the profile does not already show on page 1.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { slug } = Astro.params;
+
+if (!slug) return new Response(null, { status: 404 });
+
+return Astro.redirect(buildUrl({ locale, path: `autores/${slug}` }), 301);
+---

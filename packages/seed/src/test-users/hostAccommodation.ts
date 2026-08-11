@@ -69,7 +69,11 @@ export const ACCOMMODATION_TYPE_BY_EMAIL: Record<string, AccommodationTypeEnum> 
     'host-pro@local.test': AccommodationTypeEnum.HOUSE,
     'host-premium@local.test': AccommodationTypeEnum.CABIN,
     'host-pro-plus-addon@local.test': AccommodationTypeEnum.HOTEL,
-    'host-trial@local.test': AccommodationTypeEnum.HOSTEL
+    'host-trial@local.test': AccommodationTypeEnum.HOSTEL,
+    // HOS-376 T-013: the dual-role user needs an accommodation like any other
+    // host — that is what earns them the HOST role and scopes the provider
+    // directory to their destination. Owning a host_trades listing does not.
+    'host-provider@local.test': AccommodationTypeEnum.COUNTRY_HOUSE
 };
 
 /** Base nightly price (ARS) per accommodation type, used to seed a realistic Tier-3 price block. */

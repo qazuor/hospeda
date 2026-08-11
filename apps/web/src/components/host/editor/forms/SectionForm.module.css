@@ -1,0 +1,28 @@
+/* SectionForm.module.css — shared chrome for the editor's five form pages
+   (HOS-318). One stylesheet instead of five, so the pages cannot drift apart
+   visually. The card recipe is the same one the pre-split editor used. */
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-5, 1.5rem);
+    width: 100%;
+}
+
+.card {
+    composes: card from "../../../account/AccountSection.module.css";
+}
+
+/* The design system has no error/danger token (verified against global.css and
+   css-var-themes.css), so these literals are carried over verbatim from the
+   pre-split editor's `.submitError`. Not new debt — the same debt, in one place
+   instead of one per form page. A `--danger*` token would replace all three. */
+.error {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md, 10px);
+    background-color: oklch(0.96 0.02 25);
+    color: oklch(0.45 0.2 25);
+    border: 1px solid oklch(0.88 0.06 25);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}

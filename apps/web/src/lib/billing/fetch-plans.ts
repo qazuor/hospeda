@@ -21,12 +21,6 @@
 import type { PlanCategory } from '@repo/billing';
 import { getApiUrl } from '@/lib/env';
 
-/** Cache TTL in seconds set on the SSR response via `s-maxage`. */
-export const PRICING_CACHE_MAX_AGE_SECONDS = 300;
-
-/** Stale-while-revalidate window in seconds. */
-export const PRICING_CACHE_SWR_SECONDS = 60;
-
 /**
  * Shape of a single plan returned by `GET /api/v1/public/plans`.
  *

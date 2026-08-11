@@ -43,6 +43,24 @@
  * `onConflictDoNothing` on each table's unique `slug`). It never updates or
  * deletes existing data, so the production destructive-migration gate does
  * not apply.
+ *
+ * ## `contentOnly` flag decision
+ *
+ * `true`. No `src/data/**` fixture reproduces these events — the `events`
+ * folder is on the dual-write guard's demo-only exemption list precisely
+ * because the fixtures there are synthetic, and these rows are real content.
+ * This file is therefore the sole source of them, so baseline-stamping must
+ * not skip it: `--baseline-stamp` leaves it pending and runs it for real, and
+ * a from-scratch build gets the events like any live environment does.
+ *
+ * Before HOS-375 every fresh build stamped this applied with the events never
+ * created, and the ledger then blocked it from ever running. The documented
+ * workaround (a manual re-run list in
+ * `docs/deployment/first-time-setup.md`) never even named this migration — it
+ * listed only `0025` — so the documented production day-1 bootstrap shipped
+ * zero Entre Rios events. That is the concrete reason the fix is a flag on
+ * the migration instead of a list somewhere else. See
+ * `data-migrations/types.ts` (`SeedMigrationMeta.contentOnly`).
  */
 
 import type { DrizzleClient } from '@repo/db';
@@ -59,7 +77,8 @@ import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from 
 export const meta = {
     name: '0027-add-confirmed-events-entre-rios-2026',
     group: 'required',
-    destructive: false
+    destructive: false,
+    contentOnly: true
 } as const satisfies SeedMigrationModule['meta'];
 
 /** The 7 CITY destination slugs this migration's venues/events resolve against. */

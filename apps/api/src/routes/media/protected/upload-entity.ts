@@ -46,6 +46,8 @@ import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { type MediaEntityType, validateEntityMediaPermission } from '../admin/permissions';
+import { resolveVisibleGalleryCount } from '../gallery-count';
 
 /** Reusable Zod validator for actor.id UUID format. */
 const ActorIdSchema = z.string().uuid();
@@ -244,20 +246,53 @@ export const protectedUploadEntityRoute = createProtectedRoute({
             );
         }
 
-        // Ownership check: entity must belong to the authenticated user.
-        const entity = entityResult.data as { ownerId?: string | null };
-        if (!entity.ownerId || entity.ownerId !== actor.id) {
-            return createErrorResponse(
-                { code: 'FORBIDDEN', message: 'You do not own this entity' },
-                ctx,
-                403
-            );
+        // Ownership check.
+        //
+        // Entities that carry `ownerId` (accommodation, gastronomy, experience)
+        // keep the original direct comparison, unchanged.
+        //
+        // The rest do not have that column at all. This code used to cast every
+        // entity to `{ ownerId?: string | null }` regardless, so `!entity.ownerId`
+        // was unconditionally true for them and the route answered 403 to
+        // everyone — the author included — for `post`, `event` and `destination`.
+        // Those fall through to the shared media permission policy, which
+        // resolves them by authorship or by the entity's update permission.
+        const entity = entityResult.data as { ownerId?: string | null; authorId?: string | null };
+
+        if (entity.ownerId !== undefined && entity.ownerId !== null) {
+            if (entity.ownerId !== actor.id) {
+                return createErrorResponse(
+                    { code: 'FORBIDDEN', message: 'You do not own this entity' },
+                    ctx,
+                    403
+                );
+            }
+        } else {
+            const permissionCheck = validateEntityMediaPermission({
+                actor,
+                entityType: entityType as MediaEntityType,
+                entity
+            });
+
+            if (!permissionCheck.allowed) {
+                return createErrorResponse(
+                    { code: 'FORBIDDEN', message: 'You do not own this entity' },
+                    ctx,
+                    403
+                );
+            }
         }
 
         // ── 3d. Enforce gallery cap ───────────────────────────────────────────
         if (role === 'gallery') {
-            const entityMedia = (entityResult.data as { media?: { gallery?: unknown[] } }).media;
-            const currentGalleryCount = entityMedia?.gallery?.length ?? 0;
+            // Counted via the shared resolver so this path and the admin upload
+            // path can never disagree about where an entity type's photos live —
+            // see routes/media/gallery-count.ts.
+            const currentGalleryCount = await resolveVisibleGalleryCount({
+                entityType,
+                entityId,
+                entity: entityResult.data
+            });
             const galleryLimit = getGalleryCap(entityType);
             if (currentGalleryCount >= galleryLimit) {
                 return createErrorResponse(

@@ -33,7 +33,7 @@
  * @module test/services/google-calendar/google-calendar-sync.service
  */
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { GoogleCredential } from '../../../src/services/google-calendar/google-calendar-credential.repository.js';
 
 // ---------------------------------------------------------------------------
@@ -87,14 +87,32 @@ vi.mock('../../../src/utils/logger.js', () => ({
 const ACCOMMODATION_ID = 'acc-1';
 
 /**
+ * The instant every test in this file runs at.
+ *
+ * Frozen, and deliberately mid-afternoon in Argentina (12:00 AR), because this
+ * suite used to read the wall clock TWICE: once here at module load, and once
+ * inside the service on every call. A run that straddled midnight AR computed
+ * two different "today"s and six tests failed on an off-by-one date — which is
+ * exactly what happened on 2026-08-05, on a PR that touched none of this. The
+ * shard started at 23:50 AR and asserted at 00:07 AR.
+ *
+ * Deriving from `Date.now()` was never the problem; capturing it once while the
+ * subject under test kept reading the clock was.
+ */
+const FROZEN_NOW = new Date('2026-03-15T15:00:00.000Z');
+
+/**
  * Today's `YYYY-MM-DD` in the AR market zone, computed EXACTLY like the
  * service's `fromDate` (`Intl.DateTimeFormat('en-CA', { timeZone:
  * 'America/Argentina/Buenos_Aires' })`). A plain UTC computation would be
  * off-by-one during 00:00-03:00 UTC, since AR is a fixed UTC-3 offset.
+ *
+ * Derived from {@link FROZEN_NOW}, so it can no longer disagree with what the
+ * service sees.
  */
 const todayFromDate = new Intl.DateTimeFormat('en-CA', {
     timeZone: 'America/Argentina/Buenos_Aires'
-}).format(new Date());
+}).format(FROZEN_NOW);
 
 /** Adds (or subtracts, via a negative `days`) whole days to a `YYYY-MM-DD` string using UTC date math. */
 const addDaysUtc = (date: string, days: number): string => {
@@ -119,6 +137,12 @@ describe('google-calendar-sync.service', () => {
     let GoogleCalendarApiError: typeof import('../../../src/services/google-calendar/google-calendar-client.js').GoogleCalendarApiError;
 
     beforeEach(async () => {
+        // Only `Date` is faked. The service and its mocked collaborators still
+        // need real `setTimeout`/`queueMicrotask` to resolve their promises —
+        // faking those would hang every async test in this file.
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(FROZEN_NOW);
+
         vi.clearAllMocks();
         mockUpdateSyncState.mockResolvedValue(null);
         mockReplaceFutureSyncOccupancy.mockResolvedValue({ removed: 0, inserted: 0 });
@@ -133,6 +157,12 @@ describe('google-calendar-sync.service', () => {
         ({ GoogleCalendarApiError } = await import(
             '../../../src/services/google-calendar/google-calendar-client.js'
         ));
+    });
+
+    afterEach(() => {
+        // Leaving `Date` faked would leak a frozen clock into whatever file the
+        // worker picks up next.
+        vi.useRealTimers();
     });
 
     describe('skips', () => {

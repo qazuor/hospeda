@@ -1,0 +1,271 @@
+---
+/**
+ * @file partners/[slug].astro
+ * @description A gold partner's own page (HOS-294). Logo, name, organization
+ * type, description, contact details and social links — a business card, not a
+ * listing. It is what separates the two paid partner plans: gold has this page,
+ * silver does not.
+ *
+ * @route /{lang}/partners/{slug}/
+ * @rendering SSR (on-demand), edge-cacheable
+ *
+ * ## Status codes
+ *
+ * The API answers three ways and this page forwards all three (spec D-3b):
+ * 410 when a partner WAS published and no longer is, so crawlers deindex the
+ * URL fast; 404 when the slug never had a page (a silver partner, or no row).
+ * Collapsing them would still render fine and would silently cost the deindex
+ * signal.
+ *
+ * ## Indexability
+ *
+ * `noindex` is NEVER a literal here. It is `!isIndexable`, decided by
+ * `evaluatePartnerIndexability` — the same helper `sitemap-dynamic.xml.ts`
+ * uses, so the sitemap cannot advertise a URL this page then serves `noindex`.
+ *
+ * ## Actor-blindness
+ *
+ * The frontmatter never reads the session. This response is stored in a SHARED
+ * edge cache bucket keyed without any actor component, so a render that varied
+ * by visitor would be captured once and replayed to everyone. A source guard in
+ * `test/pages/partner-detail.astro.test.ts` enforces it, which is why this
+ * sentence names no symbol: the guard is a substring search and would match its
+ * own documentation.
+ */
+
+import DefaultLayout from '@/layouts/DefaultLayout.astro';
+import { buildEntityCacheTags, CACHE_TAG_ALL } from '@repo/cache-tags';
+import { partnerApi } from '@/lib/api/endpoints';
+import { toPartnerDetailProps } from '@/lib/api/transforms';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { evaluatePartnerIndexability } from '@/lib/seo/partner-indexable';
+import { buildUrl } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const slug = Astro.params.slug as string;
+
+// --- Primary fetch ---
+const result = await partnerApi.getBySlug(slug);
+
+// 410 for a page that was published and is retired; 404 for a URL that never
+// existed. `ApiError.status` already carries the distinction.
+if (!result.ok) {
+    return new Response(null, { status: result.error.status === 410 ? 410 : 404 });
+}
+if (!result.data) {
+    return new Response(null, { status: 404 });
+}
+
+const raw = result.data as unknown as Record<string, unknown>;
+const partner = toPartnerDetailProps({ item: raw, locale });
+
+// --- Indexability (shared with the sitemap) ---
+const { isIndexable } = evaluatePartnerIndexability({
+    tier: raw.tier as string | null,
+    lifecycleState: raw.lifecycleState as string | null,
+    subscriptionStatus: raw.subscriptionStatus as string | null,
+    description: partner.description
+});
+
+// --- Edge cacheability ---
+// Addressed by its OWN entity tag and deliberately NOT by any collection tag:
+// partners have no listing page, so there is no `list-partner` to purge (see
+// `CACHE_TAG_COLLECTIONS`). A write to THIS partner evicts THIS page, and the
+// home carousel is evicted by the `home` tag the API schedules alongside it.
+const entityCacheTags = buildEntityCacheTags({
+    entity: 'partner',
+    slug,
+    id: String(raw.id ?? '')
+});
+const [primaryCacheTag, ...extraCacheTags] = entityCacheTags;
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    // No usable tag means nothing could ever purge this page, and an
+    // unpurgeable cached page is worse than an uncached one.
+    cacheable: Astro.url.search === '' && primaryCacheTag !== undefined,
+    cacheClass: 'detail',
+    // The `else` branch exists only to satisfy the non-empty tuple type and is
+    // never applied: `cacheable` above is false whenever `primaryCacheTag` is
+    // undefined, and `applyCacheHeaders` returns before it reads `tags`.
+    // `CACHE_TAG_ALL` is the filler rather than a collection tag because
+    // partners deliberately have none.
+    tags:
+        primaryCacheTag !== undefined ? [primaryCacheTag, ...extraCacheTags] : [CACHE_TAG_ALL]
+});
+
+// --- Presentation ---
+const typeLabel = t(`partners.types.${partner.type}`, partner.type);
+const metaTitle = t('partners.detail.metaTitle', `${partner.name} — Aliado de Hospeda`, {
+    name: partner.name
+});
+const metaDescription =
+    partner.description ??
+    t('partners.detail.metaDescription', `Conocé a ${partner.name}, aliado de Hospeda.`, {
+        name: partner.name
+    });
+
+const canonicalPath = buildUrl({ locale, path: `partners/${slug}` });
+
+/** Social links, flattened from the stored map and skipping empty entries. */
+const socialLinks = Object.entries(partner.socialNetworks ?? {})
+    .filter(([, url]) => typeof url === 'string' && url.trim().length > 0)
+    .map(([network, url]) => ({ network, url: String(url) }));
+
+/** Contact rows, same treatment. */
+const contactRows = Object.entries(partner.contactInfo ?? {})
+    .filter(([, value]) => typeof value === 'string' && value.trim().length > 0)
+    .map(([field, value]) => ({ field, value: String(value) }));
+---
+
+<DefaultLayout
+    locale={locale}
+    title={metaTitle}
+    description={metaDescription}
+    canonicalPath={canonicalPath}
+    noindex={!isIndexable}
+>
+    <article class="partner">
+        <header class="partner__header">
+            {partner.logoUrl && (
+                <img
+                    src={partner.logoUrl}
+                    alt={partner.name}
+                    class="partner__logo"
+                    loading="eager"
+                    decoding="async"
+                />
+            )}
+            <p class="partner__type">{typeLabel}</p>
+            <h1 class="partner__name">{partner.name}</h1>
+        </header>
+
+        {partner.description && <p class="partner__description">{partner.description}</p>}
+
+        {partner.websiteUrl && (
+            <p class="partner__website">
+                <a href={partner.websiteUrl} target="_blank" rel="noopener noreferrer">
+                    {t('partners.detail.websiteLabel', 'Sitio web')}
+                </a>
+            </p>
+        )}
+
+        {contactRows.length > 0 && (
+            <section class="partner__block">
+                <h2 class="partner__block-title">
+                    {t('partners.detail.contactHeading', 'Contacto')}
+                </h2>
+                <ul class="partner__list">
+                    {contactRows.map((row) => (
+                        <li class="partner__list-item">{row.value}</li>
+                    ))}
+                </ul>
+            </section>
+        )}
+
+        {socialLinks.length > 0 && (
+            <section class="partner__block">
+                <h2 class="partner__block-title">
+                    {t('partners.detail.socialHeading', 'Redes')}
+                </h2>
+                <ul class="partner__list">
+                    {socialLinks.map((link) => (
+                        <li class="partner__list-item">
+                            <a href={link.url} target="_blank" rel="noopener noreferrer">
+                                {link.network}
+                            </a>
+                        </li>
+                    ))}
+                </ul>
+            </section>
+        )}
+    </article>
+</DefaultLayout>
+
+<style>
+    .partner {
+        max-width: 720px;
+        margin-inline: auto;
+        padding-inline: var(--space-container-x);
+        padding-block: var(--space-section-sm);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5);
+    }
+
+    .partner__header {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .partner__logo {
+        max-height: 120px;
+        max-width: 100%;
+        width: auto;
+        object-fit: contain;
+        border-radius: var(--radius-card);
+        background: var(--surface-warm);
+        padding: var(--space-4);
+    }
+
+    .partner__type {
+        font-family: var(--font-sans);
+        font-size: 0.75rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        padding: 0.2rem 0.6rem;
+        border-radius: var(--radius-pill);
+        background: oklch(from var(--brand-primary) l c h / 0.15);
+        color: var(--brand-primary);
+        margin: 0;
+    }
+
+    .partner__name {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: var(--text-h2);
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .partner__description {
+        font-family: var(--font-sans);
+        color: var(--core-muted-foreground);
+        margin: 0;
+    }
+
+    .partner__website a,
+    .partner__list-item a {
+        color: var(--brand-primary);
+    }
+
+    .partner__block-title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: 1.1rem;
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2);
+    }
+
+    .partner__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .partner__list-item {
+        font-family: var(--font-sans);
+        color: var(--core-muted-foreground);
+    }
+</style>

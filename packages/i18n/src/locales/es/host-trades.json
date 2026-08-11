@@ -12,8 +12,8 @@
     },
     "accessDenied": {
         "title": "Esta sección es exclusiva para anfitriones",
-        "message": "Para acceder al directorio de proveedores necesitás un plan de anfitrión activo.",
-        "cta": "Ver planes de suscripción"
+        "message": "El directorio es gratuito para quienes publican en Hospeda. Publicá tu alojamiento y accedé a proveedores locales de confianza, con beneficios exclusivos para anfitriones.",
+        "cta": "Publicá tu alojamiento"
     },
     "card": {
         "is24h": "Disponible 24hs",
@@ -34,5 +34,223 @@
         "PLAGAS": "Control de plagas",
         "INTERNET": "Internet / TV",
         "ALBANILERIA": "Albañilería"
+    },
+    "registerUsage": {
+        "title": "Registrar uso del beneficio",
+        "subtitle": "Registrá que usaste el beneficio de {{name}}. Le pedimos que lo confirme.",
+        "subtitleFallback": "Registro de uso de un beneficio del directorio de proveedores.",
+        "backToDirectory": "Volver al directorio",
+        "form": {
+            "date": {
+                "label": "¿Qué día fue el servicio?",
+                "hint": "Ya viene con la fecha de hoy. Cambiala si el servicio fue otro día."
+            },
+            "note": {
+                "label": "Nota (opcional)",
+                "placeholder": "Por ejemplo: cambio de cerradura en el departamento 3.",
+                "counter": "Te quedan {{remaining}} caracteres."
+            },
+            "submit": "Registrar el uso",
+            "submitting": "Registrando…",
+            "footnote": "Le vamos a pedir a {{name}} que confirme. Hasta que lo haga, el registro queda pendiente."
+        },
+        "errors": {
+            "dateRequired": "Elegí el día del servicio.",
+            "dateFuture": "El servicio no puede ser en el futuro.",
+            "generic": "No pudimos registrar el uso. Probá de nuevo en un momento."
+        },
+        "success": {
+            "title": "Listo, lo registramos",
+            "body": "Le pedimos a {{name}} que confirme el uso. Cuando lo haga, vas a poder valorarlo.",
+            "cta": "Ver mis usos del beneficio"
+        },
+        "notFound": {
+            "title": "No encontramos este proveedor",
+            "body": "El código que escaneaste no corresponde a ningún proveedor del directorio. Revisá que sea el código correcto."
+        },
+        "revoked": {
+            "title": "Este proveedor ya no está en el directorio",
+            "body": "Ya no forma parte del directorio, así que no podés registrar usos de su beneficio. Si tenés dudas, escribinos."
+        },
+        "loadError": {
+            "title": "No pudimos cargar el proveedor",
+            "body": "Hubo un problema al cargar los datos. Probá recargar la página.",
+            "retry": "Reintentar"
+        }
+    },
+    "usages": {
+        "title": "Usos del beneficio",
+        "subtitle": "Confirmá los usos que registran los proveedores y consultá tu historial.",
+        "pending": {
+            "title": "Esperan tu confirmación",
+            "empty": "No tenés usos pendientes de confirmar."
+        },
+        "history": {
+            "title": "Historial",
+            "empty": "Todavía no hay usos registrados.",
+            "loadMore": "Ver más",
+            "filterLabel": "Filtrar por estado"
+        },
+        "filters": {
+            "ALL": "Todos",
+            "PENDING": "Pendientes",
+            "CONFIRMED": "Confirmados",
+            "REJECTED": "Rechazados",
+            "EXPIRED": "Vencidos"
+        },
+        "status": {
+            "PENDING": "Pendiente",
+            "CONFIRMED": "Confirmado",
+            "REJECTED": "Rechazado",
+            "EXPIRED": "Vencido"
+        },
+        "card": {
+            "unknownProvider": "Proveedor del directorio",
+            "servicedOn": "Servicio del {{date}}",
+            "declaredByYou": "Lo registraste vos",
+            "declaredByProvider": "Lo registró el proveedor",
+            "rejectionNote": "Motivo del rechazo: {{note}}"
+        },
+        "actions": {
+            "confirm": "Confirmar",
+            "reject": "Rechazar",
+            "undoRejection": "Deshacer el rechazo"
+        },
+        "reject": {
+            "title": "¿Rechazar este uso?",
+            "body": "Le vamos a avisar a {{name}} que este uso no ocurrió. Podés deshacerlo después: el rechazo es reversible.",
+            "noteLabel": "Contale por qué (opcional)",
+            "cancel": "Volver",
+            "confirm": "Sí, rechazar"
+        },
+        "errors": {
+            "load": "No pudimos cargar tus usos del beneficio. Probá recargar la página.",
+            "action": "No pudimos completar la acción. Probá de nuevo en un momento."
+        },
+        "badge": {
+            "pendingCount_one": "{{count}} uso espera tu confirmación",
+            "pendingCount_other": "{{count}} usos esperan tu confirmación"
+        }
+    },
+    "review": {
+        "title": "Valorar a {{name}}",
+        "overall": {
+            "legend": "Puntuación general",
+            "one": "1 estrella",
+            "many": "{{count}} estrellas"
+        },
+        "benefit": {
+            "legend": "¿Te respetó el beneficio para anfitriones?",
+            "yes": "Sí",
+            "no": "No"
+        },
+        "breakdown": {
+            "summary": "Detalle por aspecto (opcional)",
+            "workQuality": "Calidad del trabajo",
+            "punctuality": "Puntualidad",
+            "treatment": "Trato"
+        },
+        "content": {
+            "label": "Comentario (opcional)",
+            "placeholder": "Contá cómo fue el trabajo. Lo van a leer otros anfitriones."
+        },
+        "submit": "Publicar valoración",
+        "submitting": "Publicando…",
+        "cancel": "Cancelar",
+        "success": {
+            "published": "Listo, tu valoración ya está publicada en el directorio.",
+            "pending": "Guardamos tu valoración y quedó en revisión. Se publica en el directorio cuando la aprueben.",
+            "close": "Cerrar"
+        },
+        "errors": {
+            "ratingRequired": "Elegí una puntuación general.",
+            "benefitRequired": "Contanos si el proveedor respetó el beneficio.",
+            "contentTooShort": "El comentario tiene que tener al menos {{min}} caracteres, o podés dejarlo vacío.",
+            "invalid": "Revisá los datos de la valoración antes de publicarla.",
+            "generic": "No pudimos publicar tu valoración. Probá de nuevo en un momento.",
+            "noChanges": "No cambiaste nada de tu valoración."
+        },
+        "cta": "Valorar a {{name}}",
+        "ctaEdit": "Editar tu valoración de {{name}}",
+        "editTitle": "Editar tu valoración de {{name}}",
+        "save": "Guardar cambios",
+        "loading": "Buscando si ya lo valoraste…"
+    },
+    "provider": {
+        "usages": {
+            "form": {
+                "title": "Registrar un uso del beneficio",
+                "channel": "¿A quién atendiste?",
+                "channelSelector": "Un cliente que ya me confirmó un uso",
+                "channelEmail": "Alguien nuevo, por su email",
+                "host": "Anfitrión",
+                "hostPlaceholder": "Elegí uno…",
+                "email": "Email del anfitrión",
+                "emailHint": "Tiene que ser el email con el que se registró en Hospeda. Si no coincide, te lo avisamos en el momento.",
+                "date": "¿Qué día fue el servicio?",
+                "note": "Nota (opcional)",
+                "submit": "Registrar el uso",
+                "submitting": "Registrando…",
+                "success": "Listo. Le pedimos al anfitrión que lo confirme; hasta entonces queda pendiente y no suma a tus números."
+            },
+            "list": {
+                "title": "Usos registrados",
+                "empty": "Todavía no registraste ningún uso del beneficio.",
+                "declaredByYou": "Lo registraste vos",
+                "declaredByHost": "Lo registró el anfitrión"
+            },
+            "suspended": {
+                "title": "No podés registrar usos por ahora",
+                "help": "Escribinos para revisarlo. Tus usos ya confirmados siguen contando."
+            },
+            "errors": {
+                "hostRequired": "Elegí a quién atendiste.",
+                "emailRequired": "Escribí el email del anfitrión.",
+                "dateRequired": "Elegí el día del servicio.",
+                "dateFuture": "El servicio no puede ser en el futuro.",
+                "generic": "No pudimos registrar el uso. Probá de nuevo en un momento."
+            }
+        },
+        "reviews": {
+            "title": "Valoraciones",
+            "empty": "Todavía no hay valoraciones sobre tu ficha. Aparecen cuando un anfitrión con un uso confirmado te valora.",
+            "anonymous": "Un anfitrión",
+            "rating": "{{count}} de 5 estrellas",
+            "benefitYes": "Dice que respetaste el beneficio",
+            "benefitNo": "Dice que NO respetaste el beneficio",
+            "yourReply": "Tu respuesta",
+            "noReply": "Todavía no respondiste esta valoración.",
+            "pendingHelp": "La revisamos antes de publicarla. Todavía no se ve en el directorio.",
+            "rejectedReason": "Motivo: {{reason}}",
+            "editedAfterReply": "El anfitrión editó su valoración después de tu respuesta.",
+            "replyState": {
+                "PENDING": "En revisión",
+                "APPROVED": "Publicada",
+                "REJECTED": "Rechazada"
+            },
+            "reply": {
+                "open": "Responder",
+                "edit": "Editar tu respuesta",
+                "label": "Tu respuesta",
+                "counter": "{{count}}/{{max}} · mínimo {{min}} caracteres",
+                "createNotice": "La revisamos antes de publicarla, así que no aparece en el directorio enseguida.",
+                "editNotice": "Si la editás, tu respuesta vuelve a revisión y deja de verse en el directorio hasta que la aprobemos de nuevo.",
+                "cancel": "Cancelar",
+                "send": "Enviar respuesta",
+                "save": "Guardar respuesta",
+                "errors": {
+                    "tooShort": "Tu respuesta tiene que tener al menos {{min}} caracteres.",
+                    "generic": "No pudimos guardar tu respuesta. Probá de nuevo en un momento."
+                }
+            }
+        },
+        "qr": {
+            "title": "Tu código QR",
+            "help": "Imprimilo o mostralo en el celular. El anfitrión lo escanea con la cámara y registra el uso él mismo: no hace falta que le pidas datos ni que lo cargues vos.",
+            "alt": "Código QR que lleva a la página para registrar un uso de tu beneficio",
+            "encodes": "Lleva a: {{url}}",
+            "download": "Descargar el QR",
+            "downloaded": "Listo, lo descargamos como SVG."
+        }
     }
 }

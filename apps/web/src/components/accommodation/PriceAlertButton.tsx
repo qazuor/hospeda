@@ -3,9 +3,20 @@
  * @description React island for the "Alert me for price drops" toggle on the
  * accommodation detail page (SPEC-286 T-011).
  *
- * Renders one of four states, resolved from SSR-computed props (see
- * `alojamientos/[slug].astro`) so the correct state is visible on first paint
- * with no loading flash:
+ * Auth, entitlement, and existing-alert state are resolved CLIENT-SIDE
+ * (HOS-369 WB0-7). The page used to mount this island only for a signed-in
+ * visitor and compute the four gate booleans during SSR, which baked the
+ * visitor into HTML that must be edge-cacheable. Now the page always mounts it
+ * and passes the anonymous variant as slot children.
+ *
+ * Without a session (and until one resolves) it renders `children` — the
+ * sign-in CTA, sized to match this button, so the SSR/cached output is the
+ * anonymous variant per D-11 and the swap costs no layout shift.
+ *
+ * With a session it renders one of four states, resolved by
+ * `usePriceAlertGateState`. While those lookups are in flight the create button
+ * shows disabled rather than guessing a branch, so no state the visitor could
+ * act on is ever wrong:
  *  - **Locked** — the actor lacks the `PRICE_ALERTS` entitlement (free plan).
  *    Renders a link to the plans page instead of a button; no API call.
  *  - **Max reached** — the actor is entitled but is at their plan's
@@ -32,8 +43,10 @@
  */
 
 import { BellIcon, LockIcon } from '@repo/icons';
-import { useCallback, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
+import { usePriceAlertGateState } from '@/hooks/use-price-alert-gate-state';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
@@ -64,28 +77,16 @@ interface ErrorResponse {
 export interface PriceAlertButtonProps {
     /** The accommodation this button subscribes/unsubscribes alerts for. */
     readonly accommodationId: string;
-    /**
-     * SSR-resolved: whether the actor already has an active alert for this
-     * specific accommodation (not just "has some alert somewhere").
-     */
-    readonly userHasAlert: boolean;
-    /**
-     * The ID of the existing alert (required to call `DELETE`). `null` when
-     * `userHasAlert` is `false`.
-     */
-    readonly existingAlertId: string | null;
-    /** SSR-resolved: whether the actor's plan includes the `PRICE_ALERTS` entitlement. */
-    readonly canCreateAlerts: boolean;
-    /**
-     * SSR-resolved: whether the actor is at their plan's `MAX_ACTIVE_ALERTS`
-     * limit. Only relevant when `userHasAlert` is `false` — an actor who
-     * already holds an alert for this accommodation can always cancel it.
-     */
-    readonly maxReached: boolean;
     /** API base URL (PUBLIC_API_URL from env). */
     readonly apiUrl: string;
     /** Active locale for i18n and the upgrade-link URL. */
     readonly locale: SupportedLocale;
+    /**
+     * Anonymous fallback, supplied by the page as the island's slot children
+     * (a `SignInCtaCard`). This is what the server renders and what the edge
+     * caches; it is replaced only once a session resolves in the browser.
+     */
+    readonly children?: ReactNode;
 }
 
 /** In-flight mutation kind, for spinner + disabled-state wiring. */
@@ -96,29 +97,41 @@ type SubmitPhase = 'idle' | 'creating' | 'cancelling';
 /**
  * "Alert me for price drops" toggle island.
  *
- * Resolves its initial rendering branch entirely from SSR props (no client
- * fetch on mount, unlike `AlertsList`) — the accommodation detail page has
- * already computed entitlement/limit/existing-alert state server-side.
+ * Resolves session, entitlement, and existing-alert state on mount (see
+ * `usePriceAlertGateState`) because the page it lives on is edge-cached and can
+ * carry no visitor state.
  */
 export function PriceAlertButton({
     accommodationId,
-    userHasAlert,
-    existingAlertId,
-    canCreateAlerts,
-    maxReached,
     apiUrl,
-    locale
+    locale,
+    children
 }: PriceAlertButtonProps) {
     const { t } = createTranslations(locale);
     const base = apiUrl.replace(/\/$/, '');
 
+    // Simple mode (no `initialUser`): `user` starts null, so the anonymous
+    // branch is what renders on the server and on first paint.
+    const { user } = useAccountPermissions();
+    const gate = usePriceAlertGateState({ accommodationId, skip: user === null });
+
     // ── State ─────────────────────────────────────────────────────────────────
-    // Local mirrors of the SSR props so a successful create/cancel can flip
+    // Local mirrors of the resolved gate so a successful create/cancel can flip
     // the rendered branch without a page reload.
-    const [hasAlert, setHasAlert] = useState(userHasAlert);
-    const [alertId, setAlertId] = useState<string | null>(existingAlertId);
+    const [hasAlert, setHasAlert] = useState(false);
+    const [alertId, setAlertId] = useState<string | null>(null);
     const [phase, setPhase] = useState<SubmitPhase>('idle');
     const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+    // Adopt the resolved lookup once it settles. Deliberately keyed on the
+    // settled snapshot only: a mutation that already flipped the local mirror
+    // must not be undone by a late-arriving resolution of the pre-mutation
+    // state, and `usePriceAlertGateState` never re-runs after it settles.
+    useEffect(() => {
+        if (gate.isResolving) return;
+        setHasAlert(gate.hasAlert);
+        setAlertId(gate.alertId);
+    }, [gate.isResolving, gate.hasAlert, gate.alertId]);
 
     const isSubmitting = phase !== 'idle';
 
@@ -213,6 +226,11 @@ export function PriceAlertButton({
 
     // ── Render ────────────────────────────────────────────────────────────────
 
+    // Every hook above runs unconditionally (Rules of Hooks); the gate is the
+    // first thing after them. `user === null` covers both a real guest and the
+    // not-yet-resolved window, and both must show the anonymous variant.
+    if (!user) return <>{children}</>;
+
     const errorNode = errorMessage && (
         <p
             className={styles.priceAlertError}
@@ -251,12 +269,37 @@ export function PriceAlertButton({
         );
     }
 
+    // Signed in, but the entitlement/alert lookups have not settled yet. Show
+    // the create button disabled rather than guessing: rendering the locked
+    // upsell here would flash a false "your plan does not include this" at an
+    // entitled visitor, and rendering it enabled would let them fire a create
+    // we cannot yet know is allowed.
+    if (gate.isResolving) {
+        return (
+            <div className={styles.priceAlertWrapper}>
+                <button
+                    type="button"
+                    className={styles.priceAlertButtonDisabled}
+                    disabled
+                    aria-busy="true"
+                >
+                    <BellIcon
+                        size="sm"
+                        weight="duotone"
+                        aria-hidden="true"
+                    />
+                    {t('accommodations.detail.priceAlert.create', 'Avisame si baja el precio')}
+                </button>
+            </div>
+        );
+    }
+
     // Free plan — locked state, links to the tourist plans page, no API call.
     // PRICE_ALERTS is a tourist entitlement every owner plan already inherits
     // (TOURIST_VIP_ENTITLEMENTS), so anyone seeing this locked state is a
     // free-tier tourist — the upsell must target the tourist pricing page, not
     // the owner one (BETA-201; mirrors the sibling AlertsList.client.tsx).
-    if (!canCreateAlerts) {
+    if (!gate.canCreateAlerts) {
         const upgradeHref = buildUrl({ locale, path: 'suscriptores/turistas' });
         return (
             <div className={styles.priceAlertWrapper}>
@@ -276,7 +319,7 @@ export function PriceAlertButton({
     }
 
     // Entitled but at the plan's MAX_ACTIVE_ALERTS limit.
-    if (maxReached) {
+    if (gate.maxReached) {
         return (
             <div className={styles.priceAlertWrapper}>
                 <button

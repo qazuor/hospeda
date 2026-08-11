@@ -2,15 +2,21 @@ import { index, integer, jsonb, pgTable, text, timestamp, uuid } from 'drizzle-o
 
 /**
  * Revalidation log table
- * Audit log for every on-demand ISR revalidation attempt, recording the path
- * revalidated, what triggered it, who triggered it, the outcome, and optional
+ * Audit log for every CDN cache-invalidation attempt, recording WHAT was
+ * invalidated, what triggered it, who triggered it, the outcome, and optional
  * diagnostic metadata.
+ *
+ * `target` holds a cache tag (`accom-cabana-del-rio`, `list-accom`) or `*` for
+ * a whole-zone flush. It was named `path` until HOS-369 W1-1, when purge moved
+ * from URLs to cache tags — the rename keeps the column honest about its
+ * contents. Historical rows keep their URL paths, which is why the name is the
+ * broader `target` rather than `tag`.
  */
 export const revalidationLog = pgTable(
     'revalidation_log',
     {
         id: uuid('id').primaryKey().defaultRandom(),
-        path: text('path').notNull(),
+        target: text('target').notNull(),
         entityType: text('entity_type').notNull(),
         entityId: text('entity_id'),
         trigger: text('trigger').notNull(), // 'manual' | 'hook' | 'cron' | 'stale'
@@ -25,6 +31,6 @@ export const revalidationLog = pgTable(
         entityTypeIdx: index('revalidation_log_entity_type_idx').on(table.entityType),
         triggerIdx: index('revalidation_log_trigger_idx').on(table.trigger),
         createdAtIdx: index('revalidation_log_created_at_idx').on(table.createdAt),
-        pathIdx: index('revalidation_log_path_idx').on(table.path)
+        targetIdx: index('revalidation_log_target_idx').on(table.target)
     })
 );

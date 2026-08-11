@@ -4,10 +4,12 @@
  * bathrooms. Uses native HTML number inputs.
  */
 
+import { TextField } from '@/components/ui/TextField';
 import type { AccommodationEditData } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import styles from './CapacitySection.module.css';
+import { ACCOMMODATION_FIELD_PREFIX } from './field-ids';
 
 /** Props for CapacitySection. */
 export interface CapacitySectionProps {
@@ -32,16 +34,14 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
 
             <div className={styles.row}>
                 <div className={styles.field}>
-                    <label
-                        htmlFor="acc-maxGuests"
-                        className={styles.fieldLabel}
-                    >
-                        {t('host.properties.editor.field.maxGuests', 'Huéspedes máx.')}
-                    </label>
-                    <input
-                        id="acc-maxGuests"
-                        type="number"
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="maxGuests"
+                        label={t('host.properties.editor.field.maxGuests', 'Huéspedes máx.')}
+                        labelClassName={styles.fieldLabel}
                         className={styles.fieldInput}
+                        error={errors.maxGuests}
+                        type="number"
                         value={data.maxGuests ?? ''}
                         min={1}
                         max={200}
@@ -51,31 +51,18 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                                 e.target.value === '' ? null : Number(e.target.value)
                             )
                         }
-                        aria-invalid={Boolean(errors.maxGuests)}
-                        aria-describedby={errors.maxGuests ? 'acc-maxGuests-error' : undefined}
                     />
-                    {errors.maxGuests && (
-                        <span
-                            id="acc-maxGuests-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.maxGuests}
-                        </span>
-                    )}
                 </div>
 
                 <div className={styles.field}>
-                    <label
-                        htmlFor="acc-bedrooms"
-                        className={styles.fieldLabel}
-                    >
-                        {t('host.properties.editor.field.bedrooms', 'Dormitorios')}
-                    </label>
-                    <input
-                        id="acc-bedrooms"
-                        type="number"
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="bedrooms"
+                        label={t('host.properties.editor.field.bedrooms', 'Dormitorios')}
+                        labelClassName={styles.fieldLabel}
                         className={styles.fieldInput}
+                        error={errors.bedrooms}
+                        type="number"
                         value={data.bedrooms ?? ''}
                         min={0}
                         max={100}
@@ -85,31 +72,18 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                                 e.target.value === '' ? null : Number(e.target.value)
                             )
                         }
-                        aria-invalid={Boolean(errors.bedrooms)}
-                        aria-describedby={errors.bedrooms ? 'acc-bedrooms-error' : undefined}
                     />
-                    {errors.bedrooms && (
-                        <span
-                            id="acc-bedrooms-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.bedrooms}
-                        </span>
-                    )}
                 </div>
 
                 <div className={styles.field}>
-                    <label
-                        htmlFor="acc-bathrooms"
-                        className={styles.fieldLabel}
-                    >
-                        {t('host.properties.editor.field.bathrooms', 'Baños')}
-                    </label>
-                    <input
-                        id="acc-bathrooms"
-                        type="number"
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="bathrooms"
+                        label={t('host.properties.editor.field.bathrooms', 'Baños')}
+                        labelClassName={styles.fieldLabel}
                         className={styles.fieldInput}
+                        error={errors.bathrooms}
+                        type="number"
                         value={data.bathrooms ?? ''}
                         min={1}
                         max={100}
@@ -119,18 +93,7 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                                 e.target.value === '' ? null : Number(e.target.value)
                             )
                         }
-                        aria-invalid={Boolean(errors.bathrooms)}
-                        aria-describedby={errors.bathrooms ? 'acc-bathrooms-error' : undefined}
                     />
-                    {errors.bathrooms && (
-                        <span
-                            id="acc-bathrooms-error"
-                            className={styles.fieldError}
-                            role="alert"
-                        >
-                            {errors.bathrooms}
-                        </span>
-                    )}
                 </div>
             </div>
         </fieldset>

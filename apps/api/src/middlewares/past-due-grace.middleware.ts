@@ -80,6 +80,26 @@ const GRACE_EXEMPT_PATH_SUFFIXES = [
 ] as const;
 
 /**
+ * Whole route families exempt from grace period enforcement, matched by PREFIX.
+ *
+ * Separate from {@link GRACE_EXEMPT_PATH_SUFFIXES} on purpose: that list is
+ * checked with `endsWith`, and filing a prefix under a name that says "suffix"
+ * would make the constant lie about its own predicate.
+ *
+ * - `/api/v1/protected/alliance/` (HOS-278) — the alliance tier is where an
+ *   applicant reads the state of their partner / proveedor / editor
+ *   application. `billing_customers` is one row per user shared across product
+ *   domains (ADR-035), so without this a host whose ACCOMMODATION subscription
+ *   went past-due beyond grace would be told 402 when asking whether their
+ *   PARTNER application was approved — a different product domain, and a read
+ *   of non-billing state that withholding cannot incentivise paying for. Same
+ *   "can't gate one domain on delinquency in another" reasoning as the
+ *   `/start-subscription` suffix above, applied to the whole tier because the
+ *   tier carries no paid capability at all.
+ */
+const GRACE_EXEMPT_PATH_PREFIXES = ['/api/v1/protected/alliance/'] as const;
+
+/**
  * Response header name for communicating remaining grace period days to clients.
  *
  * @example
@@ -167,11 +187,12 @@ export function pastDueGraceMiddleware(): AppMiddleware {
             return;
         }
 
-        // Allow recovery paths through even when grace period has expired
+        // Allow recovery paths — and whole exempt tiers — through even when the
+        // grace period has expired.
         const requestPath = c.req.path;
-        const isExemptPath = GRACE_EXEMPT_PATH_SUFFIXES.some((suffix) =>
-            requestPath.endsWith(suffix)
-        );
+        const isExemptPath =
+            GRACE_EXEMPT_PATH_SUFFIXES.some((suffix) => requestPath.endsWith(suffix)) ||
+            GRACE_EXEMPT_PATH_PREFIXES.some((prefix) => requestPath.startsWith(prefix));
         if (isExemptPath) {
             await next();
             return;

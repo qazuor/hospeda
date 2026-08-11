@@ -104,9 +104,9 @@ const [heroPlaya, heroAtardecer, heroIsla] = await Promise.all(
 					<HeroImageRotator
 						client:load
 						images={[
-							{ src: heroPlaya.src, srcset: heroPlaya.srcset, sizes: HERO_IMAGE_SIZES, alt: t('home.hero.imageAlt.playa', 'Playa del Litoral argentino al mediodía') },
-							{ src: heroAtardecer.src, srcset: heroAtardecer.srcset, sizes: HERO_IMAGE_SIZES, alt: t('home.hero.imageAlt.atardecer', 'Atardecer dorado sobre el río') },
-							{ src: heroIsla.src, srcset: heroIsla.srcset, sizes: HERO_IMAGE_SIZES, alt: t('home.hero.imageAlt.isla', 'Isla fluvial con vegetación nativa') },
+							{ src: heroPlaya.src, srcset: heroPlaya.srcset, avifSrcset: heroPlaya.avifSrcset, sizes: HERO_IMAGE_SIZES, alt: t('home.hero.imageAlt.playa', 'Playa del Litoral argentino al mediodía') },
+							{ src: heroAtardecer.src, srcset: heroAtardecer.srcset, avifSrcset: heroAtardecer.avifSrcset, sizes: HERO_IMAGE_SIZES, alt: t('home.hero.imageAlt.atardecer', 'Atardecer dorado sobre el río') },
+							{ src: heroIsla.src, srcset: heroIsla.srcset, avifSrcset: heroIsla.avifSrcset, sizes: HERO_IMAGE_SIZES, alt: t('home.hero.imageAlt.isla', 'Isla fluvial con vegetación nativa') },
 						]}
 						interval={5000}
 					/>

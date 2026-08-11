@@ -1,0 +1,378 @@
+/**
+ * Styles for BenefitUsagesPanel.client.tsx and BenefitUsageCard.tsx
+ * (HOS-376 T-046).
+ *
+ * Every value is a design token from `global.css`. The four state badges are
+ * the one place needing colours the token set does not name; they reuse the
+ * same literal oklch triplets the sibling host-trade surfaces already use, each
+ * pairing dark text with a low-alpha wash of the same hue so contrast holds in
+ * both themes.
+ */
+
+.panel {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-8, 2rem);
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4, 1rem);
+}
+
+.sectionTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.125rem;
+    color: var(--core-foreground);
+}
+
+.list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3, 0.75rem);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.empty {
+    margin: 0;
+    padding: var(--space-6, 1.5rem);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-muted-foreground);
+    text-align: center;
+    background-color: var(--core-card);
+    border: 1px dashed var(--core-foreground-a08);
+    border-radius: var(--radius-card, 24px);
+}
+
+/* ── Card ── */
+
+.card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-5, 1.25rem);
+    background-color: var(--core-card);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card, 24px);
+}
+
+.cardHeader {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-3, 0.75rem);
+}
+
+.cardTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.0625rem;
+    color: var(--core-foreground);
+}
+
+.cardCategory {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+}
+
+.cardMeta {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+}
+
+.cardNote {
+    margin: 0;
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+}
+
+.cardActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-2, 0.5rem);
+}
+
+/* ── Badges ── */
+
+.badge {
+    flex-shrink: 0;
+    padding: 0.25rem 0.625rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    border-radius: var(--radius-pill, 9999px);
+}
+
+.badgePending {
+    color: oklch(0.45 0.13 75);
+    background-color: oklch(0.75 0.15 75 / 0.18);
+}
+
+.badgeConfirmed {
+    color: oklch(0.45 0.13 150);
+    background-color: oklch(0.7 0.15 150 / 0.18);
+}
+
+.badgeRejected {
+    color: oklch(0.5 0.2 25);
+    background-color: oklch(0.55 0.22 25 / 0.12);
+}
+
+.badgeExpired {
+    color: var(--core-muted-foreground);
+    background-color: var(--core-foreground-a08);
+}
+
+/* ── Actions ── */
+
+.primaryAction,
+.secondaryAction,
+.dangerAction,
+.loadMore {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    /* 44px keeps the tap target within the AA touch guideline; this audience
+       skews older and largely mobile. */
+    min-height: 44px;
+    padding: 0.5rem 1.125rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-pill, 9999px);
+    cursor: pointer;
+    transition: opacity var(--duration-normal, 0.4s) ease-out;
+}
+
+.primaryAction {
+    color: var(--accent-foreground, #ffffff);
+    background-color: var(--brand-accent);
+}
+
+.secondaryAction {
+    color: var(--core-foreground);
+    background-color: transparent;
+    border-color: var(--core-foreground-a08);
+}
+
+.dangerAction {
+    color: oklch(0.5 0.2 25);
+    background-color: oklch(0.55 0.22 25 / 0.12);
+    border-color: oklch(0.85 0.05 25 / 0.4);
+}
+
+.loadMore {
+    align-self: center;
+    color: var(--core-foreground);
+    background-color: transparent;
+    border-color: var(--core-foreground-a08);
+}
+
+.primaryAction:hover:not(:disabled),
+.secondaryAction:hover:not(:disabled),
+.dangerAction:hover:not(:disabled),
+.loadMore:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.primaryAction:disabled,
+.secondaryAction:disabled,
+.dangerAction:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}
+
+/* ── Filters ── */
+
+.filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2, 0.5rem);
+    /* A <fieldset> carries a UA border and padding; the chips are the visible
+       grouping, so both are removed and only the semantics are kept. */
+    margin: 0;
+    padding: 0;
+    border: none;
+}
+
+/* The fieldset's legend labels the group for assistive technology only — the
+   chips themselves already say what they filter. `clip-path` over `display:
+   none`, which would remove it from the accessibility tree entirely. */
+.visuallyHidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    clip-path: inset(50%);
+    border: 0;
+}
+
+.filter {
+    min-height: 36px;
+    padding: 0.375rem 0.875rem;
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    background-color: transparent;
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-pill, 9999px);
+    cursor: pointer;
+}
+
+.filterActive {
+    color: var(--primary-foreground, #ffffff);
+    background-color: var(--brand-primary);
+    border-color: var(--brand-primary);
+}
+
+.filter:focus-visible,
+.primaryAction:focus-visible,
+.secondaryAction:focus-visible,
+.dangerAction:focus-visible,
+.loadMore:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+}
+
+/* ── Nav count pill (T-047) ──
+   Matches `WhatsNew.module.css` `.inlineCountPill` so the two badges in the same
+   sidebar read as one thing rather than two conventions. */
+
+.countPill {
+    display: inline-flex;
+    min-width: 1.25rem;
+    align-items: center;
+    justify-content: center;
+    margin-left: var(--space-2, 0.5rem);
+    padding: 0 6px;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.625rem;
+    line-height: 1.4;
+    color: var(--accent-foreground);
+    background: var(--brand-accent);
+    border-radius: var(--radius-pill, 9999px);
+}
+
+/* ── Skeleton ── */
+
+.skeleton {
+    height: 108px;
+    background-color: var(--core-foreground-a05);
+    border-radius: var(--radius-card, 24px);
+    animation: usage-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes usage-skeleton-pulse {
+    0%,
+    100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.5;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton {
+        animation: none;
+    }
+}
+
+/* ── Rejection dialog ── */
+
+.dialog {
+    width: min(32rem, calc(100vw - 2rem));
+    /* Restore native <dialog> centering — a global reset zeroes margins,
+       which would otherwise pin the dialog to the top-left corner. */
+    margin: auto;
+    padding: var(--space-6, 1.5rem);
+    color: var(--core-foreground);
+    background-color: var(--core-card);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-card, 24px);
+}
+
+.dialog::backdrop {
+    background-color: oklch(0 0 0 / 0.45);
+}
+
+.dialogTitle {
+    margin: 0 0 var(--space-3, 0.75rem);
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 1.125rem;
+}
+
+.dialogBody {
+    margin: 0 0 var(--space-4, 1rem);
+    font-family: var(--font-sans);
+    font-size: var(--text-body, 1rem);
+    color: var(--core-muted-foreground);
+}
+
+.dialogLabel {
+    display: block;
+    margin-bottom: var(--space-2, 0.5rem);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: 0.9375rem;
+}
+
+.dialogTextarea {
+    width: 100%;
+    min-height: 44px;
+    padding: 0.625rem 0.875rem;
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    color: var(--core-foreground);
+    background-color: var(--core-background);
+    border: 1px solid var(--core-foreground-a08);
+    border-radius: var(--radius-md, 10px);
+    resize: vertical;
+}
+
+.dialogTextarea:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 1px;
+}
+
+.dialogActions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2, 0.5rem);
+    margin-top: var(--space-4, 1rem);
+}
+
+/* ── Error ──
+   The design system has no `danger` token, so these literals match the ones the
+   sibling host-trade pages already use for error copy. */
+
+.error {
+    margin: 0;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+    color: oklch(0.55 0.22 25);
+    background-color: oklch(0.55 0.22 25 / 0.08);
+    border: 1px solid oklch(0.85 0.05 25 / 0.4);
+    border-radius: var(--radius-md, 10px);
+}

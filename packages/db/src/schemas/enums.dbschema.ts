@@ -17,7 +17,11 @@ import {
     ExperienceTypeEnum,
     ExternalPlatformEnum,
     GastronomyTypeEnum,
+    HostTradeBenefitTypeEnum,
     HostTradeCategoryEnum,
+    HostTradeUsageChannelEnum,
+    HostTradeUsageDeclaredByEnum,
+    HostTradeUsageStatusEnum,
     InvoiceStatusEnum,
     LifecycleStatusEnum,
     MessageSenderTypeEnum,
@@ -33,6 +37,8 @@ import {
     NotificationRecipientSideEnum,
     OccupancySourceEnum,
     OwnerPromotionDiscountTypeEnum,
+    PartnerContentReviewStateEnum,
+    PartnerMentionChannelEnum,
     PartnerSubscriptionStatusEnum,
     PartnerTierEnum,
     PartnerTypeEnum,
@@ -107,6 +113,38 @@ export const EventCategoryPgEnum = pgEnum('event_category_enum', enumToTuple(Eve
 export const HostTradeCategoryPgEnum = pgEnum(
     'host_trade_category_enum',
     enumToTuple(HostTradeCategoryEnum)
+);
+
+export const HostTradeBenefitTypePgEnum = pgEnum(
+    'host_trade_benefit_type_enum',
+    enumToTuple(HostTradeBenefitTypeEnum)
+);
+
+/**
+ * PostgreSQL enum for the lifecycle of a `host_trade_benefit_usages` row
+ * (HOS-376 §6.1). Values: PENDING, CONFIRMED, REJECTED, EXPIRED.
+ */
+export const HostTradeUsageStatusPgEnum = pgEnum(
+    'host_trade_usage_status_enum',
+    enumToTuple(HostTradeUsageStatusEnum)
+);
+
+/**
+ * PostgreSQL enum for which side declared a `host_trade_benefit_usages` row
+ * (HOS-376 §6.1). Values: PROVIDER, HOST. Determines who must confirm.
+ */
+export const HostTradeUsageDeclaredByPgEnum = pgEnum(
+    'host_trade_usage_declared_by_enum',
+    enumToTuple(HostTradeUsageDeclaredByEnum)
+);
+
+/**
+ * PostgreSQL enum for how a `host_trade_benefit_usages` row was created
+ * (HOS-376 §6.2). Values: QR, LINKED_SELECTOR, EMAIL_LOOKUP.
+ */
+export const HostTradeUsageChannelPgEnum = pgEnum(
+    'host_trade_usage_channel_enum',
+    enumToTuple(HostTradeUsageChannelEnum)
 );
 
 export const ExchangeRateSourcePgEnum = pgEnum(
@@ -382,6 +420,31 @@ export const PartnerTierPgEnum = pgEnum('partner_tier_enum', enumToTuple(Partner
 export const PartnerSubscriptionStatusPgEnum = pgEnum(
     'partner_subscription_status_enum',
     enumToTuple(PartnerSubscriptionStatusEnum)
+);
+
+/**
+ * Channels a manual partner promotion can be logged against (HOS-377).
+ *
+ * Distinct from {@link SocialPlatformPgEnum}: that one names the targets of the
+ * automated Make.com publishing pipeline, this one names where a human on the
+ * team promoted a partner. They overlap in wording, not in meaning — note this
+ * list says `TWITTER` where the social pipeline says `X`, deliberately.
+ */
+export const PartnerMentionChannelPgEnum = pgEnum(
+    'partner_mention_channel_enum',
+    enumToTuple(PartnerMentionChannelEnum)
+);
+
+/**
+ * Review state of a partner's self-authored content (HOS-278 D2).
+ *
+ * A real Postgres enum rather than the `varchar` its `host_trades` counterpart
+ * uses: this table already declares four of them, and the convention that
+ * matters is the one of the table being extended.
+ */
+export const PartnerContentReviewStatePgEnum = pgEnum(
+    'partner_content_review_state_enum',
+    enumToTuple(PartnerContentReviewStateEnum)
 );
 
 /**

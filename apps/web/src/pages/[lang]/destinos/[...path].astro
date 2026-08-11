@@ -4,7 +4,10 @@
  * @description Destination detail page with hierarchical catch-all routing.
  * Handles paths like /destinos/entre-rios/ and /destinos/entre-rios/colon/.
  * @route /{lang}/destinos/{...path}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — TTL from the `detail` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
@@ -38,7 +41,6 @@ import {
 	postsApi,
 	userBookmarksPublicApi
 } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { DestinationReviewSidebarCard } from '@/components/destination/DestinationReviewSidebarCard.client';
 import DestinationReviewSignInCta from '@/components/destination/DestinationReviewSignInCta.astro';
 import { getApiUrl } from '@/lib/env';
@@ -58,9 +60,10 @@ import { buildUrl } from '@/lib/urls';
 import { AlertTriangleIcon } from '@repo/icons';
 import { renderContent } from '@/lib/render-content';
 import { getDestinationSameAs } from '@/lib/destination-sameas';
-import { webLogger } from '@/lib/logger';
 import { Image } from 'astro:assets';
 
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t, tPlural } = createTranslations(locale);
 const { path } = Astro.params;
@@ -101,6 +104,42 @@ const seoDescription = pickLocalizedSeo({
 });
 const slug = String(dest.slug || '');
 const destId = String(dest.id || '');
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After the 404/410 guards, so an error response is never marked shareable,
+// and after `slug`/`destId` are derived so both tags are available.
+//
+// Addressed by its OWN two tags and deliberately NOT by `list-dest`: a detail
+// page is not a listing, and tagging it with the collection would make every
+// destination write evict every other destination's page. The accommodation
+// detail made the same call (W1-6).
+//
+// Known gap, deliberately accepted: this page also renders points of interest,
+// and neither `pointOfInterest` nor `attraction` exists in the tag vocabulary
+// or calls the revalidation service at all. A POI edit therefore does not purge
+// this page — it goes stale for at most the `detail` cache class's TTL (see
+// `lib/cache/cache-classes.ts`). Closing that needs the purge chain built first
+// (the same work `/destinos/lugar/` and `/destinos/atraccion/` are waiting on,
+// which is why those two are NOT cacheable yet).
+const destinationCacheTags = buildEntityCacheTags({
+	entity: 'destination',
+	slug,
+	id: destId
+});
+const [primaryDestinationTag, ...extraDestinationTags] = destinationCacheTags;
+
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// No usable entity tag means nothing could purge this page, and an
+	// unpurgeable cached page is worse than an uncached one.
+	cacheable: primaryDestinationTag !== undefined,
+	cacheClass: 'detail',
+	tags:
+		primaryDestinationTag !== undefined
+			? [primaryDestinationTag, ...extraDestinationTags]
+			: [CACHE_TAG_COLLECTIONS.destination]
+});
 
 type ClimateInputForPage = {
 	readonly bestSeason?: string;
@@ -329,18 +368,14 @@ try {
 	console.error('[destinos/detail] Error fetching previews:', err);
 }
 
-// --- Auth -------------------------------------------------------------------
-const userId = Astro.locals.user?.id ?? null;
-const isAuthenticated = userId !== null;
-// SSR-only: forwarded to every protected user-bookmarks call below so the
-// server-to-server fetch carries the session (credentials: 'include' only
-// forwards cookies in the browser, not during SSR).
-const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-
-// --- Bookmark count + favorite status (graceful degradation) ----------------
+// --- Bookmark count (public, visitor-independent) ---------------------------
+// The per-visitor favorite state that used to be fetched here (checkStatus for
+// this destination, checkBulk for the event and nearby-destination cards) is
+// gone: this page is edge-cacheable, so every visitor gets the same HTML and
+// FavoriteButton resolves its own state from the shared favorites store after
+// hydration (HOS-369 WB0-2/WB0-3). The count below is a public aggregate, not
+// visitor state, so it stays server-rendered.
 let bookmarkCount: number | undefined;
-let initialIsFavorited: boolean | undefined;
-let initialBookmarkId: string | null = null;
 
 try {
 	const countResult = await userBookmarksPublicApi.count({
@@ -352,82 +387,6 @@ try {
 	}
 } catch {
 	// Graceful degradation: counter not shown if fetch fails
-}
-
-if (isAuthenticated) {
-	try {
-		const statusResult = await userBookmarksApi.checkStatus({
-			entityId: destId,
-			entityType: 'DESTINATION',
-			cookieHeader
-		});
-		if (statusResult.ok) {
-			initialIsFavorited = statusResult.data.isFavorited;
-			initialBookmarkId = statusResult.data.bookmarkId;
-		}
-	} catch {
-		// Graceful degradation: FavoriteButton hydrates itself on mount
-	}
-}
-
-// --- Bulk favorite pre-check for event preview cards -------------------------
-// eventCards has up to 3 cards. One /check-bulk request replaces up to 3
-// per-card checkStatus calls that would fire on mount.
-type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
-let eventCardFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
-if (isAuthenticated && eventCards.length > 0) {
-	try {
-		const bulkResult = await userBookmarksApi.checkBulk({
-			entityType: 'EVENT',
-			entityIds: eventCards.map((card) => card.id),
-			cookieHeader
-		});
-		if (bulkResult.ok) {
-			eventCardFavoriteChecks = bulkResult.data.checks;
-		} else {
-			webLogger.warn('Bulk bookmark check failed on destinos/detail event cards; falling back to per-card hydration', {
-				error: bulkResult.error
-			});
-		}
-	} catch (error) {
-		webLogger.warn('Bulk bookmark check threw on destinos/detail event cards; falling back to per-card hydration', {
-			error: error instanceof Error ? error.message : String(error)
-		});
-	}
-}
-const resolvedEventCards = eventCards.map((card) => {
-	const entry = eventCardFavoriteChecks[card.id];
-	if (!entry) return card;
-	return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
-});
-
-// --- Bulk favorite pre-check for nearby destination cards --------------------
-// nearbyDestinations has up to 8 items. One /check-bulk replaces N per-card calls.
-let nearbyDestFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
-if (isAuthenticated && nearbyDestinations.length > 0) {
-	try {
-		const nearbyIds = nearbyDestinations
-			.map((d) => (d as Record<string, unknown>).id)
-			.filter((id): id is string => typeof id === 'string');
-		if (nearbyIds.length > 0) {
-			const bulkResult = await userBookmarksApi.checkBulk({
-				entityType: 'DESTINATION',
-				entityIds: nearbyIds,
-				cookieHeader
-			});
-			if (bulkResult.ok) {
-				nearbyDestFavoriteChecks = bulkResult.data.checks;
-			} else {
-				webLogger.warn('Bulk bookmark check failed on destinos/detail nearby cards; falling back to per-card hydration', {
-					error: bulkResult.error
-				});
-			}
-		}
-	} catch (error) {
-		webLogger.warn('Bulk bookmark check threw on destinos/detail nearby cards; falling back to per-card hydration', {
-			error: error instanceof Error ? error.message : String(error)
-		});
-	}
 }
 
 // --- Breadcrumbs ------------------------------------------------------------
@@ -542,9 +501,6 @@ const isThinContent = isThinDestination({
 			destinationId={destId}
 			name={name}
 			locale={locale}
-			isAuthenticated={isAuthenticated}
-			initialIsFavorited={initialIsFavorited}
-			initialBookmarkId={initialBookmarkId}
 			bookmarkCount={bookmarkCount}
 			attractions={attractions}
 		/>
@@ -674,22 +630,20 @@ const isThinContent = isThinDestination({
 				locale={locale}
 			>
 				<Fragment slot="actions">
-					{isAuthenticated ? (
-						<DestinationReviewSidebarCard
-							client:idle
-							variant="inline"
-							destinationId={destId}
-							destinationName={name}
-							locale={locale}
-							apiUrl={getApiUrl()}
-						/>
-					) : (
+					<DestinationReviewSidebarCard
+						client:idle
+						variant="inline"
+						destinationId={destId}
+						destinationName={name}
+						locale={locale}
+						apiUrl={getApiUrl()}
+					>
 						<DestinationReviewSignInCta
 							variant="inline"
 							locale={locale}
 							returnPath={`destinos/${path}`}
 						/>
-					)}
+					</DestinationReviewSidebarCard>
 				</Fragment>
 			</DestinationReviewsSection>
 		</div>
@@ -754,11 +708,11 @@ const isThinContent = isThinDestination({
 					</a>
 				)}
 			</div>
-			{resolvedEventCards.length > 0 ? (
+			{eventCards.length > 0 ? (
 				<div class="dest-detail__preview-grid">
-					{resolvedEventCards.map((card, i) => (
+					{eventCards.map((card, i) => (
 						<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-							<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
+							<EventCardHorizontal data={card} locale={locale} />
 						</div>
 					))}
 				</div>
@@ -811,8 +765,6 @@ const isThinContent = isThinDestination({
 				<DestinationNearbySection
 					destinations={nearbyDestinations}
 					locale={locale}
-					isAuthenticated={isAuthenticated}
-					favoriteChecks={nearbyDestFavoriteChecks}
 				/>
 			</section>
 		)}
@@ -841,23 +793,21 @@ const isThinContent = isThinDestination({
 			locale={locale}
 		/>
 
-		{isAuthenticated ? (
-			/* client:idle (NOT client:visible): the sticky sidebar is taller than
-			   the viewport, so this last card only intersects at full page scroll —
-			   with client:visible the CTA renders as a dead SSR button until then. */
-			<DestinationReviewSidebarCard
-				client:idle
-				destinationId={destId}
-				destinationName={name}
-				locale={locale}
-				apiUrl={getApiUrl()}
-			/>
-		) : (
+		{/* client:idle (NOT client:visible): the sticky sidebar is taller than
+		    the viewport, so this last card only intersects at full page scroll —
+		    with client:visible the CTA renders as a dead SSR button until then. */}
+		<DestinationReviewSidebarCard
+			client:idle
+			destinationId={destId}
+			destinationName={name}
+			locale={locale}
+			apiUrl={getApiUrl()}
+		>
 			<DestinationReviewSignInCta
 				locale={locale}
 				returnPath={`destinos/${path}`}
 			/>
-		)}
+		</DestinationReviewSidebarCard>
 	</div>
 
 	<DestinationViewTracker

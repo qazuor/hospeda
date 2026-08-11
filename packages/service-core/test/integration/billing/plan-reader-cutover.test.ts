@@ -87,9 +87,6 @@ vi.mock('@repo/db', () => ({
 vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
     getRevalidationService: vi.fn(() => null)
 }));
-vi.mock('../../../src/revalidation/entity-path-mapper.js', () => ({
-    getLocalizedPath: vi.fn((path: string) => path)
-}));
 
 // ─── Imports after mocks ───────────────────────────────────────────────────
 

@@ -15,6 +15,7 @@
 
 import { getImage } from 'astro:assets';
 import { DestinationsIsland } from '@/components/sections/DestinationsIsland.client';
+import type { DestinationsIslandData } from '@/components/sections/DestinationsIsland.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { destinationsApi, SSR_PUBLIC_CACHE_TTL_MS, toDestinationCardProps } from '@/lib/api';
@@ -30,10 +31,9 @@ interface Props {
      * Forwarded to FavoriteButton inside each carousel card.
      * Defaults to false (guest user).
      */
-    readonly isAuthenticated?: boolean;
 }
 
-const { locale, isAuthenticated = false } = Astro.props;
+const { locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 // Fetch from API - empty array if unavailable
@@ -75,6 +75,25 @@ const optimizedDestinations = await Promise.all(
         }
     })
 );
+
+// Narrow to the fields the island renders before handing them over (HOS-369
+// W3-3). Astro serializes an island's props into the HTML for hydration, so
+// spreading the full card shape shipped `gallery` alone — 77,162 B across
+// these 22 destinations — plus four more fields nothing reads. Project
+// explicitly rather than deleting keys: a new field on DestinationCardData
+// then has to be opted IN here, instead of silently riding along.
+const islandDestinations: DestinationsIslandData[] = optimizedDestinations.map((dest) => ({
+    id: dest.id,
+    slug: dest.slug,
+    name: dest.name,
+    summary: dest.summary,
+    featuredImage: dest.featuredImage,
+    accommodationsCount: dest.accommodationsCount,
+    path: dest.path,
+    averageRating: dest.averageRating,
+    reviewsCount: dest.reviewsCount,
+    attractions: dest.attractions
+}));
 ---
 
 {destinations.length > 0 && (
@@ -85,9 +104,8 @@ const optimizedDestinations = await Promise.all(
     <div class="destinations-section__container">
         <DestinationsIsland
             client:visible
-            destinations={optimizedDestinations}
+            destinations={islandDestinations}
             locale={locale}
-            isAuthenticated={isAuthenticated}
         />
     </div>
 </section>

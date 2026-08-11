@@ -12,7 +12,7 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makeEventMediaModelStub } from '../../utils/modelMockFactory';
 
 const asMock = <T>(fn: T) => fn as unknown as import('vitest').Mock;
 
@@ -27,7 +27,11 @@ describe('EventService.getSummary', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById']);
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     it('should return summary for a valid public event', async () => {

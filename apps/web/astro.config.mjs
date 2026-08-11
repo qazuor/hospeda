@@ -109,6 +109,14 @@ export default defineConfig({
         inlineStylesheets: 'never'
     },
     image: {
+        // Decorator around the built-in sharp service. It changes NO encoding
+        // behaviour — it only corrects the `format` sharp reports for AVIF
+        // output (`heif`), which is the field Astro's image endpoint turns into
+        // the `Content-Type`. Without it `/_image/?...&f=avif` is served as
+        // `image/heif`. Full rationale in the service file (HOS-369).
+        service: {
+            entrypoint: './src/lib/images/avif-mime-image-service.ts'
+        },
         // Built from ALLOWED_REMOTE_HOSTS (single source of truth shared with
         // the runtime SSRF guard `isAllowedRemoteHost()` in src/lib/media.ts).
         // `localhost` is HTTP for dev; the rest are HTTPS public CDNs.
@@ -257,7 +265,35 @@ export default defineConfig({
             include: ['@repo/schemas', '@repo/icons', '@repo/i18n/web']
         },
         ssr: {
-            noExternal: [],
+            // `sanitize-html` is CommonJS but depends on `htmlparser2@12`, which is
+            // ESM-only (`type: module`, no CommonJS build). Left external, its
+            // `require('htmlparser2')` falls into Node's `require(esm)` path
+            // (`loadESMFromCJS`), which must link the whole ESM graph
+            // synchronously — htmlparser2 -> `entities/decode` -> `decode-codepoint.js`.
+            // Under concurrent warm-up traffic that synchronous link races against
+            // an `import()` of the same graph from another route chunk and throws
+            // `request for './decode-codepoint.js' is from a module not been linked`.
+            // Node then caches the rejected chunk, so the losing route serves 500s
+            // until the process restarts (HOS-370: destination detail pages were
+            // down for ~1h in production after a deploy).
+            //
+            // Bundling it resolves the CommonJS -> ESM interop at build time, so no
+            // `require(esm)` exists at runtime and the race cannot happen.
+            // `test/integration/cjs-esm-bridges.test.ts` fails if a new
+            // CommonJS -> ESM-only dependency edge appears without being handled here.
+            // `recharts` is the same shape: CommonJS, and it pulls `victory-vendor`
+            // (also CommonJS), whose `d3-*` subpath modules each `require()` an
+            // ESM-only `d3-*` package. It is imported from a lazily-loaded server
+            // chunk (the host dashboard), so it is linked mid-traffic exactly like
+            // sanitize-html was. Bundling is preferred over warming it at boot
+            // because `victory-vendor` exposes no root entry point — warming it
+            // would mean importing every `d3-*` subpath by hand.
+            // `markdown-it` is the third of the same shape, surfaced when the
+            // dev-dependency bump resolved `entities` to 8.0.0, which dropped its
+            // CommonJS build and became ESM-only. It reaches the server through
+            // `tiptap-markdown`, a runtime dependency of this app, so the bridge is
+            // live rather than build-time tooling.
+            noExternal: ['sanitize-html', 'recharts', 'markdown-it'],
             external: ['cloudinary', 'image-size']
         },
         define: {

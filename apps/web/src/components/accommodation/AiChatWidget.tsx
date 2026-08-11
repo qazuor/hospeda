@@ -4,11 +4,20 @@
  * Renders a FAB + slide-out panel with focus trap, ESC-to-close,
  * aria-live region for streaming tokens, and price disclaimer.
  *
+ * The chat is for signed-in visitors only, and that gate is resolved
+ * CLIENT-SIDE (HOS-369 WB0-7). The page used to wrap the whole mount in
+ * `{isAuthenticated && ...}`, which baked the visitor into HTML that must be
+ * edge-cacheable; now the page mounts it unconditionally and the widget renders
+ * nothing until a session resolves. Unlike the sidebar islands this needs no
+ * placeholder: the FAB and panel are both `position: fixed`, so appearing after
+ * hydration moves nothing on the page.
+ *
  * @module AiChatWidget
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Spinner } from '@/components/shared/feedback/Spinner';
+import { useAccountPermissions } from '@/hooks/use-account-permissions';
 import { useAccommodationChat } from '@/hooks/useAccommodationChat';
 import { useDialogHistoryBack } from '@/hooks/useDialogHistoryBack';
 import { useVisualViewportInset } from '@/hooks/useVisualViewportInset';
@@ -109,6 +118,9 @@ function resolveChatError({
  * @param props - Accommodation ID, locale, and API URL.
  */
 export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetProps) {
+    // Simple mode (no `initialUser`): `user` starts null, so the server and the
+    // first paint render nothing — the anonymous variant (HOS-369 D-11).
+    const { user } = useAccountPermissions();
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [draft, setDraft] = useState('');
@@ -207,6 +219,11 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
      * Mirrors the same pattern from SearchChatPanel.client.tsx.
      */
     const showThinking = chat.state.status === 'streaming' && !chat.state.currentAssistantContent;
+
+    // Every hook above runs unconditionally (Rules of Hooks); the gate is the
+    // first thing after them. `user === null` covers both a real guest and the
+    // not-yet-resolved window, and neither may see the chat.
+    if (!user) return null;
 
     return (
         <>

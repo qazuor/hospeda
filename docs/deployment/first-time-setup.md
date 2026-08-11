@@ -795,36 +795,11 @@ The day-1 production seed must therefore be a curated `--required` run that **ex
 
     What this does NOT seed (and how to add it manually): see step 5.
 
-    **After this step, baseline-stamp the versioned seed data-migration ledger manually.**
-    This curated day-1 seed is a *partial* baseline (`--exclude=users`, no `--example`), so it
-    is not covered by `pnpm db:fresh`'s automatic baseline-stamp. Run:
-
-    ```bash
-    pnpm --filter @repo/seed seed --data-migrate --baseline-stamp
-    ```
-
-    See [docs/guides/seed-data-migrations.md](../guides/seed-data-migrations.md#production-day-1-manual-baseline-stamp-is-still-required-open-item)
-    for why this is still a manual step and the caveat about migrations that might depend on
-    the excluded `users` step.
-
-    > **Content-only migrations must be re-run for real after a from-scratch build.**
-    > A few data-migrations INSERT curated content that is deliberately NOT part of the
-    > baseline seed (it lives only in the migration, not under `src/data/**`). Baseline-stamping
-    > marks them applied WITHOUT running their `up()`, so on a fresh build (prod day-1 or a
-    > local `db:fresh-dev`) that content never lands. After the baseline-stamp above, re-run
-    > these specific migrations for real so the content is created:
-    >
-    > ```bash
-    > # Delete their ledger rows, then apply for real. Each is idempotent (insert-if-missing).
-    > # Currently: 0025-seed-real-blog-posts (9 editorial blog posts + "Equipo Hospeda" author).
-    > psql "$HOSPEDA_DATABASE_URL" -c "DELETE FROM seed_migrations WHERE name = '0025-seed-real-blog-posts';"
-    > pnpm db:seed:migrate
-    > ```
-    >
-    > On an already-live environment (the normal deploy path, not a from-scratch build) this is a
-    > no-op: the migration runs for real the first time via `pnpm db:seed:migrate` and is skipped
-    > on every run after that. This note only matters for a fresh/DR rebuild. Keep the list above
-    > current when adding another content-only migration.
+    > **The seed data-migration ledger is handled in step 6, AFTER the real admin exists.**
+    > Do not run `--data-migrate --baseline-stamp` here. It is not a pure bookkeeping step
+    > anymore: it also runs the content-only migrations for real, and those need a
+    > `SUPER_ADMIN` to attribute their rows to. Running it before step 5 fails with an
+    > explicit error (that is deliberate — see step 6).
 
 5. Create the first admin user through Better Auth signup, then promote.
 
@@ -840,7 +815,44 @@ The day-1 production seed must therefore be a curated `--required` run that **ex
 
     c. Sign out and sign back in so the session cookie picks up the new role. Visit `https://admin.hospeda.com.ar` and confirm the admin panel loads.
 
-6. Switch your shell back to the **pooled** URL (`?pgbouncer=true`) so future connections from the API use pgbouncer.
+6. Reconcile the versioned seed data-migration ledger.
+
+    This curated day-1 seed is a *partial* baseline (`--exclude=users`, no `--example`), so it
+    is not covered by `pnpm db:fresh`'s automatic baseline-stamp step. Run it by hand now:
+
+    ```bash
+    pnpm --filter @repo/seed seed --data-migrate --baseline-stamp
+    ```
+
+    This does two things in one pass. Every migration whose end state the baseline seed
+    already produced is recorded applied without running its `up()`. Every migration flagged
+    `meta.contentOnly` — one whose rows exist ONLY in the migration file, with no
+    `src/data/**` fixture behind them — is instead **run for real**, so its content actually
+    lands. Today that is the editorial blog posts and the Entre Ríos event catalog. There is
+    no list of migration names to keep current here: the flag lives on each migration, which
+    is the whole point (the list this note replaced named one of the three affected
+    migrations and shipped zero events as a result). See
+    [docs/guides/seed-data-migrations.md](../guides/seed-data-migrations.md#the-contentonly-flag-migrations-with-no-fixture-baseline).
+
+    **Why this comes after step 5.** Migrations stamp `createdById`/`updatedById` with the
+    acting user, so the runner needs a `SUPER_ADMIN` to exist. It deliberately refuses to
+    create one: falling back to the seeded `superadmin@hospeda.com` account would hand
+    production the predictable admin credential that step 4's `--exclude=users` exists to
+    keep off the box. Run this before step 5 and it aborts with
+    `no SUPER_ADMIN account` — that failure is the guard working, not a bug. Promote the real
+    admin first, then run this.
+
+    Verify what happened:
+
+    ```bash
+    pnpm db:seed:migrate:status
+    ```
+
+    Every migration should be `applied`. The `result` column distinguishes the two paths:
+    `baseline-stamp` for the bookkeeping ones, `ok` for the content-only ones that really
+    ran.
+
+7. Switch your shell back to the **pooled** URL (`?pgbouncer=true`) so future connections from the API use pgbouncer.
 
 ### Validation
 

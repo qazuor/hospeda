@@ -74,7 +74,8 @@ export const webNamespaces = [
     'experience',
     'social',
     'notifications',
-    'alliance-leads'
+    'alliance-leads',
+    'authors'
 ] as const;
 
 export type WebNamespace = (typeof webNamespaces)[number];
@@ -115,6 +116,7 @@ import allianceLeadsEn from './locales/en/alliance-leads.json';
 import apiEn from './locales/en/api.json';
 import authEn from './locales/en/auth.json';
 import authUiEn from './locales/en/auth-ui.json';
+import authorsEn from './locales/en/authors.json';
 import benefitsEn from './locales/en/benefits.json';
 import billingEn from './locales/en/billing.json';
 import blogEn from './locales/en/blog.json';
@@ -170,6 +172,7 @@ import allianceLeadsEs from './locales/es/alliance-leads.json';
 import apiEs from './locales/es/api.json';
 import authEs from './locales/es/auth.json';
 import authUiEs from './locales/es/auth-ui.json';
+import authorsEs from './locales/es/authors.json';
 import benefitsEs from './locales/es/benefits.json';
 import billingEs from './locales/es/billing.json';
 import blogEs from './locales/es/blog.json';
@@ -226,6 +229,7 @@ import allianceLeadsPt from './locales/pt/alliance-leads.json';
 import apiPt from './locales/pt/api.json';
 import authPt from './locales/pt/auth.json';
 import authUiPt from './locales/pt/auth-ui.json';
+import authorsPt from './locales/pt/authors.json';
 import benefitsPt from './locales/pt/benefits.json';
 import billingPt from './locales/pt/billing.json';
 import blogPt from './locales/pt/blog.json';
@@ -333,7 +337,8 @@ export const rawWebTranslations = {
         experience: experienceEs,
         social: socialEs,
         notifications: notificationsEs,
-        'alliance-leads': allianceLeadsEs
+        'alliance-leads': allianceLeadsEs,
+        authors: authorsEs
     },
     en: {
         about: aboutEn,
@@ -387,7 +392,8 @@ export const rawWebTranslations = {
         experience: experienceEn,
         social: socialEn,
         notifications: notificationsEn,
-        'alliance-leads': allianceLeadsEn
+        'alliance-leads': allianceLeadsEn,
+        authors: authorsEn
     },
     pt: {
         about: aboutPt,
@@ -441,7 +447,8 @@ export const rawWebTranslations = {
         experience: experiencePt,
         social: socialPt,
         notifications: notificationsPt,
-        'alliance-leads': allianceLeadsPt
+        'alliance-leads': allianceLeadsPt,
+        authors: authorsPt
     }
 } as const;
 

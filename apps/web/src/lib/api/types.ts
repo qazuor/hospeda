@@ -449,3 +449,114 @@ export interface OwnerPromotionUpdateInput {
     readonly maxRedemptions?: number | null;
     readonly touristAudience?: OwnerPromotionTouristAudience;
 }
+
+// ---------------------------------------------------------------------------
+// Editor own-content list types (HOS-374 Phase 2 2C-1)
+// ---------------------------------------------------------------------------
+
+/**
+ * The platform's moderation verdict on the author's own content.
+ * Mirrors `ModerationStatusEnum` (`@repo/schemas`) as a string union so
+ * `lib/api/` stays free of a runtime dependency on the schemas package.
+ */
+export type EditorContentModerationState = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+/**
+ * The author's own publish switch. Independent of `moderationState` — see
+ * `EditableContentCard.astro` for why the two must never be collapsed into
+ * one "draft/published" boolean (HOS-374 §7.6.1).
+ */
+export type EditorContentVisibility = 'PUBLIC' | 'PRIVATE' | 'RESTRICTED';
+
+/** The content's workflow stage, independent of moderation and visibility. */
+export type EditorContentLifecycleState = 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+
+/**
+ * Card data for one of the authenticated user's own posts
+ * (`/mi-cuenta/publicaciones`). Transformed from the raw
+ * `GET /protected/posts` item by `transformPostEditCard`.
+ */
+export interface PostEditListItem {
+    readonly id: string;
+    readonly slug: string;
+    readonly title: string;
+    readonly moderationState: EditorContentModerationState;
+    readonly visibility: EditorContentVisibility;
+    readonly lifecycleState: EditorContentLifecycleState;
+    readonly updatedAt: string;
+}
+
+/**
+ * Card data for one of the authenticated user's own events
+ * (`/mi-cuenta/eventos`). Transformed from the raw
+ * `GET /protected/events` item by `transformEventEditCard`.
+ */
+export interface EventEditListItem {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly moderationState: EditorContentModerationState;
+    readonly visibility: EditorContentVisibility;
+    readonly lifecycleState: EditorContentLifecycleState;
+    readonly updatedAt: string;
+}
+
+/**
+ * One of the author's own posts, loaded for the editor at
+ * `/mi-cuenta/publicaciones/[id]/editar` (HOS-374 Phase 2 2C-2). Transformed
+ * from the raw `GET /protected/posts/:id` payload by `transformPostEditDetail`.
+ *
+ * A superset of {@link PostEditListItem}: the same three state columns plus the
+ * editable body. `media` is absent — post media stays in a JSONB blob and is
+ * out of scope until slice 2D.
+ */
+/**
+ * One of the author's own events, loaded for the editor at
+ * `/mi-cuenta/eventos/[id]/editar` (HOS-374 Phase 2 2C-3). Transformed from the
+ * raw `GET /protected/events/:id` payload by `transformEventEditDetail`.
+ *
+ * Only the fields the PATCH can actually persist are carried, plus the read-only
+ * context the page renders (organizer/location names, date precision). See
+ * `event-edit-data.ts` for why the rest of `EventUpdateHttpSchema` is absent.
+ */
+export interface EventEditDetail {
+    readonly id: string;
+    /** Server-derived at create time and immutable here; shown read-only. */
+    readonly slug: string;
+    readonly name: string;
+    readonly description: string;
+    readonly category: string;
+    /** ISO timestamp, or `null` when the API sent none. */
+    readonly startDate: string | null;
+    /** ISO timestamp, or `null` when the event has no end. */
+    readonly endDate: string | null;
+    /**
+     * `'EXACT'` (a known day) or `'MONTH'` (only the month is known — the day
+     * component of `startDate` is a placeholder). HOS-280.
+     */
+    readonly datePrecision: 'EXACT' | 'MONTH';
+    /** Display name of the organizer, when the relation was loaded. */
+    readonly organizerName: string | null;
+    /** Display name of the location, when the relation was loaded. */
+    readonly locationName: string | null;
+    readonly moderationState: EditorContentModerationState;
+    readonly visibility: EditorContentVisibility;
+    readonly lifecycleState: EditorContentLifecycleState;
+}
+
+export interface PostEditDetail {
+    readonly id: string;
+    /** Server-derived at create time and immutable here; shown read-only. */
+    readonly slug: string;
+    readonly title: string;
+    readonly summary: string;
+    readonly content: string;
+    readonly category: string;
+    /** `null` when the API sent no value — never defaulted to a number here. */
+    readonly readingTimeMinutes: number | null;
+    /** `null` when the post relates to no destination. */
+    readonly relatedDestinationId: string | null;
+    readonly moderationState: EditorContentModerationState;
+    readonly visibility: EditorContentVisibility;
+    readonly lifecycleState: EditorContentLifecycleState;
+}

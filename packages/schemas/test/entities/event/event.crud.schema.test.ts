@@ -275,6 +275,85 @@ describe('Event CRUD Schemas', () => {
         });
     });
 
+    describe('date range order (HOS-374)', () => {
+        const START = new Date('2024-12-25T10:00:00Z');
+        const BEFORE_START = new Date('2024-12-25T09:00:00Z');
+        const AFTER_START = new Date('2024-12-25T18:00:00Z');
+
+        /** A create payload that is valid except for the date range under test. */
+        const createInputWithDate = (date: Record<string, unknown>) => ({
+            name: 'Range Event',
+            slug: 'range-event',
+            summary: 'An event used to exercise the date range order check',
+            category: EventCategoryEnum.MUSIC,
+            date,
+            authorId: '123e4567-e89b-12d3-a456-426614174000',
+            organizerId: '123e4567-e89b-12d3-a456-426614174001',
+            visibility: 'PUBLIC',
+            lifecycleState: 'ACTIVE'
+        });
+
+        it('should reject a create whose end precedes its start', () => {
+            const result = EventCreateInputSchema.safeParse(
+                createInputWithDate({ start: START, end: BEFORE_START })
+            );
+
+            expect(result.success).toBe(false);
+            // Asserting the path and the message key, not just the boolean: a
+            // payload this shape can fail for unrelated reasons, and a bare
+            // `success === false` would keep passing if the refinement were
+            // deleted and some other rule happened to reject it.
+            expect(result.error?.issues).toContainEqual(
+                expect.objectContaining({
+                    path: ['date', 'end'],
+                    message: 'zodError.event.date.end.beforeStart'
+                })
+            );
+        });
+
+        it('should accept a create whose end equals its start', () => {
+            const result = EventCreateInputSchema.safeParse(
+                createInputWithDate({ start: START, end: START })
+            );
+
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept a create with no end at all', () => {
+            const result = EventCreateInputSchema.safeParse(createInputWithDate({ start: START }));
+
+            expect(result.success).toBe(true);
+        });
+
+        it('should reject an update whose end precedes its start', () => {
+            const result = EventUpdateInputSchema.safeParse({
+                date: { start: START, end: BEFORE_START }
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error?.issues).toContainEqual(
+                expect.objectContaining({
+                    path: ['date', 'end'],
+                    message: 'zodError.event.date.end.beforeStart'
+                })
+            );
+        });
+
+        it('should accept an update whose end follows its start', () => {
+            const result = EventUpdateInputSchema.safeParse({
+                date: { start: START, end: AFTER_START }
+            });
+
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept an update that omits date entirely', () => {
+            const result = EventUpdateInputSchema.safeParse({ name: 'Renamed Event' });
+
+            expect(result.success).toBe(true);
+        });
+    });
+
     describe('EventUpdateInputSchema', () => {
         it('should validate partial update input', () => {
             const partialInput = {
@@ -302,9 +381,13 @@ describe('Event CRUD Schemas', () => {
                     price: 75.0,
                     currency: 'USD',
                     isFree: false
-                },
-                visibility: 'PRIVATE',
-                lifecycleState: 'DRAFT'
+                }
+                // visibility and lifecycleState used to be part of a "full" update.
+                // HOS-374 §7.6.4 moved them (and moderationState) out of this payload
+                // and onto dedicated endpoints, because carrying them here made the
+                // publication and moderation permissions bypassable by anyone holding
+                // EVENT_UPDATE. The schema is strict, so sending them now fails —
+                // asserted in content-state-fields-excluded.guard.test.ts.
             };
 
             const result = EventUpdateInputSchema.safeParse(fullInput);

@@ -11,7 +11,7 @@ import {
     expectSuccess
 } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makePostMediaModelStub } from '../../utils/modelMockFactory';
 
 describe('PostService.updateVisibility', () => {
     let service: PostService;
@@ -23,7 +23,14 @@ describe('PostService.updateVisibility', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['findById', 'update']);
-        service = createServiceTestInstance(PostService, modelMock);
+        service = createServiceTestInstance(
+            PostService,
+            modelMock,
+            undefined,
+            null,
+            undefined,
+            makePostMediaModelStub()
+        );
         post = createMockPost({ visibility: VisibilityEnum.PUBLIC });
         postId = post.id;
         actorWithPerm = createActor({

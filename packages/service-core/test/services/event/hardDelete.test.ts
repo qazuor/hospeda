@@ -10,7 +10,11 @@ import {
     expectNotFoundError,
     expectSuccess
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 
 /**
  * Test suite for EventService.hardDelete
@@ -27,7 +31,11 @@ describe('EventService.hardDelete', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'hardDelete']);
         loggerMock = createLoggerMock();
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     it('should hard delete an event (success)', async () => {

@@ -6,6 +6,9 @@
  * - {@link GastronomyReviewService} — review create / moderate / list / rating recompute
  * - FAQ helpers — addGastronomyFaq / updateGastronomyFaq / removeGastronomyFaq /
  *   listGastronomyFaqs / reorderGastronomyFaqs
+ * - Media helpers (HOS-372) — addGastronomyMedia / removeGastronomyMedia /
+ *   reorderGastronomyMedia / getGastronomyMedia / setFeaturedGastronomyMedia,
+ *   plus the composed-media read attach helpers
  * - Projection utilities — projectGastronomyPublic / projectGastronomyOwnerAvatar
  * - Permission helpers — granular COMMERCE_* gate wrappers
  * - Types — GastronomyHookState
@@ -19,6 +22,19 @@ export {
     reorderGastronomyFaqs,
     updateGastronomyFaq
 } from './gastronomy.faq';
+// Media helpers (HOS-372)
+export {
+    addGastronomyMedia,
+    getGastronomyMedia,
+    removeGastronomyMedia,
+    reorderGastronomyMedia,
+    setFeaturedGastronomyMedia
+} from './gastronomy.media';
+// Media read/compose attach helpers (HOS-372)
+export {
+    attachComposedGastronomyMedia,
+    attachComposedGastronomyMediaList
+} from './gastronomy.media-read';
 // Permission helpers
 export {
     checkGastronomyCanAdminList,
@@ -26,6 +42,7 @@ export {
     checkGastronomyCanDelete,
     checkGastronomyCanEditAll,
     checkGastronomyCanEditFaqs,
+    checkGastronomyCanEditMedia,
     checkGastronomyCanEditOwn,
     checkGastronomyCanHardDelete,
     checkGastronomyCanModerateReview,

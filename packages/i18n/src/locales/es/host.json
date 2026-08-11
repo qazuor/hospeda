@@ -236,13 +236,16 @@
                 "capacity": "Capacidad",
                 "pricing": "Precio",
                 "amenities": "Servicios y comodidades",
+                "faqs": "Preguntas frecuentes",
                 "contact": "Contacto",
                 "socialNetworks": "Redes sociales",
                 "photos": "Fotos",
                 "photosDescription": "Subí fotos de tu propiedad para atraer más huéspedes",
                 "externalReputation": "Reputación externa",
                 "featuredToggle": "Destacado",
-                "calendar": "Calendario"
+                "calendar": "Calendario",
+                "capacityPricing": "Capacidad y precio",
+                "contactSocial": "Contacto y redes"
             },
             "sectionNav": {
                 "ariaLabel": "Navegación de secciones del formulario"
@@ -294,6 +297,37 @@
                 "galleryCapReached": "Límite de galería alcanzado (máx. {{cap}} fotos)",
                 "galleryCapLabel": "Galería llena"
             },
+            "faq": {
+                "emptyState": "Todavía no hay preguntas. Agregá la primera.",
+                "addButton": "Agregar pregunta",
+                "editButton": "Editar",
+                "deleteButton": "Eliminar",
+                "saveButton": "Guardar",
+                "cancelButton": "Cancelar",
+                "questionLabel": "Pregunta",
+                "answerLabel": "Respuesta",
+                "questionPlaceholder": "Escribí la pregunta...",
+                "answerPlaceholder": "Escribí la respuesta...",
+                "moveUpAria": "Subir \"{{question}}\"",
+                "moveDownAria": "Bajar \"{{question}}\"",
+                "editAria": "Editar \"{{question}}\"",
+                "deleteAria": "Eliminar \"{{question}}\"",
+                "deleteConfirm": "¿Eliminás esta pregunta?",
+                "saveError": "No se pudo guardar la pregunta.",
+                "deleteError": "No se pudo eliminar la pregunta.",
+                "reorderError": "No se pudo reordenar.",
+                "visibleOnListingLabel": "Visible en la ficha pública",
+                "usableByAiLabel": "Usable por la IA",
+                "notVisibleBadge": "No visible en la ficha",
+                "notAiUsableBadge": "No usable por IA",
+                "channelIntro": {
+                    "title": "¿Por qué ocultar o restringir una pregunta?",
+                    "body1": "\"Visible en la ficha pública\" muestra la pregunta en la página del alojamiento y en los datos estructurados (JSON-LD) que leen los buscadores. \"Usable por la IA\" permite que el asistente de chat use esta pregunta para responder consultas.",
+                    "body2": "Destildá \"Visible en la ficha pública\" para información útil pero que no querés publicar: algo temporal (\"la pileta está en refacción hasta noviembre\"), un margen que preferís no prometer por escrito (\"hay flexibilidad de late check-out si no hay reserva siguiente\"), o una recomendación que suena mejor en una conversación que en la vidriera (\"de noche conviene pedir remis\").",
+                    "body3": "Destildá \"Usable por la IA\" para contenido que preferís que se muestre tal cual, sin que el asistente lo parafrasee — texto legal o condiciones exactas de cancelación, por ejemplo.",
+                    "body4": "Importante: una pregunta no visible en la ficha pero usable por la IA no es privada. El asistente se la puede decir a cualquiera que pregunte por chat; solo no aparece publicada en la página."
+                }
+            },
             "action": {
                 "save": "Guardar",
                 "saving": "Guardando...",
@@ -311,6 +345,7 @@
                 "saveFailed": "Error al guardar",
                 "network": "Error de conexión"
             },
+            "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",
             "toast": {
                 "saveSuccess": "Cambios guardados",
                 "saveError": "No pudimos guardar los cambios. Intentá de nuevo.",
@@ -489,6 +524,29 @@
                 "icalErrorPrefix": "No pudimos leer el calendario:",
                 "reconnectIcal": "Reconectar",
                 "reconnectIcalHelp": "Volvé a pegar la URL corregida del calendario para reconectarlo."
+            },
+            "group": {
+                "property": "La propiedad",
+                "content": "Contenido",
+                "management": "Gestión"
+            },
+            "breadcrumb": {
+                "properties": "Mis propiedades"
+            },
+            "hub": {
+                "title": "Editar propiedad",
+                "subtitle": "Elegí qué querés editar",
+                "status": {
+                    "missingDescription": "⚠ Falta la descripción",
+                    "missingPrice": "⚠ Sin precio",
+                    "guests": "Hasta {{count}} huéspedes",
+                    "missingCoordinates": "⚠ Sin ubicación en el mapa",
+                    "selected": "{{count}} seleccionados",
+                    "photos": "{{count}} fotos",
+                    "missingPhotos": "⚠ Sin fotos",
+                    "faqs": "{{count}} preguntas",
+                    "missingContact": "⚠ Sin datos de contacto"
+                }
             }
         },
         "empty": {

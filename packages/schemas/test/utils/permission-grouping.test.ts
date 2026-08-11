@@ -109,3 +109,32 @@ describe('permission-grouping (SPEC-170)', () => {
         });
     });
 });
+
+/**
+ * The author-scoped permissions added by HOS-374 must land in their entity's
+ * category, not in the SYSTEM catch-all.
+ *
+ * Category assignment is derived by longest-prefix match on the enum KEY, so a
+ * key that fails to match silently falls back to SYSTEM — the permission still
+ * works, it just becomes near-impossible to find in the admin's categorized
+ * picker. That is a failure mode with no error message, which is why it gets an
+ * explicit test.
+ */
+describe('author-scoped post/event permissions (HOS-374)', () => {
+    const cases: ReadonlyArray<[PermissionEnum, PermissionCategoryEnum]> = [
+        [PermissionEnum.POST_VIEW_OWN, PermissionCategoryEnum.POST],
+        [PermissionEnum.POST_UPDATE_OWN, PermissionCategoryEnum.POST],
+        [PermissionEnum.POST_DELETE_OWN, PermissionCategoryEnum.POST],
+        [PermissionEnum.POST_PUBLISH_OWN, PermissionCategoryEnum.POST],
+        [PermissionEnum.EVENT_VIEW_OWN, PermissionCategoryEnum.EVENT],
+        [PermissionEnum.EVENT_UPDATE_OWN, PermissionCategoryEnum.EVENT],
+        [PermissionEnum.EVENT_DELETE_OWN, PermissionCategoryEnum.EVENT],
+        [PermissionEnum.EVENT_PUBLISH_OWN, PermissionCategoryEnum.EVENT]
+    ];
+
+    for (const [permission, expected] of cases) {
+        it(`maps ${permission} to ${expected}`, () => {
+            expect(PERMISSION_TO_CATEGORY[permission]).toBe(expected);
+        });
+    }
+});

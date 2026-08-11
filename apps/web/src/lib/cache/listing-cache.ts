@@ -19,17 +19,34 @@
  * so Cloudflare edge-caches the HTML — but ONLY for responses that are safe to
  * share from a single cache entry:
  *
- *   - anonymous (no per-user favourite state / compare controls baked into the
- *     SSR HTML — see the `!isAuthenticated` gate at each call site); and
  *   - an indexable canonical view (base listing or a single-type landing), not
  *     a `noindex` facet combination; and
  *   - without arbitrary result-narrowing filters (which are low-repeat and
  *     would fill the CDN cache with single-hit entries).
  *
- * Personalised, filtered, or `noindex` responses stay `private` and reach
- * origin as before. Gating on the anonymous case is the load-bearing safety
- * property: the origin never MARKS a personalised (favourite-baked) response as
- * shareable.
+ * Filtered and `noindex` responses stay `private` and reach origin as before.
+ *
+ * WHAT MAKES THIS SAFE CHANGED IN WAVE B0 — do not re-derive it from the old
+ * shape. This file used to describe a third condition, "anonymous, via the
+ * `!isAuthenticated` gate at each call site", and called that gate the
+ * load-bearing safety property. **That gate no longer exists**: as of Wave B0
+ * none of the 37 `applyCacheHeaders` call sites under `src/pages` reads the
+ * session, so a cacheable page emits `public` whether or not a session cookie is
+ * present. That is correct, not a regression — the safety property moved rather
+ * than disappeared. It is now AC-B0-1: the SSR HTML is identical with and
+ * without a session, so there is no personalised response to mark shareable in
+ * the first place. Verified end-to-end on staging (2026-08-08) by diffing two
+ * real responses; see §9 AC-B0-1 in the spec.
+ *
+ * Two consequences worth stating, because reading `public` on a response that
+ * carried a session cookie looks alarming until you know them:
+ *
+ *   - The guarantee is enforced, not assumed. `test/pages/
+ *     cacheable-pages-are-session-blind.guard.test.ts` (WB0-6) is fail-closed:
+ *     reintroducing a session read into a cacheable page fails it.
+ *   - Per-user state is reconciled AFTER hydration, not baked into the HTML.
+ *     `data-user-authenticated` ships as `"false"` and the client flips it; the
+ *     favourites grid resolves through a single `check-bulk` call.
  *
  * IMPORTANT — this header is necessary but not sufficient. The origin cannot
  * control Cloudflare's cache-key. For this to take effect a Cloudflare Cache
@@ -46,33 +63,25 @@
  * on its own; it is the origin-side prerequisite for the Cache Rule.
  *
  * On-demand freshness is handled by `POST /api/revalidate`, which purges the
- * entire Cloudflare cache on any content write, so the TTL below only bounds
- * staleness in the (rare) case a purge is missed.
+ * cache TAGS a write affects (HOS-369 W1-1 — it used to flush the whole zone on
+ * any content write, which would have made this cache empty itself). The TTL
+ * only bounds staleness in the case a purge is missed.
+ *
+ * THE TTL IS NO LONGER DECIDED HERE. This file used to own the site's single
+ * `s-maxage` pair, which every cacheable page shared regardless of what could
+ * change it. Since HOS-426 the budget comes from the page's cache CLASS
+ * (`./cache-classes.ts`) and this file is back to what its name says: the
+ * predicates deciding whether an accommodation listing response is shareable at
+ * all. What remains here is `LISTING_PRIVATE_CONTROL`, the demotion value,
+ * which is a cacheability answer rather than a TTL.
+ *
+ * Which tags a response carries is declared through `applyCacheHeaders`
+ * (`./response-cache.ts`) — the only thing that may mark a response cacheable,
+ * and which cannot do so without them.
  */
-
-/** `s-maxage` in seconds — how long Cloudflare serves the cached HTML. */
-export const LISTING_CACHE_S_MAXAGE_SECONDS = 300;
-
-/** `stale-while-revalidate` window in seconds. */
-export const LISTING_CACHE_SWR_SECONDS = 600;
-
-/** `Cache-Control` value for a shareable, edge-cacheable listing response. */
-export const LISTING_CACHEABLE_CONTROL = `public, s-maxage=${LISTING_CACHE_S_MAXAGE_SECONDS}, stale-while-revalidate=${LISTING_CACHE_SWR_SECONDS}`;
 
 /** `Cache-Control` value for a per-user / non-shareable listing response. */
 export const LISTING_PRIVATE_CONTROL = 'private, no-cache';
-
-/**
- * Resolve the `Cache-Control` header value for an accommodation listing/map
- * SSR response.
- *
- * @param params.cacheable - Whether this specific response is safe to share
- *   from the Cloudflare edge (anonymous, indexable, unfiltered).
- * @returns The header value to set via `Astro.response.headers.set`.
- */
-export function resolveListingCacheControl({ cacheable }: { readonly cacheable: boolean }): string {
-    return cacheable ? LISTING_CACHEABLE_CONTROL : LISTING_PRIVATE_CONTROL;
-}
 
 /**
  * Default children context value. A value away from this DOES narrow the
@@ -146,4 +155,35 @@ export function hasActiveAccommodationListingFilters({
     }
 
     return false;
+}
+
+/**
+ * Whether a listing URL carries nothing but pagination — the signal that it is
+ * the plain, unfiltered listing, possibly at page N.
+ *
+ * This exists because `/…/page/N/` is not what the listing page actually sees.
+ * Those routes are `Astro.rewrite`s into the parent listing with `?page=N`
+ * appended, so a naive `Astro.url.search === ''` check would mark every
+ * paginated page non-cacheable while looking correct on page 1 — the kind of
+ * regression that shows up as a cache-hit-rate number nobody is watching
+ * rather than as a broken page.
+ *
+ * The accommodation listing does not use this: it has its own richer predicate
+ * ({@link hasActiveAccommodationListingFilters}) covering sort and trip-context
+ * params it additionally accepts. This is the conservative default for the
+ * catalog listings that accept no facets of their own (HOS-369 W2-3), where
+ * anything other than `page` should keep the response private.
+ *
+ * @param params.searchParams - The request URL's search params.
+ * @returns `true` when the only params present (if any) are pagination.
+ */
+export function hasOnlyPaginationParams({
+    searchParams
+}: {
+    readonly searchParams: URLSearchParams;
+}): boolean {
+    for (const key of searchParams.keys()) {
+        if (key !== 'page') return false;
+    }
+    return true;
 }

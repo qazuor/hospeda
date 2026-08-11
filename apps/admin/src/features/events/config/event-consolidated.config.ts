@@ -5,9 +5,9 @@ import { EntityViewStatChips } from '@/components/views/EntityViewStatChips';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
 import { createBasicInfoConsolidatedSection } from './sections/basic-info.consolidated';
 import { createContactMediaConsolidatedSection } from './sections/contact-media.consolidated';
+import { createContentStatesViewSection } from './sections/content-states.view.consolidated';
 import { createDatePricingConsolidatedSection } from './sections/date-pricing.consolidated';
 import { createRelationsConsolidatedSection } from './sections/relations.consolidated';
-import { createStatesModerationConsolidatedSection } from './sections/states-moderation.consolidated';
 
 /**
  * Creates the view-stat chips section for events (SPEC-197 T-016).
@@ -65,7 +65,7 @@ export const createEventConsolidatedConfig = (
         createDatePricingConsolidatedSection(),
         createContactMediaConsolidatedSection(),
         createRelationsConsolidatedSection(),
-        createStatesModerationConsolidatedSection()
+        createContentStatesViewSection()
     ],
     metadata: {
         entityType: 'event',

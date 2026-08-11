@@ -10,7 +10,11 @@ import {
     expectNotFoundError,
     expectValidationError
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 
 type Actor = ReturnType<typeof createActor>;
 let modelMock: EventModel;
@@ -27,7 +31,11 @@ describe('EventService - setAdminInfo', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'update']);
         loggerMock = createLoggerMock();
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
         superAdmin = createActor({
             roles: [RoleEnum.SUPER_ADMIN],
             permissions: [PermissionEnum.ACCESS_PANEL_ADMIN, PermissionEnum.EVENT_UPDATE]

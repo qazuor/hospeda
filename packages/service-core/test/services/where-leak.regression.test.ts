@@ -5,6 +5,7 @@ import { DestinationReviewService } from '../../src/services/destinationReview/d
 import { EventService } from '../../src/services/event/event.service';
 import { PostService } from '../../src/services/post/post.service';
 import type { Actor, ServiceConfig } from '../../src/types';
+import { makeEventMediaModelStub, makePostMediaModelStub } from '../utils/modelMockFactory';
 
 /**
  * Regression tests for WHERE-clause leak bug.
@@ -71,7 +72,16 @@ describe('Service-layer WHERE-clause leak regression', () => {
 
         beforeEach(() => {
             model = new MockModel();
-            service = injectMockModel(new PostService(emptyContext()), model);
+            service = injectMockModel(
+                new PostService(
+                    emptyContext(),
+                    undefined,
+                    null,
+                    undefined,
+                    makePostMediaModelStub() as never
+                ),
+                model
+            );
         });
 
         it('_executeSearch does not leak page/pageSize/sortBy/sortOrder into WHERE', async () => {
@@ -119,7 +129,13 @@ describe('Service-layer WHERE-clause leak regression', () => {
 
         beforeEach(() => {
             model = new MockModel();
-            service = injectMockModel(new EventService(emptyContext()), model);
+            service = injectMockModel(
+                new EventService({
+                    ...emptyContext(),
+                    eventMediaModel: makeEventMediaModelStub() as never
+                }),
+                model
+            );
         });
 
         it('_executeSearch does not leak page/pageSize/sortBy/sortOrder into WHERE', async () => {

@@ -30,6 +30,7 @@
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
+import { waitForCommerceEditorHydration } from '../../fixtures/commerce-editor-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 import { setReactInputValue } from '../../fixtures/react19-input-helpers.ts';
 
@@ -137,9 +138,11 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
             waitUntil: 'load'
         });
 
-        // Wait for the React island to hydrate: the type select is the earliest
-        // reliably-visible React-controlled element.
-        await expect(page.locator('#ce-type')).toBeVisible({ timeout: 15_000 });
+        // Wait for the React island to hydrate.
+        //
+        // HOS-371: #ce-type is server-rendered, so waiting for it to be VISIBLE
+        // proves only that the HTML arrived — not that React attached anything.
+        await waitForCommerceEditorHydration({ page });
 
         // ── AC-4 assertion 1: no website input in the contact fieldset ────────
         // CommerceListingEditor renders the contact fieldset with a legend
@@ -183,7 +186,13 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
         });
 
         // Wait for React hydration.
-        await expect(page.locator('#ce-type')).toBeVisible({ timeout: 15_000 });
+        //
+        // HOS-371: this used to wait for #ce-type to be visible, which the SSR
+        // HTML satisfies before hydration. Once the island began shipping TipTap
+        // hydration stopped winning that race, `setReactInputValue` below wrote
+        // into a node React was not listening to, and the form never went dirty
+        // — the save button stayed disabled and this test failed in CI.
+        await waitForCommerceEditorHydration({ page });
 
         // Fill the linkedIn input using the React 19 helper.
         const linkedInInput = page.locator('input[aria-label="linkedIn"]');
@@ -215,9 +224,8 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
             waitUntil: 'load'
         });
 
-        // Wait for hydration.
-        await expect(page.locator('#ce-type')).toBeVisible({ timeout: 15_000 });
-
+        // No hydration gate needed here: this only READS the persisted value,
+        // which the SSR HTML already carries — nothing is typed into the form.
         const linkedInInputAfter = page.locator('input[aria-label="linkedIn"]');
         await expect(linkedInInputAfter).toBeVisible({ timeout: 10_000 });
         await expect(linkedInInputAfter).toHaveValue(newLinkedInUrl, { timeout: 10_000 });

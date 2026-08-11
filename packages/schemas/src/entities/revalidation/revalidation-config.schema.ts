@@ -29,7 +29,7 @@ export const RevalidationConfigSchema = z.object({
     id: z.string().uuid(),
     /** The entity type this configuration applies to */
     entityType: RevalidationEntityTypeEnum,
-    /** Whether to automatically revalidate affected paths when the entity changes */
+    /** Whether to automatically revalidate affected cache tags when the entity changes */
     autoRevalidateOnChange: z.boolean(),
     /** Interval in minutes for cron-based revalidation (1 minute to 1 week / 10080 minutes) */
     cronIntervalMinutes: z.number().int().min(1).max(10080),

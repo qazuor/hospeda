@@ -32,11 +32,15 @@ export type UserPermissionAssignment = z.infer<typeof UserPermissionAssignmentSc
  * - `fromRole`: permissions inherited from the user's role (read-only here).
  * - `grantOverrides`: permissions added directly to the user (`effect = 'grant'`).
  * - `denyOverrides`: role permissions subtracted from the user (`effect = 'deny'`).
+ * - `isTrustedEditor`: derived, never stored — `true` iff every permission in
+ *   `TRUSTED_EDITOR_PERMISSIONS` is present in `grantOverrides` (HOS-374 OQ-1).
+ *   The admin UI reads it to render the atomic mark/unmark control's state.
  */
 export const UserPermissionOverridesResponseSchema = z.object({
     fromRole: z.array(PermissionEnumSchema),
     grantOverrides: z.array(PermissionEnumSchema),
-    denyOverrides: z.array(PermissionEnumSchema)
+    denyOverrides: z.array(PermissionEnumSchema),
+    isTrustedEditor: z.boolean()
 });
 
 export type UserPermissionOverridesResponse = z.infer<typeof UserPermissionOverridesResponseSchema>;

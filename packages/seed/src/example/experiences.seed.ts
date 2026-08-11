@@ -37,9 +37,12 @@
  *  5. CULTURAL_TOUR   — Concepción del Uruguay, per_person, DRAFT+PUBLIC+hasActiveSub=false (non-visible)
  */
 
+import { ExperienceMediaModel } from '@repo/db';
 import { Pool } from 'pg';
+import { buildExperienceMediaRows } from '../utils/commerce-media-builder.js';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
 import { logger } from '../utils/logger.js';
+import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
 import type { SeedContext } from '../utils/seedContext.js';
 
 // ---------------------------------------------------------------------------
@@ -50,19 +53,6 @@ interface DbRow {
     id: string;
     slug?: string;
     email?: string;
-}
-
-/** Seed-only media image shape (matches BaseMediaObjectSchema at runtime). */
-interface SeedMediaImage {
-    url: string;
-    alt: string;
-    moderationState: 'APPROVED';
-}
-
-/** Seed-only media JSONB payload written directly to the DB. */
-interface SeedMedia {
-    featuredImage: SeedMediaImage;
-    gallery: SeedMediaImage[];
 }
 
 interface ExperienceInsertInput {
@@ -84,7 +74,12 @@ interface ExperienceInsertInput {
     ownerId: string;
     destinationId: string;
     createdById: string;
-    media: SeedMedia;
+    /**
+     * Fixture photo block. Shared with the accommodation and gastronomy seeds
+     * (HOS-372) instead of the locally-redeclared `SeedMedia` interface this
+     * file used to carry — one shape, one place to keep it correct.
+     */
+    media: FixtureMediaBlock;
 }
 
 /**
@@ -344,6 +339,49 @@ function buildExperienceInputs(
 // ---------------------------------------------------------------------------
 
 /**
+ * Inserts a listing's fixture photos as `experience_media` rows (HOS-372).
+ *
+ * Uses `ExperienceMediaModel` rather than this file's raw `pg.Pool`: the pool
+ * exists here because `has_active_subscription` is a server-managed column the
+ * service schema excludes, which is not a constraint the media table shares.
+ * Going through the model keeps the row shape typed and reuses the same builder
+ * the accommodation and gastronomy seeds use.
+ *
+ * Idempotent: skips entirely when the listing already has media rows.
+ *
+ * @param input.experienceId - Real DB id of the listing.
+ * @param input.media - The fixture's `media` block.
+ * @param input.label - Listing name, for logging.
+ */
+async function seedExperienceMediaRows({
+    experienceId,
+    media,
+    label
+}: {
+    readonly experienceId: string;
+    readonly media: FixtureMediaBlock | undefined;
+    readonly label: string;
+}): Promise<void> {
+    if (!media) return;
+    const hasPhotos = Boolean(media.featuredImage) || (media.gallery?.length ?? 0) > 0;
+    if (!hasPhotos) return;
+
+    const mediaModel = new ExperienceMediaModel();
+    const { total: existingCount } = await mediaModel.findByExperience({
+        experienceId,
+        pageSize: 1
+    });
+    if (existingCount > 0) {
+        logger.info(`[experiences] Skipping media for "${label}": ${existingCount} rows exist`);
+        return;
+    }
+
+    for (const row of buildExperienceMediaRows({ experienceId, media })) {
+        await mediaModel.create(row);
+    }
+}
+
+/**
  * Seeds experience commerce listings using a raw pg.Pool connection.
  *
  * `hasActiveSubscription` is a server-managed field excluded from the
@@ -434,17 +472,21 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
             // `getExperienceFixtureId`), inserted instead of relying on the
             // column's DB-random default, so versioned data-migrations can
             // target a specific experience listing by a fixed id.
+            // HOS-372: `media` is no longer part of this INSERT. Photos go to
+            // `experience_media` right after (see `seedExperienceMediaRows`);
+            // the JSONB column is on its way out and every read path already
+            // composes from the table.
             const result = await pool.query<{ id: string }>(
                 `INSERT INTO experiences
                    (id, slug, name, summary, description, type,
                     price_from, price_unit, is_price_on_request, has_active_subscription,
                     visibility, lifecycle_state, moderation_state, is_featured,
-                    owner_id, destination_id, created_by_id, updated_by_id, media)
+                    owner_id, destination_id, created_by_id, updated_by_id)
                  VALUES
                    ($1, $2, $3, $4, $5, $6,
                     $7, $8, $9, $10,
                     $11, $12, $13, $14,
-                    $15, $16, $17, $17, $18::jsonb)
+                    $15, $16, $17, $17)
                  ON CONFLICT (slug) DO NOTHING
                  RETURNING id`,
                 [
@@ -464,8 +506,7 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                     input.isFeatured,
                     input.ownerId,
                     input.destinationId,
-                    input.createdById,
-                    JSON.stringify(input.media)
+                    input.createdById
                 ]
             );
 
@@ -494,6 +535,13 @@ export async function seedExperiences(context: SeedContext): Promise<void> {
                 // EXPERIENCE-typed bookmark — see `bookmarks.seed.ts`) can
                 // resolve this experience's real id from its slug.
                 context.idMapper.setMapping('experiences', input.slug, realId, input.name);
+
+                // HOS-372: photos as relational rows, not a JSONB blob.
+                await seedExperienceMediaRows({
+                    experienceId: realId,
+                    media: input.media,
+                    label: input.name
+                });
             }
         }
 

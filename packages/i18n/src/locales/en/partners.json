@@ -1,18 +1,14 @@
 {
-    "listing": {
-        "title": "Partners",
-        "subtitle": "Meet the organizations that support Hospeda",
-        "emptyState": "No partners are currently available.",
-        "typeFilter": "Partner type"
-    },
     "types": {
         "commerce": "Business",
         "ngo": "NGO",
         "institution": "Institution"
     },
-    "tiers": {
-        "gold": "Gold",
-        "silver": "Silver",
-        "bronze": "Bronze"
+    "detail": {
+        "metaTitle": "{name} — Hospeda partner",
+        "metaDescription": "Meet {name}, a Hospeda partner in the Entre Ríos Litoral.",
+        "contactHeading": "Contact",
+        "socialHeading": "Social",
+        "websiteLabel": "Website"
     }
 }

@@ -31,6 +31,15 @@ const KNOWN_GAPS_REGISTRY_NOT_IN_SCHEMA = new Set<string>([
     // absent from serverEnvSchema.
     'SENTRY_AUTH_TOKEN',
 
+    // HOS-401 — build-time only, and not consumed by our code at all: Astro
+    // itself reads it during `astro build` to derive the key that encrypts
+    // server-island props, then bakes that key into the server bundle. The
+    // runtime never reads the variable, so it is deliberately absent from
+    // serverEnvSchema. Validating it there would also break every local and CI
+    // build, where it is legitimately unset (Astro falls back to a per-build
+    // random key).
+    'ASTRO_KEY',
+
     // HOS-79 — read directly via process.env inside the ISR revalidation route
     // (apps/web/src/pages/api/revalidate.ts), NOT through serverEnvBaseSchema.
     // Registered so env:check:usage recognizes them; they deliberately stay out

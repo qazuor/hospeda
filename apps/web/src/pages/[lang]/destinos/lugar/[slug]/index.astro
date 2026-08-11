@@ -36,6 +36,8 @@ import { resolveI18nText } from '@/lib/resolve-i18n-text';
 import { buildUrl } from '@/lib/urls';
 import { LocationIcon } from '@repo/icons';
 
+import { buildEntityCacheTags } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 /**
  * Radius for the "nearby accommodations" query, in km. Matches
  * `DEFAULT_POI_PROXIMITY_RADIUS_KM` in service-core — the same radius the
@@ -49,7 +51,6 @@ const NEARBY_LIMIT = 6;
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
-const isAuthenticated = Boolean(Astro.locals.user);
 const { slug } = Astro.params;
 if (!slug) return new Response(null, { status: 404 });
 
@@ -65,6 +66,36 @@ const poi = poiResult.data as unknown as Record<string, unknown>;
 if (poi.hasOwnPage !== true) return new Response(null, { status: 404 });
 
 const poiId = String(poi.id || '');
+
+// --- Edge cacheability (HOS-369 W2-4) ---
+// After ALL THREE guards: the 404/410 for a missing or soft-deleted row, the
+// null-data check, and the `hasOwnPage` gate. That last one is the important
+// one — it is what separates a curated landmark from the 839 catalog rows that
+// must never get a URL of their own, and caching before it would have shared
+// pages that are supposed to 404.
+//
+// Two tags, no collection: `pointOfInterest` has a detail page but nothing
+// lists POIs globally.
+//
+// The reverse direction is covered where it matters: `PointOfInterestService`
+// fans out over EVERY destination this POI belongs to when it changes, so the
+// destination detail pages that render it are evicted too.
+const poiCacheTags = buildEntityCacheTags({
+	entity: 'pointOfInterest',
+	slug,
+	id: poiId
+});
+const [primaryPoiTag, ...extraPoiTags] = poiCacheTags;
+
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: primaryPoiTag !== undefined,
+	cacheClass: 'detail',
+	// No collection tag exists to fall back to; the id tag is always present
+	// because `poiId` comes from the fetched row.
+	tags: primaryPoiTag !== undefined ? [primaryPoiTag, ...extraPoiTags] : [`poi-${poiId}`]
+});
 const name = translatePoiName({
 	slug,
 	nameI18n: poi.nameI18n as Parameters<typeof translatePoiName>[0]['nameI18n'],
@@ -248,7 +279,6 @@ const breadcrumbItems = [
 					<AccommodationCard
 						data={card}
 						locale={locale}
-						isAuthenticated={isAuthenticated}
 					/>
 				))}
 			</div>

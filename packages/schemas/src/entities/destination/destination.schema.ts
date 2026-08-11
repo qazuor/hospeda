@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import { BaseAdminFields } from '../../common/admin.schema.js';
 import { BaseAuditFields } from '../../common/audit.schema.js';
-import { BaseFaqSchema } from '../../common/faq.schema.js';
 import { I18nTextSchema, TranslationMetaSchema } from '../../common/i18n.schema.js';
 import { DestinationIdSchema } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
@@ -17,6 +16,7 @@ import { DestinationReviewSchema } from '../destinationReview/destinationReview.
 import { DestinationPointOfInterestSummarySchema } from '../point-of-interest/point-of-interest.destination-relation.schema.js';
 import { TagSchema } from '../tag/tag.schema.js';
 import { DestinationClimateSchema } from './subtypes/destination.climate.schema.js';
+import { DestinationFaqSchema } from './subtypes/destination.faq.schema.js';
 import { DestinationRatingSchema } from './subtypes/destination.rating.schema.js';
 import { DestinationWeatherCacheSchema } from './subtypes/destination.weather.schema.js';
 
@@ -124,7 +124,29 @@ export const DestinationSchema = z.object({
     weatherCurrent: DestinationWeatherCacheSchema.nullish(),
 
     // FAQs (1-to-N child entity, included in detail responses)
-    faqs: z.array(BaseFaqSchema).optional()
+    /**
+     * FAQs belonging to this entity, loaded from the dedicated `destination_faqs`
+     * table and embedded in the detail payload.
+     *
+     * Built from `DestinationFaqSchema` with its identity fields made OPTIONAL, which is
+     * doing two jobs at once:
+     *
+     *  - It DECLARES `id`, so Zod stops stripping it. The field used to be typed
+     *    `z.array(BaseFaqSchema)`, and that base is deliberately identity-less —
+     *    it is what `FaqCreatePayloadSchema` and `BaseFaqPublicSchema` are picked
+     *    from, and what the per-entity subtypes extend by ADDING `id` + the owner
+     *    FK. Undeclared meant stripped, so every embedded FAQ came out with no
+     *    id even though the rows carry a real UUID. Consumers key their rows and
+     *    their "which one am I editing" state off that id, so a blank one made
+     *    all FAQs indistinguishable.
+     *  - It keeps both fields OPTIONAL rather than adopting the subtype whole,
+     *    because requiring them would TIGHTEN a published schema — forbidden by
+     *    the additive-only compatibility policy (see `packages/schemas/CLAUDE.md`
+     *    and `docs/guides/schema-compat-policy.md`). Historic payloads without an
+     *    id must keep parsing; the same call was made for `pointsOfInterest`'s
+     *    `relation` in HOS-146.
+     */
+    faqs: z.array(DestinationFaqSchema.partial({ id: true, destinationId: true })).optional()
 });
 
 /**

@@ -12,8 +12,8 @@
     },
     "accessDenied": {
         "title": "This section is exclusive to hosts",
-        "message": "You need an active host plan to access the service provider directory.",
-        "cta": "View subscription plans"
+        "message": "The directory is free for anyone who lists on Hospeda. List your accommodation and get access to trusted local providers, with benefits reserved for hosts.",
+        "cta": "List your accommodation"
     },
     "card": {
         "is24h": "Available 24/7",
@@ -34,5 +34,223 @@
         "PLAGAS": "Pest control",
         "INTERNET": "Internet / TV",
         "ALBANILERIA": "Masonry"
+    },
+    "registerUsage": {
+        "title": "Record benefit use",
+        "subtitle": "Record that you used {{name}}'s benefit. We'll ask them to confirm it.",
+        "subtitleFallback": "Record the use of a benefit from the provider directory.",
+        "backToDirectory": "Back to the directory",
+        "form": {
+            "date": {
+                "label": "What day was the service?",
+                "hint": "Today's date is filled in. Change it if the service was another day."
+            },
+            "note": {
+                "label": "Note (optional)",
+                "placeholder": "For example: lock replacement in apartment 3.",
+                "counter": "{{remaining}} characters left."
+            },
+            "submit": "Record the use",
+            "submitting": "Recording…",
+            "footnote": "We'll ask {{name}} to confirm. Until they do, the record stays pending."
+        },
+        "errors": {
+            "dateRequired": "Pick the day of the service.",
+            "dateFuture": "The service cannot be in the future.",
+            "generic": "We couldn't record the use. Please try again in a moment."
+        },
+        "success": {
+            "title": "Done, we recorded it",
+            "body": "We asked {{name}} to confirm the use. Once they do, you'll be able to review them.",
+            "cta": "See my benefit uses"
+        },
+        "notFound": {
+            "title": "We couldn't find this provider",
+            "body": "The code you scanned doesn't match any provider in the directory. Check that it's the right code."
+        },
+        "revoked": {
+            "title": "This provider is no longer in the directory",
+            "body": "They're no longer part of the directory, so you can't record uses of their benefit. Get in touch if you have questions."
+        },
+        "loadError": {
+            "title": "We couldn't load the provider",
+            "body": "Something went wrong loading the data. Try reloading the page.",
+            "retry": "Try again"
+        }
+    },
+    "usages": {
+        "title": "Benefit usages",
+        "subtitle": "Confirm the usages providers record, and review your history.",
+        "pending": {
+            "title": "Waiting for your confirmation",
+            "empty": "You have no usages waiting to be confirmed."
+        },
+        "history": {
+            "title": "History",
+            "empty": "No usages recorded yet.",
+            "loadMore": "Show more",
+            "filterLabel": "Filter by status"
+        },
+        "filters": {
+            "ALL": "All",
+            "PENDING": "Pending",
+            "CONFIRMED": "Confirmed",
+            "REJECTED": "Rejected",
+            "EXPIRED": "Expired"
+        },
+        "status": {
+            "PENDING": "Pending",
+            "CONFIRMED": "Confirmed",
+            "REJECTED": "Rejected",
+            "EXPIRED": "Expired"
+        },
+        "card": {
+            "unknownProvider": "Directory provider",
+            "servicedOn": "Service on {{date}}",
+            "declaredByYou": "You recorded it",
+            "declaredByProvider": "The provider recorded it",
+            "rejectionNote": "Reason for rejection: {{note}}"
+        },
+        "actions": {
+            "confirm": "Confirm",
+            "reject": "Reject",
+            "undoRejection": "Undo rejection"
+        },
+        "reject": {
+            "title": "Reject this usage?",
+            "body": "We will let {{name}} know this usage did not happen. You can undo it later — rejecting is reversible.",
+            "noteLabel": "Tell them why (optional)",
+            "cancel": "Back",
+            "confirm": "Yes, reject"
+        },
+        "errors": {
+            "load": "We could not load your benefit usages. Try reloading the page.",
+            "action": "We could not complete the action. Please try again in a moment."
+        },
+        "badge": {
+            "pendingCount_one": "{{count}} usage waiting for your confirmation",
+            "pendingCount_other": "{{count}} usages waiting for your confirmation"
+        }
+    },
+    "review": {
+        "title": "Review {{name}}",
+        "overall": {
+            "legend": "Overall rating",
+            "one": "1 star",
+            "many": "{{count}} stars"
+        },
+        "benefit": {
+            "legend": "Did they honour the host benefit?",
+            "yes": "Yes",
+            "no": "No"
+        },
+        "breakdown": {
+            "summary": "Detail by aspect (optional)",
+            "workQuality": "Quality of work",
+            "punctuality": "Punctuality",
+            "treatment": "Treatment"
+        },
+        "content": {
+            "label": "Comment (optional)",
+            "placeholder": "Tell us how the job went. Other hosts will read it."
+        },
+        "submit": "Publish review",
+        "submitting": "Publishing…",
+        "cancel": "Cancel",
+        "success": {
+            "published": "Done - your review is now published in the directory.",
+            "pending": "We saved your review and it is under review. It will appear in the directory once approved.",
+            "close": "Close"
+        },
+        "errors": {
+            "ratingRequired": "Choose an overall rating.",
+            "benefitRequired": "Tell us whether the provider honoured the benefit.",
+            "contentTooShort": "The comment needs at least {{min}} characters, or you can leave it empty.",
+            "invalid": "Check the review details before publishing it.",
+            "generic": "We could not publish your review. Please try again in a moment.",
+            "noChanges": "You did not change anything in your review."
+        },
+        "cta": "Review {{name}}",
+        "ctaEdit": "Edit your review of {{name}}",
+        "editTitle": "Edit your review of {{name}}",
+        "save": "Save changes",
+        "loading": "Checking whether you already reviewed them…"
+    },
+    "provider": {
+        "usages": {
+            "form": {
+                "title": "Record a benefit usage",
+                "channel": "Who did you serve?",
+                "channelSelector": "A client who already confirmed a usage",
+                "channelEmail": "Someone new, by email",
+                "host": "Host",
+                "hostPlaceholder": "Choose one…",
+                "email": "Host's email",
+                "emailHint": "It has to be the email they registered with on Hospeda. If it does not match, we tell you right away.",
+                "date": "What day was the service?",
+                "note": "Note (optional)",
+                "submit": "Record the usage",
+                "submitting": "Recording…",
+                "success": "Done. We asked the host to confirm it; until then it stays pending and does not count towards your numbers."
+            },
+            "list": {
+                "title": "Recorded usages",
+                "empty": "You have not recorded any benefit usage yet.",
+                "declaredByYou": "You recorded it",
+                "declaredByHost": "The host recorded it"
+            },
+            "suspended": {
+                "title": "You cannot record usages right now",
+                "help": "Write to us so we can review it. Your already-confirmed usages still count."
+            },
+            "errors": {
+                "hostRequired": "Choose who you served.",
+                "emailRequired": "Enter the host's email.",
+                "dateRequired": "Choose the day of the service.",
+                "dateFuture": "The service cannot be in the future.",
+                "generic": "We could not record the usage. Please try again in a moment."
+            }
+        },
+        "reviews": {
+            "title": "Reviews",
+            "empty": "There are no reviews of your listing yet. They appear when a host with a confirmed usage reviews you.",
+            "anonymous": "A host",
+            "rating": "{{count}} out of 5 stars",
+            "benefitYes": "Says you honoured the benefit",
+            "benefitNo": "Says you did NOT honour the benefit",
+            "yourReply": "Your reply",
+            "noReply": "You have not answered this review yet.",
+            "pendingHelp": "We review it before publishing. It is not visible in the directory yet.",
+            "rejectedReason": "Reason: {{reason}}",
+            "editedAfterReply": "The host edited their review after your reply.",
+            "replyState": {
+                "PENDING": "In review",
+                "APPROVED": "Published",
+                "REJECTED": "Rejected"
+            },
+            "reply": {
+                "open": "Reply",
+                "edit": "Edit your reply",
+                "label": "Your reply",
+                "counter": "{{count}}/{{max}} · minimum {{min}} characters",
+                "createNotice": "We review it before publishing, so it does not show up in the directory right away.",
+                "editNotice": "If you edit it, your reply goes back to review and stops showing in the directory until we approve it again.",
+                "cancel": "Cancel",
+                "send": "Send reply",
+                "save": "Save reply",
+                "errors": {
+                    "tooShort": "Your reply needs at least {{min}} characters.",
+                    "generic": "We could not save your reply. Please try again in a moment."
+                }
+            }
+        },
+        "qr": {
+            "title": "Your QR code",
+            "help": "Print it or show it on your phone. The host scans it with their camera and records the usage themselves: you do not need to ask for details or record it yourself.",
+            "alt": "QR code leading to the page for recording a usage of your benefit",
+            "encodes": "Leads to: {{url}}",
+            "download": "Download the QR",
+            "downloaded": "Done, we downloaded it as SVG."
+        }
     }
 }

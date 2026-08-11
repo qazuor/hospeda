@@ -108,6 +108,21 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_MODERATION_CHANGE,
         PermissionEnum.EVENT_LOCATION_UPDATE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
+        // EVENT_ORGANIZER granular family (NOSPEC:event-organizer-permissions):
+        // every event-organizer admin route (apps/api/src/routes/event-organizer/
+        // admin/*) and the protected create route gate on these `eventOrganizer.*`
+        // permissions, not on the legacy `EVENT_ORGANIZER_MANAGE`
+        // (`event.organizer.manage`) above. The granular family was orphaned —
+        // granted to no role at all — until this fix, so nobody (not even
+        // SUPER_ADMIN) could create/list/update/delete an event organizer through
+        // the API. EVENT_ORGANIZER_MANAGE is kept as-is for backward
+        // compatibility; do not remove it.
+        PermissionEnum.EVENT_ORGANIZER_CREATE,
+        PermissionEnum.EVENT_ORGANIZER_VIEW,
+        PermissionEnum.EVENT_ORGANIZER_UPDATE,
+        PermissionEnum.EVENT_ORGANIZER_DELETE,
+        PermissionEnum.EVENT_ORGANIZER_RESTORE,
+        PermissionEnum.EVENT_ORGANIZER_HARD_DELETE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
         PermissionEnum.EVENT_COMMENT_VIEW,
@@ -387,6 +402,15 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_TRADE_RESTORE,
         PermissionEnum.HOST_TRADE_HARD_DELETE,
 
+        // HOST_TRADE usage + reviews (HOS-376). Staff-only: reading the
+        // moderation queue, deciding on it, and lifting a provider's
+        // declaration suspension are all separate authorities.
+        PermissionEnum.HOST_TRADE_REVIEW_CREATE,
+        PermissionEnum.HOST_TRADE_REVIEW_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_REVIEW_MODERATE,
+        PermissionEnum.HOST_TRADE_USAGE_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_USAGE_MANAGE,
+
         // SOCIAL: Social media publish pipeline (SPEC-254) — full access.
         PermissionEnum.SOCIAL_POST_VIEW,
         PermissionEnum.SOCIAL_POST_CREATE,
@@ -507,6 +531,16 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.EVENT_MODERATION_CHANGE,
         PermissionEnum.EVENT_LOCATION_UPDATE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
+        // EVENT_ORGANIZER granular family (NOSPEC:event-organizer-permissions):
+        // see the identical comment on the SUPER_ADMIN block above — the routes
+        // gate on `eventOrganizer.*`, this family was orphaned (granted to no
+        // role) until this fix, and EVENT_ORGANIZER_MANAGE stays as legacy.
+        PermissionEnum.EVENT_ORGANIZER_CREATE,
+        PermissionEnum.EVENT_ORGANIZER_VIEW,
+        PermissionEnum.EVENT_ORGANIZER_UPDATE,
+        PermissionEnum.EVENT_ORGANIZER_DELETE,
+        PermissionEnum.EVENT_ORGANIZER_RESTORE,
+        PermissionEnum.EVENT_ORGANIZER_HARD_DELETE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
         PermissionEnum.EVENT_COMMENT_VIEW,
@@ -721,6 +755,15 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.HOST_TRADE_RESTORE,
         PermissionEnum.HOST_TRADE_HARD_DELETE,
 
+        // HOST_TRADE usage + reviews (HOS-376). Staff-only: reading the
+        // moderation queue, deciding on it, and lifting a provider's
+        // declaration suspension are all separate authorities.
+        PermissionEnum.HOST_TRADE_REVIEW_CREATE,
+        PermissionEnum.HOST_TRADE_REVIEW_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_REVIEW_MODERATE,
+        PermissionEnum.HOST_TRADE_USAGE_VIEW_ALL,
+        PermissionEnum.HOST_TRADE_USAGE_MANAGE,
+
         // SOCIAL: Social media publish pipeline (SPEC-254) — full access.
         PermissionEnum.SOCIAL_POST_VIEW,
         PermissionEnum.SOCIAL_POST_CREATE,
@@ -792,9 +835,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.ANALYTICS_VIEW,
         PermissionEnum.NOTIFICATION_SEND,
 
-        // ACCESS: Admin panel and APIs
-        PermissionEnum.ACCESS_PANEL_ADMIN,
-        PermissionEnum.ACCESS_API_ADMIN,
+        // ACCESS: APIs only — HOS-374 D-1/NG-3 removed ACCESS_PANEL_ADMIN and
+        // ACCESS_API_ADMIN. The role is dormant today (see the KNOWN DEBT note
+        // above), so this costs nothing now; if CLIENT_MANAGER is ever activated,
+        // panel access is re-granted at that point, not preemptively.
         PermissionEnum.ACCESS_API_PUBLIC,
 
         // PLATFORM SETTINGS V1 (SPEC-156): Mi cuenta self-edit + self-billing
@@ -805,32 +849,50 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
     ],
 
     [RoleEnum.EDITOR]: [
-        // EVENT: Create, update, publish, manage
+        // EVENT: Create + manage own content only — HOS-374 §7.6.2 REVERSES the
+        // SPEC-169 verdict below (OQ-2, owner-confirmed): EDITOR no longer sees or
+        // edits every editor's content, only its own, authored from `/mi-cuenta`.
+        // EVENT_UPDATE, EVENT_VIEW_ALL, EVENT_VIEW_PRIVATE and EVENT_VIEW_DRAFT are
+        // removed; EVENT_VIEW_OWN / EVENT_UPDATE_OWN replace them.
+        //
+        // EVENT_PUBLISH_TOGGLE is ALSO removed, even though §7.6.2's permission
+        // table doesn't name it: checkCanSetEventPublishState accepts the flat
+        // *_PUBLISH_TOGGLE as an unconditional bypass. Leaving it on EDITOR would
+        // let a plain editor publish ANY author's content and trivially defeat the
+        // §7.6.3 state lock, making the whole author-scoped model decorative. Only
+        // a trusted editor gets *_PUBLISH_OWN, granted per-user (§5.1.2).
         PermissionEnum.EVENT_CREATE,
-        PermissionEnum.EVENT_UPDATE,
-        PermissionEnum.EVENT_PUBLISH_TOGGLE,
+        PermissionEnum.EVENT_VIEW_OWN,
+        PermissionEnum.EVENT_UPDATE_OWN,
         PermissionEnum.EVENT_FEATURED_TOGGLE,
         PermissionEnum.EVENT_LOCATION_UPDATE,
         PermissionEnum.EVENT_LOCATION_LIFECYCLE_CHANGE,
         PermissionEnum.EVENT_ORGANIZER_MANAGE,
         PermissionEnum.EVENT_ORGANIZER_LIFECYCLE_CHANGE,
+        // EVENT_ORGANIZER_CREATE only (NOSPEC:event-organizer-permissions): HOS-374
+        // gives editors an inline "create an organizer" affordance inside the
+        // event create form at `/mi-cuenta`, because `EventCreateHttpSchema
+        // .organizerId` is a required UUID and an editor whose organizer isn't in
+        // the catalog would otherwise be stuck. This is deliberately narrower than
+        // the SUPER_ADMIN/ADMIN grant above — an editor must NOT be able to
+        // list-admin, edit, delete, restore or hard-delete organizers, so none of
+        // EVENT_ORGANIZER_VIEW / _UPDATE / _DELETE / _RESTORE / _HARD_DELETE are
+        // granted here.
+        PermissionEnum.EVENT_ORGANIZER_CREATE,
         PermissionEnum.EVENT_SLUG_MANAGE,
         PermissionEnum.EVENT_COMMENT_CREATE,
         // SPEC-165: EDITOR moderates event comments (view all states + approve/reject/delete).
         PermissionEnum.EVENT_COMMENT_VIEW,
         PermissionEnum.EVENT_COMMENT_MODERATE,
-        // SPEC-169 §3 verdict (KEEP — legitimate editorial visibility, see the POST_VIEW_* note below).
-        PermissionEnum.EVENT_VIEW_PRIVATE,
-        PermissionEnum.EVENT_VIEW_DRAFT,
-        // EDITOR runs the editorial dashboard which lists every event
-        // (upcoming + featured + total). Without VIEW_ALL the admin list
-        // endpoint returns 403 and cards B / F render in error state.
-        PermissionEnum.EVENT_VIEW_ALL,
 
-        // POST: Create, update, publish, manage
+        // POST: Create + manage own content only — same HOS-374 reversal as EVENT
+        // above. POST_UPDATE, POST_VIEW_ALL, POST_VIEW_PRIVATE, POST_VIEW_DRAFT and
+        // POST_PUBLISH_TOGGLE are removed; POST_VIEW_OWN / POST_UPDATE_OWN replace
+        // the view/update pair. See the EVENT block's comment for why
+        // PUBLISH_TOGGLE goes too even though it predates this table.
         PermissionEnum.POST_CREATE,
-        PermissionEnum.POST_UPDATE,
-        PermissionEnum.POST_PUBLISH_TOGGLE,
+        PermissionEnum.POST_VIEW_OWN,
+        PermissionEnum.POST_UPDATE_OWN,
         PermissionEnum.POST_SPONSOR_MANAGE,
         PermissionEnum.POST_SPONSOR_LIFECYCLE_CHANGE,
         PermissionEnum.POST_TAGS_MANAGE,
@@ -840,13 +902,6 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // SPEC-165: EDITOR moderates post comments (view all states + approve/reject/delete).
         PermissionEnum.POST_COMMENT_VIEW,
         PermissionEnum.POST_COMMENT_MODERATE,
-        // SPEC-169 §3 verdict (KEEP — confirmed legitimate, not a leak): EDITOR sees ALL editorial
-        // content (posts + events, including private) by design — that is the editorial role. A
-        // SUPER_ADMIN can narrow this for a specific user via direct per-user permission overrides
-        // (the user-permissions model already supports it; managing it from the admin UI is SPEC-170).
-        PermissionEnum.POST_VIEW_PRIVATE,
-        PermissionEnum.POST_VIEW_DRAFT,
-        PermissionEnum.POST_VIEW_ALL,
 
         // USER: Basic profile permissions
         PermissionEnum.USER_VIEW_PROFILE,
@@ -880,10 +935,10 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // RECOMMENDATION: Personalized recommendations feed (SPEC-284, always own-scoped)
         PermissionEnum.RECOMMENDATION_VIEW,
 
-        // ACCESS: Admin panel and APIs
+        // ACCESS: APIs only — HOS-374 D-1 removed ACCESS_PANEL_ADMIN and
+        // ACCESS_API_ADMIN. The editor authors from `/mi-cuenta` (a protected web
+        // route, not the admin panel) and never needs either admin-tier gate again.
         PermissionEnum.DASHBOARD_BASE_VIEW,
-        PermissionEnum.ACCESS_PANEL_ADMIN,
-        PermissionEnum.ACCESS_API_ADMIN,
         PermissionEnum.ACCESS_API_PUBLIC,
 
         // TAG: Editor scope per SPEC-086 (D-017)
@@ -1047,7 +1102,14 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.USER_UPDATE_SELF,
 
         // HOST_TRADE: read-only access to the admin-curated host trades directory (SPEC-241).
-        PermissionEnum.HOST_TRADE_VIEW
+        PermissionEnum.HOST_TRADE_VIEW,
+
+        // HOS-376: rating a provider requires being a real host. This is the
+        // ONLY one of the five HOS-376 permissions a non-staff role gets, and
+        // granting it here (rather than to USER) is what stops a user who is
+        // only a provider — a host_trades owner with no accommodations, who
+        // therefore never earns the HOST role — from rating a competitor.
+        PermissionEnum.HOST_TRADE_REVIEW_CREATE
     ],
 
     // ---------------------------------------------------------------------------

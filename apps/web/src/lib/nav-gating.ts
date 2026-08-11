@@ -86,6 +86,18 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
         RoleEnum.EDITOR,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
+    ]),
+    // Same role set as POST_CREATE (EDITOR, ADMIN, SUPER_ADMIN — verified
+    // against `packages/seed/src/required/rolePermissions.seed.ts`), kept as
+    // its own map entry rather than reused from POST_CREATE: events and posts
+    // are separate content domains with separate permissions server-side, and
+    // a future divergence between the two role sets must not silently change
+    // `hasPostsNavAccess` too. Backs the `/mi-cuenta/eventos` own-content
+    // listing gate (HOS-374 Phase 2 2C-1).
+    [PermissionEnum.EVENT_CREATE]: new Set<RoleEnum>([
+        RoleEnum.EDITOR,
+        RoleEnum.ADMIN,
+        RoleEnum.SUPER_ADMIN
     ])
 };
 
@@ -194,6 +206,47 @@ export function hasCommerceNavAccess({
     return isVisibleByRoles({ requiredPermission: PermissionEnum.COMMERCE_EDIT_OWN }, roles);
 }
 
+/**
+ * Does the user hold a role that grants the own-posts editorial listing
+ * (`/mi-cuenta/publicaciones`, HOS-374 Phase 2 2C-1)?
+ *
+ * Keyed on `POST_CREATE` — the same permission the HOS-134 editor
+ * discovery-door signal already uses, so the two never disagree about who
+ * counts as an editor.
+ *
+ * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
+ *   for unauthenticated visitors.
+ * @returns `true` when at least one held role carries editor-tier access.
+ */
+export function hasPostsNavAccess({
+    roles
+}: {
+    readonly roles: readonly string[] | null;
+}): boolean {
+    return isVisibleByRoles({ requiredPermission: PermissionEnum.POST_CREATE }, roles);
+}
+
+/**
+ * Does the user hold a role that grants the own-events editorial listing
+ * (`/mi-cuenta/eventos`, HOS-374 Phase 2 2C-1)?
+ *
+ * Keyed on `EVENT_CREATE`, a distinct map entry from `POST_CREATE` — see the
+ * comment on that entry in `PERMISSION_ROLE_MAP` for why the two are not
+ * collapsed into one shared permission even though they resolve to the same
+ * role set today.
+ *
+ * @param params - `{ roles }` (RO-RO): every role the user holds, or `null`
+ *   for unauthenticated visitors.
+ * @returns `true` when at least one held role carries editor-tier access.
+ */
+export function hasEventsNavAccess({
+    roles
+}: {
+    readonly roles: readonly string[] | null;
+}): boolean {
+    return isVisibleByRoles({ requiredPermission: PermissionEnum.EVENT_CREATE }, roles);
+}
+
 // -----------------------------------------------------------------------------
 // Discovery-door helpers (HOS-131 §6.2/§6.3, OQ-3: acquired signal = permissions)
 // -----------------------------------------------------------------------------
@@ -204,7 +257,14 @@ export function hasCommerceNavAccess({
  * the same circular-dependency reason as `GatedNavNode` above.
  */
 export interface DoorGatingOption {
-    /** The permission that signals "already acquired". Omitted = never acquired. */
+    /**
+     * Stable identifier, matched against `acquiredOptionIds` (see
+     * {@link resolveDoorOptionState}). Optional here only because most
+     * existing callers/tests construct ad hoc option objects that never need
+     * the override; every real `DiscoveryDoorOption` always has one.
+     */
+    readonly id?: string;
+    /** The permission that signals "already acquired". Omitted = never acquired via permissions. */
     readonly acquiredPermission?: PermissionEnum;
     /** `true` = a not-yet-implemented placeholder (sponsor, service provider). */
     readonly comingSoon?: boolean;
@@ -220,23 +280,43 @@ export type DoorOptionState = 'acquired' | 'unacquired' | 'comingSoon';
  * `(node) => isVisibleByRoles(node, roles)` on the server-rendered sidebar/hub
  * pages.
  *
- * An option with no `acquiredPermission` (the sponsor/service-provider
- * placeholders — HOS-131 NG-2) is NEVER `'acquired'`: it resolves to
- * `'comingSoon'` when `comingSoon` is set, or `'unacquired'` otherwise. This
- * is what makes the "Sumate como aliado" door "always shown" fall out of the
- * SAME `isDoorVisible` logic used for the listing door — no `kind`-based
- * branching required.
+ * An option with no `acquiredPermission` (the sponsor/partner placeholders —
+ * HOS-131 NG-2) is NEVER `'acquired'` via the permission mechanism: it
+ * resolves to `'comingSoon'` when `comingSoon` is set, or `'unacquired'`
+ * otherwise. This is what makes the "Sumate como aliado" door "always shown"
+ * fall out of the SAME `isDoorVisible` logic used for the listing door — no
+ * `kind`-based branching required.
  *
- * @param params - `{ option, visibility }` (RO-RO).
+ * `acquiredOptionIds` (HOS-278) is an explicit, out-of-band override for the
+ * ONE option that permissions structurally cannot represent: the
+ * `serviceProvider` door option. The door's "acquired" signal is normally
+ * PERMISSIONS (HOS-131 OQ-3), but an approved service provider deliberately
+ * receives NO permission and NO role change (HOS-278 AC-7 — a provider is an
+ * ordinary tourist account; ownership of the `host_trades` row is the real
+ * gate). So a permission-only evaluator can never say "acquired" for it, and
+ * the page that CAN know (it fetched `GET /host-trades/mine`) supplies the
+ * verdict here instead. When `option.id` is present in `acquiredOptionIds`,
+ * the option resolves to `'acquired'` unconditionally — the permission/
+ * `comingSoon` checks are skipped entirely for that id. Every other option is
+ * completely unaffected: an absent/undefined `acquiredOptionIds` (the default
+ * for every existing caller) falls straight through to the permission logic
+ * below, unchanged.
+ *
+ * @param params - `{ option, visibility, acquiredOptionIds? }` (RO-RO).
  * @returns The option's resolved state.
  */
 export function resolveDoorOptionState({
     option,
-    visibility
+    visibility,
+    acquiredOptionIds
 }: {
     readonly option: DoorGatingOption;
     readonly visibility: (node: GatedNavNode) => boolean;
+    readonly acquiredOptionIds?: readonly string[];
 }): DoorOptionState {
+    if (option.id !== undefined && acquiredOptionIds?.includes(option.id)) {
+        return 'acquired';
+    }
     if (!option.acquiredPermission) {
         return option.comingSoon ? 'comingSoon' : 'unacquired';
     }
