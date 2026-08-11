@@ -228,6 +228,14 @@ describe('usos-de-beneficio — the nav badge clears on resolve, not on view', (
 
     it('states the count in the accessible label, not only as a glyph', () => {
         expect(pillSrc).toContain('aria-label={label}');
-        expect(resolveEsKey('host-trades.usages.badge.pendingCount')).toBeTruthy();
+
+        // The CLDR PAIR, not a base key: the label is pluralised through
+        // `tPlural`, so `pendingCount` alone no longer resolves and asserting it
+        // would only pass by un-pluralising the badge again. Both halves are
+        // checked because a missing `_one` is invisible until exactly one usage
+        // is pending — the most common case there is.
+        expect(resolveEsKey('host-trades.usages.badge.pendingCount_one')).toBeTruthy();
+        expect(resolveEsKey('host-trades.usages.badge.pendingCount_other')).toBeTruthy();
+        expect(pillSrc).toContain('tPlural(');
     });
 });

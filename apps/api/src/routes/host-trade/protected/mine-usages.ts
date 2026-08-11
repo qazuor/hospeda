@@ -181,7 +181,7 @@ export const protectedDeclareUsageAsProviderRoute = createProtectedRoute({
     path: '/mine/usages',
     summary: 'Declare a benefit usage on one of your hosts',
     description:
-        'Records that a host used the caller’s benefit. The host is identified by exactly one of hostUserId (from the scoped selector) or hostEmail (the first-time fallback). An email that resolves to nobody, or to somebody who is not a host, answers 404 HOST_NOT_FOUND explicitly — a typo is the common failure and hiding it costs the provider a thirty-day wait on a row that was never going to resolve.',
+        'Records that a host used the caller’s benefit. The host is identified by exactly one of hostUserId (from the scoped selector) or hostEmail (the first-time fallback). An email that resolves to nobody, or to somebody who is not a host, answers 404 HOST_NOT_FOUND explicitly — a typo is the common failure and hiding it costs the provider a thirty-day wait on a row that was never going to resolve. Naming yourself through either identifier answers 403 SELF_USAGE_FORBIDDEN.',
     tags: ['HostTrades'],
     requestBody: HostTradeBenefitUsageProviderCreateBodySchema,
     responseSchema: DeclaredUsageResponseSchema,

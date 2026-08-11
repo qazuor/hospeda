@@ -84,6 +84,7 @@ function makeUsage(overrides: Partial<PanelUsage> = {}): PanelUsage {
         createdAt: '2026-08-01T00:00:00.000Z',
         updatedAt: '2026-08-01T00:00:00.000Z',
         hostTrade: PROVIDER,
+        hasReview: false,
         ...overrides
     } as PanelUsage;
 }
@@ -361,6 +362,33 @@ describe('BenefitUsagesPanel — the review call-to-action', () => {
         renderPanel({ pending: [], history: [makeUsage({ status })] });
 
         expect(within(history()).queryByRole('button', { name: /valorar/i })).toBeNull();
+    });
+
+    it('offers EDITING, not rating, once the provider was already reviewed', async () => {
+        // The dialog decides create-vs-edit from its own read-back, so a fixed
+        // "Valorar" label announced the wrong action: the host clicked to write
+        // a review and got the editor for one that already existed.
+        renderPanel({
+            pending: [],
+            history: [makeUsage({ status: 'CONFIRMED', hasReview: true })]
+        });
+
+        expect(
+            within(history()).getByRole('button', { name: /editar tu valoración/i })
+        ).toBeInTheDocument();
+        expect(within(history()).queryByRole('button', { name: /^valorar a/i })).toBeNull();
+    });
+
+    it('offers rating when the provider has not been reviewed yet', () => {
+        renderPanel({
+            pending: [],
+            history: [makeUsage({ status: 'CONFIRMED', hasReview: false })]
+        });
+
+        expect(within(history()).getByRole('button', { name: /^valorar a/i })).toBeInTheDocument();
+        expect(
+            within(history()).queryByRole('button', { name: /editar tu valoración/i })
+        ).toBeNull();
     });
 
     it('does not offer it on a CONFIRMED row whose provider did not resolve', () => {

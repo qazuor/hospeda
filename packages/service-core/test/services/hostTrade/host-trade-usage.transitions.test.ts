@@ -7,7 +7,12 @@
  * rather than 403, following the anti-oracle criterion of
  * `alliance/protected/claim.ts`.
  */
-import type { HostTradeBenefitUsageModel, HostTradeModel, UserModel } from '@repo/db';
+import type {
+    HostTradeBenefitUsageModel,
+    HostTradeModel,
+    HostTradeReviewModel,
+    UserModel
+} from '@repo/db';
 
 vi.mock('../../../src/services/hostTrade/host-trade-aggregates', () => ({
     recalculateHostTradeAggregates: vi.fn(async () => ({
@@ -544,12 +549,19 @@ describe('listPendingForHost', () => {
             }))
         );
 
+        // The inbox resolves `hasReview` per row; nothing in this file exercises
+        // the flag, so an empty result keeps every assertion here about the
+        // inbox itself.
+        const reviewModel = createModelMock();
+        reviewModel.findAll = vi.fn(async () => ({ items: [], total: 0 }));
+
         const service = new HostTradeUsageService(
             { logger: mockLogger },
             model as unknown as HostTradeBenefitUsageModel,
             hostTradeModel as unknown as HostTradeModel,
             createModelMock() as unknown as UserModel,
-            async () => true
+            async () => true,
+            reviewModel as unknown as HostTradeReviewModel
         );
         return { service, model };
     }

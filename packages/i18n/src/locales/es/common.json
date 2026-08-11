@@ -67,6 +67,7 @@
         "DECLARATION_SUSPENDED": "Tu cuenta no puede registrar usos por ahora. Un administrador va a revisarlo.",
         "NO_CONFIRMED_USAGE": "Para valorar a este proveedor necesitás un uso del beneficio confirmado.",
         "SELF_REVIEW_FORBIDDEN": "No podés valorar tu propia ficha del directorio.",
+        "SELF_USAGE_FORBIDDEN": "No podés registrar un uso del beneficio de tu propia ficha.",
         "REVIEW_ALREADY_EXISTS": "Ya valoraste a este proveedor. Podés editar tu valoración.",
         "PROVIDER_REVOKED": "Este proveedor ya no forma parte del directorio.",
         "ALREADY_EXISTS": "Ese recurso ya existe.",

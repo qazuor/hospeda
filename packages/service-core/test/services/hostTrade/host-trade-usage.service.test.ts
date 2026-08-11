@@ -11,7 +11,12 @@
  * NOTHING, and a provider declaring on someone else's listing gets 404 rather
  * than 403.
  */
-import type { HostTradeBenefitUsageModel, HostTradeModel, UserModel } from '@repo/db';
+import type {
+    HostTradeBenefitUsageModel,
+    HostTradeModel,
+    HostTradeReviewModel,
+    UserModel
+} from '@repo/db';
 import { hostTradeBenefitUsages } from '@repo/db';
 import { HostTradeUsageStatusEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -56,6 +61,8 @@ function buildService(
         rejectedBy?: 'HOST' | 'PROVIDER';
         /** An existing PENDING usage for the pair, opened by this side. */
         pendingBy?: 'HOST' | 'PROVIDER';
+        /** Provider ids this host has already reviewed, for the `hasReview` flag. */
+        reviewedTradeIds?: readonly string[];
     } = {}
 ) {
     const model = createModelMock();
@@ -93,15 +100,28 @@ function buildService(
 
     const isHostUser = vi.fn(async () => options.isHost ?? true);
 
+    // Only the host-facing lists touch it, and only to answer "already
+    // reviewed?". The mock honours the `hostTradeId` membership filter the
+    // service sends, so a test can assert the flag is per-provider rather than
+    // per-page.
+    const reviewModel = createModelMock();
+    reviewModel.findAll = vi.fn(async (where: Record<string, unknown>) => {
+        const reviewed = options.reviewedTradeIds ?? [];
+        const requested = (where.hostTradeId as string[] | undefined) ?? [];
+        const matched = reviewed.filter((id) => requested.includes(id));
+        return { items: matched.map((id) => ({ hostTradeId: id })), total: matched.length };
+    });
+
     const service = new HostTradeUsageService(
         { logger: mockLogger },
         model as unknown as HostTradeBenefitUsageModel,
         hostTradeModel as unknown as HostTradeModel,
         userModel as unknown as UserModel,
-        isHostUser
+        isHostUser,
+        reviewModel as unknown as HostTradeReviewModel
     );
 
-    return { service, model, hostTradeModel, userModel, isHostUser };
+    return { service, model, hostTradeModel, userModel, isHostUser, reviewModel };
 }
 
 /** The single row handed to `model.create`, whatever the channel. */
@@ -295,6 +315,78 @@ const suspendedTrade = () =>
 
 const hostDeclaration = { hostTradeId: HT_ID, servicedAt: '2026-08-01' };
 const providerDeclaration = { hostTradeId: HT_ID, hostUserId: HOST_ID, servicedAt: '2026-08-01' };
+
+describe('guard — SELF_USAGE_FORBIDDEN', () => {
+    /**
+     * The dual-role account: owns the listing AND holds the host permission.
+     * Real and seeded (`host-provider@local.test`), not hypothetical — a host who
+     * became a provider keeps being a host.
+     */
+    const ownerAsHostActor = () =>
+        new ActorFactoryBuilder()
+            .withId(OWNER_ID)
+            .withPermissions([PermissionEnum.HOST_TRADE_VIEW])
+            .build();
+
+    // AC-17 already forbids reviewing your own listing (SELF_REVIEW_FORBIDDEN).
+    // Declaring a usage on it is the same conflict one step earlier, and it is
+    // the step that feeds `confirmedUsesCount` and `distinctHostsCount` — the
+    // two numbers the directory ranks providers by.
+
+    it('refuses the owner declaring on his own listing through the QR channel', async () => {
+        const { service, model } = buildService();
+
+        const result = await service.declareAsHost(
+            { hostTradeId: HT_ID, servicedAt: '2026-08-01' },
+            ownerAsHostActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SELF_USAGE_FORBIDDEN);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses the owner naming himself through the selector channel', async () => {
+        const { service, model } = buildService();
+        model.findLinkedHosts = vi.fn(async () => [OWNER_ID]);
+
+        const result = await service.declareAsProvider(
+            { hostTradeId: HT_ID, hostUserId: OWNER_ID, servicedAt: '2026-08-01' },
+            providerActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SELF_USAGE_FORBIDDEN);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses the owner naming his own email through the email channel', async () => {
+        const { service, model, userModel } = buildService();
+        userModel.findOne = vi.fn(async () => ({ id: OWNER_ID, email: 'duenio@example.com' }));
+
+        const result = await service.declareAsProvider(
+            {
+                hostTradeId: HT_ID,
+                hostEmail: 'duenio@example.com',
+                servicedAt: '2026-08-01'
+            },
+            providerActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SELF_USAGE_FORBIDDEN);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('still allows an ordinary host, so the guard is about identity and not the listing', async () => {
+        const { service, model } = buildService();
+
+        const result = await service.declareAsHost(
+            { hostTradeId: HT_ID, servicedAt: '2026-08-01' },
+            hostActor()
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(model.create).toHaveBeenCalled();
+    });
+});
 
 describe('guard — PROVIDER_REVOKED', () => {
     it('refuses a host declaring on a revoked listing', async () => {
@@ -808,8 +900,8 @@ describe('HostTradeUsageService — provider identity on the host’s lists', ()
     const OTHER_HT_ID = getMockId('attraction', 'ht-usage-2');
 
     /** Two rows naming two different providers, plus a repeat of the first. */
-    function buildEnrichedService() {
-        const { service, model, hostTradeModel } = buildService();
+    function buildEnrichedService(reviewedTradeIds?: readonly string[]) {
+        const { service, model, hostTradeModel, reviewModel } = buildService({ reviewedTradeIds });
         const page = [
             { id: 'usage-1', hostTradeId: HT_ID, hostUserId: HOST_ID, status: 'PENDING' },
             { id: 'usage-2', hostTradeId: OTHER_HT_ID, hostUserId: HOST_ID, status: 'CONFIRMED' },
@@ -818,7 +910,7 @@ describe('HostTradeUsageService — provider identity on the host’s lists', ()
         model.findAll = vi.fn(async () => ({ items: page, total: page.length }));
         model.findPendingForUser = vi.fn(async () => page);
         model.countPendingForUser = vi.fn(async () => page.length);
-        return { service, model, hostTradeModel };
+        return { service, model, hostTradeModel, reviewModel };
     }
 
     /** The id list handed to `findByIds` on its only call. */
@@ -841,6 +933,44 @@ describe('HostTradeUsageService — provider identity on the host’s lists', ()
             category: 'PLOMERIA'
         });
         expect(res.data?.items[1]?.hostTrade?.id).toBe(OTHER_HT_ID);
+    });
+
+    it('flags which providers the host already reviewed, per provider and not per row', async () => {
+        // Rows 1 and 3 name the SAME provider, so one review has to light both.
+        // The card's button reads this to offer "edit" instead of "rate"; with a
+        // per-row flag the second visit to the same plumber would keep offering
+        // to write a review that already exists.
+        const { service } = buildEnrichedService([HT_ID]);
+
+        const res = await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(res.error).toBeUndefined();
+        expect(res.data?.items.map((item) => item.hasReview)).toEqual([true, false, true]);
+    });
+
+    it('reports hasReview false for every row when the host reviewed nobody', async () => {
+        const { service } = buildEnrichedService();
+
+        const res = await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        expect(res.data?.items.map((item) => item.hasReview)).toEqual([false, false, false]);
+    });
+
+    it('asks only about the providers on the page, in one query', async () => {
+        // Same contract as `findByIds` above: one round trip for the page, and
+        // a window sized to the page so a long review history cannot truncate
+        // the answer into false negatives.
+        const { service, reviewModel } = buildEnrichedService([HT_ID]);
+
+        await service.listForHost({ page: 1, pageSize: 20 }, hostActor());
+
+        const calls = (reviewModel.findAll as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls;
+        expect(calls).toHaveLength(1);
+        const [where, pagination] = calls[0] as [Record<string, unknown>, { pageSize: number }];
+        expect(where.hostUserId).toBe(HOST_ID);
+        expect([...(where.hostTradeId as string[])].sort()).toEqual([HT_ID, OTHER_HT_ID].sort());
+        expect(pagination.pageSize).toBe(2);
     });
 
     it('attaches the same identity to the pending inbox', async () => {

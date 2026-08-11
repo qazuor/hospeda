@@ -1,4 +1,9 @@
-import { HostTradeBenefitUsageModel, HostTradeModel, UserModel } from '@repo/db';
+import {
+    HostTradeBenefitUsageModel,
+    HostTradeModel,
+    HostTradeReviewModel,
+    UserModel
+} from '@repo/db';
 import type {
     CountResponse,
     HostTrade,
@@ -196,19 +201,23 @@ export class HostTradeUsageService extends BaseCrudService<
     private readonly hostTradeModel: HostTradeModel;
     private readonly userModel: UserModel;
     private readonly isHostUser: IsHostUserPort;
+    /** Read-only here: used solely to tell the host-facing lists whether a row's provider was already reviewed. */
+    private readonly reviewModel: HostTradeReviewModel;
 
     constructor(
         ctx: ServiceConfig,
         model?: HostTradeBenefitUsageModel,
         hostTradeModel?: HostTradeModel,
         userModel?: UserModel,
-        isHostUser?: IsHostUserPort
+        isHostUser?: IsHostUserPort,
+        reviewModel?: HostTradeReviewModel
     ) {
         super(ctx, HostTradeUsageService.ENTITY_NAME);
         this.model = model ?? new HostTradeBenefitUsageModel();
         this.hostTradeModel = hostTradeModel ?? new HostTradeModel();
         this.userModel = userModel ?? new UserModel();
         this.isHostUser = isHostUser ?? defaultIsHostUser;
+        this.reviewModel = reviewModel ?? new HostTradeReviewModel();
     }
 
     /** No free-text search surface; the admin list filters on typed columns. */
@@ -491,6 +500,7 @@ export class HostTradeUsageService extends BaseCrudService<
 
                 const provider = await this.requireProvider(validated.hostTradeId, ctx);
                 this.assertListingAcceptsDeclarations(provider);
+                this.assertHostIsNotTheOwner(provider, validatedActor.id);
                 await this.assertPairAcceptsDeclaration(
                     {
                         hostTradeId: validated.hostTradeId,
@@ -568,6 +578,8 @@ export class HostTradeUsageService extends BaseCrudService<
                     validated,
                     ctx
                 );
+
+                this.assertHostIsNotTheOwner(provider, hostUserId);
 
                 await this.assertPairAcceptsDeclaration(
                     {
@@ -779,10 +791,53 @@ export class HostTradeUsageService extends BaseCrudService<
             ])
         );
 
+        const reviewedTradeIds = await this.resolveReviewedTradeIds(items, ids, ctx);
+
         return items.map((item) => ({
             ...item,
-            hostTrade: byId.get(item.hostTradeId) ?? null
+            hostTrade: byId.get(item.hostTradeId) ?? null,
+            hasReview: reviewedTradeIds.has(item.hostTradeId)
         }));
+    }
+
+    /**
+     * Which of the page's providers this host has already reviewed.
+     *
+     * ONE query for the page, like {@link attachProviders} above, and scoped to
+     * the ids actually on it. `pageSize` is the id count rather than a constant
+     * because a review is unique per (host, provider) — so the query can never
+     * match more rows than there are distinct providers on the page, and the
+     * default page window cannot silently truncate the answer into false
+     * negatives on a long history.
+     *
+     * The host is taken from the ROWS, not from the actor: both callers scope
+     * their query to `hostUserId = actor.id`, so the rows already carry it, and
+     * reading it here keeps this helper honest if a future caller lists someone
+     * else's page. An empty page resolves without touching the database.
+     *
+     * @param items - The page of usage rows.
+     * @param ids - The de-duplicated provider ids on that page.
+     * @param ctx - Optional service context, for transaction propagation.
+     * @returns The subset of `ids` this host has reviewed.
+     */
+    private async resolveReviewedTradeIds(
+        items: HostTradeBenefitUsage[],
+        ids: string[],
+        ctx?: ServiceContext
+    ): Promise<Set<string>> {
+        const hostUserId = items[0]?.hostUserId;
+        if (!hostUserId || ids.length === 0) return new Set();
+
+        const { items: reviews } = await this.reviewModel.findAll(
+            { hostUserId, hostTradeId: ids, deletedAt: null },
+            { page: 1, pageSize: ids.length },
+            undefined,
+            ctx?.tx
+        );
+
+        return new Set(
+            (reviews as ReadonlyArray<{ hostTradeId: string }>).map((review) => review.hostTradeId)
+        );
     }
 
     // --- The provider's own usages and selector (T-031) -------------------
@@ -1401,6 +1456,39 @@ export class HostTradeUsageService extends BaseCrudService<
      * UNIQUE index in the database (§7.1), so this is the friendly 409 in front
      * of a constraint violation, and the index does not care who opened it.
      */
+    /**
+     * Refuses a usage whose host IS the listing's owner.
+     *
+     * Shared by both declaration paths because the conflict is the same from
+     * either side: the QR channel takes the host from the session, the provider
+     * channels resolve him from a selector or an email, and all three can land
+     * on the owner. A host who later became a provider keeps being a host, so
+     * this is a real account shape (`host-provider@local.test`), not a
+     * hypothetical one.
+     *
+     * The mirror of `SELF_REVIEW_FORBIDDEN` one step earlier: reviewing already
+     * required not owning the listing, but declaring did not. Left open, an
+     * owner could file a usage on himself that NEITHER side can confirm — the
+     * provider panel offers no button for a host-declared row and the host view
+     * offers none for his own — leaving an unresolvable PENDING row that counts
+     * in "Usos registrados" and eventually ages into "Vencidos".
+     *
+     * @param provider - The listing being declared against.
+     * @param hostUserId - The resolved host, whatever channel produced him.
+     * @throws {ServiceError} `SELF_USAGE_FORBIDDEN` when they are the same person.
+     */
+    private assertHostIsNotTheOwner(
+        provider: { ownerUserId?: string | null },
+        hostUserId: string
+    ): void {
+        if (provider.ownerUserId && provider.ownerUserId === hostUserId) {
+            throw new ServiceError(
+                ServiceErrorCode.SELF_USAGE_FORBIDDEN,
+                'A provider cannot declare a benefit usage on their own listing'
+            );
+        }
+    }
+
     private async assertPairAcceptsDeclaration(
         pair: {
             hostTradeId: string;

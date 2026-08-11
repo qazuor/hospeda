@@ -364,40 +364,51 @@ export function ReviewFormDialog({
                         >
                             {t('host-trades.review.overall.legend', 'Puntuación general')}
                         </legend>
-                        {STAR_VALUES.map((value) => (
-                            <label
-                                className={styles.star}
-                                key={value}
-                            >
-                                <input
-                                    aria-label={t(
-                                        value === 1
-                                            ? 'host-trades.review.overall.one'
-                                            : 'host-trades.review.overall.many',
-                                        value === 1 ? '1 estrella' : '{{count}} estrellas',
-                                        { count: String(value) }
-                                    )}
-                                    checked={overallRating === value}
-                                    className={styles.starInput}
-                                    name={`${groupName}-overall`}
-                                    onChange={() => setOverallRating(value)}
-                                    type="radio"
-                                    value={value}
-                                />
-                                <span
-                                    aria-hidden="true"
-                                    className={styles.starGlyph}
+                        {/* The row wrapper is what scopes the hover preview: on
+                            the fieldset it would also fire over the legend, and
+                            with no `.star:hover` to unlight the tail every star
+                            would light at once. */}
+                        <div className={styles.starRow}>
+                            {STAR_VALUES.map((value) => (
+                                <label
+                                    className={styles.star}
+                                    key={value}
                                 >
-                                    ★
-                                </span>
-                                <span
-                                    aria-hidden="true"
-                                    className={styles.starValue}
-                                >
-                                    {value}
-                                </span>
-                            </label>
-                        ))}
+                                    <input
+                                        aria-label={t(
+                                            value === 1
+                                                ? 'host-trades.review.overall.one'
+                                                : 'host-trades.review.overall.many',
+                                            value === 1 ? '1 estrella' : '{{count}} estrellas',
+                                            { count: String(value) }
+                                        )}
+                                        checked={overallRating === value}
+                                        className={styles.starInput}
+                                        name={`${groupName}-overall`}
+                                        onChange={() => setOverallRating(value)}
+                                        type="radio"
+                                        value={value}
+                                    />
+                                    <span
+                                        aria-hidden="true"
+                                        className={cn(
+                                            styles.starGlyph,
+                                            overallRating !== null &&
+                                                value <= overallRating &&
+                                                styles.starGlyphFilled
+                                        )}
+                                    >
+                                        ★
+                                    </span>
+                                    <span
+                                        aria-hidden="true"
+                                        className={styles.starValue}
+                                    >
+                                        {value}
+                                    </span>
+                                </label>
+                            ))}
+                        </div>
                     </fieldset>
 
                     <fieldset className={styles.benefitGroup}>
@@ -466,7 +477,11 @@ export function ReviewFormDialog({
                                                 />
                                                 <span
                                                     aria-hidden="true"
-                                                    className={styles.starGlyph}
+                                                    className={cn(
+                                                        styles.starGlyph,
+                                                        value <= (breakdown[dimension.key] ?? 0) &&
+                                                            styles.starGlyphFilled
+                                                    )}
                                                 >
                                                     ★
                                                 </span>

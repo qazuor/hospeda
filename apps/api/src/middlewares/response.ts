@@ -48,6 +48,7 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.DECLARATION_SUSPENDED]: 403,
     [ServiceErrorCode.NO_CONFIRMED_USAGE]: 403,
     [ServiceErrorCode.SELF_REVIEW_FORBIDDEN]: 403,
+    [ServiceErrorCode.SELF_USAGE_FORBIDDEN]: 403,
     [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
     [ServiceErrorCode.PROVIDER_REVOKED]: 422
 };

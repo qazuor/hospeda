@@ -67,6 +67,7 @@
         "DECLARATION_SUSPENDED": "Your account can't record usages right now. An administrator will review it.",
         "NO_CONFIRMED_USAGE": "You need a confirmed benefit usage before you can review this provider.",
         "SELF_REVIEW_FORBIDDEN": "You can't review your own directory listing.",
+        "SELF_USAGE_FORBIDDEN": "You can't record a benefit usage on your own listing.",
         "REVIEW_ALREADY_EXISTS": "You already reviewed this provider. You can edit your review.",
         "PROVIDER_REVOKED": "This provider is no longer part of the directory.",
         "ALREADY_EXISTS": "That resource already exists.",

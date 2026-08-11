@@ -168,7 +168,7 @@ export const protectedDeclareUsageRoute = createProtectedRoute({
     path: '/{slug}/usages',
     summary: 'Declare a benefit usage with a provider (QR path)',
     description:
-        'Records that the authenticated host used a provider’s benefit, addressing the provider by the slug the QR encodes. The usage is created PENDING and awaits the provider’s confirmation. Answers 422 PROVIDER_REVOKED for a delisted provider, 403 DECLARATION_SUSPENDED for a suspended one, 403 DECLARATION_BLOCKED when a standing rejection blocks the pair, and 409 USAGE_PENDING_EXISTS when one is already open.',
+        'Records that the authenticated host used a provider’s benefit, addressing the provider by the slug the QR encodes. The usage is created PENDING and awaits the provider’s confirmation. Answers 422 PROVIDER_REVOKED for a delisted provider, 403 DECLARATION_SUSPENDED for a suspended one, 403 DECLARATION_BLOCKED when a standing rejection blocks the pair, 403 SELF_USAGE_FORBIDDEN when the caller owns the listing, and 409 USAGE_PENDING_EXISTS when one is already open.',
     tags: ['HostTrades'],
     requiredPermissions: [PermissionEnum.HOST_TRADE_VIEW],
     requestParams: { slug: z.string().min(1) },
