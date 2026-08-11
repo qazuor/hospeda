@@ -107,6 +107,18 @@ export enum ServiceErrorCode {
     /** The actor owns the listing they are trying to review. HTTP 403. */
     SELF_REVIEW_FORBIDDEN = 'SELF_REVIEW_FORBIDDEN',
 
+    /**
+     * The actor owns the listing they are declaring a usage on. HTTP 403.
+     *
+     * The sibling of {@link SELF_REVIEW_FORBIDDEN}, one step earlier in the
+     * flow. Reviewing already required not owning the listing, but declaring did
+     * not — so an owner could open a usage on himself. It could never be
+     * confirmed (neither side is offered the button), leaving an unresolvable
+     * PENDING row, and declaring is the step that feeds `confirmedUsesCount` and
+     * `distinctHostsCount`: the two numbers the directory ranks providers by.
+     */
+    SELF_USAGE_FORBIDDEN = 'SELF_USAGE_FORBIDDEN',
+
     /** This host already reviewed this provider; one client, one voice. HTTP 409. */
     REVIEW_ALREADY_EXISTS = 'REVIEW_ALREADY_EXISTS',
 

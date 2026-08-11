@@ -434,6 +434,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
             case ServiceErrorCode.DECLARATION_SUSPENDED:
             case ServiceErrorCode.NO_CONFIRMED_USAGE:
             case ServiceErrorCode.SELF_REVIEW_FORBIDDEN:
+            case ServiceErrorCode.SELF_USAGE_FORBIDDEN:
                 statusCode = 403;
                 break;
             case ServiceErrorCode.PROVIDER_REVOKED:
@@ -587,6 +588,7 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.DECLARATION_SUSPENDED]: 403,
                 [ServiceErrorCode.NO_CONFIRMED_USAGE]: 403,
                 [ServiceErrorCode.SELF_REVIEW_FORBIDDEN]: 403,
+                [ServiceErrorCode.SELF_USAGE_FORBIDDEN]: 403,
                 [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
                 [ServiceErrorCode.PROVIDER_REVOKED]: 422
             };

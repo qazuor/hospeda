@@ -491,6 +491,7 @@ export class HostTradeUsageService extends BaseCrudService<
 
                 const provider = await this.requireProvider(validated.hostTradeId, ctx);
                 this.assertListingAcceptsDeclarations(provider);
+                this.assertHostIsNotTheOwner(provider, validatedActor.id);
                 await this.assertPairAcceptsDeclaration(
                     {
                         hostTradeId: validated.hostTradeId,
@@ -568,6 +569,8 @@ export class HostTradeUsageService extends BaseCrudService<
                     validated,
                     ctx
                 );
+
+                this.assertHostIsNotTheOwner(provider, hostUserId);
 
                 await this.assertPairAcceptsDeclaration(
                     {
@@ -1401,6 +1404,39 @@ export class HostTradeUsageService extends BaseCrudService<
      * UNIQUE index in the database (§7.1), so this is the friendly 409 in front
      * of a constraint violation, and the index does not care who opened it.
      */
+    /**
+     * Refuses a usage whose host IS the listing's owner.
+     *
+     * Shared by both declaration paths because the conflict is the same from
+     * either side: the QR channel takes the host from the session, the provider
+     * channels resolve him from a selector or an email, and all three can land
+     * on the owner. A host who later became a provider keeps being a host, so
+     * this is a real account shape (`host-provider@local.test`), not a
+     * hypothetical one.
+     *
+     * The mirror of `SELF_REVIEW_FORBIDDEN` one step earlier: reviewing already
+     * required not owning the listing, but declaring did not. Left open, an
+     * owner could file a usage on himself that NEITHER side can confirm — the
+     * provider panel offers no button for a host-declared row and the host view
+     * offers none for his own — leaving an unresolvable PENDING row that counts
+     * in "Usos registrados" and eventually ages into "Vencidos".
+     *
+     * @param provider - The listing being declared against.
+     * @param hostUserId - The resolved host, whatever channel produced him.
+     * @throws {ServiceError} `SELF_USAGE_FORBIDDEN` when they are the same person.
+     */
+    private assertHostIsNotTheOwner(
+        provider: { ownerUserId?: string | null },
+        hostUserId: string
+    ): void {
+        if (provider.ownerUserId && provider.ownerUserId === hostUserId) {
+            throw new ServiceError(
+                ServiceErrorCode.SELF_USAGE_FORBIDDEN,
+                'A provider cannot declare a benefit usage on their own listing'
+            );
+        }
+    }
+
     private async assertPairAcceptsDeclaration(
         pair: {
             hostTradeId: string;

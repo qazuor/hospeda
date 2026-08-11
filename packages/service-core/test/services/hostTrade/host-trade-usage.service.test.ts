@@ -296,6 +296,78 @@ const suspendedTrade = () =>
 const hostDeclaration = { hostTradeId: HT_ID, servicedAt: '2026-08-01' };
 const providerDeclaration = { hostTradeId: HT_ID, hostUserId: HOST_ID, servicedAt: '2026-08-01' };
 
+describe('guard — SELF_USAGE_FORBIDDEN', () => {
+    /**
+     * The dual-role account: owns the listing AND holds the host permission.
+     * Real and seeded (`host-provider@local.test`), not hypothetical — a host who
+     * became a provider keeps being a host.
+     */
+    const ownerAsHostActor = () =>
+        new ActorFactoryBuilder()
+            .withId(OWNER_ID)
+            .withPermissions([PermissionEnum.HOST_TRADE_VIEW])
+            .build();
+
+    // AC-17 already forbids reviewing your own listing (SELF_REVIEW_FORBIDDEN).
+    // Declaring a usage on it is the same conflict one step earlier, and it is
+    // the step that feeds `confirmedUsesCount` and `distinctHostsCount` — the
+    // two numbers the directory ranks providers by.
+
+    it('refuses the owner declaring on his own listing through the QR channel', async () => {
+        const { service, model } = buildService();
+
+        const result = await service.declareAsHost(
+            { hostTradeId: HT_ID, servicedAt: '2026-08-01' },
+            ownerAsHostActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SELF_USAGE_FORBIDDEN);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses the owner naming himself through the selector channel', async () => {
+        const { service, model } = buildService();
+        model.findLinkedHosts = vi.fn(async () => [OWNER_ID]);
+
+        const result = await service.declareAsProvider(
+            { hostTradeId: HT_ID, hostUserId: OWNER_ID, servicedAt: '2026-08-01' },
+            providerActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SELF_USAGE_FORBIDDEN);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses the owner naming his own email through the email channel', async () => {
+        const { service, model, userModel } = buildService();
+        userModel.findOne = vi.fn(async () => ({ id: OWNER_ID, email: 'duenio@example.com' }));
+
+        const result = await service.declareAsProvider(
+            {
+                hostTradeId: HT_ID,
+                hostEmail: 'duenio@example.com',
+                servicedAt: '2026-08-01'
+            },
+            providerActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.SELF_USAGE_FORBIDDEN);
+        expect(model.create).not.toHaveBeenCalled();
+    });
+
+    it('still allows an ordinary host, so the guard is about identity and not the listing', async () => {
+        const { service, model } = buildService();
+
+        const result = await service.declareAsHost(
+            { hostTradeId: HT_ID, servicedAt: '2026-08-01' },
+            hostActor()
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(model.create).toHaveBeenCalled();
+    });
+});
+
 describe('guard — PROVIDER_REVOKED', () => {
     it('refuses a host declaring on a revoked listing', async () => {
         const { service, model } = buildService({
