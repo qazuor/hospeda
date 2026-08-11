@@ -18,15 +18,19 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockDeclare, mockListOwnUsages } = vi.hoisted(() => ({
+const { mockDeclare, mockListOwnUsages, mockReplyToReview, mockUpdateReply } = vi.hoisted(() => ({
     mockDeclare: vi.fn(),
-    mockListOwnUsages: vi.fn()
+    mockListOwnUsages: vi.fn(),
+    mockReplyToReview: vi.fn(),
+    mockUpdateReply: vi.fn()
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     hostTradesApi: {
         declareUsageAsProvider: (...args: unknown[]) => mockDeclare(...args),
-        listOwnUsages: (...args: unknown[]) => mockListOwnUsages(...args)
+        listOwnUsages: (...args: unknown[]) => mockListOwnUsages(...args),
+        replyToReview: (...args: unknown[]) => mockReplyToReview(...args),
+        updateReply: (...args: unknown[]) => mockUpdateReply(...args)
     }
 }));
 
@@ -77,6 +81,8 @@ function renderUsages(overrides: Record<string, unknown> = {}) {
 beforeEach(() => {
     mockDeclare.mockReset();
     mockListOwnUsages.mockReset();
+    mockReplyToReview.mockReset();
+    mockUpdateReply.mockReset();
     mockDeclare.mockResolvedValue({ ok: true, data: { usage: makeUsage() } });
     mockListOwnUsages.mockResolvedValue({
         ok: true,
@@ -292,6 +298,118 @@ describe('ProviderReviewsPanel', () => {
         );
 
         expect(screen.getByText(/todavía no hay valoraciones/i)).toBeInTheDocument();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Valoraciones — answering (T-051)
+// ---------------------------------------------------------------------------
+
+describe('ProviderReviewsPanel — answering', () => {
+    /** A reply as the write endpoints hand it back: always PENDING. */
+    const SAVED_REPLY = {
+        id: 'reply-1',
+        reviewId: 'review-1',
+        content: 'Perdón por la demora, ya lo hablamos con el equipo.',
+        moderationState: 'PENDING',
+        reviewEditedAfterReply: false,
+        createdAt: '2026-08-11T00:00:00.000Z',
+        updatedAt: '2026-08-11T00:00:00.000Z'
+    };
+
+    it('restates the row as in review once the answer is sent (T-051)', async () => {
+        // Arrange — an unanswered review.
+        const user = userEvent.setup();
+        mockReplyToReview.mockResolvedValue({ ok: true, data: { reply: SAVED_REPLY } });
+        render(
+            <ProviderReviewsPanel
+                initialReviews={[reviewRow(null)]}
+                initialTotal={1}
+                locale="es"
+            />
+        );
+
+        // Act
+        await user.click(screen.getByRole('button', { name: /^responder$/i }));
+        await user.type(
+            screen.getByRole('textbox', { name: /tu respuesta/i }),
+            'Perdón por la demora, ya lo hablamos con el equipo.'
+        );
+        await user.click(screen.getByRole('button', { name: /enviar respuesta/i }));
+
+        // Assert — the state has to appear WITHOUT a reload. A provider who
+        // sends an answer and is left looking at "todavía no respondiste"
+        // concludes it failed and sends it again.
+        expect(await screen.findByText('En revisión')).toBeInTheDocument();
+        expect(screen.getByText(/ya lo hablamos con el equipo/i)).toBeInTheDocument();
+        expect(screen.queryByText(/todavía no respondiste/i)).not.toBeInTheDocument();
+    });
+
+    // The DROPPED REASON itself is asserted in `merge-saved-reply.test.ts`, not
+    // here: a stale reason is invisible in this render (the row only prints one
+    // while REJECTED, and a rewrite is always PENDING), so an assertion at this
+    // layer would pass whether or not the reason was cleared — it was tried, and
+    // the mutation survived. What IS observable here is the rejection LEAVING.
+    it('takes a rewritten reply out of the rejected state (AC-23)', async () => {
+        // Arrange — a REJECTED reply carrying the moderator's reason.
+        const user = userEvent.setup();
+        mockUpdateReply.mockResolvedValue({ ok: true, data: { reply: SAVED_REPLY } });
+        render(
+            <ProviderReviewsPanel
+                initialReviews={[
+                    reviewRow({
+                        id: 'reply-1',
+                        content: 'Respuesta vieja',
+                        moderationState: 'REJECTED',
+                        moderationReason: 'Incluía la dirección del anfitrión.',
+                        reviewEditedAfterReply: false,
+                        createdAt: '2026-08-02T00:00:00.000Z',
+                        updatedAt: '2026-08-02T00:00:00.000Z'
+                    })
+                ]}
+                initialTotal={1}
+                locale="es"
+            />
+        );
+
+        // Act
+        await user.click(screen.getByRole('button', { name: /editar tu respuesta/i }));
+        await user.clear(screen.getByRole('textbox', { name: /tu respuesta/i }));
+        await user.type(
+            screen.getByRole('textbox', { name: /tu respuesta/i }),
+            'Perdón por la demora, ya lo hablamos con el equipo.'
+        );
+        await user.click(screen.getByRole('button', { name: /guardar respuesta/i }));
+
+        // Assert — the row must stop announcing a rejection the edit undid.
+        expect(await screen.findByText('En revisión')).toBeInTheDocument();
+        expect(screen.queryByText('Rechazada')).not.toBeInTheDocument();
+        expect(screen.getByText(/ya lo hablamos con el equipo/i)).toBeInTheDocument();
+    });
+
+    it('offers editing rather than answering when a reply already exists', () => {
+        // Arrange + Act
+        render(
+            <ProviderReviewsPanel
+                initialReviews={[
+                    reviewRow({
+                        id: 'reply-1',
+                        content: 'Gracias por la devolución.',
+                        moderationState: 'APPROVED',
+                        moderationReason: null,
+                        reviewEditedAfterReply: false,
+                        createdAt: '2026-08-02T00:00:00.000Z',
+                        updatedAt: '2026-08-02T00:00:00.000Z'
+                    })
+                ]}
+                initialTotal={1}
+                locale="es"
+            />
+        );
+
+        // Assert — a second POST answers 409; the label must not invite it.
+        expect(screen.getByRole('button', { name: /editar tu respuesta/i })).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /^responder$/i })).not.toBeInTheDocument();
     });
 });
 

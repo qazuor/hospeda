@@ -227,6 +227,21 @@
                 "PENDING": "Em revisão",
                 "APPROVED": "Publicada",
                 "REJECTED": "Recusada"
+            },
+            "reply": {
+                "open": "Responder",
+                "edit": "Editar sua resposta",
+                "label": "Sua resposta",
+                "counter": "{{count}}/{{max}} · mínimo {{min}} caracteres",
+                "createNotice": "Revisamos antes de publicar, então ela não aparece no diretório imediatamente.",
+                "editNotice": "Se você editar, sua resposta volta para revisão e deixa de aparecer no diretório até aprovarmos de novo.",
+                "cancel": "Cancelar",
+                "send": "Enviar resposta",
+                "save": "Salvar resposta",
+                "errors": {
+                    "tooShort": "Sua resposta precisa ter pelo menos {{min}} caracteres.",
+                    "generic": "Não conseguimos salvar sua resposta. Tente de novo em instantes."
+                }
             }
         },
         "qr": {
