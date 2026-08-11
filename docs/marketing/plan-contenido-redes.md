@@ -575,6 +575,168 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 
 ---
 
+## C · ATRACCIÓN TURÍSTICA
+
+### Categoría 8 — Destinos
+
+La categoría de mayor volumen del plan, y la que más fácil se va de las manos. **Hay 22 destinos y 7 formatos posibles: eso son 154 placas.** No las hace nadie, y no hacen falta.
+
+La solución no es escribir 154 piezas en este documento, sino **diseñar 7 plantillas una sola vez** y rellenarlas por destino. Cada plantilla se diseña con calidad, y después producir una nueva es cambiar textos y fotos: media hora en vez de un día.
+
+#### Cómo se produce esta categoría
+
+1. **Se diseñan las 7 plantillas primero**, probándolas con un destino cualquiera hasta que queden bien.
+2. **Se aplican por tandas**, no todas a todos. La matriz de abajo dice qué le toca a cada destino.
+3. **La foto es el cuello de botella real**, no el diseño. Antes de arrancar hay que resolver de dónde salen las fotos de 22 lugares — ver la nota al final de la categoría.
+
+#### Matriz: qué se hace de cada destino
+
+| Grupo | Destinos | Qué se produce |
+|---|---|---|
+| **Principales** | Concepción del Uruguay, Colón, San José, Gualeguaychú, Villa Elisa, Federación, Concordia | Las 7 plantillas |
+| **Segunda tanda** | Chajarí, Villaguay, Gualeguay, Santa Ana, Villa Paranacito, Ibicuy | Presentación, Qué hacer, Dónde dormir |
+| **Resto** | Los demás | Solo Presentación |
+
+Así son unas 60 placas en total en vez de 154, y las que más rinden salen completas.
+
+#### Orden de publicación
+
+Uno o dos destinos por semana, arrancando por los principales. **Un destino se publica completo** —sus placas juntas o en días seguidos— y recién ahí se pasa al siguiente. Saltar de destino en destino diluye todo.
+
+Conviene acompañar la temporada: el destino termal en invierno, el de río en verano, el de carnaval antes de carnaval.
+
+---
+
+#### 8.1 · Presentación del destino — plantilla
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: *(nombre del destino)*
+- **Título**: *(la frase que define el lugar — "El río más lindo de Entre Ríos", "Termas y tranquilidad")*
+- **Cuerpo**: *(dos renglones: qué es y para quién)*
+- **Idea**: La placa de apertura de cada destino. Una foto que lo identifique de una, el nombre bien grande, y una frase. **La plantilla es siempre igual** —misma tipografía, mismo lugar del nombre, mismo tratamiento de la foto— para que los 22 destinos se lean como una colección. Lo único que cambia es la foto y el texto.
+- **Foto/s**: La imagen más reconocible del lugar. Si el destino tiene una postal obvia, esa.
+- **CTA**: Conocé *(destino)* en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 8.2 · Qué hacer en el destino — plantilla
+
+- **Prioridad**: 1
+- **Tipo**: Listado de puntos **y** Carrusel. Hay que hacer los dos.
+- **Aspect Ratio**: 4:5
+- **Tag Line**: *(nombre del destino)*
+- **Título**: 5 cosas para hacer en *(destino)*.
+- **Cuerpo**: *(una línea)*
+- **Items**: Los cinco lugares o actividades del destino. **Salen de los lugares ya cargados en la plataforma**, no de buscar en internet.
+- **Idea**: El formato que más se guarda de toda la categoría: la gente lo usa para planear. En la versión listado, los cinco con un ícono de Phosphor cada uno. En la versión carrusel, una foto por lugar. La versión carrusel rinde más pero necesita cinco fotos buenas; la de listado se puede hacer con una sola.
+- **Foto/s**: Una por lugar en la versión carrusel. Una general en la versión listado.
+- **CTA**: Descubrí *(destino)* en hospeda.com.ar
+- **Idioma**: Español
+- **De dónde sale el contenido**: los lugares de interés ya están cargados en la plataforma con su descripción. No hay que investigar nada, hay que entrar y elegir los cinco mejores.
+
+---
+
+#### 8.3 · Dónde dormir en el destino — plantilla
+
+- **Prioridad**: 1
+- **Tipo**: Carrusel (4 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: *(nombre del destino)*
+- **Título**: Dónde dormir en *(destino)*.
+- **Cuerpo**: Cabañas, casas y hoteles, todos en un mismo lugar.
+- **Items**: Tres o cuatro alojamientos reales del destino, con su foto y una línea de qué los distingue.
+- **Idea**: Es la plantilla que convierte, porque lleva directo a lo que vendemos. **Solo alojamientos publicados de verdad**, con permiso del dueño. Mostrar variedad —una cabaña, una casa, algo más grande— para que se vea que hay opciones.
+- **Foto/s**: Las fotos de los propios alojamientos, que ya están cargadas.
+- **CTA**: Mirá todos en hospeda.com.ar
+- **Idioma**: Español
+- **Beneficio doble**: al anfitrión que aparece le encanta y lo comparte, con lo cual la pieza llega sola a su círculo. Conviene avisarle antes de publicar.
+
+---
+
+#### 8.4 · Cómo llegar — plantilla
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: *(nombre del destino)*
+- **Título**: Cómo llegar a *(destino)*.
+- **Cuerpo**: *(las distancias desde las ciudades grandes)*
+- **Items**: Distancia y tiempo desde Buenos Aires, Rosario, Santa Fe, Paraná y las ciudades cercanas de la región.
+- **Idea**: Es la placa más útil y menos vistosa de la categoría, y por eso mismo se guarda: resuelve la primera pregunta de cualquiera que evalúa ir. Un mapita simple con las rutas y los tiempos al lado. Nada de adornos.
+- **Foto/s**: Ninguna. Mapa simple con distancias.
+- **CTA**: Armá tu escapada en hospeda.com.ar
+- **Idioma**: Español
+- **Ojo con los datos**: las distancias y los tiempos tienen que ser correctos. Un dato mal puesto en una placa que la gente guarda para viajar es de las cosas que peor caen.
+
+---
+
+#### 8.5 · El destino en cinco fotos — plantilla
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (5 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: *(nombre del destino)*
+- **Título**: *(destino)* en cinco fotos.
+- **Cuerpo**: *(una línea, o nada)*
+- **Items**: Cinco fotos del lugar, cada una con un pie corto.
+- **Idea**: La plantilla más barata de producir y la que mejor funciona en historias: son fotos lindas con poco texto encima. Casi no necesita diseño, necesita buenas fotos. Sirve para sostener la cuenta las semanas flojas.
+- **Foto/s**: Cinco del destino, variadas: un paisaje, un detalle, algo de gente, algo de comida, algo de noche.
+- **CTA**: Conocé *(destino)* en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 8.6 · El dato que no sabías — plantilla
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: *(nombre del destino)*
+- **Título**: *(el dato curioso, en una frase)*
+- **Cuerpo**: *(dos renglones que lo expliquen)*
+- **Idea**: Historia, curiosidad o anécdota del lugar. Es el formato que más comentarios genera, porque el que vive ahí lo corrige o lo completa — y eso es bueno, no malo. Diseño simple, la fuerza está en el dato.
+- **Foto/s**: Una foto histórica o del lugar del que se habla.
+- **CTA**: Descubrí *(destino)* en hospeda.com.ar
+- **Idioma**: Español
+- **Verificar antes de publicar**: un dato histórico mal contado en un pueblo chico te lo corrigen en diez minutos y en público. Chequearlo con alguien del lugar.
+
+---
+
+#### 8.7 · Cuál elegir — plantilla comparativa
+
+- **Prioridad**: 3
+- **Tipo**: Carrusel (3 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Para decidir
+- **Título**: ¿*(destino A)* o *(destino B)*?
+- **Cuerpo**: Los dos están buenísimos. Depende de qué busques.
+- **Items**:
+  1. "¿*(A)* o *(B)*?" — portada partida al medio, una foto de cada uno
+  2. "*(A)* si buscás…" — dos o tres características
+  3. "*(B)* si buscás…" — dos o tres características
+- **Idea**: Ayuda a decidir a quien ya sabe que quiere ir a la zona pero no sabe adónde. **Nunca decir que uno es mejor**: son distintos, para gente distinta. Comparaciones que tienen sentido: termas contra río, tranquilo contra movido, cerca contra lejos.
+- **Foto/s**: Una representativa de cada destino.
+- **CTA**: Elegí el tuyo en hospeda.com.ar
+- **Idioma**: Español
+- **Cuidado político**: en una región donde los municipios compiten por turismo, dejar mal parado a un pueblo es un problema real. El eje siempre es *"depende de qué busques"*, nunca *"este es mejor"*.
+
+---
+
+#### Nota de producción: las fotos
+
+**El cuello de botella de esta categoría no es el diseño, son las fotos.** Hacen falta imágenes buenas de 22 lugares, y sin eso no arranca nada. Tres caminos, de mejor a peor:
+
+1. **Fotos propias.** Salir a sacarlas. Es lo mejor y lo más caro en tiempo, pero quedan para siempre y son exclusivas.
+2. **Pedirlas.** Los municipios y las oficinas de turismo suelen tener bancos de fotos y las ceden a cambio de la mención. Es la vía más rápida para los 22. También sirve pedirle a la gente que mande las suyas — eso es la categoría 17.
+3. **Fotos de los alojamientos publicados.** Ya están cargadas y muchas muestran el entorno. Sirve para tapar agujeros, con permiso del dueño.
+
+**Nunca sacar fotos de internet sin permiso.** Además del problema legal, el fotógrafo de un pueblo chico reconoce su foto al toque, y ese es un conflicto que no vale la pena.
+
+---
+
 ### Categoría 13 — Confianza y testimonios
 
 La categoría que más convierte y la que más depende de material que hoy no tenemos. Por eso está partida en dos:
@@ -1097,7 +1259,7 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | B · Producto | 5. Gastronomía y experiencias | ⬜ pendiente |
 | B · Producto | 6. Auspiciantes, patrocinadores y redactores | ⬜ pendiente |
 | B · Producto | 7. Oficios y proveedores | ⬜ pendiente |
-| C · Atracción | 8. Destinos | ⬜ pendiente |
+| C · Atracción | 8. Destinos | ✅ 7 plantillas · ~60 placas a producir |
 | C · Atracción | 9. Lugares para visitar | ⬜ pendiente |
 | C · Atracción | 10. Eventos y agenda | ⬜ pendiente |
 | C · Atracción | 11. Gastronomía de la región | ⬜ pendiente |
