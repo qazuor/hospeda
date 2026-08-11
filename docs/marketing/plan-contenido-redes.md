@@ -596,18 +596,24 @@ Esto vale más que las placas. Sin un método para juntar testimonios, la catego
 
 ---
 
-#### 13.1 · La cara de los que estamos atrás
+#### 13.1 · Quién está atrás de Hospeda
 
 - **Prioridad**: 1
-- **Tipo**: Imagen única
+- **Tipo**: Carrusel (una placa por persona)
 - **Aspect Ratio**: 9:16 y 4:5
-- **Tag Line**: Quiénes somos
+- **Tag Line**: Quién está atrás
 - **Título**: Atrás de Hospeda hay gente, no una empresa.
-- **Cuerpo**: Nos podés escribir y te contestamos nosotros.
-- **Idea**: Se puede hacer hoy mismo, sin ningún cliente: es confianza pura, sin testimonios. Una foto real del equipo, sin producción de agencia, sin pose de foto corporativa. Nombres y nada más. En un mercado donde todos se conocen, la cara vale más que cualquier argumento.
-- **Foto/s**: Foto real del equipo. Natural, en un lugar de la región, no en una oficina. Que se vea gente de acá.
+- **Cuerpo**: Si escribís, te contesta una persona.
+- **Items**:
+  1. **Quien lleva Hospeda adelante** — nombre, foto, y una línea: *"Anfitrión hace años, como vos. Si escribís, te contesto yo."*
+  2. **Cada colaborador, uno por placa** — nombre, foto, y una línea con lo que aporta (las fotos, los textos, el diseño, lo que sea)
+- **Idea**: Se puede hacer hoy mismo, sin ningún cliente: es confianza pura, sin necesidad de testimonios. **La primera placa es la más importante y no cambia nunca** — es la cara de la marca. Las demás son las de quienes van dando una mano. Todas con la misma diagramación: foto grande, nombre, una sola línea. Nada de cargos ni títulos rimbombantes: lo que hace cada uno, dicho simple.
+- **Foto/s**: Fotos reales, naturales, en lugares de la región. La primera preferentemente en el alojamiento propio. **Nada de fotos de banco de imágenes ni poses de oficina** — se tiene que ver gente de acá.
 - **CTA**: Escribinos desde hospeda.com.ar
 - **Idioma**: Español
+- **Por qué carrusel y no una foto grupal**: los colaboradores van y vienen, algunos son por un tiempo. Con el carrusel se agrega o se saca una placa cuando cambia algo, sin rehacer la pieza entera. Una foto grupal, en cambio, queda desactualizada e incómoda de bajar el día que alguien se va. **Dejar los archivos separados y a mano** para poder recambiar placas sueltas.
+- **Cuidado con el peso**: la fuerza está en la primera placa. En un mercado donde todos se conocen, una persona con nombre y cara —a la que le podés escribir— convence más que cualquier estructura. Las placas de colaboradores suman calidez y agradecimiento, pero no deben hacer parecer una empresa grande que no es. Sin cargos, sin organigrama, sin la palabra "equipo" si no corresponde.
+- **Y si preguntan "¿y si se cansa?"**: eso no se contesta con más caras, se contesta con el argumento del rubro — *"alquilo hace años y esta herramienta la uso yo mismo todos los días"*. Va de la mano con la 12.15.
 
 ---
 
