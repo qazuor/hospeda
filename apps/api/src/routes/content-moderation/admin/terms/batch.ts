@@ -1,13 +1,14 @@
 /**
  * Admin batch import moderation terms endpoint
  */
-import { z } from '@hono/zod-openapi';
+
 import { createContentModerationTermSchema, PermissionEnum } from '@repo/schemas';
 import { ContentModerationTermService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
+import { z } from '../../../../utils/zod';
 
 const BatchImportResponseSchema = z.object({
     createdCount: z.number().int().nonnegative()

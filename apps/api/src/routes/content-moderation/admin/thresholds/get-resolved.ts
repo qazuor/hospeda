@@ -1,10 +1,11 @@
 /**
  * Admin get resolved threshold for context endpoint
  */
-import { z } from '@hono/zod-openapi';
+
 import { PermissionEnum } from '@repo/schemas';
 import { getThresholdForContext } from '@repo/service-core';
 import { createAdminRoute } from '../../../../utils/route-factory';
+import { z } from '../../../../utils/zod';
 
 const ResolvedThresholdSchema = z.object({
     context: z.string(),

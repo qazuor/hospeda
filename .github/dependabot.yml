@@ -126,17 +126,6 @@ updates:
       - dependency-name: '@ai-sdk/openai'
       - dependency-name: '@ai-sdk/anthropic'
       - dependency-name: 'ai'
-      # @hono/zod-openapi: 1.4.0 -> 1.5.x (a MINOR) changes the shape of the `z`
-      # re-export. apps/api fails typecheck with six errors: z.ZodObject stops
-      # being usable on the right-hand side of `instanceof` (TS2358 in
-      # src/utils/openapi-schema.ts) and callback params lose inference (TS7006
-      # in base-schemas.ts, routes/feedback/public/submit.ts and two test files).
-      # Four of the five files import `z` straight from this package. The fix is
-      # not cosmetic: openapi-schema.ts deliberately introspects Zod internals
-      # (_def.typeName / _def.shape) because no public API covers it, so the
-      # migration has to re-establish that against the new typings.
-      # Owner: HOS-430.
-      - dependency-name: '@hono/zod-openapi'
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).

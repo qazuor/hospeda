@@ -8,12 +8,12 @@
  * @module routes/billing/public/listPlans
  */
 
-import { z } from '@hono/zod-openapi';
 import { billingPlans, getDb, ne } from '@repo/db';
 import { ProductDomainEnum } from '@repo/schemas';
 import { PlanService } from '../../../services/plan.service';
 import { apiLogger } from '../../../utils/logger';
 import { createSimpleRoute } from '../../../utils/route-factory.js';
+import { z } from '../../../utils/zod';
 
 /**
  * Resolve the set of plan slugs that do NOT belong to the accommodation domain

@@ -5,7 +5,7 @@
  * Contains Zod v4 schemas that mirror @repo/feedback client schemas,
  * field length limits, and magic byte validation for file attachments.
  */
-import { z } from '@hono/zod-openapi';
+import { z } from '../../../utils/zod';
 
 // ─── Field limits (shared between Zod schema and sanitization) ───────────────
 

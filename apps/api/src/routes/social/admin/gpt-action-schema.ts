@@ -27,7 +27,7 @@
  * @see SPEC-254 T-030
  */
 
-import { createRoute, OpenAPIHono, z } from '@hono/zod-openapi';
+import { createRoute, OpenAPIHono } from '@hono/zod-openapi';
 import {
     CreateSocialDraftBaseSchema,
     CreateSocialDraftResponseSchema,
@@ -36,6 +36,7 @@ import {
 } from '@repo/schemas';
 import { env } from '../../../utils/env';
 import { createAdminRoute } from '../../../utils/route-factory';
+import { z } from '../../../utils/zod';
 
 // ---------------------------------------------------------------------------
 // GPT-action-schema override for openaiFileIdRefs

@@ -17,9 +17,10 @@
  * DB-backed e2e config.
  */
 
-import { OpenAPIHono, z } from '@hono/zod-openapi';
+import { OpenAPIHono } from '@hono/zod-openapi';
 import { describe, expect, it } from 'vitest';
 import { createCRUDRoute } from '../../src/utils/route-factory';
+import { z } from '../../src/utils/zod';
 
 const ResponseSchema = z.object({ ok: z.boolean() });
 

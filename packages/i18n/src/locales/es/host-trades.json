@@ -18,7 +18,16 @@
     "card": {
         "is24h": "Disponible 24hs",
         "benefit": "Beneficio para hosts",
-        "contact": "Contactar"
+        "contact": "Contactar",
+        "stats": {
+            "ratingLabel": "{{rating}} de 5 estrellas",
+            "reviews_one": "{{count}} valoración",
+            "reviews_other": "{{count}} valoraciones",
+            "uses_one": "{{count}} uso",
+            "uses_other": "{{count}} usos",
+            "hosts_one": "{{count}} anfitrión",
+            "hosts_other": "{{count}} anfitriones"
+        }
     },
     "categories": {
         "CERRAJERIA": "Cerrajería",

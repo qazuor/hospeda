@@ -45,7 +45,12 @@ vi.mock('@/lib/i18n', () => ({
                     'No hay proveedores disponibles para tus destinos por ahora.'
             };
             return labels[key] ?? fallback ?? key;
-        }
+        },
+        // The card reads `tPlural` for its stats line (T-052). These fixtures
+        // carry no aggregates, so it is never called today — but leaving it out
+        // would turn the first fixture that gains one into a crash rather than
+        // a readable failure.
+        tPlural: (key: string, count: number) => `${key}:${count}`
     })
 }));
 

@@ -2,7 +2,7 @@
  * Admin update accommodation review endpoint
  * Allows admins to update any accommodation review
  */
-import type { z } from '@hono/zod-openapi';
+
 import {
     AccommodationReviewAdminSchema,
     AccommodationReviewIdSchema,
@@ -14,6 +14,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createAdminRoute } from '../../../../utils/route-factory';
+import type { z } from '../../../../utils/zod';
 
 const accommodationReviewService = new AccommodationReviewService({ logger: apiLogger });
 
