@@ -575,6 +575,179 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 
 ---
 
+### Categoría 14 — Tutoriales y ayuda
+
+Piezas que enseñan a usar la plataforma. Sirven dos veces: convencen al que duda porque le muestran que es fácil, y después se reusan como respuesta cuando alguien pregunta cómo se hace. Son las que más se guardan y se reenvían.
+
+**Cómo se arman todos**: capturas de pantalla reales, pasos numerados, un paso por placa, poco texto. Si un paso necesita un párrafo para explicarse, el problema está en la plataforma, no en la placa — vale la pena avisarlo.
+
+**Cuidado con el envejecimiento**: cuando la interfaz cambia, estos tutoriales quedan viejos y confunden más de lo que ayudan. Conviene revisarlos cada tanto y dejar los archivos a mano para poder recambiar una captura sin rehacer todo.
+
+---
+
+#### 14.1 · Cómo publicar tu alojamiento
+
+- **Prioridad**: 1
+- **Tipo**: Carrusel (6 imágenes)
+- **Aspect Ratio**: 4:5 y 2:3
+- **Tag Line**: Paso a paso
+- **Título**: Publicá tu alojamiento en 5 pasos.
+- **Cuerpo**: Es más corto de lo que pensás. Te lo mostramos entero.
+- **Items**:
+  1. **Portada** — "Publicá tu alojamiento en 5 pasos"
+  2. **Creá tu cuenta** — "Con tu mail. Elegís el plan y arrancás la prueba."
+  3. **Cargá tu propiedad** — "A mano o pegando el link de otra plataforma para que se complete sola."
+  4. **Sumá las fotos** — "Las que ya tenés. Después las mejorás cuando quieras."
+  5. **Contá qué ofrecés** — "Comodidades, ubicación y las preguntas que siempre te hacen."
+  6. **Publicá** — "Listo. Ya te pueden encontrar y escribir."
+- **Idea**: Es la pieza más importante de esta categoría y la que más se va a reenviar por WhatsApp a dueños indecisos. La clave es que se vea **corto**: numeración bien visible arriba, una captura real por paso, y una sola línea de texto. Si el diseñador siente que necesita más texto para que se entienda, mejor sacar el paso que agrandar el bloque.
+- **Foto/s**: Capturas de pantalla reales de cada paso del alta, tomadas recorriendo el proceso de verdad.
+- **CTA**: Empezá ahora en hospeda.com.ar
+- **Idioma**: Español
+- **Antes de diseñar**: los pasos de arriba son la secuencia lógica, no necesariamente los nombres exactos de las pantallas. Hay que recorrer el alta real —que es lo que el diseñador tiene que hacer igual para sacar las capturas— y ajustar los títulos a lo que dice la plataforma. Si el alta tiene más de 5 pasos reales, se agrupan; si tiene menos, mejor todavía y se cambia el título.
+
+---
+
+#### 14.2 · Importá tu ficha en 10 segundos
+
+- **Prioridad**: 1
+- **Tipo**: Carrusel (3 imágenes)
+- **Aspect Ratio**: 4:5 y 2:3
+- **Tag Line**: No empieces de cero
+- **Título**: Pegá el link y listo.
+- **Cuerpo**: Si ya publicaste tu alojamiento en otro lado, no lo cargues de nuevo.
+- **Items**:
+  1. "¿Ya estás publicado en otro lado?" — logos de Google y Mercado Libre
+  2. "Copiá el link y pegalo acá." — la pantalla de importación con la dirección pegada
+  3. "Tu ficha, cargada sola." — la ficha completa que quedó
+- **Idea**: La promesa es el ahorro de tiempo, así que el carrusel tiene que sentirse veloz: tres placas, poquísimo texto, mucho blanco. La fuerza está en el contraste entre lo poco que se hace en el paso 2 y lo mucho que aparece en el paso 3 — que la ficha final se vea completa y linda.
+- **Foto/s**: Capturas reales del importador y de la ficha resultante.
+- **CTA**: Importá tu ficha en hospeda.com.ar
+- **Idioma**: Español
+- **Marcas**: acá **no se nombran Airbnb ni Booking**. Se dice "Google, Mercado Libre y otras plataformas de alquiler".
+
+---
+
+#### 14.3 · Cómo conectar tu calendario
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (4 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Paso a paso
+- **Título**: Conectá tu calendario y olvidate.
+- **Cuerpo**: Se hace una sola vez y después trabaja solo.
+- **Items**:
+  1. "Entrá a tu alojamiento y buscá Calendario"
+  2. "Elegí qué querés conectar" — Google, Airbnb, Booking u otro
+  3. "Autorizá el acceso" — la pantalla de permiso
+  4. "Listo: tus fechas ocupadas ya se bloquean solas"
+- **Idea**: Cuatro capturas reales, numeradas. Es un tutorial de algo que suena técnico y no lo es — el tono tiene que bajar el miedo, no lucirse. La última placa es la importante: mostrar el calendario ya sincronizado, con fechas bloqueadas, para que se vea el resultado.
+- **Foto/s**: Capturas reales del proceso de conexión.
+- **CTA**: Conectá tu calendario en hospeda.com.ar
+- **Idioma**: Español
+- **Marcas**: acá **sí se nombran** Google, Airbnb y Booking.
+
+---
+
+#### 14.4 · Cómo traer tus opiniones de Google
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (3 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Paso a paso
+- **Título**: Traé las estrellas que ya te ganaste.
+- **Cuerpo**: Se conectan una vez y quedan visibles en tu ficha.
+- **Items**:
+  1. "Buscá Reputación en tu alojamiento"
+  2. "Conectá tu perfil de Google"
+  3. "Tus estrellas ya se ven en tu ficha"
+- **Idea**: El resultado es lo que vende, así que la tercera placa tiene que ser la más trabajada: la ficha con las estrellas visibles, bien destacadas. Las dos primeras son puro trámite y van simples.
+- **Foto/s**: Capturas reales del proceso y de una ficha con las opiniones ya conectadas.
+- **CTA**: Conectá tus opiniones en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 14.5 · Cómo crear una oferta
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (3 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Paso a paso
+- **Título**: Armá una oferta en dos minutos.
+- **Cuerpo**: Para mover esas fechas que te están quedando vacías.
+- **Items**:
+  1. "Entrá a Promociones en tu alojamiento"
+  2. "Poné el descuento y las fechas"
+  3. "Tu ficha aparece destacada en la búsqueda"
+- **Idea**: Igual que la 14.4, la última placa es la que importa: la grilla de resultados con tu ficha resaltada entre las demás. Ahí está el premio.
+- **Foto/s**: Capturas reales del panel de ofertas y del listado con la oferta activa.
+- **CTA**: Creá tu oferta en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 14.6 · Cómo sacarle mejores fotos a tu alojamiento
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (6 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Consejos de anfitrión a anfitrión
+- **Título**: Las fotos venden más que el precio.
+- **Cuerpo**: Seis cosas que aprendimos sacándole fotos a nuestro propio alojamiento.
+- **Items**:
+  1. **Portada** — "Las fotos venden más que el precio"
+  2. **Luz de mañana o de tarde** — "El sol del mediodía quema todo. Sacá temprano o cerca del atardecer."
+  3. **Ordená antes** — "Cama tendida, mesada vacía, cortinas abiertas. Dos minutos que cambian todo."
+  4. **Desde la puerta** — "La primera foto es la que se ve en el listado: que muestre el ambiente entero."
+  5. **Mostrá lo que te diferencia** — "La galería, la parrilla, el árbol, la vista. Eso es lo que te eligen."
+  6. **No mientas con el ángulo** — "Si la foto promete más de lo que hay, la queja llega igual."
+- **Idea**: Esta no enseña a usar la plataforma: enseña el oficio, y por eso construye más confianza que cualquier placa de producto. Lo ideal es ilustrarla con fotos propias — un antes y después real de un alojamiento nuestro. Se puede armar cada placa partida al medio: la foto mal sacada y la bien sacada, del mismo lugar.
+- **Foto/s**: Pares de fotos del mismo ambiente, una mal y una bien. **Fotos propias**: si son de banco de imágenes la pieza pierde toda la autoridad, que es justamente lo que la hace valiosa.
+- **CTA**: Sumá tu propiedad en hospeda.com.ar
+- **Idioma**: Español
+- **Por qué vale la pena**: es la pieza que mejor combina con el argumento de que somos del rubro (12.15). No vende la plataforma, regala algo útil, y el que la guarda ya nos escucha distinto cuando después le hablamos de publicar.
+
+---
+
+#### 14.7 · Cómo buscar sin pelearte con los filtros
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (3 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Para el que viaja
+- **Título**: Pedilo como lo dirías en voz alta.
+- **Cuerpo**: El buscador entiende lo que escribís, no hace falta que sepas los términos.
+- **Items**:
+  1. "Escribí lo que buscás" — *cabaña con pileta para 4 cerca del río*
+  2. "Te muestra lo que encontró" — los resultados reales
+  3. "Ajustá si querés" — los filtros, para afinar
+- **Idea**: Tres capturas reales, con la búsqueda escrita bien visible en la primera. Es el mejor tutorial para el público turista porque muestra algo que ninguna otra plataforma de la zona tiene.
+- **Foto/s**: Capturas reales del buscador y sus resultados.
+- **CTA**: Probalo en hospeda.com.ar
+- **Idioma**: Español, inglés y portugués
+
+---
+
+#### 14.8 · Cómo guardar y comparar
+
+- **Prioridad**: 3
+- **Tipo**: Carrusel (3 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Para el que viaja
+- **Título**: Guardá los que te gustan y compará al final.
+- **Cuerpo**: Sin capturas de pantalla ni mensajes a vos mismo.
+- **Items**:
+  1. "Tocá el corazón en los que te gustan"
+  2. "Se guardan todos juntos en tu cuenta"
+  3. "Compará lado a lado y decidí"
+- **Idea**: Es la pieza que mejor justifica crearse una cuenta, así que el mensaje real es ese aunque no lo diga. La tercera placa —la comparación lado a lado— tiene que verse clara y ordenada: ahí está el motivo para registrarse.
+- **Foto/s**: Capturas reales de favoritos y del comparador.
+- **CTA**: Creá tu cuenta gratis en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
 ## Definiciones tomadas
 
 Decisiones ya cerradas. Se respetan salvo aviso.
@@ -613,7 +786,7 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | C · Atracción | 11. Gastronomía de la región | ⬜ pendiente |
 | D · Conversión | 12. Sumar alojamientos y negocios | ✅ 17 piezas |
 | D · Conversión | 13. Confianza y testimonios | ⬜ pendiente |
-| D · Conversión | 14. Tutoriales y ayuda | ⬜ pendiente (acá va el instructivo de carga de alojamientos) |
+| D · Conversión | 14. Tutoriales y ayuda | ✅ 8 piezas |
 | E · Recurrentes | 15. Campañas | ⬜ pendiente |
 | E · Recurrentes | 16. Novedades | ⬜ pendiente |
 | E · Recurrentes | 17. Pedidos de colaboración | ⬜ pendiente |
