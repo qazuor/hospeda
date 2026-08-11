@@ -1632,6 +1632,202 @@ Para el resto, alcanza con la presentación y con aparecer en las piezas de "dó
 
 ---
 
+### Categoría 9 — Lugares para visitar
+
+Piezas dedicadas a **un lugar concreto**, no a un destino entero. La diferencia con la categoría 8 importa: allá se presenta una ciudad, acá se cuenta un lugar puntual con la profundidad que no entra en un listado.
+
+Sirve para dos cosas: es el contenido que más se guarda y comparte —a la gente le gusta descubrir lugares— y es el que mejor posiciona en buscadores, porque la gente busca "Palacio San José" mucho más que "turismo en Entre Ríos".
+
+**Los lugares grandes van uno por uno**; el resto usa la plantilla del final.
+
+---
+
+#### 9.1 · Parque Nacional El Palmar
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única **y** Carrusel (5 imágenes)
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Entre Colón y Ubajay
+- **Título**: El palmar de yatay más grande del mundo.
+- **Cuerpo**: Ocho mil hectáreas de palmeras, monte y playas sobre el río Uruguay.
+- **Idea**: Es el atractivo natural más importante de la provincia y visualmente el más impactante: las palmeras al atardecer son una imagen que no tiene nadie más. Foto a sangre, poco texto.
+- **Foto/s**: Las palmeras yatay a contraluz, al atardecer.
+- **CTA**: Buscá dónde quedarte cerca en hospeda.com.ar
+- **Idioma**: Español, inglés y portugués
+- **Nota**: es de los pocos lugares con potencial de interés fuera del país. Vale hacerla en los tres idiomas.
+
+---
+
+#### 9.2 · Palacio San José
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única **y** Carrusel (5 imágenes)
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Cerca de Caseros
+- **Título**: La casa de Urquiza tenía agua corriente antes que Buenos Aires.
+- **Cuerpo**: El palacio del primer presidente constitucional, hoy museo y monumento nacional. La entrada y la visita guiada son gratis.
+- **Idea**: El dato del título es lo que hace que la pieza se comparta — es historia concreta, no "patrimonio histórico". Que se vean los patios y la escala del edificio.
+- **Foto/s**: Los patios del palacio, o la fachada.
+- **CTA**: Buscá dónde quedarte cerca en hospeda.com.ar
+- **Idioma**: Español
+- **Verificar**: que la entrada siga siendo gratuita y los días de apertura, antes de publicar. Cierra los lunes.
+
+---
+
+#### 9.3 · Castillo San Carlos
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Concordia
+- **Título**: Las ruinas de un castillo francés, en Entre Ríos.
+- **Cuerpo**: Cuentan que Saint-Exupéry pasó por acá en 1929 y que algo de El Principito salió de esta visita.
+- **Idea**: Es el lugar con mejor historia de toda la provincia y casi nadie lo conoce. **El "cuentan que" es obligatorio**: la relación con El Principito es leyenda local, no hecho documentado, y presentarla como certeza es un error que alguien va a señalar.
+- **Foto/s**: Las ruinas entre los árboles del parque, con luz de tarde.
+- **CTA**: Conocé Concordia en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 9.4 · Banco Pelay
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Concepción del Uruguay
+- **Título**: La playa de río más extensa de Sudamérica.
+- **Cuerpo**: A cinco kilómetros del centro, con parrillas, sombra y espacio para todos.
+- **Idea**: El dato del título es fuerte y verificable, así que se usa tal cual. Foto panorámica que muestre la extensión — el argumento es el tamaño.
+- **Foto/s**: Banco Pelay a lo ancho, en verano.
+- **CTA**: Buscá dónde quedarte en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 9.5 · El delta entrerriano
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (5 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Villa Paranacito e Ibicuy
+- **Título**: Acá las casas están sobre pilotes y se anda en lancha.
+- **Cuerpo**: El delta entrerriano, a menos de tres horas de Buenos Aires.
+- **Idea**: El contraste con lo que la gente espera de Entre Ríos es el gancho: nadie asocia la provincia con casas sobre el agua. Las fotos hacen todo el trabajo.
+- **Foto/s**: Casas sobre pilotes, arroyos, lanchas, monte cerrado.
+- **CTA**: Conocé el delta en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 9.6 · Pueblo Liebig
+
+- **Prioridad**: 3
+- **Tipo**: Carrusel (5 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Cerca de Colón
+- **Título**: Un pueblo inglés de 1903, intacto.
+- **Cuerpo**: Lo levantó una compañía inglesa alrededor de un frigorífico. Las casas de los obreros y los chalets de los jefes siguen ahí.
+- **Idea**: Funciona como circuito: el frigorífico, las filas de casas, los chalets, la capilla y el monumento al corned beef. Cada placa un punto del recorrido.
+- **Foto/s**: El frigorífico y las casas, con luz que resalte el ladrillo.
+- **CTA**: Conocé Pueblo Liebig en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 9.7 · Un lugar por semana — plantilla
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: *(la localidad)*
+- **Título**: *(el nombre del lugar)*
+- **Subtítulo**: *(qué es, en una línea)*
+- **Cuerpo**: *(dos renglones: por qué vale la pena y dónde queda)*
+- **Idea**: Plantilla para todos los lugares que no tienen pieza propia: los balnearios, los museos, las reservas, las estaciones de tren. **Sale de los lugares ya cargados en la plataforma**, que tienen su descripción hecha. Es la forma más barata de sostener la categoría todo el año.
+- **Foto/s**: Del lugar.
+- **CTA**: Conocé *(localidad)* en hospeda.com.ar
+- **Idioma**: Español
+- **De dónde salen**: de los puntos de interés cargados en la plataforma y de las listas de atracciones de cada destino en la categoría 8. Hay material para más de un año publicando uno por semana.
+
+---
+
+### Categoría 11 — Gastronomía de la región
+
+**No es para los restaurantes: es para el que viaja.** Qué se come en el Litoral, qué probar en cada lugar, qué platos son de acá. La categoría 5 le habla al dueño del restaurante; esta le habla a quien va a comer.
+
+Es contenido barato de producir, se comparte mucho y despierta ganas de viajar mejor que casi cualquier foto de paisaje.
+
+**Y tiene un beneficio directo**: cada pieza puede mencionar restaurantes reales publicados en la plataforma, que la comparten.
+
+---
+
+#### 11.1 · Los pescados de río
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (5 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Comer en el Litoral
+- **Título**: Si venís al Litoral, comé pescado de río.
+- **Cuerpo**: Surubí, boga, dorado, patí. Cada uno tiene su forma de prepararlo.
+- **Items**: Un pescado por placa, con cómo se come y dónde probarlo.
+- **Idea**: Es el plato identitario de la región y mucha gente de afuera no lo conoce. Fotos de comida bien hechas, cercanas, con vapor si se puede.
+- **Foto/s**: Platos servidos en restaurantes de la zona. Con permiso, y mencionándolos.
+- **CTA**: Buscá dónde comer en hospeda.com.ar
+- **Idioma**: Español
+- **Verificar**: que las especies mencionadas se puedan pescar y consumir legalmente. Igual que en la campaña de pesca, hay vedas.
+
+---
+
+#### 11.2 · El chajá y los dulces
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Comer en el Litoral
+- **Título**: Lo dulce del Litoral.
+- **Subtítulo**: Chajá, dulce de leche, cítricos y miel.
+- **Cuerpo**: Lo que te llevás de recuerdo y se te termina antes de llegar a casa.
+- **Idea**: Contenido liviano, muy compartible, ideal para historias. Foto de comida bien iluminada, cercana.
+- **Foto/s**: Postres y dulces regionales.
+- **CTA**: Descubrí la región en hospeda.com.ar
+- **Idioma**: Español
+- **Verificar**: el origen de cada producto antes de atribuirlo. El chajá es de Paysandú, del otro lado del río — si se menciona, decirlo bien o no incluirlo.
+
+---
+
+#### 11.3 · Dónde comer en cada destino — plantilla
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (4 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: *(la localidad)*
+- **Título**: Dónde comer en *(localidad)*.
+- **Cuerpo**: Tres lugares para probar cuando vayas.
+- **Items**: Tres restaurantes reales publicados en la plataforma, con su foto y qué pedir en cada uno.
+- **Idea**: Es el equivalente gastronómico de la 8.36 ("dónde dormir"). **Solo restaurantes publicados de verdad**, con permiso. El que aparece la comparte con su clientela, así que la pieza se distribuye sola.
+- **Foto/s**: De los propios restaurantes, ya cargadas en sus fichas.
+- **CTA**: Mirá todos en hospeda.com.ar
+- **Idioma**: Español
+- **Requisito**: necesita que haya restaurantes publicados en ese destino. Arrancar por las localidades donde ya haya, no forzarlo.
+
+---
+
+#### 11.4 · La parrilla del Litoral
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Comer en el Litoral
+- **Título**: Acá el asado se hace con leña, no con carbón.
+- **Cuerpo**: Y se toma con lo que haya, mientras esté frío.
+- **Idea**: Pieza de identidad más que de información. Funciona en historias y genera comentarios de los locales, que es lo que se busca. Tono liviano, con humor.
+- **Foto/s**: Una parrilla encendida, real, en un patio o en una costanera.
+- **CTA**: hospeda.com.ar
+- **Idioma**: Español
+- **Verificar con alguien de la zona**: si lo de la leña es una generalización que no se sostiene, cambiar el título. Una afirmación de identidad mal puesta la corrigen en los comentarios al toque.
+
+---
+
 ### Categoría 10 — Eventos y agenda
 
 La categoría de mayor frecuencia del plan: es la que llena el calendario semanal y sostiene la cuenta cuando no hay nada nuevo que anunciar.
@@ -2892,9 +3088,9 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | B · Producto | 6. Marcas, patrocinadores y redactores | ✅ 3 piezas |
 | B · Producto | 7. Oficios y proveedores | ✅ 2 piezas |
 | C · Atracción | 8. Destinos | ✅ 35 piezas escritas + 5 plantillas |
-| C · Atracción | 9. Lugares para visitar | ⬜ pendiente |
+| C · Atracción | 9. Lugares para visitar | ✅ 7 piezas |
 | C · Atracción | 10. Eventos y agenda | ✅ 5 plantillas |
-| C · Atracción | 11. Gastronomía de la región | ⬜ pendiente |
+| C · Atracción | 11. Gastronomía de la región | ✅ 4 piezas |
 | D · Conversión | 12. Sumar alojamientos y negocios | ✅ 17 piezas |
 | D · Conversión | 13. Confianza y testimonios | ✅ 7 piezas |
 | D · Conversión | 14. Tutoriales y ayuda | ✅ 7 piezas |
