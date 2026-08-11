@@ -687,30 +687,7 @@ Piezas que enseñan a usar la plataforma. Sirven dos veces: convencen al que dud
 
 ---
 
-#### 14.6 · Cómo sacarle mejores fotos a tu alojamiento
-
-- **Prioridad**: 2
-- **Tipo**: Carrusel (6 imágenes)
-- **Aspect Ratio**: 4:5
-- **Tag Line**: Consejos de anfitrión a anfitrión
-- **Título**: Las fotos venden más que el precio.
-- **Cuerpo**: Seis cosas que aprendimos sacándole fotos a nuestro propio alojamiento.
-- **Items**:
-  1. **Portada** — "Las fotos venden más que el precio"
-  2. **Luz de mañana o de tarde** — "El sol del mediodía quema todo. Sacá temprano o cerca del atardecer."
-  3. **Ordená antes** — "Cama tendida, mesada vacía, cortinas abiertas. Dos minutos que cambian todo."
-  4. **Desde la puerta** — "La primera foto es la que se ve en el listado: que muestre el ambiente entero."
-  5. **Mostrá lo que te diferencia** — "La galería, la parrilla, el árbol, la vista. Eso es lo que te eligen."
-  6. **No mientas con el ángulo** — "Si la foto promete más de lo que hay, la queja llega igual."
-- **Idea**: Esta no enseña a usar la plataforma: enseña el oficio, y por eso construye más confianza que cualquier placa de producto. Lo ideal es ilustrarla con fotos propias — un antes y después real de un alojamiento nuestro. Se puede armar cada placa partida al medio: la foto mal sacada y la bien sacada, del mismo lugar.
-- **Foto/s**: Pares de fotos del mismo ambiente, una mal y una bien. **Fotos propias**: si son de banco de imágenes la pieza pierde toda la autoridad, que es justamente lo que la hace valiosa.
-- **CTA**: Sumá tu propiedad en hospeda.com.ar
-- **Idioma**: Español
-- **Por qué vale la pena**: es la pieza que mejor combina con el argumento de que somos del rubro (12.15). No vende la plataforma, regala algo útil, y el que la guarda ya nos escucha distinto cuando después le hablamos de publicar.
-
----
-
-#### 14.7 · Cómo buscar sin pelearte con los filtros
+#### 14.6 · Cómo buscar sin pelearte con los filtros
 
 - **Prioridad**: 2
 - **Tipo**: Carrusel (3 imágenes)
@@ -729,7 +706,7 @@ Piezas que enseñan a usar la plataforma. Sirven dos veces: convencen al que dud
 
 ---
 
-#### 14.8 · Cómo guardar y comparar
+#### 14.7 · Cómo guardar y comparar
 
 - **Prioridad**: 3
 - **Tipo**: Carrusel (3 imágenes)
@@ -745,6 +722,195 @@ Piezas que enseñan a usar la plataforma. Sirven dos veces: convencen al que dud
 - **Foto/s**: Capturas reales de favoritos y del comparador.
 - **CTA**: Creá tu cuenta gratis en hospeda.com.ar
 - **Idioma**: Español
+
+---
+
+### Categoría 18 — De anfitrión a anfitrión
+
+**Una serie, no piezas sueltas.** Consejos de oficio para el que alquila: cómo sacar mejores fotos, cómo poner el precio, cómo recibir, qué hacer cuando algo sale mal. No hablan de Hospeda ni venden nada.
+
+Por qué es la categoría más valiosa del plan:
+
+- **No la puede copiar una plataforma grande**, porque ellos no alquilan. Nosotros sí, hace años.
+- **No envejece**: no depende de la interfaz ni de los precios. Una pieza sirve tres años.
+- **Se guarda y se reenvía** entre anfitriones, que es exactamente el público que queremos.
+- **Construye autoridad**: el que aprendió algo con nosotros escucha distinto cuando después le hablamos de publicar.
+
+**Formato de la serie**: carrusel, misma identidad visual en todas, numeradas (#1, #2, #3…) para que se lean como colección. Portada + 4 o 5 consejos + cierre. El tono es de colega, nunca de experto: *"esto lo aprendimos a los golpes"* funciona mejor que *"los 5 secretos del anfitrión exitoso"*.
+
+**Cadencia sugerida**: una por semana o cada quince días. Es la categoría que sostiene la cuenta cuando no hay nada nuevo que anunciar.
+
+> ⚠️ **Los consejos de abajo hay que corregirlos con la experiencia real.** Están escritos desde afuera del oficio y suenan razonables, pero el que alquila hace años sabe cuáles son de verdad los errores que se cometen y cuáles son consejos de manual. **Revisar cada uno y reemplazar los que no coincidan con lo que realmente les pasó.** Un consejo que suena a copiado de internet arruina toda la serie, porque el valor de esta categoría es que sea verdadera.
+
+---
+
+#### 18.1 · Las fotos venden más que el precio
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (6 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: De anfitrión a anfitrión #1
+- **Título**: Las fotos venden más que el precio.
+- **Cuerpo**: Seis cosas que aprendimos sacándole fotos a nuestro propio alojamiento.
+- **Items**:
+  1. **Portada** — "Las fotos venden más que el precio"
+  2. **Luz de mañana o de tarde** — "El sol del mediodía quema todo. Sacá temprano o cerca del atardecer."
+  3. **Ordená antes** — "Cama tendida, mesada vacía, cortinas abiertas. Dos minutos que cambian todo."
+  4. **Desde la puerta** — "La primera foto es la que se ve en el listado: que muestre el ambiente entero."
+  5. **Mostrá lo que te diferencia** — "La galería, la parrilla, el árbol, la vista. Eso es lo que te eligen."
+  6. **No mientas con el ángulo** — "Si la foto promete más de lo que hay, la queja llega igual."
+- **Idea**: Cada placa partida al medio: la foto mal sacada y la bien sacada, del mismo lugar. El contraste enseña más que el texto.
+- **Foto/s**: Pares de fotos del mismo ambiente, una mal y una bien. **Fotos propias**: si son de banco de imágenes la pieza pierde la autoridad que la hace valiosa.
+- **CTA**: Seguinos para más consejos · hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 18.2 · Qué escribir en la descripción
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (6 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: De anfitrión a anfitrión #2
+- **Título**: Nadie lee "ambiente cálido y acogedor".
+- **Cuerpo**: Lo que el huésped busca de verdad antes de decidir.
+- **Items**:
+  1. **Portada** — "Nadie lee 'ambiente cálido y acogedor'"
+  2. **Datos antes que adjetivos** — "Cuántas camas, cuántos baños, si hay aire. Eso se busca primero."
+  3. **Contá las distancias reales** — "A cuántas cuadras del centro, del río, del súper. En cuadras, no en 'cerquita'."
+  4. **Aclará lo que no tenés** — "Si no hay wifi o no entra el auto, decilo. Te ahorra una queja y una mala reseña."
+  5. **Respondé lo que siempre preguntan** — "Si te preguntan lo mismo cinco veces, ponelo en la descripción."
+  6. **Escribile a una persona** — "'Vas a poder' funciona mejor que 'el huésped podrá'."
+- **Idea**: Tipográfica, sin fotos. Se puede jugar con textos tachados —las frases hechas— y al lado la versión que sí sirve.
+- **Foto/s**: Ninguna. Es una pieza de texto.
+- **CTA**: Seguinos para más consejos · hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 18.3 · El que contesta primero, alquila
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (5 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: De anfitrión a anfitrión #3
+- **Título**: El que contesta primero, alquila.
+- **Cuerpo**: La consulta que tarda un día en responderse ya reservó en otro lado.
+- **Items**:
+  1. **Portada** — "El que contesta primero, alquila"
+  2. **Contestá aunque no sepas todo** — "Un 'ahora te confirmo' vale más que el silencio."
+  3. **Tené las respuestas listas** — "Las tres preguntas de siempre, escritas y a mano para copiar."
+  4. **Pasá el precio claro** — "Total, por cuántas noches, qué incluye. Sin que te lo tengan que sacar."
+  5. **Cerrá vos** — "Preguntá si le sirve la fecha. El que no cierra, pierde."
+- **Idea**: Conversaciones de mensajería como elemento gráfico, que es donde esto pasa de verdad. Se puede mostrar el reloj o el tiempo transcurrido para reforzar la idea de velocidad.
+- **Foto/s**: Ninguna. Se arma con aspecto de conversación.
+- **CTA**: Seguinos para más consejos · hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 18.4 · Cómo poner el precio
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (6 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: De anfitrión a anfitrión #4
+- **Título**: Ni regalado ni de cara.
+- **Cuerpo**: Cómo pensamos el precio nosotros, después de equivocarnos varias veces.
+- **Items**:
+  1. **Portada** — "Ni regalado ni de cara"
+  2. **Mirá lo que cobra el de al lado** — "Parecidos a vos, en tu misma zona. No el hotel del centro."
+  3. **La temporada no es una sola** — "Enero no es marzo, y un finde largo no es un finde común."
+  4. **El mínimo de noches también es precio** — "A veces conviene bajar el mínimo antes que bajar el valor."
+  5. **Ojo con la carrera hacia abajo** — "Si todos bajan, pierden todos. Diferenciate por otra cosa."
+  6. **Revisalo cada tanto** — "El precio que pusiste en enero ya no sirve en julio."
+- **Idea**: Es el consejo más delicado de la serie, así que el tono importa más que nunca: **no dar una fórmula**, dar criterios. Nada de números concretos en la placa. Se puede armar con un termómetro o una escala como recurso gráfico.
+- **Foto/s**: Ninguna.
+- **CTA**: Seguinos para más consejos · hospeda.com.ar
+- **Idioma**: Español
+- **Cuidado**: no sugerir precios ni rangos. Además de que cada caso es distinto, dar números en una placa pública es meterse en un terreno que no nos corresponde.
+
+---
+
+#### 18.5 · Lo que hace que te dejen cinco estrellas
+
+- **Prioridad**: 2
+- **Tipo**: Carrusel (6 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: De anfitrión a anfitrión #5
+- **Título**: Los detalles cuestan poco y se recuerdan mucho.
+- **Cuerpo**: Cosas chiquitas que cambian una reseña de cuatro a cinco.
+- **Items**:
+  1. **Portada** — "Los detalles cuestan poco y se recuerdan mucho"
+  2. **Algo para el primer mate** — "Yerba, azúcar, un paquete de galletitas. Cuesta nada."
+  3. **Instrucciones escritas** — "Cómo prende el termotanque, dónde está la llave de luz, el wifi anotado."
+  4. **Datos del lugar** — "Dónde comprar el pan, a qué hora abre el súper, el mejor lugar para comer."
+  5. **Toallas y sábanas de más** — "Se ensucia algo el primer día y ya está resuelto."
+  6. **Un número al que llamar** — "Que sepan que si pasa algo, hay alguien del otro lado."
+- **Idea**: Fotos reales de esos detalles: el mate servido, la nota escrita a mano en la mesada, las toallas dobladas. Cálida, cercana. Es la pieza más emocional de la serie.
+- **Foto/s**: Fotos propias de detalles reales del alojamiento. Nada de banco de imágenes.
+- **CTA**: Seguinos para más consejos · hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 18.6 · Qué hacer con una mala reseña
+
+- **Prioridad**: 3
+- **Tipo**: Carrusel (5 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: De anfitrión a anfitrión #6
+- **Título**: Te llegó una mala. Ahora qué.
+- **Cuerpo**: Le pasa a todos. Lo que importa es lo que hacés después.
+- **Items**:
+  1. **Portada** — "Te llegó una mala. Ahora qué."
+  2. **No contestes caliente** — "Dejala dormir un día. Lo que escribís enojado queda para siempre."
+  3. **Si tiene razón, decilo** — "Reconocer el error y contar qué cambiaste convence más que discutir."
+  4. **Contestá para el que va a leer** — "No le escribís al que se quejó: le escribís al próximo que la lee."
+  5. **Una mala entre muchas buenas no asusta** — "Un perfil con puras cinco estrellas da más desconfianza que una queja bien resuelta."
+- **Idea**: Sobria y tranquilizadora. Podría mostrarse una reseña negativa y al lado una respuesta bien escrita. El punto 5 es contraintuitivo y es el que hace que la pieza se guarde.
+- **Foto/s**: Ninguna.
+- **CTA**: Seguinos para más consejos · hospeda.com.ar
+- **Idioma**: Español
+- **Nota**: cuando salga la función de responder reseñas (12.14), esta pieza es la que le da contexto. Conviene publicarlas cerca una de otra.
+
+---
+
+#### 18.7 · La temporada baja no es tiempo muerto
+
+- **Prioridad**: 3
+- **Tipo**: Carrusel (5 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: De anfitrión a anfitrión #7
+- **Título**: Qué hacer cuando no entra nadie.
+- **Cuerpo**: Los meses flojos son para preparar los buenos.
+- **Items**:
+  1. **Portada** — "Qué hacer cuando no entra nadie"
+  2. **Arreglá lo que venís pateando** — "Con la casa vacía se hace sin apuro y sin molestar a nadie."
+  3. **Sacá fotos nuevas** — "Con tiempo, buena luz y la casa ordenada de verdad."
+  4. **Buscá otro público** — "Trabajadores de paso, gente que viene por un trámite, estadías largas."
+  5. **Armá una promo para el próximo finde largo** — "Publicala antes de que empiecen a buscar, no después."
+- **Idea**: Un calendario con los meses flojos marcados, resignificados como oportunidad. El tono es de aliento, no de queja.
+- **Foto/s**: Ninguna, o una foto de la casa vacía y ordenada, en calma.
+- **CTA**: Seguinos para más consejos · hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 18.8 · Los errores del primer año
+
+- **Prioridad**: 3
+- **Tipo**: Carrusel (6 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: De anfitrión a anfitrión #8
+- **Título**: Los errores que cometimos el primer año.
+- **Cuerpo**: Para que no los repitas vos.
+- **Items**: **A completar con los errores reales.** Esta es la pieza que más necesita la experiencia propia: cinco cosas concretas que salieron mal el primer año de alquilar. Cuanto más específicas y más incómodas, mejor funciona.
+- **Idea**: La pieza más honesta de la serie y probablemente la que mejor rinda. Funciona porque nadie cuenta sus errores en redes. El tono es de confesión, con humor, sin dramatizar. Visualmente simple: texto sobre color, sin fotos que distraigan.
+- **Foto/s**: Ninguna.
+- **CTA**: Seguinos para más consejos · hospeda.com.ar
+- **Idioma**: Español
+- **Antes de diseñar**: los ítems los tiene que escribir alguien que haya vivido ese primer año. No se pueden inventar: un error inventado se nota al instante y tira abajo la credibilidad de toda la serie.
 
 ---
 
@@ -786,7 +952,8 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | C · Atracción | 11. Gastronomía de la región | ⬜ pendiente |
 | D · Conversión | 12. Sumar alojamientos y negocios | ✅ 17 piezas |
 | D · Conversión | 13. Confianza y testimonios | ⬜ pendiente |
-| D · Conversión | 14. Tutoriales y ayuda | ✅ 8 piezas |
+| D · Conversión | 14. Tutoriales y ayuda | ✅ 7 piezas |
 | E · Recurrentes | 15. Campañas | ⬜ pendiente |
 | E · Recurrentes | 16. Novedades | ⬜ pendiente |
 | E · Recurrentes | 17. Pedidos de colaboración | ⬜ pendiente |
+| E · Recurrentes | 18. **De anfitrión a anfitrión** | ✅ 8 piezas · serie abierta |
