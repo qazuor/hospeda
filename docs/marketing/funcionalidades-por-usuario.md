@@ -156,7 +156,7 @@ Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` p
 
 🟡 **Directorio de proveedores y oficios** (HOS-376) — plomería, gas, electricidad, cerrajería, climatización, limpieza. Con registro de uso del beneficio y valoraciones. Confirmar si ya está disponible.
 
-❓ Responder reseñas — sin verificar. Confirmar antes de comunicarlo.
+🔴 **Responder reseñas** — todavía no está. El permiso existe, la pantalla no. Confirmado el 11/08/2026.
 
 **Ángulos**: "30 días gratis, sin tarjeta" · "Pegá el link de Airbnb y la IA completa tu ficha" · "Tu ficha en 3 idiomas con un clic" · "Sos anfitrión y además viajás VIP gratis"
 
@@ -239,7 +239,7 @@ Público que **no estaba** en el catálogo viejo y hoy tiene producto propio.
 | Planes multi-propiedad / hotel | 3 planes completos en código pero **desactivados**. |
 | Fotos en las reseñas | El permiso está, la pantalla no. |
 | Asistente de IA para soporte | Definido, sin otorgar a ningún plan. |
-| Responder reseñas | **Sin verificar.** Confirmar antes de comunicarlo. |
+| Responder reseñas | El permiso está, la pantalla no. Confirmado el 11/08/2026. |
 
 > **Advertencia sobre esta lista.** El catálogo del que salió estaba fechado el 08/07/2026 y ya tenía tres errores: daba por inexistentes el calendario con sincronización, el WhatsApp en la ficha y decía 14 días de prueba en vez de 30. Los tres estaban construidos. Antes de descartar cualquier funcionalidad de esta tabla, verificarla contra la plataforma real — esta lista envejece rápido.
 

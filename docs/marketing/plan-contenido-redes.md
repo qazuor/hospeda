@@ -463,6 +463,22 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 
 ---
 
+#### 12.14 · Respondé lo que dicen de vos
+
+- **Prioridad**: **5** — no publicar todavía
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Tu versión también cuenta
+- **Título**: Respondé lo que dicen de vos.
+- **Cuerpo**: Contestá públicamente las opiniones de tus huéspedes. Una buena respuesta a una queja convence más que diez opiniones perfectas.
+- **Idea**: Una opinión con su respuesta abajo, como se ve en la ficha. Lo importante es que se entienda la jerarquía: la opinión arriba, la respuesta del anfitrión abajo y con un fondo distinto, claramente identificada como del dueño. Elegir para la muestra una queja bien respondida, no un elogio: ahí está la fuerza del mensaje.
+- **Foto/s**: Cuando la función exista, captura de pantalla real. Mientras tanto no se arma la versión final.
+- **CTA**: A definir cuando salga la función
+- **Idioma**: Español
+- **Por qué está frenada**: responder reseñas todavía no está construido. El permiso existe en el sistema, la pantalla no. Confirmado el 11/08/2026. Se diseña ahora y se publica el día que salga.
+
+---
+
 ## Temas a resolver
 
 Cosas que frenan la producción de alguna pieza y necesitan una definición.
@@ -491,7 +507,7 @@ Cosas que frenan la producción de alguna pieza y necesitan una definición.
 | C · Atracción | 9. Lugares para visitar | ⬜ pendiente |
 | C · Atracción | 10. Eventos y agenda | ⬜ pendiente |
 | C · Atracción | 11. Gastronomía de la región | ⬜ pendiente |
-| D · Conversión | 12. Sumar alojamientos y negocios | ✅ 13 piezas |
+| D · Conversión | 12. Sumar alojamientos y negocios | ✅ 14 piezas |
 | D · Conversión | 13. Confianza y testimonios | ⬜ pendiente |
 | D · Conversión | 14. Tutoriales y ayuda | ⬜ pendiente (acá va el instructivo de carga de alojamientos) |
 | E · Recurrentes | 15. Campañas | ⬜ pendiente |
