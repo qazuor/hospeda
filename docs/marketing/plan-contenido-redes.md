@@ -83,13 +83,21 @@ Se usan los de Phosphor — <https://phosphoricons.com/>
 2. **Nada de lo que todavía no existe se muestra como si ya funcionara.** Las piezas de prioridad 5 se diseñan y se guardan.
 3. **Cuando mostramos la plataforma, usamos capturas de pantalla reales.** Nada dibujado ni simulado: entramos al sitio, sacamos la captura y la retocamos solo para que se lea mejor. Si la pantalla real todavía no existe, la pieza es prioridad 5.
 4. **Escribimos como hablamos acá.** De vos, sin palabras en inglés, sin términos que solo entienda alguien del rubro.
-5. **Ningún destino se destaca sobre los demás.** Somos de Concepción del Uruguay y es por donde arrancamos a conseguir clientes, pero eso es un dato interno, no una línea editorial. En las publicaciones los 22 destinos valen lo mismo: mismo tamaño en el mapa, misma presencia en las fotos, ninguna ciudad como protagonista. Cuando hablamos del territorio, hablamos del **Litoral** o de **Entre Ríos**, no de una ciudad.
+5. **Ningún destino se destaca sobre los demás.** Somos de Concepción del Uruguay y es por donde arrancamos a conseguir clientes, pero eso es un dato interno, no una línea editorial. Cuando hablamos del territorio, hablamos del **Litoral** o de **Entre Ríos**, no de una ciudad.
+6. **Los cuerpos van cortos.** Dos renglones como máximo. Si el texto obliga a achicar la tipografía o a apretar la diagramación, hay que recortarlo, no achicar la letra. Informativo pero breve: lo largo va en el pie de la publicación, no adentro de la imagen.
+7. **Nunca listamos todos los destinos.** Se nombran algunos y se cierra con "y muchos más". Una lista completa queda vieja apenas se suma uno nuevo, y hay que rehacer la placa.
 
-### Los 22 destinos
+### Destinos
 
-Colón · Concepción del Uruguay · Gualeguaychú · Caseros · Ceibas · Chajarí · Concordia · Federación · Gualeguay · Ibicuy · Larroque · Pueblo Liebig · Rosario del Tala · San José · San Justo · San Salvador · Santa Ana · Ubajay · Urdinarrain · Villa Elisa · Villa Paranacito · Villaguay
+Cuando haga falta nombrar destinos, se usan estos: **Concepción del Uruguay · Colón · San José · Gualeguaychú · Villa Elisa · Federación · Concordia**, y se cierra con *y muchos más*.
 
-La lista no está cerrada: se suman destinos a pedido. Antes de una campaña grande, conviene confirmar si cambió.
+Hoy hay 22 destinos cargados y se suman a pedido, por eso nunca se listan todos (ver regla 7).
+
+### Quiénes somos, y por qué importa
+
+Hospeda no la armó una empresa de tecnología mirando el rubro desde afuera. **La armaron dueños de un alojamiento que alquilan para turismo hace años.** Los problemas que resuelve la plataforma son los problemas que sufrimos nosotros primero.
+
+Es el argumento más fuerte que tenemos para hablarle a un anfitrión, y conviene que se note en el tono de toda la comunicación de captación, no solo en la placa que lo dice explícitamente (la 12.15).
 
 ---
 
@@ -108,7 +116,7 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Aspect Ratio**: 9:16 y 4:5
 - **Título**: Nació la nueva forma de viajar por el Litoral.
 - **Subtítulo**: Alojamientos, gastronomía, eventos y experiencias en un solo lugar.
-- **Cuerpo**: Todo lo que necesitás para armar tu escapada por Entre Ríos y el Litoral, sin dar vueltas por diez páginas distintas.
+- **Cuerpo**: Todo lo que necesitás para armar tu escapada, sin dar vueltas por diez páginas distintas.
 - **Idea**: La placa de apertura, la más limpia de todas. Foto del río al atardecer ocupando toda la imagen, el logo centrado arriba, y el título grande en la mitad de abajo sobre un degradado oscuro para que se lea bien. Nada más. Es la primera impresión de la marca: si tiene tres elementos, sobra uno.
 - **Foto/s**: El río al atardecer o una costanera de la región. Panorámica, con poca gente o sin gente. Tiene que leerse "el Litoral", no una ciudad en particular: si un vecino de Colón o de Federación reconoce el lugar como ajeno, la placa falló.
 - **CTA**: Descubrí más en hospeda.com.ar
@@ -144,7 +152,7 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Tag Line**: Sin vueltas
 - **Título**: No te pedimos nada para mirar.
 - **Subtítulo**: Todo el catálogo es público. Sin cuenta, sin mail, sin registro.
-- **Cuerpo**: Mirás alojamientos, comparás destinos, leés opiniones y hasta le escribís al anfitrión, todo sin crear una cuenta. Registrarte es opcional, y sirve para guardar lo que te gustó.
+- **Cuerpo**: Mirá, compará y leé opiniones sin crear una cuenta. Registrarte es opcional: sirve para guardar lo que te gustó.
 - **Idea**: Esta placa vive del contraste con las otras plataformas, así que tiene que ser directa: fondo de un solo color de la paleta, letras grandes, sin foto. Que parezca una declaración y no un aviso. Como único elemento gráfico, un candado abierto de Phosphor, chico.
 - **Foto/s**: Ninguna. Es una placa de puro texto a propósito. Acá el silencio visual dice más que una foto.
 - **CTA**: Probá ahora en hospeda.com.ar
@@ -160,7 +168,7 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Tag Line**: Buscá como hablás
 - **Título**: "Cabaña con pileta para 4, cerca del río."
 - **Subtítulo**: Escribilo así, tal cual. El buscador te entiende.
-- **Cuerpo**: No hace falta pelearse con filtros ni saber cómo se llama cada cosa. Pedilo como te sale y te trae resultados de verdad.
+- **Cuerpo**: Nada de pelearse con filtros. Pedilo como te sale y te trae resultados de verdad.
 - **Idea**: La captura real del buscador con esa frase escrita adentro, grande y centrada, ocupando el centro de la placa. Abajo, tres resultados reales apenas insinuados y desenfocados: se tiene que entender que la búsqueda devolvió algo posta, sin que se lean los detalles.
 - **Foto/s**: Captura de pantalla real del buscador de hospeda.com.ar con la búsqueda hecha. Si hace falta calidez, una textura suave de agua atrás.
 - **CTA**: Probá el buscador en hospeda.com.ar
@@ -176,7 +184,7 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Tag Line**: Se terminó
 - **Título**: Ocho páginas abiertas para organizar un fin de semana.
 - **Subtítulo**: Ahora es una sola.
-- **Cuerpo**: Buscabas el alojamiento en un lado, el restaurante en otro, los eventos en un grupo de Facebook y el clima en otra aplicación. Todo eso ahora está en el mismo lugar.
+- **Cuerpo**: Alojamiento, restaurantes, eventos y clima. Todo eso ahora está en el mismo lugar.
 - **Idea**: Placa de problema y solución, se resuelve con un antes abajo y un después arriba. Abajo: un montón de ventanas del navegador amontonadas y desprolijas, en gris. Arriba: una sola ventana limpia con el logo. La diferencia entre las dos partes tiene que sentirse como un alivio.
 - **Foto/s**: Ninguna. Es ilustración o armado con ventanas.
 - **CTA**: hospeda.com.ar
@@ -191,32 +199,33 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Aspect Ratio**: 4:5
 - **Tag Line**: Dónde estamos
 - **Título**: Todo el Litoral, en un mapa.
-- **Cuerpo**: 22 destinos de Entre Ríos, de punta a punta de la provincia. Cada uno con sus alojamientos, sus eventos y sus lugares para visitar.
-- **Items**: Colón · Concepción del Uruguay · Gualeguaychú · Caseros · Ceibas · Chajarí · Concordia · Federación · Gualeguay · Ibicuy · Larroque · Pueblo Liebig · Rosario del Tala · San José · San Justo · San Salvador · Santa Ana · Ubajay · Urdinarrain · Villa Elisa · Villa Paranacito · Villaguay
-- **Idea**: Un mapa ilustrado de la provincia de fondo, con un punto por cada destino y el nombre al lado. Mapa dibujado con la estética de la marca, no una captura de Google Maps. **Todos los puntos del mismo tamaño**: ningún destino se destaca sobre otro. Son 22 nombres, así que hay que trabajar bien la tipografía para que entren y se lean; si no entran todos con claridad, conviene pasarlo a carrusel con la provincia dividida en zonas.
+- **Cuerpo**: De punta a punta de Entre Ríos, cada destino con sus alojamientos, sus eventos y sus lugares para visitar.
+- **Items**: Concepción del Uruguay · Colón · San José · Gualeguaychú · Villa Elisa · Federación · Concordia · **y muchos más**
+- **Idea**: Un mapa ilustrado de la provincia de fondo, con puntos marcando los destinos y el nombre al lado de los principales. Mapa dibujado con la estética de la marca, no una captura de Google Maps. **Todos los puntos del mismo tamaño**: ningún destino se destaca sobre otro. El "y muchos más" es clave — se marcan más puntos de los que se nombran, para que se vea que la cobertura es mayor que la lista.
 - **Foto/s**: Ninguna. Ilustración de mapa.
 - **CTA**: Elegí tu destino en hospeda.com.ar
 - **Idioma**: Español
-- **Al actualizar**: cada vez que se sume un destino nuevo, hay que rehacer esta placa. Conviene dejar el archivo editable y a mano.
+- **Por qué no van todos**: si se listan los 22, la placa queda vieja apenas se suma uno y hay que rehacerla. Nombrando algunos y cerrando con "y muchos más", la pieza sirve para siempre.
 
 ---
 
-#### 1.7 · Escribile al anfitrión sin tener cuenta
+#### 1.7 · Preguntale al anfitrión
 
 - **Prioridad**: 2
 - **Tipo**: Carrusel (3 imágenes)
 - **Aspect Ratio**: 4:5
 - **Tag Line**: Consultá directo
-- **Título**: Preguntale al anfitrión sin crear una cuenta.
-- **Cuerpo**: Escribís desde la ficha, te llega la respuesta al mail y seguís la charla desde ahí. Sin registrarte, sin bajar ninguna aplicación, sin dar tu teléfono.
+- **Título**: ¿Tenés una duda? Preguntale al dueño.
+- **Cuerpo**: Escribís desde la ficha y te responde directo. Sin intermediarios y sin esperar tres días.
 - **Items**:
   1. "Encontraste la cabaña. Tenés una duda." — la ficha, con el botón de consulta marcado
-  2. "Escribís ahí mismo. Sin cuenta." — el formulario, cortito
-  3. "Te responde al mail y seguís charlando." — la casilla de correo con la respuesta
+  2. "Escribís ahí mismo." — el formulario, cortito
+  3. "Te responde y seguís charlando." — la conversación con la respuesta
 - **Idea**: Los tres pasos reales del proceso, con capturas de pantalla limpias. Numerados 1, 2 y 3 arriba a la izquierda. Que se lea como un instructivo de tres segundos, no como un tutorial largo.
 - **Foto/s**: Capturas de pantalla reales de la plataforma, retocadas solo para que se lean bien.
 - **CTA**: Encontrá tu lugar en hospeda.com.ar
 - **Idioma**: Español
+- **Ojo con el eje**: la consulta se puede hacer sin tener cuenta, pero **eso no se comunica acá**. El mensaje es la velocidad de la respuesta, no la ausencia de registro: publicitar el camino sin registro es enseñarle a la gente a no registrarse. La versión anterior de esta pieza tenía ese error.
 
 ---
 
@@ -228,7 +237,7 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Tag Line**: Antes de reservar
 - **Título**: El clima de tu escapada, con 16 días de anticipación.
 - **Subtítulo**: En la ficha de cada destino.
-- **Cuerpo**: El tiempo de ahora y el pronóstico extendido, para elegir bien la fecha. Porque un finde en la costa con lluvia no es el mismo finde.
+- **Cuerpo**: Un finde en la costa con lluvia no es el mismo finde. Fijate el pronóstico antes de elegir la fecha.
 - **Idea**: El recuadro del clima de la plataforma como protagonista, sobre una foto de la costa en un día bárbaro. El contraste entre el dato y la promesa de buen tiempo es todo el mensaje. Que se vean varios días en fila, para que se entienda lo de los 16 días.
 - **Foto/s**: La costanera o una playa del río en un día de sol, con mucho cielo. Dejar aire arriba para que entre el recuadro del clima.
 - **CTA**: Mirá el pronóstico de tu destino en hospeda.com.ar
@@ -242,9 +251,9 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Tipo**: Imagen única
 - **Aspect Ratio**: 9:16 y 4:5
 - **Tag Line**: De la región, para la región
-- **Título**: Hecho en el Litoral.
-- **Subtítulo**: Por gente que conoce cada camino de la costa.
-- **Cuerpo**: No somos una plataforma de afuera que descubrió Entre Ríos en un mapa. Somos de acá, recorrimos estos pueblos, y armamos la herramienta que nos hubiera gustado tener.
+- **Título**: Hecho en el Litoral, por gente del rubro.
+- **Subtítulo**: Somos dueños de un alojamiento. Como vos.
+- **Cuerpo**: Alquilamos para turismo hace años. Armamos la herramienta que nos hubiera gustado tener.
 - **Idea**: Una foto real y honesta de la región. No la postal turística perfecta: algo más de todos los días, que el entrerriano reconozca al toque como propio. El título abajo, con aire. Esta placa gana por ser auténtica: si parece foto comprada, falló.
 - **Foto/s**: Un camino, una costanera, un paisaje de la costa del río. **Que no sea identificable con una ciudad puntual** — la idea es que el de Federación y el de Gualeguay se sientan igual de aludidos.
 - **CTA**: Conocenos en hospeda.com.ar
@@ -260,7 +269,7 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Tag Line**: Seguimos creciendo
 - **Título**: ¿No encontrás tu destino?
 - **Subtítulo**: Escribinos y lo sumamos.
-- **Cuerpo**: Arrancamos con 22 destinos de Entre Ríos, pero la lista no está cerrada. Si tu pueblo o tu ciudad todavía no está, contanos y lo agregamos.
+- **Cuerpo**: La lista no está cerrada. Si tu pueblo todavía no está, contanos y lo sumamos.
 - **Idea**: Un mapa con los destinos marcados y un espacio vacío señalado con un signo de pregunta o un marcador punteado, como diciendo "acá falta el tuyo". El gesto de la placa es de invitación, no de disculpa: no es que nos falten lugares, es que estamos creciendo y decidís vos cuál sigue.
 - **Foto/s**: Ninguna. Ilustración de mapa, en la misma línea gráfica que la 1.6.
 - **CTA**: Escribinos desde hospeda.com.ar y sumamos tu destino
@@ -332,7 +341,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Tipo**: Imagen única
 - **Aspect Ratio**: 9:16 y 4:5
 - **Título**: No empieces de cero. Traé tus estrellas a Hospeda.
-- **Cuerpo**: Conectá las opiniones y calificaciones que ya tenés en Google y mostralas directamente en tu ficha. Más confianza para el huésped, desde el primer día.
+- **Cuerpo**: Conectá las opiniones que ya tenés en Google y mostralas en tu ficha. Más confianza para el huésped, desde el día uno.
 - **Idea**: Lo que se tiene que entender de una es que el puntaje que ya te ganaste no se pierde. Mostrar la ficha real de un alojamiento con las estrellas de Google visibles, y las estrellas como el elemento más brillante de la placa.
 - **Foto/s**: Captura de pantalla real de una ficha que tenga las calificaciones externas cargadas. Elegir un alojamiento que se vea lindo.
 - **CTA**: Sumá tu alojamiento hoy en hospeda.com.ar
@@ -363,7 +372,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Tag Line**: Para restaurantes, bodegas y paseos
 - **Título**: Tu negocio, donde la gente organiza el viaje.
 - **Subtítulo**: Página propia, opiniones y buena presencia en Google.
-- **Cuerpo**: Un restaurante, una bodega, un paseo en kayak o una cata de vinos. Tu negocio con su propia página adentro de Hospeda, visible para todos los que están armando su escapada por el Litoral.
+- **Cuerpo**: Un restaurante, una bodega, un paseo en kayak. Tu negocio con página propia, visible para todo el que arma su escapada.
 - **Idea**: Una foto fuerte del rubro, con la ficha real de la plataforma superpuesta en ángulo, como si flotara sobre la escena. La idea es conectar el negocio de verdad con su versión en la plataforma.
 - **Foto/s**: Una mesa servida en un restaurante de la zona con luz de tarde, o un kayak en el río. Que se vea la región, no una foto genérica de banco de imágenes que podría ser de cualquier lado.
 - **CTA**: Sumá tu negocio en hospeda.com.ar
@@ -379,7 +388,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Tag Line**: Un beneficio que no te esperabas
 - **Título**: Publicás tu alojamiento y viajás como VIP.
 - **Subtítulo**: Sin pagar nada extra.
-- **Cuerpo**: Todo anfitrión tiene incluido el paquete completo de viajero VIP: favoritos ilimitados, comparador, avisos de baja de precio y listas para organizar tus viajes. Porque el que recibe huéspedes también sale de paseo.
+- **Cuerpo**: Favoritos ilimitados, comparador y avisos de baja de precio, incluidos. El que recibe huéspedes también sale de paseo.
 - **Idea**: Placa de doble identidad. La imagen partida al medio: de un lado la persona como anfitriona (recibiendo, la casa), del otro como turista (de viaje). Algo que conecte las dos mitades: un color, una línea, la misma persona en las dos fotos.
 - **Foto/s**: Dos fotos que puedan leerse como la misma persona en dos papeles. Si se consigue con un anfitrión real de la plataforma, muchísimo mejor.
 - **CTA**: Empezá gratis en hospeda.com.ar
@@ -416,7 +425,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Tag Line**: Llená los findes flojos
 - **Título**: Publicá una oferta y que se vea.
 - **Subtítulo**: Aparece destacada en la búsqueda y en tu ficha.
-- **Cuerpo**: Armás la promoción desde tu panel y aparece resaltada entre todos los resultados. Ideal para mover esas fechas que te están quedando vacías.
+- **Cuerpo**: Armás la oferta y aparece resaltada entre todos los resultados. Ideal para mover las fechas que te quedan vacías.
 - **Idea**: La grilla real de resultados de búsqueda, donde una sola ficha tiene el distintivo de oferta y salta a la vista. El resto en gris o apagado. El mensaje se entiende mirando, antes de leer: *así te ven*.
 - **Foto/s**: Captura de pantalla real del listado con una promoción activa.
 - **CTA**: Creá tu oferta en hospeda.com.ar
@@ -431,7 +440,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Aspect Ratio**: 4:5
 - **Título**: Que te encuentren buscando en Google.
 - **Subtítulo**: Incluido en todos los planes.
-- **Cuerpo**: Tu alojamiento está preparado para aparecer bien en Google. Y si querés, podés editar vos mismo cómo se ve tu ficha cuando alguien la encuentra buscando.
+- **Cuerpo**: Tu ficha está preparada para aparecer bien en Google. Y podés editar vos mismo cómo se ve.
 - **Idea**: Simular cómo se ve el alojamiento en la lista de resultados de Google: el formato de siempre, con el título en azul, la dirección de la página en verde y la descripción en gris abajo. Se reconoce al instante y se entiende sin leer una palabra de la placa.
 - **Foto/s**: Ninguna. Se arma imitando el resultado de búsqueda.
 - **CTA**: Empezá gratis en hospeda.com.ar
@@ -446,7 +455,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Aspect Ratio**: 9:16 y 4:5
 - **Tag Line**: Se acabaron las reservas dobles
 - **Título**: Conectá tu Google Calendar y no repitas fechas nunca más.
-- **Cuerpo**: Sincronizás tu calendario y las fechas ocupadas se bloquean solas. Sin planillas, sin anotar en un cuaderno, sin llamar para chequear. También funciona con otros calendarios que uses.
+- **Cuerpo**: Las fechas ocupadas se bloquean solas. Sin planillas ni anotar en un cuaderno.
 - **Idea**: Un calendario con las fechas ocupadas marcadas, y el gesto de sincronización entre dos calendarios como elemento central. La sensación tiene que ser de tranquilidad, no de complejidad.
 - **Foto/s**: Captura de pantalla real del calendario de la plataforma con fechas ocupadas cargadas.
 - **CTA**: Publicá gratis tus primeros 30 días en hospeda.com.ar
@@ -461,7 +470,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Aspect Ratio**: 9:16, 4:5 y 2:3
 - **Tag Line**: Contacto directo
 - **Título**: Las consultas te llegan al WhatsApp.
-- **Cuerpo**: Sin comisiones ni intermediarios. El que se interesa por tu alojamiento te escribe directo, y arreglás con él como siempre lo hiciste.
+- **Cuerpo**: Sin comisiones ni intermediarios. Te escriben directo y arreglás como siempre lo hiciste.
 - **Idea**: La conversación de WhatsApp como protagonista, con una consulta real de alguien preguntando por fechas. Simple y reconocible al toque. Es de las pocas placas donde conviene imitar una interfaz que todos usan todos los días: se entiende sin leer.
 - **Foto/s**: Captura de una conversación (con los datos personales tapados), o armado con el mismo estilo visual de WhatsApp.
 - **CTA**: Sumá tu propiedad en hospeda.com.ar
@@ -477,7 +486,7 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Tag Line**: Un beneficio para anfitriones
 - **Título**: Se rompió el termotanque un domingo.
 - **Subtítulo**: Tenés a quién llamar.
-- **Cuerpo**: Un directorio de oficios de confianza de la zona, para los anfitriones de Hospeda. Con las opiniones de otros anfitriones que ya los llamaron.
+- **Cuerpo**: Oficios de confianza de la zona, con las opiniones de otros anfitriones que ya los llamaron.
 - **Items**: Plomería · Gas · Electricidad · Cerrajería · Aire acondicionado · Limpieza
 - **Idea**: La lista de oficios con íconos de Phosphor, sobre un fondo que transmita el apuro del momento, pero cotidiano y solucionable, no una catástrofe. El título juega con el problema real del anfitrión un domingo a la mañana.
 - **Foto/s**: Ninguna, o una foto bien neutra de herramientas.
@@ -494,12 +503,34 @@ A quién le hablamos: dueños de cabañas, casas, hoteles, restaurantes y experi
 - **Aspect Ratio**: 9:16 y 4:5
 - **Tag Line**: Tu versión también cuenta
 - **Título**: Respondé lo que dicen de vos.
-- **Cuerpo**: Contestá públicamente las opiniones de tus huéspedes. Una buena respuesta a una queja convence más que diez opiniones perfectas.
+- **Cuerpo**: Contestá las opiniones de tus huéspedes. Una queja bien respondida convence más que diez elogios.
 - **Idea**: Una opinión con su respuesta abajo, como se ve en la ficha. Lo importante es que se entienda la jerarquía: la opinión arriba, la respuesta del anfitrión abajo y con un fondo distinto, claramente identificada como del dueño. Elegir para la muestra una queja bien respondida, no un elogio: ahí está la fuerza del mensaje.
 - **Foto/s**: Cuando la función exista, captura de pantalla real. Mientras tanto no se arma la versión final.
 - **CTA**: A definir cuando salga la función
 - **Idioma**: Español
 - **Por qué está frenada**: responder reseñas todavía no está construido. El permiso existe en el sistema, la pantalla no. Confirmado el 11/08/2026. Se diseña ahora y se publica el día que salga.
+
+---
+
+#### 12.15 · Somos anfitriones, como vos
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única **y** Carrusel (4 imágenes). Hay que hacer los dos.
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: Del rubro, para el rubro
+- **Título**: Esto no lo armó una empresa de software.
+- **Subtítulo**: Lo armaron dueños de un alojamiento que alquilan hace años.
+- **Cuerpo**: Los problemas que resuelve Hospeda son los que sufrimos nosotros primero.
+- **Items** (para la versión carrusel, los dolores del rubro que conocemos de primera mano):
+  1. "El que pregunta por WhatsApp a las 11 de la noche."
+  2. "Las fechas que se te superponen entre tres plataformas."
+  3. "La comisión que se lleva media noche de alquiler."
+  4. "Cargar la misma ficha por cuarta vez, en otro sitio más."
+- **Idea**: Es la placa que le da autoridad a todo el resto de la categoría, así que tiene que sonar a persona y no a marca. Nada de fotos de oficina ni de gente con notebook: una foto real de un alojamiento de verdad, del tipo que cualquiera de nuestros clientes reconoce como parecido al suyo. En la versión carrusel, cada dolor en una placa con mucho aire y poco texto, y la última cierra con el título de la versión de imagen única.
+- **Foto/s**: Un alojamiento real de la zona, en un momento cotidiano: la llave sobre la mesa, la parrilla encendida, las toallas dobladas. **Nada de fotos de banco de imágenes** — esta pieza vive de ser verdadera, y una foto comprada la desarma entera.
+- **CTA**: Sumá tu propiedad en hospeda.com.ar
+- **Idioma**: Español
+- **Nota**: es el mejor argumento que tenemos para hablarle a un anfitrión, y no debería quedar encerrado en esta sola placa. Conviene que el tono de toda la categoría 12 suene a alguien del rubro hablándole a un colega, no a una plataforma vendiendo un servicio.
 
 ---
 
@@ -530,7 +561,7 @@ Cosas que frenan la producción de alguna pieza y necesitan una definición.
 | C · Atracción | 9. Lugares para visitar | ⬜ pendiente |
 | C · Atracción | 10. Eventos y agenda | ⬜ pendiente |
 | C · Atracción | 11. Gastronomía de la región | ⬜ pendiente |
-| D · Conversión | 12. Sumar alojamientos y negocios | ✅ 14 piezas |
+| D · Conversión | 12. Sumar alojamientos y negocios | ✅ 15 piezas |
 | D · Conversión | 13. Confianza y testimonios | ⬜ pendiente |
 | D · Conversión | 14. Tutoriales y ayuda | ⬜ pendiente (acá va el instructivo de carga de alojamientos) |
 | E · Recurrentes | 15. Campañas | ⬜ pendiente |
