@@ -280,6 +280,184 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 
 ---
 
+## B · PRODUCTO POR AUDIENCIA
+
+### Categoría 3 — Turistas
+
+La categoría que consigue **registros**. Todo lo demás lleva gente al sitio; esta hace que se quede.
+
+El eje de toda la categoría es uno solo: **mostrar qué ganás teniendo cuenta**. Nunca al revés. Se puede mirar todo sin registrarse —y está bien que así sea, es lo que hace que entren— pero eso no se publicita acá: acá se muestra lo que se pierde el que no se registra.
+
+Las tres piezas que más convierten son favoritos, comparador y alertas de precio, en ese orden. Guardar es lo primero que alguien quiere hacer cuando encuentra algo que le gusta.
+
+> **Ningún precio de plan va en las imágenes.** Cuando una función es de plan pago, se muestra la función y se manda a la web. Sin números, sin nombres de plan en la placa.
+
+---
+
+#### 3.1 · Guardá lo que te gusta
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Con tu cuenta gratis
+- **Título**: Dejá de mandarte links a vos mismo.
+- **Subtítulo**: Guardá tus favoritos en un solo lugar.
+- **Cuerpo**: Encontrás una cabaña que te gusta, tocás el corazón y queda guardada. Gratis.
+- **Idea**: El problema que resuelve lo vivió todo el mundo: capturas de pantalla, links mandados por mensaje a uno mismo, pestañas abiertas. Mostrar ese caos de un lado y la lista ordenada de favoritos del otro.
+- **Foto/s**: Captura de pantalla real de la pantalla de favoritos, con varios alojamientos guardados.
+- **CTA**: Creá tu cuenta gratis en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 3.2 · Compará lado a lado
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Para decidir mejor
+- **Título**: Tres cabañas, una pantalla.
+- **Subtítulo**: Compará precio, capacidad y comodidades de una.
+- **Cuerpo**: Sin abrir cinco pestañas ni anotar en un papel.
+- **Idea**: Es la función más fácil de mostrar y la que mejor se entiende sin explicación: la captura del comparador **es** el argumento. Que se vea la tabla completa, con las diferencias saltando a la vista.
+- **Foto/s**: Captura real del comparador con tres alojamientos cargados.
+- **CTA**: Probalo en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 3.3 · Te avisamos cuando baja
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Alertas de precio
+- **Título**: ¿Está un poco caro? Esperá.
+- **Subtítulo**: Te avisamos cuando baje.
+- **Cuerpo**: Marcás el alojamiento que te gusta y te llega el aviso cuando cambia el precio.
+- **Idea**: Le habla al que ya encontró lo que quiere pero no cierra por plata — que es muchísima gente. Un aviso de notificación como elemento central, con el precio bajando. Simple y reconocible.
+- **Foto/s**: Ninguna, o captura de la pantalla de alertas.
+- **CTA**: Activá tus alertas en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 3.4 · Preguntá en tu idioma
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Buscador con inteligencia artificial
+- **Título**: "Cabaña con pileta para 4, cerca del río."
+- **Subtítulo**: Escribilo así y te entiende.
+- **Cuerpo**: Nada de pelearse con filtros. Pedilo como te sale.
+- **Idea**: Es la misma idea que la 1.4, pero acá el eje es que **se necesita cuenta para usarlo**: el buscador se ve, pero para usarlo hay que estar registrado. Es un motivo de registro concreto y ninguna otra plataforma de la zona lo tiene.
+- **Foto/s**: Captura real del buscador con la búsqueda escrita y los resultados abajo.
+- **CTA**: Creá tu cuenta y probalo en hospeda.com.ar
+- **Idioma**: Español, inglés y portugués
+
+---
+
+#### 3.5 · Preguntale al alojamiento
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Respuestas al toque
+- **Título**: ¿Aceptan mascotas? ¿Hay wifi? ¿Cómo se llega?
+- **Subtítulo**: Preguntale a la ficha y te responde.
+- **Cuerpo**: Un asistente que conoce el alojamiento y contesta a cualquier hora.
+- **Idea**: Las tres preguntas del título son las que todo el mundo hace de verdad — por eso funcionan mejor que explicar qué es un asistente. Formato de conversación, que se entienda sin leer.
+- **Foto/s**: Captura real del chat con una pregunta y su respuesta.
+- **CTA**: Probalo en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 3.6 · Armá tus listas
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Colecciones
+- **Título**: Una lista para cada viaje.
+- **Subtítulo**: "Finde largo", "Verano con los chicos", "Escapada en pareja".
+- **Cuerpo**: Agrupá tus favoritos como se te ocurra y encontralos cuando los necesites.
+- **Idea**: Los tres ejemplos del subtítulo hacen todo el trabajo: se entiende al instante para qué sirve. Mostrar las listas con sus nombres y las miniaturas adentro.
+- **Foto/s**: Captura real de las colecciones.
+- **CTA**: Organizá tus viajes en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 3.7 · Escribile al anfitrión desde tu bandeja
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Tus consultas, ordenadas
+- **Título**: Todas tus consultas en un solo lugar.
+- **Subtítulo**: Sin perder ninguna conversación.
+- **Cuerpo**: Preguntaste en cinco alojamientos distintos. Las respuestas te llegan todas juntas.
+- **Idea**: Le habla a quien está en plena búsqueda y ya perdió el hilo de con quién habló. La bandeja de entrada con varias conversaciones abiertas es el argumento.
+- **Foto/s**: Captura real de la bandeja de mensajes.
+- **CTA**: Creá tu cuenta gratis en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 3.8 · Dejá tu opinión
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Gratis, siempre
+- **Título**: Contá cómo te fue.
+- **Subtítulo**: Tu opinión ayuda al que viaja después.
+- **Cuerpo**: Escribí tu reseña del alojamiento o del destino. No hace falta plan pago.
+- **Idea**: Doble beneficio: consigue contenido para la plataforma y le da al usuario un motivo para volver después del viaje. El tono es de comunidad, no de pedido.
+- **Foto/s**: Captura real de una reseña publicada, o alguien escribiendo desde el celular.
+- **CTA**: Sumá tu opinión en hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 3.9 · Lo que te recomendamos a vos
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Recomendaciones
+- **Título**: Mientras más usás, mejor te conocemos.
+- **Subtítulo**: Sugerencias armadas según lo que buscás.
+- **Cuerpo**: Alojamientos que tienen que ver con lo que venís mirando, sin buscarlos.
+- **Idea**: Es la función más difícil de mostrar en una imagen porque es invisible. Conviene mostrarla como resultado: una lista de sugerencias con el título "Para vos" arriba.
+- **Foto/s**: Captura real del listado de recomendaciones.
+- **CTA**: Entrá a hospeda.com.ar
+- **Idioma**: Español
+
+---
+
+#### 3.10 · Qué tenés con cada plan
+
+- **Prioridad**: 2
+- **Tipo**: Listado de puntos **y** Carrusel (3 imágenes)
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Elegí cómo viajar
+- **Título**: Gratis alcanza. Y si viajás seguido, hay más.
+- **Cuerpo**: Empezá sin pagar nada y sumá funciones cuando las necesites.
+- **Items**:
+  1. **Gratis** — guardar favoritos, escribir opiniones, hablar con anfitriones y usar el buscador con inteligencia artificial
+  2. **Un paso más** — comparador, alertas de precio, listas para organizar y ver el WhatsApp del anfitrión
+  3. **Todo** — sin límites, ofertas exclusivas, contacto directo y atención prioritaria
+- **Idea**: **Ningún precio ni nombre de plan en la placa.** Se muestran los tres escalones por lo que dan, no por lo que cuestan, y el precio se ve en la web. Así la pieza no se vence cuando cambien los valores.
+- **Foto/s**: Ninguna. Tres bloques con íconos de Phosphor.
+- **CTA**: Mirá los planes en hospeda.com.ar
+- **Idioma**: Español
+- **Por qué sin precios**: la lista de precios está por cambiar. Una placa con números queda vieja y hay que rehacerla; una que muestra beneficios sirve igual después del cambio.
+
+---
+
 ## D · CONVERSIÓN
 
 ### Categoría 12 — Sumar alojamientos y negocios
@@ -1939,7 +2117,7 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 |---|---|---|
 | A · Marca | 1. Genéricas de marca | ✅ 10 piezas |
 | A · Marca | 2. Institucional | ⬜ pendiente |
-| B · Producto | 3. Turistas | ⬜ pendiente |
+| B · Producto | 3. Turistas | ✅ 10 piezas |
 | B · Producto | 4. Alojamientos | ⬜ pendiente |
 | B · Producto | 5. Gastronomía y experiencias | ⬜ pendiente |
 | B · Producto | 6. Auspiciantes, patrocinadores y redactores | ⬜ pendiente |
