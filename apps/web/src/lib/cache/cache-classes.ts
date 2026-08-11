@@ -35,13 +35,15 @@
  *   - `pricing` — the four `suscriptores/*` pages; tagged `pricing`, purged by
  *                 `plan.service.ts` on a plan write.
  *
- * THE NUMBERS BELOW ARE NOT ALL RAISED YET, AND THE TWO LAGGARDS ARE NOT AN
- * OVERSIGHT. Owner decision D-15 sets statics to 24 h and catalog/detail to 1 h.
- * `catalog`, `home` and `pricing` are there. `static` and `detail` deliberately
- * still carry the old value, each gated on a prerequisite that is not code in
- * this repo — see the note on each one. A class whose budget is wrong is not
- * caught by any test here, because the number IS the specification; the gate is
- * the reasoning next to it.
+ * THE NUMBERS BELOW ARE OWNER DECISION D-15 (statics 24 h, catalog and detail
+ * 1 h), and each one is only as safe as the purge that backs it. That is not a
+ * platitude — the two highest budgets here were each blocked on a specific
+ * mechanism landing first: `static` on the deploy purge being reliably timed
+ * (HOS-427 + HOS-428), `detail` on entity-tag purging actually working
+ * (HOS-424). Raising a budget whose purge is broken does not trade freshness
+ * for hit rate; it just serves wrong content for longer. No test here can catch
+ * that, because the number IS the specification — the reasoning next to each
+ * class is the only guard.
  *
  * SWR IS CAPPED AT ONE HOUR RATHER THAN SCALING WITH THE TTL. Its job is
  * absorbing a revalidation round-trip, not extending the staleness budget. At
@@ -70,15 +72,22 @@ export interface CacheClassBudget {
  */
 export const CACHE_CLASS_BUDGETS = {
     /**
-     * Still at the old value, on purpose. D-15 puts this at 86 400 s, and these
-     * pages can only be invalidated by the deploy purge — which fires 45 s after
-     * the container's FIRST REQUEST, with nothing bounding when that arrives
-     * (`purge-on-deploy.ts`). At 300 s a late purge self-corrects within minutes;
-     * at 86 400 s a corrected legal text sits wrong for hours. Raising this is
-     * gated on HOS-428 (enable Coolify's healthcheck, already configured and
-     * disabled), not on anything in this repo.
+     * A full day, and the only class where the TTL is not the safety net.
+     *
+     * These pages render from `@repo/i18n` and page source, so nothing short of
+     * a deploy changes them and a content write has nothing to purge. That makes
+     * the DEPLOY PURGE their entire invalidation story — at 300 s a missed purge
+     * self-corrected within minutes and nobody noticed; at 86 400 s it does not.
+     * Which is why this value is only defensible alongside HOS-428: the purge
+     * fires 45 s after the container's FIRST REQUEST, and until Coolify's
+     * healthcheck sends that request immediately, nothing bounds how long a
+     * quiet deploy waits (`purge-on-deploy.ts`, "WHAT THE DELAY DOES NOT
+     * GUARANTEE").
+     *
+     * If the healthcheck is ever turned back off, this number has to come back
+     * down with it. They are one decision, not two.
      */
-    static: { sMaxAge: 300, swr: 600 },
+    static: { sMaxAge: 86_400, swr: 3_600 },
     catalog: { sMaxAge: 3_600, swr: 3_600 },
     /**
      * Reaching 3 600 s took a fix, not just a decision. Until HOS-424 (PR #2746)

@@ -14,19 +14,22 @@
  * W2-1. A settings write purges these pages without needing to — the cost is a
  * re-render, and it is the right side to err on.
  *
- * THE DEPLOY-STALENESS PREMISE THAT USED TO JUSTIFY A SHORT TTL IS GONE.
+ * THE DEPLOY PURGE IS NOW THESE PAGES' INVALIDATION PATH, NOT THE TTL.
  * This file used to argue that nothing purges the cache on deploy, so the
- * 300 s `s-maxage` doubled as the window in which a shipped copy change was
- * still invisible at the edge — the reason NOT to raise the TTL further.
- * HOS-427 shipped that purge (`src/lib/cache/purge-on-deploy.ts`): the web
- * container now purges the `<env>:all` catch-all once per deploy, roughly
- * `DEPLOY_PURGE_SETTLE_MS` (45 s) after it serves its first request, well
- * inside the 300 s budget these pages carry today. The deploy purge is these
- * pages' invalidation path now, not the TTL alone — with one honest caveat the
- * source file states plainly: the clock only starts once something reaches the
- * new container, so on a fully idle deploy the purge can be delayed past that
- * 45 s (never worse than before, since the TTL still bounds staleness, but not
- * literally "45 s after every deploy" either).
+ * `s-maxage` doubled as the window in which a shipped copy change was still
+ * invisible at the edge — the reason NOT to raise the TTL further. HOS-427
+ * shipped that purge (`src/lib/cache/purge-on-deploy.ts`): the web container
+ * purges the `<env>:all` catch-all once per deploy, `DEPLOY_PURGE_SETTLE_MS`
+ * (45 s) after it serves its first request.
+ *
+ * That reversal is what let HOS-426 put these pages on a 24 h budget — and it
+ * also means the TTL no longer forgives a missed purge. At 300 s a purge that
+ * never fired self-corrected within minutes and nobody noticed. At 86 400 s the
+ * purge IS the mechanism, so the caveat the source file states plainly now
+ * matters: the clock only starts once something reaches the new container, so
+ * on a fully idle deploy the purge can be delayed well past 45 s. HOS-428
+ * (enabling Coolify's healthcheck) is what bounds that, and it is a precondition
+ * of the 24 h value rather than a nice-to-have next to it.
  *
  * `cacheClass: 'static'` (HOS-426) is what pins the actual budget: it is
  * asserted below alongside the tag, so a page cannot silently drift onto a
