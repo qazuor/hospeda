@@ -1845,7 +1845,7 @@
             "id": "T-049",
             "title": "Modo edición de la valoración y cartel de réplica desactualizada",
             "description": "Si el anfitrión ya valoró, el mismo formulario abre precargado en modo edición y hace PATCH. En el listado público, cuando reviewEditedAfterReply es true, mostrar el cartel 'la valoración fue editada después de esta respuesta' junto a la réplica. Tests: el formulario precarga los valores existentes; el cartel aparece sólo con el flag en true. MODO EDICION IMPLEMENTADO: ReviewFormDialog lee my-review al abrir y decide entre publicar y editar; una lectura fallida cae al formulario de creacion en vez de bloquear, porque negarse a abrir dejaria al anfitrion sin poder decir nada y el POST igual responde 409 con copy propia. El PATCH manda un DIFF, no el formulario entero: cambiar el TEXTO re-corre moderacion y puede bajar la valoracion del directorio, asi que reenviar un content intacto convertiria una edicion de estrellas en una reescritura y podria devolver como APPROVED un texto que un moderador bajo. Un comentario vaciado viaja como null (borrado), no ausente. LA SEGUNDA MITAD — el cartel de replica desactualizada — NO entra: vive en el listado publico de valoraciones, que lo construye T-053. El grafo no declara esa dependencia y deberia: no se puede renderizar un cartel en un listado que no existe.",
-            "status": "in_progress",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-048", "T-034", "T-053"],
             "blocks": [],
@@ -1878,7 +1878,7 @@
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
                 "started": "2026-08-10T19:30:00.000Z",
-                "completed": null
+                "completed": "2026-08-11T17:05:00Z"
             }
         },
         {
@@ -1985,8 +1985,8 @@
         {
             "id": "T-053",
             "title": "Detalle del proveedor con valoraciones y réplicas",
-            "description": "Vista de detalle dentro del directorio con la lista paginada de valoraciones aprobadas, su desglose cuando existe, el indicador de beneficio respetado y la réplica aprobada del proveedor. Skeleton de carga. Tests: una réplica PENDING no se renderiza.",
-            "status": "pending",
+            "description": "Vista de detalle dentro del directorio con la lista paginada de valoraciones aprobadas, su desglose cuando existe, el indicador de beneficio respetado y la réplica aprobada del proveedor. Skeleton de carga. Tests: una réplica PENDING no se renderiza. RESUELTO: la página vive en [slug]/index.astro, hermana de [slug]/registrar-uso, y repite sus 3 estados terminales (404 / 422 PROVIDER_REVOKED / error) porque un anfitrión puede llegar desde un link guardado hace una temporada. La PRIMERA página de valoraciones se lee en el servidor y se le pasa cargada a la isla: son la razón de abrir la página, y buscarlas post-hidratación mostraría un panel vacío justo donde 'no hay valoraciones' y 'todavía no cargaron' significan lo opuesto. DESVIACION DELIBERADA del enunciado: NO hay skeleton. Con la primera página server-rendered no existe estado de carga inicial, y al paginar se atenúa la lista leída en vez de blanquearla — vaciar lo que el anfitrión está leyendo para anunciar una carga cuesta más que la espera que reporta. Una réplica PENDING/REJECTED no llega (el endpoint la omite), así que 'sin respuesta' y 'respuesta no aprobada' son indistinguibles en la página A PROPÓSITO: un lector no debe poder deducir que un proveedor escribió algo que un moderador bajó. El orden del desglose se fija en el código, no se lee del payload: la columna es JSONB y el orden de claves no sobrevive el round-trip. Las etiquetas del desglose se REUSAN de host-trades.review.breakdown (las del formulario), no se duplican: el anfitrión que puntuó 'Puntualidad' tiene que leer la misma palabra donde se publica. ENTRADA (decisión del owner): el nombre de la TradeCard es el link a la ficha — patrón convencional de directorio, no compite con el CTA de contacto y no agrega un elemento nuevo a la tarjeta. Una lectura FALLIDA de las valoraciones NO cae al empty state: cero filas es lo que tienen en común un proveedor sin valorar y una lectura que se rompió, y sólo una de las dos puede afirmarse como hecho sobre el oficio de una persona real, justo en la pantalla donde un anfitrión decide si llamarla (prop initialLoadFailed).",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-036"],
             "blocks": ["T-054"],
@@ -1994,14 +1994,14 @@
             "tags": ["web", "react", "ui", "reviews"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-11T16:20:00Z",
+                "completed": "2026-08-11T17:05:00Z"
             }
         },
         {
@@ -2515,9 +2515,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 16,
-        "inProgress": 1,
-        "completed": 53,
+        "pending": 15,
+        "inProgress": 0,
+        "completed": 55,
         "blocked": 0,
         "averageComplexity": 2.4
     }

@@ -307,5 +307,26 @@
             "previous": "Anteriores",
             "next": "Siguientes"
         }
+    },
+    "directory": {
+        "reviews": {
+            "title_one": "{{count}} valoración",
+            "title_other": "{{count}} valoraciones",
+            "empty": "Todavía nadie valoró a este proveedor. Las valoraciones aparecen cuando un anfitrión con un uso confirmado lo valora.",
+            "anonymous": "Un anfitrión",
+            "rating": "{{count}} de 5 estrellas",
+            "benefitYes": "Respetó el beneficio",
+            "benefitNo": "NO respetó el beneficio",
+            "replyLabel": "Respuesta del proveedor",
+            "editedAfterReply": "La valoración fue editada después de esta respuesta.",
+            "paginationLabel": "Paginación de valoraciones",
+            "pageStatus": "Página {{page}} de {{total}}",
+            "previous": "Anteriores",
+            "next": "Siguientes",
+            "errors": {
+                "page": "No pudimos cargar esta página de valoraciones. Probá de nuevo.",
+                "initial": "No pudimos cargar las valoraciones de este proveedor. Probá recargar la página."
+            }
+        }
     }
 }

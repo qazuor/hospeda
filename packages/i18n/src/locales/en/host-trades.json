@@ -307,5 +307,26 @@
             "previous": "Previous",
             "next": "Next"
         }
+    },
+    "directory": {
+        "reviews": {
+            "title_one": "{{count}} review",
+            "title_other": "{{count}} reviews",
+            "empty": "Nobody has reviewed this provider yet. Reviews appear once a host with a confirmed use writes one.",
+            "anonymous": "A host",
+            "rating": "{{count}} out of 5 stars",
+            "benefitYes": "Honoured the benefit",
+            "benefitNo": "Did NOT honour the benefit",
+            "replyLabel": "Provider's answer",
+            "editedAfterReply": "The review was edited after this answer.",
+            "paginationLabel": "Review pagination",
+            "pageStatus": "Page {{page}} of {{total}}",
+            "previous": "Previous",
+            "next": "Next",
+            "errors": {
+                "page": "We could not load this page of reviews. Please try again.",
+                "initial": "We could not load this provider’s reviews. Try reloading the page."
+            }
+        }
     }
 }

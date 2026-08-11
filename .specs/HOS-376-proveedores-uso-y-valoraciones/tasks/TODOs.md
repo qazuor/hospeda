@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 53/70 tareas cerradas + 1 en curso (76%)
+## Progreso: 55/70 tareas cerradas (79%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 20/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 25/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -175,7 +175,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Isla React en <dialog> nativo: estrellas 1-5 para overallRating como radiogroup operable por teclado con label textual por valor (no sólo iconos), desglose de las 3 dimensiones COLAPSADO por…
   - Bloqueada por: T-034 · Bloquea a: T-049, T-054, T-067
   - `ReviewFormDialog.client.tsx`. Las estrellas son radios NATIVOS con `aria-label` textual por valor: navegación por flechas gratis, y el input queda clipeado pero **nunca** `display: none`, que lo sacaría del orden de tabulación. Desglose en un `<details>` colapsado. El booleano no tiene default y el submit se niega hasta que se responda. Un desglose intacto se **omite** del body en vez de viajar como objeto de `undefined`s: el body es `.strict()` y el agregado lee distinto `null` que vacío. `safeParse` del schema compartido es el último gate, pero los tres rechazos alcanzables se chequean antes con copy propia, porque los mensajes del schema son claves i18n del traductor de la API.
-- [~] **T-049** (c2, EN CURSO) — Modo edición de la valoración y cartel de réplica desactualizada
+- [x] **T-049** (c2) — Modo edición de la valoración y cartel de réplica desactualizada
   - Si el anfitrión ya valoró, el mismo formulario abre precargado en modo edición y hace PATCH. En el listado público, cuando reviewEditedAfterReply es true, mostrar el cartel 'la valoración fu…
   - Bloqueada por: T-048, T-034, **T-053 (agregada)** · Bloquea a: —
   - **Modo edición LISTO**: el diálogo lee `my-review` al abrir y decide entre publicar y editar; una lectura fallida cae al formulario de creación en vez de bloquear (negarse a abrir dejaría al anfitrión sin poder decir nada, y el POST igual responde 409 con copy propia). El `PATCH` manda un **diff**, no el formulario entero: cambiar el TEXTO re-corre moderación y puede bajar la valoración del directorio, así que reenviar un `content` intacto convertiría una edición de estrellas en una reescritura — y podría devolver como `APPROVED` un texto que un moderador bajó. Un comentario vaciado viaja como `null` (borrado), no ausente.
@@ -192,7 +192,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-052** (c2) — Stats en TradeCard con el umbral de 3 valoraciones
   - En apps/web/src/components/host/host-trades/TradeCard.tsx, bajo el beneficio: '★ 4,6 (12 valoraciones) · 34 usos · 21 anfitriones'. El promedio SÓLO se muestra a partir de HOST_TRADE_MIN_REV…
   - Bloqueada por: T-023, T-012, T-070 · Bloquea a: T-054
-- [ ] **T-053** (c2) — Detalle del proveedor con valoraciones y réplicas
+- [x] **T-053** (c2) — Detalle del proveedor con valoraciones y réplicas
   - Vista de detalle dentro del directorio con la lista paginada de valoraciones aprobadas, su desglose cuando existe, el indicador de beneficio respetado y la réplica aprobada del proveedor. Sk…
   - Bloqueada por: T-036 · Bloquea a: T-054
 - [ ] **T-054** (c3) — Namespace i18n del dominio en es/en/pt

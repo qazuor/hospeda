@@ -307,5 +307,26 @@
             "previous": "Anteriores",
             "next": "Seguintes"
         }
+    },
+    "directory": {
+        "reviews": {
+            "title_one": "{{count}} avaliação",
+            "title_other": "{{count}} avaliações",
+            "empty": "Ninguém avaliou este fornecedor ainda. As avaliações aparecem quando um anfitrião com um uso confirmado avalia.",
+            "anonymous": "Um anfitrião",
+            "rating": "{{count}} de 5 estrelas",
+            "benefitYes": "Respeitou o benefício",
+            "benefitNo": "NÃO respeitou o benefício",
+            "replyLabel": "Resposta do fornecedor",
+            "editedAfterReply": "A avaliação foi editada depois desta resposta.",
+            "paginationLabel": "Paginação de avaliações",
+            "pageStatus": "Página {{page}} de {{total}}",
+            "previous": "Anteriores",
+            "next": "Seguintes",
+            "errors": {
+                "page": "Não conseguimos carregar esta página de avaliações. Tente novamente.",
+                "initial": "Não conseguimos carregar as avaliações deste fornecedor. Tente recarregar a página."
+            }
+        }
     }
 }

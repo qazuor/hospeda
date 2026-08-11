@@ -35,11 +35,19 @@
  *   - `pricing` — the four `suscriptores/*` pages; tagged `pricing`, purged by
  *                 `plan.service.ts` on a plan write.
  *
- * THE NUMBERS BELOW ARE DELIBERATELY ALL EQUAL RIGHT NOW. This file introduces
- * the mechanism at exactly today's behaviour, so the 40-call-site change that
- * comes with it cannot alter a single response. Raising them per owner decision
- * D-15 (statics 24 h, catalog and detail 1 h) is a separate change to this one
- * file — which is the entire point of having it.
+ * THE NUMBERS BELOW ARE NOT ALL RAISED YET, AND THE TWO LAGGARDS ARE NOT AN
+ * OVERSIGHT. Owner decision D-15 sets statics to 24 h and catalog/detail to 1 h.
+ * `catalog`, `home` and `pricing` are there. `static` and `detail` deliberately
+ * still carry the old value, each gated on a prerequisite that is not code in
+ * this repo — see the note on each one. A class whose budget is wrong is not
+ * caught by any test here, because the number IS the specification; the gate is
+ * the reasoning next to it.
+ *
+ * SWR IS CAPPED AT ONE HOUR RATHER THAN SCALING WITH THE TTL. Its job is
+ * absorbing a revalidation round-trip, not extending the staleness budget. At
+ * the old 2× ratio a 24 h static page could be served 72 h after it was
+ * generated, which would undercut the very deploy purge that makes a 24 h TTL
+ * defensible in the first place.
  */
 
 /**
@@ -61,24 +69,28 @@ export interface CacheClassBudget {
  * to prevent.
  */
 export const CACHE_CLASS_BUDGETS = {
-    static: { sMaxAge: 300, swr: 600 },
-    catalog: { sMaxAge: 300, swr: 600 },
     /**
-     * Do NOT raise this ahead of HOS-424. A content write purges the collection
-     * tag but not the entity tag, so an edited detail page is already stale for
-     * its full TTL; a longer TTL multiplies a live defect rather than trading
-     * freshness for hit rate.
+     * Still at the old value, on purpose. D-15 puts this at 86 400 s, and these
+     * pages can only be invalidated by the deploy purge — which fires 45 s after
+     * the container's FIRST REQUEST, with nothing bounding when that arrives
+     * (`purge-on-deploy.ts`). At 300 s a late purge self-corrects within minutes;
+     * at 86 400 s a corrected legal text sits wrong for hours. Raising this is
+     * gated on HOS-428 (enable Coolify's healthcheck, already configured and
+     * disabled), not on anything in this repo.
+     */
+    static: { sMaxAge: 300, swr: 600 },
+    catalog: { sMaxAge: 3_600, swr: 3_600 },
+    /**
+     * Still at the old value, on purpose. HOS-424 — a content write purging the
+     * collection tag but not the entity tag — merged as PR #2746, but its
+     * staging smoke has not been executed. That issue exists precisely because a
+     * purge that read correctly in code was evicting nothing in the field, so a
+     * merged fix is not the evidence this needs. Raising it to 3 600 s before
+     * the smoke would multiply a possibly-still-live defect by 12.
      */
     detail: { sMaxAge: 300, swr: 600 },
-    home: { sMaxAge: 300, swr: 600 },
-    /**
-     * The odd one out at 60 s of SWR rather than 600 s. That is not a decision,
-     * it is the value the four `suscriptores/*` pages were independently written
-     * with before they shared this vocabulary, preserved here so folding them in
-     * changes no TTL. Reconcile it when the classes are re-tuned, not silently
-     * on the way past.
-     */
-    pricing: { sMaxAge: 300, swr: 60 }
+    home: { sMaxAge: 3_600, swr: 3_600 },
+    pricing: { sMaxAge: 3_600, swr: 3_600 }
 } as const satisfies Record<string, CacheClassBudget>;
 
 /** The class a cacheable page declares. */

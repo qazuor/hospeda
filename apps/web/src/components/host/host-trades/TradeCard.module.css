@@ -113,6 +113,24 @@
     line-height: 1.5;
 }
 
+/* The name links to the provider's page (HOS-376 T-053). Inherits the title's
+   own type so the card reads unchanged until pointed at. */
+
+.cardTitleLink {
+    color: inherit;
+    text-decoration: none;
+}
+
+.cardTitleLink:hover {
+    text-decoration: underline;
+}
+
+.cardTitleLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: 2px;
+    border-radius: var(--radius-md, 10px);
+}
+
 /* ── Stats line (HOS-376 §6.5) ──
    Reputation the card states about a real person's trade: the rating when
    enough reviews back it, and the uses/distinct-hosts pair that has to be
