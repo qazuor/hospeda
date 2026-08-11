@@ -40,6 +40,23 @@ describe('PERMISSION_ROLE_MAP', () => {
         ).toBe(false);
     });
 
+    it('does NOT map EDITOR to ACCOMMODATION_CREATE (an editor is not a host)', () => {
+        // Regression. EDITOR was listed here (and in the mirrored constant, so
+        // the drift test above stayed green), which made the SSR sidebar render
+        // the whole host group for an editor. The seed grants an editor only
+        // ACCOMMODATION_REVIEW_CREATE/_UPDATE — never ACCOMMODATION_CREATE — so
+        // every endpoint behind those entries refused, and the avatar dropdown
+        // (which evaluates real permission strings) never showed them either.
+        //
+        // The mirrored-constant test cannot catch this on its own: both sides
+        // are hand-maintained copies, so changing them together is always
+        // "consistent". This asserts the role membership itself.
+        expect(PERMISSION_ROLE_MAP[PermissionEnum.ACCOMMODATION_CREATE]?.has(RoleEnum.EDITOR)).toBe(
+            false
+        );
+        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has(RoleEnum.EDITOR)).toBe(false);
+    });
+
     it('grants POST_CREATE to EDITOR (and platform staff), but not HOST or COMMERCE_OWNER (HOS-134 editor door signal)', () => {
         const mapped = PERMISSION_ROLE_MAP[PermissionEnum.POST_CREATE];
         expect(mapped).toBeDefined();
@@ -93,6 +110,17 @@ describe('hasPostsNavAccess / hasEventsNavAccess (HOS-374 Phase 2 2C-1)', () => 
         const multiHatRoles = [RoleEnum.USER, RoleEnum.HOST, RoleEnum.EDITOR];
         expect(hasPostsNavAccess({ roles: multiHatRoles })).toBe(true);
         expect(hasEventsNavAccess({ roles: multiHatRoles })).toBe(true);
+    });
+
+    it('denies a plain EDITOR the accommodation nav it never had permissions for', () => {
+        // The page-level guards for /mi-cuenta/propiedades, the host dashboard
+        // and the owner inbox all route through hasAccommodationsNavAccess
+        // (HOS-296 §6.5), so this is the same verdict the sidebar renders.
+        expect(hasAccommodationsNavAccess({ roles: [RoleEnum.EDITOR] })).toBe(false);
+    });
+
+    it('still grants accommodation nav to an editor who is ALSO a host', () => {
+        expect(hasAccommodationsNavAccess({ roles: [RoleEnum.EDITOR, RoleEnum.HOST] })).toBe(true);
     });
 });
 
