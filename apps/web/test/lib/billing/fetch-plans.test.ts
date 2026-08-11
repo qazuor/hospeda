@@ -8,7 +8,10 @@
  * - fetchPublicPlans returns ok:false on network error
  * - fetchPublicPlans returns ok:false when the response body is not an array
  * - filterPlansByCategory filters by category and isActive, sorts by sortOrder
- * - exported constants have the expected values
+ *
+ * `PRICING_CACHE_MAX_AGE_SECONDS`/`PRICING_CACHE_SWR_SECONDS` were deleted
+ * (HOS-426): the pricing pages' TTL now comes from the `pricing` cache class
+ * in `src/lib/cache/cache-classes.ts`, not a local constant here.
  *
  * Fetch is mocked globally — no real HTTP requests are made.
  * getApiUrl() is module-mocked to avoid triggering validateWebEnv() which
@@ -17,12 +20,7 @@
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
-import {
-    fetchPublicPlans,
-    filterPlansByCategory,
-    PRICING_CACHE_MAX_AGE_SECONDS,
-    PRICING_CACHE_SWR_SECONDS
-} from '@/lib/billing/fetch-plans';
+import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
 
 // Module-level mock: bypass validateWebEnv() which requires import.meta.env.
 // Pattern established by apps/web/test/pages/sitemap-dynamic.test.ts.
@@ -429,25 +427,5 @@ describe('HOS-39 T-021: owner + tourist pricing pages reflect DB changes on next
         expect(touristPlans).toHaveLength(1);
         expect(touristPlans[0]?.name).toBe('Plus (Editado)');
         expect(touristPlans[0]?.monthlyPriceArs).toBe(777_000);
-    });
-});
-
-describe('cache constants', () => {
-    it('PRICING_CACHE_MAX_AGE_SECONDS is a positive number', () => {
-        expect(typeof PRICING_CACHE_MAX_AGE_SECONDS).toBe('number');
-        expect(PRICING_CACHE_MAX_AGE_SECONDS).toBeGreaterThan(0);
-    });
-
-    it('PRICING_CACHE_SWR_SECONDS is a positive number', () => {
-        expect(typeof PRICING_CACHE_SWR_SECONDS).toBe('number');
-        expect(PRICING_CACHE_SWR_SECONDS).toBeGreaterThan(0);
-    });
-
-    it('PRICING_CACHE_MAX_AGE_SECONDS is 300', () => {
-        expect(PRICING_CACHE_MAX_AGE_SECONDS).toBe(300);
-    });
-
-    it('PRICING_CACHE_SWR_SECONDS is 60', () => {
-        expect(PRICING_CACHE_SWR_SECONDS).toBe(60);
     });
 });

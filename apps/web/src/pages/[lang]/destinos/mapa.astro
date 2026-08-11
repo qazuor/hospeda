@@ -32,6 +32,7 @@ applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	cacheable: true,
+	cacheClass: 'catalog',
 	tags: [CACHE_TAG_COLLECTIONS.destination]
 });
 

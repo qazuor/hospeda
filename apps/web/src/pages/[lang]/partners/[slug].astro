@@ -89,6 +89,7 @@ applyCacheHeaders({
     // No usable tag means nothing could ever purge this page, and an
     // unpurgeable cached page is worse than an uncached one.
     cacheable: Astro.url.search === '' && primaryCacheTag !== undefined,
+    cacheClass: 'detail',
     // The `else` branch exists only to satisfy the non-empty tuple type and is
     // never applied: `cacheable` above is false whenever `primaryCacheTag` is
     // undefined, and `applyCacheHeaders` returns before it reads `tags`.

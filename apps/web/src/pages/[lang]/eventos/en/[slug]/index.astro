@@ -3,9 +3,10 @@
  * @file eventos/en/[slug]/index.astro
  * @description Events at a specific venue/location.
  * @route /{lang}/eventos/en/{slug}/
- * @rendering SSR + Cloudflare edge cache — `public, s-maxage=300,
- *   stale-while-revalidate=600`, purged by cache tag. Eligibility is decided
- *   per request by the `applyCacheHeaders` call below, not by this comment.
+ * @rendering SSR + Cloudflare edge cache — TTL from the `detail` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 import ListingLayout from '@/layouts/ListingLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
@@ -42,13 +43,15 @@ const locationName = String(locData.name || slug);
 // Tagged `list-event` only. The event LOCATION this page is keyed on has no tag
 // of its own — `eventLocation` is absent from the vocabulary and from
 // `entity-tag-mapper.ts` — so renaming a location does not purge this page; it
-// goes stale for at most the 300s TTL. Event writes, which are what actually
-// changes the list below, do purge it.
+// goes stale for at most the `detail` cache class's TTL (see
+// `lib/cache/cache-classes.ts`). Event writes, which are what actually changes
+// the list below, do purge it.
 applyCacheHeaders({
 	locals: Astro.locals,
 	headers: Astro.response.headers,
 	// `/…/page/N/` rewrites into this route with `?page=N`.
 	cacheable: hasOnlyPaginationParams({ searchParams: Astro.url.searchParams }),
+	cacheClass: 'detail',
 	tags: [CACHE_TAG_COLLECTIONS.event]
 });
 

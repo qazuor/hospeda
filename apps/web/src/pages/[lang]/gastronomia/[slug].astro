@@ -89,6 +89,7 @@ applyCacheHeaders({
     // No usable entity tag means nothing could purge this page, and an
     // unpurgeable cached page is worse than an uncached one.
     cacheable: primaryGastronomyTag !== undefined,
+    cacheClass: 'detail',
     tags:
         primaryGastronomyTag !== undefined
             ? [primaryGastronomyTag, ...extraGastronomyTags]

@@ -150,14 +150,43 @@ export default defineConfig({
         }
     ],
 
+    /**
+     * ONE project, deliberately (HOS-431).
+     *
+     * There used to be two — `chromium-web` and `chromium-admin` — differing
+     * only in `baseURL`. A project's `baseURL` does nothing unless a spec
+     * navigates relative to it, and **no spec in this suite does**: every one
+     * builds an absolute URL from `WEB_URL` / `ADMIN_URL` (verified across all
+     * 67 spec files — zero `page.goto('/…')`, zero uses of the `baseURL`
+     * fixture). The two projects were therefore identical, and Playwright ran
+     * every spec twice.
+     *
+     * That was not merely wasteful, it was corrupting. The duplicate runs hit
+     * the SAME e2e database concurrently (`fullyParallel` + 4 workers), so a
+     * spec raced ITSELF on the same rows. `commerce-03` is the worked example:
+     * `beforeAll` reads the current gastronomy type as "the original", the test
+     * switches it to a hardcoded `BAR`, `afterAll` restores. Interleaved, copy B
+     * reads copy A's `BAR` as its original, then tries to set `BAR` on a row
+     * already holding it — no value change, so React's `onChange` never fires,
+     * the form never goes dirty, and Save stays disabled until the assertion
+     * times out. B's `afterAll` then writes `BAR` back as the "seeded" value.
+     * The favourites specs failed the same way on a shared counter, reading 2,
+     * 3 and 4 across attempts.
+     *
+     * So: do NOT re-add a second project to "cover admin". Admin coverage comes
+     * from specs navigating to `ADMIN_URL` (see tests/admin, tests/security),
+     * which this single project already runs. A second project would only
+     * duplicate the suite onto the same database again. If relative navigation
+     * is ever introduced, split the specs with `testMatch` FIRST, so the two
+     * projects run disjoint sets rather than the same one twice.
+     *
+     * `use.baseURL` above stays at the web URL as the default for any future
+     * relative navigation.
+     */
     projects: [
         {
-            name: 'chromium-web',
+            name: 'chromium',
             use: { ...devices['Desktop Chrome'], baseURL: WEB_BASE_URL }
-        },
-        {
-            name: 'chromium-admin',
-            use: { ...devices['Desktop Chrome'], baseURL: ADMIN_BASE_URL }
         }
     ]
 });

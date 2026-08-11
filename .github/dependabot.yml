@@ -68,6 +68,13 @@ updates:
     #     mergeAndUpdate/FormGroupApi/uuid. apps/admin forms use
     #     @tanstack/react-form as the mandated pattern (CLAUDE.md) — real prod
     #     surface, not cosmetic. Owner: HOS-57.
+    #   - better-auth / @better-auth/*: 1.6.23 -> 1.6.25 (a PATCH) makes the
+    #     @better-auth/expo plugin object stop satisfying BetterAuthClientPlugin,
+    #     so the plugin's actions fall out of the inferred client type and
+    #     getCookie disappears with them — apps/mobile/src/lib/auth-client.ts
+    #     fails typecheck with TS2322 + TS7006. better-auth is a direct dependency
+    #     of admin/api/mobile/web and @better-auth/expo of api/mobile, so the whole
+    #     scope has to move together. Owner: HOS-429.
     #   - expo / expo-*: Dependabot opens PRs for individual expo-* leaf packages
     #     (router, constants, linking, secure-store, splash-screen, web-browser)
     #     bumping 56.x -> 57.0.0, but never proposes bumping the core `expo`
@@ -86,6 +93,8 @@ updates:
       - dependency-name: 'zod'
       - dependency-name: 'jsdom'
       - dependency-name: '@tanstack/react-form'
+      - dependency-name: 'better-auth'
+      - dependency-name: '@better-auth/*'
       - dependency-name: 'expo'
         update-types: ['version-update:semver-major']
       - dependency-name: 'expo-*'
@@ -117,6 +126,17 @@ updates:
       - dependency-name: '@ai-sdk/openai'
       - dependency-name: '@ai-sdk/anthropic'
       - dependency-name: 'ai'
+      # @hono/zod-openapi: 1.4.0 -> 1.5.x (a MINOR) changes the shape of the `z`
+      # re-export. apps/api fails typecheck with six errors: z.ZodObject stops
+      # being usable on the right-hand side of `instanceof` (TS2358 in
+      # src/utils/openapi-schema.ts) and callback params lose inference (TS7006
+      # in base-schemas.ts, routes/feedback/public/submit.ts and two test files).
+      # Four of the five files import `z` straight from this package. The fix is
+      # not cosmetic: openapi-schema.ts deliberately introspects Zod internals
+      # (_def.typeName / _def.shape) because no public API covers it, so the
+      # migration has to re-establish that against the new typings.
+      # Owner: HOS-430.
+      - dependency-name: '@hono/zod-openapi'
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).
