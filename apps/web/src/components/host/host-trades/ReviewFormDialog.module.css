@@ -80,9 +80,30 @@
     transition: color var(--duration-normal, 0.4s) ease-out;
 }
 
-.star:hover .starGlyph,
-.starInput:checked ~ .starGlyph {
+/*
+ * A rating control says its value by HOW MANY stars are lit, so the chosen one
+ * and every star below it are filled. The selected state is driven from React
+ * (`starGlyphFilled`) rather than `:checked ~`, which can only reach the marked
+ * input's own glyph and therefore lit exactly one — reading as "1 star" when the
+ * host had answered 4.
+ */
+.starGlyphFilled {
     color: var(--brand-accent);
+}
+
+/*
+ * Hover preview, same "fill up to" shape but expressible in CSS: light the whole
+ * row, then unlight everything AFTER the hovered star. The sibling combinator
+ * only reaches forwards, which is exactly the half that needs undoing. Higher
+ * specificity than `.starGlyphFilled` on purpose — while previewing 2 of a
+ * chosen 4, stars 3 and 4 must go dim.
+ */
+.starRow:hover .starGlyph {
+    color: var(--brand-accent);
+}
+
+.starRow:hover .star:hover ~ .star .starGlyph {
+    color: var(--core-foreground-a25);
 }
 
 /* The focus ring has to live on the glyph, since the input itself is clipped. */

@@ -133,6 +133,36 @@ describe('ReviewFormDialog — the stars', () => {
         }
     });
 
+    it('fills every star up to the chosen one, not only the chosen one', async () => {
+        // A rating control communicates its value by how many stars are lit.
+        // Lighting ONLY the fifth reads as one star, which is the opposite of
+        // what the host just answered — and it disagrees with the provider's
+        // Valoraciones tab, which renders the same score as five filled stars.
+        const user = userEvent.setup();
+        renderDialog();
+        const stars = await formReady();
+
+        await user.click(within(stars).getByRole('radio', { name: /4 estrellas/i }));
+
+        const glyphs = [...stars.querySelectorAll('.starGlyph')];
+        expect(glyphs).toHaveLength(5);
+        expect(glyphs.map((g) => g.className.includes('starGlyphFilled'))).toEqual([
+            true,
+            true,
+            true,
+            true,
+            false
+        ]);
+    });
+
+    it('lights nothing before a star is chosen', async () => {
+        renderDialog();
+        const stars = await formReady();
+
+        const glyphs = [...stars.querySelectorAll('.starGlyph')];
+        expect(glyphs.some((g) => g.className.includes('starGlyphFilled'))).toBe(false);
+    });
+
     it('is operable from the keyboard', async () => {
         const user = userEvent.setup();
         renderDialog();
