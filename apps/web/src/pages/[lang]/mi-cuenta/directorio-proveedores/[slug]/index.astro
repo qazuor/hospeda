@@ -1,0 +1,362 @@
+---
+/**
+ * @file mi-cuenta/directorio-proveedores/[slug]/index.astro
+ * @description A provider's detail page inside the directory (HOS-376 T-053).
+ *
+ * What a host reads before deciding whom to call: the benefit in full, the
+ * stats that back it, and the reviews other hosts wrote — with the provider's
+ * answer where he gave one and a moderator cleared it.
+ *
+ * The first page of reviews is read HERE and handed to the island already
+ * loaded. The reviews are the reason to open this page, so fetching them after
+ * hydration would show an empty panel on exactly the screen where "no reviews"
+ * and "not loaded yet" carry opposite meanings.
+ *
+ * The three terminal states mirror the sibling QR landing page, and for the
+ * same reason: a host may reach this URL from a link saved a season ago.
+ *   - 404          → no provider carries this slug
+ *   - 422 REVOKED  → the provider was taken down (the row survives, HOS-278 R-4)
+ *   - other errors → transient, offer a retry
+ *
+ * @route     /[lang]/mi-cuenta/directorio-proveedores/[slug]/
+ * @rendering SSR (prerender = false — requires an authenticated host)
+ */
+
+import { LockIcon, WrenchIcon } from '@repo/icons';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import accountSectionStyles from '@/components/account/AccountSection.module.css';
+import { DirectoryReviewsList } from '@/components/host/host-trades/DirectoryReviewsList.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import type { DirectoryProvider, DirectoryReviewRow } from '@/lib/api/endpoints-protected';
+import { hostTradesApi } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { webLogger as logger } from '@/lib/logger';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// Safety net: middleware already protects /mi-cuenta/* and comes back here.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+const slug = Astro.params.slug;
+if (!slug) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta/directorio-proveedores' }));
+}
+
+// ---------------------------------------------------------------------------
+// Read the provider, then its first page of reviews.
+//
+// Sequential rather than parallel, and not by oversight: the review endpoint
+// takes the provider's id, which only the first read can supply.
+// ---------------------------------------------------------------------------
+
+type LoadOutcome = 'ok' | 'notFound' | 'revoked' | 'error';
+
+let provider: DirectoryProvider | null = null;
+let outcome: LoadOutcome = 'error';
+
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const result = await hostTradesApi.getBySlug({ slug, cookieHeader });
+
+if (result.ok) {
+    provider = result.data.hostTrade;
+    outcome = 'ok';
+} else if (result.error.status === 404) {
+    outcome = 'notFound';
+} else if (result.error.code === 'PROVIDER_REVOKED') {
+    // Matched on the CODE rather than the 422 status: 422 is also what a
+    // validation failure would use, and those are two different screens.
+    outcome = 'revoked';
+} else {
+    outcome = 'error';
+    logger.error(
+        '[directorio-proveedores/detalle] Could not load provider',
+        `slug=${slug} status=${result.error.status} code=${result.error.code ?? 'none'}`
+    );
+}
+
+let reviewRows: readonly DirectoryReviewRow[] = [];
+let reviewTotal = 0;
+let reviewTotalPages = 1;
+let reviewsLoadFailed = false;
+
+if (provider) {
+    const reviewsResult = await hostTradesApi.listDirectoryReviews({
+        hostTradeId: provider.id,
+        cookieHeader
+    });
+
+    if (reviewsResult.ok) {
+        reviewRows = reviewsResult.data.items;
+        reviewTotal = reviewsResult.data.pagination.total;
+        reviewTotalPages = reviewsResult.data.pagination.totalPages;
+    } else {
+        // The page still renders: the benefit and the contact button are worth
+        // more than nothing, and a host who came to call someone can still do
+        // it. But the reviews section must SAY it failed rather than fall back
+        // to the empty state — zero rows is what a failed read and an unreviewed
+        // provider have in common, and only one of them may be stated as fact
+        // about a real person's trade.
+        reviewsLoadFailed = true;
+        logger.error(
+            '[directorio-proveedores/detalle] Could not load reviews',
+            `hostTradeId=${provider.id} status=${reviewsResult.error.status}`
+        );
+    }
+}
+
+// ---------------------------------------------------------------------------
+// i18n
+// ---------------------------------------------------------------------------
+
+const { t } = createTranslations(locale);
+
+const title = provider?.name ?? t('host-trades.page.title', 'Directorio de proveedores');
+const subtitle =
+    outcome === 'ok' && provider
+        ? t(`host-trades.categories.${provider.category}`, provider.category)
+        : t('host-trades.page.subtitle', 'Proveedores locales de confianza para tu alojamiento');
+
+const directoryHref = buildUrl({ locale, path: 'mi-cuenta/directorio-proveedores' });
+const registerUsageHref = buildUrl({
+    locale,
+    path: `mi-cuenta/directorio-proveedores/${slug}/registrar-uso`
+});
+const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver al directorio');
+---
+
+<AccountLayout
+    locale={locale}
+    title={title}
+    description={subtitle}
+    activeSection="directorio-proveedores"
+>
+    <AccountPageHeader title={title} description={subtitle} />
+
+    {outcome === 'ok' && provider ? (
+        <div class="provider-detail__stack">
+            <div class:list={['provider-detail__identity', accountSectionStyles.branded]}>
+                <span class="provider-detail__icon" aria-hidden="true">
+                    <WrenchIcon size={32} weight="duotone" />
+                </span>
+                <div class="provider-detail__identity-body">
+                    <p class="provider-detail__benefit">
+                        <span class="provider-detail__benefit-label">
+                            {t('host-trades.card.benefit', 'Beneficio para hosts')}
+                        </span>
+                        {provider.benefit}
+                    </p>
+
+                    {provider.is24h ? (
+                        <p class="provider-detail__schedule">
+                            {t('host-trades.card.is24h', 'Disponible 24hs')}
+                        </p>
+                    ) : provider.scheduleText ? (
+                        <p class="provider-detail__schedule">{provider.scheduleText}</p>
+                    ) : null}
+
+                    <div class="provider-detail__actions">
+                        <a href={registerUsageHref} class="provider-detail__cta">
+                            {t('host-trades.registerUsage.title', 'Registrar uso del beneficio')}
+                        </a>
+                        <a href={directoryHref} class="provider-detail__back">{backToDirectory}</a>
+                    </div>
+                </div>
+            </div>
+
+            <DirectoryReviewsList
+                client:load
+                locale={locale}
+                hostTradeId={provider.id}
+                initialLoadFailed={reviewsLoadFailed}
+                initialRows={reviewRows}
+                initialTotal={reviewTotal}
+                initialTotalPages={reviewTotalPages}
+            />
+        </div>
+    ) : (
+        <div class:list={['provider-detail__terminal', accountSectionStyles.branded]} role="alert">
+            <span class="provider-detail__terminal-icon" aria-hidden="true">
+                <LockIcon size={40} weight="duotone" />
+            </span>
+            <h2 class="provider-detail__terminal-heading">
+                {outcome === 'revoked'
+                    ? t(
+                          'host-trades.registerUsage.revoked.title',
+                          'Este proveedor ya no está en el directorio'
+                      )
+                    : outcome === 'notFound'
+                      ? t(
+                            'host-trades.registerUsage.notFound.title',
+                            'No encontramos este proveedor'
+                        )
+                      : t(
+                            'host-trades.registerUsage.loadError.title',
+                            'No pudimos cargar el proveedor'
+                        )}
+            </h2>
+            <p class="provider-detail__terminal-body">
+                {outcome === 'revoked'
+                    ? t(
+                          'host-trades.registerUsage.revoked.body',
+                          'Ya no forma parte del directorio, así que no podés registrar usos de su beneficio. Si tenés dudas, escribinos.'
+                      )
+                    : outcome === 'notFound'
+                      ? t(
+                            'host-trades.registerUsage.notFound.body',
+                            'El código que escaneaste no corresponde a ningún proveedor del directorio. Revisá que sea el código correcto.'
+                        )
+                      : t(
+                            'host-trades.registerUsage.loadError.body',
+                            'Hubo un problema al cargar los datos. Probá recargar la página.'
+                        )}
+            </p>
+            {outcome === 'error' ? (
+                <a href={Astro.url.pathname} class="provider-detail__terminal-cta">
+                    {t('host-trades.registerUsage.loadError.retry', 'Reintentar')}
+                </a>
+            ) : (
+                <a href={directoryHref} class="provider-detail__terminal-cta">{backToDirectory}</a>
+            )}
+        </div>
+    )}
+</AccountLayout>
+
+<style>
+    .provider-detail__stack {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-5, 1.25rem);
+    }
+
+    /* ── Identity + benefit ── */
+
+    .provider-detail__identity {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-6, 1.5rem);
+        background-color: var(--core-card);
+        border: 1px solid var(--core-foreground-a08);
+        border-radius: var(--radius-card, 24px);
+    }
+
+    .provider-detail__icon {
+        display: inline-flex;
+        flex-shrink: 0;
+        align-items: center;
+        justify-content: center;
+        color: var(--brand-primary);
+    }
+
+    .provider-detail__identity-body {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2, 0.5rem);
+    }
+
+    .provider-detail__benefit {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: var(--text-body, 1rem);
+        color: var(--core-foreground);
+    }
+
+    .provider-detail__benefit-label {
+        display: block;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--brand-accent);
+    }
+
+    .provider-detail__schedule {
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+    }
+
+    .provider-detail__actions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-3, 0.75rem);
+        margin-top: var(--space-2, 0.5rem);
+    }
+
+    .provider-detail__cta,
+    .provider-detail__terminal-cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0.625rem 1.25rem;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9375rem;
+        color: var(--primary-foreground, #ffffff);
+        text-decoration: none;
+        white-space: nowrap;
+        background-color: var(--brand-primary);
+        border-radius: var(--radius-pill, 9999px);
+        transition: opacity 150ms ease-out;
+    }
+
+    .provider-detail__cta:hover,
+    .provider-detail__terminal-cta:hover {
+        opacity: 0.88;
+    }
+
+    .provider-detail__back {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+        text-decoration: underline;
+    }
+
+    /* ── Terminal states (not found / revoked / load error) ── */
+
+    .provider-detail__terminal {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-12, 3rem) var(--space-8, 2rem);
+        background-color: var(--core-card);
+        border: 1px solid var(--core-foreground-a08);
+        border-radius: var(--radius-card, 24px);
+        text-align: center;
+    }
+
+    .provider-detail__terminal-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--core-muted-foreground);
+    }
+
+    .provider-detail__terminal-heading {
+        margin: 0;
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: var(--core-foreground);
+    }
+
+    .provider-detail__terminal-body {
+        max-width: 46ch;
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: var(--text-body, 1rem);
+        color: var(--core-muted-foreground);
+    }
+</style>

@@ -37,7 +37,7 @@ import {
 } from '../../../src/lib/cache/response-cache';
 
 /** The `catalog` cache class's `Cache-Control`, pinned as a literal (HOS-426). */
-const CACHEABLE_CONTROL = 'public, s-maxage=300, stale-while-revalidate=600';
+const CACHEABLE_CONTROL = 'public, s-maxage=3600, stale-while-revalidate=3600';
 
 /** Minimal stand-in for the request-scoped locals the helpers touch. */
 function makeLocals(): App.Locals {

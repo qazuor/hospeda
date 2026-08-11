@@ -25,6 +25,7 @@ import type { JSX } from 'react';
 import { formatNumber } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import { resolveTradeStats } from './resolve-trade-stats';
 import styles from './TradeCard.module.css';
 
@@ -93,6 +94,10 @@ export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
 
     const categoryLabel = t(`host-trades.categories.${trade.category}`, trade.category);
     const contactHref = resolveContactHref(trade.contact);
+    const detailHref = buildUrl({
+        locale,
+        path: `mi-cuenta/directorio-proveedores/${trade.slug}`
+    });
     const stats = resolveTradeStats({ trade });
 
     // One decimal, localised: "4,6" in es/pt, "4.6" in en. A raw 4.5999999
@@ -110,7 +115,18 @@ export function TradeCard({ trade, locale }: TradeCardProps): JSX.Element {
         <article className={styles.card}>
             {/* ── Card header: name + category badge ── */}
             <div className={styles.cardHeader}>
-                <h3 className={styles.cardTitle}>{trade.name}</h3>
+                {/* The name is the way into the provider's page. A directory
+                    reads that way, and it costs the card no new element —
+                    "Contactar" stays the only button, so the primary action
+                    keeps competing with nothing. */}
+                <h3 className={styles.cardTitle}>
+                    <a
+                        className={styles.cardTitleLink}
+                        href={detailHref}
+                    >
+                        {trade.name}
+                    </a>
+                </h3>
                 <span className={styles.categoryBadge}>{categoryLabel}</span>
             </div>
 

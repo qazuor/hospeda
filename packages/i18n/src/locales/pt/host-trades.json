@@ -261,5 +261,72 @@
             "download": "Baixar o QR",
             "downloaded": "Pronto, baixamos como SVG."
         }
+    },
+    "moderation": {
+        "title": "Moderação de fornecedores",
+        "subtitle": "Duas filas com significados diferentes: uma resposta pendente bloqueia um fornecedor, uma avaliação pendente não bloqueia ninguém.",
+        "replies": {
+            "title": "Respostas pendentes",
+            "help": "Um fornecedor não pode responder a uma reclamação sobre o próprio negócio até que isto seja aprovado. Esta fila vem primeiro.",
+            "empty": "Não há respostas aguardando revisão.",
+            "onReview": "Responde à avaliação {{id}}",
+            "editedAfterReply": "O anfitrião editou a avaliação depois desta resposta."
+        },
+        "reviews": {
+            "title": "Avaliações",
+            "help": "São publicadas ao serem criadas, então esta fila é um backlog: nada depende dela.",
+            "empty": "Não há avaliações para revisar.",
+            "benefitYes": "Respeitou o benefício",
+            "benefitNo": "NÃO respeitou o benefício",
+            "noContent": "Sem comentário escrito."
+        },
+        "filters": {
+            "stateLabel": "Estado de moderação",
+            "all": "Todos",
+            "PENDING": "Pendentes",
+            "APPROVED": "Aprovadas",
+            "REJECTED": "Recusadas"
+        },
+        "state": {
+            "PENDING": "Pendente",
+            "APPROVED": "Aprovada",
+            "REJECTED": "Recusada"
+        },
+        "actions": {
+            "approve": "Aprovar",
+            "reject": "Recusar",
+            "reasonLabel": "Motivo (opcional, mostrado a quem escreveu)",
+            "reasonPlaceholder": "Por exemplo: inclui dados pessoais de terceiros."
+        },
+        "errors": {
+            "load": "Não conseguimos carregar a fila. Tente recarregar a página.",
+            "moderate": "Não conseguimos salvar a decisão. Tente novamente."
+        },
+        "pagination": {
+            "status": "Página {{page}} de {{total}}",
+            "previous": "Anteriores",
+            "next": "Seguintes"
+        }
+    },
+    "directory": {
+        "reviews": {
+            "title_one": "{{count}} avaliação",
+            "title_other": "{{count}} avaliações",
+            "empty": "Ninguém avaliou este fornecedor ainda. As avaliações aparecem quando um anfitrião com um uso confirmado avalia.",
+            "anonymous": "Um anfitrião",
+            "rating": "{{count}} de 5 estrelas",
+            "benefitYes": "Respeitou o benefício",
+            "benefitNo": "NÃO respeitou o benefício",
+            "replyLabel": "Resposta do fornecedor",
+            "editedAfterReply": "A avaliação foi editada depois desta resposta.",
+            "paginationLabel": "Paginação de avaliações",
+            "pageStatus": "Página {{page}} de {{total}}",
+            "previous": "Anteriores",
+            "next": "Seguintes",
+            "errors": {
+                "page": "Não conseguimos carregar esta página de avaliações. Tente novamente.",
+                "initial": "Não conseguimos carregar as avaliações deste fornecedor. Tente recarregar a página."
+            }
+        }
     }
 }
