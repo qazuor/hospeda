@@ -32,7 +32,7 @@
 
 Esto abre dos segmentos que hoy no se están trabajando:
 
-- **Portugués** — brasileños. Concepción del Uruguay está sobre el río, y el Litoral es corredor natural de entrada.
+- **Portugués** — brasileños. La costa del río Uruguay es corredor natural de entrada desde el norte.
 - **Inglés** — turismo internacional de naturaleza y **pesca deportiva en el Río Uruguay**, extranjeros residentes en Argentina, y SEO internacional que hoy no tiene competencia en la región.
 
 Propuesta de esquema: sumar un campo **Idioma** a cada ítem de la lista (`es` por defecto, `es/en/pt` donde valga la producción triple). Evita decidirlo pieza por pieza sobre la marcha.

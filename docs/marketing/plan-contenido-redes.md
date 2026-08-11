@@ -83,6 +83,13 @@ Se usan los de Phosphor — <https://phosphoricons.com/>
 2. **Nada de lo que todavía no existe se muestra como si ya funcionara.** Las piezas de prioridad 5 se diseñan y se guardan.
 3. **Cuando mostramos la plataforma, usamos capturas de pantalla reales.** Nada dibujado ni simulado: entramos al sitio, sacamos la captura y la retocamos solo para que se lea mejor. Si la pantalla real todavía no existe, la pieza es prioridad 5.
 4. **Escribimos como hablamos acá.** De vos, sin palabras en inglés, sin términos que solo entienda alguien del rubro.
+5. **Ningún destino se destaca sobre los demás.** Somos de Concepción del Uruguay y es por donde arrancamos a conseguir clientes, pero eso es un dato interno, no una línea editorial. En las publicaciones los 22 destinos valen lo mismo: mismo tamaño en el mapa, misma presencia en las fotos, ninguna ciudad como protagonista. Cuando hablamos del territorio, hablamos del **Litoral** o de **Entre Ríos**, no de una ciudad.
+
+### Los 22 destinos
+
+Colón · Concepción del Uruguay · Gualeguaychú · Caseros · Ceibas · Chajarí · Concordia · Federación · Gualeguay · Ibicuy · Larroque · Pueblo Liebig · Rosario del Tala · San José · San Justo · San Salvador · Santa Ana · Ubajay · Urdinarrain · Villa Elisa · Villa Paranacito · Villaguay
+
+La lista no está cerrada: se suman destinos a pedido. Antes de una campaña grande, conviene confirmar si cambió.
 
 ---
 
@@ -103,7 +110,7 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Subtítulo**: Alojamientos, gastronomía, eventos y experiencias en un solo lugar.
 - **Cuerpo**: Todo lo que necesitás para armar tu escapada por Entre Ríos y el Litoral, sin dar vueltas por diez páginas distintas.
 - **Idea**: La placa de apertura, la más limpia de todas. Foto del río al atardecer ocupando toda la imagen, el logo centrado arriba, y el título grande en la mitad de abajo sobre un degradado oscuro para que se lea bien. Nada más. Es la primera impresión de la marca: si tiene tres elementos, sobra uno.
-- **Foto/s**: El río Uruguay al atardecer, o la costanera de Concepción del Uruguay. Panorámica, con poca gente o sin gente. Tiene que leerse "la región", no "un lugar puntual".
+- **Foto/s**: El río al atardecer o una costanera de la región. Panorámica, con poca gente o sin gente. Tiene que leerse "el Litoral", no una ciudad en particular: si un vecino de Colón o de Federación reconoce el lugar como ajeno, la placa falló.
 - **CTA**: Descubrí más en hospeda.com.ar
 - **Idioma**: Español
 
@@ -184,13 +191,13 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Aspect Ratio**: 4:5
 - **Tag Line**: Dónde estamos
 - **Título**: Todo el Litoral, en un mapa.
-- **Cuerpo**: Desde Concepción del Uruguay hasta cada rincón de la costa del río. Los destinos que ya están cargados, con sus alojamientos, eventos y lugares para visitar.
-- **Items**: La lista de destinos reales que ya están cargados en la plataforma. **Falta pedirla** — no inventar ciudades que no estén publicadas.
-- **Idea**: Un mapa ilustrado de la región de fondo, con un punto por cada destino y el nombre al lado. Mapa dibujado con la estética de la marca, no una captura de Google Maps. Concepción del Uruguay marcada con un punto más grande, porque es la base.
+- **Cuerpo**: 22 destinos de Entre Ríos, de punta a punta de la provincia. Cada uno con sus alojamientos, sus eventos y sus lugares para visitar.
+- **Items**: Colón · Concepción del Uruguay · Gualeguaychú · Caseros · Ceibas · Chajarí · Concordia · Federación · Gualeguay · Ibicuy · Larroque · Pueblo Liebig · Rosario del Tala · San José · San Justo · San Salvador · Santa Ana · Ubajay · Urdinarrain · Villa Elisa · Villa Paranacito · Villaguay
+- **Idea**: Un mapa ilustrado de la provincia de fondo, con un punto por cada destino y el nombre al lado. Mapa dibujado con la estética de la marca, no una captura de Google Maps. **Todos los puntos del mismo tamaño**: ningún destino se destaca sobre otro. Son 22 nombres, así que hay que trabajar bien la tipografía para que entren y se lean; si no entran todos con claridad, conviene pasarlo a carrusel con la provincia dividida en zonas.
 - **Foto/s**: Ninguna. Ilustración de mapa.
 - **CTA**: Elegí tu destino en hospeda.com.ar
 - **Idioma**: Español
-- **Antes de diseñar**: pedir la lista exacta de destinos publicados.
+- **Al actualizar**: cada vez que se sume un destino nuevo, hay que rehacer esta placa. Conviene dejar el archivo editable y a mano.
 
 ---
 
@@ -235,13 +242,30 @@ Piezas que dicen **qué es Hospeda** y **por qué existe**. Son las primeras que
 - **Tipo**: Imagen única
 - **Aspect Ratio**: 9:16 y 4:5
 - **Tag Line**: De la región, para la región
-- **Título**: Hecho en Concepción del Uruguay.
+- **Título**: Hecho en el Litoral.
 - **Subtítulo**: Por gente que conoce cada camino de la costa.
-- **Cuerpo**: No somos una plataforma de afuera que descubrió el Litoral en un mapa. Somos de acá, y armamos la herramienta que nos hubiera gustado tener.
-- **Idea**: Una foto real y honesta de la ciudad. No la postal turística perfecta: algo más de todos los días, que el que vive acá reconozca al toque. El título abajo, con aire. Esta placa gana por ser auténtica: si parece foto comprada, falló.
-- **Foto/s**: Una calle, la costanera o un lugar reconocible de Concepción del Uruguay. Luz natural, sin filtros fuertes.
+- **Cuerpo**: No somos una plataforma de afuera que descubrió Entre Ríos en un mapa. Somos de acá, recorrimos estos pueblos, y armamos la herramienta que nos hubiera gustado tener.
+- **Idea**: Una foto real y honesta de la región. No la postal turística perfecta: algo más de todos los días, que el entrerriano reconozca al toque como propio. El título abajo, con aire. Esta placa gana por ser auténtica: si parece foto comprada, falló.
+- **Foto/s**: Un camino, una costanera, un paisaje de la costa del río. **Que no sea identificable con una ciudad puntual** — la idea es que el de Federación y el de Gualeguay se sientan igual de aludidos.
 - **CTA**: Conocenos en hospeda.com.ar
 - **Idioma**: Español
+
+---
+
+#### 1.10 · ¿No está tu destino?
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: Seguimos creciendo
+- **Título**: ¿No encontrás tu destino?
+- **Subtítulo**: Escribinos y lo sumamos.
+- **Cuerpo**: Arrancamos con 22 destinos de Entre Ríos, pero la lista no está cerrada. Si tu pueblo o tu ciudad todavía no está, contanos y lo agregamos.
+- **Idea**: Un mapa con los destinos marcados y un espacio vacío señalado con un signo de pregunta o un marcador punteado, como diciendo "acá falta el tuyo". El gesto de la placa es de invitación, no de disculpa: no es que nos falten lugares, es que estamos creciendo y decidís vos cuál sigue.
+- **Foto/s**: Ninguna. Ilustración de mapa, en la misma línea gráfica que la 1.6.
+- **CTA**: Escribinos desde hospeda.com.ar y sumamos tu destino
+- **Idioma**: Español
+- **Nota**: sirve para dos públicos a la vez — el turista que no encuentra su lugar, y el dueño de un alojamiento de una ciudad que todavía no está cargada. Vale reusarla en la categoría de sumar alojamientos con otro CTA apuntado al segundo.
 
 ---
 
@@ -486,7 +510,6 @@ Cosas que frenan la producción de alguna pieza y necesitan una definición.
 | Tema | Qué hay que definir | Piezas afectadas |
 |---|---|---|
 | **Cupón de descuento** | Cuál es el código vigente y hasta cuándo vale. | 12.1 |
-| **Lista de destinos** | Cuáles son los destinos publicados hoy. | 1.6 |
 | **Uso de nombres de otras plataformas** | Aparecen Airbnb, Booking y Google en placas publicitarias. Conviene que alguien lo revise. | 12.3, 12.4 |
 | **Directorio de oficios** | Confirmar si ya está disponible para anfitriones. Si lo está, la pieza 12.13 pasa a prioridad 1. | 12.13 |
 
@@ -496,7 +519,7 @@ Cosas que frenan la producción de alguna pieza y necesitan una definición.
 
 | Bloque | Categoría | Estado |
 |---|---|---|
-| A · Marca | 1. Genéricas de marca | ✅ 9 piezas |
+| A · Marca | 1. Genéricas de marca | ✅ 10 piezas |
 | A · Marca | 2. Institucional | ⬜ pendiente |
 | B · Producto | 3. Turistas | ⬜ pendiente |
 | B · Producto | 4. Alojamientos | ⬜ pendiente |
