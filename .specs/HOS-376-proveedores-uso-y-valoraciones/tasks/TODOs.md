@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 50/70 tareas cerradas + 1 en curso (71%)
+## Progreso: 53/70 tareas cerradas + 1 en curso (76%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 20/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 23/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -201,7 +201,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [ ] **T-055** (c3) — Admin: cola de moderación de réplicas y valoraciones
   - apps/admin/src/routes/_authed/host-trades/: cola de réplicas PENDING (la prioritaria, porque bloquea publicación) y listado de valoraciones con filtro de moderationState. Hooks con el molde …
   - Bloqueada por: T-037 · Bloquea a: —
-- [ ] **T-056** (c3) — Admin: listado de usos y gestión de suspensiones
+- [x] **T-056** (c3) — Admin: listado de usos y gestión de suspensiones
   - Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Ta…
   - Bloqueada por: T-038 · Bloquea a: —
 
