@@ -2078,6 +2078,164 @@ Contenido con fecha de vencimiento. Es la única categoría donde **llegar tarde
 
 ---
 
+### Categoría 16 — Novedades
+
+Cada cosa nueva que sale es una publicación. Con el ritmo de desarrollo que tiene la plataforma, esta categoría se alimenta sola: no hay que inventar contenido, hay que contar lo que ya se hizo.
+
+**Sirve para tres cosas a la vez**: muestra que la plataforma está viva —lo que tranquiliza al que dudaba en sumarse—, le avisa al usuario que ya tiene algo que antes no, y da una excusa para volver a mencionar una función que quizás nadie usó.
+
+**Formato único, repetible.** Se diseña una vez y se rellena cada vez.
+
+---
+
+#### 16.1 · Ya podés — plantilla
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Novedad
+- **Título**: Ya podés *(lo que sea que salió)*.
+- **Subtítulo**: *(una línea de para qué sirve)*
+- **Cuerpo**: *(dos renglones: cómo se usa o dónde está)*
+- **Idea**: Plantilla fija: mismo lugar del "Ya podés", mismo color de acento para toda la serie, y una captura real de la función nueva. Que se reconozca de una que es una novedad, sin leer.
+- **Foto/s**: Captura de pantalla real de la función que salió.
+- **CTA**: Probalo en hospeda.com.ar
+- **Idioma**: Español
+- **Cómo se usa**: una por cada función que sale. Si la función es grande, va acompañada de su tutorial (categoría 14). Si es chica, esta placa sola alcanza.
+
+---
+
+#### 16.2 · Lo que se viene
+
+- **Prioridad**: 3
+- **Tipo**: Listado de puntos
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Próximamente
+- **Título**: En qué estamos trabajando.
+- **Cuerpo**: Para que sepas hacia dónde va la plataforma.
+- **Items**: Las funciones que están en construcción, **siempre en futuro y con la palabra "próximamente" adelante**.
+- **Idea**: Es la única pieza del plan que puede mencionar cosas que todavía no existen. Genera confianza —muestra que hay trabajo detrás— y de paso le da uso al contenido que quedó en prioridad 5.
+- **Foto/s**: Ninguna.
+- **CTA**: hospeda.com.ar
+- **Idioma**: Español
+- **⚠️ Regla estricta**: nada en tiempo presente. **No prometer fechas.** Y solo listar cosas que efectivamente se están construyendo — anunciar algo que después no sale es peor que no anunciar nada.
+
+---
+
+### Categoría 17 — Pedidos de colaboración
+
+Pedirle cosas a la gente: fotos, datos, correcciones, contenido. Es la categoría que **destraba a las demás**, sobre todo la de destinos, que sin fotos no arranca.
+
+Y tiene un efecto secundario que vale tanto como el material: **el que colabora se siente parte**. Alguien que mandó una foto de su pueblo después defiende la plataforma sola.
+
+**Tres reglas para que funcione:**
+
+1. **Pedir poco y concreto.** "Mandanos fotos" no lo hace nadie. "¿Tenés una foto del atardecer en la costanera de tu pueblo?" sí.
+2. **Agradecer en público.** El que mandó algo tiene que verse mencionado. Es lo único que sostiene el flujo.
+3. **Usar lo que llega.** Si alguien manda material y nunca lo ve publicado, no vuelve a mandar. Y se lo cuenta a los demás.
+
+---
+
+#### 17.1 · Mandanos fotos de tu pueblo
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: Necesitamos tu ayuda
+- **Título**: ¿Tenés una buena foto de tu pueblo?
+- **Subtítulo**: Mandanosla y la publicamos con tu nombre.
+- **Cuerpo**: Estamos armando la guía de los destinos del Litoral y nos faltan fotos de varios lugares.
+- **Idea**: **Es la pieza que destraba la categoría de destinos.** Tiene que sonar a pedido genuino, no a concurso ni a campaña de marketing. Cuanto más se note que hace falta de verdad, más gente responde. Mostrar una foto linda de ejemplo, mandada por alguien.
+- **Foto/s**: Una foto buena de un destino, con crédito visible de quien la sacó — muestra el ejemplo y a la vez cumple la promesa.
+- **CTA**: Mandanos tu foto desde hospeda.com.ar
+- **Idioma**: Español
+- **Cómo potenciarla**: publicar una versión por destino, nombrando el pueblo. "¿Tenés una foto de Federación?" convierte mucho más que un pedido genérico, y permite ir cubriendo los agujeros del banco de fotos uno por uno.
+
+---
+
+#### 17.2 · Gracias por la foto — plantilla
+
+- **Prioridad**: 1
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 4:5
+- **Tag Line**: Gracias
+- **Título**: *(el destino)*, por *(nombre de quien la mandó)*.
+- **Cuerpo**: *(dato del lugar o de la foto, una línea)*
+- **Idea**: **Es la contraparte obligatoria de la 17.1**: si nadie ve que las fotos se publican y se acreditan, el flujo se corta a la semana. La foto ocupa toda la placa y el crédito va abajo, chico pero legible. Diseño mínimo: la foto es la protagonista, no la marca.
+- **Foto/s**: La foto que mandó la persona.
+- **CTA**: Mandanos la tuya desde hospeda.com.ar
+- **Idioma**: Español
+- **Importante**: pedir permiso por escrito antes de publicar, aunque la hayan mandado para eso. Un mensaje alcanza, pero que quede guardado.
+
+---
+
+#### 17.3 · Contanos qué nos falta de tu pueblo
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Ayudanos a completar
+- **Título**: ¿Qué le falta a tu pueblo en Hospeda?
+- **Subtítulo**: Un lugar, un evento, un dato que no pusimos.
+- **Cuerpo**: Vos conocés tu lugar mejor que nadie. Contanos qué tendríamos que sumar.
+- **Idea**: Sirve para completar la información de los destinos, que hoy está armada desde afuera. Y funciona como validación: el que corrige un dato queda involucrado con la plataforma.
+- **Foto/s**: Ninguna, o un mapa con un signo de pregunta.
+- **CTA**: Escribinos desde hospeda.com.ar
+- **Idioma**: Español
+- **Nota**: es la forma más barata de arreglar el problema de que las descripciones de los 22 destinos se escribieron sin conocer los lugares. La gente corrige gratis y con gusto.
+
+---
+
+#### 17.4 · Buscamos quien escriba
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Convocatoria
+- **Título**: ¿Te gusta escribir sobre tu región?
+- **Subtítulo**: Publicá en Hospeda con tu nombre y tu página de autor.
+- **Cuerpo**: Buscamos gente que cuente qué pasa en su pueblo: eventos, lugares, recomendaciones.
+- **Idea**: Le habla a alguien concreto —el que ya escribe en un blog o en redes sobre su zona— y le ofrece algo que no tiene: una página de autor propia y una audiencia armada. Ese es el gancho, no el "sumate".
+- **Foto/s**: Captura real de una página de autor de la plataforma.
+- **CTA**: Postulate desde hospeda.com.ar
+- **Idioma**: Español
+- **Beneficio doble**: además del contenido, cada autor trae su propio círculo. Es la forma más barata de crecer en pueblos donde no tenemos presencia.
+
+---
+
+#### 17.5 · ¿Hay un evento que no está?
+
+- **Prioridad**: 2
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16, 4:5 y 2:3
+- **Tag Line**: Agenda
+- **Título**: ¿Organizás algo y no está en la agenda?
+- **Subtítulo**: Contanos y lo publicamos.
+- **Cuerpo**: Fiestas, ferias, recitales, torneos. Si pasa en el Litoral, va.
+- **Idea**: Le habla a quien organiza —el municipio, el club, la comisión de la fiesta— no al público. Por eso la versión 2:3 importa: es la que se manda por mensaje directo a un organizador.
+- **Foto/s**: Una foto de una fiesta o evento de la región, con gente.
+- **CTA**: Sumá tu evento en hospeda.com.ar
+- **Idioma**: Español
+- **Nota**: los organizadores comparten la publicación de su propio evento, así que cada evento cargado trae alcance gratis.
+
+---
+
+#### 17.6 · Encontraste un error, avisanos
+
+- **Prioridad**: 3
+- **Tipo**: Imagen única
+- **Aspect Ratio**: 9:16 y 4:5
+- **Tag Line**: Ayudanos a mejorar
+- **Título**: ¿Viste algo mal? Decinos.
+- **Subtítulo**: Un dato viejo, un precio que cambió, un lugar que ya no está.
+- **Cuerpo**: Se arregla en el día. Y te lo agradecemos.
+- **Idea**: Convierte una queja en colaboración, que es mucho mejor que un comentario público diciendo que la información está mal. El tono es agradecido y liviano, sin ponerse a la defensiva.
+- **Foto/s**: Ninguna.
+- **CTA**: Reportalo desde hospeda.com.ar
+- **Idioma**: Español
+
+---
+
 ### Categoría 18 — De anfitrión a anfitrión
 
 **Una serie, no piezas sueltas.** Consejos de oficio para el que alquila: cómo sacar mejores fotos, cómo poner el precio, cómo recibir, qué hacer cuando algo sale mal. No hablan de Hospeda ni venden nada.
@@ -2313,6 +2471,6 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | D · Conversión | 13. Confianza y testimonios | ✅ 7 piezas |
 | D · Conversión | 14. Tutoriales y ayuda | ✅ 7 piezas |
 | E · Recurrentes | 15. Campañas | ✅ 8 piezas + calendario de producción |
-| E · Recurrentes | 16. Novedades | ⬜ pendiente |
-| E · Recurrentes | 17. Pedidos de colaboración | ⬜ pendiente |
+| E · Recurrentes | 16. Novedades | ✅ 2 plantillas |
+| E · Recurrentes | 17. Pedidos de colaboración | ✅ 6 piezas |
 | E · Recurrentes | 18. **De anfitrión a anfitrión** | ✅ 8 piezas · serie abierta |
