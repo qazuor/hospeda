@@ -10,7 +10,6 @@
  * security settings.
  */
 
-import type { z } from '@hono/zod-openapi';
 import {
     ServiceErrorCode,
     SkipSetPasswordBodySchema,
@@ -20,6 +19,7 @@ import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import type { z } from '../../../utils/zod';
 import { getDefaultUserService } from './_singletons';
 
 /**

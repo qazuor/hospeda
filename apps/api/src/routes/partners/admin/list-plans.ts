@@ -1,7 +1,7 @@
-import { z } from '@hono/zod-openapi';
 import { and, billingPlans, billingPrices, eq, getDb, inArray } from '@repo/db';
 import { PermissionEnum, ProductDomainEnum } from '@repo/schemas';
 import { createAdminRoute } from '../../../utils/route-factory';
+import { z } from '../../../utils/zod';
 
 const PartnerAdminPlanSchema = z.object({
     id: z.string().uuid(),

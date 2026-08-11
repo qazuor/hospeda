@@ -11,7 +11,7 @@
  * comment; 422 for content over 2000 chars (AC-13), 401 unauth (AC-12),
  * 429 when rate-limited (AC-14).
  */
-import type { z } from '@hono/zod-openapi';
+
 import {
     CreateCommentBodySchema,
     EntityCommentSchema,
@@ -28,6 +28,7 @@ import {
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createProtectedRoute } from '../../../../utils/route-factory';
+import type { z } from '../../../../utils/zod';
 
 /** Per-user hourly write budget: 30 comment submissions per hour. */
 const writeCommentRateLimit = createSlidingWindowPerUserRateLimit({

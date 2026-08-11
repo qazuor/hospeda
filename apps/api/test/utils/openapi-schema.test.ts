@@ -13,9 +13,9 @@
  * date conversion the utility exists for still works alongside it.
  */
 
-import { z } from '@hono/zod-openapi';
 import { describe, expect, it } from 'vitest';
 import { createOpenAPISchema } from '../../src/utils/openapi-schema';
+import { z } from '../../src/utils/zod';
 
 describe('createOpenAPISchema — unknown-keys mode preservation (HOS-106)', () => {
     it('preserves .strict(): rebuilt schema rejects unknown keys', () => {
