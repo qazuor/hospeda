@@ -14,10 +14,23 @@
  * W2-1. A settings write purges these pages without needing to — the cost is a
  * re-render, and it is the right side to err on.
  *
- * Nothing purges the cache on deploy, so the 300s `s-maxage` doubles as the
- * window in which a shipped copy change is still invisible at the edge. That is
- * the argument against a longer TTL here, and it is why the assertions below
- * pin the shared helper rather than a per-page `Cache-Control`.
+ * THE DEPLOY-STALENESS PREMISE THAT USED TO JUSTIFY A SHORT TTL IS GONE.
+ * This file used to argue that nothing purges the cache on deploy, so the
+ * 300 s `s-maxage` doubled as the window in which a shipped copy change was
+ * still invisible at the edge — the reason NOT to raise the TTL further.
+ * HOS-427 shipped that purge (`src/lib/cache/purge-on-deploy.ts`): the web
+ * container now purges the `<env>:all` catch-all once per deploy, roughly
+ * `DEPLOY_PURGE_SETTLE_MS` (45 s) after it serves its first request, well
+ * inside the 300 s budget these pages carry today. The deploy purge is these
+ * pages' invalidation path now, not the TTL alone — with one honest caveat the
+ * source file states plainly: the clock only starts once something reaches the
+ * new container, so on a fully idle deploy the purge can be delayed past that
+ * 45 s (never worse than before, since the TTL still bounds staleness, but not
+ * literally "45 s after every deploy" either).
+ *
+ * `cacheClass: 'static'` (HOS-426) is what pins the actual budget: it is
+ * asserted below alongside the tag, so a page cannot silently drift onto a
+ * different class's TTL.
  *
  * `.astro` frontmatter cannot render in Vitest, so these are source-based —
  * the established pattern here (see `home-cache.test.ts`).
@@ -79,6 +92,14 @@ describe('static pages — edge cacheability (HOS-369 W2-2)', () => {
         // if the identifier were renamed to something that still contains this
         // one (verified by mutation).
         expect(args).toMatch(/\bCACHE_TAG_SITE_CONFIG\b/);
+    });
+
+    it.each(STATIC_PAGES)('%s declares the `static` cache class (HOS-426)', (page) => {
+        // Pins the freshness budget these pages get from `cache-classes.ts` to
+        // the class that matches what invalidates them: only a deploy, purged
+        // now by `purge-on-deploy.ts`, not a content write.
+        const args = callArgsOf(readPage(page), 'applyCacheHeaders');
+        expect(args).toMatch(/cacheClass:\s*'static'/);
     });
 
     it.each(STATIC_PAGES)('%s is cacheable unconditionally', (page) => {
