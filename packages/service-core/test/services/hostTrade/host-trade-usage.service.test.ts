@@ -834,6 +834,34 @@ describe('HostTradeUsageService.applyDeclarationSuspension (T-038)', () => {
         expect(hostTradeModel.update).not.toHaveBeenCalled();
     });
 
+    /**
+     * The cross of the two cases above, which is the only thing that pins their
+     * ORDER: the 403 one names a listing that exists and the 404 one is asked
+     * by an admin, so each passes whichever way round the gate and the lookup
+     * run. Looking the listing up first would let anybody with a session tell
+     * an absent id from a present one by the error code alone — without holding
+     * the permission that would let them do anything about either.
+     */
+    it('answers FORBIDDEN, not NOT_FOUND, when an unauthorised actor names a listing that does not exist', async () => {
+        const model = createModelMock();
+        const hostTradeModel = createModelMock();
+        hostTradeModel.findById = vi.fn(async () => null);
+
+        const service = new HostTradeUsageService(
+            { logger: mockLogger },
+            model as unknown as HostTradeBenefitUsageModel,
+            hostTradeModel as unknown as HostTradeModel
+        );
+
+        const result = await service.applyDeclarationSuspension(
+            { hostTradeId: HT_ID, reason: 'Motivo.' },
+            hostActor()
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(hostTradeModel.findById).not.toHaveBeenCalled();
+    });
+
     /** A reason is what the provider is owed when he asks why. */
     it('requires a reason', async () => {
         const { service, hostTradeModel } = buildService();

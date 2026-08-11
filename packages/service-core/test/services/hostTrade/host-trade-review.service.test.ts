@@ -444,6 +444,31 @@ describe('HostTradeReviewService.moderateReview', () => {
         expect(model.update).not.toHaveBeenCalled();
     });
 
+    /**
+     * THE CROSS OF THE TWO CASES ABOVE, and the only one that pins their ORDER.
+     * Each of them alone passes whichever way round the gate and the lookup
+     * run: the 403 case is asked about a review that exists, and the 404 case
+     * is asked by somebody who holds the permission.
+     *
+     * Order matters here in a way it does not for the review's own author-side
+     * paths. Looking the row up first would answer NOT_FOUND to an
+     * unauthorised caller for an id that is absent and FORBIDDEN for one that
+     * is present — turning the moderation endpoint into a way to ask whether a
+     * given review id exists without being allowed to moderate anything.
+     */
+    it('answers FORBIDDEN, not NOT_FOUND, when an unauthorised actor names a review that does not exist', async () => {
+        const { service, model } = buildModerationService(null as never);
+        model.findById = vi.fn(async () => null);
+
+        await expect(
+            service.moderateReview(
+                { id: REVIEW_ID, decision: ModerationStatusEnum.APPROVED, actor: hostActor() },
+                txCtx()
+            )
+        ).rejects.toMatchObject({ code: ServiceErrorCode.FORBIDDEN });
+        expect(model.findById).not.toHaveBeenCalled();
+    });
+
     it('stamps the decision, the moderator, the time and the reason', async () => {
         const { service, model } = buildModerationService();
 

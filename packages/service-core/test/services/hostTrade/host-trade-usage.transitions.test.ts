@@ -510,6 +510,26 @@ describe('liftDeclarationSuspension — the admin act (AC-12)', () => {
     });
 
     /**
+     * The cross of the permission case and the missing-listing one, which is
+     * the only thing that pins their ORDER. Each alone passes whichever way
+     * round the gate and the lookup run — the 403 case names a listing that
+     * exists, the 404 case is asked by an admin. Looking up first would let
+     * anybody with a session tell an absent listing id from a present one by
+     * the error code, without holding the permission to do anything with it.
+     */
+    it('answers FORBIDDEN, not NOT_FOUND, when an unauthorised actor names a listing that does not exist', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage(), { provider: null });
+
+        const result = await service.liftDeclarationSuspension(
+            { hostTradeId: HT_ID },
+            actorOf(OWNER_ID)
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(hostTradeModel.findById).not.toHaveBeenCalled();
+    });
+
+    /**
      * Lifting a suspension that is not there is the outcome the admin wanted, so
      * it succeeds without writing. An error here would make a double-click on
      * the admin screen look like a failure.
