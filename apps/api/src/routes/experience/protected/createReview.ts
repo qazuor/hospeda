@@ -8,7 +8,7 @@
  * - One review per user per listing is enforced (ALREADY_EXISTS on duplicate).
  * - After creation, the listing's denormalized rating fields are recomputed.
  */
-import type { z } from '@hono/zod-openapi';
+
 import { ExperienceReviewCreateInputSchema, ExperienceReviewSchema } from '@repo/schemas';
 import { ExperienceReviewService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -16,6 +16,7 @@ import { createSlidingWindowPerUserRateLimit } from '../../../middlewares/rate-l
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import type { z } from '../../../utils/zod';
 
 /** Stricter per-user write budget: 30 review submissions per hour. */
 const writeReviewRateLimit = createSlidingWindowPerUserRateLimit({

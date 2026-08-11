@@ -1,9 +1,9 @@
-import { z } from '@hono/zod-openapi';
 import {
     errorResponseSchema,
     paginatedListResponseSchema,
     successResponseSchema
 } from '../schemas';
+import { z } from './zod';
 
 /**
  * Response factory for generating standard API responses

@@ -5,7 +5,6 @@
  * All symbols are re-exported from route-factory.ts so importers are unaffected.
  */
 
-import type { z } from '@hono/zod-openapi';
 import type { PermissionEnum } from '@repo/schemas';
 import type { MiddlewareHandler } from 'hono';
 import {
@@ -23,6 +22,7 @@ import type { OwnershipConfig } from '../types/authorization';
 import { assertConcretePublicSchema } from './response-helpers';
 import type { CreateOpenApiRouteInterface } from './route-factory';
 import { createCRUDRoute, createListRoute } from './route-factory';
+import type { z } from './zod';
 
 // ============================================================================
 // Three-Tier Authorization Route Factories

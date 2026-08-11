@@ -12,7 +12,6 @@
  * whether to next-route the user to `/mi-cuenta/agregar-contrasena/`.
  */
 
-import type { z } from '@hono/zod-openapi';
 import {
     CompleteProfileBodySchema,
     CompleteProfileResponseSchema,
@@ -24,6 +23,7 @@ import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import type { z } from '../../../utils/zod';
 import { getDefaultNewsletterService, getDefaultUserService } from './_singletons';
 
 /** Stable consent-version identifier for profile-completion newsletter opt-ins. */

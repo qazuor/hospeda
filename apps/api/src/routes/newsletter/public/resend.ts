@@ -11,11 +11,11 @@
  * mailer even with valid emails.
  */
 
-import { z } from '@hono/zod-openapi';
 import type { ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { createPublicRoute } from '../../../utils/route-factory';
+import { z } from '../../../utils/zod';
 import { getDefaultNewsletterService } from '../protected/_singletons';
 
 const GuestResendRequestSchema = z.object({

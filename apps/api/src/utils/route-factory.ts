@@ -1,6 +1,6 @@
 /** Route factory for creating common API routes with consistent structure */
 
-import { createRoute, z } from '@hono/zod-openapi';
+import { createRoute } from '@hono/zod-openapi';
 import type { PermissionEnum } from '@repo/schemas';
 import { PaginationQuerySchema, ServiceErrorCode } from '@repo/schemas';
 import type { Context, MiddlewareHandler } from 'hono';
@@ -16,6 +16,7 @@ import {
     handleRouteError,
     type PaginatedResult
 } from './response-helpers';
+import { z } from './zod';
 
 /**
  * Route configuration options for middleware and behavior customization

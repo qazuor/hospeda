@@ -189,7 +189,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-051** (c2) — Responder una valoración desde el panel del proveedor
   - Formulario de réplica en la pestaña Valoraciones, con aviso claro de que la respuesta pasa por revisión antes de publicarse (si no, el proveedor va a creer que se perdió). Estado visible: en…
   - Bloqueada por: T-035, T-050 · Bloquea a: —
-- [ ] **T-052** (c2) — Stats en TradeCard con el umbral de 3 valoraciones
+- [x] **T-052** (c2) — Stats en TradeCard con el umbral de 3 valoraciones
   - En apps/web/src/components/host/host-trades/TradeCard.tsx, bajo el beneficio: '★ 4,6 (12 valoraciones) · 34 usos · 21 anfitriones'. El promedio SÓLO se muestra a partir de HOST_TRADE_MIN_REV…
   - Bloqueada por: T-023, T-012, T-070 · Bloquea a: T-054
 - [ ] **T-053** (c2) — Detalle del proveedor con valoraciones y réplicas
