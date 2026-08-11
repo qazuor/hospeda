@@ -157,8 +157,11 @@ describe('GastronomyCard.astro', () => {
     });
 
     describe('image area', () => {
-        it('uses a view transition name keyed to the gastronomy slug', () => {
-            expect(src).toContain('transition:name={`gastronomy-');
+        // HOS-369: the name was removed. See the shared guard
+        // test/static-guards/card-view-transition-names.test.ts for the reason
+        // and the byte measurements; this local assertion keeps the file honest.
+        it('declares no view transition name', () => {
+            expect(src).not.toContain('transition:name');
         });
     });
 

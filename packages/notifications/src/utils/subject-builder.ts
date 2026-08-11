@@ -54,6 +54,54 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.COMMERCE_OWNER_CREDENTIALS]:
         'Tus credenciales de acceso a Hospeda — activá tu cuenta',
 
+    // Alliance claim invitation (HOS-278 §6.2)
+    [NotificationType.ALLIANCE_CLAIM_INVITE]:
+        '¿Postulaste a {programLabel} en Hospeda? Confirmanos que fuiste vos',
+
+    // Alliance application resolved (HOS-278 AC-6). One line for both
+    // outcomes: a subject that announced the verdict would deliver it in the
+    // inbox list, where a rejection lands with no context around it.
+    [NotificationType.ALLIANCE_LEAD_DECISION]:
+        'Novedades sobre tu postulación a {programLabel} en Hospeda',
+
+    // Listing revoked (HOS-278 R-4). Names the listing so a provider with more
+    // than one knows which; the reason stays in the body, where it has room.
+    [NotificationType.HOST_TRADE_REVOKED]:
+        'Tu ficha {listingName} ya no aparece en el directorio de Hospeda',
+
+    // The usage chain (HOS-376). Each names the counterpart, because a busy
+    // provider or host has several of these open and the inbox line is the
+    // only place they can tell them apart before opening anything.
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REQUEST]:
+        '{counterpartName} registró un uso del beneficio: ¿nos lo confirmás?',
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REMINDER]:
+        'Sigue pendiente el uso del beneficio con {counterpartName}',
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMED]:
+        '{counterpartName} confirmó el uso del beneficio',
+    [NotificationType.HOST_TRADE_USAGE_REJECTED]:
+        '{counterpartName} no reconoció el uso del beneficio',
+    [NotificationType.HOST_TRADE_REVIEW_RECEIVED]: 'Recibiste una valoración en {listingName}',
+    // Says nothing about the outcome: the same subject serves an approval and a
+    // rejection, so a provider opening it is not braced for bad news before
+    // reading which it was.
+    [NotificationType.HOST_TRADE_REPLY_MODERATED]: 'Novedades sobre tu respuesta en Hospeda',
+
+    // Partner revoked (HOS-278 R-4). Names the partner for the same reason,
+    // and says "aliados" rather than "directorio": a partner was never in the
+    // provider directory, so naming it would describe the wrong takedown.
+    [NotificationType.PARTNER_REVOKED]: '{partnerName} ya no aparece entre los aliados de Hospeda',
+
+    // Unpaid partner nudge (HOS-278 R-3). States the fact, not a deadline
+    // countdown: the exact day lives in the body, where "no se borra nada" can
+    // sit next to it.
+    [NotificationType.PARTNER_UNPAID_NOTICE]: '{partnerName} todavía no está publicado',
+
+    // Mentions logged (HOS-377 AC-9). Says what was DONE and nothing about how
+    // it performed: "difundimos" is an action Hospeda actually took, whereas
+    // anything shaped like "el alcance de {partnerName}" promises a number the
+    // platform does not measure and will never be able to produce (AC-3).
+    [NotificationType.PARTNER_MENTIONS_LOGGED]: 'Difundimos {partnerName} el {mentionedAtLabel}',
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3)
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]:
         'Tu calendario de {providerLabel} dejó de sincronizarse — {accommodationName}',

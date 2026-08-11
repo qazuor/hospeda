@@ -51,7 +51,9 @@ export const mockUser: InferredUser = {
     profileCompleted: false,
     setPasswordPrompted: false,
     // SPEC-143 #29 service-suspension flag (canonical source)
-    serviceSuspended: false
+    serviceSuspended: false,
+    // HOS-375 platform/service-account flag
+    isSystemAccount: false
 };
 
 export const mockActor: Actor = new ActorFactoryBuilder()

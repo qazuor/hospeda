@@ -1,0 +1,1 @@
+ALTER TABLE "alliance_leads" ADD COLUMN "partner_type" varchar(30);

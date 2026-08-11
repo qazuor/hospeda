@@ -25,10 +25,17 @@
 
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
-import { DestinationTypeEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    DestinationTypeEnum,
+    LifecycleStatusEnum,
+    PermissionEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ZodObject, ZodRawShape, z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
+import { getRevalidationService } from '../../revalidation';
 import type {
     Actor,
     AdminSearchExecuteParams,
@@ -179,6 +186,20 @@ export abstract class BaseCommerceListingService<
      * @example `'gastronomyId'` for the gastronomy service.
      */
     protected abstract get _entityFkColumn(): string;
+
+    /**
+     * Entity kind this service reports to the cache-revalidation pipeline
+     * (HOS-369 W2-4).
+     *
+     * Abstract rather than derived from `entityName` on purpose: the value has
+     * to match the `EntityChangeData` discriminant and the `@repo/cache-tags`
+     * vocabulary EXACTLY, and a mismatch is invisible — the purge still reports
+     * success, it just evicts nothing. Making each subclass state it means the
+     * compiler checks it against the union instead of a string coincidence.
+     *
+     * @example `'gastronomy'` for the gastronomy service.
+     */
+    protected abstract get _revalidationEntityType(): 'gastronomy' | 'experience';
 
     /**
      * Amenity junction table model (injectable for testing).
@@ -400,6 +421,12 @@ export abstract class BaseCommerceListingService<
             });
         }
 
+        // --- Edge cache revalidation (HOS-369 W2-4) ---
+        // Appended to the existing junction-sync body rather than overriding
+        // the hook: this class already owns `_afterCreate`/`_afterUpdate`, so
+        // there is no `super` to delegate to.
+        await this._scheduleListingRevalidation(entity);
+
         return entity;
     }
 
@@ -503,7 +530,87 @@ export abstract class BaseCommerceListingService<
             });
         }
 
+        // --- Edge cache revalidation (HOS-369 W2-4) ---
+        // Appended to the existing junction-sync body rather than overriding
+        // the hook: this class already owns `_afterCreate`/`_afterUpdate`, so
+        // there is no `super` to delegate to.
+        await this._scheduleListingRevalidation(entity);
+
         return entity;
+    }
+
+    // -----------------------------------------------------------------------
+    // (d) Edge cache revalidation (HOS-369 W2-4)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Schedule a cache purge for this listing after a write.
+     *
+     * Mirrors the accommodation service's two established rules:
+     *
+     * 1. **Only when publicly visible.** A DRAFT or PRIVATE listing has no
+     *    public footprint, so purging its (nonexistent) pages is pure waste and
+     *    produced spurious 404s in production under HOS-203.
+     * 2. **Never blocking.** Revalidation is a side effect of a content write;
+     *    a Cloudflare outage must not fail the write that triggered it.
+     *
+     * The parent destination is resolved to a slug because the destination
+     * detail page surfaces its commerce listings, so it goes stale too.
+     * Resolution failure degrades to purging the listing's own tags rather than
+     * throwing — a partial purge beats a failed write.
+     *
+     * @param entity - The listing as it now stands after the write.
+     */
+    private async _scheduleListingRevalidation(entity: TEntity): Promise<void> {
+        if (!this._isListingPubliclyVisible(entity)) return;
+
+        try {
+            const destinationSlug = entity.destinationId
+                ? await this._resolveDestinationSlugForRevalidation(entity.destinationId)
+                : undefined;
+
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: this._revalidationEntityType,
+                id: entity.id,
+                slug: entity.slug,
+                destinationSlug
+            });
+        } catch (error) {
+            this.logger.warn(
+                { error, entityType: this._revalidationEntityType },
+                'Revalidation scheduling failed (non-blocking)'
+            );
+        }
+    }
+
+    /**
+     * Whether a listing is visible to the public, and therefore worth purging.
+     *
+     * Reads the two string fields `CommerceListingEntity` declares rather than
+     * a typed enum, because that interface types them as `string | null`.
+     *
+     * @param entity - The listing to test.
+     * @returns `true` when the listing is publicly visible.
+     */
+    private _isListingPubliclyVisible(entity: TEntity): boolean {
+        return (
+            entity.lifecycleState === LifecycleStatusEnum.ACTIVE &&
+            entity.visibility === VisibilityEnum.PUBLIC
+        );
+    }
+
+    /**
+     * Resolve a destination id to its slug for the purge payload.
+     *
+     * @param destinationId - The listing's parent destination id.
+     * @returns The slug, or `undefined` when it cannot be resolved.
+     */
+    private async _resolveDestinationSlugForRevalidation(
+        destinationId: string
+    ): Promise<string | undefined> {
+        const destination = await this._destinationModel.findById(destinationId);
+        const slug = (destination as { slug?: unknown } | null)?.slug;
+        return typeof slug === 'string' && slug.length > 0 ? slug : undefined;
     }
 
     // -----------------------------------------------------------------------

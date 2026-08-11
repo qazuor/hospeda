@@ -19,9 +19,15 @@ export interface ProfileEditSocialSectionProps {
     readonly twitterUrl: string;
     readonly linkedinUrl: string;
     readonly youtubeUrl: string;
+    /**
+     * `settings.publicProfileShowSocialNetworks` (HOS-375 §6.7). Whether the
+     * links above are published on the owner's public author page.
+     */
+    readonly showOnPublicProfile: boolean;
     readonly fieldErrors: ProfileEditFieldErrors;
     readonly submitting: boolean;
     readonly t: (key: string, fallback?: string) => string;
+    readonly onShowOnPublicProfileChange: (value: boolean) => void;
     readonly onFacebookChange: (value: string) => void;
     readonly onInstagramChange: (value: string) => void;
     readonly onTwitterChange: (value: string) => void;
@@ -87,9 +93,11 @@ export function ProfileEditSocialSection({
     twitterUrl,
     linkedinUrl,
     youtubeUrl,
+    showOnPublicProfile,
     fieldErrors,
     submitting,
     t,
+    onShowOnPublicProfileChange,
     onFacebookChange,
     onInstagramChange,
     onTwitterChange,
@@ -153,6 +161,50 @@ export function ProfileEditSocialSection({
                     submitting={submitting}
                     onChange={onYoutubeChange}
                 />
+            </div>
+
+            {/*
+              HOS-375 §6.7 (G-5) — publishing these links is opt-in, default off.
+              The copy is not decoration: without it the toggle would publish
+              data the user never knew was publishable. It states the three
+              things they need to decide, in order — that the author page
+              exists, that it is public, and that these links appear on it.
+
+              Phrased conditionally ("si publicás") on purpose: the author page
+              only exists for someone with at least one published note or event,
+              so promising "tu página de autor" to every account would describe
+              a page most of them do not have.
+            */}
+            <div className={styles.consentBlock}>
+                <label
+                    className={styles.checkboxLabel}
+                    htmlFor="publicProfileShowSocialNetworks"
+                >
+                    <input
+                        id="publicProfileShowSocialNetworks"
+                        type="checkbox"
+                        className={styles.checkbox}
+                        checked={showOnPublicProfile}
+                        onChange={(e) => onShowOnPublicProfileChange(e.target.checked)}
+                        aria-describedby="publicProfileShowSocialNetworks-help"
+                        disabled={submitting}
+                    />
+                    <span>
+                        {t(
+                            'account.editProfile.social.showOnPublicProfile',
+                            'Mostrar mis redes en mi página pública de autor'
+                        )}
+                    </span>
+                </label>
+                <p
+                    className={styles.consentHelp}
+                    id="publicProfileShowSocialNetworks-help"
+                >
+                    {t(
+                        'account.editProfile.social.showOnPublicProfileHelp',
+                        'Si publicás notas o eventos, tenés una página de autor visible para cualquiera en internet. Al activar esto, los enlaces de arriba se muestran ahí. Está desactivado salvo que vos lo actives, y podés desactivarlo cuando quieras.'
+                    )}
+                </p>
             </div>
         </section>
     );

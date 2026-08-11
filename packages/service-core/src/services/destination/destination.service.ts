@@ -1047,7 +1047,8 @@ export class DestinationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             });
         } catch (error) {
             DestinationService.revalidationLogger.warn(
@@ -1085,7 +1086,8 @@ export class DestinationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             });
         } catch (error) {
             DestinationService.revalidationLogger.warn(
@@ -1102,7 +1104,8 @@ export class DestinationService extends BaseCrudService<
                 for (const descendant of descendants) {
                     getRevalidationService()?.scheduleRevalidation({
                         entityType: 'destination',
-                        slug: descendant.slug
+                        slug: descendant.slug,
+                        id: descendant.id
                     });
                 }
             } catch (error) {
@@ -1147,7 +1150,8 @@ export class DestinationService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             });
         } catch (error) {
             DestinationService.revalidationLogger.warn(
@@ -1166,6 +1170,7 @@ export class DestinationService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (ctx.hookState) {
             ctx.hookState.deletedDestinationSlug = entity?.slug;
+            ctx.hookState.deletedDestinationId = entity?.id;
         }
         return id;
     }
@@ -1176,10 +1181,12 @@ export class DestinationService extends BaseCrudService<
         ctx: ServiceContext<DestinationHookState>
     ): Promise<{ count: number }> {
         const slug = ctx.hookState?.deletedDestinationSlug;
+        const deletedId = ctx.hookState?.deletedDestinationId;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
-                slug
+                slug,
+                id: deletedId
             });
         } catch (error) {
             DestinationService.revalidationLogger.warn(
@@ -1198,6 +1205,7 @@ export class DestinationService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (ctx.hookState) {
             ctx.hookState.deletedDestinationSlug = entity?.slug;
+            ctx.hookState.deletedDestinationId = entity?.id;
             ctx.hookState.deletedEntityId = id;
         }
         return id;
@@ -1209,10 +1217,12 @@ export class DestinationService extends BaseCrudService<
         ctx: ServiceContext<DestinationHookState>
     ): Promise<{ count: number }> {
         const slug = ctx.hookState?.deletedDestinationSlug;
+        const deletedId = ctx.hookState?.deletedDestinationId;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
-                slug
+                slug,
+                id: deletedId
             });
         } catch (error) {
             DestinationService.revalidationLogger.warn(
@@ -1244,6 +1254,7 @@ export class DestinationService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (ctx.hookState) {
             ctx.hookState.restoredDestinationSlug = entity?.slug;
+            ctx.hookState.restoredDestinationId = entity?.id;
         }
         return id;
     }
@@ -1254,10 +1265,12 @@ export class DestinationService extends BaseCrudService<
         ctx: ServiceContext<DestinationHookState>
     ): Promise<{ count: number }> {
         const slug = ctx.hookState?.restoredDestinationSlug;
+        const restoredId = ctx.hookState?.restoredDestinationId;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'destination',
-                slug
+                slug,
+                id: restoredId
             });
         } catch (error) {
             DestinationService.revalidationLogger.warn(

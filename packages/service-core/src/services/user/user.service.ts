@@ -77,7 +77,7 @@ import {
     normalizeViewInput
 } from './user.normalizers';
 import { canAssignRole, checkCanAdminList } from './user.permissions';
-import type { UserHookState, UserPublicProfile } from './user.types';
+import type { PublicAuthorListOutput, UserHookState, UserPublicProfile } from './user.types';
 
 /** Entity-specific filter fields for user admin search. */
 type UserEntityFilters = EntityFilters<typeof UserAdminSearchSchema>;
@@ -284,9 +284,18 @@ export class UserService extends BaseCrudService<
      *
      * The projection is a pure function of the row: no branch reads `actor`, so
      * the response is byte-identical for an anonymous visitor, the user
-     * themselves, and an admin. The route is edge-cached and its cache key does
-     * NOT include the session, so any actor-dependent field here would poison
-     * the cache for everyone.
+     * themselves, and an admin.
+     *
+     * That is load-bearing, and for a subtler reason than "the route is edge
+     * cached" — it is NOT. `/api/v1/public/users` sits in
+     * `PRIVATE_CACHE_ENDPOINTS` (`apps/api/src/middlewares/cache.constants.ts`),
+     * so it never reaches the shared CDN. What it DOES reach is the API's own
+     * in-memory cache, under the key
+     * `private:${path}${suffix}:${authorization ?? 'anonymous'}` — and the web
+     * app authenticates with SESSION COOKIES, not an `Authorization` header.
+     * Every logged-in visitor therefore lands in the same `:anonymous` bucket as
+     * every logged-out one, so an actor-dependent field here would still be
+     * captured once and replayed to everybody for the TTL.
      *
      * Soft-deleted users are treated as absent (`null`). `findOne` does not
      * filter `deleted_at`, so it is filtered explicitly — otherwise a deleted
@@ -314,12 +323,100 @@ export class UserService extends BaseCrudService<
 
                 if (!user || user.deletedAt) return null;
 
+                // The social block is opt-in (HOS-375 §6.7) and the opt-in
+                // belongs to the PROFILE OWNER, never to whoever is asking.
+                // That is load-bearing, not stylistic: this route is cached
+                // (`cacheTTL: 300`) under a key that segments only on the
+                // `Authorization` header, which cookie-authenticated web
+                // visitors never send — so a viewer-dependent branch here would
+                // serve one visitor's payload to everyone. See the method
+                // docstring. Read the owner's setting only.
+                //
+                // `settings` itself is never projected — only this one derived
+                // boolean's EFFECT is visible.
+                const showSocialNetworks = user.settings?.publicProfileShowSocialNetworks === true;
+
                 return {
                     id: user.id,
                     displayName: user.displayName ?? null,
                     slug: user.slug,
                     avatar: user.profile?.avatar ?? null,
-                    bio: user.profile?.bio ?? null
+                    bio: user.profile?.bio ?? null,
+                    // Content-curation flag the author page needs for its
+                    // indexability gate (HOS-375 §6.5 cond. 1 / AC-13). A plain
+                    // column read, so it does not break the actor-blindness
+                    // documented above.
+                    isSystemAccount: user.isSystemAccount === true,
+                    // Omitted entirely when opted out, rather than emitted as
+                    // null: "this author publishes no social links" and "this
+                    // author opted out" are the same thing to a consumer, and an
+                    // explicit null invites rendering an empty block.
+                    ...(showSocialNetworks && user.socialNetworks
+                        ? { socialNetworks: user.socialNetworks }
+                        : {})
+                };
+            }
+        });
+    }
+
+    /**
+     * Lists the authors that have a public, INDEXABLE author page.
+     *
+     * Feeds `GET /api/v1/public/authors`, whose only consumer is the dynamic
+     * sitemap (HOS-375 §6.6). The row predicate lives in
+     * {@link UserModel.listPublicAuthors} — read its docstring before changing
+     * anything about who is included; it mirrors the web helper
+     * `evaluateAuthorIndexability`, and the whole point of the pairing is that
+     * the sitemap can never advertise a URL the page then serves as `noindex`.
+     *
+     * Like {@link UserService.getPublicProfileBySlug}, this method runs NO
+     * permission check. That is safe for the same reason: it never returns a
+     * user row, only `{ slug, updatedAt }` for people whose author page is
+     * already public and indexed. `actor` is accepted for logging and is never
+     * branched on, so the response is identical for every caller and the route
+     * stays safe to cache at the edge.
+     *
+     * It is NOT a user directory and must never be widened into one. Every row
+     * here is already discoverable through the sitemap it exists to build; a
+     * looser predicate would turn it into a user-enumeration surface (R-1).
+     *
+     * @param actor - The requesting actor. Used for logging only; a guest actor
+     *   is expected and valid.
+     * @param params - `{ page, pageSize }`. Both are optional and defaulted.
+     * @param ctx - Optional service context (transaction).
+     * @returns A `ServiceOutput` with the page of authors and its pagination.
+     */
+    public async listPublicAuthors(
+        actor: Actor,
+        params: { page?: number; pageSize?: number } = {},
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<PublicAuthorListOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'listPublicAuthors',
+            input: { actor, ...params },
+            schema: z.object({
+                page: z.coerce.number().int().min(1).default(1),
+                // Capped so a crafted `?pageSize=100000` cannot ask the database
+                // for every qualifying author in one request.
+                pageSize: z.coerce.number().int().min(1).max(100).default(50)
+            }),
+            ctx,
+            execute: async (validatedInput, _validatedActor, execCtx) => {
+                const { page, pageSize } = validatedInput;
+
+                const { items, total } = await this.model.listPublicAuthors(
+                    { page, pageSize },
+                    execCtx?.tx
+                );
+
+                return {
+                    items,
+                    pagination: {
+                        page,
+                        pageSize,
+                        total,
+                        totalPages: Math.ceil(total / pageSize)
+                    }
                 };
             }
         });
@@ -461,12 +558,18 @@ export class UserService extends BaseCrudService<
     ): Promise<Partial<User>> {
         // Ensure data is properly typed for normalization
         const cleanData = data as Partial<User>;
-        const normalized = await normalizeUserInput(cleanData);
+        const normalized = await normalizeUserInput({ input: cleanData, mode: 'create' });
         return normalized;
     }
 
     /**
-     * Normalizes and generates slug before updating a user.
+     * Normalizes a user patch before updating.
+     *
+     * `mode: 'update'` is load-bearing: it is what stops a rename from
+     * regenerating `users.slug`. That slug is the public author URL
+     * (`/autores/<slug>/`), which HOS-375 made indexable and sitemapped, and
+     * there is no redirect from an old one — see `normalizeUserInput`'s JSDoc.
+     *
      * Bookmarks are always omitted from the result (even if type allows).
      */
     protected async _beforeUpdate(
@@ -476,7 +579,7 @@ export class UserService extends BaseCrudService<
     ): Promise<Partial<User>> {
         // Remove bookmarks before normalization to avoid type errors
         const { bookmarks, ...rest } = data;
-        return normalizeUserInput(rest) as Partial<User>;
+        return (await normalizeUserInput({ input: rest, mode: 'update' })) as Partial<User>;
     }
 
     // --- Custom Methods (stubs) ---
@@ -1293,13 +1396,15 @@ export class UserService extends BaseCrudService<
      * Marks one or more What's New entry ids as seen for the authenticated user.
      *
      * Performs a **defensive read-modify-write** at the service level regardless
-     * of the underlying JSONB column's replace/merge behaviour. The `settings`
-     * column in `UserModel` does NOT declare `mergeableJsonbColumns` for
-     * `settings`, so `model.update` would REPLACE the whole column. This method
-     * therefore reads the current settings first, computes the union of existing
-     * and new seenIds via `Set`, and writes back only the merged object — keeping
-     * ALL sibling keys (`theme`, `language`, `notifications`, `newsletter`,
-     * `onboarding.adminTours`, `onboarding.whatsNew.baselineAt`) intact.
+     * of the underlying JSONB column's replace/merge behaviour. `UserModel` does
+     * declare `settings` in `mergeableJsonbColumns` (HOS-375), but that merge is
+     * SHALLOW — a patch carrying `onboarding` replaces that whole subtree — and
+     * what this method writes is `onboarding.whatsNew.seenIds`, two levels down.
+     * This method therefore reads the current settings first, computes the union
+     * of existing and new seenIds via `Set`, and writes back only the merged
+     * object — keeping ALL sibling keys (`theme`, `language`, `notifications`,
+     * `newsletter`, `onboarding.adminTours`, `onboarding.whatsNew.baselineAt`)
+     * intact.
      *
      * Idempotent: calling twice with overlapping ids is safe — Set union never
      * produces duplicates.
@@ -1458,11 +1563,11 @@ export class UserService extends BaseCrudService<
      * admin tour at the given config version.
      *
      * Performs a **defensive read-modify-write** at the service level, mirroring
-     * the approach used by {@link markWhatsNewSeen}. The `settings` column in
-     * `UserModel` is REPLACE-mode (no `mergeableJsonbColumns` declared for
-     * `settings`), so this method reads the current settings, sets
-     * `settings.onboarding.adminTours[tourId] = version`, and writes back the
-     * full merged object — keeping ALL sibling keys intact:
+     * the approach used by {@link markWhatsNewSeen}. `UserModel` declares
+     * `settings` in `mergeableJsonbColumns` (HOS-375), but that merge is SHALLOW
+     * and the target here lives two levels down, so this method reads the
+     * current settings, sets `settings.onboarding.adminTours[tourId] = version`,
+     * and writes back the full merged object — keeping ALL sibling keys intact:
      * - `theme*`, `language*`, `notifications`, `newsletter`
      * - `onboarding.whatsNew` (baselineAt + seenIds untouched)
      * - Any other `onboarding.adminTours` entries for other tour ids.

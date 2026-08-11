@@ -41,7 +41,7 @@ export {
 
 // Attraction icon slug (Material Symbols) → Phosphor component. Single source of
 // truth shared by apps/web and apps/admin.
-export { getAttractionIcon } from './domain/attraction-icon';
+export { ATTRACTION_ICONS, getAttractionIcon } from './domain/attraction-icon';
 export type {
     AuthProviderColorScheme,
     AuthProviderColorVariant,
@@ -593,6 +593,29 @@ export { CloudSnowIcon } from './icons/weather/CloudSnowIcon';
 export { CloudSunIcon } from './icons/weather/CloudSunIcon';
 export { SnowflakeIcon } from './icons/weather/SnowflakeIcon';
 export { WindIcon } from './icons/weather/WindIcon';
+export type {
+    PhosphorGlyphComponent,
+    PhosphorGlyphProps,
+    SpriteManifestPair,
+    SpriteWeight
+} from './sprite';
+// External-sprite mode (HOS-369 W3-6). OPT-IN: with no base URL configured the
+// wrappers render exactly as they always have, which is what keeps apps/admin —
+// where no sprite endpoint exists — unchanged.
+export {
+    expandSpriteSymbolEntry,
+    getIconSpriteBase,
+    getIconSpriteGlyph,
+    getIconSpriteName,
+    hasIconSpriteSymbol,
+    ICON_SPRITE_GLOBAL,
+    ICON_SPRITE_SYMBOLS_GLOBAL,
+    iconSymbolId,
+    isSpriteWeight,
+    SPRITE_WEIGHTS,
+    setIconSpriteBase,
+    setIconSpriteSymbols
+} from './sprite';
 export type { IconProps, IconWeight } from './types';
 // Export types and constants
 export { DEFAULT_DUOTONE_COLOR, ICON_SIZES } from './types';

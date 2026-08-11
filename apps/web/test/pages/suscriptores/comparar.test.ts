@@ -17,9 +17,10 @@ describe('Owner comparison page (suscriptores/planes/comparar/index.astro)', () 
         expect(ownerSrc).toContain('prerender = false');
     });
 
-    it('should set Cache-Control header', () => {
-        expect(ownerSrc).toContain('Cache-Control');
-        expect(ownerSrc).toContain('s-maxage');
+    it('should set Cache-Control through applyCacheHeaders, declaring the `pricing` class and tag (HOS-426)', () => {
+        expect(ownerSrc).toContain('applyCacheHeaders({');
+        expect(ownerSrc).toMatch(/cacheClass:\s*'pricing'/);
+        expect(ownerSrc).toContain('CACHE_TAG_PRICING');
     });
 
     it('should render PlanComparisonTable with audience="owner"', () => {
@@ -60,9 +61,10 @@ describe('Tourist comparison page (suscriptores/turistas/comparar/index.astro)',
         expect(touristSrc).toContain('prerender = false');
     });
 
-    it('should set Cache-Control header', () => {
-        expect(touristSrc).toContain('Cache-Control');
-        expect(touristSrc).toContain('s-maxage');
+    it('should set Cache-Control through applyCacheHeaders, declaring the `pricing` class and tag (HOS-426)', () => {
+        expect(touristSrc).toContain('applyCacheHeaders({');
+        expect(touristSrc).toMatch(/cacheClass:\s*'pricing'/);
+        expect(touristSrc).toContain('CACHE_TAG_PRICING');
     });
 
     it('should render PlanComparisonTable with audience="tourist"', () => {

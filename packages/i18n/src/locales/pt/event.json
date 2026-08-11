@@ -72,6 +72,7 @@
         "agenda": "Programação do Evento",
         "pricing": "Ingressos e Preços",
         "organizer": "Organizado por",
+        "byline": "Por {{name}}",
         "getTickets": "Obter Ingressos",
         "relatedEvents": "Eventos Relacionados",
         "shareEvent": "Compartilhar Evento",

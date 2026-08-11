@@ -2,6 +2,7 @@ import { PostModel } from '@repo/db';
 import type { PostIdType } from '@repo/schemas';
 import { type DestinationIdType, RoleEnum, VisibilityEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock } from 'vitest';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import { PostService } from '../../../src/services/post/post.service';
 import type { ServiceLogger } from '../../../src/utils/service-logger';
 import { createMockPost } from '../../factories/postFactory';
@@ -11,7 +12,11 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makePostMediaModelStub
+} from '../../utils/modelMockFactory';
 import { asMock } from '../../utils/test-utils';
 
 describe('PostService.getByRelatedDestination', () => {
@@ -28,7 +33,13 @@ describe('PostService.getByRelatedDestination', () => {
     beforeEach(() => {
         modelMock = createTypedModelMock(PostModel, ['findAll']);
         loggerMock = createLoggerMock();
-        service = new PostService({ logger: loggerMock }, modelMock);
+        service = new PostService(
+            { logger: loggerMock },
+            modelMock,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     it('should return posts by related destination (success)', async () => {
@@ -44,14 +55,20 @@ describe('PostService.getByRelatedDestination', () => {
         const result = await service.getByRelatedDestination(actor, params);
         expectSuccess(result);
         expect(result.data).toHaveLength(2);
-        expect(modelMock.findAll).toHaveBeenCalledWith({ relatedDestinationId: destinationId });
+        expect(modelMock.findAll).toHaveBeenCalledWith({
+            relatedDestinationId: destinationId,
+            ...PUBLIC_READ_FLOOR
+        });
     });
 
-    it('should filter by visibility', async () => {
+    it('should override a caller-supplied visibility with the public read floor', async () => {
+        // HOS-374 §7.6.5: the public read floor is applied last on public read
+        // paths, so a caller-supplied `visibility` (even PRIVATE) is overridden
+        // rather than honored.
         const posts = [
             createMockPost({
                 relatedDestinationId: destinationId,
-                visibility: VisibilityEnum.PRIVATE
+                visibility: VisibilityEnum.PUBLIC
             })
         ];
         (modelMock.findAll as Mock).mockResolvedValue({ items: posts, total: 1 });
@@ -61,7 +78,7 @@ describe('PostService.getByRelatedDestination', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedDestinationId: destinationId,
-            visibility: VisibilityEnum.PRIVATE
+            ...PUBLIC_READ_FLOOR
         });
     });
 
@@ -83,7 +100,8 @@ describe('PostService.getByRelatedDestination', () => {
         expect(result.data).toHaveLength(1);
         expect(modelMock.findAll).toHaveBeenCalledWith({
             relatedDestinationId: destinationId,
-            createdAt: { gte: params.fromDate, lte: params.toDate }
+            createdAt: { gte: params.fromDate, lte: params.toDate },
+            ...PUBLIC_READ_FLOOR
         });
     });
 

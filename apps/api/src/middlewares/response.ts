@@ -40,7 +40,17 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.PROVIDER_RATE_LIMITED]: 503,
     [ServiceErrorCode.PROVIDER_TIMEOUT]: 504,
     [ServiceErrorCode.PLAN_DISABLED]: 410,
-    [ServiceErrorCode.GONE]: 410
+    [ServiceErrorCode.GONE]: 410,
+    // Host-trade benefit usage + reviews (HOS-376 §7.5)
+    [ServiceErrorCode.HOST_NOT_FOUND]: 404,
+    [ServiceErrorCode.USAGE_PENDING_EXISTS]: 409,
+    [ServiceErrorCode.DECLARATION_BLOCKED]: 403,
+    [ServiceErrorCode.DECLARATION_SUSPENDED]: 403,
+    [ServiceErrorCode.NO_CONFIRMED_USAGE]: 403,
+    [ServiceErrorCode.SELF_REVIEW_FORBIDDEN]: 403,
+    [ServiceErrorCode.SELF_USAGE_FORBIDDEN]: 403,
+    [ServiceErrorCode.REVIEW_ALREADY_EXISTS]: 409,
+    [ServiceErrorCode.PROVIDER_REVOKED]: 422
 };
 
 /**

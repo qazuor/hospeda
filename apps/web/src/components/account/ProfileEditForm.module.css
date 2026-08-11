@@ -113,6 +113,49 @@
     margin: 0;
 }
 
+/* ── Public-profile consent block (HOS-375 §6.7) ───────────────────────── */
+/* Sits BELOW `.grid` inside the social section, so it spans the full card    */
+/* width at every breakpoint instead of becoming a third grid cell. The       */
+/* separator is what stops "publish these on the internet" from reading as    */
+/* just another field.                                                       */
+
+.consentBlock {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2, 8px);
+    margin-top: var(--space-4, 16px);
+    padding-top: var(--space-4, 16px);
+    border-top: 1px solid var(--border);
+}
+
+.checkboxLabel {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-2, 8px);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: var(--core-foreground);
+    cursor: pointer;
+}
+
+.checkbox {
+    /* Nudged down so the box aligns with the cap height of the first line
+       rather than the line box, which reads misaligned on a two-line label. */
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: var(--brand-primary);
+    cursor: pointer;
+}
+
+.consentHelp {
+    composes: hint;
+    /* Indented to the label's text so the consent copy reads as belonging to
+       the checkbox rather than to the section. */
+    padding-left: calc(var(--space-2, 8px) + 1rem);
+    max-width: 65ch;
+}
+
 /* ── Avatar preview (T-036) ────────────────────────────────────────────── */
 
 .avatarRow {

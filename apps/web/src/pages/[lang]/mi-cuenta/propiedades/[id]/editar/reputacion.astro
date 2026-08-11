@@ -1,0 +1,44 @@
+---
+/**
+ * @file reputacion.astro
+ * @description External reputation section of the editor (HOS-318 T-016).
+ *
+ * `ExternalReputationSection` fetches and persists on its own.
+ *
+ * Worth recording: HOS-216 was a bug where THIS section's entitlement gate
+ * blocked the entire editor's Save button, so a host without the feature could
+ * not save anything at all. With one form per page, that class of coupling is
+ * structurally impossible — a gated section can no longer hold another
+ * section's submit hostage.
+ */
+
+import { ExternalReputationSection } from '@/components/host/ExternalReputationSection.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'reputacion',
+	need: ['translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="reputacion"
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.section.externalReputation', 'Reputación externa')}
+>
+	<ExternalReputationSection locale={locale} accommodationId={accommodationId} client:load />
+</EditorSectionLayout>

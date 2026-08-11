@@ -772,6 +772,30 @@ export interface EventDetailOrganizer {
 }
 
 /**
+ * The event's author, as the byline on the detail page needs them (HOS-375 G-7).
+ *
+ * Distinct from {@link EventDetailOrganizer}: the organizer is who RUNS the
+ * event, the author is the Hospeda contributor who wrote it up. Only the author
+ * has a public author page at `/autores/<slug>/`.
+ */
+export interface EventDetailAuthor {
+    readonly id: string;
+    /**
+     * Already resolved for display — the author's chosen `displayName` and
+     * NOTHING else. There is deliberately no first+last-name fallback: an
+     * author who never set a display name gets no byline rather than having
+     * their legal name published on a page they never opted into. See
+     * `EventAuthorPublicSchema`, which does not expose those fields at all.
+     */
+    readonly name: string;
+    /**
+     * `null` when the author row has no slug, which leaves the byline as plain
+     * text: there is no author page to link to.
+     */
+    readonly slug: string | null;
+}
+
+/**
  * Rich pricing data for the event detail page.
  */
 export interface EventDetailPricing {
@@ -869,6 +893,10 @@ export interface EventDetailData {
 
     // --- Organizer ---
     readonly organizer?: EventDetailOrganizer;
+
+    // --- Author (HOS-375 G-7) ---
+    /** Absent when the API payload carries no author relation for the event. */
+    readonly author?: EventDetailAuthor;
 
     // --- Event contact ---
     readonly contactEmail?: string;
@@ -1214,18 +1242,24 @@ export interface ExperienceDetailData extends ExperienceCardData {
 }
 
 /**
- * Partner card data for the partners listing page.
+ * Detail data for a gold partner's own page at `/partners/<slug>/` (HOS-294).
+ *
+ * Deliberately NOT a rename of the deleted `PartnerCardData`. That shape
+ * belonged to the retired directory and carried its model — a tier badge,
+ * `isFeatured`, a description clamped to three lines — and reusing it would
+ * have carried that model into the thing meant to replace it.
+ *
+ * `tier` is absent on purpose: it decides WHETHER this page exists, and is
+ * never rendered on it. It is internal commercial state, and printing "Gold" on
+ * a page only gold partners have says nothing to a reader.
  */
-export interface PartnerCardData {
-    readonly id: string;
+export interface PartnerDetailData {
     readonly slug: string;
     readonly name: string;
     readonly type: string;
-    readonly tier: string;
     readonly description: string | null;
     readonly logoUrl: string | null;
     readonly websiteUrl: string | null;
-    readonly isFeatured: boolean;
-    readonly startsAt: string | null;
-    readonly endsAt: string | null;
+    readonly contactInfo: Readonly<Record<string, unknown>> | null;
+    readonly socialNetworks: Readonly<Record<string, unknown>> | null;
 }

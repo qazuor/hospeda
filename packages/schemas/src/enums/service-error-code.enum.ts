@@ -70,5 +70,63 @@ export enum ServiceErrorCode {
      * experience so crawlers and LLM fetchers deindex the URL fast instead of
      * treating it as a transient 404. Clients should not retry.
      */
-    GONE = 'GONE'
+    GONE = 'GONE',
+
+    // -----------------------------------------------------------------------
+    // Host-trade benefit usage + reviews (HOS-376 §7.5)
+    //
+    // These are domain codes rather than reuses of NOT_FOUND / FORBIDDEN /
+    // ALREADY_EXISTS because the spec's acceptance criteria name the CODE in the
+    // response ("responde 403 DECLARATION_BLOCKED"), so it has to reach the
+    // client intact. A generic FORBIDDEN plus a detail field would leave the UI
+    // unable to tell "you already reviewed this provider" from "you never used
+    // their benefit" — two refusals with completely different next steps.
+    // -----------------------------------------------------------------------
+
+    /**
+     * The email a provider typed does not resolve to a host. Maps to HTTP 404.
+     *
+     * Deliberately explicit rather than opaque: a typo is the most common way
+     * this path fails, and hiding it behind a generic answer makes the provider
+     * wait out a thirty-day pending row that was never going to resolve.
+     */
+    HOST_NOT_FOUND = 'HOST_NOT_FOUND',
+
+    /** A PENDING usage already exists for this (provider, host) pair. HTTP 409. */
+    USAGE_PENDING_EXISTS = 'USAGE_PENDING_EXISTS',
+
+    /** A standing rejection blocks this provider from declaring on this host. HTTP 403. */
+    DECLARATION_BLOCKED = 'DECLARATION_BLOCKED',
+
+    /** The provider crossed the rejection threshold and may not declare. HTTP 403. */
+    DECLARATION_SUSPENDED = 'DECLARATION_SUSPENDED',
+
+    /** Reviewing requires a confirmed usage with that provider first. HTTP 403. */
+    NO_CONFIRMED_USAGE = 'NO_CONFIRMED_USAGE',
+
+    /** The actor owns the listing they are trying to review. HTTP 403. */
+    SELF_REVIEW_FORBIDDEN = 'SELF_REVIEW_FORBIDDEN',
+
+    /**
+     * The actor owns the listing they are declaring a usage on. HTTP 403.
+     *
+     * The sibling of {@link SELF_REVIEW_FORBIDDEN}, one step earlier in the
+     * flow. Reviewing already required not owning the listing, but declaring did
+     * not — so an owner could open a usage on himself. It could never be
+     * confirmed (neither side is offered the button), leaving an unresolvable
+     * PENDING row, and declaring is the step that feeds `confirmedUsesCount` and
+     * `distinctHostsCount`: the two numbers the directory ranks providers by.
+     */
+    SELF_USAGE_FORBIDDEN = 'SELF_USAGE_FORBIDDEN',
+
+    /** This host already reviewed this provider; one client, one voice. HTTP 409. */
+    REVIEW_ALREADY_EXISTS = 'REVIEW_ALREADY_EXISTS',
+
+    /**
+     * The provider listing is revoked, so it accepts no new usages or reviews.
+     * Maps to HTTP 422 — the request was well-formed and the listing still
+     * exists (a revoked row is kept, unlike a deleted one), but its state makes
+     * the action meaningless.
+     */
+    PROVIDER_REVOKED = 'PROVIDER_REVOKED'
 }

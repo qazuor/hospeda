@@ -14,21 +14,12 @@ import { toDestinationCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 
-type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
-
 interface Props {
     readonly destinations: ReadonlyArray<unknown>;
     readonly locale: SupportedLocale;
-    readonly isAuthenticated?: boolean;
-    /**
-     * Pre-resolved favorite state from a bulk-check on the parent page.
-     * Keyed by destination id. When provided, DestinationCard passes
-     * `initialIsFavorited` to FavoriteButton, suppressing per-card hydration.
-     */
-    readonly favoriteChecks?: Readonly<Record<string, FavoriteCheckEntry>>;
 }
 
-const { destinations, locale, isAuthenticated = false, favoriteChecks = {} } = Astro.props;
+const { destinations, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 if (destinations.length === 0) return;
@@ -58,9 +49,6 @@ const visibleDestinations = (destinations as Record<string, unknown>[])
                 destination={card}
                 locale={locale}
                 variant="grid"
-                isAuthenticated={isAuthenticated}
-                initialIsFavorited={favoriteChecks[card.id]?.isBookmarked}
-                initialBookmarkId={favoriteChecks[card.id]?.bookmarkId ?? null}
             />
         ))}
     </div>

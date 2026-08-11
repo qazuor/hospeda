@@ -1,0 +1,52 @@
+---
+/**
+ * @file autores/[slug]/page/[page].astro
+ * @description Posts pagination for the author page. This route renders nothing
+ * of its own: it validates the page number and rewrites to
+ * `autores/[slug]/index.astro` with `?page=<n>`, which is the single file that
+ * knows how to render an author (HOS-375 §6.3).
+ * @route /{lang}/autores/{slug}/page/{page}/
+ *
+ * Rewriting rather than duplicating the page is what keeps the "pages 2..n show
+ * only the posts block" rule in ONE place — the parent reads `?page` and drops
+ * the events block itself. It is also what makes these URLs `noindex` without a
+ * literal anywhere: the parent feeds the page number to
+ * `evaluateAuthorIndexability`, whose `paginated` condition fails for 2+.
+ *
+ * The URL shape is deliberately byte-identical to the old
+ * `/publicaciones/autor/<slug>/page/<n>/`, so the T-023 redirect can splice the
+ * head of the path and leave the tail untouched.
+ */
+
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl, buildUrlWithParams } from '@/lib/urls';
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { slug, page: pageParam } = Astro.params;
+
+if (!slug) return new Response(null, { status: 404 });
+
+const page = Number(pageParam);
+
+// Anything that is not a positive integer is not a page — `/page/0/`,
+// `/page/-2/` and `/page/abc/` are all 404, never a silent clamp to 1, which
+// would mint an unbounded family of URLs all serving the profile.
+if (!Number.isInteger(page) || page < 1) {
+	return new Response(null, { status: 404 });
+}
+
+const authorPath = `autores/${slug}`;
+
+// Page 1 is the profile itself. `/page/1/` is a duplicate of it, so it is a
+// permanent redirect rather than a second entry point.
+if (page === 1) {
+	return Astro.redirect(buildUrl({ locale, path: authorPath }), 301);
+}
+
+// Every URL here goes through the builder: it is the only thing that prefixes
+// the locale and guarantees the trailing slash. The page this replaces
+// hand-concatenated both, and that is not carried over (NG-4).
+return Astro.rewrite(
+	buildUrlWithParams({ locale, path: authorPath, params: { page: String(page) } })
+);
+---

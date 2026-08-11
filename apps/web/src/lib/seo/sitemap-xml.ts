@@ -24,6 +24,10 @@
  * endpoints cannot drift apart.
  */
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import type { CacheTagList } from '../cache/response-cache.js';
+import { buildStaticCacheHeaders } from '../cache/response-cache.js';
+
 /**
  * Supported locales and their URL prefix, ordered es/en/pt.
  *
@@ -181,8 +185,46 @@ ${entries.join('\n')}
 </sitemapindex>`;
 }
 
-/** Response headers shared by every sitemap endpoint: XML, cached 24h. */
-export const SITEMAP_RESPONSE_HEADERS = {
-    'Content-Type': 'application/xml; charset=utf-8',
-    'Cache-Control': 'public, max-age=86400, stale-while-revalidate=86400'
-} as const;
+/**
+ * Cache tags for every sitemap: one per collection a sitemap can list.
+ *
+ * Deliberately broad. A sitemap enumerates a whole collection, so any member's
+ * creation, deletion or slug change alters it — and sitemaps are cheap to
+ * regenerate, unlike the 24 h of staleness the narrower alternative buys.
+ * Whole-zone purge used to cover this for free (HOS-369 §5.5); selective purge
+ * does not, so it is stated here.
+ */
+// The leading element is pinned so the value satisfies `CacheTagList`'s
+// at-least-one-tag tuple without a cast; the spread that follows keeps the list
+// exhaustive as new collections are added. The repeat is deduplicated by
+// `buildStaticCacheHeaders`.
+const SITEMAP_CACHE_TAGS: CacheTagList = [
+    CACHE_TAG_COLLECTIONS.accommodation,
+    ...Object.values(CACHE_TAG_COLLECTIONS)
+];
+
+/**
+ * Response headers shared by every sitemap endpoint: XML, cached 24h.
+ *
+ * Sitemap endpoints bypass middleware (the `.xml` extension short-circuits
+ * `isStaticAssetRoute`), so the `Cache-Tag` header is set here rather than by
+ * the Step 11 collector, which never sees these responses (HOS-369 W1-1).
+ *
+ * A FUNCTION rather than the frozen object literal it used to be (HOS-369
+ * W1-2): the tags are now namespaced by deployment environment, and that
+ * namespace is resolved from the environment rather than known at module-eval
+ * time. Calling it per response also means a deployment whose namespace cannot
+ * be resolved emits `private, no-cache` instead of a cacheable response nothing
+ * can purge — the same fail-closed rule `applyCacheHeaders` applies to pages.
+ *
+ * @returns The exact header pairs each sitemap endpoint should send.
+ */
+export function getSitemapResponseHeaders(): Readonly<Record<string, string>> {
+    return {
+        'Content-Type': 'application/xml; charset=utf-8',
+        ...buildStaticCacheHeaders({
+            cacheControl: 'public, max-age=86400, stale-while-revalidate=86400',
+            tags: SITEMAP_CACHE_TAGS
+        })
+    };
+}

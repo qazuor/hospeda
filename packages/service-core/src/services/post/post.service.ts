@@ -1,8 +1,11 @@
-import { buildSearchCondition, PostModel, posts, REntityTagModel } from '@repo/db';
+import { buildSearchCondition, PostMediaModel, PostModel, posts, REntityTagModel } from '@repo/db';
 import { createLogger } from '@repo/logger';
 import type { ImageProvider } from '@repo/media/server';
 import { resolveEnvironment } from '@repo/media/server';
 import type {
+    ContentLifecycleStateInput,
+    ContentModerationChangeInput,
+    ContentPublishStateInput,
     GetPostByCategoryInput,
     GetPostByRelatedAccommodationInput,
     GetPostByRelatedDestinationInput,
@@ -56,7 +59,9 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
+import { applyPublicReadFloor } from '../moderation/public-read-floor';
 import { generatePostSlug, mapPostFilterKeysToColumns } from './post.helpers';
+import { attachComposedPostMedia, attachComposedPostMediaList } from './post.media-read';
 import { normalizeCreateInput, normalizeUpdateInput } from './post.normalizers';
 import {
     checkCanAdminList,
@@ -65,7 +70,10 @@ import {
     checkCanDeletePost,
     checkCanHardDeletePost,
     checkCanLikePost,
+    checkCanModeratePost,
     checkCanRestorePost,
+    checkCanSetPostLifecycleState,
+    checkCanSetPostPublishState,
     checkCanUpdatePost,
     checkCanViewPost
 } from './post.permissions';
@@ -161,17 +169,31 @@ export class PostService extends BaseCrudService<
     private readonly relatedModel: REntityTagModel;
 
     /**
+     * Model for the relational `post_media` table (HOS-390).
+     *
+     * Photos live in this table, not in the `posts.media` JSONB blob, so every
+     * read path has to rebuild the `media` shape consumers expect — see the
+     * media-composition hooks below.
+     */
+    private readonly postMediaModel: PostMediaModel;
+
+    /**
      * Initializes a new instance of the PostService.
      * @param ctx - The service context, containing the logger.
      * @param model - Optional PostModel instance (for testing/mocking).
      * @param mediaProvider - Optional ImageProvider for Cloudinary cleanup on hard delete.
      * @param relatedModel - Optional REntityTagModel instance (for testing/mocking).
+     * @param postMediaModel - Optional PostMediaModel instance. Unit tests that
+     *   mock the entity model must inject a stub here, otherwise the read hooks
+     *   below query a database that was never initialized (see
+     *   `makePostMediaModelStub` in the test utils).
      */
     constructor(
         ctx: ServiceConfig,
         model?: PostModel,
         mediaProvider?: ImageProvider | null,
-        relatedModel?: REntityTagModel
+        relatedModel?: REntityTagModel,
+        postMediaModel?: PostMediaModel
     ) {
         super(ctx, PostService.ENTITY_NAME);
         this.model = model ?? new PostModel();
@@ -179,6 +201,7 @@ export class PostService extends BaseCrudService<
         this.adminSearchSchema = PostAdminSearchSchema;
         this.mediaProvider = mediaProvider ?? null;
         this.relatedModel = relatedModel ?? new REntityTagModel();
+        this.postMediaModel = postMediaModel ?? new PostMediaModel();
     }
 
     /**
@@ -351,68 +374,119 @@ export class PostService extends BaseCrudService<
         } as Partial<Post>;
     }
 
+    // -----------------------------------------------------------------------
+    // Media composition (HOS-390)
+    // -----------------------------------------------------------------------
+    //
+    // Photos live in the relational `post_media` table, not in the `posts.media`
+    // JSONB blob, so every read path has to rebuild the `media` shape consumers
+    // expect. These are the standard chokepoints: `getById`/`getBySlug` go
+    // through `_afterGetByField`, `list()` and `search()` through their own
+    // hooks, and `adminList` through `_executeAdminSearch` — which the base
+    // flow does NOT route through `_afterList`, so it needs its own call.
+    //
+    // WITHOUT this wiring the relational rows are written but never read: the
+    // author persists photos successfully and they appear nowhere.
+    //
+    // Composition is batched (`findByPosts`, one IN query) so a list page does
+    // not go N+1.
+    //
+    // Videos are NOT composed from the table — they stay in the JSONB blob
+    // (SPEC-204 D1) and `attachComposedPostMedia*` reads them from there.
+
+    /**
+     * Composes `media` from the relational `post_media` rows for a plain array
+     * result (HOS-390).
+     *
+     * `_afterList` / `_afterSearch` only cover `list()` and `search()`. The
+     * public card feeds below (`getNews`, `getFeatured`, `getByCategory` and the
+     * three `getByRelated*`) read the model directly and return a bare `Post[]`,
+     * so each has to compose explicitly — otherwise those surfaces would render
+     * posts with no photos while the detail page shows them, which is exactly
+     * the half-migrated state the read switch exists to avoid.
+     */
+    private composeMediaForItems(items: Post[], ctx?: ServiceContext): Promise<Post[]> {
+        return attachComposedPostMediaList({
+            items,
+            mediaModel: this.postMediaModel,
+            tx: ctx?.tx
+        });
+    }
+
     /**
      * Lifecycle hook: flattens the nested `r_post_post_tag` join rows into
-     * a top-level `PostTag[]` on the returned entity (SPEC-086).
+     * a top-level `PostTag[]` on the returned entity (SPEC-086), then composes
+     * `media` from the relational rows (HOS-390).
      */
     protected override async _afterGetByField(
         entity: Post | null,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<Post | null> {
-        return this.flattenPostTagsRelation(entity);
+        return attachComposedPostMedia({
+            entity: this.flattenPostTagsRelation(entity),
+            mediaModel: this.postMediaModel,
+            tx: ctx?.tx
+        });
     }
 
     /**
      * Lifecycle hook: flattens nested `r_post_post_tag` join rows into a
      * top-level `PostTag[]` on every item of a paginated list result
-     * (SPEC-086).
+     * (SPEC-086), then composes `media` from the relational rows (HOS-390).
      */
     protected override async _afterList(
         result: PaginatedListOutput<Post>,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<Post>> {
         if (!result?.items) return result;
-        return {
-            ...result,
-            items: result.items.map((item) => this.flattenPostTagsRelation(item))
-        };
+        const items = await attachComposedPostMediaList({
+            items: result.items.map((item) => this.flattenPostTagsRelation(item)),
+            mediaModel: this.postMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
     }
 
     /**
      * Lifecycle hook: flattens nested `r_post_post_tag` join rows into a
      * top-level `PostTag[]` on every item of a paginated search result
-     * (SPEC-086).
+     * (SPEC-086), then composes `media` from the relational rows (HOS-390).
      */
     protected override async _afterSearch(
         result: PaginatedListOutput<Post>,
         _actor: Actor,
-        _ctx: ServiceContext
+        ctx: ServiceContext
     ): Promise<PaginatedListOutput<Post>> {
         if (!result?.items) return result;
-        return {
-            ...result,
-            items: result.items.map((item) => this.flattenPostTagsRelation(item))
-        };
+        const items = await attachComposedPostMediaList({
+            items: result.items.map((item) => this.flattenPostTagsRelation(item)),
+            mediaModel: this.postMediaModel,
+            tx: ctx?.tx
+        });
+        return { ...result, items };
     }
 
     /**
      * Override admin search execution to flatten the `r_post_post_tag` join rows
-     * into a top-level `PostTag[]` for every item, matching the behavior of
-     * `_afterList` and `_afterSearch`. The base `adminList` flow does NOT invoke
-     * `_afterList`, so this override is required to keep the response shape
-     * consistent with `PostAdminSchema.postTags` (SPEC-086 / SPEC-117 A-2 fix).
+     * into a top-level `PostTag[]` for every item and compose `media` from the
+     * relational rows, matching the behavior of `_afterList` and `_afterSearch`.
+     * The base `adminList` flow does NOT invoke `_afterList`, so this override is
+     * required to keep the response shape consistent with `PostAdminSchema`
+     * (SPEC-086 / SPEC-117 A-2 fix; HOS-390 for the media half).
      */
     protected override async _executeAdminSearch(
         params: AdminSearchExecuteParams
     ): Promise<PaginatedListOutput<Post>> {
         const result = await super._executeAdminSearch(params);
         if (!result?.items) return result;
-        return {
-            ...result,
-            items: result.items.map((item) => this.flattenPostTagsRelation(item))
-        };
+        const items = await attachComposedPostMediaList({
+            items: result.items.map((item) => this.flattenPostTagsRelation(item)),
+            mediaModel: this.postMediaModel,
+            tx: params.ctx?.tx
+        });
+        return { ...result, items };
     }
 
     /**
@@ -556,14 +630,11 @@ export class PostService extends BaseCrudService<
         checkCanAdminList(actor);
     }
     protected async _afterCreate(entity: Post, _actor: Actor, _ctx: ServiceContext): Promise<Post> {
-        // User-tags (r_entity_tag) do not have slugs per SPEC-086 D-002.
-        // PostTag slugs live in the separate post_tags system and are not on entity.tags.
-        const tagSlugs: string[] | undefined = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
                 slug: entity.slug,
-                tagSlugs
+                id: entity.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -598,13 +669,11 @@ export class PostService extends BaseCrudService<
         _actor: Actor,
         ctx: ServiceContext<PostHookState>
     ): Promise<Post> {
-        // User-tags do not have slugs per SPEC-086 D-002
-        const tagSlugs: string[] | undefined = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
                 slug: entity.slug,
-                tagSlugs
+                id: entity.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -644,13 +713,11 @@ export class PostService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Post> {
-        // User-tags do not have slugs per SPEC-086 D-002
-        const tagSlugs: string[] | undefined = undefined;
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
                 slug: entity.slug,
-                tagSlugs
+                id: entity.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -670,8 +737,7 @@ export class PostService extends BaseCrudService<
         if (entity && ctx.hookState) {
             ctx.hookState.restoredPost = {
                 slug: entity.slug,
-                // User-tags do not have slugs per SPEC-086 D-002
-                tagSlugs: undefined
+                id: entity.id
             };
         }
         return id;
@@ -687,7 +753,7 @@ export class PostService extends BaseCrudService<
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
                 slug: restored?.slug,
-                tagSlugs: restored?.tagSlugs
+                id: restored?.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -707,8 +773,7 @@ export class PostService extends BaseCrudService<
         if (entity && ctx.hookState) {
             ctx.hookState.deletedPost = {
                 slug: entity.slug,
-                // User-tags do not have slugs per SPEC-086 D-002
-                tagSlugs: undefined
+                id: entity.id
             };
         }
         return id;
@@ -724,7 +789,7 @@ export class PostService extends BaseCrudService<
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
                 slug: deleted?.slug,
-                tagSlugs: deleted?.tagSlugs
+                id: deleted?.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -744,8 +809,7 @@ export class PostService extends BaseCrudService<
         if (entity && ctx.hookState) {
             ctx.hookState.deletedPost = {
                 slug: entity.slug,
-                // User-tags do not have slugs per SPEC-086 D-002
-                tagSlugs: undefined
+                id: entity.id
             };
             ctx.hookState.deletedEntityId = id;
         }
@@ -762,7 +826,7 @@ export class PostService extends BaseCrudService<
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'post',
                 slug: deleted?.slug,
-                tagSlugs: deleted?.tagSlugs
+                id: deleted?.id
             });
         } catch (error) {
             PostService.revalidationLogger.warn(
@@ -845,9 +909,13 @@ export class PostService extends BaseCrudService<
             boolean | Record<string, unknown>
         >;
 
+        // The public read floor (HOS-374 §7.6.5) is applied LAST, on top of the
+        // caller's filters, so no query parameter can widen the result set to
+        // pending, private or archived posts. `adminList` is a separate code
+        // path (`_executeAdminSearch`) and deliberately does not get it.
         return this.model.findAllWithRelations(
             relations,
-            mapPostFilterKeysToColumns(filterParams),
+            applyPublicReadFloor(mapPostFilterKeysToColumns(filterParams)),
             {
                 page: ctx.pagination?.page ?? 1,
                 pageSize: ctx.pagination?.pageSize ?? 10,
@@ -893,18 +961,43 @@ export class PostService extends BaseCrudService<
             additionalConditions.push(inArray(posts.id, postIds));
         }
 
-        const count = await this.model.count(mapPostFilterKeysToColumns(filterParams), {
-            additionalConditions
-        });
+        // Mirror the `_executeSearch` public read floor so `total` stays
+        // consistent with the items actually returned (HOS-374 §7.6.5).
+        const count = await this.model.count(
+            applyPublicReadFloor(mapPostFilterKeysToColumns(filterParams)),
+            {
+                additionalConditions
+            }
+        );
         return { count };
     }
 
     /**
-     * Gets news posts, optionally filtered by date and visibility.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED news posts, optionally filtered by date.
+     *
+     * Its only caller is `GET /api/v1/public/posts/news` (`cacheTTL: 60`, under
+     * the `/api/v1/public/posts` prefix of `PUBLIC_CACHE_ENDPOINTS`), so it goes
+     * through {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` +
+     * `ACTIVE` rows to everyone, regardless of who is asking.
+     *
+     * It previously carried the same DEAD `!actor.id` guard {@link getByCategory}
+     * documents in full: `createGuestActor` (`apps/api/src/utils/actor.ts`) gives
+     * every anonymous public request a real UUID and
+     * `runWithLoggingAndValidation` rejects an id-less actor, so the branch never
+     * fired for any caller. `visibility` was therefore effectively unfiltered and
+     * `lifecycleState` never constrained at all — a `PRIVATE` news post, or a
+     * `DRAFT`/`ARCHIVED` one whose `visibility` is `PUBLIC` (the column default),
+     * reached every visitor and sat in the shared 60s cache entry.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The route does not forward one either.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - Optional filters for news posts.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of news posts
+     * @returns List of published news posts
      */
     public async getNews(
         actor: Actor,
@@ -920,30 +1013,40 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { isNews: true };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if (validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (validated.fromDate || validated.toDate) {
                     const expiresAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) expiresAtFilter.gte = validated.fromDate;
                     if (validated.toDate) expiresAtFilter.lte = validated.toDate;
                     where.expiresAt = expiresAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
-                return items;
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
 
     /**
-     * Gets featured posts.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED featured posts.
+     *
+     * Its only caller is `GET /api/v1/public/posts/featured` (`cacheTTL: 60`,
+     * under the `/api/v1/public/posts` prefix of `PUBLIC_CACHE_ENDPOINTS`), so it
+     * goes through {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC`
+     * + `ACTIVE` rows to everyone, regardless of who is asking. It previously
+     * carried the same DEAD `!actor.id` guard {@link getByCategory} documents in
+     * full, so `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat
+     * in the shared 60s cache entry.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The route does not forward one either.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - Optional filters for featured posts.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of featured posts
+     * @returns List of published featured posts
      */
     public async getFeatured(
         actor: Actor,
@@ -959,30 +1062,60 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { isFeatured: true };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if (validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
-                return items;
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
 
     /**
-     * Gets posts by category.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts by category.
+     *
+     * Its only caller is `GET /api/v1/public/posts/category/{category}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of who is asking — see that helper's docstring for
+     * why a public read cannot branch on the actor.
+     *
+     * It previously defaulted `visibility` to `PUBLIC` only when `!actor.id`,
+     * and never constrained `lifecycleState` at all. **That guard was dead
+     * code**: `createGuestActor` (`apps/api/src/utils/actor.ts`) hands every
+     * unauthenticated public request a real UUID
+     * (`00000000-0000-4000-8000-000000000000`), and `runWithLoggingAndValidation`
+     * rejects an actor without an id outright — so `!actor.id` was never true
+     * for any caller that reached this method. The route therefore served
+     * `PRIVATE` and `DRAFT` posts to every visitor unconditionally, with the
+     * shared 300s cache entry merely widening the blast radius rather than
+     * causing it. The two failure modes it is worth keeping straight:
+     *
+     * - **Unconditional leak.** `visibility` was effectively unfiltered, and
+     *   `lifecycleState` genuinely unfiltered, so a `PRIVATE` post, or a
+     *   `DRAFT`/`ARCHIVED` one whose `visibility` is `PUBLIC` (the column
+     *   default), reached anonymous callers directly.
+     * - **Cache poisoning.** Even had the `!actor.id` branch worked, the cached
+     *   body carries no actor component and `cacheMiddleware` runs before
+     *   `authMiddleware`, so one signed-in request would have stored the
+     *   widened result under the shared anonymous entry for the whole TTL.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The public HTTP schema (`PostsByCategoryHttpSchema`) cannot
+     * express it either, and the route forwards only `category`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The category and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts in the given category
+     * @returns List of published posts in the given category
      */
     public async getByCategory(
         actor: Actor,
@@ -998,12 +1131,6 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { category: validated.category };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if ('visibility' in validated && validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (
                     ('fromDate' in validated && validated.fromDate) ||
                     ('toDate' in validated && validated.toDate)
@@ -1015,18 +1142,36 @@ export class PostService extends BaseCrudService<
                         createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
-                return items;
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
 
     /**
-     * Gets posts related to an accommodation.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts related to an accommodation.
+     *
+     * Its only caller is
+     * `GET /api/v1/public/posts/related/accommodation/{accommodationId}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of who is asking. It previously carried the same DEAD
+     * `!actor.id` guard {@link getByCategory} documents in full, so
+     * `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat in the
+     * shared 300s cache entry.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The route forwards only `accommodationId`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The accommodationId and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts related to the accommodation
+     * @returns List of published posts related to the accommodation
      */
     public async getByRelatedAccommodation(
         actor: Actor,
@@ -1044,30 +1189,42 @@ export class PostService extends BaseCrudService<
                     relatedAccommodationId: validated.accommodationId
                 };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if (validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
-                return items;
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
 
     /**
-     * Gets posts related to a destination.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts related to a destination.
+     *
+     * Its only caller is
+     * `GET /api/v1/public/posts/related/destination/{destinationId}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of who is asking. It previously carried the same DEAD
+     * `!actor.id` guard {@link getByCategory} documents in full, so
+     * `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat in the
+     * shared 300s cache entry.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The route forwards only `destinationId`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The destinationId and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts related to the destination
+     * @returns List of published posts related to the destination
      */
     public async getByRelatedDestination(
         actor: Actor,
@@ -1085,30 +1242,41 @@ export class PostService extends BaseCrudService<
                     relatedDestinationId: validated.destinationId
                 };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if (validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
-                return items;
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
 
     /**
-     * Gets posts related to an event.
-     * @param actor - The user or system performing the action.
+     * Gets PUBLISHED posts related to an event.
+     *
+     * Its only caller is `GET /api/v1/public/posts/related/event/{eventId}`
+     * (`cacheTTL: 300`, under the `/api/v1/public/posts` prefix of
+     * `PUBLIC_CACHE_ENDPOINTS`), so it goes through
+     * {@link applyPublicReadFloor} and returns `APPROVED` + `PUBLIC` + `ACTIVE`
+     * rows to everyone, regardless of who is asking. It previously carried the same DEAD
+     * `!actor.id` guard {@link getByCategory} documents in full, so
+     * `PRIVATE`/`DRAFT`/`ARCHIVED` posts reached every visitor and sat in the
+     * shared 300s cache entry.
+     *
+     * A caller-supplied `visibility` is NOT honoured here: the floor is applied
+     * LAST and pins all three state columns, so no query parameter can widen a
+     * public read. The route forwards only `eventId`.
+     *
+     * @param actor - The user or system performing the action. Recorded for
+     *   logging and permission checks; it does not change which rows come back.
      * @param params - The eventId and optional filters.
      * @param ctx - Optional service context carrying transaction and hookState.
-     * @returns List of posts related to the event
+     * @returns List of published posts related to the event
      */
     public async getByRelatedEvent(
         actor: Actor,
@@ -1124,20 +1292,16 @@ export class PostService extends BaseCrudService<
                 await this._canList(actor);
                 const where: Record<string, unknown> = { relatedEventId: validated.eventId };
 
-                // If no visibility is specified, default to PUBLIC for guest users
-                if (validated.visibility) {
-                    where.visibility = validated.visibility;
-                } else if (!actor.id) {
-                    where.visibility = 'PUBLIC';
-                }
                 if (validated.fromDate || validated.toDate) {
                     const createdAtFilter: Record<string, unknown> = {};
                     if (validated.fromDate) createdAtFilter.gte = validated.fromDate;
                     if (validated.toDate) createdAtFilter.lte = validated.toDate;
                     where.createdAt = createdAtFilter;
                 }
-                const { items } = await this.model.findAll(where);
-                return items;
+                // Public read floor (HOS-374 §7.6.5), applied last so a caller
+                // cannot widen the result set through the `visibility` param.
+                const { items } = await this.model.findAll(applyPublicReadFloor(where));
+                return this.composeMediaForItems(items, ctx);
             }
         });
     }
@@ -1378,6 +1542,164 @@ export class PostService extends BaseCrudService<
                 resolvedCtx.hookState.updateId = undefined;
             }
         }
+    }
+
+    /**
+     * Applies a single state transition to one post.
+     *
+     * Shared tail of `moderate` / `setPublishState` / `setLifecycleState`
+     * (HOS-374 §7.6.4): load the post, authorize against the loaded row, write
+     * ONLY the field the caller owns, then revalidate the public page. Each
+     * transition supplies its own `authorize` because the three are gated by
+     * three different permissions, two of which have no author path at all.
+     *
+     * Writing one field per call is the point: it is what makes the permission
+     * on each transition impossible to sidestep by bundling a second state
+     * change into the same payload.
+     *
+     * @param input - actor, post id, the patch to apply, and the authorization check
+     * @param methodName - name reported to the service logger
+     * @param ctx - optional service context for transaction propagation
+     */
+    private async _applyStateChange(
+        input: {
+            readonly actor: Actor;
+            readonly id: string;
+            readonly patch: Partial<Post>;
+            readonly authorize: (actor: Actor, post: Post) => void;
+        },
+        methodName: string,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        const { actor, id, patch, authorize } = input;
+        return this.runWithLoggingAndValidation({
+            methodName,
+            input: { actor, id },
+            schema: z.object({ id: z.string().uuid() }),
+            ctx,
+            execute: async (validated, validatedActor, execCtx) => {
+                const existing = await this.model.findById(validated.id, execCtx?.tx);
+                if (!existing) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Post not found: ${validated.id}`
+                    );
+                }
+
+                authorize(validatedActor, existing as Post);
+
+                const updated = await this.model.update(
+                    { id: validated.id },
+                    patch as Partial<Post>,
+                    execCtx?.tx
+                );
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Post not found after update: ${validated.id}`
+                    );
+                }
+
+                // Every one of these transitions can flip the post in or out of
+                // the public predicate (APPROVED + PUBLIC + ACTIVE), so the
+                // cached page is stale either way. Best-effort: a revalidation
+                // failure must not undo a committed state change.
+                try {
+                    getRevalidationService()?.scheduleRevalidation({
+                        entityType: 'post',
+                        slug: updated.slug,
+                        id: updated.id
+                    });
+                } catch (error) {
+                    PostService.revalidationLogger.warn(
+                        { error, entityType: 'post' },
+                        'Revalidation scheduling failed (non-blocking)'
+                    );
+                }
+
+                return updated as Post;
+            }
+        });
+    }
+
+    /**
+     * Applies the platform's moderation verdict to a post.
+     *
+     * Gated by `POST_MODERATION_CHANGE`, which finally gates something. Touches
+     * `moderationState` and nothing else — the author's `visibility` switch is
+     * deliberately untouched, so approving does not publish and rejecting does
+     * not unpublish (HOS-374 §7.6.1).
+     *
+     * @param input - actor, post id, and the new moderation state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated post or a service error
+     */
+    public async moderate(
+        input: { readonly actor: Actor; readonly id: string } & ContentModerationChangeInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { moderationState: input.moderationState },
+                authorize: (actor) => checkCanModeratePost(actor)
+            },
+            'moderate',
+            ctx
+        );
+    }
+
+    /**
+     * Raises or lowers a post's publication.
+     *
+     * Gated by `POST_PUBLISH_TOGGLE` (any post) or `POST_PUBLISH_OWN` plus
+     * authorship. Touches `visibility` only, so unpublishing keeps the approval
+     * and republishing does not re-enter the review queue (§7.6.1).
+     *
+     * @param input - actor, post id, and the new visibility
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated post or a service error
+     */
+    public async setPublishState(
+        input: { readonly actor: Actor; readonly id: string } & ContentPublishStateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { visibility: input.visibility },
+                authorize: (actor, post) => checkCanSetPostPublishState(actor, post)
+            },
+            'setPublishState',
+            ctx
+        );
+    }
+
+    /**
+     * Moves a post through its lifecycle (draft / active / archived).
+     *
+     * Gated by `POST_LIFECYCLE_CHANGE`.
+     *
+     * @param input - actor, post id, and the new lifecycle state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated post or a service error
+     */
+    public async setLifecycleState(
+        input: { readonly actor: Actor; readonly id: string } & ContentLifecycleStateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Post>> {
+        return this._applyStateChange(
+            {
+                actor: input.actor,
+                id: input.id,
+                patch: { lifecycleState: input.lifecycleState },
+                authorize: (actor) => checkCanSetPostLifecycleState(actor)
+            },
+            'setLifecycleState',
+            ctx
+        );
     }
 
     /**

@@ -39,10 +39,10 @@
     "devDependencies": {
         "@repo/schemas": "workspace:*",
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^26.1.1",
+        "@types/node": "^26.1.2",
         "@types/react": "^19.1.1",
         "@vitest/coverage-v8": "^4.1.10",
-        "tsx": "^4.23.1",
+        "tsx": "^4.23.5",
         "typescript": "6.0.3",
         "vite-tsconfig-paths": "^6.1.1",
         "vitest": "^4.1.10"

@@ -826,6 +826,10 @@
                 "futureFeatureDesc": "La funcionalidad de gestión de permisos estará disponible en una actualización futura. Esto permitirá a los administradores otorgar o revocar permisos específicos a nivel de usuario, anulando los valores predeterminados del rol.",
                 "grantOverrides": "Permisos Otorgados",
                 "denyOverrides": "Permisos Denegados",
+                "trustedEditor": "Editor de confianza",
+                "trustedEditorDesc": "Puede publicar y eliminar sus propias notas y eventos sin aprobación previa",
+                "trustedEditorEnabled": "Marcado como editor de confianza",
+                "trustedEditorDisabled": "Editor de confianza desmarcado",
                 "addOverride": "Agregar override",
                 "removeOverride": "Eliminar override",
                 "confirmRemove": "¿Eliminar este override?",
@@ -1473,7 +1477,8 @@
             "empty": "No hay fotos en la galería. Subí la primera.",
             "cap": "Límite alcanzado ({{count}} fotos). Eliminá una para agregar otra.",
             "actions": {
-                "add": "Agregar foto"
+                "add": "Agregar foto",
+                "remove": "Quitar foto"
             }
         },
         "errors": {
@@ -1482,6 +1487,68 @@
             "removeFailed": "No se pudo eliminar la foto. Intentá de nuevo.",
             "setFeaturedFailed": "No se pudo establecer la portada. Intentá de nuevo.",
             "uploadFailed": "No se pudo subir la imagen. Intentá de nuevo."
+        }
+    },
+    "partnerMentions": {
+        "title": "Bitácora de menciones",
+        "description": "Registro de las acciones de difusión que el equipo hizo por este aliado, con el enlace a cada publicación.",
+        "empty": "Todavía no registramos ninguna difusión para este aliado.",
+        "loading": "Cargando la bitácora…",
+        "channels": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "TWITTER": "Twitter",
+            "YOUTUBE": "YouTube",
+            "TIKTOK": "TikTok",
+            "NEWSLETTER": "Newsletter",
+            "WHATSAPP": "WhatsApp",
+            "OTHER": "Otro canal"
+        },
+        "fields": {
+            "mentionedAt": "Fecha de la difusión",
+            "channel": "Canal",
+            "channels": "Canales",
+            "url": "Enlace a la publicación",
+            "urlPlaceholder": "https://…",
+            "internalNote": "Nota interna",
+            "internalNotePlaceholder": "Sólo la ve el equipo. El aliado nunca la ve.",
+            "internalNoteHelp": "Contexto para el equipo. No se le muestra al aliado ni se le envía por mail."
+        },
+        "form": {
+            "title": "Registrar una difusión",
+            "description": "Elegí todos los canales de una misma campaña: se guardan juntos y el aliado recibe un solo aviso.",
+            "selectChannels": "Seleccioná al menos un canal",
+            "urlRequired": "Este canal necesita el enlace a la publicación.",
+            "urlOptional": "Opcional: este canal no tiene enlace público.",
+            "submit": "Registrar difusión",
+            "submitting": "Registrando…",
+            "cancel": "Cancelar"
+        },
+        "actions": {
+            "add": "Registrar difusión",
+            "edit": "Corregir",
+            "save": "Guardar cambios",
+            "saving": "Guardando…",
+            "remove": "Quitar",
+            "viewPublication": "Ver la publicación",
+            "noPublicationLink": "Sin enlace público"
+        },
+        "remove": {
+            "title": "¿Quitar esta difusión?",
+            "description": "La difusión deja de verse en la bitácora del aliado. El registro se conserva junto con quién la quitó.",
+            "confirm": "Quitar"
+        },
+        "messages": {
+            "created_one": "Registramos la difusión y le avisamos al aliado.",
+            "created_other": "Registramos las {{count}} difusiones y le enviamos un solo aviso al aliado.",
+            "updated": "Difusión corregida.",
+            "removed": "Difusión quitada de la bitácora."
+        },
+        "errors": {
+            "loadFailed": "No pudimos cargar la bitácora.",
+            "createFailed": "No pudimos registrar la difusión. Intentá de nuevo.",
+            "updateFailed": "No pudimos guardar la corrección. Intentá de nuevo.",
+            "removeFailed": "No pudimos quitar la difusión. Intentá de nuevo."
         }
     }
 }

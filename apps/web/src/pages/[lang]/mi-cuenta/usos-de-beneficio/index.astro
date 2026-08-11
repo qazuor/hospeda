@@ -1,0 +1,106 @@
+---
+/**
+ * @file mi-cuenta/usos-de-beneficio/index.astro
+ * @description The host's benefit-usage screen (HOS-376 T-046, §8).
+ *
+ * Two lists with different meanings, both read here rather than after
+ * hydration: the INBOX (`/usages/pending` — PENDING rows a provider declared,
+ * the same definition the navigation badge counts) and the HISTORY
+ * (`/usages` — the whole record, including the host's own QR declarations,
+ * which wait on the provider and therefore never appear in the inbox).
+ *
+ * Reading both server-side means the screen is complete before any JavaScript
+ * runs. The island's skeleton is reserved for what is genuinely a later fetch:
+ * changing the history filter, loading another page, or re-reading after a
+ * confirm/reject.
+ *
+ * A failed read renders the page with an explicit error rather than a redirect:
+ * the host arrives here from a link in the confirmation e-mail, and bouncing him
+ * to the directory would read as "this does not exist".
+ *
+ * @route     /[lang]/mi-cuenta/usos-de-beneficio/
+ * @rendering SSR (prerender = false — requires an authenticated host)
+ */
+
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import { BenefitUsagesPanel } from '@/components/host/host-trades/BenefitUsagesPanel.client';
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import type { BenefitUsage } from '@/lib/api/endpoints-protected';
+import { hostTradesApi } from '@/lib/api/endpoints-protected';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { webLogger as logger } from '@/lib/logger';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+
+export const prerender = false;
+
+/** Rows per page, matching the island's own page size. */
+const PAGE_SIZE = 20;
+
+const locale = Astro.locals.locale as SupportedLocale;
+
+// Safety net: middleware already protects /mi-cuenta/* and returns here.
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+
+const [pendingResult, historyResult] = await Promise.all([
+    hostTradesApi.listPendingUsages({ page: 1, pageSize: PAGE_SIZE, cookieHeader }),
+    hostTradesApi.listUsages({ page: 1, pageSize: PAGE_SIZE, cookieHeader })
+]);
+
+let pending: readonly BenefitUsage[] = [];
+let history: readonly BenefitUsage[] = [];
+let historyTotal = 0;
+let loadFailed = false;
+
+if (pendingResult.ok) {
+    pending = pendingResult.data.items;
+} else {
+    loadFailed = true;
+    logger.error(
+        '[usos-de-beneficio] Could not load the pending inbox',
+        `status=${pendingResult.error.status} code=${pendingResult.error.code ?? 'none'}`
+    );
+}
+
+if (historyResult.ok) {
+    history = historyResult.data.items;
+    historyTotal = historyResult.data.pagination.total;
+} else {
+    loadFailed = true;
+    logger.error(
+        '[usos-de-beneficio] Could not load the usage history',
+        `status=${historyResult.error.status} code=${historyResult.error.code ?? 'none'}`
+    );
+}
+
+const { t } = createTranslations(locale);
+
+const title = t('host-trades.usages.title', 'Usos del beneficio');
+const subtitle = t(
+    'host-trades.usages.subtitle',
+    'Confirmá los usos que registran los proveedores y consultá tu historial.'
+);
+---
+
+<AccountLayout
+    locale={locale}
+    title={title}
+    description={subtitle}
+    activeSection="usos-de-beneficio"
+>
+    <AccountPageHeader title={title} description={subtitle} />
+
+    <BenefitUsagesPanel
+        client:load
+        locale={locale}
+        initialPending={pending}
+        initialHistory={history}
+        initialHistoryTotal={historyTotal}
+        loadFailed={loadFailed}
+    />
+</AccountLayout>

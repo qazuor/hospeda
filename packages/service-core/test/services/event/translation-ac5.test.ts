@@ -22,7 +22,11 @@ import {
 } from '../../../src/translation/translation-init';
 import { createAdminActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 
 // Stub out revalidation so it never throws or makes real calls.
 vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
@@ -54,7 +58,11 @@ describe('EventService — SPEC-212 AC-5: translation diff on update', () => {
         vi.clearAllMocks();
         // EventService receives its model via ctx.model (not as a second positional arg)
         modelMock = createTypedModelMock(EventModel, ['findById', 'update', 'findOne']);
-        service = new EventService({ logger: createLoggerMock(), model: modelMock });
+        service = new EventService({
+            logger: createLoggerMock(),
+            model: modelMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
 
         translateMock = vi.fn().mockResolvedValue(undefined);
         initializeTranslationService({ translate: translateMock });

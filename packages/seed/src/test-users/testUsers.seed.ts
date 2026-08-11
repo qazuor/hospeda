@@ -21,6 +21,11 @@ import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
 import { ensureHostAccommodation } from './hostAccommodation.js';
 import { ensureHostPromotion } from './hostPromotion.js';
+import {
+    ensureHostTradeOwnership,
+    HOST_TRADE_OWNER_EMAIL,
+    HOST_TRADE_OWNER_SLUG
+} from './hostTradeOwnership.js';
 import { markUserReady } from './markUserReady.js';
 
 /**
@@ -142,6 +147,18 @@ const TEST_USERS: readonly TestUserSpec[] = [
         planSlug: 'owner-basico',
         subStatus: 'trialing',
         trialDays: 14
+    },
+    // Dual-role host (HOS-376 T-013). A HOST who ALSO owns a host_trades
+    // listing. Every other host in this matrix is only a host, and no test user
+    // owns a provider listing at all — so "a host who is also a provider can
+    // rate OTHER providers but not their own" (AC-16 / AC-17) has no account to
+    // exercise it with. Ownership of the listing is attached separately by
+    // `ensureHostTradeOwnership`, since it lives on the host_trades row.
+    {
+        email: 'host-provider@local.test',
+        displayName: 'Host Provider',
+        role: RoleEnum.HOST,
+        planSlug: 'owner-basico'
     },
     // Complex / CLIENT_MANAGER tier
     {
@@ -721,6 +738,18 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                 // Idempotent: skips if the user already owns one. Depends on the
                 // accommodation created just above (re-resolved internally by id).
                 await ensureHostPromotion({ userId, spec });
+
+                // ── HOS-376 T-013: make the dual-role user a provider too ──
+                // Only this one account. Idempotent, and it yields rather than
+                // steal a listing a real provider already claimed.
+                if (spec.email === HOST_TRADE_OWNER_EMAIL) {
+                    const action = await ensureHostTradeOwnership({ userId, db });
+                    if (action === 'skip-owned-by-other') {
+                        logger.warn(
+                            `${STATUS_ICONS.Warning}  host_trades "${HOST_TRADE_OWNER_SLUG}" already belongs to another user — left untouched, ${spec.email} has no provider listing here.`
+                        );
+                    }
+                }
             }
 
             summaryTracker.trackSuccess(ENTITY_NAME);

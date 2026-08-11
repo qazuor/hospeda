@@ -26,12 +26,16 @@ export const protectedPatchPostRoute = createProtectedRoute({
     method: 'patch',
     path: '/{id}',
     summary: 'Patch post',
-    description: 'Partially updates a post. Requires POST_UPDATE permission.',
+    description: 'Partially updates a post. Requires authorship or POST_UPDATE permission.',
     tags: ['Posts'],
-    requiredPermissions: [PermissionEnum.POST_UPDATE],
     requestParams: { id: PostIdSchema },
     requestBody: PostPatchHttpSchema,
     responseSchema: PostProtectedSchema,
+    ownership: {
+        entityType: 'post',
+        ownershipFields: ['authorId'],
+        bypassPermission: PermissionEnum.POST_UPDATE
+    },
     handler: async (
         ctx: Context,
         params: Record<string, unknown>,

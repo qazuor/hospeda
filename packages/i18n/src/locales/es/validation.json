@@ -100,6 +100,7 @@
             }
         },
         "media": {
+            "photosNotUpdatable": "Las fotos no se actualizan por esta vía: usá los endpoints de medios del alojamiento",
             "reorder": {
                 "orderedIds": {
                     "invalid": "La lista ordenada debe ser un arreglo de UUIDs válidos",
@@ -520,9 +521,30 @@
         "adminNote": {
             "max": "La nota no puede superar los {{max}} caracteres"
         },
+        "benefitType": {
+            "requiredForServiceProvider": "Elegí qué beneficio ofrecés a los anfitriones"
+        },
+        "businessName": {
+            "max": "El nombre del negocio no puede superar los {{max}} caracteres",
+            "min": "El nombre del negocio debe tener al menos {{min}} caracteres",
+            "requiredForServiceProvider": "Indicá el nombre de tu negocio"
+        },
+        "category": {
+            "requiredForServiceProvider": "Elegí la categoría del servicio que ofrecés"
+        },
+        "claimExpiresAt": {
+            "invalid": "La fecha de vencimiento de la confirmación no es válida"
+        },
+        "claimToken": {
+            "max": "El código de confirmación no puede superar los {{max}} caracteres",
+            "required": "Falta el código de confirmación"
+        },
         "contactName": {
             "max": "El nombre de contacto no puede superar los {{max}} caracteres",
             "min": "El nombre de contacto debe tener al menos {{min}} caracteres"
+        },
+        "destinationId": {
+            "requiredForServiceProvider": "Elegí la localidad donde prestás el servicio"
         },
         "email": {
             "invalid": "El email no es válido",
@@ -539,6 +561,9 @@
         "message": {
             "max": "El mensaje no puede superar los {{max}} caracteres",
             "min": "El mensaje debe tener al menos {{min}} caracteres"
+        },
+        "partnerType": {
+            "requiredForPartner": "Elegí qué tipo de organización representás"
         },
         "phone": {
             "max": "El teléfono no puede superar los {{max}} caracteres"
@@ -1397,6 +1422,32 @@
         "checkOut": {
             "invalidDate": "El check-out debe ser una fecha válida"
         },
+        "commerceMedia": {
+            "alt": {
+                "max": "El texto alternativo no puede superar los {{max}} caracteres",
+                "min": "El texto alternativo debe tener al menos {{min}} caracteres"
+            },
+            "caption": {
+                "max": "La leyenda no puede superar los {{max}} caracteres",
+                "min": "La leyenda debe tener al menos {{min}} caracteres"
+            },
+            "description": {
+                "max": "La descripción no puede superar los {{max}} caracteres",
+                "min": "La descripción debe tener al menos {{min}} caracteres"
+            },
+            "publicId": {
+                "min": "El public id debe tener al menos {{min}} caracteres"
+            },
+            "sortOrder": {
+                "int": "El orden de visualización debe ser un número entero"
+            },
+            "state": {
+                "invalid": "El estado del medio debe ser 'visible' o 'archived'"
+            },
+            "url": {
+                "invalid": "La URL no es válida"
+            }
+        },
         "commerceRating": {
             "ambiance": {
                 "max": "El puntaje de ambiente no puede superar los {{max}}",
@@ -1440,6 +1491,38 @@
             },
             "workPhone": {
                 "international": "El teléfono laboral no es válido"
+            }
+        },
+        "contentMedia": {
+            "alt": {
+                "max": "El texto alternativo no puede superar los {{max}} caracteres",
+                "min": "El texto alternativo debe tener al menos {{min}} caracteres"
+            },
+            "caption": {
+                "max": "La leyenda no puede superar los {{max}} caracteres",
+                "min": "La leyenda debe tener al menos {{min}} caracteres"
+            },
+            "description": {
+                "max": "La descripción no puede superar los {{max}} caracteres",
+                "min": "La descripción debe tener al menos {{min}} caracteres"
+            },
+            "publicId": {
+                "min": "El public id debe tener al menos {{min}} caracteres"
+            },
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "La lista ordenada debe ser un arreglo de UUIDs válidos",
+                    "min": "La lista ordenada debe contener al menos {{min}} elemento"
+                }
+            },
+            "sortOrder": {
+                "int": "El orden de visualización debe ser un número entero"
+            },
+            "state": {
+                "invalid": "El estado del medio debe ser 'visible' o 'archived'"
+            },
+            "url": {
+                "invalid": "La URL no es válida"
             }
         },
         "createdAfter": {
@@ -2205,8 +2288,20 @@
         "gastronomyType": {
             "invalid": "El tipo de gastronomía no es válido"
         },
+        "hostTradeBenefitType": {
+            "invalid": "El tipo de beneficio seleccionado no es válido"
+        },
         "hostTradeCategory": {
             "invalid": "La categoría de oficio seleccionada no es válida"
+        },
+        "hostTradeUsageChannel": {
+            "invalid": "El canal de registro del uso no es válido"
+        },
+        "hostTradeUsageDeclaredBy": {
+            "invalid": "El origen de la declaración del uso no es válido"
+        },
+        "hostTradeUsageStatus": {
+            "invalid": "El estado del uso del beneficio no es válido"
         },
         "invoiceStatus": {
             "invalid": "El invoice status no es válido"
@@ -2252,6 +2347,9 @@
         },
         "ownerPromotionDiscountType": {
             "invalid": "El owner promotion discount type no es válido"
+        },
+        "partnerMentionChannel": {
+            "invalid": "El canal de mención no es válido"
         },
         "paymentStatus": {
             "invalid": "El payment status no es válido"
@@ -2394,6 +2492,7 @@
         },
         "date": {
             "end": {
+                "beforeStart": "La fecha de fin no puede ser anterior a la de inicio",
                 "invalid": "El fin no es válido"
             },
             "start": {
@@ -2694,6 +2793,14 @@
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
         },
+        "media": {
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "La lista ordenada debe ser un arreglo de UUIDs válidos",
+                    "min": "La lista ordenada debe contener al menos {{min}} elemento"
+                }
+            }
+        },
         "priceFrom": {
             "nonnegative": "El precio debe ser mayor o igual a 0"
         },
@@ -2933,6 +3040,14 @@
         "featureIds": {
             "invalidUuid": "El ID de característica debe ser un UUID válido"
         },
+        "media": {
+            "reorder": {
+                "orderedIds": {
+                    "invalid": "La lista ordenada debe ser un arreglo de UUIDs válidos",
+                    "min": "La lista ordenada debe contener al menos {{min}} elemento"
+                }
+            }
+        },
         "menuUrl": {
             "httpsRequired": "La URL del menú debe usar HTTPS",
             "invalid": "La URL del menú no es válida"
@@ -3017,14 +3132,71 @@
         "benefit": {
             "min": "El beneficio debe tener al menos {{min}} caracteres"
         },
+        "benefitReview": {
+            "decision": {
+                "invalid": "La decisión de revisión no es válida"
+            }
+        },
+        "benefitReviewState": {
+            "invalid": "El estado de revisión del beneficio no es válido"
+        },
+        "benefitText": {
+            "max": "La letra chica no puede superar los {{max}} caracteres"
+        },
+        "benefitValue": {
+            "int": "El valor del beneficio debe ser un número entero",
+            "notAllowedForType": "El tipo de beneficio elegido no lleva un valor numérico",
+            "percentageMax": "El descuento no puede superar el 100%",
+            "positive": "El valor del beneficio debe ser mayor que cero",
+            "required": "Indicá el valor del beneficio para el tipo elegido",
+            "requiresType": "Elegí un tipo de beneficio antes de indicar su valor"
+        },
         "contact": {
             "min": "El contacto debe tener al menos {{min}} caracteres"
         },
         "name": {
             "min": "El nombre debe tener al menos {{min}} caracteres"
         },
+        "revokeReason": {
+            "max": "El motivo no puede superar los {{max}} caracteres",
+            "required": "Indicá el motivo de la revocación"
+        },
         "slug": {
             "min": "El slug debe tener al menos {{min}} caracteres"
+        }
+    },
+    "hostTradeReview": {
+        "content": {
+            "max": "El comentario no puede superar los {{max}} caracteres",
+            "min": "El comentario debe tener al menos {{min}} caracteres"
+        },
+        "rating": {
+            "int": "La calificación debe ser un número entero de estrellas",
+            "max": "La calificación máxima es {{max}}",
+            "min": "La calificación mínima es {{min}}"
+        }
+    },
+    "hostTradeReviewReply": {
+        "content": {
+            "max": "La respuesta no puede superar los {{max}} caracteres",
+            "min": "La respuesta debe tener al menos {{min}} caracteres"
+        }
+    },
+    "hostTradeUsage": {
+        "hostEmail": {
+            "invalid": "El email del anfitrión no es válido"
+        },
+        "hostIdentifier": {
+            "exactlyOne": "Elegí un anfitrión de la lista o ingresá su email, pero no las dos cosas"
+        },
+        "note": {
+            "max": "La nota no puede superar los {{max}} caracteres"
+        },
+        "rejectionNote": {
+            "max": "El motivo del rechazo no puede superar los {{max}} caracteres"
+        },
+        "servicedAt": {
+            "format": "La fecha del servicio debe tener el formato AAAA-MM-DD"
         }
     },
     "location": {
@@ -3214,6 +3386,38 @@
         "version": {
             "format": "El formato de la versión no es válido",
             "required": "La versión es obligatoria"
+        }
+    },
+    "partnerMention": {
+        "mentionedAt": {
+            "required": "La fecha de la mención es obligatoria"
+        },
+        "url": {
+            "invalid": "El link de la publicación no es una URL válida",
+            "tooLong": "El link de la publicación es demasiado largo",
+            "requiredForChannel": "Este canal necesita el link a la publicación"
+        },
+        "internalNote": {
+            "tooLong": "La nota interna no puede superar los {{max}} caracteres"
+        },
+        "entries": {
+            "empty": "Elegí al menos un canal"
+        }
+    },
+    "partner": {
+        "revokeReason": {
+            "required": "El motivo de la baja no puede estar vacío",
+            "max": "El motivo de la baja no puede superar los {{max}} caracteres"
+        },
+        "contentReview": {
+            "decision": {
+                "invalid": "La decisión de revisión no es válida"
+            },
+            "note": {
+                "requiredOnReject": "Rechazar el contenido requiere indicar un motivo",
+                "tooLong": "El motivo del rechazo no puede superar los {{max}} caracteres",
+                "tooShort": "El motivo del rechazo no puede estar vacío"
+            }
         }
     },
     "poiCategory": {

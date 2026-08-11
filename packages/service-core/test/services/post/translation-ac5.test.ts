@@ -18,7 +18,7 @@ import {
 import { createAdminActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makePostMediaModelStub } from '../../utils/modelMockFactory';
 
 describe('PostService — SPEC-212 AC-5: translation diff on update', () => {
     let service: PostService;
@@ -33,7 +33,14 @@ describe('PostService — SPEC-212 AC-5: translation diff on update', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         modelMock = createTypedModelMock(PostModel, ['findById', 'update', 'findOne']);
-        service = createServiceTestInstance(PostService, modelMock);
+        service = createServiceTestInstance(
+            PostService,
+            modelMock,
+            undefined,
+            null,
+            undefined,
+            makePostMediaModelStub()
+        );
 
         translateMock = vi.fn().mockResolvedValue(undefined);
         initializeTranslationService({ translate: translateMock });

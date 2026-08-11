@@ -1,8 +1,11 @@
-import { PostModel } from '@repo/db';
+import { PostMediaModel, PostModel } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { PostService } from '@repo/service-core';
 import exampleManifest from '../manifest-example.json';
+import { buildPostMediaRows } from '../utils/content-media-builder.js';
 import { deterministicFixtureId } from '../utils/deterministicFixtureId.js';
+import { logger } from '../utils/logger.js';
+import type { FixtureMediaBlock } from '../utils/media-rows-builder.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { createSeedFactory } from '../utils/seedFactory.js';
 import { getRandomFutureDate } from '../utils/utils.js';
@@ -180,6 +183,67 @@ const getPostInfo = (item: unknown) => {
  * by a fixed id. See the audit note on `postNormalizer` above for why this
  * bypasses `PostService._beforeCreate` safely.
  */
+
+/**
+ * Writes a post's photos into the relational `post_media` table (HOS-390).
+ *
+ * The fixtures still carry a `media` block, and it is still persisted to the
+ * JSONB column — videos live there and are staying (SPEC-204 D1). What changed
+ * is that PHOTOS also become rows, because that table is the source of truth
+ * the read paths move to.
+ *
+ * This is the fresh-DB half of the dual-write rule; the already-seeded half is
+ * the `0037-hos-390-content-media-to-relational` data migration. Both build
+ * their rows with the same `buildMediaRows` helper, so a fresh seed and a
+ * backfill cannot drift apart.
+ *
+ * Idempotent: skips entirely when the post already has media rows, so a re-run
+ * against an already-seeded database never duplicates a gallery.
+ *
+ * @param input.postId - Real DB id of the post.
+ * @param input.media - The fixture's `media` block, if any.
+ * @param input.label - Post title, for logging.
+ */
+async function seedPostMediaRows({
+    postId,
+    media,
+    label
+}: {
+    readonly postId: string;
+    readonly media: FixtureMediaBlock | undefined;
+    readonly label: string;
+}): Promise<void> {
+    if (!media) return;
+    const hasPhotos = Boolean(media.featuredImage) || (media.gallery?.length ?? 0) > 0;
+    if (!hasPhotos) return;
+
+    const mediaModel = new PostMediaModel();
+    const { total: existingCount } = await mediaModel.findByPost({ postId, pageSize: 1 });
+    if (existingCount > 0) {
+        logger.info(`Skipping media for ${label}: ${existingCount} rows already exist`);
+        return;
+    }
+
+    for (const row of buildPostMediaRows({ postId, media })) {
+        await mediaModel.create(row);
+    }
+}
+
+/**
+ * Seed-factory `postProcess` hook: mirrors the fixture's photos into
+ * `post_media` right after the post row exists.
+ */
+const postProcessPost = async (result: unknown, item: unknown): Promise<void> => {
+    const created = result as { id?: string } | null;
+    const fixture = item as { media?: FixtureMediaBlock; title?: string };
+    if (!created?.id) return;
+    await seedPostMediaRows({
+        postId: created.id,
+        media: fixture.media,
+        label: fixture.title ?? created.id
+    });
+};
+
 export const seedPosts = createSeedFactory({
     entityName: 'Posts',
     serviceClass: PostService,
@@ -188,6 +252,7 @@ export const seedPosts = createSeedFactory({
     normalizer: postNormalizer,
     getEntityInfo: getPostInfo,
     preProcess: preProcessPost,
+    postProcess: postProcessPost,
 
     deterministicId: {
         modelClass: PostModel,

@@ -2,16 +2,31 @@
  * @file SearchBarCalendar.client.tsx
  * @description Date-range calendar panel for the hero SearchBar. Extracted into
  * its own module so it can be code-split and lazy-loaded only when the user
- * opens the dates panel. Bundles react-day-picker, its CSS, and the locale
- * imports outside of the SearchBar critical path.
+ * opens the dates panel. Bundles react-day-picker and the locale imports
+ * outside of the SearchBar critical path.
+ *
+ * HOS-369 W3-5 — the stylesheet used to be a plain `import` here. The JS split
+ * worked (`React.lazy` + `Suspense` in SearchBar.client.tsx), but the CSS did
+ * not: Astro hoists every stylesheet in a page's module graph into that page's
+ * `<head>`, dynamic import or not, so 8.845 B of calendar CSS was render-blocking
+ * on the home for a panel that only exists after a click. Importing it with
+ * `?url` gives back a plain string instead of declaring a style dependency, so
+ * Astro has nothing to hoist and the `<link>` appears when this module does.
+ *
+ * The call is at module level on purpose: `SearchBar.client.tsx` prefetches this
+ * module before the panel opens, so the stylesheet is requested then, not at
+ * first paint of the calendar.
  */
 
 import type { DateRange } from 'react-day-picker';
 import { DayPicker, getDefaultClassNames } from 'react-day-picker';
 import { enUS as enLocale, es as esLocale, ptBR as ptLocale } from 'react-day-picker/locale';
-import 'react-day-picker/style.css';
+import dayPickerCssUrl from 'react-day-picker/style.css?url';
+import { ensureStylesheet } from '@/lib/ensure-stylesheet';
 import type { SupportedLocale } from '@/lib/i18n';
 import styles from './SearchBar.module.css';
+
+void ensureStylesheet({ href: dayPickerCssUrl });
 
 /** Locale → react-day-picker locale object map. */
 const CALENDAR_LOCALE_MAP = { es: esLocale, en: enLocale, pt: ptLocale } as const;

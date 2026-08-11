@@ -136,6 +136,102 @@ describe('resolveInitialModerationState', () => {
         });
     });
 
+    // ---- HOS-376: the host-trade domain's asymmetric defaults ------------------
+
+    describe('host-trade review vs host-trade reply (HOS-376 §6.4)', () => {
+        it('returns APPROVED for a clean host-trade review', () => {
+            // Stronger evidence than an accommodation review: a usage the
+            // counterpart CONFIRMED, not just a conversation that happened.
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTrade',
+                    verificationLevel: 'none',
+                    moderationScore: 0
+                })
+            ).toBe(ModerationStatusEnum.APPROVED);
+        });
+
+        /** AC-19 — content-mod overrides the APPROVED default. */
+        it('returns PENDING for a host-trade review whose text scores at threshold', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTrade',
+                    verificationLevel: 'none',
+                    moderationScore: MODERATION_PENDING_THRESHOLD
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+        });
+
+        it('returns PENDING for a clean provider reply', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTradeReply',
+                    verificationLevel: 'none',
+                    moderationScore: 0
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+        });
+
+        it('returns PENDING for a provider reply whose text scores at threshold', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTradeReply',
+                    verificationLevel: 'none',
+                    moderationScore: MODERATION_PENDING_THRESHOLD
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+        });
+
+        /**
+         * The one place the reply breaks the shared decision tree.
+         *
+         * `verified` short-circuits to APPROVED for every other entity type,
+         * but verifying the AUTHOR says nothing about the reply's actual risk:
+         * the danger is what a provider writes about the host's address, and
+         * the most verified provider is precisely the one who was standing at
+         * it. A `verified` reply that published itself would be a fail-open.
+         */
+        it('keeps a verified provider reply PENDING', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTradeReply',
+                    verificationLevel: 'verified',
+                    moderationScore: 0
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+        });
+
+        it('still lets a verified host-trade review through', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTrade',
+                    verificationLevel: 'verified',
+                    moderationScore: 0
+                })
+            ).toBe(ModerationStatusEnum.APPROVED);
+        });
+
+        it('honours an injected threshold for both', () => {
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTrade',
+                    verificationLevel: 'none',
+                    moderationScore: 0.6,
+                    pendingThreshold: 0.8
+                })
+            ).toBe(ModerationStatusEnum.APPROVED);
+
+            expect(
+                resolveInitialModerationState({
+                    entityType: 'hostTrade',
+                    verificationLevel: 'none',
+                    moderationScore: 0.8,
+                    pendingThreshold: 0.8
+                })
+            ).toBe(ModerationStatusEnum.PENDING);
+        });
+    });
+
     // ---- PENDING_THRESHOLD constant sanity -------------------------------------
 
     it('PENDING_THRESHOLD is in (0, 1] so the stub binary result maps cleanly', () => {

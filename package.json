@@ -37,10 +37,11 @@
         "check:unsafe-ilike": "bash scripts/check-unsafe-ilike.sh",
         "check:type-casts": "bash scripts/check-type-casts.sh",
         "check:getbyid-tests": "bash scripts/check-getbyid-tests.sh",
-        "check:inline-nonce": "bash scripts/check-inline-nonce.sh",
+        "check:no-inline-nonce": "bash scripts/check-no-inline-nonce.sh",
         "check:env-registry": "bash scripts/check-env-registry.sh",
         "check:web-loading": "bash scripts/check-web-loading-patterns.sh",
-        "check:guards": "pnpm check:circular && pnpm check:cloudinary-isolation && pnpm check:bare-cloudinary-img && pnpm check:csp-patterns && pnpm check:unsafe-ilike && pnpm check:type-casts && pnpm check:getbyid-tests && pnpm check:inline-nonce && pnpm check:env-registry && pnpm check:web-loading",
+        "check:partner-mention-copy": "bash scripts/check-partner-mention-copy.sh",
+        "check:guards": "pnpm check:circular && pnpm check:cloudinary-isolation && pnpm check:bare-cloudinary-img && pnpm check:csp-patterns && pnpm check:unsafe-ilike && pnpm check:type-casts && pnpm check:getbyid-tests && pnpm check:no-inline-nonce && pnpm check:env-registry && pnpm check:web-loading && pnpm check:partner-mention-copy",
         "format:md": "markdownlint-cli2 '**/*.md' --fix",
         "format:md:claude": "markdownlint-cli2 '.claude/**/*.md' --fix",
         "lint:md": "markdownlint-cli2 '**/*.md'",
@@ -92,9 +93,9 @@
         "@commitlint/cli": "^21.2.1",
         "@commitlint/config-conventional": "^21.2.0",
         "@inquirer/prompts": "^8.5.2",
-        "@playwright/test": "^1.61.1",
+        "@playwright/test": "^1.62.0",
         "@repo/config": "workspace:*",
-        "@types/node": "^26.1.1",
+        "@types/node": "^26.1.2",
         "@vitest/coverage-v8": "^4.1.10",
         "ajv": "^8.20.0",
         "ajv-formats": "^3.0.1",
@@ -102,15 +103,15 @@
         "dotenv": "^17.4.2",
         "fuse.js": "^7.5.0",
         "husky": "^9.1.7",
-        "lint-staged": "^17.0.8",
-        "markdownlint-cli2": "^0.23.0",
+        "lint-staged": "^17.2.0",
+        "markdownlint-cli2": "^0.23.1",
         "sharp": "^0.35.2",
-        "tsx": "^4.23.1",
-        "turbo": "^2.10.5",
+        "tsx": "^4.23.5",
+        "turbo": "^2.10.7",
         "typescript": "6.0.3",
         "vitest": "^4.1.10"
     },
-    "packageManager": "pnpm@11.13.0",
+    "packageManager": "pnpm@11.18.0",
     "engines": {
         "node": ">=22.19.0"
     },
@@ -127,7 +128,7 @@
             "biome check --write --no-errors-on-unmatched"
         ],
         "*.json": [
-            "biome format --write"
+            "biome format --write --no-errors-on-unmatched --files-ignore-unknown=true"
         ],
         "*.md": [
             "markdownlint-cli2 --config .markdownlint-cli2.jsonc --fix"

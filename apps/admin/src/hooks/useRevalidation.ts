@@ -18,6 +18,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { RevalidationLogPage } from '@/lib/revalidation-http-adapter';
 import {
     getRevalidationConfigs,
+    getRevalidationHealth,
     getRevalidationLogs,
     getRevalidationStats,
     manualRevalidate,
@@ -33,7 +34,8 @@ import {
 export const REVALIDATION_QUERY_KEYS = {
     configs: ['revalidation', 'configs'] as const,
     logs: ['revalidation', 'logs'] as const,
-    stats: ['revalidation', 'stats'] as const
+    stats: ['revalidation', 'stats'] as const,
+    health: ['revalidation', 'health'] as const
 } as const;
 
 /**
@@ -92,6 +94,19 @@ export function useRevalidationStats() {
 }
 
 /**
+ * Fetches the revalidation service health report, including the cache tag an
+ * environment flush would purge on the deployment this panel talks to.
+ *
+ * @returns TanStack Query result with `RevalidationHealth` data
+ */
+export function useRevalidationHealth() {
+    return useQuery({
+        queryKey: REVALIDATION_QUERY_KEYS.health,
+        queryFn: getRevalidationHealth
+    });
+}
+
+/**
  * Mutation hook for updating a revalidation configuration record.
  * Automatically invalidates the configs query on success.
  *
@@ -114,7 +129,8 @@ export function useUpdateRevalidationConfig() {
 }
 
 /**
- * Mutation hook for triggering a manual revalidation of specific URL paths.
+ * Mutation hook for triggering a manual revalidation of specific cache tags,
+ * or (via an explicit `purgeEverything: true` opt-in) a whole-zone purge.
  * Automatically invalidates logs and stats queries on success.
  *
  * @returns TanStack Query mutation for `manualRevalidate`
@@ -131,7 +147,7 @@ export function useManualRevalidate() {
 }
 
 /**
- * Mutation hook for revalidating all paths for an entire entity type.
+ * Mutation hook for revalidating the collection cache tag for an entire entity type.
  * Automatically invalidates logs and stats queries on success.
  *
  * @returns TanStack Query mutation for `revalidateByType`
@@ -148,7 +164,7 @@ export function useRevalidateByType() {
 }
 
 /**
- * Mutation hook for revalidating all paths associated with a specific entity instance.
+ * Mutation hook for revalidating all cache tags associated with a specific entity instance.
  * Automatically invalidates the logs query on success.
  *
  * @returns TanStack Query mutation for `revalidateEntity`

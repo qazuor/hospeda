@@ -7,6 +7,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContactHost } from '../../../src/components/accommodation/ContactHost.client';
+import { buildAuthSnapshot } from '../../helpers/auth-session';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -87,11 +88,76 @@ const CURRENT_USER = { id: 'user-001', name: 'Ana', email: 'ana@example.com' };
 
 const LOCALE = 'es' as const;
 
+// HOS-369 WB0-4: the island resolves the visitor client-side via
+// `useAccountPermissions`, which reads `auth-cache`. The `currentUser` prop is
+// gone — a visitor's name and e-mail must never be baked into cacheable HTML.
+// See test/helpers/auth-session.ts.
+const mockReadCachedAuthMe = vi.fn();
+
+vi.mock('@/lib/auth-cache', () => ({
+    readCachedAuthMe: () => mockReadCachedAuthMe(),
+    fetchAuthMe: () => new Promise(() => undefined),
+    writeCachedAuthMe: () => undefined,
+    resetInFlightAuthMe: () => undefined
+}));
+
+// HOS-369 WB0-7: `existingConversationId` stopped being an SSR prop too — it is
+// the same per-visitor lookup, now shared with ReviewSidebarCard through the
+// store. Default: no conversation, which is the guest and fail-closed answer.
+const mockConversation = vi.fn(() => ({
+    conversationId: null as string | null,
+    hasConversation: false,
+    isResolving: false
+}));
+
+vi.mock('@/store/accommodation-conversation-store', () => ({
+    useAccommodationConversation: (params: { readonly accommodationId: string }) =>
+        mockConversation(params)
+}));
+
+/** Arrange the session the island will resolve. */
+function arrangeSession(isAuthenticated: boolean): void {
+    mockReadCachedAuthMe.mockReturnValue(
+        buildAuthSnapshot({
+            isAuthenticated,
+            id: CURRENT_USER.id,
+            name: CURRENT_USER.name,
+            email: CURRENT_USER.email
+        })
+    );
+}
+
+/**
+ * Arrange the visitor's existing conversation with this accommodation.
+ *
+ * HOS-369 WB0-7: this used to be the SSR `existingConversationId` prop. It is
+ * now resolved client-side and shared with `ReviewSidebarCard` through the
+ * store, so tests control it by mocking the store rather than passing a prop.
+ * Defaults to "none", which is both the guest answer and the fail-closed one.
+ */
+function arrangeConversation(conversationId: string | null = null): void {
+    mockConversation.mockReturnValue({
+        conversationId,
+        hasConversation: conversationId !== null,
+        isResolving: false
+    });
+}
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
 describe('ContactHost', () => {
+    beforeEach(() => {
+        // Default: an anonymous visitor — the variant a cached page must render.
+        // Tests covering the signed-in modes call `arrangeSession(true)`.
+        arrangeSession(false);
+        // Reset explicitly: `mockReturnValue` persists across tests, so without
+        // this the one Mode C case would put its conversation id into every
+        // later test and silently turn Mode B assertions into Mode C ones.
+        arrangeConversation(null);
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
     });
@@ -105,8 +171,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -116,12 +180,11 @@ describe('ContactHost', () => {
             expect(screen.getByRole('textbox', { name: /message/i })).toBeInTheDocument();
         });
 
-        it('Mode B: renders only message field when currentUser set and no existingConversationId', () => {
+        it('Mode B: renders only the message field for a signed-in visitor with no conversation', () => {
+            arrangeSession(true);
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={CURRENT_USER}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -132,12 +195,12 @@ describe('ContactHost', () => {
             expect(screen.getByRole('textbox')).toBeInTheDocument();
         });
 
-        it('Mode C: renders view-existing link when existingConversationId is set', () => {
+        it('Mode C: renders the view-existing link when the store resolves a conversation', () => {
+            arrangeSession(true);
+            arrangeConversation('conv-999');
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={CURRENT_USER}
-                    existingConversationId="conv-999"
                     locale={LOCALE}
                 />
             );
@@ -150,8 +213,6 @@ describe('ContactHost', () => {
             const { container } = render(
                 <ContactHost
                     accommodation={INACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -162,8 +223,6 @@ describe('ContactHost', () => {
             const { container } = render(
                 <ContactHost
                     accommodation={DELETED_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -180,8 +239,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -194,8 +251,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -211,8 +266,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -252,8 +305,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -297,8 +348,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -343,8 +392,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -397,8 +444,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -426,6 +471,7 @@ describe('ContactHost', () => {
         });
 
         it('Mode B: surfaces the real API error (NOT conversationNotFound) for a 500 response', async () => {
+            arrangeSession(true);
             vi.stubGlobal(
                 'fetch',
                 vi.fn().mockResolvedValue({
@@ -439,8 +485,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={CURRENT_USER}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -474,8 +518,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -506,8 +548,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -547,8 +587,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -578,8 +616,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -620,8 +656,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -650,8 +684,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -683,8 +715,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -728,8 +758,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -782,8 +810,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                     initialMessage={prefilled}
                 />
@@ -795,12 +821,11 @@ describe('ContactHost', () => {
         });
 
         it('Mode B: pre-fills the message textarea when initialMessage is provided and user is authenticated', () => {
+            arrangeSession(true);
             const prefilled = 'Hola, me interesa. Somos 2 adultos.';
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={CURRENT_USER}
-                    existingConversationId={null}
                     locale={LOCALE}
                     initialMessage={prefilled}
                 />
@@ -813,8 +838,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -855,8 +878,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -897,6 +918,7 @@ describe('ContactHost', () => {
         });
 
         it('Mode B: fires booking_request_sent when an authenticated conversation is created', async () => {
+            arrangeSession(true);
             vi.stubGlobal(
                 'fetch',
                 vi.fn().mockResolvedValue({
@@ -910,8 +932,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={CURRENT_USER}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -959,8 +979,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );
@@ -1018,8 +1036,6 @@ describe('ContactHost', () => {
             render(
                 <ContactHost
                     accommodation={ACTIVE_ACCOMMODATION}
-                    currentUser={null}
-                    existingConversationId={null}
                     locale={LOCALE}
                 />
             );

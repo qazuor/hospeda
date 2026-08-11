@@ -1,0 +1,58 @@
+---
+/**
+ * @file CriticalStyles.astro
+ * @description Inlines `global.css` as a single critical `<style>` block in
+ * `<head>`, replacing the render-blocking `<link rel="stylesheet">` Astro
+ * would otherwise emit for it (HOS-369 — staging measured 1,707ms of
+ * paint-blocked wait after HTML-complete, gated by 17 stylesheets; this one
+ * is the largest at 14 KB transferred / 56 KB raw, and it is common to every
+ * page).
+ *
+ * ## Why `?inline` and not `?raw`
+ *
+ * `global.css` starts with `@import "@repo/design-tokens/tokens.web.css"`,
+ * `@import "./components.css"`, `@import "./css-var-themes.css"`. Vite's
+ * `?raw` suffix returns the literal file bytes with those `@import`
+ * statements UNRESOLVED — the browser would then fetch each imported sheet
+ * in a render-blocking chain, which is worse than the single `<link>` this
+ * replaces. `?inline` returns the CSS AFTER Vite has resolved and
+ * concatenated every `@import`, so the whole design-token + reset +
+ * component-class layer ships as one inline block, no follow-up requests.
+ *
+ * ## Why every layout renders THIS component instead of importing the CSS
+ * file directly
+ *
+ * The CSP carries no nonce (HOS-369 WB0-1): `middleware.ts` hashes every
+ * inline `<style>` by CONTENT (`collectCspHashes`,
+ * `integrations/csp-hash-collector/collect-csp-hashes.ts`) and allows it in
+ * `style-src` for that response only. Astro's `<ClientRouter />` does
+ * soft-navigation, but the CSP that stays active in the browser is the one
+ * stamped for the FIRST page load — so a soft-navigated page's inline
+ * `<style>` only keeps rendering if its hash was ALREADY present in that
+ * first page's CSP, which only holds if EVERY page emits byte-identical
+ * content for this block (see HOS-91: 20/20 `<style>` tags with
+ * `.sheet === null` after a soft-nav to a page with a differently-hashed
+ * inline block).
+ *
+ * Four layouts (`BaseLayout`, `StandaloneLayout`, `AuthLayout`,
+ * `ErrorLayout`) each render their own `<head>`, so "keep the inline CSS
+ * identical" cannot be a convention four files individually honor — it has
+ * to be one Vite module graph node whose string is reused verbatim. Routing
+ * all four through this single component makes that a structural guarantee:
+ * there is exactly one `?inline` import of `global.css` in the whole app,
+ * and `set:html` writes its resolved value out unmodified. See the guard at
+ * `test/components/shared/critical-styles-consistency.test.ts`.
+ *
+ * ## Why `is:inline` + `set:html` (not a plain `<style>{globalCss}</style>`)
+ *
+ * `astro.config.mjs` sets `build.inlineStylesheets: 'never'` — without
+ * `is:inline`, Astro would still try to treat this as a scoped/bundled style
+ * block and extract it to its own asset, defeating the whole point. `set:html`
+ * writes the string as raw text children, exactly as authored by Vite's CSS
+ * transform, which is what `collectCspHashes` needs to hash consistently
+ * (it hashes the element's raw text VERBATIM — no trimming).
+ */
+import globalCss from '@/styles/global.css?inline';
+---
+
+<style is:inline set:html={globalCss}></style>

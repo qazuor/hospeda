@@ -1,15 +1,18 @@
-import { ENTITY_GALLERY_CAPS, PermissionEnum } from '@repo/schemas';
+import { PermissionEnum } from '@repo/schemas';
 import { FieldTypeEnum, LayoutTypeEnum } from '@/components/entity-form/enums/form-config.enums';
 import type { ConsolidatedSectionConfig } from '@/features/destinations/types/consolidated-config.types';
-import { DEFAULT_MEDIA_MAX_SIZE_BYTES } from '@/lib/constants';
 
 /**
- * Consolidated configuration for the Contact & Media section of event
+ * Consolidated configuration for the Contact section of event.
+ *
+ * The id stays `contact-media` on purpose even though the media fields are
+ * gone (HOS-390): the section id is referenced by the form's section ordering
+ * and by tests, and renaming it would be churn with no behavioural payoff.
  */
 export const createContactMediaConsolidatedSection = (): ConsolidatedSectionConfig => ({
     id: 'contact-media',
-    title: 'Contacto y Multimedia',
-    description: 'Información de contacto y archivos multimedia',
+    title: 'Contacto',
+    description: 'Información de contacto del evento',
     layout: LayoutTypeEnum.GRID,
     modes: ['view', 'edit', 'create'],
     permissions: {
@@ -66,40 +69,12 @@ export const createContactMediaConsolidatedSection = (): ConsolidatedSectionConf
                 autocomplete: 'url',
                 pattern: '^https?:\\/\\/.*'
             }
-        },
-        {
-            id: 'media.featuredImage',
-            type: FieldTypeEnum.IMAGE,
-            required: false,
-            modes: ['view', 'edit'],
-            label: 'Imagen Principal',
-            description: 'Imagen destacada del evento',
-            permissions: {
-                view: [PermissionEnum.EVENT_VIEW_ALL],
-                edit: [PermissionEnum.EVENT_UPDATE]
-            },
-            typeConfig: {
-                type: 'IMAGE',
-                allowedTypes: ['image/jpeg', 'image/png', 'image/webp'],
-                maxSize: DEFAULT_MEDIA_MAX_SIZE_BYTES
-            }
-        },
-        {
-            id: 'media.gallery',
-            type: FieldTypeEnum.GALLERY,
-            required: false,
-            modes: ['view', 'edit'],
-            label: 'Galería de Imágenes',
-            description: 'Imágenes adicionales del evento',
-            permissions: {
-                view: [PermissionEnum.EVENT_VIEW_ALL],
-                edit: [PermissionEnum.EVENT_UPDATE]
-            },
-            typeConfig: {
-                type: 'GALLERY',
-                maxImages: ENTITY_GALLERY_CAPS.event,
-                allowedTypes: ['image/jpeg', 'image/png', 'image/webp']
-            }
         }
+        // HOS-390: `media.featuredImage` (IMAGE) and `media.gallery` (GALLERY)
+        // were REMOVED here. Event photos live in the relational `event_media`
+        // table and are managed exclusively via the Gallery tab
+        // (`/events/:id/gallery`, `ContentGalleryManager`), never through this
+        // form. Leaving them would write a JSONB blob nothing reads any more —
+        // the read switch composes `media` from the table.
     ]
 });

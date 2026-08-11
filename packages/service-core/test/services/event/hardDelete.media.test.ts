@@ -21,7 +21,11 @@ import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { EventService } from '../../../src/services/event/event.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockEvent } from '../../factories/eventFactory';
-import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
+import {
+    createLoggerMock,
+    createTypedModelMock,
+    makeEventMediaModelStub
+} from '../../utils/modelMockFactory';
 
 describe('EventService.hardDelete — media cleanup (T-065)', () => {
     let service: EventService;
@@ -39,7 +43,14 @@ describe('EventService.hardDelete — media cleanup (T-065)', () => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'hardDelete']);
         loggerMock = createLoggerMock();
         provider = new InMemoryImageProvider();
-        service = new EventService({ model: modelMock, logger: loggerMock }, provider);
+        service = new EventService(
+            {
+                model: modelMock,
+                logger: loggerMock,
+                eventMediaModel: makeEventMediaModelStub() as never
+            },
+            provider
+        );
         (modelMock.findById as Mock).mockResolvedValue(existingEvent);
         (modelMock.hardDelete as Mock).mockResolvedValue(1);
     });
@@ -76,7 +87,11 @@ describe('EventService.hardDelete — media cleanup (T-065)', () => {
     });
 
     it('does NOT call the provider when no mediaProvider is injected', async () => {
-        const serviceNoProvider = new EventService({ model: modelMock, logger: loggerMock });
+        const serviceNoProvider = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
         const deleteSpy = vi.spyOn(provider, 'deleteByPrefix');
 
         const result = await serviceNoProvider.hardDelete(actor, eventId);

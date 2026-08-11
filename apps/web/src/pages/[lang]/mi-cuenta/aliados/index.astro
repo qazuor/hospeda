@@ -2,18 +2,32 @@
 /**
  * @file mi-cuenta/aliados/index.astro
  * @description "Sumate como aliado" discovery-door hub page (HOS-131 §6.2,
- * expanded HOS-134 §5.3). Lists the four B2B alliance roles: sponsor, partner
- * (home-ad), and service provider are not-yet-implemented verticals (NG-2)
- * that render "Próximamente" + a "Contactanos" CTA; `editor` has a real entry
- * form (`/colaborar/editores`) and resolves `acquired` once the user holds
- * `POST_CREATE`, linking the admin panel to manage it.
+ * expanded HOS-134 §5.3, HOS-278). Lists the four B2B alliance roles, all
+ * backed by a real qualified lead-capture landing since HOS-277: `sponsor`
+ * and `partner` stay lead-only forever (an admin evaluates and provisions
+ * manually — no self-service "acquired" state exists for them);
+ * `serviceProvider` and `partner` each become a real, self-service-editable
+ * listing once an admin approves the lead (HOS-278) — this page fetches
+ * `GET /host-trades/mine` and `GET /partners/mine` and, when a row comes back,
+ * force-acquires that door option (`resolveDoorOptionState`'s
+ * `acquiredOptionIds` override, `src/lib/nav-gating.ts`) so it shows
+ * "Gestionar" → `/mi-cuenta/proveedor` or `/mi-cuenta/partner` instead of the
+ * acquire CTA. Neither declares an `acquiredPermission`, and that is AC-7: an
+ * approved aliado is an ordinary account, so there is no permission for the
+ * normal mechanism to read; `editor` resolves `acquired` once the user
+ * holds `POST_CREATE`/`EVENT_CREATE`, linking the relevant own-content
+ * listing.
  *
  * @route     /[lang]/mi-cuenta/aliados/
  * @rendering SSR (prerender = false — requires authenticated user)
  */
 
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
+import AllianceApplicationsSection from '@/components/account/AllianceApplicationsSection.astro';
+import { AllianceClaimBanner } from '@/components/account/AllianceClaimBanner.client';
 import DiscoveryDoorHub from '@/components/account/DiscoveryDoorHub.astro';
+import PartnerMentionsSection from '@/components/account/PartnerMentionsSection.astro';
+import { allianceLeadsApi, hostTradesApi, partnersApi } from '@/lib/api/endpoints-protected';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -44,9 +58,80 @@ const labelKey = resolveDoorLabelKey({
 });
 const title = t(labelKey);
 const description = t(door.subtitleI18nKey);
+
+// HOS-278 AC-14 — the page now answers "and then what happened?" as well as
+// "what can I apply for?".
+//
+// Degrades to an empty list on ANY failure rather than erroring the page: the
+// applications panel is an addition to a discovery hub that stood on its own
+// for two specs, and a 500 on the API must not take the hub down with it. The
+// section renders nothing at all when the list is empty, so the fallback is
+// simply the page as it was.
+// The second fetch resolves the `serviceProvider` door option's "acquired"
+// signal (HOS-278 §8) and degrades to null on ANY failure for the same reason:
+// a 500 there just means the option falls back to its unacquired CTA for this
+// render.
+//
+// Both run in parallel — neither depends on the other, and this is an
+// uncacheable actor-scoped SSR page, so chaining them would add a full API
+// round-trip to its TTFB for nothing.
+// The fourth fetch is the mentions log (HOS-377 AC-10). It degrades to an
+// empty list on ANY failure for the same reason as the others, and it joins
+// the same parallel batch rather than being chained off the partner fetch:
+// `listForOwner` resolves ownership server-side from the session, so it does
+// not need the partner id this page is fetching alongside it.
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const [myLeadsResult, myTradeResult, myPartnerResult, myMentionsResult] = await Promise.all([
+    allianceLeadsApi.mine({ cookieHeader }),
+    hostTradesApi.mine({ cookieHeader }),
+    partnersApi.mine({ cookieHeader }),
+    partnersApi.mineMentions({ cookieHeader })
+]);
+const myLeads = myLeadsResult.ok ? myLeadsResult.data.leads : [];
+const myTrade = myTradeResult.ok ? myTradeResult.data.trade : null;
+const myPartner = myPartnerResult.ok ? myPartnerResult.data.partner : null;
+const myMentionBatches = myMentionsResult.ok ? myMentionsResult.data.batches : [];
+
+// Both force-acquired options are built here rather than inline in the
+// template so the list is one expression to read and to test. Each entry is
+// independent: a partner who is also a provider gets both, and a failed fetch
+// only drops its own option back to the acquire CTA.
+const acquiredOptionIds = [
+    ...(myTrade ? (['serviceProvider'] as const) : []),
+    ...(myPartner ? (['partner'] as const) : [])
+];
+
+// HOS-278 AC-4 — this is where the claim invitation email lands.
+//
+// Only a boolean crosses into the island. The token stays in the address bar
+// for the island to read and then strip: serializing it as a prop would print
+// a single-use secret into the document, where a screenshot or a copied page
+// source outlives the click it was meant for.
+const hasPendingClaim =
+    Astro.url.searchParams.has('claim') && Astro.url.searchParams.has('lead');
 ---
 
 <AccountLayout locale={locale} title={title} description={description} activeSection="aliados">
     <AccountPageHeader title={title} />
-    <DiscoveryDoorHub locale={locale} door={door} roles={user.roles} adminUrl={getAdminUrl()} />
+    {hasPendingClaim && <AllianceClaimBanner client:load locale={locale} />}
+    <AllianceApplicationsSection locale={locale} leads={myLeads} />
+    {/*
+      HOS-377 AC-10. Gated on OWNERSHIP (`myPartner !== null`), exactly like the
+      `partner` door option's acquired state above — never on a permission. The
+      partner door has no `acquiredPermission` and must never get one
+      (HOS-277 NG-1): an approved aliado is an ordinary account, so there is no
+      permission for that mechanism to read.
+    */}
+    <PartnerMentionsSection
+        locale={locale}
+        batches={myMentionBatches}
+        visible={myPartner !== null}
+    />
+    <DiscoveryDoorHub
+        locale={locale}
+        door={door}
+        roles={user.roles}
+        adminUrl={getAdminUrl()}
+        acquiredOptionIds={acquiredOptionIds}
+    />
 </AccountLayout>

@@ -3,7 +3,10 @@
  * @file publicaciones/[slug].astro
  * @description Blog post detail page with BlogPosting JSON-LD.
  * @route /{lang}/publicaciones/{slug}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — TTL from the `detail` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 
 import DetailLayout from '@/layouts/DetailLayout.astro';
@@ -25,16 +28,18 @@ import { ReadingProgressBar } from '@/components/post/ReadingProgressBar.client'
 import { EntityViewTracker } from '@/components/analytics/EntityViewTracker.client';
 import { buildUrl } from '@/lib/urls';
 import { postsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { pickLocalizedSeo } from '@/lib/seo';
 import { getPostCategoryColor } from '@/lib/colors';
 import { getExpiryStatus } from '@/lib/format-expires';
 import { getMediaUrl } from '@repo/media';
+import { toRenderableImageUrl } from '@/lib/media';
 import { renderContent } from '@/lib/render-content';
 import { extractToc } from '@/lib/extract-toc';
 
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { slug } = Astro.params;
@@ -48,6 +53,33 @@ if (!result.ok) return new Response(null, { status: result.error.status === 410 
 
 const post = result.data as Record<string, unknown>;
 const postId = String(post.id || '');
+
+// --- Edge cacheability (HOS-369 W2-3) ---
+// After the 404/410 guards, so an error response is never marked shareable,
+// and after `postId` is derived so both tags are available.
+//
+// Addressed by its OWN two tags and deliberately NOT by `list-post`: a detail
+// page is not a listing, and the collection tag would make every post write
+// evict every other post's page.
+const postCacheTags = buildEntityCacheTags({
+	entity: 'post',
+	slug,
+	id: postId
+});
+const [primaryPostTag, ...extraPostTags] = postCacheTags;
+
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// No usable entity tag means nothing could purge this page, and an
+	// unpurgeable cached page is worse than an uncached one.
+	cacheable: primaryPostTag !== undefined,
+	cacheClass: 'detail',
+	tags:
+		primaryPostTag !== undefined
+			? [primaryPostTag, ...extraPostTags]
+			: [CACHE_TAG_COLLECTIONS.post]
+});
 const title = String(post.title || '');
 const summary = String(post.summary || post.excerpt || '');
 const category = String(post.category || '');
@@ -130,29 +162,57 @@ const postTags: readonly { readonly id: string; readonly name: string; readonly 
     }))
     .filter((tag) => tag.slug && tag.name);
 
-const rawAuthorAvatar = String(authorObj?.profilePicture || authorObj?.image || authorObj?.avatarUrl || '');
+// `PostAuthorPublicSchema.image` asserts type but NOT URL format on purpose
+// (HOS-375): `users.image` is written outside Zod by Better Auth, so a strict
+// response schema would fail-close this page to a 500 on one bad stored row.
+// The junk therefore arrives here intact, and it must be dropped BEFORE
+// `getMediaUrl` — that helper passes any non-Cloudinary string through
+// unchanged, so without this guard `avatars/x.jpg` would land in `<img src>`
+// and resolve against the current post path, 404ing as a broken image.
+const rawAuthorAvatar = toRenderableImageUrl(
+	String(authorObj?.profilePicture || authorObj?.image || authorObj?.avatarUrl || ''),
+);
 const authorAvatar = rawAuthorAvatar ? getMediaUrl(rawAuthorAvatar, { preset: 'avatar' }) : '';
 
+/**
+ * The author, as this page is allowed to publish them.
+ *
+ * `firstName`/`lastName` are deliberately not read. The payload is stripped
+ * through `PostPublicSchema`, whose `author` is the narrow
+ * `PostAuthorPublicSchema` (id, displayName, slug, image), so they never
+ * arrive — and every consumer below used to fall back to them and publish the
+ * author's legal name whenever `display_name` was empty, which Better Auth
+ * writes directly and therefore really is empty for some accounts.
+ */
 const authorForCard = authorObj
 	? {
 			id: String(authorObj.id || ''),
-			displayName: authorObj.displayName ? String(authorObj.displayName) : null,
-			firstName: authorObj.firstName ? String(authorObj.firstName) : null,
-			lastName: authorObj.lastName ? String(authorObj.lastName) : null,
+			displayName: authorObj.displayName ? String(authorObj.displayName).trim() : null,
 			profilePicture: authorAvatar || null,
 			bio: authorObj.bio ? String(authorObj.bio) : null,
 			slug: authorObj.slug ? String(authorObj.slug) : null,
 	  }
 	: null;
 
+/** The one resolved byline every consumer on this page reads. */
+const resolvedAuthorName = authorForCard?.displayName || '';
+
+/**
+ * Whether this post has an author it may actually publish.
+ *
+ * With `firstName`/`lastName` gone, an author who never chose a display name
+ * resolves to `''` — and an empty name renders as a bare "Por " in
+ * `PostDetailHeader` and as a nameless avatar-plus-empty-link in
+ * `PostAuthorCard`. Both surfaces are gated on this instead: no byline beats
+ * the wrong byline, and it beats a broken one too. Same rule the event byline
+ * applies in `toEventDetailProps`.
+ */
+const hasPublishableAuthor = Boolean(authorForCard?.id && resolvedAuthorName);
+
 // --- Auth ---
-const userId = Astro.locals.user?.id ?? null;
-const isAuthenticated = userId !== null;
 
 // --- Bookmark count + favorite status (graceful degradation) ---
 let bookmarkCount: number | undefined;
-let initialIsFavorited: boolean | undefined;
-let initialBookmarkId: string | null = null;
 
 if (postId) {
 	try {
@@ -160,20 +220,6 @@ if (postId) {
 		if (countResult.ok) bookmarkCount = countResult.data.count;
 	} catch { /* graceful */ }
 
-	if (isAuthenticated) {
-		try {
-			const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-			const statusResult = await userBookmarksApi.checkStatus({
-				entityId: postId,
-				entityType: 'POST',
-				cookieHeader
-			});
-			if (statusResult.ok) {
-				initialIsFavorited = statusResult.data.isFavorited;
-				initialBookmarkId = statusResult.data.bookmarkId;
-			}
-		} catch { /* graceful */ }
-	}
 }
 
 // --- Expiry ---
@@ -268,12 +314,28 @@ const sponsorship = post.sponsorship as Record<string, unknown> | undefined;
 
 // --- JSON-LD ---
 const siteBase = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
-const articleAuthorName =
-	authorForCard?.displayName ||
-	[authorForCard?.firstName, authorForCard?.lastName].filter(Boolean).join(' ') ||
-	'';
+const articleAuthorName = resolvedAuthorName;
+/**
+ * Absolute URL of the author's page, for the JSON-LD `author.url` (HOS-375
+ * §5.6 / §6.9). It had never been populated, so the Article structured data
+ * named an author it gave search engines no way to identify.
+ *
+ * Only emitted when the post has a REAL author with a slug: the `'Hospeda'`
+ * fallback below is the site itself, not a person, and a slug-less author has
+ * no page. Not gated on the page's indexability (§6.5) — `author.url` is an
+ * entity reference, not a crawl instruction, and the two inputs that gate it
+ * (`isSystemAccount`, plus the avatar) are not both in this payload anyway.
+ */
+const articleAuthorUrl =
+	articleAuthorName && authorForCard?.slug
+		? `${siteBase}${buildUrl({ locale, path: `autores/${authorForCard.slug}` })}`
+		: undefined;
+
 /** Byline for the Article JSON-LD, falling back to the site itself. */
-const articleAuthor = { name: articleAuthorName || 'Hospeda' } as const;
+const articleAuthor = {
+	name: articleAuthorName || 'Hospeda',
+	...(articleAuthorUrl && { url: articleAuthorUrl }),
+} as const;
 
 // Speakable selectors (AEO / voice): the article headline and lead/summary
 // rendered by PostDetailHeader.astro. Class names are the stable BEM-lite
@@ -359,12 +421,9 @@ const breadcrumbItems = [
 			bookmarkCount={bookmarkCount}
 			postId={postId}
 			locale={locale}
-			isAuthenticated={isAuthenticated}
-			initialIsFavorited={initialIsFavorited}
-			initialBookmarkId={initialBookmarkId}
-			author={authorForCard ? {
+			author={hasPublishableAuthor && authorForCard ? {
 				id: authorForCard.id,
-				name: authorForCard.displayName || [authorForCard.firstName, authorForCard.lastName].filter(Boolean).join(' ') || '',
+				name: resolvedAuthorName,
 				slug: authorForCard.slug,
 			} : null}
 			likes={Number(post.likes ?? 0)}
@@ -406,9 +465,7 @@ const breadcrumbItems = [
 			entityType="POST"
 			entityId={postId}
 			locale={locale}
-			isAuthenticated={isAuthenticated}
 			currentUrl={Astro.url.href}
-			currentUserName={Astro.locals.user?.name ?? null}
 		/>
 
 		<!-- Videos (if any) -->
@@ -504,7 +561,7 @@ const breadcrumbItems = [
 	<div slot="sidebar" class="post-sidebar">
 		<PostTableOfContents headings={tocHeadings} locale={locale} />
 
-		{authorForCard && authorForCard.id && (
+		{hasPublishableAuthor && authorForCard && (
 			<PostAuthorCard author={authorForCard} locale={locale} />
 		)}
 

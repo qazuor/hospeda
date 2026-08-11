@@ -18,7 +18,7 @@
 
 import type { APIRoute } from 'astro';
 import { getSiteUrl } from '../lib/env';
-import { buildSitemapIndexDocument, SITEMAP_RESPONSE_HEADERS } from '../lib/seo/sitemap-xml';
+import { buildSitemapIndexDocument, getSitemapResponseHeaders } from '../lib/seo/sitemap-xml';
 
 export const prerender = false;
 
@@ -46,6 +46,6 @@ export const GET: APIRoute = async () => {
             locations: CHILD_SITEMAP_PATHS.map((path) => `${siteUrl}${path}`),
             lastmod
         }),
-        { status: 200, headers: SITEMAP_RESPONSE_HEADERS }
+        { status: 200, headers: getSitemapResponseHeaders() }
     );
 };

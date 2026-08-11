@@ -2,10 +2,14 @@
  * @fileoverview
  * Dynamic sitemap endpoint emitting XML for all published entities.
  *
- * Fetches accommodations, destinations, events, and posts in parallel.
+ * Fetches accommodations, destinations, events, posts and authors in parallel.
  * Generates one <url> entry per entity per supported locale (es, en, pt).
  * Partial results are returned if one or more fetches fail — the whole
  * sitemap is never blocked by a single failing entity type.
+ *
+ * Author entries (HOS-375 §6.6) carry no filtering of their own: the
+ * indexability predicate lives behind `/api/v1/public/authors`, shared with the
+ * page itself, so the sitemap cannot advertise a URL the page serves noindex.
  *
  * Also emits static entries for the two facet-landing families promoted to
  * indexable pages by SPEC-306 §4/§7.2-3: event category (9 enum values) and
@@ -21,10 +25,11 @@
 import { AccommodationTypeEnum } from '@repo/schemas';
 import type { APIRoute } from 'astro';
 import { getApiUrl, getSiteUrl } from '../lib/env';
+import { evaluatePartnerIndexability } from '../lib/seo/partner-indexable';
 import {
     buildLocalizedUrlEntries,
     buildUrlsetDocument,
-    SITEMAP_RESPONSE_HEADERS
+    getSitemapResponseHeaders
 } from '../lib/seo/sitemap-xml';
 import {
     type DestinationListItem,
@@ -298,7 +303,9 @@ export const GET: APIRoute = async () => {
         gastronomy,
         experiences,
         attractions,
-        pointsOfInterest
+        pointsOfInterest,
+        authors,
+        partners
     ] = await Promise.allSettled([
         fetchAllEntities(apiUrl, `${base}/accommodations`),
         fetchAllEntities(apiUrl, `${base}/destinations`, { includeEventCount: 'true' }),
@@ -307,7 +314,14 @@ export const GET: APIRoute = async () => {
         fetchAllEntities(apiUrl, `${base}/gastronomies`),
         fetchAllEntities(apiUrl, `${base}/experiences`),
         fetchAllEntities(apiUrl, `${base}/attractions`),
-        fetchAllEntities(apiUrl, `${base}/points-of-interest`)
+        fetchAllEntities(apiUrl, `${base}/points-of-interest`),
+        // Authors is APPENDED, never inserted mid-array: the tests in
+        // `test/pages/sitemap-dynamic.test.ts` stub `fetch` positionally with
+        // `mockImplementationOnce`, so a new fetch anywhere above would shift
+        // every later entity onto the wrong stub.
+        fetchAllEntities(apiUrl, `${base}/authors`),
+        // Partners (HOS-294) — appended for exactly the same reason.
+        fetchAllEntities(apiUrl, `${base}/partners`)
     ]);
 
     const resolvedAccommodations =
@@ -320,6 +334,8 @@ export const GET: APIRoute = async () => {
     const resolvedAttractions = attractions.status === 'fulfilled' ? attractions.value : [];
     const resolvedPointsOfInterest =
         pointsOfInterest.status === 'fulfilled' ? pointsOfInterest.value : [];
+    const resolvedAuthors = authors.status === 'fulfilled' ? authors.value : [];
+    const resolvedPartners = partners.status === 'fulfilled' ? partners.value : [];
 
     const entries: string[] = [];
 
@@ -447,6 +463,55 @@ export const GET: APIRoute = async () => {
         })
     );
 
+    // Authors: /autores/{slug}/ — NO filter here, deliberately. Every other
+    // entity block decides indexability in this file, but the author predicate
+    // (HOS-375 §6.5: not a system account, at least one published item, a bio,
+    // an avatar) is already applied by `GET /api/v1/public/authors`, which
+    // shares it with the page through `evaluateAuthorIndexability`. Re-deciding
+    // it here would create the second source of truth §6.6 exists to prevent —
+    // the failure it guards against is the sitemap advertising a URL the page
+    // then serves as `noindex`.
+    //
+    // `lastmod` is the author row's own `updatedAt`, which the endpoint returns
+    // for exactly this purpose: the page renders a profile plus two content
+    // lists, so a profile edit really is a change to this URL.
+    entries.push(
+        ...buildEntriesForEntity({
+            items: resolvedAuthors,
+            siteUrl,
+            pathFn: (slug) => `/autores/${slug}/`,
+            changefreq: 'weekly',
+            priority: 0.6
+        })
+    );
+
+    // Partners: /partners/{slug}/ — ONLY the gold ones that pass the shared
+    // indexability predicate (HOS-294 D-3). `evaluatePartnerIndexability` is the
+    // SAME function the page uses to decide its own `noindex`, which is the
+    // whole point: deciding it a second time here is how a sitemap ends up
+    // advertising a URL the page then serves `noindex`.
+    //
+    // Note this filter is NOT redundant with the API's own. The public LIST
+    // returns every visible partner regardless of tier, because the home
+    // carousel needs the silver ones too — and a silver partner has no page.
+    entries.push(
+        ...buildEntriesForEntity({
+            items: resolvedPartners.filter(
+                (item) =>
+                    evaluatePartnerIndexability(
+                        // TYPE-WORKAROUND: `EntityItem` models only what every
+                        // entity shares (slug + updatedAt); these four fields are
+                        // specific to the partner payload.
+                        item as unknown as Parameters<typeof evaluatePartnerIndexability>[0]
+                    ).isIndexable
+            ),
+            siteUrl,
+            pathFn: (slug) => `/partners/${slug}/`,
+            changefreq: 'monthly',
+            priority: 0.6
+        })
+    );
+
     // Event category facet landings: /eventos/categoria/{slug}/ (SPEC-306, 9 URLs).
     entries.push(
         ...buildEntriesForStaticSlugs({
@@ -483,6 +548,6 @@ export const GET: APIRoute = async () => {
 
     return new Response(buildUrlsetDocument(entries), {
         status: 200,
-        headers: SITEMAP_RESPONSE_HEADERS
+        headers: getSitemapResponseHeaders()
     });
 };

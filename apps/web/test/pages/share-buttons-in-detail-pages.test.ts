@@ -105,7 +105,10 @@ describe('T-050 — ShareButtons in detail pages', () => {
 
         it('renders author as a link when slug is available', () => {
             expect(authorCardSrc).toContain('post-author-card__name--link');
-            expect(authorCardSrc).toContain('publicaciones/autor/${author.slug}');
+            // HOS-375 moved the author page to `/autores/`. Linked directly, so
+            // this must NOT fall back to the old path and lean on the redirect.
+            expect(authorCardSrc).toContain('autores/${author.slug}');
+            expect(authorCardSrc).not.toContain('publicaciones/autor/');
         });
     });
 });

@@ -13,9 +13,9 @@
  *  1. Capturing a `since` checkpoint before the edit gives the assertion a
  *     bounded search window into `revalidation_log`.
  *  2. PATCH-ing the accommodation as the owner updates the row.
- *  3. The revalidation hook fires and writes at least one entry into
- *     `revalidation_log` for the accommodation entity within a small
- *     timeout (5s default).
+ *  3. The revalidation hook fires and writes an entry into `revalidation_log`
+ *     carrying the accommodation's cache tag (`accom-<slug>`, HOS-369 W1-1)
+ *     for the accommodation entity within a small timeout (5s default).
  *  4. DB invariant: the new value is persisted.
  *
  * Why we don't measure ISR cache TTL directly:
@@ -98,12 +98,28 @@ test.describe('ACC-02: edit propagates via revalidation @p0 @accommodation @cach
             `expected PATCH to succeed (got ${patchResponse.status()})`
         ).toBe(true);
 
-        // ── Assert revalidation scheduled for this entity ─────────────────
+        // ── Assert revalidation scheduled for this entity's cache tag ──────
+        //
+        // 20s, because the log entry is written after the purge ATTEMPT and the
+        // service's own worst case is longer than it looks: `accommodation` has a
+        // 5s debounce, and `enqueuePurgeGroup` then waits out whatever remains of
+        // `MIN_PURGE_INTERVAL_MS` (12s) since the last flush — the deliberate
+        // spacing that keeps bursts under Cloudflare's 5-purges-per-minute
+        // ceiling. 5 + 12 = 17s before the entry can exist, and the whole P0
+        // suite shares one API process, so any other entity purging just before
+        // this one charges the full 12s to it.
+        //
+        // The old 10s only ever passed because few entity types purged at all.
+        // HOS-369 W2-4 wired four more (POI, attraction, gastronomy, experience)
+        // and the commerce specs exercise two of them, which made the wait real
+        // and this test fail reproducibly. Nothing regressed — the timeout was
+        // always below the documented contract; it just had no way to show it.
         await assertRevalidationTriggered({
             since,
             entityType: 'accommodation',
             entityId: accommodation.id,
-            timeoutMs: 10_000
+            targets: [`accom-${accommodation.slug}`],
+            timeoutMs: 20_000
         });
 
         // ── DB invariant: new name persisted ──────────────────────────────

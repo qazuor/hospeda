@@ -20,8 +20,10 @@ import {
     type DrizzleClient,
     destinations,
     events,
+    experienceMediaModel,
     experiences,
     gastronomies,
+    gastronomyMediaModel,
     getDb,
     posts
 } from '@repo/db';
@@ -78,12 +80,15 @@ export type UserBookmarkWithEntityInfo = UserBookmark & BookmarkEntityInfo;
  *
  * Strategy:
  * 1. Group bookmark entity IDs by `entityType`.
- * 2. Run one batched query per known entity type (max 6 entity-type queries + 1
- *    accommodation-media batch = 7 queries regardless of bookmark count):
- *    - ACCOMMODATION: `SELECT id, name, slug WHERE id IN (...)` + one additional
- *      `findByAccommodations` call to the relational `accommodation_media` table
- *      for the featured image URL (SPEC-204 — no longer read from the JSONB blob).
- *    - DESTINATION / EVENT / POST / EXPERIENCE / GASTRONOMY: `SELECT id, name|title, slug, media WHERE id IN (...)`.
+ * 2. Run one batched query per known entity type (max 6 entity-type queries + 3
+ *    media batches = 9 queries regardless of bookmark count):
+ *    - ACCOMMODATION / EXPERIENCE / GASTRONOMY: `SELECT id, name, slug WHERE id
+ *      IN (...)` plus one batched call to that vertical's relational media table
+ *      for the featured image URL. Their photos are rows, not JSONB (SPEC-204
+ *      for accommodations, HOS-372 for commerce), and the `media` blob is being
+ *      dropped — reading it here returned nothing on a freshly seeded database.
+ *    - DESTINATION / EVENT / POST: `SELECT id, name|title, slug, media WHERE id
+ *      IN (...)`. These three still keep their whole media object in JSONB.
  * 3. Merge the lookup into each bookmark; missing/unknown types leave the
  *    three info fields as `null`.
  *
@@ -130,7 +135,9 @@ export async function enrichBookmarksWithEntityInfo(
         eventRows,
         postRows,
         experienceRows,
-        gastronomyRows
+        experienceMediaMap,
+        gastronomyRows,
+        gastronomyMediaMap
     ] = await Promise.all([
         accommodationIds.length > 0
             ? db
@@ -190,35 +197,55 @@ export async function enrichBookmarksWithEntityInfo(
                   .select({
                       id: experiences.id,
                       name: experiences.name,
-                      slug: experiences.slug,
-                      media: experiences.media
+                      slug: experiences.slug
                   })
                   .from(experiences)
                   .where(inArray(experiences.id, experienceIds))
             : Promise.resolve([]),
+        // HOS-372: same relational batch load as accommodations above.
+        experienceIds.length > 0
+            ? experienceMediaModel.findByExperiences({
+                  experienceIds,
+                  state: 'visible',
+                  tx
+              })
+            : Promise.resolve(new Map()),
         gastronomyIds.length > 0
             ? db
                   .select({
                       id: gastronomies.id,
                       name: gastronomies.name,
-                      slug: gastronomies.slug,
-                      media: gastronomies.media
+                      slug: gastronomies.slug
                   })
                   .from(gastronomies)
                   .where(inArray(gastronomies.id, gastronomyIds))
-            : Promise.resolve([])
+            : Promise.resolve([]),
+        gastronomyIds.length > 0
+            ? gastronomyMediaModel.findByGastronomies({
+                  gastronomyIds,
+                  state: 'visible',
+                  tx
+              })
+            : Promise.resolve(new Map())
     ]);
 
+    /**
+     * Featured image URL for an entity, read from a relational media map.
+     *
+     * Shared by the three verticals whose photos live in per-vertical media
+     * tables (SPEC-204 for accommodations, HOS-372 for commerce). Entities with
+     * no featured row are simply absent from the map.
+     */
+    const featuredUrlFrom = (map: unknown, entityId: string): string | null => {
+        const rows = (map as Map<string, { isFeatured: boolean; url: string }[]>).get(entityId);
+        return rows?.find((row) => row.isFeatured)?.url ?? null;
+    };
+
     for (const row of accommodationRows) {
-        // Resolve featured image from the relational media map (SPEC-204).
-        const mediaRows = (
-            accommodationMediaMap as Map<string, { isFeatured: boolean; url: string }[]>
-        ).get(row.id);
-        const featuredRow = mediaRows?.find((m) => m.isFeatured);
         lookup.set(row.id, {
             entityName: row.name,
             entitySlug: row.slug,
-            entityImage: featuredRow?.url ?? null
+            entityImage: featuredUrlFrom(accommodationMediaMap, row.id)
         });
     }
     for (const row of destinationRows) {
@@ -246,19 +273,17 @@ export async function enrichBookmarksWithEntityInfo(
         });
     }
     for (const row of experienceRows) {
-        const media = row.media as { featuredImage?: { url?: string } } | null | undefined;
         lookup.set(row.id, {
             entityName: row.name,
             entitySlug: row.slug,
-            entityImage: media?.featuredImage?.url ?? null
+            entityImage: featuredUrlFrom(experienceMediaMap, row.id)
         });
     }
     for (const row of gastronomyRows) {
-        const media = row.media as { featuredImage?: { url?: string } } | null | undefined;
         lookup.set(row.id, {
             entityName: row.name,
             entitySlug: row.slug,
-            entityImage: media?.featuredImage?.url ?? null
+            entityImage: featuredUrlFrom(gastronomyMediaMap, row.id)
         });
     }
 

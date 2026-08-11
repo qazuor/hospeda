@@ -28,12 +28,6 @@ interface Props {
 	readonly data: AccommodationCardData;
 	readonly locale: SupportedLocale;
 	/**
-	 * Whether the current user is authenticated.
-	 * Forwarded to FavoriteButton to decide between toggle-favorite or
-	 * auth-required popover. Defaults to false (guest user).
-	 */
-	readonly isAuthenticated?: boolean;
-	/**
 	 * Optional URL search string (without leading `?`) appended to the detail
 	 * link. Used to forward search context (checkIn, checkOut, adults,
 	 * children) from the listing into the detail page so the contact form can
@@ -49,7 +43,7 @@ interface Props {
 	readonly eager?: boolean;
 }
 
-const { data, locale, isAuthenticated = false, linkQuery, eager = false } = Astro.props;
+const { data, locale, linkQuery, eager = false } = Astro.props;
 const { t, tPlural } = createTranslations(locale);
 
 const baseDetailUrl = buildUrl({ locale, path: `/alojamientos/${data.slug}/` });
@@ -106,7 +100,6 @@ const isNew = data.createdAt
 					decoding="async"
 					class="acc-card__img"
 					data-fallback="/assets/images/placeholder-accommodation.svg"
-					transition:name={`accommodation-${data.slug}`}
 				/>
 			) : (
 				<img
@@ -119,7 +112,6 @@ const isNew = data.createdAt
 					width="432"
 					height="220"
 					data-fallback="/assets/images/placeholder-accommodation.svg"
-					transition:name={`accommodation-${data.slug}`}
 				/>
 			)}
 
@@ -181,13 +173,10 @@ const isNew = data.createdAt
 					client:visible
 					entityId={data.id}
 					entityType="ACCOMMODATION"
-					initialIsFavorited={data.isFavorited}
-					initialBookmarkId={data.favoriteBookmarkId ?? null}
 					count={data.bookmarkCount}
 					variant="standalone"
 					showCount={true}
 					locale={locale}
-					isAuthenticated={isAuthenticated}
 				/>
 				{(data.photoCount ?? 0) > 0 && (
 					<div class="acc-card__photo-count" aria-hidden="true">

@@ -4,7 +4,10 @@
  * @description Accommodations listing page with filter sidebar, card grid,
  * pagination, and ItemList JSON-LD structured data.
  * @route /{lang}/alojamientos/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — TTL from the `catalog` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
@@ -22,14 +25,14 @@ import { AccommodationTypeEnum } from '@repo/schemas';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
-import { webLogger } from '@/lib/logger';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
-import { hasActiveAccommodationListingFilters, resolveListingCacheControl } from '@/lib/cache/listing-cache';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
@@ -203,21 +206,29 @@ const contextQuery = contextQueryParams.toString() || undefined;
 // public-GET-only, and caching a credentialed read would serve one visitor's
 // bookmarks to another.
 
-// Fetch destinations for filter dropdown (CITY only — accommodations are
-// browsed by city, not by parent administrative regions).
-const destinationsResult = await destinationsApi.list({ destinationType: 'CITY', pageSize: 100, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
-const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
-
-// Fetch amenities for filter chips
-const amenitiesResult = await amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
-const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
-
-// Fetch features for filter chips
-const featuresResult = await featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS });
-const features = featuresResult.ok ? featuresResult.data.items : [];
-
-// Fetch accommodations
-const result = await accommodationsApi.list({
+// HOS-369 W2-5: these four reads are issued CONCURRENTLY, not one after the
+// other. They are genuinely independent — every argument below comes from
+// `url.searchParams`, never from another response — so awaiting them in
+// sequence stacked four round-trips of latency into TTFB for no reason.
+//
+// This matters despite the edge cache rather than because of it: a cached page
+// never runs this frontmatter at all, so the only requests that pay for it are
+// exactly the ones the cache cannot serve — the first hit after a TTL expiry
+// or a purge, and every `stale-while-revalidate` refresh.
+//
+// `Promise.all` and not `allSettled`: none of these reject. The API client
+// returns an `ApiResult` and each `.ok` is checked below, so a failed catalog
+// read degrades to an empty filter list exactly as it did sequentially.
+const [destinationsResult, amenitiesResult, featuresResult, result] = await Promise.all([
+	// Destinations for the filter dropdown (CITY only — accommodations are
+	// browsed by city, not by parent administrative regions).
+	destinationsApi.list({ destinationType: 'CITY', pageSize: 100, cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS }),
+	// Amenities for filter chips
+	amenitiesApi.list({ pageSize: 100, isActive: true, sortBy: 'name', sortOrder: 'asc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS }),
+	// Features for filter chips
+	featuresApi.list({ pageSize: 100, sortBy: 'displayWeight', sortOrder: 'desc', cacheTtlMs: SSR_PUBLIC_CACHE_TTL_MS }),
+	// The accommodations themselves
+	accommodationsApi.list({
 	page,
 	pageSize,
 	q,
@@ -255,7 +266,12 @@ const result = await accommodationsApi.list({
 	poiId: poiIdRaw,
 	poiSlug: poiSlugRaw,
 	// NOT cached on purpose — see the note above the catalog reads.
-});
+	})
+]);
+
+const destinations = destinationsResult.ok ? destinationsResult.data.items : [];
+const amenities = amenitiesResult.ok ? amenitiesResult.data.items : [];
+const features = featuresResult.ok ? featuresResult.data.items : [];
 
 const hasError = !result.ok;
 const items = result.ok ? result.data.items : [];
@@ -265,50 +281,11 @@ const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 // Transform items for cards
 const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
 
-// SPEC-098 T-041 — Pre-hydrate FavoriteButton state for authenticated users.
-// We issue a single bulk-check request for all the entity IDs on the current
-// page instead of one /check per card. Guests skip this call entirely; their
-// FavoriteButton renders in guest mode (auth-required popover on click).
-//
-// On any failure (network error, 5xx, etc.) we silently degrade — each
-// FavoriteButton can still hydrate itself via its own /check fallback so the
-// page render is never blocked.
-const isAuthenticated = Boolean(Astro.locals.user);
-type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
-let favoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
-if (isAuthenticated && baseCards.length > 0) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const bulkResult = await userBookmarksApi.checkBulk({
-            entityType: 'ACCOMMODATION',
-            entityIds: baseCards.map((card) => card.id),
-            cookieHeader
-        });
-        if (bulkResult.ok) {
-            favoriteChecks = bulkResult.data.checks;
-        } else {
-            webLogger.warn(
-                'Bulk bookmark check failed; falling back to per-card hydration',
-                { error: bulkResult.error }
-            );
-        }
-    } catch (error) {
-        webLogger.warn(
-            'Bulk bookmark check threw; falling back to per-card hydration',
-            { error: error instanceof Error ? error.message : String(error) }
-        );
-    }
-}
-
-const cards = baseCards.map((card) => {
-    const entry = favoriteChecks[card.id];
-    if (!entry) return card;
-    return {
-        ...card,
-        isFavorited: entry.isBookmarked,
-        favoriteBookmarkId: entry.bookmarkId
-    };
-});
+// HOS-369 WB0-5: favourite state is no longer resolved here. It is per-user, so
+// baking it into the HTML is exactly what kept this page out of the edge cache.
+// The hearts now resolve it themselves after hydration — once per page load for
+// the whole grid, via `store/favorites-store` (WB0-2/WB0-3), not once per card.
+const cards = baseCards;
 
 // --- Natural language filter summary ---
 // Build catalogs from the fetched data for the summary builder.
@@ -513,22 +490,24 @@ const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalB
 // HOS-218 — Cloudflare edge cache. This SSR page re-fetches the near-static
 // catalog (accommodations + amenities + features + destinations) on every
 // render; served `cf-cache-status: DYNAMIC` in prod, so anonymous/bot traffic
-// hammered origin. Emit a shareable `Cache-Control` only for an anonymous,
-// indexable, unfiltered view (base listing / single-type landing + bounded
-// sort/pagination variants) so Cloudflare edge-caches it; personalised,
-// `noindex`, or filtered responses stay `private`. The origin gate ensures a
-// favourite-baked response is never MARKED shareable; the Cloudflare Cache Rule
-// that this header enables must also bypass on the session cookie (see
-// `@/lib/cache/listing-cache`).
-Astro.response.headers.set(
-	'Cache-Control',
-	resolveListingCacheControl({
-		cacheable:
-			!isAuthenticated &&
-			!facetSeoDecision.noindex &&
-			!hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
-	})
-);
+// hammered origin. Emit a shareable `Cache-Control` for an indexable, unfiltered
+// view (base listing / single-type landing + bounded sort/pagination variants)
+// so Cloudflare edge-caches it; `noindex` or filtered responses stay `private`.
+//
+// HOS-369 WB0-5 removed the `!isAuthenticated` term: this response no longer
+// varies by visitor, so there is no personalised variant to withhold from the
+// cache. That is the point — the gate existed because the HTML used to differ,
+// and D-8 replaces "the origin promises not to mark it shareable" with "there
+// is nothing personal in it to begin with".
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable:
+		!facetSeoDecision.noindex &&
+		!hasActiveAccommodationListingFilters({ searchParams: url.searchParams }),
+	cacheClass: 'catalog',
+	tags: [CACHE_TAG_COLLECTIONS.accommodation]
+});
 
 /**
  * Quick-filter type chips shown above the listing grid (HOS-97). Uses the
@@ -794,7 +773,7 @@ const emptyStateSuggestions = [
 		title={t('accommodations.title', 'Alojamientos')}
 	/>
 
-	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
+	<CompareModeControls slot="page-header" locale={locale} />
 
 	<FilterSidebar
 		slot="filters"
@@ -854,7 +833,6 @@ const emptyStateSuggestions = [
 					client:load
 					locale={locale}
 					apiUrl={getApiUrl()}
-					isAuthenticated={isAuthenticated}
 					currentUrl={Astro.url.href}
 					destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
 					pageType={typesArray[0]}
@@ -888,7 +866,6 @@ const emptyStateSuggestions = [
 						<AccommodationCard
 							data={card}
 							locale={locale}
-							isAuthenticated={isAuthenticated}
 							linkQuery={contextQuery}
 							eager={i < 3}
 						/>

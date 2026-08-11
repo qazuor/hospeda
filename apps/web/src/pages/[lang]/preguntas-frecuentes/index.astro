@@ -30,8 +30,26 @@ import {
 	ArrowRightIcon
 } from '@repo/icons';
 
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+// --- Edge cacheability (HOS-369 W2-2) ---
+// No session, no API call — the content is i18n + code, so it only changes on
+// deploy. Tagged `site-config`: the only tag with a live purger. The TTL comes
+// from the `static` cache class (see `lib/cache/cache-classes.ts`); what
+// bounds the post-deploy staleness window is HOS-427's deploy purge, which
+// evicts the environment catch-all tag this response carries. Note that purge
+// fires 45s after the container serves its FIRST REQUEST, not after the deploy,
+// and nothing bounds when that first request arrives — see HOS-428.
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: true,
+	cacheClass: 'static',
+	tags: [CACHE_TAG_SITE_CONFIG]
+});
 
 /**
  * Category configuration: ordered, with their item keys.

@@ -35,8 +35,14 @@ const FACET_PAGES = [
     // 'eventos/categoria/[category]/index.astro' promoted to a first-class,
     // indexable landing (SPEC-306) — see PROMOTED_FACET_LANDINGS below.
     'publicaciones/categoria/[category]/index.astro',
-    'publicaciones/etiqueta/[tag]/index.astro',
-    'publicaciones/autor/[slug]/index.astro'
+    'publicaciones/etiqueta/[tag]/index.astro'
+    // `publicaciones/autor/[slug]/index.astro` was deleted by HOS-375: the
+    // author page moved to `autores/[slug]/` and stopped being a facet of the
+    // blog — it carries the author's events too. It is deliberately NOT listed
+    // here, because its `noindex` is no longer unconditional: it is decided by
+    // `evaluateAuthorIndexability`. That page's own guard lives in
+    // `test/pages/author-page.test.ts`, which asserts the decision is wired
+    // from the predicate and is never a hardcoded literal either way.
 ] as const;
 
 /**
@@ -71,6 +77,25 @@ const PROMOTED_FACET_LANDINGS = [
 ] as const;
 
 describe('facet pages are noindex (SPEC-157 follow-up)', () => {
+    it('still guards every other facet family after HOS-375 removed the author page', () => {
+        // Non-vacuity guard (HOS-375 T-030, risk R-4). Removing the author page
+        // from this list was correct — its noindex became conditional — but the
+        // cheap way to make a `for` loop pass is to empty the list it iterates.
+        // Pin the survivors by name so shrinking the guard is a deliberate edit
+        // with a failing test attached, not a silent deletion.
+        expect(FACET_PAGES).toHaveLength(4);
+        expect(FACET_PAGES).toEqual([
+            'alojamientos/caracteristicas/[slug]/index.astro',
+            'alojamientos/comodidades/[slug]/index.astro',
+            'publicaciones/categoria/[category]/index.astro',
+            'publicaciones/etiqueta/[tag]/index.astro'
+        ]);
+        // The author page must NOT come back here: its indexability is decided
+        // by `evaluateAuthorIndexability`, not by an unconditional literal.
+        expect(FACET_PAGES).not.toContain('publicaciones/autor/[slug]/index.astro');
+        expect(FACET_PAGES).not.toContain('autores/[slug]/index.astro');
+    });
+
     for (const page of FACET_PAGES) {
         it(`${page} passes noindex={true} to its layout`, () => {
             const src = readFileSync(resolve(PAGES_DIR, page), 'utf8');

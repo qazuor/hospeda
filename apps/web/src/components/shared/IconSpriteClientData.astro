@@ -1,0 +1,37 @@
+---
+/**
+ * @file IconSpriteClientData.astro
+ * @description Hands the current icon sprite's URL to the browser, so React
+ * islands emit the same `<use>` references the server did (HOS-369 W3-6).
+ *
+ * The server enables sprite mode once at boot (`initIconSprite`, called from
+ * `src/middleware.ts`). Islands render in a different realm where that call
+ * never happened, so without this they would hydrate icons INLINE over
+ * server-rendered `<use>` markup — a hydration mismatch on every icon inside an
+ * island, and the inline payload back for anything an island renders later.
+ *
+ * Mechanism deliberately mirrors `I18nClientData.astro`: a value the shell
+ * emits, read once on the client. `@repo/icons` resolves
+ * `window.__HOSPEDA_ICON_SPRITE__` on its first sprite lookup, so nothing has to
+ * be threaded through island props.
+ *
+ * Two shape constraints, neither cosmetic:
+ *
+ *  - It is a CLASSIC inline script, not a module and not `defer`. It runs
+ *    synchronously during parse, which puts it unconditionally before every
+ *    deferred island hydration module regardless of document order.
+ *  - The source comes through `set:html` from a builder. Astro treats the
+ *    children of an `is:inline` script as raw text, so an expression written
+ *    directly between the tags is emitted verbatim and never executes — the
+ *    exact failure the feedback nav bootstrap hit (see its snippet's JSDoc).
+ *
+ * Consumers that never render this component (i.e. `apps/admin`) never assign
+ * the global, so their icons keep rendering inline. That is the opt-in.
+ */
+
+import { iconSpriteClientScript } from '@/lib/icon-sprite';
+
+const script = iconSpriteClientScript();
+---
+
+<script is:inline set:html={script}></script>

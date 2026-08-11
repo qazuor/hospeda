@@ -97,6 +97,11 @@ export function LanguageSwitcher({
             className={cn(styles.root, styles[`root--${variant}`], className)}
         >
             {LOCALES.map((loc) => (
+                /* data-astro-reload: a locale switch is the only navigation that
+                   changes the client translation dictionary, which now arrives as
+                   a per-locale <head> script (HOS-369 Wave D). A full page load
+                   guarantees the destination locale's dictionary is in place
+                   before anything hydrates. */
                 <a
                     key={loc}
                     href={buildLocaleUrl({ currentPath, targetLocale: loc })}
@@ -105,6 +110,7 @@ export function LanguageSwitcher({
                     aria-current={loc === locale ? 'true' : undefined}
                     aria-label={LOCALE_NAMES[loc]}
                     data-astro-prefetch
+                    data-astro-reload
                 >
                     {LOCALE_LABELS[loc]}
                 </a>

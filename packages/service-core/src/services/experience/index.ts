@@ -6,6 +6,9 @@
  * - {@link ExperienceReviewService} — review create / moderate / list / rating recompute
  * - FAQ helpers — addExperienceFaq / updateExperienceFaq / removeExperienceFaq /
  *   listExperienceFaqs / reorderExperienceFaqs
+ * - Media helpers (HOS-372) — addExperienceMedia / removeExperienceMedia /
+ *   reorderExperienceMedia / getExperienceMedia / setFeaturedExperienceMedia,
+ *   plus the composed-media read attach helpers
  * - Projection utilities — projectExperiencePublic / projectExperienceOwnerAvatar
  * - Permission helpers — granular COMMERCE_* gate wrappers
  * - Types — ExperienceHookState
@@ -19,6 +22,19 @@ export {
     reorderExperienceFaqs,
     updateExperienceFaq
 } from './experience.faq';
+// Media helpers (HOS-372)
+export {
+    addExperienceMedia,
+    getExperienceMedia,
+    removeExperienceMedia,
+    reorderExperienceMedia,
+    setFeaturedExperienceMedia
+} from './experience.media';
+// Media read/compose attach helpers (HOS-372)
+export {
+    attachComposedExperienceMedia,
+    attachComposedExperienceMediaList
+} from './experience.media-read';
 // Permission helpers
 export {
     checkExperienceCanAdminList,
@@ -26,6 +42,7 @@ export {
     checkExperienceCanDelete,
     checkExperienceCanEditAll,
     checkExperienceCanEditFaqs,
+    checkExperienceCanEditMedia,
     checkExperienceCanEditOwn,
     checkExperienceCanHardDelete,
     checkExperienceCanModerateReview,

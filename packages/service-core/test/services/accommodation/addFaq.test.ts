@@ -126,4 +126,65 @@ describe('AccommodationService.addFaq', () => {
         const result = await service.addFaq(actor, {});
         expectValidationError(result);
     });
+
+    // -------------------------------------------------------------------
+    // HOS-393 — channel-visibility flags (isVisibleOnListing / isUsableByAi)
+    // -------------------------------------------------------------------
+
+    it('should propagate explicit channel-visibility flags to the created FAQ (AC-3)', async () => {
+        modelMock.findById.mockResolvedValue(accommodation);
+        faqModelMock.create.mockResolvedValue({
+            ...input.faq,
+            id: 'faq-1',
+            accommodationId: accommodation.id as any,
+            isVisibleOnListing: false,
+            isUsableByAi: false
+        });
+        vi.spyOn(permissionHelpers, 'checkCanUpdate').mockReturnValue();
+
+        const inputWithFlags: AccommodationFaqAddInput = {
+            ...input,
+            faq: {
+                ...input.faq,
+                isVisibleOnListing: false,
+                isUsableByAi: false
+            }
+        };
+
+        const result = await service.addFaq(actor, inputWithFlags);
+        expectSuccess(result);
+        expect(result.data?.faq).toMatchObject({
+            isVisibleOnListing: false,
+            isUsableByAi: false
+        });
+        expect(faqModelMock.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                isVisibleOnListing: false,
+                isUsableByAi: false
+            }),
+            undefined
+        );
+    });
+
+    it('should default both channel-visibility flags to true when omitted (AC-12)', async () => {
+        modelMock.findById.mockResolvedValue(accommodation);
+        faqModelMock.create.mockResolvedValue({
+            ...input.faq,
+            id: 'faq-1',
+            accommodationId: accommodation.id as any,
+            isVisibleOnListing: true,
+            isUsableByAi: true
+        });
+        vi.spyOn(permissionHelpers, 'checkCanUpdate').mockReturnValue();
+
+        await service.addFaq(actor, input);
+
+        expect(faqModelMock.create).toHaveBeenCalledWith(
+            expect.objectContaining({
+                isVisibleOnListing: true,
+                isUsableByAi: true
+            }),
+            undefined
+        );
+    });
 });

@@ -3,44 +3,21 @@
  * @description Regression tests for the accommodation listing/map Cloudflare
  * edge-cache policy (HOS-218). The listing/map SSR pages served
  * `cf-cache-status: DYNAMIC` (no `Cache-Control`), so every anonymous/bot hit
- * re-ran the SSR + 4 catalog fetches. These tests pin the two pure decisions
- * behind the fix: which responses are shareable, and the header value emitted.
+ * re-ran the SSR + 4 catalog fetches. These tests pin the pure decision behind
+ * the fix: which responses are shareable.
+ *
+ * The `Cache-Control` VALUE itself is no longer decided by this file — since
+ * HOS-426 the TTL comes from the page's cache class (`cache-classes.ts`), and
+ * `resolveListingCacheControl`/`LISTING_CACHEABLE_CONTROL` were deleted along
+ * with it. `resolveCacheableControl` (`cache-classes.test.ts`, if present) and
+ * `applyCacheHeaders` (`response-cache.test.ts`) cover that value now.
  */
 
 import { describe, expect, it } from 'vitest';
-import {
-    hasActiveAccommodationListingFilters,
-    LISTING_CACHEABLE_CONTROL,
-    LISTING_PRIVATE_CONTROL,
-    resolveListingCacheControl
-} from '@/lib/cache/listing-cache';
+import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
 
 /** Convenience: build the params from a query string. */
 const params = (qs: string): URLSearchParams => new URLSearchParams(qs);
-
-describe('resolveListingCacheControl', () => {
-    it('emits a public, edge-cacheable Cache-Control for a shareable response', () => {
-        // Arrange / Act
-        const value = resolveListingCacheControl({ cacheable: true });
-
-        // Assert
-        expect(value).toBe(LISTING_CACHEABLE_CONTROL);
-        expect(value).toContain('public');
-        expect(value).toContain('s-maxage=');
-        expect(value).toContain('stale-while-revalidate=');
-    });
-
-    it('emits a private, non-shareable Cache-Control for a personalised/filtered response', () => {
-        // Arrange / Act
-        const value = resolveListingCacheControl({ cacheable: false });
-
-        // Assert
-        expect(value).toBe(LISTING_PRIVATE_CONTROL);
-        expect(value).toContain('private');
-        expect(value).not.toContain('public');
-        expect(value).not.toContain('s-maxage');
-    });
-});
 
 describe('hasActiveAccommodationListingFilters', () => {
     it('returns false for a bare base listing URL', () => {

@@ -32,7 +32,10 @@
  * - startDateBefore  — ISO yyyy-mm-dd upper bound on event start
  *
  * @route /{lang}/eventos/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — TTL from the `catalog` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
@@ -63,17 +66,17 @@ import {
     type EventDateFilter
 } from '@/lib/filters/event-date-presets';
 import { destinationsApi, eventsApi } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { webLogger } from '@/lib/logger';
 import { buildUrl } from '@/lib/urls';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { EventCategoryEnum } from '@repo/schemas';
 
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
@@ -331,44 +334,39 @@ const canonicalBaseUrl =
 // page self-canonical and indexable (instead of canonicalizing to page 1).
 const canonicalPath = page > 1 ? `${canonicalBaseUrl}page/${page}/` : canonicalBaseUrl;
 
+// --- Edge cacheability (HOS-369 W2-3) ---
+// The same two-part gate the accommodation listing uses, reusing the predicates
+// this page already computes for SEO rather than inventing a parallel notion of
+// "filtered": a `noindex` response is a low-repeat facet combination not worth
+// a cache entry, and any other active filter makes the render an arbitrary
+// slice. Both stay `private`.
+//
+// Pagination is deliberately NOT part of the gate — `/eventos/page/N/` rewrites
+// here with `?page=N`, and those are a bounded, high-repeat set of variants
+// over the same result set.
+//
+// Tagged with the collection: this IS a listing, so every event write must
+// evict it. `entity-tag-mapper.ts` already emits `list-event`; until this call
+// existed those purges evicted nothing.
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: !facetSeoDecision.noindex && !hasOtherEventFilters,
+    cacheClass: 'catalog',
+    tags: [CACHE_TAG_COLLECTIONS.event]
+});
+
 // Auth state forwarded to FavoriteButton via EventCard so authenticated users
 // see their saved state on listing cards (instead of a guest-default heart).
-const isAuthenticated = Astro.locals.user ? true : false;
 
 // --- Bulk favorite pre-check (eliminates N+1 per card on mount) -----------
 // The public events API does not return isFavorited. Without this block each
 // EventCardHorizontal would fire its own /check request on mount. We mirror
 // the accommodation pattern: one /check-bulk SSR call, result injected into
-// cards so FavoriteButton receives initialIsFavorited and skips hydration.
-type FavoriteCheckEntry = { readonly isBookmarked: boolean; readonly bookmarkId: string | null };
-let eventFavoriteChecks: Readonly<Record<string, FavoriteCheckEntry>> = {};
-if (isAuthenticated && cards.length > 0) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const bulkResult = await userBookmarksApi.checkBulk({
-            entityType: 'EVENT',
-            entityIds: cards.map((card) => card.id),
-            cookieHeader
-        });
-        if (bulkResult.ok) {
-            eventFavoriteChecks = bulkResult.data.checks;
-        } else {
-            webLogger.warn('Bulk bookmark check failed on eventos listing; falling back to per-card hydration', {
-                error: bulkResult.error
-            });
-        }
-    } catch (error) {
-        webLogger.warn('Bulk bookmark check threw on eventos listing; falling back to per-card hydration', {
-            error: error instanceof Error ? error.message : String(error)
-        });
-    }
-}
-
-const resolvedCards = cards.map((card) => {
-    const entry = eventFavoriteChecks[card.id];
-    if (!entry) return card;
-    return { ...card, isFavorited: entry.isBookmarked, favoriteBookmarkId: entry.bookmarkId };
-});
+// HOS-369 WB0-5: favourite state is per-user, so it is no longer resolved
+// here — the hearts resolve it themselves after hydration, once per page
+// load for the whole grid (`store/favorites-store`).
+const resolvedCards = cards;
 
 // Category quick-filter chips are built after `paginationParams` (below) so
 // they can filter the listing in place via `?category=ENUM` (preserving the
@@ -575,7 +573,7 @@ const itemListEntries = cards.map((card) => ({
 			<div class="events-grid">
 				{resolvedCards.map((card, i) => (
 					<div data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-						<EventCardHorizontal data={card} locale={locale} isAuthenticated={isAuthenticated} />
+						<EventCardHorizontal data={card} locale={locale} />
 					</div>
 				))}
 			</div>

@@ -18,7 +18,7 @@ import {
     expectSuccess,
     expectValidationError
 } from '../../helpers/assertions';
-import { createTypedModelMock } from '../../utils/modelMockFactory';
+import { createTypedModelMock, makeEventMediaModelStub } from '../../utils/modelMockFactory';
 
 describe('EventService.update', () => {
     let service: EventService;
@@ -28,12 +28,18 @@ describe('EventService.update', () => {
     const actorNoPerm = createActor();
     const existingEvent = createMockEvent({ visibility: VisibilityEnum.PUBLIC });
     const eventId = existingEvent.id;
-    const updateInput = createEventUpdateInput({ visibility: VisibilityEnum.PUBLIC });
+    // No visibility here: HOS-374 §7.6.4 took it out of the update payload, and the
+    // event update schema is strict.
+    const updateInput = createEventUpdateInput();
 
     beforeEach(() => {
         modelMock = createTypedModelMock(EventModel, ['findById', 'update']);
         loggerMock = { log: vi.fn(), error: vi.fn() } as unknown as ServiceLogger;
-        service = new EventService({ model: modelMock, logger: loggerMock });
+        service = new EventService({
+            model: modelMock,
+            logger: loggerMock,
+            eventMediaModel: makeEventMediaModelStub() as never
+        });
     });
 
     afterEach(() => {

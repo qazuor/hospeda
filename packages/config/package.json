@@ -3,6 +3,7 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
+    "sideEffects": false,
     "exports": {
         ".": {
             "types": "./dist/index.d.ts",
@@ -27,7 +28,7 @@
         "@vitest/coverage-v8": "^4.1.10",
         "tsup": "^8.5.1",
         "typescript": "6.0.3",
-        "vite": "^8.1.4",
+        "vite": "^8.2.0",
         "vitest": "^4.1.10"
     }
 }

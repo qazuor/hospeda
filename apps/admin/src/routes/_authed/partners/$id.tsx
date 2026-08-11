@@ -2,6 +2,7 @@ import { PermissionEnum } from '@repo/schemas';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useState } from 'react';
 import { RoutePermissionGuard } from '@/components/auth/RoutePermissionGuard';
+import { PartnerMentionsSection } from '@/features/partners/components/PartnerMentionsSection';
 import {
     usePartnerQuery,
     useRegisterPartnerManualPaymentMutation,
@@ -66,7 +67,9 @@ function PartnerViewPage() {
                     </div>
                     <div>
                         <span className="font-medium">Inicio:</span>{' '}
-                        {new Date(partner.startsAt).toLocaleDateString('es-AR')}
+                        {partner.startsAt
+                            ? new Date(partner.startsAt).toLocaleDateString('es-AR')
+                            : 'Sin iniciar'}
                     </div>
                     <div>
                         <span className="font-medium">Fin:</span>{' '}
@@ -136,6 +139,8 @@ function PartnerViewPage() {
                         </button>
                     </div>
                 </div>
+
+                <PartnerMentionsSection partnerId={partner.id} />
             </div>
         </RoutePermissionGuard>
     );

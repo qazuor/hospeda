@@ -1,0 +1,87 @@
+/**
+ * @file commerce-edit-data.ts
+ * @description Shared form-state contract for the commerce owner editor (HOS-258).
+ *
+ * Lives outside `CommerceListingEditor.client.tsx` so the section components can
+ * type their props without importing from the orchestrator that renders them —
+ * a type-only cycle would be erased at runtime, but it makes the dependency
+ * graph read backwards and trips the repo's circular-dependency guard.
+ */
+
+import type { OpeningHours } from '@repo/schemas';
+import type { CommerceI18nValues } from '../CommerceTranslationPanel.client';
+
+/**
+ * The `contactInfo` members this surface exposes, in render order.
+ *
+ * NOTE: `website` is intentionally absent per SPEC-253 AC-4 — it is not exposed
+ * in the owner editor UI even though it exists in `ContactInfoSchema`.
+ *
+ * Runtime array rather than a bare type so the id contract can ENUMERATE what
+ * the editor claims to render (HOS-385): the schema's `contactInfo` block is a
+ * whole object, and only these members have a control to focus.
+ */
+export const CONTACT_KEYS = ['mobilePhone', 'workEmail'] as const;
+
+/** Subset of the contact JSONB block the owner edits in this surface. */
+export type ContactValues = Record<(typeof CONTACT_KEYS)[number], string>;
+
+/** Social URLs the owner edits (subset of SocialNetwork, includes linkedIn per AC-4). */
+export interface SocialValues {
+    facebook: string;
+    instagram: string;
+    twitter: string;
+    tiktok: string;
+    youtube: string;
+    linkedIn: string;
+}
+
+export const SOCIAL_KEYS: ReadonlyArray<keyof SocialValues> = [
+    'facebook',
+    'instagram',
+    'twitter',
+    'tiktok',
+    'youtube',
+    'linkedIn'
+];
+
+/**
+ * All owner-editable form state, held as ONE object (HOS-258 PR 1).
+ *
+ * Mirrors `AccommodationEditData` in the host editor: the orchestrator owns this
+ * object plus a `baseline` snapshot, and the PATCH body is the diff between the
+ * two. It replaced the 18 independent `useState` slots + manual `dirty` Set this
+ * editor used to carry, which made per-section extraction impossible.
+ *
+ * Media is deliberately NOT part of this type (HOS-372): `MediaSection` owns its
+ * own state and persists every photo operation immediately against the
+ * relational media endpoints, so photos are never diffed into the PATCH body.
+ */
+export interface CommerceEditData {
+    readonly name: string;
+    readonly destinationId: string;
+    readonly description: string;
+    readonly listingType: string;
+    readonly summary: string;
+    readonly richDescription: string;
+    readonly contact: ContactValues;
+    readonly social: SocialValues;
+    readonly openingHours: OpeningHours | null;
+    readonly priceRange: string;
+    readonly menuUrl: string;
+    readonly isPriceOnRequest: boolean;
+    readonly priceFrom: number | null;
+    readonly priceUnit: string;
+    readonly amenityIds: ReadonlySet<string>;
+    readonly featureIds: ReadonlySet<string>;
+    readonly i18nValues: CommerceI18nValues;
+}
+
+/**
+ * The single generic change callback every section receives — the commerce
+ * counterpart of the accommodation editor's `handleTextFieldChange`.
+ */
+export type CommerceFieldChange = <K extends keyof CommerceEditData>(
+    field: K,
+    value: CommerceEditData[K]
+) => void;

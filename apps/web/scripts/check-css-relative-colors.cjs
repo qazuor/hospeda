@@ -84,9 +84,15 @@ const ALLOWLIST = Object.freeze({
     'src/components/GlobalAnnouncements.astro': 2,
     'src/components/ShareButtons.module.css': 1,
     'src/components/shared/cards/EventCardFeatured.astro': 3,
-    // SPEC-271: partner tier badge tints use oklch(from var(--brand-*) l c h / 0.15)
-    // for theme-adaptive background shading — no precomputed alpha tokens exist.
-    'src/components/partner/PartnerCard.astro': 2,
+    // HOS-294: the partner detail page's organization-type badge uses
+    // oklch(from var(--brand-primary) l c h / 0.15) for theme-adaptive
+    // background shading — no precomputed alpha token exists for it.
+    //
+    // Inherited from `src/components/partner/PartnerCard.astro` (SPEC-271,
+    // allowlisted at 2), which HOS-294 deleted along with the partner directory.
+    // The count drops to 1 because the detail page keeps only the TYPE badge:
+    // the tier badge went with the card, since the tier is never shown publicly.
+    'src/pages/[lang]/partners/[slug].astro': 1,
     'src/components/account/CollectionCard.tsx': 3,
     // SPEC-203: subtle primary/accent tints + a modal overlay on the plan-management
     // surface. No precomputed alpha tokens exist (only --ring-a50), so these follow

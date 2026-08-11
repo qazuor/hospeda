@@ -3,7 +3,6 @@ import { UserModel } from '@repo/db';
 import type { RolePermissionAssignment, UserIdType, UserPermissionAssignment } from '@repo/schemas';
 import {
     type PermissionAssignmentOutput,
-    PermissionEffectEnum,
     type PermissionRemovalOutput,
     type PermissionsByRoleInput,
     PermissionsByRoleInputSchema,
@@ -17,6 +16,9 @@ import {
     RolesByPermissionInputSchema,
     type RolesQueryOutput,
     ServiceErrorCode,
+    type TrustedEditorInput,
+    TrustedEditorInputSchema,
+    type TrustedEditorResult,
     type UserPermissionManagementInput,
     UserPermissionManagementInputSchema,
     type UserPermissionOverridesResponse,
@@ -39,11 +41,16 @@ import {
     emitPermissionChangeAudit,
     invalidateUserPermissionsOverrides
 } from './permission.effects';
+import { loadUserPermissionOverrides } from './permission.service.overrides.js';
 import {
     canAssignPermissions,
     canRevokePermissions,
     canViewPermissions
 } from './permission.service.permission';
+import {
+    applySetTrustedEditor,
+    applyUnsetTrustedEditor
+} from './permission.service.trusted-editor.js';
 // import * as normalizers from './permission.service.normalizer'; // Uncomment if/when normalizers are needed
 
 /**
@@ -354,40 +361,75 @@ export class PermissionService extends BaseService {
                         'You do not have permission to view permissions.'
                     );
                 }
-                const user = userId as UserIdType;
-
-                // The roles are required to compute `fromRole`; a missing user is a 404.
-                const targetUser = await this.userModel.findById(user);
-                if (!targetUser) {
-                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'User not found.');
-                }
-
-                const { items } = await this.userPermissionModel.findAll({ userId: user });
-                const grantOverrides = items
-                    .filter((row) => row.effect === PermissionEffectEnum.GRANT)
-                    .map((row) => row.permission);
-                const denyOverrides = items
-                    .filter((row) => row.effect === PermissionEffectEnum.DENY)
-                    .map((row) => row.permission);
-
-                // HOS-296: `fromRole` is the UNION over every hat the user wears,
-                // matching what `actorMiddleware` actually resolves. Reporting one
-                // role's permissions would show the admin a set the user does not
-                // really have.
-                const targetUserRoles = await getUserRoles({ userId: user });
-                const perRoleRows = await Promise.all(
-                    targetUserRoles.map((role) => this.rolePermissionModel.findAll({ role }))
+                return loadUserPermissionOverrides(
+                    {
+                        rolePermissionModel: this.rolePermissionModel,
+                        userPermissionModel: this.userPermissionModel,
+                        userModel: this.userModel
+                    },
+                    userId as UserIdType
                 );
-                const fromRole = Array.from(
-                    new Set(
-                        perRoleRows.flatMap(({ items: roleRows }) =>
-                            roleRows.map((row: RolePermissionAssignment) => row.permission)
-                        )
-                    )
-                );
-
-                return { fromRole, grantOverrides, denyOverrides };
             }
+        });
+    }
+
+    /**
+     * Marks a user as a trusted editor (HOS-374 §5.1.2 / OQ-1) — grants the four
+     * `TRUSTED_EDITOR_PERMISSIONS` in ONE transaction. Normalizes existing rows
+     * (a hand-made `deny` becomes `grant`) and is idempotent.
+     *
+     * @param actor The actor performing the action (needs `PERMISSION_ASSIGN`)
+     * @param input { userId }
+     * @param ctx - Optional service context; its transaction is joined when present.
+     * @returns ServiceOutput<TrustedEditorResult>
+     */
+    public async setTrustedEditor(
+        actor: Actor,
+        input: TrustedEditorInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TrustedEditorResult>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'setTrustedEditor',
+            input: { actor, ...input },
+            schema: TrustedEditorInputSchema,
+            ctx,
+            execute: async ({ userId }, validActor) =>
+                applySetTrustedEditor(
+                    { userPermissionModel: this.userPermissionModel },
+                    validActor,
+                    { userId: userId as UserIdType },
+                    ctx
+                )
+        });
+    }
+
+    /**
+     * Un-marks a trusted editor — hard-deletes the four `TRUSTED_EDITOR_PERMISSIONS`
+     * override rows in ONE transaction, so the user falls back to role defaults.
+     * Idempotent; removes the rows whatever their current effect.
+     *
+     * @param actor The actor performing the action (needs `PERMISSION_REVOKE`)
+     * @param input { userId }
+     * @param ctx - Optional service context; its transaction is joined when present.
+     * @returns ServiceOutput<TrustedEditorResult>
+     */
+    public async unsetTrustedEditor(
+        actor: Actor,
+        input: TrustedEditorInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TrustedEditorResult>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'unsetTrustedEditor',
+            input: { actor, ...input },
+            schema: TrustedEditorInputSchema,
+            ctx,
+            execute: async ({ userId }, validActor) =>
+                applyUnsetTrustedEditor(
+                    { userPermissionModel: this.userPermissionModel },
+                    validActor,
+                    { userId: userId as UserIdType },
+                    ctx
+                )
         });
     }
 

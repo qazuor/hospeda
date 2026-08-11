@@ -1,5 +1,25 @@
-import { EntitlementKey, LimitKey } from '@repo/billing';
 import type { ApiResult } from '@/lib/api/types';
+
+/**
+ * Entitlement / limit key literals for the price-alert gate.
+ *
+ * Kept as plain strings rather than the `EntitlementKey` / `LimitKey` enums in
+ * `@repo/billing`, mirroring `AnalyticsSection.client.tsx`. Since HOS-369 WB0-7
+ * this module runs in the BROWSER (`use-price-alert-gate-state.ts` resolves the
+ * gate client-side, because the accommodation detail page is edge-cacheable and
+ * can no longer compute it during SSR). Importing the billing barrel from the
+ * client graph ships the MercadoPago adapter, `@repo/logger` and the
+ * `@repo/config` env registry — env-var names and their `howToObtain` prose
+ * included — to public browsers. The `billing-barrel-client-isolation` static
+ * guard fails on exactly that, and it caught this change.
+ *
+ * These MUST match the wire values the backend emits.
+ * `test/lib/price-alert-gate.test.ts` asserts they still do, against the real
+ * enums, so a rename upstream breaks loudly here instead of silently locking
+ * every entitled visitor out of price alerts.
+ */
+const ENTITLEMENT_PRICE_ALERTS = 'price_alerts';
+const LIMIT_MAX_ACTIVE_ALERTS = 'max_active_alerts';
 
 /**
  * Resolved gate state for the accommodation-detail `PriceAlertButton` — kept
@@ -31,8 +51,8 @@ export const resolvePriceAlertGateState = (
     }
 
     const { entitlements, limits } = entitlementsResult.data;
-    const canCreateAlerts = entitlements.includes(EntitlementKey.PRICE_ALERTS);
-    const maxActiveAlerts = limits[LimitKey.MAX_ACTIVE_ALERTS];
+    const canCreateAlerts = entitlements.includes(ENTITLEMENT_PRICE_ALERTS);
+    const maxActiveAlerts = limits[LIMIT_MAX_ACTIVE_ALERTS];
     const maxReached =
         maxActiveAlerts !== undefined &&
         maxActiveAlerts !== -1 &&

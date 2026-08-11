@@ -85,7 +85,8 @@
         "hostDashboard": "Host dashboard",
         "properties": "My accommodations",
         "promotions": "My promotions",
-        "tradeDirectory": "Provider directory"
+        "tradeDirectory": "Provider directory",
+        "benefitUsages": "Benefit usages"
     },
     "doors": {
         "sectionLabel": "Discover more",
@@ -127,9 +128,14 @@
                     "title": "Service provider",
                     "description": "Join the local provider directory that hosts recommend to their guests."
                 },
-                "editor": {
-                    "title": "Editor",
-                    "description": "Want to write posts and add events on Hospeda? Apply to become a content editor.",
+                "editorPosts": {
+                    "title": "Article editor",
+                    "description": "Want to write articles and stories on Hospeda? Apply as a content editor.",
+                    "cta": "Apply as an editor"
+                },
+                "editorEvents": {
+                    "title": "Event editor",
+                    "description": "Want to keep the region's event calendar up to date? Apply as a content editor.",
                     "cta": "Apply as an editor"
                 }
             }
@@ -169,6 +175,10 @@
         "saving": "Saving...",
         "success": "Profile updated successfully",
         "noChanges": "No changes to save",
+        "social": {
+            "showOnPublicProfile": "Show my social links on my public author page",
+            "showOnPublicProfileHelp": "If you publish notes or events, you have an author page that anyone on the internet can see. Turning this on displays the links above there. It stays off unless you turn it on, and you can turn it off at any time."
+        },
         "errors": {
             "saveFailed": "Failed to save profile",
             "displayNameRequired": "Display name is required",
@@ -1043,6 +1053,372 @@
                 "name": "AI Support (monthly)",
                 "description": "Unlocks AI-powered support tools for hosts, including smart reply suggestions and automated guest FAQ handling. Renews monthly."
             }
+        }
+    },
+    "myContent": {
+        "status": {
+            "moderation": {
+                "label": "Moderation",
+                "PENDING": "Awaiting review",
+                "APPROVED": "Approved",
+                "REJECTED": "Rejected"
+            },
+            "visibility": {
+                "label": "Visibility",
+                "PUBLIC": "Public",
+                "PRIVATE": "Private",
+                "RESTRICTED": "Restricted"
+            },
+            "lifecycle": {
+                "label": "Status",
+                "DRAFT": "Draft",
+                "ACTIVE": "Active",
+                "ARCHIVED": "Archived"
+            }
+        },
+        "card": {
+            "editLink": "Edit",
+            "retry": "Retry"
+        },
+        "posts": {
+            "list": {
+                "title": "My posts",
+                "subtitle": "Check the status of your articles",
+                "empty": "You haven't written any post yet",
+                "fetchError": "Couldn't load the list. Try reloading the page.",
+                "createCta": "+ New post",
+                "emptyCta": "Write my first post"
+            },
+            "create": {
+                "pageTitle": "New post",
+                "subtitle": "Fill in the basics now — you'll be able to add photos and more details afterward in the editor.",
+                "field": {
+                    "title": "Title",
+                    "summary": "Summary",
+                    "content": "Content",
+                    "category": "Category"
+                },
+                "hint": {
+                    "summary": "Between 10 and 500 characters. Shown in the blog listing.",
+                    "content": "At least 100 characters. You'll be able to keep editing it in the full editor."
+                },
+                "submit": "Create post",
+                "submitting": "Creating...",
+                "error": "We couldn't create the post. Please try again."
+            },
+            "editor": {
+                "pageTitle": "Edit post",
+                "slugImmutableNotice": "The public URL is generated when the post is created and cannot be changed.",
+                "backToList": "Back to my posts",
+                "lockNotice": "This post has already been approved and published, so you can't edit it. Contact the team if you need a change.",
+                "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
+                "publicationExplainer": "Your post is visible on the public site only when it is approved, public and active at the same time.",
+                "publishBlockedByUnsaved": "Save your changes before changing publication.",
+                "section": {
+                    "basicInfo": "Basic information",
+                    "content": "Content",
+                    "details": "Details",
+                    "publication": "Publication"
+                },
+                "field": {
+                    "title": "Title",
+                    "summary": "Summary",
+                    "category": "Category",
+                    "content": "Content",
+                    "readingTime": "Reading time (minutes)",
+                    "destination": "Related destination",
+                    "destinationNone": "No related destination"
+                },
+                "hint": {
+                    "summary": "Between 10 and 300 characters. Shown in the blog listing.",
+                    "content": "At least 100 characters.",
+                    "readingTime": "Leave it empty to keep the current value."
+                },
+                "placeholder": {
+                    "content": "Write your post..."
+                },
+                "action": {
+                    "publish": "Publish",
+                    "unpublish": "Unpublish",
+                    "delete": "Delete",
+                    "deleteConfirm": "Delete this post?",
+                    "deleteYes": "Yes, delete",
+                    "deleteNo": "Cancel"
+                },
+                "toast": {
+                    "saved": "Changes saved",
+                    "noChanges": "No changes to save",
+                    "published": "Post published",
+                    "unpublished": "Post unpublished",
+                    "publishError": "Couldn't change publication.",
+                    "deleteError": "Couldn't delete the post."
+                },
+                "error": {
+                    "saveFailed": "Couldn't save the changes."
+                }
+            }
+        },
+        "editor": {
+            "media": {
+                "sectionTitle": "Photos",
+                "featured": "Cover image",
+                "gallery": "Photo gallery",
+                "add": "Add photo",
+                "remove": "Remove",
+                "uploadHint": "JPG, PNG or WebP — max {{maxSize}}MB. Up to {{cap}} photos in the gallery.",
+                "invalidType": "Only JPG, PNG or WebP files are allowed",
+                "tooLarge": "The file cannot exceed {{maxSize}}MB",
+                "capReached": "Gallery limit reached (max {{cap}} photos)",
+                "uploadFailed": "Could not upload the image",
+                "uploadTimeout": "The upload took too long. Please try again.",
+                "persistFailed": "Could not save the image to the database",
+                "featuredFailed": "Could not set the image as the cover",
+                "removeFailed": "Could not remove the image"
+            }
+        },
+        "events": {
+            "list": {
+                "title": "My events",
+                "subtitle": "Check the status of your events",
+                "empty": "You haven't created any event yet",
+                "fetchError": "Couldn't load the list. Try reloading the page.",
+                "createCta": "+ New event",
+                "emptyCta": "Create my first event"
+            },
+            "create": {
+                "pageTitle": "New event",
+                "subtitle": "Fill in the basics now — you'll be able to add photos and more details later in the editor.",
+                "field": {
+                    "name": "Name",
+                    "category": "Category",
+                    "description": "Description",
+                    "startDate": "Starts",
+                    "endDate": "Ends",
+                    "organizerId": "Organized by"
+                },
+                "hint": {
+                    "description": "Between 50 and 2000 characters. The listing summary comes from here."
+                },
+                "organizer": {
+                    "createNew": "+ Create new organizer",
+                    "namePlaceholder": "Organizer name",
+                    "submit": "Create organizer",
+                    "creating": "Creating...",
+                    "cancel": "Cancel",
+                    "error": "We couldn't create the organizer. Try again.",
+                    "nameInvalid": "The name must be between 3 and 100 characters.",
+                    "loadError": "We couldn't load the organizer list. Reload the page to retry, or create a new one below.",
+                    "empty": "There are no organizers yet. Create the first one to be able to publish your event."
+                },
+                "dateOrderError": "The end date can't be earlier than the start date.",
+                "error": "We couldn't create the event. Try again.",
+                "submitting": "Creating...",
+                "submit": "Create event"
+            },
+            "editor": {
+                "pageTitle": "Edit event",
+                "backToList": "Back to my events",
+                "readOnlyNotice": "The URL, the organizer and the venue are set when the event is created and cannot be edited here.",
+                "lockNotice": "This event has already been approved and published, so you can't edit it. Contact the team if you need a change.",
+                "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
+                "publicationExplainer": "Your event is visible on the public site only when it is approved, public and active at the same time.",
+                "publishBlockedByUnsaved": "Save your changes before changing publication.",
+                "monthPrecisionNotice": "This event only has a month-level date, so it cannot be edited here. Contact us if you need to set the exact day.",
+                "section": {
+                    "basicInfo": "Basic information",
+                    "description": "Description",
+                    "schedule": "Dates",
+                    "publication": "Publication"
+                },
+                "field": {
+                    "name": "Name",
+                    "category": "Category",
+                    "description": "Description",
+                    "startDate": "Starts",
+                    "endDate": "Ends",
+                    "organizer": "Organized by",
+                    "location": "Venue"
+                },
+                "hint": {
+                    "description": "Between 50 and 2000 characters. The listing summary comes from here.",
+                    "endDate": "Optional. Leave it empty for a single-moment event."
+                },
+                "placeholder": {
+                    "description": "Tell us what the event is about..."
+                },
+                "action": {
+                    "publish": "Publish",
+                    "unpublish": "Unpublish",
+                    "delete": "Delete",
+                    "deleteConfirm": "Delete this event?",
+                    "deleteYes": "Yes, delete",
+                    "deleteNo": "Cancel"
+                },
+                "toast": {
+                    "saved": "Changes saved",
+                    "noChanges": "No changes to save",
+                    "published": "Event published",
+                    "unpublished": "Event unpublished",
+                    "publishError": "Couldn't change publication.",
+                    "deleteError": "Couldn't delete the event."
+                },
+                "error": {
+                    "saveFailed": "Couldn't save the changes.",
+                    "startDateRequired": "The event needs a start date."
+                }
+            }
+        }
+    },
+    "alliances": {
+        "applications": {
+            "title": "Your applications",
+            "submittedOn": "Submitted on",
+            "note": "We'll email you as soon as an application is resolved."
+        },
+        "programs": {
+            "partner": "Partner",
+            "sponsor": "Sponsor",
+            "editor": "Editor",
+            "service_provider": "Service provider"
+        },
+        "status": {
+            "pending": "Under review",
+            "reviewing": "Under review",
+            "approved": "Approved",
+            "rejected": "Not moving forward"
+        },
+        "claim": {
+            "working": "Confirming your application…",
+            "confirmed": "Done! We linked the application to your account.",
+            "failed": "We couldn't confirm that application. The link may have expired or already been used."
+        }
+    },
+    "provider": {
+        "pageTitle": "My provider listing",
+        "pageSubtitle": "Manage your listing in the provider directory",
+        "empty": {
+            "text": "You don't have a provider listing yet. Apply from \"Become a partner\" and, once your application is approved, your listing will show up here.",
+            "cta": "Go to Become a partner"
+        },
+        "revoked": {
+            "text": "Your listing was taken down from the provider directory.",
+            "contact": "If you'd like more details, reach out and we'll explain."
+        },
+        "errors": {
+            "fetchFailed": "We couldn't load your provider listing. Reload the page to try again.",
+            "panelFailed": "We could not load this section. Reload the page to try again."
+        },
+        "form": {
+            "title": "Edit my provider listing",
+            "identitySection": "Managed by Hospeda",
+            "identityNote": "These fields are managed by the Hospeda team. Contact us if you need to correct them.",
+            "fields": {
+                "name": "Name",
+                "slug": "Identifier (slug)",
+                "category": "Category",
+                "contact": "Contact",
+                "is24h": "Available 24 hours",
+                "scheduleText": "Business hours",
+                "scheduleTextPlaceholder": "E.g. Monday to Friday 8am–6pm"
+            },
+            "operationalSection": "Contact and availability",
+            "operationalNote": "These changes apply to the directory right away.",
+            "benefitSection": "Benefit for hosts",
+            "benefitNote": "A benefit change goes to the Hospeda team for review before it's published. In the meantime, the current benefit stays visible in the directory.",
+            "liveBenefitLabel": "Currently published benefit",
+            "noBenefit": "No structured benefit set",
+            "pendingLabel": "Awaiting review",
+            "noChanges": "There are no changes to save",
+            "success": "Changes saved",
+            "saving": "Saving…",
+            "save": "Save changes",
+            "errors": {
+                "saveFailed": "We couldn't save your changes"
+            }
+        },
+        "tabs": {
+            "label": "Sections of your listing",
+            "ficha": "My listing",
+            "usos": "Usages",
+            "valoraciones": "Reviews",
+            "qr": "My QR"
+        },
+        "suspended": {
+            "noReason": "We have temporarily suspended usage recording from your listing."
+        }
+    },
+    "partner": {
+        "pageTitle": "My partner listing",
+        "pageSubtitle": "Manage your presence as a Hospeda partner",
+        "empty": {
+            "text": "You don't have a partner listing yet. Apply from \"Become a partner\" and, once your application is approved, your listing will show up here.",
+            "cta": "Go to Become a partner"
+        },
+        "status": {
+            "empty": "Your application was approved. Add your logo and copy so an admin can review them. You are not published yet.",
+            "underReview": "We're reviewing your logo and copy. We'll let you know as soon as we're done — there's nothing to pay yet.",
+            "rejected": "We reviewed your details and need you to fix something before moving on. The specifics are below, next to the form.",
+            "approved": "Your content is approved. You can activate your subscription now to go live.",
+            "approvedCta": "Go to payment",
+            "revoked": "Your partner listing was taken down and no longer appears on the site.",
+            "revokedContact": "If you'd like more details, reach out and we'll explain."
+        },
+        "errors": {
+            "fetchFailed": "We couldn't load your partner listing. Reload the page to try again."
+        },
+        "form": {
+            "title": "Edit my partner listing",
+            "identitySection": "Managed by Hospeda",
+            "identityNote": "These fields are managed by the Hospeda team. Contact us if you need to correct them.",
+            "contentSection": "Logo and copy",
+            "contentNote": "Changes to your logo, description and website go through review before they're published. Whatever is already live stays visible in the meantime.",
+            "pendingLabel": "Under review",
+            "pendingText": "You've already submitted changes and we're reviewing them. You can keep adjusting: we review the last version you send.",
+            "rejectedLabel": "Changes rejected",
+            "contactSection": "Contact",
+            "socialSection": "Social",
+            "immediateNote": "These fields update instantly, with no review.",
+            "noChanges": "No changes to save",
+            "success": "Changes saved",
+            "saving": "Saving…",
+            "save": "Save changes",
+            "errors": {
+                "saveFailed": "We couldn't save your changes"
+            },
+            "fields": {
+                "name": "Name",
+                "slug": "Identifier",
+                "logoUrl": "Logo URL",
+                "websiteUrl": "Website",
+                "description": "Description",
+                "workEmail": "Contact email",
+                "workPhone": "Phone",
+                "whatsapp": "WhatsApp",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "X / Twitter",
+                "linkedIn": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            }
+        }
+    },
+    "partnerMentions": {
+        "title": "Mentions log",
+        "subtitle": "Everything we published about you, with a link to each one so you can check it yourself.",
+        "empty": "No mentions logged yet.",
+        "emptyHelp": "Once we promote your listing, every action will appear here with its link.",
+        "viewPublication": "View publication",
+        "noPublicationLink": "No public link",
+        "channels": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "TWITTER": "Twitter",
+            "YOUTUBE": "YouTube",
+            "TIKTOK": "TikTok",
+            "NEWSLETTER": "Newsletter",
+            "WHATSAPP": "WhatsApp",
+            "OTHER": "Other channel"
         }
     }
 }

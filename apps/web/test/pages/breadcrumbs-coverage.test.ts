@@ -132,12 +132,30 @@ describe('T-031 — Events, posts, and author pages', () => {
         expect(src).toContain('tagName');
     });
 
-    it('publicaciones/autor/[slug] has Breadcrumbs with author level and author name', () => {
-        const src = readPage('publicaciones/autor/[slug]/index.astro');
-        assertHasBreadcrumbs(src, 'publicaciones/autor/[slug]');
-        // Must include the intermediate "Autor" level
-        expect(src).toContain("t('blog.details.author'");
+    it('autores/[slug] has Breadcrumbs with the author name and NO intermediate level', () => {
+        // HOS-375 §8: the author page moved out of the blog subtree to
+        // `/autores/<slug>/`, and there is no `/autores/` index (NG-1) — so the
+        // trail is Inicio → <displayName>, with no grouping level between them.
+        const src = readPage('autores/[slug]/index.astro');
+        assertHasBreadcrumbs(src, 'autores/[slug]');
         expect(src).toContain('authorName');
+
+        // Non-vacuity guard: the old page carried an "Autor" grouping level that
+        // linked nowhere. Re-adding one would put a dead step back in the trail.
+        //
+        // Scanned against the markup only. Fences are matched as whole lines,
+        // not with `indexOf('---')`: this page's docblock holds a markdown table
+        // whose separator row contains `---`, which would cut the file in the
+        // middle of a comment.
+        const lines = src.split('\n');
+        const fences: number[] = [];
+        lines.forEach((line, index) => {
+            if (line.trim() === '---') fences.push(index);
+        });
+        const template = lines.slice(fences[1] + 1).join('\n');
+
+        expect(template).toContain('<Breadcrumbs');
+        expect(template).not.toContain("t('blog.details.author'");
     });
 });
 

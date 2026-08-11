@@ -1,0 +1,192 @@
+---
+/**
+ * @file SignInCtaCard.astro
+ * @description Static (zero-JS) "sign in to do this" card, rendered wherever a
+ * feature is only available to an authenticated visitor.
+ *
+ * **This is the anonymous half of a cached page** (HOS-369 D-11). The detail
+ * pages are edge-cacheable, so their HTML is identical for every visitor and
+ * must therefore be the anonymous variant. Islands that need a session mount
+ * this card as their slot children and swap themselves in only once a session
+ * is resolved in the browser. Because the card is sized like the component it
+ * stands in for, that swap costs no layout shift — and a visitor who never
+ * signs in is left with a working affordance instead of a hole.
+ *
+ * The sign-in link encodes the current path as `returnUrl` so the visitor lands
+ * back where they were after authenticating — matching the pattern in
+ * `apps/web/src/lib/middleware-helpers.ts`.
+ */
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+import { ArrowRightIcon, BellIcon, StarIcon } from '@repo/icons';
+
+interface Props {
+    readonly locale: SupportedLocale;
+    /**
+     * Path (without locale prefix or leading slash) the visitor returns to
+     * after signing in, e.g. `"destinos/entre-rios/colon"`.
+     */
+    readonly returnPath: string;
+    /** `card` renders the full card; `inline` renders just the sign-in link. */
+    readonly variant?: 'card' | 'inline';
+    /** Card heading. Ignored by the `inline` variant. */
+    readonly title?: string;
+    /** One-line explanation under the heading. Ignored by `inline`. */
+    readonly hint?: string;
+    /** Link label, shown by both variants. */
+    readonly ctaLabel: string;
+    /** Badge icon for the card heading. */
+    readonly icon?: 'star' | 'bell';
+}
+
+const {
+    locale,
+    returnPath,
+    variant = 'card',
+    title,
+    hint,
+    ctaLabel,
+    icon = 'star'
+} = Astro.props;
+const { t } = createTranslations(locale);
+
+const returnUrl = encodeURIComponent(`/${locale}/${returnPath.replace(/^\//, '')}/`);
+const signInHref = `${buildUrl({ locale, path: 'auth/signin' })}?returnUrl=${returnUrl}`;
+
+const BadgeIcon = icon === 'bell' ? BellIcon : StarIcon;
+const linkAriaLabel = t('auth.signInCta.ariaLabel', 'Iniciar sesión');
+---
+
+{variant === 'inline' ? (
+    <a
+        href={signInHref}
+        class="signin-cta__link signin-cta__link--inline"
+        aria-label={linkAriaLabel}
+    >
+        {ctaLabel}
+        <ArrowRightIcon size={16} weight="bold" aria-hidden="true" />
+    </a>
+) : (
+<aside class="signin-cta">
+    <div class="signin-cta__header">
+        <span class="signin-cta__badge" aria-hidden="true">
+            <BadgeIcon size={18} weight="fill" aria-hidden="true" />
+        </span>
+        {title && <h3 class="signin-cta__title">{title}</h3>}
+    </div>
+
+    {hint && <p class="signin-cta__hint">{hint}</p>}
+
+    <a href={signInHref} class="signin-cta__link" aria-label={linkAriaLabel}>
+        {ctaLabel}
+        <ArrowRightIcon size={16} weight="bold" aria-hidden="true" />
+    </a>
+</aside>
+)}
+
+<style>
+    .signin-cta {
+        background-color: var(--core-card);
+        border: 1px solid var(--border);
+        border-radius: var(--radius-card, 24px);
+        padding: var(--space-5, 20px);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3, 12px);
+        box-shadow: var(--shadow-card);
+    }
+
+    .signin-cta__header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2, 8px);
+    }
+
+    .signin-cta__badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        background-color: var(--brand-accent-a12);
+        color: var(--brand-accent);
+    }
+
+    .signin-cta__title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--core-foreground);
+        margin: 0;
+        line-height: 1.3;
+    }
+
+    .signin-cta__hint {
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        color: var(--core-muted-foreground);
+        margin: 0;
+        line-height: 1.45;
+    }
+
+    .signin-cta__link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        width: 100%;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9375rem;
+        color: var(--brand-primary-link);
+        background: var(--brand-primary-a08);
+        border: 1px solid var(--brand-primary-a20);
+        border-radius: var(--radius-button, 10px);
+        padding: var(--space-2, 8px) var(--space-4, 16px);
+        text-decoration: none;
+        transition: background-color var(--duration-fast, 0.15s) ease,
+            color var(--duration-fast, 0.15s) ease,
+            transform var(--duration-fast, 0.15s) ease;
+    }
+
+    .signin-cta__link:hover {
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground, #fff);
+        transform: translateY(-1px);
+    }
+
+    .signin-cta__link:focus-visible {
+        outline: 2px solid var(--brand-primary);
+        outline-offset: 2px;
+    }
+
+    .signin-cta__link svg {
+        transition: transform var(--duration-fast, 0.15s) ease;
+        flex-shrink: 0;
+    }
+
+    .signin-cta__link:hover svg {
+        transform: translateX(2px);
+    }
+
+    /* Inline variant: mirrors the listing "view all" pill so the sign-in link
+       shares the same outline language in an actions row. */
+    .signin-cta__link--inline {
+        width: auto;
+        align-self: flex-start;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        border-radius: var(--radius-pill);
+        border: 1px solid var(--brand-primary);
+        background: transparent;
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+
+    .signin-cta__link--inline:hover {
+        transform: none;
+    }
+</style>

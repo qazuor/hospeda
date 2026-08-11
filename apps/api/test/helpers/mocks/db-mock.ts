@@ -292,6 +292,21 @@ export function createDbMock() {
             async findByEmail(_email: string) {
                 return null;
             }
+            /**
+             * HOS-375 T-012 — backs `UserService.listPublicAuthors`, which the
+             * public `/api/v1/public/authors` route calls directly. The real
+             * model returns `{ items: PublicAuthorListItem[], total: number }`
+             * (see `packages/db/src/models/user/user.model.ts`); this mirrors
+             * that shape field-for-field rather than the route's
+             * `{ items, pagination }` envelope, since the ENVELOPE is built by
+             * `UserService.listPublicAuthors` itself, one layer up from here.
+             * A mock returning the wrong shape is exactly how the sibling
+             * `events/author/:id` route stayed broken for months (see
+             * `apps/api/test/routes/event/public/getByAuthor.test.ts`).
+             */
+            async listPublicAuthors(_options: { page: number; pageSize: number }) {
+                return { items: [], total: 0 };
+            }
         },
 
         // Mock AccommodationModel — instantiated at module scope in
@@ -324,6 +339,71 @@ export function createDbMock() {
             }
             async create(_data: unknown, _tx?: unknown) {
                 return null;
+            }
+            async hardDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
+            }
+        },
+
+        // HOS-390: relational content media, the post/event twins of
+        // AccommodationMediaModel above. PostService and EventService instantiate
+        // them in their constructors, so a mock without them fails at MODULE LOAD
+        // for every test that touches a post or event route — and the suite then
+        // reports "0 tests" rather than a failure, which reads like a pass.
+        PostMediaModel: class MockPostMediaModel {
+            async findByPost(_input: unknown) {
+                return { items: [], total: 0 };
+            }
+            async findFeatured(_input: unknown) {
+                return null;
+            }
+            async findByPosts(_input: unknown) {
+                return new Map();
+            }
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async create(_data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async update(_filters: unknown, _data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async softDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
+            }
+            async hardDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
+            }
+        },
+
+        EventMediaModel: class MockEventMediaModel {
+            async findByEvent(_input: unknown) {
+                return { items: [], total: 0 };
+            }
+            async findFeatured(_input: unknown) {
+                return null;
+            }
+            async findByEvents(_input: unknown) {
+                return new Map();
+            }
+            async findById(_id: string) {
+                return null;
+            }
+            async findAll(_filters: unknown) {
+                return { items: [], total: 0 };
+            }
+            async create(_data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async update(_filters: unknown, _data: unknown, _tx?: unknown) {
+                return null;
+            }
+            async softDelete(_filters: unknown, _tx?: unknown) {
+                return undefined;
             }
             async hardDelete(_filters: unknown, _tx?: unknown) {
                 return undefined;
@@ -815,6 +895,17 @@ export function createDbMock() {
         FeatureModel: GenericMockModel,
         HostTradeModel: GenericMockModel,
         NotificationScheduleModel: GenericMockModel,
+        // HOS-278 §6.5: AllianceLeadService's constructor now also instantiates
+        // PartnerModel (partner provisioning), so the whole alliance admin route
+        // tree fails to load without it.
+        PartnerModel: GenericMockModel,
+        // HOS-377: PartnerMentionService is exported from the @repo/service-core
+        // barrel, so EVERY test that imports anything from that package resolves
+        // this model — not just the mentions tests. Omitting it failed 43 test
+        // FILES at collection time across three shards, with zero failed
+        // assertions, which is what that failure mode looks like from the
+        // summary line.
+        PartnerMentionModel: GenericMockModel,
         OwnerPromotionModel: GenericMockModel,
         // HOS-113 T-021: PointOfInterestService (+ its default related model)
         // is instantiated at module scope by the new public POI routes, same
@@ -919,6 +1010,43 @@ export function createDbMock() {
             hardDelete: vi.fn().mockResolvedValue(undefined)
         },
 
+        // HOS-390: relational content media singletons (post_media / event_media).
+        postMediaModel: {
+            findByPost: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByPosts: vi.fn().mockResolvedValue(new Map()),
+            findFeatured: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue(null),
+            hardDelete: vi.fn().mockResolvedValue(undefined)
+        },
+        eventMediaModel: {
+            findByEvent: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByEvents: vi.fn().mockResolvedValue(new Map()),
+            findFeatured: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue(null),
+            hardDelete: vi.fn().mockResolvedValue(undefined)
+        },
+
+        // HOS-372: relational commerce media singletons, the gastronomy/experience
+        // twins of accommodationMediaModel above. GastronomyService and
+        // ExperienceService resolve them in their constructors
+        // (`mediaModel ?? gastronomyMediaModel`), so a mock without them fails at
+        // MODULE LOAD for every test that touches the commerce routes — the suite
+        // reports "0 tests" rather than a failure, which reads like a pass.
+        gastronomyMediaModel: {
+            findByGastronomy: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByGastronomies: vi.fn().mockResolvedValue(new Map()),
+            findFeatured: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue(null),
+            hardDelete: vi.fn().mockResolvedValue(undefined)
+        },
+        experienceMediaModel: {
+            findByExperience: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+            findByExperiences: vi.fn().mockResolvedValue(new Map()),
+            findFeatured: vi.fn().mockResolvedValue(null),
+            create: vi.fn().mockResolvedValue(null),
+            hardDelete: vi.fn().mockResolvedValue(undefined)
+        },
+
         // SPEC-239: Gastronomy singleton model instances. GastronomyService,
         // GastronomyReviewService, and the standalone FAQ helpers access these at module
         // scope (via service constructor or direct import). They are exported as singleton
@@ -946,6 +1074,15 @@ export function createDbMock() {
         // CommerceLeadModel above: a GenericMockModel no-op stub is sufficient for
         // route-level permission-gate tests.
         AllianceLeadModel: GenericMockModel,
+
+        // HOS-376: the benefit-usage + review half of the host-trade domain.
+        // Their services construct these at module scope when the routes load,
+        // and unlike HostTradeService they are NOT mocked in the service-core
+        // mock — the real service code runs in route tests, which is the point.
+        // (`HostTradeModel` is already declared further up.)
+        HostTradeBenefitUsageModel: GenericMockModel,
+        HostTradeReviewModel: GenericMockModel,
+        HostTradeReviewReplyModel: GenericMockModel,
 
         // SPEC-240: Experience singleton model instances. ExperienceService,
         // ExperienceReviewService, and the standalone FAQ helpers access these at module

@@ -7,7 +7,8 @@
  *    parse — see the Step 2 block below for why)
  * 3. Enforce trailing slash (301 redirect before Astro resolves the route)
  * 3.1. Legacy URL aliases (e.g. `/mi-cuenta/messages` -> `/mi-cuenta/consultas`,
- *      `/blog` -> `/publicaciones`) redirect before locale/route resolution
+ *      `/blog` -> `/publicaciones`, `/publicaciones/autor` -> `/autores`)
+ *      redirect before locale/route resolution
  * 4. Extract and validate locale from URL path; redirect invalid locales to default
  * 5. Set validated locale in context.locals
  * 6. Parse session only for routes that need it (protected + auth)
@@ -16,10 +17,15 @@
  * 8b. Rewrite 410 (Gone) responses to the same styled page, forcing the 410 status
  * 9. Set Content-Security-Policy header (enforce mode, HOS-30 Phase 2) on HTML responses
  * 10. Set X-Robots-Tag noindex on hosts in HOSPEDA_NOINDEX_HOSTS (e.g. staging)
+ * 11. Serialize the collected cache tags into the Cache-Tag header on
+ *     edge-cacheable responses (HOS-369 W1-1)
  */
 
 import { defineMiddleware } from 'astro:middleware';
-import { injectNonce } from '../integrations/csp-nonce-injector';
+import { CACHE_TAG_HEADER_NAME, serializeCacheTags } from '@repo/cache-tags';
+import { collectCspHashes } from '../integrations/csp-hash-collector';
+import { schedulePurgeOnDeploy } from './lib/cache/purge-on-deploy';
+import { isEdgeCacheableControl } from './lib/cache/response-cache';
 import {
     getInternalApiUrl,
     getInternalRequestSecret,
@@ -27,6 +33,7 @@ import {
     isDevelopment,
     isProduction
 } from './lib/env';
+import { initIconSprite } from './lib/icon-sprite';
 import { reportInternalBypassSelfCheck } from './lib/internal-bypass-report';
 import {
     buildChangePasswordRedirect,
@@ -36,7 +43,6 @@ import {
     buildProfileCompletionRedirect,
     buildSetPasswordRedirect,
     extractLocaleFromPath,
-    generateCspNonce,
     IMAGE_ENDPOINT_CACHE_CONTROL,
     isAdminBypassUser,
     isAuthRoute,
@@ -54,6 +60,45 @@ import {
     parseSessionUser,
     resolveSentryReportUri
 } from './lib/middleware-helpers';
+import { CJS_ESM_BRIDGES_WARMED } from './lib/warm-cjs-esm-bridges';
+
+/**
+ * Boot-time link of CommonJS -> ESM-only dependency bridges (HOS-370).
+ *
+ * Middleware is part of the SSR **entry** chunk, so importing the warm-up module
+ * here is what forces those bridges to be linked during boot — single-threaded,
+ * before the listener accepts traffic — instead of mid-request from a lazily
+ * loaded route chunk, where the synchronous `require(esm)` link can lose a race
+ * and permanently 500 that route. The assertion exists so the module cannot be
+ * tree-shaken out of the entry: a side-effect-only import with no referenced
+ * binding is droppable, a referenced one is not.
+ */
+if (!CJS_ESM_BRIDGES_WARMED) {
+    throw new Error('[middleware] CJS/ESM bridge warm-up module failed to load');
+}
+
+/**
+ * Boot-time activation of the external icon sprite (HOS-369 W3-6).
+ *
+ * Middleware is part of the SSR **entry** chunk, so this runs once during boot,
+ * before the listener accepts traffic — which is the only correct time. Sprite
+ * mode is a module-level singleton in `@repo/icons`; flipping it from a layout
+ * or a page would leave every icon already rendered in that tree inline, and the
+ * document would ship both forms. Building the sprite itself (rendering ~1,000
+ * symbols and hashing them) also belongs to boot, not to a request.
+ *
+ * It stays OFF until this call, which is what leaves `apps/admin` — which has no
+ * sprite endpoint and never makes it — rendering icons exactly as before.
+ *
+ * Guarded by `import.meta.env.SSR` for the same reason the self-check below is:
+ * it is false under vitest, and a module-level singleton flipped there would
+ * reach into every OTHER test in the same worker that renders an icon, changing
+ * markup those tests never asked about. Production and `astro build` both see
+ * `true`, so the shipped behaviour is unconditional.
+ */
+if (import.meta.env.SSR) {
+    initIconSprite();
+}
 
 /**
  * Hosts whose responses must include `X-Robots-Tag: noindex, nofollow`.
@@ -103,11 +148,28 @@ if (import.meta.env.SSR) {
  * Main middleware handler for all requests in the web application.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
+    // Step -1: Take this process's one shot at purging the edge cache for the
+    // deploy that started it (HOS-427). Deliberately the FIRST thing in the
+    // handler, before the static-asset early return, so that whatever request
+    // reaches this container first starts the clock.
+    //
+    // Note what that is today: `health_check_enabled` is FALSE on the web
+    // resources and the Dockerfile declares no HEALTHCHECK, so there is no
+    // probe — the first request is the first real one to reach the origin.
+    // Enabling Coolify's healthcheck (configured, just off) is what would make
+    // it a probe and the timing deterministic; see the module for why that
+    // matters more once HOS-426 raises the TTLs.
+    //
+    // No-ops on every subsequent call, never awaits, and never throws.
+    void schedulePurgeOnDeploy();
+
     const path = context.url.pathname;
 
-    // Generate a CSP nonce for this request (used by BaseLayout for inline scripts/styles)
-    const cspNonce = generateCspNonce();
-    (context.locals as { cspNonce: string }).cspNonce = cspNonce;
+    // Step 0: Open the cache-tag collector for this request. Created before any
+    // branch returns so `Astro.locals.cacheTags` is never undefined for a
+    // downstream caller, whatever path the request takes. Serialized into the
+    // `Cache-Tag` header at Step 11 (HOS-369 W1-1).
+    context.locals.cacheTags = new Set<string>();
 
     // Step 1: Skip static assets and API routes — no middleware processing needed.
     if (isStaticAssetRoute({ path })) {
@@ -186,15 +248,47 @@ export const onRequest = defineMiddleware(async (context, next) => {
         return context.redirect(`/${localeSegment}/publicaciones${tail}${search}`, 301);
     }
 
+    // Step 3.3 (HOS-375): The author page moved out from under the blog — it now
+    // carries events as well as posts, so living at `/publicaciones/autor/` said
+    // the wrong thing about its content. One regex covers the whole subtree: the
+    // tail capture carries both the bare slug and the `/page/<n>/` pagination
+    // suffix, whose shape was kept byte-identical on the new route precisely so
+    // this stays a splice of the path's head.
+    //
+    // 301, not the 308 the messages alias uses: 308's only added guarantee is
+    // method preservation on POST/PUT, and this is a GET-only public page. What
+    // matters here is consolidating search authority onto the new URL, which
+    // both codes do.
+    //
+    // `/publicaciones/autor/` with no slug redirects to `/autores/`, which does
+    // not exist yet (NG-1) and 404s. That is deliberate and not a regression:
+    // the old bare URL was a 404 too, since the route it lived on was `[slug]`.
+    // The day an authors index ships, this redirect already points at it.
+    const legacyAuthorMatch = path.match(/^\/(es|en|pt)\/publicaciones\/autor(\/.*)?$/);
+    if (legacyAuthorMatch) {
+        const localeSegment = legacyAuthorMatch[1];
+        const tail = legacyAuthorMatch[2] ?? '/';
+        const search = context.url.search;
+        return context.redirect(`/${localeSegment}/autores${tail}${search}`, 301);
+    }
+
     // Step 4: Extract and validate locale from the URL path.
     const { locale, restOfPath } = extractLocaleFromPath({ path });
 
     // If the locale segment is missing or not a supported locale, redirect to the
-    // default locale while preserving the rest of the path.
+    // default locale while preserving the rest of the path AND the query string.
     // REQ-19: 301 (permanent) — this is a stable URL strategy decision; Google
     // passes full link equity through 301s but not through the default 302.
+    //
+    // `context.url.search` is passed for the same reason Steps 3, 3.1 and 3.2
+    // pass it: dropping it silently strips campaign parameters from every
+    // locale-less link (`/?utm_source=newsletter` → a bare `/es/`), and the
+    // attribution is gone before analytics sees the first pageview.
     if (locale === null) {
-        const redirectUrl = buildLocaleRedirect({ restOfPath: restOfPath || path });
+        const redirectUrl = buildLocaleRedirect({
+            restOfPath: restOfPath || path,
+            search: context.url.search
+        });
         return context.redirect(redirectUrl, 301);
     }
 
@@ -365,10 +459,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     // Step 9: Attach a Content-Security-Policy header (enforce mode, HOS-30 Phase 2,
-    // T-020) to all HTML responses AND stamp the per-request nonce on every inline
-    // <style>/<script> Astro emitted without one (so they match the policy below).
-    // The CSP header is the single source of truth; the body rewrite makes the
-    // policy actually enforceable for inline emissions Astro doesn't tag itself.
+    // T-020) to all HTML responses. The policy allows every inline <style>/<script>
+    // by the sha256 of its own content, computed from the rendered body below.
+    // The body is NOT modified — it is only read (HOS-369 WB0-1). The previous
+    // implementation stamped a per-request nonce instead, which Cloudflare would
+    // cache alongside the body and turn into a publicly readable token for the
+    // whole TTL (spec §5.13 / D-9). A content hash cannot desynchronize from the
+    // body it describes, cached or not.
     //
     // NOTE (HOS-74): this middleware runs per-request ONLY for SSR routes. A route
     // with `export const prerender = true` runs middleware just once — at build
@@ -392,8 +489,37 @@ export const onRequest = defineMiddleware(async (context, next) => {
             | undefined;
         const sentryReportUri = resolveSentryReportUri({ sentryDsn, dedicatedCspReportUri });
 
+        // Hash sources for this exact response. They stay empty on the
+        // defensive prerendered branch (HOS-74: no page currently opts into
+        // `prerender`, so it is unreachable for a served response — prerendered
+        // files bypass this middleware entirely at request time). Reading the
+        // body there would consume the static file's stream, and a build-time
+        // hash could not describe a body served straight off disk anyway.
+        let scriptHashes: readonly string[] = [];
+        let styleHashes: readonly string[] = [];
+
+        if (!context.isPrerendered) {
+            // SSR pages: read the rendered body, hash its inline blocks, and
+            // hand back a Response over the SAME body — the HTML is never
+            // modified. Content-Length is dropped defensively (re-encoding a
+            // decoded string is byte-identical for valid UTF-8, but Node
+            // recomputes it on send, so a stale value can never ship).
+            const originalBody = await response.text();
+            const collected = await collectCspHashes({ html: originalBody });
+            scriptHashes = collected.scriptHashes;
+            styleHashes = collected.styleHashes;
+
+            const newHeaders = new Headers(response.headers);
+            newHeaders.delete('content-length');
+            response = new Response(originalBody, {
+                status: response.status,
+                headers: newHeaders
+            });
+        }
+
         const directives = buildCspHeader({
-            nonce: cspNonce,
+            scriptHashes,
+            styleHashes,
             apiUrl: (import.meta.env.PUBLIC_API_URL as string | undefined) ?? undefined,
             sentryReportUri,
             // Drop the external *.sentry.io connect-src when the first-party
@@ -406,29 +532,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
             isDev: isDevelopment()
         });
 
-        if (!context.isPrerendered) {
-            // SSR pages: rewrite body to stamp nonces on inline <style>/<script>
-            // tags before setting the header. Content-Length is dropped because the
-            // rewrite changes body size; Node will recompute it on send.
-            const originalBody = await response.text();
-            const { html: rewrittenBody } = injectNonce({
-                html: originalBody,
-                nonce: cspNonce
-            });
-            const newHeaders = new Headers(response.headers);
-            newHeaders.delete('content-length');
-            response = new Response(rewrittenBody, {
-                status: response.status,
-                headers: newHeaders
-            });
-        }
-        // Defensive branch (HOS-74: no page currently opts into `prerender`, so
-        // this is unreachable for a served response — prerendered files bypass
-        // this middleware entirely at request time). Historically, prerendered
-        // pages skipped the body rewrite because nonces cannot be embedded at
-        // build time — any un-nonced inline <style>/<script> was dropped under
-        // enforce mode. Kept as a guard.
-
         response.headers.set(CSP_HEADER_NAME, directives);
     }
 
@@ -440,6 +543,35 @@ export const onRequest = defineMiddleware(async (context, next) => {
         const requestHost = context.url.hostname.toLowerCase();
         if (NOINDEX_HOSTS.includes(requestHost)) {
             response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+        }
+    }
+
+    // Step 11: Emit the `Cache-Tag` header so this response can be purged
+    // selectively instead of by flushing the whole zone (HOS-369 W1-1, §5.5).
+    //
+    // Written here, after the render, rather than by the page that decided the
+    // caching: layouts and nested components run their frontmatter after the
+    // page's, so a header written in page frontmatter could not include what
+    // they contribute. It is also written after the CSP branch above, which
+    // REPLACES `response` with a new object — setting the header before that
+    // point would drop it on the floor for every SSR HTML page.
+    //
+    // Only tagged, shared-cacheable responses get the header. An untagged
+    // cacheable response is prevented upstream: `applyCacheHeaders` cannot
+    // declare one (see `lib/cache/response-cache.ts`), and the static guard
+    // `test/static-guards/cacheable-responses-declare-tags.guard.test.ts` fails
+    // the build if any source file sets a public `Cache-Control` on its own.
+    //
+    // Cloudflare consumes and strips `Cache-Tag` before the response reaches the
+    // visitor, so the entity slugs and ids inside it are never exposed and cost
+    // the client nothing.
+    if (context.locals.cacheTags.size > 0) {
+        const cacheControl = response.headers.get('Cache-Control');
+        if (isEdgeCacheableControl({ cacheControl })) {
+            const { header } = serializeCacheTags({ tags: context.locals.cacheTags });
+            if (header !== null) {
+                response.headers.set(CACHE_TAG_HEADER_NAME, header);
+            }
         }
     }
 

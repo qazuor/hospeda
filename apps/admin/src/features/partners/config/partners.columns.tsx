@@ -63,12 +63,8 @@ export const createPartnersColumns = (t: ColumnTFunction): readonly ColumnConfig
                     value: 'silver',
                     label: t('admin-filters.partnerTier.silver' as TranslationKey),
                     color: BadgeColor.GRAY
-                },
-                {
-                    value: 'bronze',
-                    label: t('admin-filters.partnerTier.bronze' as TranslationKey),
-                    color: BadgeColor.ORANGE
                 }
+                // `bronze` was retired by HOS-294 and its badge went with it.
             ],
             startVisibleOnTable: true,
             startVisibleOnGrid: true

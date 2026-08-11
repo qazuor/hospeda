@@ -1,46 +1,37 @@
 ---
 /**
  * @file I18nClientData.astro
- * @description Inlines the current page's flattened translation dictionary for
- * the CURRENT locale only, as a non-executable `<script type="application/json">`
- * data block. Client islands read it via `getClientLocaleDict` in `@/lib/i18n`
- * instead of importing the full `@repo/i18n` catalog, so the other two locales
- * never ship in the JS bundle (HOS-160 lever A — the ~1 MB `web.*.js` chunk).
+ * @description Links the current page to the CURRENT locale's flattened
+ * translation dictionary, served as a hashed immutable asset by
+ * `src/pages/i18n/[file].js.ts`. Client islands read it via `getClientLocaleDict`
+ * in `@/lib/i18n` instead of importing the full `@repo/i18n` catalog, so the
+ * other two locales never ship in the JS bundle (HOS-160 lever A).
  *
- * Placed inside `<body>` (in BOTH `BaseLayout` and `AuthLayout`) so that
- * `<ClientRouter>` soft-navigation swaps it out for the destination page's
- * locale automatically — a cross-locale navigation therefore delivers the new
- * locale's dictionary with no script re-execution needed.
+ * The dictionary used to be INLINED here as a `<script type="application/json">`
+ * data block. It is byte-identical on every page and ~632 KB for `es` — 46.4% of
+ * a listing page's HTML — so every navigation re-downloaded it. As an asset the
+ * browser fetches it once per session per locale (HOS-369 Wave D).
  *
- * As a data block (`type="application/json"`) it is never executed, so CSP
- * `script-src` does not apply to it — but it still carries the request nonce to
- * satisfy the inline-nonce guard (`scripts/check-inline-nonce.sh`); a nonce on a
- * non-executed script is simply ignored by the browser.
+ * Two constraints shape the tag below, and neither is cosmetic:
+ *
+ *  - It is a CLASSIC script assigning a global, never a `fetch`.
+ *    `getClientLocaleDict` is synchronous and runs while islands render;
+ *    anything asynchronous would hand the first islands an empty dictionary and
+ *    every key would silently fall back.
+ *  - It is rendered in `<head>`, in all four HTML shells. A parser-inserted
+ *    `<script defer>` runs before the deferred module scripts that hydrate
+ *    islands only if it comes FIRST in document order; from `<body>` it can land
+ *    after an island that appears earlier, and that island hydrates with nothing.
  */
 
 import type { SupportedLocale } from '@/lib/i18n';
-import { CLIENT_I18N_ELEMENT_ID, getInlineLocaleMessages } from '@/lib/i18n';
+import { i18nAssetUrl } from '@/lib/i18n-asset';
 
 interface Props {
     readonly locale: SupportedLocale;
 }
 
 const { locale } = Astro.props;
-const cspNonce = Astro.locals.cspNonce ?? '';
-
-// Escape every `<` as a unicode escape so a translation value containing the
-// closing-script sequence cannot break out of the JSON data element (standard
-// safe JSON-in-HTML embedding).
-const payload = JSON.stringify({ locale, m: getInlineLocaleMessages(locale) }).replace(
-    /</g,
-    '\\u003c'
-);
 ---
 
-<script
-    id={CLIENT_I18N_ELEMENT_ID}
-    type="application/json"
-    is:inline
-    nonce={cspNonce}
-    set:html={payload}
-></script>
+<script defer src={i18nAssetUrl(locale)} is:inline></script>

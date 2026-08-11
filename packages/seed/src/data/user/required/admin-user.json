@@ -169,5 +169,6 @@
         }
     },
     "lifecycleState": "ACTIVE",
-    "visibility": "PUBLIC"
+    "visibility": "PUBLIC",
+    "isSystemAccount": true
 }

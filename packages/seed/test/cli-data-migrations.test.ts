@@ -195,16 +195,57 @@ describe('HOS-25 T-017: handleDataMigrate', () => {
         });
     });
 
-    it('calls baselineStamp instead of runMigrations when --baseline-stamp is set', async () => {
-        baselineStampMock.mockResolvedValue({ stamped: ['0001-foo', '0002-bar'] });
+    it('stamps and then FALLS THROUGH to runMigrations when --baseline-stamp is set', async () => {
+        // HOS-375 T-037 (G-10): --baseline-stamp is no longer an early
+        // return. `baselineStamp` leaves `meta.contentOnly` migrations
+        // pending, and the fall-through run is what actually applies them —
+        // without it, a fresh build ledgers them as applied with their
+        // content never created.
+        baselineStampMock.mockResolvedValue({ stamped: ['0001-foo', '0002-bar'], deferred: [] });
+        runMigrationsMock.mockResolvedValue({ applied: [], skipped: [], pendingCount: 0 });
 
         await handleDataMigrate({ group: 'example', allowDestructive: false, baselineStamp: true });
 
         expect(baselineStampMock).toHaveBeenCalledWith({ group: 'example' });
-        expect(runMigrationsMock).not.toHaveBeenCalled();
+        expect(runMigrationsMock).toHaveBeenCalledWith({
+            group: 'example',
+            allowDestructive: false,
+            env: process.env
+        });
         expect(loggerSuccessMock).toHaveBeenCalledWith({
             msg: 'Baseline-stamped 2 data-migration(s).'
         });
+    });
+
+    it('reports the deferred content-only migrations in the stamp log line', async () => {
+        baselineStampMock.mockResolvedValue({
+            stamped: ['0001-foo'],
+            deferred: ['0002-real-blog-posts']
+        });
+        runMigrationsMock.mockResolvedValue({
+            applied: ['0002-real-blog-posts'],
+            skipped: ['0001-foo'],
+            pendingCount: 1
+        });
+
+        await handleDataMigrate({ group: undefined, allowDestructive: false, baselineStamp: true });
+
+        expect(loggerSuccessMock).toHaveBeenCalledWith({
+            msg: 'Baseline-stamped 1 data-migration(s), deferring 1 content-only migration(s) to a real run.'
+        });
+        expect(loggerSuccessMock).toHaveBeenCalledWith({
+            msg: 'Applied 1 data-migration(s) (1 already up to date).'
+        });
+    });
+
+    it('does not run migrations when baselineStamp throws — the fall-through is not reached', async () => {
+        baselineStampMock.mockRejectedValue(new Error('stamp failed'));
+
+        await expect(
+            handleDataMigrate({ group: undefined, allowDestructive: false, baselineStamp: true })
+        ).rejects.toThrow(ProcessExitError);
+
+        expect(runMigrationsMock).not.toHaveBeenCalled();
     });
 
     it('logs the error message and exits(1) when runMigrations throws', async () => {

@@ -85,6 +85,77 @@ export function isAllowedRemoteHost(url: string): boolean {
     }
 }
 
+/**
+ * Returns `true` when `value` can be used directly as an `<img src>`.
+ *
+ * Accepts an absolute `http(s)` URL or a root-relative path (`/…`, including
+ * the protocol-relative `//host/…` form). Everything else is rejected: bare
+ * relative paths (`avatars/x.jpg`, which resolve against the CURRENT page path
+ * and 404 on any detail route), non-fetchable schemes (`javascript:`, `data:`),
+ * empty/whitespace strings, and anything `new URL()` cannot parse at all.
+ *
+ * ## Why this exists (HOS-375)
+ *
+ * The public author-avatar fields — `PostAuthorPublicSchema.image`,
+ * `EventAuthorPublicSchema.image` and the author page's `avatar` — are
+ * deliberately LENIENT on the API side: they assert type and presence but not
+ * URL format, because `users.image` and the `profile.avatar` JSONB path are
+ * both written outside Zod (Better Auth signup, seed fixtures, data-migration
+ * `0043`) and a strict response schema fail-closes to an HTTP 500 through
+ * `stripWithSchema`. The schema's job is "never take the page down"; keeping a
+ * broken picture off the page is THIS function's job, at the consumer, right
+ * before render.
+ *
+ * That split is intentional and must not be collapsed back into the schema with
+ * `.catch()` — `ZodCatch` has no renderer in `@hono/zod-openapi`, and the
+ * OpenAPI document is global, so one such field 500s `/docs/openapi.json`
+ * everywhere.
+ *
+ * SSRF is a SEPARATE concern with a separate guard: use
+ * {@link isAllowedRemoteHost} before handing a URL to Astro's `getImage()`.
+ * This function only answers "will the browser be able to load it".
+ *
+ * The parameter is `unknown` rather than `string | null | undefined` on purpose:
+ * the values it screens come out of `Record<string, unknown>` API payloads, and
+ * narrowing them with an `as` cast at each call site would be an unsound
+ * promise about data this function exists precisely to distrust. The `typeof`
+ * check below is the real narrowing.
+ *
+ * @param value - Candidate image URL, from API/database content
+ * @returns `true` when the value is safe to emit as an image `src`
+ */
+export function isRenderableImageUrl(value: unknown): boolean {
+    if (typeof value !== 'string') return false;
+
+    const trimmed = value.trim();
+    if (trimmed === '') return false;
+
+    // Root-relative and protocol-relative paths are served by this origin (or
+    // the same scheme) and always resolve correctly from any route.
+    if (trimmed.startsWith('/')) return true;
+
+    try {
+        const { protocol } = new URL(trimmed);
+        return protocol === 'http:' || protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+/**
+ * Narrows a candidate image URL to a renderable one, or `undefined`.
+ *
+ * Convenience wrapper over {@link isRenderableImageUrl} for the common
+ * "render it or render nothing" call site. Returns the TRIMMED value so
+ * callers never emit a `src` with stray whitespace.
+ *
+ * @param value - Candidate image URL, from API/database content
+ * @returns The trimmed URL when renderable, otherwise `undefined`
+ */
+export function toRenderableImageUrl(value: unknown): string | undefined {
+    return typeof value === 'string' && isRenderableImageUrl(value) ? value.trim() : undefined;
+}
+
 interface MediaImage {
     readonly url?: string;
     readonly caption?: string;

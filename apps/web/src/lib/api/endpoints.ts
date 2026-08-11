@@ -11,6 +11,7 @@ import type {
     CommerceLeadCreateInput,
     DestinationPointOfInterestSummary,
     DestinationPublic,
+    EventOrganizerPublic,
     EventPublic,
     EventSummary,
     ExternalReputationBlock,
@@ -408,6 +409,13 @@ export const amenitiesApi = {
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
         /**
+         * SPEC-266: scope the catalog to one vertical. The accommodation editor
+         * needs `accommodation` so gastronomy/experience amenities stay out of
+         * its checkbox group. Added in HOS-318 — without it the editor page had
+         * to bypass this wrapper with a raw `fetch`, which apps/web forbids.
+         */
+        applicableVertical?: 'accommodation' | 'gastronomy' | 'experience';
+        /**
          * HOS-103: opt in to the short-TTL SSR cache. Pass
          * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added
          * the accommodations listing surfaces, whose catalog reads are fixed and
@@ -432,6 +440,8 @@ export const featuresApi = {
         isFeatured?: boolean;
         sortBy?: string;
         sortOrder?: 'asc' | 'desc';
+        /** SPEC-266: scope the catalog to one vertical. See `amenitiesApi.list`. */
+        applicableVertical?: 'accommodation' | 'gastronomy' | 'experience';
         /**
          * HOS-103: opt in to the short-TTL SSR cache. Pass
          * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites. HOS-299 added
@@ -557,6 +567,37 @@ export const eventLocationsApi = {
     /** Get event location by slug */
     getBySlug({ slug }: { readonly slug: string }): Promise<ApiResult<Record<string, unknown>>> {
         return apiClient.get({ path: `${BASE}/event-locations/slug/${slug}` });
+    }
+};
+
+// --- Event Organizers ---
+
+/**
+ * Public event organizer API endpoints.
+ *
+ * Added for `EventCreateForm.client.tsx` (HOS-374 §5.2.2): `organizerId` is a
+ * REQUIRED UUID on `EventCreateHttpSchema`, so the create form needs a catalog
+ * to populate its `<select>`. No caller needed this before — the event editor
+ * shows `organizerId` read-only (see `event-edit-data.ts`), and none of it was
+ * wired.
+ */
+export const eventOrganizersApi = {
+    /**
+     * List event organizers, matching `destinationsApi.list`'s shape.
+     *
+     * @param params - Optional pagination.
+     * @returns Paginated list of public event organizers.
+     *
+     * @example
+     * ```ts
+     * const result = await eventOrganizersApi.list({ pageSize: 100 });
+     * ```
+     */
+    list(params?: {
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<EventOrganizerPublic>>> {
+        return apiClient.getList({ path: `${BASE}/event-organizers`, params });
     }
 };
 
@@ -912,6 +953,44 @@ export const eventsApi = {
      */
     getSummary({ id }: { readonly id: string }): Promise<ApiResult<EventSummary>> {
         return apiClient.get({ path: `${BASE}/events/${id}/summary` });
+    },
+
+    /**
+     * Get a single author's events, newest first, for the author page
+     * (HOS-375 §6.2).
+     *
+     * Takes the author's **UUID**, not their slug — the route is
+     * `GET /events/author/{authorId}`. The author page resolves the slug to an
+     * id through the public author profile before calling this.
+     *
+     * ONLY pagination is sent, deliberately. The server's
+     * `EventByAuthorHttpSchema` also declares `category`, `isFeatured`,
+     * `isVirtual`, `q`, `sortBy` and `sortOrder`, but the handler
+     * (`apps/api/src/routes/event/public/getByAuthor.ts`) destructures just
+     * `page` and `pageSize` and silently discards the rest (HOS-375 NG-2).
+     * Accepting them here would advertise filtering this endpoint does not do.
+     *
+     * @param params - Author UUID and optional pagination
+     * @returns A paginated page of that author's events
+     *
+     * @example
+     * ```ts
+     * const result = await eventsApi.getByAuthor({ authorId, page: 2, pageSize: 12 });
+     * ```
+     */
+    getByAuthor({
+        authorId,
+        page,
+        pageSize
+    }: {
+        readonly authorId: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+    }): Promise<ApiResult<PaginatedResponse<EventPublic>>> {
+        return apiClient.getList({
+            path: `${BASE}/events/author/${authorId}`,
+            params: { page, pageSize }
+        });
     }
 };
 
@@ -1198,6 +1277,22 @@ export const publicConversationsApi = {
 
 // --- Users ---
 
+/**
+ * The author's social profiles as the public author payload carries them.
+ *
+ * Every key is optional and the whole object is absent unless the profile owner
+ * opted in (HOS-375 §6.7), so a consumer must render only the keys actually
+ * present — never a placeholder for a network the author left empty.
+ */
+export interface UserAuthorSocialNetworks {
+    readonly facebook?: string;
+    readonly instagram?: string;
+    readonly twitter?: string;
+    readonly linkedIn?: string;
+    readonly tiktok?: string;
+    readonly youtube?: string;
+}
+
 /** Minimal public profile returned by the user-by-slug endpoint. */
 export interface UserAuthorPublic {
     readonly id: string;
@@ -1205,16 +1300,33 @@ export interface UserAuthorPublic {
     readonly slug: string;
     readonly avatar: string | null;
     readonly bio: string | null;
+
+    /**
+     * `users.is_system_account` — `true` for a platform/service identity rather
+     * than a person. Consumed by `evaluateAuthorIndexability` (HOS-375 §6.5
+     * condition 1): a system account is never indexable, however complete its
+     * profile is.
+     */
+    readonly isSystemAccount: boolean;
+
+    /**
+     * Present ONLY when the profile owner enabled
+     * `settings.publicProfileShowSocialNetworks`. Absent — the key omitted, not
+     * `null` — otherwise, so `author.socialNetworks` being falsy already means
+     * "do not render the block".
+     */
+    readonly socialNetworks?: UserAuthorSocialNetworks;
 }
 
 /** Public user API endpoints */
 export const usersApi = {
     /**
      * Get a minimal public profile for a user by their URL slug.
-     * Used by the author page (/publicaciones/autor/{slug}/).
+     * Used by the author page (/{lang}/autores/{slug}/).
      *
      * @param params - User URL slug
-     * @returns Minimal public profile (id, displayName, slug, avatar, bio)
+     * @returns Minimal public profile (id, displayName, slug, avatar, bio,
+     *   isSystemAccount, plus socialNetworks when the owner opted in)
      *
      * @example
      * ```ts
@@ -1764,10 +1876,29 @@ export const partnerApi = {
     list(params?: {
         readonly page?: number;
         readonly pageSize?: number;
-        readonly q?: string;
-        readonly type?: string;
-        readonly tier?: string;
     }): Promise<ApiResult<PaginatedResponse<PartnerPublic>>> {
         return apiClient.getList({ path: `${BASE}/partners`, params });
+    },
+
+    /**
+     * One gold partner's public detail payload.
+     *
+     * GET /api/v1/public/partners/{slug}
+     *
+     * The caller MUST distinguish the two failure statuses rather than treating
+     * any error as "missing" (HOS-294 D-3b):
+     *
+     * - `error.status === 410` — the page was published and is retired. The
+     *   page propagates 410 so crawlers deindex it.
+     * - `error.status === 404` — this URL was never served (a silver partner,
+     *   or no such row).
+     *
+     * Both are normal outcomes, not faults. `ApiError` already carries `status`,
+     * so no extra plumbing is needed here — only the discipline of reading it,
+     * the same way `alojamientos/[slug].astro` propagates 410 for soft-deleted
+     * accommodations.
+     */
+    getBySlug(slug: string): Promise<ApiResult<PartnerPublic>> {
+        return apiClient.get({ path: `${BASE}/partners/${encodeURIComponent(slug)}` });
     }
 };

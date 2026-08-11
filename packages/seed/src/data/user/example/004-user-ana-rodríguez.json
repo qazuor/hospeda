@@ -1,7 +1,7 @@
 {
     "id": "004-user-ana-rodríguez",
     "$schema": "../../schemas/user.schema.json",
-    "slug": "ana-rodríguez",
+    "slug": "ana-rodriguez",
     "role": "HOST",
     "permissions": [],
     "firstName": "Ana",

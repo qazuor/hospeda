@@ -61,6 +61,29 @@ export type PoiCategoryIdType = z.infer<typeof PoiCategoryIdSchema>;
 export const HostTradeIdSchema = BaseIdSchema;
 export type HostTradeIdType = z.infer<typeof HostTradeIdSchema>;
 
+/**
+ * Id of a row in `partners` — the alliance/sponsor directory.
+ *
+ * Not to be confused with {@link BenefitPartnerIdSchema}, which belongs to the
+ * separate Benefit Listings System further down this file.
+ */
+export const PartnerIdSchema = BaseIdSchema;
+export type PartnerIdType = z.infer<typeof PartnerIdSchema>;
+
+/** Id of a row in `partner_mentions` — one logged promotion action (HOS-377). */
+export const PartnerMentionIdSchema = BaseIdSchema;
+export type PartnerMentionIdType = z.infer<typeof PartnerMentionIdSchema>;
+
+/**
+ * Groups the `partner_mentions` rows written by ONE admin submission (HOS-377).
+ *
+ * Not an entity id: no `partner_mention_batches` table exists and none is
+ * planned. It is a shared marker generated server-side inside the creating
+ * transaction, which is why it never appears in a request body.
+ */
+export const PartnerMentionBatchIdSchema = BaseIdSchema;
+export type PartnerMentionBatchIdType = z.infer<typeof PartnerMentionBatchIdSchema>;
+
 export const DestinationIdSchema = BaseIdSchema;
 export type DestinationIdType = z.infer<typeof DestinationIdSchema>;
 
@@ -79,6 +102,9 @@ export type EntityViewIdType = z.infer<typeof EntityViewIdSchema>;
 export const EventIdSchema = BaseIdSchema;
 export type EventIdType = z.infer<typeof EventIdSchema>;
 
+export const EventMediaIdSchema = BaseIdSchema;
+export type EventMediaIdType = z.infer<typeof EventMediaIdSchema>;
+
 export const EventLocationIdSchema = BaseIdSchema;
 export type EventLocationIdType = z.infer<typeof EventLocationIdSchema>;
 
@@ -87,6 +113,9 @@ export type EventOrganizerIdType = z.infer<typeof EventOrganizerIdSchema>;
 
 export const PostIdSchema = BaseIdSchema;
 export type PostIdType = z.infer<typeof PostIdSchema>;
+
+export const PostMediaIdSchema = BaseIdSchema;
+export type PostMediaIdType = z.infer<typeof PostMediaIdSchema>;
 
 export const PostSponsorIdSchema = BaseIdSchema;
 export type PostSponsorIdType = z.infer<typeof PostSponsorIdSchema>;

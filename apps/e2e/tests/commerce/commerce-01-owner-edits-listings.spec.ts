@@ -42,6 +42,10 @@
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
+import {
+    setRichDescription,
+    waitForCommerceEditorHydration
+} from '../../fixtures/commerce-editor-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 import { setReactInputValue } from '../../fixtures/react19-input-helpers.ts';
 
@@ -221,10 +225,18 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
             waitUntil: 'load'
         });
 
-        // Wait for React hydration to complete: after client:load hydration the
-        // #ce-menuUrl input is under React's control. We verify it is editable
-        // (not disabled, not readonly) and stable — a stronger guarantee than
-        // toBeVisible alone, which resolves the moment the SSR HTML arrives.
+        // Wait for React hydration to complete.
+        //
+        // HOS-371: `toBeEditable()` on a server-rendered control is NOT a
+        // hydration gate — #ce-menuUrl is in the SSR HTML and is already
+        // "editable" before React attaches a single handler. This only ever
+        // passed because hydration won the race; once the island started
+        // shipping TipTap it stopped winning, and the fill below landed on a
+        // node React was not listening to (dirty stays empty → Save disabled).
+        // `waitForCommerceEditorHydration` gates on something that cannot exist
+        // before hydration.
+        await waitForCommerceEditorHydration({ page });
+
         const menuUrlInput = page.locator('#ce-menuUrl');
         await expect(menuUrlInput).toBeVisible({ timeout: 15_000 });
         await expect(menuUrlInput).toBeEditable({ timeout: 10_000 });
@@ -287,25 +299,19 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
             waitUntil: 'load'
         });
 
-        // Wait for editor island hydration using the stable, unique textarea id.
-        // toBeEditable() (not just toBeVisible()) confirms the textarea is interactive
-        // and React event handlers are in place.
-        const richDescriptionTextarea = page.locator('#ce-richDescription');
-        await expect(richDescriptionTextarea).toBeVisible({ timeout: 15_000 });
-        await expect(richDescriptionTextarea).toBeEditable({ timeout: 10_000 });
+        // Wait for editor island hydration.
+        await waitForCommerceEditorHydration({ page });
 
-        // React 19 controlled textareas have the same issue as controlled inputs:
-        // Playwright's fill() / pressSequentially() may not reliably trigger React's
-        // synthetic onChange in CI (no native-setter interception → markDirty never
-        // called → dirty.size===0 → save button stays disabled → PATCH never fires).
-        //
-        // Fix: use the shared setReactInputValue helper (SPEC-253) which selects the
-        // correct prototype (HTMLTextAreaElement) and dispatches InputEvent with
-        // inputType:'insertText' so React 19's onChange fires reliably.
+        // HOS-371: `richDescription` is a TipTap editor now, not `#ce-richDescription`
+        // (a `<textarea>`). `setReactInputValue` does not apply: TipTap owns a
+        // ProseMirror document, so writing to the DOM node would be discarded on
+        // the next transaction. `setRichDescription` drives TipTap's own command,
+        // which dispatches a real transaction and fires the same
+        // onUpdate → onChange → dirty-tracking chain a keystroke would.
         //
         // The seed has no richDescription for excursion-rio-uruguay-concepcion
         // (the DB column is NULL → strField returns "" → state starts as "").
-        await setReactInputValue(richDescriptionTextarea, newRichDescription);
+        await setRichDescription({ page, value: newRichDescription });
 
         // Explicit pre-click enabled assertion — surfaces dirty-form failures
         // clearly instead of masking them as a 15 s click timeout.

@@ -24,7 +24,6 @@ import ExperienceContactCTA from '@/components/experience/ExperienceContactCTA.a
 import ExperienceFaqs from '@/components/experience/ExperienceFaqs.astro';
 import { ExperienceReviews } from '@/components/experience/ExperienceReviews.client';
 import { experiencesApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
-import { userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { toExperienceDetailPageProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -32,6 +31,8 @@ import { buildUrl } from '@/lib/urls';
 import type { ExperienceReviewPublicItem } from '@/lib/api/endpoints';
 import type { DetailFaq } from '@/data/types';
 
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
@@ -60,6 +61,36 @@ if (visibility && visibility !== 'PUBLIC') {
 }
 
 const experience = toExperienceDetailPageProps({ item: raw, locale });
+
+// --- Edge cacheability (HOS-369 W2-4) ---
+// After BOTH guards above — the 404/410 for missing or soft-deleted rows, and
+// the visibility gate. That ordering is what makes this safe: a non-PUBLIC
+// listing 404s before reaching here, so a private listing can never be shared
+// from the edge. It mirrors the service side, which only schedules a purge for
+// a listing that is ACTIVE and PUBLIC.
+//
+// Addressed by its OWN two tags and deliberately NOT by `list-experience`: a
+// detail page is not a listing, and the collection tag would make every
+// experience write evict every other one's page.
+const experienceCacheTags = buildEntityCacheTags({
+    entity: 'experience',
+    slug,
+    id: String(raw.id || '')
+});
+const [primaryExperienceTag, ...extraExperienceTags] = experienceCacheTags;
+
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    // No usable entity tag means nothing could purge this page, and an
+    // unpurgeable cached page is worse than an uncached one.
+    cacheable: primaryExperienceTag !== undefined,
+    cacheClass: 'detail',
+    tags:
+        primaryExperienceTag !== undefined
+            ? [primaryExperienceTag, ...extraExperienceTags]
+            : [CACHE_TAG_COLLECTIONS.experience]
+});
 
 // --- Parallel secondary fetches ---
 const [reviewsSettled, faqsSettled] = await Promise.allSettled([
@@ -119,12 +150,9 @@ const galleryImages = (() => {
     return [];
 })();
 
-const isAuthenticated = Boolean(Astro.locals.user);
 
 // --- SSR bookmark status for hero ---
 let bookmarkCount: number | undefined;
-let initialIsFavorited: boolean | undefined;
-let initialBookmarkId: string | null = null;
 
 try {
     const countResult = await userBookmarksPublicApi.count({
@@ -138,22 +166,6 @@ try {
     // graceful degradation
 }
 
-if (isAuthenticated) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const statusResult = await userBookmarksApi.checkStatus({
-            entityId: experience.id,
-            entityType: 'EXPERIENCE',
-            cookieHeader
-        });
-        if (statusResult.ok) {
-            initialIsFavorited = statusResult.data.isFavorited;
-            initialBookmarkId = statusResult.data.bookmarkId;
-        }
-    } catch {
-        // graceful degradation
-    }
-}
 
 const canonicalPath = buildUrl({ locale, path: `experiencias/${experience.slug}/` });
 
@@ -215,9 +227,6 @@ const breadcrumbItems = [
         <ExperienceHero
             experience={experience}
             locale={locale}
-            isAuthenticated={isAuthenticated}
-            initialIsFavorited={initialIsFavorited}
-            initialBookmarkId={initialBookmarkId}
             bookmarkCount={bookmarkCount}
         />
     </Fragment>
@@ -256,7 +265,6 @@ const breadcrumbItems = [
             totalReviews={totalReviews}
             averageRating={experience.averageRating}
             locale={locale}
-            isAuthenticated={isAuthenticated}
         />
 
         <!-- FAQs (static SSR accordion) -->

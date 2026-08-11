@@ -15,7 +15,8 @@
  *    T-011) against the pending batch's metadata, BEFORE running anything.
  *    A refusal aborts the whole run with zero side effects.
  * 4. Resolve the acting {@link Actor} once for the whole run (injected, or
- *    bootstrapped via `loadSuperAdminAndGetActor()`).
+ *    looked up via {@link requireSuperAdminActor} — which refuses to CREATE a
+ *    super admin, unlike the seed pipeline's own bootstrap).
  * 5. Run each pending migration, in numeric-prefix order, inside its own
  *    database transaction: build its {@link SeedMigrationCtx}
  *    ({@link buildMigrationContext}, T-005) against the transaction-scoped
@@ -42,7 +43,7 @@ import type { DrizzleClient } from '@repo/db';
 import { getDb } from '@repo/db';
 import type { Actor } from '@repo/service-core';
 import { logger as defaultLogger, type SeedLogger } from '../utils/logger.js';
-import { loadSuperAdminAndGetActor } from '../utils/superAdminLoader.js';
+import { findSuperAdminActor } from '../utils/superAdminLoader.js';
 import { buildMigrationContext } from './context.js';
 import {
     computePendingMigrations,
@@ -135,6 +136,42 @@ export async function resolvePendingMigrations(
 }
 
 /**
+ * Resolves the acting super admin for a migration run, and REFUSES to
+ * manufacture one.
+ *
+ * This deliberately does not call `loadSuperAdminAndGetActor()`, which creates
+ * the well-known `superadmin@hospeda.com` account (plus its credential row)
+ * when none exists. That behavior is correct for the seed pipeline and wrong
+ * here: the production day-1 bootstrap seeds with `--required --exclude=users`
+ * precisely to keep that predictable admin credential off the box, and since
+ * HOS-375 a `--baseline-stamp` invocation falls through to a real run — so
+ * bootstrapping here would silently undo the exclusion the operator asked for.
+ * Failing loudly instead makes the ordering mistake visible at the moment it
+ * happens.
+ *
+ * @param args - RO-RO input carrying the run's own Drizzle client. Passed
+ *   explicitly rather than letting the lookup fall back to `getDb()`, so the
+ *   read always goes through the same connection the rest of the run uses.
+ * @throws {Error} When no `SUPER_ADMIN` exists in the target database.
+ */
+async function requireSuperAdminActor(args: { readonly db: DrizzleClient }): Promise<Actor> {
+    const resolved = await findSuperAdminActor({ db: args.db });
+
+    if (!resolved) {
+        throw new Error(
+            'Cannot run seed data-migrations: this database has no SUPER_ADMIN account. ' +
+                'Migrations record the acting user (createdById/updatedById), so one must exist first. ' +
+                'The migration runner deliberately does NOT create the seeded superadmin@hospeda.com ' +
+                'account as a fallback — on a production day-1 bootstrap, create and promote the real ' +
+                'admin account BEFORE running the data-migration step ' +
+                '(see docs/deployment/first-time-setup.md, Phase 4).'
+        );
+    }
+
+    return resolved;
+}
+
+/**
  * Input accepted by {@link runMigrations}.
  */
 export interface RunMigrationsArgs {
@@ -176,11 +213,15 @@ export interface RunMigrationsArgs {
     readonly dir?: string;
 
     /**
-     * Pre-resolved actor for permission-checked `ctx.services` calls.
-     * Resolved ONCE for the whole run (not per-migration) and injected into
-     * every migration's context. Omit to bootstrap the super-admin actor via
-     * `loadSuperAdminAndGetActor()` — tests should always inject a stub actor
-     * to avoid requiring a live super-admin lookup.
+     * Pre-resolved actor for permission-checked `ctx.services` calls, and for
+     * the `createdById`/`updatedById` a migration stamps on the rows it
+     * writes. Resolved ONCE for the whole run (not per-migration) and injected
+     * into every migration's context.
+     *
+     * Omit to look up the existing super admin via
+     * {@link requireSuperAdminActor}, which THROWS when none exists rather
+     * than creating one. Tests should always inject a stub actor to avoid
+     * requiring a live super-admin lookup.
      */
     readonly actor?: Actor;
 
@@ -238,6 +279,8 @@ export interface RunMigrationsResult {
  *
  * @throws {Error} If the production safety gate refuses the batch (see
  *   {@link evaluateProdDataMigrationGate}).
+ * @throws {Error} If `actor` is omitted and the database has no `SUPER_ADMIN`
+ *   to act as (see {@link requireSuperAdminActor}).
  * @throws {Error} If any migration's `up()` throws — wraps the original error
  *   with the failing migration's name, preserving it as `cause`.
  *
@@ -293,7 +336,7 @@ export async function runMigrations(args: RunMigrationsArgs = {}): Promise<RunMi
         throw new Error(reason);
     }
 
-    const resolvedActor = actor ?? (await loadSuperAdminAndGetActor());
+    const resolvedActor = actor ?? (await requireSuperAdminActor({ db }));
 
     logger.info(`Running ${pending.length} pending data-migration(s)...`);
 

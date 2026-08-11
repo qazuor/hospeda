@@ -238,9 +238,14 @@ export function createAccommodationSignals({
         // ----------------------------------------------------------------
         // Premium — video gallery (gated by EntitlementKey.CAN_EMBED_VIDEO).
         // When the feature is unlocked the signal flips to a regular
-        // done/pending pair driven by `media.videos`. The field lives in
+        // done/pending pair driven by `videos`. The field lives in
         // `sections/gallery.consolidated.ts` (VIDEO_GALLERY type) so unlocked
         // hosts can add YouTube/Vimeo URLs and watch this flip to "done".
+        //
+        // HOS-372: reads the top-level `videos` field, NOT `media.videos`. That
+        // is the single source now — the column the form writes AND the field the
+        // response exposes. `media.videos` only ever appears on a composed
+        // response, so reading it made the signal go stale against the form value.
         // ----------------------------------------------------------------
         {
             id: 'video-gallery',
@@ -249,7 +254,7 @@ export function createAccommodationSignals({
             sectionId: 'gallery',
             check: (entity) => {
                 if (!hasVideoGalleryFeature) return { status: 'premium' };
-                const videos = readPath(entity, 'media.videos');
+                const videos = readPath(entity, 'videos');
                 return Array.isArray(videos) && videos.length > 0
                     ? { status: 'done' }
                     : { status: 'pending' };

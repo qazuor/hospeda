@@ -94,6 +94,118 @@ export enum NotificationType {
      */
     ACCOMMODATION_CALENDAR_FEED_BROKEN = 'accommodation_calendar_feed_broken',
     /**
+     * HOS-278 §6.2 — sent to the OWNER of an email address when an anonymous
+     * "aliados" application arrives carrying that address.
+     *
+     * The application is not linked to their account by sending this: the link
+     * is established only when they click through and redeem the token
+     * (AC-4). The lead's email is unverified, so linking on the email alone
+     * would let anyone hang an application — and whatever benefits it carries
+     * — off someone else's account.
+     *
+     * This is a TRANSACTIONAL notification: it is a security-relevant
+     * confirmation about the recipient's own account, and it is the ONLY way
+     * the claim token is ever delivered.
+     */
+    ALLIANCE_CLAIM_INVITE = 'alliance_claim_invite',
+    /**
+     * HOS-278 AC-6 — sent to an applicant when an admin resolves their
+     * "aliados" application, whichever way it went.
+     *
+     * The copy the landing pages already make ("nos contactamos a la
+     * brevedad") is a promise this notification is what keeps. Before it, a
+     * rejected applicant heard nothing at all and an approved one heard
+     * whatever the admin remembered to write by hand.
+     *
+     * TRANSACTIONAL: it is the answer to something the recipient asked for.
+     */
+    ALLIANCE_LEAD_DECISION = 'alliance_lead_decision',
+    /**
+     * HOS-278 R-4 — sent to a service provider when their directory listing is
+     * revoked.
+     *
+     * R-4 chose "revoke, not undo": the row survives and the reason is
+     * recorded. Telling the provider is the other half of that choice — a
+     * listing that quietly stops appearing, with no message, is
+     * indistinguishable from a bug, and the provider would keep honouring a
+     * benefit for hosts who can no longer find them.
+     *
+     * TRANSACTIONAL: it reports a change to an arrangement the recipient is
+     * party to, not something they can opt out of hearing.
+     */
+    HOST_TRADE_REVOKED = 'host_trade_revoked',
+    /**
+     * HOS-376 §6.6 — sent to whoever must confirm a declared benefit usage.
+     *
+     * The whole chain hangs off this one: a usage nobody confirms cannot ripen
+     * into a review, never moves the public counters, and expires in silence.
+     * If this notification does not land, the feature does not exist.
+     *
+     * TRANSACTIONAL: it asks the recipient to act on a record about them.
+     */
+    HOST_TRADE_USAGE_CONFIRMATION_REQUEST = 'host_trade_usage_confirmation_request',
+    /**
+     * HOS-376 AC-8 — the single day-10 nudge for a usage still waiting.
+     *
+     * One reminder, never a sequence: the record expires on its own at thirty
+     * days and expiring is a fine outcome, so chasing would turn a neutral
+     * timeout into pressure to confirm something half-remembered.
+     *
+     * TRANSACTIONAL, for the same reason as the request it repeats.
+     */
+    HOST_TRADE_USAGE_CONFIRMATION_REMINDER = 'host_trade_usage_confirmation_reminder',
+    /**
+     * HOS-376 §6.6 — sent to the declarant once the counterpart confirms.
+     *
+     * TRANSACTIONAL: it reports the resolution of something the recipient
+     * started.
+     */
+    HOST_TRADE_USAGE_CONFIRMED = 'host_trade_usage_confirmed',
+    /**
+     * HOS-376 §6.5 — sent to the declarant when the counterpart says it never
+     * happened.
+     *
+     * Consequential — a rejection blocks that side from re-declaring on the
+     * pair — so the declarant cannot be left to infer it from a row that
+     * quietly stopped counting.
+     *
+     * TRANSACTIONAL.
+     */
+    HOST_TRADE_USAGE_REJECTED = 'host_trade_usage_rejected',
+    /**
+     * HOS-376 §6.3 — sent to a provider when a host reviews their listing.
+     *
+     * TRANSACTIONAL: it reports something published about the recipient's own
+     * business, which they have a right of reply to.
+     */
+    HOST_TRADE_REVIEW_RECEIVED = 'host_trade_review_received',
+    /**
+     * HOS-376 AC-24 — sent to a provider when their reply is approved or
+     * rejected.
+     *
+     * The moderator's reason reaches the provider HERE and nowhere else: the
+     * protected read schema deliberately withholds it, so dropping it from
+     * this notification would leave a rejected provider with a reply that
+     * silently never appeared and no way to write a better one.
+     *
+     * TRANSACTIONAL.
+     */
+    HOST_TRADE_REPLY_MODERATED = 'host_trade_reply_moderated',
+    PARTNER_REVOKED = 'partner_revoked',
+    PARTNER_UNPAID_NOTICE = 'partner_unpaid_notice',
+    /**
+     * HOS-377 AC-9 — the team logged one or more promotion actions for a
+     * partner, and this tells them so, with a link to each publication.
+     *
+     * Sent ONCE per submission, never once per row: a campaign that ran on four
+     * networks is one thing that happened, and four emails about it is spam.
+     *
+     * TRANSACTIONAL: it reports work performed under the arrangement the
+     * partner is paying for. It is a record of actions taken, NOT a performance
+     * report — see the template for why that distinction is load-bearing.
+     */
+    PARTNER_MENTIONS_LOGGED = 'partner_mentions_logged',
+    /**
      * HOS-176 Increment A — advance notice sent to a subscriber before a plan
      * price INCREASE is applied to their MercadoPago preapproval.
      *
@@ -633,6 +745,276 @@ export interface CommerceOwnerCredentialsPayload extends BaseNotificationPayload
 }
 
 /**
+ * Payload for the ALLIANCE_CLAIM_INVITE notification (HOS-278 §6.2).
+ *
+ * Sent to the owner of an email address that an ANONYMOUS "aliados"
+ * application arrived with. Asks them to confirm the application is theirs;
+ * only that click links it to their account (AC-4).
+ *
+ * **Security note**: `claimUrl` embeds the single-use claim token. It is the
+ * only place the raw token ever exists outside the request that generated it
+ * — the database stores a SHA-256 digest, never the token itself. It MUST NOT
+ * be logged, echoed in an API response, or stored in notification metadata.
+ *
+ * The message never states whether an account already existed: it is only
+ * ever DELIVERED when one does, so the fact is disclosed to the account owner
+ * alone and never to the submitter (AC-3).
+ *
+ * @example
+ * ```ts
+ * const payload: AllianceClaimInvitePayload = {
+ *   type: NotificationType.ALLIANCE_CLAIM_INVITE,
+ *   recipientEmail: 'juan@example.com',
+ *   recipientName: 'Juan Pérez',
+ *   userId: 'user-uuid',
+ *   leadId: 'lead-uuid',
+ *   programLabel: 'Partner',
+ *   claimUrl: 'https://hospeda.com.ar/mi-cuenta/aliados?lead=lead-uuid&claim=TOKEN',
+ *   expiresAt: '2026-08-11T12:00:00.000Z',
+ * };
+ * ```
+ */
+export interface AllianceClaimInvitePayload extends BaseNotificationPayload {
+    readonly type: NotificationType.ALLIANCE_CLAIM_INVITE;
+    /** UUID of the alliance lead awaiting confirmation. For traceability. */
+    readonly leadId: string;
+    /**
+     * Human-readable name of the program applied to (e.g. "Partner",
+     * "Proveedor"). Resolved by the caller — the recipient should not have to
+     * decode a slug to know what they are confirming.
+     */
+    readonly programLabel: string;
+    /**
+     * Full confirmation URL, including the single-use claim token.
+     * NEVER log or persist this value.
+     */
+    readonly claimUrl: string;
+    /** ISO-8601 timestamp at which the claim link stops working. */
+    readonly expiresAt: string;
+}
+
+/**
+ * Payload for the ALLIANCE_LEAD_DECISION notification (HOS-278 AC-6).
+ *
+ * Sent when an admin approves or rejects an "aliados" application. One type
+ * rather than two: the recipient, the program and the next step all come from
+ * the same place, and splitting it would duplicate every field to vary one
+ * sentence.
+ *
+ * `adminNote` is NOT carried. It is the admin's internal note on the
+ * disposition — written for colleagues, not for the applicant, and the
+ * applicant-facing endpoints strip it for the same reason.
+ *
+ * @example
+ * ```ts
+ * const payload: AllianceLeadDecisionPayload = {
+ *   type: NotificationType.ALLIANCE_LEAD_DECISION,
+ *   recipientEmail: 'juan@example.com',
+ *   recipientName: 'Juan Pérez',
+ *   userId: null,
+ *   leadId: 'lead-uuid',
+ *   programLabel: 'Partner',
+ *   outcome: 'approved',
+ * };
+ * ```
+ */
+export interface AllianceLeadDecisionPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.ALLIANCE_LEAD_DECISION;
+    /** UUID of the resolved application. For traceability. */
+    readonly leadId: string;
+    /** Human-readable program name (e.g. "Partner", "Proveedor"). */
+    readonly programLabel: string;
+    /** Which way the admin resolved it. */
+    readonly outcome: 'approved' | 'rejected';
+}
+
+/**
+ * Payload for the HOST_TRADE_REVOKED notification (HOS-278 R-4).
+ *
+ * Sent when an admin takes a service provider's directory listing down. Unlike
+ * {@link AllianceLeadDecisionPayload}, this one DOES carry the reason: it is
+ * not an internal note about the recipient, it is the explanation the
+ * recipient is owed, and the revoke endpoint requires it precisely so this
+ * email has something to say.
+ *
+ * @example
+ * ```ts
+ * const payload: HostTradeRevokedPayload = {
+ *   type: NotificationType.HOST_TRADE_REVOKED,
+ *   recipientEmail: 'proveedor@example.com',
+ *   recipientName: 'Juan Pérez',
+ *   userId: 'user-uuid',
+ *   listingName: 'Plomería Acme',
+ *   reason: 'Dejó de responder a los anfitriones.',
+ * };
+ * ```
+ */
+export interface HostTradeRevokedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_REVOKED;
+    /** Display name of the listing that was taken down. */
+    readonly listingName: string;
+    /** Why it was revoked. Shown to the provider verbatim. */
+    readonly reason: string;
+}
+
+/**
+ * Payload for the PARTNER_REVOKED notification (HOS-278 R-4).
+ *
+ * The partner-program counterpart of {@link HostTradeRevokedPayload}. Separate
+ * rather than shared because the two arrangements differ: a provider left a
+ * directory, a partner left the alliance surfaces they were paying for.
+ */
+/**
+ * Payload for the HOST_TRADE_USAGE_CONFIRMATION_REQUEST notification.
+ *
+ * `counterpartName` is whoever the recipient is being asked about — the
+ * provider's listing when a provider declared, the host's name when a host
+ * did. One field rather than two because the endpoint that sends this is
+ * role-blind by design (§6.2): `declaredBy` on the row decides who is who.
+ */
+export interface HostTradeUsageConfirmationRequestPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REQUEST;
+    /** The other party in the record. */
+    readonly counterpartName: string;
+    /** ISO date the work is claimed to have happened. */
+    readonly servicedAt: string;
+    /** ISO timestamp at which the record expires unanswered. */
+    readonly expiresAt: string;
+    /** Where the recipient goes to answer. */
+    readonly actionUrl: string;
+}
+
+/** Payload for the HOST_TRADE_USAGE_CONFIRMATION_REMINDER notification (AC-8). */
+export interface HostTradeUsageConfirmationReminderPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REMINDER;
+    /** The other party in the record. */
+    readonly counterpartName: string;
+    /** ISO timestamp at which the record expires unanswered. */
+    readonly expiresAt: string;
+    /** Where the recipient goes to answer. */
+    readonly actionUrl: string;
+}
+
+/**
+ * Payload for the HOST_TRADE_USAGE_CONFIRMED notification.
+ *
+ * `canReview` is decided by the SENDER, not by the template: only a host may
+ * review, and a provider who declared on his own listing must not be invited
+ * to a form that would refuse him.
+ */
+export interface HostTradeUsageConfirmedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_USAGE_CONFIRMED;
+    /** The party who confirmed. */
+    readonly counterpartName: string;
+    /** Whether this recipient may now review the provider. */
+    readonly canReview: boolean;
+    /** Where the review form lives. Only meaningful when `canReview`. */
+    readonly reviewUrl?: string;
+}
+
+/** Payload for the HOST_TRADE_USAGE_REJECTED notification (§6.5). */
+export interface HostTradeUsageRejectedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_USAGE_REJECTED;
+    /** The party who rejected. */
+    readonly counterpartName: string;
+    /** The optional note they left. */
+    readonly note?: string;
+}
+
+/**
+ * Payload for the HOST_TRADE_REVIEW_RECEIVED notification (§6.3).
+ *
+ * Deliberately carries no excerpt of the review text: an excerpt in an inbox
+ * reads as the whole thing, and the case where that matters is exactly the
+ * complaint a provider would answer from a truncated quote.
+ */
+export interface HostTradeReviewReceivedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_REVIEW_RECEIVED;
+    /** The listing that was reviewed. */
+    readonly listingName: string;
+    /** Overall rating, 1-5. */
+    readonly overallRating: number;
+    /** Whether the host said the benefit was honoured. */
+    readonly respectedBenefit: boolean;
+    /** Where the provider reads it and answers. */
+    readonly actionUrl: string;
+}
+
+/** Payload for the HOST_TRADE_REPLY_MODERATED notification (AC-24). */
+export interface HostTradeReplyModeratedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.HOST_TRADE_REPLY_MODERATED;
+    /** How the moderator resolved it. */
+    readonly outcome: 'approved' | 'rejected';
+    /** Why, when it was rejected. The only place the provider ever sees it. */
+    readonly reason?: string;
+    /** Where the provider sees or rewrites it. */
+    readonly actionUrl: string;
+}
+
+export interface PartnerRevokedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.PARTNER_REVOKED;
+    /** Display name of the partner that was taken down. */
+    readonly partnerName: string;
+    /** Why it was revoked. Shown to the partner verbatim. */
+    readonly reason: string;
+}
+
+/**
+ * One logged promotion action, as the email renders it (HOS-377).
+ *
+ * `channelLabel` is a HUMAN LABEL resolved by the caller, not an enum value.
+ * This package does not depend on `@repo/schemas` and must not start doing so
+ * for a display string — the same reason
+ * {@link AccommodationCalendarFeedBrokenPayload} takes `providerLabel` rather
+ * than a provider enum.
+ */
+export interface PartnerMentionEntryPayload {
+    /** e.g. "Instagram", "Newsletter". Rendered verbatim. */
+    readonly channelLabel: string;
+    /**
+     * Link to the publication, when the channel produces one.
+     *
+     * Absent for a WhatsApp broadcast or an "other" channel, which have no
+     * public permalink. The template renders those as a plain line rather than
+     * a dead link — a link that goes nowhere is worse than no link on an email
+     * whose entire promise is that the partner can go and check.
+     */
+    readonly url?: string | null;
+}
+
+/**
+ * Payload for the PARTNER_MENTIONS_LOGGED notification (HOS-377 AC-9).
+ *
+ * Carries the WHOLE submission, because one submission is one email. A payload
+ * shaped around a single mention would make the once-per-batch guarantee a
+ * caller convention instead of something the type enforces.
+ */
+export interface PartnerMentionsLoggedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.PARTNER_MENTIONS_LOGGED;
+    /** Display name of the partner that was promoted. */
+    readonly partnerName: string;
+    /** When the promotion happened — already formatted for display. */
+    readonly mentionedAtLabel: string;
+    /** Every channel in the submission, in canonical order. Never empty. */
+    readonly mentions: readonly PartnerMentionEntryPayload[];
+}
+
+/**
+ * Payload for the PARTNER_UNPAID_NOTICE notification (HOS-278 R-3).
+ *
+ * The one-time nudge before an unpaid partner listing is archived. Sent by the
+ * reaper cron, never by a user action, and never twice — see
+ * `partners.unpaid_notice_sent_at`.
+ */
+export interface PartnerUnpaidNoticePayload extends BaseNotificationPayload {
+    readonly type: NotificationType.PARTNER_UNPAID_NOTICE;
+    /** Display name of the partner that has not been paid for. */
+    readonly partnerName: string;
+    /** Days remaining before it is archived. */
+    readonly daysUntilArchive: number;
+}
+
+/**
  * Payload for the ACCOMMODATION_CALENDAR_FEED_BROKEN notification
  * (HOS-162 Phase 3, spec §14.4).
  *
@@ -728,5 +1110,17 @@ export type NotificationPayload =
     | SubscriptionAccessEndingSoonPayload
     | PlanBeingRetiredPayload
     | CommerceOwnerCredentialsPayload
+    | AllianceClaimInvitePayload
+    | AllianceLeadDecisionPayload
+    | HostTradeRevokedPayload
+    | HostTradeUsageConfirmationRequestPayload
+    | HostTradeUsageConfirmationReminderPayload
+    | HostTradeUsageConfirmedPayload
+    | HostTradeUsageRejectedPayload
+    | HostTradeReviewReceivedPayload
+    | HostTradeReplyModeratedPayload
+    | PartnerRevokedPayload
+    | PartnerUnpaidNoticePayload
+    | PartnerMentionsLoggedPayload
     | AccommodationCalendarFeedBrokenPayload
     | PlanPriceChangeNoticePayload;

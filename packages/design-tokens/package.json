@@ -19,6 +19,7 @@
             }
         },
         "./tokens.css": "./dist/tokens.css",
+        "./tokens.web.css": "./dist/tokens.web.css",
         "./seed/web-baseline.json": "./seed/web-baseline.json"
     },
     "files": [
@@ -42,11 +43,11 @@
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^26.1.1",
+        "@types/node": "^26.1.2",
         "@vitest/coverage-v8": "^4.1.10",
         "culori": "^4.0.2",
         "tsup": "^8.5.1",
-        "tsx": "^4.23.1",
+        "tsx": "^4.23.5",
         "typescript": "6.0.3",
         "vitest": "^4.1.10",
         "zod": "^4.0.8"

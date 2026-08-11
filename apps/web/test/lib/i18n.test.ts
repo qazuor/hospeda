@@ -13,8 +13,10 @@ import {
     SUPPORTED_LOCALES
 } from '../../src/lib/i18n';
 
-// The `#hospeda-i18n` data element that the client i18n path reads is seeded
-// globally with the `es` dictionary in `test/setup.ts` (HOS-160 lever A).
+// `window.__HOSPEDA_I18N__`, which the client i18n path reads, is seeded with
+// every locale's dictionary in `test/setup.ts` (HOS-160 lever A / HOS-369 Wave
+// D). In production the same global is assigned by the hashed, immutable
+// `/i18n/<locale>.<hash>.js` script the page links from <head>.
 
 describe('isValidLocale', () => {
     it('should return true for supported locales', () => {
@@ -111,14 +113,21 @@ describe('createTranslations', () => {
     });
 });
 
-describe('client i18n data element delivery (HOS-160 lever A)', () => {
-    it('resolves an es key from the inlined #hospeda-i18n element', () => {
+describe('client i18n dictionary delivery (HOS-160 lever A / HOS-369 Wave D)', () => {
+    it('reads the dictionary from the window global, not from the DOM', () => {
+        // The reader is synchronous and runs while islands render, so the
+        // dictionary must already be a plain global — never something fetched.
+        expect(window.__HOSPEDA_I18N__?.es).toBeDefined();
+    });
+
+    it('resolves an es key from window.__HOSPEDA_I18N__', () => {
         expect(createT('es')('nav.home')).not.toContain('MISSING');
     });
 
-    it('resolves a pt key from the inlined element (cross-locale)', () => {
-        // The global test seed (test/setup.ts) carries every locale, mirroring
-        // how each localized page inlines its own locale's dict in production.
+    it('resolves a pt key from the same global (cross-locale)', () => {
+        // The global is keyed by locale, so the test seed carries every one of
+        // them — mirroring production, where each page loads the asset for its
+        // own locale into its own slot.
         expect(createT('pt')('nav.home')).not.toContain('MISSING');
     });
 });

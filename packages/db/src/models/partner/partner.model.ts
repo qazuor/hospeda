@@ -1,7 +1,8 @@
 import type { LifecycleStatusEnum, Partner, PartnerSubscriptionStatusEnum } from '@repo/schemas';
-import { and, asc, count, desc, eq, gte, isNull, lte, or, sql } from 'drizzle-orm';
+import { and, asc, count, desc, eq, exists, gte, isNull, lte, ne, or, sql } from 'drizzle-orm';
 import { BaseModelImpl } from '../../base/base.model.ts';
 import { getDb } from '../../client.js';
+import { allianceLeads } from '../../schemas/alliance/alliance_lead.dbschema.js';
 import type {
     LifecycleStatusPgEnum,
     PartnerSubscriptionStatusPgEnum
@@ -34,6 +35,28 @@ export interface AdminSearchPartnerFilters extends SearchPartnerFilters {
 export class PartnerModel extends BaseModelImpl<Partner> {
     protected table = partners;
     public entityName = 'partner';
+
+    /**
+     * Grouped JSONB columns shallow-merged (PostgreSQL `||`) on update rather
+     * than replaced wholesale (HOS-278 D3).
+     *
+     * `contactInfo` is here because the `/mi-cuenta` form models a SUBSET of
+     * its keys (three of nine). Without the merge, saving a phone number would
+     * replace the whole object and silently delete the emails and preference
+     * enums the form never sent — the exact loss `accommodations` declared this
+     * for. Clearing still works: every `ContactInfoSchema` field is
+     * `.nullish()`, so "I deleted my phone" travels as an explicit `null`.
+     *
+     * `socialNetworks` is deliberately NOT here, and the reason is a real
+     * dead-end rather than an oversight. Its schema fields are `.optional()`
+     * but NOT `.nullable()`, so a cleared link cannot be expressed: `null` is
+     * rejected by Zod, `''` fails the `.url()` regex, and under a merge an
+     * omitted key is PRESERVED. Merging would ship a form whose "delete my
+     * Instagram" button silently does nothing. Replacing wholesale makes
+     * omission mean removal — which is safe here precisely because the partner
+     * form models all six keys, so there is no sibling for it to lose.
+     */
+    protected override readonly mergeableJsonbColumns = ['contactInfo'] as const;
 
     protected getTableName(): string {
         return 'partners';
@@ -89,13 +112,18 @@ export class PartnerModel extends BaseModelImpl<Partner> {
             query.where(and(...conditions));
         }
 
-        // Sorting: tier order (gold > silver > bronze) then startsAt
+        // Sorting: tier order (gold > silver) then startsAt.
+        //
+        // The `bronze` branch was dropped by HOS-294 along with the tier itself.
+        // It is raw SQL, so nothing in the type system would ever have flagged
+        // it — the enum could lose a value and this CASE would keep naming it
+        // forever, silently dead. `ELSE 99` still catches anything unexpected.
         const sortBy = filters.sort || 'tier';
         const sortOrder = filters.sortOrder || 'desc';
 
         if (sortBy === 'tier') {
             query.orderBy(
-                sql`CASE ${partners.tier} WHEN 'gold' THEN 0 WHEN 'silver' THEN 1 WHEN 'bronze' THEN 2 ELSE 99 END`,
+                sql`CASE ${partners.tier} WHEN 'gold' THEN 0 WHEN 'silver' THEN 1 ELSE 99 END`,
                 desc(partners.startsAt)
             );
         } else if (sortBy === 'startsAt') {
@@ -236,6 +264,67 @@ export class PartnerModel extends BaseModelImpl<Partner> {
                     lte(partners.endsAt, now)
                 )
             );
+
+        return result as Partner[];
+    }
+
+    /**
+     * Partners that were provisioned from an approved lead and never paid
+     * (HOS-278 R-3).
+     *
+     * The population R-3 is about — "un partner puede cargar todo y no pagar
+     * nunca" — and deliberately NOT every unpaid partner. The scope is decided
+     * by `alliance_leads.provisioned_partner_id`: a partner an admin typed in
+     * by hand is that admin's working state, and archiving it out from under
+     * them would be the cron deciding their queue is stale. Same predicate the
+     * migration-0080 backfill used to draw the same line.
+     *
+     * "Never paid" is `starts_at IS NULL`: that column is written only when a
+     * subscription actually activates, which makes it the honest record of
+     * whether money ever moved. Reading `subscription_status` instead would
+     * also match a partner who paid once and lapsed — a different story, owned
+     * by the dunning flow, not by this reaper.
+     *
+     * Already-archived and revoked rows are excluded so the cron is idempotent
+     * and never re-touches a partner an admin has already dealt with.
+     *
+     * @param input - `{ createdBefore, noticeState }` (RO-RO).
+     *   `noticeState: 'un-notified'` returns candidates for the nudge (stage
+     *   one); `'any'` returns candidates for archiving (stage two), which does
+     *   not care whether the notice went out — a partner who was created
+     *   before the notice column existed must still be archivable.
+     * @param limit - Batch ceiling, mirroring the expiry cron.
+     * @returns The matching partners.
+     */
+    async findUnpaidProvisioned(
+        input: { readonly createdBefore: Date; readonly noticeState: 'un-notified' | 'any' },
+        limit = 100
+    ): Promise<Partner[]> {
+        const db = getDb();
+
+        const conditions = [
+            isNull(partners.startsAt),
+            isNull(partners.revokedAt),
+            isNull(partners.deletedAt),
+            ne(partners.lifecycleState, 'ARCHIVED'),
+            lte(partners.createdAt, input.createdBefore),
+            exists(
+                db
+                    .select({ one: sql`1` })
+                    .from(allianceLeads)
+                    .where(eq(allianceLeads.provisionedPartnerId, partners.id))
+            )
+        ];
+
+        if (input.noticeState === 'un-notified') {
+            conditions.push(isNull(partners.unpaidNoticeSentAt));
+        }
+
+        const result = await db
+            .select()
+            .from(partners)
+            .where(and(...conditions))
+            .limit(limit);
 
         return result as Partner[];
     }

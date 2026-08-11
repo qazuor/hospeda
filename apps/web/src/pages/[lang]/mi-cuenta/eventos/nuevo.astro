@@ -1,0 +1,83 @@
+---
+/**
+ * @file mi-cuenta/eventos/nuevo.astro
+ * @description Editor self-service event create page (HOS-374 §5.2.2). Mounts
+ * `EventCreateForm`, which collects the minimum required fields and redirects
+ * to the real editor (`[id]/editar.astro`) on success.
+ *
+ * Two gates, matching this route's siblings (`index.astro`, `[id]/editar.astro`):
+ *  1. Session — middleware AND this page, matching the `/mi-cuenta` convention.
+ *  2. Role — `hasEventsNavAccess` (EVENT_CREATE), the same gate the listing
+ *     already uses.
+ *
+ * Fetches the public event-organizer catalog SSR (`eventOrganizersApi.list`,
+ * mirroring `destinationsApi.list` in `comercio/nuevo/[vertical].astro`) and
+ * passes it to `EventCreateForm`, which also needs it to let an editor create
+ * an organizer inline when the catalog is unusable — see that component's
+ * module doc for the full rationale (`organizerId` is a required UUID with no
+ * other way to satisfy it from `/mi-cuenta`).
+ *
+ * @route     /[lang]/mi-cuenta/eventos/nuevo/
+ * @rendering SSR (prerender = false — authenticated, editor-only)
+ */
+
+import AccountLayout from '@/layouts/AccountLayout.astro';
+import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
+import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
+import { EventCreateForm } from '@/components/event/editor/EventCreateForm.client';
+import { eventOrganizersApi } from '@/lib/api/endpoints';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
+import { hasEventsNavAccess } from '@/lib/nav-gating';
+import { webLogger as logger } from '@/lib/logger';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale as SupportedLocale;
+const { t } = createTranslations(locale);
+
+const user = Astro.locals.user;
+if (!user) {
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
+}
+
+if (!hasEventsNavAccess({ roles: user.roles })) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+
+// The organizer catalog: at most 100 entries today, no pagination UI — the
+// same simplifying assumption `destinationsApi.list({ pageSize: 100 })` makes
+// in the commerce create page.
+const organizersResult = await eventOrganizersApi.list({ pageSize: 100 });
+const organizers = organizersResult.ok
+    ? organizersResult.data.items.map((item) => ({ id: item.id, name: item.name }))
+    : [];
+const organizersLoadFailed = !organizersResult.ok;
+if (organizersLoadFailed) {
+    logger.error(
+        '[mi-cuenta/eventos/nuevo] Failed to fetch event organizer catalog',
+        !organizersResult.ok ? organizersResult.error.message : undefined
+    );
+}
+
+const title = t('account.myContent.events.create.pageTitle', 'Nuevo evento');
+const subtitle = t(
+    'account.myContent.events.create.subtitle',
+    'Completá lo básico ahora — vas a poder sumar fotos y más detalles después en el editor.'
+);
+---
+
+<AccountLayout locale={locale} title={title} description={subtitle} activeSection="eventos">
+    <AccountPageHeader title={title} description={subtitle} />
+
+    <AccountSectionCard>
+        <EventCreateForm
+            client:load
+            locale={locale}
+            organizers={organizers}
+            organizersLoadFailed={organizersLoadFailed}
+        />
+    </AccountSectionCard>
+</AccountLayout>

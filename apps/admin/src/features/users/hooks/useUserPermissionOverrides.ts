@@ -4,6 +4,7 @@
  * - `useUserPermissionOverrides` — GET the split view (fromRole/grant/deny).
  * - `useAssignUserPermission` — POST a grant/deny override (upsert).
  * - `useRevokeUserPermission` — DELETE an override.
+ * - `useSetTrustedEditor` — PUT the atomic trusted-editor bundle (HOS-374).
  *
  * Mutations invalidate the user's overrides query on success so the panel
  * re-renders with the new state. No optimistic updates: permission changes are
@@ -13,6 +14,8 @@
 import type {
     AssignUserPermissionOverrideBody,
     PermissionEnum,
+    SetTrustedEditorBody,
+    TrustedEditorResult,
     UserPermissionOverridesResponse
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -53,6 +56,18 @@ async function revokeOverride(
     const result = await fetchApi<{ success: boolean; data: { removed: boolean } }>({
         path: `${API_PATH}/${userId}/permissions/${encodeURIComponent(permission)}`,
         method: 'DELETE'
+    });
+    return result.data.data;
+}
+
+async function setTrustedEditor(
+    userId: string,
+    body: SetTrustedEditorBody
+): Promise<TrustedEditorResult> {
+    const result = await fetchApi<{ success: boolean; data: TrustedEditorResult }>({
+        path: `${API_PATH}/${userId}/trusted-editor`,
+        method: 'PUT',
+        body
     });
     return result.data.data;
 }
@@ -105,6 +120,34 @@ export const useRevokeUserPermission = (userId: string) => {
             adminLogger.error('[PermissionOverride] Failed to revoke override', {
                 userId,
                 permission,
+                error
+            });
+        }
+    });
+};
+
+/**
+ * Mark or unmark a user as a trusted editor (HOS-374 §5.1.2 / OQ-1).
+ *
+ * One `PUT` carrying the desired state, not a POST/DELETE pair: the four
+ * `TRUSTED_EDITOR_PERMISSIONS` move together server-side, so the UI exposes a
+ * single toggle. Invalidates the overrides query so the grant list and the
+ * derived `isTrustedEditor` flag re-render from the server's verdict.
+ */
+export const useSetTrustedEditor = (userId: string) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (trusted: boolean) => setTrustedEditor(userId, { trusted }),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: permissionOverrideKeys.detail(userId)
+            });
+        },
+        onError: (error, trusted) => {
+            adminLogger.error('[PermissionOverride] Failed to set trusted-editor status', {
+                userId,
+                trusted,
                 error
             });
         }

@@ -12,7 +12,8 @@
  *
  * AC-27: SSR-fetched comments are approved and oldest-first.
  * AC-28: 429 handling lives in the island (it only applies to POSTs).
- * AC-29: `isAuthenticated` is passed from the parent SSR page.
+ * AC-29: the island resolves the visitor's session client-side (HOS-369
+ * WB0-4), so nothing about them is threaded through this wrapper.
  */
 
 import { commentsApi } from '@/lib/api/endpoints';
@@ -28,20 +29,16 @@ interface Props {
     /** Active UI locale — forwarded to the island for i18n. */
     readonly locale: SupportedLocale;
     /** Whether the requesting user is authenticated. */
-    readonly isAuthenticated: boolean;
     /** Full current URL (e.g. Astro.url.href) — used to build the returnUrl for sign-in. */
     readonly currentUrl: string;
     /** Display name of the current user — author of optimistically appended comments. */
-    readonly currentUserName?: string | null;
 }
 
 const {
     entityType,
     entityId,
     locale,
-    isAuthenticated,
     currentUrl,
-    currentUserName,
 } = Astro.props;
 
 // Build sign-in URL with returnUrl so unauthenticated users land back here after login.
@@ -74,8 +71,6 @@ try {
     entityId={entityId}
     initialComments={initialComments}
     locale={locale}
-    isAuthenticated={isAuthenticated}
     signinUrl={signinUrl}
-    currentUserName={currentUserName}
     client:visible
 />

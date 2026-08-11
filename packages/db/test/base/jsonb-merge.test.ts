@@ -165,6 +165,41 @@ describe('buildMergeSetClause — unit', () => {
         expect(result.media).toBeNull();
         expect((result.media as Record<string, unknown> | null)?.queryChunks).toBeUndefined();
     });
+
+    // HOS-375 round-2 review finding: `undefined` must ALSO stay off the merge
+    // branch. `JSON.stringify(undefined)` returns `undefined` (not a string), so the
+    // bound parameter degrades to SQL NULL and `COALESCE(col, '{}'::jsonb) || NULL`
+    // evaluates to NULL — wiping the whole column. That went from latent to reachable
+    // once `settings` became a mergeable JSONB column on `UserModel`: a patch of
+    // `{ settings: undefined }` would drop every stored user preference. On the plain
+    // path Drizzle's `.set()` simply skips an undefined-valued key, which is the
+    // correct "this key was not part of the patch" semantics.
+    it('TC4c: an undefined value for a mergeable column falls through to plain assignment (no-op)', () => {
+        // Arrange
+        const data: Record<string, unknown> = { media: undefined };
+
+        // Act
+        const result = buildMergeSetClause(data, tableWithMedia, ['media']);
+
+        // Assert: plain undefined, NOT a SQL merge fragment
+        expect(result.media).toBeUndefined();
+        expect(Object.hasOwn(result, 'media')).toBe(true);
+        expect((result.media as Record<string, unknown> | undefined)?.queryChunks).toBeUndefined();
+    });
+
+    // Non-vacuity guard for TC4b/TC4c: the nullish check must not have widened into
+    // "skip anything falsy". `0`, `''` and `false` are legitimate JSONB values and
+    // must still take the merge branch.
+    it.each([
+        ['zero', 0],
+        ['the empty string', ''],
+        ['false', false]
+    ])('TC4d: still merges a falsy-but-not-nullish value (%s)', (_label, value) => {
+        const result = buildMergeSetClause({ media: value }, tableWithMedia, ['media']);
+
+        const mediaValue = result.media as Record<string, unknown>;
+        expect(Array.isArray(mediaValue?.queryChunks)).toBe(true);
+    });
 });
 
 // ---------------------------------------------------------------------------

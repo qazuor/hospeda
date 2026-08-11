@@ -119,6 +119,61 @@ describe('Admin user permission override routes (SPEC-170 gate + routing)', () =
         });
     });
 
+    describe('PUT /:id/trusted-editor (HOS-374 OQ-1)', () => {
+        const path = `/api/v1/admin/users/${USER_ID}/trusted-editor`;
+
+        it('rejects an unauthenticated guest', async () => {
+            expect([400, 401, 403]).toContain(await statusOf('PUT', path));
+        });
+
+        it('blocks an admin without the permission trio (403)', async () => {
+            expect(await statusOf('PUT', path, { headers: headers([]) })).toBe(403);
+        });
+
+        it('lets a trio-holding admin through the gate (not 403) — and routes to trusted-editor, not /:id', async () => {
+            // The trio does NOT include USER_READ_ALL, which the sibling bare
+            // `/:id` routes require; not being blocked proves the request
+            // resolved to the trusted-editor route.
+            const status = await statusOf('PUT', path, { headers: headers(MANAGE_TRIO) });
+            expect(status).not.toBe(401);
+            expect(status).not.toBe(403);
+        });
+
+        // The route deliberately declares BOTH permissions on ONE path rather
+        // than splitting mark/unmark across POST and DELETE. Route-factory
+        // middlewares are registered per PATH and are method-agnostic, so a
+        // method pair here would both run whichever gate was registered first
+        // — making the second route's declared `requiredPermissions` a claim
+        // the router never honors. These two cases pin that the declared gate
+        // IS the enforced gate: neither permission alone gets through.
+        it('is NOT satisfied by PERMISSION_ASSIGN alone (403)', async () => {
+            expect(await statusOf('PUT', path, { headers: headers(['permission.assign']) })).toBe(
+                403
+            );
+        });
+
+        it('is NOT satisfied by PERMISSION_REVOKE alone (403)', async () => {
+            expect(await statusOf('PUT', path, { headers: headers(['permission.revoke']) })).toBe(
+                403
+            );
+        });
+
+        it('is satisfied by ASSIGN + REVOKE together (not 403)', async () => {
+            const status = await statusOf('PUT', path, {
+                headers: headers(['permission.assign', 'permission.revoke'])
+            });
+            expect(status).not.toBe(403);
+        });
+
+        it('no longer answers on POST or DELETE', async () => {
+            // The pair was collapsed into this PUT. If a later refactor
+            // reintroduces either method on this path, the shared-middleware
+            // trap comes back with it — so assert they are gone.
+            expect(await statusOf('POST', path, { headers: headers(MANAGE_TRIO) })).toBe(404);
+            expect(await statusOf('DELETE', path, { headers: headers(MANAGE_TRIO) })).toBe(404);
+        });
+    });
+
     describe('DELETE /:id/permissions/:permission', () => {
         it('rejects an unauthenticated guest', async () => {
             expect([400, 401, 403]).toContain(await statusOf('DELETE', deletePath));

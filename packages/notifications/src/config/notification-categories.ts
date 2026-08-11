@@ -66,6 +66,43 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Commerce owner credentials (SPEC-239 T-050) — TRANSACTIONAL: required for first login
     [NotificationType.COMMERCE_OWNER_CREDENTIALS]: NotificationCategory.TRANSACTIONAL,
 
+    // Alliance claim invitation (HOS-278 §6.2) — TRANSACTIONAL: a
+    // security-relevant confirmation about the recipient's OWN account, and the
+    // only channel the claim token is ever delivered through. Opting out would
+    // mean an application could be attached without the owner ever being asked.
+    [NotificationType.ALLIANCE_CLAIM_INVITE]: NotificationCategory.TRANSACTIONAL,
+
+    // Alliance application resolved (HOS-278 AC-6) — TRANSACTIONAL: it is the
+    // answer to something the recipient asked for, and the landing copy already
+    // promises it.
+    [NotificationType.ALLIANCE_LEAD_DECISION]: NotificationCategory.TRANSACTIONAL,
+
+    // Listing revoked (HOS-278 R-4) — TRANSACTIONAL: it reports a change to an
+    // arrangement the recipient is party to, not something to opt out of.
+    [NotificationType.HOST_TRADE_REVOKED]: NotificationCategory.TRANSACTIONAL,
+    // The benefit-usage and review chain (HOS-376). All TRANSACTIONAL: each one
+    // reports or asks about a record the recipient is party to, not content
+    // they chose to hear about.
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REQUEST]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMATION_REMINDER]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.HOST_TRADE_USAGE_CONFIRMED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.HOST_TRADE_USAGE_REJECTED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.HOST_TRADE_REVIEW_RECEIVED]: NotificationCategory.TRANSACTIONAL,
+    [NotificationType.HOST_TRADE_REPLY_MODERATED]: NotificationCategory.TRANSACTIONAL,
+
+    // Partner revoked (HOS-278 R-4) — TRANSACTIONAL for the same reason.
+    [NotificationType.PARTNER_REVOKED]: NotificationCategory.TRANSACTIONAL,
+
+    // Unpaid partner nudge (HOS-278 R-3) — TRANSACTIONAL: it reports a pending
+    // consequence on an arrangement the recipient entered, not marketing.
+    [NotificationType.PARTNER_UNPAID_NOTICE]: NotificationCategory.TRANSACTIONAL,
+
+    // Mentions logged (HOS-377 AC-9) — TRANSACTIONAL: it reports work performed
+    // under the arrangement the partner is paying for, which is the thing they
+    // bought. Marketing would be Hospeda promoting itself; this is Hospeda
+    // reporting what it did for them.
+    [NotificationType.PARTNER_MENTIONS_LOGGED]: NotificationCategory.TRANSACTIONAL,
+
     // Broken iCal feed alert to the host (HOS-162 Phase 3) — TRANSACTIONAL:
     // overbooking risk, always sent, never opted out of
     [NotificationType.ACCOMMODATION_CALENDAR_FEED_BROKEN]: NotificationCategory.TRANSACTIONAL,

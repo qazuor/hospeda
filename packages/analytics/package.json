@@ -3,6 +3,7 @@
     "version": "0.0.0",
     "private": true,
     "type": "module",
+    "sideEffects": false,
     "main": "dist/index.js",
     "types": "dist/index.d.ts",
     "exports": {
@@ -30,7 +31,7 @@
     },
     "devDependencies": {
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^26.1.1",
+        "@types/node": "^26.1.2",
         "tsup": "^8.5.1",
         "typescript": "6.0.3",
         "vitest": "^4.1.10"

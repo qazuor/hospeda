@@ -13,9 +13,15 @@ import {
     AdminPaymentFailure,
     AdminSystemEvent,
     AiCostThresholdAlert,
+    AllianceClaimInvite,
+    AllianceLeadDecision,
     CommerceOwnerCredentials,
     ContactSubmissionEmail,
     FeedbackReportEmail,
+    HostTradeRevoked,
+    PartnerMentionsLogged,
+    PartnerRevoked,
+    PartnerUnpaidNotice,
     PaymentFailure,
     PaymentRetryWarning,
     PaymentSuccess,
@@ -25,12 +31,18 @@ import {
     PlanPriceChangeNotice,
     PurchaseConfirmation,
     RenewalReminder,
+    ReplyModerated,
+    ReviewReceived,
     SubscriptionAccessEndingSoon,
     SubscriptionCancelConfirmed,
     SubscriptionCancelled,
     SubscriptionPaused,
     SubscriptionReactivated,
-    TrialEndingReminder
+    TrialEndingReminder,
+    UsageConfirmationReminder,
+    UsageConfirmationRequest,
+    UsageConfirmed,
+    UsageRejected
 } from '../templates/index.js';
 import { formatDate } from '../templates/utils/index.js';
 import type { EmailTransport } from '../transports/email/email-transport.interface.js';
@@ -41,10 +53,22 @@ import type {
     AddonEventPayload,
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
+    AllianceClaimInvitePayload,
+    AllianceLeadDecisionPayload,
     CommerceOwnerCredentialsPayload,
     ContactSubmissionPayload,
     FeedbackReportPayload,
+    HostTradeReplyModeratedPayload,
+    HostTradeReviewReceivedPayload,
+    HostTradeRevokedPayload,
+    HostTradeUsageConfirmationReminderPayload,
+    HostTradeUsageConfirmationRequestPayload,
+    HostTradeUsageConfirmedPayload,
+    HostTradeUsageRejectedPayload,
     NotificationPayload,
+    PartnerMentionsLoggedPayload,
+    PartnerRevokedPayload,
+    PartnerUnpaidNoticePayload,
     PaymentNotificationPayload,
     PaymentRetryWarningPayload,
     PlanBeingRetiredPayload,
@@ -583,6 +607,123 @@ export class NotificationService {
                     recipientName,
                     temporaryPassword: p.temporaryPassword,
                     changePasswordUrl: p.changePasswordUrl
+                });
+            }
+
+            case 'alliance_claim_invite': {
+                const p = payload as AllianceClaimInvitePayload;
+                return AllianceClaimInvite({
+                    recipientName,
+                    programLabel: p.programLabel,
+                    claimUrl: p.claimUrl,
+                    expiresAtLabel: formatDate({ dateString: p.expiresAt })
+                });
+            }
+
+            case 'alliance_lead_decision': {
+                const p = payload as AllianceLeadDecisionPayload;
+                return AllianceLeadDecision({
+                    recipientName,
+                    programLabel: p.programLabel,
+                    outcome: p.outcome
+                });
+            }
+
+            case 'host_trade_usage_confirmation_request': {
+                const p = payload as HostTradeUsageConfirmationRequestPayload;
+                return UsageConfirmationRequest({
+                    recipientName,
+                    counterpartName: p.counterpartName,
+                    servicedAtLabel: formatDate({ dateString: p.servicedAt }),
+                    expiresAtLabel: formatDate({ dateString: p.expiresAt }),
+                    actionUrl: p.actionUrl
+                });
+            }
+
+            case 'host_trade_usage_confirmation_reminder': {
+                const p = payload as HostTradeUsageConfirmationReminderPayload;
+                return UsageConfirmationReminder({
+                    recipientName,
+                    counterpartName: p.counterpartName,
+                    expiresAtLabel: formatDate({ dateString: p.expiresAt }),
+                    actionUrl: p.actionUrl
+                });
+            }
+
+            case 'host_trade_usage_confirmed': {
+                const p = payload as HostTradeUsageConfirmedPayload;
+                return UsageConfirmed({
+                    recipientName,
+                    counterpartName: p.counterpartName,
+                    canReview: p.canReview,
+                    reviewUrl: p.reviewUrl
+                });
+            }
+
+            case 'host_trade_usage_rejected': {
+                const p = payload as HostTradeUsageRejectedPayload;
+                return UsageRejected({
+                    recipientName,
+                    counterpartName: p.counterpartName,
+                    note: p.note
+                });
+            }
+
+            case 'host_trade_review_received': {
+                const p = payload as HostTradeReviewReceivedPayload;
+                return ReviewReceived({
+                    recipientName,
+                    listingName: p.listingName,
+                    overallRating: p.overallRating,
+                    respectedBenefit: p.respectedBenefit,
+                    actionUrl: p.actionUrl
+                });
+            }
+
+            case 'host_trade_reply_moderated': {
+                const p = payload as HostTradeReplyModeratedPayload;
+                return ReplyModerated({
+                    recipientName,
+                    outcome: p.outcome,
+                    reason: p.reason,
+                    actionUrl: p.actionUrl
+                });
+            }
+
+            case 'host_trade_revoked': {
+                const p = payload as HostTradeRevokedPayload;
+                return HostTradeRevoked({
+                    recipientName,
+                    listingName: p.listingName,
+                    reason: p.reason
+                });
+            }
+
+            case 'partner_revoked': {
+                const p = payload as PartnerRevokedPayload;
+                return PartnerRevoked({
+                    recipientName,
+                    partnerName: p.partnerName,
+                    reason: p.reason
+                });
+            }
+
+            case 'partner_mentions_logged': {
+                const p = payload as PartnerMentionsLoggedPayload;
+                return PartnerMentionsLogged({
+                    recipientName,
+                    partnerName: p.partnerName,
+                    mentionedAtLabel: p.mentionedAtLabel,
+                    mentions: p.mentions
+                });
+            }
+
+            case 'partner_unpaid_notice': {
+                const p = payload as PartnerUnpaidNoticePayload;
+                return PartnerUnpaidNotice({
+                    recipientName,
+                    partnerName: p.partnerName,
+                    daysUntilArchive: p.daysUntilArchive
                 });
             }
 

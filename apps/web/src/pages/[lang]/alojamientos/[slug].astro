@@ -32,11 +32,11 @@ import RelatedCarousel from '@/components/accommodation/RelatedCarousel.astro';
 import PricingSidebar from '@/components/accommodation/PricingSidebar.astro';
 import OwnerCard from '@/components/accommodation/OwnerCard.astro';
 import { ContactHost } from '@/components/accommodation/ContactHost.client';
-import WhatsAppContact from '@/components/accommodation/WhatsAppContact.astro';
+import SignInCtaCard from '@/components/shared/auth/SignInCtaCard.astro';
+import { WhatsAppContact } from '@/components/accommodation/WhatsAppContact.client';
 import { AccommodationViewTracker } from '@/components/analytics/AccommodationViewTracker.client';
 import { AiChatWidget } from '@/components/accommodation/AiChatWidget';
 import { PriceAlertButton } from '@/components/accommodation/PriceAlertButton';
-import { protectedConversationsApi } from '@/lib/api/endpoints-protected';
 import { getApiUrl } from '@/lib/env';
 import AccommodationCard from '@/components/shared/cards/AccommodationCard.astro';
 import RelatedPostCard from '@/components/shared/cards/RelatedPostCard.astro';
@@ -45,14 +45,13 @@ import PromotionBanner from '@/components/accommodation/PromotionBanner.astro';
 import { accommodationsApi, ownerPromotionsApi, postsApi, eventsApi, userBookmarksPublicApi } from '@/lib/api/endpoints';
 import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
 import type { NearbyPoi } from '@repo/schemas';
-import { billingApi, priceAlertsApi, protectedAccommodationsApi, userBookmarksApi } from '@/lib/api/endpoints-protected';
 import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { webLogger } from '@/lib/logger';
-import { resolvePriceAlertGateState } from '@/lib/price-alert-gate';
 import { pickLocalizedSeo } from '@/lib/seo';
 import { buildUrl } from '@/lib/urls';
+import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 
 export const prerender = false;
 
@@ -147,6 +146,50 @@ if (!result.data) return new Response(null, { status: 404 });
 const rawAccommodation = result.data as Record<string, unknown>;
 const accommodation = toAccommodationDetailPageProps({ item: rawAccommodation, locale });
 
+// --- Edge cacheability (HOS-369) ---
+// Placed AFTER the 404/410 guards above so an error response is never marked
+// shareable, and after `accommodation` is derived so the id is available.
+//
+// This page is addressed by its OWN two tags and deliberately NOT by
+// `list-accom`: a detail page is not a listing, and tagging it with the
+// collection would make every accommodation write evict every other
+// accommodation's page. Editing THIS accommodation evicts THIS page.
+//
+// Content pulled in from other entities (similar stays, the owner's other
+// properties, related posts and events, reviews, promotions, nearby POIs) is
+// therefore not purge-addressable from here. It goes stale for at most the
+// `detail` cache class's TTL (see `lib/cache/cache-classes.ts`), which is the
+// trade this scoping buys.
+const entityCacheTags = buildEntityCacheTags({
+	entity: 'accommodation',
+	slug,
+	id: accommodation.id
+});
+const [primaryCacheTag, ...extraCacheTags] = entityCacheTags;
+
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	// Two independent reasons to stay private, both fail-closed:
+	//  - a query string means this render is visitor-specific: every `ctx*`
+	//    above comes from a search param and feeds the WhatsApp prefill with
+	//    the visitor's dates and party size. The Cloudflare Cache Rule already
+	//    bypasses on a non-empty query, but the ORIGIN must not mark such a
+	//    response shareable either — the rule is not the only thing that could
+	//    ever cache it;
+	//  - no usable entity tag means nothing could purge this page, and an
+	//    unpurgeable cached page is worse than an uncached one.
+	cacheable: Astro.url.search === '' && primaryCacheTag !== undefined,
+	cacheClass: 'detail',
+	// Only read when `cacheable` is true, which requires `primaryCacheTag`.
+	// The other branch exists to satisfy the non-empty tuple type and is never
+	// applied, because `applyCacheHeaders` returns before touching tags.
+	tags:
+		primaryCacheTag !== undefined
+			? [primaryCacheTag, ...extraCacheTags]
+			: [CACHE_TAG_COLLECTIONS.accommodation]
+});
+
 // Extract lifecycle fields directly from raw API response (not in AccommodationDetailData)
 const accommodationLifecycleState = String(rawAccommodation.lifecycleState ?? 'ACTIVE');
 const accommodationDeletedAt = rawAccommodation.deletedAt
@@ -154,6 +197,16 @@ const accommodationDeletedAt = rawAccommodation.deletedAt
     : null;
 
 // --- Parallel secondary fetches with graceful degradation ---
+//
+// HOS-369 W2-5: the bookmark count joined this batch. It only needs
+// `accommodation.id`, which has been available since the `getBySlug` above, but
+// it used to be awaited on its own AFTER this block resolved — a third
+// sequential round-trip charged to TTFB for a value that could have travelled
+// with the other eight.
+//
+// The page is now down to two waves, which is the floor: `getBySlug` first
+// because everything here is keyed off the entity it returns, then everything
+// else at once.
 const [
     similarResult,
     ownerPropsResult,
@@ -162,7 +215,8 @@ const [
     reviewsResult,
     externalReputationResult,
     promotionsResult,
-    nearbyPoisResult
+    nearbyPoisResult,
+    bookmarkCountResult
 ] = await Promise.allSettled([
         accommodationsApi.getSimilar({ id: accommodation.id, limit: 6 }),
         accommodationsApi.listByOwner({ userId: accommodation.owner.id, pageSize: 7 }),
@@ -171,7 +225,11 @@ const [
         accommodationsApi.getReviews({ id: accommodation.id, page: 1, pageSize: 100 }),
         accommodationsApi.getExternalReputation({ id: accommodation.id }),
         ownerPromotionsApi.listByAccommodation({ accommodationId: accommodation.id }),
-        accommodationsApi.getNearbyPois({ slug })
+        accommodationsApi.getNearbyPois({ slug }),
+        userBookmarksPublicApi.count({
+            entityType: 'ACCOMMODATION',
+            entityId: accommodation.id
+        })
     ]);
 
 /** Safely extract array from a settled API result. */
@@ -252,169 +310,33 @@ const externalReputationData = (() => {
     return { items: [] };
 })();
 
-// --- Auth ---
-const userId = Astro.locals.user?.id ?? null;
-const isAuthenticated = userId !== null;
-const currentUser = Astro.locals.user
-    ? {
-          id: Astro.locals.user.id,
-          name: (Astro.locals.user as { name?: string | null }).name ?? null,
-          email: (Astro.locals.user as { email?: string | null }).email ?? null
-      }
-    : null;
-
-// --- Review eligibility + existing conversation (single API call) ---
-// A conversation-list filtered by accommodationId with pageSize:1 satisfies both:
-// - canLeaveReview: user has at least one conversation with this accommodation
-// - existingConversationId: the ID of that conversation for the "contact host" button
-// Previously these were two separate calls; collapsing them halves the conversation
-// API pressure on every authenticated accommodation-detail page view.
-let canLeaveReview = false;
-let existingConversationId: string | null = null;
-if (isAuthenticated) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const convResult = await protectedConversationsApi.list({
-            accommodationId: accommodation.id,
-            pageSize: 1,
-            cookieHeader
-        });
-        if (convResult.ok) {
-            const firstConv = convResult.data.items?.[0] ?? null;
-            canLeaveReview = firstConv !== null;
-            existingConversationId = firstConv?.id ?? null;
-        }
-    } catch {
-        // Fail-closed: any error reading the inbox means we hide the review form
-        // and show the contact form without a pre-filled conversation ID.
-        canLeaveReview = false;
-    }
-}
-
-// --- Bookmark count + favorite status (graceful degradation, never blocks render) ---
+// --- Bookmark count (public, visitor-independent) ---
+// Everything this page used to resolve per-visitor during SSR is gone
+// (HOS-369 WB0-7): the conversation lookup that fed the review gate and the
+// "view your existing conversation" link, the favorite status, the price-alert
+// entitlement/limit state, and the viewer's entitled WhatsApp number. This page
+// is edge-cacheable, so every visitor receives the same HTML and each island
+// resolves its own visitor state after hydration. The count below is a public
+// aggregate, not visitor state, so it stays server-rendered.
+// Resolved from the parallel batch above. `allSettled` already absorbs a
+// rejection, so the old try/catch is gone rather than lost: an unavailable
+// count still leaves `bookmarkCount` undefined and simply hides the counter.
 let bookmarkCount: number | undefined;
-let initialIsFavorited: boolean | undefined;
-let initialBookmarkId: string | null = null;
 
-try {
-    const countResult = await userBookmarksPublicApi.count({
-        entityType: 'ACCOMMODATION',
-        entityId: accommodation.id
-    });
-    if (countResult.ok) {
-        bookmarkCount = countResult.data.count;
-    }
-} catch {
-    // Graceful degradation: counter not shown if fetch fails
-}
-
-if (isAuthenticated) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const statusResult = await userBookmarksApi.checkStatus({
-            entityId: accommodation.id,
-            entityType: 'ACCOMMODATION',
-            cookieHeader
-        });
-        if (statusResult.ok) {
-            initialIsFavorited = statusResult.data.isFavorited;
-            initialBookmarkId = statusResult.data.bookmarkId;
-        }
-    } catch {
-        // Graceful degradation: FavoriteButton hydrates itself on mount
-    }
-}
-
-// --- Price alert (entitlement gate + existing-alert lookup, SPEC-286 T-011) ---
-// Skipped entirely for guests — PriceAlertButton is never mounted below when
-// `isAuthenticated` is false, so there is no point paying for these two
-// protected round-trips. Both calls carry the request's own `Cookie` header
-// explicitly (`credentials: 'include'` only forwards cookies from a browser
-// fetch — a server-to-server SSR fetch has no cookie jar), mirroring the
-// conversations-list call above (see protectedConversationsApi usage earlier
-// in this file).
-let userHasAlert = false;
-let existingAlertId: string | null = null;
-let canCreateAlerts = false;
-let maxReached = false;
-
-if (isAuthenticated) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-        const [alertsListResult, entitlementsResult] = await Promise.allSettled([
-            priceAlertsApi.list({ cookieHeader }),
-            billingApi.getEntitlements({ cookieHeader })
-        ]);
-
-        // Ungated list endpoint (T-005) always returns the actor's full set —
-        // there is no `accommodationId` query filter, so filter client-side.
-        let existingAlertsCount = 0;
-        if (alertsListResult.status === 'fulfilled' && alertsListResult.value.ok) {
-            const items = alertsListResult.value.data.items ?? [];
-            existingAlertsCount = items.length;
-            const match = items.find((item) => item.accommodationId === accommodation.id);
-            if (match) {
-                userHasAlert = true;
-                existingAlertId = match.id;
-            }
-        }
-
-        if (entitlementsResult.status === 'fulfilled') {
-            const gateState = resolvePriceAlertGateState(entitlementsResult.value, existingAlertsCount);
-            canCreateAlerts = gateState.canCreateAlerts;
-            maxReached = gateState.maxReached;
-        }
-    } catch (err) {
-        // Graceful degradation: safe defaults hide the button's active
-        // affordances (PriceAlertButton renders the locked state).
-        webLogger.error('[slug] failed to fetch price-alert state', err);
+if (bookmarkCountResult.status === 'fulfilled') {
+    const settled = bookmarkCountResult.value as { ok?: boolean; data?: { count?: number } };
+    if (settled?.ok && typeof settled.data?.count === 'number') {
+        bookmarkCount = settled.data.count;
     }
 }
 
 // --- WhatsApp contact (HOS-19, VIEWER-gated) ---
-// The number is gated by the VIEWER's plan and lives on a per-user protected
-// endpoint (the public detail payload is shared-cached, so it only carries the
-// owner-derived `hasWhatsapp` boolean). Anonymous / unentitled viewers see an
-// upsell; entitled viewers get the number (a clickable wa.me link at VIP+). The
-// protected endpoint is the authoritative gate — it never returns the number to
-// an unentitled caller, so nothing needs to be re-checked here.
-let whatsappNumber: string | null = null;
-let whatsappDirect = false;
-let whatsappShowUpsell = false;
-if (accommodation.hasWhatsapp) {
-    if (isAuthenticated) {
-        try {
-            const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-            const waResult = await protectedAccommodationsApi.getWhatsApp({
-                id: accommodation.id,
-                cookieHeader
-            });
-            if (waResult.ok) {
-                if (waResult.data.number) {
-                    whatsappNumber = waResult.data.number;
-                    whatsappDirect = waResult.data.direct;
-                } else if (!waResult.data.entitled) {
-                    // Authenticated but not on a WhatsApp-display plan → upsell.
-                    whatsappShowUpsell = true;
-                }
-                // entitled but no number (rare owner-removed race) → render nothing.
-            } else {
-                // The API client resolves HTTP failures to `{ ok: false }` rather
-                // than throwing, so the catch below never fires for a transient
-                // 5xx / session desync. Fall back to the upsell (same intent as
-                // the catch) so an authenticated viewer never sees a blank block.
-                whatsappShowUpsell = true;
-            }
-        } catch (err) {
-            // Graceful degradation: prefer the upsell over a blank block.
-            whatsappShowUpsell = true;
-            webLogger.error('[slug] failed to fetch WhatsApp contact', err);
-        }
-    } else {
-        // Anonymous visitor → upsell, never hit the protected endpoint.
-        whatsappShowUpsell = true;
-    }
-}
+// The number is gated by the VIEWER's plan, so it is resolved by the
+// WhatsAppContact island after hydration, never here: this page is
+// edge-cacheable, and a number baked into SSR would be served to every
+// subsequent visitor for the whole TTL regardless of their plan. The public
+// payload carries only the owner-derived `hasWhatsapp` boolean, which is what
+// decides whether the island is mounted at all.
 // CAN_CONTACT_WHATSAPP_DISPLAY is a tourist entitlement every owner plan already
 // inherits, so the WhatsApp upsell audience is always a free-tier tourist — point
 // at the tourist pricing page, not the owner one (BETA-201).
@@ -582,9 +504,6 @@ const faqSections = accommodation.faqs.map((faq) => ({
             accommodation={accommodation}
             lang={locale}
             accommodationId={accommodation.id}
-            isAuthenticated={isAuthenticated}
-            initialIsFavorited={initialIsFavorited}
-            initialBookmarkId={initialBookmarkId}
             bookmarkCount={bookmarkCount}
         />
     </Fragment>
@@ -678,7 +597,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
 
     {eventItems.length > 0 && (
         <RelatedCarousel title={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} ariaLabel={t('accommodations.detail.related.events', undefined, { destination: accommodation.destination.name })} lang={locale} count={eventItems.length}>
-            {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item, locale })} locale={locale} isAuthenticated={isAuthenticated} />)}
+            {eventItems.map((item) => <EventCardHorizontal data={toEventCardProps({ item, locale })} locale={locale} />)}
         </RelatedCarousel>
     )}
 
@@ -693,15 +612,16 @@ const faqSections = accommodation.faqs.map((faq) => ({
         destinationId={accommodation.destination.id}
     />
 
-    <!-- AI chat widget (SPEC-200) — only for authenticated users -->
-    {isAuthenticated && (
-        <AiChatWidget
-            client:idle
-            accommodationId={accommodation.id}
-            locale={locale}
-            apiUrl={getApiUrl()}
-        />
-    )}
+    <!-- AI chat widget (SPEC-200) — signed-in visitors only, resolved in the
+         browser (HOS-369 WB0-7). Mounted unconditionally: the widget renders
+         nothing until it resolves a session, and both the FAB and the panel are
+         position:fixed, so appearing after hydration shifts nothing. -->
+    <AiChatWidget
+        client:idle
+        accommodationId={accommodation.id}
+        locale={locale}
+        apiUrl={getApiUrl()}
+    />
 
     <!-- Floating accommodation comparison bar (HOS-85 post-review fix). Mounted
          directly here — NOT in DetailLayout, which is shared by destination,
@@ -717,19 +637,22 @@ const faqSections = accommodation.faqs.map((faq) => ({
     <Fragment slot="sidebar">
         <div class="acc-sidebar">
             <PricingSidebar price={accommodation.price} extraInfo={accommodation.extraInfo} lang={locale} />
-            {isAuthenticated && (
-                <PriceAlertButton
-                    client:idle
-                    accommodationId={accommodation.id}
-                    userHasAlert={userHasAlert}
-                    existingAlertId={existingAlertId}
-                    canCreateAlerts={canCreateAlerts}
-                    maxReached={maxReached}
-                    apiUrl={getApiUrl()}
+            <PriceAlertButton
+                client:idle
+                accommodationId={accommodation.id}
+                apiUrl={getApiUrl()}
+                locale={locale}
+            >
+                <SignInCtaCard
                     locale={locale}
+                    returnPath={`alojamientos/${slug}`}
+                    icon="bell"
+                    title={t('accommodations.detail.priceAlert.signInTitle', 'Alertas de precio')}
+                    hint={t('accommodations.detail.priceAlert.signInHint', 'Necesitás una cuenta para que te avisemos si baja el precio.')}
+                    ctaLabel={t('accommodations.detail.priceAlert.signInCta', 'Iniciá sesión para crear la alerta')}
                 />
-            )}
-            <OwnerCard owner={accommodation.owner} accommodationId={accommodation.id} userId={userId} lang={locale}>
+            </PriceAlertButton>
+            <OwnerCard owner={accommodation.owner} accommodationId={accommodation.id} lang={locale}>
                 <ContactHost
                     client:idle
                     accommodation={{
@@ -743,32 +666,40 @@ const faqSections = accommodation.faqs.map((faq) => ({
                         currency: accommodation.price?.currency ?? null,
                         ownerId: accommodation.owner.id
                     }}
-                    currentUser={currentUser}
-                    existingConversationId={existingConversationId}
                     locale={locale}
                     initialMessage={prefilledMessage}
                 />
-                {accommodation.hasWhatsapp && (whatsappNumber || whatsappShowUpsell) && (
+                {accommodation.hasWhatsapp && (
                     <WhatsAppContact
-                        number={whatsappNumber}
-                        direct={whatsappDirect}
-                        showUpsell={whatsappShowUpsell}
+                        client:idle
+                        accommodationId={accommodation.id}
                         accommodationName={accommodation.name}
                         plansHref={whatsappPlansHref}
                         locale={locale}
                     />
                 )}
             </OwnerCard>
-            {isAuthenticated && (
-                <ReviewSidebarCard
-                    client:visible
-                    accommodationId={accommodation.id}
-                    accommodationName={accommodation.name}
-                    canLeaveReview={canLeaveReview}
+            <!-- client:idle, NOT client:visible (which it used to be). The
+                 island now SSRs the anonymous sign-in CTA and swaps itself in
+                 after resolving a session; with client:visible a signed-in
+                 visitor would keep seeing that CTA until they scrolled the
+                 sidebar far enough to intersect it. -->
+            <ReviewSidebarCard
+                client:idle
+                accommodationId={accommodation.id}
+                accommodationName={accommodation.name}
+                locale={locale}
+                apiUrl={getApiUrl()}
+            >
+                <SignInCtaCard
                     locale={locale}
-                    apiUrl={getApiUrl()}
+                    returnPath={`alojamientos/${slug}`}
+                    icon="star"
+                    title={t('review.sidebar.title', 'Tu opinión')}
+                    hint={t('review.sidebar.signInHint', 'Necesitás una cuenta para dejar tu reseña.')}
+                    ctaLabel={t('review.sidebar.signInCta', 'Iniciá sesión para opinar')}
                 />
-            )}
+            </ReviewSidebarCard>
         </div>
     </Fragment>
 </DetailLayout>

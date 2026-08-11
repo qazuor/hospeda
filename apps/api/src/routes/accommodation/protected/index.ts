@@ -41,6 +41,7 @@ import { protectedPublishAccommodationRoute } from './publish';
 import { removeFaqRoute } from './removeFaq';
 import { protectedRemoveMediaRoute } from './removeMedia';
 import { protectedRemoveOccupancyRoute } from './removeOccupancy';
+import { protectedReorderFaqsRoute } from './reorderFaqs';
 import { protectedReorderMediaRoute } from './reorderMedia';
 import { protectedSetFeaturedMediaRoute } from './setFeaturedMedia';
 import { protectedSoftDeleteAccommodationRoute } from './softDelete';
@@ -143,8 +144,12 @@ app.route('/', protectedCalendarSyncStatusRoute);
 app.route('/', protectedCalendarDisconnectRoute);
 
 // FAQ management (auth required, no ownership)
+// PUT /:id/faqs/reorder registered BEFORE /:id/faqs/:faqId so Hono does not
+// resolve "reorder" as a faqId UUID param (HOS-393, mirrors the media reorder
+// ordering convention above).
 app.route('/', getFaqsRoute);
 app.route('/', addFaqRoute);
+app.route('/', protectedReorderFaqsRoute);
 app.route('/', updateFaqRoute);
 app.route('/', removeFaqRoute);
 

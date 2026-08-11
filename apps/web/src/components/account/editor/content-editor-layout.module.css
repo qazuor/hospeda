@@ -1,0 +1,78 @@
+/* content-editor-layout.module.css — HOS-374 2C-2 / 2C-3
+   Layout chrome shared by the post and event editors; the field primitives live
+   in `content-editor-fields.module.css`. Mirrors `AccommodationEditor.module.css`:
+   stacked cards on small screens, sticky section nav from 1100px up. */
+
+.editor {
+    width: 100%;
+    padding: var(--space-5, 2rem) 0;
+}
+
+.layout {
+    display: block;
+}
+
+.navSlot {
+    display: none;
+}
+
+.cardsColumn {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6, 24px);
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+@media (min-width: 1100px) {
+    .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: var(--space-8, 32px);
+        align-items: start;
+    }
+
+    .navSlot {
+        display: block;
+        position: sticky;
+        top: 110px;
+    }
+
+    .cardsColumn {
+        max-width: none;
+        margin: 0;
+    }
+}
+
+/* Section card — the canonical AccountSectionCard recipe, same as the
+   accommodation editor composes. The inner section keeps its own bare
+   `<fieldset>` (border:none; padding:0), which nests fine here. */
+.card {
+    composes: card from "../../account/AccountSection.module.css";
+}
+
+/* Amber, matching the PENDING/moderation badge hue the listing cards already
+   use (`EditableContentCard.astro`). Written as literal oklch rather than a
+   token because this app defines no warning token — `--warning-*` and
+   `--success-*` resolve to nothing here, which is exactly how
+   `AccommodationEditor.module.css`'s `.submitSuccess` ended up invisible. */
+.lockNotice {
+    margin: 0;
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    border-radius: var(--radius-md, 10px);
+    background-color: oklch(0.72 0.17 65 / 0.18);
+    border: 1px solid oklch(0.72 0.17 65 / 0.45);
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem;
+}
+
+.submitError {
+    padding: 0.75rem 1rem;
+    border-radius: var(--radius-md, 10px);
+    background-color: oklch(0.96 0.02 25);
+    color: oklch(0.45 0.2 25);
+    border: 1px solid oklch(0.88 0.06 25);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+}

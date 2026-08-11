@@ -5,12 +5,12 @@
  *
  * Coverage:
  * - imports (DestinationCard, toDestinationCardProps, i18n)
- * - props interface (destinations, locale, isAuthenticated)
+ * - props interface (destinations, locale)
  * - early return when destinations array is empty
  * - cap at MAX_VISIBLE (4)
  * - toDestinationCardProps transform applied to each item
  * - DestinationCard rendered with variant="grid"
- * - isAuthenticated forwarded to card
+ * - no visitor-dependent props forwarded to the card (HOS-369 WB0-5)
  * - copy does NOT use "destinos cercanos" or km-radius language
  * - i18n keys for title and subtitle
  * - accessibility (aria-labelledby + id)
@@ -55,9 +55,9 @@ describe('DestinationNearbySection.astro', () => {
             expect(src).toContain('readonly locale: SupportedLocale');
         });
 
-        it('should declare isAuthenticated as optional boolean defaulting to false', () => {
-            expect(src).toContain('readonly isAuthenticated?: boolean');
-            expect(src).toContain('isAuthenticated = false');
+        it('no longer declares isAuthenticated/favoriteChecks props (removed HOS-369 WB0-5)', () => {
+            expect(src).not.toContain('isAuthenticated');
+            expect(src).not.toContain('favoriteChecks');
         });
     });
 
@@ -80,8 +80,10 @@ describe('DestinationNearbySection.astro', () => {
             expect(src).toContain('variant="grid"');
         });
 
-        it('should forward isAuthenticated to DestinationCard', () => {
-            expect(src).toContain('isAuthenticated={isAuthenticated}');
+        it('does NOT forward isAuthenticated/initialIsFavorited/initialBookmarkId to DestinationCard — resolves client-side (HOS-369 WB0-5)', () => {
+            expect(src).not.toMatch(/<DestinationCard[\s\S]*?isAuthenticated=/);
+            expect(src).not.toMatch(/<DestinationCard[\s\S]*?initialIsFavorited=/);
+            expect(src).not.toMatch(/<DestinationCard[\s\S]*?initialBookmarkId=/);
         });
 
         it('should forward locale to DestinationCard', () => {

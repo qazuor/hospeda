@@ -207,3 +207,55 @@ export function makeMediaModelStub() {
         findByAccommodations: vi.fn(async () => new Map())
     };
 }
+
+/**
+ * Creates a minimal no-op stub for `PostMediaModel`.
+ *
+ * HOS-390: every post read path (the three lifecycle hooks plus the six public
+ * card feeds) calls `findByPosts`. Unit tests that mock the entity model have no
+ * database, so they must inject this stub as the 5th `PostService` constructor
+ * arg or the read paths throw "Database not initialized".
+ *
+ * NOTE — differs from {@link makeMediaModelStub} in one respect worth knowing:
+ * an empty Map means "no rows", and unlike the accommodation composer the post
+ * one does NOT then fall back to the entity's own `media` (that fallback would
+ * resurrect deleted photos from the un-dropped `posts.media` blob — see
+ * `post.media-read.ts`). A test that asserts on a post's composed `media` must
+ * therefore return rows from this stub rather than rely on the blob surviving.
+ *
+ * @returns A stub satisfying the `PostMediaModel` surface used by the read paths.
+ */
+export function makePostMediaModelStub() {
+    return {
+        findById: vi.fn(),
+        findAll: vi.fn(async () => ({ items: [], total: 0 })),
+        create: vi.fn(),
+        update: vi.fn(),
+        softDelete: vi.fn(),
+        findByPost: vi.fn(async () => ({ items: [], total: 0 })),
+        findFeatured: vi.fn(async () => null),
+        findByPosts: vi.fn(async () => new Map())
+    };
+}
+
+/**
+ * Creates a minimal no-op stub for `EventMediaModel`.
+ *
+ * Twin of {@link makePostMediaModelStub}; injected through the `eventMediaModel`
+ * key of the `EventService` constructor's context object. The same
+ * no-blob-fallback caveat applies — see `event.media-read.ts`.
+ *
+ * @returns A stub satisfying the `EventMediaModel` surface used by the read paths.
+ */
+export function makeEventMediaModelStub() {
+    return {
+        findById: vi.fn(),
+        findAll: vi.fn(async () => ({ items: [], total: 0 })),
+        create: vi.fn(),
+        update: vi.fn(),
+        softDelete: vi.fn(),
+        findByEvent: vi.fn(async () => ({ items: [], total: 0 })),
+        findFeatured: vi.fn(async () => null),
+        findByEvents: vi.fn(async () => new Map())
+    };
+}

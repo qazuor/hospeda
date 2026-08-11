@@ -2,9 +2,10 @@ import { z } from 'zod';
 import { SuccessSchema } from '../../../api/result.schema.js';
 import {
     BaseFaqSchema,
-    FaqCreatePayloadSchema,
+    FaqChannelVisibilityFields,
     FaqReorderPayloadSchema,
-    FaqUpdatePayloadSchema
+    FaqWithChannelVisibilityCreatePayloadSchema,
+    FaqWithChannelVisibilityUpdatePayloadSchema
 } from '../../../common/faq.schema.js';
 import { AccommodationFaqIdSchema, AccommodationIdSchema } from '../../../common/id.schema.js';
 
@@ -20,7 +21,11 @@ export const AccommodationFaqSchema = BaseFaqSchema.extend({
     id: AccommodationFaqIdSchema,
 
     // Owner relationship - this FAQ belongs to this accommodation
-    accommodationId: AccommodationIdSchema
+    accommodationId: AccommodationIdSchema,
+
+    // HOS-393: channel visibility. Required-with-default on read — the DB columns
+    // are NOT NULL DEFAULT true, so a row always has a concrete value.
+    ...FaqChannelVisibilityFields
 });
 
 /**
@@ -34,14 +39,14 @@ export type AccommodationFaq = z.infer<typeof AccommodationFaqSchema>;
 
 export const AccommodationFaqAddInputSchema = z.object({
     accommodationId: AccommodationIdSchema,
-    faq: FaqCreatePayloadSchema
+    faq: FaqWithChannelVisibilityCreatePayloadSchema
 });
 export type AccommodationFaqAddInput = z.infer<typeof AccommodationFaqAddInputSchema>;
 
 export const AccommodationFaqUpdateInputSchema = z.object({
     accommodationId: AccommodationIdSchema,
     faqId: AccommodationFaqIdSchema,
-    faq: FaqUpdatePayloadSchema
+    faq: FaqWithChannelVisibilityUpdatePayloadSchema
 });
 export type AccommodationFaqUpdateInput = z.infer<typeof AccommodationFaqUpdateInputSchema>;
 

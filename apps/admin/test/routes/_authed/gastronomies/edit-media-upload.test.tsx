@@ -2,39 +2,31 @@ import { render } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import * as mod from '../../../../src/routes/_authed/gastronomies/$id_.edit';
 
-const uploadEntityImageMutateAsync = vi.fn().mockResolvedValue({
-    url: 'https://cdn.example.com/gastronomy.jpg',
-    publicId: 'gastronomy/public-id',
-    width: 1024,
-    height: 768
-});
-const deleteImageMutateAsync = vi.fn().mockResolvedValue({
-    deleted: true,
-    publicId: 'gastronomy/public-id'
-});
+/**
+ * HOS-382 regression test.
+ *
+ * This file used to assert that the gastronomy edit page wired
+ * `media.featuredImage` / `media.gallery` field handlers to Cloudinary
+ * uploads. That wiring was the bug: `media` is not a writable key on
+ * `GastronomyUpdateInputSchema` (the `media` JSONB column was dropped —
+ * HOS-372), so the schema silently stripped it on every PATCH. Every photo
+ * uploaded through those fields reached Cloudinary but never got a DB row —
+ * a permanently-billed orphan. Photos are now managed exclusively via the
+ * relational Gallery tab (`CommerceGalleryManager`,
+ * `/gastronomies/:id/gallery`), so this test now guards the opposite: the
+ * edit page must NEVER forward `fieldHandlers` to `EntityEditContent` again.
+ */
 
-vi.mock('@/hooks/use-media-upload', async () => {
-    const actual = await vi.importActual<typeof import('@/hooks/use-media-upload')>(
-        '@/hooks/use-media-upload'
-    );
-    return {
-        ...actual,
-        useMediaUpload: () => ({
-            uploadEntityImage: { mutateAsync: uploadEntityImageMutateAsync },
-            deleteImage: { mutateAsync: deleteImageMutateAsync },
-            isUploading: false,
-            uploadError: null,
-            isDeleting: false
-        })
-    };
-});
+type CapturedFieldHandlers =
+    | Record<
+          string,
+          {
+              onUpload: (file: File) => Promise<string>;
+          }
+      >
+    | undefined;
 
-type CapturedFieldHandlers = Record<
-    string,
-    { onUpload: (file: File) => Promise<string>; onDelete: (publicId: string) => Promise<void> }
->;
-
-let capturedFieldHandlers: CapturedFieldHandlers | undefined;
+let capturedFieldHandlers: CapturedFieldHandlers;
 
 vi.mock('@/components/entity-pages/EntityEditContent', () => ({
     EntityEditContent: (props: { fieldHandlers?: CapturedFieldHandlers }) => {
@@ -58,6 +50,12 @@ vi.mock('@/components/ui-wrapped', () => ({
     TabsTrigger: ({ children }: { children: React.ReactNode }) => <>{children}</>,
     TabsContent: ({ children }: { children: React.ReactNode }) => <>{children}</>
 }));
+// PageTabs is stubbed rather than mocking `@tanstack/react-router`'s
+// `useLocation`/`Link` (the router mock below only provides `createFileRoute`).
+vi.mock('@/components/layout/PageTabs', () => ({
+    PageTabs: () => <div data-testid="page-tabs" />,
+    gastronomyTabs: []
+}));
 vi.mock('@/features/gastronomy', () => ({
     useGastronomyPage: () => ({ entity: null, isLoading: false, error: null, permissions: {} })
 }));
@@ -78,33 +76,24 @@ vi.mock('@tanstack/react-router', () => ({
 }));
 
 describe('Route /_authed/gastronomies/$id_/edit', () => {
-    it('wires featured and gallery fields to gastronomy media uploads', async () => {
+    it('HOS-382: no longer forwards media.featuredImage / media.gallery field handlers', async () => {
         const Page = (mod.Route as unknown as { options: { component: React.ComponentType } })
             .options.component;
 
-        render(<Page />);
+        const { getByTestId } = render(<Page />);
 
-        const handlers = capturedFieldHandlers as CapturedFieldHandlers | undefined;
-        if (!handlers) throw new Error('fieldHandlers was not forwarded to EntityEditContent');
+        // Positive control: EntityEditContent must have actually mounted, or the
+        // `capturedFieldHandlers` assertion below is vacuously true (undefined
+        // because nothing ran, not because the page stopped forwarding it).
+        expect(getByTestId('entity-edit-content')).toBeInTheDocument();
 
-        const file = new File(['x'], 'x.jpg', { type: 'image/jpeg' });
-        await handlers['media.featuredImage'].onUpload(file);
-        await handlers['media.gallery'].onUpload(file);
+        // Sub-tab navigation guard: the edit page must render PageTabs (mocked
+        // above) so the Gallery tab stays reachable from the edit view.
+        expect(getByTestId('page-tabs')).toBeInTheDocument();
 
-        expect(uploadEntityImageMutateAsync).toHaveBeenNthCalledWith(1, {
-            file,
-            entityType: 'gastronomy',
-            entityId: '550e8400-e29b-41d4-a716-446655440000',
-            role: 'featured'
-        });
-        expect(uploadEntityImageMutateAsync).toHaveBeenNthCalledWith(2, {
-            file,
-            entityType: 'gastronomy',
-            entityId: '550e8400-e29b-41d4-a716-446655440000',
-            role: 'gallery'
-        });
-
-        await handlers['media.gallery'].onDelete('gastronomy/public-id');
-        expect(deleteImageMutateAsync).toHaveBeenCalledWith({ publicId: 'gastronomy/public-id' });
+        // The bug: this used to be a populated map with 'media.featuredImage' and
+        // 'media.gallery' keys that quietly buffered uploads into a `media`
+        // object the update schema then stripped. It must now be undefined.
+        expect(capturedFieldHandlers).toBeUndefined();
     });
 });

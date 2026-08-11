@@ -17,6 +17,11 @@ import type {
     AddonResponse,
     DestinationReviewListItem,
     DowngradePreview,
+    HostTradeBenefitTypeEnum,
+    HostTradeCategoryEnum,
+    HostTradeOwnerUpdate,
+    HostTradeReviewCreateBody,
+    HostTradeReviewUpdateBody,
     KeepSelections,
     LinkPreapprovalResponse,
     OccupancySourceEnum,
@@ -34,6 +39,15 @@ import type {
 import { MAX_BULK_CHECK_ENTITY_IDS } from '@repo/schemas';
 import { apiClient } from './client';
 import type { ApiResult, PaginatedResponse } from './types';
+
+/**
+ * The two commerce verticals that share the granular media endpoint shape
+ * (HOS-372). Duplicated (not imported) from `@/lib/commerce/owner-listings`
+ * to avoid this low-level endpoints module depending on a higher-level
+ * feature module — mirrors how other entity-scoped unions in this file are
+ * hand-declared rather than imported (see `CalendarProviderToken` above).
+ */
+export type CommerceMediaVertical = 'gastronomy' | 'experience';
 
 const BASE = '/api/v1/public';
 const PROTECTED = '/api/v1/protected';
@@ -1948,6 +1962,984 @@ export const hostDashboardApi = {
     }
 };
 
+// --- Alliance applications (Protected — HOS-278 AC-5 / AC-14) ---
+
+/** One of the caller's own "aliados" applications, as the account page shows it. */
+export interface MyAllianceLeadItem {
+    readonly id: string;
+    readonly kind: 'partner' | 'sponsor' | 'editor' | 'service_provider';
+    readonly status: 'pending' | 'reviewing' | 'approved' | 'rejected';
+    /** ISO-8601 submission timestamp. */
+    readonly createdAt: string;
+}
+
+/** Response envelope for `GET /protected/alliance/leads/mine`. */
+export interface MyAllianceLeadsResponse {
+    readonly leads: ReadonlyArray<MyAllianceLeadItem>;
+}
+
+/**
+ * Applicant self-service view of their own alliance applications.
+ *
+ * Auth-only — the endpoint scopes to the caller's own `applicantUserId`, and
+ * answers `{ leads: [] }` rather than an error when there are none, which is
+ * the common case (HOS-278 AC-5).
+ */
+export const allianceLeadsApi = {
+    /**
+     * Lists the caller's own applications, newest first.
+     *
+     * @param params - `{ cookieHeader }` when calling from SSR; omit in the browser.
+     * @returns The caller's applications, or an error the page degrades from.
+     */
+    mine({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<MyAllianceLeadsResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/alliance/leads/mine`,
+            cookieHeader
+        });
+    }
+};
+
+// --- Host-trade self-service (Protected — HOS-278 AC-7 .. AC-10) ---
+
+/**
+ * The caller's own `host_trades` directory listing, as the account page shows
+ * it. A read allowlist mirroring `HostTradeOwnerViewSchema` field-for-field
+ * (same precedent as {@link MyAllianceLeadItem} — the web declares its own
+ * read interface rather than importing the Zod-inferred type directly).
+ *
+ * `benefit`/`benefitType`/`benefitValue` are the LIVE, publicly visible offer.
+ * `pendingBenefit*` + `benefitReviewState` describe an edit awaiting admin
+ * review (HOS-278 AC-8) — they never overwrite the live trio until approved.
+ */
+export interface MyHostTrade {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly category: HostTradeCategoryEnum;
+    readonly contact: string;
+    /** Fine print of the LIVE benefit (conditions, exclusions, validity). */
+    readonly benefit: string;
+    readonly benefitType: HostTradeBenefitTypeEnum | null;
+    readonly benefitValue: number | null;
+    readonly pendingBenefitType: HostTradeBenefitTypeEnum | null;
+    readonly pendingBenefitValue: number | null;
+    /** Fine print of the PENDING benefit edit, when one is awaiting review. */
+    readonly pendingBenefitText: string | null;
+    readonly benefitReviewState: 'pending' | null;
+    readonly destinationId: string;
+    readonly is24h: boolean;
+    readonly scheduleText: string | null;
+    readonly isActive: boolean;
+    /** Set once the listing has been taken down (HOS-278 R-4) — the row survives. */
+    readonly revokedAt: string | null;
+    readonly revokeReason: string | null;
+    /**
+     * Set while the listing may not declare usages (HOS-376 §6.5).
+     *
+     * Distinct from `revokedAt`: a revoked listing is gone from the directory,
+     * a suspended one is still listed and still accrues confirmations — it just
+     * cannot open new declarations. `declarationSuspendedById` is deliberately
+     * not here: who moderated is the moderator's business, not the provider's.
+     */
+    readonly declarationSuspendedAt: string | null;
+    readonly declarationSuspendReason: string | null;
+}
+
+/** Response envelope for `GET /protected/host-trades/mine`. */
+export interface MyHostTradeResponse {
+    /** `null` when the caller owns no listing — never a 403/404. */
+    readonly trade: MyHostTrade | null;
+}
+
+/**
+ * The host-facing read shape of a directory provider.
+ *
+ * Mirrors `HostTradePublicSchema` field-for-field — the same read-allowlist
+ * precedent as {@link MyHostTrade}: the web declares its own interface rather
+ * than importing the Zod-inferred type, so a schema change surfaces here as a
+ * typecheck failure instead of silently reshaping a rendered page.
+ */
+export interface DirectoryProvider {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly category: HostTradeCategoryEnum;
+    readonly contact: string;
+    readonly benefit: string;
+    readonly destinationId: string;
+    readonly is24h: boolean;
+    readonly scheduleText: string | null;
+    readonly confirmedUsesCount: number;
+    readonly distinctHostsCount: number;
+    readonly reviewsCount: number;
+    readonly averageRating: number;
+    readonly benefitRespectedCount: number;
+}
+
+/** Response envelope for `GET /protected/host-trades/{slug}`. */
+export interface DirectoryProviderResponse {
+    readonly hostTrade: DirectoryProvider;
+}
+
+/** Response envelope for the QR declaration. */
+export interface DeclaredUsageResponse {
+    readonly usage: {
+        readonly id: string;
+        readonly status: string;
+        readonly servicedAt: string;
+        readonly expiresAt: string;
+    };
+}
+
+/** The four states of the usage machine (HOS-376 §6.1). */
+export type BenefitUsageStatus = 'PENDING' | 'CONFIRMED' | 'REJECTED' | 'EXPIRED';
+
+/** Which side opened the record — and therefore which side must answer it. */
+export type BenefitUsageDeclaredBy = 'PROVIDER' | 'HOST';
+
+/**
+ * A benefit usage as the HOST's own screens read it (HOS-376 T-046).
+ *
+ * A read allowlist mirroring `HostTradeBenefitUsageWithProviderSchema`, same
+ * precedent as {@link MyHostTrade}: the web declares its own interface so a
+ * schema change surfaces here as a typecheck failure instead of silently
+ * reshaping a rendered page.
+ *
+ * `hostTrade` is nullable because the API declares it nullable — the FK cascades
+ * so it should always resolve, which is precisely why nothing here may depend on
+ * it being present.
+ */
+export interface BenefitUsage {
+    readonly id: string;
+    readonly hostTradeId: string;
+    readonly hostUserId: string;
+    readonly declaredBy: BenefitUsageDeclaredBy;
+    readonly declaredById: string;
+    readonly creationChannel: string;
+    readonly status: BenefitUsageStatus;
+    /** Calendar date of the service, as `YYYY-MM-DD` — never a `Date`. */
+    readonly servicedAt: string;
+    readonly note: string | null;
+    readonly expiresAt: string;
+    readonly confirmedAt: string | null;
+    readonly rejectedAt: string | null;
+    readonly rejectionNote: string | null;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+    /** Who the provider is. Null only if the listing could not be resolved. */
+    readonly hostTrade: {
+        readonly id: string;
+        readonly slug: string;
+        readonly name: string;
+        readonly category: HostTradeCategoryEnum;
+    } | null;
+    /**
+     * Whether this host already reviewed this provider — what decides whether
+     * the card's button offers to write a review or to edit one.
+     *
+     * Keyed by (host, provider), so every row naming the same provider reports
+     * the same value. The API always sends it (the schema defaults it to
+     * `false`); an absent value would simply read as "not reviewed yet", which
+     * is the recoverable direction.
+     */
+    readonly hasReview: boolean;
+}
+
+/** Response envelope shared by the three usage transitions. */
+export interface BenefitUsageTransitionResponse {
+    readonly usage: BenefitUsage;
+}
+
+/**
+ * One entry of the provider's declaration selector (HOS-376 §6.2b).
+ *
+ * A name and an id, never an email. "Already served" is not consent to hand
+ * over a stored address, and a provider who needs the email channel already has
+ * the address — what he must not receive is an export of past clients' contacts.
+ */
+export interface LinkedHost {
+    readonly id: string;
+    readonly displayName: string;
+}
+
+/**
+ * A review of the caller's own listing, with his answer (HOS-376 T-050).
+ *
+ * The reply carries its `moderationState` — the one thing the directory shape
+ * omits — because its author is the one reading: an answer awaiting moderation
+ * has to read as "in review", never as absent.
+ */
+export interface OwnerReviewRow {
+    readonly review: HostTradeReview;
+    readonly author: {
+        readonly id: string;
+        readonly displayName: string | null;
+        readonly image: string | null;
+    } | null;
+    readonly reply: OwnerReviewReply | null;
+}
+
+/** The moderation states a reply can be read in. */
+export type ReplyModerationState = 'PENDING' | 'APPROVED' | 'REJECTED';
+
+/**
+ * A reply as the provider's own panel reads it (`GET /mine/reviews`).
+ *
+ * Carries `moderationReason`, which the directory tier does not: the rejected
+ * author is the one person who needs to know why.
+ */
+export interface OwnerReviewReply {
+    readonly id: string;
+    readonly content: string;
+    readonly moderationState: ReplyModerationState;
+    readonly moderationReason: string | null;
+    readonly reviewEditedAfterReply: boolean;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
+/**
+ * A reply as the two WRITE endpoints hand it back (HOS-376 T-051).
+ *
+ * Deliberately NOT {@link OwnerReviewReply}: this shape mirrors
+ * `HostTradeReviewReplyProtectedSchema`, which carries `reviewId` and omits
+ * `moderationReason`. The omission is not a gap to paper over — a reply that was
+ * just created or just edited has NO standing moderation decision (editing
+ * discards the previous one, AC-23), so the only honest reason to show
+ * alongside it is none. A caller merging this into a panel row supplies
+ * `moderationReason: null` explicitly, rather than carrying a stale one over.
+ */
+export interface SavedReviewReply {
+    readonly id: string;
+    readonly reviewId: string;
+    readonly content: string;
+    readonly moderationState: ReplyModerationState;
+    readonly reviewEditedAfterReply: boolean;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
+/** The optional three-dimension breakdown a host may add to a review. */
+export interface HostTradeReviewBreakdown {
+    readonly workQuality?: number;
+    readonly punctuality?: number;
+    readonly treatment?: number;
+}
+
+/**
+ * A host's review of a provider, as its author reads it back (HOS-376 T-048).
+ *
+ * A read allowlist mirroring `HostTradeReviewProtectedSchema`, same precedent
+ * as {@link MyHostTrade}. `moderationState` is here because it is what the
+ * screen must tell the author: a review that `moderateText()` pushed to
+ * PENDING is written but not yet visible in the directory, and silence about
+ * that reads as "it did not save".
+ */
+export interface HostTradeReview {
+    readonly id: string;
+    readonly hostTradeId: string;
+    readonly hostUserId: string;
+    readonly overallRating: number;
+    readonly rating: HostTradeReviewBreakdown | null;
+    readonly averageRating: number | null;
+    readonly respectedBenefit: boolean;
+    readonly content: string | null;
+    readonly moderationState: string;
+    readonly editedAt: string | null;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
+/**
+ * Reads of the `host_trades` directory, plus a provider's self-service
+ * view/edit of their OWN listing.
+ *
+ * `mine`/`updateMine` are auth-only (no permission — HOS-278 AC-7): an approved
+ * service provider is an ordinary tourist account with no role/permission
+ * change, so ownership of the row is the only gate. `mine()` answers
+ * `{ trade: null }` rather than an error when the caller owns none, mirroring
+ * {@link allianceLeadsApi.mine}.
+ *
+ * `getBySlug` is the other half — a HOST reading a provider, gated by the
+ * directory's own `HOST_TRADE_VIEW` permission.
+ */
+export const hostTradesApi = {
+    /**
+     * Reads one directory provider by the slug a QR encodes (HOS-376 T-045).
+     *
+     * Two failures are distinct and both are expected: `404` when no listing
+     * carries the slug, and `422 PROVIDER_REVOKED` when the listing was taken
+     * down. Callers must branch on them separately — a host holding last
+     * season's flyer needs to be told which one happened. The directory list
+     * (`GET /protected/host-trades`) cannot answer either question: it takes no
+     * slug filter, and in it a revoked listing and one belonging to another
+     * destination are the same observation — absent.
+     *
+     * @param params - The provider `slug`, plus `cookieHeader` when calling from SSR.
+     * @returns The host-facing provider view, or a typed error to branch on.
+     */
+    getBySlug({
+        slug,
+        cookieHeader
+    }: {
+        slug: string;
+        cookieHeader?: string;
+    }): Promise<ApiResult<DirectoryProviderResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/${encodeURIComponent(slug)}`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Declares a benefit usage from the host side — the QR path (HOS-376 §6.2a).
+     *
+     * Carries no identifiers: the provider comes from the slug in the URL and
+     * the host IS the session. The usage is created `PENDING` and waits for the
+     * provider to confirm.
+     *
+     * @param params - The provider `slug`, the `servicedAt` calendar date
+     *   (`YYYY-MM-DD` — a plain string, never a `Date`, because the column is a
+     *   Postgres `date` and coercing would shift the day backwards for every
+     *   UTC-3 caller), and an optional `note`.
+     * @returns The created usage, or a typed error (`409 USAGE_PENDING_EXISTS`,
+     *   `403 DECLARATION_BLOCKED` / `DECLARATION_SUSPENDED`, `422 PROVIDER_REVOKED`).
+     */
+    declareUsage({
+        slug,
+        servicedAt,
+        note
+    }: {
+        slug: string;
+        servicedAt: string;
+        note?: string;
+    }): Promise<ApiResult<DeclaredUsageResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/${encodeURIComponent(slug)}/usages`,
+            body: note ? { servicedAt, note } : { servicedAt }
+        });
+    },
+    /**
+     * Fetches the caller's own listing, or `null`.
+     *
+     * @param params - `{ cookieHeader }` when calling from SSR; omit in the browser.
+     * @returns The caller's listing, or an error the page degrades from.
+     */
+    mine({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<MyHostTradeResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/mine`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Applies an edit to the caller's own listing.
+     *
+     * Operational fields (`contact`, `scheduleText`, `is24h`) apply
+     * immediately; any of `benefitType`/`benefitValue`/`benefitText` present
+     * goes to the PENDING columns and waits for admin review (HOS-278 AC-8) —
+     * see `HostTradeOwnerUpdateSchema`'s JSDoc for the full contract.
+     *
+     * @param body - The changed fields only (validated by `HostTradeOwnerUpdateSchema`).
+     * @returns The updated listing (owner view shape).
+     */
+    updateMine(body: HostTradeOwnerUpdate): Promise<ApiResult<{ readonly trade: MyHostTrade }>> {
+        return apiClient.patch({ path: `${PROTECTED}/host-trades/mine`, body });
+    },
+
+    /**
+     * The caller's whole benefit-usage record, newest first (HOS-376 T-046).
+     *
+     * NOT the same list as {@link hostTradesApi.listPendingUsages}, and the
+     * difference is deliberate: this one includes the host's own declarations
+     * (which wait on the provider, not on him) and the CONFIRMED rows the review
+     * action hangs off. The inbox answers "what awaits your action" and shares
+     * that definition with the navigation badge.
+     *
+     * @param params - Optional `status` filter, page window, and `cookieHeader`
+     *   when calling from SSR.
+     * @returns The page of usages plus its pagination envelope.
+     */
+    listUsages({
+        status,
+        page,
+        pageSize,
+        cookieHeader
+    }: {
+        status?: BenefitUsageStatus;
+        page?: number;
+        pageSize?: number;
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<PaginatedResponse<BenefitUsage>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/host-trades/usages`,
+            params: { status, page, pageSize },
+            cookieHeader
+        });
+    },
+
+    /**
+     * The usages awaiting the caller's own confirmation (HOS-376 T-046/T-047).
+     *
+     * Scoped to declarations made BY A PROVIDER: a usage the host declared
+     * himself is not waiting on him. The navigation badge counts these same
+     * rows, so the two can never disagree.
+     *
+     * @param params - Page window, and `cookieHeader` when calling from SSR.
+     * @returns The page of pending usages plus its pagination envelope.
+     */
+    listPendingUsages({
+        page,
+        pageSize,
+        cookieHeader
+    }: {
+        page?: number;
+        pageSize?: number;
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<PaginatedResponse<BenefitUsage>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/host-trades/usages/pending`,
+            params: { page, pageSize },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Publishes the caller's review of a provider (HOS-376 T-048).
+     *
+     * The provider comes from the path and the host from the session, so the
+     * body carries neither. Four server-side gates can refuse it, each with its
+     * own code and its own copy: `403 NO_CONFIRMED_USAGE`,
+     * `403 SELF_REVIEW_FORBIDDEN`, `409 REVIEW_ALREADY_EXISTS` and
+     * `422 PROVIDER_REVOKED`.
+     *
+     * @param params - The provider `hostTradeId` and the review body.
+     * @returns The published review, or a typed error to branch on.
+     */
+    createReview({
+        hostTradeId,
+        body
+    }: {
+        hostTradeId: string;
+        body: HostTradeReviewCreateBody;
+    }): Promise<ApiResult<{ readonly review: HostTradeReview }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/${encodeURIComponent(hostTradeId)}/reviews`,
+            body
+        });
+    },
+
+    /**
+     * Declares a usage from the PROVIDER side (HOS-376 T-050, §6.2b/c).
+     *
+     * Exactly one host identifier travels: `hostUserId` from the scoped
+     * selector, or `hostEmail` from the fallback. Sending both is refused by the
+     * API, and sending the email of somebody who is not a host answers
+     * `404 HOST_NOT_FOUND` explicitly rather than opaquely — a typo is the most
+     * frequent failure here, and hiding it would make the provider wait 30 days
+     * for a confirmation that can never arrive.
+     *
+     * @param params - The service date, one host identifier, and an optional note.
+     * @returns The created usage, or a typed error to branch on.
+     */
+    declareUsageAsProvider({
+        servicedAt,
+        hostUserId,
+        hostEmail,
+        note
+    }: {
+        servicedAt: string;
+        hostUserId?: string;
+        hostEmail?: string;
+        note?: string;
+    }): Promise<ApiResult<DeclaredUsageResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/mine/usages`,
+            body: {
+                servicedAt,
+                ...(hostUserId ? { hostUserId } : {}),
+                ...(hostEmail ? { hostEmail } : {}),
+                ...(note ? { note } : {})
+            }
+        });
+    },
+
+    /**
+     * The usages recorded on the caller's own listing (HOS-376 T-050).
+     *
+     * @param params - Optional `status` filter, page window, `cookieHeader` from SSR.
+     * @returns The page of usages plus its pagination envelope.
+     */
+    listOwnUsages({
+        status,
+        page,
+        pageSize,
+        cookieHeader
+    }: {
+        status?: BenefitUsageStatus;
+        page?: number;
+        pageSize?: number;
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<PaginatedResponse<BenefitUsage>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/host-trades/mine/usages`,
+            params: { status, page, pageSize },
+            cookieHeader
+        });
+    },
+
+    /**
+     * The hosts the caller may declare on directly (HOS-376 T-050, §6.2b).
+     *
+     * Scoped to pairs with a CONFIRMED usage, and that scope IS the privacy
+     * property: it lists nobody the provider has not already served. The payload
+     * carries a display name and never an email.
+     *
+     * @param params - `cookieHeader` when calling from SSR.
+     * @returns The selector's contents.
+     */
+    listLinkedHosts({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<{ readonly hosts: readonly LinkedHost[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/mine/linked-hosts`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * The caller's own QR (HOS-376 T-050, §6.2a).
+     *
+     * The URL travels alongside the image because a provider who cannot scan
+     * his own code — printing from a machine with no camera, or working out why
+     * a scan lands nowhere — needs to read the destination as text.
+     *
+     * @param params - `cookieHeader` when calling from SSR.
+     * @returns The SVG markup, the URL it encodes, and the slug.
+     */
+    getMyQr({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<
+        ApiResult<{ readonly svg: string; readonly url: string; readonly slug: string }>
+    > {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/mine/qr`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * The reviews written about the caller's own listing (HOS-376 T-050).
+     *
+     * NOT the directory read: here the caller's own reply arrives in whatever
+     * moderation state it is in, which is what lets the panel say "in review"
+     * instead of showing nothing where the answer should be.
+     *
+     * @param params - Page window, and `cookieHeader` when calling from SSR.
+     * @returns The page of reviews plus its pagination envelope.
+     */
+    listOwnReviews({
+        page,
+        pageSize,
+        cookieHeader
+    }: {
+        page?: number;
+        pageSize?: number;
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<PaginatedResponse<OwnerReviewRow>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/host-trades/mine/reviews`,
+            params: { page, pageSize },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Reads back the caller's own review of a provider (HOS-376 T-049).
+     *
+     * Answers `{ review: null }` rather than 404 when none exists — that is an
+     * ordinary state, and it is what decides between "write a review" and "edit
+     * yours".
+     *
+     * @param params - The provider `hostTradeId`, plus `cookieHeader` from SSR.
+     * @returns The caller's review, or null.
+     */
+    getMyReview({
+        hostTradeId,
+        cookieHeader
+    }: {
+        hostTradeId: string;
+        cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly review: HostTradeReview | null }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/${encodeURIComponent(hostTradeId)}/my-review`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Edits the caller's own review (HOS-376 T-049).
+     *
+     * ONLY THE FIELDS SENT ARE CHANGED, and that is load-bearing rather than a
+     * convenience: changing the TEXT re-runs moderation and can pull the review
+     * out of the directory until it is approved again. Resending an untouched
+     * `content` would therefore turn a star-only edit into a rewrite — and could
+     * hand back as APPROVED a text a moderator had rejected. Callers must send a
+     * diff, never the whole form.
+     *
+     * @param params - The `reviewId` and the changed fields only.
+     * @returns The updated review, or a typed error (404 when it is not yours).
+     */
+    updateReview({
+        reviewId,
+        body
+    }: {
+        reviewId: string;
+        body: HostTradeReviewUpdateBody;
+    }): Promise<ApiResult<{ readonly review: HostTradeReview }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/host-trades/reviews/${encodeURIComponent(reviewId)}`,
+            body
+        });
+    },
+
+    /**
+     * Answers a review of the caller's own listing (HOS-376 T-051, §6.4).
+     *
+     * One reply per review, never a thread: a second attempt answers 409. A
+     * review that is not on the caller's listing answers 404, never 403 — the
+     * caller must not learn that a review he cannot answer exists.
+     *
+     * @param params - The `reviewId` being answered and the reply text.
+     * @returns The created reply, born awaiting moderation.
+     */
+    replyToReview({
+        reviewId,
+        body
+    }: {
+        reviewId: string;
+        body: { readonly content: string };
+    }): Promise<ApiResult<{ readonly reply: SavedReviewReply }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/reviews/${encodeURIComponent(reviewId)}/reply`,
+            body
+        });
+    },
+
+    /**
+     * Rewrites the caller's own reply (HOS-376 T-051, AC-23).
+     *
+     * THE EDIT RETURNS THE REPLY TO MODERATION and discards the previous
+     * decision, which was made about text that no longer exists. For a published
+     * reply that means leaving the directory until it is cleared again — a
+     * consequence the caller has to be told about before it is offered, not
+     * after.
+     *
+     * @param params - The `replyId` and the rewritten text.
+     * @returns The updated reply, back in PENDING.
+     */
+    updateReply({
+        replyId,
+        body
+    }: {
+        replyId: string;
+        body: { readonly content: string };
+    }): Promise<ApiResult<{ readonly reply: SavedReviewReply }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/host-trades/replies/${encodeURIComponent(replyId)}`,
+            body
+        });
+    },
+
+    /**
+     * How many usages await the caller's confirmation (HOS-376 T-047).
+     *
+     * Backs the navigation badge, and counts the SAME rows
+     * {@link hostTradesApi.listPendingUsages} returns — a badge showing 3 over a
+     * list of 1 is worse than either number being wrong alone.
+     *
+     * @param params - `cookieHeader` when calling from SSR; omit in the browser.
+     * @returns The pending count.
+     */
+    countPendingUsages({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<{ readonly count: number }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/host-trades/usages/pending-count`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Confirms a usage the counterpart declared.
+     *
+     * Anything that is not the caller's to answer — someone else's row, or one
+     * the caller declared himself — answers 404, never 403, so the endpoint
+     * cannot be used to probe which ids exist.
+     *
+     * @param params - The usage `id`.
+     * @returns The confirmed usage, or a typed error.
+     */
+    confirmUsage({ id }: { id: string }): Promise<ApiResult<BenefitUsageTransitionResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/usages/${encodeURIComponent(id)}/confirm`
+        });
+    },
+
+    /**
+     * Rejects a usage the counterpart declared.
+     *
+     * The note stays optional on purpose: rejection is the control that keeps
+     * the public counter honest, and demanding a written explanation to say
+     * "that never happened" taxes the one action the system most needs people
+     * to take.
+     *
+     * @param params - The usage `id` and an optional `note`.
+     * @returns The rejected usage, or a typed error.
+     */
+    rejectUsage({
+        id,
+        note
+    }: {
+        id: string;
+        note?: string;
+    }): Promise<ApiResult<BenefitUsageTransitionResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/usages/${encodeURIComponent(id)}/reject`,
+            body: note ? { note } : {}
+        });
+    },
+
+    /**
+     * Returns a rejection to PENDING — only for the account that rejected it.
+     *
+     * This is what makes rejecting safe to offer: it is reversible, so a host
+     * who refuses a usage by mistake is not left having damaged a provider's
+     * standing with no way back.
+     *
+     * @param params - The usage `id`.
+     * @returns The usage, back in PENDING, or a typed error.
+     */
+    undoUsageRejection({ id }: { id: string }): Promise<ApiResult<BenefitUsageTransitionResponse>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/host-trades/usages/${encodeURIComponent(id)}/reject/undo`
+        });
+    }
+};
+
+// --- Partner self-service (Protected — HOS-278 D3) ---
+
+/** Contact details the partner maintains. Mirrors the shared `contactInfo` JSONB. */
+export interface MyPartnerContactInfo {
+    readonly personalEmail?: string | null;
+    readonly workEmail?: string | null;
+    readonly homePhone?: string | null;
+    readonly workPhone?: string | null;
+    readonly mobilePhone?: string | null;
+    readonly whatsapp?: string | null;
+    readonly website?: string | null;
+}
+
+/** Social links the partner maintains. Mirrors the shared `socialNetworks` JSONB. */
+export interface MyPartnerSocialNetworks {
+    readonly facebook?: string;
+    readonly instagram?: string;
+    readonly twitter?: string;
+    readonly linkedIn?: string;
+    readonly tiktok?: string;
+    readonly youtube?: string;
+}
+
+/**
+ * The caller's own `partners` listing, as the account page shows it.
+ *
+ * A read allowlist mirroring `PartnerOwnerViewSchema` field-for-field (same
+ * precedent as {@link MyHostTrade} — the web declares its own read interface
+ * rather than importing the Zod-inferred type directly).
+ *
+ * `logoUrl`/`description`/`websiteUrl` are the LIVE, publicly visible content.
+ * `pending*` + `contentReviewState` describe an edit awaiting admin review
+ * (§6.3 step 4) — they never overwrite the live trio until approved.
+ *
+ * `contentApprovedAt` is the payment gate (AC-11): null means no admin has
+ * accepted this partner's content yet, so the page must not offer to charge
+ * them. It stays set once earned, so a partner editing an already-approved
+ * listing keeps the CTA while the new edit waits.
+ */
+export interface MyPartner {
+    readonly id: string;
+    readonly slug: string;
+    readonly name: string;
+    readonly type: string;
+    readonly tier: string;
+    readonly logoUrl: string | null;
+    readonly description: string | null;
+    readonly websiteUrl: string | null;
+    readonly contactInfo: MyPartnerContactInfo | null;
+    readonly socialNetworks: MyPartnerSocialNetworks | null;
+    readonly subscriptionStatus: string;
+    readonly lifecycleState: string;
+    readonly startsAt: string | null;
+    readonly endsAt: string | null;
+    readonly pendingLogoUrl: string | null;
+    readonly pendingDescription: string | null;
+    readonly pendingWebsiteUrl: string | null;
+    readonly contentReviewState: 'pending' | 'approved' | 'rejected' | null;
+    /** Why an admin turned the last submission down. Null unless rejected. */
+    readonly contentReviewNote: string | null;
+    /** When content FIRST cleared review — the AC-11 payment gate. */
+    readonly contentApprovedAt: string | null;
+    /** Set once the partner has been taken down (HOS-278 R-4) — the row survives. */
+    readonly revokedAt: string | null;
+    readonly revokeReason: string | null;
+}
+
+/** Response envelope for `GET /protected/partners/mine`. */
+export interface MyPartnerResponse {
+    /** `null` when the caller owns no partner listing — never a 403/404. */
+    readonly partner: MyPartner | null;
+}
+
+/**
+ * One logged promotion action, as the partner sees it (HOS-377).
+ *
+ * A read allowlist mirroring `partnerMentionPublicSchema`, same precedent as
+ * {@link MyPartner}. The admin-only fields (`internalNote` and the audit
+ * authors) are absent from this interface because they are absent from the
+ * PAYLOAD — the service strips them server-side, so this is describing what
+ * arrives rather than choosing what to render.
+ */
+export interface MyPartnerMention {
+    readonly id: string;
+    readonly partnerId: string;
+    /** One of the 8 `PartnerMentionChannelEnum` values. */
+    readonly channel: string;
+    readonly batchId: string | null;
+    readonly mentionedAt: string;
+    /**
+     * Link to the publication, so the partner can verify it.
+     *
+     * Null for a WhatsApp broadcast or an "other" channel — neither produces a
+     * public permalink, which is why the URL is optional per channel rather
+     * than globally required.
+     */
+    readonly url: string | null;
+    readonly createdAt: string;
+    readonly updatedAt: string;
+}
+
+/**
+ * One submission: a date, and every channel it ran on (AC-10).
+ *
+ * A campaign that ran on four networks is ONE thing that happened, so the log
+ * shows one entry with four links rather than four entries sharing a date. A
+ * mention logged on its own arrives as a single-item batch with a null
+ * `batchId`, so the view has exactly one shape to render.
+ */
+export interface MyPartnerMentionBatch {
+    readonly batchId: string | null;
+    readonly mentionedAt: string;
+    readonly mentions: readonly MyPartnerMention[];
+}
+
+/** Response envelope for `GET /protected/partners/mine/mentions`. */
+export interface MyPartnerMentionsResponse {
+    /**
+     * Empty when the caller owns no partner, or owns one with nothing logged
+     * yet — never a 403/404. Both are ordinary states, and a 403 would confirm
+     * that some partner exists.
+     */
+    readonly batches: readonly MyPartnerMentionBatch[];
+}
+
+/** What a partner may PATCH onto their own listing. */
+export interface MyPartnerUpdate {
+    readonly logoUrl?: string | null;
+    readonly description?: string | null;
+    readonly websiteUrl?: string | null;
+    readonly contactInfo?: MyPartnerContactInfo | null;
+    readonly socialNetworks?: MyPartnerSocialNetworks | null;
+}
+
+/**
+ * Partner self-service view/edit of their OWN `partners` listing.
+ *
+ * Auth-only (no permission — HOS-278 AC-7): an approved partner is an ordinary
+ * account with no role/permission change, so ownership of the row is the only
+ * gate. `mine()` answers `{ partner: null }` rather than an error when the
+ * caller owns none, mirroring {@link hostTradesApi.mine}.
+ */
+export const partnersApi = {
+    /**
+     * Fetches the caller's own partner listing, or `null`.
+     *
+     * @param params - `{ cookieHeader }` when calling from SSR; omit in the browser.
+     * @returns The caller's listing, or an error the page degrades from.
+     */
+    mine({ cookieHeader }: { cookieHeader?: string } = {}): Promise<ApiResult<MyPartnerResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/partners/mine`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Applies an edit to the caller's own partner listing.
+     *
+     * `contactInfo`/`socialNetworks` apply immediately and are MERGED with the
+     * stored value, so omitting a key preserves it. Any of
+     * `logoUrl`/`description`/`websiteUrl` present goes to the PENDING columns
+     * and waits for admin review — see `PartnerOwnerUpdateSchema`'s JSDoc for
+     * the full contract.
+     *
+     * @param body - The changed fields only (validated by `PartnerOwnerUpdateSchema`).
+     * @returns The updated listing (owner view shape).
+     */
+    updateMine(body: MyPartnerUpdate): Promise<ApiResult<{ readonly partner: MyPartner }>> {
+        return apiClient.patch({ path: `${PROTECTED}/partners/mine`, body });
+    },
+
+    /**
+     * The caller's own mentions log, grouped by submission, newest first.
+     *
+     * Answers `{ batches: [] }` rather than an error when the caller owns no
+     * partner — the same shape as {@link partnersApi.mine} answering `null`,
+     * and for the same reason: owning no listing is an ordinary state, and a
+     * 403 would confirm that some partner exists.
+     *
+     * `internalNote` and the audit authors are stripped by the SERVICE, not by
+     * this call, so a future caller cannot forget to omit them.
+     *
+     * @param params - `{ cookieHeader }` when calling from SSR; omit in the browser.
+     * @returns The caller's log, or an error the page degrades from.
+     */
+    mineMentions({
+        cookieHeader
+    }: {
+        cookieHeader?: string;
+    } = {}): Promise<ApiResult<MyPartnerMentionsResponse>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/partners/mine/mentions`,
+            cookieHeader
+        });
+    }
+};
+
 // --- Host Analytics (Protected — SPEC-207) ---
 
 /** Analytics window type for time-range queries */
@@ -2647,6 +3639,548 @@ export const accommodationEditApi = {
             path: `${BASE}/destinations`,
             params: { pageSize: 200 }
         });
+    }
+};
+
+// --- Accommodation FAQs (Protected — HOS-393) ---
+
+/**
+ * A single FAQ entry belonging to an accommodation, as returned by the
+ * protected FAQ endpoints. Mirrors the display fields of
+ * `AccommodationFaqSchema` (`@repo/schemas`) — audit/lifecycle fields are
+ * intentionally omitted, the editor UI has no use for them.
+ */
+export interface AccommodationFaqItem {
+    readonly id: string;
+    readonly question: string;
+    readonly answer: string;
+    readonly category: string | null;
+    readonly displayOrder: number | null;
+    /**
+     * Whether the FAQ appears on the accommodation's public page (accordion,
+     * FAQ sections, and `FAQPage` JSON-LD). Enforced server-side (HOS-393) —
+     * this flag is display-only here, the editor never filters by it.
+     */
+    readonly isVisibleOnListing: boolean;
+    /**
+     * Whether the AI chat assistant may use this FAQ to answer guest
+     * questions. Enforced where the prompt is assembled (HOS-393). A FAQ
+     * that is AI-usable but not `isVisibleOnListing` is NOT private — the
+     * assistant will still say it to anyone who asks in chat.
+     */
+    readonly isUsableByAi: boolean;
+}
+
+/**
+ * Protected accommodation FAQ API endpoints (HOS-393). Backs the accommodation
+ * editor's FAQ section (`FaqSection.client.tsx`).
+ *
+ * FAQ mutations do NOT go through `accommodationEditApi.update`'s PATCH diff —
+ * each call here persists immediately against its own endpoint, so the FAQ
+ * section never enters the parent editor's dirty-tracking / unsaved-changes
+ * guard (AC-2, HOS-393).
+ */
+export const accommodationFaqApi = {
+    /**
+     * List all FAQs for an accommodation.
+     *
+     * @param params - Accommodation ID and optional SSR cookie header.
+     * @returns The accommodation's FAQs.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationFaqApi.list({ accommodationId: 'acc-uuid' });
+     * if (result.ok) console.log(result.data.faqs);
+     * ```
+     */
+    list({
+        accommodationId,
+        cookieHeader
+    }: {
+        readonly accommodationId: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly faqs: readonly AccommodationFaqItem[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/accommodations/${accommodationId}/faqs`,
+            cookieHeader
+        });
+    },
+
+    /**
+     * Add a new FAQ to an accommodation.
+     *
+     * @param params - Accommodation ID and the new FAQ's fields.
+     * @returns The newly created FAQ.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationFaqApi.add({
+     *   accommodationId: 'acc-uuid',
+     *   question: '¿Hay estacionamiento?',
+     *   answer: 'Sí, gratuito para huéspedes.'
+     * });
+     * ```
+     */
+    add({
+        accommodationId,
+        question,
+        answer,
+        category,
+        isVisibleOnListing,
+        isUsableByAi
+    }: {
+        readonly accommodationId: string;
+        readonly question: string;
+        readonly answer: string;
+        readonly category?: string;
+        /** Defaults to `true` server-side when omitted (HOS-393). */
+        readonly isVisibleOnListing?: boolean;
+        /** Defaults to `true` server-side when omitted (HOS-393). */
+        readonly isUsableByAi?: boolean;
+    }): Promise<ApiResult<{ readonly faq: AccommodationFaqItem }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/accommodations/${accommodationId}/faqs`,
+            body: { question, answer, category, isVisibleOnListing, isUsableByAi }
+        });
+    },
+
+    /**
+     * Update an existing FAQ.
+     *
+     * Uses PUT — the backend route for accommodation FAQ edits is
+     * `PUT /{id}/faqs/{faqId}` (not PATCH), even though the body is a partial
+     * update (`FaqUpdatePayloadSchema`).
+     *
+     * @param params - Accommodation ID, FAQ ID, and the fields to update.
+     * @returns The updated FAQ.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationFaqApi.update({
+     *   accommodationId: 'acc-uuid',
+     *   faqId: 'faq-uuid',
+     *   question: '¿Hay estacionamiento cubierto?'
+     * });
+     * ```
+     */
+    update({
+        accommodationId,
+        faqId,
+        question,
+        answer,
+        category,
+        isVisibleOnListing,
+        isUsableByAi
+    }: {
+        readonly accommodationId: string;
+        readonly faqId: string;
+        readonly question?: string;
+        readonly answer?: string;
+        readonly category?: string;
+        readonly isVisibleOnListing?: boolean;
+        readonly isUsableByAi?: boolean;
+    }): Promise<ApiResult<{ readonly faq: AccommodationFaqItem }>> {
+        return apiClient.put({
+            path: `${PROTECTED}/accommodations/${accommodationId}/faqs/${faqId}`,
+            body: { question, answer, category, isVisibleOnListing, isUsableByAi }
+        });
+    },
+
+    /**
+     * Delete a FAQ from an accommodation.
+     *
+     * @param params - Accommodation ID and FAQ ID to delete.
+     * @returns Whether the deletion succeeded.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationFaqApi.remove({ accommodationId: 'acc-uuid', faqId: 'faq-uuid' });
+     * ```
+     */
+    remove({
+        accommodationId,
+        faqId
+    }: {
+        readonly accommodationId: string;
+        readonly faqId: string;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/accommodations/${accommodationId}/faqs/${faqId}`
+        });
+    },
+
+    /**
+     * Reorder the FAQs of an accommodation.
+     *
+     * @param params - Accommodation ID and the desired display order, as an
+     *   explicit `{ faqId, displayOrder }[]` array.
+     * @returns Whether the reorder succeeded.
+     *
+     * @example
+     * ```ts
+     * const result = await accommodationFaqApi.reorder({
+     *   accommodationId: 'acc-uuid',
+     *   order: [{ faqId: 'faq-1', displayOrder: 0 }, { faqId: 'faq-2', displayOrder: 1 }]
+     * });
+     * ```
+     */
+    reorder({
+        accommodationId,
+        order
+    }: {
+        readonly accommodationId: string;
+        readonly order: ReadonlyArray<{ readonly faqId: string; readonly displayOrder: number }>;
+    }): Promise<ApiResult<{ readonly success: boolean }>> {
+        return apiClient.put({
+            path: `${PROTECTED}/accommodations/${accommodationId}/faqs/reorder`,
+            body: { order }
+        });
+    }
+};
+
+// --- Post edit (Protected — HOS-374 Phase 2 2C-1) ---
+
+/**
+ * Protected post edit API endpoints. Backs the editor's own-content dashboard
+ * (`/mi-cuenta/publicaciones`) and the editor form
+ * (`/mi-cuenta/publicaciones/[id]/editar`) — HOS-374 §5.2.2.
+ *
+ * Every endpoint here is author-scoped SERVER-side: authorship comes from the
+ * session, never from a parameter this client could widen.
+ */
+export const postEditApi = {
+    /**
+     * Load one of the caller's own posts, in whatever moderation and lifecycle
+     * state it is in.
+     *
+     * This goes to the PROTECTED route rather than `GET /public/posts/:id`,
+     * which would technically answer (an author may read their own pending
+     * post). That route carries `cacheTTL: 300`, so a response shaped by WHO
+     * asked would be cached and then served to whoever asked next — an
+     * author's unpublished draft handed to an anonymous visitor.
+     *
+     * @param params - Post ID plus the SSR cookie header.
+     * @returns The post, or a 403/404 error when the caller is not its author.
+     */
+    getById({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/posts/${id}`, cookieHeader });
+    },
+
+    /**
+     * Publish or unpublish one of the caller's own posts.
+     *
+     * Moves `visibility` ONLY — the moderation verdict is left intact, so
+     * unpublish → edit → republish never re-enters the review queue
+     * (HOS-374 §7.6.1). Requires `POST_PUBLISH_OWN` plus authorship (or the
+     * broad `POST_PUBLISH_TOGGLE`); a plain editor gets a 403.
+     *
+     * Do NOT reach for `update({ data: { isPublished } })` instead: that field
+     * name lies. `httpToDomainPostUpdate` maps it to the `publishedAt`
+     * TIMESTAMP, which no read path consults — it publishes nothing.
+     *
+     * @param params - Post ID and the target visibility.
+     * @returns The updated post.
+     */
+    setPublishState({
+        id,
+        visibility
+    }: {
+        readonly id: string;
+        readonly visibility: 'PUBLIC' | 'PRIVATE';
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/posts/${id}/publish-state`,
+            body: { visibility }
+        });
+    },
+    /**
+     * List the authenticated user's own posts, in every moderation and
+     * lifecycle state — including drafts, pending-review, and rejected
+     * content the public site never shows.
+     *
+     * Authorship is forced server-side from the session; `authorId` is NOT an
+     * accepted query parameter (the endpoint rejects it with a 400).
+     *
+     * @param params - Pagination, optional moderation/lifecycle filters, sort,
+     *   and optional SSR cookie header (see {@link protectedConversationsApi.list}).
+     * @returns Paginated list of the caller's own posts.
+     *
+     * @example
+     * ```ts
+     * const result = await postEditApi.listOwn({ cookieHeader, moderationState: 'PENDING' });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    listOwn({
+        cookieHeader,
+        page,
+        pageSize,
+        moderationState,
+        lifecycleState,
+        sortBy,
+        sortOrder
+    }: {
+        readonly cookieHeader?: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly moderationState?: 'PENDING' | 'APPROVED' | 'REJECTED';
+        readonly lifecycleState?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+        readonly sortBy?: string;
+        readonly sortOrder?: 'asc' | 'desc';
+    } = {}): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/posts`,
+            params: { page, pageSize, moderationState, lifecycleState, sortBy, sortOrder },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Create a new post authored by the caller (HOS-374 §5.2.2 create page).
+     *
+     * `POST /api/v1/protected/posts`. Authorship (`authorId`) is forced
+     * server-side from the authenticated actor by `httpToDomainPostCreate`
+     * (HOS-374 D-2) — never sent from here, and the HTTP schema does not even
+     * accept it. The created post starts `isPublished: false`; publication is
+     * a moderation-gate decision, not the author's, at create time.
+     *
+     * @param params - The create payload, a `.pick()` subset of
+     *   `PostCreateHttpSchema` (see `PostCreateForm.client.tsx`).
+     * @returns The created post record.
+     */
+    create({
+        data
+    }: {
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/posts`, body: data });
+    },
+
+    /**
+     * Update one of the caller's own posts via PATCH (partial update). Only
+     * sends the fields provided in `data`.
+     *
+     * Not called by the read-only listing (HOS-374 Phase 2 2C-1) — wired
+     * ahead of time for the editor form the next slice builds.
+     *
+     * @param params - Post ID and partial update data
+     * @returns The updated post record
+     */
+    update({
+        id,
+        data
+    }: {
+        readonly id: string;
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.patch({ path: `${PROTECTED}/posts/${id}`, body: data });
+    },
+
+    /**
+     * Soft-delete one of the caller's own posts.
+     *
+     * Not called by the read-only listing (HOS-374 Phase 2 2C-1) — wired
+     * ahead of time for the editor form the next slice builds.
+     *
+     * @param params - Post ID to delete
+     * @returns The delete result
+     */
+    softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({ path: `${PROTECTED}/posts/${id}` });
+    }
+};
+
+// --- Event edit (Protected — HOS-374 Phase 2 2C-1 / 2C-3) ---
+
+/**
+ * Protected event edit API endpoints. Mirrors {@link postEditApi} method for
+ * method — see its JSDoc for the shared rationale (authorship forced
+ * server-side, protected `getById` rather than the cacheable public one).
+ */
+export const eventEditApi = {
+    /**
+     * Load one of the caller's own events, in whatever moderation and lifecycle
+     * state it is in.
+     *
+     * Goes to the PROTECTED route for the same reason as
+     * {@link postEditApi.getById}: the public one carries `cacheTTL: 300`, so a
+     * response shaped by WHO asked would be cached and served to the next
+     * anonymous visitor.
+     *
+     * @param params - Event ID plus the SSR cookie header.
+     * @returns The event, or a 403/404 error when the caller is not its author.
+     */
+    getById({
+        id,
+        cookieHeader
+    }: {
+        readonly id: string;
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.getProtected({ path: `${PROTECTED}/events/${id}`, cookieHeader });
+    },
+
+    /**
+     * Publish or unpublish one of the caller's own events.
+     *
+     * Moves `visibility` ONLY — the moderation verdict survives, so
+     * unpublish → edit → republish never re-enters the review queue
+     * (HOS-374 §7.6.1). Requires `EVENT_PUBLISH_OWN` plus authorship (or the
+     * broad `EVENT_PUBLISH_TOGGLE`).
+     *
+     * @param params - Event ID and the target visibility.
+     * @returns The updated event.
+     */
+    setPublishState({
+        id,
+        visibility
+    }: {
+        readonly id: string;
+        readonly visibility: 'PUBLIC' | 'PRIVATE';
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/events/${id}/publish-state`,
+            body: { visibility }
+        });
+    },
+
+    /**
+     * List the authenticated user's own events, in every moderation and
+     * lifecycle state — including drafts, pending-review, and rejected
+     * content the public site never shows.
+     *
+     * Authorship is forced server-side from the session; `authorId` is NOT an
+     * accepted query parameter (the endpoint rejects it with a 400).
+     *
+     * @param params - Pagination, optional moderation/lifecycle filters, sort,
+     *   and optional SSR cookie header (see {@link protectedConversationsApi.list}).
+     * @returns Paginated list of the caller's own events.
+     *
+     * @example
+     * ```ts
+     * const result = await eventEditApi.listOwn({ cookieHeader, lifecycleState: 'DRAFT' });
+     * if (result.ok) console.log(result.data.items);
+     * ```
+     */
+    listOwn({
+        cookieHeader,
+        page,
+        pageSize,
+        moderationState,
+        lifecycleState,
+        sortBy,
+        sortOrder
+    }: {
+        readonly cookieHeader?: string;
+        readonly page?: number;
+        readonly pageSize?: number;
+        readonly moderationState?: 'PENDING' | 'APPROVED' | 'REJECTED';
+        readonly lifecycleState?: 'DRAFT' | 'ACTIVE' | 'ARCHIVED';
+        readonly sortBy?: string;
+        readonly sortOrder?: 'asc' | 'desc';
+    } = {}): Promise<ApiResult<PaginatedResponse<Record<string, unknown>>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/events`,
+            params: { page, pageSize, moderationState, lifecycleState, sortBy, sortOrder },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Create a new event authored by the caller (HOS-374 §5.2.2 create page).
+     *
+     * `POST /api/v1/protected/events`. Authorship (`authorId`) is forced
+     * server-side from the authenticated actor by `httpToDomainEventCreate`
+     * (HOS-374 D-2) — never sent from here, and the HTTP schema does not even
+     * accept it. The created event goes through the normal moderation queue.
+     *
+     * @param params - The create payload, a `.pick()` subset of
+     *   `EventCreateHttpSchema` (see `EventCreateForm.client.tsx`).
+     * @returns The created event record.
+     */
+    create({
+        data
+    }: {
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/events`, body: data });
+    },
+
+    /**
+     * Update one of the caller's own events via PATCH (partial update). Only
+     * sends the fields provided in `data`.
+     *
+     * Not called by the read-only listing (HOS-374 Phase 2 2C-1) — wired
+     * ahead of time for the editor form the next slice builds.
+     *
+     * @param params - Event ID and partial update data
+     * @returns The updated event record
+     */
+    update({
+        id,
+        data
+    }: {
+        readonly id: string;
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.patch({ path: `${PROTECTED}/events/${id}`, body: data });
+    },
+
+    /**
+     * Soft-delete one of the caller's own events.
+     *
+     * Not called by the read-only listing (HOS-374 Phase 2 2C-1) — wired
+     * ahead of time for the editor form the next slice builds.
+     *
+     * @param params - Event ID to delete
+     * @returns The delete result
+     */
+    softDelete({ id }: { readonly id: string }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({ path: `${PROTECTED}/events/${id}` });
+    }
+};
+
+// --- Event Organizers (Protected) ---
+
+/**
+ * Protected event organizer API endpoints.
+ *
+ * Just `create` today — needed so `EventCreateForm.client.tsx` (HOS-374
+ * §5.2.2) can let an editor whose organizer is not in the public catalog
+ * create one inline, since `EventCreateHttpSchema.organizerId` is a required
+ * UUID with no other way to satisfy it from `/mi-cuenta`.
+ *
+ * Gated server-side on `EVENT_ORGANIZER_CREATE` — deliberately narrower than
+ * the admin `EVENT_ORGANIZER_MANAGE`/`_VIEW`/`_UPDATE`/`_DELETE` set (see
+ * `packages/seed/src/required/rolePermissions.seed.ts`'s EDITOR block): an
+ * editor can create an organizer but not list/edit/delete one through this
+ * surface.
+ */
+export const eventOrganizerApi = {
+    /**
+     * Create a new event organizer authored by the caller.
+     *
+     * `POST /api/v1/protected/event-organizers`. Only `name` is genuinely
+     * required by `EventOrganizerCreateHttpSchema` — every other field
+     * (description, logo, contact, social links) is optional, which is why
+     * the inline create form only collects a name.
+     *
+     * @param params - The create payload, a `.pick()` subset of
+     *   `EventOrganizerCreateHttpSchema` (see `EventCreateForm.client.tsx`).
+     * @returns The created event organizer record.
+     */
+    create({
+        data
+    }: {
+        readonly data: Record<string, unknown>;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.postProtected({ path: `${PROTECTED}/event-organizers`, body: data });
     }
 };
 
@@ -3737,6 +5271,365 @@ export const priceAlertsApi = {
         return apiClient.getProtected({
             path: `${PROTECTED}/price-alerts`,
             cookieHeader: params?.cookieHeader
+        });
+    }
+};
+
+// --- Commerce Listing Media (Protected — HOS-372) ---
+
+/**
+ * Maps a commerce vertical to its URL path segment.
+ */
+function commerceMediaPathSegment(vertical: CommerceMediaVertical): 'gastronomies' | 'experiences' {
+    return vertical === 'gastronomy' ? 'gastronomies' : 'experiences';
+}
+
+/**
+ * Row shape returned by the gastronomy_media / experience_media relational
+ * endpoints. Field-for-field identical between both verticals (they share
+ * `BaseCommerceMediaSchema`) — one client, parameterized by `vertical`, reads
+ * cleanly instead of two near-identical objects.
+ *
+ * The `id` is the DB UUID needed for removeMedia / setFeaturedMedia /
+ * reorderMedia.
+ */
+export interface CommerceMediaRow {
+    readonly id: string;
+    readonly url: string;
+    readonly publicId?: string | null;
+    readonly caption?: string | null;
+    readonly description?: string | null;
+    readonly alt?: string | null;
+    readonly isFeatured: boolean;
+    readonly sortOrder: number;
+    readonly state: 'visible' | 'archived';
+    readonly moderationState: string;
+}
+
+/**
+ * Granular per-operation protected endpoints for commerce listing (gastronomy
+ * / experience) photo management (HOS-372).
+ *
+ * Mirrors `accommodationMediaApi` (SPEC-204): each operation persists
+ * immediately to the vertical's relational media table — the parent
+ * `CommerceListingEditor` PATCH no longer carries photo data. Unlike the
+ * accommodation endpoint, `removeMedia` here does NOT delete the Cloudinary
+ * asset server-side (see `removeMedia`'s JSDoc) — callers must also call
+ * `protectedMediaApi.deleteMedia` for cleanup.
+ *
+ * @example
+ * ```ts
+ * const list = await commerceMediaApi.listMedia({ vertical: 'gastronomy', id: 'listing-uuid' });
+ * const added = await commerceMediaApi.addMedia({ vertical: 'gastronomy', id: 'listing-uuid', body: { url, publicId } });
+ * await commerceMediaApi.setFeaturedMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
+ * await commerceMediaApi.removeMedia({ vertical: 'gastronomy', id: 'listing-uuid', mediaId: added.data.media.id });
+ * ```
+ */
+export const commerceMediaApi = {
+    /**
+     * List media rows for a commerce listing.
+     *
+     * @param params - Vertical, listing ID, optional state filter, optional SSR cookie
+     * @returns `{ media: CommerceMediaRow[] }`
+     */
+    listMedia({
+        vertical,
+        id,
+        state = 'visible',
+        cookieHeader
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly state?: 'visible' | 'archived';
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly media: readonly CommerceMediaRow[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media`,
+            params: { state },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Add a new media row for a commerce listing.
+     * `sortOrder` and `isFeatured` are server-controlled.
+     *
+     * @param params - Vertical, listing ID, and media body
+     * @returns `{ media: CommerceMediaRow }` — the newly created row (with DB id)
+     */
+    addMedia({
+        vertical,
+        id,
+        body
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly body: {
+            readonly url: string;
+            readonly publicId?: string;
+            readonly caption?: string;
+            readonly description?: string;
+            readonly alt?: string;
+            readonly moderationState?: string;
+        };
+    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media`,
+            body
+        });
+    },
+
+    /**
+     * Delete a media row by its DB UUID (soft-delete + resequence).
+     *
+     * Unlike `accommodationMediaApi.removeMedia`, this does NOT delete the
+     * Cloudinary asset — the gastronomy/experience media routes intentionally
+     * leave binary cleanup to the caller. Pair with
+     * `protectedMediaApi.deleteMedia({ publicId })` (best-effort) when the
+     * row being removed carries a `publicId`.
+     *
+     * @param params - Vertical, listing ID, and media row ID (DB UUID)
+     * @returns Delete result
+     */
+    removeMedia({
+        vertical,
+        id,
+        mediaId
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}`
+        });
+    },
+
+    /**
+     * Mark a media row as the featured (cover) image.
+     * Enforces the single-featured invariant: the previous featured row is
+     * automatically unmarked by the server and becomes a normal visible row.
+     *
+     * @param params - Vertical, listing ID, and media row ID (DB UUID) to feature
+     * @returns `{ media: CommerceMediaRow }` — the updated row
+     */
+    setFeaturedMedia({
+        vertical,
+        id,
+        mediaId
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<{ readonly media: CommerceMediaRow }>> {
+        return apiClient.put({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/${mediaId}/featured`
+        });
+    },
+
+    /**
+     * Reorder the visible gallery photos of a commerce listing.
+     *
+     * @param params - Vertical, listing ID, and the full ordered list of
+     *   visible media UUIDs (must match the current visible set exactly).
+     * @returns `{ media: CommerceMediaRow[] }` — the rows in their new order
+     */
+    reorderMedia({
+        vertical,
+        id,
+        orderedIds
+    }: {
+        readonly vertical: CommerceMediaVertical;
+        readonly id: string;
+        readonly orderedIds: readonly string[];
+    }): Promise<ApiResult<{ readonly media: readonly CommerceMediaRow[] }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/${commerceMediaPathSegment(vertical)}/${id}/media/reorder`,
+            body: { orderedIds }
+        });
+    }
+};
+
+// ---------------------------------------------------------------------------
+// Content media (posts / events) — HOS-390
+// ---------------------------------------------------------------------------
+
+/** Editorial content vertical that owns a relational media table. */
+export type ContentMediaEntity = 'post' | 'event';
+
+/**
+ * Maps a content entity to its URL path segment.
+ */
+function contentMediaPathSegment(entity: ContentMediaEntity): 'posts' | 'events' {
+    return entity === 'post' ? 'posts' : 'events';
+}
+
+/**
+ * Row shape returned by the `post_media` / `event_media` relational endpoints.
+ * Field-for-field identical between both (they share `BaseContentMediaSchema`),
+ * so one client parameterized by `entity` reads cleanly instead of two
+ * near-identical objects.
+ *
+ * The `id` is the DB UUID needed for removeMedia / setFeaturedMedia /
+ * reorderMedia.
+ */
+export interface ContentMediaRow {
+    readonly id: string;
+    readonly url: string;
+    readonly publicId?: string | null;
+    readonly caption?: string | null;
+    readonly description?: string | null;
+    readonly alt?: string | null;
+    readonly isFeatured: boolean;
+    readonly sortOrder: number;
+    readonly state: 'visible' | 'archived';
+    readonly moderationState: string;
+}
+
+/**
+ * Granular per-operation protected endpoints for post / event photo management
+ * (HOS-390).
+ *
+ * Mirrors `commerceMediaApi` (HOS-372), with ONE behavioral difference worth
+ * knowing: `removeMedia` here DOES delete the Cloudinary asset server-side (the
+ * route passes the media provider down, so the binary is removed before the
+ * row and a storage failure aborts the whole operation). Callers must NOT also
+ * call `protectedMediaApi.deleteMedia` — that would be a second delete of an
+ * already-deleted asset.
+ *
+ * Each operation persists immediately: the post/event editor PATCH does not
+ * carry photo data. Videos are the exception and still travel in the entity's
+ * `media` blob (SPEC-204 D1).
+ *
+ * @example
+ * ```ts
+ * const list = await contentMediaApi.listMedia({ entity: 'post', id: 'post-uuid' });
+ * const added = await contentMediaApi.addMedia({ entity: 'post', id: 'post-uuid', body: { url, publicId } });
+ * await contentMediaApi.setFeaturedMedia({ entity: 'post', id: 'post-uuid', mediaId: added.data.media.id });
+ * await contentMediaApi.removeMedia({ entity: 'post', id: 'post-uuid', mediaId: added.data.media.id });
+ * ```
+ */
+export const contentMediaApi = {
+    /**
+     * List media rows for a post or event.
+     *
+     * @param params - Entity, entity ID, optional state filter, optional SSR cookie
+     * @returns `{ media: ContentMediaRow[] }`
+     */
+    listMedia({
+        entity,
+        id,
+        state = 'visible',
+        cookieHeader
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly state?: 'visible' | 'archived';
+        readonly cookieHeader?: string;
+    }): Promise<ApiResult<{ readonly media: readonly ContentMediaRow[] }>> {
+        return apiClient.getProtected({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media`,
+            params: { state },
+            cookieHeader
+        });
+    },
+
+    /**
+     * Add a new media row for a post or event.
+     * `sortOrder` and `isFeatured` are server-controlled.
+     *
+     * Uses `postProtected`, not `post` — the plain helper does not send
+     * credentials, so a protected write through it is always a 401.
+     *
+     * @param params - Entity, entity ID, and media body
+     * @returns `{ media: ContentMediaRow }` — the newly created row (with DB id)
+     */
+    addMedia({
+        entity,
+        id,
+        body
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly body: {
+            readonly url: string;
+            readonly publicId?: string;
+            readonly caption?: string;
+            readonly description?: string;
+            readonly alt?: string;
+            readonly moderationState?: string;
+        };
+    }): Promise<ApiResult<{ readonly media: ContentMediaRow }>> {
+        return apiClient.postProtected({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media`,
+            body
+        });
+    },
+
+    /**
+     * Delete a media row by its DB UUID (soft-delete + resequence).
+     *
+     * The server also deletes the Cloudinary asset — do NOT pair this with
+     * `protectedMediaApi.deleteMedia`.
+     *
+     * @param params - Entity, entity ID, and media row ID (DB UUID)
+     * @returns Delete result
+     */
+    removeMedia({
+        entity,
+        id,
+        mediaId
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<Record<string, unknown>>> {
+        return apiClient.delete({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/${mediaId}`
+        });
+    },
+
+    /**
+     * Mark a media row as the featured (cover) image.
+     * Enforces the single-featured invariant: the previous featured row is
+     * automatically unmarked by the server and becomes a normal visible row.
+     *
+     * @param params - Entity, entity ID, and media row ID (DB UUID) to feature
+     * @returns `{ media: ContentMediaRow }` — the updated row
+     */
+    setFeaturedMedia({
+        entity,
+        id,
+        mediaId
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly mediaId: string;
+    }): Promise<ApiResult<{ readonly media: ContentMediaRow }>> {
+        return apiClient.put({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/${mediaId}/featured`
+        });
+    },
+
+    /**
+     * Reorder the visible gallery photos of a post or event.
+     *
+     * @param params - Entity, entity ID, and the full ordered list of visible
+     *   media UUIDs (must match the current visible set exactly).
+     * @returns `{ media: ContentMediaRow[] }` — the rows in their new order
+     */
+    reorderMedia({
+        entity,
+        id,
+        orderedIds
+    }: {
+        readonly entity: ContentMediaEntity;
+        readonly id: string;
+        readonly orderedIds: readonly string[];
+    }): Promise<ApiResult<{ readonly media: readonly ContentMediaRow[] }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/${contentMediaPathSegment(entity)}/${id}/media/reorder`,
+            body: { orderedIds }
         });
     }
 };

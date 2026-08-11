@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import { useTranslations } from '@/hooks/use-translations';
 
 // ---------------------------------------------------------------------------
@@ -148,29 +149,160 @@ export function StatCard({ label, value, suffix }: StatCardProps) {
 }
 
 // ---------------------------------------------------------------------------
+// FlushTargetNotice
+// ---------------------------------------------------------------------------
+
+/**
+ * The literal the API reports as `environmentFlushTarget` when the deployment
+ * cache-tag namespace could not be resolved. Mirrors
+ * `UNRESOLVED_ENVIRONMENT_TARGET` in `@repo/service-core`; duplicated here
+ * rather than imported because the admin bundle has no other reason to pull in
+ * that package, and the value travels over HTTP as a plain string anyway.
+ */
+export const UNRESOLVED_FLUSH_TARGET = 'unresolved';
+
+/**
+ * What the panel currently knows about the tag an environment flush would
+ * purge. Modelled as a closed union so every branch has to be rendered
+ * explicitly — a plain `string | undefined` would let an unknown target fall
+ * through as an empty label, which is exactly the failure mode this display
+ * exists to prevent.
+ */
+export type FlushTargetState =
+    | { readonly kind: 'loading' }
+    | { readonly kind: 'error' }
+    | { readonly kind: 'unresolved' }
+    | { readonly kind: 'resolved'; readonly target: string };
+
+/**
+ * Derives the display state of the flush target from a health query.
+ *
+ * Kept as a pure function (rather than inlined in the page) so the mapping
+ * from "backend said `unresolved`" to "UI must say so out loud" is testable on
+ * its own.
+ *
+ * @param params.isLoading - Whether the health query is still in flight
+ * @param params.isError - Whether the health query failed
+ * @param params.target - `environmentFlushTarget` as reported by the API
+ * @returns The state the notice should render
+ */
+export function deriveFlushTargetState({
+    isLoading,
+    isError,
+    target
+}: {
+    readonly isLoading: boolean;
+    readonly isError: boolean;
+    readonly target: string | undefined;
+}): FlushTargetState {
+    if (isLoading) return { kind: 'loading' };
+    if (isError) return { kind: 'error' };
+    if (target === undefined || target === '' || target === UNRESOLVED_FLUSH_TARGET) {
+        return { kind: 'unresolved' };
+    }
+    return { kind: 'resolved', target };
+}
+
+/**
+ * Names the blast radius of an environment flush: which cache tag it would
+ * purge on the deployment this panel talks to.
+ *
+ * Every non-resolved branch renders its own explicit sentence. Nothing here
+ * ever degrades to a blank line or to a plausible-looking default such as
+ * `prod:all` — an operator reading a guessed environment is the precise hazard
+ * this component was added for (HOS-369).
+ */
+export function FlushTargetNotice({ state }: { readonly state: FlushTargetState }) {
+    const { t } = useTranslations();
+
+    if (state.kind === 'loading') {
+        return (
+            <p
+                className="text-muted-foreground text-xs"
+                data-testid="revalidation-flush-target-loading"
+            >
+                {t('revalidation.manual.flushTargetLoading')}
+            </p>
+        );
+    }
+
+    if (state.kind === 'error') {
+        return (
+            <p
+                className="font-medium text-destructive text-xs"
+                data-testid="revalidation-flush-target-error"
+            >
+                {t('revalidation.manual.flushTargetError')}
+            </p>
+        );
+    }
+
+    if (state.kind === 'unresolved') {
+        return (
+            <p
+                className="font-medium text-destructive text-xs"
+                data-testid="revalidation-flush-target-unresolved"
+            >
+                {t('revalidation.manual.flushTargetUnresolved')}
+            </p>
+        );
+    }
+
+    return (
+        <p className="text-xs">
+            <span className="text-muted-foreground">
+                {t('revalidation.manual.flushTargetLabel')}
+            </span>{' '}
+            <code
+                className="rounded bg-muted px-1 py-0.5 font-mono"
+                data-testid="revalidation-flush-target"
+            >
+                {state.target}
+            </code>
+        </p>
+    );
+}
+
+// ---------------------------------------------------------------------------
 // ManualForm
 // ---------------------------------------------------------------------------
 
 type ManualFormProps = {
-    readonly pathsInput: string;
+    readonly tagsInput: string;
     readonly reason: string;
     readonly isPending: boolean;
     readonly parsedCount: number;
-    readonly onPathsChange: (value: string) => void;
+    /** Whether the destructive environment-flush mode is active. Defaults off. */
+    readonly purgeEverything: boolean;
+    /** Which environment the flush would empty, as reported by the API. */
+    readonly flushTarget: FlushTargetState;
+    readonly onTagsChange: (value: string) => void;
     readonly onReasonChange: (value: string) => void;
+    readonly onPurgeEverythingChange: (value: boolean) => void;
     readonly onSubmit: (e: React.FormEvent) => void;
 };
 
 /**
- * Form to enter comma-separated paths and an optional audit reason.
+ * Form to enter comma-separated cache tags and an optional audit reason, plus
+ * an explicit, visually distinct opt-in for flushing this environment's cache.
+ *
+ * The flush toggle is OFF by default (`purgeEverything`) — reaching the
+ * destructive path always requires the operator to deliberately flip it, per
+ * the same "never the implicit fallback" contract the manual-revalidate
+ * endpoint enforces server-side. The flush is scoped to THIS deployment: it
+ * purges the `<env>:all` catch-all tag, leaving the other environments that
+ * share the Cloudflare zone untouched, which is why the box names the target.
  */
 export function ManualForm({
-    pathsInput,
+    tagsInput,
     reason,
     isPending,
     parsedCount,
-    onPathsChange,
+    purgeEverything,
+    flushTarget,
+    onTagsChange,
     onReasonChange,
+    onPurgeEverythingChange,
     onSubmit
 }: ManualFormProps) {
     const { t, tPlural } = useTranslations();
@@ -181,21 +313,21 @@ export function ManualForm({
         >
             <div>
                 <label
-                    htmlFor="revalidation-paths"
+                    htmlFor="revalidation-tags"
                     className="mb-2 block font-medium text-sm"
                 >
-                    {t('revalidation.manual.pathsLabel')}
+                    {t('revalidation.manual.tagsLabel')}
                 </label>
                 <textarea
-                    id="revalidation-paths"
+                    id="revalidation-tags"
                     className="flex min-h-[100px] w-full rounded-md border border-input bg-background px-3 py-2 font-mono text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    placeholder={t('revalidation.manual.pathsPlaceholder')}
-                    value={pathsInput}
-                    onChange={(e) => onPathsChange(e.target.value)}
-                    disabled={isPending}
+                    placeholder={t('revalidation.manual.tagsPlaceholder')}
+                    value={tagsInput}
+                    onChange={(e) => onTagsChange(e.target.value)}
+                    disabled={isPending || purgeEverything}
                 />
                 <p className="mt-1 text-muted-foreground text-xs">
-                    {t('revalidation.manual.pathsHint')}
+                    {t('revalidation.manual.tagsHint')}
                 </p>
             </div>
             <div>
@@ -213,19 +345,51 @@ export function ManualForm({
                     disabled={isPending}
                 />
             </div>
+
+            {/* Environment-flush opt-in — deliberately styled as destructive and
+                kept visually separate from the tags form above it. */}
+            <div className="flex items-start gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-3">
+                <Switch
+                    id="revalidation-purge-everything"
+                    checked={purgeEverything}
+                    onCheckedChange={onPurgeEverythingChange}
+                    disabled={isPending}
+                    aria-label={t('revalidation.manual.purgeEverythingLabel')}
+                />
+                <div className="space-y-1">
+                    <label
+                        htmlFor="revalidation-purge-everything"
+                        className="block font-medium text-destructive text-sm"
+                    >
+                        {t('revalidation.manual.purgeEverythingLabel')}
+                    </label>
+                    <p className="text-muted-foreground text-xs">
+                        {t('revalidation.manual.purgeEverythingWarning')}
+                    </p>
+                    <FlushTargetNotice state={flushTarget} />
+                </div>
+            </div>
+
             <div className="flex items-center justify-between">
                 <p className="text-muted-foreground text-sm">
-                    {tPlural('revalidation.manual.pathsCount', parsedCount, { count: parsedCount })}
+                    {purgeEverything
+                        ? ''
+                        : tPlural('revalidation.manual.tagsCount', parsedCount, {
+                              count: parsedCount
+                          })}
                 </p>
                 <Button
                     type="submit"
-                    disabled={isPending || parsedCount === 0}
+                    variant={purgeEverything ? 'destructive' : 'default'}
+                    disabled={isPending || (!purgeEverything && parsedCount === 0)}
                 >
                     {isPending ? (
                         <>
                             <LoaderIcon className="mr-2 size-4 animate-spin" />
                             {t('revalidation.manual.submittingButton')}
                         </>
+                    ) : purgeEverything ? (
+                        t('revalidation.manual.purgeEverythingButton')
                     ) : (
                         t('revalidation.manual.submitButton')
                     )}
@@ -244,7 +408,10 @@ type RevalidationResultTableProps = {
 };
 
 /**
- * Displays the per-path result of a completed revalidation request.
+ * Displays the per-target result of a completed revalidation request. A
+ * target is a cache tag — including `<env>:all` for an environment flush, and
+ * `unresolved` for a flush the API refused because it could not name its own
+ * environment.
  */
 export function RevalidationResultTable({ result }: RevalidationResultTableProps) {
     const { t } = useTranslations();
@@ -271,7 +438,7 @@ export function RevalidationResultTable({ result }: RevalidationResultTableProps
                         <thead>
                             <tr className="border-b">
                                 <th className="px-4 py-2 text-left font-medium">
-                                    {t('revalidation.result.pathHeader')}
+                                    {t('revalidation.result.tagHeader')}
                                 </th>
                                 <th className="px-4 py-2 text-center font-medium">
                                     {t('revalidation.result.statusHeader')}
@@ -279,23 +446,23 @@ export function RevalidationResultTable({ result }: RevalidationResultTableProps
                             </tr>
                         </thead>
                         <tbody>
-                            {result.revalidated.map((path) => (
+                            {result.revalidated.map((target) => (
                                 <tr
-                                    key={`ok-${path}`}
+                                    key={`ok-${target}`}
                                     className="border-b hover:bg-muted/50"
                                 >
-                                    <td className="px-4 py-2 font-mono text-xs">{path}</td>
+                                    <td className="px-4 py-2 font-mono text-xs">{target}</td>
                                     <td className="px-4 py-2 text-center">
                                         <Badge variant="default">OK</Badge>
                                     </td>
                                 </tr>
                             ))}
-                            {result.failed.map((path) => (
+                            {result.failed.map((target) => (
                                 <tr
-                                    key={`fail-${path}`}
+                                    key={`fail-${target}`}
                                     className="border-b hover:bg-muted/50"
                                 >
-                                    <td className="px-4 py-2 font-mono text-xs">{path}</td>
+                                    <td className="px-4 py-2 font-mono text-xs">{target}</td>
                                     <td className="px-4 py-2 text-center">
                                         <Badge variant="destructive">
                                             {t('revalidation.status.failed')}

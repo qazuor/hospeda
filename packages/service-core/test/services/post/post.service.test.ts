@@ -1,7 +1,9 @@
 import { EntityTypeEnum, RoleEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { PUBLIC_READ_FLOOR } from '../../../src/services/moderation/public-read-floor';
 import { PostService } from '../../../src/services/post/post.service';
 import type { Actor, ServiceConfig } from '../../../src/types';
+import { makePostMediaModelStub } from '../../utils/modelMockFactory';
 
 // Mock PostModel
 class MockPostModel {
@@ -57,7 +59,13 @@ describe('PostService - Relations Support', () => {
         } as Actor;
 
         mockModel = new MockPostModel();
-        service = new PostService(mockContext, mockModel as any);
+        service = new PostService(
+            mockContext,
+            mockModel as any,
+            null,
+            undefined,
+            makePostMediaModelStub() as never
+        );
     });
 
     describe('getDefaultListRelations method', () => {
@@ -147,7 +155,13 @@ describe('PostService - tags filter via r_entity_tag (HOS-109 regression)', () =
 
         mockModel = new MockPostModel();
         mockRelatedModel = new MockREntityTagModel();
-        service = new PostService(mockContext, mockModel as any, null, mockRelatedModel as any);
+        service = new PostService(
+            mockContext,
+            mockModel as any,
+            null,
+            mockRelatedModel as any,
+            makePostMediaModelStub() as never
+        );
     });
 
     describe('_executeSearch', () => {
@@ -205,7 +219,12 @@ describe('PostService - tags filter via r_entity_tag (HOS-109 regression)', () =
             expect(mockRelatedModel.findEntityIdsByTags).not.toHaveBeenCalled();
             const call = mockModel.findAllWithRelations.mock.calls[0];
             const whereArg = call?.[1] as Record<string, unknown>;
-            expect(whereArg).toEqual({ category: 'blog', isNews: false, isFeatured: true });
+            expect(whereArg).toEqual({
+                category: 'blog',
+                isNews: false,
+                isFeatured: true,
+                ...PUBLIC_READ_FLOOR
+            });
             expect(call?.[3]).toBeUndefined();
         });
     });
@@ -259,7 +278,7 @@ describe('PostService - tags filter via r_entity_tag (HOS-109 regression)', () =
             const call = mockModel.count.mock.calls[0];
             const whereArg = call?.[0] as Record<string, unknown>;
             const options = call?.[1] as { additionalConditions: unknown[] };
-            expect(whereArg).toEqual({ category: 'news' });
+            expect(whereArg).toEqual({ category: 'news', ...PUBLIC_READ_FLOOR });
             expect(options.additionalConditions).toEqual([]);
         });
     });

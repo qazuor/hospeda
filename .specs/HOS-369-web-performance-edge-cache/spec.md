@@ -14,6 +14,60 @@ areas:
 
 ## 0. Revision log
 
+### Rev 3 — 2026-08-01: purge-by-URL is a dead end, and the SSR must go auth-blind
+
+Wave A shipped and is live in production (§0.1 below). Preparing Wave B's
+selective purge (W1-1) surfaced three findings that invalidate part of the Rev 2
+plan and add a wave that Rev 2 had scattered across Wave C.
+
+What changed in this revision:
+
+- **W1-1 as written cannot work.** Rev 2 said "replace `purge_everything: true`
+  with `files: [...]`". Two independently fatal problems: the path mapper emits
+  URLs that do not exist for the default locale, and on the **Free** plan the
+  query string cannot be removed from the cache key, so purge-by-URL can never
+  reach the `?page=`/`?sortBy=` variants that the origin marks cacheable. The
+  purge contract moves to **cache tags**. See §5.11.
+- **Auth-blind SSR is promoted from a Wave C task (old W2-4) to its own wave
+  (Wave B0), and re-scoped.** An audit of all 27 public content pages, ~37
+  components and the client-side session machinery found the conversion is far
+  cheaper than Rev 2 assumed — but also that Rev 2 aimed it at the wrong file
+  set. See §5.12.
+- **OQ-3 (shared CSP nonce) is decided, and it is a hard prerequisite**, not a
+  footnote. It blocks Wave B for every page, not just the ones being
+  de-personalized. See §5.13 and D-9.
+- **Ordering changed on a risk argument, not a value argument.** Rev 2 deferred
+  the de-personalization because the traffic is ~100 % bots and the performance
+  payoff is therefore ≈0 today. The owner overrode this: the blast radius of the
+  migration is proportional to the number of authenticated users it can break,
+  and that number is ≈0 right now. See D-10.
+
+Rev 1's §5.1–§5.7 and Rev 2's §5.9–§5.10 measurements are unchanged and still
+valid.
+
+#### 0.1 Wave A — shipped
+
+| Task | Commit | Notes |
+|---|---|---|
+| WA-1 | `edf33948d` | facet crawl policy |
+| WA-2 | `21a61497c` | `rel="nofollow"` derived from the href, never a per-caller prop |
+| WA-3 | `cf134f690` | query-free canonical on facet URLs |
+| AC-A3 | `1c8aa7085` | non-vacuous robots.txt root-conflict guard |
+| WA-4 | `3921e17f3` | single reconciled crawler policy |
+| fixture | `9be1a1f3e` | fixture corrected against the live file |
+
+PR #2551 → `staging`; PR #2552 → `main` (`616bf1613`). Live: 414-line
+`robots.txt`, 280 facet rules, no contradictions, Cloudflare's managed block
+disabled. **WA-5 measured 2026-08-03: Wave A worked.** Applebot — the clean
+signal, still unblocked — fell **326,810 → 1.2 k (−99.6 %)**; total crawl
+traffic **464 k → ≈2 k (−95.5 %)**; egress **83.7 GB/day → ≈21 MB/day**. The
+trigger to reconsider strategy C did not fire; D-1 stands. Full table and
+caveats in §6.1 (WA-5).
+
+> Read WA-5 correctly: GPTBot is now `Disallow: /`, so its drop proves nothing
+> about the crawl trap. **Applebot is the clean signal** — still allowed, so it
+> can only fall because the combinatorial tree closed.
+
 ### Rev 2 — 2026-07-31, same day: the "CPU runaway" was misdiagnosed
 
 Rev 1 listed a `hospeda-web-prod` CPU runaway as an independent root cause and
@@ -207,6 +261,10 @@ with no validatable form.
   immutable, edge-cacheable asset.
 - **G-7** — Bots (Googlebot, PageSpeed, AI crawlers) get the same cached-edge
   benefit as human visitors, and are not throttled by the public rate limit.
+  **MET on staging 2026-08-05 (W2-6).** Googlebot and Chrome were measured
+  served from the *same* cache entry (identical `age`, no `Vary`), and the
+  rate-limit half needs no work: a 24 h census found zero crawler requests
+  against the API host. See §6.5 W2-6 and D-13.
 
 Added in Rev 2:
 
@@ -323,7 +381,13 @@ And `alojamientos/index.astro:208-220` runs 4 sequential awaits
 (destinations → amenities → features → accommodations) with no `Promise.all`,
 contradicting a comment in `listing-cache.ts:9` that claims otherwise.
 
-### 5.5 Purge is still whole-zone
+### 5.5 Purge is still whole-zone — RESOLVED by W1-1 (2026-08-03)
+
+> **Status.** Everything below described the state before W1-1. It shipped:
+> `/api/revalidate` now purges `{ tags }` (or `{ purgeEverything: true }` behind
+> an explicit flag), `entity-path-mapper.ts` is deleted, and
+> `revalidation_log.path` is now `target`. Kept as written because it is the
+> record of WHY, and because §5.11's reasoning still governs W1-2.
 
 `apps/web/src/pages/api/revalidate.ts:60` sends
 `{ purge_everything: true }` to the Cloudflare zone. Verified by reading the
@@ -339,6 +403,12 @@ static assets that currently work correctly.
 per-entity affected-path logic (`destination`, `event`, `post`,
 `accommodation_review`, `destination_review`, `tag`, `amenity`,
 `accommodation`). It is not wired to the purge call.
+
+> **Rev 3 — do not act on the paragraph above.** "Wire the existing mapper into
+> the purge" was the Rev 2 plan and it does not work: the mapper emits redirect
+> URLs for the default locale, and exact-URL purge cannot reach the cacheable
+> query-string variants at this plan tier. The mapper is **deleted**, not wired.
+> See §5.11 and D-6.
 
 The adapter falls back to `NoOpRevalidationAdapter` with only a `logger.warn`
 if `HOSPEDA_REVALIDATION_SECRET` is missing — a silent-disable path worth
@@ -552,6 +622,321 @@ ChatGPT's answers** — `OAI-SearchBot` and `ChatGPT-User` do that, and they are
 separate agents currently moving 360 kB and near-zero traffic respectively.
 Blocking `Applebot`, by contrast, does cost real Siri/Spotlight visibility.
 
+### 5.11 Purge-by-URL is a dead end on this plan (Rev 3)
+
+> Method: read the installed source of the purge path on 2026-08-01
+> (`apps/web/src/pages/api/revalidate.ts`,
+> `packages/service-core/src/revalidation/**`), then checked every limit against
+> the live Cloudflare documentation rather than from memory. Facts below are
+> quoted from the docs, not inferred.
+
+Rev 2's W1-1 ("replace `purge_everything: true` with `files: [...]`") fails for
+two independent reasons. Either one alone would sink it.
+
+#### 5.11.1 The path mapper emits URLs that do not exist
+
+`entity-path-mapper.ts:463` ends with:
+
+```ts
+export function getLocalizedPath(path: string, locale: string): string {
+    if (locale === 'es') return path;      // '/alojamientos/'  ← no prefix
+    return `/${locale}${path}`;
+}
+```
+
+But `apps/web/src/pages/` contains **only** `[lang]/` for content routes.
+`pages/index.astro` is 44 bytes: `Astro.redirect('/es/', 301)`. There is no
+`/alojamientos/` route — it is a 301 to `/es/alojamientos/`.
+
+So for `es` — the default locale and effectively all human traffic — the mapper
+produces **redirect URLs, not content URLs**. Under `purge_everything` this is
+invisible. Under selective purge, every Spanish path would purge a URL that was
+never cached, and Cloudflare would return `200 success` for it.
+
+This is a **latent bug that only detonates on the change that was supposed to be
+an improvement** — the same shape as HOS-370 (a race that only surfaced once a
+deploy reordered module loading). It is not a reason to abandon selectivity; it
+is a reason to distrust a 466-line hand-maintained duplicate of the routing
+table. See D-6.
+
+#### 5.11.2 On the Free plan the query string cannot leave the cache key
+
+| Purge method | Per request | Rate (account) | Available on Free |
+|---|---|---|---|
+| By URL (single-file) | 100 URLs | 800 URLs/s | Yes |
+| By prefix / tag / hostname / everything | 100 ops | **5 requests/min** | Yes |
+
+All five purge methods became available on every plan on **2025-04-01**
+(Cloudflare changelog, *"All cache purge methods now available for all plans"*).
+Purge by tag is no longer Enterprise-only — this is the fact that unlocks the
+design in §6.3.
+
+But **cache-key customization did not follow**. `Ignore query string` and
+`No query parameters except` remain Enterprise (the former also Pay-as-you-go).
+On Free only **Sort query string** is available.
+
+That is decisive, because `listing-cache.ts` deliberately marks bounded
+query-string variants as cacheable — `page`, `sortBy`, `sortOrder`, `checkIn`,
+`checkOut`, `type`, `types` are all in `NON_FILTERING_PARAMS`. So the cache
+*will* contain `?page=2`, `?sortBy=price` entries, the cache key *will* include
+the query string, and exact-URL purge can **never** reach them. This is not a
+tradeoff we can choose to accept later and fix; on this plan it has no fix.
+
+Purge by tag invalidates on what a response *contains*, regardless of its URL.
+It is the only method that closes this hole at our tier.
+
+#### 5.11.3 A Cache Rule that matches only `GET` silently defeats single-file purge
+
+From the Cloudflare docs (*Purge By Single File → Limitations*): a Cache Rule
+whose expression matches on `http.request.method eq "GET"` **will not match
+during a purge**, because the purge request is not a GET. The documented fix is
+to match `(... and (http.request.method eq "GET" or http.request.method eq
+"PURGE"))`.
+
+This applies to the Cache Rule regardless of which purge method we choose, and
+the failure mode is a purge that reports success and does nothing. Captured as
+an explicit requirement in §7.2.
+
+#### 5.11.4 Prefix purge was considered and rejected
+
+Prefix purge would cover the query-string variants too. It is rejected because
+it over-purges catastrophically: purging `/es/alojamientos/` also evicts every
+accommodation detail page under it — precisely the finite, high-value, expensive
+-to-render surface the cache exists to protect. Tags give the same coverage with
+none of the collateral.
+
+#### 5.11.5 Does Free honor a `Cache-Tag` header from an ORIGIN? (RESOLVED — yes, measured 2026-08-03)
+
+> **Outcome: YES.** Cloudflare honors an origin-emitted `Cache-Tag` on the Free
+> plan, and purge-by-tag evicts it. The fallback below is NOT needed and the
+> emitter side stays exactly as built. **W1-2 is unblocked.** The measurement
+> and the method that actually proves it are in §5.11.6; the original open
+> question is preserved below because the reasoning is what made it worth
+> testing rather than assuming.
+>
+> Method: re-read the live Cloudflare docs on 2026-08-03 while implementing
+> W1-1 — the purge-cache overview, the purge-by-tags page, and the Workers
+> cache configuration page.
+
+Everything §5.11.2 claims about the purge METHODS holds. What no page states is
+whether the `Cache-Tag` **response header emitted by an origin server** — as
+opposed to one set inside a Worker — is honored on the Free plan. The
+2025-04-01 changelog universalized the five purge *methods*; it says nothing
+about the header, which was historically Enterprise-only.
+
+The circumstantial case that it works is decent: purge-by-tag on Free would be
+useless without an origin-side way to attach tags, and Cache Response Rules
+(available on Free, 10 rules) exist to set cache tags on responses. But that is
+inference, and the failure mode is the silent one §5.11.3 warns about — the
+purge returns `200 success` and evicts nothing.
+
+**This must be verified empirically before the Cache Rule opens** (W1-2), and
+it is cheap: scope a Cache Rule to one probe path, confirm `CF-Cache-Status:
+HIT`, purge by that response's tag, confirm the next request is a `MISS`. If it
+fails, the fallback is a Cache Response Rule that copies a first-party origin
+header into `Cache-Tag` — the emitter side stays exactly as built either way.
+
+#### 5.11.6 The measurement, and why the test above was not sufficient
+
+> Method: executed against `staging.hospeda.com.ar` on 2026-08-03, immediately
+> after W1-1 + the environment namespace were deployed there.
+
+Setup: one Cache Rule scoped to
+`(http.host eq "staging.hospeda.com.ar" and http.request.uri.path eq "/llms.txt")`,
+action *Eligible for cache*, Edge TTL **ignore the origin `cache-control`, use
+120 s**. Overriding the TTL is not incidental — it bounds the whole experiment,
+and the origin's own `max-age=3600` would have made it unrunnable. Blast radius:
+one staging URL, one zone-shared config row, no production path.
+
+The purge went through the REAL chain — `POST /api/revalidate?secret=…` on the
+staging web app, the same endpoint `CloudflareRevalidationAdapter` calls and the
+only process holding the Cloudflare credentials — with
+`{"tags":["preview:site-config"]}`, answering `200 {"ok":true,"purged":1}`. That
+the endpoint ACCEPTED the namespaced tag instead of rejecting it (§7.3) is a
+second result: the purger and the emitter agreed on the namespace.
+
+| Condition | Terminal status | `age` at reset |
+|---|---|---|
+| Control, no purge | **`EXPIRED`** | ~120 s (the configured TTL) |
+| After purge-by-tag | **`MISS`** | ~70 s, 5-8 s after the POST |
+
+**`EXPIRED` vs `MISS` is the discriminator, not the `age` reset.** §5.11.5's
+proposed test — "confirm the next request is a `MISS`" — is NOT sufficient, and
+following it literally produced a false positive on the first attempt: a `MISS`
+observed after several minutes of unrelated debugging looked like proof, but the
+elapsed time had exceeded the TTL, so the object would have dropped out on its
+own. Cloudflare reports a natural TTL expiry as `EXPIRED` and an explicit
+eviction as `MISS`, so the STATUS is what carries the signal. Two further
+controls are required for the result to mean anything:
+
+- **Bound the sequence inside the TTL.** Print the elapsed seconds between the
+  confirmed `HIT` and the post-purge probe; if it approaches the Edge TTL the
+  run proves nothing and must be repeated.
+- **Pin the PoP.** Cache is per-PoP, so a `MISS` served from a different edge is
+  a false negative. Every probe above reported `cf-ray … -EZE`.
+
+Purge propagation was **not instantaneous**: a probe 3 s after the POST still
+returned `HIT age 70`; the eviction landed within ~5-8 s. Any automated check
+that asserts a `MISS` immediately after purging will flake.
+
+Incidental findings from the same session: the zone is on the **`free`** plan
+(dashboard badge) and had **0 Cache Rules and 0 Cache Response Rules** before
+this probe — consistent with the `DYNAMIC` measured everywhere in §2.3 — and
+both rule types are in fact available on Free, so the §5.11.5 fallback would
+have been viable had it been needed.
+
+### 5.12 The auth-blind SSR audit (Rev 3)
+
+> Method: three parallel read-only audits on 2026-08-01 — (1) all 27 public
+> content pages under `alojamientos|destinos|eventos|publicaciones|experiencias|
+> gastronomia`, (2) all ~37 components accepting session-derived props, (3) the
+> existing client-side session/favorites machinery. Findings below are quoted
+> from source with line numbers, not summarized from grep counts.
+
+Rev 2 treated this as one Wave C task (old W2-4, "accommodation detail — the
+hard case"). The audit shows the scope was both wider (27 pages, not 1) and
+much shallower (only 2 files are genuinely hard).
+
+#### 5.12.1 The blocking surface, classified
+
+| Class | What it is | Files | Conversion cost |
+|---|---|---|---|
+| **B** — boolean flag | `isAuthenticated` threaded to components | ~14 | **None.** The flag becomes inert once every visitor gets the same HTML; components receive `false` and self-correct, exactly as a guest does today |
+| **A** — personalized data | `checkBulk` / `checkStatus` / `currentUserName` baked into props | ~11 | Mechanical: move the fetch to post-hydration |
+| **C** — branching markup | the component *tree* differs by session | **2** | Real work — see below |
+| **D** — the cache gate itself | `cacheable: !isAuthenticated && …` | 3 | **Disappears by construction** |
+
+All five class-C instances live in two files:
+
+- `alojamientos/[slug].astro` — `{isAuthenticated && <AiChatWidget/>}` (697),
+  `{… && <PriceAlertButton/>}` (720), `{… && <ReviewSidebarCard/>}` (762)
+- `destinos/[...path].astro` — `isAuthenticated ? <DestinationReviewSidebarCard/>
+  : <DestinationReviewSignInCta/>`, twice (677, 844)
+
+**There is not one session-based redirect anywhere in the audited scope.** Every
+`Astro.redirect` in those six directories is pagination canonicalization. A
+session-driven redirect would have made these pages uncacheable outright; there
+are none.
+
+#### 5.12.2 The leverage point is one line
+
+Most of the ~37 components decide nothing: 6 detail headers, 7 card types and 4
+map components merely forward `isAuthenticated` to `FavoriteButton`. The root is
+`FavoriteButton.client.tsx:236`:
+
+```ts
+if (!needsHydration || !isAuthenticated || hydrationFiredRef.current) return;
+```
+
+The client-side self-correction is itself gated on the SSR-baked prop, so a
+component told "anonymous" can never recover. Fixing this one guard fixes ~17
+components at once.
+
+Six components gate **content**, not an icon, and none re-checks:
+`ContactHost`, `CommentThreadIsland`, `SearchChatPanel`/`AiSearchEntry`,
+`ExperienceReviews`, `GastronomyReviewForm`, `CompareModeToggle`. For a
+logged-in visitor served a cached anonymous page these hide real functionality
+(the contact form's authenticated mode, the comment form, AI search) with no
+error and nothing in the logs.
+
+#### 5.12.3 Nothing needs to be invented
+
+The pattern already exists and already runs in production:
+
+- `apps/web/src/lib/auth-cache.ts` — `fetchAuthMe()` against
+  `GET /api/v1/public/auth/me` with `credentials: 'include'`, in-flight request
+  dedup, 60 s `sessionStorage` cache. Consumed today by `UserMenu`,
+  `MobileMenu`, `HostLandingCta`, `NewsletterForm`, `AuthedPreferenceSync`.
+- `use-account-permissions.ts` — treats the SSR prop as a **hint**, trusts the
+  cache only when it agrees with that hint, otherwise refetches.
+- `NewsletterForm.client.tsx` is the exemplar: it corrects in **both**
+  directions — downgrades on an expired session and **promotes** when SSR said
+  guest but the real session is authenticated. That second direction is exactly
+  the "cached anonymous HTML served to a logged-in user" case.
+- `userBookmarksApi.checkBulk` already works unmodified from the browser; its
+  `cookieHeader` parameter is documented as SSR-only and optional. It is simply
+  never called client-side today.
+- Rate budget: the governor is a global **200 req/60 s per user across all**
+  `/api/v1/protected/*` (`apps/api/src/routes/index.ts:414-421`). One `/auth/me`
+  plus one `check-bulk` per page load is noise.
+
+Two things genuinely do not exist and must be built: a **shared favorites
+store** (without it, 24 cards hydrate with 24 individual `/check` calls instead
+of one bulk call — template: `apps/web/src/store/compare-store.ts`), and a
+**static guard** asserting no cacheable page bakes session state.
+
+`publicaciones/index.astro` is the existence proof: it is the one listing page
+with **no** SSR bulk-check, and its cards self-hydrate today.
+
+#### 5.12.4 Do not solve this with Server Islands
+
+Already tried and reverted. `MobileMenuIsland` was `server:defer`; because it
+mounts on every page, each page view fired an extra `get-session` request and
+flooded the API's auth rate-limit bucket (50/5 min per IP). It was moved to the
+client-reconciliation pattern instead. `server:defer` now appears exactly once in
+the app (`NextEventsSection`), and inside any Server Island the middleware forces
+`Astro.locals.user = null` (`middleware.ts:166`).
+
+#### 5.12.5 This does not violate the SSR-first island rule
+
+`apps/web/CLAUDE.md` requires an island's SSR output to already contain its final
+critical data, because crawlers do not run JS. That rule protects **indexable
+content** — prices, counts, ratings, badges. Per-user state is by definition not
+crawler-relevant: **a crawler is never logged in**. Moving favorite/session state
+to post-hydration is compatible with the rule, not an exception to it.
+
+### 5.13 The cached CSP nonce (Rev 3 — resolves OQ-3)
+
+Every HTML response carries a per-request CSP nonce: `BaseLayout.astro` — the
+shell of every page — threads `Astro.locals.cspNonce` into `FontsLoader`,
+`ThemeFoucScript`, `I18nClientData`, `PostHogScript` and `GlobalAnnouncements`,
+and middleware step 9 emits the matching `Content-Security-Policy` header.
+
+Cloudflare caches headers with the body, so **nothing breaks**: the header nonce
+and the body nonce stay paired. What breaks is the guarantee. For the TTL the
+nonce becomes a static, publicly readable token — anyone can `GET` the page,
+read it, and reuse it. That collapses the inline-script protection that HOS-30
+Phase 2 was built to provide, for whatever injection vector exists.
+
+This was **already documented** in `apps/web/docs/seo/rendering-strategy.md:94`
+as a known consequence of HOS-128, with the escape hatch already named
+(*"or move those to a hash-based inline strategy"*). Rev 3 does not discover it;
+it decides it (D-9).
+
+#### 5.13.1 Why "just use hashes" is not the rejected option
+
+The instinct to reach for hashes has been evaluated and rejected **twice** —
+SPEC-046 (`research/astro-csp-options.md`, 2026-05-16) and HOS-124 (canceled).
+Both were evaluating **Astro's native `security.csp`**, which is hash-based, and
+both rejected it for the same blocking reason:
+
+- **Astro's native CSP does not support `<ClientRouter />`**, which `BaseLayout`
+  uses on every page. Astro added that support and then **removed** it
+  (`76c5480` / #13914, June 2025 — view transitions had to become async, which
+  broke users). No timeline for its return.
+- The policy moves to `<meta http-equiv>`, which cannot carry `report-uri`.
+- `security.csp` is build+preview only — **dev mode loses CSP coverage entirely**.
+- External SDK URLs (Sentry, MercadoPago) need manual hash entries per build.
+- Shiki is unsupported; `'unsafe-inline'` is incompatible.
+
+Which is why SPEC-046 chose Path A2 and the repo has a hand-written nonce
+injector (`apps/web/integrations/csp-nonce-injector`, imported by
+`middleware.ts:22`).
+
+**What Rev 3 proposes is not that.** It keeps middleware as the single CSP
+source, keeps `report-uri`, keeps `<ClientRouter/>`, keeps dev coverage, and
+never enables `security.csp`. It changes only what our **own** injector stamps:
+instead of *add a `nonce` attribute and put the nonce in the header*, compute the
+`sha256` of each inline script's content and put that hash in the header. None
+of the five blockers above applies, because none of them is about hashes as
+such — they are all about Astro's implementation of them.
+
+It also has a property nonces lack under caching: **the hash is derived from the
+content, so header and body cannot desynchronize**, cached or not.
+
+Cost we keep paying: it is our own integration, maintained by us. That is already
+true today.
+
 ## 6. Proposed design
 
 **Rev 2 restructure.** The wave plan changed once §5.9/§5.10 landed. The chosen
@@ -604,11 +989,94 @@ policy is in force. This is where the GPTBot decision (§11 D-3) is actually
 expressed. Add a guard test asserting no user-agent appears in two groups with
 conflicting root rules.
 
-**WA-5 — Measure the effect before doing anything else.**
+**WA-1 – WA-4 status confirmed 2026-08-09.** WA-5 already reported that Wave A
+worked, but the four tasks it measures were never individually marked, so this
+records where each one actually landed:
+
+- **WA-1 DONE** — `pages/robots.txt.ts:167` emits `buildFacetDisallowDirectives()`
+  from `lib/filters/facet-crawl-policy.ts`, key-scoped as the task required.
+- **WA-2 DONE** — `shouldNofollowFacetHref` is applied in
+  `components/shared/ui/FilterChips.astro:132` and, for the POI chips, in
+  `components/destination/DestinationPOIFilter.client.tsx:224` and `:245`, with
+  its own suite at `test/lib/filters/facet-crawl-policy.test.ts`. Searching the
+  chip components for the literal string `nofollow` finds nothing — the value is
+  produced by the helper — so do not conclude from a grep that this is missing.
+- **WA-4 DONE** — `test/pages/robots-txt.test.ts`.
+- **WA-3 VERIFIED, and its premise is wrong: do NOT wire the predicate.**
+
+WA-3 suspected the destination detail page "may not be wired into"
+`resolveFacetSeoDecision` and implied it should be. It is not wired — and it
+should stay that way. Measured on staging:
+
+| URL | canonical | robots |
+|---|---|---|
+| `/es/destinos/colon/` | `…/es/destinos/colon/` | `index,follow` |
+| `…/colon/?categories=GASTRONOMY` | `…/es/destinos/colon/` | `index,follow` |
+| `…/colon/?categories=GASTRONOMY,CULTURE` | `…/es/destinos/colon/` | `index,follow` |
+| control `/es/alojamientos/?types=HOTEL,CABIN` | `…/es/alojamientos/` | `noindex,follow` |
+
+The canonical WA-3 asks for **is** emitted, on every facet combination. What the
+page does not do is apply the listings' 2+-value `noindex`, and applying it
+would be a defect: on a listing a facet URL renders genuinely different content
+(the filter runs server-side), whereas on the destination detail the parameter
+is client-side-only shareability and changes nothing in the response. Verified
+byte-for-byte — `/es/destinos/colon/` and the same URL with
+`?categories=GASTRONOMY,CULTURE` differ by **2 bytes**, and the diff is the
+`astro-island` `prefix` counter (`r163` vs `r183`), not content. Marking a page
+`noindex` because of a parameter that never changed its output would drop a real
+indexable destination page out of the index.
+
+**WA-5 — Measure the effect before doing anything else. DONE 2026-08-03 — Wave A worked; C stays rejected.**
 Re-read AI Crawl Control after 48–72 h (crawlers must re-read `robots.txt` and
 drain their queues). Record the new per-crawler numbers against the §5.9
 baseline. **If Applebot has not dropped materially, that is the trigger to
 reconsider C** — with data, not preemptively.
+
+> Measured 2026-08-03, AI Crawl Control → Métricas, **last 24 h (GMT-3)**, same
+> window shape as the §5.9 baseline.
+
+| Crawler | §5.9 baseline (07-31) | Now (08-03) | Change |
+|---|---:|---:|---|
+| **Applebot** — the clean signal | **326,810** | **1.2 k** | **≈ −99.6 %** |
+| GPTBot | 136,990 | not in top 5 | now `Disallow: /` |
+| Googlebot | 151 | 63 | — |
+| Baidu | 156 | 159 | flat |
+| Claude-SearchBot | — | 15 | — |
+| OAI-SearchBot | in "+2" | 7 | — |
+| **Total requests** | **464,000** | **≈ 2 k** | **−95.48 %** |
+| **Egress** | **≈ 83.7 GB/day** | **≈ 21 MB/day** | **≈ −99.97 %** |
+
+Per-crawler egress now: Applebot 12.04 MB, Googlebot 3.92 MB, Baidu 3.81 MB,
+OAI-SearchBot 1.15 MB, ChatGPT-User 552 kB. Monthly projection falls from
+≈2.5 TB to well under 1 GB.
+
+**Verdict: the trigger did NOT fire. Strategy C is not reconsidered; D-1 stands.**
+
+Read it the way §3's note instructed. GPTBot's disappearance proves nothing —
+it is explicitly `Disallow: /` in the live file, alongside ClaudeBot,
+anthropic-ai, CCBot, Applebot-**Extended**, Amazonbot, Bytespider,
+meta-externalagent and CloudflareBrowserRenderingCrawler. **Applebot carries the
+signal**: it is NOT blocked (only its `-Extended` training variant is), it was
+free to crawl exactly as before, and it still fell 99.6 %. The only thing that
+changed for it is that the ~280 facet `Disallow` rules closed the combinatorial
+URL space.
+
+That is direct confirmation of §5.9.1's diagnosis — the volume was a
+self-inflicted crawl trap, not legitimate demand — and it **refutes R-11**
+("Applebot may not respond to Wave A at all"). The 857-fetches-per-URL-per-day
+figure is now ≈3, which is ordinary.
+
+Two caveats worth carrying forward rather than declaring victory:
+
+- **The load is gone, but the cache is not built yet.** Wave B remains
+  justified on its own terms (origin CPU, TTFB, egress on *human* traffic); it
+  simply no longer has a crawl storm to absorb. Do not read this as licence to
+  descope B.
+- **Googlebot fell too (151 → 63)**, and Googlebot is the revenue channel (D-2).
+  Some of that is the same facet closure removing junk URLs it was wasting
+  budget on, which is the intended outcome — but D-2's requirement stands: this
+  must be confirmed in Search Console → Crawl stats, not inferred from this
+  panel.
 
 ### 6.2 Wave 0 — housekeeping (independent, can run in parallel with A)
 
@@ -631,46 +1099,620 @@ in `apps/api/test/routes/isverified-badge-gate.guard.test.ts` — discovery by
 symbol reference, explicit non-vacuity check, and a documented statement of
 what the guard does **not** cover.
 
-### 6.3 Wave B — turn on the edge
+**W0-3 ANSWERED, W0-4 DONE (2026-08-09) — but at the import boundary, not on
+the chunk. Owner decision.**
 
-**W1-1 — Selective purge (prerequisite, not follow-up).**
-Wire `entity-path-mapper.getAffectedPaths()` into
-`apps/web/src/pages/api/revalidate.ts`, replacing `purge_everything: true` with
-`files: [...]`. Keep a whole-zone escape hatch behind an explicit flag for
-deploys. This must land **before** W1-2; opening the cache with a whole-zone
-purge trades one problem for another.
+*W0-3 — how `@repo/config` entered the client graph.* No `ANALYZE=1` run was
+needed: HOS-360 had already traced and measured the exact chain. The registry
+rode in through **`@repo/billing`'s barrel**, which re-exports it; the barrel
+was reachable from `MobileMenu.client.tsx`, which imported `EntitlementKey` for
+an entitlement-gated host CTA. Measured on the then-live chunk
+`_astro/MobileMenu.client.BFcCCpWR.js`: `HOSPEDA_MERCADO_PAGO_ACCESS_TOKEN`, its
+`howToObtain` text and the Redis/BullMQ/cron entries, all present, none
+tree-shakeable (neither `@repo/logger` nor `@repo/billing` declares
+`sideEffects: false`). So W0-2 was **not** a coincidence — it shipped HOS-311's
+revert of that CTA, which removed the import as collateral.
 
-**W1-2 — Cloudflare Cache Rule.**
-Scope: `/{lang}/alojamientos*` and `/{lang}/suscriptores/{planes,turistas}*`
-only — the routes that already emit a correct header. Requirements, in order:
+*W0-4 — the guard.* Three options were weighed (extend the import guard; scan
+the built output; reword the criterion). The owner chose to **extend the
+existing HOS-360 detector**: `FORBIDDEN_PACKAGE` became `FORBIDDEN_PACKAGES`
+with `@repo/config` added (PR #2720).
+
+**The deviation from W0-4 as written, and why it is the right trade.** The task
+asks for a guard on the built chunk; this one asserts at the import boundary.
+The reason is where it runs: CI executes `Build` and `Unit Tests` as separate
+jobs, so a chunk scanner needs a new pipeline step wired after `Build` and can
+never be part of `pnpm test` locally — an enforcement point that is easy to let
+rot. The import guard runs in the fast lane on every PR and reuses machinery
+already proven non-vacuous.
+
+**What that costs, stated plainly**: a leak arriving by a route other than
+`@repo/billing` or `@repo/config` — a bare-specifier hop through another
+workspace package, say — is not covered. The detector's own header documents
+that blind spot.
+
+**Empirical baseline** (staging, 2026-08-09, before the guard landed): 51
+production client chunks across 7 pages, 1.24 MB of JS, **zero** occurrences of
+`exampleValue`, `howToObtain` or `HOSPEDA_`. The guard holds a property that is
+already true rather than fixing a live leak.
+
+**Non-vacuity**: the synthetic form matrix is parametrised over
+`FORBIDDEN_PACKAGES` (15 runtime × 4 erased forms per package), and a planted
+runtime `@repo/config` import in `MobileMenu.client.tsx` turns the corpus walk
+red. 78/78 on the file, 253/253 across all 17 static-guard files.
+
+**W0-2 remains open** — it is a promotion action, not implementation work.
+
+### 6.3 Wave B0 — make the origin cacheable (Rev 3, new)
+
+Everything in Wave B is inert until the origin emits a response that is (a) safe
+to share and (b) invalidatable. Wave B0 is that work. It absorbs Rev 2's old
+W2-4 and re-scopes it (§5.12).
+
+**WB0-1 — CSP: nonce → content hash.** Modify
+`apps/web/integrations/csp-nonce-injector` to compute a `sha256` per inline
+script/style and emit those as `script-src`/`style-src` sources from
+`buildCspHeader()`, instead of stamping a per-request nonce. Middleware stays
+the single CSP source; `security.csp` is **not** enabled; `<ClientRouter/>`,
+`report-uri` and dev coverage are untouched (§5.13). Blocks every other Wave B
+task — it applies to all pages, not only the de-personalized ones.
+
+**WB0-2 — Shared favorites store.** New client store on the
+`store/compare-store.ts` template: one `checkBulk` per page load, shared across
+every `FavoriteButton` island on the page. Without it, de-personalizing a
+24-card listing trades one SSR bulk call for 24 client `/check` calls.
+
+**WB0-3 — `FavoriteButton` reconciles.** Remove the SSR-prop gate at
+`FavoriteButton.client.tsx:236` and adopt the `use-account-permissions` contract
+(SSR prop is a hint; always re-resolve; correct in **both** directions, per
+`NewsletterForm`). Fixes ~17 pass-through components — 6 detail headers, 7 card
+types, 4 map components — with one change.
+
+**WB0-4 — The six content-gate components.** `ContactHost`,
+`CommentThreadIsland`, `SearchChatPanel`/`AiSearchEntry`, `ExperienceReviews`,
+`GastronomyReviewForm`, `CompareModeToggle`. Same pattern, copied.
+
+**WB0-5 — Strip SSR personalization from the listings and the four mechanical
+detail pages.** The ~11 class-A pages plus the class-B threading. `eventos`,
+`publicaciones`, `experiencias`, `gastronomia` detail pages are class A/B only —
+mechanical. Mostly deletion. Watch for `currentUserName`, which is personalized
+data hiding behind a name that does not look like `isAuthenticated`
+(`eventos/[slug].astro:272`, `publicaciones/[slug].astro:411`).
+
+**WB0-6 — The static guard.** A test that fails if any page emitting a cacheable
+`Cache-Control` also reads `Astro.locals.user`, or if `FavoriteButton`'s
+reconciliation is re-gated on an SSR prop. Non-negotiable: the audit found
+`currentUserName` only because a human went looking, and vigilance does not
+survive three months. Must be non-vacuous — prove it fails when the guarded
+property is removed, per the HOS-370 precedent.
+
+**WB0-7 — The two hard files. DONE.** `alojamientos/[slug].astro` and
+`destinos/[...path].astro` (§5.12.1, §5.4). Five class-C instances plus the
+accommodation detail's conversations / price alerts / entitlements / WhatsApp
+lookups. It was the only part of Wave B0 that needed design rather than pattern
+application. Rendering rule in D-11.
+
+How each class-C instance was resolved, all three following one shape — the
+island is always mounted, the ANONYMOUS variant is passed to it as slot
+children, and the island swaps itself in only after resolving a session:
+
+- **`destinos` (2 swap sites).** `DestinationReviewSidebarCard` now takes
+  `children` and renders them until `useAccountPermissions` resolves a user;
+  the page passes `DestinationReviewSignInCta`, which is what the server emits.
+- **`alojamientos` sidebar (2 additive sites).** `PriceAlertButton` and
+  `ReviewSidebarCard` do the same, with a new shared `SignInCtaCard.astro` as
+  the anonymous variant. D-11 asked for "a correctly-sized placeholder"; an
+  equally-sized sign-in CTA is strictly better, because a placeholder that
+  COLLAPSES for a guest costs a layout shift on ~100% of cached traffic, which
+  is the metric this spec exists to improve (**owner decision**, and the
+  pattern `destinos` already shipped).
+- **`AiChatWidget` (1 additive site).** No placeholder: the FAB and panel are
+  both `position: fixed`, so appearing after hydration moves nothing.
+
+Two per-visitor lookups moved to the browser rather than being dropped:
+`priceAlertsApi.list` + `billingApi.getEntitlements`
+(`use-price-alert-gate-state.ts`), and the conversations lookup that feeds BOTH
+`ContactHost.existingConversationId` and `ReviewSidebarCard.canLeaveReview`. The
+latter got its own store (`accommodation-conversation-store.ts`) for the reason
+the SSR version was collapsed into one call in the first place: the two islands
+hydrate in different ticks, so a result-only cache would still issue two
+requests. Caching the in-flight **promise** keeps it at one.
+
+**Not in the original scope, found here: the WhatsApp number.** §5.4 listed the
+"WhatsApp lookups" as page state to move, which undersold it. The SSR lookup put
+a specific viewer's *entitled phone number* in the page body — on a page destined
+for a shared cache, meaning it would have been served to every subsequent
+visitor, entitled or not, for the whole TTL. `WhatsAppContact` therefore became
+an island (`.astro` → `.client.tsx` + CSS module, HOS-314's contrast rationale
+carried over verbatim) that renders the upsell on the server and only ever shows
+a number the protected endpoint returned to that viewer personally.
+
+### 6.4 Wave B — turn on the edge
+
+**W1-1 — Selective purge by cache tag (prerequisite, not follow-up). DONE
+(2026-08-03, PRs #2575 + the purge-side PR).**
+
+Shipped in two halves, emission before purge — tags nobody purges by are
+inert, while purging by tags nobody emits is a silent no-op against a live
+cache. What landed, and the four things that differ from the plan below:
+
+- **`@repo/cache-tags`**, a new dependency-free package, is the single
+  vocabulary both sides read. Anything it imported would be pulled into the web
+  client graph, hence the zero dependencies.
+- **The tag vocabulary in §7.3 would not have purged anything.** It specifies
+  `accom-<id>`, but all ~40 revalidation call sites pass `slug`; only the
+  plan-remediation paths pass `id`, and they fall back to an id-only event when
+  the slug lookup fails. Emitting one and purging by the other purges nothing,
+  silently. Resolved by emitting BOTH tags per entity — a few dozen bytes
+  against a 16 KB header budget.
+- **Four cacheable responses bypass middleware entirely**: `robots.txt`,
+  `llms.txt`, the sitemaps and the RSS feeds, because `isStaticAssetRoute`
+  short-circuits on the `.txt`/`.xml` extension. They set `Cache-Tag`
+  themselves. A static guard found them; without it the sitemap would have
+  shipped stale for 24 h with nothing able to evict it. `/api/og` is exempt and
+  needs no tag: it is content-addressed by construction, since every input that
+  changes the image is a query param and the query string is in the cache key.
+- **`revalidateByEntityType` no longer enumerates published rows.** The
+  collection tag covers every listing surface for a type, and walking hundreds
+  of rows would blow past the 5-requests-per-minute tag-purge ceiling. Each
+  entity purges its own tag from its own write hook. This is a deliberate
+  narrowing of the cron backstop, not an oversight.
+
+**Two gates remained before W1-2. Both cleared on 2026-08-03:**
+
+1. ~~**§5.11.5** — verify empirically that Free honors an origin-emitted
+   `Cache-Tag` header. The failure mode is silent.~~ **PASSED** — measured, see
+   §5.11.6. Free honors it; purge-by-tag evicts within ~5-8 s. No fallback
+   needed.
+2. ~~**Audit the live `revalidation_config` rows.**~~ **PASSED, clean.** Queried
+   prod directly (`hops --target=prod psql`): all 8 baseline rows present, none
+   with `enabled = false`, and `tag` + `amenity` carrying
+   `auto_revalidate_on_change = false` exactly as seeded — no drift, every row
+   still on the original seed `updated_at`. The consequence below is therefore
+   accepted rather than discovered: an amenity or tag write invalidates nothing
+   until the next write of another type or the 24 h cron. Under
+   `purge_everything` this was harmless — the next write of any type flushed the
+   zone and corrected it within minutes.
+
+   Note the audit is **wider than "rows set to false"**: the gate in
+   `revalidation.service.ts` is three conditions, and the first is `if (!config)
+   return` — an entity type with NO row invalidates nothing either. That is not
+   reachable today only because `EntityChangeData` is a closed union over the
+   same 8 types the seed creates. Adding a ninth entity type to that union
+   without seeding its config row would silently disable its invalidation.
+
+The original plan, for the record:
+
+Emit `Cache-Tag` per response (entity ids + listing/collection tags + locale)
+from an Astro middleware collector, and change
+`CloudflareRevalidationAdapter` to POST the tags to `/api/revalidate`, which
+purges `{ tags: [...] }` instead of `{ purge_everything: true }`. Keep a
+whole-zone escape hatch behind an explicit flag for deploys.
+
+This **replaces** Rev 2's "wire `getAffectedPaths()` into `files: [...]`", which
+cannot work (§5.11). Tags also retire
+`packages/service-core/src/revalidation/entity-path-mapper.ts` — 466 lines that
+duplicate the routing table by hand, in a different package, and have already
+drifted from it (§5.11.1). This wave deletes more code than it adds.
+
+Budget check against the limits in §5.11.2: the revalidation service already
+coalesces per-entity debounce buckets into a **single** flush per window
+(`revalidation.service.ts`, `enqueuePurgeGroup`), so the 5 requests/min tag-purge
+ceiling is not a constraint at our write volume.
+
+**W1-2 — Cloudflare Cache Rule. DONE (2026-08-04, staging only).**
+Live as `HOS-369 W1-2 - staging catalog + subscriber`; the expression, every
+setting, and the reasoning per clause are versioned at
+[`infra/cloudflare/rules/cache-rules.md`](../../infra/cloudflare/rules/cache-rules.md)
+(W1-5). Three things differ from the plan below, all found by measuring rather
+than by reading:
+
+- **Edge TTL is `bypass_by_default`, not `respect_origin`.** "Honor the origin"
+  has three sub-modes in Cloudflare and only this one fails closed:
+  `respect_origin` would cache any matched response whose origin sent no
+  `Cache-Control` at Cloudflare's own default TTL — untagged, therefore
+  unpurgeable. This mirrors `applyCacheHeaders`'s coupling at the edge.
+- **A Browser TTL of `respect_origin` had to be added, and it is load-bearing.**
+  The zone's Browser Cache TTL is 4 h and Cloudflare injects `max-age=14400`
+  into everything a Cache Rule makes cacheable — absent before the rule, absent
+  on prod. A purge never reaches browser caches, so without this a returning
+  visitor holds stale HTML for four hours with nothing able to evict it. The fix
+  is per-rule; the zone setting is left alone because it would also hit prod.
+- **The rule's real footprint is smaller than its expression.** Only the listing
+  index (and `/page/N/`), `mapa/`, `tipo/<type>/` and the four subscriber pages
+  declare cacheability. Accommodation **detail** pages, `fotos/`, `comparar/`,
+  `comodidades/<slug>/`, `caracteristicas/<slug>/` and
+  `suscriptores/propietarios/` send no `Cache-Control` and return `BYPASS`.
+  Adding one is an application change (one `applyCacheHeaders` call), not a
+  Cloudflare change.
+
+Requirement 5 (Sort query string) is satisfied but currently **inert**:
+`http.request.uri.query eq ""` means the rule never sees a query string to
+normalize. Kept per §7.2 so it is already right if the expression widens.
+
+The original plan, for the record. Scope: `/{lang}/alojamientos*` and
+`/{lang}/suscriptores/{planes,turistas}*`
+first — the routes that already emit a correct header — then **one path family
+at a time** as WB0-5 proves each one auth-blind. Requirements, in order:
 
 1. Make `text/html` eligible on those paths, honoring the origin
    `Cache-Control` rather than overriding it with an Edge TTL.
-2. **Bypass when a session cookie is present**: `better-auth.session_token` or
-   `__Secure-better-auth.session_token`. The origin-side `isAuthenticated` gate
-   is not sufficient — the edge cache key must reflect it too, or an
-   authenticated visitor can be served (or can poison) the anonymous variant.
-3. Bypass on any query string carrying filters, to avoid fragmenting the cache
+2. Match **`PURGE` as well as `GET`** in the rule expression, or single-file
+   purge silently no-ops against it (§5.11.3).
+3. **Bypass when a session cookie is present**: `better-auth.session_token` or
+   `__Secure-better-auth.session_token`. Required until WB0-5 lands for that
+   path; the origin-side `isAuthenticated` gate is not sufficient, because the
+   edge cache key must reflect it too. Once a path is genuinely auth-blind the
+   bypass becomes redundant — but it is removed only after that path is
+   verified, never before.
+   W1-2a (below) removed the shell's dependency on the session for the six
+   cacheable families, so for those the bypass is now a belt-and-braces measure
+   rather than the only thing standing between visitors. Drop it per path only
+   after that path is verified by measurement (W1-3), never on this note alone.
+4. Bypass on any query string carrying filters, to avoid fragmenting the cache
    across thousands of variants.
+5. Turn **Sort query string** on — the only cache-key normalization available at
+   this tier (§5.11.2).
 
-**W1-3 — Verify by measurement, not by assumption.**
-Re-run the §5.1 probes. Acceptance is in §9; a rule that is created but not
-verified is exactly the failure mode that left the pricing header dead for
-months.
+**W1-2a — De-personalize the shell. DONE (landed with WB0-7).**
+Discovered while extending the WB0-6 guard to `src/layouts` during WB0-7: the
+guard only ever swept `src/pages` and `src/components`, so it certified 25 pages
+as session-blind while the LAYOUT wrapping every one of them was not. On every
+session-optional segment (which was every cacheable content path —
+`alojamientos`, `destinos`, `eventos`, `publicaciones`, `gastronomia`,
+`experiencias`), the shell baked:
 
-**W1-4 — Redirect Rules at the edge.**
-Move the trailing-slash and `/` → `/es/` redirects to Cloudflare Redirect
-Rules. Collapse the `/es/blog` → `/es/blog/` → `/es/publicaciones/` chain into a
-single hop.
+- `BaseLayout.astro` — `<html data-user-authenticated>`, plus the visitor's id,
+  e-mail and name forwarded to `FeedbackHeadlessHost`.
+- `Header.astro` — the visitor's id, name, e-mail and avatar URL, as `UserMenu`'s
+  SSR props.
+- `Footer.astro` — the visitor's e-mail, as `NewsletterForm`'s SSR props. This
+  one was invisible to the guard for a second reason: it reads
+  `const locals = Astro.locals as { user?: … }`, an ALIASED read that neither the
+  direct nor the destructured detector matched. A third detector was added.
 
-**W1-5 — Version the Cloudflare configuration.**
-The only Cloudflare config-as-code in the repo today is two Workers
-(`infra/cloudflare/posthog-proxy`, `infra/cloudflare/sentry-tunnel`). Cache
-Rules and Redirect Rules must not be dashboard-only — that is precisely how a
-dead header survived unnoticed. At minimum, commit the rule expressions as
-documentation under `infra/cloudflare/`; ideally as Terraform.
+Astro serializes island props into the document, so all of that was literal
+text in the HTML — worse than anything Wave B0 removed, since it is PII rather
+than UI state. Nor was the harm only at the far end: the first paint of a
+cached page would show one visitor's name in another's header until
+`useAccountPermissions` corrected it.
 
-### 6.4 Wave C — extend the pattern across the catalog
+**The fix was structural, not per-component.** The obvious move — rewrite the
+three layouts to render an anonymous shell — was rejected: `UserMenu` and
+`MobileMenu` run the hook in *SSR-reconciling* mode, whose whole contract is
+that the SSR snapshot is trustworthy, so the change would have cascaded into a
+redesign of how those two resolve the session. But `Astro.locals.user` is only
+populated at all on the segments listed in `SESSION_OPTIONAL_SEGMENTS`, and the
+six catalog families were on that list for ONE reason: their pages needed the
+visitor. Wave B0 removed every such read. So the six were removed from the list
+instead, and the shell now gets `null` there by construction — no layout
+change, no hook change.
+
+Two consequences, both intended:
+
+- The shell renders its guest variant on those routes; a signed-in visitor sees
+  it for one frame until `UserMenu` resolves `/auth/me`. This is the behaviour
+  that already applied on SSG/public routes and that `BaseLayout` and
+  `MobileMenuIsland` both already documented. A cached page cannot know who you
+  are — it is the cost of the cache, not a defect.
+- Those six families stop issuing a `get-session` call per page view, on the
+  highest-traffic paths in the app. The fix is also a measurable win.
+
+The invariant is guarded by set intersection rather than source text, in
+`test/lib/cacheable-routes-parse-no-session.guard.test.ts`: no cacheable route
+family may appear in `SESSION_OPTIONAL_SEGMENTS`. That form was chosen because
+the `Footer` read had escaped the text-matching guard for a whole wave — it
+aliased the whole locals object (`const locals = Astro.locals as { user?: … }`)
+rather than reading `Astro.locals.user`. A membership check cannot be defeated
+by a spelling, and it covers every future consumer, not just the three layouts.
+
+**W1-3 — Verify by measurement, not by assumption. DONE for the surfaces that
+exist (2026-08-04).** All probes from Buenos Aires, PoP `EZE`, pinned via
+`cf-ray`.
+
+- **AC-1 PASSED** — `HIT` on the second request, `age` climbing (3, 6).
+- **AC-2 PASSED with a real session — and the criterion as written is wrong.**
+  Re-run on 2026-08-04 with an actual logged-in visitor, every probe issued from
+  inside the browser (`fetch` with `credentials: 'include'` vs `'omit'`) so the
+  session token was never read or handled.
+
+  *Bypass half:* across `/es/alojamientos/`, `/en/alojamientos/` and
+  `/es/suscriptores/planes/`, **12 authenticated requests returned `DYNAMIC`,
+  never `HIT`**, while the anonymous ones warmed to `HIT` alongside them. No
+  `Set-Cookie` on any anonymous response.
+
+  *Body half:* AC-2 asks that the bypassed response "contains that user's
+  state". **It cannot, and should not — W1-2a is what changed this.** The
+  authenticated response carries `data-user-authenticated="false"` exactly like
+  the anonymous one. What holds instead is the stronger **AC-B0-1**: after
+  normalising only the two Sentry telemetry metas (`sentry-trace`, `baggage` —
+  per-request span ids carrying no visitor state), the two documents are
+  **byte-identical**: 1,378,961 characters, same length, zero differing regions.
+  That identity is precisely what makes the cookie bypass redundant rather than
+  load-bearing. Record AC-2 as passing on this basis; its original wording
+  predates the de-personalization and now describes a failure, not a success.
+
+  Two traps worth keeping. `/api/v1/public/auth/me` does **not** exist on the
+  web origin — it lives on the API host, and fetching it returns the web app's
+  404 *page* with `data-user-authenticated="false"` baked in, which reads
+  exactly like "not logged in". Confirm a session with `fetch('/es/mi-cuenta/')`
+  instead. And `document.cookie` cannot see `better-auth.session_token` because
+  it is HttpOnly, so its absence proves nothing.
+- **AC-3 PASSED** — `?types=HOTEL` → `DYNAMIC`.
+- **AC-6 PASSED, both directions.** First pass: purging `preview:list-accom`
+  evicted `/es/alojamientos/` **and** `/es/alojamientos/page/2/` (the case
+  purge-by-URL provably could not reach, §5.11.2), while the `/_astro/*` chunk
+  stayed `HIT` with its `age` climbing *through* the purge (4409 → 4542, i.e.
+  +133 s of wall time, not a reset). Tag purge does not touch static assets.
+
+  The remaining half became testable once the accommodation **detail** page
+  opted into the cache (see W1-6 below), and was measured on 2026-08-04 in
+  **both directions**, which is what makes it non-vacuous rather than a lucky
+  single observation:
+
+  | Purged tag | Detail (es/en/pt) | Listing | `/_astro/*` |
+  |---|---|---|---|
+  | `preview:accom-<slug>` | **MISS ×3** | `HIT` (survived) | `HIT`, age climbing |
+  | `preview:list-accom` | `HIT` ×3 (survived, ages 37→69, 45→68, 54→68) | **MISS** | — |
+
+  An entity purge takes the entity's page in every locale and nothing else; a
+  collection purge takes the listing and leaves every detail page standing. The
+  spec's original wording names an *event*, but `/eventos/` is outside the Cache
+  Rule and emits no cache header — accommodations exercise the identical
+  property on a family the rule actually covers.
+- **AC-9 PASSED, with a caveat worth keeping.** TTFB on the cached route is
+  **15–18 ms** on a warm connection. A first reading of 246 ms looked like a
+  failure until it was decomposed: 213 ms of it was the TCP+TLS handshake and
+  only ~33 ms was the response. Measure with connection reuse, or the number
+  describes the handshake rather than the cache.
+- **AC-10 PASSED** — Googlebot and Chrome user-agents received the same cached
+  object: both `HIT`, identical `age` (109).
+
+Purge propagation measured at **≤ ~4 s** (tighter than gate A's 5–8 s on
+`llms.txt`): confirmed `HIT` → purge returns 3 s later → `MISS` 1 s after that,
+with the object 4 s into a 300 s TTL. Both arms of the §5.11.6 discriminator
+were observed on the same URL and PoP — natural expiry → `EXPIRED`, explicit
+purge → `MISS`.
+
+**Headline**: cached listing **15 ms** vs uncached accommodation detail
+**689 ms**, same host. That is the concrete argument for extending
+`applyCacheHeaders` to the detail pages.
+
+Operational note: the purge must be issued from the VPS (the secret never
+leaves it) while the probes run locally — the cache is per-PoP and the VPS
+resolves to a different one. `POST /api/revalidate/` **requires** the trailing
+slash; without it Astro's trailing-slash middleware returns a 301 and the POST
+body is lost. Not a defect — `CloudflareRevalidationAdapter` already documents
+it — but it will catch anyone hand-rolling a curl.
+
+**Wave B0 — Verify the client-side reconciliation. DONE (2026-08-08.)** Against
+staging, with a real session (`e2e-tourist@local.test`) established through the
+sign-in form, so no token was ever read or handled. Probes issued from inside
+the page.
+
+- **AC-B0-6 PASSED.** On `/es/alojamientos/` served `HIT` (`age` 16):
+  **zero `nonce=` occurrences** in the HTML, no `'nonce-` in the CSP, and **22
+  `sha256-` sources** in `script-src` (23 on a detail page — detail carries one
+  extra inline script). Re-checked on five page shapes (three catalogs, a
+  detail, a `page/2/`): zero nonces on every one. All three inline scripts still
+  execute: the theme FOUC script had already applied `data-theme="dark"` **by
+  `DOMContentLoaded`** (seeded via an `initScript` that wrote `localStorage`
+  before the document's own scripts ran), `__HOSPEDA_I18N__` is present, and
+  PostHog reports `__loaded`.
+
+  One CSP violation fires, and it is benign: `script-src` / `eval` from
+  `_astro/schemas.*.js`. That is Zod 4's own feature probe —
+  `try { Function('') } catch { return false }` — which catches its own failure
+  and takes the non-eval path. Not an inline script, and nothing breaks.
+
+- **AC-B0-3 PASSED, all six.** In every case the SSR emits the **guest**
+  variant and the authenticated affordance appears only after hydration, which
+  is exactly the property that makes the HTML shareable:
+
+  | component | SSR | after hydration |
+  |---|---|---|
+  | `ContactHost` | `#contact-name` / `-email` / `-phone` present | all three gone; `#contact-message` + "Enviar mensaje" |
+  | `CommentThreadIsland` | "Iniciá sesión para comentar" | `#comment-input` + "Comentar" |
+  | `SearchChatPanel` | absent entirely (mounts on drawer open) | `<textarea>` + `ai-search-char-count`, no `loginCtaSignIn` |
+  | `ExperienceReviews` | no CTA | `<p>Dejar reseña</p>` |
+  | `GastronomyReviewForm` | `<a>` "Iniciá sesión para opinar" | `<button>` "Dejar reseña" |
+  | `CompareModeToggle` | neutral | click opens the **upsell**, not the guest gate |
+
+  `CompareModeToggle` deserves its own note: `e2e-tourist` has no comparison
+  entitlement, so the upsell popover **is** its authenticated affordance. What
+  matters for this criterion is that the guest gate ("Iniciá sesión para
+  comparar") did not open — the island recognised the session on a page whose
+  SSR carried none.
+
+  Method note for whoever re-runs this: `<astro-island>` is `display: contents`,
+  so it has no layout box, `getBoundingClientRect()` returns zeros and
+  `scrollIntoView()` on the island itself **does not trigger `client:visible`**.
+  Scroll `island.firstElementChild`. The cheap check for "did it hydrate at
+  all?" is `performance.getEntriesByType('resource')` filtered by the chunk
+  name. Missing this reads as a broken component: the comment thread looked
+  stuck on the guest CTA for three probes before the scroll landed.
+
+- **AC-B0-5 PASSED, both directions, by mutation.**
+  *Direction (a), WB0-6's static guard:* injecting `Astro.locals.user` into
+  `[lang]/alojamientos/index.astro` → 2 failures; injecting
+  `Astro.request.headers.get('cookie')` into `[lang]/eventos/[slug].astro` → 1
+  failure. Clean tree: 21/21.
+  *Direction (b), `FavoriteButton.test.tsx`:* re-gating `useFavoriteStatus` on a
+  re-added `isAuthenticated` prop → 9 runtime failures.
+
+  **The mutation also found the guard for (b) was inert.** Two
+  `@ts-expect-error` assignments claimed a resurrected prop would surface as an
+  unused-directive error at typecheck. It would not: `apps/web/tsconfig.json`
+  lists only `src/**` under `include` and `vitest.config.ts` does not enable
+  `test.typecheck`, so **nothing in CI typechecks the test tree**. Verified:
+  re-adding `isAuthenticated?: boolean` to the interface left `pnpm typecheck`
+  at exit 0 and the file at 58/58 green. Replaced with a source assertion over
+  the props interface body (PR #2716), which catches the interface-only
+  mutation the runtime tests are blind to.
+
+- **AC-B0-7 PASSED as written — and it surfaced a larger, unrelated defect.**
+  CLS on the cached catalog route: **authenticated 0.4512 vs anonymous 0.4605**.
+  D-11's post-hydration swaps therefore contribute **no measurable shift**,
+  which is what this criterion asks.
+
+  But both arms are "Poor". The shift is session-independent and was traced to
+  **PR #2705** (async non-critical CSS): forcing the 15 `data-async-css` sheets
+  back to blocking at parse time drops the catalog from **0.4605 → 0.0000/0.0149**
+  and the home from **0.1661/0.1680 → 0.0039/0.0167**, with **no FCP cost** in
+  either direction. The dominant entry is `.acc-grid` going from `[y=0, h=0]` to
+  `[y=592, h=309]` when the activator flips `media` — the unstyled grid being
+  styled all at once. Reproducible with and without throttling. Reverted in
+  PR #2717 by owner decision.
+
+  Two measurement traps worth recording. CLS on a **second, immediate**
+  navigation to the same URL reads 0.0346 — measuring there hides the defect
+  entirely. And Cloudflare's `age` varies wildly per edge node: within one 51 s
+  window the same URLs reported ages of 44–55 and then 265–267, so `age` alone
+  is not an eviction signal.
+
+**AC-6 — write-side CLOSED, and it found a defect:
+[HOS-424](https://linear.app/hospeda-beta/issue/HOS-424).** The purge half is
+verified (see W1-3). The remaining half — that a real content write makes the
+service emit the tags — is now measured, and **it does not**: a real content
+edit purges the collection tag but leaves the entity's own detail page cached
+and stale in all three locales. Filed as HOS-424, High.
+
+Measured on a post, because **the admin event form cannot save at all** — a
+silent 400, which is [HOS-422](https://linear.app/hospeda-beta/issue/HOS-422)
+and unrelated to this spec. Changed the `summary` of
+`concepcion-del-uruguay-historia-rio-naturaleza` (209 → 208 chars):
+
+| URL | before | after |
+|---|---|---|
+| `/es/publicaciones/<slug>/` | `HIT` age 10 | **`HIT` age 19 — not evicted, old text** |
+| `/en/…` | `HIT` age 9 | **`HIT` age 18 — not evicted** |
+| `/pt/…` | `HIT` age 9 | **`HIT` age 18 — not evicted** |
+| `/es/publicaciones/` | `HIT` age 19 | **`MISS` — evicted** |
+| control `/es/alojamientos/` | `HIT` age 9 | `HIT` age 18 |
+| control `/es/eventos/` | `HIT` age 9 | `HIT` age 18 |
+
+The ages advanced exactly with wall clock (74 s elapsed, +9 on the ages), which
+is the proof the cached object was never re-fetched.
+
+**Two explanations are ruled out.** The tags are not wrong: a manual purge of
+`preview:post-<slug>` + `preview:post-<id>` returns `{"ok":true,"purged":2}` and
+evicts all three locales instantly. And it is not the no-op artefact that made
+the first attempt inconclusive — that run sent an identical payload, this one
+changed content, same result.
+
+The mapper is not at fault either: `entity-tag-mapper.ts:125-136` adds the
+entity tags for `post`. The pattern — collection purged, entity not — is exactly
+what a revalidation event reaching the mapper **without `slug` or `id`** would
+produce, since `buildEntityCacheTags` would then return nothing while
+`CACHE_TAG_COLLECTIONS.post` and `CACHE_TAG_HOME` survive. The cheap
+discriminator, not run: check whether `preview:home` IS purged by the same write.
+
+Established on a post instead: the detail emits
+`preview:all,preview:post-<slug>,preview:post-<id>` and the list emits
+`preview:all,preview:list-post`; a manual purge of the two entity tags returns
+`{"ok":true,"purged":2}` and flips all three locales to `MISS` immediately, so
+**the tags work end to end**. The write itself is the defect — confirmed on a
+second run with a real content change and filed as HOS-424; see the AC-6 block
+above for the measurements.
+
+Measurement protocol, since this is easy to get wrong: bring the three detail
+locales, the list and two unrelated controls to `HIT` with a SMALL `age` via a
+retrying fetch loop, then write, then re-read within ~10-20 s. **Do not warm
+every probe URL together and wait** — `s-maxage` is 300 s, so a synchronised
+warm-up expires them all at once and contaminates the window, which is exactly
+what invalidated the first attempt. Compare each URL against its own baseline,
+never against another URL: Cloudflare's `age` varies per edge node.
+
+**W1-4 — Redirect Rules at the edge. DONE, narrowed to one rule (2026-08-04,
+staging only).** Versioned at
+[`infra/cloudflare/rules/redirect-rules.md`](../../infra/cloudflare/rules/redirect-rules.md).
+
+Only `/` → `/es/` moved. It is served at the edge with no origin round-trip,
+which satisfies **AC-7** for staging. Two of the three things this task asked
+for were deliberately not done:
+
+- **The generic trailing-slash redirect stays at the origin.** Moving it means
+  transcribing `routes.ts`'s skip-list (`/_astro/`, `/_server-islands/`,
+  `/api/`, `/favicon`, images, fonts, `.txt`, `.xml`, `/_image`) into a
+  Cloudflare expression with no tests and no link back to its source. That is
+  the `entity-path-mapper` failure shape this spec deleted 466 lines to remove,
+  re-created inside Cloudflare, for ~90 ms per redirect.
+- **The `/es/blog` chain collapse was built, verified, and then removed the same
+  day.** It worked — 1051 ms → 369 ms, two hops to one. But `/blog` is not a
+  legacy URL: the blog has always lived at `/publicaciones/`, and the alias
+  exists only because BETA-162 (priority Low) found that `/es/blog` 404'd, an
+  *obvious* URL a visitor might guess. Nothing has ever linked to it, so the
+  traffic is near zero by construction. Two permanently-maintained rules with
+  dynamic `concat`/`substring` targets to save 680 ms on a URL nobody requests
+  is a bad trade — the latency was measured, the volume was not, and the volume
+  is what decided it.
+
+**AC-7's stated signal is wrong and should be read as measured, not as
+written.** It expects `cf-cache-status` to be *present* on the edge-served 301.
+Cloudflare Redirect Rules answer *before* the cache layer, so an edge-served
+redirect has **no** `cf-cache-status` header at all and an **absolute**
+`Location`; the origin-served one is what carries `cf-cache-status: DYNAMIC` and
+a relative `Location`. Measured both ways on the same URL.
+
+**Found while building it (out of scope, tracked separately):** `middleware.ts`
+Step 4 drops the query string. `buildLocaleRedirect({ restOfPath })` takes only
+the path, unlike Steps 3/3.1/3.2 which all append `context.url.search` — so
+`https://hospeda.com.ar/?utm_source=newsletter` arrives at a bare `/es/` and the
+campaign parameters are gone before analytics sees them. The edge rule preserves
+them, so staging's root is now fixed and production is not; every other
+locale-less path is still affected on both.
+
+**W1-5 — Version the Cloudflare configuration. DONE at the documentation tier
+(2026-08-04).**
+[`infra/cloudflare/README.md`](../../infra/cloudflare/README.md) now indexes
+everything the zone carries and states the shared-zone constraint every rule
+must respect; [`infra/cloudflare/rules/cache-rules.md`](../../infra/cloudflare/rules/cache-rules.md)
+mirrors the live Cache Rule — expression, every setting with its API
+equivalent, the reasoning per clause, the measured list of what it does and does
+not actually cache, and the verification commands.
+
+**Terraform is deliberately deferred, not forgotten.** It needs a state backend,
+a provider credential with ruleset-write scope, and a decision about who may
+apply — three choices worth making on purpose rather than as a side effect of
+writing one cache rule. Until then the documents are the source of truth for
+*intent* and the dashboard for *what is live*, and the two are kept in step by
+convention: a rule changed in the dashboard is changed in its document in the
+same PR. Redirect Rules join the same directory when W1-4 lands.
+
+**W1-6 — The accommodation detail page opts into the cache. DONE (2026-08-04,
+PR #2610).** Not in the original plan; added once W1-3 measured **15 ms cached
+vs 689 ms uncached on the same host** and the §6.4 footprint audit showed detail
+pages — the bulk of the indexable surface — were returning `BYPASS` purely
+because the origin never opted in.
+
+No Cloudflare change was needed: the W1-2 rule already matched
+`/{lang}/alojamientos*`, and `bypass_by_default` was doing exactly its job.
+Adding a family is an application change, and this is the proof of it.
+
+The page is the **first caller of `buildEntityCacheTags`** — the helper shipped
+with W1-1 and had no call site until now. It emits `accom-<slug>` **and**
+`accom-<id>`, and deliberately **not** `list-accom`: a detail page is not a
+listing, and tagging it with the collection would make every accommodation write
+evict every other accommodation's page. The trade, stated plainly: content
+pulled in from other entities (similar stays, the owner's other properties,
+related posts and events, reviews, promotions, nearby POIs) is not
+purge-addressable from this page and goes stale for at most the 300 s TTL.
+
+`cacheable` is gated on two fail-closed conditions — an empty query string
+(every `ctx*` on the page comes from a search param and feeds the WhatsApp
+prefill with the visitor's dates and party size, so the ORIGIN must refuse to
+mark such a render shareable regardless of what the edge does) and the existence
+of a usable entity tag. The call sits **after** the 404/410 guards, so an error
+response is never marked `public, s-maxage=300` — pinning a 404 at the edge for
+five minutes. A test asserts that ordering, because the ordering is the whole
+protection.
+
+### 6.5 Wave C — extend the pattern across the catalog
+
+> **Rev 3.** Wave C shrank. Its de-personalization tasks moved into Wave B0,
+> which does them for the whole catalog at once rather than per-page:
+> **old W2-4 → WB0-7**, and the personalization half of **W2-3 → WB0-5**. What
+> remains here is the cache-header rollout for surfaces Wave B0 does not touch.
 
 **W2-1 — Home.** The easiest case: it never reads the session, is already
 unconditionally anonymous, and emits no cache header at all. Apply the
@@ -685,10 +1727,10 @@ unconditionally anonymous, and emits no cache header at all. Apply the
 `/auth/me` round-trip via `SESSION_OPTIONAL_SEGMENTS` and get no caching
 benefit in return. Same conditional pattern as accommodations.
 
-**W2-4 — Accommodation detail.** The hard case (§5.4). Move bookmark state,
-conversation state and user identity out of SSR into client-side fetches,
-following the pattern already used in `PricingCardsGrid.astro:807-826`. Only
-then apply the cache header.
+**W2-4 — Accommodation detail. → MOVED to WB0-7 (Rev 3).** Rev 2 scoped this as
+one page; the §5.12 audit found the same blocker across 27 pages and a much
+cheaper conversion than assumed. Kept here as a pointer so existing references
+do not dangle.
 
 **W2-5 — Parallelize the sequential SSR fetches** in
 `alojamientos/index.astro` and the authenticated branch of
@@ -696,15 +1738,82 @@ then apply the cache header.
 for the first request after every TTL expiry and for every `stale-while-
 revalidate` refresh.
 
-**W2-6 — Bot handling.** Confirm crawlers benefit from the edge cache (they
-will, since the cache is UA-agnostic) and add a rate-limit allowlist or a
-separate tier for verified crawler traffic hitting the API directly.
+**W2-6 — Bot handling. DONE (2026-08-05), and the second half was closed as
+unnecessary rather than built.** This task had two halves. The first is
+confirmed by measurement; the second turned out to protect an empty set.
+
+**Half 1 — crawlers do benefit from the edge cache. Confirmed on staging.**
+Not "they will, since the cache is UA-agnostic" — measured. The same URL
+(`https://staging.hospeda.com.ar/es/`) was requested twice in immediate
+succession with different User-Agents:
+
+| User-Agent | Status | `cf-cache-status` | `age` |
+|---|---|---|---|
+| `Googlebot/2.1` | 200 | `HIT` | 6 |
+| `Chrome/151` | 200 | `HIT` | 6 |
+
+The **identical `age`** is the actual evidence, not the two `HIT`s: it proves
+both requests were served from *the same cache object*, rather than each UA
+warming its own entry. No `Vary` header is present on the response, which is
+what makes that true. **AC-G-7 is satisfied for staging.**
+
+**Half 2 — the rate-limit allowlist is not built, because verified crawlers
+never reach the API.** §5.6 described the residual exposure as "a crawler
+hitting `api.hospeda.com.ar` directly from a shared datacenter range". That
+exposure was already closed by a different spec: **HOS-109 T-011 serves
+`User-agent: * / Disallow: /` on the API host** (`apps/api/src/routes/robots.ts`),
+because crawlers were probing it for feeds. The consequence for this task is
+structural:
+
+- A crawler that *respects* robots.txt — which is what "verified" means — never
+  requests anything from the API host, so an allowlist grants it nothing.
+- A crawler that reaches the API *anyway* is by definition ignoring robots.txt,
+  so it is not verified and must not be allowlisted.
+
+The set the allowlist would serve is empty by construction, not by accident.
+
+**Measured, not just reasoned (Cloudflare AI Crawl Control, 24 h to
+2026-08-05, the maximum window the Free plan exposes).** Filtering the zone's
+crawler traffic to `hostname contains "api."` — which covers both
+`api.hospeda.com.ar` and `staging-api.hospeda.com.ar` — returns **one single
+request**, and that request is **our own probe**: `GET /api/v1/public/destinations`
+on `staging-api.hospeda.com.ar`, issued by the curl that verified the API's
+robots.txt an hour earlier. Real crawler traffic against the API is **zero**.
+The same window shows **~2,000 crawler requests zone-wide** (Applebot 947,
+Googlebot 182, ChatGPT-User 28, Amazonbot 22, Claude-SearchBot 10, +5 others
+35) — all of it against the web app, none against the API.
+
+**A User-Agent allowlist would have been a rate-limit bypass, and we
+demonstrated it by accident.** Cloudflare's AI Crawl Control attributed the
+probe above to **"Googlebot"** — because that is the User-Agent string the
+curl sent. A `curl -A` is all it takes. Any allowlist keyed on the UA string
+would hand a rate-limit exemption to anyone who asks for one. Building it
+honestly would require Cloudflare's `cf.verified_bot` signal plus a shared
+secret so the header cannot be forged by bypassing the proxy — real work, a
+permanent bypass path to maintain, in exchange for protecting a set measured
+at zero. Rejected on that trade, not on difficulty.
+
+**The inverse risk was checked and is not real.** The API's `Disallow: /` also
+tells Googlebot's *renderer* not to fetch API subresources while rendering a
+page, which would matter if any indexable content arrived only via a
+client-side fetch. It does not: the SSR-first island rule
+(`apps/web/CLAUDE.md`) requires the critical data to be in the SSR HTML, and
+the browser-side calls to `PUBLIC_API_URL` on public pages are `/protected/*`
+endpoints (which return nothing without a session), "load more" pagination
+past page 1, forms, and analytics. Nothing indexable depends on them.
+
+**Scope limit, stated so this is not read as broader than it is.** AI Crawl
+Control tracks *known* crawlers, and the Free plan caps the window at 24 hours.
+A rogue scraper with a forged UA would not necessarily appear in it — but that
+is precisely the actor an allowlist for *verified* crawlers could never have
+covered. The public tier's 1000 req/h per IP and the per-route limiters remain
+the defence there, unchanged by this task.
 
 **W2-7 — Fix the 19 misleading `@rendering SSR + ISR 24h` comments** — either
 implement the caching they claim (covered by W2-3) or correct the comment. A
 comment promising a mechanism that does not exist is worse than no comment.
 
-### 6.5 Wave D — document weight
+### 6.6 Wave D — document weight
 
 > **Rev 2 reprioritisation.** Rev 1 treated this as the lowest-value wave. §5.9
 > changes that: the 631 KB inline i18n payload is served **464,000 times a day**,
@@ -717,15 +1826,369 @@ Overlaps HOS-168; this spec supplies the measurements it lacked.
 - **W3-1** — Move the i18n payload out of the HTML into a hashed, immutable
   asset served on the `/_astro/*` carril that already returns `HIT`. Saves
   631 KB per cold page load. **This is the single largest byte win available.**
-- **W3-2** — Split the i18n catalog by namespace. `validation` (157 KB) has no
-  business being on a page without forms.
-- **W3-3** — Audit the 170 KB of `astro-island` props across 26 islands.
-- **W3-4** — Remove `driver.js` CSS from the global bundle.
-- **W3-5** — Consolidate the 20 render-blocking stylesheets. Gated on the
-  CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not start before
-  that resolves.
+- **W3-2** — ~~Split the i18n catalog by namespace. `validation` (157 KB) has no
+  business being on a page without forms.~~ **DONE 2026-08-05, but by a
+  different cut than the one this line proposed.** The asset went from
+  **104,701 B to 76,588 B brotli (−26.9%)**, 663,143 → 509,702 B raw, by
+  dropping the **21 namespaces no browser-reachable module can name**. The
+  per-page split the line asked for was measured and rejected; see below.
 
-### 6.6 Documentation cleanup
+  **The right question was not "which page needs this namespace" but "can the
+  browser name it at all".** The asset exists only for the client:
+  `getClientLocaleDict` reads it, while SSR resolves keys from the full
+  `@repo/i18n` catalog server-side and never touches it. Twenty-one namespaces
+  — `faq`, `features`, `social`, `terms`, `privacy`, `fields`, `benefits`,
+  `about`, `error`, `mobile`, `gastronomy`, `google-calendar`, `cookies`,
+  `content-moderation`, `exchange-rate`, `tags`, `owners`, `notifications`,
+  `api`, `partners`, `revalidation` — are named only by `.astro` files. They
+  were downloaded by every visitor on every cold load and could never be read.
+
+  **Reachability had to come from the import graph, not from the directory
+  layout, and the difference was not academic.** `apps/web/src/lib/` holds both
+  kinds of module: `features-content.ts` is imported only by `.astro`
+  (SSR-only, `features` is droppable), while `colors.ts` carries
+  `blog.categories.*` literals and is imported by `PostCreateForm.client.tsx`
+  (**`blog` is NOT droppable**). A directory-scoped scan called `blog`
+  unreachable and would have shipped a broken chip label. Two other things the
+  graph walk had to get right: keys frequently live in a data structure first
+  (`config/navigation.ts`, tour steps, filter definitions) and reach `t()`
+  through a variable, so the scan matches any string literal headed by a
+  namespace rather than only `t()` call sites; and `packages/feedback` writes
+  ESM `./Button.js` specifiers for `.tsx` files on disk, which left **112
+  imports unresolved** and 2 modules unexplored until the resolver learned to
+  strip `.js`.
+
+  **`validation` stays, and the line above was wrong about it.** It is the
+  largest namespace (1,902 keys, 16,028 B brotli) and it is reachable from
+  PUBLIC pages: `zodIssuesToFieldErrors` (`lib/forms/field-errors.ts`) feeds
+  `issue.message` — a runtime string from `@repo/schemas` — through
+  `resolveValidationMessage`, which maps `zodError.X` → `validation.X`, and it
+  passes the fallback as an explicit `undefined`. `use-zod-form.ts` reaches it
+  from `ContactHost` and `CommentThreadIsland`. Pruning it to the keys
+  *reachable from the schemas* was measured and does not pay: `@repo/schemas`
+  declares 1,727 `zodError.*` keys, **1,722 of the 1,902 (90.5%) are
+  reachable**, and the prune is worth **1,446 B brotli (1.4%)**. Only a
+  per-page analysis of which schemas can run in which browser page would touch
+  the 16 KB, and that re-creates the hand-maintained mirror of the routing
+  table this spec deleted `entity-path-mapper.ts` to be rid of. Deliberately
+  not done.
+
+  **The guard is the deliverable, not the byte count** —
+  `test/lib/i18n-client-namespaces.guard.test.ts`. A missing namespace does not
+  throw: `resolve()` renders the call site's inline fallback (**154 client call
+  sites pass one**, so the failure is invisible there) or, with no fallback,
+  **the raw key text in production** — `[MISSING: …]` is emitted only under
+  `import.meta.env.DEV`. The same DEV-only asymmetry sits in
+  `resolveValidationMessage`, whose `startsWith('[MISSING:')` recovery branch
+  can never fire in a production build. A wrong list therefore passes dev,
+  `astro check` and every component test. So the guard recomputes the set from
+  the import graph and asserts it in BOTH directions — a namespace named by an
+  island but not shipped fails, and a namespace shipped but unreachable fails
+  too, so dead weight cannot creep back. An import it cannot resolve is a
+  FAILURE rather than an "external" skip, because a truncated graph is exactly
+  how a namespace gets misreported as unreachable. Mutation-tested both ways:
+  removing `blog` names `blog (named in apps/web/src/lib/colors.ts)`, adding
+  `faq` names `faq`.
+
+  **W3-2b — the same cut again, one level finer. DONE 2026-08-05
+  (PR #2675): 76,766 → 56,644 B brotli, −20,122 B (−26.2%), 6,914 → 5,118
+  keys.** Dropping whole namespaces left most of the remaining weight in place:
+  inside the 31 namespaces that survived, the majority of keys are named only by
+  `.astro` files. Narrowing from namespaces to the **two-segment key prefixes**
+  browser code names removes them.
+
+  **Two segments is a chosen stopping point, and the table is why.** Measured
+  across granularities, single asset, no route logic: two segments → 169
+  entries / 55,222 B; three → 803 / 48,433 B; full prefix → 1,777 / 45,157 B.
+  Two segments takes **68% of the available win for 9% of the declaration**.
+  Past it the list stops being reviewable in a diff and every PR adding a key
+  must regenerate it; at two segments a new key under an existing prefix is
+  covered for free. Note the constraint that forces a declaration at all: the
+  asset is built at server start and the production container has no source
+  tree, so the set cannot be computed at runtime.
+
+  **A coverage audit had to come before trusting any key-level cut, and it
+  found two real holes.** All 96 non-literal translation calls in the client
+  graph were enumerated and classified: 53 template literals (safe — the static
+  head bounds the subtree), 9 `${NAMESPACE}.x` (safe — one file, module-level
+  literal), 34 variable-keyed. Of those 34, **32 are safe** because the literals
+  feeding them live in `apps/web/src` and the scan already sees them; **2 are
+  not**, and they share a shape — the key literal lives inside a workspace
+  package the graph treats as external:
+
+  - `lib/forms/field-errors.ts` → `validation.*`, via `issue.message` from
+    `@repo/schemas`.
+  - `lib/api-errors.ts` → `common.apiError.*`, built inside `@repo/i18n` by
+    `translateApiErrorWithT`.
+
+  Neither literal exists anywhere in `apps/web`, so a scan of the web app alone
+  deletes both and silently breaks API-error messages and form validation in the
+  browser. `common.apiError` was verified absent from the generated list before
+  being added by hand. They live in `EXTERNAL_I18N_KEY_PREFIXES`, and the guard
+  asserts **their code paths still exist**, so removing an entry without
+  removing its call path fails CI rather than shipping.
+
+  **The guard caught its first defect on its first run**, and the direction
+  matters: it flagged four `auth-ui.*` prefixes the generator had missed,
+  because the generator walked pages → islands while the guard also roots at the
+  `auth-ui` package. The checker being strictly more conservative than the
+  producer is the property that makes this safe. Mutation-tested: removing
+  `nav.signIn` names it and its call site; emptying the external list fails on
+  `expected [] to include 'common.apiError'`.
+
+  **The public / `mi-cuenta` split was measured and NOT built.** At namespace
+  granularity it is worthless — exactly **one** namespace (`events`, 1,105 B) is
+  private-only, because the shared header mounts `UserMenu` with `client:load`
+  on every page and its nav config names `account.nav.*`, `commerce.owner.nav`
+  and `conversations.inbox.*`, while public landings mount `HostLandingCta`
+  (`host`) and `PlanPurchaseButton` (`billing`). At key-prefix granularity it is
+  worth ~17.7 KB, but it needs two assets, route-conditional linking, and a
+  guard that reasons about which islands each `.astro` page mounts. Since the
+  SSR-only cut above takes more weight with one asset and no routing, the split
+  was deferred rather than built. Reorganizing the namespaces to make the
+  boundary cleaner was considered and rejected: the ceiling is set by which keys
+  public islands can reach, which is a property of the code, not of the naming —
+  renaming ~1,300 keys across three locales would buy a shorter list, not bytes.
+- **W3-3** — ~~Audit the 170 KB of `astro-island` props across 26 islands.~~
+  **DONE 2026-08-05, and the framing above was wrong.** It is not 26 islands: on
+  the home, `DestinationsIsland` alone carried 147,372 B — 28.9% of the whole
+  document and 79% of all island props. Measured per field, `gallery` was 77,162 B
+  of that and is read nowhere, along with `coordinates`, `ratingDimensions`,
+  `isFeatured` and `eventsCount`. The island tree reads exactly ten fields
+  (`DestinationsMap` reads one, `slug`). Fixed by projecting to those ten before
+  passing them. The 170 KB figure came from the LISTING; nobody had bucketed the
+  home.
+- **W3-4** — ~~Remove `driver.js` CSS from the global bundle.~~ **DONE 2026-08-05
+  (PR #2678): −4,540 B raw / −788..811 B brotli on every page.** The runtime was
+  already lazy — both tour islands `await import('driver.js')` — so the only
+  thing on the critical path was the CSS: `global.css` did the vendor `@import`
+  plus ~90 lines of themed overrides, for a tour reachable only from
+  `/mi-cuenta`. The rules moved to `styles/driver-tour.css`, imported by
+  `lib/load-driver.ts`, which re-exports `driver` and is what the islands now
+  dynamically import. Vite emits the stylesheet as a sibling asset of that async
+  chunk (`load-driver.*.css`, 4,540 B raw / 1,052 B brotli), referenced by the
+  two island chunks and nothing else, so the `<link>` is injected when the tour
+  starts. The per-page saving is smaller than the asset because brotli was
+  already compressing those rules inside the 80 KB global sheet; both numbers
+  were measured on a production build, not estimated.
+
+  **The invariant that needed a guard is the dynamic import, not the file move.**
+  A plain `import { driver } from '@/lib/load-driver'` in either island folds the
+  CSS straight back into that island's eagerly linked stylesheet — the tour still
+  works, the bytes are just back, and nothing at runtime says so. The guard pins
+  all three parts (rules in their own file, one importer, dynamic import only)
+  and matches import SYNTAX rather than bare mentions, so the pointer comments in
+  `global.css` and `driver-tour.css` that explain the invariant do not trip it.
+  Its positive assertions matter as much as the negative ones: "no `.driver-` rule
+  in `global.css`" also passes if someone deletes the theme outright, which is
+  BETA-121 (unstyled popover), so the themed rules are asserted to exist in their
+  new home. Mutation-tested 4/4: static import in an island, `driver-tour.css`
+  imported from `BaseLayout.astro`, the vendor `@import` back in `global.css`, and
+  the theme deleted — each fails and names the file.
+- **W3-5** — Consolidate the 20 render-blocking stylesheets. **Partly shipped.**
+
+  ~~Gated on the CSP/`inlineStylesheets` constraint (HOS-164/HOS-168) — do not
+  start before that resolves.~~ **That gate was wrong and cost this task a wave
+  of delay.** It conflated two different things: *inlining* a stylesheet into a
+  `<style>` element, which really is constrained, and *removing* one from the
+  critical path, which is not.
+
+  `inlineStylesheets: 'never'` is set in `astro.config.mjs` for a reason that
+  has nothing to do with byte count — Astro's `'auto'` inlines small sheets as
+  `<style nonce="…">`, and `<ClientRouter />` soft navigation swaps in a page
+  whose nonce no longer matches the CSP the browser pinned on first load
+  (GAP-30-01). Forcing sheets to external hashed files routes them through
+  `style-src 'self'`, which is immune to that. Nothing about that decision
+  blocks reducing how many of those external sheets are render-blocking.
+
+  The proof is already merged: `apps/web/src/lib/ensure-stylesheet.ts` — whose
+  own header names it "HOS-369 W3-5" — takes vendor CSS off the critical path by
+  importing it with Vite's `?url` suffix and injecting a `<link>` at runtime. A
+  same-origin `<link rel="stylesheet">` is allowed by `style-src 'self'` and
+  needs no hash, so the mechanism is CSP-compatible **by construction**. It
+  shipped for `glightbox` and `react-day-picker` while this line still claimed
+  the task could not start.
+
+  What that module also documents is the real constraint, which is the one worth
+  carrying forward: **Astro hoists the CSS of a page's ENTIRE module graph into
+  `<head>`, without distinguishing a static import from a dynamic one.** So a
+  `[data-glightbox]` guard plus `import()` does not help, and neither does
+  moving the import into its own module — Vite merges a module whose only
+  content is a CSS import back into its parent chunk. `?url` + runtime injection
+  is what breaks the chain. Both failures were measured, not predicted.
+
+  Remaining work is the consolidation itself, and it needs a re-measurement
+  first: the "20 sheets / 57,603 B brotli" figure in §5.6 predates W3-4 and this
+  module's two extractions.
+
+  **Do not classify a sheet as non-critical by reading the settled DOM.** A
+  first pass at bucketing the 20 sheets marked seven of them as contributing no
+  critical bytes. At least one of those seven is wrong, and wrong in a way that
+  generalizes: `EventCardHorizontalSkeleton.astro` is the `slot="fallback"` of a
+  `server:defer` island (`NextEventsSectionSkeleton` →
+  `pages/[lang]/index.astro:252`). A server island's fallback is what the
+  document ships and what the user looks at until the deferred render lands, so
+  its CSS is as critical as anything above the fold — and then it is replaced,
+  which is precisely why it is invisible to any check that runs after the page
+  settles. Measured, not argued: `skeleton-pulse` appears **63 times in the raw
+  SSR HTML** of the staging home.
+
+  The classifier has to read the **raw SSR HTML** (`curl`, no JS), the same
+  discipline the SSR-first island rule in `apps/web/CLAUDE.md` already demands
+  of island tests. Seven sheets were classified this way; the other six were not
+  re-checked and must be before any of them is treated as safe to defer.
+- **W3-6 (new, 2026-08-04)** — Deduplicate the inline SVG icons. See the
+  re-measurement below: 520 inline `<svg>` elements on one listing page, only
+  **169 distinct** — each icon repeated ~20×, once per card. 355 KB, the second
+  largest bucket in the document and not covered by W3-1..W3-5.
+
+#### Re-measured 2026-08-04, after Waves A, B0 and B shipped
+
+The owner asked why PageSpeed against staging had not moved. It had not, and the
+measurement says exactly why — **this wave is now the only thing standing
+between the work already done and a visible score.** Recorded here so HOS-369 is
+not closed without it.
+
+`/es/alojamientos/`, measured live on staging: **1,385,789 B of HTML**, 197,500 B
+transferred (brotli). Compression hides it on the wire; the browser still parses
+1.39 MB.
+
+| Bucket | Bytes | Share |
+|---|---|---|
+| `<script id="hospeda-i18n">` | **639,458** | **46.4 %** |
+| Inline SVG (520 elements, 169 distinct) | **354,976** | **25.7 %** |
+| `astro-island` props (57 islands) | 55,758 | 4.0 % |
+| `<style>` | 51,144 | 3.7 % |
+| JSON-LD | 3,286 | 0.2 % |
+
+**72 % of the document is payload the page does not need in that form.** The
+i18n blob carries `.m.cookies.sections.*`, `.m.faq.categories.*`,
+`.m.privacy.sections.*`, `.m.about.story.*` and `.m.features.hero.*` — the
+cookie policy, the FAQ, the privacy policy and two marketing pages, shipped
+inside the accommodation listing.
+
+**New fact that raises W3-1's value beyond the 631 KB already claimed**: the
+blob is **byte-identical across every page** (`/es/`, `/es/alojamientos/`, a
+detail page, `/es/suscriptores/planes/`, `/es/legal/cookies/` — all 645,173 B of
+`id="hospeda-i18n"`). Moving it to a hashed immutable asset therefore saves the
+bytes **once per session**, not once per page: the browser downloads it on the
+first navigation and reuses it for every subsequent one. It also shrinks every
+edge-cached HTML object to roughly a third of its size.
+
+**Why the edge cache could not have moved the score, stated plainly so nobody
+re-litigates it.** Wave B fixed the cost of *serving* (TTFB 689 ms → 15 ms).
+Lighthouse weights TBT 30 %, LCP 25 %, CLS 25 %, FCP 10 %, SI 10 % — TTFB is not
+scored directly and only partly feeds FCP. Mobile PSI additionally throttles CPU
+4×, which punishes precisely the parse-and-execute work this payload creates.
+Two different problems; both real; PageSpeed measures the second one.
+
+#### Measured on 2026-08-05, after W3-1 shipped
+
+W3-1 is merged (PR #2654) and live on staging. Measured against the same URLs,
+before and after the redeploy:
+
+| Page | Before | After | Drop |
+|---|---|---|---|
+| `/es/` (home) | 1,258,565 B | **611,860 B** | 51.4 % |
+| `/es/alojamientos/` | 1,387,892 B | **741,193 B** | 46.6 % |
+
+The dictionary now ships as `/i18n/<locale>.<hash>.js` (658,231 B, `immutable`,
+`HIT` at the edge on the second request — see `infra/cloudflare/rules/cache-rules.md`),
+so the browser pays it once per session per locale instead of once per navigation.
+
+**AC-8 does NOT pass on W3-1 alone, and the AC as written is wrong.** It says the
+home drops below 500 KB "after W3-1"; the measurement above is 611,860 B. The AC
+was written before the 2026-08-04 re-measurement discovered the 354,976 B inline-SVG
+bucket, and was never updated to account for it. Closing HOS-369 on the strength of
+that sentence would close it on a page still 22 % over the threshold.
+
+**W3-6 is therefore a closure blocker, not an optional extra.** Removing the
+duplicated SVG (520 elements, 169 distinct) should bring the home to roughly
+256 KB. Note the 354,976 B figure was measured on the LISTING; the home's own SVG
+bucket has not been measured separately and must be, rather than assumed equal.
+
+One framing correction while the numbers are fresh: the dictionary is ~100 KB
+brotli / 127 KB gzip on the wire, not 639 KB. The 632 KB that *is* paid in full on
+every navigation is HTML parsing and the DOM text node — which is exactly the
+CPU-bound work mobile PSI throttles 4×, and therefore still the right target.
+
+#### Measured on 2026-08-05 — document weight, after W3-6 and W3-3
+
+> **This section is diagnosis, not acceptance.** It recorded AC-8 as met against
+> the old "home HTML under 500 KB" criterion. That criterion was replaced the
+> same day (see §9, AC-8) because the document got lighter while the page got
+> slower. The progression below is still accurate and still useful — it is the
+> best record of where the document's bytes went — but it no longer decides
+> whether HOS-369 closes.
+
+| Page | Baseline 2026-08-04 | After W3-1 | After W3-6 | After W3-3 | Total |
+|---|---|---|---|---|---|
+| `/es/` (home) | 1,256,468 B | 611,861 B | 511,077 B | **412,346 B** | **−67.2 %** |
+| `/es/alojamientos/` | 1,385,789 B | 741,191 B | 490,047 B | 490,046 B | **−64.6 %** |
+
+~~**AC-8 is met**~~: the home is 412,346 B against the old 500,000 B threshold, a
+17.5 % margin rather than the knife-edge the earlier projections kept landing on.
+**That threshold is retired** — see the note above and §9, AC-8. The reduction is
+real; what it did not buy was a faster page.
+
+It took THREE levers, not the one the criterion named — and each time the
+arithmetic fell short, it was because a bucket nobody had measured on the home
+turned out to dominate it:
+
+1. **W3-1** removed the 641,597 B i18n blob → 611,861 B. Still 22 % over.
+2. **W3-6** replaced 520 inline SVGs with `<use>` into a hashed sprite →
+   511,077 B. Still 2.2 % over.
+3. **W3-3** stopped serializing 84,870 B of island props nothing renders →
+   412,346 B. Clear.
+
+The recurring lesson is worth stating once: **the spec's bucket table was
+measured on the LISTING, and every projection made from it onto the home was
+wrong.** The two pages do not share a profile — the listing is dominated by
+repeated card SVGs, the home by one island's props. Re-bucket the specific page
+before predicting anything about it.
+
+Verified on staging with real data after each deploy: the sprite reaches `HIT` at
+the edge, 383 `<use>` resolve with none broken, the destinations map and carousel
+render from the narrowed prop set, and the i18n dictionary carries its 8,840 keys.
+
+#### Cold first-visit profile, 2026-08-05 — the baseline AC-8 now measures against
+
+Taken after the whole of Wave D, on a genuinely cold cache (recipe in §9, AC-8).
+This is the measurement that retired the document-weight criterion:
+
+| | |
+|---|---|
+| Requests | **153** |
+| Transferred | **1,123 KB** |
+| JS | **106 requests / 2,019 KB decoded** |
+| CSS | 254 KB |
+| LCP | **≈ 15,266 ms** |
+
+Three heaviest resources, all decoded bytes:
+
+| Resource | Decoded | Note |
+|---|---|---|
+| `src.*.js` | 504 KB | |
+| `/icons/sprite.*.svg` | **489 KB** | created by W3-6; 8,248 ms, slowest resource on the home |
+| `/i18n/es.*.js` | **389 KB** | created by W3-1 |
+
+**Two of the three heaviest resources were created by this wave**, to shrink the
+HTML the old AC-8 was measuring. Both are `immutable` and `HIT` at the edge, so
+they are first-visit cost that buys every later page — the trade is sound, the
+criterion that scored it was not.
+
+Two consequences for the remaining work, so nobody re-derives them:
+
+- **The sprite is the home's slowest resource**, and `<use href="…#id">` means no
+  icon paints until the whole file arrives. The fix is to inline only the icons
+  in the first viewport and leave the sprite for the rest — not to revert W3-6.
+- **Over half the i18n dictionary is `account.*` keys** the public home can never
+  use. Measured at ~17.7 KB brotli and deferred on that basis; in decoded bytes,
+  which is what the main thread pays and what mobile PSI throttles 4×, it is
+  worth far more. That is W3-2, and it needs two assets, per-route conditional
+  linking, and a guard that can reason about which islands each `.astro` mounts.
+
+### 6.7 Documentation cleanup
 
 `docs/performance/caching.md`, `docs/performance/README.md`,
 `docs/runbooks/scaling.md`, `docs/deployment/apps/web.md` and
@@ -761,16 +2224,118 @@ Documented under `infra/cloudflare/` (W1-5). Must specify: match expression,
 cache eligibility, cookie-based bypass condition, query-string bypass
 condition, and TTL source (origin `Cache-Control`, not an Edge TTL override).
 
-### 7.3 Purge contract
+**Rev 3 additions, both non-obvious and both silent when wrong:**
 
-`POST /api/revalidate?secret=…` changes from
-`{ purge_everything: true }` to `{ files: string[] }`, sourced from
-`entity-path-mapper.getAffectedPaths()`. The whole-zone form stays available
-behind an explicit parameter for deploy-time flushes.
+- The match expression MUST include `http.request.method eq "PURGE"` alongside
+  `"GET"`. A `GET`-only expression does not match during a purge, so purges
+  report success and evict nothing (§5.11.3).
+- **Sort query string** ON. It is the only cache-key normalization available on
+  Free; `Ignore query string` and `No query parameters except` are Enterprise
+  (§5.11.2).
 
-Env vars unchanged: `HOSPEDA_REVALIDATION_SECRET` (required),
-`CLOUDFLARE_ZONE_ID` and `CLOUDFLARE_API_TOKEN` (production-scoped, `web` app
-only).
+### 7.3 Purge contract (revised Rev 3)
+
+`POST /api/revalidate?secret=…` changes from `{ purge_everything: true }` to
+`{ tags: string[] }`. The whole-zone form stays available behind an explicit
+parameter for deploy-time flushes.
+
+**Tag vocabulary** (must be printable ASCII, ≤1024 chars each, ≤1000 tags per
+response — Cloudflare limits):
+
+> **As built (W1-1).** The table below was the plan; two rows changed. Both
+> tags are emitted per entity — by SLUG **and** by ID — because the call sites
+> are not consistent about which identifier they hold, and emitting one while
+> purging by the other purges nothing (§6.4). Two page tags were also added
+> that the plan did not anticipate. The vocabulary lives in
+> `packages/cache-tags/src/vocabulary.ts`, which is the source of truth.
+>
+> **EVERY tag below is prefixed by its deployment environment** —
+> `prod:list-accom`, `preview:home` — see §7.3.1. The table gives the bare
+> vocabulary; the namespace is applied on top of it, symmetrically, in every
+> environment including production.
+
+| Tag shape | Emitted by | Purged when |
+|---|---|---|
+| `accom-<slug>` **and** `accom-<id>` (same for `dest-`, `event-`, `post-`) | any response rendering that entity | that entity is written |
+| `list-accom` / `list-dest` / `list-event` / `list-post` | any listing containing that collection — including the facet landings, the sitemaps and the feeds | any member of the collection changes |
+| `home` | the home page | anything featured on it changes |
+| `pricing` | the four subscriber pricing/comparison pages | a billing plan is written |
+| `site-config` | `robots.txt`, `llms.txt` | platform settings change |
+
+The response-side collector is Astro middleware; the purge-side caller is
+`CloudflareRevalidationAdapter`. `entity-path-mapper.ts` is **deleted** by this
+change, not extended (D-6).
+
+**As built**, two contract details the plan did not state:
+
+- The whole-zone form is a **separate method** (`purgeEverything`) at every
+  layer — adapter, service, HTTP body — not a flag on the tag path. A content
+  write cannot reach a zone flush by accident, and reading a call site tells you
+  which one it is. `POST /api/revalidate` rejects an ambiguous body
+  (`{ tags, purgeEverything }` together) with a 400 rather than picking one.
+- `revalidation_log.path` was renamed to **`target`** (migration
+  `0070_volatile_freak.sql`, `RENAME COLUMN`, no data loss). It holds a cache
+  tag, or `*` for a zone flush. `target` rather than `tag` because historical
+  rows keep their URL paths.
+
+Rev 2's `{ files: string[] }` form is rejected — see §5.11 for why it cannot
+work at this plan tier.
+
+Env vars: `HOSPEDA_REVALIDATION_SECRET` (required), `CLOUDFLARE_ZONE_ID` and
+`CLOUDFLARE_API_TOKEN` (`web` app only), plus **`HOSPEDA_DEPLOY_ENV` — now
+required on the `web` apps too**, not just the API (§7.3.1). Note the existing
+silent-disable path: a missing `HOSPEDA_REVALIDATION_SECRET` falls back to
+`NoOpRevalidationAdapter` with only a `logger.warn` (§5.5).
+
+#### 7.3.1 Tags are namespaced by deployment environment
+
+> Discovered and fixed on 2026-08-03, after W1-1 merged and before the Cache
+> Rule opened. Verified by comparing `CLOUDFLARE_ZONE_ID` (sha256, without
+> exposing it) inside all four containers.
+
+`staging.hospeda.com.ar` and `hospeda.com.ar` are the **same Cloudflare zone**,
+and the vocabulary above is byte-identical across deployments. Two consequences,
+both dormant only because nothing was cached yet:
+
+1. **Cross-environment eviction.** Any write in staging — a smoke run, a seed, a
+   QA click — purges the identically-tagged objects cached for production, and
+   vice versa. That directly attacks the hit rate this spec exists to raise.
+2. **Shared quota, uncoordinated limiter.** Cloudflare's 5 purges/min is
+   per-ZONE, but `MIN_PURGE_INTERVAL_MS` is enforced through
+   `lastPurgeStartedAt` — instance state in process memory. Two API processes
+   against one zone cannot coordinate, and over-quota no longer self-heals:
+   pre-W1-1 it degraded to `purge_everything`, with tags it returns 429 and
+   evicts nothing.
+
+Resolution: every tag carries the deployment that produced it, symmetrically,
+production included — `<env>:<tag>`, separator `:` (0x3A, already inside the
+existing validity pattern, and unlike `-` it does not collide with slugs or
+entity prefixes). Production is prefixed too because with nothing cached the
+transition was free, and an unprefixed tag would otherwise mean "prod" only
+implicitly. The environment comes from the existing `HOSPEDA_DEPLOY_ENV` and
+reuses its established vocabulary (`prod | preview | dev | test`).
+
+**The invariant, and where it is actually enforced.** If the emitter (web) and
+the purger (API) derive different namespaces, purges match nothing and evict
+nothing — silently. Both halves call one shared `resolveCacheTagEnvironment`,
+but that only rules out CODE divergence, which was never the risk; the risk is
+CONFIGURATION divergence between two processes, and that was the measured
+state (the API had `HOSPEDA_DEPLOY_ENV`, the web apps did not). So
+`POST /api/revalidate` **rejects any tag whose namespace is not its own** with a
+400 naming both, turning a mismatch into a hard failure recorded in
+`revalidation_log` on every write.
+
+Deliberately **fail-closed, not fail-fast**: an unresolvable environment skips
+tagging, responses demote to `private, no-cache`, and the site keeps serving
+uncached. Throwing would take a public site down over a cache variable; guessing
+`prod` would make staging evict production. Do NOT reuse `resolveEnvironment()`
+from `@repo/media/server` here — its `NODE_ENV=production → 'prod'` fallback is
+precisely the bug, since staging runs `NODE_ENV=production` too.
+
+**Still open: `purgeEverything` cannot be namespaced.** Cloudflare has no
+zone-scoped variant of a whole-zone flush, so a deploy-time flush from staging
+still empties production's cache. Pre-existing, but consequential once the Cache
+Rule opens.
 
 ## 8. UX / UI behavior
 
@@ -782,6 +2347,13 @@ session. This is the existing, documented reason both are `client:load` rather
 than `client:idle`. Extending caching to more routes widens the surface where
 that brief wrong-state window is visible — it does not create a new one, but it
 should be confirmed as acceptable on the newly cached routes.
+
+> **Rev 3.** Wave B0 generalizes exactly this already-accepted pattern from the
+> header to the rest of the page: favorites, contact-host mode, comment form, AI
+> search, review CTAs. The window widens from "the header" to "every per-user
+> affordance", so it stops being an incidental detail and becomes a deliberate UX
+> contract — hence D-11 (anonymous branch is the server-rendered default,
+> placeholders reserve space) and AC-B0-7 (CLS must not regress).
 
 ## 9. Acceptance criteria
 
@@ -806,6 +2378,64 @@ Wave A (added Rev 2):
 - **AC-A5** — Googlebot's daily request count is re-read in Search Console before
   and after. Directional evidence for D-2, not a pass/fail gate.
 
+Wave B0 (added Rev 3):
+
+- **AC-B0-1** — For a given catalog URL, the SSR HTML is **identical modulo
+  per-request tracing metadata** whether requested with or without a valid
+  session cookie. Asserted by diffing two real responses, not by reasoning about
+  the code. This is the single criterion that makes the cookie bypass redundant.
+
+  **VERIFIED 2026-08-08 on staging** (`/es/alojamientos/`, real session for
+  `e2e-tourist@local.test`, two `fetch`es from the page context with
+  `credentials: 'include'` and `'omit'`). Both bodies carry
+  `data-user-authenticated="false"` — the SSR is session-blind even with a valid
+  cookie. After normalising the `sentry-trace` / `baggage` metas the two are
+  **byte-identical**: 519,787 bytes each, zero remaining differences. Neither
+  body contains the account email, `data-user-authenticated="true"`, or
+  `isAuthenticated:true`. `cf-cache-status` was `DYNAMIC` for the session request
+  and `HIT` for the anonymous one.
+
+  **"Byte-identical" was corrected to "identical modulo per-request tracing
+  metadata" because the original wording is unachievable, not because the
+  implementation fell short.** `@sentry/astro` injects a `sentry-trace` meta with
+  a fresh trace id on every render. Two **anonymous** renders of the same URL are
+  therefore not byte-identical either — measured: same first-difference offset
+  (105), lengths differing by one byte. A criterion no passing implementation can
+  satisfy is a criterion that will eventually be waved through, so it is stated
+  in the form that can actually be checked. What must NOT be relaxed is the
+  substance: the diff has to be run on real responses, and anything outside the
+  tracing metas is a failure.
+- **AC-B0-2** — On a **cached anonymous** page, a logged-in visitor sees their
+  real favorites after hydration, and clicking a heart does **not** open the
+  guest login popover. This is the exact failure the current
+  `FavoriteButton.client.tsx:236` guard produces; it must be demonstrated fixed
+  against a genuinely cached response, not a fresh render.
+- **AC-B0-3** — The six content-gate components (§5.12.2) render their
+  authenticated affordances after hydration on a cached anonymous page:
+  contact-host authenticated mode, comment form, AI search panel, both review
+  CTAs, compare mode.
+- **AC-B0-4** — A listing of N cards issues **one** `check-bulk` after
+  hydration, not N `/check` calls. Asserted on the network log.
+- **AC-B0-5** — Two guards fail, one per direction, demonstrated by mutation and
+  not by reading them, per HOS-370's precedent: **WB0-6's static guard** fails
+  when session state is reintroduced into a cacheable page, and
+  **`FavoriteButton.test.tsx`** fails when `FavoriteButton`'s reconciliation is
+  re-gated on an SSR prop.
+
+  > Corrected 2026-08-08. The original text asked WB0-6's guard to catch both.
+  > It cannot, by design: that guard sweeps `src/pages` and the `.astro`
+  > components and **deliberately excludes React islands**, because resolving
+  > the visitor in the browser is the correct behaviour there (see the guard's
+  > own "What this guard does NOT cover"). Asking one guard to cover both
+  > directions would mean widening it to `.tsx` and flagging every legitimate
+  > client-side session read. Two guards, one invariant each.
+- **AC-B0-6** — After WB0-1, no `nonce=` attribute remains in the HTML of a
+  cacheable page, the CSP header carries `sha256-` sources instead, and the
+  page's inline scripts still execute (theme FOUC applies, i18n data present,
+  PostHog initializes). Verified in `build` + `preview`, then in prod.
+- **AC-B0-7** — Lighthouse CLS on a cached catalog route does not regress after
+  the class-C branches move to post-hydration swaps (D-11).
+
 Wave B onward:
 
 - **AC-1** — `curl -D -` on `/es/alojamientos/` returns `cf-cache-status: HIT`
@@ -814,17 +2444,193 @@ Wave B onward:
   cookie returns `BYPASS` (or `DYNAMIC`), never `HIT`, and its body contains
   that user's state.
 - **AC-3** — A URL with filter params (`?amenities=…`) is not cached.
-- **AC-4** — `hospeda-web-prod` idles below 10 % CPU across five `docker stats`
-  samples with no traffic.
+- **AC-4** (reworded 2026-08-08) — `hospeda-web-prod` shows a **median CPU of
+  0 % and a p90 under 1 %** across at least 30 `docker stats` samples taken
+  during normal production traffic. Occasional spikes are expected and do not
+  fail the criterion: they are individual origin renders.
+
+  **VERIFIED 2026-08-08**: 30 samples of container
+  `xv55ojdh2we9snulfsylql66-040250619247` — 21/30 at exactly 0.00 %, median
+  0.00 %, p90 0.17 %, mean 0.97 %, one sample above 10 % (max 27.86 %). Memory
+  steady at ~190–275 MiB of 7.7 GiB.
+
+  **The original wording — "below 10 % across five samples with no traffic" —
+  cannot be executed on prod, which is why it is replaced.** Two independent
+  reasons, both measured rather than assumed. (1) Production always has traffic;
+  there is no no-traffic window to sample. (2) The web container **does not log
+  requests at all**, so a no-traffic window could not be demonstrated even if one
+  occurred: a GET issued directly to the container over its own network (status
+  200, TTFB 344 ms) leaves nothing in `docker logs`. Five samples were also too
+  few to distinguish an idle baseline from a render spike — the first five taken
+  here read 0.60 / 0.00 / 0.00 / **21.31** / 0.00, which the old criterion would
+  have failed while the container was in fact idle. The intent (the origin is no
+  longer burning CPU because everything reaches it) is what the distribution
+  above measures.
 - **AC-5** — No production client chunk contains `exampleValue`,
   `howToObtain`, or `HOSPEDA_*` variable definitions, enforced by a CI guard
   that demonstrably fails when the leak is reintroduced.
-- **AC-6** — `POST /api/revalidate` issues a `files: [...]` purge; editing one
-  event does not evict `/_astro/*` assets (verify `age` on a static asset
-  survives the purge).
-- **AC-7** — `https://hospeda.com.ar/` resolves to `/es/` at the edge
-  (`cf-cache-status` present on the 301, no origin hit).
-- **AC-8** — Home HTML drops below 500 KB uncompressed after W3-1.
+- **AC-6** (revised Rev 3; pagination form corrected 2026-08-08) —
+  `POST /api/revalidate` issues a `tags: [...]` purge. Editing one event does not
+  evict `/_astro/*` assets (verify `age` on a static asset survives the purge),
+  **and** evicts that event's detail page in all three locales **plus** the
+  listing's **page-2 variant `/{lang}/eventos/page/2/`** — the case
+  purge-by-URL provably could not reach (§5.11.2).
+
+  **VERIFIED 2026-08-08 on staging.** Purged the three tags an event write emits
+  (`preview:event-<slug>`, `preview:event-<id>`, `preview:list-event` — see
+  `entity-tag-mapper.ts`), response `{"ok":true,"purged":3}`:
+
+  | URL | before | after |
+  |---|---|---|
+  | `/es/eventos/concierto-jazz/` | `HIT` age 88 | **`MISS`** |
+  | `/en/eventos/concierto-jazz/` | `HIT` age 88 | **`MISS`** |
+  | `/pt/eventos/concierto-jazz/` | `HIT` age 87 | **`MISS`** |
+  | `/es/eventos/page/2/` | `HIT` age 55 | **`MISS`** |
+  | `/_astro/page.5Z8Kdn8n.js` | `HIT` age 37,386 | `HIT` age **37,506** |
+
+  The asset's `age` kept counting from the same origin fetch, which is the
+  evidence that it was not evicted — a re-fetch would have reset it to 0.
+
+  **Why "`?page=2` variant" became "`/page/2/`".** Pagination on these listings
+  is URL-segment based; `?page=2` is only the internal `Astro.rewrite` target and
+  is not a URL any visitor or crawler receives. Measured: `/es/eventos/page/2/`
+  is `HIT`, while `/es/eventos/?page=2` is `DYNAMIC` — the origin marks it
+  cacheable but no Cache Rule matches the query form. Written the old way, the AC
+  asks you to verify eviction of a URL that is never cached in the first place,
+  which passes trivially and proves nothing.
+- **AC-7** (corrected 2026-08-08) — `https://hospeda.com.ar/` resolves to `/es/`
+  at the edge: the `301` carries **only Cloudflare headers** (`server`,
+  `cf-ray`) and **no origin headers**, proving it never reached the app.
+
+  **The previous wording — "`cf-cache-status` present on the 301" — was
+  inverted.** Cloudflare Redirect Rules short-circuit *before* the cache, so they
+  never emit `cf-cache-status`; its presence on a 301 is precisely the signal
+  that the request DID reach the origin. Measured both sides on staging:
+
+  | 301 | headers | verdict |
+  |---|---|---|
+  | apex `/` (Redirect Rule) | `server`, `cf-ray` only — zero origin headers | never hits origin ✅ |
+  | `/es/alojamientos` (no trailing slash, origin middleware) | `x-robots-tag`, `content-length`, `alt-svc`, **`cf-cache-status: BYPASS`** | hits origin |
+
+  As written, the AC would have passed the failing case and failed the passing
+  one. **VERIFIED 2026-08-08** under the corrected wording.
+- **AC-8** (rewritten 2026-08-05, owner decision) — **The home meets Lighthouse's
+  "good" thresholds on mobile: `LCP ≤ 2,500 ms` and `TBT ≤ 200 ms`**, measured
+  cold against staging. Not met today: the cold profile in §6.6 measures
+  **LCP ≈ 15,266 ms**. ~~**HOS-369 does not close until it is.**~~
+
+  > **SPLIT OUT 2026-08-09, owner decision. This criterion no longer blocks
+  > HOS-369.** The cache lane is finished and the performance gain is already
+  > substantial (cold LCP 15,266 → 2,693 ms); what remains of LCP/TBT moves to
+  > **[HOS-423](https://linear.app/hospeda-beta/issue/HOS-423)**, which inherits
+  > this criterion verbatim along with every measurement and lever recorded
+  > below. Read the rest of AC-8 as the handover document it now is, not as a
+  > gate on this spec.
+  >
+  > **Re-measured 2026-08-09, after the #2705 revert was deployed. Still NOT
+  > met, but by 193 ms instead of 12,766.** Cold-cache recipe exactly as
+  > prescribed below, 3 runs, each in its own fresh `isolatedContext`:
+  >
+  > | run | LCP | TTFB | Load delay | Load duration | Render delay | CLS |
+  > |---|---|---|---|---|---|---|
+  > | 1 | 2,693 | 674 | 171 | 1,786 | 62 | 0.00 |
+  > | 2 | 2,536 | 40 | — | — | 2,496 | 0.00 |
+  > | 3 | 2,891 | 55 | 799 | 1,823 | 215 | 0.00 |
+  >
+  > **Median LCP 2,693 ms** against a 2,500 ms threshold. Run 2's LCP element
+  > was a text node (no resource, hence no load phases); runs 1 and 3 picked the
+  > hero image. **TBT was not measured in this pass** — the second half of the
+  > criterion is still open.
+  >
+  > **The two remaining levers, in order of size:**
+  >
+  > 1. **Render-blocking CSS — the `RenderBlocking` insight estimates
+  >    ~11.7–12.0 s of FCP savings on all three runs.** This is the direct cost
+  >    of reverting #2705: the sheets are back on the critical path. The answer
+  >    is NOT to re-defer all of them (that was #2705, and it bought a 0.45 CLS)
+  >    nor to leave every one blocking. It is to shrink what is critical —
+  >    inline the above-the-fold rules and defer only what provably does not
+  >    affect the first viewport, verified against CLS each time.
+  > 2. **The hero image transfer — ~1.8 s of `Load duration`** in both runs
+  >    where the image won LCP, with `ImageDelivery` reporting 34.8 kB of waste.
+  >    Note this is the transfer itself, not discovery: `Load delay` is 171 ms
+  >    and 799 ms. The "~750 ms load delay" recorded as the next block in the
+  >    prior session's handoff was measured on a WARM profile and does not
+  >    describe the cold one.
+  >
+  > **Do not trust a warm re-measurement of this criterion.** Three
+  > `reload: true` traces taken the same day reported a median LCP of 1,144 ms
+  > with `Load duration` of 1–2 ms — under one RTT, which the sanity check below
+  > correctly flags as cache rather than speed. The cold number is 2.4× that.
+  >
+  > **TBT — the other half, measured 2026-08-09. Also NOT met.** Same cold
+  > profile, `longtask` observer, blocking time summed after FCP:
+  >
+  > | run | TBT (all) | TBT (≤5 s after FCP) | FCP | LCP |
+  > |---|---|---|---|---|
+  > | 1 | 403 | 374 | 2,360 | 2,524 |
+  > | 2 | 513 | 479 | 2,372 | 2,840 |
+  > | 3 | 478 | 442 | 2,404 | 2,520 |
+  >
+  > **Median TBT 478 ms** against a 200 ms threshold.
+  >
+  > **TBT and LCP are separate problems here, and that is the useful part.**
+  > The blocking is a deterministic burst at ~6.5 s, ~7.1–7.3 s and ~8.5 s —
+  > the same four tasks in the same order on all three runs, roughly 4 s AFTER
+  > LCP. Nothing blocks before ~5.9 s. So no amount of LCP work will move TBT,
+  > and vice versa. That burst is post-load island hydration plus third
+  > parties; `longtask` attribution returns `unknown`, so isolating it needs a
+  > main-thread trace, not this observer.
+  >
+  > **What actually gates FCP: stylesheet COUNT, not CSS weight (2026-08-09).**
+  > Measured on the cold profile: **19 render-blocking stylesheets totalling
+  > 45 KB**. They are discovered early and all start together at ~800 ms, but
+  > the last one lands at 2,330 ms — and FCP is 2,404 ms, immediately after.
+  >
+  > 45 KB over Slow 4G's 1.6 Mbps is ~225 ms of transfer. It is taking ~1,500 ms
+  > of wall clock. The gap is per-request latency and connection contention
+  > across 19 requests, not bytes.
+  >
+  > **This is why #2705 was the wrong fix for the right problem.** Deferring the
+  > sheets did address the serialization, but by removing them from the first
+  > paint entirely — which is exactly what produced the 0.45 CLS. Bundling or
+  > inlining attacks the same 1.5 s with no CLS cost at all, because the styles
+  > still arrive before first paint. Try that before considering any deferral
+  > scheme again.
+  >
+  > Two smaller notes from the same pass: the two sheets that land at 7.0–8.2 s
+  > (`index.BTpp_eN0.css`, `feedback-overrides.CLF4mXio.css`) are JS-injected via
+  > `ensure-stylesheet.ts` and are NOT render-blocking. And the home HTML is
+  > 519,410 B uncompressed — above the 500 KB line of the retired predecessor
+  > criterion, which is recorded here only as a reminder that the retired
+  > criterion did not track speed in either direction.
+
+  Measured with a genuinely cold cache — `performance_start_trace(reload: true)`
+  does NOT give one, it reuses the browser cache. The recipe that does:
+  `new_page(url: "about:blank", isolatedContext: <n>)` → `emulate(…)` →
+  `performance_start_trace(reload: false, autoStop: false)` → `navigate_page(url)`
+  → `performance_stop_trace()`. Sanity-check every throttled timing against the
+  RTT: anything completing in less than one RTT under emulated throttling is
+  cache, not speed.
+
+  **The criterion this replaces was measuring the wrong thing, and that is the
+  finding worth keeping.** It read "home HTML drops below 500 KB uncompressed",
+  and it was marked MET on 2026-08-05 at 412,346 B — 17.5 % under the threshold,
+  after three levers (W3-1, W3-6, W3-3). The document did get lighter. The page
+  did not get faster, and the cold profile in §6.6 says so in detail: two of the
+  three heaviest resources on the home are the sprite and the dictionary that
+  Wave D itself created, to shrink the very HTML this AC was measuring. A
+  criterion that goes green because weight moved out of the document and into a
+  resource the document then has to fetch is not measuring the user's
+  experience; it is measuring where the bytes are parked.
+
+  Document weight stays in §6.6 as a diagnostic — it is still the right lens on
+  main-thread parse cost, which mobile PSI throttles 4× — but it is no longer an
+  acceptance criterion. Sprite and dictionary are `immutable` and `HIT` at the
+  edge: first-visit cost that buys every subsequent page. Do **not** revert them
+  to satisfy this AC; that re-inlines 355 KB of SVG and ~650 KB of dictionary
+  into every document. The fix is to stop the first visit paying for all of it at
+  once (W3-2, W3-6 follow-up), not to move it back.
 - **AC-9** — TTFB for an anonymous, cached catalog route measured from Buenos
   Aires is under 200 ms.
 - **AC-10** — Googlebot user-agent receives the same `HIT` as a browser
@@ -836,11 +2642,33 @@ Wave B onward:
   and the reason W1-2's cookie bypass is non-negotiable. Precedent: HOS-115,
   HOS-341, HOS-353. Mitigation: bypass at the edge *and* the origin gate, plus
   AC-2 as an explicit verification step.
-- **R-2 — CSP nonce shared across visitors.** Each response carries a
-  per-request nonce in both the CSP header and the HTML. Under caching, all
-  visitors share one nonce for the TTL. Header and document stay consistent so
-  nothing breaks, but the `strict-dynamic` guarantee is weakened. HOS-128 flagged
-  this as requiring explicit sign-off; it still does. See OQ-3.
+  **Rev 3:** Wave B0 changes the *nature* of this risk rather than just its
+  likelihood. Once a path emits HTML with nothing personal in it, there is
+  nothing to leak — the risk stops depending on a Cloudflare configuration
+  being correct. Until then it is at its **highest** during the migration
+  window, when a page may still bake user data while the Cache Rule already
+  treats it as cacheable. That window is closed by the per-path ordering in
+  D-8/§12.3, not by care.
+- **R-2 — CSP nonce shared across visitors.** ~~Requires sign-off.~~
+  **RESOLVED Rev 3 → D-9**: migrate to content hashes in our own injector.
+  Residual risk moves to R-9.
+- **R-7 (Rev 3) — The de-personalization misses a personalized fragment.** The
+  audit found `currentUserName` threaded into `CommentThread` on two detail
+  pages only because a human went looking for it; it does not look like
+  `isAuthenticated` and would survive any grep for that string. Mitigation is
+  WB0-6's guard, and the guard must key on *reading the session at all* in a
+  cacheable page, not on a list of known prop names.
+- **R-8 (Rev 3) — Tag emission drifts from what the page actually renders.**
+  A response that renders an entity but forgets its tag is never purged, and the
+  failure is silent — stale content with no error. This is the same failure
+  shape as the `entity-path-mapper` drift that tags are replacing, so tags are
+  not automatically immune: the collector must derive tags from the data the
+  page actually fetched, not from a second hand-maintained list.
+- **R-9 (Rev 3) — The hash migration blocks inline scripts.** If WB0-1 computes
+  a hash that does not match the emitted content, the browser blocks the script:
+  theme FOUC flashes, i18n data is missing, PostHog is dead. Unlike most risks
+  here this one is **loud and immediate**, which makes it the cheap kind. Caught
+  by AC-B0-6 in `preview` before it reaches prod.
 - **R-3 — Whole-zone purge under an active cache.** Addressed by W1-1 being a
   prerequisite rather than a follow-up.
 - **R-4 — Dashboard-only configuration drift.** The exact failure mode that
@@ -876,10 +2704,10 @@ Added in Rev 2:
   *increases* crawl rate while fragmenting the cache across thousands of
   low-value variants. This is the concrete reason A precedes B (§12.3), beyond
   cost ordering.
-- **R-11 — Applebot may not respond to Wave A at all.** Its +254 % growth is
-  anomalous for a 381-URL site, and the crawl-trap explanation, while
-  well-evidenced, is not proven to be the *whole* explanation. WA-5 exists to
-  detect that case rather than assume it away.
+- ~~**R-11 — Applebot may not respond to Wave A at all.**~~ **REFUTED
+  2026-08-03.** Applebot fell 326,810 → 1.2 k (−99.6 %) while remaining
+  unblocked, so the crawl trap was in fact the whole explanation. WA-5 did its
+  job: the risk was retired by measurement, not by assumption. See §6.1 (WA-5).
 
 ## 11. Decisions and open questions
 
@@ -890,7 +2718,9 @@ Added in Rev 2:
   crawlers as a first move. Rationale: the owner wants AI visibility; A is the
   only lever that reduces load without surrendering any of it; and C treats the
   symptom. C is reconsidered only if WA-5's post-A measurement shows Applebot has
-  not dropped materially.
+  not dropped materially. **Confirmed correct 2026-08-03** — Applebot dropped
+  99.6 %, so the condition for reconsidering C was never met. C stays rejected
+  and AI visibility was retained in full.
 - **D-2 — Googlebot's 151 requests/day is treated as a first-class concern**, not
   a footnote. Organic search is the revenue channel; Applebot and GPTBot are not.
   The working hypothesis — that Google throttled our crawl budget because of
@@ -907,32 +2737,175 @@ Added in Rev 2:
 - **D-5 — Wave D (document weight) is promoted** from "nice to have" to a direct
   egress lever, on the strength of §5.9 (631 KB × 464k requests/day).
 
+### 11.1.1 Decisions taken (owner, 2026-08-01 — Rev 3)
+
+- **D-6 — Purge by cache tag, not by URL.** Purge-by-URL is unfixable at this
+  plan tier: the cache key keeps the query string (§5.11.2), so the `?page=` /
+  `?sortBy=` variants the origin deliberately marks cacheable can never be
+  reached. Tags invalidate on what a response *contains*. Secondary benefit: it
+  retires `entity-path-mapper.ts`, a 466-line hand-maintained duplicate of the
+  routing table that has already drifted (§5.11.1). **Rejected alternatives:**
+  purge by prefix (over-purges every detail page under a listing, §5.11.4) and
+  purge by URL with per-variant enumeration (combinatorial, and still cannot
+  cover unenumerated variants).
+- **D-7 — The `/es/` path bug is fixed as part of D-6's replacement, not
+  patched.** Fixing `getLocalizedPath` in place would keep a hand-maintained
+  mirror of the router alive; tags remove the need for one. If any path-based
+  purge survives for an escape hatch, the prefix bug must be fixed there too.
+- **D-8 — Auth-blind SSR is its own wave (B0) and precedes the Cache Rule per
+  path.** No path becomes cacheable until it is proven session-blind. Until
+  then, the session-cookie bypass stays. This ordering is what keeps the only
+  severe risk (cross-user leakage) structurally impossible rather than
+  configuration-dependent.
+- **D-9 — OQ-3 resolved: move to content hashes, do not accept the shared
+  nonce.** A nonce that is frozen for the cache TTL is a publicly readable
+  token, which is not a nonce. The migration is to **our own injector**, not to
+  Astro's `security.csp` — the latter remains rejected for the reasons in
+  §5.13.1 (no `<ClientRouter/>` support, no `report-uri`, no dev coverage).
+  This is a hard prerequisite for Wave B on **all** pages.
+- **D-10 — Do the de-personalization now, while there are no authenticated
+  users to break.** Explicitly overrides the Rev 2 / analyst recommendation to
+  defer it. The analysis argued from *value* (traffic is ~100 % bots, so the
+  cache-hit benefit for logged-in users is ≈0 today). The owner argued from
+  *risk window*: the blast radius of this migration is proportional to the
+  number of authenticated, paying users it can break, and that number is ≈0
+  right now. It will never be cheaper. **Recorded as an owner override of the
+  spec author's recommendation**, because the reasoning generalizes to future
+  migrations of this shape.
+- **D-11 — Class-C branches render the ANONYMOUS variant server-side.** It is
+  what crawlers must see, the safe fallback if JS fails, and the only branch
+  that can be cached. Never render the authenticated branch and hide it — that
+  leaks the shape of private UI into cached HTML. Swap cases (`destinos`)
+  reserve space to avoid layout shift; additive cases (`alojamientos`) render a
+  correctly-sized placeholder rather than inserting into the sidebar after
+  hydration.
+- **D-12 — Stay on SSR; do not migrate to prerender.** Once the HTML is
+  user-identical, SSR + edge cache with on-demand purge **is** ISR: a cache HIT
+  is a static file served from the edge. Purge takes seconds; a rebuild+redeploy
+  takes minutes on a 3-vCPU VPS with thousands of editable entities. Prerender
+  is additionally blocked for an unrelated reason already documented in
+  `apps/web/docs/seo/rendering-strategy.md`: a prerendered page bypasses
+  middleware and would ship **with no CSP header at all** (HOS-74 moved 13
+  content routes off `prerender` for exactly this; `staticHeaders: true` does
+  not help, as it only forwards headers registered by Astro's native mechanism).
+  Unblocking it requires native `security.csp` → dropping `<ClientRouter/>` →
+  HOS-124, canceled. The same doc records that prerender does not change
+  indexability, only TTFB, and that CWV is already "Good".
+
+### 11.1.2 Decisions taken (owner, 2026-08-05)
+
+- **D-13 — W2-6's crawler rate-limit allowlist is closed as unnecessary, not
+  deferred.** The owner asked for a Cloudflare census before deciding rather
+  than accepting the argument on its logic, and the census settled it: zero real
+  crawler requests against the API host in 24 h, against ~2,000 zone-wide. The
+  allowlist would protect a set that is empty by construction — HOS-109 already
+  serves `Disallow: /` on the API host, so a compliant crawler never arrives and
+  a non-compliant one is not "verified". Recorded as a decision rather than as a
+  dropped task, because the reasoning is reusable: **an allowlist keyed on a
+  self-declared identity is a bypass, not a control.** The census demonstrated
+  this in the act of being taken — Cloudflare attributed our own `curl -A
+  "…Googlebot…"` probe to Googlebot. Full record and evidence in §6.5 W2-6.
+
 ### 11.2 Still open
 
-- **OQ-1** — Should HOS-128 be closed as superseded by this spec, or kept as a
-  sub-scope? This spec absorbs its goal and adds causes it never contemplated;
-  its "gated on real traffic" trigger is now overtaken by measurement. Owner
-  decision, still pending.
-- **OQ-2** — TTL values for the newly cached routes. The existing 300 s / 600 s
-  (listings) and 300 s / 60 s (pricing) are unexamined defaults. Content that
-  changes rarely (legal, `nosotros`) can take far longer.
-- **OQ-3** — Accept the shared CSP nonce under caching, or move the affected
-  pages to a hash-based inline strategy (HOS-164's subject)? Deciding "accept"
-  is fine; deciding by omission is not.
+Rev 4 (2026-08-10) closed seven of the ten. Two of the remaining three are not
+answerable from a keyboard — they need the cache running in production — and the
+third is an implementation task, not a question.
+
+- ~~**OQ-1** — Should HOS-128 be closed as superseded by this spec, or kept as a
+  sub-scope?~~ **RESOLVED 2026-08-06 → D-14, and already executed.** HOS-128 was
+  cancelled that day with a full close-out note recording that this spec absorbed
+  its goal and additionally resolved both of its "MUST sign off" safety
+  conditions (personalization, and the CSP nonce under caching — closed by the
+  move to content hashes, not accepted as risk). Its "gated on real traffic"
+  trigger was overtaken by measurement: the traffic that forced the work was
+  crawlers, not users. Reconfirmed by the owner 2026-08-10; only this section was
+  stale.
+- ~~**OQ-2** — TTL values for the newly cached routes.~~ **RESOLVED Rev 4 → D-15**
+  (owner, 2026-08-10): raise them aggressively — statics to 24 h, catalog to 1 h,
+  detail to 1 h. **The decision is made; the implementation is sequenced, because
+  two prerequisites make a long TTL actively harmful today.** Both were found
+  while scoping the change, not before it:
+    1. **Nothing purges on deploy.** The W2-2 pages (`nosotros`, the three legal
+       pages, `beneficios`, `funcionalidades`, `colaborar/*`, `contacto`,
+       `preguntas-frecuentes`) change *only* on deploy and carry `site-config`,
+       whose only purger is a content write. Their `s-maxage` IS the post-deploy
+       staleness window — at 300 s that is a shrug, at 86 400 s a corrected legal
+       text is wrong for a day. A deploy-time purge is a prerequisite, not a
+       follow-up.
+    2. **HOS-424 is open**: a content write purges the collection tag but not the
+       entity tag, so an edited detail page is already stale for the full TTL.
+       Raising detail from 300 s to 3 600 s multiplies an existing defect by 12.
+  There is also no per-class TTL to set: `applyCacheHeaders` takes no TTL
+  argument and every caller shares one constant
+  (`LISTING_CACHE_S_MAXAGE_SECONDS = 300` in `apps/web/src/lib/cache/listing-cache.ts`),
+  so "different TTLs per page class" is an API change, not a number change.
+  Tracked in order: **HOS-427** (deploy-time purge — it had been cited as "known
+  debt" by both HOS-401 and HOS-426 without ever being owned by an issue), then
+  **HOS-424**, then **HOS-426** for the raise itself. HOS-427 blocks HOS-426.
+  Note for whoever implements HOS-427: purge by the namespace catch-all tag, not
+  `purge_everything` — staging and production share the zone, so a whole-zone
+  flush from a staging deploy empties production's cache (§7).
+- ~~**OQ-3** — Accept the shared CSP nonce under caching, or move the affected
+  pages to a hash-based inline strategy?~~ **RESOLVED Rev 3 → D-9** (move to
+  content hashes, via our own injector, not Astro's `security.csp`). See §5.13.
 - **OQ-4** — Is the VPS adequately sized? 3 vCPU / 7.9 GB hosting prod and
   staging of three apps plus Coolify, at 2.4–2.8 load average with 1.1 GB RAM
   free and 2.6 GB of swap in use. **Rev 2: not answerable until A and B land** —
   the current load is crawler-driven, so sizing cannot be judged against it.
-- **OQ-5** — Should staging be moved off the production box entirely?
-- **OQ-6** — The zone is on the **Free** plan (confirmed Rev 2). Does Free
-  support the needed Cache Rule / Redirect Rule count? Tiered Cache and Cache
-  Reserve are paid features and are **not** available at this tier — if either is
-  wanted, that is a plan-upgrade decision.
-- **OQ-7** — Is the `hospeda_vid` cookie churn worth fixing? The SSR client does
-  not return the cookie the API sets, so the API mints a new visitor id on every
-  internal call — ~38/second (§12.2). Harmless for caching (the web origin sets
-  no cookies of its own) but it makes `hospeda_vid` useless as an analytics
-  dimension and adds a `Set-Cookie` to every API response.
+  **Rev 4: still open, and now precisely gated** — it becomes answerable once
+  PR #2723 promotes `staging` to `main` and the production Cache Rules are
+  applied, which is the same event that unblocks AC-4. Answer it with the same
+  `docker stats` / `/proc/loadavg` sampling as the baseline, not by estimate.
+- ~~**OQ-5** — Should staging be moved off the production box entirely?~~
+  **RESOLVED Rev 4 → D-16** (owner, 2026-08-10): no. The coexistence is accepted
+  as permanent and the question leaves the board. If sizing becomes a real
+  constraint after the cache lands, it comes back as its own issue rather than
+  as an open question on this spec.
+- ~~**OQ-6** — The zone is on the **Free** plan (confirmed Rev 2). Does Free
+  support the needed Cache Rule / Redirect Rule count?~~ **RESOLVED Rev 4 by
+  counting, not by decision.** Free allows **10 Cache Rules** per zone
+  ([Cloudflare docs](https://developers.cloudflare.com/cache/how-to/cache-rules/),
+  availability table). This spec versioned **two** Cache Rules
+  (`HOS-369 W1-2 - staging catalog + subscriber`, `HOS-369 - staging /_image/
+  endpoint`) and **one** Redirect Rule (`HOS-369 W1-4 - staging root to default
+  locale`), all scoped to staging. Replicating them for production lands at 4 of
+  10 Cache Rules — no quota pressure, now or after another wave. Tiered Cache and
+  Cache Reserve remain paid-tier features and are **not** available here, but
+  nothing shipped depends on either; that stays a plan-upgrade decision if it is
+  ever wanted for its own sake.
+- ~~**OQ-8** (Rev 3) — Tag granularity: one coarse `list-accom` tag or per-page
+  tags?~~ **RESOLVED Rev 4 by implementation.** Coarse, exactly as the question
+  proposed ("start coarse and measure"): `CACHE_TAG_COLLECTIONS` in
+  `packages/cache-tags/src/vocabulary.ts` defines six collection tags
+  (`list-accom`, `list-dest`, `list-event`, `list-post`, `list-gastro`,
+  `list-exp`) alongside the per-entity tags from `buildEntityCacheTag`. The
+  measurement half already returned its finding: **HOS-424** — a write purges the
+  collection tag but not the entity tag. Per-page tags stay unbuilt, and should
+  stay unbuilt until a measured eviction cost justifies them.
+- ~~**OQ-9** (Rev 3) — Does anything else bake per-request non-determinism into
+  the HTML besides the CSP nonce?~~ **RESOLVED Rev 4 by measurement, not by
+  audit.** Two guards ship on staging — `cacheable-pages-are-session-blind.guard.test.ts`
+  and `cacheable-routes-parse-no-session.guard.test.ts` — and AC-1/AC-2/AC-6 all
+  passed against live cached responses. The nonce remains the only per-request
+  non-determinism ever found, and D-9 closed it. This is evidence of absence
+  under the traffic actually exercised, not a proof; a new dynamic value would be
+  caught by the guards only if it flows through the session, so the general case
+  is still guarded by AC-2 re-verification after every wave.
+- **OQ-10** (Rev 3) — Once a path is genuinely auth-blind, do we remove the
+  session-cookie bypass from its Cache Rule, or keep it as belt-and-braces? D-8
+  says removal only after prod verification, but does not say it must be
+  removed. Keeping it costs logged-in users the cache; removing it makes the
+  guard the only thing standing between a regression and a leak. **Rev 4: still
+  open by design** — D-8 conditions removal on production verification, which has
+  not happened yet. Decide it after AC-2 is re-verified against production, never
+  before.
+- ~~**OQ-7** — Is the `hospeda_vid` cookie churn worth fixing?~~ **RESOLVED
+  2026-08-06 — promoted out of this spec.** The owner answered yes and it is
+  tracked as **HOS-405** (Backlog, Medium), which carries the full description,
+  the ~38/second measurement and the warning that propagating the cookie from SSR
+  is the same mechanism that can reintroduce personalization into a cacheable
+  response. It is no longer an open question here.
 
 ## 12. Implementation notes
 
@@ -999,9 +2972,33 @@ W0-3 → W0-4        ─── understand before guarding
 WB-1 (purge)       ─── HARD prerequisite of WB-2
 WB-2 → WB-3        ─── never ship the rule without the verification
 WB-3 → WB-4        ─── redirects after the cache is proven correct
-WC-4               ─── requires the SSR personalization move first
+WC-4               ─── superseded by WB0-7 (Rev 3)
 WD-5               ─── blocked on HOS-164 / HOS-168 CSP resolution
 ```
+
+Rev 3 inserts Wave B0 between A and B, and makes the Cache Rule a per-path
+rollout rather than one switch:
+
+```
+WB0-1 (nonce→hash) ─── HARD prerequisite of ALL of Wave B, every page.
+                       A cached per-request nonce is a public token (§5.13)
+WB0-2 → WB0-3      ─── store before the button, or 24 cards = 24 /check calls
+WB0-3              ─── one guard fixes ~17 pass-through components
+WB0-4, WB0-5       ─── parallel with each other, after WB0-3
+WB0-6 (guard)      ─── lands WITH WB0-5, never after. It is what makes the
+                       "no cacheable page bakes session state" claim durable
+WB0-5 → W1-2       ─── PER PATH. A path becomes cacheable only once proven
+                       auth-blind; the cookie bypass is removed only after
+                       that path is verified in prod, never before (D-8)
+WB0-7              ─── LAST. The 2 hard files, after the pattern is proven
+                       on the listings
+WA-5               ─── independent of all of B0; measure on schedule
+```
+
+The single most important edge in this graph is `WB0-5 → W1-2` **per path**. It
+is what turns the cross-user-leak risk from "depends on a Cloudflare
+configuration being right" into "structurally impossible, because there is
+nothing personal in the HTML".
 
 Note the wave labels changed in Rev 2 (0/1/2/3 → A/0/B/C/D). Task ids inside the
 carried-over waves kept their original `W1-*`/`W2-*`/`W3-*` numbering to avoid
@@ -1019,6 +3016,50 @@ breaking references; read `W1-*` as Wave B, `W2-*` as Wave C, `W3-*` as Wave D.
 - **HOS-297** — purge burst coalescing. Done; not the same as selectivity.
 - **HOS-218** — the bugfix under which `listing-cache.ts` actually shipped.
 - **HOS-103** — internal-request rate-limit exemption, already in place.
+
+Added in Rev 3:
+
+- **HOS-370** — `web-prod` 500s on destination detail: a CommonJS→ESM-only
+  `require(esm)` race. Opened and shipped during this spec's Wave B prep
+  (PR #2554, merge `7cd18daf3`). Relevant here for two reasons: it was the
+  blocker on the redeploy Wave B needs, and it is the second instance in this
+  spec of *a latent defect that only detonates when something else changes*
+  (the first being §5.11.1's `/es/` path bug). Both argue for guards over
+  vigilance. Carries `status-needs-smoke-prod`.
+- **SPEC-046** — the original CSP design. Its
+  `research/astro-csp-options.md` (2026-05-16) is the primary source for why
+  Astro's hash-based `security.csp` was rejected and Path A2 (our own nonce
+  injector) chosen. **Read it before touching WB0-1** — it is the reason D-9 is
+  careful to distinguish "content hashes in our injector" from "Astro's
+  `security.csp`".
+- **HOS-124** — migrate to native `security.csp`. **Canceled, not deferred.**
+  Blocked on `<ClientRouter/>` support that Astro added and then removed
+  (`76c5480` / #13914, June 2025). Re-read before anyone proposes it again.
+- **HOS-74** — CSP missing on prerendered routes. Moved 13 content routes off
+  `prerender` because a prerendered page bypasses middleware and ships with no
+  CSP header. The evidentiary basis for D-12.
+- **HOS-30** — CSP Phase 2 (enforce mode). The guarantee D-9 protects.
+- **HOS-117 Wave 4** — `apps/web/docs/seo/rendering-strategy.md`. Already
+  contains the page classification, the SSR-vs-prerender anti-myth, and — at
+  line 94 — the shared-nonce-under-caching consequence that Rev 3's §5.13
+  decides. It anticipated the question; it did not answer it.
+- **HOS-115** — the CDN cache-poisoning class of bug that motivates the
+  personalization sign-off in `rendering-strategy.md`'s HOS-128 entry.
+- **HOS-296** — multi-role actors. Why `/auth/me` is the single endpoint
+  carrying the role SET, and therefore why the client-side reconciliation in
+  WB0-3/WB0-4 must resolve against it rather than a cheaper session probe.
+- **SPEC-098 / SPEC-228** — `FavoriteButton`'s bulk pre-check (T-041) and its
+  single-check hydration fallback (T-039b). WB0-3 modifies T-039b's guard; read
+  both before changing it.
+
+Engram topics worth recalling before implementation:
+
+- `spec/HOS-369/wave-a-implementation` — Wave A decisions in full.
+- `issue/HOS-370/cjs-esm-require-bridge` — the bundler-shape lesson.
+- `incident/2026-08-01-destino-500-esm-linking` — the incident post-mortem, and
+  a worked example of hypotheses discarded with evidence.
+- `project_public_cache_actor_blind` — cached public routes must be
+  actor-blind; the API-side sibling of Wave B0 (HOS-359).
 
 ## 13. Linear
 

@@ -1,0 +1,44 @@
+---
+/**
+ * @file ProfilePageJsonLd.astro
+ * @description `ProfilePage` schema.org JSON-LD for the author page
+ * (`/autores/<slug>/`), with the author as `mainEntity` (HOS-375 §6.8).
+ *
+ * Renders through the canonical `JsonLd` wrapper — which escapes `<`, `>` and
+ * `&` to prevent script injection (SPEC-157 decision D-1, single canonical
+ * JSON-LD path). Never hand-roll a `<script type="application/ld+json">` tag;
+ * that markup exists in exactly one file.
+ *
+ * The node itself is built by `@/lib/seo/profile-page-json-ld`, a pure module,
+ * so the emitted JSON can actually be asserted on in tests (Vitest cannot
+ * render `.astro`).
+ *
+ * The CALLER decides whether to render this at all: structured data on a
+ * `noindex` page is noise, so the page mounts it only when
+ * `evaluateAuthorIndexability` says the page is indexable (§6.5). Likewise the
+ * social opt-in (§6.7) is applied upstream — `sameAs` only receives networks an
+ * author chose to publish.
+ */
+
+import JsonLd from '@/components/seo/JsonLd.astro';
+import { buildProfilePageJsonLd } from '@/lib/seo/profile-page-json-ld';
+
+interface Props {
+    /** The author's display name. */
+    readonly name: string;
+    /** Absolute URL of the author page. */
+    readonly url: string;
+    /** Avatar URL. Omitted from the output when absent. */
+    readonly image?: string | null;
+    /** The author's bio. Omitted from the output when absent. */
+    readonly description?: string | null;
+    /** Social profile URLs, already gated by the opt-in. Omitted when empty. */
+    readonly sameAs?: readonly (string | null | undefined)[] | null;
+}
+
+const { name, url, image, description, sameAs } = Astro.props;
+
+const data = buildProfilePageJsonLd({ name, url, image, description, sameAs });
+---
+
+<JsonLd data={data} />

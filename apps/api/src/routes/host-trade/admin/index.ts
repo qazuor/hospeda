@@ -10,9 +10,32 @@ import { adminHardDeleteHostTradeRoute } from './hardDelete';
 import { adminListHostTradesRoute } from './list';
 import { adminPatchHostTradeRoute } from './patch';
 import { adminRestoreHostTradeRoute } from './restore';
+import { adminReviewHostTradeBenefitRoute } from './review-benefit';
+import {
+    adminListHostTradeRepliesRoute,
+    adminListHostTradeReviewsRoute,
+    adminModerateHostTradeReplyRoute,
+    adminModerateHostTradeReviewRoute
+} from './reviews';
+import { adminRevokeHostTradeRoute } from './revoke';
 import { adminUpdateHostTradeRoute } from './update';
+import { adminListHostTradeUsagesRoute, adminSetDeclarationSuspensionRoute } from './usages';
 
 const adminRouter = createRouter();
+
+// The two moderation queues (HOS-376 T-037). Registered before `/{id}` for the
+// same defence-in-depth reason as the protected side: `reviews` and `replies`
+// are literal segments a parameterised route would happily swallow.
+adminRouter.route('/', adminListHostTradeReviewsRoute);
+adminRouter.route('/', adminModerateHostTradeReviewRoute);
+adminRouter.route('/', adminListHostTradeRepliesRoute);
+adminRouter.route('/', adminModerateHostTradeReplyRoute);
+
+// The usage audit screen and the declaration suspension (HOS-376 T-038).
+// `usages` is a literal segment, registered before the parameterised routes for
+// the same defence-in-depth reason as the queues above.
+adminRouter.route('/', adminListHostTradeUsagesRoute);
+adminRouter.route('/', adminSetDeclarationSuspensionRoute);
 
 // GET / - List all host-trade entries (including deleted)
 adminRouter.route('/', adminListHostTradesRoute);
@@ -25,6 +48,12 @@ adminRouter.route('/', adminCreateHostTradeRoute);
 
 // POST /:id/restore - Restore host-trade entry
 adminRouter.route('/', adminRestoreHostTradeRoute);
+
+// POST /:id/revoke - Take the listing off the directory, keeping the row (R-4)
+adminRouter.route('/', adminRevokeHostTradeRoute);
+
+// POST /:id/review-benefit - Resolve a provider's pending benefit edit (AC-8)
+adminRouter.route('/', adminReviewHostTradeBenefitRoute);
 
 // PUT /:id - Update host-trade entry
 adminRouter.route('/', adminUpdateHostTradeRoute);

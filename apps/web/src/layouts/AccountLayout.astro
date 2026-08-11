@@ -17,6 +17,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPill.client';
+import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import { getNavForSurface } from '@/config/navigation';
@@ -189,6 +190,7 @@ const activeLabel = resolveActiveLabel();
 											<span class="account-nav__label">
 												{t(item.i18nKey)}
 												{item.id === 'whatsNew' && <WhatsNewCountPill locale={locale} client:idle />}
+												{item.id === 'benefitUsages' && <BenefitUsagesCountPill locale={locale} client:idle />}
 											</span>
 										</a>
 									</li>

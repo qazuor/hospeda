@@ -66,13 +66,6 @@
     border-color: oklch(0.55 0.22 25);
 }
 
-.fieldError {
-    font-family: var(--font-sans);
-    font-size: 0.8125rem;
-    color: oklch(0.55 0.22 25);
-    margin-top: var(--space-1, 0.25rem);
-}
-
 select.fieldInput {
     appearance: auto;
 }

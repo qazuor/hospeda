@@ -85,7 +85,8 @@
         "hostDashboard": "Painel do anfitrião",
         "properties": "Meus alojamentos",
         "promotions": "Minhas promoções",
-        "tradeDirectory": "Diretório de fornecedores"
+        "tradeDirectory": "Diretório de fornecedores",
+        "benefitUsages": "Usos do benefício"
     },
     "doors": {
         "sectionLabel": "Descubra mais",
@@ -127,9 +128,14 @@
                     "title": "Prestador de serviços",
                     "description": "Some-se ao diretório de fornecedores locais que os anfitriões recomendam aos seus hóspedes."
                 },
-                "editor": {
-                    "title": "Editor",
-                    "description": "Quer escrever publicações e cadastrar eventos no Hospeda? Candidate-se como editor de conteúdo.",
+                "editorPosts": {
+                    "title": "Editor de artigos",
+                    "description": "Quer escrever artigos e notas no Hospeda? Candidate-se como editor de conteúdo.",
+                    "cta": "Candidate-se como editor"
+                },
+                "editorEvents": {
+                    "title": "Editor de eventos",
+                    "description": "Quer manter a agenda de eventos da região atualizada? Candidate-se como editor de conteúdo.",
                     "cta": "Candidate-se como editor"
                 }
             }
@@ -169,6 +175,10 @@
         "saving": "Salvando...",
         "success": "Perfil atualizado com sucesso",
         "noChanges": "Nenhuma alteração para salvar",
+        "social": {
+            "showOnPublicProfile": "Mostrar minhas redes na minha página pública de autor",
+            "showOnPublicProfileHelp": "Se você publicar notas ou eventos, tem uma página de autor visível para qualquer pessoa na internet. Ao ativar isto, os links acima aparecem lá. Fica desativado a menos que você o ative, e pode desativá-lo quando quiser."
+        },
         "errors": {
             "saveFailed": "Erro ao salvar o perfil",
             "displayNameRequired": "O nome de exibição é obrigatório",
@@ -1043,6 +1053,372 @@
                 "name": "Suporte com IA (mensal)",
                 "description": "Desbloqueia ferramentas de suporte com IA para anfitriões, incluindo sugestões de resposta inteligentes e tratamento automático de perguntas frequentes de hóspedes. Renova mensalmente."
             }
+        }
+    },
+    "myContent": {
+        "status": {
+            "moderation": {
+                "label": "Moderação",
+                "PENDING": "Aguardando revisão",
+                "APPROVED": "Aprovado",
+                "REJECTED": "Rejeitado"
+            },
+            "visibility": {
+                "label": "Visibilidade",
+                "PUBLIC": "Pública",
+                "PRIVATE": "Privada",
+                "RESTRICTED": "Restrita"
+            },
+            "lifecycle": {
+                "label": "Status",
+                "DRAFT": "Rascunho",
+                "ACTIVE": "Ativo",
+                "ARCHIVED": "Arquivado"
+            }
+        },
+        "card": {
+            "editLink": "Editar",
+            "retry": "Tentar novamente"
+        },
+        "posts": {
+            "list": {
+                "title": "Minhas publicações",
+                "subtitle": "Veja o status dos seus artigos",
+                "empty": "Você ainda não escreveu nenhuma publicação",
+                "fetchError": "Não foi possível carregar a lista. Tente recarregar a página.",
+                "createCta": "+ Nova publicação",
+                "emptyCta": "Escrever minha primeira publicação"
+            },
+            "create": {
+                "pageTitle": "Nova publicação",
+                "subtitle": "Preencha o básico agora — você vai poder adicionar fotos e mais detalhes depois no editor.",
+                "field": {
+                    "title": "Título",
+                    "summary": "Resumo",
+                    "content": "Conteúdo",
+                    "category": "Categoria"
+                },
+                "hint": {
+                    "summary": "Entre 10 e 500 caracteres. Aparece na listagem do blog.",
+                    "content": "Mínimo de 100 caracteres. Você vai poder continuar editando no editor completo."
+                },
+                "submit": "Criar publicação",
+                "submitting": "Criando...",
+                "error": "Não foi possível criar a publicação. Tente novamente."
+            },
+            "editor": {
+                "pageTitle": "Editar publicação",
+                "slugImmutableNotice": "A URL pública é gerada ao criar a publicação e não pode ser alterada.",
+                "backToList": "Voltar às minhas publicações",
+                "lockNotice": "Esta publicação já foi aprovada e publicada, então você não pode editá-la. Fale com a equipe se precisar mudar algo.",
+                "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
+                "publicationExplainer": "Sua publicação aparece no site público somente quando está aprovada, pública e ativa ao mesmo tempo.",
+                "publishBlockedByUnsaved": "Salve as alterações antes de mudar a publicação.",
+                "section": {
+                    "basicInfo": "Informações básicas",
+                    "content": "Conteúdo",
+                    "details": "Detalhes",
+                    "publication": "Publicação"
+                },
+                "field": {
+                    "title": "Título",
+                    "summary": "Resumo",
+                    "category": "Categoria",
+                    "content": "Conteúdo",
+                    "readingTime": "Tempo de leitura (minutos)",
+                    "destination": "Destino relacionado",
+                    "destinationNone": "Sem destino relacionado"
+                },
+                "hint": {
+                    "summary": "Entre 10 e 300 caracteres. Aparece na listagem do blog.",
+                    "content": "Mínimo de 100 caracteres.",
+                    "readingTime": "Deixe vazio para manter o valor atual."
+                },
+                "placeholder": {
+                    "content": "Escreva sua publicação..."
+                },
+                "action": {
+                    "publish": "Publicar",
+                    "unpublish": "Despublicar",
+                    "delete": "Excluir",
+                    "deleteConfirm": "Excluir esta publicação?",
+                    "deleteYes": "Sim, excluir",
+                    "deleteNo": "Cancelar"
+                },
+                "toast": {
+                    "saved": "Alterações salvas",
+                    "noChanges": "Não há alterações para salvar",
+                    "published": "Publicação publicada",
+                    "unpublished": "Publicação despublicada",
+                    "publishError": "Não foi possível alterar a publicação.",
+                    "deleteError": "Não foi possível excluir a publicação."
+                },
+                "error": {
+                    "saveFailed": "Não foi possível salvar as alterações."
+                }
+            }
+        },
+        "editor": {
+            "media": {
+                "sectionTitle": "Fotos",
+                "featured": "Imagem principal",
+                "gallery": "Galeria de fotos",
+                "add": "Adicionar foto",
+                "remove": "Remover",
+                "uploadHint": "JPG, PNG ou WebP — máx. {{maxSize}}MB. Até {{cap}} fotos na galeria.",
+                "invalidType": "Somente arquivos JPG, PNG ou WebP são permitidos",
+                "tooLarge": "O arquivo não pode ultrapassar {{maxSize}}MB",
+                "capReached": "Limite da galeria atingido (máx. {{cap}} fotos)",
+                "uploadFailed": "Não foi possível enviar a imagem",
+                "uploadTimeout": "O envio demorou demais. Tente novamente.",
+                "persistFailed": "Não foi possível salvar a imagem no banco de dados",
+                "featuredFailed": "Não foi possível definir a imagem como principal",
+                "removeFailed": "Não foi possível remover a imagem"
+            }
+        },
+        "events": {
+            "list": {
+                "title": "Meus eventos",
+                "subtitle": "Veja o status dos seus eventos",
+                "empty": "Você ainda não criou nenhum evento",
+                "fetchError": "Não foi possível carregar a lista. Tente recarregar a página.",
+                "createCta": "+ Novo evento",
+                "emptyCta": "Criar meu primeiro evento"
+            },
+            "create": {
+                "pageTitle": "Novo evento",
+                "subtitle": "Preencha o básico agora — você vai poder adicionar fotos e mais detalhes depois no editor.",
+                "field": {
+                    "name": "Nome",
+                    "category": "Categoria",
+                    "description": "Descrição",
+                    "startDate": "Começa",
+                    "endDate": "Termina",
+                    "organizerId": "Organiza"
+                },
+                "hint": {
+                    "description": "Entre 50 e 2000 caracteres. O resumo da listagem sai daqui."
+                },
+                "organizer": {
+                    "createNew": "+ Criar novo organizador",
+                    "namePlaceholder": "Nome do organizador",
+                    "submit": "Criar organizador",
+                    "creating": "Criando...",
+                    "cancel": "Cancelar",
+                    "error": "Não conseguimos criar o organizador. Tente novamente.",
+                    "nameInvalid": "O nome deve ter entre 3 e 100 caracteres.",
+                    "loadError": "Não conseguimos carregar a lista de organizadores. Recarregue a página para tentar de novo, ou crie um novo abaixo.",
+                    "empty": "Ainda não há organizadores cadastrados. Crie o primeiro para poder publicar seu evento."
+                },
+                "dateOrderError": "A data de término não pode ser anterior à data de início.",
+                "error": "Não conseguimos criar o evento. Tente novamente.",
+                "submitting": "Criando...",
+                "submit": "Criar evento"
+            },
+            "editor": {
+                "pageTitle": "Editar evento",
+                "backToList": "Voltar aos meus eventos",
+                "readOnlyNotice": "A URL, o organizador e o local são definidos ao criar o evento e não são editáveis aqui.",
+                "lockNotice": "Este evento já foi aprovado e publicado, então você não pode editá-lo. Fale com a equipe se precisar mudar algo.",
+                "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",
+                "publicationExplainer": "Seu evento aparece no site público somente quando está aprovado, público e ativo ao mesmo tempo.",
+                "publishBlockedByUnsaved": "Salve as alterações antes de mudar a publicação.",
+                "monthPrecisionNotice": "Este evento tem data aproximada ao mês, então não é editável aqui. Fale conosco se precisar definir o dia.",
+                "section": {
+                    "basicInfo": "Informações básicas",
+                    "description": "Descrição",
+                    "schedule": "Datas",
+                    "publication": "Publicação"
+                },
+                "field": {
+                    "name": "Nome",
+                    "category": "Categoria",
+                    "description": "Descrição",
+                    "startDate": "Começa",
+                    "endDate": "Termina",
+                    "organizer": "Organiza",
+                    "location": "Local"
+                },
+                "hint": {
+                    "description": "Entre 50 e 2000 caracteres. O resumo da listagem sai daqui.",
+                    "endDate": "Opcional. Deixe vazio se o evento durar um só momento."
+                },
+                "placeholder": {
+                    "description": "Conte do que se trata o evento..."
+                },
+                "action": {
+                    "publish": "Publicar",
+                    "unpublish": "Despublicar",
+                    "delete": "Excluir",
+                    "deleteConfirm": "Excluir este evento?",
+                    "deleteYes": "Sim, excluir",
+                    "deleteNo": "Cancelar"
+                },
+                "toast": {
+                    "saved": "Alterações salvas",
+                    "noChanges": "Não há alterações para salvar",
+                    "published": "Evento publicado",
+                    "unpublished": "Evento despublicado",
+                    "publishError": "Não foi possível alterar a publicação.",
+                    "deleteError": "Não foi possível excluir o evento."
+                },
+                "error": {
+                    "saveFailed": "Não foi possível salvar as alterações.",
+                    "startDateRequired": "O evento precisa de uma data de início."
+                }
+            }
+        }
+    },
+    "alliances": {
+        "applications": {
+            "title": "Suas candidaturas",
+            "submittedOn": "Enviada em",
+            "note": "Assim que resolvermos uma candidatura, escrevemos para você por e-mail."
+        },
+        "programs": {
+            "partner": "Partner",
+            "sponsor": "Sponsor",
+            "editor": "Editor",
+            "service_provider": "Fornecedor"
+        },
+        "status": {
+            "pending": "Em análise",
+            "reviewing": "Em análise",
+            "approved": "Aprovada",
+            "rejected": "Não avançou"
+        },
+        "claim": {
+            "working": "Confirmando sua candidatura…",
+            "confirmed": "Pronto! Vinculamos a candidatura à sua conta.",
+            "failed": "Não foi possível confirmar essa candidatura. O link pode ter expirado ou já ter sido usado."
+        }
+    },
+    "provider": {
+        "pageTitle": "Minha ficha de fornecedor",
+        "pageSubtitle": "Gerencie sua ficha no diretório de fornecedores",
+        "empty": {
+            "text": "Você ainda não tem uma ficha de fornecedor. Candidate-se em \"Seja um parceiro\" e, assim que sua candidatura for aprovada, sua ficha vai aparecer aqui.",
+            "cta": "Ir para Seja um parceiro"
+        },
+        "revoked": {
+            "text": "Sua ficha foi removida do diretório de fornecedores.",
+            "contact": "Se quiser mais detalhes, entre em contato com a gente."
+        },
+        "errors": {
+            "fetchFailed": "Não conseguimos carregar sua ficha de fornecedor. Recarregue a página para tentar novamente.",
+            "panelFailed": "Não conseguimos carregar esta seção. Recarregue a página para tentar novamente."
+        },
+        "form": {
+            "title": "Editar minha ficha de fornecedor",
+            "identitySection": "Dados administrados pela Hospeda",
+            "identityNote": "Esses dados são administrados pela equipe da Hospeda. Se precisar corrigi-los, fale com a gente.",
+            "fields": {
+                "name": "Nome",
+                "slug": "Identificador (slug)",
+                "category": "Categoria",
+                "contact": "Contato",
+                "is24h": "Disponível 24 horas",
+                "scheduleText": "Horário de atendimento",
+                "scheduleTextPlaceholder": "Ex: Segunda a sexta 8h–18h"
+            },
+            "operationalSection": "Contato e disponibilidade",
+            "operationalNote": "Essas mudanças são aplicadas imediatamente no diretório.",
+            "benefitSection": "Benefício para anfitriões",
+            "benefitNote": "Uma mudança no benefício vai para revisão da equipe da Hospeda antes de ser publicada. Enquanto isso, o benefício atual continua visível no diretório.",
+            "liveBenefitLabel": "Benefício publicado atualmente",
+            "noBenefit": "Nenhum benefício estruturado cadastrado",
+            "pendingLabel": "Aguardando revisão",
+            "noChanges": "Não há mudanças para salvar",
+            "success": "Mudanças salvas",
+            "saving": "Salvando…",
+            "save": "Salvar mudanças",
+            "errors": {
+                "saveFailed": "Não foi possível salvar as mudanças"
+            }
+        },
+        "tabs": {
+            "label": "Seções da sua ficha",
+            "ficha": "Minha ficha",
+            "usos": "Usos",
+            "valoraciones": "Avaliações",
+            "qr": "Meu QR"
+        },
+        "suspended": {
+            "noReason": "Suspendemos temporariamente o registro de usos a partir da sua ficha."
+        }
+    },
+    "partner": {
+        "pageTitle": "Minha ficha de parceiro",
+        "pageSubtitle": "Gerencie sua presença como parceiro da Hospeda",
+        "empty": {
+            "text": "Você ainda não tem uma ficha de parceiro. Candidate-se em \"Seja parceiro\" e, depois que sua solicitação for aprovada, sua ficha vai aparecer aqui.",
+            "cta": "Ir para Seja parceiro"
+        },
+        "status": {
+            "empty": "Sua candidatura foi aprovada. Preencha seu logo e seus textos para que um admin os revise. Você ainda não está publicado.",
+            "underReview": "Estamos revisando seu logo e seus textos. Avisamos assim que terminarmos; ainda não há nada a pagar.",
+            "rejected": "Revisamos seus dados e precisamos que você corrija algo antes de continuar. O detalhe está abaixo, junto ao formulário.",
+            "approved": "Seu conteúdo está aprovado. Já pode ativar sua assinatura para aparecer publicado.",
+            "approvedCta": "Ir para o pagamento",
+            "revoked": "Sua ficha de parceiro foi dada de baixa e não aparece mais no site.",
+            "revokedContact": "Se quiser mais informação, fale com a gente e explicamos os detalhes."
+        },
+        "errors": {
+            "fetchFailed": "Não conseguimos carregar sua ficha de parceiro. Recarregue a página para tentar de novo."
+        },
+        "form": {
+            "title": "Editar minha ficha de parceiro",
+            "identitySection": "Dados administrados pela Hospeda",
+            "identityNote": "Estes dados são gerenciados pela equipe da Hospeda. Fale com a gente se precisar corrigi-los.",
+            "contentSection": "Logo e textos",
+            "contentNote": "As mudanças no logo, na descrição e no site passam por revisão antes de serem publicadas. O que já está publicado continua visível enquanto isso.",
+            "pendingLabel": "Em revisão",
+            "pendingText": "Você já enviou mudanças e estamos revisando. Pode continuar ajustando: revisamos a última versão que você enviar.",
+            "rejectedLabel": "Mudanças rejeitadas",
+            "contactSection": "Contato",
+            "socialSection": "Redes",
+            "immediateNote": "Estes dados são atualizados na hora, sem revisão.",
+            "noChanges": "Não há mudanças para salvar",
+            "success": "Mudanças salvas",
+            "saving": "Salvando…",
+            "save": "Salvar mudanças",
+            "errors": {
+                "saveFailed": "Não foi possível salvar as mudanças"
+            },
+            "fields": {
+                "name": "Nome",
+                "slug": "Identificador",
+                "logoUrl": "URL do logo",
+                "websiteUrl": "Site",
+                "description": "Descrição",
+                "workEmail": "E-mail de contato",
+                "workPhone": "Telefone",
+                "whatsapp": "WhatsApp",
+                "facebook": "Facebook",
+                "instagram": "Instagram",
+                "twitter": "X / Twitter",
+                "linkedIn": "LinkedIn",
+                "tiktok": "TikTok",
+                "youtube": "YouTube"
+            }
+        }
+    },
+    "partnerMentions": {
+        "title": "Registro de menções",
+        "subtitle": "Tudo o que divulgamos sobre você, com o link de cada publicação para que possa verificar.",
+        "empty": "Ainda não registramos menções.",
+        "emptyHelp": "Quando divulgarmos sua ficha, cada ação vai aparecer aqui com o seu link.",
+        "viewPublication": "Ver publicação",
+        "noPublicationLink": "Sem link público",
+        "channels": {
+            "INSTAGRAM": "Instagram",
+            "FACEBOOK": "Facebook",
+            "TWITTER": "Twitter",
+            "YOUTUBE": "YouTube",
+            "TIKTOK": "TikTok",
+            "NEWSLETTER": "Newsletter",
+            "WHATSAPP": "WhatsApp",
+            "OTHER": "Outro canal"
         }
     }
 }

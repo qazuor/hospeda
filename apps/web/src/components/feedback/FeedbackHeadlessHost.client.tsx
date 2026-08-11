@@ -30,9 +30,10 @@ import {
     useConsoleCapture,
     useKeyboardShortcut
 } from '@repo/feedback';
-import * as Sentry from '@sentry/astro';
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { loadFeedbackStyles } from '@/components/feedback/load-feedback-styles';
+import { captureFeedback, getLastEventId } from '@/lib/observability/sentry-lazy';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -67,15 +68,12 @@ export interface FeedbackHeadlessHostProps {
 
 /**
  * Returns the most recent Sentry event ID, if available.
- * Wrapped in try/catch so SDK changes or pre-init calls cannot crash the host.
+ *
+ * Both helpers below delegate to `sentry-lazy`, which reads the SDK only if it
+ * has actually been loaded and initialised, and already swallows any SDK error.
  */
 function getSentryEventId(): string | undefined {
-    try {
-        const fn = (Sentry as { lastEventId?: () => string | undefined }).lastEventId;
-        return typeof fn === 'function' ? fn() : undefined;
-    } catch {
-        return undefined;
-    }
+    return getLastEventId();
 }
 
 /**
@@ -83,21 +81,7 @@ function getSentryEventId(): string | undefined {
  * Best-effort: any SDK error is swallowed so the Linear flow is unaffected.
  */
 function handleSentryFeedback(payload: SentryFeedbackBridgePayload): void {
-    try {
-        const fn = (
-            Sentry as {
-                captureFeedback?: (data: {
-                    name: string;
-                    email: string;
-                    message: string;
-                    associatedEventId?: string;
-                }) => void;
-            }
-        ).captureFeedback;
-        fn?.(payload);
-    } catch {
-        // Intentional no-op — Sentry failure must not block feedback submission
-    }
+    captureFeedback({ ...payload });
 }
 
 // ---------------------------------------------------------------------------
@@ -129,6 +113,16 @@ export function FeedbackHeadlessHost({
     // safe to call multiple times if the component remounts.
     useEffect(() => {
         installRuntimeTrackers();
+    }, []);
+
+    // HOS-369 W3-5: load the widget's CSS off the critical path. Called on
+    // mount (not on-open) so the styles are already in place before the user
+    // can trigger the modal. This island is `transition:persist`ed, so this
+    // effect fires exactly once per session — `loadFeedbackStyles` re-runs
+    // itself on every `astro:after-swap` to survive that. See
+    // `load-feedback-styles.ts` for the full rationale.
+    useEffect(() => {
+        void loadFeedbackStyles();
     }, []);
 
     const [isOpen, setIsOpen] = useState<boolean>(false);

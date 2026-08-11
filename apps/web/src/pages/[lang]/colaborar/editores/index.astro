@@ -20,14 +20,34 @@
 
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import BaseLayout from '@/layouts/BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import { AllianceLead } from '@/components/alliance/AllianceLead.client';
 import { CheckCircleIcon } from '@repo/icons';
 
+import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
+
+// --- Edge cacheability (HOS-369 W2-2) ---
+// No session, no API call — the content is i18n + code, so it only changes on
+// deploy. Tagged `site-config`: the only tag with a live purger. The TTL comes
+// from the `static` cache class (see `lib/cache/cache-classes.ts`); what
+// bounds the post-deploy staleness window is HOS-427's deploy purge, which
+// evicts the environment catch-all tag this response carries. Note that purge
+// fires 45s after the container serves its FIRST REQUEST, not after the deploy,
+// and nothing bounds when that first request arrives — see HOS-428.
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'static',
+    tags: [CACHE_TAG_SITE_CONFIG]
+});
 
 const title = t('alliance-leads.editor.title', 'Sumate como editor');
 const subtitle = t(
@@ -42,6 +62,18 @@ const roleItems = [
 ].filter((item) => item.length > 0);
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
+const homeUrl = new URL(buildUrl({ locale, path: '' }), Astro.site).href;
+const collaborateUrl = new URL(buildUrl({ locale, path: 'colaborar' }), Astro.site).href;
+
+// The STRUCTURED trail is not the visible one. The visible component shows a
+// parent level for context, but `BreadcrumbList` describes a URL hierarchy a
+// crawler can walk. Unlike the /sumate/ landings this one has a real parent
+// page, so the middle level carries its URL.
+const breadcrumbItems = [
+    { name: t('nav.home', 'Inicio'), url: homeUrl },
+    { name: t('contributions.hub.title', 'Colaborá con Hospeda'), url: collaborateUrl },
+    { name: title, url: canonicalUrl }
+];
 ---
 
 <BaseLayout locale={locale} title={title} description={subtitle}>
@@ -53,8 +85,18 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         canonical={canonicalUrl}
         noindex={false}
     />
+    <BreadcrumbJsonLd slot="head" items={breadcrumbItems} />
 
-    <Breadcrumbs locale={locale} items={[{ label: title }]} />
+    <div class="sumate__breadcrumbs">
+        <Breadcrumbs
+            locale={locale}
+            items={[
+                { label: t('contributions.hub.title', 'Colaborá con Hospeda'),
+                    path: 'colaborar' },
+                { label: title }
+            ]}
+        />
+    </div>
 
     <section class="sumate__hero section">
         <div class="sumate__container section__container">
@@ -111,8 +153,13 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
 <style>
     .sumate__hero {
-        padding-block: var(--space-section, 120px);
+        padding-block: clamp(3rem, 6vw, 4.5rem);
         background-color: var(--core-background);
+    }
+    .sumate__breadcrumbs {
+        max-width: var(--container-max, 1350px);
+        margin-inline: auto;
+        padding-inline: var(--space-5, 1.25rem);
     }
     .sumate__container {
         max-width: var(--container-max, 1350px);
@@ -198,7 +245,7 @@ const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
         line-height: 1.6;
     }
     .sumate__form {
-        padding-block: var(--space-section, 120px);
+        padding-block: clamp(3rem, 6vw, 4.5rem);
     }
     .sumate__form-container {
         max-width: 720px;

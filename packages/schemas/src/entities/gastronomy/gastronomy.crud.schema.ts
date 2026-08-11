@@ -150,7 +150,10 @@ export const GastronomyOwnerUpdateInputSchema = GastronomySchema.pick({
     openingHours: true,
     contactInfo: true,
     socialNetworks: true,
-    media: true,
+    // HOS-372: `media` is not writable — the `media` JSONB column was dropped.
+    // Photos are written through the relational `gastronomy_media` endpoints and
+    // videos through this top-level column.
+    videos: true,
     menuUrl: true,
     priceRange: true,
     richDescription: true,
@@ -297,7 +300,13 @@ export const GastronomyUpdateInputSchema = z
                 ownerId: true,
                 // Server-computed aggregates — updated by the review subsystem only.
                 reviewsCount: true,
-                averageRating: true
+                averageRating: true,
+                // HOS-372: the `media` JSONB column was dropped. Photos live in
+                // `gastronomy_media` and are written through the relational media
+                // endpoints; videos travel as the top-level `videos` column, which
+                // stays writable here. `media` remains a RESPONSE field, composed
+                // from the rows on the way out — it is only the write side that goes.
+                media: true
             }).shape
         )
     )

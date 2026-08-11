@@ -1,9 +1,10 @@
 /**
- * Unit tests for PlanService pricing page revalidation (SPEC-168 T-017).
+ * Unit tests for PlanService pricing cache-tag revalidation (SPEC-168 T-017,
+ * tag purge since HOS-369 W1-1).
  *
  * Verifies that:
  * - Every successful plan write (create, update, toggleActive, softDelete, hardDelete)
- *   triggers revalidatePaths with the correct pricing page paths.
+ *   triggers revalidateTags with the `pricing` cache tag.
  * - Read operations (list, getById) do NOT trigger revalidation.
  * - A revalidation failure does NOT propagate as an error from the write method.
  * - When the RevalidationService singleton is not initialized, the write still succeeds
@@ -15,13 +16,14 @@
  * @module test/billing/plan-service-revalidation.test
  */
 
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Mock the revalidation init so we can control getRevalidationService
 // ---------------------------------------------------------------------------
 
-const revalidatePaths = vi.fn().mockResolvedValue([]);
+const revalidateTags = vi.fn().mockResolvedValue([]);
 const getRevalidationServiceMock = vi.fn();
 
 vi.mock('../../src/revalidation/revalidation-init.js', () => ({
@@ -55,16 +57,6 @@ import { PlanService } from '../../src/services/billing/plan/plan.service.js';
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/** The 6 pricing page paths expected across all locales */
-const EXPECTED_PRICING_PATHS = [
-    '/suscriptores/planes/',
-    '/suscriptores/turistas/',
-    '/en/suscriptores/planes/',
-    '/en/suscriptores/turistas/',
-    '/pt/suscriptores/planes/',
-    '/pt/suscriptores/turistas/'
-];
 
 /** Minimal BillingPlanResponse shape used for success stubs */
 const STUB_PLAN = {
@@ -100,24 +92,24 @@ const successEmpty = { success: true as const, data: undefined };
 // Setup
 // ---------------------------------------------------------------------------
 
-describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
+describe('PlanService — pricing cache-tag revalidation (SPEC-168 T-017)', () => {
     let service: PlanService;
 
     beforeEach(() => {
         vi.clearAllMocks();
         service = new PlanService();
 
-        // Default: RevalidationService is initialized and revalidatePaths succeeds
-        getRevalidationServiceMock.mockReturnValue({ revalidatePaths });
-        revalidatePaths.mockResolvedValue([]);
+        // Default: RevalidationService is initialized and revalidateTags succeeds
+        getRevalidationServiceMock.mockReturnValue({ revalidateTags });
+        revalidateTags.mockResolvedValue([]);
     });
 
     // -------------------------------------------------------------------------
-    // Pricing paths helper
+    // Pricing tag
     // -------------------------------------------------------------------------
 
-    describe('getPricingPaths (indirectly via revalidatePaths call)', () => {
-        it('should call revalidatePaths with all 6 pricing page paths for es/en/pt locales', async () => {
+    describe('pricing cache tag (indirectly via revalidateTags call)', () => {
+        it('should call revalidateTags with the single pricing cache tag', async () => {
             // Arrange
             vi.mocked(crudModule.createPlan).mockResolvedValue(successResult);
 
@@ -147,15 +139,15 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
             await new Promise((r) => setTimeout(r, 0));
 
             // Assert
-            expect(revalidatePaths).toHaveBeenCalledWith(
+            expect(revalidateTags).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    paths: expect.arrayContaining(EXPECTED_PRICING_PATHS),
+                    tags: [CACHE_TAG_PRICING],
                     trigger: 'hook',
                     entityType: 'plan'
                 })
             );
-            const callArg = revalidatePaths.mock.calls[0]?.[0] as { paths: string[] };
-            expect(callArg.paths).toHaveLength(EXPECTED_PRICING_PATHS.length);
+            const callArg = revalidateTags.mock.calls[0]?.[0] as { tags: string[] };
+            expect(callArg.tags).toHaveLength(1);
         });
     });
 
@@ -164,7 +156,7 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
     // -------------------------------------------------------------------------
 
     describe('create', () => {
-        it('should trigger revalidatePaths when create succeeds', async () => {
+        it('should trigger revalidateTags when create succeeds', async () => {
             // Arrange
             vi.mocked(crudModule.createPlan).mockResolvedValue(successResult);
 
@@ -192,10 +184,10 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(revalidatePaths).toHaveBeenCalledOnce();
+            expect(revalidateTags).toHaveBeenCalledOnce();
         });
 
-        it('should NOT trigger revalidatePaths when create fails', async () => {
+        it('should NOT trigger revalidateTags when create fails', async () => {
             // Arrange
             vi.mocked(crudModule.createPlan).mockResolvedValue(failureResult);
 
@@ -222,12 +214,12 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(revalidatePaths).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
     });
 
     describe('update', () => {
-        it('should trigger revalidatePaths when update succeeds', async () => {
+        it('should trigger revalidateTags when update succeeds', async () => {
             // Arrange
             vi.mocked(crudModule.updatePlan).mockResolvedValue(successResult);
 
@@ -237,10 +229,10 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(revalidatePaths).toHaveBeenCalledOnce();
+            expect(revalidateTags).toHaveBeenCalledOnce();
         });
 
-        it('should NOT trigger revalidatePaths when update fails', async () => {
+        it('should NOT trigger revalidateTags when update fails', async () => {
             // Arrange
             vi.mocked(crudModule.updatePlan).mockResolvedValue(failureResult);
 
@@ -249,12 +241,12 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(revalidatePaths).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
     });
 
     describe('toggleActive', () => {
-        it('should trigger revalidatePaths when toggleActive succeeds', async () => {
+        it('should trigger revalidateTags when toggleActive succeeds', async () => {
             // Arrange
             vi.mocked(crudModule.togglePlanActive).mockResolvedValue(successResult);
 
@@ -264,10 +256,10 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(revalidatePaths).toHaveBeenCalledOnce();
+            expect(revalidateTags).toHaveBeenCalledOnce();
         });
 
-        it('should NOT trigger revalidatePaths when toggleActive fails', async () => {
+        it('should NOT trigger revalidateTags when toggleActive fails', async () => {
             // Arrange
             vi.mocked(crudModule.togglePlanActive).mockResolvedValue(failureResult);
 
@@ -276,12 +268,12 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(revalidatePaths).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
     });
 
     describe('softDelete', () => {
-        it('should trigger revalidatePaths when softDelete succeeds', async () => {
+        it('should trigger revalidateTags when softDelete succeeds', async () => {
             // Arrange
             vi.mocked(crudModule.softDeletePlan).mockResolvedValue(successEmpty);
 
@@ -291,10 +283,10 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(revalidatePaths).toHaveBeenCalledOnce();
+            expect(revalidateTags).toHaveBeenCalledOnce();
         });
 
-        it('should NOT trigger revalidatePaths when softDelete fails', async () => {
+        it('should NOT trigger revalidateTags when softDelete fails', async () => {
             // Arrange
             vi.mocked(crudModule.softDeletePlan).mockResolvedValue(failureResult);
 
@@ -303,12 +295,12 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(revalidatePaths).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
     });
 
     describe('restore', () => {
-        it('should trigger revalidatePaths when restore succeeds', async () => {
+        it('should trigger revalidateTags when restore succeeds', async () => {
             // Arrange
             vi.mocked(crudModule.restorePlan).mockResolvedValue(successResult);
 
@@ -318,10 +310,10 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(revalidatePaths).toHaveBeenCalledOnce();
+            expect(revalidateTags).toHaveBeenCalledOnce();
         });
 
-        it('should NOT trigger revalidatePaths when restore fails', async () => {
+        it('should NOT trigger revalidateTags when restore fails', async () => {
             // Arrange
             vi.mocked(crudModule.restorePlan).mockResolvedValue(failureResult);
 
@@ -330,12 +322,12 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(revalidatePaths).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
     });
 
     describe('hardDelete', () => {
-        it('should trigger revalidatePaths when hardDelete succeeds', async () => {
+        it('should trigger revalidateTags when hardDelete succeeds', async () => {
             // Arrange
             vi.mocked(crudModule.hardDeletePlan).mockResolvedValue(successEmpty);
 
@@ -345,10 +337,10 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(true);
-            expect(revalidatePaths).toHaveBeenCalledOnce();
+            expect(revalidateTags).toHaveBeenCalledOnce();
         });
 
-        it('should NOT trigger revalidatePaths when hardDelete fails (e.g. referenced by subscription)', async () => {
+        it('should NOT trigger revalidateTags when hardDelete fails (e.g. referenced by subscription)', async () => {
             // Arrange
             vi.mocked(crudModule.hardDeletePlan).mockResolvedValue(failureResult);
 
@@ -357,7 +349,7 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert
             expect(result.success).toBe(false);
-            expect(revalidatePaths).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
     });
 
@@ -366,7 +358,7 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
     // -------------------------------------------------------------------------
 
     describe('read operations', () => {
-        it('should NOT trigger revalidatePaths on list', async () => {
+        it('should NOT trigger revalidateTags on list', async () => {
             // Arrange
             vi.mocked(crudModule.listPlans).mockResolvedValue({
                 success: true as const,
@@ -380,10 +372,10 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
             await service.list({});
 
             // Assert
-            expect(revalidatePaths).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
 
-        it('should NOT trigger revalidatePaths on getById', async () => {
+        it('should NOT trigger revalidateTags on getById', async () => {
             // Arrange
             vi.mocked(crudModule.getPlanById).mockResolvedValue(successResult);
 
@@ -391,7 +383,7 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
             await service.getById('plan-uuid');
 
             // Assert
-            expect(revalidatePaths).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
     });
 
@@ -400,10 +392,10 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
     // -------------------------------------------------------------------------
 
     describe('revalidation failure resilience', () => {
-        it('should return write success even when revalidatePaths rejects', async () => {
+        it('should return write success even when revalidateTags rejects', async () => {
             // Arrange
             vi.mocked(crudModule.updatePlan).mockResolvedValue(successResult);
-            revalidatePaths.mockRejectedValue(new Error('Cloudflare unreachable'));
+            revalidateTags.mockRejectedValue(new Error('Cloudflare unreachable'));
 
             // Act — should NOT throw
             const result = await service.update('plan-uuid', { name: 'New Name' }, {});
@@ -442,7 +434,7 @@ describe('PlanService — pricing page revalidation (SPEC-168 T-017)', () => {
 
             // Assert — write result is success, no revalidation attempted
             expect(result.success).toBe(true);
-            expect(revalidatePaths).not.toHaveBeenCalled();
+            expect(revalidateTags).not.toHaveBeenCalled();
         });
 
         it('should return write success when getRevalidationService itself throws', async () => {

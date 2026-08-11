@@ -1,0 +1,46 @@
+---
+/**
+ * @file contacto.astro
+ * @description Contact and social networks section of the editor (HOS-318 T-024).
+ *
+ * OQ-1 settled here: this page sits in the "Contenido" group, as approved. The
+ * case for moving it to "La propiedad" (these are the host's own details, not
+ * publishable content) is noted in the spec and can be revisited without
+ * touching anything but the registry entry.
+ */
+
+import { ContactForm } from '@/components/host/editor/forms/ContactForm.client';
+import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
+import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
+import { createTranslations } from '@/lib/i18n';
+
+export const prerender = false;
+
+const resolution = await resolveEditorPage({
+	astro: Astro,
+	sectionSlug: 'contacto',
+	need: ['translations'],
+});
+
+if (resolution.redirect) return resolution.redirect;
+
+const { data, locale, accommodationId, sectionId } = resolution;
+const { t } = createTranslations(locale);
+---
+
+<EditorSectionLayout
+	locale={locale}
+	accommodationId={accommodationId}
+	accommodationName={data.accommodation.name}
+	currentSectionId={sectionId}
+	currentSectionSlug="contacto"
+	hasTranslations={data.translations !== null}
+	title={t('host.properties.editor.section.contactSocial', 'Contacto y redes')}
+>
+	<ContactForm
+		locale={locale}
+		accommodationId={accommodationId}
+		initialData={data.accommodation}
+		client:load
+	/>
+</EditorSectionLayout>

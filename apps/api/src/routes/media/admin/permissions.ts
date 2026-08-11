@@ -51,7 +51,17 @@ const OWN_ANY_ENTITIES: ReadonlySet<MediaEntityType> = new Set([
     'experience'
 ]);
 
-type EntityWithOwner = { ownerId?: string | null };
+/**
+ * Entity types that express belonging through `authorId` rather than `ownerId`.
+ *
+ * These have a single flat UPDATE permission, so staff pass on the permission
+ * check alone (unchanged behavior). The author fallback below is what lets a
+ * non-staff author manage media on their own content from the protected route,
+ * where no `ownerId` exists to compare against.
+ */
+const AUTHOR_OWNED_ENTITIES: ReadonlySet<MediaEntityType> = new Set(['post', 'event']);
+
+type EntityWithOwner = { ownerId?: string | null; authorId?: string | null };
 
 type PermissionCheckResult =
     | { allowed: true }
@@ -79,6 +89,16 @@ export const validateEntityMediaPermission = ({
     const hasAny = allowedPermissions.some((perm) => actor.permissions.includes(perm));
 
     if (!hasAny) {
+        // An author managing media on their own post/event is allowed without
+        // holding the flat editorial UPDATE permission. Staff never reach this
+        // branch — they satisfy `hasAny` above — so admin behavior is unchanged.
+        if (
+            AUTHOR_OWNED_ENTITIES.has(entityType) &&
+            entity?.authorId &&
+            entity.authorId === actor.id
+        ) {
+            return { allowed: true };
+        }
         return { allowed: false, reason: 'MISSING_ENTITY_PERMISSION' };
     }
 

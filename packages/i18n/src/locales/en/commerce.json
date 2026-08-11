@@ -110,6 +110,7 @@
                 "mobilePhone": "Phone",
                 "workEmail": "Email"
             },
+            "richDescriptionPlaceholder": "Tell your business story in detail...",
             "validation": {
                 "summaryMin": "Minimum 10 characters.",
                 "summaryMax": "Maximum 300 characters.",
@@ -183,6 +184,7 @@
             "saving": "Saving...",
             "success": "Changes saved.",
             "error": "Changes could not be saved. Please try again.",
+            "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
             "media": {
                 "featured": "Featured image",
                 "gallery": "Photo gallery",

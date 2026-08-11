@@ -17,7 +17,10 @@
  * left untouched here.
  *
  * @route /{lang}/alojamientos/tipo/{type}/
- * @rendering SSR + ISR 24h
+ * @rendering SSR + Cloudflare edge cache — TTL from the `catalog` cache class
+ *   (see `lib/cache/cache-classes.ts`), purged by cache tag. Eligibility is
+ *   decided per request by the `applyCacheHeaders` call below, not by this
+ *   comment.
  */
 
 import ListingLayout from '@/layouts/ListingLayout.astro';
@@ -40,13 +43,14 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
-import { hasActiveAccommodationListingFilters, resolveListingCacheControl } from '@/lib/cache/listing-cache';
+import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
+import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { AccommodationTypeEnum } from '@repo/schemas';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { type: typeSlug } = Astro.params;
-const isAuthenticated = Boolean(Astro.locals.user);
 
 // Derived from the canonical enum so any new type added to AccommodationTypeEnum
 // is automatically accepted here without code changes (Bug B10 fix).
@@ -83,12 +87,13 @@ const pageSize = 9;
 // The origin gate ensures a favourite-baked response is never MARKED shareable;
 // the Cloudflare Cache Rule this header enables must also bypass on the session
 // cookie (see `@/lib/cache/listing-cache`).
-Astro.response.headers.set(
-	'Cache-Control',
-	resolveListingCacheControl({
-		cacheable: !isAuthenticated && !hasActiveAccommodationListingFilters({ searchParams: url.searchParams })
-	})
-);
+applyCacheHeaders({
+	locals: Astro.locals,
+	headers: Astro.response.headers,
+	cacheable: !hasActiveAccommodationListingFilters({ searchParams: url.searchParams }),
+	cacheClass: 'catalog',
+	tags: [CACHE_TAG_COLLECTIONS.accommodation]
+});
 
 /**
  * Maps the URL's user-friendly sort key to the backend `(sortBy, sortOrder)`
@@ -436,7 +441,7 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 		title={typeName}
 	/>
 
-	<CompareModeControls slot="page-header" locale={locale} isAuthenticated={isAuthenticated} />
+	<CompareModeControls slot="page-header" locale={locale} />
 
 	<FilterSidebar
 		slot="filters"
@@ -454,7 +459,6 @@ const collectionPageUrl = `${siteOrigin}${canonicalPath}`;
 				client:load
 				locale={locale}
 				apiUrl={getApiUrl()}
-				isAuthenticated={isAuthenticated}
 				currentUrl={Astro.url.href}
 				destinations={Object.fromEntries(destinations.map((d) => [d.id, d.name]))}
 				pageType={typeEnum}
