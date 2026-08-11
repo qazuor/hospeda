@@ -181,10 +181,10 @@ const accessDeniedCtaHref = buildUrl({ locale, path: 'mi-cuenta/publica' });
         /* Generic error state — same standalone-card treatment as above. */
         <div class:list={['trades-page__error', accountSectionStyles.branded]} role="alert">
             <p class="trades-page__error-title">
-                {t('host.properties.empty.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
+                {t('host-trades.page.error.fetchError', 'No se pudo cargar la lista. Intentá recargar la página.')}
             </p>
             <a href={Astro.url.pathname} class="trades-page__retry-btn">
-                {t('host.properties.error.retry', 'Reintentar')}
+                {t('host-trades.page.error.retry', 'Reintentar')}
             </a>
         </div>
     ) : !isEmpty ? (

@@ -1,7 +1,11 @@
 {
     "page": {
         "title": "Directorio de proveedores",
-        "subtitle": "Proveedores locales de confianza para tu alojamiento"
+        "subtitle": "Proveedores locales de confianza para tu alojamiento",
+        "error": {
+            "fetchError": "No se pudo cargar la lista. Intentá recargar la página.",
+            "retry": "Reintentar"
+        }
     },
     "filter": {
         "all": "Todos"

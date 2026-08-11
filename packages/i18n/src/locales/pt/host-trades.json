@@ -1,7 +1,11 @@
 {
     "page": {
         "title": "Diretório de fornecedores",
-        "subtitle": "Fornecedores locais de confiança para sua acomodação"
+        "subtitle": "Fornecedores locais de confiança para sua acomodação",
+        "error": {
+            "fetchError": "Não foi possível carregar a lista. Tente recarregar a página.",
+            "retry": "Tentar de novo"
+        }
     },
     "filter": {
         "all": "Todos"
