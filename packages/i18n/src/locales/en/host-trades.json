@@ -225,6 +225,21 @@
                 "PENDING": "In review",
                 "APPROVED": "Published",
                 "REJECTED": "Rejected"
+            },
+            "reply": {
+                "open": "Reply",
+                "edit": "Edit your reply",
+                "label": "Your reply",
+                "counter": "{{count}}/{{max}} · minimum {{min}} characters",
+                "createNotice": "We review it before publishing, so it does not show up in the directory right away.",
+                "editNotice": "If you edit it, your reply goes back to review and stops showing in the directory until we approve it again.",
+                "cancel": "Cancel",
+                "send": "Send reply",
+                "save": "Save reply",
+                "errors": {
+                    "tooShort": "Your reply needs at least {{min}} characters.",
+                    "generic": "We could not save your reply. Please try again in a moment."
+                }
             }
         },
         "qr": {
