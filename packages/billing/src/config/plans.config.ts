@@ -454,7 +454,11 @@ export const TOURIST_PLUS_PLAN: PlanDefinition = {
     trialDays: TOURIST_TRIAL_DAYS,
     isDefault: false,
     sortOrder: 2,
-    isActive: true,
+    // HOS-301 D1: the tourist tier ships with a single paid plan (tourist-vip).
+    // Deactivated rather than deleted, exactly like the complex-* plans: the
+    // definition stays in ALL_PLANS so existing subscriptions keep resolving
+    // their entitlements, and reversing the decision is a one-line change.
+    isActive: false,
     entitlements: [
         EntitlementKey.SAVE_FAVORITES,
         EntitlementKey.WRITE_REVIEWS,
