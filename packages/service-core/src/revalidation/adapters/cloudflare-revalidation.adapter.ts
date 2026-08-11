@@ -158,6 +158,31 @@ export class CloudflareRevalidationAdapter implements RevalidationAdapter {
                 };
             }
 
+            // A 2xx is NOT the verdict — the body is. `/api/revalidate/` answers
+            // `{ ok: true, purged: N }` only after Cloudflare's own envelope has
+            // been checked (see `apps/web/src/lib/cache/cloudflare-purge.ts`,
+            // which exists precisely because a Cloudflare 200 can mean "purged
+            // nothing"). Trusting the status line alone threw that verdict away
+            // and wrote `status = 'success'` into `revalidation_log` for a purge
+            // whose outcome this process never actually read — an audit trail
+            // that cannot distinguish a real purge from a silent no-op.
+            const confirmation = (await response.json().catch(() => null)) as {
+                ok?: unknown;
+            } | null;
+
+            if (confirmation === null || confirmation.ok !== true) {
+                const detail =
+                    confirmation === null
+                        ? '<unparseable response body>'
+                        : JSON.stringify(confirmation);
+                return {
+                    target: '?',
+                    success: false,
+                    durationMs,
+                    error: `HTTP ${response.status} but the purge endpoint did not confirm it: ${detail}`
+                };
+            }
+
             return { target: '?', success: true, durationMs };
         } catch (error) {
             if (error instanceof Error && error.name === 'AbortError') {

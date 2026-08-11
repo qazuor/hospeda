@@ -9,8 +9,18 @@ export interface DestinationHookState extends Record<string, unknown> {
     pendingPathUpdate?: { parentId: string; oldPath: string; newPath: string };
     /** Slug of the destination being deleted .. set in _beforeSoftDelete/_beforeHardDelete. */
     deletedDestinationSlug?: string;
+    /**
+     * UUID of the destination being deleted .. set alongside the slug above.
+     *
+     * Captured because the detail page tags itself with BOTH `dest-<slug>` and
+     * `dest-<id>`, and the row is gone by the time the `_after*` hook runs — so
+     * an identifier not captured here can never be purged.
+     */
+    deletedDestinationId?: string;
     /** Slug of the destination being restored .. set in _beforeRestore. */
     restoredDestinationSlug?: string;
+    /** UUID of the destination being restored .. set alongside the slug above. */
+    restoredDestinationId?: string;
     /** ID of the entity being hard-deleted, used for Cloudinary media cleanup. */
     deletedEntityId?: string;
     /**

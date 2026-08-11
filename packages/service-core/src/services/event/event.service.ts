@@ -445,7 +445,8 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -483,7 +484,8 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -526,7 +528,8 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -545,7 +548,8 @@ export class EventService extends BaseCrudService<
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
             ctx.hookState.restoredEvent = {
-                slug: entity.slug
+                slug: entity.slug,
+                id: entity.id
             };
         }
         return id;
@@ -560,7 +564,8 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: restored?.slug
+                slug: restored?.slug,
+                id: restored?.id
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -578,7 +583,7 @@ export class EventService extends BaseCrudService<
     ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
-            ctx.hookState.deletedEvent = { slug: entity.slug };
+            ctx.hookState.deletedEvent = { slug: entity.slug, id: entity.id };
         }
         return id;
     }
@@ -592,7 +597,8 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: deleted?.slug
+                slug: deleted?.slug,
+                id: deleted?.id
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -610,7 +616,7 @@ export class EventService extends BaseCrudService<
     ): Promise<string> {
         const entity = await this.model.findById(id);
         if (entity && ctx.hookState) {
-            ctx.hookState.deletedEvent = { slug: entity.slug };
+            ctx.hookState.deletedEvent = { slug: entity.slug, id: entity.id };
             ctx.hookState.deletedEntityId = id;
         }
         return id;
@@ -625,7 +631,8 @@ export class EventService extends BaseCrudService<
         try {
             getRevalidationService()?.scheduleRevalidation({
                 entityType: 'event',
-                slug: deleted?.slug
+                slug: deleted?.slug,
+                id: deleted?.id
             });
         } catch (error) {
             EventService.revalidationLogger.warn(
@@ -1525,7 +1532,8 @@ export class EventService extends BaseCrudService<
                 try {
                     getRevalidationService()?.scheduleRevalidation({
                         entityType: 'event',
-                        slug: updated.slug
+                        slug: updated.slug,
+                        id: updated.id
                     });
                 } catch (error) {
                     EventService.revalidationLogger.warn(
