@@ -93,7 +93,18 @@ describe('Plan Configuration', () => {
         });
 
         it('should have pricing in cents', () => {
-            expect(OWNER_BASICO_PLAN.monthlyPriceArs).toBe(1500000); // ARS $15,000
+            expect(OWNER_BASICO_PLAN.monthlyPriceArs).toBe(1800000); // ARS $18,000
+        });
+
+        it('should carry the HOS-301 D1 owner pricing grid', () => {
+            // Guards the config half of the HOS-25 dual-write: the DB half lives
+            // in `0049-hos-301-reprice-owner-plans.ts`. Annual prices are ten
+            // months of the monthly amount ("two months free" in the plan copy).
+            expect(OWNER_BASICO_PLAN.annualPriceArs).toBe(18000000); // ARS $180,000
+            expect(OWNER_BASICO_PLAN.monthlyPriceUsdRef).toBe(18);
+            expect(OWNER_PREMIUM_PLAN.monthlyPriceArs).toBe(6500000); // ARS $65,000
+            expect(OWNER_PREMIUM_PLAN.annualPriceArs).toBe(65000000); // ARS $650,000
+            expect(OWNER_PREMIUM_PLAN.monthlyPriceUsdRef).toBe(65);
         });
 
         it('should have entitlements array', () => {
