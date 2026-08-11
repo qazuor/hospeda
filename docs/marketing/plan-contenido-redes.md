@@ -607,18 +607,179 @@ Conviene acompañar la temporada: el destino termal en invierno, el de río en v
 
 ---
 
-#### 8.1 · Presentación del destino — plantilla
+#### 8.1 · Presentación del destino — los 22, con textos listos
 
 - **Prioridad**: 1
 - **Tipo**: Imagen única
 - **Aspect Ratio**: 9:16 y 4:5
-- **Tag Line**: *(nombre del destino)*
-- **Título**: *(la frase que define el lugar — "El río más lindo de Entre Ríos", "Termas y tranquilidad")*
-- **Cuerpo**: *(dos renglones: qué es y para quién)*
-- **Idea**: La placa de apertura de cada destino. Una foto que lo identifique de una, el nombre bien grande, y una frase. **La plantilla es siempre igual** —misma tipografía, mismo lugar del nombre, mismo tratamiento de la foto— para que los 22 destinos se lean como una colección. Lo único que cambia es la foto y el texto.
-- **Foto/s**: La imagen más reconocible del lugar. Si el destino tiene una postal obvia, esa.
-- **CTA**: Conocé *(destino)* en hospeda.com.ar
+- **Idea (vale para las 22)**: La placa de apertura de cada destino. Una foto que lo identifique de una, el nombre bien grande, y una frase. **La diagramación es siempre la misma** —misma tipografía, mismo lugar del nombre, mismo tratamiento de la foto— para que los 22 se lean como una colección. Lo único que cambia es la foto y el texto.
+- **CTA (vale para las 22)**: Conocé *(destino)* en hospeda.com.ar
 - **Idioma**: Español
+
+> ⚠️ **Antes de diseñar, leer esto.** Los textos de abajo están escritos para que el diseñador no tenga que investigar nada. Los de las ciudades grandes son sólidos. **Los de los pueblos chicos hay que revisarlos con alguien que conozca el lugar** — están marcados con ⚠️. Un pueblo mal descripto en una placa pública se nota al toque y lo corrigen en los comentarios.
+
+##### Principales
+
+###### Colón
+
+- **Tag Line**: Colón, Entre Ríos
+- **Título**: Playas de arena sobre el río Uruguay.
+- **Cuerpo**: Termas, artesanías y la puerta de entrada al Palmar. El destino más elegido de la costa.
+- **Foto**: La playa sobre el río, o la costanera al atardecer.
+
+###### Concepción del Uruguay
+
+- **Tag Line**: Concepción del Uruguay
+- **Título**: Historia, playa y el carnaval más antiguo.
+- **Cuerpo**: Playas sobre el río, patrimonio histórico y vida universitaria. La ciudad más antigua de la provincia.
+- **Foto**: Banco Pelay, o el casco histórico.
+
+###### Gualeguaychú
+
+- **Tag Line**: Gualeguaychú
+- **Título**: El carnaval más grande del país.
+- **Cuerpo**: Verano de corsos y playas, termas todo el año. Cerca de Buenos Aires y con todo para quedarse.
+- **Foto**: El corsódromo en plena noche de carnaval.
+
+###### San José
+
+- **Tag Line**: San José, Entre Ríos
+- **Título**: La primera colonia agrícola del país.
+- **Cuerpo**: Historia de inmigrantes, playa sobre el río y la tranquilidad de un pueblo, a minutos de Colón.
+- **Foto**: El casco histórico o la costanera.
+
+###### Villa Elisa
+
+- **Tag Line**: Villa Elisa
+- **Título**: Termas en medio del campo.
+- **Cuerpo**: Aguas termales, silencio y verde. Para descansar de verdad, sin multitudes.
+- **Foto**: El parque termal rodeado de verde.
+
+###### Federación
+
+- **Tag Line**: Federación
+- **Título**: La ciudad que se mudó entera.
+- **Cuerpo**: Se levantó de nuevo cuando la represa tapó la vieja. Hoy es el destino termal más conocido del Litoral.
+- **Foto**: El parque termal con el lago de fondo.
+
+###### Concordia
+
+- **Tag Line**: Concordia
+- **Título**: Termas, lago y playas de río.
+- **Cuerpo**: La segunda ciudad de la provincia. Salto Grande, citrus y el parque termal más grande de la zona.
+- **Foto**: El lago de Salto Grande, o las termas.
+
+##### Segunda tanda
+
+###### Chajarí
+
+- **Tag Line**: Chajarí
+- **Título**: Termas en el corazón del citrus.
+- **Cuerpo**: Naranjas, mandarinas y aguas termales en el norte entrerriano. Tranquilo y a mano.
+- **Foto**: El parque termal, o las plantaciones de citrus.
+
+###### Villaguay
+
+- **Tag Line**: Villaguay
+- **Título**: El centro exacto de Entre Ríos.
+- **Cuerpo**: Termas, campo y buena mesa, en el medio de la provincia. Parada obligada si la cruzás.
+- **Foto**: El parque termal, o el paisaje de campo.
+
+###### Gualeguay ⚠️
+
+- **Tag Line**: Gualeguay
+- **Título**: Río, tradición y pueblo de verdad.
+- **Cuerpo**: Uno de los pueblos más antiguos de la provincia, sobre su propio río. Historia, pesca y calma.
+- **Foto**: El río Gualeguay, o el centro histórico.
+
+###### Santa Ana ⚠️
+
+- **Tag Line**: Santa Ana, Entre Ríos
+- **Título**: El norte, sin apuro.
+- **Cuerpo**: Un pueblo chico del norte entrerriano, cerca de las termas y lejos del ruido.
+- **Foto**: A definir con material del lugar.
+
+###### Villa Paranacito
+
+- **Tag Line**: Villa Paranacito
+- **Título**: El delta entrerriano.
+- **Cuerpo**: Islas, arroyos y casas sobre pilotes. Se llega en auto y se recorre en lancha.
+- **Foto**: Las casas sobre pilotes, o un arroyo entre la vegetación.
+
+###### Ibicuy ⚠️
+
+- **Tag Line**: Ibicuy
+- **Título**: Islas, pesca y silencio.
+- **Cuerpo**: El sur profundo de Entre Ríos, entre humedales y arroyos. Para pescar y desconectar.
+- **Foto**: El río o los humedales.
+
+##### Resto
+
+###### Caseros ⚠️
+
+- **Tag Line**: Caseros, Entre Ríos
+- **Título**: A pasos del Palacio San José.
+- **Cuerpo**: Un pueblo chico con la historia de Urquiza a la vuelta de la esquina.
+- **Foto**: El Palacio San José.
+
+###### Ceibas ⚠️
+
+- **Tag Line**: Ceibas
+- **Título**: La puerta de entrada a Entre Ríos.
+- **Cuerpo**: El primer pueblo cuando entrás por la ruta. Pesca, monte y parada clásica de viaje.
+- **Foto**: A definir con material del lugar.
+
+###### Larroque ⚠️
+
+- **Tag Line**: Larroque
+- **Título**: Pueblo chico, vida tranquila.
+- **Cuerpo**: Campo entrerriano puro, a media hora de Gualeguaychú.
+- **Foto**: A definir con material del lugar.
+
+###### Pueblo Liebig
+
+- **Tag Line**: Pueblo Liebig
+- **Título**: Un pueblo que fue una fábrica.
+- **Cuerpo**: El viejo frigorífico y sus casas inglesas, intactos. Patrimonio industrial a minutos de Colón.
+- **Foto**: El frigorífico o las casas del pueblo.
+
+###### Rosario del Tala ⚠️
+
+- **Tag Line**: Rosario del Tala
+- **Título**: Campo, río y tradición.
+- **Cuerpo**: En el centro de la provincia, sobre el arroyo. Pueblo de a pie y de a caballo.
+- **Foto**: A definir con material del lugar.
+
+**San Justo** ⚠️⚠️
+
+- **Tag Line**: San Justo, Entre Ríos
+- **Título**: *(a escribir)*
+- **Cuerpo**: *(a escribir)*
+- **Foto**: A definir.
+- **Nota**: **no tengo información confiable de este destino.** El texto lo tiene que escribir alguien que lo conozca. No inventar.
+
+###### San Salvador ⚠️
+
+- **Tag Line**: San Salvador
+- **Título**: La capital nacional del arroz.
+- **Cuerpo**: Un pueblo del norte entrerriano con identidad propia y campo hasta donde llega la vista.
+- **Foto**: Los arrozales.
+
+###### Ubajay ⚠️
+
+- **Tag Line**: Ubajay
+- **Título**: A la entrada de El Palmar.
+- **Cuerpo**: El pueblo más cercano al Parque Nacional. Base tranquila para conocer las palmeras.
+- **Foto**: Las palmeras yatay de El Palmar.
+
+###### Urdinarrain ⚠️
+
+- **Tag Line**: Urdinarrain
+- **Título**: Colonia, campo y calma.
+- **Cuerpo**: Un pueblo de colonos a media hora de Gualeguaychú, con su propio ritmo.
+- **Foto**: A definir con material del lugar.
+
+> **Los marcados con ⚠️ hay que revisarlos** antes de diseñar: son pueblos chicos y lo que escribí es lo que se sabe de afuera. El que conoce el lugar va a encontrar algo mucho mejor que decir, y ese detalle es el que hace que la placa la comparta la gente del pueblo. **San Justo está sin texto a propósito**: no tengo información confiable y prefiero dejarlo vacío antes que inventar.
 
 ---
 
@@ -1259,7 +1420,7 @@ Nada pendiente por ahora. Acá se anota lo que frene la producción de alguna pi
 | B · Producto | 5. Gastronomía y experiencias | ⬜ pendiente |
 | B · Producto | 6. Auspiciantes, patrocinadores y redactores | ⬜ pendiente |
 | B · Producto | 7. Oficios y proveedores | ⬜ pendiente |
-| C · Atracción | 8. Destinos | ✅ 7 plantillas · ~60 placas a producir |
+| C · Atracción | 8. Destinos | ✅ 22 presentaciones escritas + 6 plantillas |
 | C · Atracción | 9. Lugares para visitar | ⬜ pendiente |
 | C · Atracción | 10. Eventos y agenda | ⬜ pendiente |
 | C · Atracción | 11. Gastronomía de la región | ⬜ pendiente |
