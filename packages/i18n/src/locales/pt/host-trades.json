@@ -128,7 +128,8 @@
             "action": "Não conseguimos concluir a ação. Tente novamente em instantes."
         },
         "badge": {
-            "pendingCount": "{{count}} usos aguardando sua confirmação"
+            "pendingCount_one": "{{count}} uso aguardando sua confirmação",
+            "pendingCount_other": "{{count}} usos aguardando sua confirmação"
         }
     },
     "review": {
@@ -170,6 +171,7 @@
             "noChanges": "Você não alterou nada na sua avaliação."
         },
         "cta": "Avaliar {{name}}",
+        "ctaEdit": "Editar sua avaliação de {{name}}",
         "editTitle": "Editar sua avaliação de {{name}}",
         "save": "Salvar alterações",
         "loading": "Verificando se você já avaliou…"

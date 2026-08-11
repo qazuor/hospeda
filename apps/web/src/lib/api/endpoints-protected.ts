@@ -2138,6 +2138,16 @@ export interface BenefitUsage {
         readonly name: string;
         readonly category: HostTradeCategoryEnum;
     } | null;
+    /**
+     * Whether this host already reviewed this provider — what decides whether
+     * the card's button offers to write a review or to edit one.
+     *
+     * Keyed by (host, provider), so every row naming the same provider reports
+     * the same value. The API always sends it (the schema defaults it to
+     * `false`); an absent value would simply read as "not reviewed yet", which
+     * is the recoverable direction.
+     */
+    readonly hasReview: boolean;
 }
 
 /** Response envelope shared by the three usage transitions. */

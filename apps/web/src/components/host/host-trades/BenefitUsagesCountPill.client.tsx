@@ -43,7 +43,7 @@ interface BenefitUsagesCountPillProps {
  * @returns The pill, or `null` when nothing is pending or the count is unknown.
  */
 export function BenefitUsagesCountPill({ locale }: BenefitUsagesCountPillProps) {
-    const { t } = createTranslations(locale);
+    const { tPlural } = createTranslations(locale);
     const [count, setCount] = useState(0);
 
     const readCount = useCallback(async () => {
@@ -67,11 +67,13 @@ export function BenefitUsagesCountPill({ locale }: BenefitUsagesCountPillProps) 
         return null;
     }
 
-    const label = t(
-        'host-trades.usages.badge.pendingCount',
-        '{{count}} usos esperan tu confirmación',
-        { count: String(count) }
-    );
+    // `tPlural`, not `t`: the glyph is a bare numeral, so this label is the only
+    // place the badge speaks — and "1 usos esperan" is what a screen-reader user
+    // would hear from a non-pluralised string. CLDR `_one`/`_other` keys live in
+    // `host-trades.json` for all three locales.
+    const label = tPlural('host-trades.usages.badge.pendingCount', count, {
+        count: String(count)
+    });
 
     return (
         <span

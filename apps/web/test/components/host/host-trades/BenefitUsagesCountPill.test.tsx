@@ -79,6 +79,25 @@ describe('BenefitUsagesCountPill — what it shows', () => {
         expect(pill.getAttribute('aria-label')?.length).toBeGreaterThan(1);
     });
 
+    it('reads as singular when exactly one usage is pending', async () => {
+        // The label is the only place the badge speaks: the glyph is a bare
+        // numeral, so "1 usos esperan tu confirmación" is what a screen-reader
+        // user actually hears. Asserting the count is present is not enough —
+        // that is how the un-pluralised string reached staging.
+        mockCountPending.mockResolvedValue({ ok: true, data: { count: 1 } });
+        renderPill();
+
+        const pill = await screen.findByRole('status');
+        expect(pill).toHaveAttribute('aria-label', '1 uso espera tu confirmación');
+    });
+
+    it('reads as plural for more than one', async () => {
+        renderPill();
+
+        const pill = await screen.findByRole('status');
+        expect(pill).toHaveAttribute('aria-label', '3 usos esperan tu confirmación');
+    });
+
     it('caps the glyph at 99+ while keeping the real number in the label', async () => {
         mockCountPending.mockResolvedValue({ ok: true, data: { count: 128 } });
         renderPill();

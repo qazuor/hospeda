@@ -84,7 +84,27 @@ export type HostTradeUsageProviderRef = z.infer<typeof HostTradeUsageProviderRef
  * 500 for the whole page instead of one row rendering a neutral label.
  */
 export const HostTradeBenefitUsageWithProviderSchema = HostTradeBenefitUsageProtectedSchema.extend({
-    hostTrade: HostTradeUsageProviderRefSchema.nullable()
+    hostTrade: HostTradeUsageProviderRefSchema.nullable(),
+
+    /**
+     * Whether this host has already reviewed this provider.
+     *
+     * A BOOLEAN, not the review or its id: the only thing the list decides with
+     * it is whether its button offers to write a review or to edit one. The
+     * dialog still reads the review back when it opens, because it needs the
+     * VALUES; existence is all the card needs, and an id it never dereferences
+     * would be payload nobody reads.
+     *
+     * Defaults to `false` so a caller that predates this field — or a row built
+     * by a path that does not resolve it — degrades to the create label rather
+     * than failing response validation. The wrong label is recoverable; the
+     * dialog opens in edit mode regardless, since it decides from its own
+     * read-back.
+     *
+     * Keyed by (host, provider) and not by usage: a host who used the same
+     * plumber three times has one review, so all three rows report `true`.
+     */
+    hasReview: z.boolean().default(false)
 });
 
 /** Inferred type for {@link HostTradeBenefitUsageWithProviderSchema}. */

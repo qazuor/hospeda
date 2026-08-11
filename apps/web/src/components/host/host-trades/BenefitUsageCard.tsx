@@ -167,9 +167,21 @@ export function BenefitUsageCard({
                             onClick={() => onReview?.(usage)}
                             type="button"
                         >
-                            {t('host-trades.review.cta', 'Valorar a {{name}}', {
-                                name: providerName
-                            })}
+                            {/* The dialog opens in edit mode when a review
+                                already exists, so a fixed "Valorar" label would
+                                announce the wrong action. `hasReview` comes on
+                                the row for exactly this. */}
+                            {usage.hasReview
+                                ? t(
+                                      'host-trades.review.ctaEdit',
+                                      'Editar tu valoración de {{name}}',
+                                      {
+                                          name: providerName
+                                      }
+                                  )
+                                : t('host-trades.review.cta', 'Valorar a {{name}}', {
+                                      name: providerName
+                                  })}
                         </button>
                     ) : null}
                 </div>
