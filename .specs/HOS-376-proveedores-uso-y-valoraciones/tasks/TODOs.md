@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 63/70 tareas cerradas (90%)
+## Progreso: 64/70 tareas cerradas (91%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -205,7 +205,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Ta…
   - Bloqueada por: T-038 · Bloquea a: —
 
-## Fase `testing` — 6/11 completadas (complejidad promedio 2.5)
+## Fase `testing` — 7/11 completadas (complejidad promedio 2.5)
 
 - [x] **T-057** (c3) — Tests unitarios de la máquina de estados del uso
   - TODAS las transiciones válidas (PENDING→CONFIRMED, PENDING→REJECTED, PENDING→EXPIRED, REJECTED→PENDING por undo) y TODAS las inválidas (CONFIRMED→cualquier cosa, EXPIRED→cualquier cosa, dobl…
@@ -225,7 +225,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-062** (c2) — Tests de integración de los endpoints del proveedor y del rate limit
   - T-031, T-032 y T-039: ownership, HOST_NOT_FOUND explícito, linked-hosts que excluye pares sin uso confirmado, 429 al superar el límite, y que el límite del canal EMAIL_LOOKUP sea más estrict…
   - Bloqueada por: T-031, T-039 · Bloquea a: —
-- [ ] **T-063** (c2) — Tests de integración de los endpoints admin
+- [x] **T-063** (c2) — Tests de integración de los endpoints admin
   - T-037 y T-038: 403 sin el permiso correspondiente (un permiso por endpoint, no genérico), moderar recalcula agregados, levantar la suspensión registra el admin, los filtros funcionan. Los te…
   - Bloqueada por: T-037, T-038 · Bloquea a: —
 - [ ] **T-064** (c3) — Regresiones dedicadas: AC-6, AC-15, AC-16, AC-17
