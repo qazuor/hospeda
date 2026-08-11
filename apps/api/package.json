@@ -60,7 +60,7 @@
         "@vercel/oidc": "3.8.2",
         "bcryptjs": "^3.0.3",
         "better-auth": "^1.6.23",
-        "bullmq": "^5.80.2",
+        "bullmq": "^6.0.7",
         "cloudinary": "^2.10.0",
         "cron-parser": "^5.7.0",
         "cronstrue": "^3.21.0",
