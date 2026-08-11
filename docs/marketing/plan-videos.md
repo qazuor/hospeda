@@ -23,6 +23,14 @@ En cada video se detalla qué formatos hay que hacer. Casi siempre se produce un
 3. **La pantalla de la plataforma se graba, no se genera.** Todo lo que muestre Hospeda funcionando es grabación real. La inteligencia artificial se usa para el personaje y los ambientes, nunca para simular la interfaz.
 4. **Un video, una idea.** Si hay dos mensajes, son dos videos.
 5. **Subtítulos siempre**, quemados en el video, no los automáticos de la red.
+6. **Las transiciones son corte seco o movimiento simple.** Nada de las transiciones que traen las apps de edición —giros en 3D, estrellitas, barridos con brillo—: envejecen mal, distraen del mensaje y son lo que más rápido delata un video hecho a las apuradas. Lo que sirve es esto:
+   - **Corte seco**, cayendo sobre un acento de la música. Es el más usado y casi siempre el mejor.
+   - **Zoom hacia un objeto** que ya está en escena, hasta que ese objeto llena el cuadro. Sirve para entrar a una pantalla.
+   - **Zoom hacia atrás**, para salir de una pantalla y revelar dónde estaba.
+   - **Barrido con la mano**: el personaje empuja el cuadro y entra lo siguiente.
+   - **Corte sobre movimiento**: algo se mueve en la misma dirección antes y después del corte.
+
+   **La regla práctica**: si la transición se nota más que lo que muestra, está mal. Y si hay dudas, corte seco.
 
 ### El personaje
 
@@ -58,6 +66,7 @@ Es el logo de Hospeda con cuerpo y cara. Aparece en la mayoría de los videos co
 | **Duración** | sí | Objetivo en segundos |
 | **Objetivo** | sí | Qué tiene que lograr. Uno solo |
 | **Guion** | sí | Escena por escena, con tiempos |
+| **Transiciones** | sí | Cómo se pasa de una parte a otra. Ver la regla 6 |
 | **Texto en pantalla** | sí | Lo que se lee, para el que mira sin sonido |
 | **Voz** | no | Si lleva voz en off, qué dice |
 | **Personaje** | sí | Si aparece, cuándo y haciendo qué |
@@ -89,6 +98,28 @@ Es el logo de Hospeda con cuerpo y cara. Aparece en la mayoría de los videos co
 | **0:09 – 0:13** | Sigue la grabación: se aprieta importar y aparece el indicador de carga. Un par de segundos, acelerados. | **"Esperás dos segundos."** |
 | **0:13 – 0:18** | La ficha aparece completa: fotos, descripción, comodidades. Se hace un scroll lento para que se vea todo lo que se llenó solo. | **"Listo."** |
 | **0:18 – 0:22** | Vuelve el personaje, ahora contento, con el pulgar arriba al costado de la ficha terminada. Aparece el logo. | **"Publicá tu alojamiento"**<br>**hospeda.com.ar** |
+
+#### Transiciones
+
+Son tres cortes y **conviene resolverlos como un solo gesto que abre y cierra**: se entra al teléfono al principio y se sale del teléfono al final. Eso le da unidad al video sin ningún efecto raro.
+
+**1 · Dentro del personaje (0:03)** — del fastidio al "no".
+Corte seco, cayendo justo sobre un acento de la música. No hay transición: es el mismo personaje, cambia el gesto. Se puede hacer con dos generaciones distintas o con un solo plano y el corte marcado por el sonido.
+
+**2 · Del personaje a la pantalla (0:05)** — la transición importante.
+
+- **Recomendada — zoom al teléfono.** El personaje ya tiene un teléfono en la mano. La cámara se acerca hacia ese teléfono hasta que la pantalla llena el cuadro, y ahí arranca la grabación de Hospeda. Dura menos de un segundo. Es la mejor porque el objeto ya está en escena: no aparece nada de la nada, y explica visualmente que lo que sigue pasa en ese teléfono.
+  **Cómo se hace**: se genera el Plano A con el teléfono bien visible y la pantalla hacia la cámara, se compone la grabación adentro de la pantalla en edición, y se hace el acercamiento sobre la imagen fija. No hace falta generar nada nuevo.
+- **Alternativa si no se quiere componer — corte seco.** Corte directo del personaje a la pantalla completa, sobre un golpe de música. Funciona bien y no requiere trabajo extra. Es el plan B legítimo, no una versión inferior.
+- **Lo que NO conviene**: fundido a blanco o a negro. Frena el ritmo justo cuando el video recién arrancó.
+
+**3 · De la pantalla al personaje contento (0:18)** — el cierre del gesto.
+
+- **Recomendada — zoom hacia atrás.** La cámara se aleja de la ficha terminada y revela que esa ficha está en el teléfono que ahora sostiene el personaje contento. Cierra exactamente el movimiento de la transición 2, y esa simetría es lo que hace que el video se sienta armado y no pegoteado.
+  **Requisito**: el Plano B también tiene que tener el teléfono en la mano, con la pantalla visible.
+- **Alternativa — la ficha se desliza.** La pantalla se corre hacia un costado y el personaje entra desde el otro. Simple y prolijo.
+
+> **Consecuencia para los prompts**: si se van a hacer las transiciones recomendadas, **los dos planos del personaje necesitan el teléfono con la pantalla hacia la cámara**, y generados con buena resolución para aguantar el acercamiento. Eso ya está pedido en los prompts de abajo.
 
 #### Voz en off
 
@@ -125,11 +156,15 @@ Grabación de pantalla real del importador, en una sola toma limpia:
 
 Plano: busto, encuadre vertical 9:16, personaje centrado y mirando a cámara.
 Expresión: fastidio leve, cejas caídas, boca torcida. Cansancio, no enojo.
-Pose: sostiene un teléfono en una mano, la otra en gesto de negación con la palma hacia adelante.
+Pose: sostiene un teléfono en una mano, a la altura del pecho y con la PANTALLA
+ORIENTADA HACIA LA CÁMARA, bien visible y sin reflejos. La otra mano en gesto de
+negación con la palma hacia adelante.
+Pantalla del teléfono: en blanco o gris plano, se le compone contenido después.
 Fondo: color plano #DFECF8, sin textura ni degradado.
 Luz: pareja y suave, sin sombras duras.
 Estilo: [MISMO ESTILO DE RENDER QUE LA REFERENCIA], colores planos, sin fotorrealismo.
 Sin texto en la imagen.
+Resolución alta: la imagen tiene que aguantar un acercamiento fuerte hacia el teléfono.
 ```
 
 ##### Personaje — Plano B (ChatGPT o ComfyUI, imagen fija)
@@ -140,12 +175,21 @@ Sin texto en la imagen.
 Plano: busto, encuadre vertical 9:16, personaje ligeramente a la izquierda del cuadro
 dejando espacio libre a la derecha.
 Expresión: contento, satisfecho, mirando a cámara.
-Pose: pulgar hacia arriba con una mano.
+Pose: sostiene el teléfono en una mano, a la altura del pecho y con la PANTALLA
+ORIENTADA HACIA LA CÁMARA, en la misma posición y ángulo que el Plano A. Pulgar
+hacia arriba con la otra mano.
+Pantalla del teléfono: en blanco o gris plano, se le compone contenido después.
 Fondo: color plano #CCE7C3, sin textura ni degradado.
 Luz: pareja y suave, sin sombras duras.
 Estilo: [MISMO ESTILO DE RENDER QUE LA REFERENCIA], colores planos, sin fotorrealismo.
 Sin texto en la imagen.
+Resolución alta: la imagen tiene que aguantar el alejamiento desde el teléfono.
 ```
+
+> **El teléfono tiene que estar en la misma posición, ángulo y tamaño en los dos planos.**
+> Si en el Plano A está a la izquierda y en el B a la derecha, el zoom de entrada y el de
+> salida no cierran y la simetría se pierde. Conviene generar los dos con el mismo prompt
+> base, cambiando solo la expresión y el fondo.
 
 ##### Animación de los planos (ComfyUI o Gemini, imagen a video)
 
@@ -155,6 +199,9 @@ el diseño del personaje.
 
 Plano A: leve negación con la cabeza, un pequeño movimiento de hombros. Nada más.
 Plano B: leve asentimiento con la cabeza, el pulgar se mantiene quieto.
+
+La mano que sostiene el teléfono NO se mueve en ninguno de los dos planos: el teléfono
+tiene que quedar quieto para poder componerle la pantalla y hacer el acercamiento.
 
 Cámara fija. Fondo fijo. Sin zoom, sin desplazamiento, sin cambios de iluminación.
 El personaje no se deforma ni cambia de color en ningún momento.
