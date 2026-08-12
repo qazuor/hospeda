@@ -101,15 +101,35 @@ export function ReviewFormDialog({
     // Opened imperatively so the browser supplies the focus trap and Escape.
     // `showModal` is guarded because jsdom does not implement it, and an
     // unguarded call takes every test of this component down.
+    //
+    // The cleanup returns focus to whatever opened the dialog. The browser does
+    // NOT do this for us here: React unmounts the <dialog> when the parent stops
+    // rendering it, and a node removed while modal takes its focus-restoration
+    // with it — measured, focus landed on <body>. Without this a keyboard user
+    // who presses Escape is dropped at the top of the document (WCAG 2.4.3).
+    // `shared/ui/Dialog.client.tsx` already does the same thing; this component
+    // hand-rolls its dialog to get the NATIVE trap, which is the better half of
+    // that trade, and has to bring this half itself.
     useEffect(() => {
         const dialog = dialogRef.current;
         if (!dialog) return;
+
+        const previouslyFocused = document.activeElement as HTMLElement | null;
 
         if (typeof dialog.showModal === 'function') {
             dialog.showModal();
         } else {
             dialog.setAttribute('open', '');
         }
+
+        return () => {
+            // `isConnected` guards the case the trigger itself was re-rendered
+            // away — focusing a detached node silently does nothing, but asking
+            // first says why the call is conditional.
+            if (previouslyFocused?.isConnected) {
+                previouslyFocused.focus?.();
+            }
+        };
     }, []);
 
     // Reads back whatever the host already wrote, which is what decides between
