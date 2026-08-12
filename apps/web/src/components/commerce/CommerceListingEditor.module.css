@@ -25,6 +25,46 @@
     gap: var(--space-6);
 }
 
+/* Sticky section nav — same shape as the post/event editors'
+   `content-editor-layout.module.css`, deliberately NOT imported from it.
+   That module pins its cards column to `max-width: 720px`, which is the exact
+   width the comment above explains this editor removed on purpose: composing it
+   here would silently reinstate the mismatch against the page header and the
+   full-width FAQ card below. The grid values are kept identical to it so the
+   three content editors still feel like one surface. */
+.layout {
+    display: block;
+}
+
+/* Below the two-column breakpoint the nav is absent, not collapsed: sections
+   stack and scroll naturally, matching the accommodation editor's BETA-138
+   product decision. `EditorSectionNav` renders its own markup regardless, so
+   hiding the slot is what keeps it out of the mobile a11y tree. */
+.navSlot {
+    display: none;
+}
+
+.sectionsColumn {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+}
+
+@media (min-width: 1100px) {
+    .layout {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: var(--space-8, 32px);
+        align-items: start;
+    }
+
+    .navSlot {
+        display: block;
+        position: sticky;
+        top: 110px;
+    }
+}
+
 /* Action bar — top divider, right-aligned, pill buttons. */
 .actions {
     display: flex;
