@@ -189,6 +189,26 @@ describe('POST /usages/{id}/reject', () => {
 
         expect(res.status).toBe(404);
     });
+
+    it('answers 400 when the usage is no longer PENDING', async () => {
+        mockReject.mockResolvedValue({
+            error: { code: ServiceErrorCode.VALIDATION_ERROR, message: 'Usage is CONFIRMED' }
+        });
+        const app = buildApp();
+
+        const res = await post(app, `/usages/${USAGE_ID}/reject`);
+
+        expect(res.status).toBe(400);
+    });
+
+    it('rejects an id that is not a uuid', async () => {
+        const app = buildApp();
+
+        const res = await post(app, '/usages/not-a-uuid/reject');
+
+        expect(res.status).toBe(400);
+        expect(mockReject).not.toHaveBeenCalled();
+    });
 });
 
 describe('POST /usages/{id}/reject/undo', () => {
@@ -224,6 +244,32 @@ describe('POST /usages/{id}/reject/undo', () => {
         const res = await post(app, `/usages/${USAGE_ID}/reject/undo`);
 
         expect(res.status).toBe(404);
+    });
+
+    it('answers 400 when the usage is not REJECTED', async () => {
+        mockUndo.mockResolvedValue({
+            error: { code: ServiceErrorCode.VALIDATION_ERROR, message: 'Usage is PENDING' }
+        });
+        const app = buildApp();
+
+        const res = await post(app, `/usages/${USAGE_ID}/reject/undo`);
+
+        expect(res.status).toBe(400);
+    });
+
+    /**
+     * The id is validated before the route can decide anything, so a malformed
+     * one must not reach the service — and must not be answered by the reject
+     * route either, which shares the prefix.
+     */
+    it('rejects an id that is not a uuid', async () => {
+        const app = buildApp();
+
+        const res = await post(app, '/usages/not-a-uuid/reject/undo');
+
+        expect(res.status).toBe(400);
+        expect(mockUndo).not.toHaveBeenCalled();
+        expect(mockReject).not.toHaveBeenCalled();
     });
 });
 

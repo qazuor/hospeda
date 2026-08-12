@@ -207,15 +207,32 @@ export function BenefitUsagesPanel({
     // The dialog is opened imperatively so the browser gives it the focus trap
     // and Escape handling. `showModal` is guarded because jsdom does not
     // implement it, and an unguarded call takes every test in this file down.
+    // The cleanup returns focus to the button that opened it. The browser does
+    // not do it here: the dialog is closed by React dropping `rejectTarget`,
+    // and the row underneath re-renders in the same pass, so whatever
+    // focus-restoration the platform had queued is lost — measured, focus
+    // landed on <body>, leaving a keyboard user at the top of the document
+    // (WCAG 2.4.3).
     useEffect(() => {
         const dialog = dialogRef.current;
         if (!dialog || !rejectTarget) return;
+
+        const previouslyFocused = document.activeElement as HTMLElement | null;
 
         if (typeof dialog.showModal === 'function') {
             dialog.showModal();
         } else {
             dialog.setAttribute('open', '');
         }
+
+        return () => {
+            // `isConnected` guards the row having been re-rendered away while
+            // the dialog was open: focusing a detached node does nothing, and
+            // asking first says why the call is conditional.
+            if (previouslyFocused?.isConnected) {
+                previouslyFocused.focus?.();
+            }
+        };
     }, [rejectTarget]);
 
     const changeFilter = useCallback(

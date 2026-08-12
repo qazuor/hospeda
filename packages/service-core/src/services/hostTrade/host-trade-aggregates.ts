@@ -158,12 +158,17 @@ export interface HostTradeAggregateDrift {
  * against production to SEE the drift before deciding to paper over it.
  *
  * @param params.dryRun - Compare only; do not persist corrections.
+ * @param params.tx - Optional transaction client, matching the two functions
+ *   above. The cron passes none, so its behaviour is unchanged; the parameter
+ *   exists because a scan-and-correct over the whole table is otherwise
+ *   untestable — it would have to write outside the caller's boundary.
  * @returns How many listings were checked, and every one that was wrong.
  */
 export async function reconcileAllHostTradeAggregates(params?: {
     dryRun?: boolean;
+    tx?: DrizzleClient;
 }): Promise<{ checked: number; corrected: HostTradeAggregateDrift[] }> {
-    const db = getDb();
+    const db = params?.tx ?? getDb();
     const rows = await db
         .select({
             id: hostTrades.id,
@@ -178,7 +183,10 @@ export async function reconcileAllHostTradeAggregates(params?: {
     const corrected: HostTradeAggregateDrift[] = [];
 
     for (const row of rows) {
-        const recomputed = await computeHostTradeAggregates({ hostTradeId: row.id });
+        const recomputed = await computeHostTradeAggregates({
+            hostTradeId: row.id,
+            tx: params?.tx
+        });
 
         const stored = {
             confirmedUsesCount: row.confirmedUsesCount,

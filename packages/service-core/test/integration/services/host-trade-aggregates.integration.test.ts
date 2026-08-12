@@ -19,7 +19,10 @@ import {
     users
 } from '@repo/db';
 import { afterAll, describe, expect, it } from 'vitest';
-import { recalculateHostTradeAggregates } from '../../../src/services/hostTrade/host-trade-aggregates';
+import {
+    recalculateHostTradeAggregates,
+    reconcileAllHostTradeAggregates
+} from '../../../src/services/hostTrade/host-trade-aggregates';
 import {
     closeServiceTestPool,
     isServiceTestDbAvailable,
@@ -404,6 +407,108 @@ describe.skipIf(!dbAvailable)('recalculateHostTradeAggregates — return value',
             const { aggregates } = await recalculateHostTradeAggregates({ hostTradeId, tx });
 
             expect(aggregates).toEqual(await readAggregates(tx, hostTradeId));
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// The weekly backstop (T-044, AC-29)
+// ---------------------------------------------------------------------------
+
+/**
+ * The reconciliation is the one path whose whole job is to find a number that
+ * is ALREADY wrong, so it cannot be exercised by writing through the normal
+ * flow — every write that moves a counter recomputes it. The stored value has
+ * to be corrupted by hand, which is what these tests do.
+ *
+ * Its cron suite mocks this function entirely, so nothing above this layer has
+ * ever seen it read, compare, or write.
+ */
+describe.skipIf(!dbAvailable)('reconcileAllHostTradeAggregates', () => {
+    /** Writes a deliberately wrong counter straight onto the listing. */
+    async function corruptStoredCount(
+        tx: DrizzleClient,
+        hostTradeId: string,
+        confirmedUsesCount: number
+    ): Promise<void> {
+        await tx
+            .update(hostTrades)
+            .set({ confirmedUsesCount })
+            .where(eq(hostTrades.id, hostTradeId));
+    }
+
+    it('corrects a counter that was tampered with, and reports what it changed', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            const owner = await insertUser(tx);
+            const host = await insertUser(tx);
+            const hostTradeId = await insertHostTrade(tx, owner);
+
+            await insertUsage(tx, { hostTradeId, hostUserId: host });
+            await recalculateHostTradeAggregates({ hostTradeId, tx });
+            await corruptStoredCount(tx, hostTradeId, 37);
+
+            const { corrected } = await reconcileAllHostTradeAggregates({ tx });
+
+            // AC-29 — the correction is only half of it. A run that silently
+            // fixed the number would destroy the evidence that a write path has
+            // a hole, which is the only reason this cron exists.
+            const drift = corrected.find((d) => d.hostTradeId === hostTradeId);
+            expect(drift).toBeDefined();
+            expect(drift?.stored.confirmedUsesCount).toBe(37);
+            expect(drift?.recomputed.confirmedUsesCount).toBe(1);
+
+            expect((await readAggregates(tx, hostTradeId))?.confirmedUsesCount).toBe(1);
+        });
+    });
+
+    it('reports nothing for a listing whose counters are already right', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            const owner = await insertUser(tx);
+            const host = await insertUser(tx);
+            const hostTradeId = await insertHostTrade(tx, owner);
+
+            await insertUsage(tx, { hostTradeId, hostUserId: host });
+            await recalculateHostTradeAggregates({ hostTradeId, tx });
+
+            const { corrected } = await reconcileAllHostTradeAggregates({ tx });
+
+            expect(corrected.map((d) => d.hostTradeId)).not.toContain(hostTradeId);
+        });
+    });
+
+    /**
+     * `dryRun` is what lets the check be pointed at production to SEE the drift
+     * before deciding to paper over it, so the promise it makes — reporting
+     * without writing — is the whole feature. A dry run that corrected would be
+     * indistinguishable from a real one until someone looked at the rows.
+     */
+    it('reports the drift without writing when asked to run dry', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            const owner = await insertUser(tx);
+            const host = await insertUser(tx);
+            const hostTradeId = await insertHostTrade(tx, owner);
+
+            await insertUsage(tx, { hostTradeId, hostUserId: host });
+            await recalculateHostTradeAggregates({ hostTradeId, tx });
+            await corruptStoredCount(tx, hostTradeId, 37);
+
+            const { corrected } = await reconcileAllHostTradeAggregates({ dryRun: true, tx });
+
+            expect(corrected.find((d) => d.hostTradeId === hostTradeId)).toBeDefined();
+            expect((await readAggregates(tx, hostTradeId))?.confirmedUsesCount).toBe(37);
+        });
+    });
+
+    it('counts every listing it looked at, drifted or not', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            const owner = await insertUser(tx);
+            const first = await insertHostTrade(tx, owner);
+            const second = await insertHostTrade(tx, owner);
+
+            const { checked } = await reconcileAllHostTradeAggregates({ dryRun: true, tx });
+
+            expect(checked).toBeGreaterThanOrEqual(2);
+            expect([first, second]).toHaveLength(2);
         });
     });
 });

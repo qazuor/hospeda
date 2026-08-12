@@ -78,6 +78,68 @@ visible without any additional admin action.
 
 ---
 
+## Host-Trade Reviews: the asymmetric posture (HOS-376)
+
+Provider reviews reuse the machinery above — same three states, same
+`moderateText` gate, same `>= 0.5` threshold — but the two SIDES of the
+conversation are moderated differently, and the asymmetry is deliberate.
+
+| | Host's review | Provider's reply |
+|---|---|---|
+| Default state | `APPROVED` | `PENDING` |
+| Published before a human reads it | Yes, unless flagged | **No, ever** |
+| May be edited afterwards | Yes, and the edit is re-moderated | Yes, and the edit is re-moderated |
+
+**Why the reply is held and the review is not.** The two are not symmetric
+speech acts. A host's review is a customer describing a service they paid for
+and can prove they received — the confirmed usage IS that proof, and it is why
+no review can exist without one. A provider's reply is a business answering a
+named customer in public, and the failure mode is not a bad review: it is a
+provider who names the host, disputes their account of their own home, or
+answers a complaint with a threat. That is worth a human read BEFORE it is
+visible, and the cost — the provider waits — is paid by the party who chose to
+speak second.
+
+Holding the review too was considered and rejected: it would make the directory
+useless during the wait, since a provider with no visible reviews is
+indistinguishable from a provider nobody has used.
+
+**A reply skips the `verified` short-circuit, and that is not an oversight.**
+`resolveInitialModerationState` returns `PENDING` for `entityType ===
+'hostTradeReply'` BEFORE it consults `verificationLevel`, so no amount of
+verification can pre-approve one. For every other entity type, verifying the
+author is evidence the review is real; for a reply it is evidence of nothing —
+the risk is what a provider writes about the host's ADDRESS, and the most
+verified provider is precisely the one who was standing at it. Letting
+`verified` through here would be a fail-open on the one default that exists to
+gate publication.
+
+### What a host's edit does to a reply that already exists (AC-22)
+
+The reply **survives**. Deleting the provider's words because the host changed
+theirs would be worse than a stale answer, so the edit instead:
+
+1. Re-moderates the review's new text (a rewritten review that trips the gate
+   drops back to `PENDING`, losing its previous decision).
+2. Seals `editedAt` on the review.
+3. Sets `reviewEditedAfterReply = true` on the reply, leaving its content and
+   its own moderation decision untouched.
+
+That flag is what lets the directory say the reply answers an earlier version.
+A provider cannot clear it — clearing it would erase the notice that their
+answer no longer matches what it answered.
+
+### Where these live
+
+| Aspect | Location |
+|--------|----------|
+| Both services | `packages/service-core/src/services/hostTrade/host-trade-review.service.ts`, `host-trade-review-reply.service.ts` |
+| Admin queues | `POST /api/v1/admin/host-trades/reviews/{id}/moderate`, `.../replies/{id}/moderate` |
+| Permission | `HOST_TRADE_REVIEW_MODERATE` gates BOTH queues — one moderator handles both sides of a conversation |
+| Aggregate coupling | A moderation decision re-aggregates the listing in the SAME transaction, unlike `AccommodationReviewService.moderateReview`, which recounts best-effort. A review moving out of `APPROVED` changes `reviewsCount`, `averageRating` and `benefitRespectedCount`, and those three are what the public card shows. |
+
+---
+
 ## Content-Moderation Gate
 
 At creation time both review services:

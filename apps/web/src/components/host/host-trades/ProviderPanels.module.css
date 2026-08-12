@@ -224,6 +224,30 @@
     background-color: var(--core-foreground-a08);
 }
 
+/* Dark theme. The four foregrounds above are dark-on-light literals, so on a
+   dark surface they composite to 1.4:1-2.2:1 — measured, not estimated. The
+   pairs below invert the lightness while keeping each hue, so a badge still
+   reads as the same colour to somebody who learned it in the other theme. */
+[data-theme="dark"] .badgePending {
+    color: oklch(0.87 0.13 75);
+    background-color: oklch(0.75 0.15 75 / 0.16);
+}
+
+[data-theme="dark"] .badgeConfirmed {
+    color: oklch(0.86 0.15 150);
+    background-color: oklch(0.7 0.15 150 / 0.16);
+}
+
+[data-theme="dark"] .badgeRejected {
+    color: oklch(0.8 0.14 25);
+    background-color: oklch(0.55 0.22 25 / 0.16);
+}
+
+[data-theme="dark"] .badgeExpired {
+    color: oklch(0.85 0.02 261);
+    background-color: oklch(0.98 0.01 220 / 0.1);
+}
+
 /* ── QR ── */
 
 .qrFrame {
