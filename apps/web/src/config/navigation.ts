@@ -26,11 +26,13 @@ import {
     CompassIcon,
     CreditCardIcon,
     DashboardIcon,
+    EventIcon,
     FavoriteIcon,
     HomeIcon,
     MegaphoneIcon,
     NewsletterIcon,
     OffersIcon,
+    PostIcon,
     ReceiptIcon,
     SearchIcon,
     SettingsIcon,
@@ -289,6 +291,43 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 icon: BriefcaseIcon,
                 surfaces: FULL_SURFACES,
                 tourTarget: 'commerce'
+            }
+        ]
+    },
+    {
+        // The editor's own area (HOS-374 Phase 2). The pages under
+        // `/mi-cuenta/publicaciones` and `/mi-cuenta/eventos` shipped with their
+        // gates already wired (`hasPostsNavAccess` / `hasEventsNavAccess`), but
+        // nothing ever linked to them — an editor could only reach their own
+        // content by typing the URL.
+        //
+        // Unlike every other group here, this one declares NO group-level
+        // `requiredPermission`, on purpose. Posts and events are separate
+        // content domains with separate permissions server-side (see the
+        // `EVENT_CREATE` entry in `PERMISSION_ROLE_MAP`, kept distinct from
+        // `POST_CREATE` precisely so the two may diverge). Gating the group on
+        // either one would hide the other's item the day they do. Instead each
+        // item carries its own gate and `getNavForSurface` drops the group when
+        // both fall away — so a role holding only one of the two still gets the
+        // half it is entitled to.
+        id: 'editorial',
+        i18nKey: 'account.nav.groupEditorial',
+        items: [
+            {
+                id: 'myPosts',
+                i18nKey: 'account.nav.myPosts',
+                href: 'mi-cuenta/publicaciones',
+                icon: PostIcon,
+                requiredPermission: PermissionEnum.POST_CREATE,
+                surfaces: FULL_SURFACES
+            },
+            {
+                id: 'myEvents',
+                i18nKey: 'account.nav.myEvents',
+                href: 'mi-cuenta/eventos',
+                icon: EventIcon,
+                requiredPermission: PermissionEnum.EVENT_CREATE,
+                surfaces: FULL_SURFACES
             }
         ]
     }

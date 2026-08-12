@@ -106,3 +106,106 @@ export async function setRichDescription({
         instance.commands.setContent(content);
     }, value);
 }
+
+/** What a save attempt resolved to: a real request, or the app refusing to send one. */
+type SaveOutcome =
+    | { readonly kind: 'patch'; readonly response: import('@playwright/test').Response }
+    | { readonly kind: 'no-changes' };
+
+/**
+ * The editor's submit button.
+ *
+ * Matched anchored (`^guardar$`) rather than as a substring: the shared
+ * `ActionBar` labels it exactly "Guardar", and a loose `/guardar/i` would also
+ * match a future "Guardar y publicar" — silently retargeting every save in the
+ * suite at a different control.
+ *
+ * @param params.page - The Playwright page sitting on the editor route
+ */
+export function commerceSaveButton({ page }: { readonly page: Page }): Locator {
+    return page.locator('button[type="submit"]', { hasText: /^\s*guardar\s*$/i });
+}
+
+/**
+ * Saves the editor and resolves with the resulting PATCH response.
+ *
+ * WHY THIS EXISTS. The specs used to assert `toBeEnabled()` on Save before
+ * clicking, as a DIAGNOSTIC: the button was disabled while the form was clean,
+ * so a failure there named the real root cause — React never registered the
+ * input change, exactly the class of bug this file's header describes — instead
+ * of surfacing as a cryptic click or response timeout.
+ *
+ * Moving the editor onto the shared `ActionBar` made Save permanently enabled
+ * (HOS-190: it must always visibly do something), which removed that signal.
+ * A clean form now answers with an info toast and sends nothing, so this races
+ * the PATCH against that toast and fails loudly when the toast wins. That is
+ * strictly more informative than the old assertion: it reports not just "the
+ * form was not dirty" but that the app actively said so.
+ *
+ * @param params.page - The Playwright page sitting on the editor route
+ * @param params.pathPattern - Matches the expected PATCH URL (e.g. `/\/protected\/gastronomies\//`)
+ * @param params.timeout - Milliseconds to wait for the PATCH (default 15s)
+ */
+export async function saveCommerceEditor({
+    page,
+    pathPattern,
+    timeout = 15_000
+}: {
+    readonly page: Page;
+    readonly pathPattern: RegExp;
+    readonly timeout?: number;
+}): Promise<import('@playwright/test').Response> {
+    const saveButton = commerceSaveButton({ page });
+    await expect(saveButton).toBeVisible({ timeout: 10_000 });
+
+    /*
+     * Both waits are raced, so exactly one of them is guaranteed to time out on
+     * every call. Each therefore has to SETTLE rather than reject: a rejection
+     * nobody awaits (the loser of the race) surfaces as an unhandled rejection
+     * and can take the whole worker down instead of failing this assertion.
+     */
+    const patch: Promise<SaveOutcome | null> = page
+        .waitForResponse(
+            (response) =>
+                pathPattern.test(response.url()) && response.request().method() === 'PATCH',
+            { timeout }
+        )
+        .then((response): SaveOutcome => ({ kind: 'patch', response }))
+        .catch(() => null);
+
+    // `addToast` renders info toasts as `role="status"`; only a clean form
+    // produces this copy, so seeing it means the edit never reached React.
+    const noChangesToast: Promise<SaveOutcome | null> = page
+        .getByRole('status')
+        .filter({ hasText: /no hay cambios para guardar/i })
+        .first()
+        .waitFor({ state: 'visible', timeout })
+        .then((): SaveOutcome => ({ kind: 'no-changes' }))
+        .catch(() => null);
+
+    // `force` is kept from the original call sites: the click is actionable but
+    // a sticky element intercepts the pointer non-deterministically under CI.
+    await saveButton.click({ force: true });
+
+    const outcome = await Promise.race([
+        patch.then((result) => result ?? noChangesToast),
+        noChangesToast.then((result) => result ?? patch)
+    ]);
+
+    if (outcome?.kind === 'no-changes') {
+        throw new Error(
+            'Save reported "no hay cambios para guardar" — the form was never dirty, so no PATCH ' +
+                "was sent. The edit did not reach React state (see this file's header on hydration " +
+                'and setReactInputValue), which is the bug to chase, not the missing response.'
+        );
+    }
+
+    if (!outcome) {
+        throw new Error(
+            `Save produced neither a PATCH matching ${pathPattern} nor a "no hay cambios" toast ` +
+                `within ${timeout}ms — the click did not reach the submit handler at all.`
+        );
+    }
+
+    return outcome.response;
+}

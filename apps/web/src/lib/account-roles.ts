@@ -27,17 +27,18 @@ import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
  * - HOST: regular property owner managing their own listings.
  * - ADMIN / SUPER_ADMIN: platform staff.
  * - CLIENT_MANAGER: agency/business account.
- * - EDITOR: content moderator with editorial rights.
  *
  * A plain USER (tourist who browses/saves favorites) does NOT have
- * host-level access.
+ * host-level access. Neither does EDITOR: editorial rights are about posts and
+ * events, and the seed never grants an editor `ACCOMMODATION_CREATE`. It was
+ * listed here (and in the mirrored map) until the sidebar was found offering
+ * an editor a host area that every underlying endpoint refused.
  */
 export const ROLES_WITH_ACCOMMODATIONS_NAV = new Set<string>([
     'HOST',
     'ADMIN',
     'SUPER_ADMIN',
-    'CLIENT_MANAGER',
-    'EDITOR'
+    'CLIENT_MANAGER'
 ]);
 
 /** Owner (host) pricing page, locale-agnostic. */

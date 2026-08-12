@@ -2224,6 +2224,36 @@ export interface SavedReviewReply {
     readonly updatedAt: string;
 }
 
+/**
+ * The provider's answer as the DIRECTORY serves it (HOS-376 T-053).
+ *
+ * Structurally identical to {@link SavedReviewReply} — both mirror
+ * `HostTradeReviewReplyProtectedSchema` — but arriving here carries a claim the
+ * write path cannot make: a moderator cleared it. The endpoint omits an answer
+ * that is PENDING or REJECTED, so `null` on a row means "no answer a reader may
+ * see", NEVER "no answer exists". That distinction is why the provider's own
+ * panel reads a different endpoint with a different shape
+ * ({@link OwnerReviewReply}, which keeps the state and the reason).
+ */
+export type DirectoryReviewReply = SavedReviewReply;
+
+/**
+ * One row of a provider's public review list (HOS-376 T-053).
+ *
+ * Only APPROVED reviews are listed, and the moderation state of the answer is
+ * expressed by its presence rather than by a field — see
+ * {@link DirectoryReviewReply}.
+ */
+export interface DirectoryReviewRow {
+    readonly review: HostTradeReview;
+    readonly author: {
+        readonly id: string;
+        readonly displayName: string | null;
+        readonly image: string | null;
+    } | null;
+    readonly reply: DirectoryReviewReply | null;
+}
+
 /** The optional three-dimension breakdown a host may add to a review. */
 export interface HostTradeReviewBreakdown {
     readonly workQuality?: number;
@@ -2435,6 +2465,40 @@ export const hostTradesApi = {
         return apiClient.postProtected({
             path: `${PROTECTED}/host-trades/${encodeURIComponent(hostTradeId)}/reviews`,
             body
+        });
+    },
+
+    /**
+     * Reads a provider's reviews as the directory shows them (HOS-376 T-053).
+     *
+     * Newest first. The page window is the only thing a caller may steer: there
+     * is deliberately no moderation filter to pass, so no caller can ask for the
+     * unapproved rows — the endpoint cannot express the request, and the service
+     * forces APPROVED regardless.
+     *
+     * Takes the provider's `hostTradeId`, not its slug, matching the write path
+     * ({@link hostTradesApi.createReview}). A page that only holds the slug reads
+     * the provider first with {@link hostTradesApi.getBySlug}.
+     *
+     * @param params - The provider `hostTradeId`, the page window, and
+     *   `cookieHeader` when calling from SSR.
+     * @returns The page of reviews plus its pagination envelope.
+     */
+    listDirectoryReviews({
+        hostTradeId,
+        page,
+        pageSize,
+        cookieHeader
+    }: {
+        hostTradeId: string;
+        page?: number;
+        pageSize?: number;
+        cookieHeader?: string;
+    }): Promise<ApiResult<PaginatedResponse<DirectoryReviewRow>>> {
+        return apiClient.getListProtected({
+            path: `${PROTECTED}/host-trades/${encodeURIComponent(hostTradeId)}/reviews`,
+            params: { page, pageSize },
+            cookieHeader
         });
     },
 

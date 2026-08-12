@@ -29,7 +29,6 @@
  * @module routes/newsletter/admin/campaigns
  */
 
-import { z } from '@hono/zod-openapi';
 import type { SelectNewsletterCampaign } from '@repo/db';
 import { getDb, newsletterCampaigns, safeIlike } from '@repo/db';
 import {
@@ -47,6 +46,7 @@ import { HTTPException } from 'hono/http-exception';
 import { getActorFromContext } from '../../../utils/actor';
 import { extractPaginationParams, getPaginationResponse } from '../../../utils/pagination';
 import { createAdminListRoute, createAdminRoute } from '../../../utils/route-factory';
+import { z } from '../../../utils/zod';
 import { getDefaultUserService } from '../protected/_singletons';
 import { getDefaultCampaignService } from './_singletons';
 

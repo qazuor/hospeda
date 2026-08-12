@@ -59,8 +59,18 @@ import { generateUnsubscribeToken } from './newsletter-token.helpers.js';
  * that don't use BullMQ do not pull in the Redis client at build time.
  */
 export interface NewsletterQueue {
+    /**
+     * `jobs` is a mutable array on purpose, against this repo's usual
+     * immutability preference. BullMQ 6 types `Queue.addBulk` as taking
+     * `{ name; data; opts? }[]`, and a `ReadonlyArray` parameter here would
+     * claim the queue accepts something it does not — which is exactly what
+     * broke on the 5 -> 6 bump: a real `Queue` stopped being assignable to
+     * this interface. This shape describes an external API, so it has to
+     * mirror that API rather than express what we would have preferred.
+     * The only call site builds the array with `.map()`, so nothing is lost.
+     */
     addBulk(
-        jobs: ReadonlyArray<{
+        jobs: Array<{
             readonly name: string;
             readonly data: { readonly campaignId: string; readonly deliveryIds: string[] };
             readonly opts?: Readonly<Record<string, unknown>>;

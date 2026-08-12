@@ -35,7 +35,25 @@ export const HostTradeAdminSearchSchema = AdminSearchBaseSchema.extend({
     isActive: queryBooleanParam().describe('Filter by active status'),
 
     /** Filter to show only 24h-available providers */
-    is24h: queryBooleanParam().describe('Filter by 24h availability')
+    is24h: queryBooleanParam().describe('Filter by 24h availability'),
+
+    /**
+     * Filter by whether the provider's ability to declare usages is suspended
+     * (HOS-376 T-056).
+     *
+     * NOT a column: a suspension is `declarationSuspendedAt IS NOT NULL`, which
+     * the base admin search cannot express, so `HostTradeService` lifts this key
+     * out of the filters and turns it into a SQL condition.
+     *
+     * It exists because nothing else can answer "who is suspended right now"
+     * (AC-11). A suspension is written by two different paths — the rejection
+     * threshold, which stamps no admin id, and an admin's own decision — and
+     * both leave the provider unable to record work until someone looks. Without
+     * this filter that someone would have to page through the whole directory.
+     */
+    declarationSuspended: queryBooleanParam().describe(
+        'Filter by declaration-suspension state (true = suspended, false = able to declare)'
+    )
 });
 
 /**

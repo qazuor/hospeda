@@ -1550,5 +1550,108 @@
             "updateFailed": "We could not save the correction. Please try again.",
             "removeFailed": "We could not remove the promotion. Please try again."
         }
+    },
+    "hostTradeUsages": {
+        "title": "Benefit usages",
+        "subtitle": "Audit of declared usages and providers suspended from declaring.",
+        "suspensions": {
+            "title": "Suspended declarations",
+            "description": "Providers who cannot record usages until someone lifts the suspension.",
+            "count": "{{count}} suspended provider",
+            "count_plural": "{{count}} suspended providers",
+            "empty": "No provider is suspended from declaring.",
+            "loading": "Loading suspensions…",
+            "error": "Suspensions could not be loaded.",
+            "byAdmin": "Suspended by an administrator",
+            "automatic": "Automatic suspension from accumulated rejections",
+            "reasonLabel": "Reason",
+            "noReason": "No reason on record.",
+            "suspendedAtLabel": "Since",
+            "actions": {
+                "lift": "Lift suspension"
+            },
+            "liftDialog": {
+                "title": "Lift the suspension?",
+                "message": "“{{name}}” will be able to record benefit usages again.",
+                "note": "No reason is asked for: lifting a suspension restores the normal state, and who did it is recorded.",
+                "cancel": "Cancel",
+                "confirm": "Lift"
+            },
+            "messages": {
+                "lifted": "The suspension on “{{name}}” was lifted.",
+                "liftedTitle": "Suspension lifted"
+            },
+            "errors": {
+                "liftFailed": "The suspension could not be lifted. Try again.",
+                "liftFailedTitle": "Could not lift"
+            }
+        },
+        "usages": {
+            "title": "Declared usages",
+            "description": "Filter by the EMAIL_LOOKUP channel to audit the only channel a provider can drive without the host being present.",
+            "loading": "Loading usages…",
+            "error": "Usages could not be loaded.",
+            "empty": "No usages have been declared yet.",
+            "emptyFiltered": "No usage matches the applied filters.",
+            "clearFilters": "Clear filters",
+            "results": "{{count}} usage",
+            "results_plural": "{{count}} usages",
+            "pagination": "Page {{page}} of {{totalPages}} · {{total}} in total",
+            "prevPage": "Previous",
+            "nextPage": "Next",
+            "unknownProvider": "Provider not resolved",
+            "unknownHost": "Host not resolved",
+            "columns": {
+                "servicedAt": "Service date",
+                "provider": "Provider",
+                "host": "Host",
+                "declaredBy": "Declared by",
+                "channel": "Channel",
+                "status": "Status",
+                "createdAt": "Recorded",
+                "actions": "Actions"
+            },
+            "declaredBy": {
+                "HOST": "Host",
+                "PROVIDER": "Provider"
+            },
+            "channel": {
+                "QR": "QR",
+                "LINKED_SELECTOR": "Selector",
+                "EMAIL_LOOKUP": "Email"
+            },
+            "filters": {
+                "any": "All",
+                "status": "Status",
+                "declaredBy": "Declared by",
+                "channel": "Channel",
+                "provider": "Provider ID",
+                "providerPlaceholder": "Provider UUID",
+                "host": "Host ID",
+                "hostPlaceholder": "Host UUID",
+                "from": "From",
+                "to": "To"
+            },
+            "actions": {
+                "suspendProvider": "Suspend provider"
+            },
+            "suspendDialog": {
+                "title": "Suspend declaring",
+                "message": "“{{name}}” will no longer be able to record benefit usages until someone lifts the suspension.",
+                "reasonLabel": "Reason",
+                "reasonPlaceholder": "Why it is being suspended. The provider may ask for this explanation.",
+                "reasonRequired": "A reason is required.",
+                "cancel": "Cancel",
+                "confirm": "Suspend"
+            },
+            "messages": {
+                "suspended": "Declaring was suspended for “{{name}}”.",
+                "suspendedTitle": "Declaring suspended"
+            },
+            "errors": {
+                "suspendFailed": "Declaring could not be suspended. Try again.",
+                "suspendFailedTitle": "Could not suspend"
+            }
+        }
     }
 }

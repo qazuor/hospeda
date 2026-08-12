@@ -113,14 +113,44 @@ export type HostTradeBenefitUsageWithProvider = z.infer<
 >;
 
 /**
+ * The host's identity, as the admin listing carries it.
+ *
+ * A name and an id, and no contact details. The screen's job is to read a
+ * pattern across rows — "40 usos, 2 anfitriones" — not to give an admin a way
+ * to export the address book of everyone a provider has served.
+ */
+export const HostTradeUsageHostRefSchema = z.object({
+    id: z.string().uuid(),
+    displayName: z.string().min(1)
+});
+
+/** Inferred type for {@link HostTradeUsageHostRefSchema}. */
+export type HostTradeUsageHostRef = z.infer<typeof HostTradeUsageHostRefSchema>;
+
+/**
  * ADMIN ACCESS SCHEMA
  *
  * The full row, including the audit trail and soft-delete columns. Backs
  * `GET /admin/host-trades/usages`, which is where a suspected collusion pattern
  * gets looked at — and that investigation needs `creationChannel` and the
  * `*ById` columns to be able to tell a QR scan from an email lookup.
+ *
+ * BOTH SIDES ARE NAMED, unlike the host-facing shape which resolves only the
+ * provider. The host's own list needs no help identifying the host, whereas the
+ * admin question is about the RELATION between two parties: a run of usages
+ * against the same handful of hosts is the anti-collusion signal (§6.5), and
+ * uuids cannot be read as "the same handful".
+ *
+ * Both refs are NULLABLE and default to null, for the reason the host-facing
+ * `hostTrade` is: the route factory validates the response, so a required field
+ * would turn one unresolved name into a 500 for the whole page. A row that
+ * cannot name its parties still belongs in the audit — it is arguably the most
+ * interesting row on the page.
  */
-export const HostTradeBenefitUsageAdminSchema = HostTradeBenefitUsageSchema;
+export const HostTradeBenefitUsageAdminSchema = HostTradeBenefitUsageSchema.extend({
+    hostTrade: HostTradeUsageProviderRefSchema.nullable().default(null),
+    host: HostTradeUsageHostRefSchema.nullable().default(null)
+});
 
 /** Inferred type for {@link HostTradeBenefitUsageAdminSchema}. */
 export type HostTradeBenefitUsageAdmin = z.infer<typeof HostTradeBenefitUsageAdminSchema>;

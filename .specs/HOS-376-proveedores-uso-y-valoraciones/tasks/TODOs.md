@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 50/70 tareas cerradas + 1 en curso (71%)
+## Progreso: 70/70 tareas cerradas (100%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 20/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 27/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -175,7 +175,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Isla React en <dialog> nativo: estrellas 1-5 para overallRating como radiogroup operable por teclado con label textual por valor (no sólo iconos), desglose de las 3 dimensiones COLAPSADO por…
   - Bloqueada por: T-034 · Bloquea a: T-049, T-054, T-067
   - `ReviewFormDialog.client.tsx`. Las estrellas son radios NATIVOS con `aria-label` textual por valor: navegación por flechas gratis, y el input queda clipeado pero **nunca** `display: none`, que lo sacaría del orden de tabulación. Desglose en un `<details>` colapsado. El booleano no tiene default y el submit se niega hasta que se responda. Un desglose intacto se **omite** del body en vez de viajar como objeto de `undefined`s: el body es `.strict()` y el agregado lee distinto `null` que vacío. `safeParse` del schema compartido es el último gate, pero los tres rechazos alcanzables se chequean antes con copy propia, porque los mensajes del schema son claves i18n del traductor de la API.
-- [~] **T-049** (c2, EN CURSO) — Modo edición de la valoración y cartel de réplica desactualizada
+- [x] **T-049** (c2) — Modo edición de la valoración y cartel de réplica desactualizada
   - Si el anfitrión ya valoró, el mismo formulario abre precargado en modo edición y hace PATCH. En el listado público, cuando reviewEditedAfterReply es true, mostrar el cartel 'la valoración fu…
   - Bloqueada por: T-048, T-034, **T-053 (agregada)** · Bloquea a: —
   - **Modo edición LISTO**: el diálogo lee `my-review` al abrir y decide entre publicar y editar; una lectura fallida cae al formulario de creación en vez de bloquear (negarse a abrir dejaría al anfitrión sin poder decir nada, y el POST igual responde 409 con copy propia). El `PATCH` manda un **diff**, no el formulario entero: cambiar el TEXTO re-corre moderación y puede bajar la valoración del directorio, así que reenviar un `content` intacto convertiría una edición de estrellas en una reescritura — y podría devolver como `APPROVED` un texto que un moderador bajó. Un comentario vaciado viaja como `null` (borrado), no ausente.
@@ -189,64 +189,64 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-051** (c2) — Responder una valoración desde el panel del proveedor
   - Formulario de réplica en la pestaña Valoraciones, con aviso claro de que la respuesta pasa por revisión antes de publicarse (si no, el proveedor va a creer que se perdió). Estado visible: en…
   - Bloqueada por: T-035, T-050 · Bloquea a: —
-- [ ] **T-052** (c2) — Stats en TradeCard con el umbral de 3 valoraciones
+- [x] **T-052** (c2) — Stats en TradeCard con el umbral de 3 valoraciones
   - En apps/web/src/components/host/host-trades/TradeCard.tsx, bajo el beneficio: '★ 4,6 (12 valoraciones) · 34 usos · 21 anfitriones'. El promedio SÓLO se muestra a partir de HOST_TRADE_MIN_REV…
   - Bloqueada por: T-023, T-012, T-070 · Bloquea a: T-054
-- [ ] **T-053** (c2) — Detalle del proveedor con valoraciones y réplicas
+- [x] **T-053** (c2) — Detalle del proveedor con valoraciones y réplicas
   - Vista de detalle dentro del directorio con la lista paginada de valoraciones aprobadas, su desglose cuando existe, el indicador de beneficio respetado y la réplica aprobada del proveedor. Sk…
   - Bloqueada por: T-036 · Bloquea a: T-054
-- [ ] **T-054** (c3) — Namespace i18n del dominio en es/en/pt
+- [x] **T-054** (c3) — Namespace i18n del dominio en es/en/pt
   - Todas las cadenas de la UI web y admin en @repo/i18n, en los 3 locales. Verificar que el prefijo del namespace esté en CLIENT_I18N_KEY_PREFIXES — si falta, en producción salen las claves cru…
   - Bloqueada por: T-045, T-046, T-047, T-048, T-050, T-052, T-053 · Bloquea a: —
-- [ ] **T-055** (c3) — Admin: cola de moderación de réplicas y valoraciones
+- [x] **T-055** (c3) — Admin: cola de moderación de réplicas y valoraciones
   - apps/admin/src/routes/_authed/host-trades/: cola de réplicas PENDING (la prioritaria, porque bloquea publicación) y listado de valoraciones con filtro de moderationState. Hooks con el molde …
   - Bloqueada por: T-037 · Bloquea a: —
-- [ ] **T-056** (c3) — Admin: listado de usos y gestión de suspensiones
+- [x] **T-056** (c3) — Admin: listado de usos y gestión de suspensiones
   - Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Ta…
   - Bloqueada por: T-038 · Bloquea a: —
 
-## Fase `testing` — 0/11 completadas (complejidad promedio 2.5)
+## Fase `testing` — 11/11 completadas (complejidad promedio 2.5)
 
-- [ ] **T-057** (c3) — Tests unitarios de la máquina de estados del uso
+- [x] **T-057** (c3) — Tests unitarios de la máquina de estados del uso
   - TODAS las transiciones válidas (PENDING→CONFIRMED, PENDING→REJECTED, PENDING→EXPIRED, REJECTED→PENDING por undo) y TODAS las inválidas (CONFIRMED→cualquier cosa, EXPIRED→cualquier cosa, dobl…
   - Bloqueada por: T-021 · Bloquea a: —
-- [ ] **T-058** (c3) — Tests unitarios de los 4 gates de elegibilidad, cada uno aislado
+- [x] **T-058** (c3) — Tests unitarios de los 4 gates de elegibilidad, cada uno aislado
   - Un test por gate, con el resto de las condiciones satisfechas, para que la falla identifique el gate exacto. Incluye el caso mixto: un actor que cumple 3 de 4 falla por el que corresponde. M…
   - Bloqueada por: T-024 · Bloquea a: T-064
-- [ ] **T-059** (c2) — Tests unitarios del recálculo de agregados
+- [x] **T-059** (c2) — Tests unitarios del recálculo de agregados
   - distinctHostsCount con usos repetidos del mismo anfitrión (el caso que más fácil se implementa mal); valoración PENDING que no suma; valoración soft-deleted que no suma; benefitRespectedCoun…
   - Bloqueada por: T-023 · Bloquea a: —
-- [ ] **T-060** (c2) — Tests unitarios del umbral y la ventana de suspensión
+- [x] **T-060** (c2) — Tests unitarios del umbral y la ventana de suspensión
   - 2 rechazos no suspenden y el 3ero sí (AC-11); un rechazo fuera de la ventana de 90 días no cuenta; el undo del que gatilló NO levanta la suspensión sola; el admin la levanta y queda registra…
   - Bloqueada por: T-022 · Bloquea a: —
-- [ ] **T-061** (c3) — Tests de integración de los endpoints del anfitrión y compartidos
+- [x] **T-061** (c3) — Tests de integración de los endpoints del anfitrión y compartidos
   - Cada endpoint de T-030 y T-033 con éxito / 401 / 403 / 404 / validación. Foco en que confirmar un uso ajeno devuelva 404 y NUNCA 403 (no ser oráculo de existencia). Recordar que apps/api usa…
   - Bloqueada por: T-030, T-033 · Bloquea a: T-064
-- [ ] **T-062** (c2) — Tests de integración de los endpoints del proveedor y del rate limit
+- [x] **T-062** (c2) — Tests de integración de los endpoints del proveedor y del rate limit
   - T-031, T-032 y T-039: ownership, HOST_NOT_FOUND explícito, linked-hosts que excluye pares sin uso confirmado, 429 al superar el límite, y que el límite del canal EMAIL_LOOKUP sea más estrict…
   - Bloqueada por: T-031, T-039 · Bloquea a: —
-- [ ] **T-063** (c2) — Tests de integración de los endpoints admin
+- [x] **T-063** (c2) — Tests de integración de los endpoints admin
   - T-037 y T-038: 403 sin el permiso correspondiente (un permiso por endpoint, no genérico), moderar recalcula agregados, levantar la suspensión registra el admin, los filtros funcionan. Los te…
   - Bloqueada por: T-037, T-038 · Bloquea a: —
-- [ ] **T-064** (c3) — Regresiones dedicadas: AC-6, AC-15, AC-16, AC-17
+- [x] **T-064** (c3) — Regresiones dedicadas: AC-6, AC-15, AC-16, AC-17
   - Un test con nombre explícito por cada uno: AC-6 confirmar el uso que uno mismo declaró da 404; AC-15 un usuario SÓLO proveedor no puede valorar a otro proveedor; AC-16 un usuario host+provee…
   - Bloqueada por: T-013, T-058, T-061 · Bloquea a: —
-- [ ] **T-065** (c3) — Regresiones dedicadas: AC-19, AC-22, AC-28
+- [x] **T-065** (c3) — Regresiones dedicadas: AC-19, AC-22, AC-28
   - AC-19 un texto con score de moderación ≥ 0.5 nace PENDING a pesar del default APPROVED; AC-22 editar una valoración ya respondida la re-modera, sella editedAt y deja la réplica VIVA con revi…
   - Bloqueada por: T-026, T-027, T-033 · Bloquea a: —
-- [ ] **T-066** (c3) — Tests de los 3 crons
+- [x] **T-066** (c3) — Tests de los 3 crons
   - Expiración: vence a los 30 días exactos y no antes, y no notifica. Recordatorio: idempotente por reminderSentAt, corre dos veces y manda un solo mail (AC-8). Reconciliación: corrige un conta…
   - Bloqueada por: T-042, T-043, T-044 · Bloquea a: T-069
-- [ ] **T-067** (c2) — Accesibilidad del formulario de estrellas y del dialog
+- [x] **T-067** (c2) — Accesibilidad del formulario de estrellas y del dialog
   - Verificar en NAVEGADOR, no sólo en vitest: el radiogroup de estrellas se opera con teclado y anuncia el valor; el <dialog> respeta el trap de foco y Escape; el pill del contador anuncia el n…
   - Bloqueada por: T-048 · Bloquea a: —
 
-## Fase `docs` — 0/2 completadas (complejidad promedio 1.5)
+## Fase `docs` — 2/2 completadas (complejidad promedio 1.5)
 
-- [ ] **T-068** (c2) — Documentación
+- [x] **T-068** (c2) — Documentación
   - Actualizar apps/api/docs/route-architecture.md con los tiers nuevos, docs/guides/review-moderation.md con la postura asimétrica y su fundamento, packages/seed/CLAUDE.md con el usuario de dob…
   - Bloqueada por: T-041 · Bloquea a: —
-- [ ] **T-069** (c1) — Checklist de smoke y labels de la issue
+- [x] **T-069** (c1) — Checklist de smoke y labels de la issue
   - Escribir el checklist de smoke local (gates de rol, ownership, auto-valoración con los usuarios seed) y de staging (mails reales por Brevo y timing de los 3 crons) en .specs/HOS-376-proveedo…
   - Bloqueada por: T-066 · Bloquea a: —
 

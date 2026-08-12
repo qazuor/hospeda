@@ -1550,5 +1550,108 @@
             "updateFailed": "No pudimos guardar la corrección. Intentá de nuevo.",
             "removeFailed": "No pudimos quitar la difusión. Intentá de nuevo."
         }
+    },
+    "hostTradeUsages": {
+        "title": "Usos del beneficio",
+        "subtitle": "Auditoría de usos declarados y proveedores con la declaración suspendida.",
+        "suspensions": {
+            "title": "Declaraciones suspendidas",
+            "description": "Proveedores que no pueden registrar usos hasta que alguien levante la suspensión.",
+            "count": "{{count}} proveedor suspendido",
+            "count_plural": "{{count}} proveedores suspendidos",
+            "empty": "Ningún proveedor tiene la declaración suspendida.",
+            "loading": "Cargando suspensiones…",
+            "error": "No se pudieron cargar las suspensiones.",
+            "byAdmin": "Suspendido por un administrador",
+            "automatic": "Suspensión automática por rechazos acumulados",
+            "reasonLabel": "Motivo",
+            "noReason": "Sin motivo registrado.",
+            "suspendedAtLabel": "Desde",
+            "actions": {
+                "lift": "Levantar suspensión"
+            },
+            "liftDialog": {
+                "title": "¿Levantar la suspensión?",
+                "message": "«{{name}}» vuelve a poder registrar usos del beneficio.",
+                "note": "No se pide motivo: levantar una suspensión restituye el estado normal y se registra quién lo hizo.",
+                "cancel": "Cancelar",
+                "confirm": "Levantar"
+            },
+            "messages": {
+                "lifted": "Se levantó la suspensión de «{{name}}».",
+                "liftedTitle": "Suspensión levantada"
+            },
+            "errors": {
+                "liftFailed": "No se pudo levantar la suspensión. Intentá de nuevo.",
+                "liftFailedTitle": "No se pudo levantar"
+            }
+        },
+        "usages": {
+            "title": "Usos declarados",
+            "description": "Filtrá por canal EMAIL_LOOKUP para auditar el único canal que un proveedor puede accionar sin el anfitrión presente.",
+            "loading": "Cargando usos…",
+            "error": "No se pudieron cargar los usos.",
+            "empty": "Todavía no hay usos declarados.",
+            "emptyFiltered": "Ningún uso coincide con los filtros aplicados.",
+            "clearFilters": "Limpiar filtros",
+            "results": "{{count}} uso",
+            "results_plural": "{{count}} usos",
+            "pagination": "Página {{page}} de {{totalPages}} · {{total}} en total",
+            "prevPage": "Anterior",
+            "nextPage": "Siguiente",
+            "unknownProvider": "Proveedor no resuelto",
+            "unknownHost": "Anfitrión no resuelto",
+            "columns": {
+                "servicedAt": "Fecha del servicio",
+                "provider": "Proveedor",
+                "host": "Anfitrión",
+                "declaredBy": "Declarado por",
+                "channel": "Canal",
+                "status": "Estado",
+                "createdAt": "Registrado",
+                "actions": "Acciones"
+            },
+            "declaredBy": {
+                "HOST": "Anfitrión",
+                "PROVIDER": "Proveedor"
+            },
+            "channel": {
+                "QR": "QR",
+                "LINKED_SELECTOR": "Selector",
+                "EMAIL_LOOKUP": "Email"
+            },
+            "filters": {
+                "any": "Todos",
+                "status": "Estado",
+                "declaredBy": "Declarado por",
+                "channel": "Canal",
+                "provider": "ID de proveedor",
+                "providerPlaceholder": "UUID del proveedor",
+                "host": "ID de anfitrión",
+                "hostPlaceholder": "UUID del anfitrión",
+                "from": "Desde",
+                "to": "Hasta"
+            },
+            "actions": {
+                "suspendProvider": "Suspender proveedor"
+            },
+            "suspendDialog": {
+                "title": "Suspender la declaración",
+                "message": "«{{name}}» deja de poder registrar usos del beneficio hasta que alguien levante la suspensión.",
+                "reasonLabel": "Motivo",
+                "reasonPlaceholder": "Por qué se suspende. El proveedor puede pedir esta explicación.",
+                "reasonRequired": "El motivo es obligatorio.",
+                "cancel": "Cancelar",
+                "confirm": "Suspender"
+            },
+            "messages": {
+                "suspended": "Se suspendió la declaración de «{{name}}».",
+                "suspendedTitle": "Declaración suspendida"
+            },
+            "errors": {
+                "suspendFailed": "No se pudo suspender la declaración. Intentá de nuevo.",
+                "suspendFailedTitle": "No se pudo suspender"
+            }
+        }
     }
 }

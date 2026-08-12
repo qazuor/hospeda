@@ -2,7 +2,7 @@
  * Protected create accommodation review endpoint
  * Requires authentication
  */
-import type { z } from '@hono/zod-openapi';
+
 import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
@@ -17,6 +17,7 @@ import { createSlidingWindowPerUserRateLimit } from '../../../../middlewares/rat
 import { getActorFromContext } from '../../../../utils/actor';
 import { apiLogger } from '../../../../utils/logger';
 import { createProtectedRoute } from '../../../../utils/route-factory';
+import type { z } from '../../../../utils/zod';
 
 /** Stricter per-user write budget: 30 review submissions per hour. */
 const writeReviewRateLimit = createSlidingWindowPerUserRateLimit({

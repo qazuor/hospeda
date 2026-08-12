@@ -1,7 +1,15 @@
-import { AccommodationModel, HostTradeModel, type SelectHostTrade } from '@repo/db';
+import {
+    AccommodationModel,
+    HostTradeModel,
+    hostTrades,
+    isNotNull,
+    isNull,
+    type SelectHostTrade
+} from '@repo/db';
 import type {
     CountResponse,
     CreateHostTrade,
+    EntityFilters,
     HostTrade,
     HostTradeOwnerUpdate,
     HostTradeQuery,
@@ -17,6 +25,7 @@ import {
     UpdateHostTradeSchema
 } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
+import type { SQL } from 'drizzle-orm';
 import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type {
@@ -53,6 +62,9 @@ const OWNER_SCOPE_KEY: keyof SelectHostTrade = 'ownerUserId';
 
 /** The only value `benefit_review_state` ever holds while an edit is waiting. */
 const HOST_TRADE_BENEFIT_REVIEW_PENDING = 'pending';
+
+/** Entity-specific filter fields for host-trade admin search. */
+type HostTradeAdminEntityFilters = EntityFilters<typeof HostTradeAdminSearchSchema>;
 
 /**
  * Input for {@link HostTradeService.revoke}.
@@ -148,8 +160,10 @@ export class HostTradeService extends BaseCrudService<
 
     /**
      * Admin search schema for host-trade list filtering.
-     * Uses the default _executeAdminSearch() since all filter fields map
-     * directly to table column names.
+     *
+     * Every filter but one maps directly to a table column; `declarationSuspended`
+     * is a predicate over a nullable timestamp and is translated in
+     * {@link HostTradeService._executeAdminSearch}.
      */
     protected readonly adminSearchSchema = HostTradeAdminSearchSchema;
 
@@ -395,17 +409,43 @@ export class HostTradeService extends BaseCrudService<
     /**
      * Executes the admin search query with admin-specific filters.
      *
-     * All entity-specific filter fields (`category`, `destinationId`, `isActive`,
+     * Most entity-specific filter fields (`category`, `destinationId`, `isActive`,
      * `is24h`) map directly to table column names, so they are merged into the
      * `where` clause by the base implementation. Sorting, pagination, and text
      * search are also forwarded to the base class, which handles them uniformly.
      *
+     * `declarationSuspended` is the exception and is translated here (HOS-376
+     * T-056): a suspension is `declarationSuspendedAt IS NOT NULL`, a predicate
+     * the key-value `where` map cannot carry. It is REMOVED from the filters
+     * before delegating — left in, the base would merge it into the `where` as
+     * a column named `declarationSuspended`, which does not exist on the table.
+     *
+     * `false` is handled as deliberately as `true`. The two are opposite
+     * questions — "who is blocked" and "who is able to declare" — so a `false`
+     * that fell through to no filter at all would answer the first heading with
+     * the entire directory.
+     *
      * @param params - Full admin search params assembled by the base `adminList` method.
      */
     protected override async _executeAdminSearch(
-        params: AdminSearchExecuteParams
+        params: AdminSearchExecuteParams<HostTradeAdminEntityFilters>
     ): Promise<PaginatedListOutput<HostTrade>> {
-        return super._executeAdminSearch(params);
+        const { entityFilters, ...rest } = params;
+        const { declarationSuspended, ...columnFilters } = entityFilters;
+
+        const extraConditions: SQL[] = [...(params.extraConditions ?? [])];
+
+        if (declarationSuspended === true) {
+            extraConditions.push(isNotNull(hostTrades.declarationSuspendedAt));
+        } else if (declarationSuspended === false) {
+            extraConditions.push(isNull(hostTrades.declarationSuspendedAt));
+        }
+
+        return super._executeAdminSearch({
+            ...rest,
+            entityFilters: columnFilters,
+            extraConditions: extraConditions.length > 0 ? extraConditions : undefined
+        });
     }
 
     // --- Custom methods ---

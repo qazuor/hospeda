@@ -45,7 +45,12 @@ vi.mock('@/lib/i18n', () => ({
                     'No hay proveedores disponibles para tus destinos por ahora.'
             };
             return labels[key] ?? fallback ?? key;
-        }
+        },
+        // The card reads `tPlural` for its stats line (T-052). These fixtures
+        // carry no aggregates, so it is never called today — but leaving it out
+        // would turn the first fixture that gains one into a crash rather than
+        // a readable failure.
+        tPlural: (key: string, count: number) => `${key}:${count}`
     })
 }));
 
@@ -369,6 +374,24 @@ describe('TradeCard — basic render', () => {
 
         // Assert
         expect(screen.getByText('Juan Plomero')).toBeInTheDocument();
+    });
+
+    it('links the name to the provider page (HOS-376 T-053)', () => {
+        // The name IS the way in: nothing else on the card reaches the detail
+        // page, so losing this link makes the page unreachable from the
+        // directory without breaking anything visible.
+        render(
+            <TradeCard
+                trade={tradePlomeria}
+                locale="es"
+            />
+        );
+
+        const link = screen.getByRole('link', { name: 'Juan Plomero' });
+        expect(link).toHaveAttribute(
+            'href',
+            `/es/mi-cuenta/directorio-proveedores/${tradePlomeria.slug}/`
+        );
     });
 
     it('renders the benefit text', () => {

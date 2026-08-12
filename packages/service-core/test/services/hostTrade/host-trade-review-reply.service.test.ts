@@ -415,6 +415,26 @@ describe('HostTradeReviewReplyService.moderateReply', () => {
         expect(model.update).not.toHaveBeenCalled();
     });
 
+    /**
+     * The cross of the two above, which is what pins their ORDER: the 403 case
+     * is asked about a reply that exists, and the 404 case is asked by somebody
+     * who holds the permission, so each alone passes whichever way round the
+     * gate and the lookup run. Looking up first would let an unauthorised
+     * caller tell an absent reply id from a present one by the error code.
+     */
+    it('answers FORBIDDEN, not NOT_FOUND, when an unauthorised actor names a reply that does not exist', async () => {
+        const { service, model } = buildService({ reply: null });
+
+        const result = await service.moderateReply({
+            id: REPLY_ID,
+            decision: ModerationStatusEnum.APPROVED,
+            actor: ownerActor()
+        });
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(model.findById).not.toHaveBeenCalled();
+    });
+
     it('stamps the decision, the moderator, the time and the reason', async () => {
         const { service, model } = buildService();
 

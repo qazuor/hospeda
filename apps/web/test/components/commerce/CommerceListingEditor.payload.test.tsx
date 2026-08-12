@@ -131,6 +131,7 @@ vi.mock('../../../src/lib/logger', () => ({ webLogger: { warn: vi.fn() } }));
 
 import { apiClient } from '../../../src/lib/api/client';
 import { commerceMediaApi, protectedMediaApi } from '../../../src/lib/api/endpoints-protected';
+import { addToast } from '../../../src/store/toast-store';
 
 const mockPatch = vi.mocked(apiClient.patch);
 const mockDeleteMedia = vi.mocked(protectedMediaApi.deleteMedia);
@@ -197,7 +198,26 @@ function renderEditor(
     );
 }
 
-const saveButton = () => screen.getByRole('button', { name: 'Guardar cambios' });
+const saveButton = () => screen.getByRole('button', { name: 'Guardar' });
+
+/**
+ * Resolve once the editor has resynced its baseline to the values a save just
+ * persisted.
+ *
+ * `mockPatch` resolving is NOT that moment: the mock is invoked before the
+ * awaited promise settles, so `setBaseline` has not run yet. The success toast
+ * is emitted on the line after it, which makes it the first observable event
+ * that the resync is complete. This used to be spelled as "wait for Save to go
+ * back to disabled" — an option the shared `ActionBar` removed by keeping Save
+ * permanently enabled.
+ */
+async function waitForBaselineResync(times: number): Promise<void> {
+    await waitFor(() =>
+        expect(
+            vi.mocked(addToast).mock.calls.filter(([arg]) => arg.type === 'success')
+        ).toHaveLength(times)
+    );
+}
 
 /**
  * The PATCH body as it actually goes over the wire.
@@ -228,6 +248,9 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
         mockPatch.mockReset();
         mockPatch.mockResolvedValue({ ok: true, data: {} });
         mockDeleteMedia.mockClear();
+        // `waitForBaselineResync` counts success toasts, so they must not carry
+        // over between tests or the wait resolves against a previous test's save.
+        vi.mocked(addToast).mockClear();
     });
 
     describe('gastronomy price fields clear to null', () => {
@@ -478,15 +501,13 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
 
             const input = screen.getByLabelText('Nombre del comercio');
             fireEvent.change(input, { target: { value: 'Otro nombre' } });
-            expect(saveButton()).toBeEnabled();
-
             fireEvent.change(input, { target: { value: 'La Parrilla' } });
 
             // Under the old dirty-Set model the field stayed "dirty" and shipped
             // a no-op write. Diffing against the baseline makes the form clean
-            // again, so the save button goes back to disabled.
-            expect(saveButton()).toBeDisabled();
-
+            // again, which is what the submit below proves. (This used to also
+            // assert the save button was disabled; the shared `ActionBar` keeps
+            // it enabled, so the request — or its absence — is now the signal.)
             fireEvent.submit(container.querySelector('form') as HTMLFormElement);
             await Promise.resolve();
             expect(mockPatch).not.toHaveBeenCalled();
@@ -521,7 +542,7 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             // still pointed at the load-time `initialData`, restoring the
             // original name would diff to nothing and the owner could not undo
             // their own save without a full page reload.
-            await waitFor(() => expect(saveButton()).toBeDisabled());
+            await waitForBaselineResync(1);
             fireEvent.change(input, { target: { value: 'La Parrilla' } });
             fireEvent.click(saveButton());
 

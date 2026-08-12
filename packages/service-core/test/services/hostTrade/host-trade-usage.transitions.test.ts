@@ -157,7 +157,7 @@ describe('counterpart resolution', () => {
     });
 
     /** AC-6 — the declarant may not confirm their own declaration. */
-    it('answers 404 when the declarant confirms their own declaration', async () => {
+    it('AC-6: answers 404 when the declarant confirms their own declaration', async () => {
         const { service, model } = buildService(makeUsage({ declaredBy: 'PROVIDER' }));
 
         const result = await service.confirmUsage({ usageId: USAGE_ID }, actorOf(OWNER_ID));
@@ -507,6 +507,26 @@ describe('liftDeclarationSuspension — the admin act (AC-12)', () => {
 
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
         expect(hostTradeModel.update).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The cross of the permission case and the missing-listing one, which is
+     * the only thing that pins their ORDER. Each alone passes whichever way
+     * round the gate and the lookup run — the 403 case names a listing that
+     * exists, the 404 case is asked by an admin. Looking up first would let
+     * anybody with a session tell an absent listing id from a present one by
+     * the error code, without holding the permission to do anything with it.
+     */
+    it('answers FORBIDDEN, not NOT_FOUND, when an unauthorised actor names a listing that does not exist', async () => {
+        const { service, hostTradeModel } = buildService(makeUsage(), { provider: null });
+
+        const result = await service.liftDeclarationSuspension(
+            { hostTradeId: HT_ID },
+            actorOf(OWNER_ID)
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(hostTradeModel.findById).not.toHaveBeenCalled();
     });
 
     /**

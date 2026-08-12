@@ -83,6 +83,16 @@
             }
         },
         "editor": {
+            "sectionNav": {
+                "basicInfo": "Informações básicas",
+                "contactInfo": "Contato",
+                "socialNetworks": "Redes sociais",
+                "openingHours": "Horários",
+                "media": "Fotos",
+                "translations": "Traduções",
+                "amenities": "Serviços",
+                "price": "Preço"
+            },
             "sections": {
                 "type": "Categoria",
                 "summary": "Resumo",
@@ -180,8 +190,7 @@
                 "deleteError": "Não foi possível excluir a pergunta.",
                 "reorderError": "Não foi possível reordenar."
             },
-            "save": "Salvar alterações",
-            "saving": "Salvando...",
+            "noChanges": "Não há alterações para salvar",
             "success": "Alterações salvas.",
             "error": "Não foi possível salvar as alterações. Tente novamente.",
             "unsavedChanges": "Você tem alterações não salvas. Se sair agora, elas serão perdidas. Deseja sair mesmo assim?",

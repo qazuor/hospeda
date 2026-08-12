@@ -5,13 +5,14 @@
  * never by UUID: a UUID is not shareable from memory, tells a search engine
  * nothing, and leaks an internal identifier.
  */
-import { z } from '@hono/zod-openapi';
+
 import { PartnerPublicSchema, ServiceErrorCode } from '@repo/schemas';
 import { PartnerService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor.js';
 import { apiLogger } from '../../../utils/logger.js';
 import { createPublicRoute } from '../../../utils/route-factory.js';
+import { z } from '../../../utils/zod';
 
 const partnerService = new PartnerService({ logger: apiLogger });
 

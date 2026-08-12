@@ -1,4 +1,4 @@
-import { z } from '@hono/zod-openapi';
+import { z } from './zod';
 
 /**
  * Utility function to convert domain schemas with z.date() fields to OpenAPI-compatible schemas with z.string().datetime()

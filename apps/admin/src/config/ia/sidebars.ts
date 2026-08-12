@@ -958,7 +958,24 @@ const plataformaSidebar: SidebarInput = {
             label: { es: 'Oficios / Proveedores', en: 'Host Trades', pt: 'Ofícios / Fornecedores' },
             icon: 'OffersIcon',
             route: '/platform/host-trades',
+            // Exact, because the sibling below lives UNDER this route. Left as
+            // a prefix match, both items would light up together on the usage
+            // screen. The cost is that the directory stops highlighting on its
+            // own detail/new pages, which breadcrumbs already cover.
+            exact: true,
             permissions: ['HOST_TRADE_VIEW_ALL']
+        },
+        {
+            type: 'link',
+            id: 'host-trade-usages',
+            label: {
+                es: 'Usos del beneficio',
+                en: 'Benefit usages',
+                pt: 'Usos do benefício'
+            },
+            icon: 'OffersIcon',
+            route: '/platform/host-trades/usages',
+            permissions: ['HOST_TRADE_USAGE_VIEW_ALL']
         },
         { type: 'separator', id: 'sep-ai' },
         // ── Inteligencia Artificial ────────────────────────────────────────

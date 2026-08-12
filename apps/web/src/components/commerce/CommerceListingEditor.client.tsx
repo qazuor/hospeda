@@ -26,6 +26,9 @@ import type { Image, OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
 import { type JSX, useCallback, useMemo, useState } from 'react';
 import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
+import { ActionBar } from '@/components/host/editor/ActionBar.client';
+import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
+import { EditorSectionNav } from '@/components/host/editor/EditorSectionNav.client';
 import { apiClient } from '@/lib/api/client';
 import type { AmenityData } from '@/lib/api/types';
 import type { CommerceListingDetail, CommerceVertical } from '@/lib/commerce/owner-listings';
@@ -33,6 +36,7 @@ import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './CommerceListingEditor.module.css';
 import {
@@ -424,6 +428,16 @@ export function CommerceListingEditor({
         async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
             if (Object.keys(patchPayload).length === 0) {
+                // Never save silently (HOS-190): "Guardar" always visibly does
+                // something. This used to be a bare `return`, which was
+                // invisible but harmless while the button was disabled with
+                // nothing to save. The shared `ActionBar` keeps Save enabled, so
+                // without this the owner would press a live button and get no
+                // response at all.
+                addToast({
+                    type: 'info',
+                    message: t('commerce.owner.editor.noChanges', 'No hay cambios para guardar')
+                });
                 return;
             }
 
@@ -471,9 +485,70 @@ export function CommerceListingEditor({
     );
 
     const isSaving = status.kind === 'saving';
-    // Derived from the diff, so reverting an edit by hand disables the button
-    // again — the accommodation editor behaves the same way.
-    const canSave = Object.keys(patchPayload).length > 0 && !isSaving;
+
+    /**
+     * Leaves the editor for the listing index.
+     *
+     * `ActionBar` renders Cancel as a `<button>`, so this navigates in JS. The
+     * bespoke bar this replaced used an `<a href>`, which middle-click and
+     * "open in new tab" understood and this does not — accepted deliberately in
+     * exchange for the three content editors sharing one action bar.
+     */
+    const handleCancel = useCallback(() => {
+        window.location.href = buildUrl({ locale, path: 'mi-cuenta/comercio' });
+    }, [locale]);
+
+    // AmenitiesSection returns null when BOTH catalogs are empty (see its early
+    // return), so its nav entry has to disappear with it: a link to a section
+    // that is not on the page scrolls nowhere and reads as a broken control.
+    // Every other section always renders, so only this one is conditional.
+    const hasCatalogs = amenities.length > 0 || features.length > 0;
+
+    // Mirrors the render order below, because `EditorSectionNav`'s scrollspy
+    // resolves ties by taking the FIRST entry of this array that is currently
+    // visible — a list in a different order than the DOM would highlight the
+    // wrong link whenever two sections share the viewport. Ids are the ones the
+    // section components emit themselves (`id="editor-*"`), not ids assigned
+    // here; `editor-translations` is the exception (see the wrapper in the JSX).
+    const navSections = useMemo<EditorSectionNavItem[]>(() => {
+        const sections: EditorSectionNavItem[] = [
+            {
+                id: 'editor-basicInfo',
+                label: t('commerce.owner.editor.sectionNav.basicInfo', 'Información básica')
+            },
+            {
+                id: 'editor-contact',
+                label: t('commerce.owner.editor.sectionNav.contactInfo', 'Contacto')
+            },
+            {
+                id: 'editor-socialNetworks',
+                label: t('commerce.owner.editor.sectionNav.socialNetworks', 'Redes sociales')
+            },
+            {
+                id: 'editor-openingHours',
+                label: t('commerce.owner.editor.sectionNav.openingHours', 'Horarios')
+            },
+            { id: 'editor-media', label: t('commerce.owner.editor.sectionNav.media', 'Fotos') },
+            {
+                id: 'editor-translations',
+                label: t('commerce.owner.editor.sectionNav.translations', 'Traducciones')
+            }
+        ];
+
+        if (hasCatalogs) {
+            sections.push({
+                id: 'editor-amenities',
+                label: t('commerce.owner.editor.sectionNav.amenities', 'Servicios')
+            });
+        }
+
+        sections.push({
+            id: 'editor-price',
+            label: t('commerce.owner.editor.sectionNav.price', 'Precio')
+        });
+
+        return sections;
+    }, [t, hasCatalogs]);
 
     // HOS-373: warns before leaving with unsaved edits. Reuses the same diff as
     // `canSave`, so the guard goes quiet the moment a save resyncs the baseline.
@@ -492,97 +567,103 @@ export function CommerceListingEditor({
             aria-busy={isSaving}
             noValidate
         >
-            <BasicInfoSection
-                locale={locale}
-                vertical={vertical}
-                data={formData}
-                destinations={destinations}
-                destinationsLoadFailed={destinationsLoadFailed}
-                errors={fieldErrors}
-                onFieldChange={onFieldChange}
-            />
+            <div className={styles.layout}>
+                <div className={styles.navSlot}>
+                    <EditorSectionNav
+                        locale={locale}
+                        sections={navSections}
+                    />
+                </div>
 
-            <ContactSection
-                locale={locale}
-                contact={formData.contact}
-                errors={fieldErrors}
-                onContactChange={updateContact}
-            />
+                <div className={styles.sectionsColumn}>
+                    <BasicInfoSection
+                        locale={locale}
+                        vertical={vertical}
+                        data={formData}
+                        destinations={destinations}
+                        destinationsLoadFailed={destinationsLoadFailed}
+                        errors={fieldErrors}
+                        onFieldChange={onFieldChange}
+                    />
 
-            <SocialNetworksSection
-                locale={locale}
-                social={formData.social}
-                errors={fieldErrors}
-                onSocialChange={updateSocial}
-            />
+                    <ContactSection
+                        locale={locale}
+                        contact={formData.contact}
+                        errors={fieldErrors}
+                        onContactChange={updateContact}
+                    />
 
-            <OpeningHoursSection
-                locale={locale}
-                value={openingHours}
-                error={fieldErrors.openingHours}
-                onChange={(next) => {
-                    onFieldChange('openingHours', next);
-                }}
-            />
+                    <SocialNetworksSection
+                        locale={locale}
+                        social={formData.social}
+                        errors={fieldErrors}
+                        onSocialChange={updateSocial}
+                    />
 
-            <MediaSection
-                locale={locale}
-                vertical={vertical}
-                listingId={listingId}
-                initialFeaturedImage={initialFeaturedImage}
-                initialGallery={initialGallery}
-            />
+                    <OpeningHoursSection
+                        locale={locale}
+                        value={openingHours}
+                        error={fieldErrors.openingHours}
+                        onChange={(next) => {
+                            onFieldChange('openingHours', next);
+                        }}
+                    />
 
-            {/* T-023: i18n editing panel */}
-            <CommerceTranslationPanel
-                locale={locale}
-                initialValues={i18nValues}
-                onChange={handleI18nChange}
-            />
+                    <MediaSection
+                        locale={locale}
+                        vertical={vertical}
+                        listingId={listingId}
+                        initialFeaturedImage={initialFeaturedImage}
+                        initialGallery={initialGallery}
+                    />
 
-            <AmenitiesSection
-                locale={locale}
-                amenities={amenities}
-                features={features}
-                selectedAmenityIds={amenityIds}
-                selectedFeatureIds={featureIds}
-                onToggleAmenity={toggleAmenity}
-                onToggleFeature={toggleFeature}
-            />
+                    {/*
+                     * T-023: i18n editing panel. Wrapped only to carry the nav anchor:
+                     * every other section emits its own `id="editor-*"`, but this panel
+                     * is shared with other surfaces and renders a bare `<fieldset>` with
+                     * no id prop, so the anchor has to live on a wrapper here.
+                     */}
+                    <div id="editor-translations">
+                        <CommerceTranslationPanel
+                            locale={locale}
+                            initialValues={i18nValues}
+                            onChange={handleI18nChange}
+                        />
+                    </div>
 
-            <PriceSection
-                locale={locale}
-                vertical={vertical}
-                data={formData}
-                errors={fieldErrors}
-                onFieldChange={onFieldChange}
-            />
+                    <AmenitiesSection
+                        locale={locale}
+                        amenities={amenities}
+                        features={features}
+                        selectedAmenityIds={amenityIds}
+                        selectedFeatureIds={featureIds}
+                        onToggleAmenity={toggleAmenity}
+                        onToggleFeature={toggleFeature}
+                    />
 
-            {formError && (
-                <p
-                    className={styles.error}
-                    role="alert"
-                >
-                    {formError}
-                </p>
-            )}
+                    <PriceSection
+                        locale={locale}
+                        vertical={vertical}
+                        data={formData}
+                        errors={fieldErrors}
+                        onFieldChange={onFieldChange}
+                    />
 
-            <div className={styles.actions}>
-                <a
-                    className={styles.cancel}
-                    href={`/${locale}/mi-cuenta/comercio/`}
-                >
-                    {t('commerce.owner.editor.cancel', 'Cancelar')}
-                </a>
-                <button
-                    type="submit"
-                    className={styles.save}
-                    disabled={!canSave}
-                >
-                    {isSaving
-                        ? t('commerce.owner.editor.saving', 'Guardando...')
-                        : t('commerce.owner.editor.save', 'Guardar cambios')}
-                </button>
+                    {formError && (
+                        <p
+                            className={styles.error}
+                            role="alert"
+                        >
+                            {formError}
+                        </p>
+                    )}
+
+                    <ActionBar
+                        locale={locale}
+                        isSaving={isSaving}
+                        onCancel={handleCancel}
+                    />
+                </div>
             </div>
         </form>
     );

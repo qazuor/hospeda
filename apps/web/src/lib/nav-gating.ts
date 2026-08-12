@@ -48,9 +48,17 @@ export interface GatedNavNode {
  *
  * Derived from `apps/web/src/lib/account-roles.ts`:
  * - `ACCOMMODATION_CREATE` ← `ROLES_WITH_ACCOMMODATIONS_NAV`
- *   (HOST, ADMIN, SUPER_ADMIN, CLIENT_MANAGER, EDITOR).
+ *   (HOST, ADMIN, SUPER_ADMIN, CLIENT_MANAGER).
  * - `COMMERCE_EDIT_OWN` ← `ROLES_WITH_COMMERCE_NAV`
  *   (COMMERCE_OWNER, ADMIN, SUPER_ADMIN).
+ *
+ * These sets APPROXIMATE the seed, so an entry that names a role the seed does
+ * not actually grant is a silent divergence between the two surfaces — the SSR
+ * sidebar shows the item while the avatar dropdown (which evaluates the real
+ * permission strings from `/auth/me`) hides it. That is exactly what happened
+ * with `EDITOR` on `ACCOMMODATION_CREATE`: an editor saw the whole host group
+ * in the sidebar and nothing in the dropdown. Verify a new role against
+ * `packages/seed/src/required/rolePermissions.seed.ts` before adding it here.
  *
  * Add an entry here whenever a new gated nav group/item is introduced with a
  * `requiredPermission` that the sidebar needs to approximate.
@@ -66,12 +74,15 @@ export interface GatedNavNode {
  * config declares has a matching entry, which is exactly what that test is for.
  */
 export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<RoleEnum>>> = {
+    // EDITOR is deliberately ABSENT: the seed grants an editor only
+    // `ACCOMMODATION_REVIEW_CREATE`/`_UPDATE`, never `ACCOMMODATION_CREATE`, so
+    // listing it here made the sidebar offer a host area the editor could not
+    // use. An editor is not a host — its own area is the `editorial` nav group.
     [PermissionEnum.ACCOMMODATION_CREATE]: new Set<RoleEnum>([
         RoleEnum.HOST,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN,
-        RoleEnum.CLIENT_MANAGER,
-        RoleEnum.EDITOR
+        RoleEnum.CLIENT_MANAGER
     ]),
     [PermissionEnum.COMMERCE_EDIT_OWN]: new Set<RoleEnum>([
         RoleEnum.COMMERCE_OWNER,

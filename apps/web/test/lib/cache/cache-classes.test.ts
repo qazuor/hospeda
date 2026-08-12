@@ -29,14 +29,12 @@ import {
  * test below, so a new page kind cannot acquire a freshness budget silently.
  */
 const EXPECTED_CONTROL: Readonly<Record<CacheClass, string>> = {
+    // Gated on HOS-428 (Coolify healthcheck), not yet at D-15's 86 400 s.
     static: 'public, s-maxage=300, stale-while-revalidate=600',
-    catalog: 'public, s-maxage=300, stale-while-revalidate=600',
-    detail: 'public, s-maxage=300, stale-while-revalidate=600',
-    home: 'public, s-maxage=300, stale-while-revalidate=600',
-    // The outlier, preserved rather than reconciled: the four `suscriptores/*`
-    // pages were written with a 60 s SWR before they shared this vocabulary,
-    // and folding them in must not change a TTL on the way past.
-    pricing: 'public, s-maxage=300, stale-while-revalidate=60'
+    catalog: 'public, s-maxage=3600, stale-while-revalidate=3600',
+    detail: 'public, s-maxage=3600, stale-while-revalidate=3600',
+    home: 'public, s-maxage=3600, stale-while-revalidate=3600',
+    pricing: 'public, s-maxage=3600, stale-while-revalidate=3600'
 };
 
 describe('resolveCacheableControl', () => {

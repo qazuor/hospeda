@@ -127,24 +127,34 @@ describe('CommerceListingEditor — richDescription as a rich text editor', () =
         expect(screen.getByRole('textbox', { name: 'Descripción ampliada' })).toBeInTheDocument();
     });
 
-    it('keeps Save disabled after mount when nothing was edited', async () => {
+    /*
+     * These two guards used to read the Save button's `disabled` attribute as
+     * the signal for "the form is not dirty". The shared `ActionBar` keeps Save
+     * enabled at all times (HOS-190: it must always visibly do something), so
+     * they now assert what a clean form DOES on save — issue no request. That is
+     * the invariant the TipTap bug actually broke; the disabled attribute was
+     * only ever its shadow.
+     */
+    it('stays clean after mount when nothing was edited', async () => {
         renderEditor('Texto existente');
         await waitForEditorMount();
 
         // Regression guard: TipTap fires an update transaction when it first
         // parses `content`. That reached the orchestrator's `onFieldChange` and
-        // left the form dirty on load — Save enabled with zero edits, and every
-        // subsequent save re-serializing the stored Markdown through TipTap.
-        expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
+        // left the form dirty on load, so every subsequent save re-serialized
+        // the stored Markdown through TipTap.
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        expect(mockPatch).not.toHaveBeenCalled();
     });
 
-    it('keeps Save disabled after mount when the listing has no rich description yet', async () => {
+    it('stays clean after mount when the listing has no rich description yet', async () => {
         renderEditor(undefined);
         await waitForEditorMount();
 
         // The empty case emitted onChange('') before the fix — same false-dirty
         // signal, and the one every brand-new listing would hit.
-        expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        expect(mockPatch).not.toHaveBeenCalled();
     });
 
     it('does not send richDescription when an unrelated field is the only edit', async () => {
@@ -155,7 +165,7 @@ describe('CommerceListingEditor — richDescription as a rich text editor', () =
         fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
             target: { value: 'La Nueva Parrilla' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const body = mockPatch.mock.calls[0]?.[0]?.body as Record<string, unknown>;

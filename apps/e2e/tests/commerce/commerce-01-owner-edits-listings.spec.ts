@@ -43,6 +43,7 @@ import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import {
+    saveCommerceEditor,
     setRichDescription,
     waitForCommerceEditorHydration
 } from '../../fixtures/commerce-editor-helpers.ts';
@@ -252,28 +253,16 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
         // InputEvent with inputType:'insertText' so React 19's onChange fires.
         await setReactInputValue(menuUrlInput, newMenuUrl);
 
-        // Explicit pre-click check: if dirty.size===0 the button is disabled and
-        // click() will hang for the full 15 s actionTimeout. Asserting here with a
-        // generous timeout surfaces the real root cause (form not dirty) with a
-        // clear AssertionError message instead of a cryptic click timeout.
-        const saveButton = page.locator('button[type="submit"]', { hasText: /guardar cambios/i });
-        await expect(saveButton).toBeEnabled({ timeout: 10_000 });
-
-        // The button is enabled (asserted above) but the actionability click times out
-        // non-deterministically in CI — a sticky/overlay element or a post-scroll layout
-        // shift intercepts the pointer. force:true performs a real click at the element's
-        // box, bypassing the obstruction + stability checks (Playwright still scrolls it
-        // into view). The toBeEnabled assertion above already guards against a disabled save.
-        // Wait for the actual PATCH to the protected API rather than the transient
-        // <output> success element, which can appear and vanish before Playwright's
-        // assertion polls it. Register the wait BEFORE the click, then assert the save
-        // succeeded — if the PATCH itself fails, .ok() surfaces the real status.
-        const gastroPatch = page.waitForResponse(
-            (r) => /\/protected\/gastronomies\//.test(r.url()) && r.request().method() === 'PATCH',
-            { timeout: 15_000 }
-        );
-        await saveButton.click({ force: true });
-        const gastroSaved = await gastroPatch;
+        // `saveCommerceEditor` waits for the PATCH rather than the transient
+        // <output> success element, which can appear and vanish before
+        // Playwright's assertion polls it. It also races that wait against the
+        // "no hay cambios" toast, which is what now reports a form that never
+        // went dirty — the diagnostic the disabled Save button used to give for
+        // free, before the editor moved onto the shared ActionBar.
+        const gastroSaved = await saveCommerceEditor({
+            page,
+            pathPattern: /\/protected\/gastronomies\//
+        });
         expect(gastroSaved.ok()).toBe(true);
 
         // ── Step 3 assertion: public gastronomy ficha reflects new menuUrl ─────
@@ -313,22 +302,10 @@ test.describe('COMMERCE-01: commerce owner edits listings — both verticals @p0
         // (the DB column is NULL → strField returns "" → state starts as "").
         await setRichDescription({ page, value: newRichDescription });
 
-        // Explicit pre-click enabled assertion — surfaces dirty-form failures
-        // clearly instead of masking them as a 15 s click timeout.
-        const expSaveButton = page.locator('button[type="submit"]', {
-            hasText: /guardar cambios/i
+        const expSaved = await saveCommerceEditor({
+            page,
+            pathPattern: /\/protected\/experiences\//
         });
-        await expect(expSaveButton).toBeEnabled({ timeout: 10_000 });
-
-        // force:true — same non-deterministic actionability timeout as the gastronomy
-        // save; the button is enabled (asserted above), so force the real click.
-        // Wait for the real PATCH instead of the transient <output> element.
-        const expPatch = page.waitForResponse(
-            (r) => /\/protected\/experiences\//.test(r.url()) && r.request().method() === 'PATCH',
-            { timeout: 15_000 }
-        );
-        await expSaveButton.click({ force: true });
-        const expSaved = await expPatch;
         expect(expSaved.ok()).toBe(true);
 
         // ── Step 4 assertion: public experience ficha reflects new description ─
