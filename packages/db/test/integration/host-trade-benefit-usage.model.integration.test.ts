@@ -539,6 +539,217 @@ describe('HostTradeBenefitUsageModel.countRejectionsInWindow', () => {
 });
 
 // ---------------------------------------------------------------------------
+// findExpirableIds — the expiry cron's predicate (T-066)
+// ---------------------------------------------------------------------------
+
+/**
+ * Both cron finders live here rather than beside the job, because the jobs mock
+ * the service and the service mocks the model: "expires at thirty days and not
+ * before" and "one reminder, ever" are SQL predicates, and nothing above this
+ * layer can see them. Every timestamp is derived from `Date.now()` — a fixed
+ * future date stops being one.
+ */
+/**
+ * A settled row's status together with the stamps that status requires.
+ *
+ * The table refuses a CONFIRMED row with no `confirmedAt`/`confirmedById` and a
+ * REJECTED one with no rejection stamps, so a status-only fixture is not merely
+ * unrealistic — it will not insert.
+ */
+function settledStamps(status: 'CONFIRMED' | 'REJECTED' | 'EXPIRED', actorId: string) {
+    if (status === 'CONFIRMED') {
+        return { status, confirmedAt: new Date(), confirmedById: actorId } as const;
+    }
+    if (status === 'REJECTED') {
+        return { status, rejectedAt: new Date(), rejectedById: actorId } as const;
+    }
+    return { status } as const;
+}
+
+describe('HostTradeBenefitUsageModel.findExpirableIds', () => {
+    const model = new HostTradeBenefitUsageModel();
+
+    /** `ms` on either side of now, as a Date. */
+    const fromNow = (ms: number) => new Date(Date.now() + ms);
+
+    it('returns a PENDING row whose window has run out', async () => {
+        await withTestTransaction(async (tx) => {
+            const { hostId, tradeId } = await seedProviderAndHost(tx);
+            const overdue = usageFixture(tradeId, hostId, { expiresAt: fromNow(-86_400_000) });
+            await tx.insert(hostTradeBenefitUsages).values(overdue);
+
+            const ids = await model.findExpirableIds(new Date(), tx);
+
+            expect(ids).toEqual([overdue.id]);
+        });
+    });
+
+    it('leaves a row whose window has not run out yet', async () => {
+        await withTestTransaction(async (tx) => {
+            const { hostId, tradeId } = await seedProviderAndHost(tx);
+            await tx
+                .insert(hostTradeBenefitUsages)
+                .values(usageFixture(tradeId, hostId, { expiresAt: fromNow(86_400_000) }));
+
+            const ids = await model.findExpirableIds(new Date(), tx);
+
+            expect(ids).toEqual([]);
+        });
+    });
+
+    /**
+     * THE BOUNDARY, and it is inclusive. A row whose `expiresAt` is exactly the
+     * moment being measured HAS run out — the predicate is `<=`, not `<`. A
+     * strict comparison would leave the row for the next daily pass, which is
+     * defensible but is not what "expires at thirty days" says, and only this
+     * case can tell the two apart.
+     */
+    it('expires a row at the exact instant it is due, not a day later', async () => {
+        await withTestTransaction(async (tx) => {
+            const { hostId, tradeId } = await seedProviderAndHost(tx);
+            const dueNow = new Date();
+            const row = usageFixture(tradeId, hostId, { expiresAt: dueNow });
+            await tx.insert(hostTradeBenefitUsages).values(row);
+
+            expect(await model.findExpirableIds(dueNow, tx)).toEqual([row.id]);
+            // One millisecond earlier it is not yet due, which is what proves
+            // the case above is measuring the boundary and not just "the past".
+            expect(await model.findExpirableIds(new Date(dueNow.getTime() - 1), tx)).toEqual([]);
+        });
+    });
+
+    it.each([
+        'CONFIRMED',
+        'REJECTED',
+        'EXPIRED'
+    ] as const)('never re-expires a %s row', async (status) => {
+        await withTestTransaction(async (tx) => {
+            const { hostId, tradeId } = await seedProviderAndHost(tx);
+            await tx.insert(hostTradeBenefitUsages).values(
+                usageFixture(tradeId, hostId, {
+                    ...settledStamps(status, hostId),
+                    expiresAt: fromNow(-86_400_000)
+                })
+            );
+
+            expect(await model.findExpirableIds(new Date(), tx)).toEqual([]);
+        });
+    });
+
+    it('ignores a soft-deleted overdue row', async () => {
+        await withTestTransaction(async (tx) => {
+            const { hostId, tradeId } = await seedProviderAndHost(tx);
+            await tx.insert(hostTradeBenefitUsages).values(
+                usageFixture(tradeId, hostId, {
+                    expiresAt: fromNow(-86_400_000),
+                    deletedAt: new Date()
+                })
+            );
+
+            expect(await model.findExpirableIds(new Date(), tx)).toEqual([]);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// findRemindable — where AC-8's idempotency actually lives (T-066)
+// ---------------------------------------------------------------------------
+
+describe('HostTradeBenefitUsageModel.findRemindable', () => {
+    const model = new HostTradeBenefitUsageModel();
+
+    const fromNow = (ms: number) => new Date(Date.now() + ms);
+
+    it('returns a PENDING row old enough to deserve its nudge', async () => {
+        await withTestTransaction(async (tx) => {
+            const { hostId, tradeId } = await seedProviderAndHost(tx);
+            const old = usageFixture(tradeId, hostId, { createdAt: fromNow(-8 * 86_400_000) });
+            await tx.insert(hostTradeBenefitUsages).values(old);
+
+            const rows = await model.findRemindable(fromNow(-7 * 86_400_000), tx);
+
+            expect(rows.map((r) => r.id)).toEqual([old.id]);
+        });
+    });
+
+    it('leaves a row that is not old enough yet', async () => {
+        await withTestTransaction(async (tx) => {
+            const { hostId, tradeId } = await seedProviderAndHost(tx);
+            await tx
+                .insert(hostTradeBenefitUsages)
+                .values(usageFixture(tradeId, hostId, { createdAt: fromNow(-86_400_000) }));
+
+            const rows = await model.findRemindable(fromNow(-7 * 86_400_000), tx);
+
+            expect(rows).toEqual([]);
+        });
+    });
+
+    /**
+     * AC-8, AND THE ONLY PLACE IT IS ENFORCED. The cron runs daily and a row it
+     * returns stays old enough forever, so `reminderSentAt IS NULL` is what
+     * turns one nudge into one nudge instead of one every morning until the
+     * usage expires. The job's own suite cannot see this: it mocks the finder,
+     * so running it twice returns the same candidates twice no matter what the
+     * predicate says.
+     */
+    it('drops a row that was already reminded, which is what makes the cron idempotent', async () => {
+        await withTestTransaction(async (tx) => {
+            const { hostId, tradeId } = await seedProviderAndHost(tx);
+            // Two DIFFERENT hosts: `hostTradeBenefitUsages_pendingPair_uniq` is
+            // a partial unique index that allows one PENDING row per pair, so
+            // the pair cannot hold both fixtures at once.
+            const otherHost = testData.user();
+            await tx.insert(users).values(otherHost);
+
+            const createdAt = fromNow(-8 * 86_400_000);
+            const pending = usageFixture(tradeId, hostId, { createdAt });
+            const alreadySent = usageFixture(tradeId, otherHost.id, {
+                createdAt,
+                reminderSentAt: fromNow(-86_400_000)
+            });
+            await tx.insert(hostTradeBenefitUsages).values([pending, alreadySent]);
+
+            const rows = await model.findRemindable(fromNow(-7 * 86_400_000), tx);
+
+            expect(rows.map((r) => r.id)).toEqual([pending.id]);
+        });
+    });
+
+    it.each([
+        'CONFIRMED',
+        'REJECTED',
+        'EXPIRED'
+    ] as const)('never chases a %s row, which needs no answer', async (status) => {
+        await withTestTransaction(async (tx) => {
+            const { hostId, tradeId } = await seedProviderAndHost(tx);
+            await tx.insert(hostTradeBenefitUsages).values(
+                usageFixture(tradeId, hostId, {
+                    ...settledStamps(status, hostId),
+                    createdAt: fromNow(-8 * 86_400_000)
+                })
+            );
+
+            expect(await model.findRemindable(fromNow(-7 * 86_400_000), tx)).toEqual([]);
+        });
+    });
+
+    it('ignores a soft-deleted row', async () => {
+        await withTestTransaction(async (tx) => {
+            const { hostId, tradeId } = await seedProviderAndHost(tx);
+            await tx.insert(hostTradeBenefitUsages).values(
+                usageFixture(tradeId, hostId, {
+                    createdAt: fromNow(-8 * 86_400_000),
+                    deletedAt: new Date()
+                })
+            );
+
+            expect(await model.findRemindable(fromNow(-7 * 86_400_000), tx)).toEqual([]);
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
 // Review + reply model wiring
 // ---------------------------------------------------------------------------
 
