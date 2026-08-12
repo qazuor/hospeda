@@ -876,8 +876,14 @@ locked-compact. Tuning lives in two places:
   does not break them.
 - **Animation feel** — the heritable CSS vars `--wave-header-anim-duration` /
   `--wave-header-anim-ease` on `.wave-header`. The 6 entity headers render inside the slot
-  and inherit them, so the band's motion is a one-line change (note: as of HOS-84 close,
-  the entity headers' own title/badge transitions still hardcode `0.3s` — a deferred polish).
+  and inherit them, so the band's motion is a one-line change. The deferred polish noted at
+  HOS-84 close is done: those headers plus `ListingPageHeader.astro` no longer hardcode
+  `0.3s` — every layout-collapse property (`max-height`, `padding`, `font-size`, `gap`,
+  `margin`) reads the vars, so band and content collapse at one rate. Two things stay
+  hardcoded on purpose: `opacity` fades (`0.2s`) and hover `color` (`0.15s`), which are
+  meant to outrun the collapse. Consumers pass a `0.3s` / `ease` fallback, so a header
+  rendered outside the band keeps its former standalone timing instead of losing the
+  transition entirely.
 
 The 8 consumers (6 entity `*DetailHeader`/`ExperienceHero`, `ListingPageHeader.astro`,
 `mapa.astro`) opt into the shared compact contract via `wh-compact-row/title/badge/hide/demote`
