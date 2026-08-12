@@ -231,7 +231,7 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		max-height: 3em;
 		opacity: 1;
 		transition:
-			max-height 0.3s ease,
+			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
 			opacity 0.2s ease;
 	}
 
@@ -249,7 +249,7 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		transition: gap 0.3s ease;
+		transition: gap var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
 	}
 
 	.post-header__favorite {
@@ -266,7 +266,7 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		max-height: 3em;
 		opacity: 1;
 		transition:
-			max-height 0.3s ease,
+			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
 			opacity 0.2s ease;
 	}
 
@@ -296,7 +296,7 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		color: var(--core-foreground);
 		margin: 0;
 		line-height: 1.15;
-		transition: font-size 0.3s ease;
+		transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
 	}
 
 	.post-header__summary {
@@ -321,9 +321,9 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		max-height: 4.65em;
 		opacity: 1;
 		transition:
-			max-height 0.3s ease,
+			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
 			opacity 0.2s ease,
-			margin-top 0.3s ease;
+			margin-top var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
 	}
 
 	.post-header__meta {
@@ -343,7 +343,7 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		max-height: 12em;
 		opacity: 1;
 		transition:
-			max-height 0.3s ease,
+			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
 			opacity 0.2s ease;
 	}
 
@@ -418,9 +418,9 @@ const hasEngagement = likes > 0 || comments > 0 || shares > 0;
 		max-height: 5em;
 		opacity: 1;
 		transition:
-			max-height 0.3s ease,
+			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
 			opacity 0.2s ease,
-			padding-top 0.3s ease;
+			padding-top var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
 	}
 
 	.post-header__engagement-item {

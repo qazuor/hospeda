@@ -176,7 +176,7 @@ const newStyle =
     max-height: 3em;
     opacity: 1;
     transition:
-      max-height 0.3s ease,
+      max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
       opacity 0.2s ease;
   }
 
@@ -194,7 +194,7 @@ const newStyle =
     display: flex;
     flex-direction: column;
     gap: var(--space-2, 8px);
-    transition: gap 0.3s ease;
+    transition: gap var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
   }
 
   .detail-header__favorite {
@@ -210,7 +210,7 @@ const newStyle =
     flex-wrap: wrap;
     gap: var(--space-2, 8px);
     align-items: center;
-    transition: gap 0.3s ease;
+    transition: gap var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
   }
 
   /* Verified badge — reuses the shared `.featured-badge` shape (padding,
@@ -238,7 +238,7 @@ const newStyle =
     padding: 4px 14px;
     line-height: 1.4;
     white-space: nowrap;
-    transition: padding 0.3s ease, font-size 0.3s ease;
+    transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
   }
 
   /* Bookmark count pill (non-interactive, info only) */
@@ -268,7 +268,7 @@ const newStyle =
     color: var(--core-foreground);
     margin: 0;
     line-height: 1.15;
-    transition: font-size 0.3s ease;
+    transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
   }
   .detail-header__destination {
     font-family: var(--font-sans);
@@ -276,7 +276,7 @@ const newStyle =
     font-weight: 500;
     color: var(--brand-primary-link);
     text-decoration: none;
-    transition: font-size 0.3s ease;
+    transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
   }
   .detail-header__destination:hover {
     text-decoration: underline;
@@ -289,7 +289,7 @@ const newStyle =
     max-height: 3em;
     opacity: 1;
     transition:
-      max-height 0.3s ease,
+      max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
       opacity 0.2s ease;
   }
   .detail-header__reviews-count {

@@ -162,7 +162,7 @@ const isNew = experience.createdAt
         max-height: 3em;
         opacity: 1;
         transition:
-            max-height 0.3s ease,
+            max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
             opacity 0.2s ease;
     }
 
@@ -180,7 +180,7 @@ const isNew = experience.createdAt
         gap: var(--space-3, 12px);
         flex: 1;
         min-width: 0;
-        transition: gap 0.3s ease;
+        transition: gap var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .exp-hero__fav {
@@ -207,7 +207,7 @@ const isNew = experience.createdAt
         font-size: 13px;
         font-weight: 600;
         line-height: 1.4;
-        transition: padding 0.3s ease, font-size 0.3s ease;
+        transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .exp-hero__new-badge {
@@ -223,7 +223,7 @@ const isNew = experience.createdAt
         font-size: 13px;
         font-weight: 600;
         line-height: 1.4;
-        transition: padding 0.3s ease, font-size 0.3s ease;
+        transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .exp-hero__name {
@@ -233,7 +233,7 @@ const isNew = experience.createdAt
         line-height: 1.2;
         color: var(--core-foreground);
         margin: 0;
-        transition: font-size 0.3s ease;
+        transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .exp-hero__location {
@@ -243,7 +243,7 @@ const isNew = experience.createdAt
         color: var(--core-muted-foreground);
         font-family: var(--font-sans);
         font-size: 0.95rem;
-        transition: font-size 0.3s ease;
+        transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .exp-hero__pricing {
@@ -252,7 +252,7 @@ const isNew = experience.createdAt
         overflow: hidden;
         max-height: 3em;
         opacity: 1;
-        transition: max-height 0.3s ease, opacity 0.3s ease;
+        transition: max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), opacity 0.3s ease;
     }
 
     .exp-hero__rating {
@@ -262,7 +262,7 @@ const isNew = experience.createdAt
         overflow: hidden;
         max-height: 3em;
         opacity: 1;
-        transition: max-height 0.3s ease, opacity 0.3s ease;
+        transition: max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), opacity 0.3s ease;
     }
 
     .exp-hero__stars {

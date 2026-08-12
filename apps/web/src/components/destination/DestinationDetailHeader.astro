@@ -149,7 +149,7 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 		max-height: 3em;
 		opacity: 1;
 		transition:
-			max-height 0.3s ease,
+			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
 			opacity 0.2s ease;
 	}
 
@@ -167,7 +167,7 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 		display: flex;
 		flex-direction: column;
 		gap: 0.5rem;
-		transition: gap 0.3s ease;
+		transition: gap var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
 	}
 
 	.dest-header__favorite {
@@ -182,7 +182,7 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 		list-style: none;
 		margin: 0;
 		padding: 0;
-		transition: max-height 0.3s ease, opacity 0.2s ease;
+		transition: max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), opacity 0.2s ease;
 	}
 
 	.dest-header__attraction-badge {
@@ -198,7 +198,7 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 		padding: 3px 10px;
 		line-height: 1.4;
 		white-space: nowrap;
-		transition: padding 0.3s ease, font-size 0.3s ease;
+		transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
 	}
 
 	/*
@@ -233,7 +233,7 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 		color: var(--core-foreground);
 		margin: 0;
 		line-height: 1.15;
-		transition: font-size 0.3s ease;
+		transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
 	}
 
 	.dest-header__meta {
@@ -244,7 +244,7 @@ const remainingAttractions = Math.max(0, attractions.length - sortedAttractions.
 		max-height: 3em;
 		opacity: 1;
 		transition:
-			max-height 0.3s ease,
+			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
 			opacity 0.2s ease;
 	}
 

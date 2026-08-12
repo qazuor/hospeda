@@ -225,7 +225,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         max-height: 3em;
         opacity: 1;
         transition:
-            max-height 0.3s ease,
+            max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
             opacity 0.2s ease;
     }
 
@@ -243,7 +243,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         display: flex;
         flex-direction: column;
         gap: var(--space-2, 8px);
-        transition: gap 0.3s ease;
+        transition: gap var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .event-header__favorite {
@@ -256,7 +256,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         flex-wrap: wrap;
         gap: var(--space-2, 8px);
         align-items: center;
-        transition: gap 0.3s ease;
+        transition: gap var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .event-header__category-badge {
@@ -271,7 +271,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         padding: 4px 14px;
         line-height: 1.4;
         white-space: nowrap;
-        transition: padding 0.3s ease, font-size 0.3s ease;
+        transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .event-header__status-pill {
@@ -286,7 +286,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         padding: 4px 14px;
         line-height: 1.4;
         white-space: nowrap;
-        transition: padding 0.3s ease, font-size 0.3s ease;
+        transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     /* Estimated-date badge (HOS-280): a plain-language pill (not uppercase, not
@@ -306,7 +306,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         line-height: 1.4;
         background-color: var(--muted);
         color: var(--core-muted-foreground);
-        transition: padding 0.3s ease, font-size 0.3s ease;
+        transition: padding var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease), font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     .event-header__title {
@@ -316,7 +316,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         color: var(--core-foreground);
         margin: 0;
         line-height: 1.15;
-        transition: font-size 0.3s ease;
+        transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     /* Mirrors `.post-header__summary`: full measure (no max-width, so it spans
@@ -339,9 +339,9 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         max-height: 4.65em;
         opacity: 1;
         transition:
-            max-height 0.3s ease,
+            max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
             opacity 0.2s ease,
-            margin-top 0.3s ease;
+            margin-top var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
     }
 
     :global(.wave-header--compact) .event-header__summary {
@@ -357,7 +357,7 @@ const cancelledStyle = `background-color: ${cancelledColors.bg}; color: ${cancel
         max-height: 12em;
         opacity: 1;
         transition:
-            max-height 0.3s ease,
+            max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
             opacity 0.2s ease;
     }
 

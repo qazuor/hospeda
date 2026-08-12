@@ -198,9 +198,13 @@ const { paddingTop = 'listing', class: className } = Astro.props;
     position: relative;
     /* Timing for the band wrapper's own compact/expand/hide transitions
        (bar transform + breadcrumbs + content). Published here so entity headers
-       inside the slot CAN inherit it — but as of HOS-84 close they still hardcode
-       their title/badge transition duration, so this var does not yet drive their
-       motion (deferred polish, see apps/web/CLAUDE.md). */
+       inside the slot inherit it: the 6 entity headers and ListingPageHeader now
+       drive every layout-collapse property (max-height, padding, font-size, gap,
+       margin) off these two vars, so the band and its content animate as one.
+       Their opacity fades (0.2s) and hover colors (0.15s) stay hardcoded on
+       purpose — those are meant to be faster than the collapse.
+       Consumers reference these with a `0.3s` / `ease` fallback, so a header
+       rendered outside the band keeps its former standalone timing. */
     --wave-header-anim-duration: 0.45s;
     --wave-header-anim-ease: ease-in-out;
   }
