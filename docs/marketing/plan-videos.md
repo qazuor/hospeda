@@ -83,19 +83,36 @@ Las **imágenes de referencia** del personaje están en la misma carpeta que est
 
 > ⚠️ **Por qué esto es lo más importante de toda la producción.** Las herramientas generativas no recuerdan nada entre una generación y la siguiente. Lo único que hace que Hospedín sea el mismo en el video de enero y en el de julio es repetir exactamente la misma descripción y partir siempre de la misma imagen de referencia. Si en algún prompt se resume la descripción "para que entre", el personaje cambia y la serie se rompe.
 
-### Las dos series de video
+### Hospedín no habla: actúa
 
-Hay **dos formatos con funciones distintas** y no compiten entre sí:
+**Todos los videos son con Hospedín.** No hay serie con persona real a cámara.
 
-| | **Serie con Hospedín** | **Serie con persona a cámara** |
+Eso obliga a una decisión de formato que vale para los 33 videos:
+
+> **Hospedín no habla con la boca sincronizada. La voz va en off y él actúa.**
+
+**Por qué.** El lip sync es la parte más cara y más frágil de todo el proceso: cuanto más largo el plano hablado, más se degrada el parecido del personaje y más raro queda el resultado. Un personaje generado sosteniendo cuarenta segundos a cámara es exactamente el peor caso posible. Con voz en off, en cambio, el personaje solo tiene que gesticular, y eso sí sale consistente.
+
+**Cómo se traduce en la práctica:**
+
+- **Los planos de Hospedín son cortos**: 2 a 4 segundos cada uno. Nunca uno largo.
+- **Se intercalan con grabación de pantalla**, que es la que lleva el peso del video.
+- **Hospedín gesticula, señala, reacciona**: asiente, niega, se sorprende, muestra algo con la mano, levanta el pulgar. Nada de bocas moviéndose.
+- **La voz en off lleva el hilo** y es la que hace largo el video sin exigirle nada al personaje.
+- **El texto en pantalla acompaña siempre**, porque la mayoría lo mira sin sonido.
+
+**Dos duraciones, según para qué es el video:**
+
+| | **Cortos** | **Largos** |
 |---|---|---|
-| Quién aparece | El personaje generado | Una persona real hablando |
 | Duración | 10 a 25 segundos | 25 a 50 segundos |
-| Para qué sirve | Gancho, demostrar una función, historias | Explicar, dar confianza, institucional |
-| Dónde | Historias y WhatsApp, sobre todo | Publicaciones |
-| Costo de producción | Generación + edición | Filmación + edición |
+| Para qué | Demostrar una función, gancho | Explicar una idea, dar confianza |
+| Dónde | Historias y WhatsApp | Publicaciones |
+| Estructura | Hospedín, pantalla, Hospedín | Voz en off con pantalla, Hospedín en planos sueltos |
 
-**Cuándo usar cuál**: si el mensaje es "mirá qué fácil es esto", va Hospedín. Si el mensaje es "te explico por qué hicimos esto", va una persona. Una función se demuestra; una idea se cuenta.
+**Cuándo usar cuál**: una función se demuestra —eso es corto—; una idea se cuenta —eso es largo—.
+
+> Si en algún momento se decide invertir en lip sync, lo que cambia es que los planos de Hospedín pueden ser más largos y la voz en off deja de ser necesaria. El resto de la estructura sirve igual.
 
 ### Quién graba las pantallas
 
