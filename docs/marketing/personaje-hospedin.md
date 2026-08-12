@@ -535,22 +535,17 @@ El objetivo es que una persona pueda mirar decenas de videos creados en distinto
 
 ---
 
-## Conflicto de paletas — resolver antes de producir
+## Cómo se relaciona con la paleta de las placas
 
-⚠️ **La paleta de Hospedín y la paleta de las placas no son la misma.**
+Las dos paletas ya están reconciliadas, sin rehacer nada del personaje:
 
-| | Azul | Verde | Naranja |
-|---|---|---|---|
-| **Hospedín** | `#3AA7D9` | `#8CC63F` | `#F5A623` |
-| **Placas** | `#0066EF` | `#076C05` / `#90BE1E` | `#FC8102` |
+- **El azul `#3AA7D9` y el naranja `#F5A623` se sumaron** a la paleta de las placas. No reemplazaron a los que ya estaban: ahora hay dos azules y dos naranjas disponibles, el original para las placas y el del personaje para cuando Hospedín aparezca o para piezas que tengan que dialogar con él.
+- **El verde `#8CC63F` reemplazó al `#90BE1E`** que usaban las placas. Eran casi el mismo color y tener los dos era redundante.
+- El resto de la paleta de placas quedó intacta.
 
-Los azules son los que más se separan: el de las placas es un azul saturado y el del personaje es bastante más celeste. Los verdes y los naranjas están cerca pero no coinciden.
+La paleta unificada está en [`plan-contenido-redes.md`](plan-contenido-redes.md).
 
-**Por qué importa**: si una placa lleva a Hospedín encima, o si una historia mezcla una placa y un video, se van a ver de dos familias distintas y la marca pierde unidad. Es de esas cosas que no se notan mirando una pieza sola y se notan mucho mirando el perfil entero.
-
-**Qué conviene hacer**: unificar en una sola paleta. Lo más simple es que las placas adopten los colores del personaje, porque el personaje está renderizado en 3D y su paleta ya está congelada en las imágenes de referencia — cambiarla implicaría volver a generar todo. Cambiar los colores de las placas, en cambio, es editar un documento.
-
-**Si se decide unificar**, hay que actualizar la paleta en `plan-contenido-redes.md`, donde hoy figuran los ocho colores originales.
+El azul oscuro `#0D2B3E` es exclusivo del personaje, para detalles y contornos. No se agregó a las placas.
 
 ---
 

@@ -50,7 +50,20 @@ En cada diseño se detalla qué tipo es. Algunos tienen más de un tipo: en esos
 | `#DFECF8` | `#0066EF` |
 | `#FED9AB` | `#FC8102` |
 | `#CCE7C3` | `#076C05` |
-| `#90BE1E` | `#2493B6` |
+| `#8CC63F` | `#2493B6` |
+
+**Sumados desde Hospedín** — para que las placas y el personaje se vean de la misma familia:
+
+| Color | Código |
+|---|---|
+| Azul de Hospedín | `#3AA7D9` |
+| Naranja de Hospedín | `#F5A623` |
+
+> **El verde `#90BE1E` fue reemplazado por el `#8CC63F`**, que es el de Hospedín. Eran casi el mismo color y tener los dos era redundante: ahora el verde lima de las placas es exactamente el del personaje.
+>
+> Los demás colores originales **no se tocaron**: el azul y el naranja de Hospedín se suman a la paleta, no reemplazan a los que ya estaban. Eso da dos azules y dos naranjas disponibles — el original para las placas y el del personaje para cuando aparezca Hospedín o para piezas que tengan que dialogar con él.
+>
+> La paleta completa del personaje está en [`personaje-hospedin.md`](personaje-hospedin.md), incluido el azul oscuro `#0D2B3E` que usa para detalles.
 
 #### Iconos
 
