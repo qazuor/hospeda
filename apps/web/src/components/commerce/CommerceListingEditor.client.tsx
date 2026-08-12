@@ -26,6 +26,7 @@ import type { Image, OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
 import { type JSX, useCallback, useMemo, useState } from 'react';
 import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
+import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
 import { EditorSectionNav } from '@/components/host/editor/EditorSectionNav.client';
 import { apiClient } from '@/lib/api/client';
@@ -35,6 +36,7 @@ import { useUnsavedChangesGuard } from '@/lib/forms/use-unsaved-changes-guard';
 import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './CommerceListingEditor.module.css';
 import {
@@ -426,6 +428,16 @@ export function CommerceListingEditor({
         async (event: React.FormEvent<HTMLFormElement>) => {
             event.preventDefault();
             if (Object.keys(patchPayload).length === 0) {
+                // Never save silently (HOS-190): "Guardar" always visibly does
+                // something. This used to be a bare `return`, which was
+                // invisible but harmless while the button was disabled with
+                // nothing to save. The shared `ActionBar` keeps Save enabled, so
+                // without this the owner would press a live button and get no
+                // response at all.
+                addToast({
+                    type: 'info',
+                    message: t('commerce.owner.editor.noChanges', 'No hay cambios para guardar')
+                });
                 return;
             }
 
@@ -473,9 +485,18 @@ export function CommerceListingEditor({
     );
 
     const isSaving = status.kind === 'saving';
-    // Derived from the diff, so reverting an edit by hand disables the button
-    // again — the accommodation editor behaves the same way.
-    const canSave = Object.keys(patchPayload).length > 0 && !isSaving;
+
+    /**
+     * Leaves the editor for the listing index.
+     *
+     * `ActionBar` renders Cancel as a `<button>`, so this navigates in JS. The
+     * bespoke bar this replaced used an `<a href>`, which middle-click and
+     * "open in new tab" understood and this does not — accepted deliberately in
+     * exchange for the three content editors sharing one action bar.
+     */
+    const handleCancel = useCallback(() => {
+        window.location.href = buildUrl({ locale, path: 'mi-cuenta/comercio' });
+    }, [locale]);
 
     // AmenitiesSection returns null when BOTH catalogs are empty (see its early
     // return), so its nav entry has to disappear with it: a link to a section
@@ -637,23 +658,11 @@ export function CommerceListingEditor({
                         </p>
                     )}
 
-                    <div className={styles.actions}>
-                        <a
-                            className={styles.cancel}
-                            href={`/${locale}/mi-cuenta/comercio/`}
-                        >
-                            {t('commerce.owner.editor.cancel', 'Cancelar')}
-                        </a>
-                        <button
-                            type="submit"
-                            className={styles.save}
-                            disabled={!canSave}
-                        >
-                            {isSaving
-                                ? t('commerce.owner.editor.saving', 'Guardando...')
-                                : t('commerce.owner.editor.save', 'Guardar cambios')}
-                        </button>
-                    </div>
+                    <ActionBar
+                        locale={locale}
+                        isSaving={isSaving}
+                        onCancel={handleCancel}
+                    />
                 </div>
             </div>
         </form>

@@ -190,8 +190,7 @@
                 "deleteError": "Could not delete the question.",
                 "reorderError": "Could not reorder."
             },
-            "save": "Save changes",
-            "saving": "Saving...",
+            "noChanges": "No changes to save",
             "success": "Changes saved.",
             "error": "Changes could not be saved. Please try again.",
             "unsavedChanges": "You have unsaved changes. If you leave now they will be lost. Leave anyway?",
