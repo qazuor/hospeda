@@ -343,14 +343,17 @@ describe('catalog row guards', () => {
         // against the actual plan definitions so the conversion cannot rot —
         // and so a wrong-but-granted key (basicStats → VIEW_ADVANCED_STATS)
         // fails here even though the audience sweep above would pass.
+        // No `tourist-plus` here: `REAL_TOURIST_PLANS` is the ACTIVE catalog and
+        // HOS-301 D1 deactivated that plan, so the table stopped rendering its
+        // column. The fixture-backed `ALL_TOURIST_PLANS` assertions below still
+        // cover the plan itself — its definition survives in ALL_PLANS for the
+        // subscriptions already on it.
         expect(cellsBySlug('reviews', REAL_TOURIST_PLANS)).toEqual({
             'tourist-free': 'yes',
-            'tourist-plus': 'yes',
             'tourist-vip': 'yes'
         });
         expect(cellsBySlug('recommendations', REAL_TOURIST_PLANS)).toEqual({
             'tourist-free': 'no',
-            'tourist-plus': 'yes',
             'tourist-vip': 'yes'
         });
 

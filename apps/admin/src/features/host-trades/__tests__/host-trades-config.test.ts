@@ -48,6 +48,26 @@ describe('createHostTradesColumns', () => {
         expect(catCol?.badgeOptions).toBeDefined();
         expect((catCol?.badgeOptions?.length ?? 0) >= 13).toBe(true);
     });
+
+    /**
+     * The category badge is the one cell whose text is DATA, not a header, and
+     * it was the last hardcoded Spanish in this feature (HOS-376 T-054). Three
+     * of the thirteen literals had already drifted from the shared dictionary —
+     * the admin said "Plagas" where the directory said "Control de plagas" —
+     * which is what a second copy of the same words always ends up doing.
+     *
+     * The stub returns the key it is given, so a label that went through `t()`
+     * IS the key. A literal would not match.
+     */
+    it('labels every category through i18n rather than a hardcoded literal', () => {
+        const catCol = columns.find((c) => c.id === 'category');
+        const labels = (catCol?.badgeOptions ?? []).map((option) => option.label);
+
+        expect(labels.length).toBeGreaterThanOrEqual(13);
+        for (const label of labels) {
+            expect(label).toMatch(/^host-trades\.categories\./);
+        }
+    });
 });
 
 // ---------------------------------------------------------------------------

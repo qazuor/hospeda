@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 54/70 tareas cerradas (77%)
+## Progreso: 57/70 tareas cerradas (81%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -109,7 +109,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Los 5 agregados y las 3 de suspensión están en la DB desde T-009 pero no en HostTradeSchema, así que ningún endpoint las sirve y HostTradeModel no las puede escribir. Reparto de tiers + omit…
   - Bloqueada por: — · Bloquea a: T-022, T-052
 
-## Fase `integration` — 20/27 completadas (complejidad promedio 2.5)
+## Fase `integration` — 27/27 completadas (complejidad promedio 2.5)
 
 - [x] **T-030** (c3) — Endpoints del anfitrión: declarar por QR y listar pendientes
   - apps/api/src/routes/host-trade/protected/: POST /{slug}/usages (gate HOST_TRADE_VIEW, declaredBy=HOST, creationChannel=QR), GET /usages/pending (paginado) y GET /usages/pending-count. Usar l…
@@ -195,13 +195,13 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-053** (c2) — Detalle del proveedor con valoraciones y réplicas
   - Vista de detalle dentro del directorio con la lista paginada de valoraciones aprobadas, su desglose cuando existe, el indicador de beneficio respetado y la réplica aprobada del proveedor. Sk…
   - Bloqueada por: T-036 · Bloquea a: T-054
-- [ ] **T-054** (c3) — Namespace i18n del dominio en es/en/pt
+- [x] **T-054** (c3) — Namespace i18n del dominio en es/en/pt
   - Todas las cadenas de la UI web y admin en @repo/i18n, en los 3 locales. Verificar que el prefijo del namespace esté en CLIENT_I18N_KEY_PREFIXES — si falta, en producción salen las claves cru…
   - Bloqueada por: T-045, T-046, T-047, T-048, T-050, T-052, T-053 · Bloquea a: —
-- [ ] **T-055** (c3) — Admin: cola de moderación de réplicas y valoraciones
+- [x] **T-055** (c3) — Admin: cola de moderación de réplicas y valoraciones
   - apps/admin/src/routes/_authed/host-trades/: cola de réplicas PENDING (la prioritaria, porque bloquea publicación) y listado de valoraciones con filtro de moderationState. Hooks con el molde …
   - Bloqueada por: T-037 · Bloquea a: —
-- [ ] **T-056** (c3) — Admin: listado de usos y gestión de suspensiones
+- [x] **T-056** (c3) — Admin: listado de usos y gestión de suspensiones
   - Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Ta…
   - Bloqueada por: T-038 · Bloquea a: —
 

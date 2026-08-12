@@ -12,9 +12,15 @@
  * - _canAdminList calls super before the entity-specific check (call-order).
  */
 
-import type { AccommodationModel, HostTradeModel } from '@repo/db';
+import {
+    type AccommodationModel,
+    type HostTradeModel,
+    hostTrades,
+    isNotNull,
+    isNull
+} from '@repo/db';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import * as hostTradePermissions from '../../../src/services/hostTrade/host-trade.permissions';
 import { HostTradeService } from '../../../src/services/hostTrade/host-trade.service';
 import type { Actor } from '../../../src/types';
@@ -523,6 +529,78 @@ describe('HostTradeService', () => {
 
             expect(checkSpy).not.toHaveBeenCalled();
             checkSpy.mockRestore();
+        });
+    });
+
+    // -----------------------------------------------------------------------
+    // adminList — declarationSuspended filter (HOS-376 T-056)
+    // -----------------------------------------------------------------------
+    describe('adminList() — declarationSuspended', () => {
+        /**
+         * A suspension is `declarationSuspendedAt IS NOT NULL`, not a column, so
+         * the base search cannot express it. These tests pin BOTH halves of the
+         * translation, and the second half is the one that bites: if the key were
+         * merely turned into a SQL condition and left in the filters, the model
+         * would receive `where.declarationSuspended = true` for a column that does
+         * not exist.
+         */
+        function buildAdminService() {
+            return buildService({
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+                getTable: vi.fn().mockReturnValue({ createdAt: {}, deletedAt: {} })
+            });
+        }
+
+        /**
+         * Reads the `where` map and the extra SQL conditions the search reached
+         * the model with.
+         *
+         * Throws rather than returning empties when `findAll` was never called:
+         * every assertion below is about what the query looked like, and a query
+         * that never happened would satisfy "no leaked filter key" trivially.
+         */
+        function readFindAllCall(model: { findAll: Mock }) {
+            const call = model.findAll.mock.calls[0];
+            if (!call) {
+                throw new Error('model.findAll was never called');
+            }
+            return { where: call[0], conditions: call[2] };
+        }
+
+        it('turns declarationSuspended=true into a SQL condition and drops the key from the where clause', async () => {
+            const { service, model } = buildAdminService();
+
+            const result = await service.adminList(actorWithViewAll, {
+                declarationSuspended: true
+            });
+
+            expect(result.error).toBeUndefined();
+            const { where, conditions } = readFindAllCall(model);
+            expect(where).not.toHaveProperty('declarationSuspended');
+            expect(conditions).toEqual([isNotNull(hostTrades.declarationSuspendedAt)]);
+        });
+
+        it('turns declarationSuspended=false into the OPPOSITE condition rather than dropping the filter', async () => {
+            const { service, model } = buildAdminService();
+
+            const result = await service.adminList(actorWithViewAll, {
+                declarationSuspended: false
+            });
+
+            expect(result.error).toBeUndefined();
+            const { where, conditions } = readFindAllCall(model);
+            expect(where).not.toHaveProperty('declarationSuspended');
+            expect(conditions).toEqual([isNull(hostTrades.declarationSuspendedAt)]);
+        });
+
+        it('adds no condition when the filter is absent', async () => {
+            const { service, model } = buildAdminService();
+
+            const result = await service.adminList(actorWithViewAll, {});
+
+            expect(result.error).toBeUndefined();
+            const { conditions } = readFindAllCall(model);
+            expect(conditions).toBeUndefined();
         });
     });
 });

@@ -81,14 +81,15 @@ export const CACHE_CLASS_BUDGETS = {
     static: { sMaxAge: 300, swr: 600 },
     catalog: { sMaxAge: 3_600, swr: 3_600 },
     /**
-     * Still at the old value, on purpose. HOS-424 — a content write purging the
-     * collection tag but not the entity tag — merged as PR #2746, but its
-     * staging smoke has not been executed. That issue exists precisely because a
-     * purge that read correctly in code was evicting nothing in the field, so a
-     * merged fix is not the evidence this needs. Raising it to 3 600 s before
-     * the smoke would multiply a possibly-still-live defect by 12.
+     * Reaching 3 600 s took a fix, not just a decision. Until HOS-424 (PR #2746)
+     * a content write purged the collection tag but NOT the entity tag, so an
+     * edited detail page stayed stale for its whole TTL and raising that TTL
+     * would only have multiplied the defect. Do not treat this value as
+     * independent of that: if entity-tag purging regresses, this is the number
+     * that turns the regression from a 5-minute annoyance into an hour of a
+     * published edit not appearing.
      */
-    detail: { sMaxAge: 300, swr: 600 },
+    detail: { sMaxAge: 3_600, swr: 3_600 },
     home: { sMaxAge: 3_600, swr: 3_600 },
     pricing: { sMaxAge: 3_600, swr: 3_600 }
 } as const satisfies Record<string, CacheClassBudget>;

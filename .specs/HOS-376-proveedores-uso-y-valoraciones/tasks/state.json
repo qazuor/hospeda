@@ -2007,110 +2007,128 @@
         {
             "id": "T-054",
             "title": "Namespace i18n del dominio en es/en/pt",
-            "description": "Todas las cadenas de la UI web y admin en @repo/i18n, en los 3 locales. Verificar que el prefijo del namespace esté en CLIENT_I18N_KEY_PREFIXES — si falta, en producción salen las claves crudas y en dev no se nota porque se sirve el diccionario entero. Correr el guard de claves i18n del repo.",
-            "status": "pending",
+            "description": "Todas las cadenas de la UI web y admin en @repo/i18n, en los 3 locales. Verificar que el prefijo del namespace esté en CLIENT_I18N_KEY_PREFIXES — si falta, en producción salen las claves crudas y en dev no se nota porque se sirve el diccionario entero. Correr el guard de claves i18n del repo. RESUELTO: el barrido encontró 2 defectos REALES y un tercero que se reporta sin tocar. (1) La página del directorio llamaba a host.properties.empty.fetchError y host.properties.error.retry, dos claves que NO EXISTEN — copiadas de la página de propiedades. El fallback inline no vacío lo tapaba: en en/pt el visitante veía texto en ESPAÑOL. Las claves ahora viven en host-trades.page.error.* en los 3 locales. (2) La columna de categoría del admin tenía su propio Record de 13 nombres en español, bajo un comentario que afirmaba que las traducciones vivían en admin-entities. TRES ya habían derivado del diccionario compartido: el admin decía Pileta / Jardín, Plagas e Internet donde el directorio público decía Pileta y Jardín, Control de plagas e Internet / TV. Ahora lee host-trades.categories.*, con un test que afirma que el label ES la clave (el stub de t devuelve lo que recibe, así que un literal no matchea). (3) NO TOCADO, para decisión del owner: features/host-trades/config/sections/basic-info.consolidated.ts tiene los ~25 labels/descripciones/placeholders del formulario admin en español hardcodeado — pero es el patrón de TODOS los basic-info.consolidated.ts del admin, así que cambiar sólo éste lo desviaría del resto. VERIFICADO Y CORRECTO, no tocado: los 212 fallbacks inline t(key, texto) del web son el patrón dominante del repo (2456 llamadas con fallback contra 276 sin), y están documentados en RegisterUsageForm como deliberados — un fallback vacío mostraría la clave cruda en prod. Los 10 prefijos host-trades.* que alcanzan el browser están declarados y el guard bidireccional de i18n-client-namespaces pasa; accessDenied y moderation quedan afuera con razón (SSR de Astro y admin). Parity es/en/pt verde sobre 222 claves, y cero claves referenciadas sin definir.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-045", "T-046", "T-047", "T-048", "T-050", "T-052", "T-053"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Claves es",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Claves en y pt",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Prefijo en CLIENT_I18N_KEY_PREFIXES",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Correr el guard de claves",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["i18n", "web", "admin"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T21:55:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T21:55:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T21:55:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-11T21:20:00Z",
+                "completed": "2026-08-11T21:55:00.000Z"
             }
         },
         {
             "id": "T-055",
             "title": "Admin: cola de moderación de réplicas y valoraciones",
-            "description": "apps/admin/src/routes/_authed/host-trades/: cola de réplicas PENDING (la prioritaria, porque bloquea publicación) y listado de valoraciones con filtro de moderationState. Hooks con el molde de apps/admin/src/features/commerce/hooks/createCommerceEntityHooks.ts (useModerateReviewMutation / usePendingReviewsQuery). Tailwind, NADA de CSS Modules. Paginación page+pageSize.",
-            "status": "pending",
+            "description": "apps/admin/src/routes/_authed/host-trades/: cola de réplicas PENDING (la prioritaria, porque bloquea publicación) y listado de valoraciones con filtro de moderationState. Hooks con el molde de apps/admin/src/features/commerce/hooks/createCommerceEntityHooks.ts (useModerateReviewMutation / usePendingReviewsQuery). Tailwind, NADA de CSS Modules. Paginación page+pageSize. RESUELTO: la ruta real es _authed/platform/host-trades/moderation/ (el enunciado decía _authed/host-trades/, que no existe). Se siguió el molde de use-comment-moderation.ts, NO el de createCommerceEntityHooks: ese factory asume un entity endpoint con reviews anidadas bajo el mismo prefijo, y acá las dos colas son endpoints hermanos e independientes. LAS DOS COLAS SE PIDEN DISTINTO y eso es todo el diseño: las réplicas se scopean a PENDING (cada fila es un proveedor que no puede responder una queja sobre su propio negocio hasta que un humano lo libere) y las valoraciones NO se scopean (nacen APPROVED, así que una cola en PENDING estaría vacía casi siempre y escondería justo las filas publicadas que hay que bajar). El badge muestra los dos números por separado, nunca su suma: 40 items de backlog y 40 proveedores bloqueados dan el mismo total y son problemas opuestos. No hay tercer botón: PENDING es un estado, no un veredicto. Un motivo vacío o de espacios viaja como ausente, no como string vacío — se guarda en la fila y se le muestra al autor, y un vacío se lee como un motivo que se dio y se perdió. HALLAZGO DE ENTORNO: apps/admin/src/routeTree.gen.ts es gitignored y NO existe en un worktree limpio, así que pnpm typecheck del admin falla entero (en archivos que uno no tocó) hasta correr pnpm build o pnpm dev una vez.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-037"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Hooks de query y mutación",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cola de réplicas PENDING",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Listado de valoraciones con filtro",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "react", "moderation"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": true,
+                "typecheck": true,
+                "tests": true
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-11T18:10:00Z",
+                "completed": "2026-08-11T18:55:00Z"
             }
         },
         {
             "id": "T-056",
             "title": "Admin: listado de usos y gestión de suspensiones",
-            "description": "Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Table + TanStack Query. El filtro por creationChannel=EMAIL_LOOKUP es el que permite auditar el fallback de spray.",
-            "status": "pending",
+            "description": "Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Table + TanStack Query. El filtro por creationChannel=EMAIL_LOOKUP es el que permite auditar el fallback de spray. RESUELTO: la vista de suspendidos NO tenía de dónde leer — T-038 construyó el POST para aplicar/levantar pero ninguna query devolvía quiénes están suspendidos, así que AC-11 y AC-12 eran incumplibles. Se agregó el filtro `declarationSuspended` a HostTradeAdminSearchSchema, traducido en HostTradeService._executeAdminSearch a IS NULL / IS NOT NULL (el where key-value no puede expresarlo) y REMOVIDO de los entityFilters, porque si queda el base lo mergea como columna inexistente. El `false` se trata como condición propia: son preguntas opuestas y un false caído devolvería el directorio entero bajo el título contrario. Además el listado admin de usos devolvía la fila cruda (dos uuids por línea), así que se le adjuntan `hostTrade` y `host` — una query por lado por página con ids deduplicados, ambos nullable para que un nombre sin resolver no tire la página. CONTRA EL ENUNCIADO: levantar NO pide motivo. El endpoint de T-038 exige motivo para suspender y no acepta ninguno para levantar; pedirlo y descartarlo sería poner palabras en un campo que nadie lee de vuelta. La pantalla SÍ suspende además de levantar (mismo endpoint, un booleano, un solo dialog: así no puede nacer un botón de suspender que postee un lift). Las reglas que son ausencias (no ofrecer suspender sobre un proveedor sin nombre resuelto o ya suspendido) viven en módulo puro, no en el JSX. El sidebar padre pasó a `exact: true` porque la ruta nueva cuelga de él y si no se encienden los dos ítems juntos. Las 4 keys de status se reusan del namespace compartido `host-trades`; el resto del copy vive en `admin-pages` para no engordar el bundle del web.",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-038"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Tabla de usos con filtros",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Vista de suspensiones",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Acción de levantar con motivo",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["admin", "react"],
             "phase": "integration",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T20:10:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T20:10:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-11T20:10:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-11T19:05:00Z",
+                "completed": "2026-08-11T20:10:00.000Z"
             }
         },
         {
@@ -2515,9 +2533,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 16,
+        "pending": 13,
         "inProgress": 0,
-        "completed": 54,
+        "completed": 57,
         "blocked": 0,
         "averageComplexity": 2.4
     }

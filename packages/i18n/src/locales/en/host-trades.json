@@ -1,7 +1,11 @@
 {
     "page": {
         "title": "Service directory",
-        "subtitle": "Trusted local providers for your accommodation"
+        "subtitle": "Trusted local providers for your accommodation",
+        "error": {
+            "fetchError": "The list could not be loaded. Try reloading the page.",
+            "retry": "Retry"
+        }
     },
     "filter": {
         "all": "All"
@@ -260,6 +264,52 @@
             "encodes": "Leads to: {{url}}",
             "download": "Download the QR",
             "downloaded": "Done, we downloaded it as SVG."
+        }
+    },
+    "moderation": {
+        "title": "Provider moderation",
+        "subtitle": "Two queues with different meanings: a pending reply blocks a provider, a pending review blocks nobody.",
+        "replies": {
+            "title": "Pending answers",
+            "help": "A provider cannot answer a complaint about their own business until this is approved. This queue comes first.",
+            "empty": "No answers are waiting for review.",
+            "onReview": "Answers review {{id}}",
+            "editedAfterReply": "The host edited their review after this answer."
+        },
+        "reviews": {
+            "title": "Reviews",
+            "help": "They publish on creation, so this queue is a backlog: nothing is waiting on it.",
+            "empty": "No reviews to look at.",
+            "benefitYes": "Honoured the benefit",
+            "benefitNo": "Did NOT honour the benefit",
+            "noContent": "No written comment."
+        },
+        "filters": {
+            "stateLabel": "Moderation state",
+            "all": "All",
+            "PENDING": "Pending",
+            "APPROVED": "Approved",
+            "REJECTED": "Rejected"
+        },
+        "state": {
+            "PENDING": "Pending",
+            "APPROVED": "Approved",
+            "REJECTED": "Rejected"
+        },
+        "actions": {
+            "approve": "Approve",
+            "reject": "Reject",
+            "reasonLabel": "Reason (optional, shown to whoever wrote it)",
+            "reasonPlaceholder": "For example: it includes personal details of third parties."
+        },
+        "errors": {
+            "load": "We could not load the queue. Try reloading the page.",
+            "moderate": "We could not save the decision. Please try again."
+        },
+        "pagination": {
+            "status": "Page {{page}} of {{total}}",
+            "previous": "Previous",
+            "next": "Next"
         }
     },
     "directory": {
