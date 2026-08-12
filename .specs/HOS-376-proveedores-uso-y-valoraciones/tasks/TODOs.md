@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 67/70 tareas cerradas (96%)
+## Progreso: 69/70 tareas cerradas (99%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -241,12 +241,12 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Verificar en NAVEGADOR, no sólo en vitest: el radiogroup de estrellas se opera con teclado y anuncia el valor; el <dialog> respeta el trap de foco y Escape; el pill del contador anuncia el n…
   - Bloqueada por: T-048 · Bloquea a: —
 
-## Fase `docs` — 0/2 completadas (complejidad promedio 1.5)
+## Fase `docs` — 2/2 completadas (complejidad promedio 1.5)
 
-- [ ] **T-068** (c2) — Documentación
+- [x] **T-068** (c2) — Documentación
   - Actualizar apps/api/docs/route-architecture.md con los tiers nuevos, docs/guides/review-moderation.md con la postura asimétrica y su fundamento, packages/seed/CLAUDE.md con el usuario de dob…
   - Bloqueada por: T-041 · Bloquea a: —
-- [ ] **T-069** (c1) — Checklist de smoke y labels de la issue
+- [x] **T-069** (c1) — Checklist de smoke y labels de la issue
   - Escribir el checklist de smoke local (gates de rol, ownership, auto-valoración con los usuarios seed) y de staging (mails reales por Brevo y timing de los 3 crons) en .specs/HOS-376-proveedo…
   - Bloqueada por: T-066 · Bloquea a: —
 

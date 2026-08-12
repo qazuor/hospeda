@@ -2523,7 +2523,7 @@
             "id": "T-068",
             "title": "Documentación",
             "description": "Actualizar apps/api/docs/route-architecture.md con los tiers nuevos, docs/guides/review-moderation.md con la postura asimétrica y su fundamento, packages/seed/CLAUDE.md con el usuario de doble rol, y el CLAUDE.md raíz si hace falta una entrada en Common Gotchas (el patrón declara/confirma es nuevo en el repo y conviene que sea encontrable).",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-041"],
             "blocks": [],
@@ -2531,49 +2531,67 @@
             "tags": ["docs"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T00:40:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T00:40:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T00:40:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-12T00:25:00.000Z",
+                "completed": "2026-08-12T00:40:00.000Z"
             }
         },
         {
             "id": "T-069",
             "title": "Checklist de smoke y labels de la issue",
             "description": "Escribir el checklist de smoke local (gates de rol, ownership, auto-valoración con los usuarios seed) y de staging (mails reales por Brevo y timing de los 3 crons) en .specs/HOS-376-proveedores-uso-y-valoraciones/docs/. Aplicar status-needs-smoke-local y status-needs-smoke-staging a HOS-376 ANTES de abrir el PR. Documentar que en local los mails no salen si falta HOSPEDA_REDIS_URL y que sendNotification traga los errores (R-10), para que nadie lo lea como flujo roto.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 1,
             "blockedBy": ["T-066"],
             "blocks": [],
             "subtasks": [
                 {
                     "title": "Checklist de smoke local",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Checklist de smoke staging",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Aplicar los 2 labels a HOS-376",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["docs", "smoke"],
             "phase": "docs",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T00:40:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T00:40:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T00:40:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-12T00:25:00.000Z",
+                "completed": "2026-08-12T00:40:00.000Z"
             }
         },
         {
@@ -2623,9 +2641,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 3,
+        "pending": 1,
         "inProgress": 0,
-        "completed": 67,
+        "completed": 69,
         "blocked": 0,
         "averageComplexity": 2.4
     }
