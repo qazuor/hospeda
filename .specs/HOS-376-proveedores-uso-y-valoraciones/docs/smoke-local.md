@@ -137,13 +137,75 @@ account.
 
 jsdom cannot test any of these. They need a real browser and a keyboard.
 
-- [ ] **7.1** The star rating is operable entirely by keyboard, and announces the
-      selected value to a screen reader.
-- [ ] **7.2** The confirmation dialog traps focus, and Escape closes it and
-      returns focus to whatever opened it.
-- [ ] **7.3** The pending-count badge announces its number, rather than reading
-      as a bare decoration.
-- [ ] **7.4** The four usage-status badges meet AA contrast in both themes.
+**Executed 2026-08-12 against the worktree environment (web :4423), as
+`host-basico@local.test`. 2 of 4 pass; both failures are filed.**
+
+- [x] **7.1 PASS** The star rating is operable entirely by keyboard, and
+      announces the selected value to a screen reader.
+      *Measured*: five native radios sharing one `name` inside
+      `<fieldset>`/`<legend>`. Focusing the first and pressing `→` three times
+      moved the selection to 4 and focus followed it; the checked radio's
+      accessible name is "4 estrellas". All FIVE groups in the dialog (overall,
+      benefit yes/no, and the three breakdown dimensions) are well-formed, and
+      all 22 radios have an accessible name — the two that carry no `aria-label`
+      get theirs from the wrapping `<label>` ("Sí" / "No").
+- [~] **7.2 PARTIAL** The confirmation dialog traps focus, and Escape closes it —
+      but focus is NOT returned to whatever opened it.
+      *Measured*: the dialog is a genuine `:modal` (opened with `showModal()`),
+      so the trap is browser-enforced: after five Tabs — more than its three
+      focusable elements — focus was still inside, cycled back to "Volver".
+      Escape closes it. **But focus then lands on `<body>`, not on the trigger.**
+      Verified through the real keyboard path (focus the button → Enter → Escape),
+      not only through a synthetic click, and reproduced on BOTH dialogs of this
+      feature. See finding A below.
+- [x] **7.3 PASS** The pending-count badge announces its number, rather than
+      reading as a bare decoration.
+      *Measured*: `role="status"` (a live region, so it announces when the count
+      changes) plus an `aria-label` carrying the meaning while the glyph is a
+      bare numeral. Both grammatical numbers were exercised: with one row
+      pending it reads "1 uso espera tu confirmación", with two "2 usos esperan
+      tu confirmación" — the `tPlural` wiring the component's own comment says
+      matters is real.
+- [ ] **7.4 FAIL** The four usage-status badges meet AA contrast in both themes.
+      *Measured* (composited, since every badge background is semi-transparent —
+      the ratio cannot be read off the CSS):
+      | Badge | Light | Dark |
+      |---|---|---|
+      | Pendiente | 6.51 ✅ | **1.45 ❌** |
+      | Confirmado | 5.96 ✅ | **1.56 ❌** |
+      | Rechazado | 5.36 ✅ | **2.20 ❌** |
+      | Vencido | 6.33 ✅ | **4.19 ❌** |
+      At 12px/600 these are normal text, so the bar is 4.5. **All four fail in
+      dark theme**; three are essentially unreadable. See finding B below.
+
+### Finding A — the dialogs do not restore focus on close
+
+Both `BenefitUsagesPanel.client.tsx` and `ReviewFormDialog.client.tsx` hand-roll
+a native `<dialog>` + `showModal()`. That choice buys a better trap than a JS one
+(the browser makes the background inert), so it is not simply wrong — but it also
+bypasses `components/shared/ui/Dialog.client.tsx`, which already solves the other
+half:
+
+```ts
+const previouslyFocused = document.activeElement as HTMLElement | null;
+// …
+return () => { previouslyFocused?.focus?.(); };
+```
+
+A keyboard user who opens a dialog and presses Escape is dropped at the top of
+the document and has to Tab all the way back. WCAG 2.4.3.
+
+### Finding B — the status badges have no dark-theme colours
+
+`BenefitUsagesPanel.module.css` and `ProviderPanels.module.css` hard-code
+`color: oklch(0.45 …)` — a dark foreground chosen for a light surface — with no
+`[data-theme="dark"]` override. `.badgeExpired` is the only one built from tokens
+(`--core-muted-foreground`), which is why it scores highest (4.19) and still
+fails.
+
+The file header claims "every value is a design token", and for these four it is
+not true. Fixing it means giving each badge a dark-theme pair, in the mould of
+the tokens the rest of the panel already uses.
 
 ---
 
@@ -151,4 +213,9 @@ jsdom cannot test any of these. They need a real browser and a keyboard.
 
 | Date | Executor | Result | Notes |
 |---|---|---|---|
-| | | | |
+| 2026-08-12 | agent (worktree :4423) | §7 only — 2 pass, 1 partial, 1 fail | Findings A and B below. Sections 1-6 NOT executed. |
+
+> Only section 7 was run. Sections 1-6 remain open: they need a seeded
+> environment with real providers, and the worktree database ships with users
+> only. The rows behind §7 were inserted by hand for the audit and deleted
+> afterwards.
