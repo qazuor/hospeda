@@ -37,7 +37,10 @@
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { waitForCommerceEditorHydration } from '../../fixtures/commerce-editor-helpers.ts';
+import {
+    saveCommerceEditor,
+    waitForCommerceEditorHydration
+} from '../../fixtures/commerce-editor-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 import { setReactInputValue, setReactSelectValue } from '../../fixtures/react19-input-helpers.ts';
 
@@ -204,20 +207,13 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         // 'change' event so React's onChange fires and markDirty('type') runs.
         await setReactSelectValue(typeSelect, GASTRONOMY_NEW_TYPE);
 
-        // Assert the save button is enabled (dirty.size > 0).
-        const saveButton = page.locator('button[type="submit"]', {
-            hasText: /guardar cambios/i
+        // Registers the PATCH listener before clicking (avoiding a race where
+        // the response lands first) and races it against the "no hay cambios"
+        // toast, which is what now reports a form that never went dirty.
+        const saved = await saveCommerceEditor({
+            page,
+            pathPattern: /\/protected\/gastronomies\//
         });
-        await expect(saveButton).toBeEnabled({ timeout: 10_000 });
-
-        // Register PATCH listener BEFORE clicking — avoids a race where the
-        // response arrives before Playwright starts waiting for it.
-        const patchResponse = page.waitForResponse(
-            (r) => /\/protected\/gastronomies\//.test(r.url()) && r.request().method() === 'PATCH',
-            { timeout: 15_000 }
-        );
-        await saveButton.click({ force: true });
-        const saved = await patchResponse;
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
         // ── Public ficha: verify type badge reflects new value ───────────────
@@ -281,19 +277,10 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         // React-controlled and have the same dirty-tracking issue.
         await setReactInputValue(nameI18nEsTextarea, newI18nName);
 
-        // Assert save button enabled.
-        const saveButton = page.locator('button[type="submit"]', {
-            hasText: /guardar cambios/i
+        const saved = await saveCommerceEditor({
+            page,
+            pathPattern: /\/protected\/gastronomies\//
         });
-        await expect(saveButton).toBeEnabled({ timeout: 10_000 });
-
-        // Wait for PATCH response.
-        const patchResponse = page.waitForResponse(
-            (r) => /\/protected\/gastronomies\//.test(r.url()) && r.request().method() === 'PATCH',
-            { timeout: 15_000 }
-        );
-        await saveButton.click({ force: true });
-        const saved = await patchResponse;
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
         // ── Re-open editor: assert nameI18n.es textarea is pre-filled ────────
@@ -339,19 +326,10 @@ test.describe('COMMERCE-03: owner edits type + i18n fields — persist on public
         // React 19 select fix: use prototype setter + 'change' event.
         await setReactSelectValue(typeSelect, EXPERIENCE_NEW_TYPE);
 
-        // Assert save button enabled.
-        const saveButton = page.locator('button[type="submit"]', {
-            hasText: /guardar cambios/i
+        const saved = await saveCommerceEditor({
+            page,
+            pathPattern: /\/protected\/experiences\//
         });
-        await expect(saveButton).toBeEnabled({ timeout: 10_000 });
-
-        // Wait for PATCH response.
-        const patchResponse = page.waitForResponse(
-            (r) => /\/protected\/experiences\//.test(r.url()) && r.request().method() === 'PATCH',
-            { timeout: 15_000 }
-        );
-        await saveButton.click({ force: true });
-        const saved = await patchResponse;
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
         // ── Public ficha: verify type badge reflects new value ───────────────
