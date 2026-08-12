@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 66/70 tareas cerradas (94%)
+## Progreso: 67/70 tareas cerradas (96%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -205,7 +205,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Ta…
   - Bloqueada por: T-038 · Bloquea a: —
 
-## Fase `testing` — 9/11 completadas (complejidad promedio 2.5)
+## Fase `testing` — 10/11 completadas (complejidad promedio 2.5)
 
 - [x] **T-057** (c3) — Tests unitarios de la máquina de estados del uso
   - TODAS las transiciones válidas (PENDING→CONFIRMED, PENDING→REJECTED, PENDING→EXPIRED, REJECTED→PENDING por undo) y TODAS las inválidas (CONFIRMED→cualquier cosa, EXPIRED→cualquier cosa, dobl…
@@ -234,7 +234,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-065** (c3) — Regresiones dedicadas: AC-19, AC-22, AC-28
   - AC-19 un texto con score de moderación ≥ 0.5 nace PENDING a pesar del default APPROVED; AC-22 editar una valoración ya respondida la re-modera, sella editedAt y deja la réplica VIVA con revi…
   - Bloqueada por: T-026, T-027, T-033 · Bloquea a: —
-- [ ] **T-066** (c3) — Tests de los 3 crons
+- [x] **T-066** (c3) — Tests de los 3 crons
   - Expiración: vence a los 30 días exactos y no antes, y no notifica. Recordatorio: idempotente por reminderSentAt, corre dos veces y manda un solo mail (AC-8). Reconciliación: corrige un conta…
   - Bloqueada por: T-042, T-043, T-044 · Bloquea a: T-069
 - [ ] **T-067** (c2) — Accesibilidad del formulario de estrellas y del dialog

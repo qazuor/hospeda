@@ -2457,35 +2457,44 @@
             "id": "T-066",
             "title": "Tests de los 3 crons",
             "description": "Expiración: vence a los 30 días exactos y no antes, y no notifica. Recordatorio: idempotente por reminderSentAt, corre dos veces y manda un solo mail (AC-8). Reconciliación: corrige un contador corrompido a mano y lo registra (AC-29). Las fechas se derivan de Date.now(); nada hardcodeado.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 3,
             "blockedBy": ["T-042", "T-043", "T-044"],
             "blocks": ["T-069"],
             "subtasks": [
                 {
                     "title": "Cron de expiración",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cron de recordatorio idempotente",
-                    "completed": false
+                    "completed": true
                 },
                 {
                     "title": "Cron de reconciliación",
-                    "completed": false
+                    "completed": true
                 }
             ],
             "tags": ["testing", "cron"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T00:52:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T00:52:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T00:52:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-12T00:20:00.000Z",
+                "completed": "2026-08-12T00:52:00.000Z"
             }
         },
         {
@@ -2614,9 +2623,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 4,
+        "pending": 3,
         "inProgress": 0,
-        "completed": 66,
+        "completed": 67,
         "blocked": 0,
         "averageComplexity": 2.4
     }
