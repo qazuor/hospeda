@@ -3,8 +3,23 @@
 Mascota oficial, presentador virtual y guía turístico de Hospeda.
 
 > **Cómo se usa este documento.** Cuando un prompt de generación diga `[DESCRIPCIÓN DE HOSPEDÍN]`, se pega **este documento entero, sin resumir ni recortar**. Resumirlo "para que entre" es exactamente lo que hace que el personaje cambie entre generaciones.
->
-> Las **imágenes de referencia** están en esta misma carpeta y son la fuente de verdad visual: van en cada generación junto con este texto.
+
+## Imágenes de referencia
+
+Están en esta misma carpeta y son la fuente de verdad visual. **Van en cada generación junto con este texto.**
+
+| Archivo | Qué contiene |
+|---|---|
+| `Hospedin.png` | El personaje en pose principal, cuerpo entero, alta resolución |
+| `Guía de personaje de Hospedín.png` | Paleta, cinco vistas (frente, 3/4, perfil, atrás, 3/4 atrás), cinco expresiones, cuatro poses de uso |
+| `Guía de personaje de Hospedín2.png` | Poses ampliadas, diez expresiones, **hoja de bocas para sincronización labial**, usos con accesorios |
+
+**Cuál usar según el caso:**
+
+- **Un plano nuevo del personaje** → `Hospedin.png` como referencia principal
+- **Una vista o ángulo específico** → la vista correspondiente de la primera guía
+- **Una expresión** → la hoja de expresiones de la segunda guía
+- **Lip sync** → la hoja de bocas de la segunda guía, que tiene las formas para A, E, I, O, U, M, B, P, F, V, L, T, D, S y R
 
 ---
 
@@ -89,6 +104,22 @@ Hospedín representa a Hospeda y funciona como un puente amigable entre la plata
 
 La silueta de Hospedín está directamente inspirada en el logo de Hospeda, y los colores principales provienen de la identidad visual de la marca.
 
+Su diseño combina visualmente los tres elementos del logo, que son los tres elementos del paisaje del Litoral:
+
+- **El azul** — el río, que es la forma principal y le da la silueta a la cabeza
+- **El verde y el turquesa** — la costa y el campo, integrados en la parte inferior del rostro como un paisaje
+- **El naranja** — el sol, que flota junto a la cabeza
+
+### Paleta exacta
+
+| Color | Código | Dónde va |
+|---|---|---|
+| Azul | `#3AA7D9` | Cabeza, brazos, manos, piernas |
+| Turquesa | `#1EA7A1` | Franja del rostro |
+| Verde | `#8CC63F` | Franja del rostro |
+| Naranja | `#F5A623` | El círculo del sol |
+| Azul oscuro | `#0D2B3E` | Detalles y contornos |
+
 ### Elementos que lo componen
 
 - Una gran **cabeza azul** de forma orgánica y asimétrica
@@ -100,8 +131,8 @@ La silueta de Hospedín está directamente inspirada en el logo de Hospeda, y lo
 - **Boca simple y muy expresiva**
 - **Brazos y manos azules**
 - **Piernas azules**
-- **Buzo canguro blanco con capucha**, con el logo de Hospeda visible
-- **Zapatillas blancas** con detalles de los colores de Hospeda
+- **Buzo canguro blanco con capucha**, con el logo de Hospeda al frente y **`hospeda.com.ar` impreso en la espalda**
+- **Zapatillas blancas** con detalles en azul, verde y turquesa
 
 ### El círculo naranja
 
@@ -260,6 +291,16 @@ Los ojos, cejas y boca de Hospedín son muy expresivos.
 | **Explicando** | Mirada comprometida, sonrisa moderada, movimientos naturales de manos |
 | **Divertido** | Pequeña sonrisa, posibilidad de guiño cuando sea apropiado |
 | **Serio / informativo** | Expresión neutral pero amigable, postura tranquila, mirada atenta |
+
+### Expresiones ya generadas
+
+Están en las guías de referencia y conviene partir de ellas antes de generar una nueva:
+
+`alegre` · `risueño` · `guiñando` · `entusiasmado` · `pensando` · `duda` · `contento` · `serio` · `divertido` · `sorprendido`
+
+### Poses ya generadas
+
+`te explico` · `descubrí` · `es fácil` · `¡vamos!` · `saludando` · `señalando` · `con el teléfono mostrando la pantalla` · `con valija` · `con mochila` · `con la notebook` · `con el mapa` · `con la cámara de fotos` · `con la lamparita de idea`
 
 > Hospedín **nunca** debe resultar aterrador, agresivo, perturbador, extraño ni siniestro.
 
@@ -494,6 +535,29 @@ El objetivo es que una persona pueda mirar decenas de videos creados en distinto
 
 ---
 
-## Pendiente de completar
+## Conflicto de paletas — resolver antes de producir
 
-> ⚠️ **La sección 2 tiene una frase cortada.** Dice *"Su diseño combina visualmente elementos relacionados con:"* y la enumeración nunca aparece. Falta completar qué elementos combina el diseño —probablemente los del logo, o los del turismo y la región—. Conviene resolverlo, porque es justamente la explicación de qué representa la silueta.
+⚠️ **La paleta de Hospedín y la paleta de las placas no son la misma.**
+
+| | Azul | Verde | Naranja |
+|---|---|---|---|
+| **Hospedín** | `#3AA7D9` | `#8CC63F` | `#F5A623` |
+| **Placas** | `#0066EF` | `#076C05` / `#90BE1E` | `#FC8102` |
+
+Los azules son los que más se separan: el de las placas es un azul saturado y el del personaje es bastante más celeste. Los verdes y los naranjas están cerca pero no coinciden.
+
+**Por qué importa**: si una placa lleva a Hospedín encima, o si una historia mezcla una placa y un video, se van a ver de dos familias distintas y la marca pierde unidad. Es de esas cosas que no se notan mirando una pieza sola y se notan mucho mirando el perfil entero.
+
+**Qué conviene hacer**: unificar en una sola paleta. Lo más simple es que las placas adopten los colores del personaje, porque el personaje está renderizado en 3D y su paleta ya está congelada en las imágenes de referencia — cambiarla implicaría volver a generar todo. Cambiar los colores de las placas, en cambio, es editar un documento.
+
+**Si se decide unificar**, hay que actualizar la paleta en `plan-contenido-redes.md`, donde hoy figuran los ocho colores originales.
+
+---
+
+## El eslogan
+
+La guía de personaje trae el eslogan de la marca, que no estaba en el plan de contenido:
+
+> **Hospeda — Todo tu viaje, en un solo lugar.**
+
+Conviene usarlo de forma consistente en las piezas de marca. Va bien como cierre de las placas de la categoría 1 y como remate de los videos institucionales.
