@@ -138,7 +138,8 @@ account.
 jsdom cannot test any of these. They need a real browser and a keyboard.
 
 **Executed 2026-08-12 against the worktree environment (web :4423), as
-`host-basico@local.test`. 2 of 4 pass; both failures are filed.**
+`host-basico@local.test`. Two defects were found, fixed, and re-measured in
+the browser. All four now pass.**
 
 - [x] **7.1 PASS** The star rating is operable entirely by keyboard, and
       announces the selected value to a screen reader.
@@ -149,15 +150,15 @@ jsdom cannot test any of these. They need a real browser and a keyboard.
       benefit yes/no, and the three breakdown dimensions) are well-formed, and
       all 22 radios have an accessible name — the two that carry no `aria-label`
       get theirs from the wrapping `<label>` ("Sí" / "No").
-- [~] **7.2 PARTIAL** The confirmation dialog traps focus, and Escape closes it —
-      but focus is NOT returned to whatever opened it.
+- [x] **7.2 PASS** (after the fix) The confirmation dialog traps focus, Escape
+      closes it, and focus returns to whatever opened it.
       *Measured*: the dialog is a genuine `:modal` (opened with `showModal()`),
       so the trap is browser-enforced: after five Tabs — more than its three
       focusable elements — focus was still inside, cycled back to "Volver".
-      Escape closes it. **But focus then lands on `<body>`, not on the trigger.**
-      Verified through the real keyboard path (focus the button → Enter → Escape),
-      not only through a synthetic click, and reproduced on BOTH dialogs of this
-      feature. See finding A below.
+      Escape closes it. Focus originally landed on `<body>`; **fixed** in
+      `5e2be60a2`, and re-verified through the real keyboard path (focus the
+      trigger → Enter → Escape → focus is back on the trigger) on BOTH dialogs.
+      The trap was re-checked after the change and still holds. See finding A.
 - [x] **7.3 PASS** The pending-count badge announces its number, rather than
       reading as a bare decoration.
       *Measured*: `role="status"` (a live region, so it announces when the count
@@ -166,17 +167,19 @@ jsdom cannot test any of these. They need a real browser and a keyboard.
       pending it reads "1 uso espera tu confirmación", with two "2 usos esperan
       tu confirmación" — the `tPlural` wiring the component's own comment says
       matters is real.
-- [ ] **7.4 FAIL** The four usage-status badges meet AA contrast in both themes.
+- [x] **7.4 PASS** (after the fix) The four usage-status badges meet AA contrast
+      in both themes.
       *Measured* (composited, since every badge background is semi-transparent —
       the ratio cannot be read off the CSS):
-      | Badge | Light | Dark |
-      |---|---|---|
-      | Pendiente | 6.51 ✅ | **1.45 ❌** |
-      | Confirmado | 5.96 ✅ | **1.56 ❌** |
-      | Rechazado | 5.36 ✅ | **2.20 ❌** |
-      | Vencido | 6.33 ✅ | **4.19 ❌** |
-      At 12px/600 these are normal text, so the bar is 4.5. **All four fail in
-      dark theme**; three are essentially unreadable. See finding B below.
+      | Badge | Light | Dark (before) | Dark (after `ce5bdf0a9`) |
+      |---|---|---|---|
+      | Pendiente | 6.51 ✅ | **1.45 ❌** | 7.35 ✅ |
+      | Confirmado | 5.96 ✅ | **1.56 ❌** | 7.80 ✅ |
+      | Rechazado | 5.36 ✅ | **2.20 ❌** | 6.95 ✅ |
+      | Vencido | 6.33 ✅ | **4.19 ❌** | 6.97 ✅ |
+      At 12px/600 these are normal text, so the bar is 4.5. All four originally
+      failed in dark theme, three of them unreadably. Light is unchanged by the
+      fix — the theme that already passed did not move. See finding B.
 
 ### Finding A — the dialogs do not restore focus on close
 
@@ -195,6 +198,10 @@ return () => { previouslyFocused?.focus?.(); };
 A keyboard user who opens a dialog and presses Escape is dropped at the top of
 the document and has to Tab all the way back. WCAG 2.4.3.
 
+**Fixed** by saving `document.activeElement` before `showModal()` and restoring
+it from the effect's cleanup, guarded on `isConnected` for the case the
+trigger's own row re-rendered away while the dialog was open.
+
 ### Finding B — the status badges have no dark-theme colours
 
 `BenefitUsagesPanel.module.css` and `ProviderPanels.module.css` hard-code
@@ -204,8 +211,11 @@ the document and has to Tab all the way back. WCAG 2.4.3.
 fails.
 
 The file header claims "every value is a design token", and for these four it is
-not true. Fixing it means giving each badge a dark-theme pair, in the mould of
-the tokens the rest of the panel already uses.
+not true.
+
+**Fixed** by giving each badge a `[data-theme="dark"]` pair that inverts the
+lightness and keeps the hue, so a badge still reads as the same colour to
+somebody who learned it in the other theme.
 
 ---
 
@@ -213,7 +223,7 @@ the tokens the rest of the panel already uses.
 
 | Date | Executor | Result | Notes |
 |---|---|---|---|
-| 2026-08-12 | agent (worktree :4423) | §7 only — 2 pass, 1 partial, 1 fail | Findings A and B below. Sections 1-6 NOT executed. |
+| 2026-08-12 | agent (worktree :4423) | §7 only — 4/4 pass after 2 fixes | Findings A and B found, fixed and re-measured. Sections 1-6 NOT executed. |
 
 > Only section 7 was run. Sections 1-6 remain open: they need a seeded
 > environment with real providers, and the worktree database ships with users

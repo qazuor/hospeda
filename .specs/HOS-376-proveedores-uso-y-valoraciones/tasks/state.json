@@ -2501,7 +2501,7 @@
             "id": "T-067",
             "title": "Accesibilidad del formulario de estrellas y del dialog",
             "description": "Verificar en NAVEGADOR, no sólo en vitest: el radiogroup de estrellas se opera con teclado y anuncia el valor; el <dialog> respeta el trap de foco y Escape; el pill del contador anuncia el número. jsdom NO puede testear focus traps — este chequeo es manual/browser sí o sí. Contraste AA en los 4 badges de estado.",
-            "status": "pending",
+            "status": "completed",
             "complexity": 2,
             "blockedBy": ["T-048"],
             "blocks": [],
@@ -2509,14 +2509,23 @@
             "tags": ["testing", "a11y", "web"],
             "phase": "testing",
             "qualityGate": {
-                "lint": null,
-                "typecheck": null,
-                "tests": null
+                "lint": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T01:20:00.000Z"
+                },
+                "typecheck": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T01:20:00.000Z"
+                },
+                "tests": {
+                    "status": "pass",
+                    "timestamp": "2026-08-12T01:20:00.000Z"
+                }
             },
             "timestamps": {
                 "created": "2026-08-08T04:10:00.000Z",
-                "started": null,
-                "completed": null
+                "started": "2026-08-12T00:45:00.000Z",
+                "completed": "2026-08-12T01:20:00.000Z"
             }
         },
         {
@@ -2641,9 +2650,9 @@
     ],
     "summary": {
         "total": 70,
-        "pending": 1,
+        "pending": 0,
         "inProgress": 0,
-        "completed": 69,
+        "completed": 70,
         "blocked": 0,
         "averageComplexity": 2.4
     }
