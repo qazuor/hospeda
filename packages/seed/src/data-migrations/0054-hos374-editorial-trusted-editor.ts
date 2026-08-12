@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0049-hos374-editorial-trusted-editor
+ * Data migration: 0054-hos374-editorial-trusted-editor
  *
  * Makes the platform's editorial author (`editorial@hospeda.com.ar`, created by
  * `0025-seed-real-blog-posts`) a **trusted editor** (HOS-374 §5.1.2 / OQ-1).
@@ -45,7 +45,7 @@ import { TRUSTED_EDITOR_PERMISSIONS } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0049-hos374-editorial-trusted-editor',
+    name: '0054-hos374-editorial-trusted-editor',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

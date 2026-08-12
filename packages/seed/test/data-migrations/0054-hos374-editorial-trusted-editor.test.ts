@@ -1,15 +1,15 @@
 /**
  * @fileoverview
- * Unit tests for the `0049-hos374-editorial-trusted-editor` data migration,
+ * Unit tests for the `0054-hos374-editorial-trusted-editor` data migration,
  * using a mocked query chain — no real database connection. Same style as
  * `0048-hos376-host-trade-usage-review-permissions.test.ts`.
  *
- * @module test/data-migrations/0049-hos374-editorial-trusted-editor
+ * @module test/data-migrations/0054-hos374-editorial-trusted-editor
  */
 import { RoleEnum, TRUSTED_EDITOR_PERMISSIONS } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0049-hos374-editorial-trusted-editor.js';
+import * as migration from '../../src/data-migrations/0054-hos374-editorial-trusted-editor.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 const STUB_ACTOR: Actor = {
@@ -83,17 +83,17 @@ function buildCtx(selectResult: readonly { id: string }[]): {
     return { ctx, probe };
 }
 
-describe('0049-hos374 trusted editor — meta', () => {
+describe('0054-hos374 trusted editor — meta', () => {
     it('exports the expected required/additive meta shape', () => {
         expect(migration.meta).toEqual({
-            name: '0049-hos374-editorial-trusted-editor',
+            name: '0054-hos374-editorial-trusted-editor',
             group: 'required',
             destructive: false
         });
     });
 });
 
-describe('0049-hos374 trusted editor — up()', () => {
+describe('0054-hos374 trusted editor — up()', () => {
     it('grants exactly the TRUSTED_EDITOR_PERMISSIONS bundle to the resolved user', async () => {
         const { ctx, probe } = buildCtx([{ id: EDITORIAL_ID }]);
 
