@@ -698,6 +698,94 @@ protected gastronomy tier once provisioned as `COMMERCE_OWNER`).
 
 ---
 
+## Host-Trade Benefit Usage and Review Routes (HOS-376)
+
+The provider directory's write surface: one party declares that a benefit was
+used, the counterpart confirms it, and only a confirmed usage unlocks a review.
+
+**This is the repo's first "A declares, B confirms" flow.** Nothing else here
+works this way, so do not look for a precedent — there is none. Three
+consequences shape every route below.
+
+### 1. The shared transitions are ROLE-BLIND
+
+`confirm`, `reject` and `reject/undo` are ONE endpoint each, serving both sides.
+The row's `declaredBy` decides who the counterpart is; the endpoint never
+branches on the actor's role. That is not a simplification — an account can be a
+host AND a provider at once (`host-provider@local.test` is seeded precisely to
+prove it), so there is no single role to branch on. A "tidy-up" that added one
+would break exactly that account and keep every single-role caller working,
+which is the worst way for it to break.
+
+They therefore declare **no `requiredPermissions`**, and a static guard
+(`apps/api/test/routes/host-trade/usage-endpoint-shape.guard.test.ts`) fails CI
+if one appears — see point 2 for why that matters.
+
+### 2. Every foreign path answers 404, never 403
+
+Confirming a usage that is not yours — INCLUDING your own declaration (AC-6) —
+answers `NOT_FOUND`. A 403 anywhere on this surface would confirm that the id
+exists, turning the endpoint into an existence oracle for rows that name two
+people, a date and a free-text note about work done at somebody's address.
+
+The corollary on the admin side: the permission gate runs BEFORE the row lookup,
+so an unauthorised caller gets `FORBIDDEN` whether the id exists or not.
+Reversing that order leaks existence through the error code.
+
+### 3. Ownership authorises, permissions do not
+
+An approved provider is an ordinary account holding no `HOST_TRADE_*`
+permission, so the provider-side routes are gated by **row ownership** (the same
+shape as `/host-trades/mine`, HOS-278 AC-7). Requiring a permission would lock
+every provider out of their own listing. The one exception is the QR
+declaration, which requires `HOST_TRADE_VIEW`: that is the weakly-verified
+branch, and the permission is what stops a passer-by who scanned a sticker on a
+van from declaring a usage.
+
+### Protected tier — the host
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `POST` | `/api/v1/protected/host-trades/{slug}/usages` | `HOST_TRADE_VIEW` | The QR channel. `declaredBy=HOST`, `creationChannel=QR`; the host IS the session, so the path carries no identification mechanism. 422 `PROVIDER_REVOKED`, 403 `DECLARATION_SUSPENDED`, 409 `USAGE_PENDING_EXISTS`. Rate-limited per user. |
+| `GET` | `/api/v1/protected/host-trades/usages/pending` | — | The confirmation inbox. Scoped to the actor server-side, never to a caller-supplied id. |
+| `GET` | `/api/v1/protected/host-trades/usages/pending-count` | — | Feeds the navigation badge, from the same definition as the list above. |
+| `GET` | `/api/v1/protected/host-trades/usages` | — | The host's own record, every state included. Deliberately NOT a widened `/usages/pending`: that one answers "what awaits your action", this one includes the host's own declarations and the CONFIRMED rows the review action depends on. |
+
+> **Routing order matters here.** `/usages/pending` must stay registered BEFORE
+> `/{slug}/usages`, or the literal is read as a slug. Same for `/usages`.
+
+### Protected tier — the provider
+
+Authorised by ownership of the caller's own listing; no listing means 404.
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `POST` | `/api/v1/protected/host-trades/mine/usages` | Body carries `hostUserId` OR `hostEmail`, never both. The email channel is the spray vector and gets a far tighter rate budget than the selector. |
+| `GET` | `/api/v1/protected/host-trades/mine/usages` | The provider's own declarations, filterable by status. |
+| `GET` | `/api/v1/protected/host-trades/mine/linked-hosts` | The declaration selector: only hosts with a CONFIRMED usage on this listing, so it exposes nobody the provider has not already served. Carries a display name and **never an email**. |
+| `GET` | `/api/v1/protected/host-trades/mine/qr` | The listing's QR as an SVG field in JSON, alongside the URL in plain text — a provider who cannot scan their own code still needs to read the destination. |
+
+### Protected tier — shared, role-blind
+
+| Method | Path | Notes |
+|--------|------|-------|
+| `POST` | `/api/v1/protected/host-trades/usages/{id}/confirm` | The only transition that moves a public counter. |
+| `POST` | `/api/v1/protected/host-trades/usages/{id}/reject` | Body `{ note? }` — the note stays OPTIONAL. Rejection is the control that keeps the public counter honest, and requiring a written explanation to say "that never happened" would put friction on the one action the system most needs people to take. A rejection blocks that side from re-declaring on the pair. |
+| `POST` | `/api/v1/protected/host-trades/usages/{id}/reject/undo` | Restricted to the account that REJECTED it, not merely the counterpart — otherwise the rejected party could reverse a refusal aimed at them. |
+
+### Admin tier
+
+| Method | Path | `requiredPermissions` | Notes |
+|--------|------|-----------------------|-------|
+| `GET` | `/api/v1/admin/host-trades/usages` | `HOST_TRADE_USAGE_VIEW_ALL` | The audit list. Resolves BOTH parties' names — "40 usos, 2 anfitriones" is only a pattern if the two hosts are legible as two hosts. |
+| `POST` | `/api/v1/admin/host-trades/{id}/declaration-suspension` | `HOST_TRADE_USAGE_MANAGE` | Suspends or lifts. Suspending REQUIRES a reason; **lifting accepts none** — the asymmetry is deliberate (a suspension takes away a provider's ability to record work, and he is owed an answer when he asks why). |
+| `GET` | `/api/v1/admin/host-trades/reviews` | `HOST_TRADE_REVIEW_VIEW_ALL` | Moderation queue; does not force a moderation state of its own. |
+| `POST` | `/api/v1/admin/host-trades/reviews/{id}/moderate` | `HOST_TRADE_REVIEW_MODERATE` | Approving or rejecting re-aggregates the listing in the SAME transaction. |
+| `GET` | `/api/v1/admin/host-trades/replies` | `HOST_TRADE_REVIEW_VIEW_ALL` | The provider replies queue. |
+| `POST` | `/api/v1/admin/host-trades/replies/{id}/moderate` | `HOST_TRADE_REVIEW_MODERATE` | Same permission as the review queue, by design: one moderator handles both sides of a conversation. |
+
+---
+
 ## External Reputation Routes (SPEC-237)
 
 Routes for displaying and managing external-platform reputation data
