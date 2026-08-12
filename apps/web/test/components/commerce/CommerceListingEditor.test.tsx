@@ -187,10 +187,26 @@ describe('CommerceListingEditor', () => {
         mockSetFeaturedMedia.mockClear();
     });
 
-    it('keeps the save button disabled until a field changes', () => {
+    /*
+     * This used to assert the save button was DISABLED with nothing to save.
+     * Adopting the shared `ActionBar` reversed that on purpose (HOS-190: "Save"
+     * always visibly does something), so the invariant worth keeping is not the
+     * disabled attribute — it is that pressing Save with no changes still sends
+     * no request. Asserting only the toast would pass just as well if the editor
+     * PATCHed an empty body alongside it.
+     */
+    it('answers a no-op save with a toast instead of a request', () => {
         renderEditor('gastronomy');
-        const save = screen.getByRole('button', { name: 'Guardar cambios' });
-        expect(save).toBeDisabled();
+
+        const save = screen.getByRole('button', { name: 'Guardar' });
+        expect(save).toBeEnabled();
+
+        fireEvent.click(save);
+
+        expect(mockPatch).not.toHaveBeenCalled();
+        expect(addToast).toHaveBeenCalledWith(
+            expect.objectContaining({ type: 'info', message: 'No hay cambios para guardar' })
+        );
     });
 
     it('renders the summary counter interpolated, not the literal {{count}} template (BETA-124)', () => {
@@ -218,7 +234,7 @@ describe('CommerceListingEditor', () => {
         fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
             target: { value: 'new text' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
@@ -240,7 +256,7 @@ describe('CommerceListingEditor', () => {
         fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
             target: { value: 'changed' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
@@ -256,7 +272,7 @@ describe('CommerceListingEditor', () => {
         fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
             target: { value: 'x' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await screen.findByRole('alert');
     });
@@ -279,7 +295,7 @@ describe('CommerceListingEditor', () => {
         fireEvent.change(screen.getByLabelText('Número'), {
             target: { value: '9 11 1234 5678' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         const alert = await screen.findByRole('alert');
         expect(alert.textContent).toBe('Ese teléfono ya está en uso');
@@ -316,7 +332,7 @@ describe('CommerceListingEditor', () => {
         const priceFromInput = screen.getByLabelText(/Precio desde/);
         expect(priceFromInput).toHaveValue(500);
         fireEvent.change(priceFromInput, { target: { value: '' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const body = mockPatch.mock.calls[0]?.[0]?.body as { priceFrom?: number | null };
@@ -328,7 +344,7 @@ describe('CommerceListingEditor', () => {
         renderEditor('gastronomy');
 
         fireEvent.change(screen.getByLabelText('Rango de precios'), { target: { value: 'MID' } });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
@@ -348,7 +364,7 @@ describe('CommerceListingEditor', () => {
         fireEvent.change(screen.getByLabelText('Número'), {
             target: { value: '9 11 1234 5678' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
@@ -374,7 +390,7 @@ describe('CommerceListingEditor', () => {
         fireEvent.change(screen.getByLabelText('Número'), {
             target: { value: '11 91234 5678' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const body = mockPatch.mock.calls[0]?.[0]?.body as {
@@ -409,7 +425,7 @@ describe('CommerceListingEditor', () => {
             fireEvent.change(screen.getByLabelText('Email'), {
                 target: { value: 'hola@laparrilla.test' }
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             const body = mockPatch.mock.calls[0]?.[0]?.body as {
@@ -432,7 +448,7 @@ describe('CommerceListingEditor', () => {
         fireEvent.change(screen.getByLabelText('facebook'), {
             target: { value: 'https://facebook.com/x' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         expect(mockPatch).toHaveBeenCalledWith({
@@ -454,7 +470,7 @@ describe('CommerceListingEditor', () => {
         renderEditor('gastronomy');
 
         fireEvent.click(screen.getByLabelText('Lun cerrado'));
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const call = mockPatch.mock.calls[0]?.[0] as {
@@ -607,7 +623,7 @@ describe('CommerceListingEditor', () => {
         fireEvent.change(screen.getByLabelText('Descripción ampliada'), {
             target: { value: 'unrelated change' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const body = mockPatch.mock.calls[0]?.[0]?.body as Record<string, unknown>;
@@ -663,7 +679,7 @@ describe('CommerceListingEditor', () => {
         // Select a second amenity and a feature.
         fireEvent.click(screen.getByLabelText('Terraza'));
         fireEvent.click(screen.getByLabelText('pet_friendly'));
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const body = mockPatch.mock.calls[0]?.[0]?.body as {
@@ -717,7 +733,7 @@ describe('CommerceListingEditor', () => {
         expect(outdoors?.open).toBe(false);
 
         fireEvent.click(screen.getByLabelText('Terraza'));
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
         const collapsedBody = mockPatch.mock.calls[0]?.[0]?.body as { amenityIds?: string[] };
@@ -758,7 +774,7 @@ describe('CommerceListingEditor', () => {
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'La Nueva Parrilla' }
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
@@ -782,7 +798,7 @@ describe('CommerceListingEditor', () => {
             fireEvent.change(screen.getByLabelText('Ciudad / Destino'), {
                 target: { value: DESTINATION_2 }
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
@@ -806,7 +822,7 @@ describe('CommerceListingEditor', () => {
             fireEvent.change(screen.getByLabelText('Descripción'), {
                 target: { value: 'Una descripción completamente nueva y suficientemente larga.' }
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             expect(mockPatch).toHaveBeenCalledWith({
@@ -832,7 +848,7 @@ describe('CommerceListingEditor', () => {
             fireEvent.change(screen.getByLabelText('Nombre del comercio'), {
                 target: { value: 'Otro nombre' }
             });
-            fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+            fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
             await waitFor(() => expect(mockPatch).toHaveBeenCalledTimes(1));
             const body = mockPatch.mock.calls[0]?.[0]?.body as Record<string, unknown>;
@@ -939,8 +955,13 @@ describe('CommerceListingEditor', () => {
         expect(mockDeleteMedia).not.toHaveBeenCalled();
 
         // No Save click occurred, and nothing in this editor was ever marked
-        // dirty by the removal — the Save button must stay disabled.
+        // dirty by the removal. Pressing Save now proves that directly: a clean
+        // form issues no request. (It used to be read off the button's disabled
+        // attribute, which the shared `ActionBar` no longer sets — Save stays
+        // enabled so it can always answer, per HOS-190.)
         expect(mockPatch).not.toHaveBeenCalled();
-        expect(screen.getByRole('button', { name: 'Guardar cambios' })).toBeDisabled();
+
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
+        expect(mockPatch).not.toHaveBeenCalled();
     });
 });

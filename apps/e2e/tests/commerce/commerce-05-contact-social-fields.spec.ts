@@ -30,7 +30,10 @@
 import { expect, test } from '@playwright/test';
 import { signInExistingUser } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
-import { waitForCommerceEditorHydration } from '../../fixtures/commerce-editor-helpers.ts';
+import {
+    saveCommerceEditor,
+    waitForCommerceEditorHydration
+} from '../../fixtures/commerce-editor-helpers.ts';
 import { execSQL } from '../../fixtures/db-helpers.ts';
 import { setReactInputValue } from '../../fixtures/react19-input-helpers.ts';
 
@@ -202,19 +205,10 @@ test.describe('COMMERCE-05: contact has no website; social includes linkedIn @p0
         const newLinkedInUrl = `https://linkedin.com/company/e2e-test-${Date.now()}`;
         await setReactInputValue(linkedInInput, newLinkedInUrl);
 
-        // Assert save button enabled (dirty.size > 0 after marking socialNetworks dirty).
-        const saveButton = page.locator('button[type="submit"]', {
-            hasText: /guardar cambios/i
+        const saved = await saveCommerceEditor({
+            page,
+            pathPattern: /\/protected\/gastronomies\//
         });
-        await expect(saveButton).toBeEnabled({ timeout: 10_000 });
-
-        // Wait for the PATCH response before asserting.
-        const patchResponse = page.waitForResponse(
-            (r) => /\/protected\/gastronomies\//.test(r.url()) && r.request().method() === 'PATCH',
-            { timeout: 15_000 }
-        );
-        await saveButton.click({ force: true });
-        const saved = await patchResponse;
         expect(saved.ok(), `PATCH failed: ${saved.status()} ${saved.url()}`).toBe(true);
 
         // ── Re-open editor: assert linkedIn input is pre-filled ──────────────

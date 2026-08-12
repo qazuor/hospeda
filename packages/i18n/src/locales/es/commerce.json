@@ -83,6 +83,16 @@
             }
         },
         "editor": {
+            "sectionNav": {
+                "basicInfo": "Información básica",
+                "contactInfo": "Contacto",
+                "socialNetworks": "Redes sociales",
+                "openingHours": "Horarios",
+                "media": "Fotos",
+                "translations": "Traducciones",
+                "amenities": "Servicios",
+                "price": "Precio"
+            },
             "sections": {
                 "type": "Categoría",
                 "summary": "Resumen",
@@ -180,8 +190,7 @@
                 "deleteError": "No se pudo eliminar la pregunta.",
                 "reorderError": "No se pudo reordenar."
             },
-            "save": "Guardar cambios",
-            "saving": "Guardando...",
+            "noChanges": "No hay cambios para guardar",
             "success": "Cambios guardados.",
             "error": "No se pudieron guardar los cambios. Probá de nuevo.",
             "unsavedChanges": "Tenés cambios sin guardar. Si salís ahora se pierden. ¿Querés salir igual?",

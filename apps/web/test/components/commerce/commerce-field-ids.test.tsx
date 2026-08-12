@@ -239,7 +239,7 @@ describe('commerce editor — derived field ids (HOS-385 AC-5)', () => {
         fireEvent.change(document.getElementById(idFor('summary')) as HTMLElement, {
             target: { value: 'corto' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         expect(document.activeElement?.id).toBe(idFor('summary'));
     });
