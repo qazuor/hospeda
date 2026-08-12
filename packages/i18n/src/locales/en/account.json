@@ -71,6 +71,7 @@
         "groupTourist": "Traveler area",
         "groupHost": "Host area",
         "groupCommerce": "Business area",
+        "groupEditorial": "Editorial area",
         "dashboard": "My account",
         "editProfile": "Edit profile",
         "subscription": "Subscription",
@@ -86,7 +87,9 @@
         "properties": "My accommodations",
         "promotions": "My promotions",
         "tradeDirectory": "Provider directory",
-        "benefitUsages": "Benefit usages"
+        "benefitUsages": "Benefit usages",
+        "myPosts": "My posts",
+        "myEvents": "My events"
     },
     "doors": {
         "sectionLabel": "Discover more",

@@ -22,12 +22,13 @@ function totalItems(groups: readonly NavGroup[]): number {
 }
 
 describe('ACCOUNT_NAV_GROUPS (config shape)', () => {
-    it('defines the four baseline groups: cuenta, turista, anfitrion, comercio', () => {
+    it('defines the five baseline groups: cuenta, turista, anfitrion, comercio, editorial', () => {
         expect(ACCOUNT_NAV_GROUPS.map((group) => group.id)).toEqual([
             'cuenta',
             'turista',
             'anfitrion',
-            'comercio'
+            'comercio',
+            'editorial'
         ]);
     });
 
@@ -248,7 +249,8 @@ describe('getNavForSurface (selector)', () => {
             'cuenta',
             'turista',
             'anfitrion',
-            'comercio'
+            'comercio',
+            'editorial'
         ]);
         expect(totalItems(groups)).toBe(totalItems(ACCOUNT_NAV_GROUPS));
     });
@@ -259,7 +261,8 @@ describe('getNavForSurface (selector)', () => {
             'cuenta',
             'turista',
             'anfitrion',
-            'comercio'
+            'comercio',
+            'editorial'
         ]);
     });
 
@@ -403,7 +406,7 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         expect(comercio?.items.map((item) => item.id)).toEqual(['commerce']);
     });
 
-    it('adds both anfitrion and comercio for platform staff (ADMIN)', () => {
+    it('adds anfitrion, comercio and editorial for platform staff (ADMIN)', () => {
         const { groups } = getNavForSurface({
             surface: 'sidebar',
             visibility: (node) => isVisibleByRoles(node, [RoleEnum.ADMIN])
@@ -412,7 +415,71 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
             'cuenta',
             'turista',
             'anfitrion',
-            'comercio'
+            'comercio',
+            'editorial'
         ]);
+    });
+
+    it('gives an EDITOR the editorial group with both own-content listings', () => {
+        const { groups } = getNavForSurface({
+            surface: 'sidebar',
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.EDITOR])
+        });
+        const editorial = findGroup(groups, 'editorial');
+        expect(editorial?.items.map((item) => item.id)).toEqual(['myPosts', 'myEvents']);
+        expect(editorial?.items.map((item) => item.href)).toEqual([
+            'mi-cuenta/publicaciones',
+            'mi-cuenta/eventos'
+        ]);
+    });
+
+    it('does NOT give an EDITOR the anfitrion group (an editor is not a host)', () => {
+        // Regression: the SSR map listed EDITOR under ACCOMMODATION_CREATE, so
+        // the sidebar offered "Mis alojamientos", the host dashboard and the
+        // owner inbox to an account the seed never grants ACCOMMODATION_CREATE
+        // to. Worse, it disagreed with the avatar dropdown, which evaluates the
+        // REAL permission strings and always hid them.
+        const { groups } = getNavForSurface({
+            surface: 'sidebar',
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.EDITOR])
+        });
+        expect(groups.map((group) => group.id)).toEqual(['cuenta', 'turista', 'editorial']);
+    });
+
+    it('keeps the host group for someone holding BOTH the HOST and EDITOR hats', () => {
+        // HOS-296: hats accumulate. Removing EDITOR from the accommodation set
+        // must not cost a host who also edits content their host area.
+        const { groups } = getNavForSurface({
+            surface: 'sidebar',
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.HOST, RoleEnum.EDITOR])
+        });
+        expect(groups.map((group) => group.id)).toEqual([
+            'cuenta',
+            'turista',
+            'anfitrion',
+            'editorial'
+        ]);
+    });
+
+    it('drops the editorial group entirely for a plain tourist', () => {
+        const { groups } = getNavForSurface({
+            surface: 'sidebar',
+            visibility: (node) => isVisibleByRoles(node, [RoleEnum.USER])
+        });
+        expect(findGroup(groups, 'editorial')).toBeUndefined();
+    });
+
+    it('surfaces only the entitled half when posts and events diverge', () => {
+        // The editorial group carries NO group-level requiredPermission on
+        // purpose: POST_CREATE and EVENT_CREATE are separate permissions kept
+        // as separate map entries so they MAY diverge. Gating the group on
+        // either one would hide the other's item the day they do. This asserts
+        // the half-entitled case directly, since no role produces it today.
+        const { groups } = getNavForSurface({
+            surface: 'sidebar',
+            visibility: (node) => isVisibleByPermissions(node, [PermissionEnum.EVENT_CREATE])
+        });
+        const editorial = findGroup(groups, 'editorial');
+        expect(editorial?.items.map((item) => item.id)).toEqual(['myEvents']);
     });
 });
