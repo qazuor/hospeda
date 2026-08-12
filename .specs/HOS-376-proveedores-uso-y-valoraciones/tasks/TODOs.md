@@ -2,7 +2,7 @@
 
 Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-beta/issue/HOS-376)
 
-## Progreso: 64/70 tareas cerradas (91%)
+## Progreso: 66/70 tareas cerradas (94%)
 
 **Complejidad promedio:** 2.4/3 (máximo por tarea: 3)
 **Profundidad del grafo:** 14 niveles
@@ -205,7 +205,7 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
   - Tabla de usos con filtros (status, proveedor, creationChannel, fechas) y vista de proveedores con la declaración suspendida, con acción de levantar la suspensión pidiendo motivo. TanStack Ta…
   - Bloqueada por: T-038 · Bloquea a: —
 
-## Fase `testing` — 7/11 completadas (complejidad promedio 2.5)
+## Fase `testing` — 9/11 completadas (complejidad promedio 2.5)
 
 - [x] **T-057** (c3) — Tests unitarios de la máquina de estados del uso
   - TODAS las transiciones válidas (PENDING→CONFIRMED, PENDING→REJECTED, PENDING→EXPIRED, REJECTED→PENDING por undo) y TODAS las inválidas (CONFIRMED→cualquier cosa, EXPIRED→cualquier cosa, dobl…
@@ -228,10 +228,10 @@ Spec: [`spec.md`](../spec.md) · Linear: [HOS-376](https://linear.app/hospeda-be
 - [x] **T-063** (c2) — Tests de integración de los endpoints admin
   - T-037 y T-038: 403 sin el permiso correspondiente (un permiso por endpoint, no genérico), moderar recalcula agregados, levantar la suspensión registra el admin, los filtros funcionan. Los te…
   - Bloqueada por: T-037, T-038 · Bloquea a: —
-- [ ] **T-064** (c3) — Regresiones dedicadas: AC-6, AC-15, AC-16, AC-17
+- [x] **T-064** (c3) — Regresiones dedicadas: AC-6, AC-15, AC-16, AC-17
   - Un test con nombre explícito por cada uno: AC-6 confirmar el uso que uno mismo declaró da 404; AC-15 un usuario SÓLO proveedor no puede valorar a otro proveedor; AC-16 un usuario host+provee…
   - Bloqueada por: T-013, T-058, T-061 · Bloquea a: —
-- [ ] **T-065** (c3) — Regresiones dedicadas: AC-19, AC-22, AC-28
+- [x] **T-065** (c3) — Regresiones dedicadas: AC-19, AC-22, AC-28
   - AC-19 un texto con score de moderación ≥ 0.5 nace PENDING a pesar del default APPROVED; AC-22 editar una valoración ya respondida la re-modera, sella editedAt y deja la réplica VIVA con revi…
   - Bloqueada por: T-026, T-027, T-033 · Bloquea a: —
 - [ ] **T-066** (c3) — Tests de los 3 crons
