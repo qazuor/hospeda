@@ -52,9 +52,9 @@ const { tagline, title, subtitle, class: className } = Astro.props;
 		max-height: 2.5em;
 		opacity: 1;
 		transition:
-			max-height 0.3s ease,
+			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
 			opacity 0.2s ease,
-			margin 0.3s ease;
+			margin var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
 	}
 
 	.listing-page-header__title {
@@ -64,7 +64,7 @@ const { tagline, title, subtitle, class: className } = Astro.props;
 		color: var(--core-foreground);
 		margin: 0;
 		line-height: 1.2;
-		transition: font-size 0.3s ease;
+		transition: font-size var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
 	}
 
 	.listing-page-header__subtitle {
@@ -76,9 +76,9 @@ const { tagline, title, subtitle, class: className } = Astro.props;
 		max-height: 3em;
 		opacity: 1;
 		transition:
-			max-height 0.3s ease,
+			max-height var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease),
 			opacity 0.2s ease,
-			margin 0.3s ease;
+			margin var(--wave-header-anim-duration, 0.3s) var(--wave-header-anim-ease, ease);
 	}
 
 	@media (prefers-reduced-motion: reduce) {
