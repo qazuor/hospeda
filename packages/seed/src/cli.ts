@@ -2,6 +2,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { formatUnknownFlagsError, SEED_CLI_USAGE, validateSeedCliFlags } from './cli-flags.js';
 import type { SeedMigrationGroup } from './data-migrations/types.js';
 
 /**
@@ -426,6 +427,31 @@ if (IS_CLI_ENTRY) {
     // Basic CLI argument parsing
     const args = process.argv.slice(2);
 
+    // HOS-510: fail closed on anything unrecognized, BEFORE any dispatch and
+    // before the database connection is opened.
+    //
+    // Every flag below is read with `args.includes('--x')`, which cannot tell
+    // an absent flag from a misspelled one. That is harmless for a toggle and
+    // dangerous for a read-only one: `pnpm db:seed:migrate --status` arrives
+    // here as `['--data-migrate', '--status']`, and dropping the unknown
+    // `--status` left `--data-migrate` to run alone — a command typed to LOOK
+    // at the ledger applied every pending data-migration instead (measured
+    // 2026-08-15 on a dev database: seed_migrations 44 rows -> 54, exit 0).
+    //
+    // Placed here rather than next to each consumer so no future branch can be
+    // reached with an argument nobody validated. See ./cli-flags.ts.
+    if (args.includes('--help')) {
+        // biome-ignore lint/suspicious/noConsole: --help is plain script-friendly output, not seed-logger output
+        console.log(SEED_CLI_USAGE);
+        process.exit(0);
+    }
+
+    const { unknown: unknownFlags } = validateSeedCliFlags({ args });
+    if (unknownFlags.length > 0) {
+        logger.error(`${STATUS_ICONS.Error} ${formatUnknownFlagsError({ unknown: unknownFlags })}`);
+        process.exit(1);
+    }
+
     /** CLI options parsed from command line arguments. */
     const options = {
         required: args.includes('--required'),
@@ -433,7 +459,6 @@ if (IS_CLI_ENTRY) {
         testUsers: args.includes('--test-users'),
         pointOfInterestCatalog: args.includes('--poi-catalog'),
         reset: args.includes('--reset'),
-        migrate: args.includes('--migrate'),
         rollbackOnError: args.includes('--rollbackOnError'),
         continueOnError: args.includes('--continueOnError'),
         cleanImages: args.includes('--clean-images'),

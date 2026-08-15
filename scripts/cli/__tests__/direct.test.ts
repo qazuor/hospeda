@@ -157,6 +157,43 @@ describe('parseCliArgs', () => {
         expect(result.commandId).toBeUndefined();
     });
 
+    describe('unknown flags are reported, not swallowed (HOS-510)', () => {
+        it('collects an unknown flag instead of dropping it', () => {
+            // The exact shape that mattered: `pnpm cli db:seed:migrate --status`.
+            // `--status` used to be warned about and discarded, and the wrapper
+            // then ran db:seed:migrate BARE — applying every pending
+            // data-migration for a command typed to look at the ledger.
+            // Reproduced 2026-08-15: seed_migrations 44 rows -> 54, exit 0.
+            const result = parseCliArgs({ argv: ['db:seed:migrate', '--status'] });
+
+            expect(result.unknownFlags).toEqual(['--status']);
+            expect(result.commandId).toBe('db:seed:migrate');
+        });
+
+        it('collects every unknown flag, not just the first', () => {
+            const result = parseCliArgs({ argv: ['db:start', '--nope', '--also-nope'] });
+
+            expect(result.unknownFlags).toEqual(['--nope', '--also-nope']);
+        });
+
+        it('reports no unknown flags for a clean invocation', () => {
+            const result = parseCliArgs({ argv: ['db:start', '--yes'] });
+
+            expect(result.unknownFlags).toEqual([]);
+        });
+
+        it('does NOT treat pass-through args after -- as unknown', () => {
+            // After `--` the args belong to the underlying script, which is
+            // responsible for validating them.
+            const result = parseCliArgs({
+                argv: ['db:seed:migrate', '--', '--status']
+            });
+
+            expect(result.unknownFlags).toEqual([]);
+            expect(result.extraArgs).toEqual(['--status']);
+        });
+    });
+
     it('should support --all as alias for --list-all', () => {
         // Arrange & Act
         const result = parseCliArgs({ argv: ['--all'] });
@@ -240,6 +277,45 @@ describe('handleDirect', () => {
         expect(consoleLogSpy).toHaveBeenCalledWith(
             'No command specified. Use --help for usage info.'
         );
+    });
+
+    describe('an unknown flag refuses the run (HOS-510)', () => {
+        it('must NOT execute the command when a flag is unrecognized', async () => {
+            // The assertion that carries this: the runner is never reached.
+            // `pnpm cli db:seed:migrate --status` used to drop --status with a
+            // warning and run the migration anyway.
+            const args = parseCliArgs({ argv: ['test', '--status'] });
+            const { runCommand } = await import('../runner.js');
+
+            const exitCode = await handleDirect({ args, allCommands, fuse });
+
+            expect(vi.mocked(runCommand)).not.toHaveBeenCalled();
+            expect(exitCode).toBe(1);
+        });
+
+        it('names the offending flag and points at the -- pass-through form', async () => {
+            const args = parseCliArgs({ argv: ['test', '--status'] });
+
+            await handleDirect({ args, allCommands, fuse });
+
+            const printed = consoleLogSpy.mock.calls.flat().join('\n');
+            expect(printed).toContain('--status');
+            expect(printed).toContain('--');
+        });
+
+        it('still executes when the same flag is passed through after --', async () => {
+            // The wrapper is not the validator for the underlying script's own
+            // flags; it just must not eat them.
+            const args = parseCliArgs({ argv: ['test', '--', '--status'] });
+            const { runCommand } = await import('../runner.js');
+
+            const exitCode = await handleDirect({ args, allCommands, fuse });
+
+            expect(vi.mocked(runCommand)).toHaveBeenCalledWith(
+                expect.objectContaining({ extraArgs: ['--status'] })
+            );
+            expect(exitCode).toBe(0);
+        });
     });
 
     it('should call runner for an exact-match command ID', async () => {
