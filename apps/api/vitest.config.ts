@@ -28,6 +28,24 @@ export default defineConfig({
         // ~16s and intermittently tripped the 15s cap, failing shard 3. Bumped to 30s for
         // headroom; the real fix (cutting per-file cold-import cost) is tracked in SPEC-188.
         testTimeout: 30000,
+        // Hooks get the same budget as tests. They did NOT before: vitest
+        // defaults hookTimeout to 10000ms, so raising testTimeout above left
+        // hooks on a 10s cap nobody chose, and any setup cost that lands in a
+        // hook is measured against a limit three times tighter than the one
+        // the test body gets.
+        //
+        // That gap produced a real, hard-to-read flake: a beforeEach that
+        // dynamically imported the module under test paid ~9.4s of module
+        // graph on its first call, sat 500ms under the cap, and crossed it on
+        // a loaded runner — surfacing as "Hook timed out in 10000ms" with no
+        // assertion and no stack in the code under test (PR #2817, shard 2/5).
+        // The offending imports are being moved out of hooks, but the
+        // asymmetry is worth closing on its own: the next expensive hook
+        // should fail for being wrong, not for being budgeted differently.
+        //
+        // Cost of the change: a genuinely hung hook now takes 30s to fail
+        // instead of 10s.
+        hookTimeout: 30000,
         pool: 'forks',
         maxWorkers: 3,
         include: ['test/**/*.test.ts', 'src/**/*.test.ts'],
