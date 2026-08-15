@@ -26,6 +26,7 @@
  * @module parse-api-validation-errors
  */
 
+import { resolveValidationMessage } from '@repo/i18n';
 import { z } from 'zod';
 
 // ---------------------------------------------------------------------------
@@ -34,6 +35,10 @@ import { z } from 'zod';
 
 /**
  * Schema for a single field-level validation detail returned by the API.
+ *
+ * Mirrors `TransformedValidationError` (`apps/api/src/utils/zod-error-types.ts`).
+ * `params` and `userFriendlyMessage` are optional because older/handcrafted
+ * error bodies omit them, but the route factory always sends both.
  */
 export const ApiValidationDetailSchema = z.object({
     /** Dot-notation field path (e.g. "name", "address.city") */
@@ -41,7 +46,11 @@ export const ApiValidationDetailSchema = z.object({
     /** i18n translation key (e.g. "zodError.accommodation.name.min") */
     messageKey: z.string(),
     /** Zod error code (e.g. "TOO_SMALL") */
-    code: z.string()
+    code: z.string(),
+    /** Interpolation params extracted from the Zod issue (min, max, expected, …) */
+    params: z.record(z.string(), z.unknown()).optional(),
+    /** English, human-readable message built by the API from the Zod issue */
+    userFriendlyMessage: z.string().optional()
 });
 
 /**
@@ -101,12 +110,50 @@ export interface ParseApiValidationErrorsInput {
      */
     readonly error: unknown;
     /**
-     * Translation function. Receives an i18n key and returns the translated
-     * string. Falls back to the raw key when the function is unavailable.
+     * Translation function, normally the `t` from `useTranslations()`.
+     * Receives an i18n key plus optional interpolation params.
      *
-     * @param key - i18n key such as `"zodError.accommodation.name.min"`
+     * @param key - i18n key such as `"validation.accommodation.name.min"`
+     * @param params - interpolation params such as `{ min: 2 }`
      */
-    readonly t: (key: string) => string;
+    readonly t: (key: string, params?: Record<string, unknown>) => string;
+}
+
+/**
+ * Resolve one API detail into the string the editor actually reads.
+ *
+ * The API reports keys in the `zodError.*` / `validationError.*` namespaces,
+ * while the catalogue stores them under `validation.*`. Calling `t()` on the
+ * reported key therefore ALWAYS misses — that was H-27, and it turned every
+ * admin validation error into `[MISSING: zodError.…]`. `resolveValidationMessage`
+ * is the single place that performs that rewrite, so this path must go
+ * through it, exactly like the client-side `validateFormWithZod` does.
+ *
+ * Fallback order, so nothing ever renders empty or as a bare key:
+ * 1. the localized string (with the API's `params` interpolated),
+ * 2. the API's English `userFriendlyMessage`,
+ * 3. the raw key.
+ *
+ * @param detail - One entry of the API's `error.details` array
+ * @param t - Translation function from `useTranslations()`
+ * @returns Message ready to render
+ */
+function resolveDetailMessage(
+    detail: ApiValidationDetail,
+    t: (key: string, params?: Record<string, unknown>) => string
+): string {
+    const resolved = resolveValidationMessage({
+        key: detail.messageKey,
+        t,
+        params: detail.params
+    });
+
+    // `resolveValidationMessage` echoes the key back on a dictionary miss.
+    if (resolved && resolved !== detail.messageKey) {
+        return resolved;
+    }
+
+    return detail.userFriendlyMessage || detail.messageKey;
 }
 
 /**
@@ -147,13 +194,9 @@ export function parseApiValidationErrors({
     const fieldErrors: Record<string, string> = {};
 
     for (const detail of details) {
-        // Translate the messageKey; fall back to the raw key so the UI never
-        // shows an empty string.
-        const message = t(detail.messageKey) || detail.messageKey;
-
         // Last detail for a field wins (consistent with Zod behaviour where
         // only one error per field is surfaced in most cases).
-        fieldErrors[detail.field] = message;
+        fieldErrors[detail.field] = resolveDetailMessage(detail, t);
     }
 
     return fieldErrors;
