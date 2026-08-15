@@ -28,15 +28,15 @@ import type { Accommodation } from '@repo/schemas';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildLoginRedirect } from '@/lib/middleware-helpers';
-import { buildUrl } from '@/lib/urls';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import EmptyState from '@/components/shared/feedback/EmptyState.astro';
+import HostTradesAccessDenied from '@/components/host/host-trades/HostTradesAccessDenied.astro';
 import { TradesDirectory } from '@/components/host/host-trades/TradesDirectory.client';
-import { BuildingIcon, LockIcon } from '@repo/icons';
+import { BuildingIcon } from '@repo/icons';
 
 export const prerender = false;
 
@@ -140,19 +140,6 @@ const title = t('host-trades.page.title', 'Directorio de proveedores');
 const subtitle = t('host-trades.page.subtitle', 'Proveedores locales de confianza para tu alojamiento');
 
 const isEmpty = trades.length === 0;
-
-// Access-denied copy. This state is reached ONLY by users who are not yet
-// hosts, so the CTA points at the "publicá en Hospeda" hub, not at the
-// subscription plans: the directory is a captation hook and is FREE for every
-// host — it is deliberately NOT gated by a paid plan (owner decision,
-// 2026-08-08; see `.specs/HOS-376-proveedores-uso-y-valoraciones/spec.md` §4
-// NG-5). The previous copy promised "necesitás un plan activo", a requirement
-// the backend never enforced, and sent the exact person we want to convert to
-// a pricing page instead of to onboarding.
-const accessDeniedTitle = t('host-trades.accessDenied.title', 'Esta sección es exclusiva para anfitriones');
-const accessDeniedMessage = t('host-trades.accessDenied.message', 'El directorio es gratuito para quienes publican en Hospeda. Publicá tu alojamiento y accedé a proveedores locales de confianza, con beneficios exclusivos para anfitriones.');
-const accessDeniedCta = t('host-trades.accessDenied.cta', 'Publicá tu alojamiento');
-const accessDeniedCtaHref = buildUrl({ locale, path: 'mi-cuenta/publica' });
 ---
 
 <AccountLayout
@@ -164,19 +151,10 @@ const accessDeniedCtaHref = buildUrl({ locale, path: 'mi-cuenta/publica' });
     <AccountPageHeader title={title} description={subtitle} />
 
     {accessDenied ? (
-        /* Access-denied state (AC-5.3): tourist or non-host user — already a
-             standalone full-page card (bg/border/radius below), branded on
-             its own since it is no longer nested in AccountSectionCard. */
-        <div class:list={['trades-page__access-denied', accountSectionStyles.branded]} role="alert">
-            <span class="trades-page__access-denied-icon" aria-hidden="true">
-                <LockIcon size={40} weight="duotone" />
-            </span>
-            <h3 class="trades-page__access-denied-heading">{accessDeniedTitle}</h3>
-            <p class="trades-page__access-denied-body">{accessDeniedMessage}</p>
-            <a href={accessDeniedCtaHref} class="trades-page__access-denied-cta">
-                {accessDeniedCta}
-            </a>
-        </div>
+        /* Access-denied state (AC-5.3): tourist or non-host user. Shared with
+             the QR landing page and provider detail page (H-05) — there must
+             be exactly one definition of this card. */
+        <HostTradesAccessDenied locale={locale} />
     ) : fetchError ? (
         /* Generic error state — same standalone-card treatment as above. */
         <div class:list={['trades-page__error', accountSectionStyles.branded]} role="alert">
@@ -209,63 +187,6 @@ const accessDeniedCtaHref = buildUrl({ locale, path: 'mi-cuenta/publica' });
 </AccountLayout>
 
 <style>
-    /* ── Access-denied state ── */
-    .trades-page__access-denied {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: var(--space-4, 1rem);
-        padding: var(--space-12, 3rem) var(--space-8, 2rem);
-        background-color: var(--core-card);
-        border: 1px solid var(--core-foreground-a08);
-        border-radius: var(--radius-card, 24px);
-        text-align: center;
-    }
-
-    .trades-page__access-denied-icon {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--core-muted-foreground);
-    }
-
-    .trades-page__access-denied-heading {
-        font-family: var(--font-heading);
-        font-weight: 700;
-        font-size: 1.25rem;
-        color: var(--core-foreground);
-        margin: 0;
-    }
-
-    .trades-page__access-denied-body {
-        font-family: var(--font-sans);
-        font-size: var(--text-body, 1rem);
-        color: var(--core-muted-foreground);
-        margin: 0;
-        max-width: 42ch;
-    }
-
-    .trades-page__access-denied-cta {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 44px;
-        padding: 0.625rem 1.25rem;
-        border-radius: var(--radius-pill, 9999px);
-        background-color: var(--brand-primary);
-        color: var(--primary-foreground, #ffffff);
-        font-family: var(--font-sans);
-        font-weight: 600;
-        font-size: 0.9375rem;
-        text-decoration: none;
-        white-space: nowrap;
-        transition: opacity 150ms ease-out;
-    }
-
-    .trades-page__access-denied-cta:hover {
-        opacity: 0.88;
-    }
-
     /* ── Error state ── */
     .trades-page__error {
         display: flex;

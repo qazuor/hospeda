@@ -1,0 +1,117 @@
+---
+/**
+ * @file HostTradesAccessDenied.astro
+ * @description Shared "this section is for hosts" card, rendered wherever a
+ * host-trades page reads a 403 from the API — a tourist who is not yet a host
+ * hit a `HOST_TRADE_VIEW`-gated endpoint (directory list, provider read by
+ * slug/QR). The gate is correct and must keep firing; this component only
+ * fixes the PRESENTATION of that outcome (H-05, August 2026 smoke).
+ *
+ * This state is reached ONLY by users who are not yet hosts, so the CTA
+ * points at the "publicá en Hospeda" hub, not at subscription plans: the
+ * directory is a captation hook and is FREE for every host — it is
+ * deliberately NOT gated by a paid plan (owner decision, 2026-08-08; see
+ * `.specs/HOS-376-proveedores-uso-y-valoraciones/spec.md` §4 NG-5).
+ *
+ * Extracted from the directory index page (HOS-376) so every host-trades
+ * screen that can read a 403 — the directory list, the QR landing page, and
+ * the provider detail page — renders the identical card instead of each
+ * re-declaring its own copy of it. There must be exactly one definition:
+ * two copies of this copy would drift.
+ *
+ * @example
+ * ```astro
+ * {outcome === 'accessDenied' ? (
+ *     <HostTradesAccessDenied locale={locale} />
+ * ) : ( ... )}
+ * ```
+ */
+
+import { LockIcon } from '@repo/icons';
+import accountSectionStyles from '@/components/account/AccountSection.module.css';
+import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+interface Props {
+    readonly locale: SupportedLocale;
+}
+
+const { locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const title = t('host-trades.accessDenied.title', 'Esta sección es exclusiva para anfitriones');
+const message = t(
+    'host-trades.accessDenied.message',
+    'El directorio es gratuito para quienes publican en Hospeda. Publicá tu alojamiento y accedé a proveedores locales de confianza, con beneficios exclusivos para anfitriones.'
+);
+const cta = t('host-trades.accessDenied.cta', 'Publicá tu alojamiento');
+const ctaHref = buildUrl({ locale, path: 'mi-cuenta/publica' });
+---
+
+<div class:list={['host-trades-access-denied', accountSectionStyles.branded]} role="alert">
+    <span class="host-trades-access-denied__icon" aria-hidden="true">
+        <LockIcon size={40} weight="duotone" />
+    </span>
+    <h2 class="host-trades-access-denied__heading">{title}</h2>
+    <p class="host-trades-access-denied__body">{message}</p>
+    <a href={ctaHref} class="host-trades-access-denied__cta">{cta}</a>
+</div>
+
+<style>
+    .host-trades-access-denied {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-4, 1rem);
+        padding: var(--space-12, 3rem) var(--space-8, 2rem);
+        background-color: var(--core-card);
+        border: 1px solid var(--core-foreground-a08);
+        border-radius: var(--radius-card, 24px);
+        text-align: center;
+    }
+
+    .host-trades-access-denied__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--core-muted-foreground);
+    }
+
+    .host-trades-access-denied__heading {
+        margin: 0;
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: 1.25rem;
+        color: var(--core-foreground);
+    }
+
+    .host-trades-access-denied__body {
+        max-width: 42ch;
+        margin: 0;
+        font-family: var(--font-sans);
+        font-size: var(--text-body, 1rem);
+        color: var(--core-muted-foreground);
+    }
+
+    .host-trades-access-denied__cta {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 44px;
+        padding: 0.625rem 1.25rem;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.9375rem;
+        color: var(--primary-foreground, #ffffff);
+        text-decoration: none;
+        white-space: nowrap;
+        background-color: var(--brand-primary);
+        border-radius: var(--radius-pill, 9999px);
+        transition: opacity 150ms ease-out;
+    }
+
+    .host-trades-access-denied__cta:hover {
+        opacity: 0.88;
+    }
+</style>
