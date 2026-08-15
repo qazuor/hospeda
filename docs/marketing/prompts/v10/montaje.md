@@ -44,7 +44,7 @@ Texto en pantalla:
 
 ## El fondo
 
-[`escenas/escena15.png`](../../escenas/escena15.png) — inserto lateral en la cabaña, el
+`escenas/escena15.png` — inserto lateral en la cabaña, el
 mismo que usa V7. Las dos tiradas de personaje parten de la misma imagen.
 
 ---

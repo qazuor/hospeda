@@ -52,7 +52,7 @@ trae el guion de V1 en plan-videos.md, más cortos y directos que la voz en off�
 
 ## El fondo
 
-Un solo fondo, [`escenas/escena1.png`](../../escenas/escena1.png) — la cabaña de madera
+Un solo fondo, `escenas/escena1.png` — la cabaña de madera
 del Litoral, plano entero de frente, celular en mano. Las tres tiradas parten de la
 misma imagen; lo que cambia entre T1 y T4 es el encuadre, descrito en el prompt de cada
 una, no una imagen distinta.

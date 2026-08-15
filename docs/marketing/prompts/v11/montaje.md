@@ -43,7 +43,7 @@ Texto en pantalla:
 
 ## El fondo
 
-[`escenas/escena15.png`](../../escenas/escena15.png) — el mismo inserto lateral en la
+`escenas/escena15.png` — el mismo inserto lateral en la
 cabaña que usan V7 y V10.
 
 ---

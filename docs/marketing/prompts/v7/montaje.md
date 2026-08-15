@@ -48,7 +48,7 @@ Texto en pantalla — **distinto del audio**, como en V9:
 
 ## El fondo
 
-[`escenas/escena15.png`](../../escenas/escena15.png) — inserto lateral en la cabaña.
+`escenas/escena15.png` — inserto lateral en la cabaña.
 Hospedín en el tercio izquierdo, el teléfono flotante a la derecha con la pantalla
 vacía. Las dos tiradas de personaje parten de la misma imagen.
 

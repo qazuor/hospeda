@@ -62,7 +62,7 @@ lote sin material de `grabaciones.md`.
 
 ## El fondo y el objeto
 
-[`escenas/escena5.png`](../../escenas/escena5.png) — el palmar, plano entero de frente.
+`escenas/escena5.png` — el palmar, plano entero de frente.
 La imagen de referencia lo muestra sosteniendo un **teléfono**: en las cuatro tiradas de
 este video ese teléfono se reemplaza por el **mapa** de `acciones.png`, manteniendo el
 resto de la escena —el personaje, el sendero, las palmeras, la luz— igual que en
