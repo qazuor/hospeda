@@ -18,7 +18,7 @@
 // @vitest-environment jsdom
 
 import type { AdminPaymentView } from '@repo/schemas';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { PaymentsTable } from '../PaymentsTable';
 
@@ -92,5 +92,30 @@ describe('PaymentsTable — refund button gating (regression)', () => {
             name: 'admin-billing.payments.refundButton'
         });
         expect(refundButton).toBeDisabled();
+    });
+
+    it('hands the payment to onRefund when the enabled button is actually clicked', () => {
+        // An enabled button is only half of the fix. The other half is that
+        // pressing it emits something: a button that renders enabled and drops
+        // the click on the floor fails exactly the same way for an operator.
+        const onRefund = vi.fn();
+        const refundablePayment = buildPayment({ id: 'clickable', isRefundable: true });
+
+        render(
+            <PaymentsTable
+                payments={[refundablePayment]}
+                isLoading={false}
+                isError={false}
+                onViewDetails={vi.fn()}
+                onRefund={onRefund}
+            />
+        );
+
+        fireEvent.click(
+            screen.getByRole('button', { name: 'admin-billing.payments.refundButton' })
+        );
+
+        expect(onRefund).toHaveBeenCalledTimes(1);
+        expect(onRefund).toHaveBeenCalledWith(refundablePayment);
     });
 });
