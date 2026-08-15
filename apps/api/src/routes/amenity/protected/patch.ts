@@ -5,7 +5,10 @@
 import {
     AmenityIdSchema,
     AmenityProtectedSchema,
+    type AmenityUpdateHttp,
     AmenityUpdateHttpSchema,
+    type AmenityUpdateInput,
+    httpToDomainAmenityUpdate,
     PermissionEnum
 } from '@repo/schemas';
 import { AmenityService, ServiceError } from '@repo/service-core';
@@ -38,7 +41,15 @@ export const protectedPatchAmenityRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        const result = await amenityService.update(actor, params.id as string, body);
+        // `httpToDomainAmenityUpdate` is identity except for one field, and that one
+        // is INVERTED: `isActive` becomes `!isActive` under the name `isBuiltin`.
+        // This route used to forward the raw body, and `AmenityUpdateInputSchema`
+        // is NOT `.strict()`, so `isActive` was dropped in silence behind a 200 —
+        // the toggle did nothing and said it worked (HOS-573).
+        const domainInput: AmenityUpdateInput = httpToDomainAmenityUpdate(
+            body as AmenityUpdateHttp
+        );
+        const result = await amenityService.update(actor, params.id as string, domainInput);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

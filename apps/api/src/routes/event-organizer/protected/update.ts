@@ -5,7 +5,10 @@
 import {
     EventOrganizerIdSchema,
     EventOrganizerProtectedSchema,
+    type EventOrganizerUpdateHttp,
     EventOrganizerUpdateHttpSchema,
+    type EventOrganizerUpdateInput,
+    httpToDomainEventOrganizerUpdate,
     PermissionEnum
 } from '@repo/schemas';
 import { EventOrganizerService, ServiceError } from '@repo/service-core';
@@ -43,7 +46,15 @@ export const protectedUpdateEventOrganizerRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        const result = await eventOrganizerService.update(actor, params.id as string, body);
+        // `httpToDomainEventOrganizerUpdate` folds `email`/`phone`/`website` into
+        // `contactInfo` and the socials into `socialNetworks` (renaming `linkedin`
+        // to `linkedIn`). This route used to forward the raw body, and
+        // `EventOrganizerUpdateInputSchema` is `.strict()`, so those flat keys
+        // arrived unrecognized and the request 400'd (HOS-573).
+        const domainInput: EventOrganizerUpdateInput = httpToDomainEventOrganizerUpdate(
+            body as EventOrganizerUpdateHttp
+        );
+        const result = await eventOrganizerService.update(actor, params.id as string, domainInput);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

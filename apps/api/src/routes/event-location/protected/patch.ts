@@ -5,7 +5,10 @@
 import {
     EventLocationIdSchema,
     EventLocationProtectedSchema,
+    type EventLocationUpdateHttp,
     EventLocationUpdateHttpSchema,
+    type EventLocationUpdateInput,
+    httpToDomainEventLocationUpdate,
     PermissionEnum
 } from '@repo/schemas';
 import { EventLocationService, ServiceError } from '@repo/service-core';
@@ -44,7 +47,14 @@ export const protectedPatchEventLocationRoute = createProtectedRoute({
     ) => {
         const actor = getActorFromContext(ctx);
         // Use update method for patch - service handles partial updates
-        const result = await eventLocationService.update(actor, params.id as string, body);
+        // `httpToDomainEventLocationUpdate` nests `latitude`/`longitude` into
+        // `coordinates.{lat,long}` as strings. This route used to forward the raw
+        // body, and `EventLocationUpdateInputSchema` is `.strict()`, so the flat
+        // pair arrived unrecognized and the request 400'd (HOS-573).
+        const domainInput: EventLocationUpdateInput = httpToDomainEventLocationUpdate(
+            body as EventLocationUpdateHttp
+        );
+        const result = await eventLocationService.update(actor, params.id as string, domainInput);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
