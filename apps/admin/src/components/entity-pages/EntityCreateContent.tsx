@@ -21,6 +21,7 @@ import { useIntelligentNavigation, useLazySections } from '@/hooks';
 import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { parseApiValidationErrors } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
+import { FormErrorSummary } from './FormErrorSummary';
 
 /**
  * Configuration for an entity create page
@@ -364,6 +365,15 @@ export function EntityCreateContent({
                                                 handleSave();
                                             }}
                                         >
+                                            {/* Every error reaches the user even
+                                                when its field has no slot to
+                                                render one (H-28). */}
+                                            <FormErrorSummary
+                                                errors={errors}
+                                                sections={sections}
+                                                className="mb-6"
+                                            />
+
                                             <div className="space-y-8">{renderSections()}</div>
 
                                             <div className="mt-6 flex justify-end gap-3 border-t pt-6">
