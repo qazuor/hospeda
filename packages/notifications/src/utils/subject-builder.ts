@@ -6,7 +6,12 @@ import { NotificationType } from '../types/notification.types.js';
  */
 const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.SUBSCRIPTION_PURCHASE]: 'Confirmación de compra - {planName}',
-    [NotificationType.ADDON_PURCHASE]: 'Add-on adquirido - {addonName}',
+    // `{planName}`, not `{addonName}`: this type is served by
+    // `PurchaseConfirmationPayload` (shared with SUBSCRIPTION_PURCHASE), which
+    // has no `addonName` field — the emitter puts the addon's own name in
+    // `planName`. Naming the field that does not exist is what made every
+    // addon receipt arrive titled "Add-on adquirido - {addonName}".
+    [NotificationType.ADDON_PURCHASE]: 'Add-on adquirido - {planName}',
     [NotificationType.PAYMENT_SUCCESS]: 'Pago recibido - ${amount}',
     [NotificationType.PAYMENT_FAILURE]: 'Error en tu pago - Acción requerida',
     [NotificationType.RENEWAL_REMINDER]: 'Tu suscripción se renueva pronto - {planName}',
@@ -116,6 +121,87 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
  * Generic fallback subject for unknown notification types
  */
 const FALLBACK_SUBJECT = 'Notificación de Hospeda';
+
+/** Matches a `{placeholder}` token inside a subject pattern. */
+const PLACEHOLDER_PATTERN = /\{(\w+)\}/g;
+
+/**
+ * Lists the template variables a notification type's subject declares.
+ *
+ * Exposed so callers can resolve exactly the variables a subject needs instead
+ * of maintaining a parallel, hand-written list of them — the drift between
+ * those two lists is what shipped `{counterpartName}` to real inboxes
+ * (H-64 / H-75).
+ *
+ * @param params - `{ type }` the notification type to inspect.
+ * @returns `{ placeholders }` in declaration order, without duplicates. Empty
+ *   for a static subject or an unknown type.
+ *
+ * @example
+ * ```ts
+ * getSubjectPlaceholders({ type: NotificationType.PARTNER_MENTIONS_LOGGED })
+ * // => { placeholders: ['partnerName', 'mentionedAtLabel'] }
+ * ```
+ */
+export function getSubjectPlaceholders(params: { readonly type: NotificationType }): {
+    readonly placeholders: readonly string[];
+} {
+    const pattern = SUBJECT_PATTERNS[params.type];
+
+    if (!pattern) {
+        return { placeholders: [] };
+    }
+
+    const found = new Set<string>();
+    for (const match of pattern.matchAll(PLACEHOLDER_PATTERN)) {
+        const key = match[1];
+        if (key !== undefined) {
+            found.add(key);
+        }
+    }
+
+    return { placeholders: [...found] };
+}
+
+/**
+ * Reports whether a built subject still carries template syntax.
+ *
+ * A subject is the only part of an email visible before it is opened, so a
+ * surviving `{placeholder}` there reads as a broken message or as phishing.
+ * Callers use this as a last line of defence before handing the string to a
+ * transport.
+ *
+ * @param params - `{ subject }` the already-interpolated subject line.
+ * @returns `{ unresolved }` — the placeholder names still present, empty when
+ *   the subject is clean.
+ *
+ * @example
+ * ```ts
+ * findUnresolvedPlaceholders({ subject: '{partnerName} todavía no está publicado' })
+ * // => { unresolved: ['partnerName'] }
+ * ```
+ */
+export function findUnresolvedPlaceholders(params: { readonly subject: string }): {
+    readonly unresolved: readonly string[];
+} {
+    const found = new Set<string>();
+    for (const match of params.subject.matchAll(PLACEHOLDER_PATTERN)) {
+        const key = match[1];
+        if (key !== undefined) {
+            found.add(key);
+        }
+    }
+
+    return { unresolved: [...found] };
+}
+
+/**
+ * The subject used when interpolation could not be completed.
+ *
+ * Deliberately the same generic line an unknown type falls back to: it says
+ * nothing false, and it never publishes the template's own syntax.
+ */
+export const SAFE_FALLBACK_SUBJECT = FALLBACK_SUBJECT;
 
 /**
  * Replaces template variables in a subject pattern with actual values.

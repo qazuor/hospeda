@@ -82,7 +82,12 @@ import type {
     SubscriptionLifecyclePayload,
     TrialEventPayload
 } from '../types/notification.types.js';
-import { getSubject } from '../utils/subject-builder.js';
+import {
+    findUnresolvedPlaceholders,
+    getSubject,
+    SAFE_FALLBACK_SUBJECT
+} from '../utils/subject-builder.js';
+import { buildSubjectData } from '../utils/subject-data.js';
 import type { PreferenceService } from './preference.service.js';
 import { type RetryableNotification, RetryService } from './retry.service.js';
 
@@ -758,101 +763,36 @@ export class NotificationService {
     /**
      * Generate email subject line based on notification type
      *
-     * Uses subject-builder utility to generate Spanish subject lines
-     * with proper variable interpolation.
+     * Variable resolution lives in `buildSubjectData`, which reads the
+     * placeholders the pattern declares and pulls them off the payload. This
+     * method adds the last line of defence: a subject that still carries
+     * template syntax is NEVER handed to a transport.
+     *
+     * That guard is not decorative. Eleven live subjects shipped their own
+     * `{placeholder}` to real inboxes (H-64 / H-75) with no error anywhere —
+     * `replacePlaceholders` preserves an unresolved variable by design, which
+     * is right for a pure formatter and catastrophic for an inbox line. When it
+     * happens now, the message degrades to the generic subject and the defect
+     * is logged at error level instead of being published.
      *
      * @param payload - Notification payload
      * @returns Email subject line in Spanish
      * @private
      */
     private generateSubject(payload: NotificationPayload): string {
-        const subjectData: Record<string, string> = {};
+        const { subjectData } = buildSubjectData({ payload });
+        const subject = getSubject(payload.type, subjectData);
+        const { unresolved } = findUnresolvedPlaceholders({ subject });
 
-        // Extract relevant data for subject placeholders
-        if ('planName' in payload) {
-            subjectData.planName = payload.planName;
+        if (unresolved.length > 0) {
+            this.deps.logger.error(
+                { type: payload.type, unresolved },
+                'Subject placeholders could not be resolved; falling back to the generic subject'
+            );
+            return SAFE_FALLBACK_SUBJECT;
         }
 
-        if ('addonName' in payload) {
-            subjectData.addonName = payload.addonName;
-        }
-
-        if ('amount' in payload && payload.amount !== undefined) {
-            subjectData.amount = payload.amount.toString();
-        }
-
-        // Admin notification specific fields
-        if (payload.type === 'admin_payment_failure' && 'affectedUserEmail' in payload) {
-            subjectData.userEmail = payload.affectedUserEmail || '';
-        }
-
-        if (payload.type === 'admin_system_event' && 'eventDetails' in payload) {
-            const details = payload.eventDetails as Record<string, unknown>;
-            subjectData.eventType = (details.eventType as string) || 'unknown';
-        }
-
-        // Feedback report specific fields
-        if (payload.type === 'feedback_report' && 'reportType' in payload) {
-            subjectData.reportType = payload.reportType;
-            subjectData.reportTitle = payload.reportTitle;
-        }
-
-        // Contact submission specific fields
-        if (payload.type === 'contact_submission' && 'senderFirstName' in payload) {
-            const fullName = `${payload.senderFirstName} ${payload.senderLastName}`.trim();
-            subjectData.senderName = fullName;
-            subjectData.contactType =
-                payload.contactType === 'accommodation' ? 'Alojamiento' : 'General';
-        }
-
-        // Payment retry warning specific fields
-        if (payload.type === 'payment_retry_warning' && 'failureCount' in payload) {
-            subjectData.failureCount = String(payload.failureCount);
-            subjectData.maxRetries = String(payload.maxRetries);
-        }
-
-        // AI cost threshold alert specific fields
-        if (payload.type === 'ai_cost_threshold_alert' && 'thresholdPct' in payload) {
-            subjectData.thresholdPct = String(payload.thresholdPct);
-            subjectData.scope =
-                payload.scope === 'global' ? 'global' : `feature:${payload.feature ?? 'unknown'}`;
-        }
-
-        // Soft-cancel confirmation specific fields (SPEC-147)
-        // Format accessUntil from raw ISO string to a locale date string
-        // (e.g. "15 de julio de 2026") so the subject does not embed a raw
-        // ISO timestamp like "2026-07-15T23:59:59.000Z".
-        if (payload.type === 'subscription_cancel_confirmed' && 'accessUntil' in payload) {
-            subjectData.accessUntil = formatDate({ dateString: payload.accessUntil });
-        }
-
-        // D3 access-ending reminder specific fields (SPEC-147 T-010)
-        if (payload.type === 'subscription_access_ending_soon' && 'daysRemaining' in payload) {
-            subjectData.daysRemaining = String(payload.daysRemaining);
-        }
-
-        // Plan retirement notification specific fields (SPEC-148)
-        // Format accessUntil from raw ISO string to a locale date string so the
-        // subject does not embed a raw ISO timestamp.
-        if (payload.type === 'plan_being_retired' && 'accessUntil' in payload) {
-            subjectData.accessUntil = formatDate({ dateString: payload.accessUntil });
-        }
-
-        // Broken iCal feed alert specific fields (HOS-162 Phase 3)
-        if (payload.type === 'accommodation_calendar_feed_broken' && 'providerLabel' in payload) {
-            subjectData.providerLabel = payload.providerLabel;
-            subjectData.accommodationName = payload.accommodationName;
-        }
-
-        // Plan price-increase advance notice specific fields (HOS-176)
-        // Format effectiveDate from raw ISO string to a locale date string so the
-        // subject does not embed a raw ISO timestamp. planName is filled by the
-        // generic 'planName' in payload branch above.
-        if (payload.type === 'plan_price_change_notice' && 'effectiveDate' in payload) {
-            subjectData.effectiveDate = formatDate({ dateString: payload.effectiveDate });
-        }
-
-        return getSubject(payload.type, subjectData);
+        return subject;
     }
 
     /**
