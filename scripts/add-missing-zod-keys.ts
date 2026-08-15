@@ -3,9 +3,10 @@
  *
  * Helper script to bulk-add missing zodError translation keys to the
  * three locale validation.json files (es/en/pt). Reads the list of
- * missing keys from the verifier's output and inserts them with simple
- * Spanish strings (es) / placeholder strings prefixed with [EN]/[PT]
- * for the other locales.
+ * missing keys from the verifier's output and inserts the same simple
+ * Spanish string in all three locales — `en`/`pt` fall back to `es`
+ * until translated, and that fallback must carry no marker of any kind
+ * (see H-57 and packages/i18n/test/locale-placeholder-markers.guard.test.ts).
  *
  * Usage:
  *   pnpm exec tsx scripts/add-missing-zod-keys.ts
@@ -150,8 +151,13 @@ function main() {
         for (const fullKey of missingKeys) {
             const tail = fullKey.replace(/^zodError\./, '');
             const parts = tail.split('.');
-            const valueEs = defaultSpanish(tail);
-            const value = locale === 'es' ? valueEs : `[${locale.toUpperCase()}] ${valueEs}`;
+            // Every locale gets the plain Spanish copy. `en`/`pt` falling back to
+            // `es` until translated is the documented policy (apps/web/CLAUDE.md);
+            // tagging that fallback with a `[EN]`/`[PT]` marker is not — the marker
+            // is versioned content, so it ships to users (H-57: 3.136 such values
+            // reached production). Locale parity is preserved because the key is
+            // still written to all three files.
+            const value = defaultSpanish(tail);
             if (setIfMissing(json, parts, value)) added += 1;
         }
 

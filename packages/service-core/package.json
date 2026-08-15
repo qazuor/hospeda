@@ -31,10 +31,10 @@
         "test:integration:watch": "vitest --config vitest.integration.config.ts"
     },
     "devDependencies": {
-        "@qazuor/qzpay-core": "^2.0.0",
+        "@qazuor/qzpay-core": "^3.0.0",
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^26.1.2",
-        "@types/pg": "^8.20.3",
+        "@types/node": "^26.2.0",
+        "@types/pg": "^8.21.0",
         "@vitest/coverage-v8": "^4.1.10",
         "pg": "^8.22.0",
         "rimraf": "^6.1.3",

@@ -9,6 +9,7 @@
  *  2) Every key present in the reference locale (`es`) is present in `en` and `pt`.
  *  3) Specific SPEC-096 namespaces required for the web app are present in all locales.
  *  4) (Soft) reports keys that are in non-reference locales but missing from `es` (extra keys).
+ *  5) No value begins with a bracketed uppercase development marker (H-57).
  *
  * Exit codes:
  *  - 0: parity OK
@@ -64,6 +65,45 @@ interface CheckResult {
     readonly missingKeys: ReadonlyArray<{ locale: Locale; namespace: string; key: string }>;
     readonly extraKeys: ReadonlyArray<{ locale: Locale; namespace: string; key: string }>;
     readonly missingRequiredNamespaces: ReadonlyArray<{ locale: Locale; namespace: string }>;
+    readonly markedValues: ReadonlyArray<{
+        locale: Locale;
+        namespace: string;
+        key: string;
+        value: string;
+    }>;
+}
+
+/**
+ * A development marker at the START of a value: `[EN] `, `[PT] `, `[TODO]`, …
+ *
+ * Locale values are versioned content, so a marker written into a JSON file is
+ * shipped to users verbatim — it is not a runtime fallback that something else
+ * later replaces. H-57: 3.272 such values reached production, the most visible
+ * being `[EN] La capacidad no puede ser menor a 1` in the accommodation editor.
+ *
+ * `en`/`pt` falling back to the `es` copy until translated is the documented
+ * policy (apps/web/CLAUDE.md); tagging that fallback with a marker is not.
+ */
+const PLACEHOLDER_MARKER_RE = /^\s*\[[A-Z][A-Z0-9_]*\]/;
+
+/**
+ * Recursively collect the string leaves whose value opens with a marker.
+ */
+function extractMarkedValues(
+    obj: Record<string, unknown>,
+    prefix = ''
+): Array<{ key: string; value: string }> {
+    const marked: Array<{ key: string; value: string }> = [];
+    for (const key in obj) {
+        const fullKey = prefix ? `${prefix}.${key}` : key;
+        const value = obj[key];
+        if (typeof value === 'string') {
+            if (PLACEHOLDER_MARKER_RE.test(value)) marked.push({ key: fullKey, value });
+        } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+            marked.push(...extractMarkedValues(value as Record<string, unknown>, fullKey));
+        }
+    }
+    return marked;
 }
 
 /**
@@ -135,6 +175,12 @@ function check(): CheckResult {
     const missingKeys: Array<{ locale: Locale; namespace: string; key: string }> = [];
     const extraKeys: Array<{ locale: Locale; namespace: string; key: string }> = [];
     const missingRequiredNamespaces: Array<{ locale: Locale; namespace: string }> = [];
+    const markedValues: Array<{
+        locale: Locale;
+        namespace: string;
+        key: string;
+        value: string;
+    }> = [];
 
     // 1) Required SPEC-096 namespaces present in every locale.
     for (const requiredNs of SPEC_096_REQUIRED_NAMESPACES) {
@@ -160,6 +206,11 @@ function check(): CheckResult {
             }
             const localeKeys = new Set(extractKeys(localeContent));
 
+            // 3) No value may open with a development marker, in any locale.
+            for (const { key, value } of extractMarkedValues(localeContent)) {
+                markedValues.push({ locale, namespace, key, value });
+            }
+
             // Keys missing in the locale (relative to reference).
             for (const refKey of refKeys) {
                 if (!localeKeys.has(refKey)) {
@@ -178,7 +229,7 @@ function check(): CheckResult {
         }
     }
 
-    return { missingNamespaces, missingKeys, extraKeys, missingRequiredNamespaces };
+    return { missingNamespaces, missingKeys, extraKeys, missingRequiredNamespaces, markedValues };
 }
 
 // ---------------------------------------------------------------------------
@@ -186,9 +237,24 @@ function check(): CheckResult {
 // ---------------------------------------------------------------------------
 
 function reportAndExit(result: CheckResult): void {
-    const { missingNamespaces, missingKeys, extraKeys, missingRequiredNamespaces } = result;
+    const { missingNamespaces, missingKeys, extraKeys, missingRequiredNamespaces, markedValues } =
+        result;
 
     let hasError = false;
+
+    if (markedValues.length > 0) {
+        hasError = true;
+        console.error(
+            `\n❌ ${markedValues.length} value(s) start with a development marker and would be shown to users:`
+        );
+        for (const { locale, namespace, key, value } of markedValues.slice(0, 20)) {
+            console.error(`   - [${locale}] ${namespace}.${key} = ${JSON.stringify(value)}`);
+        }
+        if (markedValues.length > 20) {
+            console.error(`   ... (${markedValues.length - 20} more)`);
+        }
+        console.error('   Fall back to the Spanish copy WITHOUT the marker.');
+    }
 
     if (missingRequiredNamespaces.length > 0) {
         hasError = true;

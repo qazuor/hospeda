@@ -16,6 +16,7 @@ import { env } from '@/env';
 import { parseApiValidationErrors } from '@/lib/errors';
 import { cn } from '@/lib/utils';
 import { adminLogger } from '@/utils/logger';
+import { FormErrorSummary } from './FormErrorSummary';
 import { filterAndSortSections, type SectionSortOptions } from './utils/section-sorter';
 import { computeSectionSummary, type SectionSummaryFn } from './utils/section-summarizer';
 
@@ -304,6 +305,15 @@ export const EntityEditContent = ({
                     handleSave();
                 }}
             >
+                {/* Every error reaches the user even when its field has no slot
+                    to render one — a collapsed section, a rich-text editor, or
+                    a field this form does not render at all (H-28). */}
+                <FormErrorSummary
+                    errors={errors ?? {}}
+                    sections={orderedSections}
+                    className="mb-4"
+                />
+
                 {flat ? (
                     <div className={cn('space-y-4')}>
                         {orderedSections.map((section, index) => {
