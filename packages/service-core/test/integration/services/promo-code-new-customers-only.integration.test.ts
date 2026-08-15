@@ -100,9 +100,54 @@ async function seedSubscription(
 }
 
 /**
- * Inserts a `new_customers_only` percentage promo code and returns its code
- * string. Shaped to satisfy the extras/020 CHECK constraints
- * (`effect_kind = 'discount'` requires a value and a valid `value_kind`).
+ * Inserts a percentage promo code carrying a per-customer redemption cap and
+ * returns its generated UUID. Not `new_customers_only`, so the two restrictions
+ * are exercised independently of each other.
+ */
+async function seedMaxPerCustomerCode(
+    tx: TestDb,
+    code: string,
+    maxPerCustomer: number
+): Promise<string> {
+    const rows = await tx.execute<{ id: string }>(sql`
+        INSERT INTO billing_promo_codes (
+            code, type, value, active, livemode, new_customers_only,
+            max_per_customer, effect_kind, value_kind, duration_cycles
+        )
+        VALUES (
+            ${code}, 'percentage', 50, true, false, false,
+            ${maxPerCustomer}, 'discount', 'percentage', 1
+        )
+        RETURNING id
+    `);
+    const id = rows.rows?.[0]?.id;
+    if (!id) throw new Error('seedMaxPerCustomerCode: insert returned no id');
+    return id;
+}
+
+/**
+ * Records one redemption of a promo code by a billing customer.
+ *
+ * `billing_promo_code_usage.customer_id` is a `billing_customers.id` — the same
+ * identifier the redemption path writes — which is precisely what the per-customer
+ * pre-check used to compare against a Better Auth user id.
+ */
+async function seedPromoUsage(
+    tx: TestDb,
+    options: { readonly promoCodeId: string; readonly customerId: string }
+): Promise<void> {
+    await tx.execute(sql`
+        INSERT INTO billing_promo_code_usage (
+            promo_code_id, customer_id, discount_amount, currency, livemode
+        )
+        VALUES (${options.promoCodeId}, ${options.customerId}, 50000, 'ARS', false)
+    `);
+}
+
+/**
+ * Inserts a `new_customers_only` percentage promo code. Shaped to satisfy the
+ * extras/020 CHECK constraints (`effect_kind = 'discount'` requires a value and
+ * a valid `value_kind`).
  */
 async function seedNewCustomersOnlyCode(tx: TestDb, code: string): Promise<void> {
     await tx.execute(sql`
@@ -170,6 +215,80 @@ describe('HOS-450 — newCustomersOnly promo restriction (real DB)', () => {
 
                 expect(result.valid).toBe(false);
                 expect(result.errorCode).toBe('PROMO_CODE_NEW_USERS_ONLY');
+            });
+        }
+    );
+
+    // The per-customer cap carried the SAME identifier mismatch as the
+    // newCustomersOnly guard: `billing_promo_code_usage.customer_id` holds a
+    // `billing_customers.id`, but the pre-check compared it against the Better
+    // Auth user id, so it never counted a single redemption. It read as working
+    // only because `redeemAndRecordInTx` re-validates the cap inside its
+    // SELECT FOR UPDATE — two layers, one broken and one sound, look like one
+    // working feature from the outside.
+    it.skipIf(!dbAvailable)(
+        'REGRESSION H-74b: rejects a customer who already reached maxPerCustomer',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const userId = randomUUID();
+                const customerId = await seedCustomer(tx, userId);
+
+                const code = uniqueCode('HOS450CAP');
+                const promoCodeId = await seedMaxPerCustomerCode(tx, code, 1);
+                // The cap is 1 and this customer has already used it once.
+                await seedPromoUsage(tx, { promoCodeId, customerId });
+
+                const ctx: QueryContext = { tx };
+                const result = await validatePromoCode(code, { userId }, ctx);
+
+                expect(result.valid).toBe(false);
+                // The pre-check's own code. `redeemAndRecordInTx` reports the
+                // same cap as PROMO_CODE_MAX_USES_PER_CUSTOMER; they are two
+                // distinct layers and must not be conflated.
+                expect(result.errorCode).toBe('PROMO_CODE_MAX_USES_PER_USER');
+            });
+        }
+    );
+
+    it.skipIf(!dbAvailable)('allows a customer still under maxPerCustomer', async () => {
+        await withServiceTestTransaction(async (tx) => {
+            const userId = randomUUID();
+            const customerId = await seedCustomer(tx, userId);
+
+            const code = uniqueCode('HOS450CAPOK');
+            const promoCodeId = await seedMaxPerCustomerCode(tx, code, 2);
+            // One redemption against a cap of two — still room for another.
+            await seedPromoUsage(tx, { promoCodeId, customerId });
+
+            const ctx: QueryContext = { tx };
+            const result = await validatePromoCode(code, { userId }, ctx);
+
+            expect(result.valid).toBe(true);
+        });
+    });
+
+    it.skipIf(!dbAvailable)(
+        'does not count another customer’s redemptions against this one',
+        async () => {
+            await withServiceTestTransaction(async (tx) => {
+                const userId = randomUUID();
+                await seedCustomer(tx, userId);
+
+                const otherUserId = randomUUID();
+                const otherCustomerId = await seedCustomer(tx, otherUserId);
+
+                const code = uniqueCode('HOS450CAPOTHER');
+                const promoCodeId = await seedMaxPerCustomerCode(tx, code, 1);
+                // Someone ELSE exhausted their own allowance of the same code.
+                await seedPromoUsage(tx, { promoCodeId, customerId: otherCustomerId });
+
+                const ctx: QueryContext = { tx };
+                const result = await validatePromoCode(code, { userId }, ctx);
+
+                // Scoping the count to the right customer is the other half of
+                // the fix: a cap that counts everyone's usage would lock out
+                // first-time redeemers instead of repeat ones.
+                expect(result.valid).toBe(true);
             });
         }
     );

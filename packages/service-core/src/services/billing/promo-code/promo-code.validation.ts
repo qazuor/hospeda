@@ -24,8 +24,7 @@ import {
     count,
     eq,
     getDb,
-    inArray,
-    sql
+    inArray
 } from '@repo/db';
 import type { EffectPreview } from '@repo/schemas';
 import { PromoEffectKindEnum } from '@repo/schemas';
@@ -394,7 +393,19 @@ async function checkUserHasExistingPlanSubscription({
  * - `maxPerCustomer` is null/0 (no limit configured)
  * - The DB query fails (fail-open to avoid blocking legitimate checkouts)
  *
- * @param params - promoCodeId, userId, and optional query context
+ * **Identifier mapping (HOS-450 / smoke finding H-74).** Same defect as
+ * {@link checkUserHasExistingPlanSubscription}: `billing_promo_code_usage.customer_id`
+ * stores a `billing_customers.id` (that is what the redemption path writes — see
+ * `applyPromoCode` and `promo-code.redemption.ts`), while `userId` here is the
+ * Better Auth user id. Comparing them directly counted zero redemptions for
+ * everyone, so this pre-check never blocked anyone. It read as working only
+ * because `redeemAndRecordInTx` re-validates the same cap inside its
+ * `SELECT FOR UPDATE`; that second layer is authoritative, but in the monthly
+ * discount flow the redemption is recorded later as a best-effort phase, so the
+ * cap arrived too late to inform the buyer.
+ *
+ * @param params - promoCodeId, userId (Better Auth user id), and optional query
+ *   context carrying a transaction client
  * @returns true if the user has reached or exceeded their per-user limit
  */
 async function checkUserRedemptionLimitExceeded({
@@ -426,8 +437,18 @@ async function checkUserRedemptionLimitExceeded({
             .select({ total: count() })
             .from(billingPromoCodeUsage)
             .where(
-                sql`${billingPromoCodeUsage.promoCodeId} = ${promoCodeId}
-                    AND ${billingPromoCodeUsage.customerId} = ${userId}`
+                and(
+                    eq(billingPromoCodeUsage.promoCodeId, promoCodeId),
+                    // Map the Better Auth user id to its billing customer id(s),
+                    // for the same reason as the newCustomersOnly guard above.
+                    inArray(
+                        billingPromoCodeUsage.customerId,
+                        db
+                            .select({ id: billingCustomers.id })
+                            .from(billingCustomers)
+                            .where(eq(billingCustomers.externalId, userId))
+                    )
+                )
             );
 
         const customerUseCount = usageRow?.total ?? 0;
