@@ -56,7 +56,8 @@ export function CancelSubscriptionDialog({
                     <DialogTitle>{t('admin-billing.subscriptions.cancelDialog.title')}</DialogTitle>
                     <DialogDescription>
                         {t('admin-billing.subscriptions.cancelDialog.description')}{' '}
-                        {subscription.userName}
+                        {subscription.user?.displayName ??
+                            t('admin-billing.subscriptions.unknownUser')}
                     </DialogDescription>
                 </DialogHeader>
 

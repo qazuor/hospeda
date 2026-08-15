@@ -20,7 +20,6 @@ import { SubscriptionDetailsDialog } from '@/features/billing-subscriptions/Subs
 import { SubscriptionFilters } from '@/features/billing-subscriptions/SubscriptionFilters';
 import { SubscriptionsTable } from '@/features/billing-subscriptions/SubscriptionsTable';
 import type { Subscription, SubscriptionStatus } from '@/features/billing-subscriptions/types';
-import { getPlanBySlug } from '@/features/billing-subscriptions/utils';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
 
@@ -40,7 +39,7 @@ function BillingSubscriptionsPage() {
 
     // Filter state
     const [statusFilter, setStatusFilter] = useState<SubscriptionStatus | 'all'>('all');
-    const [planFilter, setPlanFilter] = useState<string>('all');
+    const [productDomainFilter, setProductDomainFilter] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState('');
 
     // Dialog state
@@ -59,23 +58,25 @@ function BillingSubscriptionsPage() {
         isError
     } = useSubscriptionsQuery({
         status: statusFilter,
-        planSlug: planFilter,
-        q: searchQuery
+        productDomain: productDomainFilter,
+        search: searchQuery
     });
 
-    const subscriptions = ((subscriptionsData as { items?: Subscription[] } | undefined)?.items ??
-        []) as Subscription[];
-
-    const filteredSubscriptions = subscriptions.filter((sub: Subscription) => {
-        const matchesStatus = statusFilter === 'all' || sub.status === statusFilter;
-        const matchesPlan = planFilter === 'all' || sub.planSlug === planFilter;
-        const matchesSearch =
-            searchQuery === '' ||
-            sub.userName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            sub.userEmail.toLowerCase().includes(searchQuery.toLowerCase());
-
-        return matchesStatus && matchesPlan && matchesSearch;
-    });
+    /**
+     * Filtering is the SERVER's job and is not repeated here.
+     *
+     * The page used to re-filter this list client-side. That is wrong twice over
+     * on a paginated endpoint: it can only ever narrow the current page, so a
+     * match on page 2 stays invisible, and it silently disagrees with the totals
+     * the API reports. It also could not have worked at all — it matched
+     * `sub.planSlug` (a slug) against a plan CATEGORY, and read `userName` /
+     * `userEmail`, fields the API has never returned.
+     *
+     * The status filter in particular MUST stay server-side: `cancelled` has to
+     * match rows physically stored as qzpay's `canceled` too, and only the
+     * service knows to widen it.
+     */
+    const subscriptions = subscriptionsData?.items ?? [];
 
     // Plans query — needed to resolve plan slug -> UUID for the qzpay
     // change-plan endpoint, which only accepts UUIDs.
@@ -158,9 +159,11 @@ function BillingSubscriptionsPage() {
         // change-plan needs the DB UUID. Resolve via the admin /plans query.
         const planRow = plansData?.items?.find(
             (p) => (p as { slug?: string }).slug === newPlanSlug
-        ) as { id?: string } | undefined;
+        ) as { id?: string; name?: string } | undefined;
         const newPlanId = planRow?.id;
-        const newPlanDef = getPlanBySlug(newPlanSlug);
+        // Name comes from the DB-backed /plans response, not the static
+        // ALL_PLANS catalog: a plan created in the admin has no entry there.
+        const newPlanName = planRow?.name;
 
         if (!newPlanId) {
             addToast({
@@ -175,7 +178,7 @@ function BillingSubscriptionsPage() {
             {
                 onSuccess: () => {
                     addToast({
-                        message: `${t('admin-billing.subscriptions.toasts.planChanged')} ${newPlanDef?.name ?? newPlanSlug}`,
+                        message: `${t('admin-billing.subscriptions.toasts.planChanged')} ${newPlanName ?? newPlanSlug}`,
                         variant: 'success'
                     });
                     setChangePlanDialogOpen(false);
@@ -280,12 +283,12 @@ function BillingSubscriptionsPage() {
                     onSearchChange={setSearchQuery}
                     statusFilter={statusFilter}
                     onStatusChange={setStatusFilter}
-                    planFilter={planFilter}
-                    onPlanChange={setPlanFilter}
+                    productDomainFilter={productDomainFilter}
+                    onProductDomainChange={setProductDomainFilter}
                 />
 
                 <SubscriptionsTable
-                    subscriptions={filteredSubscriptions}
+                    subscriptions={subscriptions}
                     isLoading={isLoading}
                     isError={isError}
                     onViewDetails={handleViewDetails}

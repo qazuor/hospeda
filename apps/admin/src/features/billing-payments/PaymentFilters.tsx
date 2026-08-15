@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { useTranslations } from '@/hooks/use-translations';
-import type { PaymentMethod, PaymentStatus } from './types';
+import type { PaymentStatus } from './types';
 
 /**
  * Props for PaymentFilters
@@ -13,8 +13,6 @@ export interface PaymentFiltersProps {
     readonly onSearchChange: (value: string) => void;
     readonly statusFilter: PaymentStatus | 'all';
     readonly onStatusChange: (value: PaymentStatus | 'all') => void;
-    readonly methodFilter: PaymentMethod | 'all';
-    readonly onMethodChange: (value: PaymentMethod | 'all') => void;
     readonly startDate: string;
     readonly onStartDateChange: (value: string) => void;
     readonly endDate: string;
@@ -30,16 +28,20 @@ export interface PaymentFiltersProps {
 
 /**
  * Payment filters component.
- * Renders search, status filter, method filter, and collapsible advanced filters
- * (date range and amount range).
+ * Renders search, status filter, and collapsible advanced filters (date
+ * range and amount range, both in whole-unit ARS — converted to centavos by
+ * the caller before hitting the API).
+ *
+ * There is no payment-method filter: `AdminPaymentView` carries no `method`
+ * field (only `provider`, e.g. `mercadopago`) — the old
+ * credit_card/debit_card/bank_transfer options never matched a single real
+ * row, since MercadoPago is the only integrated processor.
  */
 export function PaymentFilters({
     searchQuery,
     onSearchChange,
     statusFilter,
     onStatusChange,
-    methodFilter,
-    onMethodChange,
     startDate,
     onStartDateChange,
     endDate,
@@ -72,7 +74,7 @@ export function PaymentFilters({
                 </div>
             </CardHeader>
             <CardContent>
-                <div className="grid gap-4 md:grid-cols-3">
+                <div className="grid gap-4 md:grid-cols-2">
                     <div>
                         <label
                             htmlFor="payment-search"
@@ -103,47 +105,26 @@ export function PaymentFilters({
                             }
                         >
                             <option value="all">{t('admin-billing.payments.allFilter')}</option>
-                            <option value="completed">
-                                {t('admin-billing.payments.statuses.completed')}
+                            <option value="succeeded">
+                                {t('admin-billing.payments.statuses.succeeded')}
                             </option>
                             <option value="pending">
                                 {t('admin-billing.payments.statuses.pending')}
                             </option>
+                            <option value="processing">
+                                {t('admin-billing.payments.statuses.processing')}
+                            </option>
                             <option value="failed">
                                 {t('admin-billing.payments.statuses.failed')}
+                            </option>
+                            <option value="canceled">
+                                {t('admin-billing.payments.statuses.canceled')}
                             </option>
                             <option value="refunded">
                                 {t('admin-billing.payments.statuses.refunded')}
                             </option>
-                        </select>
-                    </div>
-                    <div>
-                        <label
-                            htmlFor="payment-method-filter"
-                            className="mb-2 block font-medium text-sm"
-                        >
-                            {t('admin-billing.payments.methodFilter')}
-                        </label>
-                        <select
-                            id="payment-method-filter"
-                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:font-medium file:text-sm placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={methodFilter}
-                            onChange={(e) =>
-                                onMethodChange(e.target.value as PaymentMethod | 'all')
-                            }
-                        >
-                            <option value="all">{t('admin-billing.payments.allFilter')}</option>
-                            <option value="credit_card">
-                                {t('admin-billing.payments.methods.creditCard')}
-                            </option>
-                            <option value="debit_card">
-                                {t('admin-billing.payments.methods.debitCard')}
-                            </option>
-                            <option value="mercado_pago">
-                                {t('admin-billing.payments.methods.mercadoPago')}
-                            </option>
-                            <option value="bank_transfer">
-                                {t('admin-billing.payments.methods.bankTransfer')}
+                            <option value="partially_refunded">
+                                {t('admin-billing.payments.statuses.partiallyRefunded')}
                             </option>
                         </select>
                     </div>
@@ -188,7 +169,7 @@ export function PaymentFilters({
                             />
                         </div>
 
-                        {/* Amount Range */}
+                        {/* Amount Range (whole-unit ARS; the page converts to centavos) */}
                         <div>
                             <label
                                 htmlFor="payment-min-amount"
@@ -204,7 +185,7 @@ export function PaymentFilters({
                                 value={minAmount}
                                 onChange={(e) => onMinAmountChange(e.target.value)}
                                 min="0"
-                                step="100"
+                                step="1"
                             />
                         </div>
                         <div>
@@ -222,7 +203,7 @@ export function PaymentFilters({
                                 value={maxAmount}
                                 onChange={(e) => onMaxAmountChange(e.target.value)}
                                 min="0"
-                                step="100"
+                                step="1"
                             />
                         </div>
 

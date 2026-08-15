@@ -29,7 +29,7 @@ vi.mock('@/lib/errors', async (importOriginal) => {
 
 // ---- Mock utils used by RefundDialog ----------------------------------------
 vi.mock('../utils', () => ({
-    formatArs: (amount: number) => `$${amount}`,
+    formatArsFromCents: (cents: number) => `$${cents / 100}`,
     formatDate: (date: string) => date
 }));
 
@@ -58,16 +58,31 @@ import { RefundDialog } from '../RefundDialog';
 
 const FAKE_PAYMENT: Payment = {
     id: 'pay_123',
-    userName: 'Test User',
-    userEmail: 'test@test.com',
-    amount: 5000,
-    status: 'completed',
-    date: '2026-01-01',
-    method: 'mercado_pago',
-    planName: 'Plan Test',
+    amountInCents: 500000,
+    currency: 'ARS',
+    refundedAmountInCents: 0,
+    // Regression fixture (SPEC-183 T-010 predates the vocabulary fix): the real
+    // API never sends 'completed' — it sends 'succeeded'. See
+    // packages/schemas/src/api/billing/admin-billing-view.schema.ts.
+    status: 'succeeded',
+    createdAt: '2026-01-01T00:00:00.000Z',
+    user: {
+        id: 'user_123',
+        displayName: 'Test User',
+        email: 'test@test.com'
+    },
+    plan: {
+        id: 'plan_123',
+        slug: 'owner-basico',
+        displayName: 'Plan Test',
+        monthlyPriceInCents: 500000,
+        productDomain: 'accommodation'
+    },
     subscriptionId: 'sub_123',
     invoiceId: 'inv_123',
-    transactionId: 'txn_123'
+    provider: 'mercadopago',
+    providerPaymentId: 'txn_123',
+    isRefundable: true
 };
 
 describe('RefundDialog — error i18n (SPEC-183 T-010)', () => {

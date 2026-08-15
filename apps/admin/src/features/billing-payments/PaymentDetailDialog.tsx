@@ -10,13 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { useTranslations } from '@/hooks/use-translations';
 import type { Payment } from './types';
-import {
-    formatArs,
-    formatDate,
-    getPaymentMethodLabel,
-    getStatusLabel,
-    getStatusVariant
-} from './utils';
+import { formatArsFromCents, formatDate, getStatusLabel, getStatusVariant } from './utils';
 
 /**
  * Props for PaymentDetailDialog
@@ -54,18 +48,26 @@ export function PaymentDetailDialog({ payment, open, onOpenChange }: PaymentDeta
                             {t('admin-billing.payments.dialog.userInfo')}
                         </h3>
                         <div className="grid grid-cols-2 gap-2 rounded-md bg-muted p-3 text-sm">
-                            <div>
-                                <p className="text-muted-foreground text-xs">
-                                    {t('admin-billing.payments.dialog.nameLabel')}
-                                </p>
-                                <p className="font-medium">{payment.userName}</p>
-                            </div>
-                            <div>
-                                <p className="text-muted-foreground text-xs">
-                                    {t('admin-billing.payments.dialog.emailLabel')}
-                                </p>
-                                <p className="font-medium">{payment.userEmail}</p>
-                            </div>
+                            {payment.user ? (
+                                <>
+                                    <div>
+                                        <p className="text-muted-foreground text-xs">
+                                            {t('admin-billing.payments.dialog.nameLabel')}
+                                        </p>
+                                        <p className="font-medium">{payment.user.displayName}</p>
+                                    </div>
+                                    <div>
+                                        <p className="text-muted-foreground text-xs">
+                                            {t('admin-billing.payments.dialog.emailLabel')}
+                                        </p>
+                                        <p className="font-medium">{payment.user.email}</p>
+                                    </div>
+                                </>
+                            ) : (
+                                <div className="col-span-2 text-muted-foreground italic">
+                                    {t('admin-billing.payments.unknownUser')}
+                                </div>
+                            )}
                         </div>
                     </div>
 
@@ -80,7 +82,7 @@ export function PaymentDetailDialog({ payment, open, onOpenChange }: PaymentDeta
                                     {t('admin-billing.payments.dialog.amountLabel')}
                                 </p>
                                 <p className="font-semibold text-lg">
-                                    {formatArs(payment.amount, locale)}
+                                    {formatArsFromCents(payment.amountInCents, locale)}
                                 </p>
                             </div>
                             <div>
@@ -95,27 +97,34 @@ export function PaymentDetailDialog({ payment, open, onOpenChange }: PaymentDeta
                                 <p className="text-muted-foreground text-xs">
                                     {t('admin-billing.payments.dialog.dateLabel')}
                                 </p>
-                                <p className="font-medium">{formatDate(payment.date, locale)}</p>
+                                <p className="font-medium">
+                                    {formatDate(payment.createdAt, locale)}
+                                </p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground text-xs">
-                                    {t('admin-billing.payments.dialog.methodLabel')}
+                                    {t('admin-billing.payments.dialog.providerLabel')}
                                 </p>
                                 <p className="font-medium">
-                                    {getPaymentMethodLabel(payment.method, t)}
+                                    {payment.provider ?? t('admin-billing.common.noData')}
                                 </p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground text-xs">
                                     {t('admin-billing.payments.dialog.planLabel')}
                                 </p>
-                                <p className="font-medium">{payment.planName}</p>
+                                <p className="font-medium">
+                                    {payment.plan?.displayName ??
+                                        t('admin-billing.payments.unknownPlan')}
+                                </p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground text-xs">
                                     {t('admin-billing.payments.dialog.transactionIdLabel')}
                                 </p>
-                                <p className="font-mono text-xs">{payment.transactionId}</p>
+                                <p className="font-mono text-xs">
+                                    {payment.providerPaymentId ?? t('admin-billing.common.noData')}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -130,7 +139,9 @@ export function PaymentDetailDialog({ payment, open, onOpenChange }: PaymentDeta
                                 <p className="text-muted-foreground text-xs">
                                     {t('admin-billing.payments.dialog.subscriptionLabel')}
                                 </p>
-                                <p className="font-mono text-xs">{payment.subscriptionId}</p>
+                                <p className="font-mono text-xs">
+                                    {payment.subscriptionId ?? t('admin-billing.common.noData')}
+                                </p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground text-xs">
@@ -142,7 +153,7 @@ export function PaymentDetailDialog({ payment, open, onOpenChange }: PaymentDeta
                                     className="h-auto p-0 font-mono text-xs"
                                     disabled
                                 >
-                                    {payment.invoiceId}
+                                    {payment.invoiceId ?? t('admin-billing.common.noData')}
                                 </Button>
                             </div>
                         </div>

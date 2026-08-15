@@ -1,35 +1,34 @@
-/**
- * Subscription status types matching billing system
- */
-export type SubscriptionStatus =
-    | 'active'
-    | 'trialing'
-    | 'cancelled'
-    | 'past_due'
-    | 'expired'
-    | 'paused'
-    | 'comp';
+import type { AdminSubscriptionView, AdminSubscriptionViewStatus } from '@repo/schemas';
 
 /**
- * Subscription data structure
+ * A single admin subscription row.
+ *
+ * Alias of {@link AdminSubscriptionView}, the single source of truth for this
+ * shape (`packages/schemas/src/api/billing/admin-billing-view.schema.ts`).
+ * Do NOT redeclare fields here — the admin UI previously invented its own
+ * flat `Subscription` interface (`planSlug`, `monthlyAmount` in whole units,
+ * `startDate`) that diverged from what the backend actually serves. `user`
+ * and `plan` are nested and nullable; `recurringAmountInCents` is nullable
+ * and must render as "—", never a fabricated `0,00`.
  */
-export interface Subscription {
-    readonly id: string;
-    readonly userId: string;
-    readonly userName: string;
-    readonly userEmail: string;
-    readonly planSlug: string;
-    readonly status: SubscriptionStatus;
-    readonly startDate: string;
-    readonly currentPeriodEnd: string;
-    readonly monthlyAmount: number;
-    readonly cancelAtPeriodEnd: boolean;
-    readonly trialEnd?: string;
-    readonly discountPercent?: number;
-}
+export type Subscription = AdminSubscriptionView;
 
 /**
- * Payment history entry
+ * Normalised subscription status. Alias of {@link AdminSubscriptionViewStatus}.
+ *
+ * Includes `abandoned`, `pending_provider`, and `comp`, which the previous
+ * local union omitted and which previously rendered as an empty badge.
+ */
+export type SubscriptionStatus = AdminSubscriptionViewStatus;
+
+/**
+ * Payment history entry, as rendered inside the subscription details dialog.
+ *
+ * UI-derived from {@link AdminPaymentView} (mapped in
+ * `SubscriptionDetailsDialog`), not a standalone API contract. `amount` here
+ * is WHOLE-UNIT ARS (already divided by 100 at the mapping site) because this
+ * block only ever displays it, never sends it back to an endpoint that
+ * expects centavos.
  */
 export interface PaymentHistory {
     readonly id: string;
