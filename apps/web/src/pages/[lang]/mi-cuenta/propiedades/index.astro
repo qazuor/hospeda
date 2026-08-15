@@ -257,7 +257,7 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
                 <div class="props-page__item" role="listitem" data-reveal="up">
-                    <PropertyCard property={property} locale={locale} />
+                    <PropertyCard property={property} locale={locale} hasActivePlan={hasOwnerPlan} />
                 </div>
             ))}
         </div>

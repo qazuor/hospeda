@@ -216,7 +216,8 @@
                 "deleteYes": "Sí, eliminar",
                 "publishConfirmTitle": "¿Publicar este alojamiento?",
                 "publishConfirmNote": "Va a aparecer en el sitio, visible para los turistas.",
-                "publishYes": "Sí, publicar"
+                "publishYes": "Sí, publicar",
+                "choosePlan": "Elegir plan de anfitrión"
             },
             "pricePerNight": "por noche",
             "unpublishSuccess": "Propiedad despublicada",
@@ -225,9 +226,9 @@
             "publishError": "No se pudo publicar. Intentá de nuevo.",
             "publishSubscriptionRequiredMessage": "Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} días gratis.",
             "publishSubscriptionRequiredCta": "Ver planes",
-            "publishIncompleteCapacityMessage": "Faltan datos de capacidad (huéspedes, habitaciones o baños). Completalos en el editor antes de publicar.",
-            "publishIncompleteCapacityCta": "Completar en el editor",
-            "priceOnRequest": "Precio a consultar"
+            "priceOnRequest": "Precio a consultar",
+            "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
+            "publishMissingRequirementsCta": "Completar en el editor"
         },
         "editor": {
             "section": {
@@ -545,8 +546,16 @@
                     "photos": "{{count}} fotos",
                     "missingPhotos": "⚠ Sin fotos",
                     "faqs": "{{count}} preguntas",
-                    "missingContact": "⚠ Sin datos de contacto"
+                    "missingContact": "⚠ Sin datos de contacto",
+                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
                 }
+            },
+            "publishRequirement": {
+                "capacity": "huéspedes",
+                "minNights": "noches mínimas",
+                "bedrooms": "habitaciones",
+                "bathrooms": "baños",
+                "mainImage": "la foto principal"
             }
         },
         "empty": {

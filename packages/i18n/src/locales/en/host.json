@@ -216,7 +216,8 @@
                 "deleteYes": "Yes, delete",
                 "publishConfirmTitle": "Publish this accommodation?",
                 "publishConfirmNote": "It will appear on the site, visible to travellers.",
-                "publishYes": "Yes, publish"
+                "publishYes": "Yes, publish",
+                "choosePlan": "Choose a host plan"
             },
             "pricePerNight": "per night",
             "unpublishSuccess": "Property unpublished",
@@ -225,9 +226,9 @@
             "publishError": "Could not publish. Please try again.",
             "publishSubscriptionRequiredMessage": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free days.",
             "publishSubscriptionRequiredCta": "View plans",
-            "publishIncompleteCapacityMessage": "Capacity details (guests, bedrooms, or bathrooms) are missing. Complete them in the editor before publishing.",
-            "publishIncompleteCapacityCta": "Complete in editor",
-            "priceOnRequest": "Price on request"
+            "priceOnRequest": "Price on request",
+            "publishMissingRequirementsMessage": "To publish, you still need: {{fields}}.",
+            "publishMissingRequirementsCta": "Complete in the editor"
         },
         "editor": {
             "section": {
@@ -545,8 +546,16 @@
                     "photos": "{{count}} photos",
                     "missingPhotos": "⚠ No photos",
                     "faqs": "{{count}} questions",
-                    "missingContact": "⚠ No contact details"
+                    "missingContact": "⚠ No contact details",
+                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}"
                 }
+            },
+            "publishRequirement": {
+                "capacity": "guests",
+                "minNights": "minimum nights",
+                "bedrooms": "bedrooms",
+                "bathrooms": "bathrooms",
+                "mainImage": "the main photo"
             }
         },
         "empty": {
