@@ -170,7 +170,16 @@ describe('Admin media routes — route-level permission gate (smoke)', () => {
                 permissions: [
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ACCESS_API_ADMIN,
-                    PermissionEnum.MEDIA_DELETE
+                    PermissionEnum.MEDIA_DELETE,
+                    // Carried so the assertion below can only ever be about the
+                    // ROUTE gate. Past it sits a second, per-entity gate
+                    // (`validateEntityMediaPermission`) that answers 403 for an
+                    // accommodation unless the actor holds ACCOMMODATION_UPDATE_*.
+                    // Whether the handler reaches that gate depends on the entity
+                    // lookup resolving, which depends on mock state a NEIGHBOURING
+                    // test file leaves behind — so without this the test passed or
+                    // failed according to which files shared its worker.
+                    PermissionEnum.ACCOMMODATION_UPDATE_ANY
                 ]
             });
             const res = await app.request(
@@ -182,20 +191,8 @@ describe('Admin media routes — route-level permission gate (smoke)', () => {
             );
             // Handler-level outcomes apply (entity lookup fails, provider absent).
             // Critically, NOT 403 from the route gate.
-            // TEMP-DIAG(HOS-474): this assertion fails on CI and passes locally
-            // — including the whole shard, single-worker and without .env.local.
-            // The message dumps the state CI has and local does not. Remove once
-            // the cause is identified.
-            const diagBody = await res.clone().text();
-            const diag = [
-                `status=${res.status}`,
-                `NODE_ENV=${process.env.NODE_ENV}`,
-                `DEPLOY_ENV=${process.env.HOSPEDA_DEPLOY_ENV}`,
-                `MOCK_ACTOR=${process.env.HOSPEDA_ALLOW_MOCK_ACTOR}`,
-                `body=${diagBody.slice(0, 300)}`
-            ].join(' | ');
-            expect(res.status, diag).not.toBe(403);
-            expect([400, 404, 422, 503], diag).toContain(res.status);
+            expect(res.status).not.toBe(403);
+            expect([400, 404, 422, 503]).toContain(res.status);
         });
     });
 });
