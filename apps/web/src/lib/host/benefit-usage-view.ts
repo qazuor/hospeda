@@ -15,6 +15,52 @@ export interface BenefitUsageSide {
 }
 
 /**
+ * Whether a row is waiting on the answer of the side reading it.
+ *
+ * THE ONE RULE OF THIS FLOW, stated once: the COUNTERPART of `declaredBy`
+ * answers. It is role-blind by construction — the row decides, never the
+ * actor's role — which is what lets a single account be host and provider at
+ * the same time without either screen guessing wrong.
+ *
+ * Written as a mirror rather than as two hand-rolled predicates because the
+ * provider's half of the flow was missing entirely (H-06/H-65/H-159): the host
+ * had an inbox with buttons, the provider had a read-only list, and every usage
+ * a host declared sat PENDING until it expired because nobody could answer it.
+ * Deriving both sides from one expression is what stops that from happening
+ * again on whichever side gets built next.
+ *
+ * @param usage - The row's status and declaring side.
+ * @param side - The side reading the row.
+ * @returns True when `side` is the one expected to answer.
+ */
+export function isAwaitingAnswerFrom(
+    usage: BenefitUsageSide,
+    side: BenefitUsageDeclaredBy
+): boolean {
+    return usage.status === 'PENDING' && usage.declaredBy !== side;
+}
+
+/**
+ * Whether the side reading this row is the one that rejected it, and may undo.
+ *
+ * Same derivation as {@link isAwaitingAnswerFrom} and for the same reason: only
+ * the counterpart can reject, so a REJECTED row not declared by `side` was
+ * necessarily refused by `side`. The inverse is what matters — a row `side`
+ * declared and the counterpart rejected must NOT offer undo, or the rejected
+ * party could overturn a refusal aimed at them, and the button would 404.
+ *
+ * @param usage - The row's status and declaring side.
+ * @param side - The side reading the row.
+ * @returns True when `side` may reverse its own rejection.
+ */
+export function canUndoRejectionFrom(
+    usage: BenefitUsageSide,
+    side: BenefitUsageDeclaredBy
+): boolean {
+    return usage.status === 'REJECTED' && usage.declaredBy !== side;
+}
+
+/**
  * Whether this row is one the HOST himself rejected, and may therefore reverse.
  *
  * Derived rather than read: the protected payload carries `rejectedAt` but not
@@ -31,7 +77,7 @@ export interface BenefitUsageSide {
  * @returns True when the host may undo his own rejection.
  */
 export function canUndoRejection(usage: BenefitUsageSide): boolean {
-    return usage.status === 'REJECTED' && usage.declaredBy === 'PROVIDER';
+    return canUndoRejectionFrom(usage, 'HOST');
 }
 
 /**
@@ -45,7 +91,7 @@ export function canUndoRejection(usage: BenefitUsageSide): boolean {
  * @returns True when the host is the one expected to answer.
  */
 export function isAwaitingHostAnswer(usage: BenefitUsageSide): boolean {
-    return usage.status === 'PENDING' && usage.declaredBy === 'PROVIDER';
+    return isAwaitingAnswerFrom(usage, 'HOST');
 }
 
 /** `YYYY-MM-DD`, the shape a Postgres `date` column travels in. */

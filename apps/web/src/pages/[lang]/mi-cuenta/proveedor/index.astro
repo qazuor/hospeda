@@ -105,6 +105,7 @@ const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 
 let usages: readonly BenefitUsage[] = [];
 let usagesTotal = 0;
+let pendingUsages: readonly BenefitUsage[] = [];
 let linkedHosts: readonly LinkedHost[] = [];
 let reviews: readonly OwnerReviewRow[] = [];
 let reviewsTotal = 0;
@@ -112,8 +113,19 @@ let qr: { svg: string; url: string; slug: string } | null = null;
 let panelFailed = false;
 
 if (canShowTabs && activeTab === 'usos') {
-    const [usagesResult, hostsResult] = await Promise.all([
+    // The inbox is a SEPARATE read, narrowed by the API to PENDING rows the HOST
+    // declared — the ones whose counterpart is this provider (H-06/H-65/H-159).
+    // Slicing the record page client-side instead would report an empty inbox
+    // whenever the first page happens to hold the provider's own declarations.
+    const [usagesResult, pendingResult, hostsResult] = await Promise.all([
         hostTradesApi.listOwnUsages({ page: 1, pageSize: 20, cookieHeader }),
+        hostTradesApi.listOwnUsages({
+            status: 'PENDING',
+            declaredBy: 'HOST',
+            page: 1,
+            pageSize: 20,
+            cookieHeader
+        }),
         hostTradesApi.listLinkedHosts({ cookieHeader })
     ]);
 
@@ -123,6 +135,15 @@ if (canShowTabs && activeTab === 'usos') {
     } else {
         panelFailed = true;
         logger.error('[proveedor] Could not load own usages', `status=${usagesResult.error.status}`);
+    }
+    if (pendingResult.ok) {
+        pendingUsages = pendingResult.data.items;
+    } else {
+        panelFailed = true;
+        logger.error(
+            '[proveedor] Could not load the pending inbox',
+            `status=${pendingResult.error.status}`
+        );
     }
     // A failed selector is NOT a failed panel: the email channel still works,
     // and blocking the whole tab over it would take away the fallback exactly
@@ -234,6 +255,7 @@ const panelError = t(
                             locale={locale}
                             initialUsages={usages}
                             initialTotal={usagesTotal}
+                            initialPending={pendingUsages}
                             initialLinkedHosts={linkedHosts}
                             today={today}
                             suspendedReason={suspendedReason}
