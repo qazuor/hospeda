@@ -16,7 +16,7 @@ Los nombres son cortos, sin acentos ni espacios, para poder referenciarlos como 
 | `personaje/poses.png` | Turnaround de cinco vistas (frente, 3/4 adelante, perfil, espaldas, 3/4 atrás) + la paleta con los cinco códigos hex |
 | `personaje/expresiones.png` | Quince expresiones faciales rotuladas, en tres filas de cinco |
 | `personaje/bocas.png` | **Hoja de bocas para sincronización labial**: quince formas rotuladas (A, E, I, O, U, M, B, P, F, V, L, T, D, S, R) |
-| `personaje/acciones.png` | Dieciocho poses de cuerpo entero rotuladas, en tres filas de seis |
+| `personaje/acciones.png` | Diecinueve poses de cuerpo entero rotuladas |
 | `personaje/voz.wav` | Seis segundos de la voz de Hospedín, para los modelos que clonan timbre a partir de un audio |
 | `escenas/escena1.png` … `escena30.png` | Hospedín integrado en distintos lugares del Litoral, listos para usar como cuadro de partida. Cuál es cuál: [`prompts/fondos.md`](prompts/fondos.md) |
 | `capturas/pantalla.png` | Captura real de la home de Hospeda en móvil, para lo que se vea en pantalla. Proporciones y cómo grabar: [`prompts/grabaciones.md`](prompts/grabaciones.md) |
@@ -325,9 +325,9 @@ Las quince de `personaje/expresiones.png`. Conviene partir de una de ellas antes
 
 ### Poses ya generadas
 
-Las dieciocho de `personaje/acciones.png`:
+Las diecinueve de `personaje/acciones.png`:
 
-`saludando` · `señalando` · `te explico` · `descubrí` · `es fácil` · `enumerando` · `¡vamos!` · `pensando` · `negando` · `agobiado` · `caminando` · `con la llave` · `con el teléfono mostrando la pantalla` · `con valija` · `con mochila` · `con la notebook` · `con el mapa` · `con la cámara de fotos`
+`saludando` · `señalando` · `te explico` · `descubrí` · `es fácil` · `enumerando` · `¡vamos!` · `pensando` · `negando` · `agobiado` · `caminando` · `con la llave` · `con el teléfono mostrando la pantalla` · `con valija` · `con mochila` · `con la notebook` · `con el mapa` · `con la cámara de fotos` · `con la lamparita de idea`
 
 > **Al usar `acciones.png` como referencia**: en `con la notebook`, `con el mapa` y `con la cámara`, el objeto tapa el logo del buzo. Es un defecto de esa lámina, no una licencia: el logo con la palabra `hospeda` debajo del símbolo va siempre visible salvo que el objeto lo tape físicamente en el plano. Para esas tres, tomar el logo de `personaje/personaje.png`.
 >

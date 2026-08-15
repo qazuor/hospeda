@@ -10,7 +10,7 @@ con la biblia completa de [`../personaje-hospedin.md`](../personaje-hospedin.md)
 | `poses.png` | Turnaround de cinco vistas + la paleta con los cinco hex |
 | `expresiones.png` | Quince expresiones faciales rotuladas |
 | `bocas.png` | Quince formas de boca para sincronización labial |
-| `acciones.png` | Dieciocho poses de cuerpo entero rotuladas |
+| `acciones.png` | Diecinueve poses de cuerpo entero rotuladas |
 
 ## Cómo generarlas
 
@@ -262,15 +262,16 @@ de la boca y no la cabeza entera.
 
 ---
 
-## 5 · acciones.png — dieciocho poses de uso
+## 5 · acciones.png — diecinueve poses de uso
 
 ```
 Hoja de poses de uso del MISMO personaje de las imágenes anteriores, sobre fondo
 blanco liso.
 
-DIECIOCHO POSES de cuerpo entero, todas del mismo tamaño, a la misma altura y con la
-misma iluminación, ordenadas en una grilla de seis columnas por tres filas. Debajo de
-cada una, su nombre en letra chica, en mayúsculas y en azul oscuro.
+DIECINUEVE POSES de cuerpo entero, todas del mismo tamaño, a la misma altura y con la
+misma iluminación, ordenadas en una grilla de CINCO COLUMNAS POR CUATRO FILAS: las tres
+primeras filas llevan cinco poses y la última lleva cuatro. Debajo de cada una, su
+nombre en letra chica, en mayúsculas y en azul oscuro.
 
 FILA 1 — gestos de presentar:
 SALUDANDO — una mano en alto saludando, sonrisa amplia
@@ -278,10 +279,10 @@ SEÑALANDO — señalando hacia un costado con el brazo extendido y el índice
 TE EXPLICO — las dos manos abiertas hacia adelante, gesto de explicar
 DESCUBRÍ — un brazo abierto mostrando algo a un costado, mirando hacia allá
 ES FÁCIL — encogiéndose de hombros con las palmas hacia arriba
-ENUMERANDO — una mano abierta con la palma hacia arriba, algo separada del cuerpo,
-como quien va desplegando opciones una tras otra
 
 FILA 2 — gestos de reacción:
+ENUMERANDO — una mano abierta con la palma hacia arriba, algo separada del cuerpo,
+como quien va desplegando opciones una tras otra
 VAMOS — un puño en alto, postura enérgica, expresión entusiasmada
 PENSANDO — una mano cerca del mentón, mirada hacia arriba
 NEGANDO — una mano levantada a la altura del pecho con la PALMA HACIA ADELANTE,
@@ -289,14 +290,21 @@ gesto de "no", la cabeza apenas girada, expresión de fastidio contenido. Molest
 NO agresivo
 AGOBIADO — las DOS MANOS sobre la cabeza, hombros encogidos, expresión de desborde.
 Es agobio simpático, nunca angustia ni desesperación
+
+FILA 3 — movimiento y objetos:
 CAMINANDO — de perfil, en pleno paso, con una pierna adelante y los brazos en
 movimiento natural. Se tiene que leer que está avanzando, no parado de costado
 CON LA LLAVE — sosteniendo en alto una llave de puerta simple, con un llavero,
 mostrándola hacia la cámara
-
-FILA 3 — con accesorios de viaje:
-CON EL TELÉFONO — sosteniendo un celular con la pantalla hacia la cámara, en blanco
+CON LA LAMPARITA — una lamparita de idea encendida flotando junto a su cabeza, del lado
+OPUESTO al círculo naranja para que no compitan, mientras él la señala con el índice
+hacia arriba y pone cara de "se me ocurrió algo". La lamparita es un objeto simple y
+estilizado, del mismo estilo 3D que el personaje, y NO reemplaza ni tapa al círculo
+naranja: los dos se ven, cada uno de su lado
+CON EL TELÉFONO — sosteniendo un celular con la pantalla hacia la cámara, vacía
 CON VALIJA — tirando de una valija de viaje con ruedas
+
+FILA 4 — con accesorios de viaje:
 CON MOCHILA — con una mochila de viaje puesta en la espalda
 CON LA NOTEBOOK — sentado, con una notebook abierta apoyada sobre las piernas
 CON EL MAPA — sosteniendo un mapa de papel abierto con las dos manos
@@ -306,7 +314,7 @@ CON LA CÁMARA — con una cámara de fotos colgada al cuello, sosteniéndola co
 el logo del buzo y no desplazan el círculo naranja. Son objetos simples y estilizados,
 del mismo estilo 3D que el personaje.
 
-EL CÍRCULO NARANJA flotante acompaña a la cabeza en las dieciocho poses, en su posición
+EL CÍRCULO NARANJA flotante acompaña a la cabeza en las diecinueve poses, en su posición
 habitual. En CAMINANDO, que es de perfil, queda del lado que corresponda al giro, pero
 igual está.
 
@@ -331,7 +339,7 @@ MISMO PERSONAJE que las imágenes anteriores, sin ningún rediseño: misma silue
 cabeza, mismas proporciones, mismos colores, mismo buzo, mismas zapatillas.
 
 FORMATO
-Imagen horizontal, máxima resolución posible. Fondo blanco liso. Las dieciocho poses
+Imagen horizontal, máxima resolución posible. Fondo blanco liso. Las diecinueve poses
 bien separadas, sin superponerse. Sin más texto que los nombres debajo de cada una.
 ```
 
@@ -343,7 +351,7 @@ bien separadas, sin superponerse. Sin más texto que los nombres debajo de cada 
 de frente. En las de espaldas, `hospeda.com.ar` impreso en la espalda.
 
 **El círculo naranja está en TODAS las figuras**, completo, **flotando separado de la
-cabeza** y en su posición. Contarlas una por una: quince en expresiones, dieciocho en
+cabeza** y en su posición. Contarlas una por una: quince en expresiones, diecinueve en
 acciones. Es el error más frecuente en láminas con muchas figuras chicas — desaparece
 en algunas, se pega a la cabeza o cambia de lado. Si una sola figura sale mal, la
 lámina no sirve como referencia.
