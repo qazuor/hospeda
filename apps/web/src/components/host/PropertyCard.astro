@@ -34,9 +34,20 @@ export interface Props {
     readonly property: Accommodation;
     /** Current locale for i18n and URL building. */
     readonly locale: SupportedLocale;
+    /**
+     * Whether the owner holds a live host plan. Forwarded to `PublishButton`,
+     * which offers the plan instead of publishing when it is false (H-99).
+     *
+     * Defaults to `true` so a caller that has not resolved the plan keeps the
+     * previous behaviour: the page that renders this grid already fails OPEN on
+     * a failed entitlements fetch, deliberately, so a transient API blip never
+     * hides Publish from a paying host. The `/publish` endpoint stays the real
+     * enforcement point either way.
+     */
+    readonly hasActivePlan?: boolean;
 }
 
-const { property, locale } = Astro.props;
+const { property, locale, hasActivePlan = true } = Astro.props;
 const { t } = createTranslations(locale);
 
 /** Resolve thumbnail: first gallery image url, or featured image url, or placeholder. */
@@ -223,8 +234,10 @@ const isDraft = lifecycleState === LifecycleStatusEnum.DRAFT;
                     errorText={t('host.properties.card.publishError', 'No se pudo publicar. Intentá de nuevo.')}
                     subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', 'Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} días gratis.', { trialDays: OWNER_TRIAL_DAYS })}
                     subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
-                    incompleteCapacityMessage={t('host.properties.card.publishIncompleteCapacityMessage', 'Faltan datos de capacidad (huéspedes, habitaciones o baños). Completalos en el editor antes de publicar.')}
-                    incompleteCapacityCta={t('host.properties.card.publishIncompleteCapacityCta', 'Completar en el editor')}
+                    missingRequirementsMessage={t('host.properties.card.publishMissingRequirementsMessage', 'Para publicar falta completar: {{fields}}.')}
+                    missingRequirementsCta={t('host.properties.card.publishMissingRequirementsCta', 'Completar en el editor')}
+                    hasActivePlan={hasActivePlan}
+                    choosePlanLabel={t('host.properties.card.actions.choosePlan', 'Elegir plan de anfitrión')}
                 />
             )}
 

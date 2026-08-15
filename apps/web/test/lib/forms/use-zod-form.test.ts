@@ -189,6 +189,29 @@ describe('useZodForm', () => {
             );
         });
 
+        it('does not tell the user to review marked fields when nothing got marked (H-108)', () => {
+            // Arrange — the shape every ServiceError-driven 400 has in
+            // production: `details` is stripped whenever HOSPEDA_API_DEBUG_ERRORS
+            // is false, which production requires, so nothing can be mapped.
+            const { result } = renderHook(() =>
+                useZodForm({ schema: ContactLikeSchema, t: createT('es') })
+            );
+
+            // Act — measured live on the editor's `datos` section: a real server
+            // rejection (destinationId must reference a CITY) rendered ONLY
+            // "Los datos enviados no son válidos. Revisá los campos marcados."
+            // while no field on the page was marked at all.
+            act(() => {
+                result.current.handleApiError({ code: 'VALIDATION_ERROR' });
+            });
+
+            // Assert — sending someone to look for a highlight the page never
+            // drew reads as "the error is somewhere else" or "this page broke".
+            expect(result.current.fieldErrors).toEqual({});
+            expect(result.current.formError).toBe('Los datos enviados no son válidos.');
+            expect(result.current.formError).not.toContain('marcados');
+        });
+
         it('falls back to a form-level banner when the API sent no per-field details', () => {
             const { result } = renderHook(() => useZodForm({ schema: ContactLikeSchema }));
 

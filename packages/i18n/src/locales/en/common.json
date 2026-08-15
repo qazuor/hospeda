@@ -56,7 +56,7 @@
     "apiError": {
         "GENERIC": "Something went wrong. Please try again in a moment.",
         "RATE_LIMIT_EXCEEDED": "Too many requests. Please wait a few seconds and try again.",
-        "VALIDATION_ERROR": "The data you sent is invalid. Check the highlighted fields.",
+        "VALIDATION_ERROR": "The data you sent is invalid.",
         "UNAUTHORIZED": "You need to sign in to do this.",
         "FORBIDDEN": "You don't have permission to do this.",
         "NOT_FOUND": "We couldn't find what you were looking for.",

@@ -64,10 +64,48 @@ function createPublishDeps(
     };
 }
 
+/**
+ * Media model stub. Publishing now reads the listing's media, because the main
+ * image is a publish requirement (owner decision, 14/08 — H-101 mitad A): the
+ * hub used to warn "Sin fotos" while publishing succeeded anyway, leaving a
+ * public page rendering a broken `<img>`.
+ *
+ * Without this stub the service would build a real `AccommodationMediaModel`
+ * and every test here would need a database.
+ *
+ * @param params - Whether the listing has a featured image.
+ * @returns A model mock exposing only what `attachComposedMedia` calls.
+ */
+function createMediaModelMock({ hasFeatured }: { readonly hasFeatured: boolean }) {
+    return {
+        findByAccommodations: vi.fn(
+            async ({ accommodationIds }: { accommodationIds: string[] }) => {
+                const rows = hasFeatured
+                    ? [
+                          {
+                              url: 'https://cdn.example.test/main.jpg',
+                              isFeatured: true,
+                              state: 'visible',
+                              sortOrder: 0,
+                              moderationState: 'APPROVED'
+                          }
+                      ]
+                    : [];
+                return new Map(accommodationIds.map((id) => [id, rows]));
+            }
+        )
+    };
+}
+
 function buildService(
     model: ReturnType<typeof createMockBaseModel>,
     userModel: UserModel,
-    publishDeps?: AccommodationPublishDeps | null
+    publishDeps?: AccommodationPublishDeps | null,
+    // Defaults to "has a main image" so the suites that predate this
+    // requirement keep testing what they were written to test.
+    mediaModel: ReturnType<typeof createMediaModelMock> = createMediaModelMock({
+        hasFeatured: true
+    })
 ): AccommodationService {
     const mockLogger = createLoggerMock();
     return new AccommodationService(
@@ -75,7 +113,12 @@ function buildService(
         model as AccommodationModel,
         null,
         userModel,
-        publishDeps ?? null
+        publishDeps ?? null,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        mediaModel as never
     );
 }
 
@@ -321,7 +364,11 @@ describe('AccommodationService.publish', () => {
 
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
             expect(accommodationModel.update).not.toHaveBeenCalled();
-            expect(deps.checkEligibility).not.toHaveBeenCalled();
+            // Billing is now consulted FIRST (H-99). This assertion used to read
+            // `.not.toHaveBeenCalled()`, back when completeness ran ahead of it —
+            // which is exactly what made an owner with no plan fill in `bathrooms`,
+            // retry, and only then meet the subscription wall.
+            expect(deps.checkEligibility).toHaveBeenCalled();
         });
 
         it('rejects publish with VALIDATION_ERROR when extraInfo has only a partial capacity field (repro: PATCH with only maxGuests)', async () => {
@@ -371,6 +418,152 @@ describe('AccommodationService.publish', () => {
 
             expect(result.error).toBeUndefined();
             expect(result.data?.lifecycleState).toBe(LifecycleStatusEnum.ACTIVE);
+        });
+    });
+
+    describe('the rejection names the field that actually failed (H-94)', () => {
+        /**
+         * Builds a DRAFT that meets every requirement except the ones removed.
+         *
+         * @param params - Field overrides and the listing id.
+         * @returns The mock accommodation.
+         */
+        function draftMissing(id: string, extraInfo: Record<string, number>) {
+            return createMockAccommodation({
+                id,
+                ownerId: `owner-${id}`,
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                extraInfo
+            });
+        }
+
+        it('names ONLY bathrooms when that is the only missing field', async () => {
+            // Arrange — the exact production repro: the draft held
+            // {bedrooms: 3, capacity: 11, minNights: 1} and only `bathrooms` was
+            // absent, yet the host was told that guests, bedrooms AND bathrooms
+            // were all missing. Two of those three claims were false.
+            const service = buildService(accommodationModel, userModel, createPublishDeps());
+            const accommodation = draftMissing('acc-h94-001', {
+                capacity: 11,
+                minNights: 1,
+                bedrooms: 3
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({ id: 'owner-acc-h94-001' });
+
+            // Act
+            const result = await service.publish(
+                createHostActor({ id: 'owner-acc-h94-001' }),
+                'acc-h94-001'
+            );
+
+            // Assert
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.reason).toBe('PUBLISH_REQUIREMENTS_MISSING:bathrooms');
+        });
+
+        it('names minNights, which the editor never mentioned anywhere', async () => {
+            // Arrange
+            const service = buildService(accommodationModel, userModel, createPublishDeps());
+            const accommodation = draftMissing('acc-h94-002', {
+                capacity: 4,
+                bedrooms: 2,
+                bathrooms: 1
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({ id: 'owner-acc-h94-002' });
+
+            // Act
+            const result = await service.publish(
+                createHostActor({ id: 'owner-acc-h94-002' }),
+                'acc-h94-002'
+            );
+
+            // Assert
+            expect(result.error?.reason).toBe('PUBLISH_REQUIREMENTS_MISSING:minNights');
+        });
+
+        it('carries the reason on the error, not in details, so production keeps it', async () => {
+            // Arrange — `details` is stripped whenever HOSPEDA_API_DEBUG_ERRORS is
+            // false, which production requires. A field list sent there would
+            // never reach a real host.
+            const service = buildService(accommodationModel, userModel, createPublishDeps());
+            const accommodation = draftMissing('acc-h94-003', {});
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({ id: 'owner-acc-h94-003' });
+
+            // Act
+            const result = await service.publish(
+                createHostActor({ id: 'owner-acc-h94-003' }),
+                'acc-h94-003'
+            );
+
+            // Assert
+            expect(result.error?.reason).toBe(
+                'PUBLISH_REQUIREMENTS_MISSING:capacity,minNights,bedrooms,bathrooms'
+            );
+        });
+    });
+
+    describe('the main image blocks publishing (H-101 mitad A)', () => {
+        it('refuses to publish a listing with no main image', async () => {
+            // Arrange — everything else complete, no featured image. This used to
+            // publish fine and render a broken <img> on the indexable public page.
+            const service = buildService(
+                accommodationModel,
+                userModel,
+                createPublishDeps(),
+                createMediaModelMock({ hasFeatured: false })
+            );
+            const accommodation = createMockAccommodation({
+                id: 'acc-nophoto-001',
+                ownerId: 'host-nophoto-001',
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                extraInfo: { capacity: 4, minNights: 1, bedrooms: 2, bathrooms: 1 }
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({ id: 'host-nophoto-001' });
+
+            // Act
+            const result = await service.publish(
+                createHostActor({ id: 'host-nophoto-001' }),
+                'acc-nophoto-001'
+            );
+
+            // Assert
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            expect(result.error?.reason).toBe('PUBLISH_REQUIREMENTS_MISSING:mainImage');
+            expect(accommodationModel.update).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('guard order: subscription before completeness (H-99)', () => {
+        it('reports the missing subscription, not the missing bathroom', async () => {
+            // Arrange — an owner with neither a plan nor complete data. Before
+            // H-99 they were sent to fill in `bathrooms` first, and met the
+            // subscription wall only on the retry.
+            const deps = createPublishDeps({
+                checkEligibility: vi.fn().mockResolvedValue('subscription_required')
+            });
+            const service = buildService(accommodationModel, userModel, deps);
+            const accommodation = createMockAccommodation({
+                id: 'acc-noplan-001',
+                ownerId: 'host-noplan-001',
+                lifecycleState: LifecycleStatusEnum.DRAFT,
+                extraInfo: { capacity: 4 }
+            });
+            (accommodationModel.findById as Mock).mockResolvedValue(accommodation);
+            asMock(userModel.findById as Mock).mockResolvedValue({ id: 'host-noplan-001' });
+
+            // Act
+            const result = await service.publish(
+                createHostActor({ id: 'host-noplan-001' }),
+                'acc-noplan-001'
+            );
+
+            // Assert — the rejection the host cannot resolve by editing wins.
+            expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect(result.error?.message).toBe('subscription_required');
         });
     });
 });

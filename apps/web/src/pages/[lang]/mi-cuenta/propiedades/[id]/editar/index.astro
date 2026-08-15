@@ -47,6 +47,17 @@ const statuses = resolveEditorSectionStatuses({
 		hasContact: Boolean(
 			accommodation.phone || accommodation.whatsapp || accommodation.email || accommodation.website,
 		),
+		// What the publish gate will actually check, fed from the same shared
+		// requirement list the server rejects from — so the hub can no longer
+		// warn about what does not block while staying silent about what does
+		// (H-101).
+		publishReadiness: {
+			capacity: accommodation.maxGuests,
+			minNights: accommodation.minNights,
+			bedrooms: accommodation.bedrooms,
+			bathrooms: accommodation.bathrooms,
+			hasMainImage: Boolean(data.featuredImage),
+		},
 	},
 });
 ---

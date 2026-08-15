@@ -228,6 +228,14 @@ export interface AccommodationEditData {
     readonly bedrooms: number | null;
     readonly bathrooms: number | null;
     readonly beds: number | null;
+    /**
+     * Minimum stay. READ-ONLY in the editor: it is a publish requirement, so the
+     * hub must be able to warn when it is absent, but no host-facing write path
+     * exposes it — both HTTP create mappings force `minNights: 1` so a
+     * self-service draft is always publishable. Do not add it to a form's
+     * `ownFields` without also giving the write path somewhere to put it.
+     */
+    readonly minNights: number | null;
     readonly basePrice: number | null;
     readonly currency: string | null;
     readonly isAvailable: boolean;

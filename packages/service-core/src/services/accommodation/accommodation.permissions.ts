@@ -293,6 +293,33 @@ export function checkCanVerify(actor: Actor): void {
 }
 
 /**
+ * Checks if an actor may apply the platform's moderation verdict to a listing
+ * (H-102).
+ *
+ * `ACCOMMODATION_MODERATION_CHANGE` has been in the enum, and granted to roles
+ * in the seed, since long before anything read it: no service method and no
+ * route ever checked it. Meanwhile `ModerationAggregationService` counted
+ * pending accommodations for the admin panel with no action capable of clearing
+ * one, so that queue could only grow — every accommodation row in production
+ * sits at `PENDING`, the published ones included.
+ *
+ * Mirrors `checkCanModeratePost` / `checkCanModerateEvent`. The verdict belongs
+ * to the platform, so there is no owner path: an owner moves `lifecycleState`
+ * through publish/unpublish instead.
+ *
+ * @param actor The actor performing the action.
+ * @throws {ServiceError} FORBIDDEN if the actor lacks the permission.
+ */
+export function checkCanModerate(actor: Actor): void {
+    if (!hasPermission(actor, PermissionEnum.ACCOMMODATION_MODERATION_CHANGE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied to moderate accommodation'
+        );
+    }
+}
+
+/**
  * Checks if an actor may view the ADMIN detail of an accommodation (SPEC-169 §2.1/§5.2).
  *
  * This is intentionally NOT the generic {@link checkCanView}: that one grants access to

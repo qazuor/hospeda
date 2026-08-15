@@ -1723,12 +1723,21 @@ export function transformAccommodationEdit({
     const longitude = coordLong != null && String(coordLong).length > 0 ? Number(coordLong) : null;
 
     // Capacity lives under extraInfo (capacity → maxGuests, bedrooms, bathrooms, beds)
+    //
+    // `minNights` is read-only here on purpose. It is a publish requirement, so
+    // the hub has to be able to say when it is missing (before H-101 the word
+    // did not occur anywhere in the editor, and a listing blocked solely on it
+    // got no signal at all). But no host-facing write path exposes it: both HTTP
+    // create mappings force `minNights: 1`, precisely so a self-service draft is
+    // always publishable. So it is surfaced to WARN, never to edit — giving it a
+    // form field is a separate piece of work.
     const extraInfo = item.extraInfo as
         | {
               capacity?: number | null;
               bedrooms?: number | null;
               bathrooms?: number | null;
               beds?: number | null;
+              minNights?: number | null;
           }
         | null
         | undefined;
@@ -1746,6 +1755,7 @@ export function transformAccommodationEdit({
         bedrooms: extraInfo?.bedrooms == null ? null : Number(extraInfo.bedrooms),
         bathrooms: extraInfo?.bathrooms == null ? null : Number(extraInfo.bathrooms),
         beds: extraInfo?.beds == null ? null : Number(extraInfo.beds),
+        minNights: extraInfo?.minNights == null ? null : Number(extraInfo.minNights),
         basePrice:
             priceObj?.price == null
                 ? priceObj?.amount == null
