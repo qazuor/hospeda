@@ -525,32 +525,30 @@ export function PlanPurchaseButton({
 
     // Show the promo section only when the user can interact with checkout
     // (never in the plan-change case — promo codes apply at checkout, not here).
+    // HOS-451/H-90: never on a free ($0) plan — a promo code has no semantics
+    // against a price that is already zero, and the validate endpoint rejects
+    // amount=0 outright (`ValidatePromoCodeSchema.amount` is `.positive()`), so
+    // offering the field here only produces a guaranteed error. A user who
+    // wants a `comp` grant applies it on a paid plan, where it works.
     const showPromoSection =
-        showPromo && isAuthenticated && !isCurrentPlan && !isAnnualUnavailable && !isPlanChange;
-
-    // BETA-183: a MercadoPago preapproval (used by every MONTHLY plan) is created
-    // with a fixed payer_email = the Hospeda signup email. MP rejects the payment
-    // if the paying MP account is under a different email — a surprise the user
-    // only hits on MP's own screen, with no prior warning in Hospeda. Surface an
-    // up-front notice before the redirect so the user can use (or switch to) an MP
-    // account under this email. Monthly-only: annual is a one-time charge and any
-    // MP account can pay it. Layer 1 (notice only) — capturing an alternate
-    // payer_email is a follow-up.
-    const userEmail = session?.user?.email ?? '';
-    const showMonthlyEmailNotice =
+        showPromo &&
         isAuthenticated &&
-        billingInterval === 'monthly' &&
         !isCurrentPlan &&
+        !isAnnualUnavailable &&
         !isPlanChange &&
-        userEmail !== '';
-    const monthlyEmailNoticeTitle = t(
-        'billing.checkout.monthlyEmailNotice.title',
-        'Antes de continuar'
-    );
-    const monthlyEmailNoticeText = t(
-        'billing.checkout.monthlyEmailNotice.text',
-        'Vas a pagar con la cuenta de MercadoPago asociada a {{email}}. Si tu cuenta de MercadoPago usa otro correo, no vas a poder completar el pago mensual.'
-    ).replace('{{email}}', userEmail);
+        displayPriceCents > 0;
+
+    // HOS-452/H-82: the payer-email notice that used to live here (BETA-183)
+    // was removed. It warned that MercadoPago required the paying account to
+    // share the Hospeda signup email — true for the OLD inline-preapproval
+    // flow this component used when BETA-183 shipped (2026-07-18), but
+    // superseded the very next day by HOS-191 (2026-07-19), which moved
+    // accommodation checkout (monthly AND annual) to MercadoPago's hosted
+    // `preapproval_plan` share-link checkout — MP itself collects the payer
+    // account on its own page, and no `payer_email` is ever sent from here.
+    // Verified live 13/08: a checkout completed with a DIFFERENT MP account
+    // email than the Hospeda signup email, without issue. Do not re-add this
+    // notice without re-verifying the constraint still holds.
 
     // ---------------------------------------------------------------------------
     // Promo helpers
@@ -632,10 +630,20 @@ export function PlanPurchaseButton({
             });
 
             if (!result.ok) {
+                // HOS-451/H-90: a 400 here is a validation rejection (e.g. a bad
+                // `amount`), not a transient failure — showing the "couldn't
+                // verify, try again" copy invites a retry that will fail
+                // identically every time. Route it through the same "invalid
+                // code" fallback as an unrecognized errorCode; reserve the
+                // transient-sounding message for network/5xx failures, where a
+                // retry can plausibly succeed.
                 setPromo((prev) => ({
                     ...prev,
                     status: 'error',
-                    errorMsg: promoErrorGeneric,
+                    errorMsg:
+                        result.error.status === 400
+                            ? resolvePromoError(undefined)
+                            : promoErrorGeneric,
                     appliedCode: null
                 }));
                 return;
@@ -952,17 +960,6 @@ export function PlanPurchaseButton({
                 >
                     {error}
                 </p>
-            )}
-
-            {/* BETA-183: monthly MP email-mismatch notice (layer 1 — notice only) */}
-            {showMonthlyEmailNotice && (
-                <aside
-                    className={styles.monthlyNotice}
-                    data-testid="monthly-email-notice"
-                >
-                    <p className={styles.monthlyNoticeTitle}>{monthlyEmailNoticeTitle}</p>
-                    <p className={styles.monthlyNoticeText}>{monthlyEmailNoticeText}</p>
-                </aside>
             )}
 
             {/* Promo code section — only shown when the user can actually checkout */}

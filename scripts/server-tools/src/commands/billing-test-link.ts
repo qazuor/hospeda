@@ -47,7 +47,7 @@ Optional:
                           Default: ${DEFAULT_BUYER_EMAIL}
   --target=staging        Target (defaults to active target). Production
                           is rejected outright.
-  --yes                   Skip the confirmation prompt.
+  --yes, -y               Skip the confirmation prompt.
   --help, -h              Show this help.
 
 What it does:

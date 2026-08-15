@@ -73,8 +73,12 @@ export const ExperienceCreateHttpSchema = z.object({
     isFeatured: z.coerce.boolean().default(false),
     /** Destination UUID for the listing. */
     destinationId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    /** Owner UUID for the listing. */
-    ownerId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }).optional(),
+    /**
+     * Owner UUID for the listing. REQUIRED (H-88) — `experiences.owner_id` is
+     * NOT NULL with no default, so a form that lets this through submits a
+     * payload the table cannot store and the operator gets back an opaque 500.
+     */
+    ownerId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     // Junction sync fields (write-only)
     /** Optional amenity UUIDs to associate on create (write-only). */
     amenityIds: z
@@ -175,8 +179,11 @@ export const httpToDomainExperienceSearch = (
  * Convert HTTP create data to domain admin create input.
  * Transforms HTTP form/JSON data to domain object with proper nested structures.
  *
- * The caller (route handler) is responsible for injecting `ownerId` from the
- * authenticated actor when it is absent from the HTTP payload.
+ * `ownerId` travels through unconditionally: it is REQUIRED on both sides since
+ * H-88, because `experiences.owner_id` is NOT NULL. It used to be spread only
+ * when present, on the assumption that a route handler would inject it from the
+ * authenticated actor — no route ever did, so the field simply went missing and
+ * the insert died on a 23502.
  */
 export const httpToDomainExperienceCreate = (
     httpData: ExperienceCreateHttp
@@ -187,7 +194,7 @@ export const httpToDomainExperienceCreate = (
     description: httpData.description ?? '',
     type: httpData.type,
     destinationId: httpData.destinationId,
-    ...(httpData.ownerId === undefined ? {} : { ownerId: httpData.ownerId }),
+    ownerId: httpData.ownerId,
     priceFrom: httpData.priceFrom,
     priceUnit: httpData.priceUnit,
     isPriceOnRequest: httpData.isPriceOnRequest,

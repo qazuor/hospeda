@@ -16,6 +16,13 @@
  * transaction so a comp grant is atomic: a partial write can never leave a
  * subscription stamped `comp` without its redemption record (or vice versa).
  *
+ * INV-1 (HOS-453 / H-91): a comp grant never goes through MercadoPago, so it
+ * never fires a webhook — unlike every other lifecycle event, there is no
+ * other handler that will clear this customer's entitlement cache. This
+ * function calls `clearEntitlementCache(customerId)` itself, right after the
+ * transaction commits, so the new plan is visible immediately instead of
+ * waiting out the 5-minute in-memory cache TTL.
+ *
  * @module services/subscription-comp-create.service
  */
 
@@ -29,6 +36,7 @@ import {
 } from '@repo/db';
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import { redeemAndRecordUsage } from '@repo/service-core';
+import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger.js';
 
 /**
@@ -170,6 +178,14 @@ export async function createCompSubscription(input: {
             );
         }
     }, input.db);
+
+    // INV-1 (HOS-453 / H-91 fix): a comp grant has no MercadoPago preapproval
+    // and therefore no webhook, so there is no other lifecycle event that will
+    // ever clear this customer's entitlement cache. Without this call the
+    // subscriber sees their PREVIOUS plan's entitlements for up to the full
+    // 5-minute cache TTL after redeeming the comp code, even though the
+    // transaction above already committed the new `comp` subscription.
+    clearEntitlementCache(customerId);
 
     apiLogger.info(
         { localSubscriptionId, customerId, planId, code, interval },

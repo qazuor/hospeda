@@ -4,11 +4,20 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Includes all tables and helpers referenced by validatePromoCode and its
 // internal helpers (checkUserRedemptionLimitExceeded,
 // checkUserHasExistingPlanSubscription).
+//
+// NOTE (HOS-450): this mock answers whatever query the code asks, so it can
+// prove the CONTROL FLOW of each restriction but never which COLUMN is
+// compared. The user-id vs billing-customer-id mapping behind
+// `newCustomersOnly` is covered by the real-DB suite at
+// `test/integration/services/promo-code-new-customers-only.integration.test.ts`.
 vi.mock('@repo/db', () => ({
+    billingCustomers: { id: 'id', externalId: 'externalId' },
     billingPromoCodeUsage: { id: 'id', customerId: 'customerId', promoCodeId: 'promoCodeId' },
     billingPromoCodes: { id: 'id', maxPerCustomer: 'maxPerCustomer' },
     billingSubscriptions: { id: 'id', customerId: 'customerId', planId: 'planId' },
+    and: vi.fn((...conditions: unknown[]) => ({ _type: 'and', conditions })),
     eq: vi.fn((_col: unknown, _val: unknown) => ({ _type: 'eq', _col, _val })),
+    inArray: vi.fn((_col: unknown, _values: unknown) => ({ _type: 'inArray', _col, _values })),
     count: vi.fn(() => ({ _type: 'count' })),
     sql: Object.assign(
         vi.fn((_strings: unknown, ..._values: unknown[]) => ({ _type: 'sql' })),
