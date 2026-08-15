@@ -654,9 +654,17 @@ pnpm seed --required
 # Only example data
 pnpm seed --example
 
-# Specific count
-pnpm seed --example --count=100
+# Every supported flag, grouped by what it does (and which ones write)
+pnpm seed --help
 ```
+
+> `--count` used to be documented here. It never existed in the parser — example
+> volume comes from the static JSON fixtures under `src/example/`, not from a
+> flag. Since HOS-510 the CLI **refuses** unrecognized flags instead of ignoring
+> them, so an invented flag now fails loudly rather than silently running the
+> rest of the command without it. That bug had teeth: `pnpm db:seed:migrate
+> --status` dropped the unknown `--status` and applied every pending
+> data-migration instead of reporting them.
 
 ## Key Dependencies
 
