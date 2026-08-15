@@ -16,12 +16,15 @@
 
 import type { QueryContext } from '@repo/db';
 import {
+    and,
+    billingCustomers,
     billingPromoCodes,
     billingPromoCodeUsage,
     billingSubscriptions,
     count,
     eq,
     getDb,
+    inArray,
     sql
 } from '@repo/db';
 import type { EffectPreview } from '@repo/schemas';
@@ -324,10 +327,24 @@ function buildEffectPreview(promoData: PromoCode, amount?: number): EffectPrevie
  * that a user who previously subscribed to plan A is still considered "new" when
  * purchasing plan B for the first time.
  *
- * When `planId` is undefined, falls back to checking whether the user has ANY active
+ * When `planId` is undefined, falls back to checking whether the user has ANY
  * subscription (original behaviour, preserved for backward compatibility).
  *
- * @param params - userId, optional planId to scope the check, and optional query context
+ * **Identifier mapping (HOS-450 / smoke finding H-74).** `userId` is the Better
+ * Auth user id (`actor.id`), while `billing_subscriptions.customer_id` references
+ * `billing_customers.id`. Comparing them directly — as this function used to —
+ * never matched a row, so the restriction silently let every existing customer
+ * redeem a `new_customers_only` code. The user is mapped to its billing
+ * customer(s) through `billing_customers.external_id`, the canonical link used
+ * across the codebase (see `apps/api/src/middlewares/billing-customer.ts` and
+ * `apps/api/src/utils/customer-lookup.ts`).
+ *
+ * The mapping is expressed as a subquery rather than a lookup-then-compare so
+ * that a user owning more than one billing customer row (there is no UNIQUE
+ * constraint on `external_id`) is fully covered by a single query.
+ *
+ * @param params - userId (Better Auth user id), optional planId to scope the
+ *   check, and optional query context carrying a transaction client
  * @returns true if the user already has a subscription matching the criteria
  */
 async function checkUserHasExistingPlanSubscription({
@@ -342,10 +359,18 @@ async function checkUserHasExistingPlanSubscription({
     try {
         const db = ctx?.tx ?? getDb();
 
+        // Map the Better Auth user id to its billing customer id(s).
+        const customerMatches = inArray(
+            billingSubscriptions.customerId,
+            db
+                .select({ id: billingCustomers.id })
+                .from(billingCustomers)
+                .where(eq(billingCustomers.externalId, userId))
+        );
+
         const conditions = planId
-            ? sql`${billingSubscriptions.customerId} = ${userId}
-                  AND ${billingSubscriptions.planId} = ${planId}`
-            : eq(billingSubscriptions.customerId, userId);
+            ? and(customerMatches, eq(billingSubscriptions.planId, planId))
+            : customerMatches;
 
         const [row] = await db
             .select({ id: billingSubscriptions.id })
