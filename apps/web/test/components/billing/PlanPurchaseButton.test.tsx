@@ -996,6 +996,28 @@ describe('PlanPurchaseButton', () => {
                 ).not.toBeInTheDocument();
             });
         });
+
+        it('hides the promo toggle on a free ($0) plan (HOS-451 / H-90)', () => {
+            // Regression: applying a promo code against a $0 plan sends
+            // `amount: 0` to the validate endpoint. `ValidatePromoCodeSchema.amount`
+            // is `.positive()`, so the server rejects it with a 400 before ever
+            // looking at the code — the exact bug a real user hit in prod on the
+            // Free plan card. Owner decision: a $0 card never offers the field at
+            // all (applying a promo to an already-$0 price has no semantics; a
+            // `comp` grant is applied on a paid plan instead).
+            mockAuthenticated();
+            render(
+                <PlanPurchaseButton
+                    {...defaultProps}
+                    monthlyPrice={0}
+                    annualPrice={null}
+                />
+            );
+
+            expect(
+                screen.queryByRole('button', { name: '¿Tenés un código de descuento?' })
+            ).not.toBeInTheDocument();
+        });
     });
 
     // -----------------------------------------------------------------------
@@ -1625,6 +1647,46 @@ describe('PlanPurchaseButton', () => {
             });
         });
 
+        it('shows a non-transient message for a 400 validation rejection, not the generic retry copy (HOS-451 / H-90)', async () => {
+            // Regression: a 400 (e.g. the amount rejected by the schema) is a
+            // permanent validation failure, not a transient one — showing "no
+            // pudimos verificar, intentá de nuevo" invites a retry that will
+            // fail identically every time. Route it through the same
+            // "invalid code" fallback as an unrecognized errorCode instead;
+            // reserve the transient-sounding copy for network/5xx failures
+            // (covered by the 500 case above), where a retry can plausibly
+            // succeed.
+            mockAuthenticated();
+            vi.stubGlobal(
+                'fetch',
+                vi.fn().mockResolvedValue({
+                    ok: false,
+                    status: 400,
+                    json: () =>
+                        Promise.resolve({
+                            error: { message: 'Invalid amount', code: 'VALIDATION_ERROR' }
+                        })
+                })
+            );
+            const user = userEvent.setup();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            await user.click(
+                screen.getByRole('button', { name: '¿Tenés un código de descuento?' })
+            );
+            await user.type(screen.getByPlaceholderText('Ingresá tu código'), 'BADCODE');
+            await user.click(screen.getByRole('button', { name: 'Aplicar' }));
+
+            await waitFor(() => {
+                expect(screen.getByRole('alert')).toHaveTextContent(
+                    'El código ingresado no es válido. Revisalo e intentá de nuevo.'
+                );
+            });
+            expect(screen.getByRole('alert')).not.toHaveTextContent(
+                'No pudimos verificar el código. Intentá de nuevo.'
+            );
+        });
+
         it('shows generic error when validate fetch throws', async () => {
             // Arrange
             mockAuthenticated();
@@ -1995,29 +2057,27 @@ describe('PlanPurchaseButton', () => {
     });
 
     // -----------------------------------------------------------------------
-    // BETA-183 — monthly MP email-mismatch notice (layer 1, notice only)
+    // HOS-452 / H-82 — the BETA-183 payer-email notice was REMOVED (stale)
     // -----------------------------------------------------------------------
 
-    describe('monthly MP email notice (BETA-183)', () => {
-        it('shows the notice with the user email on an authenticated monthly checkout', () => {
+    describe('payer-email notice — removed (HOS-452 / H-82)', () => {
+        // Regression: BETA-183 (2026-07-18) added a notice claiming MercadoPago
+        // required the paying account to share the Hospeda signup email. HOS-191
+        // (2026-07-19, the very next day) moved accommodation checkout — monthly
+        // AND annual — to MercadoPago's hosted `preapproval_plan` share-link
+        // flow, where MP itself collects the payer account on its own page and
+        // no `payer_email` is ever sent from this component. The notice was
+        // never updated and warned users of a restriction that no longer
+        // existed (verified live 13/08: checkout completed with a MP account
+        // email different from the Hospeda signup email). It must never render.
+        it('does not render the notice on an authenticated monthly checkout', () => {
             mockAuthenticated();
-            render(<PlanPurchaseButton {...defaultProps} />);
-
-            const notice = screen.getByTestId('monthly-email-notice');
-            expect(notice).toBeInTheDocument();
-            // The user's signup email is interpolated into the copy so they can
-            // match (or switch) their MercadoPago account before the redirect.
-            expect(notice).toHaveTextContent('juan@example.com');
-        });
-
-        it('does NOT show the notice when the user is unauthenticated', () => {
-            mockUnauthenticated();
             render(<PlanPurchaseButton {...defaultProps} />);
 
             expect(screen.queryByTestId('monthly-email-notice')).not.toBeInTheDocument();
         });
 
-        it('does NOT show the notice on annual billing (annual has no email constraint)', async () => {
+        it('does not render the notice on annual billing', async () => {
             mockAuthenticated();
             // The billing interval is driven by the closest [data-billing] ancestor
             // (a vanilla-JS toggle outside the island). Wrapping in an annual
@@ -2031,6 +2091,26 @@ describe('PlanPurchaseButton', () => {
             await waitFor(() => {
                 expect(screen.queryByTestId('monthly-email-notice')).not.toBeInTheDocument();
             });
+        });
+
+        it('does not render the notice for an unauthenticated visitor', () => {
+            mockUnauthenticated();
+            render(<PlanPurchaseButton {...defaultProps} />);
+
+            expect(screen.queryByTestId('monthly-email-notice')).not.toBeInTheDocument();
+        });
+
+        it('does not render the notice on a free ($0) plan (also closes the H-90 overlap)', () => {
+            mockAuthenticated();
+            render(
+                <PlanPurchaseButton
+                    {...defaultProps}
+                    monthlyPrice={0}
+                    annualPrice={null}
+                />
+            );
+
+            expect(screen.queryByTestId('monthly-email-notice')).not.toBeInTheDocument();
         });
     });
 });
