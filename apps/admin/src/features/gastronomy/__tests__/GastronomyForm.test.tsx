@@ -143,7 +143,11 @@ describe('GastronomyForm — interaction', () => {
             defaultValues: {
                 name: 'La Parrilla de Juan',
                 type: 'RESTAURANT' as never,
-                destinationId: 'a1b2c3d4-e5f6-4789-8abc-def012345678'
+                destinationId: 'a1b2c3d4-e5f6-4789-8abc-def012345678',
+                // H-88: `owner_id` is NOT NULL in the database, so a listing
+                // without one is not a valid create — that is the payload that
+                // used to reach Postgres and come back as a bare 500.
+                ownerId: 'b2c3d4e5-f6a7-4890-9bcd-ef0123456789'
             }
         });
 
@@ -153,6 +157,43 @@ describe('GastronomyForm — interaction', () => {
         fireEvent.submit(form);
 
         await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1), { timeout: 3000 });
+    });
+
+    // ── H-88 regression ─────────────────────────────────────────────────────
+    //
+    // The admin create endpoint answered 500 DATABASE_ERROR for every
+    // submission: `owner_id` is NOT NULL with no default, and the form
+    // advertised the field as optional ("UUID del propietario (opcional)"). The
+    // operator had nothing to act on — the error named no field, and the one
+    // they had to fill in did not look required. The form must refuse the
+    // submit itself rather than let the database reject it.
+    it('does NOT submit without an owner, and names the missing field (H-88)', async () => {
+        const onSubmit = vi.fn();
+
+        renderForm({
+            onSubmit,
+            defaultValues: {
+                name: 'La Parrilla de Juan',
+                type: 'RESTAURANT' as never,
+                destinationId: 'a1b2c3d4-e5f6-4789-8abc-def012345678'
+                // ownerId deliberately absent
+            }
+        });
+
+        const form = screen.getByRole('form', { name: /formulario de gastronomía/i });
+        fireEvent.submit(form);
+
+        await waitFor(() => {
+            expect(screen.queryByText(/propietario/i)).toBeTruthy();
+        });
+        expect(onSubmit).not.toHaveBeenCalled();
+    });
+
+    it('marks the owner field as required in the accessibility tree (H-88)', () => {
+        renderForm({ onSubmit: vi.fn() });
+
+        const ownerField = screen.getByPlaceholderText('UUID del propietario');
+        expect(ownerField).toHaveAttribute('aria-required', 'true');
     });
 
     it('should show error alert when Zod validation fails (empty name)', async () => {

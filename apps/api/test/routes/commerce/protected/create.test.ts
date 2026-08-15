@@ -113,12 +113,19 @@ function createMockContext() {
     return { get: vi.fn((key: string) => store.get(key)) };
 }
 
+// H-88: `destinationId` belongs in a valid body. `gastronomies.destination_id`
+// is NOT NULL with no default, so a create without it never produced a row — it
+// reached Postgres and came back as a bare 500. It is now rejected at the schema
+// boundary instead, which is what these fixtures have to reflect. (`ownerId` is
+// NOT supplied on purpose: this route forces it to `actor.id` — that is the
+// behaviour several of the tests below exist to pin.)
 const VALID_GASTRONOMY_BODY = {
     name: 'La Parrilla del Puerto',
     summary: 'A riverside parrilla with fresh grilled fish and steak.',
     description:
         'La Parrilla del Puerto has served the waterfront for over a decade, specializing in grilled fish.',
-    type: GastronomyTypeEnum.PARRILLA
+    type: GastronomyTypeEnum.PARRILLA,
+    destinationId: '00000000-0000-4000-a000-000000000002'
 };
 
 describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
@@ -211,6 +218,7 @@ describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
     });
 });
 
+// See VALID_GASTRONOMY_BODY for why `destinationId` is present (H-88).
 const VALID_EXPERIENCE_BODY = {
     name: 'Kayak tour on the Uruguay river',
     summary: 'A guided two-hour kayak tour along the riverside.',
@@ -218,7 +226,8 @@ const VALID_EXPERIENCE_BODY = {
     type: 'TOUR_GUIDE',
     priceFrom: 1500000,
     priceUnit: 'per_person',
-    isPriceOnRequest: false
+    isPriceOnRequest: false,
+    destinationId: '00000000-0000-4000-a000-000000000002'
 };
 
 describe('handleCreateExperienceListing (HOS-166 §7.2, D-3)', () => {

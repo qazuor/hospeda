@@ -29,6 +29,10 @@ const buildAdminCreateInput = (
     isPriceOnRequest: false,
     hasActiveSubscription: false,
     destinationId: VALID_UUID,
+    // H-88: `owner_id` is NOT NULL with no default on `experiences`, so a create
+    // input without it is not a valid create — it is the payload that reached
+    // Postgres and came back as a bare 500.
+    ownerId: VALID_UUID,
     isFeatured: false,
     lifecycleState: 'ACTIVE',
     moderationState: 'PENDING',
@@ -61,16 +65,30 @@ describe('ExperienceAdminCreateInputSchema', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should allow omitting ownerId (may be assigned later)', () => {
+        // H-88. These two used to assert the opposite — that omitting `ownerId`
+        // ("may be assigned later") and `destinationId` was fine. Nothing
+        // assigns them later: the row is inserted on this very call and both
+        // columns are NOT NULL, so accepting the payload here only moved the
+        // failure to Postgres, where it surfaced as 500 "A database error
+        // occurred" naming no field.
+        it('should REJECT omitting ownerId, naming the field (H-88)', () => {
             const raw = buildAdminCreateInput({ ownerId: undefined });
             const result = ExperienceAdminCreateInputSchema.safeParse(raw);
-            expect(result.success).toBe(true);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues.map((i) => i.path.join('.'))).toContain('ownerId');
+            }
         });
 
-        it('should allow omitting destinationId', () => {
+        it('should REJECT omitting destinationId, naming the field (H-88)', () => {
             const raw = buildAdminCreateInput({ destinationId: undefined });
             const result = ExperienceAdminCreateInputSchema.safeParse(raw);
-            expect(result.success).toBe(true);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues.map((i) => i.path.join('.'))).toContain('destinationId');
+            }
         });
 
         it('should allow optional amenityIds and featureIds (write-only)', () => {

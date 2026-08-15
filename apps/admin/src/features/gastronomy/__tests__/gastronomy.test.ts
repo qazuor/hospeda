@@ -253,13 +253,21 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
     // Valid UUIDs use strict format (version nibble 1-8, variant nibble 8-b)
     const VALID_UUID = 'a1b2c3d4-e5f6-4789-8abc-def012345678';
 
+    // H-88: `ownerId` and `destinationId` belong in the minimal payload. Both
+    // columns are NOT NULL with no default on `gastronomies` (verified against
+    // the database), so a payload without them cannot become a row — the insert
+    // dies on a 23502 and the operator is told "A database error occurred" with
+    // nothing to correct. They used to be `.optional()` here, which made this
+    // schema accept exactly what the table rejects.
     const VALID_PAYLOAD = {
         name: 'La Parrilla del Gaucho',
         slug: 'la-parrilla-del-gaucho',
         summary: 'Parrilla tradicional argentina con las mejores carnes',
         description:
             'La mejor carne de la ciudad, con un ambiente familiar y acogedor en pleno centro.',
-        type: GastronomyTypeEnum.PARRILLA
+        type: GastronomyTypeEnum.PARRILLA,
+        ownerId: VALID_UUID,
+        destinationId: VALID_UUID
     };
 
     it('accepts a minimal valid payload (required fields only)', () => {
@@ -270,13 +278,41 @@ describe('GastronomyAdminCreateInputSchema — safeParse', () => {
     it('accepts a full valid payload with all optional fields', () => {
         const result = GastronomyAdminCreateInputSchema.safeParse({
             ...VALID_PAYLOAD,
-            destinationId: VALID_UUID,
-            ownerId: VALID_UUID,
             priceRange: PriceRangeEnum.MID,
             menuUrl: 'https://laparrilla.com/menu',
             isFeatured: false
         });
         expect(result.success).toBe(true);
+    });
+
+    // ── H-88 regression ─────────────────────────────────────────────────────
+    //
+    // What this pins is not "an invalid payload is accepted" in the abstract:
+    // the admin create endpoint answered 500 DATABASE_ERROR for EVERY
+    // submission, because the schema let through a payload the table can never
+    // store. Rejecting it here is what turns an opaque 500 into a 400 that
+    // names the field the operator has to fill in.
+
+    it('rejects a payload without ownerId, naming the field (H-88)', () => {
+        const { ownerId: _ownerId, ...withoutOwner } = VALID_PAYLOAD;
+        const result = GastronomyAdminCreateInputSchema.safeParse(withoutOwner);
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            const paths = result.error.issues.map((i) => i.path.join('.'));
+            expect(paths).toContain('ownerId');
+        }
+    });
+
+    it('rejects a payload without destinationId, naming the field (H-88)', () => {
+        const { destinationId: _destinationId, ...withoutDestination } = VALID_PAYLOAD;
+        const result = GastronomyAdminCreateInputSchema.safeParse(withoutDestination);
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            const paths = result.error.issues.map((i) => i.path.join('.'));
+            expect(paths).toContain('destinationId');
+        }
     });
 
     it('rejects a payload missing the required name field', () => {

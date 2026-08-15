@@ -412,12 +412,28 @@ export function GastronomyForm({
                             )}
                         </form.Field>
 
-                        {/* Owner ID */}
-                        <form.Field name="ownerId">
+                        {/*
+                            Owner ID — REQUIRED (H-88). `gastronomies.owner_id`
+                            is NOT NULL with no default, so submitting without it
+                            reached the database and came back as a bare 500
+                            "A database error occurred". The field was labelled
+                            optional, which is exactly what invited an operator
+                            to leave it blank.
+                        */}
+                        <form.Field
+                            name="ownerId"
+                            validators={{
+                                onChange: ({ value }) =>
+                                    !value || String(value).trim().length < 1
+                                        ? 'El propietario es requerido'
+                                        : undefined
+                            }}
+                        >
                             {(field) => (
                                 <FieldWrapper
                                     label="ID del propietario"
                                     htmlFor={field.name}
+                                    required
                                     error={
                                         field.state.meta.isTouched
                                             ? field.state.meta.errors.join(', ')
@@ -429,12 +445,15 @@ export function GastronomyForm({
                                         name={field.name}
                                         value={(field.state.value as string) ?? ''}
                                         onBlur={field.handleBlur}
-                                        onChange={(e) =>
-                                            field.handleChange(e.target.value || undefined)
-                                        }
-                                        placeholder="UUID del propietario (opcional)"
+                                        // Raw value, not `|| undefined`: the field is
+                                        // required now, so an empty string has to reach
+                                        // the validator as an empty string rather than
+                                        // vanishing from the payload (H-88).
+                                        onChange={(e) => field.handleChange(e.target.value)}
+                                        placeholder="UUID del propietario"
                                         className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                         disabled={isPending}
+                                        aria-required="true"
                                     />
                                 </FieldWrapper>
                             )}
