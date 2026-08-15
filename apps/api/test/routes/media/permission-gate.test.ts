@@ -180,6 +180,17 @@ describe('Admin media routes — route-level permission gate (smoke)', () => {
                     ...createAuthenticatedRequest(actor)
                 }
             );
+            // TEMP DIAGNOSTIC (remove before merge): this assertion fails in CI
+            // and passes locally, and the status alone cannot tell WHICH of the
+            // three 403s in the delete route fired — the pre-validation
+            // environment guard, the handler's env guard, or the entity
+            // permission check. The body carries the code and, for the env
+            // guards, the expected `hospeda/<env>/` prefix.
+            const diagnosticBody = await res.clone().text();
+            console.error(
+                `[DIAG permission-gate] status=${res.status} NODE_ENV=${process.env.NODE_ENV} DEPLOY_ENV=${process.env.HOSPEDA_DEPLOY_ENV} body=${diagnosticBody}`
+            );
+
             // Handler-level outcomes apply (entity lookup fails, provider absent).
             // Critically, NOT 403 from the route gate.
             expect(res.status).not.toBe(403);
