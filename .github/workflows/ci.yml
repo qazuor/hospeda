@@ -296,6 +296,21 @@ jobs:
       # env:check:rules need a real .env.local, which CI does not have (HOS-79 OQ-2).
       - name: Env usage-vs-registry parity (HOS-79)
         run: pnpm env:check:usage
+      # The two suites below cover the tooling under scripts/ — including most
+      # of the guard scripts run as steps in THIS job. They need their own
+      # steps because `scripts/` is not a pnpm workspace member
+      # (pnpm-workspace.yaml lists only apps/*, packages/*, infra/cloudflare/*),
+      # so `turbo run test` never reaches them and the `test-unit` shards
+      # cannot see them either.
+      #
+      # They ran nowhere for weeks, and the cost was measured, not theoretical:
+      # generate-env-registry-json.test.ts sat red from the commit that replaced
+      # `z.coerce.boolean()` with the `boolEnv` helper until 2026-08-15, and
+      # nothing reported it.
+      - name: Test scripts/ tooling and guards
+        run: pnpm test:scripts
+      - name: Test the interactive CLI (scripts/cli)
+        run: pnpm test:cli
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.
