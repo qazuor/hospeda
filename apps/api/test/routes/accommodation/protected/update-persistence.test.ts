@@ -18,22 +18,18 @@
  *
  * ## Why this does not reuse the PATCH suite's harness
  *
- * That suite drives the full `initApp()` and authenticates with `x-mock-actor-*`
- * headers, and it guards every assertion with `if (!domainInput) return` —
- * "skip if mock auth isn't wired (service never called in CI)". Three things
- * make that harness unable to fail:
- *
- *  - `isMockActorAllowed()` requires `CI !== 'true'`, so mock actors are OFF in
- *    CI by design and every request there is a 401.
- *  - The middleware needs all THREE headers; that suite sends two, so the actor
- *    is never built locally either.
- *  - The early return then turns both into a silent pass. Deleting the mapper
- *    call from the PATCH route leaves all 13 of its tests green — measured, not
- *    assumed.
+ * That suite drove the full `initApp()`, authenticated with `x-mock-actor-*`
+ * headers, and guarded every assertion with `if (!domainInput) return` — "skip
+ * if mock auth isn't wired". `actorMiddleware` builds a mock actor only when ALL
+ * THREE headers are present; that suite sent two, both with invalid values (a
+ * role outside `RoleEnum`, an id that is not a UUID), so every request was a 401
+ * and the early return turned it into a silent pass. Deleting the mapper call
+ * from the PATCH route left all 13 of its tests green — measured, not assumed.
+ * It is rewritten on this same harness in `patch-persistence.test.ts`.
  *
  * So this file mounts the route on a minimal app and injects the actor,
- * entitlements and entity fetcher directly. No mock-actor headers, nothing that
- * behaves differently in CI, and a request that never reaches the service is a
+ * entitlements and entity fetcher directly: authentication cannot be the thing
+ * that silently breaks it, and a request that never reaches the service is a
  * FAILURE rather than a skip.
  *
  * @module test/routes/accommodation/protected/update-persistence

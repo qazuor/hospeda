@@ -7,22 +7,27 @@
  * Every assertion here used to be unreachable. The suite drove the full
  * `initApp()`, authenticated with `x-mock-actor-*` headers, and guarded each
  * check with `if (!domainInput) return` — "skip if mock auth isn't wired
- * (service never called in CI)". Three things stacked up:
+ * (service never called in CI)". Two things stacked up:
  *
- *  - `isMockActorAllowed()` requires `CI !== 'true'`, so mock actors are OFF in
- *    CI by design and every request there was a 401.
- *  - The middleware needs all THREE mock headers; this suite sent two
- *    (`role` + `id`, no `permissions`), with a role that is not a `RoleEnum`
- *    and an id that is not a UUID — so the actor was never built locally either.
- *  - The early return then turned both into a silent pass.
+ *  - `actorMiddleware` builds a mock actor only when ALL THREE headers are
+ *    present. This suite sent two (`role` + `id`, no `permissions`), and both
+ *    carried invalid values anyway: a role outside `RoleEnum` and an id that is
+ *    not a UUID. The actor was never built, so every request was a 401.
+ *  - The early return then turned that into a silent pass.
+ *
+ * The comment blamed CI, and that part was wrong: `isMockActorAllowed()` does
+ * test `env.CI !== 'true'`, but `CI` is not a key of the api env schema, so
+ * `env.CI` is `undefined` and the check is inert. Mock actors work in CI — this
+ * suite's headers were simply malformed everywhere.
  *
  * Measured, not assumed: deleting the `httpToDomainAccommodationUpdate` call
  * from the route left all 13 tests green. The suite had been certifying SPEC-208
  * and SPEC-229 while structurally unable to fail.
  *
  * The route is now mounted on a minimal app with the actor and entitlements
- * injected directly — no mock-actor headers, nothing that behaves differently in
- * CI — and a request that never reaches the service is a FAILURE, not a skip.
+ * injected directly, so authentication cannot be the thing that silently breaks
+ * it again, and a request that never reaches the service is a FAILURE, not a
+ * skip.
  *
  * @module test/routes/accommodation/protected/patch-persistence
  */
