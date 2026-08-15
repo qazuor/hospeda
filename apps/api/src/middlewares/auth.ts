@@ -12,6 +12,7 @@ import { RoleEnum } from '@repo/schemas';
 import type { Context, Next } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { getAuth } from '../lib/auth';
+import { isUserSoftDeleted } from '../lib/auth-deleted-user-guard';
 import { env } from '../utils/env';
 
 /**
@@ -118,12 +119,35 @@ export const authMiddleware = () => {
             });
 
             if (sessionData) {
+                // H-163: a soft-deleted account keeps every session it ever
+                // minted. `BaseModel.softDelete` writes `users.deleted_at` and
+                // nothing else, and the `onDelete: 'cascade'` on `session` only
+                // fires for a physical DELETE — so Better Auth happily resolves
+                // a session whose owner was deleted days ago.
+                //
+                // Checked HERE rather than against the session user object
+                // because `session.cookieCache` can rebuild that object from a
+                // signed cookie for up to five minutes, which would let a
+                // just-deleted account keep working for the length of the TTL.
+                //
+                // A deleted account is left to fall through as a guest, which is
+                // the exact state a normal logout produces: /auth/me answers
+                // GUEST and protected routes answer 401.
+                if (await isUserSoftDeleted({ userId: sessionData.user.id })) {
+                    await next();
+                    return;
+                }
+
                 c.set('session', sessionData.session);
                 c.set('user', sessionData.user);
             }
         } catch {
             // Non-blocking: session resolution failure results in guest access.
             // The actor middleware will create a guest actor when no user is set.
+            //
+            // This deliberately also covers a failed deletion check: an outage
+            // must never be an open door, so an unevaluable gate refuses the
+            // session rather than assuming the account is live.
         }
 
         await next();
