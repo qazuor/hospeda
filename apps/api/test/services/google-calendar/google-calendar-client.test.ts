@@ -19,20 +19,18 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    GoogleCalendarApiError,
+    GoogleCalendarSyncTokenInvalidError,
+    listEvents
+} from '../../../src/services/google-calendar/google-calendar-client.js';
 
 const { mockFetch } = vi.hoisted(() => ({ mockFetch: vi.fn() }));
 
 describe('google-calendar-client', () => {
-    let listEvents: typeof import('../../../src/services/google-calendar/google-calendar-client.js').listEvents;
-    let GoogleCalendarSyncTokenInvalidError: typeof import('../../../src/services/google-calendar/google-calendar-client.js').GoogleCalendarSyncTokenInvalidError;
-    let GoogleCalendarApiError: typeof import('../../../src/services/google-calendar/google-calendar-client.js').GoogleCalendarApiError;
-
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks();
         global.fetch = mockFetch;
-        ({ listEvents, GoogleCalendarSyncTokenInvalidError, GoogleCalendarApiError } = await import(
-            '../../../src/services/google-calendar/google-calendar-client.js'
-        ));
     });
 
     const jsonResponse = (

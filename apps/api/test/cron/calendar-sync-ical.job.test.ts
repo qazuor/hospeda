@@ -13,6 +13,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { calendarSyncIcalJob } from '../../src/cron/jobs/calendar-sync-ical.job.js';
 import type { CronJobContext } from '../../src/cron/types.js';
 
 const { mockFindAllActiveByProvider, mockSyncAccommodationIcalCalendar } = vi.hoisted(() => ({
@@ -47,11 +48,8 @@ const connectionsForProvider = (
 };
 
 describe('calendar-sync-ical job', () => {
-    let calendarSyncIcalJob: typeof import('../../src/cron/jobs/calendar-sync-ical.job.js').calendarSyncIcalJob;
-
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks();
-        ({ calendarSyncIcalJob } = await import('../../src/cron/jobs/calendar-sync-ical.job.js'));
     });
 
     it('has the expected name and 6-hourly schedule', () => {

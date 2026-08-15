@@ -19,6 +19,7 @@ import type {
     CreateFeedbackIssueInput,
     FeedbackAttachment
 } from '../../../src/services/feedback/linear.service';
+import { LinearFeedbackService } from '../../../src/services/feedback/linear.service';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
@@ -130,12 +131,10 @@ const mockIssuePayload = (id: string, identifier: string) => ({
 
 describe('LinearFeedbackService', () => {
     // Import is deferred so the mock is in place when the module loads
-    let LinearFeedbackService: typeof import('../../../src/services/feedback/linear.service').LinearFeedbackService;
 
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks();
         global.fetch = mockFetch;
-        ({ LinearFeedbackService } = await import('../../../src/services/feedback/linear.service'));
     });
 
     const makeService = () =>

@@ -24,7 +24,12 @@
  * @module test/services/ical-calendar/ical-credential.repository
  */
 
+import { OccupancySourceEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    getIcalCredential,
+    saveIcalConnection
+} from '../../../src/services/ical-calendar/ical-credential.repository.js';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
@@ -58,17 +63,9 @@ const ACCOMMODATION_ID = 'acc-1234';
 const AIRBNB_FEED_URL = 'https://www.airbnb.com/calendar/ical/12345.ics?s=abcdef';
 
 describe('ical-credential.repository', () => {
-    let getIcalCredential: typeof import('../../../src/services/ical-calendar/ical-credential.repository.js').getIcalCredential;
-    let saveIcalConnection: typeof import('../../../src/services/ical-calendar/ical-credential.repository.js').saveIcalConnection;
-    let OccupancySourceEnum: typeof import('@repo/schemas').OccupancySourceEnum;
-
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks();
         mockUpsertConnection.mockResolvedValue({});
-        ({ getIcalCredential, saveIcalConnection } = await import(
-            '../../../src/services/ical-calendar/ical-credential.repository.js'
-        ));
-        ({ OccupancySourceEnum } = await import('@repo/schemas'));
     });
 
     describe('getIcalCredential', () => {

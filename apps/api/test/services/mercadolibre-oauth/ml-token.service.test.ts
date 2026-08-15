@@ -45,6 +45,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MLCredential } from '../../../src/services/mercadolibre-oauth/ml-credential.repository.js';
 import type { MLTokenResponse } from '../../../src/services/mercadolibre-oauth/ml-oauth-client.js';
+import { MLTokenRefreshError } from '../../../src/services/mercadolibre-oauth/ml-token.errors.js';
+import {
+    getValidMercadoLibreToken,
+    needsRefresh
+} from '../../../src/services/mercadolibre-oauth/ml-token.service.js';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
@@ -118,21 +123,11 @@ const buildTokenResponse = (overrides?: Partial<MLTokenResponse>): MLTokenRespon
 });
 
 describe('ml-token.service', () => {
-    let getValidMercadoLibreToken: typeof import('../../../src/services/mercadolibre-oauth/ml-token.service.js').getValidMercadoLibreToken;
-    let needsRefresh: typeof import('../../../src/services/mercadolibre-oauth/ml-token.service.js').needsRefresh;
-    let MLTokenRefreshError: typeof import('../../../src/services/mercadolibre-oauth/ml-token.errors.js').MLTokenRefreshError;
-
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks();
         mockEnv.HOSPEDA_ADMIN_NOTIFICATION_EMAILS = 'admin@hospeda.com.ar';
         mockEnv.HOSPEDA_FEEDBACK_FALLBACK_EMAIL = undefined;
         mockSendNotification.mockResolvedValue(undefined);
-        ({ getValidMercadoLibreToken, needsRefresh } = await import(
-            '../../../src/services/mercadolibre-oauth/ml-token.service.js'
-        ));
-        ({ MLTokenRefreshError } = await import(
-            '../../../src/services/mercadolibre-oauth/ml-token.errors.js'
-        ));
     });
 
     describe('getValidMercadoLibreToken', () => {
