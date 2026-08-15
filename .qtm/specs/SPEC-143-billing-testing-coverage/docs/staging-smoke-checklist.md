@@ -24,6 +24,8 @@ Many sections of this checklist exercise logic that has **zero dependency on rea
 | **Block 3** (HOST trial lifecycle) | **Local** if the seed is extended with a `status='trialing'` user; **staging** for first-charge transition | Trial gating is state-machine, can be set up directly |
 | **Block 4** (webhooks: signature verification, IPN, preapproval) | **Staging** (required) | Needs real MP credentials + Cloudflare proxy |
 | **Block 5** (admin / advanced) | Mix — most admin ops local-able, MP-touching ops require staging | Case-by-case |
+| **2.7** (refund flow) | **Staging, no exception** | Since core 2.0.0 the refund calls MP for real. The stub cannot tell you whether the provider was called at all, which is exactly the H-146 defect |
+| **3.10** (customer provider mirror) | **Staging, no exception** | The assertion lives on the MercadoPago side (customer email, saved cards) |
 
 When sections can run local, the "Pre-flight: MP test buyer browser session" pre-condition is replaced by simple signin: `http://localhost:4321/auth/signin/` with `<slug>@local.test` / `Password123!`.
 
@@ -696,20 +698,95 @@ Workstream A reference: `authorized-payment.test.ts`
 
 Workstream A reference: `refund.test.ts`
 
-**Pre-conditions**: a successful payment row exists for the test user.
+> **REWRITTEN 2026-08-15 (H-146).** The previous version of this section
+> carried a `KNOWN GAPS` block stating that the refund handler "does NOT call
+> the MP refund API […] Smoke records the gap as documented, not blocking".
+> That gap was the bug: `billing.payments.refund()` wrote `status: 'refunded'`
+> to storage without ever calling the provider, so a local row claimed money
+> went back while nothing left the MercadoPago account. Two production rows
+> (1.800.000 + 1.500.000 centavos) are the evidence. Fixed in
+> `@qazuor/qzpay-core@2.0.0` and adopted in PR #2797.
+>
+> **An executor following the old text would have recorded the defect as a
+> known gap and passed the section.** If you find that wording anywhere else,
+> it is stale.
 
-**Steps**:
+**Why this section cannot be waived**: the vitest suite exercises refund
+against an MP stub. The stub cannot tell you whether the provider was called
+at all — which is precisely what broke. Only this smoke can.
+
+**Pre-conditions**:
+
+- A successful payment row exists for the test user, **linked to MercadoPago**
+  (`billing_payments.provider_payment_ids` contains a `mercadopago` key). A row
+  without that key is a different case — see 2.7.d.
+- Note the payment's `amount` and its `provider_payment_ids.mercadopago` value
+  before starting; several checks below compare against them.
+
+#### 2.7.a Full refund (happy path)
 
 1. Admin navigates to the payment detail and clicks "Refund".
-2. Choose full refund or partial amount.
+2. Choose full refund.
 3. Confirm `POST /api/v1/admin/billing/refunds` returns 200.
-4. **KNOWN GAPS** (engram `bug/refund-flow-gaps`): the current refund
-   handler does NOT call the MP refund API, does NOT end-date entitlements,
-   does NOT change sub state, and does NOT update the payment row's
-   `refunded_amount` column. Smoke records the gap as "documented", not
-   "blocking".
+4. **Measure the response time.** This is the load-bearing check of the whole
+   section: a refund that answers in **~36 ms did not talk to MercadoPago**.
+   A real provider round trip lands in the hundreds of ms (a subscription
+   cancel, which does call MP, measured 677 ms). A fast 200 is a FAIL, not a
+   fast success.
+5. In the MP sandbox panel, confirm the refund exists against that payment id
+   and that the amount matches. **This is the only authoritative check** — the
+   local row is not evidence.
+6. Confirm `billing_payments.status = 'refunded'` and `refunded_amount` equals
+   the full amount.
+7. Confirm the linked subscription transitioned to `cancelled` and the
+   entitlements were revoked (the `applyRefundLifecycle` effects).
 
-**Run log**: (template — record which gaps are still present per run)
+#### 2.7.b Partial refund
+
+1. Repeat 2.7.a choosing a partial amount (e.g. half).
+2. Confirm the MP panel shows a refund for **that** amount.
+3. Confirm `status = 'partially_refunded'` and `refunded_amount` accumulates.
+4. Confirm the subscription stays **active** and entitlements are NOT revoked.
+
+#### 2.7.c Provider accepted but not settled (`pending`)
+
+Since core 2.0.0 the local status mirrors the PROVIDER's verdict, so a refund
+MP has accepted but not settled must NOT present as done.
+
+1. If a sandbox condition that yields a non-`approved` refund status is
+   available, use it. If none is reachable, record this sub-case as
+   **NOT EXERCISED** with the reason — do not mark it passed.
+2. Expected: the payment status is **left untouched** (still `succeeded`), the
+   metadata records `refundStatus: 'pending'` plus `refundId`, and no
+   `payment.refunded` event fires.
+3. Expected: the subscription is **NOT** cancelled and entitlements are **NOT**
+   revoked — that is deferred to the settling webhook. Cancelling here would
+   revoke a paying customer's access for money that never moved.
+
+#### 2.7.d Payment with no provider link
+
+1. Attempt a refund on a payment whose `provider_payment_ids` has no
+   `mercadopago` key.
+2. Expected: the request **fails** with a validation error naming the missing
+   link. It must NOT mark the row refunded locally.
+
+#### 2.7.e Provider refunds less than requested
+
+1. If the sandbox can return a refund amount lower than the requested one,
+   verify the local row reflects **the provider's amount**, not the requested
+   one, and that a full-refund request honoured partially does NOT cancel the
+   subscription. If unreachable in sandbox, record as NOT EXERCISED.
+
+#### 2.7.f Double-refund attempt (known gap)
+
+1. Run a refund against a payment already in `refunded`.
+2. **KNOWN GAP (open)**: core has no double-refund guard — it does not check
+   the current status before calling the provider, so a second administrative
+   attempt asks MercadoPago for the money again. Record what MP answers.
+   Follow-up tracked outside this checklist; do not "fix-and-continue".
+
+**Run log**: (template — one row per sub-case. Record the measured response
+time for 2.7.a explicitly; a section without that number is not a valid run.)
 
 ### 2.8 — Dispute / chargeback flow
 
@@ -902,6 +979,13 @@ Workstream A reference: `admin-billing-ops.test.ts`
 1. As a non-admin user, attempt to call any `/api/v1/admin/billing/*`
    endpoint. Confirm 403.
 
+#### 3.5.f Refund entry point
+
+The admin refund button is the entry point for **2.7**, and the
+`onAfterPaymentRefund` hook that decides whether to cancel the subscription
+lives on this surface (`apps/api/src/routes/billing/admin/qzpay-admin-hooks.ts`).
+Run 2.7 in full rather than duplicating its steps here.
+
 **Run log**: (template)
 
 ### 3.6 — Exchange rate cron
@@ -1071,6 +1155,60 @@ flow or MP redirect handling.
 
 **Run log**: (template per sub-flow — D5 especially should land here
 because it has no other regression check)
+
+### 3.10 — Customer provider mirror (update / delete)
+
+Added 2026-08-15 with `@qazuor/qzpay-core@3.0.0` (PR #2799). Until 3.0.0,
+`billing.customers.update()` and `billing.customers.delete()` wrote only to
+storage: the MercadoPago customer kept a stale email forever and survived a
+local deletion **together with its saved cards**. Both now mirror to the
+provider.
+
+**Run where**: Staging (required). The whole point is what happens on the
+MercadoPago side; a local run proves nothing here.
+
+**Pre-conditions**: a test user whose billing customer is linked to MP
+(`billing_customers.provider_customer_ids` has a `mercadopago` key), with at
+least one saved card so the deletion case is observable.
+
+#### 3.10.a Email / name change propagates
+
+1. Change the user's email (or name) through the normal profile flow, which
+   reaches `syncBillingCustomer` in `apps/api/src/services/billing-customer-sync.ts`.
+2. In the MP sandbox panel, confirm the customer now shows the **new** value.
+3. Confirm the local `billing_customers` row also updated.
+
+#### 3.10.b Local-only change does NOT hit the provider
+
+1. Trigger an update that touches neither email nor name (metadata only).
+2. Confirm no provider call is made (API logs). This is a deliberate
+   optimisation: a round trip per metadata write would be pure latency.
+
+#### 3.10.c Provider outage does not block the user
+
+1. With `providerSyncErrorStrategy: 'log'` (the non-livemode default), simulate
+   or observe a provider failure during an email change.
+2. Confirm the **local update still applies** and a warning is logged. A
+   MercadoPago outage must not stop a user from changing their email.
+   Refund does the opposite on purpose — see the contrast table in 2.7.
+
+#### 3.10.d ⚠️ User deletion destroys the MP customer AND its cards
+
+> **This is irreversible and it is new behaviour.** Before 3.0.0 the provider
+> copy silently survived a local delete. From 3.0.0, `handleUserDeletion`
+> removes the customer and its stored payment instruments at MercadoPago.
+
+1. Delete a test user that has a linked MP customer with a saved card.
+2. Confirm the customer no longer exists in the MP sandbox panel.
+3. Confirm the local cascade ran as before (soft delete + addon purchases).
+4. **Cross-check with the known "deleted user keeps access" defect**: if a
+   deleted user can still sign in and write, that user is now also stripped of
+   their payment instruments at MP. Record both observations together — the
+   combination is worse than either half, and it is the reason this sub-case
+   exists.
+
+**Run log**: (template — 3.10.d must be run against a THROWAWAY test user, never
+against an account whose cards matter.)
 
 ---
 
