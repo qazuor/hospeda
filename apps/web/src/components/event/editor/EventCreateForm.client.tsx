@@ -11,12 +11,17 @@
  * §5.2.1/§5.2.2 — that form is the explicit mold for both).
  *
  * Deliberately excluded from this form:
- *  - `slug` — server-derived from `name` when absent.
- *  - `isFeatured` / `isVirtual` / `isPrivate` / `requiresRegistration` — all
- *    default to `false` server-side; none of them is an authoring decision at
- *    create time.
- *  - `capacity` / `price` / `currency` / `registrationUrl` — optional,
- *    editable afterward in the real editor.
+ *  - `slug` — server-derived from `name` when absent, and never regenerated
+ *    afterwards (H-19), so what create picks is the public URL for good.
+ *  - `isFeatured` — defaults to `false` server-side; editorial curation, not an
+ *    authoring decision at create time.
+ *  - `price` / `currency` — optional here and create-ONLY: the update surface
+ *    does not accept them until a partial pricing merge exists (H-134,
+ *    follow-up on HOS-444). Left out because this form collects the minimum,
+ *    but note they cannot be added later from the editor.
+ *  - `isVirtual` / `isPrivate` / `requiresRegistration` / `capacity` /
+ *    `registrationUrl` — these no longer exist on the schema at all. They were
+ *    accepted and silently discarded until H-134 removed them.
  *  - `locationId` — optional per the schema, same reasoning `PostCreateForm`
  *    used for `destinationId`: it is a real field with no picker here, left
  *    for the editor to fill in later rather than duplicating an SSR catalog

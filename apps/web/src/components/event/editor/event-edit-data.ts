@@ -5,16 +5,19 @@
  *
  * ## What the PATCH can actually persist
  *
- * `EventUpdateHttpSchema` accepts far more than the server keeps.
- * `httpToDomainEventUpdate` (packages/schemas) maps exactly: `name`, `slug`,
- * `summary` (DERIVED from `description`), `description`, `category`, `date`,
- * `locationId`, `organizerId`, `isFeatured`. Everything else the schema
- * accepts — `price`, `currency`, `capacity`, `isVirtual`, `isPrivate`,
- * `requiresRegistration`, `registrationUrl` — is silently DROPPED (the mapper
- * defers pricing to "the service layer", which does not merge it either).
+ * `EventUpdateHttpSchema` accepts exactly what `httpToDomainEventUpdate`
+ * (packages/schemas) maps: `name`, `slug`, `summary` (DERIVED from
+ * `description`), `description`, `category`, `date`, `locationId`,
+ * `organizerId`, `isFeatured`. The schema is `.strict()`, so anything else is a
+ * `400` rather than a field that reports "saved" and stores nothing.
  *
- * So this editor deliberately exposes none of them: a field that reports
- * "saved" and persists nothing is worse than an absent field.
+ * That was not always true. The schema used to also accept `price`, `currency`,
+ * `capacity`, `isVirtual`, `isPrivate`, `requiresRegistration` and
+ * `registrationUrl`, all of which were silently dropped with a `200` (H-134).
+ * This editor was written to expose none of them for that reason; the reason is
+ * gone, but the field list is still right — five of those seven have no domain
+ * column at all, and `price`/`currency` are create-only until a partial pricing
+ * merge exists (follow-up on HOS-444).
  */
 
 import type { EventEditDetail } from '@/lib/api/types';
