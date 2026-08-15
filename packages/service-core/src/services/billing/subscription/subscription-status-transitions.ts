@@ -6,10 +6,18 @@
  * through. Rejecting illegal transitions at this layer prevents silent
  * data corruption from free-form `UPDATE ... SET status` calls.
  *
- * Spelling note: subscriptions use British spelling ('cancelled', 2 L's)
- * to match the MercadoPago/QZPay API convention and the
- * `billing_subscriptions.status` column constraint. Contrast with addon
- * purchases which use American 'canceled' (1 L) per their DB column.
+ * Spelling note: Hospeda WRITES British spelling ('cancelled', 2 L's) for
+ * subscriptions, and every `to` status must use that vocabulary. Contrast with
+ * addon purchases which use American 'canceled' (1 L) per their DB column.
+ *
+ * Reading is a different matter (H-147). `billing_subscriptions.status` also
+ * holds qzpay-core's own vocabulary — it writes `canceled` (1 L) directly on
+ * the admin-cancel path, plus `incomplete` / `incomplete_expired` / `unpaid`
+ * on the creation paths — so a `from` status read out of the DB may be in
+ * EITHER vocabulary. The guards below therefore normalise `from` through
+ * {@link normalizeStoredSubscriptionStatus} before consulting the table; `to`
+ * is deliberately NOT normalised, so a caller that intends to persist the 1-L
+ * spelling is rejected instead of being helped along.
  *
  * ABANDONED vocab (SPEC-194 T-003):
  * The abandoned-pending-subs cron now writes canonical `abandoned`
@@ -23,6 +31,7 @@
  */
 
 import { SubscriptionStatusEnum } from '@repo/schemas';
+import { normalizeStoredSubscriptionStatus } from './subscription-status-normalize.js';
 
 /**
  * Union type of all subscription status strings derived from the full enum.
@@ -236,7 +245,13 @@ export function checkSubscriptionStatusTransition(
     input: ValidateSubscriptionStatusTransitionInput
 ): SubscriptionTransitionResult {
     const { from, to, subscriptionId } = input;
-    const allowed = VALID_TRANSITIONS.get(from);
+    // H-147: `from` may arrive in qzpay's vocabulary straight from the DB
+    // column. Translate it before consulting the table, so a row that
+    // qzpay-core cancelled ('canceled', 1 L) is not mistaken for an unknown
+    // status. A value in neither vocabulary still falls through to the
+    // unknown-source branch — that is a real data-integrity signal.
+    const normalizedFrom = normalizeStoredSubscriptionStatus(from);
+    const allowed = normalizedFrom === null ? undefined : VALID_TRANSITIONS.get(normalizedFrom);
     if (allowed === undefined) {
         return {
             valid: false,
@@ -246,7 +261,7 @@ export function checkSubscriptionStatusTransition(
     if (!allowed.has(to)) {
         return {
             valid: false,
-            reason: `Transition ${from} → ${to} is not permitted by the subscription state machine${subscriptionId ? ` (subscription: ${subscriptionId})` : ''}`
+            reason: `Transition ${normalizedFrom} → ${to} is not permitted by the subscription state machine${subscriptionId ? ` (subscription: ${subscriptionId})` : ''}`
         };
     }
     return { valid: true };
@@ -304,5 +319,8 @@ export function validateSubscriptionStatusTransition(
 export function getAllowedTransitions(
     from: SubscriptionStatusFull
 ): ReadonlySet<SubscriptionStatusFull> | undefined {
-    return VALID_TRANSITIONS.get(from);
+    // H-147: same normalisation as the guards — a stored qzpay-vocabulary
+    // status must resolve to the same allowed set as its Hospeda synonym.
+    const normalizedFrom = normalizeStoredSubscriptionStatus(from);
+    return normalizedFrom === null ? undefined : VALID_TRANSITIONS.get(normalizedFrom);
 }

@@ -581,3 +581,162 @@ describe('InvalidSubscriptionTransitionError — constructor', () => {
         expect(err.message).toContain('sub-test-999');
     });
 });
+
+// ─── Regression: qzpay-vocabulary source statuses (H-147) ────────────────────
+//
+// `billing_subscriptions.status` holds values from two vocabularies: Hospeda's
+// own (`cancelled`, 2 L's) and qzpay-core's (`canceled`, 1 L — plus
+// `incomplete`, `incomplete_expired`, `unpaid`). qzpay-core writes its own
+// spelling directly on the admin-cancel path, so a `from` status read straight
+// out of the DB may be in EITHER vocabulary.
+//
+// Before this fix the state machine only knew Hospeda's vocabulary, so a
+// qzpay-written value was rejected as "Unknown source status" and every
+// transition out of it silently no-opped — observed in production as
+// `[WARN] Refund lifecycle: invalid status transition ... "from":"canceled"`,
+// with 6 of the 8 cancelled rows in prod stuck on the 1-L spelling.
+//
+// These cases assert BEHAVIOUR through the public guard, and the alias table is
+// written out by hand rather than imported from the module under test — a test
+// that spreads the production constant cannot fail when that constant changes.
+
+/**
+ * Every qzpay-vocabulary status that can legitimately appear in the
+ * `billing_subscriptions.status` column, paired with the Hospeda status it
+ * means. Hand-written on purpose (see note above).
+ */
+const QZPAY_ALIASES: ReadonlyArray<readonly [string, SubscriptionStatusEnum]> = [
+    ['canceled', SubscriptionStatusEnum.CANCELLED],
+    ['incomplete', SubscriptionStatusEnum.PENDING_PROVIDER],
+    ['incomplete_expired', SubscriptionStatusEnum.ABANDONED],
+    ['unpaid', SubscriptionStatusEnum.PAST_DUE]
+];
+
+describe('checkSubscriptionStatusTransition — qzpay-vocabulary source status (H-147)', () => {
+    // Walks the WHOLE machine on the new axis: every alias against every
+    // possible target, asserting it behaves exactly like its Hospeda synonym.
+    // A fix that only unblocks `canceled → active` would pass a single-edge
+    // test and still leave the other three aliases dead.
+    for (const [alias, canonical] of QZPAY_ALIASES) {
+        for (const to of ALL_STATUSES) {
+            it(`'${alias}' → ${to} matches '${canonical}' → ${to}`, () => {
+                // Arrange
+                const viaAlias = checkSubscriptionStatusTransition({
+                    from: alias as SubscriptionStatusEnum,
+                    to
+                });
+                // Act
+                const viaCanonical = checkSubscriptionStatusTransition({ from: canonical, to });
+                // Assert
+                expect(viaAlias.valid).toBe(viaCanonical.valid);
+            });
+        }
+    }
+
+    it("reactivating a qzpay-cancelled subscription ('canceled' → active) is permitted", () => {
+        // Arrange — the exact shape of the 6 stuck production rows
+        // Act
+        const result = checkSubscriptionStatusTransition({
+            from: 'canceled' as SubscriptionStatusEnum,
+            to: SubscriptionStatusEnum.ACTIVE,
+            subscriptionId: 'sub-prod-9b5cfe2d'
+        });
+        // Assert
+        expect(result.valid).toBe(true);
+    });
+
+    it("the logged refund case ('canceled' → cancelled) is rejected as a self-transition, NOT as an unknown status", () => {
+        // Arrange — reproduces the production WARN verbatim
+        // Act
+        const result = checkSubscriptionStatusTransition({
+            from: 'canceled' as SubscriptionStatusEnum,
+            to: SubscriptionStatusEnum.CANCELLED,
+            subscriptionId: 'sub-prod-9b5cfe2d'
+        });
+        // Assert — still invalid (a subscription cannot re-cancel itself), but
+        // the machine must now recognise the source status it was handed.
+        expect(result.valid).toBe(false);
+        if (!result.valid) {
+            expect(result.reason).not.toContain('Unknown source status');
+            expect(result.reason).toContain('not permitted');
+        }
+    });
+
+    it('normalization does not loosen the machine: a terminal alias stays terminal', () => {
+        // Arrange — 'incomplete_expired' means ABANDONED, which is terminal
+        // Act
+        const result = checkSubscriptionStatusTransition({
+            from: 'incomplete_expired' as SubscriptionStatusEnum,
+            to: SubscriptionStatusEnum.ACTIVE
+        });
+        // Assert
+        expect(result.valid).toBe(false);
+    });
+
+    it('a genuinely unknown status is still reported as an unknown source status', () => {
+        // Arrange
+        // Act
+        const result = checkSubscriptionStatusTransition({
+            from: 'bogus_status' as SubscriptionStatusEnum,
+            to: SubscriptionStatusEnum.ACTIVE
+        });
+        // Assert — the normalizer must not swallow real data-integrity signals
+        expect(result.valid).toBe(false);
+        if (!result.valid) {
+            expect(result.reason).toContain('Unknown source status');
+            expect(result.reason).toContain('bogus_status');
+        }
+    });
+
+    it('the target status is NOT normalized — writes must use Hospeda vocabulary', () => {
+        // Arrange — accepting a qzpay-spelled `to` would let a caller pass the
+        // guard and then persist the 1-L spelling, re-creating this exact bug.
+        // Act
+        const result = checkSubscriptionStatusTransition({
+            from: SubscriptionStatusEnum.ACTIVE,
+            to: 'canceled' as SubscriptionStatusEnum
+        });
+        // Assert
+        expect(result.valid).toBe(false);
+    });
+});
+
+describe('validateSubscriptionStatusTransition — qzpay-vocabulary source status (H-147)', () => {
+    it("does not throw for 'canceled' → active", () => {
+        // Arrange & Act & Assert
+        expect(() =>
+            validateSubscriptionStatusTransition({
+                from: 'canceled' as SubscriptionStatusEnum,
+                to: SubscriptionStatusEnum.ACTIVE
+            })
+        ).not.toThrow();
+    });
+
+    it('still throws for an unknown source status', () => {
+        // Arrange & Act & Assert
+        expect(() =>
+            validateSubscriptionStatusTransition({
+                from: 'bogus_status' as SubscriptionStatusEnum,
+                to: SubscriptionStatusEnum.ACTIVE
+            })
+        ).toThrow(InvalidSubscriptionTransitionError);
+    });
+});
+
+describe('getAllowedTransitions — qzpay-vocabulary source status (H-147)', () => {
+    for (const [alias, canonical] of QZPAY_ALIASES) {
+        it(`'${alias}' resolves to the same allowed set as '${canonical}'`, () => {
+            // Arrange & Act
+            const viaAlias = getAllowedTransitions(alias as SubscriptionStatusEnum);
+            const viaCanonical = getAllowedTransitions(canonical);
+            // Assert
+            expect(viaAlias).toBeDefined();
+            expect([...(viaAlias ?? [])].sort()).toEqual([...(viaCanonical ?? [])].sort());
+        });
+    }
+
+    it('returns undefined for a genuinely unknown status', () => {
+        // Arrange & Act & Assert
+        expect(getAllowedTransitions('bogus_status' as SubscriptionStatusEnum)).toBeUndefined();
+    });
+});
