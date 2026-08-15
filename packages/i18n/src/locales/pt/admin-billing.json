@@ -879,10 +879,13 @@
         "title": "Pagamentos",
         "description": "Gerencie e monitore todos os pagamentos do sistema",
         "statuses": {
-            "completed": "Concluído",
             "pending": "Pendente",
             "failed": "Falhou",
-            "refunded": "Reembolsado"
+            "refunded": "Reembolsado",
+            "succeeded": "Bem-sucedido",
+            "processing": "Processando",
+            "canceled": "Cancelado",
+            "partiallyRefunded": "Reembolsado parcialmente"
         },
         "methods": {
             "creditCard": "Cartão de Crédito",
@@ -941,7 +944,8 @@
             "transactionIdLabel": "ID da Transação",
             "references": "Referências",
             "subscriptionLabel": "Assinatura",
-            "invoiceLabel": "Fatura"
+            "invoiceLabel": "Fatura",
+            "providerLabel": "Provedor"
         },
         "refundDialog": {
             "title": "Reembolsar Pagamento",
@@ -960,7 +964,9 @@
         "toasts": {
             "refundSuccess": "Reembolso processado com sucesso",
             "refundError": "Erro ao processar reembolso:"
-        }
+        },
+        "unknownUser": "Usuário não identificado",
+        "unknownPlan": "Sem plano"
     },
     "subscriptions": {
         "title": "Assinaturas",
@@ -972,7 +978,9 @@
             "pastDue": "Pagamento pendente",
             "expired": "Expirada",
             "paused": "Pausada",
-            "comp": "Cortesia"
+            "comp": "Cortesia",
+            "abandoned": "Abandonada",
+            "pendingProvider": "Aguardando provedor"
         },
         "promoEffect": {
             "title": "Promoção ativa",
@@ -1147,6 +1155,16 @@
             "resumed": "Assinatura retomada",
             "pauseError": "Erro ao pausar assinatura:",
             "resumeError": "Erro ao retomar assinatura:"
+        },
+        "unknownUser": "Usuário não identificado",
+        "unknownPlan": "Plano não identificado",
+        "allDomains": "Todos os produtos",
+        "planDomainFilter": "Produto",
+        "productDomainLabels": {
+            "accommodation": "Hospedagem",
+            "commerce": "Comércio",
+            "partner": "Parceiro",
+            "unknown": "Outro"
         }
     },
     "exchangeRates": {
