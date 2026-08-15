@@ -44,8 +44,8 @@ usa el audio.
 
 | Marcador | Archivo a adjuntar | Veces | Por qué |
 |---|---|:-:|---|
-| `@######VOZ#######` | `../personaje/voz.wav` | 2 | es lo que clona el timbre. Sin esto no hay nada |
-| `@######ESCENA17#######` | `../escenas/escena17.png` | 1 | el modo *image to video* exige un cuadro de partida |
+| `@######VOZ#######` | `../../personaje/voz.wav` | 2 | es lo que clona el timbre. Sin esto no hay nada |
+| `@######ESCENA17#######` | `../../escenas/escena17.png` | 1 | el modo *image to video* exige un cuadro de partida |
 
 **Total: 2 marcadores, 3 apariciones.**
 
