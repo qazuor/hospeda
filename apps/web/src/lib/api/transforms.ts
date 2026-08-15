@@ -284,7 +284,7 @@ export function toAccommodationCardProps({
         entity: 'accommodation',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/images/placeholder-accommodation.svg'
+        fallback: '/assets/images/placeholder-accommodation.svg'
     });
 
     // photoCount: prefer gallery length; fall back to 1 if only the featured
@@ -374,7 +374,7 @@ export function toAccommodationDetailedProps({
         entity: 'accommodation-detailed',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/images/placeholder-accommodation.svg'
+        fallback: '/assets/images/placeholder-accommodation.svg'
     });
     const images = galleryUrls.length > 0 ? galleryUrls : [featuredImage.url];
 
@@ -431,7 +431,7 @@ export function toDestinationCardProps({
         entity: 'destination',
         id: String(item.slug || ''),
         extract: true,
-        fallback: '/images/placeholder-destination.svg'
+        fallback: '/assets/images/placeholder-destination.svg'
     });
 
     // `gallery` on DestinationCardData carries `{ url, caption }` objects,
@@ -620,7 +620,7 @@ export function toEventCardProps({
         entity: 'event',
         id: String(item.slug || ''),
         extract: true,
-        fallback: '/images/placeholder-event.svg'
+        fallback: '/assets/images/placeholder-event.svg'
     });
 
     const dateObj = item.date as { start?: string; end?: string; precision?: string } | undefined;
@@ -873,7 +873,10 @@ export function toAccommodationDetailPageProps({
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || 0),
-        featuredImage: extractFeaturedImageUrl(item, '/images/placeholder-accommodation.svg'),
+        featuredImage: extractFeaturedImageUrl(
+            item,
+            '/assets/images/placeholder-accommodation.svg'
+        ),
         media: (() => {
             const galleryItems = extractGalleryItems(item);
             const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
@@ -1089,7 +1092,7 @@ export interface ProcessEntityImagesResult<T extends Record<string, unknown>> {
  * When `extract` is `true` the helper returns a
  * {@link ProcessEntityImagesResult} object that carries `featuredImageUrl`
  * and `galleryUrls`.  Pass `fallback` to control the placeholder used when
- * no image is found (defaults to `'/images/placeholder.svg'`).
+ * no image is found (defaults to `'/assets/images/placeholder.svg'`).
  *
  * Call-sites that only need the smell-detection side-effect can still call
  * the function without `extract` and get back the original item directly
@@ -2456,7 +2459,7 @@ export function toGastronomyCardProps({
         entity: 'gastronomy',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/images/placeholder-gastronomy.svg'
+        fallback: '/assets/images/placeholder-gastronomy.svg'
     });
 
     // Resolve destination name from API join (destinationId is the FK)
@@ -2617,7 +2620,7 @@ export function toExperienceCardProps({
         entity: 'experience',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/images/placeholder-experience.svg'
+        fallback: '/assets/images/placeholder-experience.svg'
     });
 
     const destinationObj = item.destination as { name?: unknown; nameI18n?: unknown } | undefined;

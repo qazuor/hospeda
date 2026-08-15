@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600" viewBox="0 0 800 600">
+  <rect width="800" height="600" fill="#f5f3ff"/>
+  <g transform="translate(400,270)" fill="none" stroke="#c4b5fd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="0" cy="0" r="34"/>
+    <path d="M14-14 4 4l-18 10 10-18z"/>
+    <path d="M0-42v6M0 36v6M-42 0h6M36 0h6"/>
+  </g>
+  <text x="400" y="340" text-anchor="middle" fill="#c4b5fd" font-family="system-ui,sans-serif" font-size="14">Experiencia</text>
+</svg>
