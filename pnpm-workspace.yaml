@@ -15,8 +15,16 @@ overrides:
   # identities in play makes a 1.17.0 billing instance unassignable to a 1.12.0
   # parameter (the `subscription.uncanceled` event is only in 1.17.0). Forcing a
   # single version resolves the fragmentation; the bumps are additive minors.
-  "@qazuor/qzpay-core": "1.17.0"
-  "@qazuor/qzpay-mercadopago": "2.8.0"
+  #
+  # H-146 (2026-08-15): raised to core 2.0.0. Until 1.17.0, `billing.payments.refund()`
+  # wrote status:'refunded' to storage WITHOUT ever calling the provider adapter, so a
+  # local row claimed money went back while nothing left the MercadoPago account (two
+  # production rows, 1.800.000 + 1.500.000 centavos). 2.0.0 calls the provider first and
+  # mirrors its verdict. Major because refund can now throw where it always resolved.
+  # This override is what actually moves the version: the per-package `^2.0.0` ranges
+  # alone are inert while an exact pin sits here.
+  "@qazuor/qzpay-core": "2.0.0"
+  "@qazuor/qzpay-mercadopago": "2.8.1"
   typescript: "6.0.3"
   "zod@>=4.0.0 <5": "4.3.6"
   ws: ">=8.21.0"
@@ -197,6 +205,8 @@ allowBuilds:
 forceLegacyDeploy: true
 
 minimumReleaseAgeExclude:
-  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0'
-  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0'
-  - '@qazuor/qzpay-drizzle@1.11.5'
+  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0'
+  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1'
+  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7'
+  - '@qazuor/qzpay-hono@1.6.7'
+  - '@qazuor/qzpay-react@1.1.22'
