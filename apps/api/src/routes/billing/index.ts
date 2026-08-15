@@ -35,6 +35,7 @@ import type { AppOpenAPI } from '../../types';
 import { createRouter } from '../../utils/create-app';
 import { apiLogger } from '../../utils/logger';
 import { addonsRouter } from './addons';
+import { createCollectionListingBlocker } from './collection-listing-block';
 import { downgradePreviewRouter } from './downgrade-preview';
 import { linkPreapprovalRouter } from './link-preapproval';
 import { planChangeRouter } from './plan-change';
@@ -230,6 +231,17 @@ export function createBillingRoutesHandler(): AppOpenAPI {
     // Applied here (not globally) because custom routes already enforce ownership
     // through c.get('billingCustomerId') and admin routes are on separate paths.
     const qzpayRoutes = createQZPayBillingRouter();
+
+    // Block qzpay's bare-collection listings BEFORE the wrapper (H-66 / HOS-446).
+    // Ownership verification only fires when the path names a resource, so
+    // `GET /customers` — which qzpay serves unscoped — reached every
+    // authenticated user with every other customer's name and email. The block
+    // is derived from qzpay's own route table at boot, so a collection endpoint
+    // added upstream is closed the moment it exists. Registered here, ahead of
+    // `qzpayWrapper`, because Hono resolves by first match — the same ordering
+    // rule the plans / promo-codes / downgrade-preview overrides above rely on.
+    router.route('/', createCollectionListingBlocker(qzpayRoutes));
+
     const qzpayWrapper = createRouter();
     qzpayWrapper.use('*', billingAdminGuardMiddleware());
     qzpayWrapper.use('*', billingOwnershipMiddleware());
