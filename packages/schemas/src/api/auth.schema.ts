@@ -65,7 +65,30 @@ export const AuthMeResponseSchema = z.object({
     passwordChangeRequired: z
         .boolean()
         .optional()
-        .describe('Whether the user must change their password before continuing')
+        .describe('Whether the user must change their password before continuing'),
+    /**
+     * Whether this account owns a `host_trades` directory listing.
+     *
+     * Rides on `/auth/me` for the same reason `mustChangePassword` does: the
+     * web middleware already calls this endpoint once per protected request,
+     * so a flag added here travels FREE, whereas asking for it separately
+     * costs a full round-trip on every page that needs it.
+     *
+     * It cannot be derived from `actor.roles` or `actor.permissions`: an
+     * approved provider is an ordinary account with no role change and no
+     * `HOST_TRADE_*` permission (HOS-278 AC-7). Ownership of the row is the
+     * only signal there is, which is why the account sidebar had no way to
+     * gate its provider entry at all (H-158).
+     *
+     * Computed per request rather than denormalized onto `users`: a stored
+     * copy would need writing at provisioning AND at revocation, and would
+     * silently lie the first time someone adds a third path that creates a
+     * listing.
+     */
+    ownsHostTradeListing: z
+        .boolean()
+        .optional()
+        .describe('Whether the authenticated account owns a host-trade directory listing')
 });
 
 export type AuthMeResponse = z.infer<typeof AuthMeResponseSchema>;
