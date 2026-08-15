@@ -206,8 +206,43 @@ jobs:
 
       - name: Run CI scripts (raw-ilike + SEO + sitemap)
         if: always()
+        env:
+          # Both validators default to http://localhost:4321 — the DEV port, which
+          # nothing listens on in this job. They were pointed at it on every run
+          # and failed with "fetch failed" for every URL.
+          HOSPEDA_SEO_VALIDATOR_BASE_URL: ${{ env.HOSPEDA_E2E_WEB_URL }}
+          HOSPEDA_SITEMAP_VALIDATOR_BASE_URL: ${{ env.HOSPEDA_E2E_WEB_URL }}
         run: |
+          set -euo pipefail
           bash scripts/check-unsafe-ilike.sh
+
+          # These two crawl the running web app, but Playwright tears its
+          # webServers down when the suite ends, so the stack has to be brought
+          # back up here. Same commands Playwright uses. Both are backgrounded and
+          # die with the step.
+          pnpm --filter hospeda-api start > /tmp/ci-scripts-api.log 2>&1 &
+          pnpm --filter hospeda-web preview --port 18321 > /tmp/ci-scripts-web.log 2>&1 &
+
+          for _ in $(seq 1 60); do
+            if curl -fsS "$HOSPEDA_E2E_API_URL/health" > /dev/null 2>&1 \
+              && curl -fsS "$HOSPEDA_E2E_WEB_URL/" > /dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          # Fail loudly with the boot logs rather than letting the validators
+          # report a wall of "fetch failed".
+          curl -fsS "$HOSPEDA_E2E_API_URL/health" > /dev/null || {
+            echo '::error::API did not come up for the CI scripts step'
+            tail -50 /tmp/ci-scripts-api.log
+            exit 1
+          }
+          curl -fsS "$HOSPEDA_E2E_WEB_URL/" > /dev/null || {
+            echo '::error::web did not come up for the CI scripts step'
+            tail -50 /tmp/ci-scripts-web.log
+            exit 1
+          }
+
           pnpm exec tsx scripts/ci/seo-validator.ts
           pnpm exec tsx scripts/ci/sitemap-validator.ts
 
