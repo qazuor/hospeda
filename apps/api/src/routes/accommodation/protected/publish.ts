@@ -62,7 +62,21 @@ export const protectedPublishAccommodationRoute = createProtectedRoute({
         const result = await accommodationService.publish(actor, params.id as string);
 
         if (result.error) {
-            throw new ServiceError(result.error.code, result.error.message);
+            // `reason` MUST survive the re-throw. Without it the publish gate's
+            // per-field verdict died right here: the service knew `bathrooms` was
+            // the only missing field, this line dropped that, and the browser fell
+            // back to "faltan datos de capacidad (huéspedes, habitaciones o baños)"
+            // — naming three fields, two of which were filled in (H-94).
+            //
+            // It travels in `reason`, never `details`: `handleRouteError` strips
+            // `details` unless HOSPEDA_API_DEBUG_ERRORS is on, and production
+            // requires it off, so `details` reaches no real host.
+            throw new ServiceError(
+                result.error.code,
+                result.error.message,
+                undefined,
+                result.error.reason
+            );
         }
 
         captureServerAnalyticsEvent({
