@@ -70,8 +70,14 @@ describe('toAccommodationCardProps', () => {
     });
 
     it('featuredImage.url should be fallback placeholder when no media found', () => {
+        // The expected value here used to be `/images/placeholder-accommodation.svg`,
+        // which 404s — the asset lives under `/assets/images/`. So this test
+        // asserted the broken path and helped keep it alive: a listing with no
+        // photo rendered a broken <img> and the suite called that correct (H-101).
+        // A hardcoded string cannot express "the file exists", which is why
+        // `placeholder-assets.guard.test.ts` checks the disk instead.
         const result = toAccommodationCardProps({ item: {} });
-        expect(result.featuredImage.url).toBe('/images/placeholder-accommodation.svg');
+        expect(result.featuredImage.url).toBe('/assets/images/placeholder-accommodation.svg');
         expect(result.featuredImage.caption).toBeUndefined();
     });
 
