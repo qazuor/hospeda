@@ -16,6 +16,26 @@ vi.mock('../../src/lib/auth', () => ({
     })
 }));
 
+// H-163: the real-mode path now verifies the resolved account is not
+// soft-deleted before trusting the session, so these tests need a database that
+// answers. `deletedAt: null` makes the assumption they always carried — "this
+// account is live" — explicit. The refusal path has its own file
+// (`auth.deleted-user.test.ts`).
+const { deletedAtLimitMock } = vi.hoisted(() => {
+    const limit = vi.fn().mockResolvedValue([{ deletedAt: null }]);
+    return { deletedAtLimitMock: limit };
+});
+
+vi.mock('@repo/db', () => ({
+    getDb: () => ({
+        select: () => ({
+            from: () => ({ where: () => ({ limit: deletedAtLimitMock }) })
+        })
+    }),
+    users: { id: 'users.id', deletedAt: 'users.deletedAt' },
+    eq: (column: unknown, value: unknown) => ({ column, value })
+}));
+
 // Mock the validated env object used by auth middleware.
 // vi.resetModules() in tests below re-imports auth.ts, which reads env at module level.
 // This mock must survive resets, so we use a mutable reference.
