@@ -187,16 +187,7 @@ describe('Admin media routes — route-level permission gate (smoke)', () => {
                 permissions: [
                     PermissionEnum.ACCESS_PANEL_ADMIN,
                     PermissionEnum.ACCESS_API_ADMIN,
-                    PermissionEnum.MEDIA_DELETE,
-                    // Carried so the assertion below can only ever be about the
-                    // ROUTE gate. Past it sits a second, per-entity gate
-                    // (`validateEntityMediaPermission`) that answers 403 for an
-                    // accommodation unless the actor holds ACCOMMODATION_UPDATE_*.
-                    // Whether the handler reaches that gate depends on the entity
-                    // lookup resolving, which depends on mock state a NEIGHBOURING
-                    // test file leaves behind — so without this the test passed or
-                    // failed according to which files shared its worker.
-                    PermissionEnum.ACCOMMODATION_UPDATE_ANY
+                    PermissionEnum.MEDIA_DELETE
                 ]
             });
             const res = await app.request(
