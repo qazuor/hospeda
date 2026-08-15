@@ -6,11 +6,25 @@
  * 1. Renders the FAQ list from initialFaqs.
  * 2. Shows empty state when no FAQs exist.
  * 3. Clicking "Add" opens the add form.
- * 4. Submitting the add form calls POST and adds the FAQ to the list.
+ * 4. Submitting the add form calls postProtected and adds the FAQ to the list.
  * 5. Clicking Edit opens the edit form with pre-filled values.
- * 6. Submitting the edit form calls PATCH and updates the FAQ.
+ * 6. Submitting the edit form calls PUT and updates the FAQ.
  * 7. Clicking Delete (confirmed) calls DELETE and removes the FAQ.
  * 8. Clicking ↑/↓ calls PUT /reorder and reorders FAQs in the list.
+ *
+ * REGRESSION ANCHOR (H-89): tests 4 and 6 assert the TRANSPORT, not just that
+ * "some call happened". Both used to assert the verbs the component actually
+ * called — `apiClient.post` for add and `apiClient.patch` for edit — which is
+ * why they stayed green while both operations were broken in production:
+ *
+ * - `apiClient.post` is the only verb in the client that does NOT send
+ *   `credentials: 'include'` (patch/put/delete all do), so adding a FAQ hit
+ *   `/protected/` anonymously and got a 403.
+ * - the API registers `PUT /{id}/faqs/{faqId}` for update, never PATCH, so
+ *   editing got a 404 "Route not found".
+ *
+ * A test that mirrors the component's call instead of the server's contract
+ * cannot catch either. Each now also asserts the WRONG verb was not used.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -32,6 +46,7 @@ vi.mock('../../../src/lib/i18n', () => ({
 vi.mock('../../../src/lib/api/client', () => ({
     apiClient: {
         post: vi.fn(),
+        postProtected: vi.fn(),
         patch: vi.fn(),
         delete: vi.fn(),
         put: vi.fn()
@@ -45,6 +60,7 @@ vi.mock('../../../src/lib/api/client', () => ({
 import { apiClient } from '../../../src/lib/api/client';
 
 const mockPost = vi.mocked(apiClient.post);
+const mockPostProtected = vi.mocked(apiClient.postProtected);
 const mockPatch = vi.mocked(apiClient.patch);
 const mockDelete = vi.mocked(apiClient.delete);
 const mockPut = vi.mocked(apiClient.put);
@@ -83,6 +99,7 @@ function renderManager(initialFaqs: readonly CommerceFaq[] = []) {
 describe('CommerceFaqManager', () => {
     beforeEach(() => {
         mockPost.mockReset();
+        mockPostProtected.mockReset();
         mockPatch.mockReset();
         mockDelete.mockReset();
         mockPut.mockReset();
@@ -111,7 +128,7 @@ describe('CommerceFaqManager', () => {
         expect(screen.getByLabelText('Respuesta')).toBeInTheDocument();
     });
 
-    it('calls POST and appends the FAQ on successful add', async () => {
+    it('calls postProtected (credentialed) and appends the FAQ on successful add', async () => {
         const newFaq: CommerceFaq = {
             id: 'faq-new',
             question: '¿Tienen delivery?',
@@ -119,7 +136,7 @@ describe('CommerceFaqManager', () => {
             category: null,
             displayOrder: 2
         };
-        mockPost.mockResolvedValueOnce({ ok: true, data: newFaq });
+        mockPostProtected.mockResolvedValueOnce({ ok: true, data: newFaq });
 
         renderManager([FAQ_1]);
         fireEvent.click(screen.getByRole('button', { name: 'Agregar pregunta' }));
@@ -131,11 +148,14 @@ describe('CommerceFaqManager', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => {
-            expect(mockPost).toHaveBeenCalledWith({
+            expect(mockPostProtected).toHaveBeenCalledWith({
                 path: '/api/v1/protected/gastronomies/listing-1/faqs',
                 body: expect.objectContaining({ question: '¿Tienen delivery?' })
             });
         });
+        // The credential-less verb must never be used against /protected/ — that
+        // is the 403 this test exists to prevent.
+        expect(mockPost).not.toHaveBeenCalled();
 
         await waitFor(() => {
             expect(screen.getByText('¿Tienen delivery?')).toBeInTheDocument();
@@ -149,9 +169,9 @@ describe('CommerceFaqManager', () => {
         expect(questionField.value).toBe('¿Cuándo abren?');
     });
 
-    it('calls PATCH and updates the FAQ on successful edit', async () => {
+    it('calls PUT (the verb the API registers) and updates the FAQ on successful edit', async () => {
         const updated = { ...FAQ_1, question: '¿Cuándo abre el local?' };
-        mockPatch.mockResolvedValueOnce({ ok: true, data: updated });
+        mockPut.mockResolvedValueOnce({ ok: true, data: updated });
 
         renderManager([FAQ_1]);
         fireEvent.click(screen.getByRole('button', { name: 'Editar' }));
@@ -161,11 +181,13 @@ describe('CommerceFaqManager', () => {
         fireEvent.click(screen.getByRole('button', { name: 'Guardar' }));
 
         await waitFor(() => {
-            expect(mockPatch).toHaveBeenCalledWith({
+            expect(mockPut).toHaveBeenCalledWith({
                 path: '/api/v1/protected/gastronomies/listing-1/faqs/faq-1',
                 body: expect.objectContaining({ question: '¿Cuándo abre el local?' })
             });
         });
+        // PATCH is not a registered route for this resource — using it 404s.
+        expect(mockPatch).not.toHaveBeenCalled();
 
         await waitFor(() => {
             expect(screen.getByText('¿Cuándo abre el local?')).toBeInTheDocument();
