@@ -61,7 +61,8 @@ boolean.
 Flags:
   --app=<api|web|admin>   Only report rules that reference this app (a rule
                           can span two apps; this filters by "touches",
-                          not "only about").
+                          not "only about"). The spaced form --app <kind>
+                          works too.
   --help, -h              Show this help.
 
 Examples:

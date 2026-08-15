@@ -65,6 +65,11 @@ import { psql } from './commands/psql.ts';
 import { r2Lifecycle } from './commands/r2-lifecycle.ts';
 import { redeploy } from './commands/redeploy.ts';
 import { update } from './commands/update.ts';
+import {
+    type CommandArgvSpec,
+    formatUnknownFlagsError,
+    validateCommandFlags
+} from './lib/cli-flags.ts';
 import { setActiveTarget } from './lib/container-lookup.ts';
 import { die, log } from './lib/log.ts';
 import { resolveTarget, type Target, type TargetPolicy, type TargetSource } from './lib/target.ts';
@@ -90,11 +95,23 @@ interface Command {
      */
     readonly targetPolicy: TargetPolicy;
     /**
+     * The command's argv surface, as its own parser reads it. REQUIRED: a new
+     * command cannot be registered without declaring one, which is what stops
+     * this registry from drifting back into "unknown flags are ignored".
+     *
+     * Transcribe it from the PARSING CODE, never from the `--help` text — the
+     * two have drifted before. See {@link CommandArgvSpec}.
+     */
+    readonly argv: CommandArgvSpec;
+    /**
      * Run the command. Receives argv WITHOUT the command name (so a
      * call `hops docker-by-name j4luw` arrives here as `['j4luw']`).
      */
     run(argv: ReadonlyArray<string>): Promise<void>;
 }
+
+/** Every command accepts these two; declared once instead of in all 34 specs. */
+const HELP_FLAGS = ['--help', '-h'] as const;
 
 const COMMANDS: ReadonlyArray<Command> = [
     {
@@ -102,6 +119,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Find a running container by name prefix.',
         // Searches by name prefix — no prod/staging discrimination needed.
         targetPolicy: 'none',
+        argv: { booleanFlags: [...HELP_FLAGS], valueFlags: [] },
         run: dockerByName
     },
     {
@@ -109,6 +127,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Resolve a container by kind (api / web / admin / postgres / redis).',
         // Read-only lookup; safe with env default.
         targetPolicy: 'default-ok',
+        argv: { booleanFlags: ['--verbose', ...HELP_FLAGS], valueFlags: [] },
         run: findCommand
     },
     {
@@ -116,6 +135,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Trigger a Coolify redeploy of api / web / admin.',
         // Triggers a production build+deploy pipeline — write operation.
         targetPolicy: 'explicit-required',
+        argv: { booleanFlags: ['--yes', ...HELP_FLAGS], valueFlags: [] },
         run: redeploy
     },
     {
@@ -123,6 +143,10 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'List Coolify env vars for an app (redacted by default).',
         // Read-only; safe with env default.
         targetPolicy: 'default-ok',
+        argv: {
+            booleanFlags: ['--reveal', '--preview', '--all', ...HELP_FLAGS],
+            valueFlags: [{ name: '--match', syntax: 'space' }]
+        },
         run: envList
     },
     {
@@ -131,6 +155,14 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Could run arbitrary commands; treated as explicit-required because the
         // operator must know which environment they are exec-ing into.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: ['--shell', ...HELP_FLAGS],
+            valueFlags: [{ name: '--env', syntax: 'space' }],
+            // `<kind>` is this command's own positional; everything after it
+            // is a command line for the container and must not be validated.
+            leadingPositionals: 1,
+            payloadAfterPositionals: true
+        },
         run: runContainerExec
     },
     {
@@ -138,6 +170,14 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Tail / follow / grep app logs (api / web / admin).',
         // Read-only log streaming; safe with env default.
         targetPolicy: 'default-ok',
+        argv: {
+            booleanFlags: ['-f', ...HELP_FLAGS],
+            valueFlags: [
+                { name: '-n', syntax: 'space' },
+                { name: '-g', syntax: 'space' },
+                { name: '--since', syntax: 'space' }
+            ]
+        },
         run: logs
     },
     {
@@ -146,6 +186,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Truncates the container's json-log in place — destructive; the
         // operator must know which environment they are wiping.
         targetPolicy: 'explicit-required',
+        argv: { booleanFlags: ['--yes', ...HELP_FLAGS], valueFlags: [] },
         run: logsClear
     },
     {
@@ -154,6 +195,16 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Can issue any SQL including writes. Operator sees the exact
         // connection details they are connecting to before acting.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: ['-x', '--expanded', '--csv', '--json', '-t', '--stdin', ...HELP_FLAGS],
+            valueFlags: [
+                { name: '-f', syntax: 'space' },
+                { name: '--limit', syntax: 'space' }
+            ],
+            // The trailing positionals are joined into free-form SQL, which may
+            // contain `--` (a line comment) and leading dashes of its own.
+            payloadAfterPositionals: true
+        },
         run: psql
     },
     {
@@ -161,6 +212,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Approximate row counts for every user table in the Postgres DB.',
         // Pure SELECT; safe with env default.
         targetPolicy: 'default-ok',
+        argv: { booleanFlags: ['--include-empty', ...HELP_FLAGS], valueFlags: [] },
         run: dbCounts
     },
     {
@@ -169,6 +221,16 @@ const COMMANDS: ReadonlyArray<Command> = [
             'Map a Hospeda signup user to a MercadoPago test buyer email so the smoke checkout can proceed (staging only).',
         // Updates billing_customers — write operation.
         targetPolicy: 'explicit-required',
+        argv: {
+            // `-y` is a real, working alias in the parser. It was undocumented
+            // until this change; the help text now lists it (HOS-510 follow-up
+            // decision: bless what the code accepts, then document it).
+            booleanFlags: ['--yes', '-y', ...HELP_FLAGS],
+            valueFlags: [
+                { name: '--email', syntax: 'both' },
+                { name: '--buyer-email', syntax: 'both' }
+            ]
+        },
         run: billingTestLink
     },
     {
@@ -179,6 +241,13 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Prod is allowed (unlike before) but gated hard: dry-run default,
         // --execute required to write, and --yes is rejected on prod.
         targetPolicy: 'explicit-required',
+        argv: {
+            // `-y` as above. Note it is accepted by the PARSER and then
+            // rejected by a business rule on `--target=prod --execute`; that
+            // refusal is the command's to make, not this validator's.
+            booleanFlags: ['--delete-user', '--execute', '--yes', '-y', ...HELP_FLAGS],
+            valueFlags: [{ name: '--email', syntax: 'both' }]
+        },
         run: billingTestReset
     },
     {
@@ -186,6 +255,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Trigger a Postgres backup outside the daily cron and upload to R2.',
         // Creates a backup; read-only on the DB, writes to R2. Safe with env default.
         targetPolicy: 'default-ok',
+        argv: { booleanFlags: ['--yes', ...HELP_FLAGS], valueFlags: [] },
         run: dbBackupNow
     },
     {
@@ -193,6 +263,10 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Pick an R2 backup and restore it into the Postgres container (destructive).',
         // Replaces every object in the target database — most destructive op.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: ['--no-snapshot-first', '--yes', ...HELP_FLAGS],
+            valueFlags: [{ name: '--target-db', syntax: 'space' }]
+        },
         run: dbRestore
     },
     {
@@ -201,6 +275,20 @@ const COMMANDS: ReadonlyArray<Command> = [
             'Apply versioned Drizzle migrations (drizzle-kit migrate) + extras against the target DB.',
         // Modifies the database schema — write/destructive operation.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: [
+                '--reset',
+                '--no-install',
+                '--no-build',
+                '--no-backup',
+                '--no-apply-extras',
+                '--pull',
+                '--no-pull',
+                '--yes',
+                ...HELP_FLAGS
+            ],
+            valueFlags: []
+        },
         run: dbMigrate
     },
     {
@@ -210,6 +298,10 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Creates a temporary scratch DB from a dump then drops it.
         // Only reads the live DB; safe with env default.
         targetPolicy: 'default-ok',
+        argv: {
+            booleanFlags: ['--keep', '--no-build', '--pull', '--no-pull', '--yes', ...HELP_FLAGS],
+            valueFlags: []
+        },
         run: dbMigrateTest
     },
     {
@@ -218,6 +310,23 @@ const COMMANDS: ReadonlyArray<Command> = [
             'Run @repo/seed against the target DB (reset+required+example by default; destructive).',
         // Wipes and repopulates the target DB — highly destructive.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: [
+                '--no-reset',
+                '--no-required',
+                '--no-example',
+                '--clean-images',
+                '--build',
+                '--migrate',
+                '--no-apply-extras',
+                '--no-install',
+                '--pull',
+                '--no-pull',
+                '--yes',
+                ...HELP_FLAGS
+            ],
+            valueFlags: []
+        },
         run: dbSeed
     },
     {
@@ -228,6 +337,28 @@ const COMMANDS: ReadonlyArray<Command> = [
         // ledger. Non-destructive (never wipes/reseeds) but still a write —
         // require an explicit target so it can never accidentally hit prod.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: [
+                '--status',
+                '--pull',
+                '--no-pull',
+                '--no-install',
+                '--allow-destructive',
+                '--yes',
+                ...HELP_FLAGS
+            ],
+            valueFlags: [],
+            hints: {
+                // The command this whole change exists for. `hops` spells the
+                // read-only view `--status`, the seed CLI spells it
+                // `--data-migrate-status`, and reaching for the other one used
+                // to run the write path.
+                '--data-migrate-status':
+                    "that is the seed CLI's own spelling; from hops the read-only view is --status.",
+                '--dry-run':
+                    'did you mean --status? That is the read-only view; it applies nothing.'
+            }
+        },
         run: dbSeedMigrate
     },
     {
@@ -237,6 +368,10 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Writes rows (no reset) but creates dev-only login credentials —
         // the operator must know which environment they are targeting.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: ['--build', '--pull', '--no-pull', '--yes', ...HELP_FLAGS],
+            valueFlags: []
+        },
         run: dbSeedTestUsers
     },
     {
@@ -244,6 +379,13 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Reset the super admin credential-account password after a fresh seed.',
         // Updates bcrypt password hash in the account table — write operation.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: ['--generate', '--yes', ...HELP_FLAGS],
+            // `equals` and not `both` on purpose: the parser explicitly dies on
+            // the spaced form with its own message, so accepting `--email x`
+            // here would wave through an invocation the command then rejects.
+            valueFlags: [{ name: '--email', syntax: 'equals' }]
+        },
         run: dbSuperAdminPass
     },
     {
@@ -251,6 +393,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'docker restart an app container without going through Coolify redeploy.',
         // Interrupts a running production/staging service.
         targetPolicy: 'explicit-required',
+        argv: { booleanFlags: ['--yes', ...HELP_FLAGS], valueFlags: [] },
         run: appRestart
     },
     {
@@ -260,6 +403,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         name: 'restart',
         summary: 'Alias for `app-restart` — restart an app container in place.',
         targetPolicy: 'explicit-required',
+        argv: { booleanFlags: ['--yes', ...HELP_FLAGS], valueFlags: [] },
         run: appRestart
     },
     {
@@ -267,6 +411,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'docker system prune -f — free build cache + dangling images on demand.',
         // Operates on the local docker daemon — no prod/staging concept.
         targetPolicy: 'none',
+        argv: { booleanFlags: ['--yes', ...HELP_FLAGS], valueFlags: [] },
         run: prune
     },
     {
@@ -276,6 +421,14 @@ const COMMANDS: ReadonlyArray<Command> = [
         // `set` mutates the bucket lifecycle config — treat the whole command as
         // explicit-required since both subcommands depend on a target.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: ['--yes', ...HELP_FLAGS],
+            valueFlags: [
+                { name: '--prefix', syntax: 'both' },
+                { name: '--expiration-days', syntax: 'both' },
+                { name: '--rule-id', syntax: 'both' }
+            ]
+        },
         run: r2Lifecycle
     },
     {
@@ -283,6 +436,10 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Host RAM (free -m) + per-container CPU / memory snapshot.',
         // Host-level snapshot; no prod/staging concept.
         targetPolicy: 'none',
+        argv: {
+            booleanFlags: [...HELP_FLAGS],
+            valueFlags: [{ name: '--warn-pct', syntax: 'space' }]
+        },
         run: freeMem
     },
     {
@@ -291,6 +448,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         // Takes prod|staging as its OWN positional argument, not via --target.
         // The global flag is irrelevant here.
         targetPolicy: 'none',
+        argv: { booleanFlags: [...HELP_FLAGS], valueFlags: [] },
         run: health
     },
     {
@@ -298,6 +456,22 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Upsert a Coolify env var.',
         // Creates or updates env vars in Coolify — write operation.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: [
+                '--secret',
+                '--preview',
+                '--wizard',
+                '--review-all',
+                '--yes',
+                ...HELP_FLAGS
+            ],
+            // `<kind> <KEY> <VALUE>` are positionals, not value flags. Note the
+            // command reads positionals as `!a.startsWith('--')`, so a VALUE
+            // that itself begins with `--` is dropped and the command dies with
+            // a confusing "Missing <VALUE>"; this validator now refuses it up
+            // front with the token actually named.
+            valueFlags: []
+        },
         run: envSet
     },
     {
@@ -305,6 +479,10 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Delete one or more Coolify env vars by key.',
         // Permanently removes env var entries in Coolify — write/destroy operation.
         targetPolicy: 'explicit-required',
+        argv: {
+            booleanFlags: ['--preview', '--production', '--yes', ...HELP_FLAGS],
+            valueFlags: []
+        },
         run: envDelete
     },
     {
@@ -312,6 +490,10 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Dump Coolify env vars to a local dotenv file (mode 0600).',
         // Read-only from Coolify; writes a local file only. Safe with env default.
         targetPolicy: 'default-ok',
+        argv: {
+            booleanFlags: ['--reveal', '--force', ...HELP_FLAGS],
+            valueFlags: [{ name: '-o', syntax: 'space' }]
+        },
         run: envPull
     },
     {
@@ -319,6 +501,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Diff the env-var registry against live Coolify vars for an app (missing-only).',
         // Read-only diff; safe with env default.
         targetPolicy: 'default-ok',
+        argv: { booleanFlags: [...HELP_FLAGS], valueFlags: [] },
         run: envReconcile
     },
     {
@@ -326,6 +509,14 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Evaluate cross-app env-var consistency rules against live Coolify values.',
         // Read-only evaluation; safe with env default.
         targetPolicy: 'default-ok',
+        argv: {
+            booleanFlags: [...HELP_FLAGS],
+            // `both`, not `equals`: the parser matches `a === '--app' ||
+            // a.startsWith('--app=')`, so the spaced form has always worked
+            // even though only `--app=` was documented. The help text now says
+            // so too.
+            valueFlags: [{ name: '--app', syntax: 'both' }]
+        },
         run: envCheckRules
     },
     {
@@ -333,6 +524,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Umbrella: env-reconcile + env-check-rules for an app, combined report.',
         // Read-only umbrella over two read-only checks; safe with env default.
         targetPolicy: 'default-ok',
+        argv: { booleanFlags: [...HELP_FLAGS], valueFlags: [] },
         run: envDoctor
     },
     {
@@ -340,6 +532,13 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'git pull the repo and reinstall the hops binary in one step.',
         // Local git + installer operation; no prod/staging concept.
         targetPolicy: 'none',
+        argv: {
+            booleanFlags: ['--no-install', ...HELP_FLAGS],
+            valueFlags: [
+                { name: '--repo', syntax: 'space' },
+                { name: '--branch', syntax: 'space' }
+            ]
+        },
         run: update
     },
     {
@@ -347,6 +546,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Numbered list of node-cron jobs registered in the running API process.',
         // Read-only HTTP GET against the admin API; safe with env default.
         targetPolicy: 'default-ok',
+        argv: { booleanFlags: [...HELP_FLAGS], valueFlags: [] },
         run: cronList
     },
     {
@@ -354,6 +554,7 @@ const COMMANDS: ReadonlyArray<Command> = [
         summary: 'Trigger a registered cron job by index, name, or interactive picker.',
         // Fires a real job on the API (may write data, send emails, etc.).
         targetPolicy: 'explicit-required',
+        argv: { booleanFlags: ['--dry-run', '--yes', ...HELP_FLAGS], valueFlags: [] },
         run: cronTrigger
     }
 ];
@@ -378,6 +579,11 @@ Global flags (apply to every command):
 
 Available commands:
 ${COMMANDS.map((c) => `  ${c.name.padEnd(20)} ${c.summary}`).join('\n')}
+
+Unrecognized flags are refused, never ignored: hops exits non-zero without
+running anything rather than dropping a token it does not know. A silently
+discarded --status once turned a status check into a full data-migration run
+(HOS-510), and this tool runs against production.
 `.trim();
 
 /**
@@ -503,6 +709,19 @@ async function main(): Promise<void> {
         log.error(`Unknown command: ${first}`);
         process.stderr.write(`\n${TOP_LEVEL_HELP}\n`);
         process.exit(1);
+    }
+
+    // Refuse unrecognized arguments BEFORE anything else happens — before the
+    // target policy resolves, before a container is looked up, before a
+    // connection is opened. That ordering is the promise the refusal message
+    // makes ("nothing was executed"), so keep this first.
+    //
+    // A silently-dropped flag is how `pnpm db:seed:migrate --status` applied
+    // ten data-migrations instead of listing them (HOS-510). `hops` runs the
+    // same class of command against production.
+    const { unknown } = validateCommandFlags({ argv: rest, spec: command.argv });
+    if (unknown.length > 0) {
+        die(formatUnknownFlagsError({ commandName: command.name, unknown }));
     }
 
     // Enforce the target policy BEFORE running the command.
