@@ -89,6 +89,13 @@ async function getExclusiveDeals(
     return { status: response.status, body };
 }
 
+// The tier-scoping specs read one shared set of seeded deals while the owner spec
+// creates another promotion, and the config runs fullyParallel (2 workers on
+// nightly, 4 on PR). Run them in order so the writer cannot change what the
+// readers assert mid-flight — a race that only surfaced when this file ran
+// alongside others, and passed when run on its own.
+test.describe.configure({ mode: 'serial' });
+
 test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', () => {
     const userIds: string[] = [];
     let plusPlanId: string | null = null;
