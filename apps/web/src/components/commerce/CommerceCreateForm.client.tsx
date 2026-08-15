@@ -43,7 +43,8 @@ import {
     ExperiencePriceUnitEnum,
     ExperienceTypeEnum,
     GastronomyOwnerCreateInputSchema,
-    GastronomyTypeEnum
+    GastronomyTypeEnum,
+    requirePriceUnitUnlessOnRequest
 } from '@repo/schemas';
 import { type FormEvent, type JSX, useState } from 'react';
 import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
@@ -100,7 +101,16 @@ const GASTRONOMY_FORM_SCHEMA = GastronomyOwnerCreateInputSchema.pick({
     destinationId: true
 });
 
-/** Fields this form collects for experience — a subset of the real create schema. */
+/**
+ * Fields this form collects for experience — a subset of the real create schema.
+ *
+ * The pick is taken from the PLAIN create schema and the cross-field pricing
+ * rule is re-applied afterwards, deliberately in that order: Zod 4 throws
+ * `.pick() cannot be used on object schemas containing refinements`, so picking
+ * from `ExperienceOwnerCreateInputCheckedSchema` would crash this module on
+ * load. Re-applying the shared predicate keeps the client and the server
+ * enforcing the same rule from one definition instead of two (H-156).
+ */
 const EXPERIENCE_FORM_SCHEMA = ExperienceOwnerCreateInputSchema.pick({
     name: true,
     type: true,
@@ -110,7 +120,7 @@ const EXPERIENCE_FORM_SCHEMA = ExperienceOwnerCreateInputSchema.pick({
     priceFrom: true,
     priceUnit: true,
     isPriceOnRequest: true
-});
+}).superRefine(requirePriceUnitUnlessOnRequest);
 
 /**
  * CommerceCreateForm — owner self-service listing create island.
@@ -154,7 +164,11 @@ export function CommerceCreateForm({
 
         if (vertical === 'experience') {
             basePayload.priceFrom = isPriceOnRequest ? 0 : (priceFrom ?? undefined);
-            basePayload.priceUnit = priceUnit || undefined;
+            // H-156: an experience with no price has no billing unit. Send an
+            // explicit null rather than whatever the select happened to hold, so
+            // the row does not end up asserting "price on request", "price 0"
+            // and "charged per person" all at once.
+            basePayload.priceUnit = isPriceOnRequest ? null : priceUnit || undefined;
             basePayload.isPriceOnRequest = isPriceOnRequest;
         }
 
@@ -421,19 +435,19 @@ export function CommerceCreateForm({
                         {t('commerce.owner.editor.sections.priceUnit', 'Unidad de precio')}
                     </label>
                     {/*
-                     * Deliberately NOT disabled when `isPriceOnRequest` is checked, unlike
-                     * `priceFrom` above. `ExperienceOwnerCreateInputSchema.priceUnit` has no
-                     * `.optional()`/`.nullish()` at CREATE time — it stays required even when
-                     * the price itself is "on request" (only the operational PATCH schema is
-                     * `.partial()`, which is why `CommerceListingEditor`'s equivalent field can
-                     * be disabled safely). Disabling this input would make the form
-                     * unsubmittable whenever the owner checks the box without having already
-                     * picked a unit.
+                     * H-156: disabled while the price is "on request", mirroring
+                     * `priceFrom` above. This used to stay enabled BECAUSE
+                     * `ExperienceOwnerCreateInputSchema.priceUnit` was required even for a
+                     * listing with no price — disabling it would have made the form
+                     * unsubmittable. The column is nullable now and the create schema only
+                     * demands a unit when there IS a price, so the field can finally follow
+                     * the checkbox instead of contradicting it.
                      */}
                     <select
                         id="cc-priceUnit"
                         className={styles.input}
                         value={priceUnit}
+                        disabled={isPriceOnRequest}
                         onChange={(event) => setPriceUnit(event.target.value)}
                         aria-invalid={fieldErrors.priceUnit ? 'true' : 'false'}
                         aria-describedby={

@@ -151,9 +151,11 @@ function sameSet(a: ReadonlySet<string>, b: ReadonlySet<string>): boolean {
  *  - The four i18n fields travel together, as the translation panel edits them
  *    as one unit.
  *  - Gastronomy's `priceRange`/`menuUrl` are `.nullish()` on the domain schema
- *    and clear to an explicit `null`; experience's `priceFrom`/`priceUnit` are
- *    NOT nullable and must omit the key instead (T-021 — sending `null` there
- *    fails validation whenever the owner clears the field).
+ *    and clear to an explicit `null`. `priceUnit` now joins them (H-156 made the
+ *    column nullable), so clearing it sends `null` rather than omitting the key
+ *    — the old omit-instead-of-null rule (T-021) meant the owner could never
+ *    actually clear a unit once set. Experience's `priceFrom` is still NOT
+ *    nullable and keeps omitting the key.
  *  - `media` is absent by design (HOS-372): photos are persisted per operation
  *    by `MediaSection` against the relational media endpoints, so re-sending a
  *    buffered `media` block here would overwrite the rows the owner just saved.
@@ -239,7 +241,13 @@ function buildPatchPayload({
             payload.priceFrom = current.priceFrom ?? undefined;
         }
         if (current.priceUnit !== baseline.priceUnit) {
-            payload.priceUnit = current.priceUnit || undefined;
+            // H-156: `priceUnit` is nullable now, so clearing it sends an
+            // explicit `null` (the gastronomy `priceRange` pattern) instead of
+            // omitting the key. Omitting used to be the only option — a `null`
+            // failed validation — but it also meant the owner could never
+            // actually clear the unit after ticking "price on request": the PATCH
+            // silently dropped the change and the stale unit stayed on the row.
+            payload.priceUnit = current.priceUnit || null;
         }
     }
 

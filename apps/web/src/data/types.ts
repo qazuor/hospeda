@@ -1170,8 +1170,12 @@ export interface ExperienceCardData {
      * Zero when `isPriceOnRequest` is true (price stored as 0 per the spec decision).
      */
     readonly priceFrom: number;
-    /** Billing unit for the price (per_day | per_hour | per_person | per_group). */
-    readonly priceUnit: string;
+    /**
+     * Billing unit for the price (per_day | per_hour | per_person | per_group).
+     * `null` when the experience has no price to bill (H-156) — the card shows
+     * "Consultar precio" and never reads the unit.
+     */
+    readonly priceUnit: string | null;
     /**
      * When true the UI shows "Consultar precio" instead of the numeric price.
      * The stored `priceFrom` value is ignored on display.
