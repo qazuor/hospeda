@@ -25,6 +25,17 @@ export interface ToastAction {
     readonly label: string;
     readonly href?: string;
     readonly onClick?: () => void;
+    /**
+     * Forces a full page load instead of a client-side ClientRouter navigation
+     * (renders `data-astro-reload` on the anchor). Only meaningful with `href`.
+     *
+     * Needed for destinations whose islands do not survive a View Transition —
+     * see HOS-566: arriving at `/{locale}/alojamientos/comparar/` through the
+     * router leaves its `client:only` islands unhydrated, so the page renders
+     * blank. A hard navigation is the difference between a working page and an
+     * empty one, so it is a correctness flag, not a performance preference.
+     */
+    readonly reload?: boolean;
 }
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info' | 'loading';
