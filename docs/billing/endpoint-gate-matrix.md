@@ -200,12 +200,12 @@
 | **WHAT'S NEW — PROTECTED** | | | | | |
 | `GET /api/v1/protected/whats-new` | `whats-new/protected/getWhatsNew.ts` | none | - | n/a | Role-filtered release notes; auth-only sufficient |
 | **BILLING — PROTECTED (QZPay built-in routes)** | | | | | |
-| `GET /api/v1/protected/billing/customers` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
+| `GET /api/v1/protected/billing/customers` | `billing/collection-listing-block.ts` | none | - | n/a | **BLOCKED (404) — H-66/HOS-446.** The "ownership middleware" claim this row used to carry was false: that middleware only fires when the path names a resource, so qzpay served every customer's name and email to any authenticated user. Collection listings are not part of the user tier; admin listings live under `/api/v1/admin/billing` |
 | `POST /api/v1/protected/billing/customers` | `billing/index.ts (qzpay)` | none | - | n/a | Customer creation; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `GET /api/v1/protected/billing/customers/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `PUT /api/v1/protected/billing/customers/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `DELETE /api/v1/protected/billing/customers/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
-| `GET /api/v1/protected/billing/subscriptions` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
+| `GET /api/v1/protected/billing/subscriptions` | `billing/collection-listing-block.ts` | none | - | n/a | **BLOCKED (404) — H-66/HOS-446.** Unscoped listing of every customer's subscriptions; see the `customers` row |
 | `POST /api/v1/protected/billing/subscriptions` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `GET /api/v1/protected/billing/subscriptions/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `PUT /api/v1/protected/billing/subscriptions/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
@@ -215,12 +215,12 @@
 | `GET /api/v1/protected/billing/plans/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Plan catalog read; always accessible |
 | `PUT /api/v1/protected/billing/plans/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Plan management; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `DELETE /api/v1/protected/billing/plans/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Plan management; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
-| `GET /api/v1/protected/billing/invoices` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
+| `GET /api/v1/protected/billing/invoices` | `billing/collection-listing-block.ts` | none | - | n/a | **BLOCKED (404) — H-66/HOS-446.** Unscoped listing of every customer's invoices; see the `customers` row |
 | `POST /api/v1/protected/billing/invoices` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `GET /api/v1/protected/billing/invoices/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `POST /api/v1/protected/billing/invoices/{id}/pay` | `billing/index.ts (qzpay)` | none | - | n/a | Pay own invoice; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `POST /api/v1/protected/billing/invoices/{id}/void` | `billing/index.ts (qzpay)` | none | - | n/a | Void own invoice; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
-| `GET /api/v1/protected/billing/payments` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
+| `GET /api/v1/protected/billing/payments` | `billing/collection-listing-block.ts` | none | - | n/a | **BLOCKED (404) — H-66/HOS-446.** Unscoped listing of every customer's payments, amounts included; see the `customers` row |
 | `POST /api/v1/protected/billing/payments` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `GET /api/v1/protected/billing/payments/{id}` | `billing/index.ts (qzpay)` | none | - | n/a | Self-billing access; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
 | `POST /api/v1/protected/billing/payments/{id}/refund` | `billing/index.ts (qzpay)` | none | - | n/a | Refund own payment; PermissionEnum.BILLING_VIEW_OWN + ownership middleware |
@@ -247,7 +247,8 @@
 | `GET /api/v1/protected/billing/subscriptions/downgrade-preview` | `billing/downgrade-preview.ts` | none | - | n/a | Read-only informational downgrade preview; no entitlement/limit gate |
 | `POST /api/v1/protected/billing/subscriptions/change-plan` | `billing/plan-change.ts` | none | - | n/a | Plan change initiation; no entitlement gate |
 | `POST /api/v1/protected/billing/subscriptions/{id}/cancel` | `billing/subscription-cancel.ts` | none | - | n/a | User self-service soft-cancel (SPEC-147); behind `HOSPEDA_USER_CANCEL_ENABLED` flag, ownership enforced server-side; no entitlement gate |
-| `GET /api/v1/protected/billing/promo-codes` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
+| `GET /api/v1/protected/billing/promo-codes` | `billing/collection-listing-block.ts` | none | - | n/a | **BLOCKED (404) — H-66/HOS-446.** This row previously credited `promo-codes.ts`, but that router registers no bare `GET /`, so the request fell through to qzpay and enumerated the coupon catalog to any authenticated user. Coupons are never published |
+| `GET /api/v1/protected/billing/promo-codes/{code}` | `billing/collection-listing-block.ts` | none | - | n/a | **BLOCKED (404) — H-66/HOS-446.** Handed the full promo-code row to anyone guessing the name (`LANZAMIENTO50`, `BIENVENIDO30`, `FREEMONTH` all resolved first try). The user-facing path is `POST /promo-codes/validate`, which returns the sanitized `effectPreview` |
 | `POST /api/v1/protected/billing/promo-codes` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
 | `GET /api/v1/protected/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
 | `PUT /api/v1/protected/billing/promo-codes/{id}` | `billing/promo-codes.ts` | none | - | n/a | Promo-code self-management; PermissionEnum-gated |
