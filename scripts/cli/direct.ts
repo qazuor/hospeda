@@ -20,11 +20,29 @@ export interface ParsedArgs {
     readonly listAll: boolean;
     readonly yes: boolean;
     readonly extraArgs: readonly string[];
+
+    /**
+     * Flags this wrapper does not recognize, in the order they appeared.
+     * Non-empty makes {@link handleDirect} refuse rather than run the command
+     * (HOS-510).
+     */
+    readonly unknownFlags: readonly string[];
 }
 
 /**
  * Parses CLI arguments for direct mode.
- * Extracts command ID, flags, and extra args (after --).
+ * Extracts command ID, flags, extra args (after --), and anything unrecognized.
+ *
+ * HOS-510: an unrecognized flag used to be warned about and discarded, and the
+ * command then ran WITHOUT it. That is how `pnpm cli db:seed:migrate --status`
+ * applied every pending data-migration: this wrapper ate `--status`, invoked
+ * `db:seed:migrate` bare, and the seed CLI never saw the flag it would now
+ * reject. Measured 2026-08-15: seed_migrations went 44 rows to 54, exit 0, with
+ * the warning scrolled off the top of ~200 lines of migration output.
+ *
+ * A warning is not a control. Unknown flags are collected here and refused by
+ * the caller; flags meant for the underlying script belong after `--`, which is
+ * left untouched so that script can validate its own surface.
  */
 export function parseCliArgs({ argv }: { argv: readonly string[] }): ParsedArgs {
     let help = false;
@@ -33,6 +51,7 @@ export function parseCliArgs({ argv }: { argv: readonly string[] }): ParsedArgs 
     let yes = false;
     let commandId: string | undefined;
     const extraArgs: string[] = [];
+    const unknownFlags: string[] = [];
 
     const dashDashIndex = argv.indexOf('--');
     const mainArgs = dashDashIndex === -1 ? argv : argv.slice(0, dashDashIndex);
@@ -62,7 +81,7 @@ export function parseCliArgs({ argv }: { argv: readonly string[] }): ParsedArgs 
                 break;
             default:
                 if (arg.startsWith('-')) {
-                    console.warn(`Warning: unknown flag '${arg}' ignored.`);
+                    unknownFlags.push(arg);
                 } else if (commandId === undefined) {
                     commandId = arg;
                 }
@@ -74,7 +93,7 @@ export function parseCliArgs({ argv }: { argv: readonly string[] }): ParsedArgs 
         list = true;
     }
 
-    return { commandId, help, list, listAll, yes, extraArgs };
+    return { commandId, help, list, listAll, yes, extraArgs, unknownFlags };
 }
 
 /**
@@ -100,6 +119,20 @@ export async function handleDirect({
         const commands = args.listAll ? allCommands : allCommands.filter((c) => c.curated);
         console.log(formatList({ commands, showAll: args.listAll }));
         return 0;
+    }
+
+    // HOS-510: refuse before running anything. Checked after --help/--list (a
+    // typo alongside --help should still show help) but BEFORE the command is
+    // resolved or executed, because the danger is executing a write command
+    // whose modifier was silently dropped.
+    if (args.unknownFlags.length > 0) {
+        console.log(
+            `Unrecognized flag${args.unknownFlags.length === 1 ? '' : 's'}: ${args.unknownFlags.join(', ')}`
+        );
+        console.log(
+            'Refusing to run: nothing was executed. Flags for the underlying script go after `--`, e.g. `pnpm cli db:seed:migrate -- --allow-destructive`. Use --help to list this wrapper.'
+        );
+        return 1;
     }
 
     if (!args.commandId) {

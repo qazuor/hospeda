@@ -15,7 +15,16 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
-/** Identity translation function: returns the key as-is */
+/**
+ * Identity translation function: returns the key as-is.
+ *
+ * NOTE (H-27): `parseApiValidationErrors` now routes the reported key through
+ * `resolveValidationMessage` before calling `t`, so these stubs receive the
+ * REWRITTEN key (`validation.*`), never the `zodError.*` one the API sent.
+ * The expectations below encode that rewrite on purpose — it is the fix.
+ * The real-dictionary assertions live in
+ * `parse-api-validation-errors.messages.test.ts`.
+ */
 const identityT = (key: string) => key;
 
 /** Translate function that adds a [t] prefix to distinguish translations */
@@ -134,7 +143,7 @@ describe('parseApiValidationErrors', () => {
 
             // Assert
             expect(result).toEqual({
-                name: '[t] zodError.accommodation.name.min'
+                name: '[t] validation.accommodation.name.min'
             });
         });
 
@@ -159,9 +168,9 @@ describe('parseApiValidationErrors', () => {
 
             // Assert
             expect(result).toEqual({
-                name: 'zodError.accommodation.name.min',
-                slug: 'zodError.accommodation.slug.required',
-                'address.city': 'zodError.accommodation.address.city.required'
+                name: 'validation.accommodation.name.min',
+                slug: 'validation.accommodation.slug.required',
+                'address.city': 'validation.accommodation.address.city.required'
             });
         });
 
@@ -194,7 +203,7 @@ describe('parseApiValidationErrors', () => {
             const result = parseApiValidationErrors({ error, t: identityT });
 
             // Assert – last entry wins
-            expect(result.name).toBe('zodError.accommodation.name.max');
+            expect(result.name).toBe('validation.accommodation.name.max');
         });
     });
 

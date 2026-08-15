@@ -16,6 +16,7 @@ import { useUserPermissions } from '@/hooks/use-user-permissions';
 import { parseApiValidationErrors } from '@/lib/errors';
 import { adminLogger } from '@/utils/logger';
 import type { EntityCreateConfig } from './EntityCreateContent';
+import { FormErrorSummary } from './FormErrorSummary';
 
 /**
  * Props for EntityCreatePageBase.
@@ -244,6 +245,13 @@ export function EntityCreatePageBase({
                         >
                             <Card>
                                 <CardContent className="space-y-6 py-6">
+                                    {/* Every error reaches the user even when
+                                        its field has no slot to render one
+                                        (H-28). */}
+                                    <FormErrorSummary
+                                        errors={errors}
+                                        sections={sections}
+                                    />
                                     {renderSections()}
                                 </CardContent>
                             </Card>
