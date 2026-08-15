@@ -22,8 +22,8 @@ import { AccommodationEditFormSchema } from '@/components/host/editor/accommodat
 import { zodIssuesToFieldErrors } from '@/lib/forms/field-errors';
 import { createT, type SupportedLocale } from '@/lib/i18n';
 
-/** Matches a leftover i18n key (schema key or resolved-but-missing key). */
-const RAW_KEY_RE = /^(zodError|validation)\./;
+// The HOS-243 "not a raw `zodError.*`/`validation.*` key" regex is gone: every
+// assertion below now compares the FULL expected string, which subsumes it.
 
 type NumericField = 'bedrooms' | 'bathrooms' | 'maxGuests' | 'latitude' | 'longitude';
 
@@ -61,20 +61,19 @@ describe('AccommodationEditor edit-form validation messages (HOS-243)', () => {
         expect(message).toBe('La cantidad de baños no puede ser menor a 1');
     });
 
-    // en/pt are still placeholder translations ([EN]/[PT] prefixed), so assert
-    // on the pipeline contract (resolved, not a raw key, bound interpolated)
-    // rather than the exact copy — the point is no raw `zodError.*` key leaks.
+    // H-57: this block used to assert only the pipeline contract ("not a raw key,
+    // bound interpolated") because en/pt carried `[EN]`/`[PT]`-prefixed copy, and a
+    // marker is neither a raw key nor an empty string — so the suite stayed green
+    // over a defect users could see. It now asserts the EXACT string, which is the
+    // unmarked Spanish fallback until en/pt are really translated.
     for (const locale of ['en', 'pt'] as const) {
-        it(`resolves bedrooms.max to a non-key, interpolated string in ${locale}`, () => {
+        it(`renders the bedrooms.max error without a locale marker in ${locale}`, () => {
             const message = resolveFieldError({
                 payload: { bedrooms: 101 },
                 field: 'bedrooms',
                 locale
             });
-            expect(message).toBeDefined();
-            expect(message ?? '').not.toMatch(RAW_KEY_RE);
-            expect(message ?? '').toContain('100');
-            expect(message ?? '').not.toContain('{{max}}');
+            expect(message).toBe('La cantidad de habitaciones no puede superar los 100');
         });
     }
 });
@@ -134,44 +133,51 @@ describe('AccommodationEditor edit-form validation messages — sibling numeric 
         expect(message).toBe('La longitud no puede ser menor a -180');
     });
 
-    // en/pt are still placeholder translations ([EN]/[PT] prefixed), so assert
-    // on the pipeline contract (resolved, not a raw key, bound interpolated)
-    // rather than the exact copy — the point is no raw `zodError.*` key leaks.
+    // Same H-57 tightening as the HOS-243 block above: exact copy, no marker.
     for (const locale of ['en', 'pt'] as const) {
-        it(`resolves maxGuests.max to a non-key, interpolated string in ${locale}`, () => {
+        it(`renders the maxGuests.max error without a locale marker in ${locale}`, () => {
             const message = resolveFieldError({
                 payload: { maxGuests: 201 },
                 field: 'maxGuests',
                 locale
             });
-            expect(message).toBeDefined();
-            expect(message ?? '').not.toMatch(RAW_KEY_RE);
-            expect(message ?? '').toContain('200');
-            expect(message ?? '').not.toContain('{{max}}');
+            expect(message).toBe('La capacidad no puede superar los 200');
         });
 
-        it(`resolves latitude.max to a non-key, interpolated string in ${locale}`, () => {
+        it(`renders the latitude.max error without a locale marker in ${locale}`, () => {
             const message = resolveFieldError({
                 payload: { latitude: 91 },
                 field: 'latitude',
                 locale
             });
-            expect(message).toBeDefined();
-            expect(message ?? '').not.toMatch(RAW_KEY_RE);
-            expect(message ?? '').toContain('90');
-            expect(message ?? '').not.toContain('{{max}}');
+            expect(message).toBe('La latitud no puede superar los 90');
         });
 
-        it(`resolves longitude.max to a non-key, interpolated string in ${locale}`, () => {
+        it(`renders the longitude.max error without a locale marker in ${locale}`, () => {
             const message = resolveFieldError({
                 payload: { longitude: 181 },
                 field: 'longitude',
                 locale
             });
-            expect(message).toBeDefined();
-            expect(message ?? '').not.toMatch(RAW_KEY_RE);
-            expect(message ?? '').toContain('180');
-            expect(message ?? '').not.toContain('{{max}}');
+            expect(message).toBe('La longitud no puede superar los 180');
+        });
+    }
+});
+
+/**
+ * The exact string the August 2026 smoke captured in production: a host editing
+ * an accommodation on `/en` saw `[EN] La capacidad no puede ser menor a 1` under
+ * a UI that was otherwise correctly in English.
+ */
+describe('AccommodationEditor edit-form validation messages — locale markers (H-57)', () => {
+    for (const locale of ['es', 'en', 'pt'] as const) {
+        it(`renders the maxGuests.min error with no bracketed marker in ${locale}`, () => {
+            const message = resolveFieldError({
+                payload: { maxGuests: 0 },
+                field: 'maxGuests',
+                locale
+            });
+            expect(message).toBe('La capacidad no puede ser menor a 1');
         });
     }
 });

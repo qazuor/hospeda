@@ -80,104 +80,104 @@
     "form": {
         "sections": {
             "datos-basicos": {
-                "title": "[TODO]",
-                "description": "[TODO]",
+                "title": "Datos básicos",
+                "description": "Contanos lo esencial sobre tu propiedad",
                 "fields": {
-                    "name": "[TODO]",
-                    "namePlaceholder": "[TODO]",
-                    "shortDescription": "[TODO]",
-                    "shortDescriptionPlaceholder": "[TODO]",
-                    "longDescription": "[TODO]",
-                    "longDescriptionPlaceholder": "[TODO]",
-                    "type": "[TODO]",
-                    "typePlaceholder": "[TODO]"
+                    "name": "Nombre de la propiedad",
+                    "namePlaceholder": "Ej: Casa del Río",
+                    "shortDescription": "Descripción corta",
+                    "shortDescriptionPlaceholder": "Una línea que resuma tu propiedad",
+                    "longDescription": "Descripción completa",
+                    "longDescriptionPlaceholder": "Detallá lo que hace única tu propiedad",
+                    "type": "Tipo de propiedad",
+                    "typePlaceholder": "Seleccioná un tipo"
                 }
             },
             "ubicacion": {
-                "title": "[TODO]",
-                "description": "[TODO]",
+                "title": "Ubicación",
+                "description": "Dónde está tu propiedad",
                 "fields": {
-                    "address": "[TODO]",
-                    "addressPlaceholder": "[TODO]",
-                    "city": "[TODO]",
-                    "state": "[TODO]",
-                    "country": "[TODO]",
-                    "postalCode": "[TODO]",
-                    "latitude": "[TODO]",
-                    "longitude": "[TODO]",
-                    "mapHint": "[TODO]",
-                    "mapToggleExpand": "[TODO]",
-                    "mapToggleCollapse": "[TODO]"
+                    "address": "Dirección",
+                    "addressPlaceholder": "Calle y número",
+                    "city": "Ciudad",
+                    "state": "Provincia",
+                    "country": "País",
+                    "postalCode": "Código postal",
+                    "latitude": "Latitud",
+                    "longitude": "Longitud",
+                    "mapHint": "Arrastrá el pin para ajustar la ubicación",
+                    "mapToggleExpand": "Expandir mapa",
+                    "mapToggleCollapse": "Contraer mapa"
                 }
             },
             "capacidad": {
-                "title": "[TODO]",
-                "description": "[TODO]",
+                "title": "Capacidad",
+                "description": "Cuánta gente podés recibir",
                 "fields": {
-                    "maxGuests": "[TODO]",
-                    "bedrooms": "[TODO]",
-                    "bathrooms": "[TODO]",
-                    "beds": "[TODO]"
+                    "maxGuests": "Huéspedes máximos",
+                    "bedrooms": "Habitaciones",
+                    "bathrooms": "Baños",
+                    "beds": "Camas"
                 }
             },
             "amenities": {
-                "title": "[TODO]",
-                "description": "[TODO]",
-                "loading": "[TODO]",
-                "empty": "[TODO]"
+                "title": "Comodidades",
+                "description": "Seleccioná todas las que apliquen",
+                "loading": "Cargando comodidades...",
+                "empty": "No hay comodidades disponibles"
             },
             "precio": {
-                "title": "[TODO]",
-                "description": "[TODO]",
+                "title": "Precio",
+                "description": "Cuánto cobrás por noche",
                 "fields": {
-                    "pricePerNight": "[TODO]",
-                    "currency": "[TODO]"
+                    "pricePerNight": "Precio por noche",
+                    "currency": "Moneda"
                 }
             },
             "contacto": {
-                "title": "[TODO]",
-                "description": "[TODO]",
+                "title": "Contacto",
+                "description": "Cómo te pueden contactar los huéspedes",
                 "fields": {
-                    "email": "[TODO]",
-                    "phone": "[TODO]",
-                    "preferredMethod": "[TODO]",
+                    "email": "Email",
+                    "phone": "Teléfono",
+                    "preferredMethod": "Método preferido",
                     "preferredMethodOptions": {
-                        "email": "[TODO]",
-                        "phone": "[TODO]",
-                        "whatsapp": "[TODO]"
+                        "email": "Email",
+                        "phone": "Teléfono",
+                        "whatsapp": "WhatsApp"
                     }
                 }
             },
             "publicar": {
-                "title": "[TODO]",
-                "description": "[TODO]",
-                "missingFieldsTitle": "[TODO]",
-                "missingFieldsHint": "[TODO]"
+                "title": "Publicar",
+                "description": "Revisá los datos y publicá cuando estés listo",
+                "missingFieldsTitle": "Faltan datos obligatorios",
+                "missingFieldsHint": "Completá estos campos antes de publicar:"
             }
         },
         "actions": {
-            "saveDraft": "[TODO]",
-            "publish": "[TODO]",
-            "publishing": "[TODO]",
-            "publishDisabledHint": "[TODO]"
+            "saveDraft": "Guardar borrador",
+            "publish": "Publicar",
+            "publishing": "Publicando...",
+            "publishDisabledHint": "Completá todos los campos obligatorios para publicar"
         },
         "status": {
             "idle": "Pronto",
-            "saving": "[TODO]",
-            "saved": "[TODO]",
-            "error": "[TODO]",
-            "errorRetry": "[TODO]"
+            "saving": "Guardando...",
+            "saved": "Guardado",
+            "error": "Error al guardar",
+            "errorRetry": "Reintentando..."
         },
         "draftPrompt": {
-            "title": "[TODO]",
-            "body": "[TODO]",
-            "resume": "[TODO]",
-            "startNew": "[TODO]"
+            "title": "Tenés un borrador sin publicar",
+            "body": "¿Querés continuar donde lo dejaste?",
+            "resume": "Continuar borrador",
+            "startNew": "Empezar de cero"
         },
         "toast": {
-            "publishSuccess": "[TODO]",
-            "publishError": "[TODO]",
-            "updateSuccess": "[TODO]"
+            "publishSuccess": "¡Tu propiedad fue publicada!",
+            "publishError": "No pudimos publicar. Intentá de nuevo.",
+            "updateSuccess": "Cambios guardados"
         }
     },
     "properties": {
@@ -242,7 +242,7 @@
                 "photos": "Fotos",
                 "photosDescription": "Faça upload de fotos do seu imóvel para atrair mais hóspedes",
                 "externalReputation": "Reputação externa",
-                "featuredToggle": "[PT] Destacado",
+                "featuredToggle": "Destacado",
                 "calendar": "Calendário",
                 "capacityPricing": "Capacidade e preço",
                 "contactSocial": "Contato e redes"
@@ -427,9 +427,9 @@
                 "refresh": "Atualizar a página"
             },
             "featuredToggle": {
-                "label": "[PT] Destacar mi alojamiento",
-                "hint": "[PT] Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
-                "toggleError": "[PT] No se pudo actualizar el destacado. Intentá de nuevo."
+                "label": "Destacar mi alojamiento",
+                "hint": "Cuando está activo, tu alojamiento aparece con prioridad en los listados y búsquedas.",
+                "toggleError": "No se pudo actualizar el destacado. Intentá de nuevo."
             },
             "calendar": {
                 "title": "Calendário de ocupação",
