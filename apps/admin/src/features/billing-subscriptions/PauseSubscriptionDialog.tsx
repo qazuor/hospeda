@@ -55,7 +55,8 @@ export function PauseSubscriptionDialog({
                     <DialogTitle>{t('admin-billing.subscriptions.pauseDialog.title')}</DialogTitle>
                     <DialogDescription>
                         {t('admin-billing.subscriptions.pauseDialog.description')}{' '}
-                        {subscription.userName}
+                        {subscription.user?.displayName ??
+                            t('admin-billing.subscriptions.unknownUser')}
                     </DialogDescription>
                 </DialogHeader>
 

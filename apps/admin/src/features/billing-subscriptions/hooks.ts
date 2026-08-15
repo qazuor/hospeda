@@ -1,21 +1,12 @@
-import type { SubscriptionPromoEffectResponse } from '@repo/schemas';
+import {
+    AdminPaymentViewSchema,
+    type AdminSubscriptionView,
+    AdminSubscriptionViewSchema,
+    type SubscriptionPromoEffectResponse
+} from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { z } from 'zod';
 import { fetchApi } from '@/lib/api/client';
-
-/**
- * Runtime validation schema for payment-history records returned by the
- * billing API. SPEC-039: parsing here surfaces backend shape divergence
- * as a thrown error rather than silently corrupting the dialog render.
- */
-const PaymentHistoryRecordSchema = z.object({
-    id: z.string(),
-    createdAt: z.string(),
-    amount: z.number(),
-    status: z.string()
-});
-
-export type PaymentHistoryRecord = z.infer<typeof PaymentHistoryRecordSchema>;
 
 /**
  * Query keys for subscription-related queries
@@ -32,9 +23,26 @@ export const subscriptionQueryKeys = {
 };
 
 /**
- * Fetch subscriptions with filters
+ * Filters accepted by the admin subscriptions list, mirroring
+ * `AdminSubscriptionViewSearchSchema`.
  */
-async function fetchSubscriptions(filters: Record<string, unknown> = {}) {
+export interface SubscriptionFilterParams {
+    readonly status?: string;
+    readonly planSlug?: string;
+    readonly productDomain?: string;
+    readonly search?: string;
+    readonly page?: number;
+    readonly pageSize?: number;
+}
+
+/**
+ * Fetch subscriptions with filters.
+ *
+ * Same admin list-route envelope as `fetchPayments` — see its JSDoc. Items
+ * are validated at the edge with {@link AdminSubscriptionViewSchema}
+ * (SPEC-039 precedent).
+ */
+async function fetchSubscriptions(filters: SubscriptionFilterParams = {}) {
     const params = new URLSearchParams();
 
     for (const [key, value] of Object.entries(filters)) {
@@ -45,22 +53,23 @@ async function fetchSubscriptions(filters: Record<string, unknown> = {}) {
 
     const result = await fetchApi<{
         success: boolean;
-        data: Record<string, unknown>[];
-        pagination: Record<string, unknown>;
+        data: { items: unknown[]; pagination: Record<string, unknown> };
     }>({
         path: `/api/v1/admin/billing/subscriptions?${params.toString()}`
     });
-    return { items: result.data.data, pagination: result.data.pagination };
+
+    const items = z.array(AdminSubscriptionViewSchema).parse(result.data.data.items);
+    return { items, pagination: result.data.data.pagination };
 }
 
 /**
  * Fetch a single subscription by ID
  */
-async function fetchSubscription(id: string) {
-    const result = await fetchApi<{ success: boolean; data: Record<string, unknown> }>({
+async function fetchSubscription(id: string): Promise<AdminSubscriptionView> {
+    const result = await fetchApi<{ success: boolean; data: unknown }>({
         path: `/api/v1/admin/billing/subscriptions/${id}`
     });
-    return result.data.data;
+    return AdminSubscriptionViewSchema.parse(result.data.data);
 }
 
 /**
@@ -252,16 +261,24 @@ export const useExtendTrialMutation = () => {
 };
 
 /**
- * Fetch payment history for a subscription
+ * Fetch payment history for a subscription.
+ *
+ * Reuses {@link AdminPaymentViewSchema} — the same admin payments endpoint,
+ * filtered by `subscriptionId` — rather than a hand-rolled subset schema, so
+ * a shape change to the payments contract cannot silently drift out of sync
+ * with this one call site.
  */
-async function fetchPaymentHistory(subscriptionId: string): Promise<PaymentHistoryRecord[]> {
+async function fetchPaymentHistory(subscriptionId: string) {
     const params = new URLSearchParams();
     params.append('subscriptionId', subscriptionId);
 
-    const result = await fetchApi<{ success: boolean; data: unknown[] }>({
+    const result = await fetchApi<{
+        success: boolean;
+        data: { items: unknown[]; pagination: Record<string, unknown> };
+    }>({
         path: `/api/v1/admin/billing/payments?${params.toString()}`
     });
-    return z.array(PaymentHistoryRecordSchema).parse(result.data.data);
+    return z.array(AdminPaymentViewSchema).parse(result.data.data.items);
 }
 
 /**

@@ -16,7 +16,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import { translateAdminApiError } from '@/lib/errors';
 import type { useRefundPaymentMutation } from './hooks';
 import type { Payment } from './types';
-import { formatArs, formatDate } from './utils';
+import { formatArsFromCents, formatDate } from './utils';
 
 /**
  * Props for RefundDialog
@@ -31,7 +31,11 @@ export interface RefundDialogProps {
 
 /**
  * Refund dialog component.
- * Supports full and partial refunds with an optional reason.
+ *
+ * Supports full and partial refunds with an optional reason. Money moves
+ * through the UI in whole-unit ARS (the operator types pesos, not centavos)
+ * and is converted to integer centavos ONLY at the mutation boundary — the
+ * refund mutation and the backend both speak centavos exclusively.
  */
 export function RefundDialog({
     payment,
@@ -42,21 +46,28 @@ export function RefundDialog({
 }: RefundDialogProps) {
     const { t, locale } = useTranslations();
     const [refundType, setRefundType] = useState<'full' | 'partial'>('full');
-    const [partialAmount, setPartialAmount] = useState('');
+    const [partialAmountArs, setPartialAmountArs] = useState('');
     const [reason, setReason] = useState('');
 
     if (!payment) return null;
 
+    // Money still outstanding on this payment, in centavos. A prior partial
+    // refund reduces the ceiling — the old UI let an operator "refund" up to
+    // the ORIGINAL amount even after money had already gone back.
+    const outstandingAmountInCents = payment.amountInCents - payment.refundedAmountInCents;
+
+    const refundAmountInCents =
+        refundType === 'full'
+            ? outstandingAmountInCents
+            : Math.round((Number.parseFloat(partialAmountArs) || 0) * 100);
+
     const handleRefund = () => {
         if (!payment) return;
-
-        const refundAmount =
-            refundType === 'full' ? payment.amount : Number.parseFloat(partialAmount) || 0;
 
         refundMutation.mutate(
             {
                 id: payment.id,
-                amount: refundType === 'partial' ? refundAmount : undefined,
+                amountInCents: refundType === 'partial' ? refundAmountInCents : undefined,
                 reason
             },
             {
@@ -67,7 +78,7 @@ export function RefundDialog({
                     });
                     onOpenChange(false);
                     setRefundType('full');
-                    setPartialAmount('');
+                    setPartialAmountArs('');
                     setReason('');
                 },
                 onError: (error) => {
@@ -79,9 +90,6 @@ export function RefundDialog({
             }
         );
     };
-
-    const refundAmount =
-        refundType === 'full' ? payment.amount : Number.parseFloat(partialAmount) || 0;
 
     return (
         <Dialog
@@ -101,15 +109,20 @@ export function RefundDialog({
                     <div className="rounded-md border bg-muted p-3">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="font-medium text-sm">{payment.userName}</p>
-                                <p className="text-muted-foreground text-xs">{payment.userEmail}</p>
+                                <p className="font-medium text-sm">
+                                    {payment.user?.displayName ??
+                                        t('admin-billing.payments.unknownUser')}
+                                </p>
+                                <p className="text-muted-foreground text-xs">
+                                    {payment.user?.email ?? ''}
+                                </p>
                             </div>
                             <div className="text-right">
                                 <p className="font-semibold text-lg">
-                                    {formatArs(payment.amount, locale)}
+                                    {formatArsFromCents(payment.amountInCents, locale)}
                                 </p>
                                 <p className="text-muted-foreground text-xs">
-                                    {formatDate(payment.date, locale)}
+                                    {formatDate(payment.createdAt, locale)}
                                 </p>
                             </div>
                         </div>
@@ -150,7 +163,7 @@ export function RefundDialog({
                         </div>
                     </div>
 
-                    {/* Partial Amount */}
+                    {/* Partial Amount (whole-unit ARS; converted to centavos on submit) */}
                     {refundType === 'partial' && (
                         <div className="grid gap-2">
                             <Label htmlFor="partialAmount">
@@ -160,15 +173,15 @@ export function RefundDialog({
                                 id="partialAmount"
                                 type="number"
                                 placeholder="0.00"
-                                value={partialAmount}
-                                onChange={(e) => setPartialAmount(e.target.value)}
+                                value={partialAmountArs}
+                                onChange={(e) => setPartialAmountArs(e.target.value)}
                                 min="0"
-                                max={payment.amount}
+                                max={outstandingAmountInCents / 100}
                                 step="0.01"
                             />
                             <p className="text-muted-foreground text-xs">
                                 {t('admin-billing.payments.refundDialog.maxAmount')}{' '}
-                                {formatArs(payment.amount, locale)}
+                                {formatArsFromCents(outstandingAmountInCents, locale)}
                             </p>
                         </div>
                     )}
@@ -191,7 +204,9 @@ export function RefundDialog({
                     <div className="rounded-md border bg-muted p-3">
                         <div className="flex items-center justify-between font-semibold text-sm">
                             <span>{t('admin-billing.payments.refundDialog.totalToRefund')}</span>
-                            <span className="text-lg">{formatArs(refundAmount, locale)}</span>
+                            <span className="text-lg">
+                                {formatArsFromCents(refundAmountInCents, locale)}
+                            </span>
                         </div>
                     </div>
                 </div>
@@ -209,7 +224,8 @@ export function RefundDialog({
                         onClick={handleRefund}
                         disabled={
                             refundMutation.isPending ||
-                            (refundType === 'partial' && (!partialAmount || refundAmount <= 0)) ||
+                            (refundType === 'partial' &&
+                                (!partialAmountArs || refundAmountInCents <= 0)) ||
                             !reason
                         }
                     >
