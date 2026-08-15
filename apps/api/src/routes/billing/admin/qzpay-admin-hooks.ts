@@ -23,6 +23,7 @@
  * @module routes/billing/admin/qzpay-admin-hooks
  */
 
+import type { QZPayPayment } from '@qazuor/qzpay-core';
 import type { QZPayAdminLifecycleHooks } from '@qazuor/qzpay-hono';
 import {
     billingAddonPurchases,
@@ -685,6 +686,39 @@ const onAfterSubscriptionTrialExtended: NonNullable<
 };
 
 /**
+ * Read what the payment provider actually did with a refund.
+ *
+ * `qzpay-core` 2.0.0 records the provider's verdict on the payment metadata
+ * (`refundStatus`, `refundedAmount`, `refundId`) instead of assuming the
+ * requested refund happened. Payments written before 2.0.0, and deployments
+ * with no payment adapter, carry no such metadata — those degrade to
+ * `'succeeded'` with an undefined amount, which reproduces the legacy
+ * behaviour of trusting the requested amount.
+ *
+ * @param payment - The refunded payment as returned by `billing.payments.refund()`.
+ * @returns The provider settlement status, the amount it actually refunded
+ *   (centavos, `undefined` when unknown), and the provider-side refund id.
+ */
+function readProviderRefundOutcome(payment: QZPayPayment): {
+    status: 'succeeded' | 'pending';
+    refundedAmount: number | undefined;
+    refundId: string | undefined;
+} {
+    const metadata = payment.metadata ?? {};
+    const rawStatus = metadata['refundStatus'];
+    const rawAmount = metadata['refundedAmount'];
+    const rawRefundId = metadata['refundId'];
+
+    return {
+        // Only an explicit 'pending' defers. An absent status means a legacy
+        // row, not an unsettled refund.
+        status: rawStatus === 'pending' ? 'pending' : 'succeeded',
+        refundedAmount: typeof rawAmount === 'number' ? rawAmount : undefined,
+        refundId: typeof rawRefundId === 'string' ? rawRefundId : undefined
+    };
+}
+
+/**
  * After-refund hook: emit a Sentry breadcrumb, then apply the refund lifecycle
  * policy via {@link applyRefundLifecycle}:
  *
@@ -729,6 +763,34 @@ const onAfterPaymentRefund: NonNullable<QZPayAdminLifecycleHooks['onAfterPayment
         'Admin refund hook: refund committed'
     );
 
+    // ── Provider verdict gate (qzpay-core 2.0.0, H-146) ───────────────────────
+    // Since core 2.0.0 the refund actually goes to MercadoPago, and the returned
+    // payment carries what the PROVIDER did. qzpay-hono still calls this hook
+    // with the amount the ADMIN requested, so the request is not evidence of
+    // anything: read the verdict off the payment before touching entitlements.
+    const providerRefund = readProviderRefundOutcome(payment);
+
+    if (providerRefund.status === 'pending') {
+        // MercadoPago accepted the refund but has not settled it, and can still
+        // reject it. Cancelling the subscription now would revoke a paying
+        // customer's access for money that never left our account.
+        apiLogger.info(
+            {
+                paymentId: payment.id,
+                customerId: payment.customerId,
+                refundId: providerRefund.refundId,
+                adminUserId: actor.id
+            },
+            'Admin refund hook: provider refund not settled yet — lifecycle deferred to the webhook'
+        );
+        return;
+    }
+
+    // Prefer the amount the provider actually returned. A provider is free to
+    // refund less than requested, and a full-refund request that came back
+    // partial must not cancel the subscription.
+    const effectiveRefundAmount = providerRefund.refundedAmount ?? amount;
+
     // Apply subscription state change + entitlement revocation (SPEC-194 T-003).
     // Wrapped in try/catch: lifecycle errors must not fail the refund response
     // (the QZPay write already committed; qzpay-hono wraps after-hooks but we
@@ -736,7 +798,7 @@ const onAfterPaymentRefund: NonNullable<QZPayAdminLifecycleHooks['onAfterPayment
     try {
         await applyRefundLifecycle({
             payment,
-            refundAmount: amount,
+            refundAmount: effectiveRefundAmount,
             adminUserId: actor.id,
             source: 'admin'
         });
