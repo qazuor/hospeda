@@ -136,8 +136,11 @@ describe('buildConstraints', () => {
         expect(constraints.HOSPEDA_MODERATION_PROVIDER).toEqual({
             enumValues: ['openai', 'local', 'stub']
         });
-        // Known boolean var
-        expect(constraints.API_ENABLE_REQUEST_LOGGING).toEqual({ boolean: true });
+        // Known boolean var. It comes from the ADMIN schema deliberately: the
+        // api schema no longer declares a single introspectable boolean (see
+        // the `boolEnv` case below), so asserting the `boolean` branch against
+        // api would assert a shape nothing can produce.
+        expect(constraints.VITE_ENABLE_LOGGING).toEqual({ boolean: true });
         // Known bounded-number var
         expect(constraints.API_COMPRESSION_LEVEL).toEqual({ numeric: { min: 1, max: 9 } });
         // Known mobile-only enum var
@@ -149,6 +152,31 @@ describe('buildConstraints', () => {
     it('should not include a key for a var with no extractable constraint (e.g. a plain URL)', () => {
         const constraints = buildConstraints();
         expect(constraints.HOSPEDA_API_URL).toBeUndefined();
+    });
+
+    it('should yield NO constraint for an api boolean flag, because boolEnv is a ZodString', () => {
+        const constraints = buildConstraints();
+
+        // Every boolean flag in apps/api/src/utils/env-schema.ts is declared
+        // with the `boolEnv` helper — `z.string().optional().transform(...)`.
+        // Its OUTPUT is a boolean but its schema NODE stays a ZodString, and
+        // extractConstraint reads the node, so no `{ boolean: true }` is
+        // emitted for any of them.
+        //
+        // This is not a regression to repair: `boolEnv` replaced
+        // `z.coerce.boolean()`, which was actively wrong — `Boolean('false')`
+        // is `true`, so `API_ENABLE_REQUEST_LOGGING=false` used to enable
+        // logging. The lost metadata is the price of that correct fix, and it
+        // costs nothing: `constraint.boolean` has no consumer. The env-set
+        // wizard renders its yes/no prompt from the hand-declared
+        // `entry.type === 'boolean'` in the registry (scripts/env-set-wizard.ts),
+        // and reads `constraint` only for numeric bounds.
+        //
+        // The assertion is here so the next person to look does not "fix" the
+        // generator into re-deriving a constraint nothing reads — and so that
+        // reintroducing `z.coerce.boolean()` in the api schema fails loudly.
+        expect(constraints.API_ENABLE_REQUEST_LOGGING).toBeUndefined();
+        expect(constraints.API_LOG_USE_COLORS).toBeUndefined();
     });
 
     it('should let the FIRST schema (api) win for NODE_ENV, which is a weaker .refine() string in admin', () => {
