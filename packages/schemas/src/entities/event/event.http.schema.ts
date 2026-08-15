@@ -171,49 +171,67 @@ export type EventUpcomingHttp = z.infer<typeof EventUpcomingHttpSchema>;
 /**
  * HTTP-compatible event creation schema
  * Handles form data and JSON input for creating events via HTTP
+ *
+ * `.strict()` (H-134): this schema used to declare five fields that have no
+ * counterpart anywhere in `EventSchema` — `capacity`, `isVirtual`, `isPrivate`,
+ * `requiresRegistration` and `registrationUrl`. A client sent them, the mapper
+ * had nowhere to put them, and the response was still `201`. They are gone, and
+ * strictness is what makes their absence audible: an unknown key is now a `400`
+ * instead of a silent strip. That covers `authorId` too (HOS-374 D-2) — a
+ * caller trying to set the author is told so, rather than quietly getting a
+ * different one.
  */
-export const EventCreateHttpSchema = z.object({
-    name: z.string().min(5).max(200), // Changed from 'title' to 'name' for consistency with domain
-    slug: z
-        .string()
-        .min(5)
-        .max(200)
-        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
-        .optional(),
-    description: z.string().min(50).max(2000),
-    category: EventCategoryEnumSchema,
-    startDate: z.coerce.date(),
-    endDate: z.coerce.date(),
-    locationId: z.string().uuid().optional(),
-    organizerId: z.string().uuid(),
-    // `authorId` is deliberately absent (HOS-374 D-2). Authorship on this HTTP
-    // surface is the authenticated actor's, resolved server-side by
-    // `httpToDomainEventCreate`. Accepting it from the body let any caller
-    // holding EVENT_CREATE attribute content to an arbitrary user.
-    //
-    // This affects the PROTECTED tier only. The admin routes validate with
-    // `EventCreateInputSchema` instead, where an admin legitimately assigns
-    // authorship to someone else.
-    isFeatured: z.coerce.boolean().default(false),
-    isVirtual: z.coerce.boolean().default(false),
-    isPrivate: z.coerce.boolean().default(false),
-    requiresRegistration: z.coerce.boolean().default(false),
-    capacity: z.coerce.number().int().min(1).optional(),
-    price: z.coerce.number().min(0).optional(),
-    currency: PriceCurrencyEnumSchema.optional(),
-    registrationUrl: z.string().url().optional()
-});
+export const EventCreateHttpSchema = z
+    .object({
+        name: z.string().min(5).max(200), // Changed from 'title' to 'name' for consistency with domain
+        slug: z
+            .string()
+            .min(5)
+            .max(200)
+            .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+            .optional(),
+        description: z.string().min(50).max(2000),
+        category: EventCategoryEnumSchema,
+        startDate: z.coerce.date(),
+        endDate: z.coerce.date(),
+        locationId: z.string().uuid().optional(),
+        organizerId: z.string().uuid(),
+        // `authorId` is deliberately absent (HOS-374 D-2). Authorship on this HTTP
+        // surface is the authenticated actor's, resolved server-side by
+        // `httpToDomainEventCreate`. Accepting it from the body let any caller
+        // holding EVENT_CREATE attribute content to an arbitrary user.
+        //
+        // This affects the PROTECTED tier only. The admin routes validate with
+        // `EventCreateInputSchema` instead, where an admin legitimately assigns
+        // authorship to someone else.
+        isFeatured: z.coerce.boolean().default(false),
+        // `price` and `currency` are create-only. `httpToDomainEventCreate` folds
+        // them into the domain's nested `pricing` object; the UPDATE surface drops
+        // them (see `EventUpdateHttpSchema`).
+        price: z.coerce.number().min(0).optional(),
+        currency: PriceCurrencyEnumSchema.optional()
+    })
+    .strict();
 
 export type EventCreateHttp = z.infer<typeof EventCreateHttpSchema>;
 
 /**
  * HTTP-compatible event update schema
  * Handles partial updates via HTTP PATCH requests
+ *
+ * `price` and `currency` are deliberately NOT updatable here (H-134). They do
+ * have a domain home — `pricing`, a nested object — but writing one of them in
+ * isolation means merging into the stored `pricing`, which needs the current
+ * row. Neither this mapper nor `EventService` does that today, so accepting
+ * them would answer `200` and store nothing, which is the exact bug this
+ * removal closes. Implementing a real partial pricing update is a follow-up on
+ * HOS-444; until then a caller that tries gets a `400` and knows.
  */
 // Zod 4 .partial() keeps .default(); strip them so absent keys = no change (SPEC-217).
 export const EventUpdateHttpSchema = z
-    .object(stripShapeDefaults(EventCreateHttpSchema.shape))
-    .partial();
+    .object(stripShapeDefaults(EventCreateHttpSchema.omit({ price: true, currency: true }).shape))
+    .partial()
+    .strict();
 
 export type EventUpdateHttp = z.infer<typeof EventUpdateHttpSchema>;
 
@@ -342,6 +360,15 @@ export const httpToDomainEventUpdate = (httpData: EventUpdateHttp): EventUpdateI
     // Map HTTP dates to domain date object (if provided)
     // HTTP-originated events are always day-precise (HOS-280 MONTH precision is
     // only assigned via data migration / import tooling, not this HTTP mapping).
+    //
+    // Keyed on `startDate` because the domain `date` object requires `start`: a
+    // mapper cannot emit a half-built one without lying about its return type.
+    // That means an `endDate`-only body maps to no `date` at all, so the value
+    // would vanish with a 200 — the silent discard H-134 is about. Rejecting
+    // that pairing is therefore the CALLER's boundary, not this pure function's:
+    // see `assertEventDatePairing` in
+    // `apps/api/src/routes/event/protected/to-domain-update.ts`, which both
+    // write routes go through.
     ...(httpData.startDate && {
         date: {
             start: httpData.startDate,
@@ -357,6 +384,9 @@ export const httpToDomainEventUpdate = (httpData: EventUpdateHttp): EventUpdateI
     // through here let a caller reassign an existing event to another user.
     isFeatured: httpData.isFeatured
 
-    // Note: Pricing updates are complex due to nested structure
-    // The service layer should handle merging pricing data properly
+    // No pricing branch here on purpose. `EventUpdateHttpSchema` no longer
+    // accepts `price`/`currency`, so there is nothing to map (H-134). The
+    // comment this replaces claimed "the service layer should handle merging
+    // pricing data properly" — it never did, and the mapper dropping the fields
+    // meant the service was never even given the chance.
 });
