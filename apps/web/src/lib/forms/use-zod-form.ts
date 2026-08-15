@@ -181,14 +181,32 @@ export function useZodForm<TSchema extends ZodTypeAny>({
     const handleApiError = useCallback(
         (apiError: HandleApiErrorInput, fallback?: string) => {
             const mapped = apiErrorToFieldErrors(apiError, t);
-            if (Object.keys(mapped).length > 0) {
+            const markedSomeFields = Object.keys(mapped).length > 0;
+            if (markedSomeFields) {
                 setFieldErrors((prev) => ({ ...prev, ...mapped }));
             }
 
             const message = t
                 ? translateApiError({ error: apiError ?? null, t, fallback })
                 : (apiError?.message ?? fallback ?? null);
-            setFormErrorState(message ?? null);
+
+            // Only send the user looking for marked fields once some are marked
+            // (H-108). The `VALIDATION_ERROR` copy used to carry "Revisá los
+            // campos marcados" unconditionally, and in production it almost never
+            // could be true: `details` is stripped whenever
+            // HOSPEDA_API_DEBUG_ERRORS is false, so there is nothing to map and
+            // nothing gets highlighted. A live rejection in the editor rendered
+            // exactly that sentence with no field marked anywhere on the page —
+            // which does not read as "vague", it reads as "look elsewhere" or
+            // "this page is broken".
+            const reviewInvite = markedSomeFields
+                ? (t?.('validation.reviewMarkedFields', 'Revisá los campos marcados.') ??
+                  'Revisá los campos marcados.')
+                : null;
+
+            setFormErrorState(
+                message && reviewInvite ? `${message} ${reviewInvite}` : (message ?? null)
+            );
         },
         [t]
     );

@@ -1,4 +1,5 @@
 {
+    "reviewMarkedFields": "Revisá los campos marcados.",
     "accommodation": {
         "address": {
             "required": "La dirección es obligatoria"

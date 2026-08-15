@@ -56,7 +56,7 @@
     "apiError": {
         "GENERIC": "Algo salió mal. Intentá de nuevo en un momento.",
         "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Esperá unos segundos y volvé a intentar.",
-        "VALIDATION_ERROR": "Los datos enviados no son válidos. Revisá los campos marcados.",
+        "VALIDATION_ERROR": "Los datos enviados no son válidos.",
         "UNAUTHORIZED": "Necesitás iniciar sesión para realizar esta acción.",
         "FORBIDDEN": "No tenés permiso para realizar esta acción.",
         "NOT_FOUND": "No encontramos lo que buscabas.",
