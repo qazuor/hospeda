@@ -91,7 +91,8 @@
                 "media": "Fotos",
                 "translations": "Traducciones",
                 "amenities": "Servicios",
-                "price": "Precio"
+                "price": "Precio",
+                "faqs": "Preguntas frecuentes"
             },
             "sections": {
                 "type": "Categoría",

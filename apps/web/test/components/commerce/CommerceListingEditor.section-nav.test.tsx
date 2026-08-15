@@ -30,6 +30,8 @@
  * tracks the reading position is a browser question.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { AmenityData } from '../../../src/lib/api/types';
@@ -80,7 +82,13 @@ const amenityCatalog = [
     { id: 'a1', slug: 'wifi', icon: null, category: 'connectivity' }
 ] as unknown as readonly AmenityData[];
 
-function renderEditor({ withCatalogs }: { withCatalogs: boolean }) {
+function renderEditor({
+    withCatalogs,
+    hasFaqSection
+}: {
+    withCatalogs: boolean;
+    hasFaqSection?: boolean;
+}) {
     return render(
         <CommerceListingEditor
             vertical="gastronomy"
@@ -90,6 +98,7 @@ function renderEditor({ withCatalogs }: { withCatalogs: boolean }) {
             destinations={[{ id: DESTINATION_1, name: 'Concepción del Uruguay' }]}
             amenities={withCatalogs ? amenityCatalog : []}
             features={[]}
+            hasFaqSection={hasFaqSection}
         />
     );
 }
@@ -165,5 +174,68 @@ describe('CommerceListingEditor — section nav', () => {
         const { container } = renderEditor({ withCatalogs: true });
 
         expect(container.querySelector('#editor-translations')).not.toBeNull();
+    });
+
+    // ── H-153: the FAQ entry ────────────────────────────────────────────────
+    //
+    // The FAQ manager is NOT part of this component — `editar.astro` renders it
+    // as a sibling card below the editor. It has been on that page since
+    // 2026-06-22, but it was absent from this nav, so the only way to reach it
+    // was to scroll past the entire editor. The smoke enumerated this nav, found
+    // eight entries and none named "preguntas frecuentes", and concluded the
+    // merchant had nowhere to enter FAQs at all.
+    //
+    // Because the anchor lives outside this component, the entry is OPT-IN: the
+    // page that supplies `id="editor-faqs"` is the one that asks for the link.
+    // Defaulting it on would make every "the links resolve" assertion above a
+    // lie for any future page that embeds the editor without the FAQ card —
+    // the same dangling-link failure the amenities case exists to prevent.
+
+    it('omits the FAQ entry by default, since its anchor is not this component', () => {
+        const { container } = renderEditor({ withCatalogs: true });
+
+        expect(navTargetIds()).not.toContain('editor-faqs');
+        expect(container.querySelector('#editor-faqs')).toBeNull();
+    });
+
+    it('appends the FAQ entry LAST when the page provides the anchor', () => {
+        renderEditor({ withCatalogs: true, hasFaqSection: true });
+
+        const ids = navTargetIds();
+        expect(ids).toContain('editor-faqs');
+        // Last, because the FAQ card renders below the editor. The scrollspy
+        // resolves ties by first-in-array, so an out-of-order entry highlights
+        // the wrong link whenever two sections share the viewport.
+        expect(ids[ids.length - 1]).toBe('editor-faqs');
+    });
+
+    it('keeps the amenities rule independent of the FAQ entry', () => {
+        renderEditor({ withCatalogs: false, hasFaqSection: true });
+
+        const ids = navTargetIds();
+        expect(ids).not.toContain('editor-amenities');
+        expect(ids[ids.length - 1]).toBe('editor-faqs');
+    });
+
+    // The two halves of the opt-in live in different files and neither fails on
+    // its own: a page that asks for the link without rendering the anchor gets
+    // exactly the dead control this suite exists to prevent, and nothing here
+    // would catch it because the anchor is outside the component.
+    //
+    // LIMIT, stated plainly: this reads the page SOURCE, so it proves the two
+    // literals are declared together, not that the anchor survives to the
+    // response. That second question was answered by hand against the running
+    // server (the served DOM carries `id="editor-faqs"` and the FAQ card).
+    it('pairs the opt-in with the anchor in the page that uses it', () => {
+        const source = readFileSync(
+            resolve(
+                __dirname,
+                '../../../src/pages/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar.astro'
+            ),
+            'utf8'
+        );
+
+        expect(source).toContain('hasFaqSection');
+        expect(source).toContain('id="editor-faqs"');
     });
 });
