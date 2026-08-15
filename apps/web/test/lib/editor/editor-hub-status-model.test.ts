@@ -19,7 +19,14 @@ const COMPLETE: EditorStatusInput = {
     featureCount: 4,
     photoCount: 6,
     faqCount: 3,
-    hasContact: true
+    hasContact: true,
+    publishReadiness: {
+        capacity: 4,
+        minNights: 1,
+        bedrooms: 2,
+        bathrooms: 1,
+        hasMainImage: true
+    }
 };
 
 /** Resolves statuses for `COMPLETE` with the given overrides applied. */
@@ -124,5 +131,121 @@ describe('resolveEditorSectionStatuses — silent sections', () => {
         for (const status of Object.values(statuses)) {
             expect(status.tone).toBe('neutral');
         }
+    });
+});
+
+describe('resolveEditorSectionStatuses — warns about what actually blocks (H-101)', () => {
+    it('should flag the capacity section when bathrooms are missing', () => {
+        // Arrange — the exact production listing: capacity 11, bedrooms 3,
+        // minNights 1, no bathrooms. The hub showed NO warning on this section
+        // and the publish was refused for that very field.
+        const statuses = resolve({
+            publishReadiness: {
+                capacity: 11,
+                minNights: 1,
+                bedrooms: 3,
+                bathrooms: undefined,
+                hasMainImage: true
+            }
+        });
+
+        // Assert
+        expect(statuses.capacityPricing?.tone).toBe('blocking');
+        expect(statuses.capacityPricing?.missingRequirementLabelKeys).toEqual([
+            'host.properties.editor.publishRequirement.bathrooms'
+        ]);
+    });
+
+    it('should surface minNights, which the editor never mentioned at all', () => {
+        // Arrange — zero occurrences of `minNights` existed in this module
+        // before H-101, so a listing blocked solely on it got no signal.
+        const statuses = resolve({
+            publishReadiness: {
+                capacity: 4,
+                minNights: null,
+                bedrooms: 2,
+                bathrooms: 1,
+                hasMainImage: true
+            }
+        });
+
+        // Assert
+        expect(statuses.capacityPricing?.missingRequirementLabelKeys).toEqual([
+            'host.properties.editor.publishRequirement.minNights'
+        ]);
+    });
+
+    it('should group several missing fields of one section into a single line', () => {
+        // Arrange
+        const statuses = resolve({
+            publishReadiness: {
+                capacity: undefined,
+                minNights: undefined,
+                bedrooms: 2,
+                bathrooms: undefined,
+                hasMainImage: true
+            }
+        });
+
+        // Assert — four separate rows would bury the section title; none at all
+        // is what the old hub did.
+        expect(statuses.capacityPricing?.missingRequirementLabelKeys).toEqual([
+            'host.properties.editor.publishRequirement.capacity',
+            'host.properties.editor.publishRequirement.minNights',
+            'host.properties.editor.publishRequirement.bathrooms'
+        ]);
+    });
+
+    it('should mark the photos section as BLOCKING, not advisory, without a main image', () => {
+        // Arrange — H-101 mitad A. The old "⚠ Sin fotos" was a `warning` and
+        // publishing went through anyway, leaving a public page with a broken
+        // <img>. The owner decided on 14/08 that it must block.
+        const statuses = resolve({
+            photoCount: 0,
+            publishReadiness: { ...COMPLETE.publishReadiness, hasMainImage: false }
+        });
+
+        // Assert
+        expect(statuses.photos?.tone).toBe('blocking');
+        expect(statuses.photos?.missingRequirementLabelKeys).toEqual([
+            'host.properties.editor.publishRequirement.mainImage'
+        ]);
+    });
+
+    it('should let a blocker overwrite the calm neutral line that used to hide it', () => {
+        // Arrange — with a price and a guest count set, the section rendered
+        // "4 huéspedes": a neutral, finished-looking line sitting directly on
+        // top of the field that was refusing the publish.
+        const statuses = resolve({
+            maxGuests: 4,
+            basePrice: 25000,
+            publishReadiness: { ...COMPLETE.publishReadiness, bathrooms: undefined }
+        });
+
+        // Assert
+        expect(statuses.capacityPricing?.tone).toBe('blocking');
+        expect(statuses.capacityPricing?.labelKey).toBe(
+            'host.properties.editor.hub.status.blockedFromPublishing'
+        );
+    });
+
+    it('should keep advisory warnings advisory', () => {
+        // Arrange — coordinates and contact are worth prompting for, but a
+        // listing publishes fine without them. They must not be dressed up as
+        // blockers, which is the mirror image of the H-101 mistake.
+        const statuses = resolve({ hasCoordinates: false, hasContact: false });
+
+        // Assert
+        expect(statuses.location?.tone).toBe('warning');
+        expect(statuses.contact?.tone).toBe('warning');
+    });
+
+    it('should report no blockers for a listing that meets every requirement', () => {
+        // Arrange / Act
+        const statuses = resolve();
+
+        // Assert
+        const blocking = Object.values(statuses).filter((s) => s.tone === 'blocking');
+        expect(blocking).toEqual([]);
     });
 });

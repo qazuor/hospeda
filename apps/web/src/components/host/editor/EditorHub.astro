@@ -71,9 +71,16 @@ const groups = EDITOR_SECTION_GROUPS.map((group) => ({
 											class:list={[
 												'editor-hub__status',
 												{ 'editor-hub__status--warning': status.tone === 'warning' },
+												{ 'editor-hub__status--blocking': status.tone === 'blocking' },
 											]}
 										>
-											{t(status.labelKey, undefined, status.params)}
+											{status.tone === 'blocking' && status.missingRequirementLabelKeys
+												? t('host.properties.editor.hub.status.blockedFromPublishing', undefined, {
+														fields: status.missingRequirementLabelKeys
+															.map((key) => t(key))
+															.join(', '),
+													})
+												: t(status.labelKey, undefined, status.params)}
 										</span>
 									)}
 								</span>
@@ -155,6 +162,15 @@ const groups = EDITOR_SECTION_GROUPS.map((group) => ({
 	   reinforcement and never the only signal. */
 	.editor-hub__status--warning {
 		color: var(--brand-accent);
+	}
+
+	/* A blocker is not a louder warning, it is a different statement: "this
+	   listing cannot go live until you fix it". Its text says so on its own and
+	   names the fields, so the weight here is reinforcement too — the whole
+	   point of H-101 is that a host could not tell the two apart. */
+	.editor-hub__status--blocking {
+		color: var(--destructive);
+		font-weight: 600;
 	}
 
 	.editor-hub__chevron {
