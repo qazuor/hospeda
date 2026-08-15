@@ -16,6 +16,7 @@ import { adminGetMediaRoute } from './getMedia';
 import { adminGetOccupancyRoute } from './getOccupancy';
 import { adminHardDeleteAccommodationRoute } from './hardDelete';
 import { adminListAccommodationsRoute } from './list';
+import { adminModerateAccommodationRoute } from './moderate';
 import { adminAccommodationOptionsRoute } from './options';
 import { adminPatchAccommodationRoute } from './patch';
 import { adminRemoveFaqRoute } from './removeFaq';
@@ -69,6 +70,11 @@ app.route('/', adminRestoreAccommodationRoute);
 
 // POST /:id/verify - Verify / unverify accommodation
 app.route('/', adminVerifyAccommodationRoute);
+
+// POST /:id/moderate - Apply the moderation verdict (H-102). Posts and events
+// have had this since HOS-374; without it no accommodation could ever leave
+// PENDING, and the admin's pending counter could only grow.
+app.route('/', adminModerateAccommodationRoute);
 
 // GET /:id/occupancy - Occupancy calendar (staff, ACCOMMODATION_OCCUPANCY_VIEW) - HOS-43
 app.route('/', adminGetOccupancyRoute);

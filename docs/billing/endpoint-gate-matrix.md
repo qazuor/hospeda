@@ -372,6 +372,7 @@
 | `DELETE /api/v1/admin/accommodations/{id}` | `accommodation/admin/delete.ts` | none | - | n/a | Admin write; PermissionEnum-gated |
 | `DELETE /api/v1/admin/accommodations/{id}/hard` | `accommodation/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated |
 | `POST /api/v1/admin/accommodations/{id}/restore` | `accommodation/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated |
+| `POST /api/v1/admin/accommodations/{id}/moderate` | `accommodation/admin/moderate.ts` | none | - | n/a | Admin moderation — PermissionEnum-gated (H-102; ACCOMMODATION_MODERATION_CHANGE) |
 | `POST /api/v1/admin/accommodations/{id}/verify` | `accommodation/admin/verify.ts` | none | - | n/a | Admin verify/unverify; PermissionEnum-gated (ACCOMMODATION_VERIFY) |
 | `POST /api/v1/admin/accommodations/batch` | `accommodation/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated |
 | `GET /api/v1/admin/accommodations/options` | `accommodation/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated |
