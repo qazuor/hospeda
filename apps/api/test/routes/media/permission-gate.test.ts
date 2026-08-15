@@ -30,6 +30,23 @@ const makeActor = (permissions: PermissionEnum[], id = crypto.randomUUID()): Act
     permissions
 });
 
+/**
+ * The one accommodation id the mocked `AccommodationService.getById`
+ * (`test/helpers/mocks/accommodation-services.ts`) reports as missing. Every
+ * other id resolves to a mock row owned by somebody else.
+ *
+ * The delete route smoke below depends on that: it asserts the ROUTE-level
+ * gate lets a MEDIA_DELETE holder through, and any id that resolves would then
+ * hit the handler's entity-ownership check and answer 403 for a different and
+ * entirely correct reason — making the assertion unable to tell the two apart.
+ * That is not hypothetical: the test used a resolving id and only passed while
+ * CI had no Cloudinary credentials, so the request short-circuited at the
+ * provider check with 503. Adding the `HOSPEDA_CLOUDINARY_*` secrets on
+ * 2026-08-15 15:26 UTC let the request reach the ownership check and turned
+ * this into a red on every branch.
+ */
+const MISSING_ACCOMMODATION_ID = '87654321-4321-4321-8765-876543218765';
+
 describe('validateEntityMediaPermission (unit)', () => {
     describe('accommodation — split OWN/ANY', () => {
         it('allows actor with UPDATE_ANY regardless of ownership', () => {
@@ -174,24 +191,14 @@ describe('Admin media routes — route-level permission gate (smoke)', () => {
                 ]
             });
             const res = await app.request(
-                '/api/v1/admin/media?publicId=hospeda/test/accommodations/id-1/featured',
+                `/api/v1/admin/media?publicId=hospeda/test/accommodations/${MISSING_ACCOMMODATION_ID}/featured`,
                 {
                     method: 'DELETE',
                     ...createAuthenticatedRequest(actor)
                 }
             );
-            // TEMP DIAGNOSTIC (remove before merge): this assertion fails in CI
-            // and passes locally, and the status alone cannot tell WHICH of the
-            // three 403s in the delete route fired — the pre-validation
-            // environment guard, the handler's env guard, or the entity
-            // permission check. The body carries the code and, for the env
-            // guards, the expected `hospeda/<env>/` prefix.
-            const diagnosticBody = await res.clone().text();
-            console.error(
-                `[DIAG permission-gate] status=${res.status} NODE_ENV=${process.env.NODE_ENV} DEPLOY_ENV=${process.env.HOSPEDA_DEPLOY_ENV} body=${diagnosticBody}`
-            );
-
-            // Handler-level outcomes apply (entity lookup fails, provider absent).
+            // Route gate passes; the entity lookup then misses, so the handler
+            // answers 404 (or 503 when no media provider is configured).
             // Critically, NOT 403 from the route gate.
             expect(res.status).not.toBe(403);
             expect([400, 404, 422, 503]).toContain(res.status);
