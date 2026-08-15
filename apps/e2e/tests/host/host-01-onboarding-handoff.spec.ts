@@ -260,6 +260,24 @@ test.describe('HOST-01: web→admin onboarding handoff @p0 @host @onboarding @bi
             status: 'active'
         });
 
+        // Publishing also requires a main image (owner decision 14/08, H-101).
+        // The onboarding flow does NOT collect photos — `/publicar/nueva` has no
+        // upload — so a draft coming out of it never has one, and this spec
+        // started failing with a 400 the moment the requirement landed. That is
+        // the requirement working, not a regression: a listing published with no
+        // photo rendered a broken <img> on its own public page.
+        //
+        // Seeded directly for the same reason the subscription above is: a real
+        // owner uploads it in the editor's Fotos section, and this spec is about
+        // the onboarding handoff, not about media upload.
+        await execSQL(
+            `INSERT INTO accommodation_media
+                 (accommodation_id, url, state, is_featured, sort_order, moderation_state)
+             VALUES
+                 ('${result.accommodationId}', 'https://cdn.example.test/e2e-main.jpg',
+                  'visible', true, 0, 'APPROVED')`
+        );
+
         const publishResponse = await page.request.post(
             `${API_URL}/api/v1/protected/accommodations/${result.accommodationId}/publish`,
             {
