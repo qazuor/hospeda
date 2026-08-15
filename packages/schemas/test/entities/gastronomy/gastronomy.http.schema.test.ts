@@ -36,12 +36,17 @@ describe('GastronomySearchHttpSchema', () => {
 });
 
 describe('GastronomyCreateHttpSchema', () => {
+    // H-88: `ownerId` is REQUIRED. `gastronomies.owner_id` is NOT NULL with no
+    // default, so a create payload without it cannot become a row — it reached
+    // Postgres and came back as an opaque 500. A fixture that omits it is not a
+    // "valid create payload".
     const validCreate = () => ({
         name: 'La Parrilla de Juan',
         summary: 'Parrilla tradicional argentina',
         description: 'Una parrilla tradicional con los mejores cortes de carne.',
         type: 'PARRILLA',
-        destinationId: faker.string.uuid()
+        destinationId: faker.string.uuid(),
+        ownerId: faker.string.uuid()
     });
 
     it('should validate a valid create payload', () => {
@@ -101,7 +106,9 @@ describe('httpToDomainGastronomyCreate', () => {
             summary: 'Café tradicional en el centro',
             description: 'El mejor café de la ciudad con pasteles artesanales.',
             type: 'CAFE',
-            destinationId: faker.string.uuid()
+            destinationId: faker.string.uuid(),
+            // H-88: required — see `validCreate` above.
+            ownerId: faker.string.uuid()
         });
         const result = httpToDomainGastronomyCreate(httpInput);
         expect(result.name).toBe('Café del Centro');
