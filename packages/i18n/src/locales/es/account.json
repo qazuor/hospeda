@@ -616,6 +616,7 @@
             "complimentaryNoBilling": "Sin vencimiento",
             "paymentMethodLabel": "Método de pago",
             "paymentMercadoPago": "MercadoPago",
+            "paymentNone": "Sin método de pago",
             "noBillingDate": "No hay fecha de facturación disponible",
             "actionsLabel": "Acciones",
             "actionsTitle": "Gestionar suscripción",
