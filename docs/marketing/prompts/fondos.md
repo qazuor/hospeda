@@ -978,8 +978,10 @@ EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Es MUY ALARGADO: su alto es 2,17 veces su ancho. Es la proporción de un teléfono
   moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
   NO tiene proporción 9:16.
-- Ocupa alrededor de UN CUARTO del ancho de la imagen y algo MÁS DE UN TERCIO del alto,
-  centrado verticalmente.
+- ES GRANDE: ocupa DOS QUINTOS del ancho de la imagen (un 40%) y CASI LA MITAD del
+  alto, centrado verticalmente. Es el elemento más grande del cuadro después del
+  personaje, y lo que se vea en su pantalla tiene que poder leerse. Un teléfono chico
+  NO SIRVE: si ocupa menos de un tercio del ancho, la imagen se descarta.
 - Su borde derecho NO puede pasar del 80% del ancho de la imagen. Entre ese borde y el
   borde derecho de la imagen tiene que quedar una franja vacía de al menos un QUINTO del
   ancho total: esa franja se tapa después con íconos de interfaz y todo lo que caiga ahí
@@ -987,15 +989,17 @@ EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Ante la duda, el teléfono va MÁS A LA IZQUIERDA, no más a la derecha.
 - Queda bien recortado contra el fondo, sin transparencias y sin sombras encima.
 
-HOSPEDÍN: de cuerpo entero, más alto que el rectángulo, ocupando aproximadamente la
-mitad del alto de la imagen. Está en el tercio izquierdo, girado un poco hacia el
-rectángulo. Lo mira y lo señala con la mano más cercana, con la palma abierta, como
+HOSPEDÍN: de cuerpo entero, MÁS CHICO QUE EL TELÉFONO, ocupando aproximadamente dos
+quintos del alto de la imagen y sin pasar del 38% del ancho. El teléfono es el
+elemento dominante del cuadro y él lo presenta: si el personaje compite en tamaño, el
+teléfono se achica y la imagen no sirve. Está pegado al borde izquierdo, girado un
+poco hacia el teléfono. Lo mira y lo señala con la mano más cercana, con la palma abierta, como
 quien presenta algo. La otra mano relajada al costado del cuerpo. No sostiene el teléfono con la mano: el teléfono flota solo.
 
 El círculo naranja flotante de su cabeza tiene que quedar bien adentro del cuadro,
 lejos del borde derecho.
 
-Los dos —el personaje y el rectángulo— tienen que quedar completos dentro de la banda
+Los dos —el personaje y el teléfono— tienen que quedar completos dentro de la banda
 central de la imagen, sin tocar ni el borde superior, ni el inferior, ni el derecho.
 
 Detrás, la cabaña de madera con galería, pasto y árboles, todo bien desenfocado.
@@ -1355,8 +1359,10 @@ EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Es MUY ALARGADO: su alto es 2,17 veces su ancho. Es la proporción de un teléfono
   moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
   NO tiene proporción 9:16.
-- Ocupa alrededor de UN CUARTO del ancho de la imagen y algo MÁS DE UN TERCIO del alto,
-  centrado verticalmente.
+- ES GRANDE: ocupa DOS QUINTOS del ancho de la imagen (un 40%) y CASI LA MITAD del
+  alto, centrado verticalmente. Es el elemento más grande del cuadro después del
+  personaje, y lo que se vea en su pantalla tiene que poder leerse. Un teléfono chico
+  NO SIRVE: si ocupa menos de un tercio del ancho, la imagen se descarta.
 - Su borde derecho NO puede pasar del 80% del ancho de la imagen. Entre ese borde y el
   borde derecho de la imagen tiene que quedar una franja vacía de al menos un QUINTO del
   ancho total: esa franja se tapa después con íconos de interfaz y todo lo que caiga ahí
@@ -1364,12 +1370,14 @@ EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Ante la duda, el teléfono va MÁS A LA IZQUIERDA, no más a la derecha.
 - Queda bien recortado contra el fondo, sin transparencias y sin sombras encima.
 
-HOSPEDÍN: de cuerpo entero, más alto que el rectángulo, ocupando aproximadamente la
-mitad del alto de la imagen, en el tercio izquierdo. Está girado un poco hacia el
-rectángulo. Lo mira y lo señala con la mano más cercana, con la palma abierta, como
+HOSPEDÍN: de cuerpo entero, MÁS CHICO QUE EL TELÉFONO, ocupando aproximadamente dos
+quintos del alto de la imagen y sin pasar del 38% del ancho. El teléfono es el
+elemento dominante del cuadro y él lo presenta: si el personaje compite en tamaño, el
+teléfono se achica y la imagen no sirve. Está pegado al borde izquierdo, girado un
+poco hacia el teléfono. Lo mira y lo señala con la mano más cercana, con la palma abierta, como
 quien presenta algo. La otra mano relajada al costado del cuerpo. No sostiene el teléfono con la mano: el teléfono flota solo.
 
-Los dos —el personaje y el rectángulo— tienen que quedar completos dentro de la banda
+Los dos —el personaje y el teléfono— tienen que quedar completos dentro de la banda
 central de la imagen, sin tocar ni el borde superior, ni el inferior, ni el derecho.
 
 Detrás, la costanera: palmeras, el río y un muelle a lo lejos, todo bien desenfocado.
@@ -1435,8 +1443,10 @@ EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Es MUY ALARGADO: su alto es 2,17 veces su ancho. Es la proporción de un teléfono
   moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
   NO tiene proporción 9:16.
-- Ocupa alrededor de UN CUARTO del ancho de la imagen y algo MÁS DE UN TERCIO del alto,
-  centrado verticalmente.
+- ES GRANDE: ocupa DOS QUINTOS del ancho de la imagen (un 40%) y CASI LA MITAD del
+  alto, centrado verticalmente. Es el elemento más grande del cuadro después del
+  personaje, y lo que se vea en su pantalla tiene que poder leerse. Un teléfono chico
+  NO SIRVE: si ocupa menos de un tercio del ancho, la imagen se descarta.
 - Su borde derecho NO puede pasar del 80% del ancho de la imagen. Entre ese borde y el
   borde derecho de la imagen tiene que quedar una franja vacía de al menos un QUINTO del
   ancho total: esa franja se tapa después con íconos de interfaz y todo lo que caiga ahí
@@ -1444,12 +1454,14 @@ EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Ante la duda, el teléfono va MÁS A LA IZQUIERDA, no más a la derecha.
 - Queda bien recortado contra el fondo, sin transparencias y sin sombras encima.
 
-HOSPEDÍN: de cuerpo entero, más alto que el rectángulo, ocupando aproximadamente la
-mitad del alto de la imagen, en el tercio izquierdo. Está girado un poco hacia el
-rectángulo. Lo mira y lo señala con la mano más cercana, con la palma abierta, como
+HOSPEDÍN: de cuerpo entero, MÁS CHICO QUE EL TELÉFONO, ocupando aproximadamente dos
+quintos del alto de la imagen y sin pasar del 38% del ancho. El teléfono es el
+elemento dominante del cuadro y él lo presenta: si el personaje compite en tamaño, el
+teléfono se achica y la imagen no sirve. Está pegado al borde izquierdo, girado un
+poco hacia el teléfono. Lo mira y lo señala con la mano más cercana, con la palma abierta, como
 quien presenta algo. La otra mano relajada al costado del cuerpo. No sostiene el teléfono con la mano: el teléfono flota solo.
 
-Los dos —el personaje y el rectángulo— tienen que quedar completos dentro de la banda
+Los dos —el personaje y el teléfono— tienen que quedar completos dentro de la banda
 central de la imagen, sin tocar ni el borde superior, ni el inferior, ni el derecho.
 
 Detrás, la playa: agua calma, sombrillas de colores y árboles, todo bien desenfocado.
@@ -1515,8 +1527,10 @@ EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Es MUY ALARGADO: su alto es 2,17 veces su ancho. Es la proporción de un teléfono
   moderno, mucho más estirado que una hoja. NO es un rectángulo ancho, NO es cuadrado y
   NO tiene proporción 9:16.
-- Ocupa alrededor de UN CUARTO del ancho de la imagen y algo MÁS DE UN TERCIO del alto,
-  centrado verticalmente.
+- ES GRANDE: ocupa DOS QUINTOS del ancho de la imagen (un 40%) y CASI LA MITAD del
+  alto, centrado verticalmente. Es el elemento más grande del cuadro después del
+  personaje, y lo que se vea en su pantalla tiene que poder leerse. Un teléfono chico
+  NO SIRVE: si ocupa menos de un tercio del ancho, la imagen se descarta.
 - Su borde derecho NO puede pasar del 80% del ancho de la imagen. Entre ese borde y el
   borde derecho de la imagen tiene que quedar una franja vacía de al menos un QUINTO del
   ancho total: esa franja se tapa después con íconos de interfaz y todo lo que caiga ahí
@@ -1524,12 +1538,14 @@ EL TELÉFONO — ESTO ES LO MÁS IMPORTANTE DE LA IMAGEN:
 - Ante la duda, el teléfono va MÁS A LA IZQUIERDA, no más a la derecha.
 - Queda bien recortado contra el fondo, sin transparencias y sin sombras encima.
 
-HOSPEDÍN: de cuerpo entero, más alto que el rectángulo, ocupando aproximadamente la
-mitad del alto de la imagen, en el tercio izquierdo. Está girado un poco hacia el
-rectángulo. Lo mira y lo señala con la mano más cercana, con la palma abierta, como
+HOSPEDÍN: de cuerpo entero, MÁS CHICO QUE EL TELÉFONO, ocupando aproximadamente dos
+quintos del alto de la imagen y sin pasar del 38% del ancho. El teléfono es el
+elemento dominante del cuadro y él lo presenta: si el personaje compite en tamaño, el
+teléfono se achica y la imagen no sirve. Está pegado al borde izquierdo, girado un
+poco hacia el teléfono. Lo mira y lo señala con la mano más cercana, con la palma abierta, como
 quien presenta algo. La otra mano relajada al costado del cuerpo. No sostiene el teléfono con la mano: el teléfono flota solo.
 
-Los dos —el personaje y el rectángulo— tienen que quedar completos dentro de la banda
+Los dos —el personaje y el teléfono— tienen que quedar completos dentro de la banda
 central de la imagen, sin tocar ni el borde superior, ni el inferior, ni el derecho.
 
 Detrás, el palmar: palmeras yatay altas, pastizal y agua a lo lejos, todo bien
