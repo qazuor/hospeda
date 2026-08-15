@@ -23,8 +23,16 @@ overrides:
   # mirrors its verdict. Major because refund can now throw where it always resolved.
   # This override is what actually moves the version: the per-package `^2.0.0` ranges
   # alone are inert while an exact pin sits here.
-  "@qazuor/qzpay-core": "2.0.0"
-  "@qazuor/qzpay-mercadopago": "2.8.1"
+  #
+  # Raised to core 3.0.0 the same day: `customers.update()` and `customers.delete()`
+  # were also storage-only while `adapter.customers.update/delete` sat unused, so the
+  # MercadoPago customer kept a stale email and survived a local deletion WITH its
+  # saved cards. 3.0.0 mirrors both to the provider. Major because `delete()` is now
+  # destructive at MercadoPago and not reversible: `handleUserDeletion` in
+  # `billing-customer-sync.ts` removes the stored payment instruments from this
+  # version on.
+  "@qazuor/qzpay-core": "3.0.0"
+  "@qazuor/qzpay-mercadopago": "2.8.2"
   typescript: "6.0.3"
   "zod@>=4.0.0 <5": "4.3.6"
   ws: ">=8.21.0"
@@ -210,8 +218,8 @@ allowBuilds:
 forceLegacyDeploy: true
 
 minimumReleaseAgeExclude:
-  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0'
-  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1'
-  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7'
-  - '@qazuor/qzpay-hono@1.6.7'
-  - '@qazuor/qzpay-react@1.1.22'
+  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0'
+  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2'
+  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8'
+  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8'
+  - '@qazuor/qzpay-react@1.1.22 || 1.1.23'
