@@ -32,7 +32,11 @@ function sidebarGroupsForRole(role: string | null): readonly NavGroup[] {
 
 describe('AccountLayout — sidebar wiring (HOS-131 T-007)', () => {
     it('renders navigation from the single-source config via getNavForSurface', () => {
-        expect(source).toContain("import { getNavForSurface } from '@/config/navigation';");
+        // Also imports PROVIDER_NAV_GROUP (H-158) — see
+        // account-layout-provider-nav.test.ts for that entry's own coverage.
+        expect(source).toContain(
+            "import { getNavForSurface, PROVIDER_NAV_GROUP } from '@/config/navigation';"
+        );
         expect(source).toContain("surface: 'sidebar'");
     });
 

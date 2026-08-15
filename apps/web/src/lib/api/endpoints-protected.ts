@@ -2540,23 +2540,36 @@ export const hostTradesApi = {
     /**
      * The usages recorded on the caller's own listing (HOS-376 T-050).
      *
-     * @param params - Optional `status` filter, page window, `cookieHeader` from SSR.
+     * `status: 'PENDING'` + `declaredBy: 'HOST'` is the PROVIDER'S INBOX — the
+     * mirror of {@link hostTradesApi.listPendingUsages} on the host's side. The
+     * counterpart answers, always, so "waiting on me" is exactly "pending, and
+     * I did not open it".
+     *
+     * Both filters are sent to the API rather than applied to the page here.
+     * Narrowing a `PENDING` page client-side would drop rows that live on the
+     * next page, and the failure it produces is an EMPTY inbox announcing "no
+     * tenés usos pendientes" to a provider a host is waiting on (H-06/H-65/H-159).
+     *
+     * @param params - Optional `status` and `declaredBy` filters, page window,
+     *   `cookieHeader` from SSR.
      * @returns The page of usages plus its pagination envelope.
      */
     listOwnUsages({
         status,
+        declaredBy,
         page,
         pageSize,
         cookieHeader
     }: {
         status?: BenefitUsageStatus;
+        declaredBy?: BenefitUsageDeclaredBy;
         page?: number;
         pageSize?: number;
         cookieHeader?: string;
     } = {}): Promise<ApiResult<PaginatedResponse<BenefitUsage>>> {
         return apiClient.getListProtected({
             path: `${PROTECTED}/host-trades/mine/usages`,
-            params: { status, page, pageSize },
+            params: { status, declaredBy, page, pageSize },
             cookieHeader
         });
     },

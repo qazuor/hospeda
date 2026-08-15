@@ -12,8 +12,13 @@
  * hydration would show an empty panel on exactly the screen where "no reviews"
  * and "not loaded yet" carry opposite meanings.
  *
- * The three terminal states mirror the sibling QR landing page, and for the
+ * The four terminal states mirror the sibling QR landing page, and for the
  * same reason: a host may reach this URL from a link saved a season ago.
+ *   - 403          → caller lacks HOST_TRADE_VIEW — not yet a host. The gate
+ *                    is working as designed; renders the shared
+ *                    {@link HostTradesAccessDenied} instead of the generic
+ *                    "load error" state it used to fall into (H-05, August
+ *                    2026 smoke).
  *   - 404          → no provider carries this slug
  *   - 422 REVOKED  → the provider was taken down (the row survives, HOS-278 R-4)
  *   - other errors → transient, offer a retry
@@ -26,6 +31,7 @@ import { LockIcon, WrenchIcon } from '@repo/icons';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
 import { DirectoryReviewsList } from '@/components/host/host-trades/DirectoryReviewsList.client';
+import HostTradesAccessDenied from '@/components/host/host-trades/HostTradesAccessDenied.astro';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import type { DirectoryProvider, DirectoryReviewRow } from '@/lib/api/endpoints-protected';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
@@ -57,7 +63,7 @@ if (!slug) {
 // takes the provider's id, which only the first read can supply.
 // ---------------------------------------------------------------------------
 
-type LoadOutcome = 'ok' | 'notFound' | 'revoked' | 'error';
+type LoadOutcome = 'ok' | 'notFound' | 'revoked' | 'accessDenied' | 'error';
 
 let provider: DirectoryProvider | null = null;
 let outcome: LoadOutcome = 'error';
@@ -70,6 +76,16 @@ if (result.ok) {
     outcome = 'ok';
 } else if (result.error.status === 404) {
     outcome = 'notFound';
+} else if (result.error.status === 403) {
+    // Expected, not a failure: a non-host reached this URL (a link saved
+    // from a season they weren't a host yet, or shared by someone else).
+    // HOST_TRADE_VIEW did exactly its job (H-05). Logged at `warn` — this
+    // must never be counted as an application error.
+    outcome = 'accessDenied';
+    logger.warn(
+        '[directorio-proveedores/detalle] Non-host reached a provider page (403 HOST_TRADE_VIEW)',
+        `slug=${slug}`
+    );
 } else if (result.error.code === 'PROVIDER_REVOKED') {
     // Matched on the CODE rather than the 422 status: 422 is also what a
     // validation failure would use, and those are two different screens.
@@ -181,6 +197,8 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
                 initialTotalPages={reviewTotalPages}
             />
         </div>
+    ) : outcome === 'accessDenied' ? (
+        <HostTradesAccessDenied locale={locale} />
     ) : (
         <div class:list={['provider-detail__terminal', accountSectionStyles.branded]} role="alert">
             <span class="provider-detail__terminal-icon" aria-hidden="true">

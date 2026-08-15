@@ -26,6 +26,7 @@
 import {
     HostTradeBenefitUsageProtectedSchema,
     HostTradeBenefitUsageProviderCreateBodySchema,
+    HostTradeUsageDeclaredByEnumSchema,
     HostTradeUsageStatusEnumSchema,
     ServiceErrorCode
 } from '@repo/schemas';
@@ -140,6 +141,7 @@ export async function handleListOwnUsages(ctx: Context, query: Record<string, un
         {
             hostTradeId: trade.id,
             status: query.status as never,
+            declaredBy: query.declaredBy as never,
             page,
             pageSize
         },
@@ -199,17 +201,25 @@ export const protectedDeclareUsageAsProviderRoute = createProtectedRoute({
  * GET /api/v1/protected/host-trades/mine/usages
  *
  * Every usage on the caller's listing, whatever its state, newest first.
- * Filterable by `status` so the provider can work his pending queue.
+ *
+ * `status` + `declaredBy` together ARE the provider's inbox — the mirror of the
+ * host's `/usages/pending`, expressed as filters on the record rather than as a
+ * second endpoint. `status=PENDING&declaredBy=HOST` is precisely "waiting on
+ * you", because the party that must answer is always the one that did not
+ * declare. Filtering client-side instead would be a silent lie at the page
+ * boundary: 20 pending rows the provider declared himself would render an empty
+ * inbox reading "nothing waits on you" while a host waits.
  */
 export const protectedListOwnUsagesRoute = createProtectedListRoute({
     method: 'get',
     path: '/mine/usages',
     summary: 'List the usages on your own listing',
     description:
-        'Returns the benefit usages recorded against the caller’s own directory listing, newest first, optionally filtered by status.',
+        'Returns the benefit usages recorded against the caller’s own directory listing, newest first, optionally filtered by status and by which side declared them. status=PENDING&declaredBy=HOST is the provider’s inbox: the usages awaiting his confirmation.',
     tags: ['HostTrades'],
     requestQuery: {
-        status: HostTradeUsageStatusEnumSchema.optional()
+        status: HostTradeUsageStatusEnumSchema.optional(),
+        declaredBy: HostTradeUsageDeclaredByEnumSchema.optional()
     },
     responseSchema: HostTradeBenefitUsageProtectedSchema,
     handler: async (

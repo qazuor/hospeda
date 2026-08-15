@@ -72,6 +72,7 @@
         "groupHost": "Host area",
         "groupCommerce": "Business area",
         "groupEditorial": "Editorial area",
+        "groupProvider": "Provider area",
         "dashboard": "My account",
         "editProfile": "Edit profile",
         "subscription": "Subscription",
@@ -89,7 +90,8 @@
         "tradeDirectory": "Provider directory",
         "benefitUsages": "Benefit usages",
         "myPosts": "My posts",
-        "myEvents": "My events"
+        "myEvents": "My events",
+        "provider": "My provider listing"
     },
     "doors": {
         "sectionLabel": "Discover more",

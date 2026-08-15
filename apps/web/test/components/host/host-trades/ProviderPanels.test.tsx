@@ -18,18 +18,32 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockDeclare, mockListOwnUsages, mockReplyToReview, mockUpdateReply } = vi.hoisted(() => ({
+const {
+    mockConfirmUsage,
+    mockDeclare,
+    mockListOwnUsages,
+    mockRejectUsage,
+    mockReplyToReview,
+    mockUndoUsageRejection,
+    mockUpdateReply
+} = vi.hoisted(() => ({
+    mockConfirmUsage: vi.fn(),
     mockDeclare: vi.fn(),
     mockListOwnUsages: vi.fn(),
+    mockRejectUsage: vi.fn(),
     mockReplyToReview: vi.fn(),
+    mockUndoUsageRejection: vi.fn(),
     mockUpdateReply: vi.fn()
 }));
 
 vi.mock('@/lib/api/endpoints-protected', () => ({
     hostTradesApi: {
+        confirmUsage: (...args: unknown[]) => mockConfirmUsage(...args),
         declareUsageAsProvider: (...args: unknown[]) => mockDeclare(...args),
         listOwnUsages: (...args: unknown[]) => mockListOwnUsages(...args),
+        rejectUsage: (...args: unknown[]) => mockRejectUsage(...args),
         replyToReview: (...args: unknown[]) => mockReplyToReview(...args),
+        undoUsageRejection: (...args: unknown[]) => mockUndoUsageRejection(...args),
         updateReply: (...args: unknown[]) => mockUpdateReply(...args)
     }
 }));
@@ -79,15 +93,21 @@ function renderUsages(overrides: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
+    mockConfirmUsage.mockReset();
     mockDeclare.mockReset();
     mockListOwnUsages.mockReset();
+    mockRejectUsage.mockReset();
     mockReplyToReview.mockReset();
+    mockUndoUsageRejection.mockReset();
     mockUpdateReply.mockReset();
     mockDeclare.mockResolvedValue({ ok: true, data: { usage: makeUsage() } });
     mockListOwnUsages.mockResolvedValue({
         ok: true,
         data: { items: [], pagination: { page: 1, pageSize: 20, total: 0, totalPages: 0 } }
     });
+    mockConfirmUsage.mockResolvedValue({ ok: true, data: { usage: makeUsage() } });
+    mockRejectUsage.mockResolvedValue({ ok: true, data: { usage: makeUsage() } });
+    mockUndoUsageRejection.mockResolvedValue({ ok: true, data: { usage: makeUsage() } });
 });
 
 afterEach(() => {
@@ -97,6 +117,117 @@ afterEach(() => {
 // ---------------------------------------------------------------------------
 // Usos
 // ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// The provider's inbox (H-06 / H-65 / H-159)
+// ---------------------------------------------------------------------------
+
+/**
+ * These tests exist because this half of "A declara, B confirma" was missing.
+ *
+ * A host declared a usage by scanning the QR — the flagship channel, the sticker
+ * on the van — the row was created PENDING, and the provider's screen listed it
+ * with a "Pendiente" badge and NO button. The email even asked him to confirm and
+ * linked him to that exact screen. Every such row expired after 30 days without
+ * counting, so the QR channel produced none of the effects it exists for.
+ *
+ * Every assertion here is therefore about a BUTTON EXISTING and a REQUEST
+ * LEAVING. The list rendered perfectly while the bug was live; rendering is not
+ * the property under test.
+ */
+describe('ProviderUsagesPanel — answering what the host declared', () => {
+    const hostDeclared = makeUsage({ id: 'host-declared-1', declaredBy: 'HOST' });
+
+    it('offers confirm and reject on a usage the host declared', () => {
+        renderUsages({ initialPending: [hostDeclared] });
+
+        expect(screen.getByRole('button', { name: /confirmar/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /rechazar/i })).toBeInTheDocument();
+    });
+
+    it('confirms it through the API', async () => {
+        const user = userEvent.setup();
+        renderUsages({ initialPending: [hostDeclared] });
+
+        await user.click(screen.getByRole('button', { name: /confirmar/i }));
+
+        await waitFor(() => expect(mockConfirmUsage).toHaveBeenCalledTimes(1));
+        expect(mockConfirmUsage).toHaveBeenCalledWith({ id: 'host-declared-1' });
+    });
+
+    it('rejects it through the API, note and all', async () => {
+        const user = userEvent.setup();
+        renderUsages({ initialPending: [hostDeclared] });
+
+        await user.click(screen.getByRole('button', { name: /rechazar/i }));
+        await user.type(screen.getByLabelText(/por qué/i), 'Ese día no atendí.');
+        await user.click(screen.getByRole('button', { name: /sí, rechazar/i }));
+
+        await waitFor(() => expect(mockRejectUsage).toHaveBeenCalledTimes(1));
+        expect(mockRejectUsage).toHaveBeenCalledWith({
+            id: 'host-declared-1',
+            note: 'Ese día no atendí.'
+        });
+    });
+
+    it('rejects without a note, because the note is optional on purpose', async () => {
+        // Rejecting cheaply is the only control keeping the public counters
+        // honest. Demanding a written explanation to say "that never happened"
+        // taxes the one action the system most needs people to take.
+        const user = userEvent.setup();
+        renderUsages({ initialPending: [hostDeclared] });
+
+        await user.click(screen.getByRole('button', { name: /rechazar/i }));
+        await user.click(screen.getByRole('button', { name: /sí, rechazar/i }));
+
+        await waitFor(() => expect(mockRejectUsage).toHaveBeenCalledTimes(1));
+        // `undefined`, not an empty string: `rejectUsage` omits the key from the
+        // request body on a falsy note, and an empty string would be stored as a
+        // written reason that says nothing.
+        expect((mockRejectUsage.mock.calls[0]?.[0] as { note?: string }).note).toBeUndefined();
+    });
+
+    it('does NOT offer to answer a usage the provider declared himself', () => {
+        // That one waits on the HOST. A button here would 404 — the endpoint
+        // refuses the declarant answering their own declaration, and answers
+        // 404 rather than 403 so it cannot be used to probe which ids exist.
+        renderUsages({
+            initialPending: [],
+            initialUsages: [makeUsage({ declaredBy: 'PROVIDER' })]
+        });
+
+        expect(screen.queryByRole('button', { name: /confirmar/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /^rechazar/i })).not.toBeInTheDocument();
+    });
+
+    it('offers undo on a rejection the provider made, and not on one he received', () => {
+        renderUsages({
+            initialUsages: [
+                makeUsage({ id: 'mine', status: 'REJECTED', declaredBy: 'HOST' }),
+                makeUsage({ id: 'theirs', status: 'REJECTED', declaredBy: 'PROVIDER' })
+            ]
+        });
+
+        // Exactly one: the host-declared row is the one this provider refused.
+        expect(screen.getAllByRole('button', { name: /deshacer el rechazo/i })).toHaveLength(1);
+    });
+
+    it('asks the API for PENDING rows the HOST declared when it re-reads the inbox', async () => {
+        const user = userEvent.setup();
+        renderUsages({ initialPending: [hostDeclared] });
+
+        await user.click(screen.getByRole('button', { name: /confirmar/i }));
+
+        await waitFor(() => expect(mockListOwnUsages).toHaveBeenCalled());
+        // The narrowing has to reach the API. Splitting a PENDING page here
+        // would report an empty inbox whenever the first page happens to hold
+        // the provider's own declarations — a wrong all-clear.
+        const inboxCall = mockListOwnUsages.mock.calls
+            .map((call) => call[0] as Record<string, unknown>)
+            .find((params) => params?.declaredBy !== undefined);
+        expect(inboxCall).toMatchObject({ status: 'PENDING', declaredBy: 'HOST' });
+    });
+});
 
 describe('ProviderUsagesPanel — declaring', () => {
     it('sends the selected host id and NOT an email', async () => {

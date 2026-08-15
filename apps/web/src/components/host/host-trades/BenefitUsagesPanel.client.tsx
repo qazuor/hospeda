@@ -18,7 +18,7 @@
  * works: only the account that rejected may reverse it (see `canUndoRejection`).
  */
 
-import { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import type { BenefitUsage, BenefitUsageStatus } from '@/lib/api/endpoints-protected';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
@@ -28,13 +28,11 @@ import { createTranslations } from '@/lib/i18n';
 import { BenefitUsageCard } from './BenefitUsageCard';
 import { BENEFIT_USAGES_UPDATED_EVENT } from './BenefitUsagesCountPill.client';
 import styles from './BenefitUsagesPanel.module.css';
+import { RejectUsageDialog } from './RejectUsageDialog.client';
 import { ReviewFormDialog } from './ReviewFormDialog.client';
 
 /** Rows per page, matching what the page asked for server-side. */
 const PAGE_SIZE = 20;
-
-/** Maximum length of the optional rejection note, mirroring the API's cap. */
-const REJECTION_NOTE_MAX = 300;
 
 /** History filter values: the four states, plus "everything". */
 const FILTERS = ['ALL', 'PENDING', 'CONFIRMED', 'REJECTED', 'EXPIRED'] as const;
@@ -76,7 +74,6 @@ export function BenefitUsagesPanel({
 }: BenefitUsagesPanelProps) {
     const { t } = createTranslations(locale);
 
-    const dialogRef = useRef<HTMLDialogElement>(null);
     const noteFieldId = useId();
 
     const [pending, setPending] = useState<readonly BenefitUsage[]>(initialPending);
@@ -95,7 +92,6 @@ export function BenefitUsagesPanel({
     );
 
     const [rejectTarget, setRejectTarget] = useState<BenefitUsage | null>(null);
-    const [rejectionNote, setRejectionNote] = useState('');
     const [reviewTarget, setReviewTarget] = useState<BenefitUsage | null>(null);
 
     const genericError = t(
@@ -182,58 +178,21 @@ export function BenefitUsagesPanel({
         [runTransition]
     );
 
-    const openRejectDialog = useCallback((usage: BenefitUsage) => {
-        setRejectionNote('');
-        setRejectTarget(usage);
-    }, []);
+    const openRejectDialog = useCallback((usage: BenefitUsage) => setRejectTarget(usage), []);
 
     const closeRejectDialog = useCallback(() => setRejectTarget(null), []);
 
-    const confirmRejection = useCallback(async () => {
-        if (!rejectTarget) return;
+    const confirmRejection = useCallback(
+        async (note?: string) => {
+            if (!rejectTarget) return;
 
-        const target = rejectTarget;
-        const trimmed = rejectionNote.trim();
-        setRejectTarget(null);
+            const target = rejectTarget;
+            setRejectTarget(null);
 
-        await runTransition(target, () =>
-            hostTradesApi.rejectUsage({
-                id: target.id,
-                note: trimmed.length > 0 ? trimmed : undefined
-            })
-        );
-    }, [rejectTarget, rejectionNote, runTransition]);
-
-    // The dialog is opened imperatively so the browser gives it the focus trap
-    // and Escape handling. `showModal` is guarded because jsdom does not
-    // implement it, and an unguarded call takes every test in this file down.
-    // The cleanup returns focus to the button that opened it. The browser does
-    // not do it here: the dialog is closed by React dropping `rejectTarget`,
-    // and the row underneath re-renders in the same pass, so whatever
-    // focus-restoration the platform had queued is lost — measured, focus
-    // landed on <body>, leaving a keyboard user at the top of the document
-    // (WCAG 2.4.3).
-    useEffect(() => {
-        const dialog = dialogRef.current;
-        if (!dialog || !rejectTarget) return;
-
-        const previouslyFocused = document.activeElement as HTMLElement | null;
-
-        if (typeof dialog.showModal === 'function') {
-            dialog.showModal();
-        } else {
-            dialog.setAttribute('open', '');
-        }
-
-        return () => {
-            // `isConnected` guards the row having been re-rendered away while
-            // the dialog was open: focusing a detached node does nothing, and
-            // asking first says why the call is conditional.
-            if (previouslyFocused?.isConnected) {
-                previouslyFocused.focus?.();
-            }
-        };
-    }, [rejectTarget]);
+            await runTransition(target, () => hostTradesApi.rejectUsage({ id: target.id, note }));
+        },
+        [rejectTarget, runTransition]
+    );
 
     const changeFilter = useCallback(
         async (nextFilter: HistoryFilter) => {
@@ -395,66 +354,15 @@ export function BenefitUsagesPanel({
             </section>
 
             {rejectTarget ? (
-                <dialog
-                    aria-labelledby={`${noteFieldId}-dialog-title`}
-                    className={styles.dialog}
+                <RejectUsageDialog
+                    counterpartName={
+                        rejectTarget.hostTrade?.name ??
+                        t('host-trades.usages.card.unknownProvider', 'Proveedor del directorio')
+                    }
+                    locale={locale}
                     onCancel={closeRejectDialog}
-                    onClose={closeRejectDialog}
-                    ref={dialogRef}
-                >
-                    <h2
-                        className={styles.dialogTitle}
-                        id={`${noteFieldId}-dialog-title`}
-                    >
-                        {t('host-trades.usages.reject.title', '¿Rechazar este uso?')}
-                    </h2>
-                    <p className={styles.dialogBody}>
-                        {t(
-                            'host-trades.usages.reject.body',
-                            'Le vamos a avisar a {{name}} que este uso no ocurrió. Podés deshacerlo después: el rechazo es reversible.',
-                            {
-                                name:
-                                    rejectTarget.hostTrade?.name ??
-                                    t(
-                                        'host-trades.usages.card.unknownProvider',
-                                        'Proveedor del directorio'
-                                    )
-                            }
-                        )}
-                    </p>
-
-                    <label
-                        className={styles.dialogLabel}
-                        htmlFor={noteFieldId}
-                    >
-                        {t('host-trades.usages.reject.noteLabel', 'Contale por qué (opcional)')}
-                    </label>
-                    <textarea
-                        className={styles.dialogTextarea}
-                        id={noteFieldId}
-                        maxLength={REJECTION_NOTE_MAX}
-                        onChange={(event) => setRejectionNote(event.target.value)}
-                        rows={3}
-                        value={rejectionNote}
-                    />
-
-                    <div className={styles.dialogActions}>
-                        <button
-                            className={styles.secondaryAction}
-                            onClick={closeRejectDialog}
-                            type="button"
-                        >
-                            {t('host-trades.usages.reject.cancel', 'Volver')}
-                        </button>
-                        <button
-                            className={styles.dangerAction}
-                            onClick={confirmRejection}
-                            type="button"
-                        >
-                            {t('host-trades.usages.reject.confirm', 'Sí, rechazar')}
-                        </button>
-                    </div>
-                </dialog>
+                    onConfirm={confirmRejection}
+                />
             ) : null}
 
             {reviewTarget?.hostTrade ? (
