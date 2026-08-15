@@ -87,7 +87,8 @@
         "gen:env-examples": "tsx scripts/generate-env-examples.ts",
         "gen:env-registry-json": "tsx scripts/generate-env-registry-json.ts",
         "cli": "tsx scripts/cli.ts",
-        "test:cli": "vitest run --config scripts/cli/vitest.config.ts"
+        "test:cli": "vitest run --config scripts/cli/vitest.config.ts",
+        "test:scripts": "vitest run --config scripts/vitest.config.ts"
     },
     "devDependencies": {
         "@biomejs/biome": "2.5.2",
