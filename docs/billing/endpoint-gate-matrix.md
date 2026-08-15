@@ -668,6 +668,8 @@
 | `DELETE /api/v1/admin/billing/addons/{id}` | `billing/admin/addons.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |
 | `POST /api/v1/admin/billing/addons/{id}/restore` | `billing/admin/addons.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |
 | `DELETE /api/v1/admin/billing/addons/{id}/hard` | `billing/admin/addons.ts` | none | - | n/a | Admin hard-delete; PermissionEnum.BILLING_MANAGE gated |
+| `GET /api/v1/admin/billing/payments` | `billing/admin/payments-view.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated. Hospeda-owned collection view mounted ahead of the qzpay tier; every other payments verb stays with qzpay |
+| `GET /api/v1/admin/billing/subscriptions` | `billing/admin/subscriptions-view.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated. Hospeda-owned collection view mounted ahead of the qzpay tier; every other subscriptions verb stays with qzpay |
 | `GET /api/v1/admin/billing/plans` | `billing/admin/plans.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `GET /api/v1/admin/billing/plans/{id}` | `billing/admin/plans.ts` | none | - | n/a | Admin read; PermissionEnum.BILLING_READ_ALL gated |
 | `POST /api/v1/admin/billing/plans` | `billing/admin/plans.ts` | none | - | n/a | Admin write; PermissionEnum.BILLING_MANAGE gated |
