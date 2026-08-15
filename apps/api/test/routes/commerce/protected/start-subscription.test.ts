@@ -68,13 +68,24 @@ vi.mock('../../../../src/middlewares/authorization', () => ({
     protectedAuthMiddleware: vi.fn(() => (_c: unknown, next: () => Promise<void>) => next())
 }));
 
-const { mockGastronomyFindById, mockExperienceFindById } = vi.hoisted(() => ({
+const {
+    mockGastronomyFindById,
+    mockExperienceFindById,
+    mockFindByGastronomies,
+    mockFindByExperiences
+} = vi.hoisted(() => ({
     mockGastronomyFindById: vi.fn(),
-    mockExperienceFindById: vi.fn()
+    mockExperienceFindById: vi.fn(),
+    mockFindByGastronomies: vi.fn(),
+    mockFindByExperiences: vi.fn()
 }));
 vi.mock('@repo/db', () => ({
     gastronomyModel: { findById: mockGastronomyFindById },
     experienceModel: { findById: mockExperienceFindById },
+    // HOS-494: the featured image reaches the completeness gate through the
+    // relational media tables, never off the raw listing row (HOS-372).
+    gastronomyMediaModel: { findByGastronomies: mockFindByGastronomies },
+    experienceMediaModel: { findByExperiences: mockFindByExperiences },
     // Required by role-permissions-cache.ts (loaded via the actor middleware
     // chain pulled in by the route module at module load — same fix as
     // test/routes/start-paid.test.ts). This test never resolves permissions
@@ -141,7 +152,22 @@ const OTHER_USER_ID = '99999999-9999-4999-8999-999999999999';
 const ENTITY_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const CUSTOMER_ID = 'cust_owner';
 
-/** A fully-complete gastronomy listing row (see commerce-completeness.test.ts fixture). */
+/**
+ * A fully-complete gastronomy listing row, shaped as the DB ACTUALLY returns it
+ * since HOS-372 (see commerce-completeness.test.ts fixture for the composed
+ * shape).
+ *
+ * REGRESSION ANCHOR (H-154 / HOS-494): this fixture deliberately carries NO
+ * `media` key. HOS-372 dropped the `media` JSONB column from `gastronomies` /
+ * `experiences`; the featured image now lives only in the relational
+ * `gastronomy_media` / `experience_media` tables and is composed at read time.
+ * The previous version of this fixture set `media.featuredImage` directly on the
+ * raw row — a shape that has not existed in the database since that migration.
+ * That fabricated key is the reason the suite stayed green while every commerce
+ * checkout in production 422'd on `missing: ["media.featuredImage"]`. Do NOT add
+ * a `media` key back here: the featured image must arrive through the mocked
+ * media model, exactly as it does in production.
+ */
 function makeCompleteGastronomyRow(ownerId: string) {
     return {
         id: ENTITY_ID,
@@ -152,7 +178,6 @@ function makeCompleteGastronomyRow(ownerId: string) {
             'La Parrilla del Puerto has served the waterfront for over a decade, specializing in grilled fish and classic asado.',
         destinationId: '00000000-0000-4000-a000-000000000002',
         type: 'RESTAURANT',
-        media: { featuredImage: { url: 'https://example.com/img.jpg' } },
         contactInfo: { personalEmail: 'owner@example.com' },
         openingHours: {
             timezone: 'America/Argentina/Buenos_Aires',
@@ -168,6 +193,32 @@ function makeCompleteGastronomyRow(ownerId: string) {
         },
         priceRange: 'MODERATE'
     };
+}
+
+/**
+ * A relational commerce-media row, shaped as `gastronomy_media` /
+ * `experience_media` store it (HOS-372). Only the columns
+ * `composeCommerceMedia` reads are set.
+ *
+ * Defaults to the row that makes a listing publishable: `state: 'visible'` AND
+ * `isFeatured: true`. Both conditions matter — see the archived/non-featured
+ * regression tests below.
+ */
+function makeMediaRow(overrides: Record<string, unknown> = {}) {
+    return {
+        id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        url: 'https://example.com/img.jpg',
+        moderationState: 'APPROVED',
+        state: 'visible',
+        isFeatured: true,
+        sortOrder: 0,
+        ...overrides
+    };
+}
+
+/** Builds the `Map<entityId, rows>` shape the batch media finders return. */
+function mediaMap(rows: readonly unknown[]) {
+    return new Map<string, unknown[]>([[ENTITY_ID, [...rows]]]);
 }
 
 interface ContextOptions {
@@ -224,6 +275,8 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         mockGetQZPayBilling.mockReturnValue(DEFAULT_BILLING);
         mockGetCommerceListingSubscriptionStatus.mockResolvedValue(null);
         mockGastronomyFindById.mockResolvedValue(makeCompleteGastronomyRow(OWNER_ID));
+        mockFindByGastronomies.mockResolvedValue(mediaMap([makeMediaRow()]));
+        mockFindByExperiences.mockResolvedValue(mediaMap([makeMediaRow()]));
         mockInitiateCommerceMonthlySubscription.mockResolvedValue({
             checkoutUrl: 'https://mp.test/checkout',
             localSubscriptionId: 'sub-local-1',
@@ -279,6 +332,10 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
             ownerId: OWNER_ID,
             name: 'Draft'
         });
+        // A bare draft has uploaded no photos either, so the relational media
+        // table is empty for it — that is what makes `media.featuredImage`
+        // legitimately missing here.
+        mockFindByGastronomies.mockResolvedValue(new Map());
         const ctx = createMockContext();
 
         const result = await handleCommerceStartSubscription(ctx as never, {
@@ -293,6 +350,104 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect(body.error.missing.length).toBeGreaterThan(0);
         expect(body.error.missing).toContain('media.featuredImage');
         expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+    });
+
+    // ── H-154 / HOS-494: the featured image lives in the relational table ─
+    //
+    // HOS-372 dropped the `media` JSONB column. The gate must therefore compose
+    // `media` from `gastronomy_media` / `experience_media` instead of reading it
+    // off the raw row, where it can no longer exist. Before the fix every one of
+    // these listings 422'd on `media.featuredImage`, blocking commerce checkout
+    // in production for BOTH verticals.
+
+    it('passes the completeness gate when the featured image exists only in gastronomy_media (H-154)', async () => {
+        const ctx = createMockContext();
+
+        const result = await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        expect(result).not.toBeInstanceOf(Response);
+        expect(mockFindByGastronomies).toHaveBeenCalledWith(
+            expect.objectContaining({ gastronomyIds: [ENTITY_ID] })
+        );
+        expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledTimes(1);
+    });
+
+    it('passes the completeness gate when the featured image exists only in experience_media (H-154)', async () => {
+        mockExperienceFindById.mockResolvedValue({
+            ...makeCompleteGastronomyRow(OWNER_ID),
+            priceFrom: 1_500_000,
+            isPriceOnRequest: false
+        });
+        const ctx = createMockContext();
+
+        const result = await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            entityId: ENTITY_ID
+        });
+
+        expect(result).not.toBeInstanceOf(Response);
+        expect(mockFindByExperiences).toHaveBeenCalledWith(
+            expect.objectContaining({ experienceIds: [ENTITY_ID] })
+        );
+        expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledTimes(1);
+    });
+
+    it('still 422s when the listing has no media rows at all', async () => {
+        mockFindByGastronomies.mockResolvedValue(new Map());
+        const ctx = createMockContext();
+
+        const result = await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        expect(result).toBeInstanceOf(Response);
+        expect((result as Response).status).toBe(422);
+        const body = (await (result as Response).json()) as { error: { missing: string[] } };
+        expect(body.error.missing).toContain('media.featuredImage');
+        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+    });
+
+    it('still 422s when media rows exist but none is featured', async () => {
+        mockFindByGastronomies.mockResolvedValue(mediaMap([makeMediaRow({ isFeatured: false })]));
+        const ctx = createMockContext();
+
+        const result = await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        expect(result).toBeInstanceOf(Response);
+        expect((result as Response).status).toBe(422);
+        const body = (await (result as Response).json()) as { error: { missing: string[] } };
+        expect(body.error.missing).toContain('media.featuredImage');
+    });
+
+    // Pins the COMPOSITION semantics, not a reachable production state: a CHECK
+    // constraint on both media tables
+    // (`chk_{gastronomy,experience}_media_featured_not_archived`) already makes an
+    // archived featured row impossible to write. The assertion is that the gate
+    // decides via `composeCommerceMedia`'s `state === 'visible'` rule rather than a
+    // looser read such as `findFeatured` — so the gate keeps matching what the
+    // public listing renders even if that constraint is ever relaxed.
+    it('still 422s when the only featured row is archived rather than visible', async () => {
+        mockFindByGastronomies.mockResolvedValue(
+            mediaMap([makeMediaRow({ state: 'archived', isFeatured: true })])
+        );
+        const ctx = createMockContext();
+
+        const result = await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        expect(result).toBeInstanceOf(Response);
+        expect((result as Response).status).toBe(422);
+        const body = (await (result as Response).json()) as { error: { missing: string[] } };
+        expect(body.error.missing).toContain('media.featuredImage');
     });
 
     // ── AC-16: already-subscribed guard ──────────────────────────────────

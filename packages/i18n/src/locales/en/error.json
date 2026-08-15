@@ -19,6 +19,7 @@
     },
     "form": {
         "validation-failed": "Form validation failed. Please fix the errors and try again.",
+        "error-summary-title": "Review the following fields",
         "save-failed": "Save failed",
         "save-success": "Saved successfully",
         "save-success-message": "Your changes were saved correctly",

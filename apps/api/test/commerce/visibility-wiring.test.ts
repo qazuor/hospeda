@@ -37,6 +37,14 @@ const dbUpdate = vi.fn(() => ({ set: updateSet }));
  * (required by the reconciler's own read), every field
  * `resolveListingCompleteness` reads is optional — a row missing them is
  * genuinely incomplete, exactly like a real DRAFT listing (HOS-166 §6.6).
+ *
+ * REGRESSION ANCHOR (H-154 / HOS-494): there is deliberately NO `media` field.
+ * HOS-372 dropped the `media` JSONB column, so a raw row can no longer carry
+ * one. This interface used to declare `media?: { featuredImage?: ... }` and the
+ * fixtures below set it directly — a shape the database stopped returning,
+ * which is why this suite stayed green while the reconciler kept every paid
+ * commerce listing PRIVATE in production. The featured image now comes from
+ * {@link mediaStore}, mirroring `gastronomy_media` / `experience_media`.
  */
 interface FakeEntityRow {
     id: string;
@@ -49,7 +57,6 @@ interface FakeEntityRow {
     destinationId?: string;
     ownerId?: string;
     type?: string;
-    media?: { featuredImage?: { url: string } };
     contactInfo?: { personalEmail?: string };
     openingHours?: {
         timezone: string;
@@ -60,13 +67,22 @@ interface FakeEntityRow {
     isPriceOnRequest?: boolean;
 }
 
-/** A fully-complete gastronomy row — satisfies every shared + gastronomy-specific requirement. */
+/**
+ * A fully-complete gastronomy row — satisfies every shared + gastronomy-specific
+ * requirement.
+ *
+ * Also seeds {@link mediaStore} with a visible featured photo, because since
+ * HOS-372 a complete listing's featured image lives in `gastronomy_media`, not
+ * on the row. A test that wants a listing WITHOUT a photo clears the entry
+ * afterwards (see the H-154 regression tests).
+ */
 function makeCompleteGastronomyRow(base: {
     id: string;
     visibility: string;
     lifecycleState: string;
     moderationState?: string;
 }): FakeEntityRow {
+    mediaStore.set(base.id, [makeMediaRow()]);
     return {
         ...base,
         name: 'La Parrilla del Puerto',
@@ -76,7 +92,6 @@ function makeCompleteGastronomyRow(base: {
         destinationId: '00000000-0000-4000-a000-000000000002',
         ownerId: '00000000-0000-4000-a000-000000000001',
         type: 'RESTAURANT',
-        media: { featuredImage: { url: 'https://example.com/img.jpg' } },
         contactInfo: { personalEmail: 'owner@example.com' },
         openingHours: {
             timezone: 'America/Argentina/Buenos_Aires',
@@ -94,13 +109,18 @@ function makeCompleteGastronomyRow(base: {
     };
 }
 
-/** A fully-complete experience row — satisfies shared + experience-specific requirements. */
+/**
+ * A fully-complete experience row — satisfies shared + experience-specific
+ * requirements. Seeds {@link mediaStore} for the same reason as
+ * {@link makeCompleteGastronomyRow}.
+ */
 function makeCompleteExperienceRow(base: {
     id: string;
     visibility: string;
     lifecycleState: string;
     moderationState?: string;
 }): FakeEntityRow {
+    mediaStore.set(base.id, [makeMediaRow()]);
     return {
         ...base,
         name: 'Kayak tour on the Uruguay river',
@@ -110,7 +130,6 @@ function makeCompleteExperienceRow(base: {
         destinationId: '00000000-0000-4000-a000-000000000002',
         ownerId: '00000000-0000-4000-a000-000000000001',
         type: 'TOUR_GUIDE',
-        media: { featuredImage: { url: 'https://example.com/kayak.jpg' } },
         contactInfo: { personalEmail: 'guide@example.com' },
         priceFrom: 1500000,
         isPriceOnRequest: false
@@ -122,6 +141,51 @@ function makeCompleteExperienceRow(base: {
 // so the REAL `resolveCommerceEntityModel` → REAL reconciler → REAL
 // `resolveCommerceListingCompleteness` all run end-to-end against it.
 const entityStore = new Map<string, FakeEntityRow>();
+
+/**
+ * Stand-in for `gastronomy_media` / `experience_media` (HOS-372): entityId →
+ * relational media rows. This — not a `media` key on the entity row — is where
+ * a listing's featured image lives, so it is what decides whether the
+ * completeness gate sees `media.featuredImage`.
+ */
+const mediaStore = new Map<string, FakeMediaRow[]>();
+
+/** Subset of a commerce media row that `composeCommerceMedia` actually reads. */
+interface FakeMediaRow {
+    id: string;
+    url: string;
+    moderationState: string;
+    state: string;
+    isFeatured: boolean;
+    sortOrder: number;
+}
+
+/**
+ * A visible, featured media row — the one that makes a listing publishable.
+ * Both flags matter: `composeCommerceMedia` requires `state === 'visible'` AND
+ * `isFeatured`.
+ */
+function makeMediaRow(overrides: Partial<FakeMediaRow> = {}): FakeMediaRow {
+    return {
+        id: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb',
+        url: 'https://example.com/img.jpg',
+        moderationState: 'APPROVED',
+        state: 'visible',
+        isFeatured: true,
+        sortOrder: 0,
+        ...overrides
+    };
+}
+
+/** Batch finder shared by both media model stubs: ids → Map<id, rows>. */
+function findMediaByIds(ids: readonly string[]): Promise<Map<string, FakeMediaRow[]>> {
+    const grouped = new Map<string, FakeMediaRow[]>();
+    for (const id of ids) {
+        const rows = mediaStore.get(id);
+        if (rows) grouped.set(id, rows);
+    }
+    return Promise.resolve(grouped);
+}
 
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(() => ({ select: dbSelect, update: dbUpdate })),
@@ -152,6 +216,17 @@ vi.mock('@repo/db', () => ({
             if (cur) entityStore.set(where.id, { ...cur, ...data });
             return Promise.resolve(undefined);
         }
+    },
+    // HOS-372 / H-154: the relational media tables the completeness gate now
+    // composes `media` from. Backed by `mediaStore` so the REAL
+    // `loadCommerceListingMedia` runs against them end-to-end.
+    gastronomyMediaModel: {
+        findByGastronomies: ({ gastronomyIds }: { gastronomyIds: readonly string[] }) =>
+            findMediaByIds(gastronomyIds)
+    },
+    experienceMediaModel: {
+        findByExperiences: ({ experienceIds }: { experienceIds: readonly string[] }) =>
+            findMediaByIds(experienceIds)
     }
 }));
 
@@ -164,6 +239,7 @@ describe('reconcileCommerceListingForSubscription (SPEC-239 T-050)', () => {
     beforeEach(() => {
         linkRows.length = 0;
         entityStore.clear();
+        mediaStore.clear();
         dbSelect.mockClear();
         dbUpdate.mockClear();
         updateSet.mockClear();
@@ -250,6 +326,7 @@ describe('reconcileCommerceListingForSubscription — incomplete listing (HOS-16
     beforeEach(() => {
         linkRows.length = 0;
         entityStore.clear();
+        mediaStore.clear();
         dbSelect.mockClear();
         dbUpdate.mockClear();
         updateSet.mockClear();
@@ -312,6 +389,7 @@ describe('reconcileCommerceListingForSubscription — moderationState=REJECTED (
     beforeEach(() => {
         linkRows.length = 0;
         entityStore.clear();
+        mediaStore.clear();
         dbSelect.mockClear();
         dbUpdate.mockClear();
         updateSet.mockClear();
@@ -370,6 +448,7 @@ describe('reconcileCommerceListingForSubscription — experience entity (H-1 reg
     beforeEach(() => {
         linkRows.length = 0;
         entityStore.clear();
+        mediaStore.clear();
         dbSelect.mockClear();
         dbUpdate.mockClear();
         updateSet.mockClear();
@@ -412,6 +491,121 @@ describe('reconcileCommerceListingForSubscription — experience entity (H-1 reg
             subscriptionId: SUB_ID,
             subscriptionStatus: 'cancelled',
             source: 'dunning-cron'
+        });
+
+        expect(entityStore.get(ENTITY_ID)).toMatchObject({
+            visibility: 'PRIVATE',
+            lifecycleState: 'INACTIVE'
+        });
+    });
+});
+
+// ── H-154 / HOS-494 ────────────────────────────────────────────────────────
+//
+// The featured image moved to the relational media tables in HOS-372, but this
+// reconciler kept reading it off the raw row. Every paid listing therefore
+// evaluated as incomplete and stayed PRIVATE — silently, since a listing that
+// fails to publish raises no alarm. These tests pin the composed read.
+
+describe('completeness reads media from the relational tables (H-154)', () => {
+    beforeEach(() => {
+        linkRows.length = 0;
+        entityStore.clear();
+        mediaStore.clear();
+        dbSelect.mockClear();
+        dbUpdate.mockClear();
+        updateSet.mockClear();
+    });
+
+    it('publishes a gastronomy listing whose featured image is only in gastronomy_media', async () => {
+        linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteGastronomyRow({
+                id: ENTITY_ID,
+                visibility: 'PRIVATE',
+                lifecycleState: 'INACTIVE'
+            })
+        );
+        // The entity row itself carries no media key — only the relational rows do.
+        expect(mediaStore.get(ENTITY_ID)).toHaveLength(1);
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'mp-webhook'
+        });
+
+        expect(entityStore.get(ENTITY_ID)).toMatchObject({
+            visibility: 'PUBLIC',
+            lifecycleState: 'ACTIVE'
+        });
+    });
+
+    it('publishes an experience listing whose featured image is only in experience_media', async () => {
+        linkRows.push({ entityType: 'experience', entityId: ENTITY_ID });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteExperienceRow({
+                id: ENTITY_ID,
+                visibility: 'PRIVATE',
+                lifecycleState: 'INACTIVE'
+            })
+        );
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'mp-webhook'
+        });
+
+        expect(entityStore.get(ENTITY_ID)).toMatchObject({
+            visibility: 'PUBLIC',
+            lifecycleState: 'ACTIVE'
+        });
+    });
+
+    it('keeps a listing PRIVATE when it has no media rows at all', async () => {
+        linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
+        const row = makeCompleteGastronomyRow({
+            id: ENTITY_ID,
+            visibility: 'PRIVATE',
+            lifecycleState: 'INACTIVE'
+        });
+        entityStore.set(ENTITY_ID, row);
+        mediaStore.delete(ENTITY_ID);
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'mp-webhook'
+        });
+
+        expect(entityStore.get(ENTITY_ID)).toMatchObject({
+            visibility: 'PRIVATE',
+            lifecycleState: 'INACTIVE'
+        });
+    });
+
+    // Pins the composition semantics rather than a reachable state: a CHECK
+    // constraint on both media tables already forbids an archived featured row.
+    // See `loadCommerceListingMedia`'s note on why the gate composes anyway.
+    it('keeps a listing PRIVATE when its only featured photo is archived', async () => {
+        linkRows.push({ entityType: 'gastronomy', entityId: ENTITY_ID });
+        entityStore.set(
+            ENTITY_ID,
+            makeCompleteGastronomyRow({
+                id: ENTITY_ID,
+                visibility: 'PRIVATE',
+                lifecycleState: 'INACTIVE'
+            })
+        );
+        mediaStore.set(ENTITY_ID, [makeMediaRow({ state: 'archived', isFeatured: true })]);
+
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_ID,
+            subscriptionStatus: 'active',
+            source: 'mp-webhook'
         });
 
         expect(entityStore.get(ENTITY_ID)).toMatchObject({
