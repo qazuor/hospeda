@@ -3,7 +3,8 @@
  * Returns aggregated statistics for the authenticated user.
  * @route GET /api/v1/protected/users/me/stats
  */
-import { and, billingCustomers, billingSubscriptions, desc, eq, getDb, or } from '@repo/db';
+import { ENTITLEMENT_GRANTING_STATUSES } from '@repo/billing';
+import { and, billingCustomers, billingSubscriptions, desc, eq, getDb, inArray } from '@repo/db';
 import {
     AccommodationReviewService,
     DestinationReviewService,
@@ -132,17 +133,23 @@ export const userStatsRoute = createProtectedRoute({
                 .limit(1);
 
             if (customer) {
-                /** Find the most recent active or trialing subscription */
+                /**
+                 * Find the most recent entitlement-granting subscription.
+                 *
+                 * H-70: this used a hand-written `active || trialing` pair and
+                 * therefore dropped `comp`. A complimentary subscriber got
+                 * `plan: null`, which the account dashboard renders as
+                 * "Plan Gratuito" — telling someone on a comped paid plan that
+                 * they have nothing. `ENTITLEMENT_GRANTING_STATUSES` is the
+                 * canonical set (created for exactly this drift in HOS-239).
+                 */
                 const [subscription] = await db
                     .select()
                     .from(billingSubscriptions)
                     .where(
                         and(
                             eq(billingSubscriptions.customerId, customer.id),
-                            or(
-                                eq(billingSubscriptions.status, 'active'),
-                                eq(billingSubscriptions.status, 'trialing')
-                            )
+                            inArray(billingSubscriptions.status, [...ENTITLEMENT_GRANTING_STATUSES])
                         )
                     )
                     .orderBy(desc(billingSubscriptions.createdAt))

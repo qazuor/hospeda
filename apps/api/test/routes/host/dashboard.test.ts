@@ -357,6 +357,59 @@ describe('GET /api/v1/protected/host/dashboard (SPEC-205)', () => {
             expect(body.data.plan).toBeNull();
         });
 
+        it('populates plan for a COMPLIMENTARY subscription (H-70)', async () => {
+            // Arrange — a comp subscription is a real, entitlement-granting plan
+            // (SubscriptionStatusEnum.COMP). It was dropped by a hardcoded
+            // `status === 'active' || status === 'trialing'` find, so the panel
+            // reported plan: null and the dashboard read "Plan Gratuito" to an
+            // owner on a comped $18.000 plan.
+            getQZPayBillingMock.mockReturnValue({
+                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
+                subscriptions: {
+                    getByCustomerId: vi
+                        .fn()
+                        .mockResolvedValue([{ status: 'comp', planId: 'plan-owner-premium' }])
+                },
+                plans: { get: vi.fn().mockResolvedValue({ name: 'Premium' }) }
+            });
+            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+
+            // Act
+            const res = await app.request('/dashboard');
+            const body = await res.json();
+
+            // Assert — a comp is live, so it maps to `active`; `isTrial` is false
+            // because a complimentary grant is not a trial.
+            expect(body.data.plan).toEqual({
+                slug: 'Premium',
+                name: 'Premium',
+                status: 'active',
+                isTrial: false
+            });
+        });
+
+        it('still returns plan = null for a genuinely non-granting status (H-70 does not over-reach)', async () => {
+            // Arrange — widening the find to include `comp` must not resurrect
+            // statuses that legitimately grant nothing.
+            getQZPayBillingMock.mockReturnValue({
+                customers: { getByExternalId: vi.fn().mockResolvedValue({ id: 'cust-1' }) },
+                subscriptions: {
+                    getByCustomerId: vi
+                        .fn()
+                        .mockResolvedValue([{ status: 'expired', planId: 'plan-owner-premium' }])
+                },
+                plans: { get: vi.fn().mockResolvedValue({ name: 'Premium' }) }
+            });
+            const app = buildApp([EntitlementKey.VIEW_BASIC_STATS]);
+
+            // Act
+            const res = await app.request('/dashboard');
+            const body = await res.json();
+
+            // Assert
+            expect(body.data.plan).toBeNull();
+        });
+
         it('populates plan with mapped status + isTrial for a trialing subscription', async () => {
             // Arrange
             getQZPayBillingMock.mockReturnValue({
