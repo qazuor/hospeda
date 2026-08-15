@@ -204,18 +204,32 @@ export interface MyCommerceLead {
  * this is a pre-fill convenience, never a gate; the create page must render
  * fully usable regardless of the outcome (AC-10/AC-11).
  *
+ * `vertical` is REQUIRED (H-155). Without it the endpoint returns the owner's
+ * most recent lead in ANY vertical, so opening the experience create form
+ * pre-filled it with a gastronomy lead's business name and destination. The
+ * create form derives the public slug from `name` and the slug is immutable
+ * afterwards, so an owner who misses the pre-filled restaurant name ships their
+ * excursion under it permanently — an irreversible error committed in the same
+ * click. One owner holding listings in both verticals is exactly what the
+ * product invites, so this is the common case, not an edge one.
+ *
+ * @param vertical - The vertical whose create form is being rendered; scopes the
+ *   lead lookup to that domain.
  * @param cookieHeader - Raw `Cookie` header from the SSR request, forwarded so
  *   the protected endpoint can resolve the session.
- * @returns The pre-fill-shaped lead, or `null` when the caller has none / the
- *   request failed.
+ * @returns The pre-fill-shaped lead, or `null` when the caller has none in this
+ *   vertical / the request failed.
  */
 export async function fetchMyCommerceLead({
+    vertical,
     cookieHeader
 }: {
+    vertical: CommerceVertical;
     cookieHeader?: string;
 }): Promise<MyCommerceLead | null> {
     const result = await apiClient.getProtected<{ readonly lead: MyCommerceLead | null }>({
         path: COMMERCE_MY_LEAD_PATH,
+        params: { domain: vertical },
         cookieHeader
     });
 
