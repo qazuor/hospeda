@@ -91,11 +91,16 @@ export interface UseZodFormResult<TSchema extends ZodTypeAny> {
      */
     readonly validate: (payload: unknown) => SafeParseResult<TSchema>;
     /**
-     * Maps an API 400 error to field errors (via {@link apiErrorToFieldErrors}).
-     * When the API sent no per-field details (the common production case for
-     * `ServiceError`-driven 400s — see `field-errors.ts` module doc), falls
-     * back to setting `formError` from `translateApiError` (or the raw
-     * `message`/`fallback` when no `t` was supplied).
+     * Maps an API 400 error to field errors (via {@link apiErrorToFieldErrors},
+     * localized when a `t` was supplied) AND sets `formError` from
+     * `translateApiError` (or the raw `message`/`fallback` when no `t` was
+     * supplied).
+     *
+     * The banner is set even when per-field errors were mapped, because a
+     * caller may not render those fields at all — `HostTradeEditForm` and
+     * `PartnerEditForm` read only `formError`, so returning early on a mapped
+     * error left them with a submit that looked like it did nothing (the same
+     * silence H-28 produced in the admin).
      */
     readonly handleApiError: (apiError: HandleApiErrorInput, fallback?: string) => void;
     /** Clears a single field's error (call on that field's `onChange`). */
@@ -175,10 +180,9 @@ export function useZodForm<TSchema extends ZodTypeAny>({
 
     const handleApiError = useCallback(
         (apiError: HandleApiErrorInput, fallback?: string) => {
-            const mapped = apiErrorToFieldErrors(apiError);
+            const mapped = apiErrorToFieldErrors(apiError, t);
             if (Object.keys(mapped).length > 0) {
                 setFieldErrors((prev) => ({ ...prev, ...mapped }));
-                return;
             }
 
             const message = t

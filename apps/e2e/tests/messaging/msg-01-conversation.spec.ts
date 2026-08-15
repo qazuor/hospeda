@@ -110,8 +110,14 @@ test.describe('MSG-01: guest contacts host, host replies @p1 @messaging @cross-a
         ).toBe(true);
 
         // ── 3. Host replies ────────────────────────────────────────────────
+        // The owner replies through /conversations/owner/:id/messages. The
+        // unprefixed /conversations/:id/messages is the GUEST side: it stamps the
+        // message as senderType GUEST and requires conversation.userId === actor.id,
+        // answering 404 for anyone else by anti-enumeration design. Posting the
+        // host's reply there returned exactly that 404, which reads like a missing
+        // conversation rather than the wrong endpoint.
         const replyRes = await page.request.post(
-            `${API_URL}/api/v1/protected/conversations/${conversationId}/messages`,
+            `${API_URL}/api/v1/protected/conversations/owner/${conversationId}/messages`,
             {
                 data: { body: 'Sí, está disponible. Te paso el contacto directo.' },
                 headers: { cookie: host.sessionCookie }

@@ -19,6 +19,7 @@
     },
     "form": {
         "validation-failed": "La validación del formulario falló. Por favor, corrige los errores e intenta nuevamente.",
+        "error-summary-title": "Revisá los siguientes campos",
         "save-failed": "Error al guardar",
         "save-success": "Guardado exitoso",
         "save-success-message": "Los cambios se guardaron correctamente",

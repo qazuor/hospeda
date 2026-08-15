@@ -33,8 +33,11 @@ const API_URL = process.env.HOSPEDA_E2E_API_URL ?? 'http://localhost:3001';
 
 test.describe('E2E-10: filter sub-route ISR cache hit @p1 @cache @cross-app', () => {
     test('same query → same data; different query → potentially different', async ({ page }) => {
-        const queryA = '?pageSize=10&sort=createdAt';
-        const queryB = '?pageSize=5&sort=createdAt';
+        // The public list takes `sortBy` (whitelisted by sanitizeSortBy); `sort` is
+        // not a parameter it accepts and the request was rejected with 400 before
+        // any caching behaviour could be observed.
+        const queryA = '?pageSize=10&sortBy=createdAt';
+        const queryB = '?pageSize=5&sortBy=createdAt';
 
         // SPEC-105 T-105-04: public list response shape is paginated:
         // { data: { items: [...], pagination: {...} } } — NOT a flat array on data.

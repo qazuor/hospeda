@@ -17,6 +17,13 @@ on:
   # scripts step and the extras step failed on every run since reactivation
   # (4 consecutive nightly failures, 2026-06-28..07-01). Fixed: step order
   # swapped, script paths corrected.
+  # 2026-08-14: ~40 consecutive red runs. Not a test failure — the API process
+  # never booted, so Playwright's webServer died and zero tests ran. Env
+  # validation rejected three vars: HOSPEDA_BETTER_AUTH_SECRET (read from a repo
+  # secret that was never created, so it resolved to ''), HOSPEDA_LOCATION_SALT
+  # and HOSPEDA_VIEWS_HASH_SECRET (added to the API schema after this workflow
+  # was last touched). e2e-pr.yml already carried deterministic values for all
+  # three; nightly had drifted. Fixed by mirroring that env block.
   # Schedule: 05:00 UTC = 02:00 ART — 4 h before daily backup window.
   schedule:
     - cron: '0 5 * * *'
@@ -81,7 +88,18 @@ jobs:
           --health-retries 10
 
     env:
-      HOSPEDA_BETTER_AUTH_SECRET: ${{ secrets.HOSPEDA_BETTER_AUTH_SECRET }}
+      # Deterministic e2e secrets — isolated throwaway DB, NOT real secrets.
+      # All three are min-32 per the API env schema; hardcoded (not repo secrets)
+      # so the apps boot consistently and share one secret for cross-app auth.
+      # Kept identical to e2e-pr.yml. HOSPEDA_BETTER_AUTH_SECRET used to read a
+      # repo secret that does not exist, so it resolved to an empty string and
+      # the API refused to boot ("must be at least 32 characters"), killing every
+      # nightly run before the first test. HOSPEDA_LOCATION_SALT and
+      # HOSPEDA_VIEWS_HASH_SECRET became required in the API env schema later and
+      # were never added here.
+      HOSPEDA_BETTER_AUTH_SECRET: e2e-better-auth-secret-deterministic-min-32-chars
+      HOSPEDA_LOCATION_SALT: e2e-location-salt-deterministic-min-32-characters
+      HOSPEDA_VIEWS_HASH_SECRET: e2e-views-hash-secret-deterministic-min-32-chars
       HOSPEDA_REVALIDATION_SECRET: ci-placeholder-revalidation-secret-min-32-characters
       HOSPEDA_NEWSLETTER_HMAC_SECRET: ci-placeholder-newsletter-hmac-secret-min-32-chars
       PUBLIC_SENTRY_DSN: https://ci-placeholder.invalid
@@ -94,8 +112,26 @@ jobs:
       HOSPEDA_MERCADO_PAGO_PUBLIC_KEY: ${{ secrets.HOSPEDA_MERCADO_PAGO_PUBLIC_KEY }}
       HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET: ${{ secrets.HOSPEDA_MERCADO_PAGO_WEBHOOK_SECRET }}
       HOSPEDA_MERCADO_PAGO_SANDBOX: 'true'
+      # SPEC-217: enable the QZPay test-control adapter so the fault-injection
+      # specs (host-07c/res-01) mount the control endpoint and applyTestControl
+      # intercepts the wrapped subscription ops. Gated to non-production by
+      # routes/index.ts. Without it both specs degrade to test.fixme() and are
+      # skipped — a silent hole in the very resilience coverage the nightly exists
+      # to provide. Already set in e2e-pr.yml; missing here.
+      HOSPEDA_QZPAY_TEST_CONTROL_ENABLED: 'true'
 
-      # Real Cloudinary credentials (E2E folder isolation handled by provider folderRoot option)
+      # Disable API response cache for deterministic e2e: tests mutate state
+      # (publish/unpublish, subscription changes) and immediately assert the
+      # public/entitlement read, which a cached response would serve stale.
+      # NOTE: z.coerce.boolean() treats any NON-EMPTY string as true — so an
+      # EMPTY string is the only way to set these false. Do not change '' to 'false'.
+      API_CACHE_ENABLED: ''
+
+      # Real Cloudinary credentials (E2E folder isolation handled by provider
+      # folderRoot option). These three repo secrets are NOT currently configured,
+      # so they resolve to empty and the @cloudinary legs of acc-01/acc-04/res-03
+      # skip themselves (see fixtures/cloudinary-client.ts). Set the secrets to
+      # turn the real-upload verification back on; nothing else is needed here.
       HOSPEDA_CLOUDINARY_CLOUD_NAME: ${{ secrets.HOSPEDA_CLOUDINARY_CLOUD_NAME }}
       HOSPEDA_CLOUDINARY_API_KEY: ${{ secrets.HOSPEDA_CLOUDINARY_API_KEY }}
       HOSPEDA_CLOUDINARY_API_SECRET: ${{ secrets.HOSPEDA_CLOUDINARY_API_SECRET }}
@@ -170,8 +206,43 @@ jobs:
 
       - name: Run CI scripts (raw-ilike + SEO + sitemap)
         if: always()
+        env:
+          # Both validators default to http://localhost:4321 — the DEV port, which
+          # nothing listens on in this job. They were pointed at it on every run
+          # and failed with "fetch failed" for every URL.
+          HOSPEDA_SEO_VALIDATOR_BASE_URL: ${{ env.HOSPEDA_E2E_WEB_URL }}
+          HOSPEDA_SITEMAP_VALIDATOR_BASE_URL: ${{ env.HOSPEDA_E2E_WEB_URL }}
         run: |
+          set -euo pipefail
           bash scripts/check-unsafe-ilike.sh
+
+          # These two crawl the running web app, but Playwright tears its
+          # webServers down when the suite ends, so the stack has to be brought
+          # back up here. Same commands Playwright uses. Both are backgrounded and
+          # die with the step.
+          pnpm --filter hospeda-api start > /tmp/ci-scripts-api.log 2>&1 &
+          pnpm --filter hospeda-web preview --port 18321 > /tmp/ci-scripts-web.log 2>&1 &
+
+          for _ in $(seq 1 60); do
+            if curl -fsS "$HOSPEDA_E2E_API_URL/health" > /dev/null 2>&1 \
+              && curl -fsS "$HOSPEDA_E2E_WEB_URL/" > /dev/null 2>&1; then
+              break
+            fi
+            sleep 2
+          done
+          # Fail loudly with the boot logs rather than letting the validators
+          # report a wall of "fetch failed".
+          curl -fsS "$HOSPEDA_E2E_API_URL/health" > /dev/null || {
+            echo '::error::API did not come up for the CI scripts step'
+            tail -50 /tmp/ci-scripts-api.log
+            exit 1
+          }
+          curl -fsS "$HOSPEDA_E2E_WEB_URL/" > /dev/null || {
+            echo '::error::web did not come up for the CI scripts step'
+            tail -50 /tmp/ci-scripts-web.log
+            exit 1
+          }
+
           pnpm exec tsx scripts/ci/seo-validator.ts
           pnpm exec tsx scripts/ci/sitemap-validator.ts
 

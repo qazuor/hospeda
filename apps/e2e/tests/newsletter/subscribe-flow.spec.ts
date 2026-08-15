@@ -49,7 +49,7 @@ test.describe('NL-01: newsletter subscribe flow @p1 @newsletter', () => {
         createdEmails.length = 0;
     });
 
-    test('authenticated user can subscribe — DB row created in pending_verification', async ({
+    test('authenticated user with a verified email subscribes straight to active', async ({
         page
     }) => {
         // ── 1. Setup authenticated user ────────────────────────────────────
@@ -69,13 +69,23 @@ test.describe('NL-01: newsletter subscribe flow @p1 @newsletter', () => {
 
         expect([200, 201].includes(response.status())).toBe(true);
 
-        // ── 3. DB invariant: subscriber row created in pending_verification ─
-        const rows = await execSQL<{ id: string; status: string }>(
-            'SELECT id, status FROM newsletter_subscribers WHERE email = $1 LIMIT 1',
+        // ── 3. DB invariant: subscriber row created active ──────────────────
+        // The authed path skips double opt-in: the account email is already
+        // verified (forceVerifyEmail above), so newsletter-subscriber.service
+        // inserts the row straight as ACTIVE with verified_at set. Only the PUBLIC
+        // endpoint creates pending_verification rows, which is what this spec used
+        // to assert. An unverified actor is rejected outright with
+        // NEWSLETTER_ACCOUNT_EMAIL_UNVERIFIED rather than left pending.
+        const rows = await execSQL<{ id: string; status: string; verified_at: Date | null }>(
+            'SELECT id, status, verified_at FROM newsletter_subscribers WHERE email = $1 LIMIT 1',
             [user.email]
         );
         expect(rows.length).toBe(1);
-        expect(rows[0]?.status).toBe('pending_verification');
+        expect(rows[0]?.status).toBe('active');
+        expect(
+            rows[0]?.verified_at,
+            'an active row must carry its verification stamp'
+        ).not.toBeNull();
     });
 
     test('guest user gets 401 from protected subscribe endpoint', async ({ page }) => {

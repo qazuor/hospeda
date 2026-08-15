@@ -37,12 +37,21 @@ interface ToggleResponse {
     };
 }
 
+/**
+ * The inline note is persisted as `description`.
+ *
+ * `notes` is the UI's word for it and never existed on the wire: the PATCH body
+ * is validated by `UserBookmarkUpdateNotesSchema`, which is `.strict()` and
+ * accepts only `name` and `description`, and `user_bookmarks` has no `notes`
+ * column. Sending `notes` returns 400 and selecting it errors — this spec used
+ * to do both, which is why it could never pass once the route started
+ * validating strictly. apps/web sends `{ name, description }` too
+ * (endpoints-protected.ts `userBookmarksApi.update`).
+ */
 interface UpdateBookmarkResponse {
     readonly success?: boolean;
     readonly data?: {
         readonly id: string;
-        readonly notes?: string | null;
-        /** Legacy field name — some implementations use `description` for notes */
         readonly description?: string | null;
     };
 }
@@ -109,7 +118,7 @@ test.describe('E2E-05: inline notes on bookmarks @p1 @favorites @notes @spec-098
         const patchRes = await page.request.patch(
             `${API_URL}/api/v1/protected/user-bookmarks/${bookmarkId}`,
             {
-                data: { notes: noteText },
+                data: { description: noteText },
                 headers
             }
         );
@@ -118,15 +127,15 @@ test.describe('E2E-05: inline notes on bookmarks @p1 @favorites @notes @spec-098
         expect(patchRes.ok(), `PATCH expected 200, got ${patchRes.status()}`).toBe(true);
         const patchBody = (await patchRes.json()) as UpdateBookmarkResponse;
         const updated = patchBody.data ?? (patchBody as unknown as UpdateBookmarkResponse['data']);
-        const returnedNote = updated?.notes ?? updated?.description;
+        const returnedNote = updated?.description;
         expect(returnedNote).toBe(noteText);
 
         // DB invariant
-        const rows = await execSQL<{ notes: string | null; description: string | null }>(
-            'SELECT notes, description FROM user_bookmarks WHERE id = $1 AND deleted_at IS NULL',
+        const rows = await execSQL<{ description: string | null }>(
+            'SELECT description FROM user_bookmarks WHERE id = $1 AND deleted_at IS NULL',
             [bookmarkId]
         );
-        const dbNote = rows[0]?.notes ?? rows[0]?.description;
+        const dbNote = rows[0]?.description;
         expect(dbNote).toBe(noteText);
     });
 
@@ -141,7 +150,7 @@ test.describe('E2E-05: inline notes on bookmarks @p1 @favorites @notes @spec-098
 
         // Pre-set a note
         await page.request.patch(`${API_URL}/api/v1/protected/user-bookmarks/${bookmarkId}`, {
-            data: { notes: 'Nota inicial' },
+            data: { description: 'Nota inicial' },
             headers
         });
 
@@ -149,7 +158,7 @@ test.describe('E2E-05: inline notes on bookmarks @p1 @favorites @notes @spec-098
         const clearRes = await page.request.patch(
             `${API_URL}/api/v1/protected/user-bookmarks/${bookmarkId}`,
             {
-                data: { notes: '' },
+                data: { description: '' },
                 headers
             }
         );
@@ -158,7 +167,7 @@ test.describe('E2E-05: inline notes on bookmarks @p1 @favorites @notes @spec-098
         expect(clearRes.ok(), `PATCH clear expected 200, got ${clearRes.status()}`).toBe(true);
         const clearBody = (await clearRes.json()) as UpdateBookmarkResponse;
         const updated = clearBody.data ?? (clearBody as unknown as UpdateBookmarkResponse['data']);
-        const returnedNote = updated?.notes ?? updated?.description ?? null;
+        const returnedNote = updated?.description ?? null;
         expect(returnedNote == null || returnedNote === '').toBe(true);
     });
 
@@ -177,7 +186,7 @@ test.describe('E2E-05: inline notes on bookmarks @p1 @favorites @notes @spec-098
         const patchRes = await page.request.patch(
             `${API_URL}/api/v1/protected/user-bookmarks/${bookmarkId}`,
             {
-                data: { notes: longNote },
+                data: { description: longNote },
                 headers
             }
         );
@@ -201,7 +210,7 @@ test.describe('E2E-05: inline notes on bookmarks @p1 @favorites @notes @spec-098
         const noteText = 'Ver antes de reservar — preguntar por descuento';
 
         await page.request.patch(`${API_URL}/api/v1/protected/user-bookmarks/${bookmarkId}`, {
-            data: { notes: noteText },
+            data: { description: noteText },
             headers
         });
 
@@ -210,26 +219,24 @@ test.describe('E2E-05: inline notes on bookmarks @p1 @favorites @notes @spec-098
             headers
         });
         expect(listRes.ok()).toBe(true);
+        // GET /user-bookmarks answers `{ data: { bookmarks, total } }`, not a bare
+        // array under `data` — reading `data.find` threw "find is not a function"
+        // and never reached the assertion.
         const listBody = (await listRes.json()) as {
-            data?: ReadonlyArray<{
-                id: string;
-                notes?: string | null;
-                description?: string | null;
-            }>;
+            data?: {
+                bookmarks?: ReadonlyArray<{
+                    id: string;
+                    description?: string | null;
+                }>;
+                total?: number;
+            };
         };
-        const bookmark = listBody.data?.find((bm) => bm.id === bookmarkId);
+        const bookmark = listBody.data?.bookmarks?.find((bm) => bm.id === bookmarkId);
 
-        // Assert: note visible in list
-        if (!bookmark) {
-            // The list endpoint may not include notes; skip gracefully
-            test.skip(
-                true,
-                'Bookmark list response does not include notes field — cannot assert persistence via list'
-            );
-            return;
-        }
-
-        const returnedNote = bookmark?.notes ?? bookmark?.description;
-        expect(returnedNote).toBe(noteText);
+        // Assert: the bookmark we just wrote a note on must come back in the owner's
+        // own list. Skipping when it is absent would turn a real regression — a
+        // bookmark missing from its owner's list — into a silent pass.
+        expect(bookmark, `bookmark ${bookmarkId} missing from the owner's list`).toBeDefined();
+        expect(bookmark?.description).toBe(noteText);
     });
 });
