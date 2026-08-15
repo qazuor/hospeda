@@ -13,6 +13,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { toEventDomainUpdate } from './to-domain-update';
 
 const eventService = new EventService({ logger: apiLogger });
 
@@ -42,8 +43,15 @@ export const protectedPatchEventRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        // Use update method for patch - service handles partial updates
-        const result = await eventService.update(actor, params.id as string, body);
+
+        // Convert HTTP input to domain input, through the same helper the PUT on
+        // this resource uses. This route used to forward the raw body straight
+        // to the service, so `startDate`/`endDate` arrived under their HTTP
+        // names and the strict domain schema rejected them with a 400, while
+        // `summary` (derived from `description`) was never produced at all
+        // (H-30).
+        const domainInput = toEventDomainUpdate({ body });
+        const result = await eventService.update(actor, params.id as string, domainInput);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);
