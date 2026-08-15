@@ -92,96 +92,109 @@ describe('EventService.update', () => {
         expectInternalError(result);
     });
 
-    it('updates slug if category changes', async () => {
-        vi.spyOn(EventModel.prototype, 'findOne').mockResolvedValue(null);
-        vi.spyOn(helpers, 'generateEventSlug').mockResolvedValue('new-cat-name-date');
-        (modelMock.findById as Mock).mockResolvedValue(existingEvent);
-        (modelMock.update as Mock).mockResolvedValue({
-            ...existingEvent,
-            id: eventId,
-            slug: 'new-cat-name-date'
-        });
-        const input = createEventUpdateInput({
-            category: EventCategoryEnum.FESTIVAL
-        });
-        const result = await service.update(actorWithPerm, eventId, input);
-        expect(helpers.generateEventSlug).toHaveBeenCalled();
-        expect(result.data?.slug).toBe('new-cat-name-date');
-    });
+    /**
+     * The slug is generated ONCE, in `_beforeCreate`, and an update never
+     * touches it (H-19). This matches what `post` and `destination` already do.
+     *
+     * ## What this replaces, and why it was green while production broke
+     *
+     * Four tests used to live here asserting the opposite — "updates slug if
+     * category changes", "…if name changes", "…if date.start changes", plus one
+     * pinning the `Missing required fields for slug generation` throw. They
+     * passed the whole time, which is exactly why the bug read as intended
+     * behaviour. Two things made them blind:
+     *
+     *  - They asserted `result.data?.slug`, which is whatever `modelMock.update`
+     *    was TOLD to resolve with. That is the mock echoing the test back, not
+     *    the service writing a slug. The tests below assert the payload the
+     *    service actually hands to `model.update`.
+     *  - The one named "does not update slug if none of the relevant fields
+     *    change" sent `{ isFeatured: true }`. The hook keyed off a field being
+     *    PRESENT, never changed, so "absent" was the only case it covered. The
+     *    admin form posts every field on every save — the one case no test
+     *    exercised, and the one that changed Novembeer's public URL twice.
+     *
+     * `generateEventSlug` is mocked to a sentinel instead of calling through, so
+     * a regression trips two independent detectors: the spy records a call, and
+     * the sentinel appears in the persisted payload.
+     */
+    describe('slug stability on update (H-19)', () => {
+        const SENTINEL = 'regenerated-slug-that-must-never-be-persisted';
 
-    it('updates slug if name changes', async () => {
-        vi.spyOn(EventModel.prototype, 'findOne').mockResolvedValue(null);
-        vi.spyOn(helpers, 'generateEventSlug').mockResolvedValue('cat-newname-date');
-        (modelMock.findById as Mock).mockResolvedValue(existingEvent);
-        (modelMock.update as Mock).mockResolvedValue({
-            ...existingEvent,
-            id: eventId,
-            slug: 'cat-newname-date'
-        });
-        const input = createEventUpdateInput({
-            name: 'newname'
-        });
-        const result = await service.update(actorWithPerm, eventId, input);
-        expect(helpers.generateEventSlug).toHaveBeenCalled();
-        expect(result.data?.slug).toBe('cat-newname-date');
-    });
+        /** The data object handed to `model.update` — the effect at the source. */
+        const persistedPayload = (): Record<string, unknown> =>
+            ((modelMock.update as Mock).mock.calls[0]?.[1] ?? {}) as Record<string, unknown>;
 
-    it('updates slug if date.start changes', async () => {
-        vi.spyOn(EventModel.prototype, 'findOne').mockResolvedValue(null);
-        vi.spyOn(helpers, 'generateEventSlug').mockResolvedValue('cat-name-newdate');
-        (modelMock.findById as Mock).mockResolvedValue(existingEvent);
-        (modelMock.update as Mock).mockResolvedValue({
-            ...existingEvent,
-            id: eventId,
-            slug: 'cat-name-newdate'
+        beforeEach(() => {
+            vi.spyOn(EventModel.prototype, 'findOne').mockResolvedValue(null);
+            vi.spyOn(helpers, 'generateEventSlug').mockResolvedValue(SENTINEL);
+            (modelMock.findById as Mock).mockResolvedValue(existingEvent);
+            (modelMock.update as Mock).mockResolvedValue({ ...existingEvent, id: eventId });
         });
-        const input = createEventUpdateInput({
-            date: {
-                start: new Date('2024-09-01'),
-                end: new Date('2024-09-01'),
-                isAllDay: false,
-                recurrence: undefined,
-                precision: EventDatePrecisionEnum.EXACT
-            }
-        });
-        const result = await service.update(actorWithPerm, eventId, input);
-        expect(helpers.generateEventSlug).toHaveBeenCalled();
-        expect(result.data?.slug).toBe('cat-name-newdate');
-    });
 
-    it('does not update slug if none of the relevant fields change', async () => {
-        vi.spyOn(EventModel.prototype, 'findOne').mockResolvedValue(null);
-        vi.spyOn(helpers, 'generateEventSlug');
-        (modelMock.findById as Mock).mockResolvedValue(existingEvent);
-        (modelMock.update as Mock).mockResolvedValue({ ...existingEvent, id: eventId });
-        const input = {
-            isFeatured: true
-        };
-        const _result = await service.update(actorWithPerm, eventId, input);
-        expect(helpers.generateEventSlug).not.toHaveBeenCalled();
-        // ...assert slug remains unchanged or as expected...
-    });
+        it('leaves the slug alone when the admin form resubmits the whole event', async () => {
+            // The production repro: every field posted, none of them edited.
+            const result = await service.update(actorWithPerm, eventId, createEventUpdateInput());
 
-    it('throws error if required fields for slug are missing on update', async () => {
-        vi.spyOn(EventModel.prototype, 'findOne').mockResolvedValue(null);
-        vi.spyOn(helpers, 'generateEventSlug').mockImplementation(() => {
-            throw new Error(
-                'Missing required fields for slug generation: category, name, or date.start'
-            );
+            expectSuccess(result);
+            expect(helpers.generateEventSlug).not.toHaveBeenCalled();
+            expect(Object.keys(persistedPayload())).not.toContain('slug');
         });
-        (modelMock.findById as Mock).mockResolvedValue(existingEvent);
-        (modelMock.update as Mock).mockResolvedValue(existingEvent);
-        const input = createEventUpdateInput({
-            name: '',
-            date: {
-                start: new Date('2024-01-01'),
-                end: new Date('2024-01-01'),
-                isAllDay: false,
-                recurrence: undefined,
-                precision: EventDatePrecisionEnum.EXACT
-            }
+
+        it.each([
+            [
+                'the category changes',
+                () => createEventUpdateInput({ category: EventCategoryEnum.FESTIVAL })
+            ],
+            ['the name changes', () => createEventUpdateInput({ name: 'A brand new event name' })],
+            [
+                'date.start changes',
+                () =>
+                    createEventUpdateInput({
+                        date: {
+                            start: new Date('2030-09-01'),
+                            end: new Date('2030-09-01'),
+                            isAllDay: false,
+                            recurrence: undefined,
+                            precision: EventDatePrecisionEnum.EXACT
+                        }
+                    })
+            ]
+        ])('does not rewrite the public URL when %s', async (_case, buildInput) => {
+            const result = await service.update(actorWithPerm, eventId, buildInput());
+
+            expectSuccess(result);
+            expect(helpers.generateEventSlug).not.toHaveBeenCalled();
+            expect(Object.keys(persistedPayload())).not.toContain('slug');
         });
-        const result = await service.update(actorWithPerm, eventId, input);
-        expectValidationError(result);
+
+        it('honours a slug the caller sends explicitly', async () => {
+            // The payload carries a name too, which is what used to trigger
+            // regeneration — and the hook closed with `{ ...normalized, slug }`,
+            // so the generated value overwrote the caller's. That is what made
+            // the admin's "URL amigable" field inert and left direct SQL as the
+            // only way to repair a slug.
+            const result = await service.update(actorWithPerm, eventId, {
+                slug: 'a-hand-picked-slug',
+                name: 'A brand new event name'
+            });
+
+            expectSuccess(result);
+            expect(persistedPayload().slug).toBe('a-hand-picked-slug');
+            expect(persistedPayload().slug).not.toBe(SENTINEL);
+        });
+
+        it('accepts a name-only update instead of failing to build a slug (H-30)', async () => {
+            // A partial body reached a hook that demanded category, name AND
+            // date.start together, so it threw and the web editor answered 500
+            // on every rename. With no regeneration there is nothing to
+            // assemble, so a diff-shaped payload is ordinary.
+            const result = await service.update(actorWithPerm, eventId, {
+                name: 'A brand new event name'
+            });
+
+            expectSuccess(result);
+            expect(persistedPayload().name).toBe('A brand new event name');
+        });
     });
 });
