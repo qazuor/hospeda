@@ -8,6 +8,13 @@ export type { EntityPageBaseProps } from './EntityPageBase';
 export { EntityPageBase } from './EntityPageBase';
 export type { EntityViewContentProps } from './EntityViewContent';
 export { EntityViewContent } from './EntityViewContent';
+export type { FormErrorSummaryProps } from './FormErrorSummary';
+export { FormErrorSummary } from './FormErrorSummary';
+export type {
+    BuildFormErrorSummaryEntriesInput,
+    FormErrorSummaryEntry
+} from './utils/form-error-summary';
+export { buildFormErrorSummaryEntries } from './utils/form-error-summary';
 export type { SectionSortOptions } from './utils/section-sorter';
 export { filterAndSortSections, getAccommodationAnchorIds } from './utils/section-sorter';
 export type { SectionSummaryFn } from './utils/section-summarizer';

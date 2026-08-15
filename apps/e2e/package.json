@@ -38,10 +38,10 @@
     "devDependencies": {
         "@playwright/test": "^1.62.0",
         "@repo/typescript-config": "workspace:*",
-        "@types/node": "^26.1.2",
-        "@types/pg": "^8.20.3",
+        "@types/node": "^26.2.0",
+        "@types/pg": "^8.21.0",
         "@vitest/coverage-v8": "^4.1.10",
-        "tsx": "^4.23.5",
+        "tsx": "^4.23.11",
         "typescript": "6.0.3",
         "vitest": "^4.1.10"
     }
