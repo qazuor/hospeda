@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createContentStateMutationHooks } from '@/features/content/hooks/useContentStateMutations';
 import { fetchApi } from '@/lib/api/client';
 import { isApiError } from '@/lib/errors';
 import type { AccommodationCore } from '../schemas/accommodation-client.schema';
@@ -8,6 +9,20 @@ import {
     accommodationQueryKeys,
     invalidateAccommodationLists
 } from './accommodationQueryKeys';
+
+/**
+ * Moderation mutation for a listing (H-102).
+ *
+ * Only `useModerateMutation` is usable here: `POST /admin/accommodations/:id/moderate`
+ * is the sole state endpoint a listing has. Until it existed, an accommodation
+ * could not leave `PENDING` by any route — every row in production sits there,
+ * published ones included — while the admin's pending counter kept counting them.
+ * A queue counting work nobody can do only grows.
+ */
+export const ACCOMMODATION_STATE_MUTATIONS = createContentStateMutationHooks({
+    entity: 'accommodations',
+    queryKeys: accommodationQueryKeys
+});
 
 /**
  * Custom hooks for accommodation data fetching and mutations

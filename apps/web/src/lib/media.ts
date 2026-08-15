@@ -16,7 +16,7 @@
 import type { MediaPreset } from '@repo/media';
 import { getMediaUrl } from '@repo/media';
 
-const DEFAULT_PLACEHOLDER = '/images/placeholder.svg';
+const DEFAULT_PLACEHOLDER = '/assets/images/placeholder.svg';
 
 /**
  * Allowlist of remote hostnames that the web app is permitted to fetch images
@@ -330,7 +330,7 @@ export function extractFeaturedImage(
  * callers MUST NOT use it.
  *
  * @param item - API response item (destination, accommodation, event, post, etc.)
- * @param fallback - Fallback URL if no image is found (default: `'/images/placeholder.svg'`)
+ * @param fallback - Fallback URL if no image is found (default: `'/assets/images/placeholder.svg'`)
  * @param preset - Named Cloudinary preset to apply (default: `'card'`)
  * @param options - Optional named-argument overrides for `fallback` and `preset`
  * @returns The transformed image URL string

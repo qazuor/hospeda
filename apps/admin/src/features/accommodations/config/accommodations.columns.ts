@@ -16,8 +16,11 @@ import type {
 } from '@/components/entity-list/types';
 import { Views30dCell } from '@/components/entity-list/Views30dCell';
 import { BadgeColor, ColumnType, EntityType } from '@/components/table/DataTable';
+import { CONTENT_MODERATION_OPTIONS } from '@/features/content/config/content-state-options';
+import type { ModerationStatePatch } from '@/features/content/hooks/useContentStateMutations';
 import { AccommodationTypeBadge } from '../components/AccommodationTypeBadge';
 import {
+    ACCOMMODATION_STATE_MUTATIONS,
     useAccommodationQuery,
     useUpdateAccommodationMutation
 } from '../hooks/useAccommodationQuery';
@@ -286,6 +289,40 @@ export const createAccommodationsColumns = (
                     useUpdateMutation: useUpdateAccommodationMutation,
                     confirmValues: ['ARCHIVED'],
                     confirmCopyKey: 'archive'
+                })
+        },
+        {
+            // H-102: until this column existed there was no way to approve a
+            // listing from anywhere. `ACCOMMODATION_MODERATION_CHANGE` sat in the
+            // enum and was granted in the seed, read by nothing, while
+            // `ModerationAggregationService` counted pending accommodations for
+            // the admin dashboard — a queue that could only grow. Mirrors the
+            // equivalent column on posts and events.
+            //
+            // Writes through `ACCOMMODATION_STATE_MUTATIONS`, NOT the generic
+            // update: moderation has its own endpoint and its own permission, so
+            // routing it through the generic PATCH would put the verdict back
+            // behind plain ACCOMMODATION_UPDATE.
+            id: 'moderationState',
+            header: t('admin-entities.columns.moderation'),
+            accessorKey: 'moderationState',
+            enableSorting: true,
+            columnType: ColumnType.WIDGET,
+            startVisibleOnTable: false,
+            startVisibleOnGrid: false,
+            widgetRenderer: (row) =>
+                createElement(InlineStateSelectCell<ModerationStatePatch>, {
+                    entityId: row.id,
+                    entityName: row.name,
+                    entityLabelKey: 'admin-entities.entities.accommodation.singular',
+                    field: 'moderationState',
+                    currentValue: row.moderationState,
+                    successMessageKey: 'admin-entities.messages.moderationChanged',
+                    options: CONTENT_MODERATION_OPTIONS(t),
+                    permission: PermissionEnum.ACCOMMODATION_MODERATION_CHANGE,
+                    useUpdateMutation: ACCOMMODATION_STATE_MUTATIONS.useModerateMutation,
+                    confirmValues: ['REJECTED'],
+                    confirmCopyKey: 'reject'
                 })
         },
         {
