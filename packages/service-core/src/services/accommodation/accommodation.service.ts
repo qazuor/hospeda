@@ -854,6 +854,16 @@ export class AccommodationService extends BaseCrudService<
         // through without going through `publish()` — would otherwise bypass the guard.
         // Re-check here so the "ACTIVE => complete capacity" invariant holds on every
         // create path (mirrors the publish() capacity guard).
+        //
+        // KNOWN, DELIBERATE DIVERGENCE (H-101): this checks the four capacity
+        // fields only, while `publish()` also requires a main image. It is not an
+        // oversight. This path is admin-only, and at create time the media arrives
+        // in the same payload rather than in `accommodation_media`, so the main
+        // image cannot be resolved the way the publish gate resolves it. An admin
+        // creating an ACTIVE listing with no photo therefore still can — which is
+        // the same public page with a broken <img> the owner decided to stop the
+        // OWNER from producing. Closing this needs the media to be readable here,
+        // which is a change to the create pipeline, not to this guard.
         if (data.lifecycleState === LifecycleStatusEnum.ACTIVE) {
             const capacityCheck = AccommodationExtraInfoRequiredForPublishSchema.safeParse(
                 data.extraInfo ?? {}
