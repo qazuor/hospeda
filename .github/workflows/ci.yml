@@ -311,6 +311,28 @@ jobs:
         run: pnpm test:scripts
       - name: Test the interactive CLI (scripts/cli)
         run: pnpm test:cli
+      # `hops` (scripts/server-tools) is the third suite that ran nowhere, and
+      # the one that matters most: it is the tool operators point at
+      # PRODUCTION. It needs its own runtime because the package is
+      # deliberately outside the pnpm workspace — own package.json, own
+      # committed bun.lock, `engines.bun >= 1.1.0` — and the shipped binary is
+      # produced by `bun build --compile`. Running its tests on the runtime it
+      # ships on is the honest option; porting them to vitest would mean
+      # pulling the package into the workspace, which changes how the binary is
+      # installed and built on the VPS.
+      #
+      # Cheap in practice: ~0.5s to install, ~0.4s to run the ~300 tests.
+      - name: Set up bun (for scripts/server-tools)
+        uses: oven-sh/setup-bun@v2
+      - name: Install server-tools dependencies
+        # Its deps (execa, @clack/prompts) are NOT installed by the root pnpm
+        # install. Without this step 13 tests fail with "Cannot find package",
+        # which reads like a broken suite and is not one.
+        working-directory: scripts/server-tools
+        run: bun install --frozen-lockfile
+      - name: Test the hops CLI (scripts/server-tools)
+        working-directory: scripts/server-tools
+        run: bun test
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.
