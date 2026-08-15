@@ -58,8 +58,16 @@ const OWNER_ACTOR: Actor = {
     permissions: []
 };
 
-function buildContext(): Record<string, unknown> {
-    return { get: vi.fn(), set: vi.fn() };
+/**
+ * @param domain - Value of the `?domain=` query param, when the caller sent one
+ *   (H-155). `undefined` models a request without it.
+ */
+function buildContext(domain?: string): Record<string, unknown> {
+    return {
+        get: vi.fn(),
+        set: vi.fn(),
+        req: { query: vi.fn((key: string) => (key === 'domain' ? domain : undefined)) }
+    };
 }
 
 beforeEach(() => {
@@ -137,6 +145,42 @@ describe('handleGetMyLead', () => {
 
         const result = await handleGetMyLead(buildContext() as never);
 
+        expect(result).toEqual({ lead: null });
+    });
+
+    // ── H-155 ───────────────────────────────────────────────────────────────
+    //
+    // Without a domain the endpoint answered with the caller's most recent lead
+    // in ANY vertical, so the experience create form pre-filled itself from a
+    // gastronomy lead — and the create form turns `name` into an immutable
+    // public slug.
+
+    it('forwards a valid domain to the service (H-155)', async () => {
+        mockGetMyLead.mockResolvedValue({ data: null });
+
+        await handleGetMyLead(buildContext('experience') as never);
+
+        expect(mockGetMyLead).toHaveBeenCalledWith(OWNER_ACTOR, { domain: 'experience' });
+    });
+
+    it('omits the filter when no domain is given, preserving the original behaviour', async () => {
+        mockGetMyLead.mockResolvedValue({ data: null });
+
+        await handleGetMyLead(buildContext() as never);
+
+        expect(mockGetMyLead).toHaveBeenCalledWith(OWNER_ACTOR, {});
+    });
+
+    // An unknown value must not reach the service, whose schema would reject it
+    // and turn a pre-fill convenience into an error (D-4: never a gate). It
+    // degrades to "no filter", which is strictly no worse than the old
+    // behaviour.
+    it('ignores an unrecognised domain rather than erroring', async () => {
+        mockGetMyLead.mockResolvedValue({ data: null });
+
+        const result = await handleGetMyLead(buildContext('not-a-vertical') as never);
+
+        expect(mockGetMyLead).toHaveBeenCalledWith(OWNER_ACTOR, {});
         expect(result).toEqual({ lead: null });
     });
 });
