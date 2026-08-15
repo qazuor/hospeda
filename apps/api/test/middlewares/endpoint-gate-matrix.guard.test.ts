@@ -197,7 +197,12 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     // Pure AI output schema + prompt builder + RawExtraction mapper for import-from-url (not a Hono route) — SPEC-222 T-020
     'accommodation/protected/import-from-url.ai.ts',
     // Shared MP return/notification URL builders consumed by start-paid.ts + trial.ts (not a Hono route) — HOS-114
-    'billing/checkout-return-urls.ts'
+    'billing/checkout-return-urls.ts',
+    // Shared HTTP→domain converter consumed by event/protected/{patch,update}.ts
+    // (not a Hono route) — HOS-435. Lives beside its two callers so neither can
+    // be edited without the other; the gates it runs behind are the rows for
+    // those two handlers.
+    'event/protected/to-domain-update.ts'
 ]);
 
 /**

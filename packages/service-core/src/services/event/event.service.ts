@@ -396,8 +396,33 @@ export class EventService extends BaseCrudService<
     }
 
     /**
-     * Lifecycle hook: normalizes input before updating an event and updates slug if relevant fields change.
+     * Lifecycle hook: normalizes input before updating an event.
      * Also captures translatable field values from the entity BEFORE the update (SPEC-212 AC-5).
+     *
+     * ## The slug is NOT regenerated here (H-19)
+     *
+     * An event's slug is built once, in `_beforeCreate`, and an update leaves it
+     * alone — the same contract `post` and `destination` already follow, where
+     * `generateSlug` runs on create only. An update changes the slug solely when
+     * the caller puts one in the payload.
+     *
+     * This hook used to regenerate it whenever `category`, `name` or
+     * `date.start` were PRESENT in the input — not when their value changed. The
+     * admin form posts every field on every save, so the condition was true on
+     * every save, and `generateEventSlug` collided the event with itself
+     * (`createUniqueSlug`'s existence probe does not exclude the current row)
+     * and appended `-2`, then `-3`. In production the event "Novembeer" went
+     * `novembeer-concepcion-del-uruguay-2026` →
+     * `gastronomy-novembeer-2026-11-01` → `…-2` in two saves, so its indexed
+     * public URL 404'd because somebody edited its summary.
+     *
+     * The same block was also half of H-30: it demanded category, name AND
+     * date.start together, so a diff-shaped body from the web editor (a rename
+     * alone) hit the `Missing required fields` throw and answered 500.
+     *
+     * Renaming an event now leaves a slug carrying the old name. That is
+     * cosmetic and deliberate: a stable URL is worth more than a slug that
+     * reads well, and it is exactly how posts already behave.
      */
     protected async _beforeUpdate(
         input: EventUpdateInput,
@@ -416,25 +441,7 @@ export class EventService extends BaseCrudService<
             };
         }
 
-        const normalized = await normalizeUpdateInput(input);
-        // If category, name, or date.start is present in update, regenerate slug
-        if (
-            normalized.category !== undefined ||
-            normalized.name !== undefined ||
-            (normalized.date && normalized.date.start !== undefined)
-        ) {
-            const category = String(normalized.category ?? input.category);
-            const name = normalized.name ?? input.name;
-            const dateStart = normalized.date?.start ?? input.date?.start;
-            if (!category || !name || !dateStart) {
-                throw new Error(
-                    'Missing required fields for slug generation: category, name, or date.start'
-                );
-            }
-            const slug = await generateEventSlug(category, name, dateStart);
-            return { ...normalized, slug };
-        }
-        return normalized;
+        return normalizeUpdateInput(input);
     }
 
     protected async _afterCreate(
