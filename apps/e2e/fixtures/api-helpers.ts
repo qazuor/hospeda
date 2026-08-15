@@ -634,14 +634,17 @@ export async function createSubscription(options: {
  * @param options.slug - Plan slug as seeded, e.g. `tourist-plus`.
  * @returns The plan id, or `null` when the plan is not seeded in this environment.
  */
-export async function resolvePlanIdBySlug(options: {
-    readonly slug: string;
-}): Promise<{ readonly planId: string | null }> {
-    const rows = await execSQL<{ id: string }>(
-        'SELECT id FROM billing_plans WHERE name = $1 AND livemode = false LIMIT 1',
+export async function resolvePlanIdBySlug(options: { readonly slug: string }): Promise<{
+    readonly planId: string | null;
+    readonly limits: Readonly<Record<string, number>> | null;
+}> {
+    const rows = await execSQL<{ id: string; limits: Record<string, number> | null }>(
+        'SELECT id, limits FROM billing_plans WHERE name = $1 AND livemode = false LIMIT 1',
         [options.slug]
     );
-    return { planId: rows[0]?.id ?? null };
+    const row = rows[0];
+    if (!row) return { planId: null, limits: null };
+    return { planId: row.id, limits: row.limits ?? {} };
 }
 
 /**
