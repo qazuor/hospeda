@@ -19,7 +19,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createUser } from '../../fixtures/api-helpers.ts';
+import { createSubscription, createUser, resolvePlanIdBySlug } from '../../fixtures/api-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -39,8 +39,16 @@ interface BookmarkItemResponse {
     readonly collectionId?: string | null;
 }
 
+/**
+ * GET /api/v1/protected/user-bookmarks answers `{ data: { bookmarks, total } }`.
+ * Typing `data` as a bare array made `data.find(...)` throw
+ * "find is not a function" before any assertion ran.
+ */
 interface BookmarkListResponse {
-    readonly data?: ReadonlyArray<BookmarkItemResponse>;
+    readonly data?: {
+        readonly bookmarks?: ReadonlyArray<BookmarkItemResponse>;
+        readonly total?: number;
+    };
 }
 
 interface CollectionCreateResponse {
@@ -55,6 +63,11 @@ interface UpdatedBookmarkResponse {
 
 test.describe('E2E-04: move bookmark between collections @p1 @favorites @collections @move @spec-098', () => {
     const userIds: string[] = [];
+    let plusPlanId: string | null = null;
+
+    test.beforeAll(async () => {
+        ({ planId: plusPlanId } = await resolvePlanIdBySlug({ slug: 'tourist-plus' }));
+    });
 
     test.afterEach(async () => {
         if (userIds.length > 0) {
@@ -85,8 +98,12 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
             return;
         }
 
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
+        // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         // Create collection
@@ -147,8 +164,12 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
             return;
         }
 
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
+        // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         const colRes = await page.request.post(
@@ -198,16 +219,24 @@ test.describe('E2E-04: move bookmark between collections @p1 @favorites @collect
         });
         expect(listRes.ok()).toBe(true);
         const listBody = (await listRes.json()) as BookmarkListResponse;
-        const bookmark = listBody.data?.find((bm) => bm.id === bookmarkId);
+        const bookmark = listBody.data?.bookmarks?.find((bm) => bm.id === bookmarkId);
         expect(bookmark, 'bookmark must still exist after removal from collection').toBeTruthy();
         expect(bookmark?.collectionId ?? null).toBeNull();
     });
 
     test('AC-13.3 — other user cannot access collection (403)', async ({ page }) => {
         // Arrange: user A creates a collection, user B tries to read it
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const userA = await createUser({ role: 'USER' });
         const userB = await createUser({ role: 'USER' });
         userIds.push(userA.id, userB.id);
+        // BOTH users need the collections entitlement. If userB were left on the
+        // tourist-free tier, gateCollections() would reject it with 403 before the
+        // ownership check ever ran — the assertion below would pass for the wrong
+        // reason and stop testing ownership at all.
+        await createSubscription({ userId: userA.id, planId: plusPlanId, status: 'active' });
+        await createSubscription({ userId: userB.id, planId: plusPlanId, status: 'active' });
 
         const colRes = await page.request.post(
             `${API_URL}/api/v1/protected/user-bookmark-collections`,

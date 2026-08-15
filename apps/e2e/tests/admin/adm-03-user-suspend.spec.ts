@@ -1,20 +1,23 @@
 /**
- * ADM-03 — Super-admin suspends and reactivates a user.
+ * ADM-03 — Super-admin suspends and reactivates a user's service.
  *
- * Actors: Super-admin acting on a target user; the target user trying to
- *         access protected resources before / after suspension.
+ * Actors: Super-admin acting on a target user; the target user exercising
+ *         protected resources before / during / after the suspension.
  * Tags: @p1 @admin @cross-app
  *
  * Preconditions:
  *   - One target user (regular USER role) created by the test.
  *
  * What this validates (DB-level + auth surface contract):
- *  1. Setting `users.suspended_at = NOW()` is observable to the auth
- *     middleware: protected reads using the suspended user's session
- *     return 401/403 (the actor cannot proceed).
- *  2. Reactivating (suspended_at = NULL) restores access — the same
- *     session cookie now resolves to a non-suspended actor.
- *  3. The suspension does not delete the user (id and email survive).
+ *  1. `users.service_suspended = true` is persisted and observable.
+ *  2. It does NOT revoke the session: this column is the service-suspension
+ *     half of a SUBSCRIPTION PAUSE (SPEC-143 #29), which hides the owner's
+ *     accommodations and blocks creating new ones. Account-level blocking is a
+ *     separate column (`banned`). This spec previously asserted that protected
+ *     reads returned 401/403, which no code has ever implemented — no auth
+ *     guard reads `service_suspended` at all.
+ *  3. Reactivating clears the flag.
+ *  4. The suspension does not delete the user (id and email survive).
  *
  * Why we exercise the DB toggle directly rather than the admin UI:
  *   The admin endpoint to suspend a user requires super-admin
@@ -67,25 +70,27 @@ test.describe('ADM-03: super-admin user suspend + reactivate @p1 @admin @cross-a
         expect(dbAfterSuspend[0]?.service_suspended).toBe(true);
         expect(dbAfterSuspend[0]?.email).toBe(user.email);
 
-        // ── While suspended: protected access blocked ─────────────────────
-        // The exact code depends on the auth middleware: 401 when the
-        // session is invalidated, 403 when the actor is "logged in but
-        // suspended". We accept either, but reject 200.
-        const duringRes = await page.request.get(`${API_URL}/api/v1/public/auth/me`, {
-            headers: { cookie: user.sessionCookie }
-        });
-        if (duringRes.ok()) {
-            // Some implementations leave /me reading the row but flag it.
-            // In that case the response should expose the suspension.
-            const body = (await duringRes.json()) as {
-                data?: { suspendedAt?: string | null; suspended_at?: string | null };
-            };
-            const suspendedAt = body.data?.suspendedAt ?? body.data?.suspended_at;
-            expect(
-                suspendedAt,
-                'expected /me to surface suspendedAt when not blocking the request outright'
-            ).toBeTruthy();
-        }
+        // ── While suspended: the session is intentionally still valid ──────
+        // `service_suspended` does NOT cut off access, and asserting that it does was
+        // the spec's original mistake. It is the service-suspension half of a
+        // SUBSCRIPTION PAUSE (SPEC-143 #29): it hides the owner's accommodations from
+        // public reads and locks them from edits. No auth guard reads it — the only
+        // consumers are subscription-pause.service.ts, which sets it, and
+        // accommodation.service.ts, which refuses creation for a suspended owner.
+        // Account-level blocking is a different column (`banned`).
+        //
+        // So the contract to assert is: a paused owner keeps their session but cannot
+        // create accommodations. `/api/v1/public/auth/me` proves nothing either way —
+        // it is a PUBLIC endpoint that answers for guests too, and
+        // AuthMeResponseSchema exposes no suspension field at all.
+        const suspendedSessionRes = await page.request.get(
+            `${API_URL}/api/v1/protected/user-bookmarks`,
+            { headers: { cookie: user.sessionCookie } }
+        );
+        expect(
+            suspendedSessionRes.ok(),
+            `a paused subscription must not revoke the session (got ${suspendedSessionRes.status()})`
+        ).toBe(true);
 
         // ── Reactivate ────────────────────────────────────────────────────
         await reactivateUser(user.id);

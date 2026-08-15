@@ -7,7 +7,9 @@ every rule must respect.
 
 Dashboard path: **hospeda.com.ar → Rules → Redirect Rules**.
 
-Current state: **1 active rule**, scoped to staging (HOS-369 W1-4).
+Current state: **2 active rules** — the staging rule below (HOS-369 W1-4) and
+its production twin, activated 2026-08-12 (see [Production twin](#production-twin)
+at the end).
 
 ---
 
@@ -126,7 +128,66 @@ origin answers `https://hospeda.com.ar/?utm_source=newsletter` with a bare
 `/es/`, and the campaign parameters are gone before any analytics sees them.
 
 The rule above preserves the query string, so **staging's root redirect no
-longer has this bug and production still does**. Every other locale-less path
+longer has this bug and production still does**.
+
+> **Update 2026-08-12** — the production *root* half of this no longer
+> reproduces: measured before the production twin existed, the origin answered
+> `/?utm_source=test` with a relative `location: /es/?utm_source=test`. See
+> [Production twin](#production-twin). The rest of this note stands until
+> somebody re-measures the other locale-less paths.
+
+Every other locale-less path
 (`/alojamientos/?x=1`, …) is still affected on both. Fixing it properly means
 threading `search` through `buildLocaleRedirect` at the origin, which is outside
 W1-4's scope — tracked separately.
+
+---
+
+## Production twin
+
+`HOS-369 W1-4 - prod root to default locale`, order 2, active since
+2026-08-12.
+
+### Expression
+
+```
+(http.host eq "hospeda.com.ar" and http.request.uri.path eq "/")
+```
+
+### Settings
+
+| Setting | Value |
+|---|---|
+| Target type | Static |
+| Target URL | `https://hospeda.com.ar/es/` |
+| Status code | 301 |
+| Preserve query string | **on** |
+
+**The target URL is the one thing a duplicate does not fix for you.** Cloudflare's
+*Duplicate rule* copies the target verbatim, so the new rule arrives pointing at
+`https://staging.hospeda.com.ar/es/`. Deployed unedited, every visitor landing on
+the production root would have been 301'd onto staging. Changing the host in the
+*expression* is not enough — the target is a separate field, and nothing in the
+UI links the two.
+
+### Verified after activation (2026-08-12)
+
+```bash
+curl -sS -o /dev/null -D - https://hospeda.com.ar/
+# location: https://hospeda.com.ar/es/     (served by cloudflare, no origin hop)
+
+curl -sS -o /dev/null -D - 'https://hospeda.com.ar/?utm_source=smoke&utm_medium=test'
+# location: https://hospeda.com.ar/es/?utm_source=smoke&utm_medium=test
+
+curl -sS -o /dev/null -D - https://staging.hospeda.com.ar/
+# location: https://staging.hospeda.com.ar/es/     (unchanged)
+```
+
+Note the edge answers an **absolute** URL where the origin answered a relative
+`/es/`. That is inherent to a static redirect rule, not a regression.
+
+One prior expectation did **not** reproduce: the "production loses the query
+string on the locale redirect, breaking UTMs" note. Measured immediately before
+this rule was added, the production origin already preserved it
+(`location: /es/?utm_source=test`). Whatever caused that is gone; the rule now
+makes it moot either way.

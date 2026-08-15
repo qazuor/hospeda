@@ -191,6 +191,27 @@ export async function forceVerifyEmail(userId: string): Promise<void> {
 }
 
 /**
+ * Marks a freshly-created user as having completed onboarding, so the web app
+ * lets them reach `/mi-cuenta/*` instead of bouncing them to the profile form.
+ *
+ * SPEC-113 added a middleware guard that redirects any signed-in user with
+ * `profile_completed = false` to `/{locale}/mi-cuenta/completar-perfil/`.
+ * `signupUser` leaves the column false, so every UI spec that navigates into the
+ * account area lands on the completion form instead of the page under test — the
+ * elements it looks for are legitimately absent, and the failure reads as a
+ * missing feature rather than a redirect. Call this for any spec that drives the
+ * account UI; API-only specs do not need it (the guard is web middleware).
+ *
+ * This is the E2E counterpart of `pnpm db:seed:ready-user` (SPEC-264), which
+ * exists so seeded dev accounts skip the same friction.
+ *
+ * @param options.userId - The user to mark as onboarded.
+ */
+export async function markProfileCompleted(options: { readonly userId: string }): Promise<void> {
+    await execSQL('UPDATE users SET profile_completed = true WHERE id = $1', [options.userId]);
+}
+
+/**
  * Refreshes a user's session by signing in again with their credentials.
  *
  * Better Auth still uses a cookie-based session cache (`better-auth.session_data`,
@@ -600,6 +621,30 @@ export async function createSubscription(options: {
     const subscriptionId = subRows[0]?.id;
     if (!subscriptionId) throw new Error('createSubscription: subscription insert returned no id');
     return { customerId, subscriptionId };
+}
+
+/**
+ * Resolves a seeded billing plan id from its slug.
+ *
+ * The seed stores the plan slug in `billing_plans.name` (see billingPlans.seed.ts),
+ * and the E2E sandbox runs with `livemode = false`, so both must be matched — a
+ * lookup that ignores `livemode` can return the production-mode row, whose id the
+ * QZPay Drizzle adapter then refuses to see.
+ *
+ * @param options.slug - Plan slug as seeded, e.g. `tourist-plus`.
+ * @returns The plan id, or `null` when the plan is not seeded in this environment.
+ */
+export async function resolvePlanIdBySlug(options: { readonly slug: string }): Promise<{
+    readonly planId: string | null;
+    readonly limits: Readonly<Record<string, number>> | null;
+}> {
+    const rows = await execSQL<{ id: string; limits: Record<string, number> | null }>(
+        'SELECT id, limits FROM billing_plans WHERE name = $1 AND livemode = false LIMIT 1',
+        [options.slug]
+    );
+    const row = rows[0];
+    if (!row) return { planId: null, limits: null };
+    return { planId: row.id, limits: row.limits ?? {} };
 }
 
 /**

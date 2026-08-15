@@ -71,10 +71,12 @@ test.describe('ADM-04: super-admin lists plans + addons @p1 @admin @billing', ()
             plansRes.ok(),
             `super-admin GET plans should be 2xx (got ${plansRes.status()})`
         ).toBe(true);
+        // Both admin list endpoints answer { data: { items, pagination } }; reading
+        // `data` as a bare array yielded undefined and an always-empty list.
         const plansBody = (await plansRes.json()) as {
-            data?: ReadonlyArray<{ slug?: string; name?: string }>;
+            data?: { items?: ReadonlyArray<{ slug?: string; name?: string }> };
         };
-        const plansList = plansBody.data ?? [];
+        const plansList = plansBody.data?.items ?? [];
         expect(plansList.length, 'admin plans list should be non-empty').toBeGreaterThan(0);
 
         const addonsRes = await page.request.get(`${API_URL}/api/v1/admin/billing/addons`, {
@@ -85,9 +87,9 @@ test.describe('ADM-04: super-admin lists plans + addons @p1 @admin @billing', ()
             `super-admin GET addons should be 2xx (got ${addonsRes.status()})`
         ).toBe(true);
         const addonsBody = (await addonsRes.json()) as {
-            data?: ReadonlyArray<{ slug?: string }>;
+            data?: { items?: ReadonlyArray<{ slug?: string }> };
         };
-        const addonsList = addonsBody.data ?? [];
+        const addonsList = addonsBody.data?.items ?? [];
         expect(addonsList.length, 'admin addons list should be non-empty').toBeGreaterThan(0);
 
         // ── 2. Regular user: rejected with 401/403 ────────────────────────

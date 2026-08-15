@@ -289,6 +289,7 @@ function buildPayment(
         amount: number;
         status: string;
         subscriptionId: string | null;
+        metadata: Record<string, string | number | boolean | null>;
     }> = {}
 ) {
     return {
@@ -297,6 +298,7 @@ function buildPayment(
         amount: 1000,
         status: 'refunded',
         subscriptionId: SUBSCRIPTION_ID,
+        metadata: {},
         ...overrides
     } as Parameters<NonNullable<typeof adminBillingHooks.onAfterPaymentRefund>>[0]['payment'];
 }
@@ -1339,6 +1341,73 @@ describe('adminBillingHooks.onAfterPaymentRefund', () => {
                 payment,
                 refundAmount: 400
             })
+        );
+    });
+
+    // ── qzpay-core 2.0.0 (H-146) ───────────────────────────────────────────────
+    // Since core 2.0.0 `payments.refund()` actually calls MercadoPago, and the
+    // returned payment reports what the PROVIDER did. qzpay-hono still fires this
+    // hook with the amount the ADMIN requested, so the hook — not the route — has
+    // to read the provider's verdict off the payment before acting on it.
+
+    it('does NOT apply the lifecycle when the provider refund is still pending', async () => {
+        // Provider accepted the refund but has not settled it. Cancelling the
+        // subscription and revoking entitlements here would punish a customer for
+        // a refund that MercadoPago may still reject.
+        const payment = buildPayment({
+            amount: 1000,
+            status: 'succeeded',
+            metadata: { refundStatus: 'pending', refundId: 'mp_refund_3' }
+        });
+
+        await adminBillingHooks.onAfterPaymentRefund!({
+            payment,
+            amount: undefined,
+            reason: 'Customer request',
+            ctx: buildContext()
+        });
+
+        expect(applyRefundLifecycle).not.toHaveBeenCalled();
+    });
+
+    it('uses the amount the PROVIDER refunded, not the amount requested', async () => {
+        // Admin asked for a full refund (amount undefined); MercadoPago only
+        // returned 400 of 1000. Treating this as full would cancel the
+        // subscription for a customer who got 40% of the money back.
+        const payment = buildPayment({
+            amount: 1000,
+            status: 'partially_refunded',
+            metadata: { refundStatus: 'succeeded', refundedAmount: 400 }
+        });
+
+        await adminBillingHooks.onAfterPaymentRefund!({
+            payment,
+            amount: undefined,
+            reason: 'Customer request',
+            ctx: buildContext()
+        });
+
+        expect(applyRefundLifecycle).toHaveBeenCalledTimes(1);
+        expect(applyRefundLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({ refundAmount: 400 })
+        );
+    });
+
+    it('falls back to the requested amount when the payment carries no provider refund metadata', async () => {
+        // Adapter-less deployments and pre-2.0.0 rows have no refund metadata.
+        // The legacy behaviour (trust the requested amount) must survive.
+        const payment = buildPayment({ amount: 1000, metadata: {} });
+
+        await adminBillingHooks.onAfterPaymentRefund!({
+            payment,
+            amount: 700,
+            reason: 'Legacy path',
+            ctx: buildContext()
+        });
+
+        expect(applyRefundLifecycle).toHaveBeenCalledTimes(1);
+        expect(applyRefundLifecycle).toHaveBeenCalledWith(
+            expect.objectContaining({ refundAmount: 700 })
         );
     });
 
