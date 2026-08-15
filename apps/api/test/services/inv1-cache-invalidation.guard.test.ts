@@ -96,6 +96,21 @@ function readSrc(relativePath: string): string {
 }
 
 /**
+ * Matches an actual `clearEntitlementCache(...)` INVOCATION, not a mention.
+ *
+ * The guard used to assert `source.toContain('clearEntitlementCache')`, which the
+ * `import { clearEntitlementCache } from ...` line satisfies on its own. That was
+ * verified by mutation: deleting the call while leaving the import in place kept
+ * the whole suite green — the guard could not fail for the very defect it exists
+ * to catch. Requiring the open paren separates a call from an import, since the
+ * named-import form never has one directly after the identifier.
+ *
+ * Still source-level, so it does not prove the call sits on the right code path;
+ * that remains the job of each file's own unit tests.
+ */
+const CLEAR_ENTITLEMENT_CACHE_CALL = /clearEntitlementCache\s*\(/;
+
+/**
  * Each entry describes ONE lifecycle event and the source file that must
  * contain clearEntitlementCache. Multiple events mapping to the same file
  * appear as separate rows so the table is event-centric, not file-centric.
@@ -253,7 +268,7 @@ describe('INV-1 transversal guard: every lifecycle handler calls clearEntitlemen
         expect(
             source,
             `clearEntitlementCache call is MISSING from ${file}.\nEvery lifecycle handler that mutates billing state MUST call clearEntitlementCache(customerId) so the in-process cache reflects the new state immediately (INV-1, SPEC-145 T-021).\nIf this file was intentionally split/refactored, update the LIFECYCLE_SITES table in test/services/inv1-cache-invalidation.guard.test.ts.`
-        ).toContain('clearEntitlementCache');
+        ).toMatch(CLEAR_ENTITLEMENT_CACHE_CALL);
     });
 
     it('LIFECYCLE_SITES table is non-empty (guard against accidental wipe)', () => {
@@ -397,8 +412,8 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
     },
     {
         file: 'services/billing-customer-sync.ts',
-        requiresCacheClear: false,
-        reason: 'Soft-deletes all subscriptions as part of a customer cascade-delete (account deletion). Flagged for a follow-up audit outside HOS-453 scope rather than assumed safe.'
+        requiresCacheClear: true,
+        reason: "Soft-deletes every subscription of a customer on account deletion. The follow-up audit this entry was originally flagged for came back POSITIVE: qzpay's findByCustomerId filters deleted_at IS NULL, so the cascade does change what loadEntitlements resolves, and account deletion fires no MercadoPago webhook — handleUserDeletion is the only place that can invalidate."
     },
     {
         file: 'services/billing/link-preapproval.service.ts',
@@ -498,8 +513,9 @@ describe('HOS-453 auto-discovery guard: every billing_subscriptions writer is re
         expect(
             source,
             `${entry.file} is registered as requiresCacheClear:true (${entry.reason}) but its ` +
-                'source no longer contains "clearEntitlementCache" — the call was removed.'
-        ).toContain('clearEntitlementCache');
+                'source contains no clearEntitlementCache(...) INVOCATION — the call was removed. ' +
+                'A leftover import alone does not satisfy this guard.'
+        ).toMatch(CLEAR_ENTITLEMENT_CACHE_CALL);
     });
 
     it('every registry entry has a non-empty, specific reason', () => {
