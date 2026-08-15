@@ -35,12 +35,17 @@ export function ChangePlanDialog({
     onConfirm
 }: ChangePlanDialogProps) {
     const { t, locale } = useTranslations();
-    const currentPlan = getPlanBySlug(subscription.planSlug);
+    // Used ONLY to resolve category + entitlements for the change-plan
+    // options below (CONFIG-FALLBACK(SPEC-192) — see getPlanBySlug's JSDoc).
+    // The current-plan DISPLAY block further down reads `subscription.plan`
+    // (the API payload) directly instead.
+    const currentPlan = getPlanBySlug(subscription.plan?.slug ?? '');
     const [selectedPlan, setSelectedPlan] = useState<string>('');
 
     const availablePlans = getChangePlanOptions({
         currentPlan,
-        currentSlug: subscription.planSlug
+        currentSlug: subscription.plan?.slug ?? '',
+        currentProductDomain: subscription.plan?.productDomain
     });
 
     const handleConfirm = () => {
@@ -68,7 +73,8 @@ export function ChangePlanDialog({
                     </DialogTitle>
                     <DialogDescription>
                         {t('admin-billing.subscriptions.changePlanDialog.description')}{' '}
-                        {subscription.userName}
+                        {subscription.user?.displayName ??
+                            t('admin-billing.subscriptions.unknownUser')}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -78,22 +84,24 @@ export function ChangePlanDialog({
                             {t('admin-billing.subscriptions.changePlanDialog.currentPlan')}
                         </p>
                         <div className="rounded-md border bg-card p-3">
-                            {currentPlan ? (
+                            {subscription.plan ? (
                                 <>
-                                    <p className="font-medium">{currentPlan.name}</p>
+                                    <p className="font-medium">{subscription.plan.displayName}</p>
                                     <p className="text-muted-foreground text-sm">
-                                        {formatCentsToArs({
-                                            cents: currentPlan.monthlyPriceArs,
-                                            locale
-                                        })}
-                                        {t('admin-billing.subscriptions.changePlanDialog.perMonth')}
+                                        {subscription.plan.monthlyPriceInCents === null
+                                            ? '—'
+                                            : `${formatCentsToArs({
+                                                  cents: subscription.plan.monthlyPriceInCents,
+                                                  locale
+                                              })}${t('admin-billing.subscriptions.changePlanDialog.perMonth')}`}
                                     </p>
                                 </>
                             ) : (
-                                // Off-catalog plan: `?? 0` used to render a blank name over
-                                // "$ 0,00 /mes" for a paying subscription, which reads as data
-                                // corruption. Show the slug we do know instead (HOS-331).
-                                <p className="font-medium">{subscription.planSlug}</p>
+                                // Plan row missing from the payload: show the "unknown plan"
+                                // affordance instead of rendering a blank name (HOS-331).
+                                <p className="font-medium">
+                                    {t('admin-billing.subscriptions.unknownPlan')}
+                                </p>
                             )}
                         </div>
                     </div>

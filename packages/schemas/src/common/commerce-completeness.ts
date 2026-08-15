@@ -266,14 +266,19 @@ export function resolveListingCompleteness(
     }
 
     // ── Experience-specific required fields ───────────────────────────────
-    // HOS-166 PR-B resolution of the PR-A TODO. `priceFrom`/`priceUnit` are
-    // already non-nullable on `ExperienceSchema` (no `.default()`, no
-    // `.nullish()`), so a listing that satisfies the Create schema always has
-    // SOME price data — but "some" is not "meaningful": `priceFrom: 0` with
-    // `isPriceOnRequest: false` reads as "$0 per day", a broken listing. This
-    // mirrors gastronomy's `priceRange` requirement (real price information is
-    // viability, not quality) and is the one experience-specific rule that is
-    // both obvious and derivable from the schema's own shape.
+    // HOS-166 PR-B resolution of the PR-A TODO. `priceFrom` is non-nullable on
+    // `ExperienceSchema`, so a listing that satisfies the Create schema always
+    // has SOME price data — but "some" is not "meaningful": `priceFrom: 0` with
+    // `isPriceOnRequest: false` reads as "$0", a broken listing. This mirrors
+    // gastronomy's `priceRange` requirement (real price information is
+    // viability, not quality).
+    //
+    // `priceUnit` is deliberately NOT checked here. It became nullable in H-156
+    // — an experience with no price has no unit to bill it in — and the rule
+    // that a REAL price still needs one lives on the create schemas, where both
+    // fields are present. Requiring it here too would block publishing exactly
+    // the "a consultar" listings the nullability exists to allow. (This comment
+    // used to assert both fields were non-nullable; that stopped being true.)
     //
     // NOTE (deferred, not decided here): `openingHours` was deliberately NOT
     // added as a required field for experience, unlike gastronomy. A

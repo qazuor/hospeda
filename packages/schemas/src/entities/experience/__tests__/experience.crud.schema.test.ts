@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { ExperiencePriceUnitEnum } from '../../../enums/experience-price-unit.enum.js';
 import { ExperienceTypeEnum } from '../../../enums/experience-type.enum.js';
 import {
+    ExperienceAdminCreateInputCheckedSchema,
     ExperienceAdminCreateInputSchema,
     ExperienceDeleteInputSchema,
     ExperienceOwnerCreateInputSchema,
@@ -79,6 +80,81 @@ describe('ExperienceAdminCreateInputSchema', () => {
             if (!result.success) {
                 expect(result.error.issues.map((i) => i.path.join('.'))).toContain('ownerId');
             }
+        });
+
+        // ── H-156: priceUnit is nullable, but only for a price that does not exist ──
+        //
+        // `experiences.price_unit` became nullable so an owner publishing an
+        // experience "a consultar" is not forced to declare the unit of a price
+        // that does not exist — which produced rows asserting three things at
+        // once: the price is on request, the price is 0, and it is charged per
+        // person. A listing that DOES carry a price still needs a unit: "$8000"
+        // with no unit is not publishable information.
+
+        it('accepts a null priceUnit when the price is on request (H-156)', () => {
+            const raw = buildAdminCreateInput({
+                priceUnit: null,
+                priceFrom: 0,
+                isPriceOnRequest: true
+            });
+            const result = ExperienceAdminCreateInputCheckedSchema.safeParse(raw);
+            expect(result.success).toBe(true);
+        });
+
+        // Pins the reason the rule lives on a separate `*CheckedSchema` instead
+        // of on the plain create schema. Zod 4 does NOT quietly drop a
+        // refinement when the schema is sliced — it THROWS, and TypeScript does
+        // not catch it because `.superRefine()` returns `this`. Attaching the
+        // rule directly to `ExperienceOwnerCreateInputSchema` therefore compiles
+        // and then crashes on module load in `CommerceCreateForm.client.tsx`,
+        // which picks a subset of that schema.
+        it('keeps the plain create schemas slice-able (Zod 4 throws on .pick() over refinements)', () => {
+            expect(() =>
+                ExperienceOwnerCreateInputSchema.pick({
+                    name: true,
+                    priceFrom: true,
+                    priceUnit: true,
+                    isPriceOnRequest: true
+                })
+            ).not.toThrow();
+
+            expect(() =>
+                ExperienceAdminCreateInputSchema.pick({ name: true, priceUnit: true })
+            ).not.toThrow();
+        });
+
+        it('accepts an omitted priceUnit when the price is on request (H-156)', () => {
+            const raw = buildAdminCreateInput({
+                priceUnit: undefined,
+                priceFrom: 0,
+                isPriceOnRequest: true
+            });
+            const result = ExperienceAdminCreateInputCheckedSchema.safeParse(raw);
+            expect(result.success).toBe(true);
+        });
+
+        it('REJECTS a null priceUnit when there is a real price, naming the field (H-156)', () => {
+            const raw = buildAdminCreateInput({
+                priceUnit: null,
+                priceFrom: 800000,
+                isPriceOnRequest: false
+            });
+            const result = ExperienceAdminCreateInputCheckedSchema.safeParse(raw);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues.map((i) => i.path.join('.'))).toContain('priceUnit');
+            }
+        });
+
+        it('REJECTS an omitted priceUnit when there is a real price (H-156)', () => {
+            const raw = buildAdminCreateInput({
+                priceUnit: undefined,
+                priceFrom: 800000,
+                isPriceOnRequest: false
+            });
+            const result = ExperienceAdminCreateInputCheckedSchema.safeParse(raw);
+            expect(result.success).toBe(false);
         });
 
         it('should REJECT omitting destinationId, naming the field (H-88)', () => {

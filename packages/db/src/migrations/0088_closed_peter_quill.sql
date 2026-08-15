@@ -1,0 +1,1 @@
+ALTER TABLE "experiences" ALTER COLUMN "price_unit" DROP NOT NULL;

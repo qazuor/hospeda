@@ -2631,7 +2631,13 @@ export function toExperienceCardProps({
         destinationId: String(item.destinationId || ''),
         destinationName,
         priceFrom: Number(item.priceFrom ?? 0),
-        priceUnit: String(item.priceUnit || 'per_day'),
+        // H-156: pass a missing unit through as null instead of inventing
+        // `'per_day'`. `priceUnit` is nullable now, and null means "this
+        // experience has no price, so it has no billing unit" — substituting a
+        // real unit would make the card assert a charging model the owner never
+        // chose. `ExperiencePriceTag` renders "a consultar" in that case and
+        // never reads the unit.
+        priceUnit: item.priceUnit == null ? null : String(item.priceUnit),
         isPriceOnRequest: Boolean(item.isPriceOnRequest),
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),

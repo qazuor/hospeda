@@ -26,25 +26,42 @@ import type { Subscription } from '@/features/billing-subscriptions/types';
 const KEY_NO_DESTINATIONS = 'admin-billing.subscriptions.changePlanDialog.noDestinationPlans';
 const KEY_NOT_IN_CATALOG = 'admin-billing.subscriptions.changePlanDialog.planNotInCatalog';
 
-function makeSubscription(planSlug: string): Subscription {
+function makeSubscription(
+    planSlug: string,
+    productDomain = 'accommodation',
+    priceInCents: number | null = 1500000
+): Subscription {
     return {
-        id: 'sub-1',
-        userId: 'user-1',
-        userName: 'Test Host',
-        userEmail: 'host@local.test',
-        planSlug,
+        id: '11111111-1111-4111-8111-111111111111',
         status: 'active',
-        startDate: '2026-01-01',
-        currentPeriodEnd: '2026-02-01',
-        monthlyAmount: 15000,
-        cancelAtPeriodEnd: false
+        rawStatus: 'active',
+        user: {
+            id: '22222222-2222-4222-8222-222222222222',
+            displayName: 'Test Host',
+            email: 'host@local.test'
+        },
+        plan: {
+            id: '33333333-3333-4333-8333-333333333333',
+            slug: planSlug,
+            displayName: planSlug,
+            monthlyPriceInCents: priceInCents,
+            productDomain
+        },
+        recurringAmountInCents: priceInCents,
+        billingInterval: 'month',
+        currentPeriodStart: '2026-01-01T00:00:00.000Z',
+        currentPeriodEnd: '2026-02-01T00:00:00.000Z',
+        trialEnd: null,
+        cancelAtPeriodEnd: false,
+        createdAt: '2026-01-01T00:00:00.000Z',
+        productDomain
     };
 }
 
-function renderDialog(planSlug: string) {
+function renderDialog(planSlug: string, priceInCents: number | null = 1500000) {
     return render(
         <ChangePlanDialog
-            subscription={makeSubscription(planSlug)}
+            subscription={makeSubscription(planSlug, 'accommodation', priceInCents)}
             isOpen={true}
             onClose={vi.fn()}
             onConfirm={vi.fn()}
@@ -71,10 +88,13 @@ describe('ChangePlanDialog — empty states (HOS-331)', () => {
 
     it('shows the slug instead of a blank name over a fake $0 for an off-catalog plan', () => {
         // `formatArs(undefined ?? 0)` rendered "$ 0,00 /mes" next to an empty
-        // name for a subscription the customer is actually paying for.
-        renderDialog('commerce-listing');
+        // name for a subscription the customer is actually paying for. With an
+        // unknown price the dialog must say nothing rather than invent a zero.
+        renderDialog('commerce-listing', null);
         expect(screen.getByText('commerce-listing')).toBeInTheDocument();
-        expect(screen.queryByText(/0,00/)).not.toBeInTheDocument();
+        // Anchored so it cannot match the "0,00" tail of a real amount such as
+        // "15.000,00 ARS" — the unanchored version passed for the wrong reason.
+        expect(screen.queryByText(/(?<![\d.])0,00/)).not.toBeInTheDocument();
     });
 
     it('shows neither message when destinations exist', () => {

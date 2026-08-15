@@ -2804,6 +2804,9 @@
         "priceFrom": {
             "nonnegative": "El precio debe ser mayor o igual a 0"
         },
+        "priceUnit": {
+            "requiredUnlessOnRequest": "Choose a price unit (per day, per hour, per person or per group). If the experience has no fixed price, tick \"Price on request\"."
+        },
         "review": {
             "content": {
                 "max": "El contenido de la reseña no puede superar los {{max}} caracteres",

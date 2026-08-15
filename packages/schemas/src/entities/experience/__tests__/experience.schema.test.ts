@@ -259,8 +259,30 @@ describe('ExperienceSchema', () => {
             expect(result.success).toBe(false);
         });
 
-        it('should reject when priceUnit is missing', () => {
+        // H-156 inverted this: it used to assert that a missing `priceUnit` was
+        // rejected. `experiences.price_unit` is nullable now — an experience
+        // with `isPriceOnRequest` has no price, so it has no unit to bill it in
+        // — and this base schema also describes rows READ back from the
+        // database, where a null is a legitimate value rather than a defect.
+        //
+        // The rule "a unit IS required when there is a real price" did not
+        // disappear; it moved to `ExperienceAdminCreateInputCheckedSchema` /
+        // `ExperienceOwnerCreateInputCheckedSchema`, where both fields are
+        // present and can be compared. See `experience.crud.schema.test.ts`.
+        it('accepts a missing priceUnit — the rule lives on the create schemas (H-156)', () => {
             const raw = buildValidExperience({ priceUnit: undefined });
+            const result = ExperienceSchema.safeParse(raw);
+            expect(result.success).toBe(true);
+        });
+
+        it('accepts an explicit null priceUnit (H-156)', () => {
+            const raw = buildValidExperience({ priceUnit: null });
+            const result = ExperienceSchema.safeParse(raw);
+            expect(result.success).toBe(true);
+        });
+
+        it('still rejects a priceUnit outside the enum', () => {
+            const raw = buildValidExperience({ priceUnit: 'per_decade' });
             const result = ExperienceSchema.safeParse(raw);
             expect(result.success).toBe(false);
         });

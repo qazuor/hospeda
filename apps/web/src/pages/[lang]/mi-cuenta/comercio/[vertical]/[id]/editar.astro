@@ -154,9 +154,18 @@ const initialFaqs: CommerceFaq[] = Array.isArray(rawFaqs)
         features={features}
         destinations={destinations}
         destinationsLoadFailed={destinationsLoadFailed}
+        hasFaqSection={true}
     />
 
-    <div class="ce-faq-gap">
+    {/*
+        H-153: the FAQ card is a sibling of the editor, not one of its sections,
+        so the editor cannot advertise it in the section nav on its own. This
+        page owns both halves — it passes `hasFaqSection` above and supplies the
+        `id="editor-faqs"` the resulting nav link scrolls to. Removing either one
+        without the other leaves a link that scrolls nowhere; the section-nav
+        suite asserts they stay together.
+    */}
+    <div class="ce-faq-gap" id="editor-faqs">
         <AccountSectionCard>
             <CommerceFaqManager
                 client:idle

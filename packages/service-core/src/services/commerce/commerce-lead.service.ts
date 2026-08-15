@@ -144,6 +144,20 @@ const listLeadsInputSchema = z.object({
     pageSize: z.coerce.number().min(1).max(100).default(20)
 });
 
+/**
+ * Input to `getMyLead`. `domain` is a strict enum rather than the loose
+ * `z.string()` `listLeadsInputSchema` uses: an unrecognised value here must
+ * FAIL, not silently drop the filter, because a dropped filter returns the
+ * wrong vertical's lead — which is the whole failure this filter exists to
+ * prevent (H-155).
+ */
+const getMyLeadInputSchema = z.object({
+    domain: z.enum(['gastronomy', 'experience']).optional()
+});
+
+/** Input to {@link CommerceLeadService.getMyLead}. */
+export type GetMyLeadInput = z.infer<typeof getMyLeadInputSchema>;
+
 const markHandledInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     status: z.enum(['approved', 'rejected']),
@@ -289,23 +303,49 @@ export class CommerceLeadService extends BaseService {
      * No permission check beyond `validateActor` — the query is inherently
      * self-scoped, so there is nothing an elevated permission would unlock.
      *
+     * ## Scoping by `domain` (H-155)
+     *
+     * Owner scoping alone is NOT enough. One owner can legitimately hold leads
+     * in both verticals — the product invites exactly that ("+ Nuevo comercio",
+     * gastronomy and experience under one account) — so "the caller's most
+     * recent lead" was pre-filling the EXPERIENCE create form with a
+     * GASTRONOMY lead's business name and destination.
+     *
+     * That is not a cosmetic wrong default. The create form derives the public
+     * slug from `name`, and the editor tells the owner the slug cannot be
+     * changed afterwards, so an owner who does not notice the pre-filled
+     * restaurant name ships their excursion under it permanently. The error
+     * becomes irreversible in the same click that commits it.
+     *
+     * Callers rendering a vertical-specific form MUST pass that vertical as
+     * `domain`. Omitting it keeps the original owner-only behaviour for callers
+     * that genuinely want "any lead of mine".
+     *
      * @param actor - The authenticated actor requesting their own lead.
+     * @param input - Optional filters; `domain` restricts to one vertical.
      * @param ctx - Optional service execution context.
      * @returns `ServiceOutput<CommerceLead | null>` — `null` when the caller
-     *   has no provisioned lead on record.
+     *   has no provisioned lead on record (for the requested domain, when one
+     *   was given).
      */
     public async getMyLead(
         actor: Actor,
+        input: GetMyLeadInput = {},
         ctx?: ServiceContext
     ): Promise<ServiceOutput<CommerceLead | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getMyLead',
-            input: { actor },
-            schema: z.object({}),
+            input: { actor, ...input },
+            schema: getMyLeadInputSchema,
             ctx,
-            execute: async (_validated, a, execCtx) => {
+            execute: async (validated, a, execCtx) => {
+                const where: Record<string, unknown> = { provisionedUserId: a.id };
+                if (validated.domain !== undefined) {
+                    where.domain = validated.domain;
+                }
+
                 const result = await this._model.findAll(
-                    { provisionedUserId: a.id },
+                    where,
                     { page: 1, pageSize: 1, sortBy: 'createdAt', sortOrder: 'desc' },
                     undefined,
                     execCtx?.tx

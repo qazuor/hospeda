@@ -2804,6 +2804,9 @@
         "priceFrom": {
             "nonnegative": "El precio debe ser mayor o igual a 0"
         },
+        "priceUnit": {
+            "requiredUnlessOnRequest": "Elegí la unidad de precio (por día, por hora, por persona o por grupo). Si la experiencia no tiene precio fijo, marcá «Precio a consultar»."
+        },
         "review": {
             "content": {
                 "max": "El contenido de la reseña no puede superar los {{max}} caracteres",

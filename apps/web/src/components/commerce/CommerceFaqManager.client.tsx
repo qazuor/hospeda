@@ -130,7 +130,10 @@ export function CommerceFaqManager({
         setBusyId('add');
         setActionError(null);
 
-        const result = await apiClient.post<CommerceFaq>({
+        // `postProtected`, never `post`: this hits `/protected/`, and `post` is the
+        // ONE verb on the client that omits `credentials: 'include'` (patch, put
+        // and delete all send it). Using it made every add 403 — H-89.
+        const result = await apiClient.postProtected<CommerceFaq>({
             path: basePath,
             body: {
                 question: addValues.question.trim(),
@@ -178,7 +181,10 @@ export function CommerceFaqManager({
             setBusyId(faqId);
             setActionError(null);
 
-            const result = await apiClient.patch<CommerceFaq>({
+            // PUT, not PATCH: the API registers `PUT /{id}/faqs/{faqId}`
+            // (routes/{gastronomy,experience}/protected/updateFaq.ts). PATCH
+            // matched no route and 404'd — H-89.
+            const result = await apiClient.put<CommerceFaq>({
                 path: `${basePath}/${faqId}`,
                 body: {
                     question: editValues.question.trim(),

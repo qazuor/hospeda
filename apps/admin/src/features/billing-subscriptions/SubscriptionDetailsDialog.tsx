@@ -21,7 +21,13 @@ import { useTranslations } from '@/hooks/use-translations';
 import { SubscriptionPaymentHistoryBlock } from './SubscriptionPaymentHistoryBlock';
 import { SubscriptionPromoEffectPanel } from './SubscriptionPromoEffectPanel';
 import type { PaymentHistory, Subscription, SubscriptionStatus } from './types';
-import { formatArs, formatDate, getPlanBySlug, getStatusLabel, getStatusVariant } from './utils';
+import {
+    formatArsFromCents,
+    formatDate,
+    getPlanBySlug,
+    getStatusLabel,
+    getStatusVariant
+} from './utils';
 
 /**
  * Props for SubscriptionDetailsDialog
@@ -74,19 +80,25 @@ export function SubscriptionDetailsDialog({
 
     if (!subscription) return null;
 
-    const plan = getPlanBySlug(subscription.planSlug);
+    // Entitlements listing only: `AdminBillingPlanRef` (the API's plan ref)
+    // carries no entitlements, so the accommodation-only ALL_PLANS catalog is
+    // used here — and ONLY here — to resolve them. Display of the
+    // subscription's OWN current plan (name, price) below reads from the API
+    // payload's `subscription.plan` directly, never from this lookup.
+    const catalogPlan = getPlanBySlug(subscription.plan?.slug ?? '');
 
     // Map API payment data to PaymentHistory interface.
     // `paymentData` is already validated by the query hook (SPEC-039), so no
-    // cast is needed here — only a status-string narrowing.
+    // cast is needed here — only a status-string narrowing. `succeeded` is
+    // the real value the API sends; `completed` never existed.
     const paymentHistory: PaymentHistory[] = (paymentData ?? []).map((p) => ({
         id: p.id,
         date: p.createdAt,
-        amount: p.amount / 100,
+        amount: p.amountInCents / 100,
         status:
-            p.status === 'completed'
+            p.status === 'succeeded'
                 ? ('paid' as const)
-                : p.status === 'pending'
+                : p.status === 'pending' || p.status === 'processing'
                   ? ('pending' as const)
                   : ('failed' as const)
     }));
@@ -127,14 +139,26 @@ export function SubscriptionDetailsDialog({
                                     {t('admin-billing.subscriptions.detailsDialog.userSection')}
                                 </h3>
                                 <div className="rounded-md border bg-card p-3">
-                                    <p className="font-medium">{subscription.userName}</p>
-                                    <p className="text-muted-foreground text-sm">
-                                        {subscription.userEmail}
-                                    </p>
-                                    <p className="mt-1 text-muted-foreground text-xs">
-                                        {t('admin-billing.subscriptions.detailsDialog.idLabel')}{' '}
-                                        {subscription.userId}
-                                    </p>
+                                    {subscription.user ? (
+                                        <>
+                                            <p className="font-medium">
+                                                {subscription.user.displayName}
+                                            </p>
+                                            <p className="text-muted-foreground text-sm">
+                                                {subscription.user.email}
+                                            </p>
+                                            <p className="mt-1 text-muted-foreground text-xs">
+                                                {t(
+                                                    'admin-billing.subscriptions.detailsDialog.idLabel'
+                                                )}{' '}
+                                                {subscription.user.id}
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <p className="text-muted-foreground text-sm italic">
+                                            {t('admin-billing.subscriptions.unknownUser')}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
 
@@ -158,7 +182,10 @@ export function SubscriptionDetailsDialog({
                                                 'admin-billing.subscriptions.detailsDialog.planLabel'
                                             )}
                                         </span>
-                                        <span className="text-sm">{plan?.name}</span>
+                                        <span className="text-sm">
+                                            {subscription.plan?.displayName ??
+                                                t('admin-billing.subscriptions.unknownPlan')}
+                                        </span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span className="text-muted-foreground text-sm">
@@ -177,7 +204,7 @@ export function SubscriptionDetailsDialog({
                                             )}
                                         </span>
                                         <span className="text-sm">
-                                            {formatDate(subscription.startDate, locale)}
+                                            {formatDate(subscription.createdAt, locale)}
                                         </span>
                                     </div>
                                     <div className="flex justify-between">
@@ -197,21 +224,14 @@ export function SubscriptionDetailsDialog({
                                             )}
                                         </span>
                                         <span className="font-medium text-sm">
-                                            {formatArs(subscription.monthlyAmount, locale)}
+                                            {subscription.recurringAmountInCents === null
+                                                ? '—'
+                                                : formatArsFromCents(
+                                                      subscription.recurringAmountInCents,
+                                                      locale
+                                                  )}
                                         </span>
                                     </div>
-                                    {subscription.discountPercent && (
-                                        <div className="flex justify-between">
-                                            <span className="text-muted-foreground text-sm">
-                                                {t(
-                                                    'admin-billing.subscriptions.detailsDialog.discountLabel'
-                                                )}
-                                            </span>
-                                            <span className="text-sm text-success">
-                                                {subscription.discountPercent}%
-                                            </span>
-                                        </div>
-                                    )}
                                     {subscription.trialEnd && (
                                         <div className="flex justify-between">
                                             <span className="text-muted-foreground text-sm">
@@ -231,11 +251,11 @@ export function SubscriptionDetailsDialog({
                             <SubscriptionPromoEffectPanel
                                 effect={promoEffect ?? null}
                                 isLoading={isLoadingPromoEffect}
-                                trialEnd={subscription.trialEnd}
+                                trialEnd={subscription.trialEnd ?? undefined}
                             />
 
-                            {/* Entitlements */}
-                            {plan && (
+                            {/* Entitlements (accommodation-only ALL_PLANS lookup — see catalogPlan above) */}
+                            {catalogPlan && (
                                 <div>
                                     <h3 className="mb-2 font-medium text-sm">
                                         {t(
@@ -244,14 +264,16 @@ export function SubscriptionDetailsDialog({
                                     </h3>
                                     <div className="rounded-md border bg-card p-3">
                                         <ul className="space-y-1 text-sm">
-                                            {plan.entitlements.slice(0, 5).map((entitlement) => (
-                                                <li key={entitlement}>
-                                                    • {entitlement.replace(/_/g, ' ')}
-                                                </li>
-                                            ))}
-                                            {plan.entitlements.length > 5 && (
+                                            {catalogPlan.entitlements
+                                                .slice(0, 5)
+                                                .map((entitlement) => (
+                                                    <li key={entitlement}>
+                                                        • {entitlement.replace(/_/g, ' ')}
+                                                    </li>
+                                                ))}
+                                            {catalogPlan.entitlements.length > 5 && (
                                                 <li className="text-muted-foreground text-xs">
-                                                    +{plan.entitlements.length - 5}{' '}
+                                                    +{catalogPlan.entitlements.length - 5}{' '}
                                                     {t(
                                                         'admin-billing.subscriptions.detailsDialog.entitlementsMore'
                                                     )}

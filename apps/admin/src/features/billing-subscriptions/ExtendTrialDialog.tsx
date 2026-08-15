@@ -61,7 +61,8 @@ export function ExtendTrialDialog({
                     </DialogTitle>
                     <DialogDescription>
                         {t('admin-billing.subscriptions.extendTrialDialog.description')}{' '}
-                        {subscription.userName}
+                        {subscription.user?.displayName ??
+                            t('admin-billing.subscriptions.unknownUser')}
                     </DialogDescription>
                 </DialogHeader>
 

@@ -29,8 +29,7 @@ import {
  * test below, so a new page kind cannot acquire a freshness budget silently.
  */
 const EXPECTED_CONTROL: Readonly<Record<CacheClass, string>> = {
-    // Gated on HOS-428 (Coolify healthcheck), not yet at D-15's 86 400 s.
-    static: 'public, s-maxage=300, stale-while-revalidate=600',
+    static: 'public, s-maxage=86400, stale-while-revalidate=3600',
     catalog: 'public, s-maxage=3600, stale-while-revalidate=3600',
     detail: 'public, s-maxage=3600, stale-while-revalidate=3600',
     home: 'public, s-maxage=3600, stale-while-revalidate=3600',

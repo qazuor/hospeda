@@ -4,7 +4,7 @@
  */
 import {
     type ExperienceAdminCreateInput,
-    ExperienceAdminCreateInputSchema,
+    ExperienceAdminCreateInputCheckedSchema,
     ExperienceAdminSchema,
     PermissionEnum
 } from '@repo/schemas';
@@ -29,7 +29,9 @@ export const adminCreateExperienceRoute = createAdminRoute({
     description: 'Creates a new experience listing. Requires COMMERCE_CREATE permission.',
     tags: ['Experience'],
     requiredPermissions: [PermissionEnum.COMMERCE_CREATE],
-    requestBody: ExperienceAdminCreateInputSchema,
+    // H-156: the CHECKED variant carries the cross-field pricing rule
+    // (priceUnit required unless the price is on request).
+    requestBody: ExperienceAdminCreateInputCheckedSchema,
     responseSchema: ExperienceAdminSchema,
     handler: async (
         ctx: Context,

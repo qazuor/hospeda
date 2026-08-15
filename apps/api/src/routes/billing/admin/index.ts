@@ -8,13 +8,27 @@
  * Layout:
  * - Hospeda-specific custom routes are mounted FIRST so they win on path
  *   collisions: metrics, settings, notifications, customer-addons,
- *   subscription-events, custom addons / plans catalogs and customer usage.
+ *   subscription-events, custom addons / plans catalogs, customer usage, and
+ *   the payments/subscriptions LIST views.
  * - The qzpay-hono `createAdminRoutes` factory is mounted LAST. It provides
- *   the generic CRUD + write operations (subscriptions list/get/cancel/
- *   change-plan/extend-trial, payments list/get/refund, invoices list/get/
+ *   the generic CRUD + write operations (subscriptions get/cancel/
+ *   change-plan/extend-trial, payments get/refund, invoices list/get/
  *   pay/void, entitlements + limits management, promo-codes catalog,
  *   dashboard). All write paths (`/cancel`, `/refund`, `/pay`, etc.) invoke
  *   the Hospeda lifecycle hooks defined in `./qzpay-admin-hooks.ts`.
+ *
+ * Collection-path shadowing (payments + subscriptions):
+ * - `GET /payments` and `GET /subscriptions` are served by
+ *   `./payments-view.ts` / `./subscriptions-view.ts`, mounted before the qzpay
+ *   tier. qzpay's raw rows carry no user, no plan slug and no amount, and spell
+ *   a cancelled subscription `canceled` — the admin UI needs the enriched,
+ *   normalised shape declared in `@repo/schemas`
+ *   (`AdminPaymentView` / `AdminSubscriptionView`).
+ * - Each of those routers defines ONLY `GET /`. Everything else under
+ *   `/payments/*` and `/subscriptions/*` (`GET /:id`, `POST /:id/refund`,
+ *   `POST /:id/cancel`, `/change-plan`, ...) falls through to the qzpay tier
+ *   exactly as before. Adding a second path to either router would silently
+ *   take that path away from qzpay.
  *
  * The custom `subscription-cancel.ts` route that used to live here was
  * removed in this change — its Phase 1 + Phase 2 lifecycle is now expressed
@@ -42,12 +56,14 @@ import {
 import { adminCustomerEntitlementsRouter } from './customer-entitlements';
 import { adminMetricsRouter } from './metrics';
 import { listNotificationLogsRoute } from './notifications';
+import { adminPaymentsViewRouter } from './payments-view';
 import { adminPlanPriceIncreaseRouter } from './plan-price-increase';
 import { adminPlansRouter } from './plans';
 import { adminBillingHooks } from './qzpay-admin-hooks';
 import { subscriptionEventsRoute } from './subscription-events';
 import { subscriptionPromoEffectRoute } from './subscription-promo-effect';
 import { adminSubscriptionTrialExtensionRouter } from './subscription-trial-extension';
+import { adminSubscriptionsViewRouter } from './subscriptions-view';
 import { getAdminCustomerUsageSummaryRoute } from './usage';
 
 /**
@@ -142,6 +158,16 @@ app.route('/customer-addons', activateCustomerAddonRoute);
 
 // GET /metrics, /metrics/activity, /metrics/system-usage, /metrics/approaching-limits
 app.route('/metrics', adminMetricsRouter);
+
+// GET /payments - Hospeda payments list view (enriched + normalised vocabulary).
+// Shadows the qzpay tier's raw `GET /payments` ONLY; /payments/:id and
+// /payments/:id/refund still fall through to qzpay.
+app.route('/payments', adminPaymentsViewRouter);
+
+// GET /subscriptions - Hospeda subscriptions list view (enriched + normalised
+// vocabulary). Shadows the qzpay tier's raw `GET /subscriptions` ONLY; every
+// /subscriptions/:id path still falls through to qzpay.
+app.route('/subscriptions', adminSubscriptionsViewRouter);
 
 // GET /subscriptions/:id/events - List lifecycle events for a subscription
 app.route('/subscriptions', subscriptionEventsRoute);

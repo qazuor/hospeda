@@ -247,6 +247,10 @@ export const CompareBar: FC<CompareBarProps> = ({ locale = 'es' }) => {
                     <a
                         href={comparePageHref}
                         className={styles.cta}
+                        // HOS-566: the comparison page's islands are `client:only`
+                        // and do NOT hydrate when reached through a View
+                        // Transition — the page renders blank. Force a full load.
+                        data-astro-reload
                         aria-disabled={!canCompare}
                         data-disabled={canCompare ? undefined : 'true'}
                         title={

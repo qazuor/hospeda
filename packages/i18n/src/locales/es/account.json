@@ -547,7 +547,9 @@
                 "hostDashboardDesc": "Resumen de tu actividad como anfitrión",
                 "promotions": "Mis promociones",
                 "recommendations": "Sugerencias",
-                "recommendationsDesc": "Alojamientos elegidos para vos"
+                "recommendationsDesc": "Alojamientos elegidos para vos",
+                "myCommerceDesc": "Gestioná tu ficha, tus fotos y tu suscripción",
+                "myMessagesCommerceDesc": "Consultas que recibís sobre tu comercio"
             },
             "stats": {
                 "favorites": "Mis favoritos",

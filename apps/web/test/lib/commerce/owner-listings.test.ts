@@ -42,7 +42,7 @@ describe('fetchMyCommerceLead (HOS-257)', () => {
             }
         });
 
-        const lead = await fetchMyCommerceLead({});
+        const lead = await fetchMyCommerceLead({ vertical: 'gastronomy' });
 
         expect(lead).toEqual({
             name: 'La Parrilla de Juan',
@@ -53,6 +53,7 @@ describe('fetchMyCommerceLead (HOS-257)', () => {
         });
         expect(getProtected).toHaveBeenCalledWith({
             path: '/api/v1/protected/commerce/leads/mine',
+            params: { domain: 'gastronomy' },
             cookieHeader: undefined
         });
     });
@@ -60,7 +61,7 @@ describe('fetchMyCommerceLead (HOS-257)', () => {
     it('returns null when the caller has no provisioned lead', async () => {
         getProtected.mockResolvedValue({ ok: true, data: { lead: null } });
 
-        const lead = await fetchMyCommerceLead({});
+        const lead = await fetchMyCommerceLead({ vertical: 'gastronomy' });
 
         expect(lead).toBeNull();
     });
@@ -71,7 +72,7 @@ describe('fetchMyCommerceLead (HOS-257)', () => {
             error: { status: 500, message: 'boom' }
         });
 
-        const lead = await fetchMyCommerceLead({});
+        const lead = await fetchMyCommerceLead({ vertical: 'gastronomy' });
 
         expect(lead).toBeNull();
     });
@@ -79,11 +80,30 @@ describe('fetchMyCommerceLead (HOS-257)', () => {
     it('forwards cookieHeader for SSR callers', async () => {
         getProtected.mockResolvedValue({ ok: true, data: { lead: null } });
 
-        await fetchMyCommerceLead({ cookieHeader: 'sid=abc' });
+        await fetchMyCommerceLead({ vertical: 'gastronomy', cookieHeader: 'sid=abc' });
 
         expect(getProtected).toHaveBeenCalledWith({
             path: '/api/v1/protected/commerce/leads/mine',
+            params: { domain: 'gastronomy' },
             cookieHeader: 'sid=abc'
         });
+    });
+
+    // ── H-155 ───────────────────────────────────────────────────────────────
+    //
+    // Scoping the lookup by owner alone made the EXPERIENCE create form
+    // pre-fill from a GASTRONOMY lead. The form derives the public slug from
+    // `name` and the slug is immutable afterwards, so an owner who does not
+    // notice the pre-filled restaurant name publishes their excursion under it
+    // permanently. Holding listings in both verticals is what the product
+    // invites, so this is the ordinary case rather than an edge one.
+    it('asks for the experience domain when rendering the experience form (H-155)', async () => {
+        getProtected.mockResolvedValue({ ok: true, data: { lead: null } });
+
+        await fetchMyCommerceLead({ vertical: 'experience' });
+
+        expect(getProtected).toHaveBeenCalledWith(
+            expect.objectContaining({ params: { domain: 'experience' } })
+        );
     });
 });
