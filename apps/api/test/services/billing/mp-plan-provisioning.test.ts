@@ -130,8 +130,10 @@ describe('resolveOrProvisionMpPlan', () => {
         // is what makes the preapproval born discounted.
         expect(adapter.prices.create).toHaveBeenCalledWith(
             expect.objectContaining({ unitAmount: 1_050_000 }),
-            // The reason marks the discounted variant so operators can tell it apart.
-            expect.stringContaining('desc. 1er ciclo')
+            // The reason marks the discounted variant so operators can tell it
+            // apart. H-83: the marker no longer embeds the formatted amount —
+            // that fragment is what broke MercadoPago's 60-character limit.
+            expect.stringContaining('promo')
         );
         // The row persists the FULL price as the drift snapshot AND the discount dim.
         expect(create).toHaveBeenCalledWith(
@@ -392,6 +394,179 @@ describe('resolveOrProvisionMpPlan', () => {
             expect.anything(),
             'Basic — mensual — sin prueba'
         );
+    });
+});
+
+/**
+ * H-83 regression suite — the MercadoPago `reason` length budget.
+ *
+ * MercadoPago rejects `POST /preapproval_plan` with `Reason has more than 60
+ * characters`, which qzpay surfaces as `Create price - Reason has more than 60
+ * characters` and the checkout maps to a 502. Reproduced in production on
+ * 2026-08-13 with `LANZAMIENTO50` on the Basic plan: EVERY discounted checkout
+ * failed, because the old discount suffix embedded the formatted price
+ * (`— desc. 1er ciclo $9000.00`, 27 chars).
+ *
+ * The three tests above pin the exact wording; these pin the INVARIANT. The
+ * pre-existing suite asserted the reason's content but never its length, which
+ * is precisely why it stayed green while production could not sell a single
+ * discounted subscription.
+ */
+describe('H-83: the MP plan reason never exceeds MercadoPago’s 60-character limit', () => {
+    /**
+     * MercadoPago's hard limit, restated as a literal rather than imported from
+     * the implementation: this is the PROVIDER's contract, so a future edit to
+     * our own constant must not be able to relax the assertion with it.
+     */
+    const MP_LIMIT = 60;
+
+    /** Provision one variant and return the `reason` handed to the price adapter. */
+    async function reasonFor(overrides: Record<string, unknown>): Promise<string> {
+        findOne.mockResolvedValue(null);
+        create.mockResolvedValue({ id: 'row-len' });
+        const adapter = createAdapter();
+        await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT, ...overrides });
+        return adapter.prices.create.mock.calls[0]?.[1] as string;
+    }
+
+    it('reproduces the exact production failure: longest plan name + a discount coupon', async () => {
+        // `Test Daily (internal)` is the longest display name in production
+        // (21 chars), 30 days is the live accommodation trial, and 1_050_000 is
+        // a real cycle-1 discount. Under the old builder this produced a
+        // 60+-char reason and MercadoPago rejected the plan outright.
+        const reason = await reasonFor({
+            planName: 'Test Daily (internal)',
+            trialDays: 30,
+            amountCentavos: 1_800_000,
+            discountCycle1AmountCentavos: 1_050_000
+        });
+
+        expect(reason.length).toBeLessThanOrEqual(MP_LIMIT);
+        // Truncation alone is not the fix: the buyer must still recognise their
+        // own plan, so the plan name has to survive intact at this length.
+        expect(reason).toContain('Test Daily (internal)');
+    });
+
+    // The whole live catalogue crossed with the live promo shapes. `trialDays`
+    // covers 0 (no trial), the 30-day base, and 76 (base + GRUPO_WHATSAPP's 46
+    // extra days) — the longest trial actually reachable in production today.
+    const PROD_PLAN_NAMES = [
+        'Test Daily (internal)',
+        'Complex Professional',
+        'Commerce Listing',
+        'Partner Listing',
+        'Complex Premium',
+        'Partner Silver',
+        'Complex Basic',
+        'Professional',
+        'Partner Gold',
+        'Premium',
+        'Basic',
+        'Plus',
+        'Free',
+        'VIP'
+    ] as const;
+
+    const INTERVALS = ['monthly', 'annual', 'daily'] as const;
+    const TRIAL_DAYS = [0, 30, 76] as const;
+
+    it.each(
+        PROD_PLAN_NAMES
+    )('stays within the limit for every cadence, trial and discount of plan %s', async (planName) => {
+        for (const billingInterval of INTERVALS) {
+            for (const trialDays of TRIAL_DAYS) {
+                for (const discountCycle1AmountCentavos of [0, 1_050_000]) {
+                    const reason = await reasonFor({
+                        planName,
+                        billingInterval,
+                        trialDays,
+                        discountCycle1AmountCentavos
+                    });
+                    expect(
+                        reason.length,
+                        `${planName}/${billingInterval}/${trialDays}d/disc=${discountCycle1AmountCentavos} produced ${reason.length} chars: "${reason}"`
+                    ).toBeLessThanOrEqual(MP_LIMIT);
+                }
+            }
+        }
+    });
+
+    // Pins the buyer-visible copy itself, not just its length. This string is the
+    // subscription's NAME on the customer's MercadoPago account, so it is product
+    // copy: it must read as a plan, and a reviewer must see it change in the diff.
+    it.each([
+        [
+            { planName: 'Basic', trialDays: 30, discountCycle1AmountCentavos: 900_000 },
+            'Basic — mensual — 30 días de prueba — promo'
+        ],
+        [
+            { planName: 'Basic', trialDays: 30, discountCycle1AmountCentavos: 0 },
+            'Basic — mensual — 30 días de prueba'
+        ],
+        [
+            {
+                planName: 'Test Daily (internal)',
+                trialDays: 30,
+                discountCycle1AmountCentavos: 900_000
+            },
+            'Test Daily (internal) — mensual — 30 días de prueba — promo'
+        ],
+        [
+            { planName: 'Professional', trialDays: 0, discountCycle1AmountCentavos: 900_000 },
+            'Professional — mensual — sin prueba — promo'
+        ]
+    ])('renders the buyer-visible reason as %o → %s', async (overrides, expected) => {
+        const reason = await reasonFor(overrides);
+        expect(reason).toBe(expected);
+        expect(reason.length).toBeLessThanOrEqual(MP_LIMIT);
+    });
+
+    it('marks a discounted variant without embedding the price, which is what blew the budget', async () => {
+        const reason = await reasonFor({
+            planName: 'Basic',
+            trialDays: 30,
+            discountCycle1AmountCentavos: 900_000
+        });
+
+        // The marker is still there, so an operator can tell a discounted MP
+        // plan apart from the full-price one in the dashboard.
+        expect(reason).toContain('promo');
+        // But the formatted amount is gone. Beyond the length, the old label was
+        // also a lie waiting to happen: the promo engine mutates
+        // `transaction_amount` back to full price after the discounted cycles,
+        // while the plan NAME would have kept advertising the old amount forever.
+        expect(reason).not.toContain('$');
+        expect(reason).not.toMatch(/\d{3,}/);
+    });
+
+    it('leaves a full-price variant unmarked', async () => {
+        const reason = await reasonFor({ planName: 'Basic', discountCycle1AmountCentavos: 0 });
+        expect(reason).not.toContain('promo');
+    });
+
+    it('truncates a plan name that cannot fit rather than letting MercadoPago reject the plan', async () => {
+        // No plan is named like this today, but the display name is admin-editable
+        // and unbounded, so the builder must degrade instead of failing checkout.
+        const reason = await reasonFor({
+            planName: 'A'.repeat(120),
+            trialDays: 76,
+            discountCycle1AmountCentavos: 1_050_000
+        });
+
+        expect(reason.length).toBeLessThanOrEqual(MP_LIMIT);
+        // The variant fragments are what disambiguate the plan, so they must be
+        // the part that survives — the name is the field that gives ground.
+        expect(reason).toContain('mensual');
+        expect(reason).toContain('promo');
+    });
+
+    it('holds even when the trial length is absurd, so no input can produce a 502', async () => {
+        const reason = await reasonFor({
+            planName: 'Complex Professional',
+            trialDays: 999_999,
+            discountCycle1AmountCentavos: 1_050_000
+        });
+        expect(reason.length).toBeLessThanOrEqual(MP_LIMIT);
     });
 });
 
