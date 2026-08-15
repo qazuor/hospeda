@@ -35,6 +35,10 @@ const buildAdminCreateInput = (
         'Un espacio único para disfrutar de la mejor gastronomía rioplatense con carnes seleccionadas y vinos de la región.',
     type: GastronomyTypeEnum.PARRILLA,
     destinationId: VALID_UUID,
+    // H-88: `owner_id` is NOT NULL with no default on `gastronomies`, so a
+    // create input without it is not a valid create — it is the payload that
+    // reached Postgres and came back as a bare 500.
+    ownerId: VALID_UUID,
     isFeatured: false,
     lifecycleState: 'ACTIVE',
     moderationState: 'PENDING',
@@ -62,10 +66,29 @@ describe('GastronomyAdminCreateInputSchema', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should allow omitting ownerId (may be assigned later)', () => {
+        // H-88. This used to assert the opposite — "should allow omitting
+        // ownerId (may be assigned later)". Nothing assigns it later: the row is
+        // inserted on this very call and `gastronomies.owner_id` is NOT NULL, so
+        // accepting the payload here only moved the failure to Postgres, where
+        // it surfaced as 500 "A database error occurred" naming no field.
+        it('should REJECT omitting ownerId, naming the field (H-88)', () => {
             const raw = buildAdminCreateInput({ ownerId: undefined });
             const result = GastronomyAdminCreateInputSchema.safeParse(raw);
-            expect(result.success).toBe(true);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues.map((i) => i.path.join('.'))).toContain('ownerId');
+            }
+        });
+
+        it('should REJECT omitting destinationId, naming the field (H-88)', () => {
+            const raw = buildAdminCreateInput({ destinationId: undefined });
+            const result = GastronomyAdminCreateInputSchema.safeParse(raw);
+
+            expect(result.success).toBe(false);
+            if (!result.success) {
+                expect(result.error.issues.map((i) => i.path.join('.'))).toContain('destinationId');
+            }
         });
 
         it('should allow optional amenityIds and featureIds (write-only)', () => {
