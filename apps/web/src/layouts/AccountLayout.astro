@@ -24,7 +24,6 @@ import { getNavForSurface, PROVIDER_NAV_GROUP } from '@/config/navigation';
 import type { NavItem } from '@/config/navigation';
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
-import { hostTradesApi } from '@/lib/api/endpoints-protected';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -89,30 +88,23 @@ const { groups: baseNavGroups } = getNavForSurface({
  * The provider self-service nav entry ("Mi ficha de proveedor", H-158) is
  * gated by ROW OWNERSHIP, not a permission or role (HOS-278 AC-7 — an
  * approved provider is an ordinary account with no permission/role change).
- * `PROVIDER_NAV_GROUP` therefore lives OUTSIDE `ACCOUNT_NAV_GROUPS` (whose
- * only gating primitive is `requiredPermission`) and is spliced into
- * `navGroups` below only when this fetch confirms ownership — the SAME
- * `GET /host-trades/mine` call `mi-cuenta/aliados/index.astro` already uses
- * to force-acquire the `serviceProvider` discovery-door option
- * (`resolveDoorOptionState`'s `acquiredOptionIds` override in
- * `src/lib/nav-gating.ts`), reused here instead of a second ownership check.
+ * `PROVIDER_NAV_GROUP` therefore lives OUTSIDE `ACCOUNT_NAV_GROUPS`, whose
+ * only gating primitive is `requiredPermission`.
  *
- * Every `/mi-cuenta/*` page pays this extra round-trip, unlike the
- * permission-gated groups above (which read the already-resolved role set
- * off the session — no I/O). That asymmetry is the direct consequence of
- * AC-7: there is no role/permission signal to short-circuit it with.
+ * The ownership answer arrives ON THE SESSION, from the same
+ * `GET /api/v1/public/auth/me` call the middleware already makes once per
+ * protected request — so this gate costs the same as the permission-gated
+ * groups above: nothing. It briefly issued its own `GET /host-trades/mine`
+ * here instead, which put a blocking round-trip (~36 ms measured) on all 123
+ * pages this layout wraps, asking a question none of them were about.
+ *
+ * Read as a plain truthy check, NOT "and not revoked": a revoked listing
+ * still resolves to a meaningful page (mi-cuenta/proveedor renders a "listing
+ * taken down" state with the admin's reason), and hiding the door the moment
+ * a listing is revoked would strand that provider with no way back besides a
+ * typed URL — the same shape of bug this fixes, one step later.
  */
-const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
-const myTradeResult = Astro.locals.user ? await hostTradesApi.mine({ cookieHeader }) : null;
-const myTrade = myTradeResult?.ok ? myTradeResult.data.trade : null;
-// `!== null`, not "and not revoked": a revoked listing still resolves to a
-// meaningful page (mi-cuenta/proveedor renders a "listing taken down" state
-// with the admin's reason) — hiding the door the moment a listing is revoked
-// would strand that provider with no way back to it besides a typed URL,
-// which is the same shape of bug this fixes. Mirrors the `trade !== null`
-// check both mi-cuenta/proveedor/index.astro and mi-cuenta/aliados/index.astro
-// already use.
-const isProvider = myTrade !== null;
+const isProvider = Astro.locals.user?.ownsHostTradeListing === true;
 
 const navGroups = isProvider ? [...baseNavGroups, PROVIDER_NAV_GROUP] : baseNavGroups;
 

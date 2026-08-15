@@ -10,10 +10,14 @@
  * establishes that an approved provider is an ordinary tourist account with
  * no `HOST_TRADE_*` permission and no role change, so the usual
  * `requiredPermission` -> `isVisibleByRoles` mechanism every other sidebar
- * group uses structurally cannot represent this state. `AccountLayout.astro`
- * must instead reuse the SAME `GET /host-trades/mine` signal
- * `mi-cuenta/aliados/index.astro` already uses to force-acquire the
- * `serviceProvider` discovery-door option, not a second ownership check.
+ * group uses structurally cannot represent this state.
+ *
+ * The ownership answer therefore rides on the SESSION, from the `/auth/me`
+ * payload the middleware already fetches once per protected request. The first
+ * version of this fix asked `GET /host-trades/mine` from the layout instead,
+ * which is why one of these tests now asserts the ABSENCE of an API call: this
+ * layout wraps 123 pages, so a fetch in its frontmatter is a blocking
+ * round-trip on every single one of them.
  *
  * Astro components cannot be rendered in Vitest (no DOM renderer) — these are
  * source-level assertions on the `.astro` file, the same pattern used by
@@ -34,28 +38,33 @@ describe('AccountLayout — provider nav door (H-158)', () => {
         expect(source).toMatch(/from '@\/config\/navigation'/);
     });
 
-    it('fetches the caller own host-trade listing via hostTradesApi.mine, forwarding the session cookie', () => {
-        expect(source).toContain("import { hostTradesApi } from '@/lib/api/endpoints-protected';");
-        expect(source).toContain('hostTradesApi.mine({');
-        expect(source).toContain("Astro.request.headers.get('cookie')");
+    it('reads ownership OFF THE SESSION, never by asking the API from the layout', () => {
+        // THE POINT OF THIS TEST. This layout wraps 123 `/mi-cuenta/*` pages,
+        // so an API call in its frontmatter is a blocking round-trip (~36 ms
+        // measured) added to every one of them — for a question none of those
+        // pages are about. The answer rides on `/auth/me`, which the
+        // middleware already fetches once per protected request.
+        expect(source).toContain('Astro.locals.user?.ownsHostTradeListing === true');
+        expect(source).not.toContain('hostTradesApi');
     });
 
-    it('gates the door on row ownership (trade !== null), never on a permission or role', () => {
-        expect(source).toContain('myTrade !== null');
-        // The permission/role gating primitives exist in this file for the
-        // OTHER groups (anfitrion, comercio, ...) — this assertion targets the
-        // provider-specific branch specifically, not their absence file-wide.
+    it('gates the door on row ownership, never on a permission or role', () => {
+        // An approved provider holds no role and no `HOST_TRADE_*` permission
+        // (HOS-278 AC-7), so the usual primitive structurally cannot express
+        // this state. The permission/role primitives DO appear in this file for
+        // the other groups — this targets the provider branch specifically.
+        expect(source).toContain('ownsHostTradeListing');
         expect(source).not.toContain('PermissionEnum.HOST_TRADE');
     });
 
-    it('does NOT hide the door for a revoked listing — trade !== null, not a revokedAt/isActive check', () => {
+    it('does NOT hide the door for a revoked listing', () => {
         // A revoked provider still reaches a meaningful page
         // (mi-cuenta/proveedor renders a "listing taken down" state with the
         // admin's reason) — hiding the nav entry on revoke would strand them
         // exactly like the bug this test guards against, just one step later.
-        expect(source).not.toContain('myTrade?.revokedAt');
-        expect(source).not.toContain('!myTrade.revokedAt');
-        expect(source).not.toContain('myTrade?.isActive');
+        // The flag is deliberately ownership-only, with no lifecycle qualifier.
+        expect(source).not.toMatch(/ownsHostTradeListing[^\n]*revoked/i);
+        expect(source).not.toMatch(/ownsHostTradeListing[^\n]*isActive/);
     });
 
     it('splices PROVIDER_NAV_GROUP into navGroups only when ownership is confirmed', () => {
@@ -64,8 +73,11 @@ describe('AccountLayout — provider nav door (H-158)', () => {
         );
     });
 
-    it('does not fetch host-trades/mine for a guest (no Astro.locals.user)', () => {
-        expect(source).toContain('Astro.locals.user ? await hostTradesApi.mine(');
+    it('reads the flag through optional chaining, so a guest never trips it', () => {
+        // `Astro.locals.user` is null for a guest; `?.` yields undefined and
+        // the `=== true` comparison makes that a hard false rather than a
+        // truthiness accident.
+        expect(source).toContain('Astro.locals.user?.ownsHostTradeListing');
     });
 });
 
