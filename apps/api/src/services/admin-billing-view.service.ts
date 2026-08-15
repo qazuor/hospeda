@@ -51,14 +51,14 @@ import {
     assertKnownStatus,
     buildIdentitySearchCondition,
     buildPagination,
-    CUSTOMER_TO_USER_JOIN,
+    customerToUserJoin,
     extractProviderPaymentId,
     type ListAdminPaymentsResult,
     type ListAdminSubscriptionsResult,
     mapPlanRef,
     mapUserRef,
-    REF_COLUMNS,
-    SUBSCRIPTION_TO_PLAN_JOIN
+    refColumns,
+    subscriptionToPlanJoin
 } from './admin-billing-view.shared';
 import {
     isPaymentRefundable,
@@ -132,9 +132,9 @@ export async function listPayments(
         .select({ total: count() })
         .from(billingPayments)
         .innerJoin(billingCustomers, eq(billingPayments.customerId, billingCustomers.id))
-        .leftJoin(users, CUSTOMER_TO_USER_JOIN)
+        .leftJoin(users, customerToUserJoin())
         .leftJoin(billingSubscriptions, eq(billingPayments.subscriptionId, billingSubscriptions.id))
-        .leftJoin(billingPlans, SUBSCRIPTION_TO_PLAN_JOIN)
+        .leftJoin(billingPlans, subscriptionToPlanJoin())
         .where(whereClause);
 
     const total = totalRows[0]?.total ?? 0;
@@ -151,13 +151,13 @@ export async function listPayments(
             invoiceId: billingPayments.invoiceId,
             provider: billingPayments.provider,
             providerPaymentIds: billingPayments.providerPaymentIds,
-            ...REF_COLUMNS
+            ...refColumns()
         })
         .from(billingPayments)
         .innerJoin(billingCustomers, eq(billingPayments.customerId, billingCustomers.id))
-        .leftJoin(users, CUSTOMER_TO_USER_JOIN)
+        .leftJoin(users, customerToUserJoin())
         .leftJoin(billingSubscriptions, eq(billingPayments.subscriptionId, billingSubscriptions.id))
-        .leftJoin(billingPlans, SUBSCRIPTION_TO_PLAN_JOIN)
+        .leftJoin(billingPlans, subscriptionToPlanJoin())
         .where(whereClause)
         .orderBy(desc(billingPayments.createdAt))
         .limit(pageSize)
@@ -254,8 +254,8 @@ export async function listSubscriptions(
         .select({ total: count() })
         .from(billingSubscriptions)
         .innerJoin(billingCustomers, eq(billingSubscriptions.customerId, billingCustomers.id))
-        .leftJoin(users, CUSTOMER_TO_USER_JOIN)
-        .leftJoin(billingPlans, SUBSCRIPTION_TO_PLAN_JOIN)
+        .leftJoin(users, customerToUserJoin())
+        .leftJoin(billingPlans, subscriptionToPlanJoin())
         .where(whereClause);
 
     const total = totalRows[0]?.total ?? 0;
@@ -271,12 +271,12 @@ export async function listSubscriptions(
             cancelAtPeriodEnd: billingSubscriptions.cancelAtPeriodEnd,
             createdAt: billingSubscriptions.createdAt,
             productDomain: billingSubscriptions.productDomain,
-            ...REF_COLUMNS
+            ...refColumns()
         })
         .from(billingSubscriptions)
         .innerJoin(billingCustomers, eq(billingSubscriptions.customerId, billingCustomers.id))
-        .leftJoin(users, CUSTOMER_TO_USER_JOIN)
-        .leftJoin(billingPlans, SUBSCRIPTION_TO_PLAN_JOIN)
+        .leftJoin(users, customerToUserJoin())
+        .leftJoin(billingPlans, subscriptionToPlanJoin())
         .where(whereClause)
         .orderBy(desc(billingSubscriptions.createdAt))
         .limit(pageSize)

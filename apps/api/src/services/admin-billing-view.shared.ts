@@ -74,34 +74,54 @@ export interface JoinedRefColumns {
 // Shared select fragments
 // ---------------------------------------------------------------------------
 
-/** Column projection for the joined user/customer/plan references. */
-export const REF_COLUMNS = {
-    customerEmail: billingCustomers.email,
-    customerName: billingCustomers.name,
-    userId: users.id,
-    userDisplayName: users.displayName,
-    userFirstName: users.firstName,
-    userLastName: users.lastName,
-    userEmail: users.email,
-    planId: billingPlans.id,
-    planSlug: billingPlans.name,
-    planDisplayName: billingPlans.displayName,
-    planMonthlyPriceInCents: billingPlans.monthlyPriceArs,
-    planAnnualPriceInCents: billingPlans.annualPriceArs,
-    planProductDomain: billingPlans.productDomain
-} as const;
+/**
+ * Column projection for the joined user/customer/plan references.
+ *
+ * A FUNCTION, not a module-level constant, and that matters beyond style.
+ * Reading `users.id` at module scope evaluates the moment this file is
+ * imported, which for a route module means the moment the API route tree is
+ * built. Every apps/api test that calls `initApp()` builds that tree, and many
+ * of them mock `@repo/db` — where `users` comes from the `@repo/db/schemas`
+ * subpath that `test/setup.ts` replaces wholesale. Touching the table at import
+ * time turned an unrelated tag or bookmark test into a load-time crash.
+ *
+ * Every other table consumer in apps/api (`lib/alliance-ports.ts`,
+ * `routes/accommodation/reviews/public/list.ts`, ...) reaches for its columns
+ * inside a function for the same reason. This follows that.
+ */
+export function refColumns() {
+    return {
+        customerEmail: billingCustomers.email,
+        customerName: billingCustomers.name,
+        userId: users.id,
+        userDisplayName: users.displayName,
+        userFirstName: users.firstName,
+        userLastName: users.lastName,
+        userEmail: users.email,
+        planId: billingPlans.id,
+        planSlug: billingPlans.name,
+        planDisplayName: billingPlans.displayName,
+        planMonthlyPriceInCents: billingPlans.monthlyPriceArs,
+        planAnnualPriceInCents: billingPlans.annualPriceArs,
+        planProductDomain: billingPlans.productDomain
+    } as const;
+}
 
 /**
  * Join predicate for `billing_customers.external_id` → `users.id`.
  * @see the module doc for why the cast lives on the uuid side.
  */
-export const CUSTOMER_TO_USER_JOIN: SQL = sql`${users.id}::text = ${billingCustomers.externalId}`;
+export function customerToUserJoin(): SQL {
+    return sql`${users.id}::text = ${billingCustomers.externalId}`;
+}
 
 /**
  * Join predicate for `billing_subscriptions.plan_id` → `billing_plans.id`.
  * @see the module doc for why the cast lives on the uuid side.
  */
-export const SUBSCRIPTION_TO_PLAN_JOIN: SQL = sql`${billingPlans.id}::text = ${billingSubscriptions.planId}`;
+export function subscriptionToPlanJoin(): SQL {
+    return sql`${billingPlans.id}::text = ${billingSubscriptions.planId}`;
+}
 
 // ---------------------------------------------------------------------------
 // Mappers
