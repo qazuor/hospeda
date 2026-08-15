@@ -67,8 +67,21 @@ export const experiences = pgTable(
          * Use 0 when isPriceOnRequest is true.
          */
         priceFrom: integer('price_from').notNull().default(0),
-        /** Billing unit (per_day / per_hour / per_person / per_group). */
-        priceUnit: ExperiencePriceUnitPgEnum('price_unit').notNull(),
+        /**
+         * Billing unit (per_day / per_hour / per_person / per_group).
+         *
+         * NULLABLE since H-156: an experience with `isPriceOnRequest = true` has
+         * no price, so it has no unit to bill it in. Requiring one forced the
+         * owner to declare the unit of a price that does not exist, and left the
+         * row asserting three things at once — "the price is on request", "the
+         * price is 0", and "it is charged per person".
+         *
+         * INVARIANT: `priceUnit` is null ONLY when `isPriceOnRequest` is true.
+         * A listing with a real price still requires a unit — that rule is
+         * enforced on the create schemas rather than here, because a CHECK
+         * constraint cannot express it across the API's partial updates.
+         */
+        priceUnit: ExperiencePriceUnitPgEnum('price_unit'),
         /**
          * When true, the UI shows "Consultar precio" instead of the numeric priceFrom.
          * Store priceFrom = 0 alongside this flag.

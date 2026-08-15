@@ -15,6 +15,57 @@ import { ExperienceSchema } from './experience.schema.js';
  */
 
 // ============================================================================
+// CROSS-FIELD RULES
+// ============================================================================
+
+/**
+ * `priceUnit` is REQUIRED unless the price is on request (H-156).
+ *
+ * `experiences.price_unit` became nullable so that an experience with no price
+ * is not forced to declare the unit of a price that does not exist. But a
+ * listing that DOES carry a price still needs to say how it is charged — "$8000"
+ * with no unit is not publishable information. Nullability alone cannot express
+ * that; it is a relationship between two fields, so it lives here.
+ *
+ * Applied to the CREATE schemas only. Update schemas are `.partial()`, where an
+ * absent key means "no change" rather than "cleared", so the same rule there
+ * would reject every partial edit that happens not to mention pricing.
+ *
+ * ## Why this is exported as a separate `*Checked` schema
+ *
+ * Zod 4 does NOT silently drop refinements when a schema is sliced — it THROWS
+ * at runtime: `.pick() cannot be used on object schemas containing refinements`.
+ * TypeScript does not catch it (`.superRefine()` returns `this`, so `.pick()`
+ * still type-checks), so attaching this rule directly to
+ * {@link ExperienceOwnerCreateInputSchema} compiles cleanly and then blows up on
+ * module load in `CommerceCreateForm.client.tsx`, which picks a subset of it.
+ *
+ * So the plain create schemas stay slice-able and the rule lives in the
+ * `*CheckedSchema` variants, which the API routes validate against. Do NOT move
+ * the `superRefine` onto the plain schemas — verify with an actual `.pick()`
+ * before assuming otherwise; the compiler will not tell you.
+ *
+ * @param value - The parsed create input.
+ * @param ctx - Zod refinement context; the issue is attached to `priceUnit` so
+ *   the form highlights the field the operator has to fill in.
+ */
+export function requirePriceUnitUnlessOnRequest(
+    value: { readonly priceUnit?: string | null; readonly isPriceOnRequest?: boolean },
+    ctx: z.RefinementCtx
+): void {
+    if (value.isPriceOnRequest === true) {
+        return;
+    }
+    if (value.priceUnit === null || value.priceUnit === undefined) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['priceUnit'],
+            message: 'zodError.experience.priceUnit.requiredUnlessOnRequest'
+        });
+    }
+}
+
+// ============================================================================
 // ADMIN CREATE SCHEMAS
 // ============================================================================
 
@@ -69,6 +120,16 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
         .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
         .optional()
 });
+
+/**
+ * {@link ExperienceAdminCreateInputSchema} plus the cross-field pricing rule
+ * (see {@link requirePriceUnitUnlessOnRequest}). Routes validate against THIS
+ * one; the plain schema above stays free of refinements so it remains
+ * slice-able.
+ */
+export const ExperienceAdminCreateInputCheckedSchema = ExperienceAdminCreateInputSchema.superRefine(
+    requirePriceUnitUnlessOnRequest
+);
 
 /** TypeScript type for {@link ExperienceAdminCreateInputSchema}. */
 export type ExperienceAdminCreateInput = z.infer<typeof ExperienceAdminCreateInputSchema>;
@@ -242,6 +303,19 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
         .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
         .optional()
 });
+
+/**
+ * {@link ExperienceOwnerCreateInputSchema} plus the cross-field pricing rule
+ * (see {@link requirePriceUnitUnlessOnRequest}). The owner create route
+ * validates against THIS one.
+ *
+ * The plain schema above must stay refinement-free: `CommerceCreateForm`
+ * `.pick()`s a subset of it, and Zod 4 throws on `.pick()` over a refined
+ * object schema.
+ */
+export const ExperienceOwnerCreateInputCheckedSchema = ExperienceOwnerCreateInputSchema.superRefine(
+    requirePriceUnitUnlessOnRequest
+);
 
 /** TypeScript type for {@link ExperienceOwnerCreateInputSchema}. */
 export type ExperienceOwnerCreateInput = z.infer<typeof ExperienceOwnerCreateInputSchema>;

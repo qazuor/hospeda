@@ -82,8 +82,27 @@ export const ExperienceSchema = z.object({
     /**
      * Billing unit for the experience pricing.
      * Determines how `priceFrom` is presented (per day, per hour, per person, or per group).
+     *
+     * NULLABLE since H-156, mirroring `experiences.price_unit` in the database.
+     * An experience with `isPriceOnRequest = true` has no price, so it has no
+     * unit to bill it in — requiring one forced the owner to declare the unit of
+     * a price that does not exist, and produced rows asserting three things at
+     * once: "the price is on request", "the price is 0", "it is charged per
+     * person".
+     *
+     * INVARIANT: absent/null ONLY when `isPriceOnRequest` is true. A listing
+     * with a real price still requires a unit; that cross-field rule is enforced
+     * on the CREATE schemas (see `experience.crud.schema.ts`), not here — this
+     * base schema also describes rows READ back from the database, where the
+     * write rule has already been applied.
+     *
+     * `.nullish()` rather than `.nullable()`: `.nullable()` accepts `null` but
+     * still DEMANDS the key, so a client that simply omits the unit for a
+     * price-on-request listing would be told the field is "Required" — the exact
+     * friction this change exists to remove. Omission is safe because the
+     * cross-field rule rejects it whenever there IS a price.
      */
-    priceUnit: ExperiencePriceUnitEnumSchema,
+    priceUnit: ExperiencePriceUnitEnumSchema.nullish(),
 
     /**
      * When true, the UI shows "Consultar precio" and hides the numeric `priceFrom`.

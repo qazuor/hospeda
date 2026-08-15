@@ -11,8 +11,9 @@
  *
  *  - gastronomy `priceRange`/`menuUrl` are `.nullish()` on the domain schema and
  *    send an explicit `null` when cleared;
- *  - experience `priceFrom`/`priceUnit` REJECT `null` (T-021) and must instead
- *    omit the key entirely when cleared;
+ *  - experience `priceFrom` REJECTS `null` (T-021) and must omit the key
+ *    entirely when cleared; `priceUnit` no longer does — H-156 made the column
+ *    nullable, so it clears to an explicit `null` like the gastronomy fields;
  *  - `contactInfo`/`socialNetworks`/the four i18n fields are replaced WHOLESALE,
  *    so the payload must carry the untouched members too — the JSONB block is
  *    overwritten server-side, not merged;
@@ -310,7 +311,14 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             expect(Object.keys(body)).not.toContain('priceFrom');
         });
 
-        it('omits priceUnit from the wire body when cleared', async () => {
+        // H-156 reversed this. It used to assert the key was OMITTED, because
+        // `priceUnit` rejected `null` (T-021). That contract had a hole the
+        // assertion hid: omitting the key means "no change", so an owner who
+        // ticked "price on request" and cleared the unit saw the edit accepted
+        // and the stale unit stay on the row. The column is nullable now, so
+        // clearing sends an explicit `null` — the same way gastronomy's
+        // `priceRange` already did.
+        it('sends priceUnit as an explicit null when cleared (H-156)', async () => {
             const seededUnit = Object.values(ExperiencePriceUnitEnum)[0] as string;
             renderEditor('experience', buildListing({ priceUnit: seededUnit }));
 
@@ -323,7 +331,8 @@ describe('CommerceListingEditor — PATCH payload contract (HOS-258)', () => {
             fireEvent.click(saveButton());
 
             const body = await wireBody();
-            expect(Object.keys(body)).not.toContain('priceUnit');
+            expect(Object.keys(body)).toContain('priceUnit');
+            expect(body).toHaveProperty('priceUnit', null);
         });
 
         it('sends priceFrom as a number when set', async () => {
