@@ -131,6 +131,10 @@ interface ApiFieldErrorDetail {
     readonly path?: unknown;
     readonly messageKey?: unknown;
     readonly message?: unknown;
+    /** Interpolation params (`min`, `max`, …) extracted by the API transformer. */
+    readonly params?: unknown;
+    /** English human-readable message the API already built for this issue. */
+    readonly userFriendlyMessage?: unknown;
 }
 
 /** Minimal shape this module reads off an API error payload. */
@@ -152,11 +156,20 @@ export interface ApiErrorWithDetails {
  * result as "no field-level errors available" and fall back to a form-level
  * banner (e.g. via `translateApiError`), never as "the request was fine".
  *
+ * When `t` is provided each message is resolved through
+ * `resolveValidationMessage`, exactly like `zodIssuesToFieldErrors` — the API
+ * reports keys in the `zodError.*` / `validationError.*` namespaces while the
+ * catalogue stores them under `validation.*`. Without that rewrite the bare
+ * key reaches the DOM (H-29; the admin shipped the same omission as H-27).
+ * Omitting `t` keeps the function pure and returns the raw keys.
+ *
  * @param apiError - The API error payload (or `null`/`undefined`).
+ * @param t - Optional translation function (`TranslationFn` — `(key, fallback?, params?) => string`).
  * @returns Flat map of dotted field path → message; `{}` when no per-field details exist.
  */
 export function apiErrorToFieldErrors(
-    apiError: ApiErrorWithDetails | null | undefined
+    apiError: ApiErrorWithDetails | null | undefined,
+    t?: TranslationFn
 ): FieldErrors {
     const errors: FieldErrors = {};
     const details = apiError?.details;
@@ -183,9 +196,32 @@ export function apiErrorToFieldErrors(
                   ? detail.message
                   : undefined;
 
-        if (field && message && !errors[field]) {
+        if (!field || !message || errors[field]) continue;
+
+        if (!t) {
             errors[field] = message;
+            continue;
         }
+
+        const params =
+            detail.params && typeof detail.params === 'object' && !Array.isArray(detail.params)
+                ? (detail.params as Record<string, unknown>)
+                : undefined;
+
+        const resolved = resolveValidationMessage({
+            key: message,
+            t: (k, p) => t(k, undefined, p),
+            params
+        });
+
+        // `resolveValidationMessage` echoes the key back on a dictionary miss;
+        // the API's English message beats showing that key to a visitor.
+        errors[field] =
+            resolved && resolved !== message
+                ? resolved
+                : typeof detail.userFriendlyMessage === 'string' && detail.userFriendlyMessage
+                  ? detail.userFriendlyMessage
+                  : message;
     }
 
     return errors;
