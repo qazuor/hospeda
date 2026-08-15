@@ -256,6 +256,51 @@ describe('createPendingProviderSubscription', () => {
         );
     });
 
+    // ── Domain link row (commerce / partner) inside the SAME transaction ──────
+
+    it('runs writeDomainLinkRow inside the same transaction, with the new subscription id', async () => {
+        const seen: { tx?: unknown; localSubscriptionId?: string } = {};
+        const result = await createPendingProviderSubscription({
+            ...BASE_INPUT,
+            productDomain: 'commerce',
+            writeDomainLinkRow: async ({ tx, localSubscriptionId }) => {
+                seen.tx = tx;
+                seen.localSubscriptionId = localSubscriptionId;
+            }
+        });
+
+        // The SAME tx object the subscription + correlation rows were written
+        // with — that identity is what makes the domain link row atomic with them.
+        expect(seen.tx).toBe(txStub);
+        // The id is generated inside this helper, so the caller cannot know it
+        // before the call returns: it MUST be handed to the callback.
+        expect(seen.localSubscriptionId).toBe(result.localSubscriptionId);
+    });
+
+    it('aborts the whole attempt when writeDomainLinkRow throws', async () => {
+        await expect(
+            createPendingProviderSubscription({
+                ...BASE_INPUT,
+                writeDomainLinkRow: async () => {
+                    throw new Error('link row upsert failed');
+                }
+            })
+        ).rejects.toThrow('link row upsert failed');
+    });
+
+    it('omits payerEmail from the correlation row when the caller does not know the payer', async () => {
+        // The partner checkout deliberately snapshots NO payer email: its billing
+        // customer carries a synthetic `@partners.hospeda.invalid` address that
+        // could never match a live MercadoPago payer email, and the linker's
+        // payer-email check is a VETO (a confirmed mismatch refuses the link; an
+        // absent snapshot does not).
+        const { payerEmail: _unknownPayer, ...withoutEmail } = BASE_INPUT;
+        await createPendingProviderSubscription(withoutEmail);
+
+        const [correlationArg] = pendingCheckoutCreateMock.mock.calls[0] ?? [];
+        expect(correlationArg).not.toHaveProperty('payerEmail');
+    });
+
     // ── HOS-240: trial_extension redemption is DEFERRED — snapshotted, not recorded ──
 
     it('HOS-240: snapshots pendingTrialExtension on the correlation row (redemption deferred to link time)', async () => {
