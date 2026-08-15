@@ -251,6 +251,8 @@ jobs:
         run: bash scripts/check-web-loading-patterns.sh
       - name: Check partner-mentions copy for metric vocabulary (HOS-377 AC-3)
         run: bash scripts/check-partner-mention-copy.sh
+      - name: Check seed data-migrations for schema-existence probes (HOS-513)
+        run: bash scripts/check-seed-migration-schema-probe.sh
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."

@@ -6,9 +6,9 @@
 
 ### Technology Stack
 
-- **Runtime**: Node.js >= 18
+- **Runtime**: Node.js >= 22.19 (`engines` in the root `package.json`; CI runs Node 22)
 - **Language**: TypeScript (strict mode)
-- **Package Manager**: pnpm 9.x (workspaces)
+- **Package Manager**: pnpm 11.x (workspaces) — pinned by `packageManager`, so use `corepack pnpm`
 - **Build System**: TurboRepo
 - **Linter/Formatter**: Biome
 - **Testing**: Vitest
