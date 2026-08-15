@@ -79,7 +79,12 @@ test.describe('NL-03: admin send + cancel newsletter campaign @p2 @admin @newsle
         expect(subscriberId).not.toBeNull();
 
         // ── 2. Create a draft campaign via admin API ───────────────────────
+        // CreateNewsletterCampaignSchema is .strict(): `title` is required (the
+        // internal label, separate from the subject line) and the audience field is
+        // `localeFilter`, not `locale`. The old payload omitted the first and sent
+        // the second under a name the schema rejects, so every create answered 400.
         const draftBody = {
+            title: 'E2E test campaign',
             subject: 'E2E test campaign',
             bodyJson: {
                 type: 'doc',
@@ -90,7 +95,7 @@ test.describe('NL-03: admin send + cancel newsletter campaign @p2 @admin @newsle
                     }
                 ]
             },
-            locale: 'es'
+            localeFilter: 'es'
         };
         const createResponse = await page.request.post(
             `${API_URL}/api/v1/admin/newsletter/campaigns`,
