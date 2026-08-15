@@ -37,11 +37,13 @@ import { RoleEnum } from '@repo/schemas';
 import { compare, hash } from 'bcryptjs';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { APIError } from 'better-auth/api';
 import { admin, createAccessControl } from 'better-auth/plugins';
 import { getQZPayBilling } from '../middlewares/billing';
 import { BillingCustomerSyncService } from '../services/billing-customer-sync';
 import { env } from '../utils/env';
 import { resolveCookieDomain } from './auth-cookie-domain';
+import { isUserSoftDeleted } from './auth-deleted-user-guard';
 import { captureSignupCompleted } from './auth-signup-analytics';
 import { grantBaselineUserRole } from './auth-signup-baseline-role';
 import { parseTrustedOriginsFromConfig } from './auth-trusted-origins';
@@ -645,6 +647,34 @@ function buildAuth() {
                     before: async (session) => {
                         const db = getDb();
                         const userId = session.userId;
+
+                        // H-163: refuse a deleted account BEFORE anything else.
+                        //
+                        // Deleting an account writes `users.deleted_at` and
+                        // leaves the `account` row — password included —
+                        // untouched, so the credential keeps verifying. Measured
+                        // in production: an account deleted at 00:24 signed in
+                        // successfully at 00:37 and got a fresh seven-day
+                        // session.
+                        //
+                        // This is the same hook, and the same APIError, Better
+                        // Auth's own `admin` plugin uses to refuse banned users.
+                        // It sits here rather than in the email/password handler
+                        // because every credential type — OAuth included — has
+                        // to create a session, so one check covers them all.
+                        //
+                        // It also runs BEFORE the eviction below on purpose: a
+                        // refused sign-in must not cost a live session its slot.
+                        if (await isUserSoftDeleted({ userId })) {
+                            logger.warn(
+                                { userId },
+                                'Refused session creation for a deleted account'
+                            );
+                            throw new APIError('FORBIDDEN', {
+                                message: 'This account has been deleted.',
+                                code: 'ACCOUNT_DELETED'
+                            });
+                        }
 
                         // Fetch all existing sessions for this user, oldest first
                         const existingSessions = await db
