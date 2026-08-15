@@ -162,7 +162,27 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # Same exposure that took the A11y Sweep past its cap on 2026-08-15: the
+      # browser download is the one large network payload in the job and nothing
+      # cached it. This job's timeout is 15 minutes, tighter than that one's, so
+      # a stalled download here has even less room. Keyed by the Playwright
+      # version so an unrelated dependency bump does not evict the binaries.
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: |
+          version=$(pnpm --filter hospeda-e2e exec playwright --version | sed 's/.* //')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
       - name: Install Playwright browsers
+        # On a cache hit this is a no-op for the browsers and only installs the
+        # OS-level packages --with-deps pulls from apt, which the cache above
+        # cannot hold.
         run: pnpm --filter hospeda-e2e exec playwright install chromium --with-deps
 
       - name: Build apps

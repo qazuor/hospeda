@@ -93,7 +93,31 @@ jobs:
       - name: Seed database
         run: pnpm db:seed
 
+      # The browser binaries are the only step here that pulls a large payload
+      # over the network, and nothing cached them. On 2026-08-15 that download
+      # stalled and pushed the job past its 20-minute cap — surfacing as a
+      # CANCELLED check on a PR that had nothing to do with it. For scale: this
+      # job's median runtime is 8.7 minutes, so the cap was never the problem.
+      #
+      # Keyed by the Playwright version, NOT by a lockfile hash: the binaries
+      # only change when Playwright does, so an unrelated dependency bump must
+      # not evict them.
+      - name: Resolve Playwright version
+        id: playwright-version
+        run: |
+          version=$(pnpm --filter hospeda-web exec playwright --version | sed 's/.* //')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Playwright browsers
+        uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ steps.playwright-version.outputs.version }}
+
       - name: Install Playwright browsers
+        # Left as-is on purpose. On a cache hit the browser download is a no-op
+        # and this only installs the OS-level packages that --with-deps pulls
+        # from apt, which the cache above cannot hold.
         run: pnpm --filter hospeda-web exec playwright install chromium --with-deps
 
       - name: Start API server
