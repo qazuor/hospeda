@@ -77,6 +77,7 @@ import {
     normalizeViewInput
 } from './user.normalizers';
 import { canAssignRole, checkCanAdminList } from './user.permissions';
+import { revokeUserSessions } from './user.session-revocation';
 import type { PublicAuthorListOutput, UserHookState, UserPublicProfile } from './user.types';
 
 /** Entity-specific filter fields for user admin search. */
@@ -900,6 +901,72 @@ export class UserService extends BaseCrudService<
             additionalConditions.length > 0 ? additionalConditions : undefined,
             ctx?.tx
         );
+    }
+
+    /**
+     * Lifecycle hook: captures the user ID before soft delete so the post-delete
+     * hook can revoke that account's sessions (H-163).
+     *
+     * `_afterSoftDelete` receives only the affected row count, so the id has to
+     * travel through the request-scoped hook state.
+     *
+     * @param id - The ID of the user to soft-delete.
+     * @param _actor - The actor performing the action.
+     * @param ctx - Service execution context carrying transaction and hookState.
+     */
+    protected async _beforeSoftDelete(
+        id: string,
+        _actor: Actor,
+        ctx: ServiceContext<UserHookState>
+    ): Promise<string> {
+        if (ctx.hookState) {
+            ctx.hookState.softDeletedEntityId = id;
+        }
+        return id;
+    }
+
+    /**
+     * Lifecycle hook: revokes the account's Better Auth sessions after a
+     * confirmed soft delete (H-163).
+     *
+     * Soft-deleting a user writes `deleted_at` only. The `onDelete: 'cascade'`
+     * declared on `session.user_id` fires exclusively for a physical DELETE, so
+     * without this the account keeps every session it holds — measured in
+     * production as a deleted account still authenticated six days later.
+     *
+     * Best-effort by design: a failed revocation is logged, never propagated.
+     * That is safe because it is not the only thing standing between a deleted
+     * account and the application — `authMiddleware` re-checks `deleted_at` on
+     * every request, so a leftover row grants nothing. Failing the whole delete
+     * over stale rows would be the worse trade.
+     *
+     * @param result - An object containing the count of affected rows.
+     * @param _actor - The actor performing the action.
+     * @param ctx - Service execution context carrying transaction and hookState.
+     */
+    protected async _afterSoftDelete(
+        result: { count: number },
+        _actor: Actor,
+        ctx: ServiceContext<UserHookState>
+    ): Promise<{ count: number }> {
+        const userId = ctx.hookState?.softDeletedEntityId;
+
+        if (result.count > 0 && userId) {
+            try {
+                const { revokedCount } = await revokeUserSessions({ userId, tx: ctx.tx });
+                this.logger.info(
+                    { userId, revokedCount },
+                    '[auth] Revoked sessions for soft-deleted user'
+                );
+            } catch (revocationError) {
+                this.logger.warn(
+                    { error: revocationError, userId },
+                    '[auth] Failed to revoke sessions for soft-deleted user'
+                );
+            }
+        }
+
+        return result;
     }
 
     /**

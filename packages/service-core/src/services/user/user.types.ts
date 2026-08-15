@@ -85,6 +85,13 @@ export interface UserHookState extends Record<string, unknown> {
     /** ID of the user being hard-deleted, used for Cloudinary avatar cleanup fallback. */
     deletedEntityId?: string;
     /**
+     * ID of the user being SOFT-deleted, captured so the post-delete hook can
+     * revoke that account's sessions (H-163). Kept separate from
+     * `deletedEntityId` because `_afterSoftDelete` receives only the affected
+     * row count, never the id it belonged to.
+     */
+    softDeletedEntityId?: string;
+    /**
      * Cloudinary public_id read from the satellite column before hard delete.
      * Used by _afterHardDelete to delete the asset without URL parsing.
      * Falls back to the legacy path-construction strategy when null/undefined.
