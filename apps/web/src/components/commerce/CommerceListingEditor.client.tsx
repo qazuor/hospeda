@@ -87,6 +87,19 @@ export interface CommerceListingEditorProps {
      * callers/tests that omit it keep the prior behaviour.
      */
     readonly destinationsLoadFailed?: boolean;
+    /**
+     * `true` when the hosting page renders the commerce FAQ manager below this
+     * editor AND gives its wrapper `id="editor-faqs"` (H-153). Adds the matching
+     * entry to the section nav, which otherwise cannot advertise a section that
+     * is not part of this component.
+     *
+     * Opt-in rather than always-on because the nav's contract is that every link
+     * resolves: a page that embeds the editor WITHOUT the FAQ card would get a
+     * link scrolling nowhere, which reads as a dead control rather than an error
+     * — the same failure the conditional amenities entry exists to avoid.
+     * Defaults to `false`.
+     */
+    readonly hasFaqSection?: boolean;
 }
 
 type SaveStatus =
@@ -258,7 +271,8 @@ export function CommerceListingEditor({
     amenities = [],
     features = [],
     destinations = [],
-    destinationsLoadFailed = false
+    destinationsLoadFailed = false,
+    hasFaqSection = false
 }: CommerceListingEditorProps): JSX.Element {
     const { t } = createTranslations(locale);
 
@@ -547,8 +561,20 @@ export function CommerceListingEditor({
             label: t('commerce.owner.editor.sectionNav.price', 'Precio')
         });
 
+        // H-153: the FAQ manager is a SIBLING card rendered by the page, not a
+        // section of this form, so its anchor is not ours to guarantee — the
+        // page that renders it opts in. Appended last because it sits below the
+        // editor in the DOM, which is what the scrollspy's first-match tie-break
+        // requires.
+        if (hasFaqSection) {
+            sections.push({
+                id: 'editor-faqs',
+                label: t('commerce.owner.editor.sectionNav.faqs', 'Preguntas frecuentes')
+            });
+        }
+
         return sections;
-    }, [t, hasCatalogs]);
+    }, [t, hasCatalogs, hasFaqSection]);
 
     // HOS-373: warns before leaving with unsaved edits. Reuses the same diff as
     // `canSave`, so the guard goes quiet the moment a save resyncs the baseline.
