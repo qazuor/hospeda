@@ -34,7 +34,10 @@
  */
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { GoogleCalendarApiError } from '../../../src/services/google-calendar/google-calendar-client.js';
 import type { GoogleCredential } from '../../../src/services/google-calendar/google-calendar-credential.repository.js';
+import { syncAccommodationCalendar } from '../../../src/services/google-calendar/google-calendar-sync.service.js';
+import { GoogleTokenRefreshError } from '../../../src/services/google-calendar/google-token.errors.js';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
@@ -132,11 +135,7 @@ const buildCredential = (overrides?: Partial<GoogleCredential>): GoogleCredentia
 });
 
 describe('google-calendar-sync.service', () => {
-    let syncAccommodationCalendar: typeof import('../../../src/services/google-calendar/google-calendar-sync.service.js').syncAccommodationCalendar;
-    let GoogleTokenRefreshError: typeof import('../../../src/services/google-calendar/google-token.errors.js').GoogleTokenRefreshError;
-    let GoogleCalendarApiError: typeof import('../../../src/services/google-calendar/google-calendar-client.js').GoogleCalendarApiError;
-
-    beforeEach(async () => {
+    beforeEach(() => {
         // Only `Date` is faked. The service and its mocked collaborators still
         // need real `setTimeout`/`queueMicrotask` to resolve their promises —
         // faking those would hang every async test in this file.
@@ -147,16 +146,6 @@ describe('google-calendar-sync.service', () => {
         mockUpdateSyncState.mockResolvedValue(null);
         mockReplaceFutureSyncOccupancy.mockResolvedValue({ removed: 0, inserted: 0 });
         mockGetValidGoogleToken.mockResolvedValue('access-token');
-
-        ({ syncAccommodationCalendar } = await import(
-            '../../../src/services/google-calendar/google-calendar-sync.service.js'
-        ));
-        ({ GoogleTokenRefreshError } = await import(
-            '../../../src/services/google-calendar/google-token.errors.js'
-        ));
-        ({ GoogleCalendarApiError } = await import(
-            '../../../src/services/google-calendar/google-calendar-client.js'
-        ));
     });
 
     afterEach(() => {

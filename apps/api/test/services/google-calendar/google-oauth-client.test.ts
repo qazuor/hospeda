@@ -20,16 +20,28 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    exchangeAuthorizationCode,
+    GoogleOAuthClientError,
+    refreshAccessToken
+} from '../../../src/services/google-calendar/google-oauth-client.js';
 
 // ---------------------------------------------------------------------------
 // Controlled env mock
 // ---------------------------------------------------------------------------
 
-const mockEnv: Record<string, string | undefined> = {
-    HOSPEDA_GOOGLE_CALENDAR_CLIENT_ID: 'test-google-client-id',
-    HOSPEDA_GOOGLE_CALENDAR_CLIENT_SECRET: 'super-secret-google-value-should-never-leak',
-    NODE_ENV: 'test'
-};
+// Hoisted, like the fetch mock below, because the vi.mock() factory that
+// consumes it is itself hoisted above every import. As a plain `const` this
+// threw "Cannot access 'mockEnv' before initialization" the moment the module
+// under test was imported statically — the previous `await import()` inside a
+// hook only hid that by deferring evaluation until after this line had run.
+const { mockEnv } = vi.hoisted(() => ({
+    mockEnv: {
+        HOSPEDA_GOOGLE_CALENDAR_CLIENT_ID: 'test-google-client-id',
+        HOSPEDA_GOOGLE_CALENDAR_CLIENT_SECRET: 'super-secret-google-value-should-never-leak',
+        NODE_ENV: 'test'
+    } as Record<string, string | undefined>
+}));
 
 vi.mock('../../../src/utils/env.js', () => ({
     env: mockEnv
@@ -44,16 +56,9 @@ const { mockFetch } = vi.hoisted(() => ({
 }));
 
 describe('google-oauth-client', () => {
-    let exchangeAuthorizationCode: typeof import('../../../src/services/google-calendar/google-oauth-client.js').exchangeAuthorizationCode;
-    let refreshAccessToken: typeof import('../../../src/services/google-calendar/google-oauth-client.js').refreshAccessToken;
-    let GoogleOAuthClientError: typeof import('../../../src/services/google-calendar/google-oauth-client.js').GoogleOAuthClientError;
-
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks();
         global.fetch = mockFetch;
-        ({ exchangeAuthorizationCode, refreshAccessToken, GoogleOAuthClientError } = await import(
-            '../../../src/services/google-calendar/google-oauth-client.js'
-        ));
     });
 
     const jsonResponse = (

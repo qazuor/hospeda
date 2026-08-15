@@ -23,6 +23,11 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    getGoogleCredential,
+    saveGoogleConnection,
+    saveRefreshedGoogleTokens
+} from '../../../src/services/google-calendar/google-calendar-credential.repository.js';
 
 // ---------------------------------------------------------------------------
 // Hoisted mocks
@@ -59,17 +64,10 @@ vi.mock('../../../src/utils/oauth-vault.js', () => ({
 const ACCOMMODATION_ID = 'acc-1234';
 
 describe('google-calendar-credential.repository', () => {
-    let getGoogleCredential: typeof import('../../../src/services/google-calendar/google-calendar-credential.repository.js').getGoogleCredential;
-    let saveRefreshedGoogleTokens: typeof import('../../../src/services/google-calendar/google-calendar-credential.repository.js').saveRefreshedGoogleTokens;
-    let saveGoogleConnection: typeof import('../../../src/services/google-calendar/google-calendar-credential.repository.js').saveGoogleConnection;
-
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks();
         mockUpdateTokens.mockResolvedValue(undefined);
         mockUpsertConnection.mockResolvedValue({});
-        ({ getGoogleCredential, saveRefreshedGoogleTokens, saveGoogleConnection } = await import(
-            '../../../src/services/google-calendar/google-calendar-credential.repository.js'
-        ));
     });
 
     describe('getGoogleCredential', () => {
