@@ -77,7 +77,7 @@ Y lo que se **lee** en pantalla:
 problema y alivio, sin diálogo."* Es uno de los tres videos —junto con V4 y V16— que usa
 las **cinco caras negativas** de `expresiones.png` (`fastidio`, `molesto`, `agobio`,
 `susto`, `preocupación`), documentadas en
-[`patrones-de-puesta-en-escena.md`](../patrones-de-puesta-en-escena.md#c--la-reacción--sin-lip-sync).
+[`patrones-de-puesta-en-escena.md`](../../patrones-de-puesta-en-escena.md#c--la-reacción--sin-lip-sync).
 **Molesto sí, agresivo no**: T1 usa `PREOCUPACIÓN`, nunca una cara de enojo.
 
 `escena17` es el fondo genérico de exterior desenfocado — no se reconoce ningún lugar

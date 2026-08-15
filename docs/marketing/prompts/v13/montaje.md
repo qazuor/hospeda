@@ -38,7 +38,7 @@ Y lo que se **lee** en pantalla:
 | T3 | subtítulo de S3, y el cierre **"Mirá los planes en hospeda.com.ar"** |
 
 > ⚠️ **Sin precios visibles, en ningún cuadro del video.** La grabación asignada es
-> [`A8`](../../grabaciones.md#con-login-de-anfitrión) — *"Planes, sin que se lean los
+> [`A8`](../grabaciones.md#con-login-de-anfitrión) — *"Planes, sin que se lean los
 > importes"* — y está tageada así a propósito: un precio quemado en el video obliga a
 > rehacerlo entero cuando cambie la lista de planes. Lo que se muestra es **la
 > comparación de funciones entre planes, nunca los números**. Esto se verifica en cada

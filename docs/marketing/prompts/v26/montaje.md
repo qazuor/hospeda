@@ -63,7 +63,7 @@ la tabla [Puesta en escena por video](../../plan-videos.md#puesta-en-escena-por-
 *"el fondo hace la mitad del argumento"*. El remate (T4) cambia a **patrón I · primer
 plano** sobre `escena30` — la combinación *"cualquiera → I, cerrar en primer plano para
 el remate"* que recomienda
-[`patrones-de-puesta-en-escena.md`](../patrones-de-puesta-en-escena.md#cómo-se-combinan).
+[`patrones-de-puesta-en-escena.md`](../../patrones-de-puesta-en-escena.md#cómo-se-combinan).
 `escena30` es "primer plano cálido de **interior**", la variante que empalma con la luz
 nocturna de la mesa del restaurante — igual que V15 usa el mismo par cervecería→interior.
 

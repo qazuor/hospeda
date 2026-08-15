@@ -75,7 +75,7 @@ tres comparte tamaño de plano con la que tiene al lado.
 
 ## Qué se graba
 
-**Una sola grabación asignada: [`A7`](../../grabaciones.md#con-login-de-anfitrión)** —
+**Una sola grabación asignada: [`A7`](../grabaciones.md#con-login-de-anfitrión)** —
 *"Checkout con Mercado Pago"*, que ya está tageada para V12 y V21. Cubre la elección del
 plan y la pantalla de pago con la fecha del primer cobro; es la misma grabación la que
 alimenta T3 (elegís el plan, publicás) y T5 (el beat final, silencioso), en dos

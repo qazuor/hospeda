@@ -71,7 +71,7 @@ asignación de la tabla [Puesta en escena por video](../../plan-videos.md#puesta
 **Por qué Hospedín no está generado durante los 45 s enteros.** El patrón B es
 deliberadamente el más barato porque *"la grabación puede durar lo que quiera, porque no
 depende de la generación"*
-([`patrones-de-puesta-en-escena.md`](../patrones-de-puesta-en-escena.md#b--el-presentador-al-costado)).
+([`patrones-de-puesta-en-escena.md`](../../patrones-de-puesta-en-escena.md#b--el-presentador-al-costado)).
 Hailuo tiene un techo de 15 s por tirada, así que generar 45 s continuos de Hospedín
 sosteniendo la pose no es una opción. La resolución: **dos tiradas cortas de Hospedín —
 apertura (T1) y cierre (T8)—**, y en el medio la pantalla lleva todo el peso visual con
