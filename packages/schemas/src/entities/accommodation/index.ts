@@ -21,6 +21,9 @@ export * from './accommodation.featured-toggle.schema.js'; // Owner self-service
 export * from './accommodation.http.schema.js'; // HTTP-compatible schemas with query coercion
 // Relation-selector lookup options (SPEC-169 §5.5)
 export * from './accommodation.options.schema.js'; // Lightweight {id,label,slug,type,destination} options
+// The one list of what blocks publication — shared by the server gate and the
+// editor hub so the two can never drift apart again (H-101)
+export * from './accommodation.publish-requirements.js';
 // Query operations
 export * from './accommodation.query.schema.js'; // List, Search, Summary, Stats, Filters schemas
 // Relations
