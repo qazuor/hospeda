@@ -79,7 +79,12 @@ test.describe('NL-03: admin send + cancel newsletter campaign @p2 @admin @newsle
         expect(subscriberId).not.toBeNull();
 
         // ── 2. Create a draft campaign via admin API ───────────────────────
+        // CreateNewsletterCampaignSchema is .strict(): `title` is required (the
+        // internal label, separate from the subject line) and the audience field is
+        // `localeFilter`, not `locale`. The old payload omitted the first and sent
+        // the second under a name the schema rejects, so every create answered 400.
         const draftBody = {
+            title: 'E2E test campaign',
             subject: 'E2E test campaign',
             bodyJson: {
                 type: 'doc',
@@ -90,7 +95,7 @@ test.describe('NL-03: admin send + cancel newsletter campaign @p2 @admin @newsle
                     }
                 ]
             },
-            locale: 'es'
+            localeFilter: 'es'
         };
         const createResponse = await page.request.post(
             `${API_URL}/api/v1/admin/newsletter/campaigns`,
@@ -112,6 +117,20 @@ test.describe('NL-03: admin send + cancel newsletter campaign @p2 @admin @newsle
         expect(draftRow[0]?.status).toBe('draft');
 
         // ── 3. Send the campaign ───────────────────────────────────────────
+        // Dispatch needs BOTH Redis and HOSPEDA_EMAIL_API_KEY; with either missing
+        // the route resolves the stub delivery service and answers 503
+        // BULLMQ_NOT_CONFIGURED. Redis is provided in CI, the key is not, so this
+        // leg cannot run there — the earlier draft assertions above do.
+        //
+        // Deliberately NOT worked around by adding the key to the workflow: its
+        // absence is also what makes apps/api auto-verify signups in non-prod
+        // (auth.ts — "HOSPEDA_EMAIL_API_KEY not set - auto-verified user in non-prod
+        // env"). Setting it would switch the whole suite to real verification
+        // emails, which is a decision about the environment, not about this spec.
+        test.fixme(
+            true,
+            'campaign dispatch needs HOSPEDA_EMAIL_API_KEY, unset in CI — setting it would also disable signup auto-verification suite-wide'
+        );
         const sendResponse = await page.request.post(
             `${API_URL}/api/v1/admin/newsletter/campaigns/${campaignId}/send`,
             { headers: { cookie: admin.sessionCookie } }

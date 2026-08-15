@@ -94,6 +94,7 @@ export function CollectionBookmarkRemoveBtn({
         <div>
             <button
                 type="button"
+                data-testid="collection-bookmark-remove-btn"
                 onClick={handleRemove}
                 disabled={removing}
                 aria-label={

@@ -24,7 +24,7 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createUser } from '../../fixtures/api-helpers.ts';
+import { createSubscription, createUser, resolvePlanIdBySlug } from '../../fixtures/api-helpers.ts';
 import { getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
 
@@ -59,6 +59,11 @@ interface QuotaErrorResponse {
 
 test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections @limit @spec-098', () => {
     let userId: string | null = null;
+    let plusPlanId: string | null = null;
+
+    test.beforeAll(async () => {
+        ({ planId: plusPlanId } = await resolvePlanIdBySlug({ slug: 'tourist-plus' }));
+    });
 
     test.afterEach(async () => {
         if (userId) {
@@ -71,8 +76,13 @@ test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections 
         page
     }) => {
         // Arrange
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
+        // SPEC-287 put collections behind `can_use_collections`; tourist-free is
+        // now rejected with 403, and tourist-plus is the tier whose cap is 10.
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         // Act: create MAX_COLLECTIONS collections (all should succeed)
@@ -127,8 +137,13 @@ test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections 
 
     test('AC-03.4 — deleting a collection frees up a slot (re-entrant quota)', async ({ page }) => {
         // Arrange: fill to the limit
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
+        // SPEC-287 put collections behind `can_use_collections`; tourist-free is
+        // now rejected with 403, and tourist-plus is the tier whose cap is 10.
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         let firstCollectionId: string | null = null;
@@ -178,8 +193,13 @@ test.describe('E2E-07: collection limit enforcement @p1 @favorites @collections 
 
     test('AC-03.4 — usage block in GET list shows current/max ratio', async ({ page }) => {
         // Arrange
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userId = user.id;
+        // SPEC-287 put collections behind `can_use_collections`; tourist-free is
+        // now rejected with 403, and tourist-plus is the tier whose cap is 10.
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
         const headers = { cookie: user.sessionCookie };
 
         // Create 2 collections

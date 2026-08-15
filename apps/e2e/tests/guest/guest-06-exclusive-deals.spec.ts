@@ -31,7 +31,8 @@ import { expect, test } from '@playwright/test';
 import {
     createSubscription,
     createUser,
-    getAnyCityDestinationId
+    getAnyCityDestinationId,
+    markProfileCompleted
 } from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
@@ -87,6 +88,13 @@ async function getExclusiveDeals(
     }
     return { status: response.status, body };
 }
+
+// The tier-scoping specs read one shared set of seeded deals while the owner spec
+// creates another promotion, and the config runs fullyParallel (2 workers on
+// nightly, 4 on PR). Run them in order so the writer cannot change what the
+// readers assert mid-flight — a race that only surfaced when this file ran
+// alongside others, and passed when run on its own.
+test.describe.configure({ mode: 'serial' });
 
 test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', () => {
     const userIds: string[] = [];
@@ -214,6 +222,9 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
     }) => {
         const free = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
         userIds.push(free.id);
+        // /mi-cuenta/* bounces users with profile_completed = false to the profile
+        // form (SPEC-113), so the page under test never loads and never fetches.
+        await markProfileCompleted({ userId: free.id });
 
         // ── API: 403 ENTITLEMENT_REQUIRED ────────────────────────────────────
         const result = await getExclusiveDeals(free.sessionCookie);
@@ -243,6 +254,7 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         const plus = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
         userIds.push(plus.id);
         await createSubscription({ userId: plus.id, planId: plusPlanId, status: 'active' });
+        await markProfileCompleted({ userId: plus.id });
 
         await attachSession(page, plus.sessionCookie);
         await page.goto(EXCLUSIVE_DEALS_PAGE, { waitUntil: 'domcontentloaded' });
@@ -267,6 +279,7 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         const vip = await createUser({ role: 'USER' }, { apiBaseUrl: API_URL });
         userIds.push(vip.id);
         await createSubscription({ userId: vip.id, planId: vipPlanId, status: 'active' });
+        await markProfileCompleted({ userId: vip.id });
 
         await attachSession(page, vip.sessionCookie);
         await page.goto(EXCLUSIVE_DEALS_PAGE, { waitUntil: 'domcontentloaded' });
@@ -303,6 +316,7 @@ test.describe('GUEST-06: exclusive deals & VIP promotions @p1 @guest @billing', 
         const owner = await createUser({ role: 'HOST' }, { apiBaseUrl: API_URL });
         userIds.push(owner.id);
         await createSubscription({ userId: owner.id, planId: ownerProPlanId, status: 'active' });
+        await markProfileCompleted({ userId: owner.id });
 
         await attachSession(page, owner.sessionCookie);
         await page.goto(`${WEB_URL}/es/mi-cuenta/promociones/nueva/`, {

@@ -51,13 +51,48 @@ test.describe('GUEST-04: conversational AI search panel @p1 @guest @ai', () => {
         await seedCookieConsent(page);
     });
 
-    test('anonymous user can query the AI panel and refine results', async ({ page }) => {
-        // ── 1. Navigate to the listings page ──────────────────────────────────
+    test('anonymous visitor is asked to sign in — AI search is members-only', async ({ page }) => {
+        // SPEC-265 W14 made conversational search members-only: SearchChatPanel
+        // renders LoginCta instead of the composer for anonymous visitors. This spec
+        // used to drive a full query + refinement as an anonymous user, which is a
+        // product rule that no longer exists, so it could never pass again. Note
+        // LoginCta reuses the panel's aria-label, so asserting the region alone does
+        // NOT prove the chat is usable — the composer is what separates the two.
         await page.goto(`${WEB_URL}/es/alojamientos/`, { waitUntil: 'domcontentloaded' });
         expect(page.url()).toContain('/alojamientos/');
 
-        // ── 2. Assert the conversational search panel is present ───────────────
-        // The panel is a <section aria-label="Panel de búsqueda conversacional con IA">.
+        // The listing no longer renders SearchChatPanel inline: AiSearchEntry mounts
+        // a trigger and only mounts the panel once its drawer is open, so waiting
+        // for the panel straight after page load found nothing.
+        const aiTrigger = page.getByRole('button', { name: 'Buscá con IA' }).first();
+        await expect(aiTrigger).toBeVisible({ timeout: 15_000 });
+        await aiTrigger.click();
+
+        const panel = page.getByRole('region', {
+            name: 'Panel de búsqueda conversacional con IA'
+        });
+        await expect(panel).toBeVisible({ timeout: 10_000 });
+
+        // The sign-in prompt is shown…
+        await expect(panel.getByText('Iniciá sesión para buscar con IA')).toBeVisible({
+            timeout: 10_000
+        });
+        // …and the composer is absent, which is the part that actually gates usage.
+        await expect(panel.getByRole('textbox', { name: 'Mensaje' })).toHaveCount(0);
+        await expect(panel.getByRole('button', { name: 'Enviar mensaje' })).toHaveCount(0);
+    });
+
+    test('authenticated user can query the AI panel and refine results', async ({ page }) => {
+        // NOT RUNNABLE in the E2E environment as seeded: this drives real SSE turns
+        // against the configured AI provider, and `ai_settings` is empty here (0
+        // rows), so no provider — not even the stub — is resolvable. Enabling it
+        // needs an `ai_settings` row in the E2E seed; the assertions below are kept
+        // verbatim so they can be re-pointed at an authenticated session once it is.
+        test.fixme(true, 'ai_settings is not seeded in the E2E environment — no AI provider');
+
+        await page.goto(`${WEB_URL}/es/alojamientos/`, { waitUntil: 'domcontentloaded' });
+        const aiTrigger = page.getByRole('button', { name: 'Buscá con IA' }).first();
+        await aiTrigger.click();
         const panel = page.getByRole('region', {
             name: 'Panel de búsqueda conversacional con IA'
         });

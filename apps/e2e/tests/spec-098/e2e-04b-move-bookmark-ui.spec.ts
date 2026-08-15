@@ -26,7 +26,12 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createUser } from '../../fixtures/api-helpers.ts';
+import {
+    createSubscription,
+    createUser,
+    markProfileCompleted,
+    resolvePlanIdBySlug
+} from '../../fixtures/api-helpers.ts';
 import { seedCookieConsent } from '../../fixtures/browser-helpers.ts';
 import { execSQL, getDbPool } from '../../fixtures/db-helpers.ts';
 import { cleanupTestUsers } from '../../support/test-cleanup.ts';
@@ -68,6 +73,11 @@ async function attachSessionCookie(
 
 test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @ui @spec-098', () => {
     const userIds: string[] = [];
+    let plusPlanId: string | null = null;
+
+    test.beforeAll(async () => {
+        ({ planId: plusPlanId } = await resolvePlanIdBySlug({ slug: 'tourist-plus' }));
+    });
 
     test.beforeEach(async ({ page }) => {
         await seedCookieConsent(page);
@@ -103,8 +113,15 @@ test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @
             return;
         }
 
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
+        // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
+        // SPEC-113 bounces users with profile_completed = false to the completion
+        // form, so a UI spec never reaches the account page it asserts on.
+        await markProfileCompleted({ userId: user.id });
         const headers = { cookie: user.sessionCookie };
 
         const colRes = await page.request.post(
@@ -139,14 +156,16 @@ test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @
         await page.goto(`${WEB_BASE_URL}/es/mi-cuenta/favoritos/`);
         await page.waitForLoadState('networkidle');
 
+        // The move button is unconditional inside BookmarkGrid, so its absence means
+        // the bookmark did not render — a real regression. This used to `test.skip`
+        // with "integration is missing", which was false (UserFavoritesList has wired
+        // MoveToCollectionModal since the SPEC-098 closeout) and silently swallowed
+        // the redirect that markProfileCompleted now prevents.
         const moveBtn = page.locator(`[data-testid="move-bookmark-button-${bookmarkId}"]`);
-        if ((await moveBtn.count()) === 0) {
-            test.skip(
-                true,
-                'Move button not found — UserFavoritesList integration with MoveToCollectionModal is missing'
-            );
-            return;
-        }
+        await expect(
+            moveBtn,
+            `move button for bookmark ${bookmarkId} not rendered on ${page.url()}`
+        ).toHaveCount(1);
         await moveBtn.first().click();
 
         // Modal should open
@@ -184,8 +203,15 @@ test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @
             return;
         }
 
+        test.fixme(!plusPlanId, 'tourist-plus plan not seeded — cannot run');
+        if (!plusPlanId) return;
         const user = await createUser({ role: 'USER' });
         userIds.push(user.id);
+        // SPEC-287 put collections behind `can_use_collections`; tourist-free is 403.
+        await createSubscription({ userId: user.id, planId: plusPlanId, status: 'active' });
+        // SPEC-113 bounces users with profile_completed = false to the completion
+        // form, so a UI spec never reaches the account page it asserts on.
+        await markProfileCompleted({ userId: user.id });
         const headers = { cookie: user.sessionCookie };
 
         const colRes = await page.request.post(
@@ -239,21 +265,41 @@ test.describe('E2E-04b: move bookmark via UI @p1 @favorites @collections @move @
         await page.goto(`${WEB_BASE_URL}/es/mi-cuenta/favoritos/colecciones/${collectionId}/`);
         await page.waitForLoadState('networkidle');
 
-        const removeBtn = page
-            .locator('[data-testid="collection-bookmark-remove-btn"]')
-            .or(page.getByRole('button', { name: /quitar.*colecci[oó]n/i }))
-            .first();
+        // CollectionBookmarkRemoveBtn asks for confirmation with window.confirm().
+        // Playwright DISMISSES dialogs unless a handler accepts them, so without this
+        // the confirm returns false and handleRemove() returns before issuing the
+        // DELETE — the click looks successful and nothing happens. e2e-04c already
+        // does this for the same reason.
+        page.on('dialog', (dialog) => {
+            void dialog.accept();
+        });
 
-        if ((await removeBtn.count()) === 0) {
-            test.skip(
-                true,
-                'CollectionBookmarkRemoveBtn UI missing — cannot exercise AC-07.1 via UI'
-            );
-            return;
-        }
+        const removeBtn = page.locator('[data-testid="collection-bookmark-remove-btn"]').first();
+        await expect(
+            removeBtn,
+            `remove-from-collection button not rendered on ${page.url()}`
+        ).toBeVisible();
 
-        await removeBtn.click();
-        // Wait for the optimistic update + network round-trip
+        // CollectionBookmarkRemoveBtn is mounted `client:visible`, so the button is
+        // server-rendered before React attaches its onClick. A single click plus
+        // `networkidle` silently did nothing when it landed pre-hydration: no request
+        // was ever sent, and the spec then blamed the DELETE for not clearing
+        // collection_id. Retry the click until the DELETE actually goes out — the
+        // request is the evidence that the handler ran.
+        const deleteUrlFragment = `/user-bookmark-collections/${collectionId}/bookmarks/${bookmarkId}`;
+        await expect(async () => {
+            await Promise.all([
+                page.waitForResponse(
+                    (res) =>
+                        res.url().includes(deleteUrlFragment) &&
+                        res.request().method() === 'DELETE',
+                    { timeout: 3_000 }
+                ),
+                removeBtn.click()
+            ]);
+        }).toPass({ timeout: 20_000 });
+
+        // The island reloads the page after a successful DELETE.
         await page.waitForLoadState('networkidle');
 
         // Assert: DB reflects the removal (collection_id = NULL, bookmark still exists)
