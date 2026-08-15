@@ -72,6 +72,7 @@
         "groupHost": "Área do anfitrião",
         "groupCommerce": "Área comercial",
         "groupEditorial": "Área editorial",
+        "groupProvider": "Área do fornecedor",
         "dashboard": "Minha conta",
         "editProfile": "Editar perfil",
         "subscription": "Assinatura",
@@ -89,7 +90,8 @@
         "tradeDirectory": "Diretório de fornecedores",
         "benefitUsages": "Usos do benefício",
         "myPosts": "Minhas publicações",
-        "myEvents": "Meus eventos"
+        "myEvents": "Meus eventos",
+        "provider": "Minha ficha de fornecedor"
     },
     "doors": {
         "sectionLabel": "Descubra mais",
