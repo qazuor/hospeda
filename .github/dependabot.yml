@@ -126,6 +126,20 @@ updates:
       - dependency-name: '@ai-sdk/openai'
       - dependency-name: '@ai-sdk/anthropic'
       - dependency-name: 'ai'
+      # @tanstack/react-table: 8.21.3 -> 9.0.0 is a genuine major rewrite. The
+      # v9 barrel no longer exports getCoreRowModel/getSortedRowModel/
+      # useReactTable, so apps/admin's Build dies with 5 [MISSING_EXPORT]
+      # errors in src/components/table/DataTable.tsx and
+      # src/features/conversations/components/InboxList.tsx (PR #2793, closed).
+      # Real prod surface: DataTable is the mandated admin table pattern
+      # (apps/admin/CLAUDE.md), also used by VirtualizedDataTable and
+      # conversations/columns.tsx. Needs the official "Migrating to V9" sweep,
+      # not a version bump. Unlike zod/@tanstack/react-form/better-auth above,
+      # the break arrives in a MAJOR, so scope the gate to majors — 8.x
+      # minor/patch (incl. security fixes) keep flowing through the normal
+      # grouped PRs. Owner: HOS-574.
+      - dependency-name: '@tanstack/react-table'
+        update-types: ['version-update:semver-major']
     cooldown:
       # Supply-chain hardening: wait 7 days before bumping a newly published
       # version (satisfies semgrep dependabot-missing-cooldown).
