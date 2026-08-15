@@ -103,6 +103,33 @@ interface FieldWrapperProps {
     readonly children: React.ReactNode;
 }
 
+/** The subset of a TanStack Form field's meta this file reads. */
+interface FieldMetaLike {
+    readonly isTouched: boolean;
+    readonly errors: readonly unknown[];
+}
+
+/**
+ * Field error copy, or `undefined` when the field has nothing to say yet.
+ *
+ * Gated on `isTouched` **or a submit having been attempted** — never on
+ * `isTouched` alone. `form.handleSubmit()` runs every field validator and, when
+ * one refuses, resolves normally WITHOUT invoking the submit handler: no throw,
+ * no request, no rejection to catch. Gating the message on touch alone meant a
+ * field the operator never opened could veto the save while displaying nothing
+ * at all, which is exactly how H-161 stayed invisible through four save
+ * attempts across three input methods.
+ *
+ * @param meta - The field's `state.meta`.
+ * @param submitAttempted - Whether the operator has pressed save at least once.
+ * @returns The joined error copy, or `undefined` when there is nothing to show.
+ */
+function fieldError(meta: FieldMetaLike, submitAttempted: boolean): string | undefined {
+    if (!meta.isTouched && !submitAttempted) return undefined;
+    const text = meta.errors.filter(Boolean).join(', ');
+    return text.length > 0 ? text : undefined;
+}
+
 function FieldWrapper({ label, htmlFor, required, error, children }: FieldWrapperProps) {
     return (
         <div className="space-y-1">
@@ -140,6 +167,13 @@ export function PartnerForm({
     onSubmit
 }: PartnerFormProps) {
     const [globalError, setGlobalError] = React.useState<string | null>(null);
+    // Whether save has been pressed at least once — the gate that lets field
+    // errors surface for fields the operator never touched (see `fieldError`).
+    const [submitAttempted, setSubmitAttempted] = React.useState(false);
+    // Set by the submit handler itself, so the wrapper below can tell "the save
+    // ran" from "the save was vetoed". Nothing else distinguishes the two:
+    // `form.handleSubmit()` resolves the same way either way.
+    const submitHandlerRan = React.useRef(false);
 
     const form = useForm<PartnerFormValues>({
         defaultValues: {
@@ -158,6 +192,7 @@ export function PartnerForm({
             endsAt: initialData?.endsAt ?? null
         } as PartnerFormValues,
         onSubmit: async ({ value }) => {
+            submitHandlerRan.current = true;
             setGlobalError(null);
             const result = createPartnerSchema.safeParse(value);
             if (!result.success) {
@@ -174,10 +209,26 @@ export function PartnerForm({
 
     return (
         <form
-            onSubmit={(e) => {
+            onSubmit={async (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                void form.handleSubmit();
+                setGlobalError(null);
+                setSubmitAttempted(true);
+                submitHandlerRan.current = false;
+
+                await form.handleSubmit();
+
+                // A field validator that refuses aborts the submit INSIDE
+                // `handleSubmit`, which then resolves normally — no throw, no
+                // rejected promise, no request. Without this line the operator
+                // presses save and gets absolutely nothing back: not a success,
+                // not a failure. That silence is H-161, and it is worse than a
+                // loud refusal because it reads as "saved".
+                if (!submitHandlerRan.current) {
+                    setGlobalError(
+                        'No pudimos guardar: revisá los campos marcados y volvé a intentar.'
+                    );
+                }
             }}
             aria-label="Formulario de partner"
             noValidate
@@ -207,11 +258,7 @@ export function PartnerForm({
                                     label="Nombre"
                                     htmlFor={field.name}
                                     required
-                                    error={
-                                        field.state.meta.isTouched
-                                            ? field.state.meta.errors.join(', ')
-                                            : undefined
-                                    }
+                                    error={fieldError(field.state.meta, submitAttempted)}
                                 >
                                     <input
                                         id={field.name}
@@ -250,11 +297,7 @@ export function PartnerForm({
                                     label="Slug"
                                     htmlFor={field.name}
                                     required
-                                    error={
-                                        field.state.meta.isTouched
-                                            ? field.state.meta.errors.join(', ')
-                                            : undefined
-                                    }
+                                    error={fieldError(field.state.meta, submitAttempted)}
                                 >
                                     <input
                                         id={field.name}
@@ -284,11 +327,7 @@ export function PartnerForm({
                                     label="Tipo"
                                     htmlFor={field.name}
                                     required
-                                    error={
-                                        field.state.meta.isTouched
-                                            ? field.state.meta.errors.join(', ')
-                                            : undefined
-                                    }
+                                    error={fieldError(field.state.meta, submitAttempted)}
                                 >
                                     <select
                                         id={field.name}
@@ -329,11 +368,7 @@ export function PartnerForm({
                                     label="Tier"
                                     htmlFor={field.name}
                                     required
-                                    error={
-                                        field.state.meta.isTouched
-                                            ? field.state.meta.errors.join(', ')
-                                            : undefined
-                                    }
+                                    error={fieldError(field.state.meta, submitAttempted)}
                                 >
                                     <select
                                         id={field.name}
@@ -363,23 +398,19 @@ export function PartnerForm({
 
                         {/* Plan */}
                         <div className="sm:col-span-2">
-                            <form.Field
-                                name="planId"
-                                validators={{
-                                    onChange: ({ value }) =>
-                                        value ? undefined : 'El plan de billing es requerido'
-                                }}
-                            >
+                            {/* NO required validator, deliberately. `partnerSchema.planId`
+                                is `.nullable().optional()`, and every partner in production
+                                carries `plan_id = NULL` — a hand-written "required" rule
+                                here therefore vetoed the save on EVERY existing partner
+                                before the submit handler could run (H-161). A partner
+                                without a plan is a real, supported state: it is what a
+                                curated partner looks like until someone sells it one. */}
+                            <form.Field name="planId">
                                 {(field) => (
                                     <FieldWrapper
                                         label="Plan de billing"
                                         htmlFor={field.name}
-                                        required
-                                        error={
-                                            field.state.meta.isTouched
-                                                ? field.state.meta.errors.join(', ')
-                                                : undefined
-                                        }
+                                        error={fieldError(field.state.meta, submitAttempted)}
                                     >
                                         <select
                                             id={field.name}
@@ -391,9 +422,8 @@ export function PartnerForm({
                                             }
                                             className={INPUT_CLASS}
                                             disabled={isSubmitting}
-                                            aria-required="true"
                                         >
-                                            <option value="">Seleccioná un plan…</option>
+                                            <option value="">Sin plan asignado</option>
                                             {plans.map((plan) => (
                                                 <option
                                                     key={plan.id}
@@ -428,11 +458,7 @@ export function PartnerForm({
                                 <FieldWrapper
                                     label="Logo URL"
                                     htmlFor={field.name}
-                                    error={
-                                        field.state.meta.isTouched
-                                            ? field.state.meta.errors.join(', ')
-                                            : undefined
-                                    }
+                                    error={fieldError(field.state.meta, submitAttempted)}
                                 >
                                     <input
                                         id={field.name}
@@ -455,11 +481,7 @@ export function PartnerForm({
                                 <FieldWrapper
                                     label="Sitio web"
                                     htmlFor={field.name}
-                                    error={
-                                        field.state.meta.isTouched
-                                            ? field.state.meta.errors.join(', ')
-                                            : undefined
-                                    }
+                                    error={fieldError(field.state.meta, submitAttempted)}
                                 >
                                     <input
                                         id={field.name}
@@ -493,11 +515,7 @@ export function PartnerForm({
                                 <FieldWrapper
                                     label="Inicio (opcional)"
                                     htmlFor={field.name}
-                                    error={
-                                        field.state.meta.isTouched
-                                            ? field.state.meta.errors.join(', ')
-                                            : undefined
-                                    }
+                                    error={fieldError(field.state.meta, submitAttempted)}
                                 >
                                     <input
                                         id={field.name}
@@ -531,11 +549,7 @@ export function PartnerForm({
                                 <FieldWrapper
                                     label="Fin (opcional)"
                                     htmlFor={field.name}
-                                    error={
-                                        field.state.meta.isTouched
-                                            ? field.state.meta.errors.join(', ')
-                                            : undefined
-                                    }
+                                    error={fieldError(field.state.meta, submitAttempted)}
                                 >
                                     <input
                                         id={field.name}
@@ -572,11 +586,7 @@ export function PartnerForm({
                             <FieldWrapper
                                 label="Descripción"
                                 htmlFor={field.name}
-                                error={
-                                    field.state.meta.isTouched
-                                        ? field.state.meta.errors.join(', ')
-                                        : undefined
-                                }
+                                error={fieldError(field.state.meta, submitAttempted)}
                             >
                                 <textarea
                                     id={field.name}
