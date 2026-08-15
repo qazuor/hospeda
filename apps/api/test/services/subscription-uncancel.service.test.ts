@@ -31,6 +31,7 @@ const {
     mockBillingUncancelFn,
     mockDbSelectFn,
     mockDbUpdateFn,
+    mockDbUpdateSet,
     mockDbInsertFn,
     mockDbTransactionFn
 } = vi.hoisted(() => {
@@ -54,6 +55,7 @@ const {
         mockBillingUncancelFn,
         mockDbSelectFn,
         mockDbUpdateFn,
+        mockDbUpdateSet,
         mockDbInsertFn,
         mockDbTransactionFn
     };
@@ -80,6 +82,7 @@ vi.mock('@repo/db', () => ({
         status: 'status',
         cancelAtPeriodEnd: 'cancel_at_period_end',
         canceledAt: 'canceled_at',
+        metadata: 'metadata',
         updatedAt: 'updated_at'
     },
     billingSubscriptionEvents: {
@@ -207,6 +210,32 @@ describe('uncancelSubscription', () => {
         // Audit event written.
         expect(mockDbInsertFn).toHaveBeenCalled();
         expect(clearEntitlementCache).toHaveBeenCalledWith(CUSTOMER_ID);
+    });
+
+    it('drops the stored cancellation reason when the cancellation is discarded (H-80)', async () => {
+        // A cancellation reason lives on `billing_subscriptions.metadata`
+        // (`cancelReason`, written by qzpay-core when we hand it the reason).
+        // Discarding the cancellation cleared `cancelAtPeriodEnd` and
+        // `canceledAt` but left that text in place, so the NEXT cancellation —
+        // for which the user may deliberately have said nothing, since the
+        // reason is optional — inherited a motive from an attempt that was
+        // reverted. It is the only qualitative churn signal the platform
+        // collects, so a stale value there is not noise: it points somewhere.
+        setupDbSelectRow(buildSubRow());
+
+        await uncancelSubscription({
+            billing: billing as never,
+            subscriptionId: SUB_ID,
+            customerId: CUSTOMER_ID
+        });
+
+        // Assert on the actual update payload rather than an objectContaining
+        // match, which cannot fail on a MISSING key — the exact failure mode
+        // this test exists to catch.
+        expect(mockDbUpdateSet).toHaveBeenCalledTimes(1);
+        const payload = mockDbUpdateSet.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(Object.hasOwn(payload, 'metadata')).toBe(true);
+        expect(payload.cancelAtPeriodEnd).toBe(false);
     });
 
     it('idempotent no-op when cancelAtPeriodEnd is already false (no provider call)', async () => {

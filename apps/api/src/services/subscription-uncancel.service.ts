@@ -40,6 +40,7 @@ import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { billingSubscriptionEvents, billingSubscriptions, eq, getDb } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
 import { BILLING_EVENT_TYPES, ServiceError, withServiceTransaction } from '@repo/service-core';
+import { sql } from 'drizzle-orm';
 import {
     isBillingProviderError,
     mapProviderErrorToServiceError
@@ -206,7 +207,22 @@ export async function uncancelSubscription(
 
         await (tx as typeof db)
             .update(billingSubscriptions)
-            .set({ cancelAtPeriodEnd: false, updatedAt: new Date() })
+            .set({
+                cancelAtPeriodEnd: false,
+                // H-80: drop the cancellation reason along with the flag it
+                // belongs to. qzpay-core stores it on `metadata.cancelReason`
+                // when we hand it a reason; discarding the cancellation used to
+                // clear the flag and the stamp but leave the text behind, so the
+                // NEXT cancellation inherited a motive from an attempt the user
+                // reverted — and the reason is optional, so saying nothing is a
+                // legitimate answer that was being silently overwritten. It is
+                // the only qualitative churn signal we collect, so a carried-over
+                // value is a false signal pointing in a specific direction, not
+                // noise. The jsonb `-` operator removes just this key and leaves
+                // the rest of the object (and a NULL metadata) untouched.
+                metadata: sql`${billingSubscriptions.metadata} - 'cancelReason'`,
+                updatedAt: new Date()
+            })
             .where(eq(billingSubscriptions.id, subscriptionId));
 
         await (tx as typeof db).insert(billingSubscriptionEvents).values({
