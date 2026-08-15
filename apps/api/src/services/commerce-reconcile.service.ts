@@ -35,6 +35,7 @@ import {
     reconcileCommerceListingVisibility
 } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
+import { loadCommerceListingMedia } from './commerce-listing-media.js';
 
 /**
  * Resolve the concrete {@link CommerceEntityModel} for a commerce entity type
@@ -68,11 +69,18 @@ export function resolveCommerceEntityModel(entityType: string): CommerceEntityMo
  * predicate (HOS-166 §6.5). Deliberately does its OWN `findById` read via the
  * FULL `gastronomyModel`/`experienceModel` (not the narrow
  * `CommerceEntityModel` from `resolveCommerceEntityModel`) so it can read
- * every field `resolveListingCompleteness` needs (`name`, `summary`,
- * `description`, `media`, `contactInfo`, `openingHours`, `priceRange`,
- * `priceFrom`, `isPriceOnRequest`, …) — see {@link CommerceEntityModel}'s
- * JSDoc for why completeness stays a separate injected resolver rather than
- * widening that narrow structural contract.
+ * the scalar fields `resolveListingCompleteness` needs (`name`, `summary`,
+ * `description`, `contactInfo`, `openingHours`, `priceRange`, `priceFrom`,
+ * `isPriceOnRequest`, …) — see {@link CommerceEntityModel}'s JSDoc for why
+ * completeness stays a separate injected resolver rather than widening that
+ * narrow structural contract.
+ *
+ * `media` is the exception and must be loaded separately via
+ * {@link loadCommerceListingMedia}: HOS-372 dropped the `media` JSONB column,
+ * so no raw-row read can supply it. This JSDoc used to claim the full model
+ * read covered `media` too — true before that migration, false after, and the
+ * stale claim is what let this path keep every paid listing PRIVATE (H-154 /
+ * HOS-494).
  *
  * @param entityType - Commerce entity discriminator (`'gastronomy'` | `'experience'`).
  * @param entityId - UUID of the commerce entity to evaluate.
@@ -108,9 +116,17 @@ export async function resolveCommerceListingCompleteness(
         return { complete: false, missing: ['listing_not_found'] };
     }
 
+    // HOS-372 dropped the `media` JSONB column — compose it from the relational
+    // media tables, inside the reconciler's transaction (H-154 / HOS-494).
+    const media = await loadCommerceListingMedia({
+        entityType: entityType as CommerceEntityType,
+        entityId,
+        tx
+    });
+
     return resolveListingCompleteness({
         entityType: entityType as CommerceEntityType,
-        listing
+        listing: { ...listing, media }
     });
 }
 

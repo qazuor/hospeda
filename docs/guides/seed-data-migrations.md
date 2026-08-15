@@ -52,6 +52,15 @@ These are thin root aliases over the `@repo/seed` CLI's `--data-migrate*` flags 
 baseline-stamp step automatically after the main seed — see
 [Baseline-stamp](#baseline-stamp-marking-a-fresh-db-caught-up).
 
+> **The read-only command is `db:seed:migrate:status`, not `db:seed:migrate --status`.**
+> There is no `--status` flag: `pnpm db:seed:migrate --status` expands to
+> `cli.ts --data-migrate --status`, and until HOS-510 the unrecognized `--status` was
+> dropped in silence while `--data-migrate` ran alone — a command typed to look at the
+> ledger applied every pending migration instead (measured: `seed_migrations` 44 rows →
+> 54, exit 0). The CLI now **refuses** unrecognized flags rather than ignoring them, and
+> points `--status` at the right command. `pnpm seed --help` lists every flag and marks
+> which ones write.
+
 ---
 
 ## Run order (critical)
@@ -520,6 +529,42 @@ apply.
 | Forgot `destructive: true` on a migration that deletes/irreversibly mutates data | Gate never protects it in production | Set `meta.destructive: true` when scaffolding (`--destructive`) or by hand |
 | Forgot `contentOnly: true` on a migration whose rows have no fixture baseline | Every fresh build stamps it applied with its content never created, and the ledger then blocks it forever | Set `meta.contentOnly: true` — see [above](#the-contentonly-flag-migrations-with-no-fixture-baseline) |
 | Assumed `pnpm db:fresh`'s auto-baseline-stamp covers the prod day-1 seed | Migrations silently run "for real" against curated prod data (or `db:seed:migrate:status` shows a surprising pending count) | Baseline-stamp manually after the day-1 `--required --exclude=users` seed — see [above](#production-day-1-manual-baseline-stamp-is-still-required-open-item) |
+| Gated the migration on a schema-existence probe (`information_schema`, `to_regclass`) | An absent source — or any failed read — returns empty, reports success, and gets ledgered as applied forever | Verify the **target state** instead, and throw on the ambiguous zero — see [below](#never-gate-on-schema-existence) |
+
+---
+
+## Never gate on schema existence
+
+A migration must not decide whether to do its work by asking the database about its own
+shape. This shape, which `0034` introduced and `0037` copied verbatim, is banned:
+
+```ts
+const columnExists = await db.execute(
+    sql`SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = ${table} AND column_name = 'media'`
+);
+if ((columnExists.rows?.length ?? 0) === 0) return [];
+```
+
+Read the failure path. The source column is missing, so the migration reads nothing,
+reports `Backfilled 0 photo(s)` as a **success**, and the runner writes its ledger row.
+The migration is now permanently marked applied without having migrated anything, and
+nobody will look at it again. Any transient failure to read `information_schema` lands in
+exactly the same place. That is strictly worse than crashing: a throw rolls the
+transaction back and leaves the migration **pending**, so it gets retried.
+
+Instead, verify the target state — `UPDATE ... WHERE <exact old value>`, or `findOne`
+plus a counter — so a zero result is a fact about the data, not about the schema. Then
+investigate that zero rather than reporting it as success.
+[`0042-reattribute-imported-events.ts`](../../packages/seed/src/data-migrations/0042-reattribute-imported-events.ts)
+is the model: it separates "already applied" (returns success) from "ambiguous" (throws).
+
+`scripts/check-seed-migration-schema-probe.sh` enforces this in CI. It has no in-file
+opt-out comment on purpose — a marker anyone can paste is how the pattern spread from
+`0034` to `0037` in the first place. The only exemptions are those two files, frozen by
+name in the script: both already ran against production and are ledgered, so rewriting
+them would change an applied migration's checksum for no runtime benefit. The vector the
+guard actually closes is the **third** copy.
 
 ---
 
@@ -532,3 +577,4 @@ apply.
 - [docs/deployment/first-time-setup.md](../deployment/first-time-setup.md#phase-4-database-initialization) — production day-1 bootstrap (Phase 4)
 - `packages/seed/src/data-migrations/types.ts` — the full `SeedMigrationCtx`/`SeedMigrationModule` contract
 - `scripts/check-seed-dual-write.sh` — CI guard implementation and design notes
+- `scripts/check-seed-migration-schema-probe.sh` — CI guard banning schema-existence probes (HOS-513)

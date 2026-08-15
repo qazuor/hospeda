@@ -57,6 +57,7 @@ import { getQZPayBilling } from '../../../middlewares/billing';
 import { idempotencyKeyMiddleware } from '../../../middlewares/idempotency-key';
 import { mapSubscriptionCheckoutErrorToHttp } from '../../../services/billing/subscription-checkout-error-http';
 import { BillingCustomerSyncService } from '../../../services/billing-customer-sync';
+import { loadCommerceListingMedia } from '../../../services/commerce-listing-media';
 import {
     CommercePlanNotConfiguredError,
     resolveCommercePlanSlug
@@ -107,11 +108,16 @@ const LIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due']);
 
 /**
  * Subset of the raw `gastronomies`/`experiences` row this route reads —
- * ownership (`ownerId`) + everything `resolveListingCompleteness` needs
+ * ownership (`ownerId`) + the fields `resolveListingCompleteness` needs
  * ({@link CommerceListingCompletenessListing}). Read directly via the
  * `@repo/db` model (not through `GastronomyService.getById`'s view-tier
  * gating) so a non-owner gets a uniform 403 regardless of the listing's
  * current lifecycle/visibility (AC-2).
+ *
+ * `media` is the ONE completeness field this row cannot supply: HOS-372 dropped
+ * the `media` JSONB column, so it is loaded separately via
+ * {@link loadCommerceListingMedia} and merged in before the gate runs (H-154 /
+ * HOS-494). Do not "restore" it here — the column does not exist.
  */
 interface RawCommerceListingRow extends CommerceListingCompletenessListing {
     readonly id: string;
@@ -187,7 +193,17 @@ export async function handleCommerceStartSubscription(
 
     // ── Completeness gate (G-3, AC-5) — 422 with `missing`, never a 5xx
     // and never silently ignored, before any MercadoPago call. ─────────────
-    const completeness = resolveListingCompleteness({ entityType, listing });
+    //
+    // `media` is composed from the relational media tables rather than read off
+    // `listing`: HOS-372 dropped the `media` JSONB column, so the raw row this
+    // route deliberately loads (see the ownership note above) has no `media`
+    // key at all. Reading it there made this gate reject EVERY listing with
+    // `missing: ['media.featuredImage']` — H-154 / HOS-494.
+    const media = await loadCommerceListingMedia({ entityType, entityId });
+    const completeness = resolveListingCompleteness({
+        entityType,
+        listing: { ...listing, media }
+    });
     if (!completeness.complete) {
         apiLogger.info(
             { entityType, entityId, ownerId: actor.id, missing: completeness.missing },

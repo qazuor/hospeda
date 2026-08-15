@@ -6,7 +6,9 @@ from code, and for the shared-zone constraint every rule must respect.
 
 Dashboard path: **hospeda.com.ar → Caching → Cache Rules**.
 
-Current state: **2 active rules**.
+Current state: **4 active rules** — the two staging rules below, plus a
+production twin of each, activated on 2026-08-12 once production started
+emitting `Cache-Tag` (see [Production twins](#production-twins) at the end).
 
 ---
 
@@ -138,6 +140,11 @@ status-code TTLs, cache deception armor, cache by device type) is left unset.
 Production is behind on the branch that emits `Cache-Tag`; caching HTML there
 would produce objects nothing can purge selectively, which is strictly worse
 than not caching at all. Lift this only after staging is promoted.
+
+> **Resolved 2026-08-12.** The August batch shipped, production now emits
+> `Cache-Tag`, and this rule has a production twin rather than a widened host
+> clause — see [Production twins](#production-twins). Two separate rules, so
+> production can be switched off without touching staging.
 
 **`http.request.method in {"GET" "PURGE"}`** — a `GET`-only expression does not
 match during a purge, so single-file purges report success and evict nothing.
@@ -662,3 +669,70 @@ One caveat worth knowing: the request issued seconds after deploying the rule
 returned `DYNAMIC` while it was still propagating, then settled into `HIT`. A
 single `DYNAMIC` immediately after a change is propagation, not a broken
 expression — re-probe before concluding anything.
+
+---
+
+## Production twins
+
+Activated **2026-08-12**, after the August batch shipped to `main` and the
+production containers were redeployed. Both are byte-for-byte duplicates of the
+staging rules above with a single edit — `http.host eq "hospeda.com.ar"` — made
+through the dashboard's own **Duplicate rule**, so the 2,419-character catalog
+expression was never retyped.
+
+| Order | Rule | Rule id |
+|---|---|---|
+| 3 | `HOS-369 - prod /_image/ endpoint` | `see dashboard` |
+| 4 | `HOS-369 W1-2 - prod catalog + subscriber` | `see dashboard` |
+
+### Why they could be lifted now
+
+The staging rules carried the note *"Production is behind on the branch that
+emits `Cache-Tag`; caching HTML there would produce objects nothing can purge
+selectively. Lift this only after staging is promoted."* That precondition was
+verified by measurement rather than assumed, and the check is worth repeating
+before touching these rules again: **Cloudflare strips `Cache-Tag` from the
+response before it reaches the client**, so probing from outside proves nothing.
+Ask the origin directly, from the VPS, bypassing the edge:
+
+```bash
+curl -sSk --resolve hospeda.com.ar:443:127.0.0.1 -o /dev/null -D - \
+  https://hospeda.com.ar/es/alojamientos/ | grep -i cache-tag
+# cache-tag: prod:all,prod:list-accom
+```
+
+Staging answers `preview:all,preview:list-accom` on the same probe. The
+namespaces are disjoint, which is what keeps a production purge from evicting
+staging objects on the shared zone.
+
+### Verified after activation (2026-08-12)
+
+| Check | Result |
+|---|---|
+| Home `/es/`, `/en/`, `/pt/` | `MISS` → `HIT` |
+| Catalog: alojamientos, destinos, eventos, publicaciones, gastronomía, experiencias | `MISS` → `HIT` |
+| Accommodation detail page | `MISS` → `HIT` |
+| Copy-only (`/es/legal/terminos/`, `/es/colaborar/editores/`) | `MISS` → `HIT` |
+| Listing **with** a query filter (`?types=HOTEL`) | `DYNAMIC`, both probes |
+| Request carrying `better-auth.session_token` | `DYNAMIC` |
+| Request carrying `__Secure-better-auth.session_token` | `DYNAMIC` |
+| `/_image/` | `MISS` → `HIT`, `content-type: image/avif` |
+| `/_image/` at `w=800` and `w=1200` | `MISS` each, while `w=480` stayed `HIT` |
+| Effective TTL on `/es/` | `s-maxage=3600`, `age` climbing, **no injected `max-age`** |
+
+That last row is the one to re-check after any edit: an injected
+`max-age=14400` would mean Browser TTL slipped off *Respect origin* and
+returning visitors are holding HTML no purge can reach.
+
+### Documentation drift found while duplicating
+
+The `/_image/` section above documents **Edge TTL = `respect_origin`**. The
+live staging rule is actually **`bypass_by_default`** ("use cache-control if
+present, bypass if not"). The production twin replicates the **live** rule, not
+the documented one — what is deployed and measured wins over what was written
+down. For `/_image/` the two behave identically in practice, because the origin
+always sends `cache-control: public, max-age=31536000, immutable` on that
+endpoint; the difference only appears if the origin ever stops doing so, where
+`bypass_by_default` is the safer of the two. The table above has been left as
+written so the drift stays visible rather than being quietly papered over —
+correct it deliberately, after re-reading the live rule.
