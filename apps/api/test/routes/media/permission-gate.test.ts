@@ -182,8 +182,20 @@ describe('Admin media routes — route-level permission gate (smoke)', () => {
             );
             // Handler-level outcomes apply (entity lookup fails, provider absent).
             // Critically, NOT 403 from the route gate.
-            expect(res.status).not.toBe(403);
-            expect([400, 404, 422, 503]).toContain(res.status);
+            // TEMP-DIAG(HOS-474): this assertion fails on CI and passes locally
+            // — including the whole shard, single-worker and without .env.local.
+            // The message dumps the state CI has and local does not. Remove once
+            // the cause is identified.
+            const diagBody = await res.clone().text();
+            const diag = [
+                `status=${res.status}`,
+                `NODE_ENV=${process.env.NODE_ENV}`,
+                `DEPLOY_ENV=${process.env.HOSPEDA_DEPLOY_ENV}`,
+                `MOCK_ACTOR=${process.env.HOSPEDA_ALLOW_MOCK_ACTOR}`,
+                `body=${diagBody.slice(0, 300)}`
+            ].join(' | ');
+            expect(res.status, diag).not.toBe(403);
+            expect([400, 404, 422, 503], diag).toContain(res.status);
         });
     });
 });
