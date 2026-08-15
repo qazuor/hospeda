@@ -547,7 +547,9 @@
                 "hostDashboardDesc": "Summary of your activity as a host",
                 "promotions": "My Promotions",
                 "recommendations": "Suggestions",
-                "recommendationsDesc": "Accommodations picked for you"
+                "recommendationsDesc": "Accommodations picked for you",
+                "myCommerceDesc": "Manage your listing, photos and subscription",
+                "myMessagesCommerceDesc": "Enquiries you receive about your business"
             },
             "stats": {
                 "favorites": "My Favorites",

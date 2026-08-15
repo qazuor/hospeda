@@ -17,7 +17,7 @@
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
+import { hasAccommodationsNavAccess, hasCommerceNavAccess } from '@/lib/nav-gating';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountStatsGrid from '@/components/account/AccountStatsGrid.astro';
 import AccountSectionCards from '@/components/account/AccountSectionCards.astro';
@@ -28,6 +28,7 @@ import {
     ChatIcon,
     NewsletterIcon,
     BuildingIcon,
+    BriefcaseIcon,
     DashboardIcon,
 } from '@repo/icons';
 
@@ -53,6 +54,17 @@ const dashboardLabel = t('account.pages.dashboard.dashboardLabel', 'Panel de con
 // Determine host-tier access for conditional sections (HOS-296: over the
 // whole role SET, via the single shared gating predicate).
 const isHost = hasAccommodationsNavAccess({ roles: user.roles });
+
+// H-151: the same treatment for the commerce owner. The dashboard already
+// adapted between tourist and host; the merchant was the case it had never
+// heard of, so someone whose listing sits in DRAFT saw a page that never
+// mentioned their business — while the sidebar beside it showed "Mi comercio".
+// This is the first screen they land on, and the one place "your listing is not
+// public yet" can actually reach them.
+//
+// A SEPARATE condition, not an else: an account can hold both roles (HOS-296),
+// and a host who also runs a restaurant must keep both sets of entries.
+const isCommerceOwner = hasCommerceNavAccess({ roles: user.roles });
 
 // Generate user initials (up to 2 characters) for the avatar placeholder.
 const initials = user.name
@@ -91,6 +103,21 @@ const navItems = [
               },
           ]
         : []),
+    ...(isCommerceOwner
+        ? [
+              {
+                  // Same label key and icon as the sidebar's commerce entry, so
+                  // the two surfaces cannot drift apart in wording.
+                  label: t('commerce.owner.nav', 'Mi comercio'),
+                  href: buildUrl({ locale, path: 'mi-cuenta/comercio' }),
+                  description: t(
+                      'account.pages.dashboard.nav.myCommerceDesc',
+                      'Gestioná tu ficha, tus fotos y tu suscripción'
+                  ),
+                  Icon: BriefcaseIcon,
+              },
+          ]
+        : []),
     {
         label: t('account.pages.dashboard.nav.editProfile', 'Editar perfil'),
         href: buildUrl({ locale, path: 'mi-cuenta/editar' }),
@@ -103,10 +130,15 @@ const navItems = [
     {
         label: t('account.pages.dashboard.nav.myMessages', 'Mis consultas'),
         href: buildUrl({ locale, path: 'mi-cuenta/consultas' }),
-        description: t(
-            'account.pages.dashboard.nav.myMessagesDesc',
-            'Conversaciones con anfitriones'
-        ),
+        // H-151: the tourist-facing wording describes the OTHER party. A
+        // merchant is the one who receives enquiries, so "conversaciones con
+        // anfitriones" reads as someone else's inbox on their own dashboard.
+        description: isCommerceOwner
+            ? t(
+                  'account.pages.dashboard.nav.myMessagesCommerceDesc',
+                  'Consultas que recibís sobre tu comercio'
+              )
+            : t('account.pages.dashboard.nav.myMessagesDesc', 'Conversaciones con anfitriones'),
         Icon: ChatIcon,
     },
     {
