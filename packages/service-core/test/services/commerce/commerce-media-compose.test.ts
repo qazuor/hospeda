@@ -160,3 +160,89 @@ describe('composeCommerceMedia (HOS-372)', () => {
         expect(rows.map((r) => r.url)).toEqual(snapshot);
     });
 });
+
+/**
+ * Regression suite for H-23 — media awaiting moderation was served publicly.
+ *
+ * Measured in production on 2026-08-15: `GET /public/posts/slug/…` returned five
+ * photos with `moderationState: "PENDING"` and the SSR page rendered them. The
+ * composer partitioned rows by `state` (visible / archived) and by `isFeatured`,
+ * and never looked at `moderationState` at all — so the platform's verdict on a
+ * photo had no effect on whether the photo was published.
+ *
+ * The gate lives HERE, unconditionally, rather than at each read path, because
+ * this is the single composition implementation behind post, event, gastronomy
+ * and experience payloads. A per-call-site flag would be fail-open: the next
+ * read path added would forget it and the photo would ship. Editors are
+ * unaffected — media management reads raw rows through the dedicated
+ * `getMedia` endpoints, not through a composed entity.
+ */
+describe('composeCommerceMedia moderation gate (H-23)', () => {
+    it('excludes a PENDING row from the gallery', () => {
+        const rows = [
+            makeRow({ url: 'https://cdn.example.com/ok.jpg', sortOrder: 0 }),
+            makeRow({
+                url: 'https://cdn.example.com/pending.jpg',
+                sortOrder: 1,
+                moderationState: ModerationStatusEnum.PENDING
+            })
+        ];
+
+        const result = composeCommerceMedia({ rows });
+
+        // Exact comparison: asserting only that the approved photo is present
+        // would still pass with the pending one sitting next to it.
+        expect(result.gallery?.map((i) => i.url)).toEqual(['https://cdn.example.com/ok.jpg']);
+    });
+
+    it('excludes a REJECTED row from the gallery', () => {
+        const rows = [
+            makeRow({
+                url: 'https://cdn.example.com/rejected.jpg',
+                moderationState: ModerationStatusEnum.REJECTED
+            })
+        ];
+
+        expect(composeCommerceMedia({ rows })).toEqual({});
+    });
+
+    it('drops featuredImage when the featured row is not approved', () => {
+        // This is the production case: the affected event's cover image was a
+        // PENDING row, so gating it must leave the entity with NO featured
+        // image rather than promoting an unapproved one.
+        const rows = [
+            makeRow({
+                url: 'https://cdn.example.com/pending-cover.jpg',
+                isFeatured: true,
+                moderationState: ModerationStatusEnum.PENDING
+            })
+        ];
+
+        const result = composeCommerceMedia({ rows });
+
+        expect(result.featuredImage).toBeUndefined();
+        expect(result.gallery).toBeUndefined();
+    });
+
+    it('keeps videos, which carry no moderation state of their own', () => {
+        const videos = [{ url: 'https://youtube.com/watch?v=abc' }] as unknown as Video[];
+        const rows = [makeRow({ moderationState: ModerationStatusEnum.PENDING })];
+
+        const result = composeCommerceMedia({ rows, videos });
+
+        expect(result.videos).toEqual(videos);
+        expect(result.gallery).toBeUndefined();
+    });
+
+    it('excludes a non-approved row from archivedGallery too', () => {
+        const rows = [
+            makeRow({
+                state: 'archived',
+                moderationState: ModerationStatusEnum.PENDING,
+                url: 'https://cdn.example.com/archived-pending.jpg'
+            })
+        ];
+
+        expect(composeCommerceMedia({ rows }).archivedGallery).toBeUndefined();
+    });
+});

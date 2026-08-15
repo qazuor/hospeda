@@ -33,6 +33,7 @@
  */
 
 import type { BaseCommerceMedia, Image, Media, Video } from '@repo/schemas';
+import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Input type
@@ -119,8 +120,21 @@ function bySortOrder(a: BaseCommerceMedia, b: BaseCommerceMedia): number {
  * ```
  */
 export function composeCommerceMedia({ rows, videos }: ComposeCommerceMediaInput): Media {
-    const visible = rows.filter((r) => r.state === 'visible');
-    const archived = rows.filter((r) => r.state === 'archived');
+    // H-23: the platform's verdict on a photo gates whether the photo is
+    // composed at all. Before this, `moderationState` was carried into the
+    // output but never consulted, so a photo nobody had approved was served to
+    // the public exactly like an approved one.
+    //
+    // The gate is unconditional here rather than a per-caller option because
+    // this is the single composition implementation behind post, event,
+    // gastronomy and experience payloads: an opt-in flag would be fail-open,
+    // and the next read path added would ship the photo. Media MANAGEMENT is
+    // unaffected — it reads raw rows through the dedicated `getMedia`
+    // endpoints, never through a composed entity.
+    const approved = rows.filter((r) => r.moderationState === ModerationStatusEnum.APPROVED);
+
+    const visible = approved.filter((r) => r.state === 'visible');
+    const archived = approved.filter((r) => r.state === 'archived');
 
     const featuredRow = visible.find((r) => r.isFeatured);
     const galleryRows = visible
