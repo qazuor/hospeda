@@ -12,6 +12,7 @@
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { billingAddonPurchases, billingSubscriptions, withTransaction } from '@repo/db';
 import { and, eq, isNull } from 'drizzle-orm';
+import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger';
 import { sanitizeEmailForMercadoPago } from '../utils/mp-email';
 
@@ -354,6 +355,22 @@ export class BillingCustomerSyncService {
 
             // Remove from cache
             this.cache.delete(userId);
+
+            // INV-1: the cascade above soft-deleted every subscription of this
+            // customer, and qzpay's `findByCustomerId` filters on
+            // `deleted_at IS NULL` — so `loadEntitlements` would now resolve to the
+            // role defaults. Account deletion produces no MercadoPago webhook, so
+            // this is the only place that can invalidate the entitlement cache;
+            // without it the deleted customer's old plan keeps being served for the
+            // full 5-minute TTL (same shape as the comp-grant gap, HOS-453).
+            //
+            // Runs even when the cascade transaction above failed: that failure is
+            // deliberately swallowed, and an invalidation is never harmful — the
+            // next read simply repopulates from whatever the database now says.
+            //
+            // Keyed by the BILLING CUSTOMER id, not `userId`: the entitlement cache
+            // is keyed by `billingCustomerId`, and the two identifiers are distinct.
+            clearEntitlementCache(existingCustomer.id);
 
             apiLogger.info(
                 {

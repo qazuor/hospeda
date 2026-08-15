@@ -35,6 +35,11 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+const clearEntitlementCacheMock = vi.fn();
+vi.mock('../../src/middlewares/entitlement', () => ({
+    clearEntitlementCache: (...args: unknown[]) => clearEntitlementCacheMock(...args)
+}));
+
 // ─── Imports — after mocks ────────────────────────────────────────────────────
 
 import type { QZPayBilling, QZPayCustomer } from '@qazuor/qzpay-core';
@@ -439,6 +444,53 @@ describe('BillingCustomerSyncService', () => {
 
             // Assert
             expect(mockBilling.customers!.delete).not.toHaveBeenCalled();
+        });
+
+        // ─── INV-1 ───────────────────────────────────────────────────────────────
+        //
+        // The cascade above soft-deletes every subscription of this customer, and
+        // qzpay's `findByCustomerId` filters on `deleted_at IS NULL` — so after this
+        // runs, `loadEntitlements` would resolve to the role defaults. Without an
+        // explicit invalidation the 5-minute entitlement cache keeps serving the
+        // deleted customer's old plan, exactly as the comp-grant path did (HOS-453).
+        // There is no MercadoPago webhook on account deletion, so nothing else can
+        // clear it.
+
+        it('INV-1: clears the entitlement cache for the deleted customer', async () => {
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
+
+            // Act
+            await service.handleUserDeletion({ userId: 'user_123' });
+
+            // Assert — keyed by the BILLING CUSTOMER id, which is what the
+            // entitlement cache is keyed by, never the Better Auth user id.
+            expect(clearEntitlementCacheMock).toHaveBeenCalledWith('cus_123');
+        });
+
+        it('INV-1: does not clear the entitlement cache when there is no customer', async () => {
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(null);
+
+            // Act
+            await service.handleUserDeletion({ userId: 'user_123' });
+
+            // Assert — nothing was deleted, so there is nothing to invalidate.
+            expect(clearEntitlementCacheMock).not.toHaveBeenCalled();
+        });
+
+        it('INV-1: still clears the cache when the cascade transaction fails', async () => {
+            // Arrange — the qzpay customer delete succeeds but the local cascade
+            // blows up. The service deliberately swallows that error, so the
+            // invalidation must not be collateral damage of the failure path.
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
+            vi.mocked(withTransaction).mockRejectedValueOnce(new Error('cascade exploded'));
+
+            // Act
+            await service.handleUserDeletion({ userId: 'user_123' });
+
+            // Assert
+            expect(clearEntitlementCacheMock).toHaveBeenCalledWith('cus_123');
         });
 
         // ─── T-044 + T-045 ───────────────────────────────────────────────────────
