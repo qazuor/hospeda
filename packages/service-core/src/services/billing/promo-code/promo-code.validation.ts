@@ -16,13 +16,15 @@
 
 import type { QueryContext } from '@repo/db';
 import {
+    and,
+    billingCustomers,
     billingPromoCodes,
     billingPromoCodeUsage,
     billingSubscriptions,
     count,
     eq,
     getDb,
-    sql
+    inArray
 } from '@repo/db';
 import type { EffectPreview } from '@repo/schemas';
 import { PromoEffectKindEnum } from '@repo/schemas';
@@ -324,10 +326,24 @@ function buildEffectPreview(promoData: PromoCode, amount?: number): EffectPrevie
  * that a user who previously subscribed to plan A is still considered "new" when
  * purchasing plan B for the first time.
  *
- * When `planId` is undefined, falls back to checking whether the user has ANY active
+ * When `planId` is undefined, falls back to checking whether the user has ANY
  * subscription (original behaviour, preserved for backward compatibility).
  *
- * @param params - userId, optional planId to scope the check, and optional query context
+ * **Identifier mapping (HOS-450 / smoke finding H-74).** `userId` is the Better
+ * Auth user id (`actor.id`), while `billing_subscriptions.customer_id` references
+ * `billing_customers.id`. Comparing them directly — as this function used to —
+ * never matched a row, so the restriction silently let every existing customer
+ * redeem a `new_customers_only` code. The user is mapped to its billing
+ * customer(s) through `billing_customers.external_id`, the canonical link used
+ * across the codebase (see `apps/api/src/middlewares/billing-customer.ts` and
+ * `apps/api/src/utils/customer-lookup.ts`).
+ *
+ * The mapping is expressed as a subquery rather than a lookup-then-compare so
+ * that a user owning more than one billing customer row (there is no UNIQUE
+ * constraint on `external_id`) is fully covered by a single query.
+ *
+ * @param params - userId (Better Auth user id), optional planId to scope the
+ *   check, and optional query context carrying a transaction client
  * @returns true if the user already has a subscription matching the criteria
  */
 async function checkUserHasExistingPlanSubscription({
@@ -342,10 +358,18 @@ async function checkUserHasExistingPlanSubscription({
     try {
         const db = ctx?.tx ?? getDb();
 
+        // Map the Better Auth user id to its billing customer id(s).
+        const customerMatches = inArray(
+            billingSubscriptions.customerId,
+            db
+                .select({ id: billingCustomers.id })
+                .from(billingCustomers)
+                .where(eq(billingCustomers.externalId, userId))
+        );
+
         const conditions = planId
-            ? sql`${billingSubscriptions.customerId} = ${userId}
-                  AND ${billingSubscriptions.planId} = ${planId}`
-            : eq(billingSubscriptions.customerId, userId);
+            ? and(customerMatches, eq(billingSubscriptions.planId, planId))
+            : customerMatches;
 
         const [row] = await db
             .select({ id: billingSubscriptions.id })
@@ -369,7 +393,19 @@ async function checkUserHasExistingPlanSubscription({
  * - `maxPerCustomer` is null/0 (no limit configured)
  * - The DB query fails (fail-open to avoid blocking legitimate checkouts)
  *
- * @param params - promoCodeId, userId, and optional query context
+ * **Identifier mapping (HOS-450 / smoke finding H-74).** Same defect as
+ * {@link checkUserHasExistingPlanSubscription}: `billing_promo_code_usage.customer_id`
+ * stores a `billing_customers.id` (that is what the redemption path writes — see
+ * `applyPromoCode` and `promo-code.redemption.ts`), while `userId` here is the
+ * Better Auth user id. Comparing them directly counted zero redemptions for
+ * everyone, so this pre-check never blocked anyone. It read as working only
+ * because `redeemAndRecordInTx` re-validates the same cap inside its
+ * `SELECT FOR UPDATE`; that second layer is authoritative, but in the monthly
+ * discount flow the redemption is recorded later as a best-effort phase, so the
+ * cap arrived too late to inform the buyer.
+ *
+ * @param params - promoCodeId, userId (Better Auth user id), and optional query
+ *   context carrying a transaction client
  * @returns true if the user has reached or exceeded their per-user limit
  */
 async function checkUserRedemptionLimitExceeded({
@@ -401,8 +437,18 @@ async function checkUserRedemptionLimitExceeded({
             .select({ total: count() })
             .from(billingPromoCodeUsage)
             .where(
-                sql`${billingPromoCodeUsage.promoCodeId} = ${promoCodeId}
-                    AND ${billingPromoCodeUsage.customerId} = ${userId}`
+                and(
+                    eq(billingPromoCodeUsage.promoCodeId, promoCodeId),
+                    // Map the Better Auth user id to its billing customer id(s),
+                    // for the same reason as the newCustomersOnly guard above.
+                    inArray(
+                        billingPromoCodeUsage.customerId,
+                        db
+                            .select({ id: billingCustomers.id })
+                            .from(billingCustomers)
+                            .where(eq(billingCustomers.externalId, userId))
+                    )
+                )
             );
 
         const customerUseCount = usageRow?.total ?? 0;

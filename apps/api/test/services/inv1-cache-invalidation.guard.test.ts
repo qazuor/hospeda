@@ -76,8 +76,8 @@
  * @module test/services/inv1-cache-invalidation.guard
  */
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readdirSync, readFileSync } from 'node:fs';
+import { extname, join, relative, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 /**
@@ -266,6 +266,260 @@ describe('INV-1 transversal guard: every lifecycle handler calls clearEntitlemen
                 () => readSrc(site.file),
                 `File referenced in LIFECYCLE_SITES does not exist or is unreadable: ${site.file}`
             ).not.toThrow();
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-453 / H-91 — auto-discovery guard
+// ---------------------------------------------------------------------------
+//
+// H-91 (SPEC-262 / HOS-453) found that `subscription-comp-create.service.ts`
+// writes a new row to `billing_subscriptions` (a comp grant) but never called
+// `clearEntitlementCache`, and the guard above — driven entirely by the
+// hand-maintained `LIFECYCLE_SITES` table — never caught it, because nobody
+// added an entry for it. A guard that only checks what someone remembered to
+// list is not a guard against forgetting to list something.
+//
+// The block below closes that hole: instead of trusting a curated list, it
+// WALKS the source tree and finds every file that actually writes to
+// `billing_subscriptions` (`.insert(billingSubscriptions)` /
+// `.update(billingSubscriptions)`), then requires each one to have an entry
+// in `BILLING_SUBSCRIPTIONS_WRITERS` below. A new writer that nobody
+// reviewed and registered — exactly what happened with the comp service —
+// now fails CI on its own, without depending on anyone remembering to touch
+// this file.
+//
+// Each registry entry also records whether that writer legitimately needs to
+// call `clearEntitlementCache` (`requiresCacheClear`) and WHY. A `true` entry
+// is enforced the same way as the LIFECYCLE_SITES scan above (source must
+// contain the string). A `false` entry still forces a human-reviewed,
+// non-empty justification — it can never be used to silently wave a writer
+// through.
+
+/** Absolute path to the API source root (test/.. -> ../src). */
+const SRC_WALK_ROOT = resolve(__dirname, '../../src');
+
+/** Matches a direct Drizzle insert/update call targeting `billingSubscriptions`. */
+const BILLING_SUBSCRIPTIONS_WRITE_PATTERN = /\.(?:insert|update)\(billingSubscriptions\)/;
+
+/**
+ * Recursively lists every non-test, non-declaration `.ts` file under `dir`.
+ *
+ * Kept dependency-free (no glob package) — Node's own `readdirSync` is enough
+ * for a bounded, synchronous walk of `apps/api/src`.
+ */
+function listSourceFiles(dir: string): string[] {
+    const out: string[] = [];
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) {
+            out.push(...listSourceFiles(full));
+            continue;
+        }
+        if (
+            entry.isFile() &&
+            extname(entry.name) === '.ts' &&
+            !entry.name.endsWith('.test.ts') &&
+            !entry.name.endsWith('.d.ts')
+        ) {
+            out.push(full);
+        }
+    }
+    return out;
+}
+
+/**
+ * Scans `apps/api/src` for every file that directly writes to the
+ * `billing_subscriptions` table, returning paths relative to `SRC_WALK_ROOT`
+ * (forward-slash, matching the `file` field used elsewhere in this module).
+ */
+function discoverBillingSubscriptionsWriters(): string[] {
+    const writers: string[] = [];
+    for (const absPath of listSourceFiles(SRC_WALK_ROOT)) {
+        const source = readFileSync(absPath, 'utf-8');
+        if (BILLING_SUBSCRIPTIONS_WRITE_PATTERN.test(source)) {
+            writers.push(relative(SRC_WALK_ROOT, absPath).split('\\').join('/'));
+        }
+    }
+    return writers.sort();
+}
+
+/**
+ * A file that directly writes to `billing_subscriptions`, and the reviewed
+ * verdict on whether that write requires `clearEntitlementCache`.
+ */
+interface BillingSubscriptionsWriterEntry {
+    /** Path relative to `apps/api/src`. */
+    readonly file: string;
+    /** Whether this write path must call `clearEntitlementCache`. */
+    readonly requiresCacheClear: boolean;
+    /**
+     * Why. For `requiresCacheClear: true`, what lifecycle event this is. For
+     * `false`, why this particular write does not change accommodation
+     * entitlements (e.g. the row is not active/entitled yet, the mutated
+     * field is not entitlement-bearing, or the subscription is outside the
+     * `accommodation` product domain that `loadEntitlements` reads).
+     */
+    readonly reason: string;
+}
+
+const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] = [
+    {
+        file: 'cron/jobs/abandoned-pending-subs.job.ts',
+        requiresCacheClear: false,
+        reason: 'Marks a PENDING/never-activated subscription as abandoned. The row never granted entitlements, so there is nothing cached to invalidate.'
+    },
+    {
+        file: 'cron/jobs/finalize-cancelled-subs.ts',
+        requiresCacheClear: true,
+        reason: 'Finalizes a cancellation — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'
+    },
+    {
+        file: 'routes/webhooks/mercadopago/payment-logic.ts',
+        requiresCacheClear: true,
+        reason: 'Activation/upgrade via MP payment webhook — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'
+    },
+    {
+        file: 'routes/webhooks/mercadopago/subscription-logic.ts',
+        requiresCacheClear: true,
+        reason: 'Plan change/cancel via MP subscription webhook — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'
+    },
+    {
+        file: 'routes/webhooks/mercadopago/subscription-payment-handler.ts',
+        requiresCacheClear: true,
+        reason: 'MP payment-handler webhook path — already calls clearEntitlementCache. This is the path that gives a paid checkout its fast (~1 min) entitlement update, per the HOS-453 measurement.'
+    },
+    {
+        file: 'services/addon.user-addons.ts',
+        requiresCacheClear: false,
+        reason: 'Sets an `addonCancellationIncomplete` audit flag in subscription metadata for reconciliation crons. Not an entitlement-bearing field (plan/status unchanged).'
+    },
+    {
+        file: 'services/billing-customer-sync.ts',
+        requiresCacheClear: false,
+        reason: 'Soft-deletes all subscriptions as part of a customer cascade-delete (account deletion). Flagged for a follow-up audit outside HOS-453 scope rather than assumed safe.'
+    },
+    {
+        file: 'services/billing/link-preapproval.service.ts',
+        requiresCacheClear: false,
+        reason: 'Stamps promo/discount bookkeeping columns and CAS-links a preapproval while the row is still pending (not yet active/entitled). The subscription webhook handler that activates the row (subscription-logic.ts) already calls clearEntitlementCache.'
+    },
+    {
+        file: 'services/billing/pending-provider-subscription-create.ts',
+        requiresCacheClear: false,
+        reason: 'Creates the row in PENDING_PROVIDER status (mirrors the comp-create insert shape) before any MP authorization. No entitlement is granted until the webhook activates it.'
+    },
+    {
+        file: 'services/plan-disable-lifecycle.service.ts',
+        requiresCacheClear: true,
+        reason: 'Disables a plan — already calls clearEntitlementCache.'
+    },
+    {
+        file: 'services/promo-discount-apply.service.ts',
+        requiresCacheClear: false,
+        reason: 'Seeds/corrects `promoEffectRemainingCycles`, a pricing counter — not an entitlement-bearing field (plan/status unchanged).'
+    },
+    {
+        file: 'services/refund-lifecycle.service.ts',
+        requiresCacheClear: true,
+        reason: 'Full refund downgrade/cancel — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'
+    },
+    {
+        file: 'services/subscription-cancel.service.ts',
+        requiresCacheClear: true,
+        reason: 'Subscription cancel — already calls clearEntitlementCache.'
+    },
+    {
+        file: 'services/subscription-checkout.service.ts',
+        requiresCacheClear: false,
+        reason: "Stamps product_domain='commerce'/'partner' on freshly-created non-accommodation subscriptions. loadEntitlements() filters strictly to product_domain='accommodation' (SPEC-239), so these writes never affect the accommodation entitlement cache."
+    },
+    {
+        file: 'services/subscription-comp-create.service.ts',
+        requiresCacheClear: true,
+        reason: 'HOS-453 / H-91 fix: a comp grant has no MercadoPago preapproval and therefore no webhook, so this is the ONLY place that can clear the cache for a comp subscription. Fixed by this change.'
+    },
+    {
+        file: 'services/subscription-uncancel.service.ts',
+        requiresCacheClear: true,
+        reason: 'Subscription un-cancel — already calls clearEntitlementCache.'
+    },
+    {
+        file: 'services/trial.service.ts',
+        requiresCacheClear: true,
+        reason: 'Trial start/expire/activation — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'
+    }
+] as const;
+
+/**
+ * Below this count, treat the auto-discovery scan itself as broken (e.g. a
+ * changed import style the regex no longer matches, or a wrong root path)
+ * rather than as "the codebase shrank" — a scan that silently returns an
+ * empty or truncated list must FAIL, not be read as a pass. The real count
+ * at the time this guard was written is 17; this floor leaves headroom for
+ * refactors while still catching a scan that stops finding anything.
+ */
+const MIN_EXPECTED_WRITERS = 12;
+
+describe('HOS-453 auto-discovery guard: every billing_subscriptions writer is reviewed', () => {
+    const discovered = discoverBillingSubscriptionsWriters();
+    const registryByFile = new Map(BILLING_SUBSCRIPTIONS_WRITERS.map((e) => [e.file, e]));
+
+    it('the scan itself is not broken (fail-closed against a silent empty/truncated result)', () => {
+        expect(
+            discovered.length,
+            `discoverBillingSubscriptionsWriters() found only ${discovered.length} writer(s) ` +
+                `(expected at least ${MIN_EXPECTED_WRITERS}). Either the codebase genuinely lost ` +
+                'writers (update MIN_EXPECTED_WRITERS down deliberately) or the scan regex/root ' +
+                'path is broken — an unexpectedly small result must FAIL this guard, never pass ' +
+                'silently as "nothing to check".'
+        ).toBeGreaterThanOrEqual(MIN_EXPECTED_WRITERS);
+    });
+
+    it.each(
+        discovered
+    )('discovered billing_subscriptions writer is inventoried: %s', (file: string) => {
+        expect(
+            registryByFile.has(file),
+            `A file that writes to billing_subscriptions was found and is NOT inventoried: ${file}.\n` +
+                'This is exactly the H-91/HOS-453 failure mode: a new (or newly-discovered) writer ' +
+                'went live without anyone deciding whether it needs clearEntitlementCache. Add an ' +
+                'entry to BILLING_SUBSCRIPTIONS_WRITERS in this file — requiresCacheClear:true if it ' +
+                'changes plan/status for an accommodation-domain subscription, false (with a concrete ' +
+                'reason) if it genuinely does not.'
+        ).toBe(true);
+    });
+
+    it.each(
+        BILLING_SUBSCRIPTIONS_WRITERS.filter((e) => e.requiresCacheClear)
+    )('inventoried writer requiring cache clear actually calls clearEntitlementCache: %o', (entry: BillingSubscriptionsWriterEntry) => {
+        const source = readSrc(entry.file);
+        expect(
+            source,
+            `${entry.file} is registered as requiresCacheClear:true (${entry.reason}) but its ` +
+                'source no longer contains "clearEntitlementCache" — the call was removed.'
+        ).toContain('clearEntitlementCache');
+    });
+
+    it('every registry entry has a non-empty, specific reason', () => {
+        for (const entry of BILLING_SUBSCRIPTIONS_WRITERS) {
+            expect(
+                entry.reason.trim().length,
+                `BILLING_SUBSCRIPTIONS_WRITERS entry for ${entry.file} has no reason — every entry ` +
+                    'must document WHY it does or does not need clearEntitlementCache.'
+            ).toBeGreaterThan(10);
+        }
+    });
+
+    it('every registry entry still corresponds to a discovered writer (no stale entries)', () => {
+        const discoveredSet = new Set(discovered);
+        for (const entry of BILLING_SUBSCRIPTIONS_WRITERS) {
+            expect(
+                discoveredSet.has(entry.file),
+                `BILLING_SUBSCRIPTIONS_WRITERS has an entry for ${entry.file}, but the file no longer ` +
+                    'writes to billing_subscriptions (or was removed/renamed). Remove or update the entry.'
+            ).toBe(true);
         }
     });
 });
