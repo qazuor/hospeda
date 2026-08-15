@@ -78,7 +78,7 @@ Optional:
                           Without this flag the command is a DRY RUN:
                           it only discovers the user/customer and prints
                           row counts, nothing is written, on ANY target.
-  --yes                   Skip the confirmation prompt. REJECTED when
+  --yes, -y               Skip the confirmation prompt. REJECTED when
                           combined with --target=prod --execute — prod
                           confirmation can never be skipped.
   --help, -h              Show this help.
