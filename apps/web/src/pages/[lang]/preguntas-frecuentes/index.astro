@@ -12,7 +12,7 @@
 import DefaultLayout from '@/layouts/DefaultLayout.astro';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
-import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
+import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -139,15 +139,20 @@ const categories = [
 /**
  * Interpolation params shared by every answer. Only the keys a given answer
  * actually references are substituted, so passing the whole object everywhere
- * is inert for the rest. `trialDays` comes from the LIVE billing plans (H-98:
- * the minimum `trialDays` among active owner plans with `hasTrial`, falling
- * back to `OWNER_TRIAL_DAYS` on fetch failure — see
- * `resolveGenericOwnerTrialDays`), not the hardcoded constant, so the
- * owner-cost answer can never drift from the real trial length again
- * (HOS-331 fixed the drift once; H-98 fixed the source it could still drift
- * from).
+ * is inert for the rest.
+ *
+ * `trialDays` is deliberately the CONSTANT here, not the live plan value H-98
+ * introduced elsewhere. This page is on the 24 h edge cache
+ * (`cacheClass: 'static'`, W2-2) and the deploy purge is its only
+ * invalidation, precisely because its content depends on nothing but the page
+ * source and `@repo/i18n`. A live read would break that contract and buy
+ * nothing — the response is frozen for up to 24 h either way. The constant
+ * ships with a deploy and the deploy purges, so they stay in step.
+ *
+ * Reading the plan properly from here needs a cache tag a plan change purges;
+ * that is tracked on HOS-528 rather than worked around.
  */
-const faqParams = { trialDays: await resolveGenericOwnerTrialDays() } as const;
+const faqParams = { trialDays: OWNER_TRIAL_DAYS } as const;
 
 const resolvedCategories = categories.map((cat) => ({
 	key: cat.key,

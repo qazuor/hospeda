@@ -47,7 +47,7 @@ import {
 	VIAJEROS_LIST,
 	VIAJEROS_TABLE_ROWS
 } from '@/lib/features-content';
-import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
+import { OWNER_TRIAL_DAYS } from '@repo/billing';
 
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -71,15 +71,24 @@ applyCacheHeaders({
 });
 
 /**
- * Trial length for the hero stat, the hosts banner and the closing CTA. Read
- * from the live billing plans (H-98: the minimum `trialDays` among active
- * owner plans with `hasTrial`, falling back to `OWNER_TRIAL_DAYS` on fetch
- * failure — see `resolveGenericOwnerTrialDays`) instead of the hardcoded
- * constant, so the number cannot disagree with the plans (HOS-331) even when
- * the owner changes a plan's trial length. The banner used to also promise
- * "sin poner la tarjeta", which HOS-171 made false — the trial is card-first.
+ * Trial length for the hero stat, the hosts banner and the closing CTA.
+ *
+ * Deliberately the CONSTANT here, not the live plan value H-98 introduced
+ * elsewhere. This page is on the 24 h edge cache (`cacheClass: 'static'`,
+ * W2-2), and the only thing that invalidates it is the deploy purge — its
+ * whole cache contract rests on the content depending on nothing but the page
+ * source and `@repo/i18n`. Fetching the live number would break that contract
+ * AND buy nothing: the response is frozen for up to 24 h either way, so a
+ * "live" read is an illusion. The constant ships with a deploy and the deploy
+ * purges, so the two stay in step by construction.
+ *
+ * Making this page read the plan properly needs a cache tag a plan change
+ * purges — tracked on HOS-528, not worked around here.
+ *
+ * The banner used to also promise "sin poner la tarjeta", which HOS-171 made
+ * false — the trial is card-first.
  */
-const trialParams = { trialDays: await resolveGenericOwnerTrialDays() } as const;
+const trialParams = { trialDays: OWNER_TRIAL_DAYS } as const;
 
 const siteBase = getSiteUrl();
 const canonicalUrl = new URL(Astro.url.pathname, siteBase).href;
