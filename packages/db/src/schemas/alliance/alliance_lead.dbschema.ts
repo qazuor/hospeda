@@ -53,6 +53,18 @@ export const allianceLeads = pgTable(
         /** Internal admin note about the lead disposition, set via mark-handled. */
         adminNote: text('admin_note'),
         /**
+         * When the ops team was actually told this lead exists (H-62 / H-148).
+         *
+         * NULL means nobody has been alerted yet — which is what makes "a lead
+         * nobody was told about" a query instead of a guess. Before this column
+         * the omission was undetectable: no error, no bounce, no log line, and
+         * a row that looks identical whether or not anyone ever saw it.
+         *
+         * Written ONLY on a confirmed delivery, never on merely attempting one,
+         * so the backstop cron keeps retrying what never arrived.
+         */
+        opsNotifiedAt: timestamp('ops_notified_at', { withTimezone: true }),
+        /**
          * Trading name of the applicant's business — becomes `host_trades.name`.
          *
          * Distinct from {@link contactName}, which is the PERSON to talk to.
@@ -208,6 +220,12 @@ export const allianceLeads = pgTable(
         // applicant hits on `/mi-cuenta/aliados`.
         alliance_leads_applicantUserId_idx: index('alliance_leads_applicant_user_id_idx').on(
             table.applicantUserId
+        ),
+        // The backstop cron's only query is "leads nobody was told about", run
+        // on every tick. Without this it degrades into a full scan of a table
+        // that only grows.
+        alliance_leads_opsNotifiedAt_idx: index('alliance_leads_ops_notified_at_idx').on(
+            table.opsNotifiedAt
         )
     })
 );

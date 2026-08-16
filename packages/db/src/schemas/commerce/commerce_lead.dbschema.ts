@@ -60,6 +60,18 @@ export const commerceLeads = pgTable(
         }),
         /** Internal admin note about the lead disposition. */
         adminNote: text('admin_note'),
+        /**
+         * When the ops team was actually told this lead exists (H-62 / H-148).
+         *
+         * NULL means nobody has been alerted yet — which is what makes "a lead
+         * nobody was told about" a query instead of a guess. Before this column
+         * the omission was undetectable: no error, no bounce, no log line, and
+         * a row that looks identical whether or not anyone ever saw it.
+         *
+         * Written ONLY on a confirmed delivery, never on merely attempting one,
+         * so the backstop cron keeps retrying what never arrived.
+         */
+        opsNotifiedAt: timestamp('ops_notified_at', { withTimezone: true }),
         createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
         updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull()
     },
@@ -68,6 +80,12 @@ export const commerceLeads = pgTable(
         commerce_leads_email_idx: index('commerce_leads_email_idx').on(table.email),
         commerce_leads_destinationId_idx: index('commerce_leads_destinationId_idx').on(
             table.destinationId
+        ),
+        // The backstop cron's only query is "leads nobody was told about", run
+        // on every tick. Without this it degrades into a full scan of a table
+        // that only grows.
+        commerce_leads_opsNotifiedAt_idx: index('commerce_leads_opsNotifiedAt_idx').on(
+            table.opsNotifiedAt
         )
     })
 );
