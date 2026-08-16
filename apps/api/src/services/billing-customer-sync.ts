@@ -14,7 +14,6 @@ import { billingAddonPurchases, billingSubscriptions, withTransaction } from '@r
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger';
-import { sanitizeEmailForMercadoPago } from '../utils/mp-email';
 
 /**
  * Cache entry for customer lookups
@@ -78,12 +77,16 @@ export class BillingCustomerSyncService {
             return null;
         }
 
-        const { userId, name } = input;
-        // Sanitize once, before create/persist — MP rejects '+' in the local
-        // part of an email (error 612). The persisted `billing_customers.email`
-        // must already be the MP-safe value, since checkout/preapproval reuse
-        // it directly from the DB on every subsequent call.
-        const email = sanitizeEmailForMercadoPago(input.email);
+        // HOS-581: persist the address the user actually typed. BETA-164 used
+        // to mangle '+' to '.' here, on the premise that "checkout/preapproval
+        // reuse it directly from the DB on every subsequent call". HOS-191
+        // ended that: the monthly and annual checkouts now redirect to
+        // MercadoPago's hosted share link, which collects the payer on its own
+        // page, and the `payerEmail` they pass around is a LOCAL reconciliation
+        // snapshot, never sent. Only the prorated-upgrade Checkout Pro
+        // preference still sends an address to MercadoPago, so that is where
+        // the sanitizer now runs — see `initiatePaidPlanUpgrade`.
+        const { userId, name, email } = input;
 
         try {
             // Check cache first
@@ -192,9 +195,12 @@ export class BillingCustomerSyncService {
             return null;
         }
 
-        const { userId, name } = input;
-        // Sanitize once, before persisting — see ensureCustomerExists for rationale.
-        const email = sanitizeEmailForMercadoPago(input.email);
+        // HOS-581: persist the raw address — see ensureCustomerExists for the
+        // rationale. This path is also what heals a row mangled while BETA-164
+        // was in force: Better Auth fires it on `user.update.after`, so the
+        // `existingCustomer.email !== email` comparison below now converges a
+        // mangled row back to the real address.
+        const { userId, name, email } = input;
 
         try {
             // Find existing customer

@@ -176,13 +176,24 @@ describe('BillingCustomerSyncService', () => {
             });
         });
 
-        it('should sanitize a plus-addressed email before calling billing.customers.create (BETA-164)', async () => {
+        it('persists a plus-addressed email UNCHANGED (HOS-581, reverses BETA-164)', async () => {
+            // BETA-164 mangled '+' to '.' here, so `billing_customers.email`
+            // stored an address the user never wrote. That column is read back
+            // as `recipientEmail` for Hospeda's OWN billing mail (dunning,
+            // cancellation, plan changes, price propagation, abandoned
+            // checkouts), and Gmail collapses dots — so `qazuor.turista@` is a
+            // DIFFERENT mailbox from the `qazuor@` the '+' form would reach.
+            // Every one of those messages went to a mailbox nobody reads.
+            //
+            // The mangling now happens at the ONE boundary that actually sends
+            // the address to MercadoPago (the prorated-upgrade Checkout Pro
+            // preference), not at persistence. See `mp-email.ts`.
             // Arrange
             vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(null);
             vi.mocked(mockBilling.customers!.create).mockResolvedValue({
                 ...mockCustomer,
                 id: 'cus_new',
-                email: 'qazuor.turista@gmail.com'
+                email: 'qazuor+turista@gmail.com'
             });
 
             // Act
@@ -192,11 +203,11 @@ describe('BillingCustomerSyncService', () => {
                 name: 'Plus User'
             });
 
-            // Assert — MP-safe email reaches the create call, not the raw one
+            // Assert — the address the user actually typed is what gets stored.
             expect(result).toBe('cus_new');
             expect(mockBilling.customers!.create).toHaveBeenCalledWith({
                 externalId: 'user_789',
-                email: 'qazuor.turista@gmail.com',
+                email: 'qazuor+turista@gmail.com',
                 name: 'Plus User',
                 metadata: {
                     source: 'better-auth',
@@ -364,12 +375,18 @@ describe('BillingCustomerSyncService', () => {
             });
         });
 
-        it('should sanitize a plus-addressed email before calling billing.customers.update (BETA-164)', async () => {
+        it('syncs a plus-addressed email UNCHANGED (HOS-581, reverses BETA-164)', async () => {
+            // The update path matters beyond new signups: it is what heals a
+            // row that was mangled while BETA-164 was in force. Better Auth
+            // fires it on `user.update.after`, so an existing mangled customer
+            // converges to the real address the next time that user's record
+            // changes. That is opportunistic rather than guaranteed, which is
+            // why a data-migration converges the rest.
             // Arrange
             vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
             vi.mocked(mockBilling.customers!.update).mockResolvedValue({
                 ...mockCustomer,
-                email: 'qazuor.turista@gmail.com'
+                email: 'qazuor+turista@gmail.com'
             });
 
             // Act
@@ -379,10 +396,10 @@ describe('BillingCustomerSyncService', () => {
                 name: 'Test User'
             });
 
-            // Assert — MP-safe email reaches the update call, not the raw one
+            // Assert — the raw address reaches the update call.
             expect(result).toBe('cus_123');
             expect(mockBilling.customers!.update).toHaveBeenCalledWith('cus_123', {
-                email: 'qazuor.turista@gmail.com',
+                email: 'qazuor+turista@gmail.com',
                 name: 'Test User',
                 metadata: {
                     ...mockCustomer.metadata,
