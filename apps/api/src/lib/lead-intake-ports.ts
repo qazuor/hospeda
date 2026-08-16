@@ -215,7 +215,13 @@ export async function announceLeadToOps(params: { readonly alert: LeadIntakeAler
                 businessName: alert.businessName ?? undefined,
                 message: alert.message ?? undefined,
                 adminUrl,
-                submittedAtLabel: formatSubmittedAt(alert.createdAt)
+                submittedAtLabel: formatSubmittedAt(alert.createdAt),
+                // Stable per lead AND per recipient. It does not stop a second
+                // send — nothing in the notification service dedupes on it —
+                // but it keys the retry queue entry, so the backstop cron
+                // retrying the same lead reuses one slot instead of stacking a
+                // new one per tick.
+                idempotencyKey: `lead-intake-${alert.funnel}-${alert.leadId}-${recipientEmail}`
             })
         )
     );

@@ -209,6 +209,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Finalizes soft-cancelled subscriptions whose current_period_end has elapsed: flips status to cancelled, revokes addons, clears entitlement cache (SPEC-147).'
     },
     {
+        name: 'lead-intake-backstop',
+        displayName: 'Rescate de leads sin avisar',
+        category: 'notifications',
+        schedule: '20 */4 * * *',
+        description:
+            'Announce acquisition leads that are still unresolved and were never announced to ops, so a dropped intake alert does not leave a lead nobody hears about (H-62 / H-148).'
+    },
+    {
         name: 'media-orphan-cleanup',
         displayName: 'Limpieza de medios huérfanos',
         category: 'media',
