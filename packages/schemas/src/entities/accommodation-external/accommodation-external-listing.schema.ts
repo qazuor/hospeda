@@ -6,6 +6,7 @@ import {
 } from '../../common/id.schema.js';
 import { BaseLifecycleFields } from '../../common/lifecycle.schema.js';
 import { ExternalPlatformEnumSchema } from '../../enums/external-platform.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 // ============================================================================
 // SNIPPET SCHEMA
@@ -118,20 +119,34 @@ export type CreateAccommodationExternalListingInput = z.infer<
  * The `platform` is immutable after creation (change it by deleting and
  * re-creating the listing). `verified` is admin-only and managed through a
  * dedicated endpoint.
+ *
+ * **`stripShapeDefaults` is load-bearing here (H-129).** `showLink` and
+ * `showReviews` carry `.default(false)`, and in Zod 4 `.partial()` does NOT
+ * suppress a default: parsing `{ showLink: true }` against a plain
+ * `.partial()` yields `{ showLink: true, showReviews: false }`. That parsed
+ * object is spread straight into a literal SQL `SET`, so toggling one switch
+ * turned the other one off — the owner's UI sends exactly one field per
+ * toggle. Stripping the defaults first makes an absent key stay absent.
  */
-export const UpdateAccommodationExternalListingSchema = AccommodationExternalListingSchema.omit({
-    id: true,
-    accommodationId: true,
-    platform: true,
-    createdAt: true,
-    updatedAt: true,
-    createdById: true,
-    updatedById: true,
-    deletedAt: true,
-    deletedById: true,
-    verified: true,
-    lifecycleState: true
-}).partial();
+export const UpdateAccommodationExternalListingSchema = z
+    .object(
+        stripShapeDefaults(
+            AccommodationExternalListingSchema.omit({
+                id: true,
+                accommodationId: true,
+                platform: true,
+                createdAt: true,
+                updatedAt: true,
+                createdById: true,
+                updatedById: true,
+                deletedAt: true,
+                deletedById: true,
+                verified: true,
+                lifecycleState: true
+            }).shape
+        )
+    )
+    .partial();
 export type UpdateAccommodationExternalListingInput = z.infer<
     typeof UpdateAccommodationExternalListingSchema
 >;
