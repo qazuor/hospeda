@@ -7,6 +7,14 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "contactInfo": {
+            "email": {
+                "invalid": "El email no es válido"
+            },
+            "phone": {
+                "international": "El número no es válido"
+            }
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"
