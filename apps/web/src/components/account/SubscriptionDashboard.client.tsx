@@ -119,19 +119,34 @@ function getBadgeClass(status: SubscriptionStatus): string {
  * If a card brand + last4 is available, shows "Visa •••• 4242".
  * Otherwise falls back to "MercadoPago".
  *
+ * H-34: the fallback assumes the subscription IS charged and we simply could
+ * not load its card details. That assumption does not hold for a
+ * complimentary subscription: it is created without a MercadoPago preapproval
+ * and has no default payment method — none exists, and none ever will. Naming
+ * a charging method there is a false statement sitting directly under the
+ * card's own "plan de cortesía" label, and it is the kind that generates a
+ * support ticket about a charge that never happens. A comp therefore gets its
+ * own label instead of the fallback.
+ *
  * @param paymentMethod - Payment method data from subscription
  * @param fallback - Fallback string when no card data is present
+ * @param isComplimentary - Whether the subscription is a complimentary grant
+ * @param complimentaryLabel - Label used when a comp has no payment method
  * @returns Human-readable payment method string
  */
 function formatPaymentMethod(
     paymentMethod: SubscriptionData['paymentMethod'],
-    fallback: string
+    fallback: string,
+    isComplimentary: boolean,
+    complimentaryLabel: string
 ): string {
-    if (!paymentMethod) return fallback;
-    const brand = paymentMethod.brand
-        ? paymentMethod.brand.charAt(0).toUpperCase() + paymentMethod.brand.slice(1)
-        : '';
-    return `${brand} •••• ${paymentMethod.last4}`.trim();
+    if (paymentMethod) {
+        const brand = paymentMethod.brand
+            ? paymentMethod.brand.charAt(0).toUpperCase() + paymentMethod.brand.slice(1)
+            : '';
+        return `${brand} •••• ${paymentMethod.last4}`.trim();
+    }
+    return isComplimentary ? complimentaryLabel : fallback;
 }
 
 // ---------------------------------------------------------------------------
@@ -877,7 +892,9 @@ export function SubscriptionDashboard({
 
     const paymentMethodLabel = formatPaymentMethod(
         subscription.paymentMethod,
-        t('account.pages.subscription.paymentMercadoPago', 'MercadoPago')
+        t('account.pages.subscription.paymentMercadoPago', 'MercadoPago'),
+        isComplimentary,
+        t('account.pages.subscription.paymentNone', 'Sin método de pago')
     );
 
     const plansHref = buildUrl({

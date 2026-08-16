@@ -33,6 +33,11 @@ const statSubscriptionStatus = t('account.pages.dashboard.stats.subscriptionStat
 const statActiveStatus = t('account.pages.dashboard.stats.activeStatus', 'Activa');
 const statTrialStatus = t('account.pages.dashboard.stats.trialStatus', 'En prueba');
 const statFreeStatus = t('account.pages.dashboard.stats.freeStatus', 'Gratuito');
+// A complimentary plan is a real paid plan granted at no charge. It needs its
+// own label: the client script resolves the status line via
+// `data-label-${planStatus}`, so without this attribute a `comp` subscriber
+// keeps the placeholder and the card reads as if they had nothing (H-130).
+const statCompStatus = t('account.pages.dashboard.stats.compStatus', 'Bonificado');
 const statPropertiesLabel = t('account.pages.dashboard.stats.properties', 'Mis propiedades');
 const statPropertiesDesc = t('account.pages.dashboard.stats.propertiesDesc', 'Alojamientos publicados');
 const statMessagesLabel = t('account.pages.dashboard.stats.messages', 'Mensajes sin leer');
@@ -127,6 +132,7 @@ const statMessagesDesc = t('account.pages.dashboard.stats.messagesDesc', 'Consul
             class="account__stat-desc"
             data-label-active={statActiveStatus}
             data-label-trial={statTrialStatus}
+            data-label-comp={statCompStatus}
             data-label-free={statFreeStatus}
             aria-live="polite"
         >

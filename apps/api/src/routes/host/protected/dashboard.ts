@@ -8,7 +8,7 @@
  *
  * GET /api/v1/protected/host/dashboard
  */
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKey, isEntitlementGrantingStatus } from '@repo/billing';
 import { LifecycleStatusEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { AccommodationService, ConversationService, ServiceError } from '@repo/service-core';
@@ -68,12 +68,19 @@ const ZERO_PROPERTIES: HostDashboardProperties = {
  * supported set degrades to `null` plan upstream, so this mapper only
  * needs to cover the statuses that reach it.
  *
+ * `comp` maps to `active` rather than getting its own variant: a
+ * complimentary grant IS a live plan, and the response enum is a published
+ * contract that other clients parse. What the owner is not charged for is
+ * surfaced by the plan name and by the subscription page, not by widening
+ * this enum (H-70).
+ *
  * @param status - Raw QZPay subscription status string.
  * @returns The mapped dashboard status, or `null` when unsupported.
  */
 function mapQZPayStatusToDashboard(status: string): HostDashboardPlan['status'] | null {
     switch (status) {
         case 'active':
+        case 'comp':
             return 'active';
         case 'trialing':
             return 'trial';
@@ -172,8 +179,12 @@ async function resolvePlan(input: { actor: Actor }): Promise<HostDashboardPlan |
         }
 
         const subscriptions = await billing.subscriptions.getByCustomerId(customer.id);
-        const activeSubscription = subscriptions.find(
-            (sub) => sub.status === 'active' || sub.status === 'trialing'
+        // H-70: use the canonical predicate rather than a hand-written
+        // `active || trialing` pair. `comp` is entitlement-granting too, and
+        // omitting it here is what made a comped owner's dashboard report
+        // `plan: null` — which the frontend renders as "Plan Gratuito".
+        const activeSubscription = subscriptions.find((sub) =>
+            isEntitlementGrantingStatus(sub.status)
         );
         if (!activeSubscription) {
             return null;

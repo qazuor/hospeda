@@ -391,6 +391,11 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         reason: 'Finalizes a cancellation — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'
     },
     {
+        file: 'cron/jobs/preapproval-less-expiry.job.ts',
+        requiresCacheClear: true,
+        reason: 'Expires an active/trialing subscription that has no MercadoPago preapproval and whose period elapsed (H-21). The row WAS granting entitlements, so the cached set must be dropped or the user keeps the old plan gates until the 5-minute TTL lapses — already calls clearEntitlementCache.'
+    },
+    {
         file: 'routes/webhooks/mercadopago/payment-logic.ts',
         requiresCacheClear: true,
         reason: 'Activation/upgrade via MP payment webhook — already calls clearEntitlementCache (also tracked in LIFECYCLE_SITES).'
