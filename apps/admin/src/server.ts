@@ -1,5 +1,6 @@
 import { createStartHandler, defaultStreamHandler } from '@tanstack/react-start/server';
 import { createServerEntry } from '@tanstack/react-start/server-entry';
+import { applySecurityHeaders } from './lib/security-headers';
 
 /**
  * SPEC-209 T-002: cheap container healthcheck endpoint.
@@ -15,7 +16,14 @@ import { createServerEntry } from '@tanstack/react-start/server-entry';
  *
  * `/healthz` is intercepted HERE — before `createStartHandler`'s resolver
  * runs — so no React tree is built and no QZPayBilling instance is
- * constructed.
+ * constructed. Because it bypasses `createStartHandler` entirely, it also
+ * bypasses `cspMiddleware` (`../middleware.ts`) — so `healthcheckResponse`
+ * applies the H-170 baseline security headers itself, directly, rather than
+ * relying on that middleware. This is a container-internal probe (Coolify's
+ * Docker healthcheck), not a browser-facing response, so the headers carry
+ * no real security value here — they are added purely for response
+ * consistency across the app's surfaces, at zero risk: the status/body/
+ * content-type this endpoint is depended on for are untouched.
  *
  * Background: TanStack Start 1.131.26 + @tanstack/router-generator 1.131.26
  * compile `server.handlers.GET` into the SSR bundle correctly, but the
@@ -50,10 +58,12 @@ export function healthcheckResponse(request: Request): Response | null {
         return null;
     }
 
-    return new Response(JSON.stringify({ status: 'ok' }), {
+    const response = new Response(JSON.stringify({ status: 'ok' }), {
         status: 200,
         headers: { 'content-type': 'application/json' }
     });
+    applySecurityHeaders({ headers: response.headers });
+    return response;
 }
 
 /**

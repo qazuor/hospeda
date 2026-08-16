@@ -37,11 +37,21 @@
  * Phase 2 (enforcement) is a separate follow-up (SPEC-042 Phase 2 / SPEC-046),
  * out of scope here.
  *
+ * H-170 (August 2026 smoke): this middleware ALSO sets three baseline
+ * security headers (Strict-Transport-Security, X-Content-Type-Options,
+ * Referrer-Policy) unconditionally on `result.response`, mirroring
+ * `apps/api/src/middlewares/security.ts`'s defaults — see
+ * `./lib/security-headers.ts` for the values and the reasoning. Because this
+ * middleware already runs for every `handlerType` (`router` AND `serverFn`),
+ * no separate wiring was needed for that part; `/healthz` is a distinct case
+ * handled directly in `server.ts` (see that file's doc comment).
+ *
  * @see https://tanstack.com/start/latest/docs/framework/react/middleware
  */
 
 import { createMiddleware } from '@tanstack/react-start';
 import { buildCspDirectives } from './lib/csp-helpers';
+import { applySecurityHeaders } from './lib/security-headers';
 
 /** Header name for CSP Report-Only mode (does not block, only reports violations). */
 const CSP_HEADER_NAME = 'Content-Security-Policy-Report-Only' as const;
@@ -86,6 +96,7 @@ export const cspMiddleware = createMiddleware({ type: 'request' }).server(async 
     const result = await next({ context: { cspNonce: nonce } });
 
     result.response.headers.set(CSP_HEADER_NAME, cspValue);
+    applySecurityHeaders({ headers: result.response.headers });
 
     return result;
 });

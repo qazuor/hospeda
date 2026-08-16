@@ -9,8 +9,8 @@ import { describe, expect, it } from 'vitest';
 import { CROSS_CHECK_RULES } from '../env-cross-checks.js';
 
 describe('CROSS_CHECK_RULES', () => {
-    it('should contain the two seeded rules', () => {
-        expect(CROSS_CHECK_RULES).toHaveLength(2);
+    it('should contain the three seeded rules', () => {
+        expect(CROSS_CHECK_RULES).toHaveLength(3);
     });
 
     it('should seed the HOSPEDA_REVALIDATION_SECRET api/web equality rule with the exact shape', () => {
@@ -37,6 +37,31 @@ describe('CROSS_CHECK_RULES', () => {
             { app: 'api', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' },
             { app: 'web', key: 'HOSPEDA_INTERNAL_REQUEST_SECRET' }
         ]);
+    });
+
+    it('should seed the Sentry-environment rule spanning all three apps (H-16)', () => {
+        const rule = CROSS_CHECK_RULES.find((r) => r.id === 'sentry-environment-all-apps-match');
+
+        expect(rule).toBeDefined();
+        expect(rule?.comparator).toBe('equals');
+        // Coolify-only on purpose: H-16 was a per-resource misconfiguration, and
+        // one app left unset in a developer's .env.local is not a defect.
+        expect(rule?.appliesTo).toEqual(['coolify']);
+        expect(rule?.compare).toEqual([
+            { app: 'api', key: 'HOSPEDA_SENTRY_ENVIRONMENT' },
+            { app: 'web', key: 'PUBLIC_SENTRY_ENVIRONMENT' },
+            { app: 'admin', key: 'VITE_SENTRY_ENVIRONMENT' }
+        ]);
+    });
+
+    it('should cover all three apps in the Sentry-environment rule — a missing side is a blind spot', () => {
+        const rule = CROSS_CHECK_RULES.find((r) => r.id === 'sentry-environment-all-apps-match');
+        const apps = rule?.compare.map((target) => target.app) ?? [];
+
+        // The rule only catches H-16 if web is compared against BOTH other apps:
+        // web alone, or web+api only, would have let the real prod drift through
+        // on whichever pair was omitted.
+        expect(new Set(apps)).toEqual(new Set(['api', 'web', 'admin']));
     });
 
     it('should give every rule a non-empty, human-readable description', () => {
