@@ -31,8 +31,30 @@ import {
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types/index.js';
 import { ServiceError } from '../../types/index.js';
 import { hasPermission } from '../../utils/permission.js';
+import type { ReputationFailureCode } from './adapters/adapter.types.js';
 import type { ReputationAdapterCredentials } from './adapters/index.js';
 import { getReputationAdapter } from './adapters/index.js';
+
+/**
+ * Maps an adapter's {@link ReputationFailureCode} onto the persisted
+ * `fetch_status` vocabulary.
+ *
+ * `null` — the adapter reached the platform — is the ONLY input that yields
+ * `'ok'`. Before H-132 every inline run was recorded as `'ok'` regardless, so
+ * an adapter that never issued a request was indistinguishable from a place
+ * with no reviews.
+ *
+ * @param failureCode - The adapter's failure code, or `null` on success.
+ * @returns The `fetch_status` value to persist.
+ */
+const failureCodeToFetchStatus = (
+    failureCode: ReputationFailureCode | null
+): ExternalFetchStatus => {
+    if (failureCode === null) {
+        return 'ok';
+    }
+    return failureCode === 'not_found' ? 'not_found' : 'error';
+};
 
 // ---------------------------------------------------------------------------
 // Result types
@@ -380,6 +402,15 @@ export class AccommodationExternalReputationService {
                     if (hasInlineData || !startRunFn) {
                         // --- Inline path ---
                         // Either we got data from fetch(), or the adapter has no async path.
+                        //
+                        // H-132: this branch used to hardcode `fetchStatus: 'ok'` and push
+                        // the platform onto `inlineSucceeded` unconditionally. Any adapter
+                        // without a `startRun` (Google) therefore reported success even when
+                        // it had degraded before making a single network call — the stored
+                        // row, the API response, and the host's dashboard all said "ok"
+                        // while every aggregate was NULL. An adapter that reports a
+                        // `failureCode` is now believed.
+                        const failureCode = inlineResult.failureCode ?? null;
                         const now = new Date();
                         await this.reputationModel.upsertReputation(
                             {
@@ -392,13 +423,17 @@ export class AccommodationExternalReputationService {
                                 snippets: inlineResult.snippets ? [...inlineResult.snippets] : null,
                                 snippetsFetchedAt: inlineResult.snippets ? now : null,
                                 aggregateFetchedAt: now,
-                                fetchStatus: 'ok',
-                                fetchMessage: null,
+                                fetchStatus: failureCodeToFetchStatus(failureCode),
+                                fetchMessage: failureCode,
                                 runStatus: 'idle'
                             },
                             ctx?.tx
                         );
-                        inlineSucceeded.push(platform);
+                        if (failureCode === null) {
+                            inlineSucceeded.push(platform);
+                        } else {
+                            inlineFailed.push({ platform, error: failureCode });
+                        }
                     } else {
                         // --- Async path ---
                         // fetch() returned all-null and adapter.startRun is available.
