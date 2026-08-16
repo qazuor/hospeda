@@ -1165,6 +1165,99 @@ describe('SPEC-018 displayWeight ordering', () => {
 });
 
 // ---------------------------------------------------------------------------
+// toAccommodationDetailPageProps — contactInfo + socialNetworks (H-118)
+// ---------------------------------------------------------------------------
+//
+// The public API projects `contactInfo` down to `mobilePhone`/`personalEmail`/
+// `website` only (AccommodationPublicSchema, HOS-19 keeps `whatsapp` off this
+// payload deliberately — it has its own entitlement-gated channel). This
+// transform maps those three onto `phone`/`email`/`website`, and reads only
+// `facebook`/`instagram` out of the (wider) `socialNetworks` object per the
+// owner's H-118 decision.
+
+describe('toAccommodationDetailPageProps — contactInfo + socialNetworks (H-118)', () => {
+    it('maps mobilePhone/personalEmail/website onto phone/email/website', () => {
+        const result = toAccommodationDetailPageProps({
+            item: {
+                slug: 'casa',
+                name: 'Casa',
+                contactInfo: {
+                    mobilePhone: '+5493431234567',
+                    personalEmail: 'contacto@ejemplo.com',
+                    website: 'https://ejemplo.com'
+                }
+            }
+        });
+        expect(result.contactInfo).toEqual({
+            phone: '+5493431234567',
+            email: 'contacto@ejemplo.com',
+            website: 'https://ejemplo.com'
+        });
+    });
+
+    it('maps only facebook/instagram out of a wider socialNetworks object', () => {
+        const result = toAccommodationDetailPageProps({
+            item: {
+                slug: 'casa',
+                name: 'Casa',
+                socialNetworks: {
+                    facebook: 'https://facebook.com/casa',
+                    instagram: 'https://instagram.com/casa',
+                    twitter: 'https://twitter.com/casa',
+                    linkedIn: 'https://linkedin.com/company/casa',
+                    tiktok: 'https://tiktok.com/@casa',
+                    youtube: 'https://youtube.com/casa'
+                }
+            }
+        });
+        expect(result.socialNetworks).toEqual({
+            facebook: 'https://facebook.com/casa',
+            instagram: 'https://instagram.com/casa'
+        });
+    });
+
+    it('never surfaces contactInfo.whatsapp even if present on the raw payload', () => {
+        // The public schema should never send this, but the transform itself
+        // must not read it either — belt and braces against HOS-19's gate.
+        const result = toAccommodationDetailPageProps({
+            item: {
+                slug: 'casa',
+                name: 'Casa',
+                contactInfo: {
+                    mobilePhone: '+5493431234567',
+                    whatsapp: '+5493439998877'
+                }
+            }
+        });
+        expect(result.contactInfo).toEqual({ phone: '+5493431234567' });
+        expect(result.contactInfo).not.toHaveProperty('whatsapp');
+    });
+
+    it('returns undefined contactInfo when the accommodation has none of the three fields', () => {
+        const result = toAccommodationDetailPageProps({
+            item: { slug: 'casa', name: 'Casa', contactInfo: { whatsapp: '+5493439998877' } }
+        });
+        expect(result.contactInfo).toBeUndefined();
+    });
+
+    it('returns undefined contactInfo when contactInfo is absent entirely', () => {
+        const result = toAccommodationDetailPageProps({ item: { slug: 'casa', name: 'Casa' } });
+        expect(result.contactInfo).toBeUndefined();
+    });
+
+    it('returns undefined socialNetworks when neither facebook nor instagram is set', () => {
+        const result = toAccommodationDetailPageProps({
+            item: {
+                slug: 'casa',
+                name: 'Casa',
+                socialNetworks: { twitter: 'https://twitter.com/casa' }
+            }
+        });
+        expect(result.socialNetworks).toBeUndefined();
+    });
+});
+
+// ---------------------------------------------------------------------------
 // Owner Promotions Transforms (SPEC-205)
 // ---------------------------------------------------------------------------
 

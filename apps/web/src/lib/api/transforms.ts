@@ -839,6 +839,38 @@ export function toAccommodationDetailPageProps({
     const amenitiesArr = item.amenities as readonly Record<string, unknown>[] | undefined;
     const featuresArr = item.features as readonly Record<string, unknown>[] | undefined;
     const faqsArr = item.faqs as readonly Record<string, unknown>[] | undefined;
+    // --- Contact info + social networks (H-118) ---
+    // `contactInfo` on the wire carries only `mobilePhone`/`personalEmail`/
+    // `website` (AccommodationPublicSchema's narrowed public projection —
+    // `whatsapp` deliberately stays off it, see the WHATSAPP note on
+    // `hasWhatsapp` above). `socialNetworks` carries more platforms than the
+    // owner approved for this page; only facebook/instagram are read here.
+    const contactInfoRaw = item.contactInfo as Record<string, unknown> | undefined;
+    const socialNetworksRaw = item.socialNetworks as Record<string, unknown> | undefined;
+    const contactInfo: AccommodationDetailData['contactInfo'] =
+        contactInfoRaw &&
+        (contactInfoRaw.mobilePhone || contactInfoRaw.personalEmail || contactInfoRaw.website)
+            ? {
+                  phone: contactInfoRaw.mobilePhone
+                      ? String(contactInfoRaw.mobilePhone)
+                      : undefined,
+                  email: contactInfoRaw.personalEmail
+                      ? String(contactInfoRaw.personalEmail)
+                      : undefined,
+                  website: contactInfoRaw.website ? String(contactInfoRaw.website) : undefined
+              }
+            : undefined;
+    const socialNetworks: AccommodationDetailData['socialNetworks'] =
+        socialNetworksRaw && (socialNetworksRaw.facebook || socialNetworksRaw.instagram)
+            ? {
+                  facebook: socialNetworksRaw.facebook
+                      ? String(socialNetworksRaw.facebook)
+                      : undefined,
+                  instagram: socialNetworksRaw.instagram
+                      ? String(socialNetworksRaw.instagram)
+                      : undefined
+              }
+            : undefined;
     // H-125: the rich shape carries the cover photo's author-written alt text.
     // The URL-only wrapper drops it, which is why every cover fell back to the
     // listing name.
@@ -984,6 +1016,8 @@ export function toAccommodationDetailPageProps({
                   description: seoObj.description ? String(seoObj.description) : null
               }
             : null,
+        contactInfo,
+        socialNetworks,
         owner: {
             id: String(ownerObj?.id || ''),
             name: String(ownerObj?.name || 'Unknown'),

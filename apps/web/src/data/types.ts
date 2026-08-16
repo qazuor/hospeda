@@ -615,6 +615,32 @@ export type AccommodationAmenityItem = DetailAmenity;
 export type AccommodationFeatureItem = DetailFeature;
 
 /**
+ * Contact channels exposed on the accommodation public detail page (H-118).
+ *
+ * Deliberately NARROWER than the API's domain `contactInfo` shape — only the
+ * three fields the owner approved for public display (16/08). `whatsapp` is
+ * NOT here: it already renders through its own dedicated, entitlement-gated
+ * flow (`hasWhatsapp` + the `WhatsAppContact` island, HOS-19), and duplicating
+ * it in this narrow public projection would bypass that gate.
+ */
+export interface AccommodationContactInfo {
+    readonly phone?: string;
+    readonly email?: string;
+    readonly website?: string;
+}
+
+/**
+ * Social network links exposed on the accommodation public detail page
+ * (H-118). The API's `socialNetworks` carries more platforms (Twitter,
+ * LinkedIn, TikTok, YouTube), but per owner decision (16/08) the detail page
+ * surfaces only Facebook and Instagram.
+ */
+export interface AccommodationSocialNetworks {
+    readonly facebook?: string;
+    readonly instagram?: string;
+}
+
+/**
  * Typed data shape for the accommodation detail page.
  * Produced by `toAccommodationDetailPageProps()` in transforms.ts.
  */
@@ -722,6 +748,17 @@ export interface AccommodationDetailData {
         readonly title: string | null;
         readonly description: string | null;
     } | null;
+    /**
+     * H-118: phone/email/website the owner filled in via the contact editor.
+     * Absent when the accommodation has none of the three set — the block
+     * renders nothing rather than an empty card.
+     */
+    readonly contactInfo?: AccommodationContactInfo;
+    /**
+     * H-118: Facebook/Instagram links (subset of the API's full
+     * `socialNetworks`, per owner decision). Absent when neither is set.
+     */
+    readonly socialNetworks?: AccommodationSocialNetworks;
     readonly owner: {
         readonly id: string;
         readonly name: string;

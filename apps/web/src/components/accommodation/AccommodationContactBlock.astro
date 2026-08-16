@@ -1,0 +1,201 @@
+---
+/**
+ * @file AccommodationContactBlock.astro
+ * @description Phone/email/website + Facebook/Instagram block for the
+ * accommodation public detail page (H-118).
+ *
+ * H-118 background: the host editor already collects ten contact fields
+ * (`ContactForm.client.tsx`), but before this the public detail page only
+ * ever surfaced the WhatsApp button — every other channel was captured and
+ * silently never shown. This block closes that gap for the three contact
+ * fields plus two social networks the owner approved for public display
+ * (16/08 decision): phone, email, website, Facebook, Instagram.
+ *
+ * Deliberately does NOT touch the existing WhatsApp flow: `WhatsAppContact`
+ * (rendered separately inside `OwnerCard`) stays the only path for the
+ * WhatsApp number, since it is gated per-viewer by entitlement (HOS-19) —
+ * this block never receives or renders that number.
+ *
+ * `rel="noopener noreferrer"` on every outbound link, NOT `sponsored
+ * nofollow` — this is the accommodation's own declared contact info, not a
+ * paid placement (unlike the `HOS-294` partner carousel, which IS a
+ * commercial relationship and uses `rel="sponsored nofollow noopener"`).
+ * Matches the existing precedent for the same kind of link elsewhere on this
+ * page family: `GastronomyContactBlock.astro` and
+ * `EventDetailOrganizerCard.astro` both use plain `noopener noreferrer`.
+ */
+import { EmailIcon, FacebookIcon, GlobeIcon, InstagramIcon, PhoneIcon } from '@repo/icons';
+import type { AccommodationContactInfo, AccommodationSocialNetworks } from '@/data/types';
+import { createTranslations } from '@/lib/i18n';
+import type { SupportedLocale } from '@/lib/i18n';
+
+interface Props {
+    readonly contactInfo?: AccommodationContactInfo;
+    readonly socialNetworks?: AccommodationSocialNetworks;
+    readonly locale: SupportedLocale;
+}
+
+const { contactInfo, socialNetworks, locale } = Astro.props;
+const { t } = createTranslations(locale);
+
+const hasContact = Boolean(
+    contactInfo && (contactInfo.phone || contactInfo.email || contactInfo.website)
+);
+const hasSocial = Boolean(
+    socialNetworks && (socialNetworks.facebook || socialNetworks.instagram)
+);
+
+// Nothing to show — render nothing rather than an empty card (H-118: 2 of 7
+// production accommodations have no contact data at all).
+if (!hasContact && !hasSocial) {
+    return;
+}
+---
+
+<section class="acc-contact" aria-label={t('accommodations.detail.contact.title', 'Contacto')}>
+    <h3 class="acc-contact__title">
+        {t('accommodations.detail.contact.title', 'Contacto')}
+    </h3>
+
+    {hasContact && (
+        <div class="acc-contact__channels">
+            {contactInfo?.phone && (
+                <a
+                    href={`tel:${contactInfo.phone}`}
+                    class="acc-contact__link"
+                    aria-label={t(
+                        'accommodations.detail.contact.phoneAriaLabel',
+                        'Llamar al alojamiento'
+                    )}
+                >
+                    <PhoneIcon size={16} aria-hidden="true" />
+                    <span>{contactInfo.phone}</span>
+                </a>
+            )}
+            {contactInfo?.email && (
+                <a
+                    href={`mailto:${contactInfo.email}`}
+                    class="acc-contact__link"
+                    aria-label={t(
+                        'accommodations.detail.contact.emailAriaLabel',
+                        'Enviar email al alojamiento'
+                    )}
+                >
+                    <EmailIcon size={16} aria-hidden="true" />
+                    <span>{contactInfo.email}</span>
+                </a>
+            )}
+            {contactInfo?.website && (
+                <a
+                    href={contactInfo.website}
+                    class="acc-contact__link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t(
+                        'accommodations.detail.contact.websiteAriaLabel',
+                        'Visitar sitio web del alojamiento'
+                    )}
+                >
+                    <GlobeIcon size={16} aria-hidden="true" />
+                    <span>{contactInfo.website.replace(/^https?:\/\//, '')}</span>
+                </a>
+            )}
+        </div>
+    )}
+
+    {hasSocial && (
+        <div class="acc-contact__social">
+            {socialNetworks?.facebook && (
+                <a
+                    href={socialNetworks.facebook}
+                    class="acc-contact__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t('accommodations.detail.contact.facebookAriaLabel', 'Facebook del alojamiento')}
+                >
+                    <FacebookIcon size={18} aria-hidden="true" />
+                </a>
+            )}
+            {socialNetworks?.instagram && (
+                <a
+                    href={socialNetworks.instagram}
+                    class="acc-contact__social-link"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={t('accommodations.detail.contact.instagramAriaLabel', 'Instagram del alojamiento')}
+                >
+                    <InstagramIcon size={18} aria-hidden="true" />
+                </a>
+            )}
+        </div>
+    )}
+</section>
+
+<style>
+    .acc-contact {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4, 16px);
+        padding: var(--space-5, 20px);
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        box-shadow: var(--shadow-card);
+    }
+
+    .acc-contact__title {
+        font-family: var(--font-heading);
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: var(--core-foreground);
+        margin: 0;
+    }
+
+    .acc-contact__channels {
+        display: flex;
+        flex-direction: column;
+        gap: 0.6rem;
+    }
+
+    .acc-contact__link {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-family: var(--font-sans);
+        font-size: 0.9rem;
+        color: var(--brand-primary);
+        text-decoration: none;
+        transition: color var(--duration-normal, 0.4s) ease;
+        overflow-wrap: anywhere;
+    }
+
+    .acc-contact__link:hover {
+        color: var(--brand-accent);
+    }
+
+    .acc-contact__social {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .acc-contact__social-link {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 36px;
+        height: 36px;
+        border-radius: var(--radius-md);
+        background-color: var(--brand-primary-a10);
+        color: var(--brand-primary);
+        transition:
+            background-color var(--duration-normal, 0.4s) ease,
+            color var(--duration-normal, 0.4s) ease;
+        text-decoration: none;
+    }
+
+    .acc-contact__social-link:hover {
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground);
+    }
+</style>
