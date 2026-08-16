@@ -431,6 +431,131 @@ describe('CommerceLeadService', () => {
             );
         });
 
+        // ── H-87 / H-150 ────────────────────────────────────────────────
+        // Approving a lead whose email already has an account told the operator
+        // "cuenta creada, credenciales enviadas". Neither happened: HOS-296
+        // resolves the email to the existing account, grants the commerce role
+        // additively and deliberately skips the credential email, because the
+        // generated password was never set on that account.
+        //
+        // The backend distinguishes the two paths and says so — the
+        // provisioner returns `alreadyExisted` — and this method threw the
+        // field away, keeping only `userId`. The screen then narrated the case
+        // that had not happened, and the operator closed the ticket telling the
+        // applicant to look for a mail that was never sent and never will be.
+        //
+        // These assertions are on the FIELDS the message branches on. Asserting
+        // the copy alone would let the copy be right for the wrong reason.
+        describe('reports what actually happened (H-87 / H-150)', () => {
+            it('an email that already had an account: no account created, no credentials sent', async () => {
+                const service = makeService();
+                const model = makeLeadModel();
+                (service as any)._model = model;
+                const provisioner = {
+                    provisionCommerceOwner: vi.fn().mockResolvedValue({
+                        data: {
+                            userId: PROVISIONED_USER_ID,
+                            email: 'juan@example.com',
+                            name: 'Juan Pérez',
+                            alreadyExisted: true,
+                            credentialsSent: false
+                        }
+                    })
+                };
+
+                const result = await service.approveAndProvision(
+                    adminActor,
+                    { id: LEAD_ID, handledById: ACTOR_ID },
+                    provisioner
+                );
+
+                expect(result.error).toBeUndefined();
+                expect(result.data?.accountCreated).toBe(false);
+                expect(result.data?.credentialsSent).toBe(false);
+                // Still provisioned: the role WAS granted. `provisioned` means
+                // "this call did the work", not "an account was created" — the
+                // conflation its old JSDoc invited is what made a frontend
+                // branch on it and choose wrong.
+                expect(result.data?.provisioned).toBe(true);
+            });
+
+            it('a genuinely new account: created and credentials sent', async () => {
+                const service = makeService();
+                const model = makeLeadModel();
+                (service as any)._model = model;
+                const provisioner = {
+                    provisionCommerceOwner: vi.fn().mockResolvedValue({
+                        data: {
+                            userId: PROVISIONED_USER_ID,
+                            email: 'juan@example.com',
+                            name: 'Juan Pérez',
+                            alreadyExisted: false,
+                            credentialsSent: true
+                        }
+                    })
+                };
+
+                const result = await service.approveAndProvision(
+                    adminActor,
+                    { id: LEAD_ID, handledById: ACTOR_ID },
+                    provisioner
+                );
+
+                expect(result.data?.accountCreated).toBe(true);
+                expect(result.data?.credentialsSent).toBe(true);
+            });
+
+            it('a new account whose credential email did not go out is not reported as sent', async () => {
+                // The second source of the same lie: provisioning swallows a
+                // transport failure so it never blocks the account, which is
+                // right — but it must not be reported as a delivery.
+                const service = makeService();
+                const model = makeLeadModel();
+                (service as any)._model = model;
+                const provisioner = {
+                    provisionCommerceOwner: vi.fn().mockResolvedValue({
+                        data: {
+                            userId: PROVISIONED_USER_ID,
+                            email: 'juan@example.com',
+                            name: 'Juan Pérez',
+                            alreadyExisted: false,
+                            credentialsSent: false
+                        }
+                    })
+                };
+
+                const result = await service.approveAndProvision(
+                    adminActor,
+                    { id: LEAD_ID, handledById: ACTOR_ID },
+                    provisioner
+                );
+
+                expect(result.data?.accountCreated).toBe(true);
+                expect(result.data?.credentialsSent).toBe(false);
+            });
+
+            it('an already-provisioned lead claims neither, because this call did nothing', async () => {
+                const service = makeService();
+                const model = makeLeadModel({
+                    ...mockLead,
+                    status: 'approved',
+                    provisionedUserId: PROVISIONED_USER_ID
+                } as typeof mockLead);
+                (service as any)._model = model;
+                const provisioner = makeProvisioner();
+
+                const result = await service.approveAndProvision(
+                    adminActor,
+                    { id: LEAD_ID, handledById: ACTOR_ID },
+                    provisioner
+                );
+
+                expect(result.data?.provisioned).toBe(false);
+                expect(result.data?.accountCreated).toBe(false);
+                expect(result.data?.credentialsSent).toBe(false);
+            });
+        });
+
         it('does NOT double-provision when the lead is already provisioned', async () => {
             const service = makeService();
             const model = makeLeadModel({

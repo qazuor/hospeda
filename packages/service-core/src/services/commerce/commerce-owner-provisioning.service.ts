@@ -107,14 +107,21 @@ export interface ProvisioningNotificationPort {
      * Only called for accounts this flow actually created — an existing
      * account already has working credentials (HOS-296 AC-4).
      *
+     * REPORTS delivery rather than returning void. The caller announces "las
+     * credenciales fueron enviadas" to an operator who then repeats it to the
+     * applicant, so "we called the transport" is not a good enough basis for
+     * the claim: a swallowed transport failure would have the operator chasing
+     * a support ticket about a mail that was never sent (H-87 / H-150).
+     *
      * @param input - Recipient details and temporary password.
+     * @returns `{ delivered }` — true only on a confirmed send.
      */
     notifyOwnerCredentials: (input: {
         readonly email: string;
         readonly name: string;
         readonly temporaryPassword: string;
         readonly leadId: string;
-    }) => Promise<void>;
+    }) => Promise<{ readonly delivered: boolean }>;
 }
 
 // ---------------------------------------------------------------------------
@@ -150,6 +157,16 @@ export interface ProvisionCommerceOwnerResult {
      * instead of "account created".
      */
     readonly alreadyExisted: boolean;
+    /**
+     * `true` only when a credentials email was CONFIRMED delivered.
+     *
+     * `false` covers three distinct ways the applicant ends up with nothing to
+     * look for: the account already existed (no email is owed), the transport
+     * failed, or no notifier was configured. They differ in blame and not at
+     * all in what the applicant experiences, so they are reported alike and the
+     * caller never announces a delivery that did not happen (H-87 / H-150).
+     */
+    readonly credentialsSent: boolean;
     /**
      * The server-generated temporary password, or `null` when the account
      * already existed and kept its own password.
@@ -318,6 +335,11 @@ export class CommerceOwnerProvisioningService extends BaseService {
                 // did not set its password, so the generated `temporaryPassword`
                 // is not a credential for it. Mailing it would hand the owner a
                 // password that cannot sign them in (HOS-296 AC-4).
+                // Starts false and is only ever raised by a confirmed send, so
+                // every path that does not deliver — existing account, transport
+                // failure, no notifier — reports the same thing to the caller.
+                let credentialsSent = false;
+
                 if (created.alreadyExisted) {
                     this.logger.info(
                         { userId: created.id, leadId: lead.id },
@@ -325,23 +347,32 @@ export class CommerceOwnerProvisioningService extends BaseService {
                     );
                 } else if (this._notifier) {
                     try {
-                        await this._notifier.notifyOwnerCredentials({
+                        const { delivered } = await this._notifier.notifyOwnerCredentials({
                             email: created.email,
                             name: created.name,
                             temporaryPassword,
                             leadId: lead.id
                         });
+                        credentialsSent = delivered;
+
+                        if (!delivered) {
+                            this.logger.warn(
+                                { userId: created.id, leadId: lead.id },
+                                '[commerce-owner-provisioning] Credential email was not delivered; the owner has no way in yet'
+                            );
+                        }
                     } catch (err) {
                         this.logger.warn(
                             { err, userId: created.id, leadId: lead.id },
-                            // TODO(SPEC-239): Wire credential email notification channel
                             '[commerce-owner-provisioning] Credential notification failed (non-blocking)'
                         );
                     }
                 } else {
-                    this.logger.debug(
+                    // WARN, not debug: in production this branch means an
+                    // account exists that nobody can sign in to, and production
+                    // does not emit debug.
+                    this.logger.warn(
                         { userId: created.id, leadId: lead.id },
-                        // TODO(SPEC-239): Wire credential email notification channel
                         '[commerce-owner-provisioning] No notifier configured; credential email not sent'
                     );
                 }
@@ -351,6 +382,7 @@ export class CommerceOwnerProvisioningService extends BaseService {
                     email: created.email,
                     name: created.name,
                     alreadyExisted: created.alreadyExisted,
+                    credentialsSent,
                     temporaryPassword: created.alreadyExisted ? null : temporaryPassword
                 };
             }

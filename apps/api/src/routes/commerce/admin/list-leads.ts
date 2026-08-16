@@ -13,11 +13,15 @@ import { CommerceLeadSchema, PermissionEnum } from '@repo/schemas';
 import { CommerceLeadService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { createCommerceLeadNotificationPort } from '../../../lib/lead-intake-ports';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminListRoute } from '../../../utils/route-factory';
 
-const commerceLeadService = new CommerceLeadService({ logger: apiLogger });
+const commerceLeadService = new CommerceLeadService(
+    { logger: apiLogger },
+    createCommerceLeadNotificationPort()
+);
 
 /**
  * Query parameters accepted by the admin leads list endpoint.

@@ -44,12 +44,24 @@ import { createAdminRoute } from '../../../utils/route-factory';
  * the service and is delivered to the owner via the credentials email.
  */
 const ProvisionOwnerResponseSchema = z.object({
-    /** UUID of the newly created COMMERCE_OWNER user. */
+    /** UUID of the provisioned COMMERCE_OWNER user. */
     userId: z.string().uuid(),
     /** Email address of the provisioned owner (copied from the lead). */
     email: z.string().email(),
     /** Display name of the provisioned owner (from the lead's contactName). */
-    name: z.string()
+    name: z.string(),
+    /**
+     * `true` only when a NEW account was created.
+     *
+     * `false` when the address already had an account and was granted the
+     * commerce role additively (HOS-296 G-4). The admin announced "cuenta
+     * creada, credenciales enviadas" in both cases, which is false in the
+     * second one and sends the operator chasing a mail that was never
+     * sent (H-87 / H-150).
+     */
+    accountCreated: z.boolean(),
+    /** `true` only when a credentials email was confirmed delivered. */
+    credentialsSent: z.boolean()
 });
 
 // ---------------------------------------------------------------------------
@@ -132,9 +144,9 @@ export const adminProvisionOwnerRoute = createAdminRoute({
         }
 
         // biome-ignore lint/style/noNonNullAssertion: result.data is defined when result.error is absent
-        const { userId, email, name } = result.data!;
+        const { userId, email, name, alreadyExisted, credentialsSent } = result.data!;
 
         // NEVER return temporaryPassword in the HTTP response.
-        return { userId, email, name };
+        return { userId, email, name, accountCreated: !alreadyExisted, credentialsSent };
     }
 });

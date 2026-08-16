@@ -169,6 +169,40 @@ export interface AllianceDecisionNotifyPort {
     }) => Promise<void>;
 }
 
+/**
+ * Port for telling OPERATIONS that a new application just arrived
+ * (H-62 / H-148).
+ *
+ * Distinct from the two ports above, and the distinction is the whole point of
+ * this one existing: {@link AllianceClaimInvitePort} writes to the APPLICANT
+ * about linking an account, {@link AllianceDecisionNotifyPort} writes to the
+ * APPLICANT about a verdict already reached. Neither tells the platform that
+ * something arrived and is waiting. Nobody had modelled that at all, so every
+ * "aliados" application depended on an operator opening the admin unprompted —
+ * which is how eleven of them sat unread.
+ *
+ * Injected rather than imported for the same reason as its siblings:
+ * `@repo/service-core` has no business knowing about an email transport.
+ * Omitting it silences the alert (tests, preview environments) without
+ * changing the submission.
+ */
+export interface AllianceLeadIntakeNotifyPort {
+    /**
+     * Announces the arrival to whoever handles leads.
+     *
+     * Called fire-and-forget AFTER the row is persisted: the alert is a
+     * courtesy to the platform, and a mail server having a bad afternoon must
+     * never cost an applicant their submission.
+     *
+     * Runs for EVERY submission, so its duration cannot vary with anything
+     * about the applicant — in particular it cannot become the stopwatch that
+     * AC-3 forbids for "does this address have an account?".
+     *
+     * @param input - The lead as persisted.
+     */
+    notifyNewLead: (input: { readonly lead: AllianceLead }) => Promise<void>;
+}
+
 /** Input for {@link AllianceLeadService.markHandled}. */
 export interface MarkAllianceLeadHandledInput {
     /** The admin actor handling the lead. */
@@ -452,11 +486,13 @@ export class AllianceLeadService extends BaseService {
     private readonly _partnerModel: PartnerModel;
     private readonly _claimInviter: AllianceClaimInvitePort | null;
     private readonly _decisionNotifier: AllianceDecisionNotifyPort | null;
+    private readonly _intakeNotifier: AllianceLeadIntakeNotifyPort | null;
 
     constructor(
         config: ServiceConfig,
         claimInviter?: AllianceClaimInvitePort | null,
-        decisionNotifier?: AllianceDecisionNotifyPort | null
+        decisionNotifier?: AllianceDecisionNotifyPort | null,
+        intakeNotifier?: AllianceLeadIntakeNotifyPort | null
     ) {
         super(config, 'allianceLead');
         this._model = new AllianceLeadModel();
@@ -472,6 +508,7 @@ export class AllianceLeadService extends BaseService {
         this._partnerModel = new PartnerModel();
         this._claimInviter = claimInviter ?? null;
         this._decisionNotifier = decisionNotifier ?? null;
+        this._intakeNotifier = intakeNotifier ?? null;
     }
 
     // -----------------------------------------------------------------------
@@ -576,6 +613,29 @@ export class AllianceLeadService extends BaseService {
                                 '[alliance-lead] claim invitation failed to send'
                             );
                         });
+                }
+
+                if (this._intakeNotifier === null) {
+                    this.logger.warn(
+                        { leadId: lead.id },
+                        '[alliance-lead] no intake notifier configured; nobody was told about this lead'
+                    );
+                } else {
+                    // Unconditional and not awaited: every submission gets the
+                    // same work, so nothing about the applicant can be read off
+                    // the response time (AC-3), and a failing mail server never
+                    // costs an applicant their submission. A failure here is
+                    // logged at ERROR and left for the backstop cron, which
+                    // finds the lead through its null `opsNotifiedAt`.
+                    void this._intakeNotifier.notifyNewLead({ lead }).catch((error: unknown) => {
+                        this.logger.error(
+                            {
+                                leadId: lead.id,
+                                error: error instanceof Error ? error.message : String(error)
+                            },
+                            '[alliance-lead] ops intake alert failed to send'
+                        );
+                    });
                 }
 
                 return lead;

@@ -28,9 +28,13 @@ describe('Subject Builder', () => {
                 expect(result).toBe('Confirmación de compra - Pro');
             });
 
-            it('should return addon purchase subject with addonName', () => {
-                // Arrange
-                const data = { addonName: 'Soporte Prioritario' };
+            it('should return addon purchase subject with the addon name', () => {
+                // Arrange — ADDON_PURCHASE is served by PurchaseConfirmationPayload,
+                // whose name field is `planName`; the emitter puts the addon's own
+                // name there. The subject used to declare `{addonName}`, a field no
+                // payload of this type carries, so every addon receipt shipped the
+                // raw placeholder (H-64 / H-75).
+                const data = { planName: 'Soporte Prioritario' };
 
                 // Act
                 const result = getSubject(NotificationType.ADDON_PURCHASE, data);
@@ -206,8 +210,12 @@ describe('Subject Builder', () => {
                 // Act
                 const result = getSubject(NotificationType.ADDON_PURCHASE, data);
 
-                // Assert
-                expect(result).toBe('Add-on adquirido - {addonName}');
+                // Assert — this is the PURE formatter's contract and it stays:
+                // preserving the token is the right answer for a function that
+                // was handed nothing. What must never happen is that string
+                // reaching a transport, which NotificationService.generateSubject
+                // now prevents.
+                expect(result).toBe('Add-on adquirido - {planName}');
             });
 
             it('should preserve placeholder when data has unrelated keys', () => {

@@ -645,9 +645,9 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_ADMIN_NOTIFICATION_EMAILS',
         description:
-            'Comma-separated admin emails for operational alerts: MercadoPago disputes/webhooks AND newsletter campaigns that close with failed deliveries (SPEC-108).',
+            'Comma-separated admin emails for operational alerts: MercadoPago disputes/webhooks, newsletter campaigns that close with failed deliveries (SPEC-108), AND new acquisition leads from the commerce and alliance funnels (H-62 / H-148).',
         descriptionEs:
-            'Emails de admin separados por comas para alertas operativas: disputas/webhooks de MercadoPago Y campañas de newsletter que cierran con entregas fallidas (SPEC-108).',
+            'Emails de admin separados por comas para alertas operativas: disputas/webhooks de MercadoPago, campañas de newsletter que cierran con entregas fallidas (SPEC-108) Y leads nuevos de los embudos de comercio y aliados (H-62 / H-148).',
         type: 'string',
         required: false,
         secret: false,
@@ -655,9 +655,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'email',
         howToObtain:
-            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, newsletter campaigns that close with failed > 0. Example: alice@hospeda.ar,bob@hospeda.ar. Unset = those alerts are silently skipped (the features that depend on the value gracefully no-op).',
+            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, newsletter campaigns that close with failed > 0, and every new commerce/alliance lead. Example: alice@hospeda.ar,bob@hospeda.ar. Unset = those alerts are silently skipped, which for leads means an acquisition funnel nobody hears — the API logs a WARN per dropped lead and the lead-intake-backstop cron keeps retrying it.',
         howToObtainEs:
-            'Lista de emails (separados por comas, sin espacios) que reciben alertas operativas: disputas de pagos, fallos de webhooks, campañas de newsletter que cierran con failed > 0. Ejemplo: alice@hospeda.ar,bob@hospeda.ar. Si queda sin setear, esas alertas se omiten silenciosamente (las features que dependen del valor caen a no-op).'
+            'Lista de emails (separados por comas, sin espacios) que reciben alertas operativas: disputas de pagos, fallos de webhooks, campañas de newsletter que cierran con failed > 0, y cada lead nuevo de comercio/aliados. Ejemplo: alice@hospeda.ar,bob@hospeda.ar. Si queda sin setear, esas alertas se omiten: para los leads eso significa un embudo de captación que nadie escucha — la API loguea un WARN por lead descartado y el cron lead-intake-backstop lo sigue reintentando.'
     },
 
     // -------------------------------------------------------------------------
