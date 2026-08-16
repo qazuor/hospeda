@@ -479,10 +479,13 @@ export class AmenityService extends BaseCrudRelatedService<
                     );
                 }
                 // Remove relation using softDelete and ensure it returns non-null
-                const softDeleted = await this.relatedModel.softDelete({
-                    accommodationId: accommodationId as AccommodationId,
-                    amenityId: amenityId as AmenityId
-                });
+                const softDeleted = await this.relatedModel.softDelete(
+                    {
+                        accommodationId: accommodationId as AccommodationId,
+                        amenityId: amenityId as AmenityId
+                    },
+                    actor.id
+                );
                 if (!softDeleted) {
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,

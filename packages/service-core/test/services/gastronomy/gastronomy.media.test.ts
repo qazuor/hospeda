@@ -303,7 +303,7 @@ describe('removeGastronomyMedia', () => {
 
         expect(result.error).toBeUndefined();
         expect(result.data?.success).toBe(true);
-        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, {});
+        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, ownerActor.id, {});
         // Row at index 0 already has sortOrder 0 — no update call needed for it.
         expect(mockMediaModel.update).not.toHaveBeenCalledWith(
             { id: '00000000-0000-4000-a000-000000000009' },
@@ -712,7 +712,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
         );
 
         expect(result.error).toBeUndefined();
-        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, {});
+        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, ownerActor.id, {});
     });
 
     it('should still remove the row when no media provider is configured', async () => {
@@ -730,7 +730,7 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
         );
 
         expect(result.error).toBeUndefined();
-        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, {});
+        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, ownerActor.id, {});
     });
 
     it('should not call the provider for a row hosted outside Cloudinary', async () => {
@@ -751,6 +751,6 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
 
         expect(result.error).toBeUndefined();
         expect(provider.delete).not.toHaveBeenCalled();
-        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, {});
+        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, ownerActor.id, {});
     });
 });

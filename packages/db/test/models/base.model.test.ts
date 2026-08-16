@@ -11,6 +11,17 @@ const mockTable = {
     deletedAt: {}
 };
 
+// Audited table mock — adds deletedById so soft-delete authorship can be asserted
+const auditedTable = {
+    id: { count: () => ({ as: () => 'COUNT_COL' }) },
+    name: {},
+    deletedAt: {},
+    deletedById: {}
+};
+
+/** Actor id used by the soft-delete authorship tests (HOS-556 / HOS-559). */
+const ACTOR_ID = '11111111-1111-4111-8111-111111111111';
+
 type DummyType = { id: string; name?: string };
 
 class DummyModel extends BaseModel<DummyType> {
@@ -20,6 +31,19 @@ class DummyModel extends BaseModel<DummyType> {
         { count?: () => { as: () => string } } | object
     >;
     public entityName = 'dummy';
+
+    protected getTableName(): string {
+        throw new Error('getTableName not implemented in base test model');
+    }
+}
+
+class AuditedModel extends BaseModel<DummyType> {
+    // @ts-expect-error: mock table for test, not a real Drizzle table
+    protected table = auditedTable as unknown as Record<
+        string,
+        { count?: () => { as: () => string } } | object
+    >;
+    public entityName = 'audited';
 
     protected getTableName(): string {
         throw new Error('getTableName not implemented in base test model');
@@ -130,8 +154,8 @@ describe('BaseModel', () => {
     });
 
     it('softDelete throws DbError when where is empty', async () => {
-        await expect(model.softDelete({})).rejects.toThrow(DbError);
-        await expect(model.softDelete({})).rejects.toThrow(
+        await expect(model.softDelete({}, ACTOR_ID)).rejects.toThrow(DbError);
+        await expect(model.softDelete({}, ACTOR_ID)).rejects.toThrow(
             'where clause cannot be empty — this would soft-delete all records'
         );
     });
@@ -314,8 +338,62 @@ describe('BaseModel', () => {
         getDb.mockReturnValue({
             update: () => ({ set: () => ({ where: () => ({ returning: () => [] }) }) })
         });
-        const result = await model.softDelete({ id: 'notfound' });
+        const result = await model.softDelete({ id: 'notfound' }, ACTOR_ID);
         expect(result).toBe(0);
+    });
+
+    // -------------------------------------------------------------------------
+    // HOS-556 / HOS-559 regression: soft delete must record WHO deleted the row.
+    //
+    // Before this fix softDelete() wrote `{ deletedAt, updatedAt }` and nothing
+    // else, so `deleted_by_id` stayed NULL for every delete the application
+    // performed. Measured in production on 2026-08-15: 0 of the 8 rows deleted
+    // by real users carried an actor.
+    // -------------------------------------------------------------------------
+    describe('softDelete authorship (HOS-556 / HOS-559)', () => {
+        /** Captures the payload handed to Drizzle's `.set()`. */
+        const mockSet = (rows: unknown[]) => {
+            const setSpy = vi.fn().mockReturnValue({
+                where: () => ({ returning: () => rows })
+            });
+            getDb.mockReturnValue({ update: () => ({ set: setSpy }) });
+            return setSpy;
+        };
+
+        it('writes deletedById when the table has the column', async () => {
+            const setSpy = mockSet([{ id: '1' }]);
+            const audited = new AuditedModel();
+
+            await audited.softDelete({ id: '1' }, ACTOR_ID);
+
+            const payload = setSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(Object.keys(payload)).toContain('deletedById');
+            expect(payload.deletedById).toBe(ACTOR_ID);
+            expect(payload.deletedAt).toBeInstanceOf(Date);
+        });
+
+        it('writes an explicit NULL when the caller has no user actor', async () => {
+            const setSpy = mockSet([{ id: '1' }]);
+            const audited = new AuditedModel();
+
+            await audited.softDelete({ id: '1' }, null);
+
+            const payload = setSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(Object.keys(payload)).toContain('deletedById');
+            expect(payload.deletedById).toBeNull();
+        });
+
+        it('omits deletedById when the table lacks the column', async () => {
+            const setSpy = mockSet([{ id: '1' }]);
+
+            // `model` is DummyModel: it has deletedAt but no deletedById, like
+            // the r_* relation tables. Writing the key would make Drizzle throw.
+            await model.softDelete({ id: '1' }, ACTOR_ID);
+
+            const payload = setSpy.mock.calls[0]?.[0] as Record<string, unknown>;
+            expect(Object.keys(payload)).not.toContain('deletedById');
+            expect(payload.deletedAt).toBeInstanceOf(Date);
+        });
     });
 
     it('restore returns 0 if no match', async () => {
@@ -739,6 +817,7 @@ describe('BaseModel', () => {
 
             await model.softDelete(
                 { id: '1' },
+                ACTOR_ID,
                 mockTx as unknown as import('../../src/types.ts').DrizzleClient
             );
 

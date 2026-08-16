@@ -253,6 +253,11 @@ jobs:
         run: bash scripts/check-partner-mention-copy.sh
       - name: Check seed data-migrations for schema-existence probes (HOS-513)
         run: bash scripts/check-seed-migration-schema-probe.sh
+      # Being listed in `pnpm check:guards` is NOT what makes a guard run here:
+      # this job invokes each script as its own step, so a guard added only to
+      # that npm script would never execute in CI. It is in both on purpose.
+      - name: Check soft deletes record their actor (HOS-556 / HOS-559)
+        run: pnpm check:soft-delete-actor
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."

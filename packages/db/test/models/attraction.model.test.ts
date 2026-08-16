@@ -152,7 +152,10 @@ describe('AttractionModel', () => {
                 })
             });
 
-            const result = await model.softDelete({ id: 'a1' });
+            const result = await model.softDelete(
+                { id: 'a1' },
+                '11111111-1111-4111-8111-111111111111'
+            );
 
             expect(result).toBe(1);
             expect(logQuery).toHaveBeenCalled();

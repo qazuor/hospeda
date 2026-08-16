@@ -103,6 +103,10 @@ describe('AttractionService.removeAttractionFromDestination', () => {
         expect(model.findOne).toHaveBeenCalledWith(expect.anything(), marker);
         expect(destinationModel.findOne).toHaveBeenCalledWith(expect.anything(), marker);
         expect(relatedModel.findOne).toHaveBeenCalledWith(expect.anything(), marker);
-        expect(relatedModel.softDelete).toHaveBeenCalledWith(expect.anything(), marker);
+        expect(relatedModel.softDelete).toHaveBeenCalledWith(
+            expect.anything(),
+            actorWithPerms.id,
+            marker
+        );
     });
 });

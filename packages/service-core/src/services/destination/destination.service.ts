@@ -1831,7 +1831,7 @@ export class DestinationService extends BaseCrudService<
                         'FAQ not found for this destination'
                     );
                 }
-                await faqModel.softDelete({ id: validated.faqId }, ctx?.tx);
+                await faqModel.softDelete({ id: validated.faqId }, actor.id, ctx?.tx);
                 return { success: true };
             }
         });
