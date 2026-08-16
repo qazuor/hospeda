@@ -645,18 +645,28 @@ export interface AccommodationDetailData {
     readonly averageRating: number;
     readonly reviewsCount: number;
     readonly featuredImage: string;
+    /**
+     * Author-written alternative text for the cover photo (H-125).
+     * Absent when the owner never wrote one; consumers fall back to the
+     * accommodation name.
+     */
+    readonly featuredImageAlt?: string;
     readonly media: {
         readonly images: readonly string[];
         /**
-         * Gallery items carrying the image URL plus optional caption and
-         * description metadata preserved from the API response. Consumed by
-         * the full photo page and lightbox integrations; kept alongside
-         * `images` for backward compatibility.
+         * Gallery items carrying the image URL plus optional caption,
+         * description and alt metadata preserved from the API response.
+         * Consumed by the full photo page and lightbox integrations; kept
+         * alongside `images` for backward compatibility.
+         *
+         * `alt` and `caption` are NOT interchangeable (H-125): the caption is
+         * display copy, the alt is what a screen reader announces.
          */
         readonly galleryItems: readonly {
             readonly url: string;
             readonly caption?: string;
             readonly description?: string;
+            readonly alt?: string;
         }[];
         /**
          * Video entries carrying the URL plus optional caption and description.

@@ -35,7 +35,6 @@ import { getInitialsFromName } from '../avatar-utils';
 import { webLogger } from '../logger';
 import {
     extractFeaturedImage,
-    extractFeaturedImageUrl,
     extractGalleryItems,
     extractGalleryUrls,
     toRenderableImageUrl
@@ -840,6 +839,12 @@ export function toAccommodationDetailPageProps({
     const amenitiesArr = item.amenities as readonly Record<string, unknown>[] | undefined;
     const featuresArr = item.features as readonly Record<string, unknown>[] | undefined;
     const faqsArr = item.faqs as readonly Record<string, unknown>[] | undefined;
+    // H-125: the rich shape carries the cover photo's author-written alt text.
+    // The URL-only wrapper drops it, which is why every cover fell back to the
+    // listing name.
+    const featuredImage = extractFeaturedImage(item, {
+        fallback: '/assets/images/placeholder-accommodation.svg'
+    });
 
     return {
         id: String(item.id || ''),
@@ -875,10 +880,10 @@ export function toAccommodationDetailPageProps({
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || 0),
-        featuredImage: extractFeaturedImageUrl(
-            item,
-            '/assets/images/placeholder-accommodation.svg'
-        ),
+        featuredImage: featuredImage.url,
+        // H-125: `extractFeaturedImageUrl` discards everything but the URL, which
+        // is what left the cover photo with a synthetic alt. Read the rich shape.
+        ...(featuredImage.alt ? { featuredImageAlt: featuredImage.alt } : {}),
         media: (() => {
             const galleryItems = extractGalleryItems(item);
             const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
