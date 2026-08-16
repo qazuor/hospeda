@@ -4915,6 +4915,7 @@ export interface AccommodationMediaRow {
  * await accommodationMediaApi.removeMedia({ id: 'acc-uuid', mediaId: added.data.media.id });
  * await accommodationMediaApi.setFeaturedMedia({ id: 'acc-uuid', mediaId: added.data.media.id });
  * await accommodationMediaApi.reorderMedia({ id: 'acc-uuid', orderedIds: ['a', 'b', 'c'] });
+ * await accommodationMediaApi.updateMedia({ id: 'acc-uuid', mediaId: added.data.media.id, body: { alt: 'Living con ventanal al jardín' } });
  * ```
  */
 export const accommodationMediaApi = {
@@ -5029,6 +5030,42 @@ export const accommodationMediaApi = {
         return apiClient.patch({
             path: `${PROTECTED}/accommodations/${id}/media/reorder`,
             body: { orderedIds }
+        });
+    },
+
+    /**
+     * Correct a media row's text metadata — caption, description, and alt
+     * (HOS-125). Lets an owner fix a typo or write missing accessible text
+     * without deleting and re-uploading the photo (which would burn a second
+     * Cloudinary asset and lose the row's gallery position).
+     *
+     * Each field is nullable and optional: omit it to leave the column
+     * untouched, send `null` to CLEAR it, send a value to replace it. At
+     * least one field must be present — an empty body is rejected by the API
+     * as `VALIDATION_ERROR`. `attribution` is intentionally not exposed
+     * here — it targets image-bank imports (photographer/license/source),
+     * not an owner's own photo.
+     *
+     * @param params - Accommodation ID, media row ID (DB UUID), and the
+     *   fields to update
+     * @returns `{ media: AccommodationMediaRow }` — the updated row
+     */
+    updateMedia({
+        id,
+        mediaId,
+        body
+    }: {
+        readonly id: string;
+        readonly mediaId: string;
+        readonly body: {
+            readonly caption?: string | null;
+            readonly description?: string | null;
+            readonly alt?: string | null;
+        };
+    }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/accommodations/${id}/media/${mediaId}`,
+            body
         });
     }
 };

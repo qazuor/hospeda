@@ -43,6 +43,7 @@ import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { PhotoGalleryItem } from './PhotoGalleryItem.client';
+import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
 import { usePhotoSection } from './use-photo-section';
 
@@ -127,7 +128,8 @@ export function PhotoSection({
         handleGalleryRemove,
         handlePromoteToFeatured,
         handleMoveUp,
-        handleMoveDown
+        handleMoveDown,
+        handleUpdateMediaText
     } = usePhotoSection({
         locale,
         accommodationId,
@@ -178,6 +180,20 @@ export function PhotoSection({
                                 ✕
                             </button>
                         </div>
+                        <PhotoMetadataEditor
+                            locale={locale}
+                            item={featuredItem}
+                            disabled={anyOpInFlight || !opsReady}
+                            toggleAriaLabel={t(
+                                'host.properties.editor.photo.editFeaturedDetailsAria',
+                                'Editar textos de la portada'
+                            )}
+                            closeAriaLabel={t(
+                                'host.properties.editor.photo.closeFeaturedDetailsAria',
+                                'Cerrar edición de textos de la portada'
+                            )}
+                            onSave={handleUpdateMediaText}
+                        />
                     </div>
                 ) : (
                     <button
@@ -270,6 +286,7 @@ export function PhotoSection({
                             onPromote={handlePromoteToFeatured}
                             onMoveUp={handleMoveUp}
                             onMoveDown={handleMoveDown}
+                            onUpdateMetadata={handleUpdateMediaText}
                         />
                     ))}
 

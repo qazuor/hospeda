@@ -18,7 +18,9 @@
 import type { AccommodationMediaItem } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
+import type { PhotoMetadataUpdateBody } from './photo-section-helpers';
 
 export interface PhotoGalleryItemProps {
     readonly locale: SupportedLocale;
@@ -33,6 +35,11 @@ export interface PhotoGalleryItemProps {
     readonly onPromote: (item: AccommodationMediaItem) => void;
     readonly onMoveUp: (item: AccommodationMediaItem) => void;
     readonly onMoveDown: (item: AccommodationMediaItem) => void;
+    /** Corrects this photo's alt/caption/description (HOS-125). */
+    readonly onUpdateMetadata: (
+        item: AccommodationMediaItem,
+        body: PhotoMetadataUpdateBody
+    ) => Promise<boolean>;
 }
 
 /**
@@ -49,73 +56,94 @@ export function PhotoGalleryItem({
     onRemove,
     onPromote,
     onMoveUp,
-    onMoveDown
+    onMoveDown,
+    onUpdateMetadata
 }: PhotoGalleryItemProps) {
     const { t } = createTranslations(locale);
     const canOperate = !disabled && Boolean(item.id);
 
     return (
-        <div className={styles.galleryItem}>
-            <img
-                src={item.url}
-                alt={
-                    item.alt ??
-                    t('host.properties.editor.photo.galleryAlt', undefined, { index: position })
-                }
-                className={styles.galleryItemImage}
+        <div className={styles.galleryItemWrapper}>
+            <div className={styles.galleryItem}>
+                <img
+                    src={item.url}
+                    alt={
+                        item.alt ??
+                        t('host.properties.editor.photo.galleryAlt', undefined, {
+                            index: position
+                        })
+                    }
+                    className={styles.galleryItemImage}
+                />
+                <div className={styles.galleryItemActions}>
+                    <button
+                        type="button"
+                        className={styles.previewButton}
+                        onClick={() => onRemove(item)}
+                        disabled={!canOperate}
+                        aria-label={t('host.properties.editor.photo.remove', 'Eliminar')}
+                    >
+                        ✕
+                    </button>
+                </div>
+                <div className={styles.galleryItemToolbar}>
+                    <button
+                        type="button"
+                        className={styles.toolbarButton}
+                        onClick={() => onMoveUp(item)}
+                        disabled={!canOperate || isFirst}
+                        aria-label={t(
+                            'host.properties.editor.photo.moveUpAria',
+                            'Mover foto {{index}} hacia arriba',
+                            { index: position }
+                        )}
+                    >
+                        ↑
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.toolbarButton}
+                        onClick={() => onMoveDown(item)}
+                        disabled={!canOperate || isLast}
+                        aria-label={t(
+                            'host.properties.editor.photo.moveDownAria',
+                            'Mover foto {{index}} hacia abajo',
+                            { index: position }
+                        )}
+                    >
+                        ↓
+                    </button>
+                    <button
+                        type="button"
+                        className={styles.toolbarButtonPromote}
+                        onClick={() => onPromote(item)}
+                        disabled={!canOperate}
+                        aria-label={t(
+                            'host.properties.editor.photo.promoteToFeaturedAria',
+                            'Usar foto {{index}} como portada',
+                            { index: position }
+                        )}
+                    >
+                        {t('host.properties.editor.photo.promoteToFeaturedShort', 'Portada')}
+                    </button>
+                </div>
+            </div>
+            <PhotoMetadataEditor
+                locale={locale}
+                item={item}
+                disabled={disabled}
+                toggleAriaLabel={t(
+                    'host.properties.editor.photo.editDetailsAria',
+                    'Editar textos de la foto {{index}}',
+                    { index: position }
+                )}
+                closeAriaLabel={t(
+                    'host.properties.editor.photo.closeDetailsAria',
+                    'Cerrar edición de textos de la foto {{index}}',
+                    { index: position }
+                )}
+                onSave={onUpdateMetadata}
             />
-            <div className={styles.galleryItemActions}>
-                <button
-                    type="button"
-                    className={styles.previewButton}
-                    onClick={() => onRemove(item)}
-                    disabled={!canOperate}
-                    aria-label={t('host.properties.editor.photo.remove', 'Eliminar')}
-                >
-                    ✕
-                </button>
-            </div>
-            <div className={styles.galleryItemToolbar}>
-                <button
-                    type="button"
-                    className={styles.toolbarButton}
-                    onClick={() => onMoveUp(item)}
-                    disabled={!canOperate || isFirst}
-                    aria-label={t(
-                        'host.properties.editor.photo.moveUpAria',
-                        'Mover foto {{index}} hacia arriba',
-                        { index: position }
-                    )}
-                >
-                    ↑
-                </button>
-                <button
-                    type="button"
-                    className={styles.toolbarButton}
-                    onClick={() => onMoveDown(item)}
-                    disabled={!canOperate || isLast}
-                    aria-label={t(
-                        'host.properties.editor.photo.moveDownAria',
-                        'Mover foto {{index}} hacia abajo',
-                        { index: position }
-                    )}
-                >
-                    ↓
-                </button>
-                <button
-                    type="button"
-                    className={styles.toolbarButtonPromote}
-                    onClick={() => onPromote(item)}
-                    disabled={!canOperate}
-                    aria-label={t(
-                        'host.properties.editor.photo.promoteToFeaturedAria',
-                        'Usar foto {{index}} como portada',
-                        { index: position }
-                    )}
-                >
-                    {t('host.properties.editor.photo.promoteToFeaturedShort', 'Portada')}
-                </button>
-            </div>
         </div>
     );
 }

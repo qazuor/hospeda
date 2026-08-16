@@ -9,11 +9,13 @@ import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { describe, expect, it, vi } from 'vitest';
 import {
     buildCapExceededOnSelectMessage,
+    buildPhotoMetadataUpdateBody,
     buildReorderPayload,
     mediaRowToItem,
     moveArrayItem,
     splitMediaRows,
-    validatePhotoFile
+    validatePhotoFile,
+    validatePhotoMetadataFields
 } from '@/components/host/editor/photo-section-helpers';
 
 /** Minimal translator stub: returns the fallback with params interpolated. */
@@ -152,5 +154,115 @@ describe('mediaRowToItem / splitMediaRows', () => {
         const { featured, gallery } = splitMediaRows([GALLERY_ROW]);
         expect(featured).toBeNull();
         expect(gallery).toHaveLength(1);
+    });
+
+    it('carries the description field through the mapping (HOS-125)', () => {
+        const item = mediaRowToItem({ ...GALLERY_ROW, description: 'una descripción larga' });
+        expect(item.description).toBe('una descripción larga');
+    });
+});
+
+// ----------------------------------------------------------------------------
+// Photo text-metadata editing (HOS-125)
+// ----------------------------------------------------------------------------
+
+describe('validatePhotoMetadataFields', () => {
+    it('returns no errors for empty fields — clearing is always valid', () => {
+        const errors = validatePhotoMetadataFields({ alt: '', caption: '', description: '' }, t);
+        expect(errors).toEqual({});
+    });
+
+    it('returns no errors for values within bounds', () => {
+        const errors = validatePhotoMetadataFields(
+            { alt: 'Living con sofá', caption: 'Vista al jardín', description: 'x'.repeat(10) },
+            t
+        );
+        expect(errors).toEqual({});
+    });
+
+    it('rejects an alt over 200 characters', () => {
+        const errors = validatePhotoMetadataFields(
+            { alt: 'x'.repeat(201), caption: '', description: '' },
+            t
+        );
+        expect(errors.alt).toContain('200');
+    });
+
+    it('rejects a NON-EMPTY caption under 3 characters, but allows an empty one', () => {
+        const tooShort = validatePhotoMetadataFields(
+            { alt: '', caption: 'ab', description: '' },
+            t
+        );
+        expect(tooShort.caption).toContain('3');
+
+        const empty = validatePhotoMetadataFields({ alt: '', caption: '', description: '' }, t);
+        expect(empty.caption).toBeUndefined();
+    });
+
+    it('rejects a caption over 100 characters', () => {
+        const errors = validatePhotoMetadataFields(
+            { alt: '', caption: 'x'.repeat(101), description: '' },
+            t
+        );
+        expect(errors.caption).toContain('100');
+    });
+
+    it('rejects a NON-EMPTY description under 10 characters, but allows an empty one', () => {
+        const tooShort = validatePhotoMetadataFields(
+            { alt: '', caption: '', description: 'corta' },
+            t
+        );
+        expect(tooShort.description).toContain('10');
+
+        const empty = validatePhotoMetadataFields({ alt: '', caption: '', description: '' }, t);
+        expect(empty.description).toBeUndefined();
+    });
+
+    it('rejects a description over 300 characters', () => {
+        const errors = validatePhotoMetadataFields(
+            { alt: '', caption: '', description: 'x'.repeat(301) },
+            t
+        );
+        expect(errors.description).toContain('300');
+    });
+
+    it('treats whitespace-only input the same as empty (trims before checking)', () => {
+        const errors = validatePhotoMetadataFields(
+            { alt: '   ', caption: '   ', description: '   ' },
+            t
+        );
+        expect(errors).toEqual({});
+    });
+});
+
+describe('buildPhotoMetadataUpdateBody', () => {
+    it('passes non-empty values through unchanged (after trim)', () => {
+        const body = buildPhotoMetadataUpdateBody({
+            alt: '  Living con sofá  ',
+            caption: 'Vista al jardín',
+            description: 'Una descripción bien larga'
+        });
+        expect(body).toEqual({
+            alt: 'Living con sofá',
+            caption: 'Vista al jardín',
+            description: 'Una descripción bien larga'
+        });
+    });
+
+    it('maps an empty field to null, never an empty string', () => {
+        const body = buildPhotoMetadataUpdateBody({ alt: '', caption: '', description: '' });
+        expect(body).toEqual({ alt: null, caption: null, description: null });
+        expect(body.alt).not.toBe('');
+        expect(body.caption).not.toBe('');
+        expect(body.description).not.toBe('');
+    });
+
+    it('maps a whitespace-only field to null', () => {
+        const body = buildPhotoMetadataUpdateBody({
+            alt: '   ',
+            caption: '\t',
+            description: '  '
+        });
+        expect(body).toEqual({ alt: null, caption: null, description: null });
     });
 });

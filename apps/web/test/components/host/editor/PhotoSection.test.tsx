@@ -40,6 +40,7 @@ const {
     mockRemoveMedia,
     mockSetFeaturedMedia,
     mockReorderMedia,
+    mockUpdateMedia,
     mockUploadEntityImage,
     mockAddToast
 } = vi.hoisted(() => ({
@@ -48,6 +49,7 @@ const {
     mockRemoveMedia: vi.fn(),
     mockSetFeaturedMedia: vi.fn(),
     mockReorderMedia: vi.fn(),
+    mockUpdateMedia: vi.fn(),
     mockUploadEntityImage: vi.fn(),
     mockAddToast: vi.fn()
 }));
@@ -95,7 +97,8 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         addMedia: mockAddMedia,
         removeMedia: mockRemoveMedia,
         setFeaturedMedia: mockSetFeaturedMedia,
-        reorderMedia: mockReorderMedia
+        reorderMedia: mockReorderMedia,
+        updateMedia: mockUpdateMedia
     },
     // protectedMediaApi kept for backward compat (not used by new PhotoSection)
     protectedMediaApi: {
@@ -200,6 +203,11 @@ function makeError(message = 'Server error') {
 
 function makeUploadOk(url = NEW_ROW.url, publicId = NEW_ROW.publicId) {
     return Promise.resolve({ url, publicId, width: 800, height: 600 });
+}
+
+/** Resolved updateMedia response echoing back the row with new text fields. */
+function makeUpdateOk(row: Record<string, unknown>) {
+    return Promise.resolve({ ok: true as const, data: { media: row } });
 }
 
 // ---------------------------------------------------------------------------
@@ -909,6 +917,194 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                     body: expect.objectContaining({ url: NEW_ROW.url })
                 });
             });
+        });
+    });
+
+    // ── 11. Correcting photo text metadata (HOS-125) ────────────────────────
+
+    describe('editing photo text metadata (HOS-125)', () => {
+        it("writing a new alt on a gallery photo calls updateMedia with that photo's id", async () => {
+            mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, GALLERY_ROW_1, GALLERY_ROW_2]));
+            mockUpdateMedia.mockReturnValue(
+                makeUpdateOk({ ...GALLERY_ROW_1, alt: 'Living con sofá' })
+            );
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(3));
+
+            fireEvent.click(screen.getByLabelText('Editar textos de la foto 1'));
+            fireEvent.change(screen.getByLabelText('¿Qué muestra la foto?'), {
+                target: { value: 'Living con sofá' }
+            });
+            fireEvent.click(screen.getByText('Guardar'));
+
+            await waitFor(() => {
+                expect(mockUpdateMedia).toHaveBeenCalledWith({
+                    id: ACC_ID,
+                    mediaId: GALLERY_ROW_1.id,
+                    body: { alt: 'Living con sofá', caption: null, description: null }
+                });
+            });
+
+            // Reflects the corrected alt on the thumbnail
+            await waitFor(() => {
+                expect(screen.getByAltText('Living con sofá')).toBeInTheDocument();
+            });
+        });
+
+        it('correcting an existing alt replaces it, and leaves the other gallery photo untouched', async () => {
+            const galleryWithAlt = { ...GALLERY_ROW_1, alt: 'texto viejo con error' };
+            mockListMedia.mockReturnValue(makeListOk([galleryWithAlt, GALLERY_ROW_2]));
+            mockUpdateMedia.mockReturnValue(
+                makeUpdateOk({ ...galleryWithAlt, alt: 'Dormitorio con cama matrimonial' })
+            );
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => {
+                expect(screen.getByAltText('texto viejo con error')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByLabelText('Editar textos de la foto 1'));
+            const altField = screen.getByLabelText('¿Qué muestra la foto?') as HTMLTextAreaElement;
+            expect(altField.value).toBe('texto viejo con error');
+
+            fireEvent.change(altField, { target: { value: 'Dormitorio con cama matrimonial' } });
+            fireEvent.click(screen.getByText('Guardar'));
+
+            await waitFor(() => {
+                expect(mockUpdateMedia).toHaveBeenCalledTimes(1);
+                expect(mockUpdateMedia).toHaveBeenCalledWith(
+                    expect.objectContaining({ mediaId: galleryWithAlt.id })
+                );
+            });
+
+            // Old text is gone, new text is shown
+            await waitFor(() => {
+                expect(screen.queryByAltText('texto viejo con error')).not.toBeInTheDocument();
+                expect(screen.getByAltText('Dormitorio con cama matrimonial')).toBeInTheDocument();
+            });
+
+            // The second photo's row was never targeted by updateMedia
+            expect(mockUpdateMedia).not.toHaveBeenCalledWith(
+                expect.objectContaining({ mediaId: GALLERY_ROW_2.id })
+            );
+        });
+
+        it('editing the portada targets only its own mediaId, not any gallery photo', async () => {
+            mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, GALLERY_ROW_1]));
+            mockUpdateMedia.mockReturnValue(
+                makeUpdateOk({ ...FEATURED_ROW, alt: 'Portada corregida' })
+            );
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => {
+                expect(screen.getByAltText('Imagen principal')).toHaveAttribute(
+                    'src',
+                    FEATURED_ROW.url
+                );
+            });
+
+            fireEvent.click(screen.getByLabelText('Editar textos de la portada'));
+            fireEvent.change(screen.getByLabelText('¿Qué muestra la foto?'), {
+                target: { value: 'Portada corregida' }
+            });
+            fireEvent.click(screen.getByText('Guardar'));
+
+            await waitFor(() => {
+                expect(mockUpdateMedia).toHaveBeenCalledWith({
+                    id: ACC_ID,
+                    mediaId: FEATURED_ROW.id,
+                    body: { alt: 'Portada corregida', caption: null, description: null }
+                });
+            });
+            expect(mockUpdateMedia).not.toHaveBeenCalledWith(
+                expect.objectContaining({ mediaId: GALLERY_ROW_1.id })
+            );
+        });
+
+        it('clearing a filled field sends null, not an empty string, to updateMedia', async () => {
+            const galleryWithFields = {
+                ...GALLERY_ROW_1,
+                alt: 'texto existente',
+                caption: 'epígrafe existente'
+            };
+            mockListMedia.mockReturnValue(makeListOk([galleryWithFields]));
+            mockUpdateMedia.mockReturnValue(
+                makeUpdateOk({ ...galleryWithFields, alt: undefined, caption: undefined })
+            );
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(1));
+
+            fireEvent.click(screen.getByLabelText('Editar textos de la foto 1'));
+            fireEvent.change(screen.getByLabelText('¿Qué muestra la foto?'), {
+                target: { value: '' }
+            });
+            fireEvent.change(screen.getByLabelText('Epígrafe (opcional)'), {
+                target: { value: '' }
+            });
+            fireEvent.click(screen.getByText('Guardar'));
+
+            await waitFor(() => {
+                expect(mockUpdateMedia).toHaveBeenCalledWith({
+                    id: ACC_ID,
+                    mediaId: galleryWithFields.id,
+                    body: { alt: null, caption: null, description: null }
+                });
+            });
+
+            const call = mockUpdateMedia.mock.calls[0]?.[0] as { body: Record<string, unknown> };
+            expect(call.body.alt).not.toBe('');
+            expect(call.body.caption).not.toBe('');
+        });
+
+        it('rejects a too-short caption client-side and never calls updateMedia', async () => {
+            mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1]));
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(1));
+
+            fireEvent.click(screen.getByLabelText('Editar textos de la foto 1'));
+            fireEvent.change(screen.getByLabelText('Epígrafe (opcional)'), {
+                target: { value: 'ab' }
+            });
+            fireEvent.click(screen.getByText('Guardar'));
+
+            await waitFor(() => {
+                expect(
+                    screen.getByText('El epígrafe debe tener al menos 3 caracteres, o dejalo vacío')
+                ).toBeInTheDocument();
+            });
+            expect(mockUpdateMedia).not.toHaveBeenCalled();
+        });
+
+        it('surfaces an inline error and keeps the old text when updateMedia fails', async () => {
+            mockListMedia.mockReturnValue(
+                makeListOk([{ ...GALLERY_ROW_1, alt: 'texto original' }])
+            );
+            mockUpdateMedia.mockReturnValue(
+                makeError('No se pudieron guardar los datos de la foto')
+            );
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => {
+                expect(screen.getByAltText('texto original')).toBeInTheDocument();
+            });
+
+            fireEvent.click(screen.getByLabelText('Editar textos de la foto 1'));
+            fireEvent.change(screen.getByLabelText('¿Qué muestra la foto?'), {
+                target: { value: 'texto que no se guarda' }
+            });
+            fireEvent.click(screen.getByText('Guardar'));
+
+            await waitFor(() => {
+                expect(
+                    screen.getByText('No se pudieron guardar los datos de la foto')
+                ).toBeInTheDocument();
+            });
+
+            // Thumbnail still shows the OLD alt — state was not mutated on failure
+            expect(screen.getByAltText('texto original')).toBeInTheDocument();
         });
     });
 });

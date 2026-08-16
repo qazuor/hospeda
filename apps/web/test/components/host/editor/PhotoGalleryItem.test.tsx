@@ -52,6 +52,7 @@ function makeProps(overrides: Partial<PhotoGalleryItemProps> = {}): PhotoGallery
         onPromote: vi.fn(),
         onMoveUp: vi.fn(),
         onMoveDown: vi.fn(),
+        onUpdateMetadata: vi.fn().mockResolvedValue(true),
         ...overrides
     };
 }
@@ -118,5 +119,21 @@ describe('PhotoGalleryItem', () => {
         render(<PhotoGalleryItem {...makeProps({ item: { ...ITEM, id: '' } })} />);
         expect(screen.getByLabelText('Eliminar')).toBeDisabled();
         expect(screen.getByLabelText('Mover foto 2 hacia arriba')).toBeDisabled();
+    });
+
+    // ── Per-photo text metadata editor toggle (HOS-125) ─────────────────────
+
+    it('renders the details toggle as a real <button> and disables it with the rest', () => {
+        render(<PhotoGalleryItem {...makeProps({ disabled: true })} />);
+        const toggle = screen.getByLabelText('Editar textos de la foto 2');
+        expect(toggle.tagName).toBe('BUTTON');
+        expect(toggle).toBeDisabled();
+    });
+
+    it('does not render the metadata form until the toggle is clicked', () => {
+        render(<PhotoGalleryItem {...makeProps()} />);
+        expect(screen.queryByLabelText('¿Qué muestra la foto?')).not.toBeInTheDocument();
+        fireEvent.click(screen.getByLabelText('Editar textos de la foto 2'));
+        expect(screen.getByLabelText('¿Qué muestra la foto?')).toBeInTheDocument();
     });
 });

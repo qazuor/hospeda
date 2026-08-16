@@ -126,6 +126,7 @@ export function mediaRowToItem(row: AccommodationMediaRow): AccommodationMediaIt
         url: row.url,
         publicId: row.publicId ?? '',
         caption: row.caption,
+        description: row.description,
         alt: row.alt,
         isFeatured: row.isFeatured
     };
@@ -145,5 +146,122 @@ export function splitMediaRows(rows: readonly AccommodationMediaRow[]): {
     return {
         featured: featuredRow ? mediaRowToItem(featuredRow) : null,
         gallery: galleryRows.map(mediaRowToItem)
+    };
+}
+
+// ----------------------------------------------------------------------------
+// Photo text-metadata editing (HOS-125 — correct alt/caption/description)
+// ----------------------------------------------------------------------------
+
+/**
+ * Length bounds for the three free-text photo fields, mirroring
+ * `AccommodationMediaUpdatePayloadSchema` in `@repo/schemas` exactly (min/max
+ * on `alt`, `caption`, `description`). Kept as named constants here so the
+ * client rejects an out-of-bounds value BEFORE calling the API, instead of
+ * round-tripping to a 400.
+ */
+export const PHOTO_ALT_MAX_LENGTH = 200;
+export const PHOTO_CAPTION_MIN_LENGTH = 3;
+export const PHOTO_CAPTION_MAX_LENGTH = 100;
+export const PHOTO_DESCRIPTION_MIN_LENGTH = 10;
+export const PHOTO_DESCRIPTION_MAX_LENGTH = 300;
+
+/** Raw form field values for the photo metadata editor, always plain strings. */
+export interface PhotoMetadataFormValues {
+    readonly alt: string;
+    readonly caption: string;
+    readonly description: string;
+}
+
+/** Per-field validation errors — a field is present only when it is invalid. */
+export interface PhotoMetadataFieldErrors {
+    readonly alt?: string;
+    readonly caption?: string;
+    readonly description?: string;
+}
+
+/** PATCH body accepted by `accommodationMediaApi.updateMedia`. */
+export interface PhotoMetadataUpdateBody {
+    readonly alt?: string | null;
+    readonly caption?: string | null;
+    readonly description?: string | null;
+}
+
+/**
+ * Validate the three free-text photo fields against the same length bounds
+ * the API enforces. An EMPTY (post-trim) field is always valid — it means
+ * "clear this field" once submitted — so the minimum length only applies to
+ * a field the host actually filled in.
+ *
+ * @param values - Current form field values
+ * @param t - Active translator
+ * @returns Per-field error messages; a field with no error is omitted
+ */
+export function validatePhotoMetadataFields(
+    values: PhotoMetadataFormValues,
+    t: Translate
+): PhotoMetadataFieldErrors {
+    const errors: { alt?: string; caption?: string; description?: string } = {};
+
+    const alt = values.alt.trim();
+    if (alt.length > PHOTO_ALT_MAX_LENGTH) {
+        errors.alt = t(
+            'host.properties.editor.photo.altTooLong',
+            'El texto no puede superar {{max}} caracteres',
+            { max: PHOTO_ALT_MAX_LENGTH }
+        );
+    }
+
+    const caption = values.caption.trim();
+    if (caption.length > 0 && caption.length < PHOTO_CAPTION_MIN_LENGTH) {
+        errors.caption = t(
+            'host.properties.editor.photo.captionTooShort',
+            'El epígrafe debe tener al menos {{min}} caracteres, o dejalo vacío',
+            { min: PHOTO_CAPTION_MIN_LENGTH }
+        );
+    } else if (caption.length > PHOTO_CAPTION_MAX_LENGTH) {
+        errors.caption = t(
+            'host.properties.editor.photo.captionTooLong',
+            'El epígrafe no puede superar {{max}} caracteres',
+            { max: PHOTO_CAPTION_MAX_LENGTH }
+        );
+    }
+
+    const description = values.description.trim();
+    if (description.length > 0 && description.length < PHOTO_DESCRIPTION_MIN_LENGTH) {
+        errors.description = t(
+            'host.properties.editor.photo.descriptionTooShort',
+            'La descripción debe tener al menos {{min}} caracteres, o dejala vacía',
+            { min: PHOTO_DESCRIPTION_MIN_LENGTH }
+        );
+    } else if (description.length > PHOTO_DESCRIPTION_MAX_LENGTH) {
+        errors.description = t(
+            'host.properties.editor.photo.descriptionTooLong',
+            'La descripción no puede superar {{max}} caracteres',
+            { max: PHOTO_DESCRIPTION_MAX_LENGTH }
+        );
+    }
+
+    return errors;
+}
+
+/**
+ * Build the PATCH body for `accommodationMediaApi.updateMedia` from raw form
+ * values: a blank (post-trim) field becomes `null` — CLEAR — never `''`. The
+ * API treats `null` and "omitted" differently from an empty string (which
+ * would fail the schema's `min()` bound instead of clearing the column), so
+ * this mapping is the one place that distinction must never be lost.
+ */
+export function buildPhotoMetadataUpdateBody(
+    values: PhotoMetadataFormValues
+): PhotoMetadataUpdateBody {
+    const toNullable = (raw: string): string | null => {
+        const trimmed = raw.trim();
+        return trimmed.length > 0 ? trimmed : null;
+    };
+    return {
+        alt: toNullable(values.alt),
+        caption: toNullable(values.caption),
+        description: toNullable(values.description)
     };
 }

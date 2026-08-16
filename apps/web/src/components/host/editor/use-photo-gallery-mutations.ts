@@ -19,6 +19,7 @@ import {
     buildReorderPayload,
     mediaRowToItem,
     moveArrayItem,
+    type PhotoMetadataUpdateBody,
     splitMediaRows,
     type Translate
 } from './photo-section-helpers';
@@ -44,6 +45,10 @@ export interface UsePhotoGalleryMutationsResult {
     readonly handlePromoteToFeatured: (item: AccommodationMediaItem) => void;
     readonly handleMoveUp: (item: AccommodationMediaItem) => void;
     readonly handleMoveDown: (item: AccommodationMediaItem) => void;
+    readonly handleUpdateMediaText: (
+        item: AccommodationMediaItem,
+        body: PhotoMetadataUpdateBody
+    ) => Promise<boolean>;
 }
 
 /**
@@ -238,11 +243,65 @@ export function usePhotoGalleryMutations({
         [handleMoveGalleryItem]
     );
 
+    /**
+     * Correct a single photo's text metadata (alt/caption/description) via
+     * `updateMedia` (HOS-125). Targets exactly ONE row by its DB UUID — a
+     * save on one photo never touches any other photo's fields — and merges
+     * the server's authoritative row back into whichever slot the item lives
+     * in (portada or gallery), without disturbing the rest of that slot's
+     * state. Returns `true` on success so the calling form can show a
+     * "saved" confirmation and stay open for further edits.
+     */
+    const handleUpdateMediaText = useCallback(
+        async (item: AccommodationMediaItem, body: PhotoMetadataUpdateBody): Promise<boolean> => {
+            if (!item.id) return false;
+            setError(null);
+            setOpLoading(true);
+
+            const result = await accommodationMediaApi.updateMedia({
+                id: accommodationId,
+                mediaId: item.id,
+                body
+            });
+
+            if (!result.ok) {
+                reportUploadError(
+                    result.error.message ??
+                        t(
+                            'host.properties.editor.photo.metadataSaveFailed',
+                            'No se pudieron guardar los datos de la foto'
+                        )
+                );
+                setOpLoading(false);
+                return false;
+            }
+
+            const updated = mediaRowToItem(result.data.media);
+            if (item.isFeatured) {
+                setFeaturedItem(updated);
+            } else {
+                setGalleryItems((prev) => prev.map((g) => (g.id === item.id ? updated : g)));
+            }
+            setOpLoading(false);
+            return true;
+        },
+        [
+            accommodationId,
+            t,
+            reportUploadError,
+            setError,
+            setOpLoading,
+            setFeaturedItem,
+            setGalleryItems
+        ]
+    );
+
     return {
         handleFeaturedRemove,
         handleGalleryRemove,
         handlePromoteToFeatured,
         handleMoveUp,
-        handleMoveDown
+        handleMoveDown,
+        handleUpdateMediaText
     };
 }

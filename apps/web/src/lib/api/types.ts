@@ -286,6 +286,8 @@ export interface AccommodationMediaItem {
     readonly url: string;
     readonly publicId: string;
     readonly caption?: string;
+    /** Longer photo description (HOS-125 — correctable via updateMedia). */
+    readonly description?: string;
     readonly alt?: string;
     readonly width?: number;
     readonly height?: number;

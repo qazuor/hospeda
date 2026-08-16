@@ -22,6 +22,7 @@ import { addToast } from '@/store/toast-store';
 import {
     buildCapExceededOnSelectMessage,
     mediaRowToItem,
+    type PhotoMetadataUpdateBody,
     splitMediaRows,
     validatePhotoFile
 } from './photo-section-helpers';
@@ -83,6 +84,10 @@ export interface UsePhotoSectionResult {
     readonly handlePromoteToFeatured: (item: AccommodationMediaItem) => void;
     readonly handleMoveUp: (item: AccommodationMediaItem) => void;
     readonly handleMoveDown: (item: AccommodationMediaItem) => void;
+    readonly handleUpdateMediaText: (
+        item: AccommodationMediaItem,
+        body: PhotoMetadataUpdateBody
+    ) => Promise<boolean>;
 }
 
 /**
@@ -383,7 +388,8 @@ export function usePhotoSection({
         handleGalleryRemove,
         handlePromoteToFeatured,
         handleMoveUp,
-        handleMoveDown
+        handleMoveDown,
+        handleUpdateMediaText
     } = usePhotoGalleryMutations({
         accommodationId,
         t,
@@ -426,6 +432,7 @@ export function usePhotoSection({
         handleGalleryRemove,
         handlePromoteToFeatured,
         handleMoveUp,
-        handleMoveDown
+        handleMoveDown,
+        handleUpdateMediaText
     };
 }
