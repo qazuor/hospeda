@@ -33,7 +33,7 @@
 .stepIndicatorNext {
     margin: var(--space-1, 0.25rem) 0 0;
     font-family: var(--font-sans);
-    font-size: var(--text-small, 0.875rem);
+    font-size: var(--text-sm, 0.875rem);
     color: var(--core-muted-foreground);
 }
 
