@@ -146,6 +146,9 @@ export function buildSubjectData(params: { readonly payload: NotificationPayload
     const { payload } = params;
     const subjectData = buildDerivedSubjectData(payload);
     const { placeholders } = getSubjectPlaceholders({ type: payload.type });
+    // TYPE-WORKAROUND: the placeholder names come from the subject pattern at
+    // run time, so they cannot be expressed as keys of the payload union;
+    // `asSubjectValue` below re-narrows every value before it is used.
     const fields = payload as unknown as Record<string, unknown>;
 
     for (const key of placeholders) {
