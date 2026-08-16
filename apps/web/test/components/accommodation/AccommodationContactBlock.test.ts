@@ -33,7 +33,7 @@ describe('AccommodationContactBlock.astro (source-based)', () => {
 
     it('derives hasContact from phone/email/website only — never from whatsapp', () => {
         expect(src).toContain(
-            'contactInfo && (contactInfo.phone || contactInfo.email || contactInfo.website)'
+            'contactInfo && (contactInfo.phone || contactInfo.email || websiteHref)'
         );
         // Defense in depth: the component's own logic must never reference a
         // whatsapp field at all, even though the prop type doesn't carry one.
@@ -42,9 +42,22 @@ describe('AccommodationContactBlock.astro (source-based)', () => {
     });
 
     it('derives hasSocial from facebook/instagram only (owner decision, H-118)', () => {
-        expect(src).toContain(
-            'socialNetworks && (socialNetworks.facebook || socialNetworks.instagram)'
-        );
+        expect(src).toContain('Boolean(facebookHref || instagramHref)');
+    });
+
+    it('routes every host-authored URL through the scheme allow-list', () => {
+        // `z.string().url()` accepts `javascript:` and `data:`, so the schema is
+        // not what keeps a payload out of these hrefs — `resolveSafeExternalUrl`
+        // is. These three fields are written by the host and published with no
+        // review in between, so a raw href here is a stored-XSS sink.
+        expect(src).toContain('resolveSafeExternalUrl(contactInfo?.website)');
+        expect(src).toContain('resolveSafeExternalUrl(socialNetworks?.facebook)');
+        expect(src).toContain('resolveSafeExternalUrl(socialNetworks?.instagram)');
+
+        // And no outbound href may bypass it by reading the raw value.
+        expect(src).not.toContain('href={contactInfo.website}');
+        expect(src).not.toContain('href={socialNetworks.facebook}');
+        expect(src).not.toContain('href={socialNetworks.instagram}');
     });
 
     it('renders the phone link as a tel: URI with no target/rel (internal-scheme link)', () => {
@@ -59,8 +72,8 @@ describe('AccommodationContactBlock.astro (source-based)', () => {
 
     it('renders the website link with rel="noopener noreferrer", not sponsored/nofollow', () => {
         const websiteBlock = src.slice(
-            src.indexOf('href={contactInfo.website}'),
-            src.indexOf('href={contactInfo.website}') + 300
+            src.indexOf('href={websiteHref}'),
+            src.indexOf('href={websiteHref}') + 300
         );
         expect(websiteBlock).toContain('target="_blank"');
         expect(websiteBlock).toContain('rel="noopener noreferrer"');
@@ -70,8 +83,8 @@ describe('AccommodationContactBlock.astro (source-based)', () => {
 
     it('renders the Facebook link with rel="noopener noreferrer", not sponsored/nofollow', () => {
         const fbBlock = src.slice(
-            src.indexOf('href={socialNetworks.facebook}'),
-            src.indexOf('href={socialNetworks.facebook}') + 300
+            src.indexOf('href={facebookHref}'),
+            src.indexOf('href={facebookHref}') + 300
         );
         expect(fbBlock).toContain('target="_blank"');
         expect(fbBlock).toContain('rel="noopener noreferrer"');
@@ -81,8 +94,8 @@ describe('AccommodationContactBlock.astro (source-based)', () => {
 
     it('renders the Instagram link with rel="noopener noreferrer", not sponsored/nofollow', () => {
         const igBlock = src.slice(
-            src.indexOf('href={socialNetworks.instagram}'),
-            src.indexOf('href={socialNetworks.instagram}') + 300
+            src.indexOf('href={instagramHref}'),
+            src.indexOf('href={instagramHref}') + 300
         );
         expect(igBlock).toContain('target="_blank"');
         expect(igBlock).toContain('rel="noopener noreferrer"');

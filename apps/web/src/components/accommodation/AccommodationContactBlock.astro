@@ -28,6 +28,7 @@ import { EmailIcon, FacebookIcon, GlobeIcon, InstagramIcon, PhoneIcon } from '@r
 import type { AccommodationContactInfo, AccommodationSocialNetworks } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 
 interface Props {
     readonly contactInfo?: AccommodationContactInfo;
@@ -38,12 +39,17 @@ interface Props {
 const { contactInfo, socialNetworks, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
-const hasContact = Boolean(
-    contactInfo && (contactInfo.phone || contactInfo.email || contactInfo.website)
-);
-const hasSocial = Boolean(
-    socialNetworks && (socialNetworks.facebook || socialNetworks.instagram)
-);
+// Every outbound URL here is authored by the host in the editor and published
+// with no review in between. `z.string().url()` accepts `javascript:` and
+// `data:` (verified against this repo's Zod), so the schema is NOT the control
+// that keeps a payload out of these hrefs — this allow-list is. An unsafe value
+// yields `undefined` and the link is dropped, never rendered raw.
+const websiteHref = resolveSafeExternalUrl(contactInfo?.website);
+const facebookHref = resolveSafeExternalUrl(socialNetworks?.facebook);
+const instagramHref = resolveSafeExternalUrl(socialNetworks?.instagram);
+
+const hasContact = Boolean(contactInfo && (contactInfo.phone || contactInfo.email || websiteHref));
+const hasSocial = Boolean(facebookHref || instagramHref);
 
 // Nothing to show — render nothing rather than an empty card (H-118: 2 of 7
 // production accommodations have no contact data at all).
@@ -85,9 +91,9 @@ if (!hasContact && !hasSocial) {
                     <span>{contactInfo.email}</span>
                 </a>
             )}
-            {contactInfo?.website && (
+            {websiteHref && (
                 <a
-                    href={contactInfo.website}
+                    href={websiteHref}
                     class="acc-contact__link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -97,7 +103,7 @@ if (!hasContact && !hasSocial) {
                     )}
                 >
                     <GlobeIcon size={16} aria-hidden="true" />
-                    <span>{contactInfo.website.replace(/^https?:\/\//, '')}</span>
+                    <span>{websiteHref.replace(/^https?:\/\//, '')}</span>
                 </a>
             )}
         </div>
@@ -105,9 +111,9 @@ if (!hasContact && !hasSocial) {
 
     {hasSocial && (
         <div class="acc-contact__social">
-            {socialNetworks?.facebook && (
+            {facebookHref && (
                 <a
-                    href={socialNetworks.facebook}
+                    href={facebookHref}
                     class="acc-contact__social-link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -116,9 +122,9 @@ if (!hasContact && !hasSocial) {
                     <FacebookIcon size={18} aria-hidden="true" />
                 </a>
             )}
-            {socialNetworks?.instagram && (
+            {instagramHref && (
                 <a
-                    href={socialNetworks.instagram}
+                    href={instagramHref}
                     class="acc-contact__social-link"
                     target="_blank"
                     rel="noopener noreferrer"
