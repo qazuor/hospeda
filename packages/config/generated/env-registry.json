@@ -4507,6 +4507,28 @@
           "key": "HOSPEDA_INTERNAL_REQUEST_SECRET"
         }
       ]
+    },
+    {
+      "id": "sentry-environment-all-apps-match",
+      "description": "The Sentry environment tag must hold the SAME value across api, web and admin on a given deployment target — the three report into ONE shared Sentry project, so this tag is the only field separating a production error from a staging one. H-16 (August 2026 smoke): hospeda.com.ar shipped PUBLIC_SENTRY_ENVIRONMENT=staging while api and admin correctly said production, so every real production error from the web app was filed as staging and could not be filtered, alerted on or prioritised by environment. The three keys differ in NAME only because each app exposes env vars under its own framework prefix (HOSPEDA_ / PUBLIC_ / VITE_); their VALUES must agree. Coolify-only: the failure mode is a per-resource misconfiguration, and one app left unset in a developer's .env.local is not a defect worth failing on.",
+      "appliesTo": [
+        "coolify"
+      ],
+      "comparator": "equals",
+      "compare": [
+        {
+          "app": "api",
+          "key": "HOSPEDA_SENTRY_ENVIRONMENT"
+        },
+        {
+          "app": "web",
+          "key": "PUBLIC_SENTRY_ENVIRONMENT"
+        },
+        {
+          "app": "admin",
+          "key": "VITE_SENTRY_ENVIRONMENT"
+        }
+      ]
     }
   ],
   "constraints": {
