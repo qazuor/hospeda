@@ -141,7 +141,6 @@ export const accommodations = pgTable(
         lastWarnedAt: timestamp('last_warned_at', { withTimezone: true }),
         moderationState: ModerationStatusPgEnum('moderation_state').notNull().default('PENDING'),
         extraInfo: jsonb('extra_info').$type<Record<string, unknown>>(),
-        schedule: jsonb('schedule').$type<Record<string, unknown>>(),
         rating: jsonb('rating').$type<Record<string, unknown>>()
     },
     (table) => ({
