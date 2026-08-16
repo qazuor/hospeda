@@ -49,6 +49,7 @@ import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { rankCitySuggestions } from '@/lib/rank-city-suggestions';
 import { buildUrlWithParams } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './CreatePropertyMiniForm.module.css';
@@ -620,8 +621,7 @@ export function CreatePropertyMiniForm({
                 });
                 return [];
             }
-            const needle = query.trim().toLowerCase();
-            return response.data.items
+            const items = response.data.items
                 .filter(
                     (item: DestinationPublic): item is DestinationPublic & { id: string } =>
                         typeof item.id === 'string'
@@ -632,18 +632,10 @@ export function CreatePropertyMiniForm({
                         label: item.name,
                         featured: Boolean(item.isFeatured)
                     })
-                )
-                .sort((a, b) => {
-                    const an = a.label.toLowerCase();
-                    const bn = b.label.toLowerCase();
-                    const aExact = an === needle;
-                    const bExact = bn === needle;
-                    if (aExact !== bExact) return aExact ? -1 : 1;
-                    const aStarts = an.startsWith(needle);
-                    const bStarts = bn.startsWith(needle);
-                    if (aStarts !== bStarts) return aStarts ? -1 : 1;
-                    return an.localeCompare(bn);
-                });
+                );
+
+            // Ranked accent-blindly, matching how the endpoint searches (H-136).
+            return rankCitySuggestions({ query, items });
         },
         []
     );

@@ -97,7 +97,19 @@ export async function loadAccommodationEditorData({
             await Promise.all([
                 accommodationEditApi.getById({ id: accommodationId, cookieHeader }),
                 wants.has('destinations')
-                    ? destinationsApi.list({ page: 1, pageSize: CATALOG_PAGE_SIZE })
+                    ? // Scoped to CITY (H-107). An accommodation always sits in
+                      // a city, and `_assertDestinationIsCity` (SPEC-095) has
+                      // rejected anything else on both create and update since
+                      // then. Unscoped, this list also offered the COUNTRY,
+                      // PROVINCE, REGION and DEPARTMENT rows — visually
+                      // indistinguishable from a city, and a guaranteed save
+                      // failure once picked. The list now states the same rule
+                      // the server enforces instead of contradicting it.
+                      destinationsApi.list({
+                          page: 1,
+                          pageSize: CATALOG_PAGE_SIZE,
+                          destinationType: 'CITY'
+                      })
                     : Promise.resolve(null),
                 wants.has('catalog')
                     ? amenitiesApi.list({
