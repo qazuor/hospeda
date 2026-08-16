@@ -6,8 +6,11 @@
  * page that went away from one that never existed (spec D-3b):
  *
  * - `found`    — gold, ACTIVE, active subscription.
- * - `gone`     — gold but failing visibility. It was published; it is not now.
- * - `notFound` — not gold, or no row at all. This URL was never served.
+ * - `gone`     — gold and deliberately REVOKED (`revokedAt` set). 410 is the one
+ *                irreversible answer, so it is reserved for the one irreversible
+ *                state (HOS-562).
+ * - `notFound` — everything else: not gold, no row, never published, or a lapsed
+ *                subscription. All of these are reversible, so they get 404.
  *
  * Every failing-gate case below uses a row that EXISTS. A nonexistent slug
  * resolves to `notFound` before the gate is ever consulted, so testing the gate
@@ -129,12 +132,23 @@ describe('PartnerService.getPublicBySlug — the gold gate (HOS-294 D-6)', () =>
         expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
     });
 
-    it('returns gone for an EXISTING gold partner whose lifecycle is not ACTIVE', async () => {
-        // Arrange — a revoked partner. The row is right there; the page it used
-        // to serve is what went away.
+    // -----------------------------------------------------------------------
+    // HOS-562 — 410 belongs to a deliberate takedown, and to nothing else.
+    //
+    // Regression for the smoke finding H-160: `!isVisible → gone` collapsed
+    // three unrelated states into the single irreversible HTTP answer. The two
+    // tests below used to assert exactly that, so they encoded the bug.
+    // -----------------------------------------------------------------------
+
+    it('returns gone ONLY for a partner that was deliberately revoked', async () => {
+        // Arrange — the revoke trio: lifecycle flipped to INACTIVE, `revokedAt`
+        // stamped with an author. This is the one state that does not come back.
         const { service } = buildService({
             findOne: vi.fn(async () =>
-                makePartner({ lifecycleState: LifecycleStatusEnum.INACTIVE })
+                makePartner({
+                    lifecycleState: LifecycleStatusEnum.INACTIVE,
+                    revokedAt: new Date('2026-08-13T00:00:00Z')
+                })
             )
         });
 
@@ -146,11 +160,37 @@ describe('PartnerService.getPublicBySlug — the gold gate (HOS-294 D-6)', () =>
         expect(result.data?.outcome).toBe('gone');
     });
 
-    it('returns gone for an EXISTING gold partner who stopped paying', async () => {
-        // Arrange
+    it('returns notFound for a gold partner that was NEVER published (H-160)', async () => {
+        // Arrange — provisioned but still in DRAFT, never revoked. This URL has
+        // never been served, so 410 would tell a crawler to drop a page it never
+        // had. Production answered 410 here; that is the reported bug.
         const { service } = buildService({
             findOne: vi.fn(async () =>
-                makePartner({ subscriptionStatus: PartnerSubscriptionStatusEnum.PENDING })
+                makePartner({
+                    lifecycleState: LifecycleStatusEnum.DRAFT,
+                    revokedAt: null
+                })
+            )
+        });
+
+        // Act
+        const result = await service.getPublicBySlug(publicActor, { slug: SLUG });
+
+        // Assert
+        expect(result.data?.outcome).toBe('notFound');
+    });
+
+    it('returns notFound — NOT gone — for a gold partner who stopped paying (H-160)', async () => {
+        // Arrange — still ACTIVE, subscription lapsed, never revoked. This is the
+        // expensive case: 410 de-indexes the partner aggressively, so when they
+        // regularise the payment they come back without their ranking. A lapse is
+        // temporary; 404 is the reversible answer for it.
+        const { service } = buildService({
+            findOne: vi.fn(async () =>
+                makePartner({
+                    subscriptionStatus: PartnerSubscriptionStatusEnum.PENDING,
+                    revokedAt: null
+                })
             )
         });
 
@@ -159,6 +199,26 @@ describe('PartnerService.getPublicBySlug — the gold gate (HOS-294 D-6)', () =>
 
         // Assert
         expect(result.error).toBeUndefined();
+        expect(result.data?.outcome).toBe('notFound');
+    });
+
+    it('still returns gone for a revoked partner whose subscription also lapsed', async () => {
+        // Arrange — revoking deliberately leaves `subscriptionStatus` alone, so
+        // the two signals can coexist. The deliberate takedown wins.
+        const { service } = buildService({
+            findOne: vi.fn(async () =>
+                makePartner({
+                    lifecycleState: LifecycleStatusEnum.INACTIVE,
+                    subscriptionStatus: PartnerSubscriptionStatusEnum.PENDING,
+                    revokedAt: new Date('2026-08-13T00:00:00Z')
+                })
+            )
+        });
+
+        // Act
+        const result = await service.getPublicBySlug(publicActor, { slug: SLUG });
+
+        // Assert
         expect(result.data?.outcome).toBe('gone');
     });
 
