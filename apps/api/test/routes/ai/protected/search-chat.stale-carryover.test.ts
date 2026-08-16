@@ -277,6 +277,43 @@ describe('dropStaleAmenitiesOnNewSearch — isNewSearch as the trigger', () => {
         expect(result.hasPool).toBe(false);
     });
 
+    // HOS-562 follow-up: the guard originally covered 2 of the 4 slug arrays,
+    // because those were the two the smoke happened to reproduce. All four are
+    // the same shape with the same failure mode.
+    it.each([
+        ['amenitySlugs', 'amenitySlugs' as const],
+        ['featureSlugs', 'featureSlugs' as const],
+        ['attractionSlugs', 'attractionSlugs' as const],
+        ['poiSlugs', 'poiSlugs' as const]
+    ])('drops byte-identical %s carryover on a new search', (_label, key) => {
+        // Arrange
+        const previous: SearchIntentEntities = { city: 'Colón', [key]: ['termas', 'playa'] };
+        const current: SearchIntentEntities = { city: 'Colón', [key]: ['termas', 'playa'] };
+
+        // Act
+        const result = dropStaleAmenitiesOnNewSearch(current, previous, { isNewSearch: true });
+
+        // Assert
+        expect(result[key]).toBeUndefined();
+    });
+
+    it.each([
+        ['amenitySlugs', 'amenitySlugs' as const],
+        ['featureSlugs', 'featureSlugs' as const],
+        ['attractionSlugs', 'attractionSlugs' as const],
+        ['poiSlugs', 'poiSlugs' as const]
+    ])('keeps %s the user genuinely changed this turn', (_label, key) => {
+        // Arrange — a different set is a real update, never carryover.
+        const previous: SearchIntentEntities = { city: 'Colón', [key]: ['termas'] };
+        const current: SearchIntentEntities = { city: 'Colón', [key]: ['playa'] };
+
+        // Act
+        const result = dropStaleAmenitiesOnNewSearch(current, previous, { isNewSearch: true });
+
+        // Assert
+        expect(result[key]).toEqual(['playa']);
+    });
+
     it('is a no-op on the first turn, where there is nothing to carry over', () => {
         // Arrange — no prior entities at all. A first turn is trivially a "new
         // search"; nothing may be dropped from it.

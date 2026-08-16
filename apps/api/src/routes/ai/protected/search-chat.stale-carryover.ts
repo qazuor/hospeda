@@ -75,10 +75,27 @@ import { isUsableEntityId } from '@repo/utils';
 
 /**
  * Boolean amenity shortcuts prone to silent carryover across turns. Mirrors
- * `search-chat.ts`'s `BOOLEAN_SHORTCUT_AMENITY_SLUGS` keys; `amenitySlugs` /
- * `featureSlugs` are handled separately below because they are arrays.
+ * `search-chat.ts`'s `BOOLEAN_SHORTCUT_AMENITY_SLUGS` keys; the slug arrays are
+ * handled separately below because they are arrays.
  */
 const STALE_PRONE_BOOLEAN_KEYS = ['hasPool', 'hasWifi', 'allowsPets', 'hasParking'] as const;
+
+/**
+ * Slug-array slots prone to the same silent carryover.
+ *
+ * HOS-562 follow-up: this originally listed only `amenitySlugs` and
+ * `featureSlugs`, because those were the two the production smoke happened to
+ * reproduce. `attractionSlugs` and `poiSlugs` are the SAME shape with the same
+ * failure mode, so leaving them out was an accident of what got observed, not a
+ * line anyone drew. A guard that covers two of four identical fields is the
+ * partial-coverage trap this whole batch exists to fix.
+ */
+const STALE_PRONE_SLUG_ARRAY_KEYS = [
+    'amenitySlugs',
+    'featureSlugs',
+    'attractionSlugs',
+    'poiSlugs'
+] as const;
 
 /**
  * Best-effort single-value "what location is this entity set about" signal,
@@ -142,10 +159,19 @@ function sameSlugSet(a: readonly string[] | undefined, b: readonly string[] | un
  *
  * ## What gets dropped
  *
- * Only `hasPool` / `hasWifi` / `allowsPets` / `hasParking` / `amenitySlugs` /
- * `featureSlugs` values that are IDENTICAL to the previous turn's — i.e.
- * indistinguishable from blind carryover. A field that genuinely changed
- * (present now, absent or different before) is never touched.
+ * The boolean amenity shortcuts (`hasPool` / `hasWifi` / `allowsPets` /
+ * `hasParking`) and ALL FOUR slug arrays (`amenitySlugs` / `featureSlugs` /
+ * `attractionSlugs` / `poiSlugs`), and only when their value is IDENTICAL to
+ * the previous turn's — i.e. indistinguishable from blind carryover. A field
+ * that genuinely changed (present now, absent or different before) is never
+ * touched.
+ *
+ * Numeric ranges and dates (guests, price, rating, bedrooms/bathrooms,
+ * check-in/out) are deliberately NOT guarded: they updated correctly in the
+ * reported repro, so covering them would add false-positive risk on fields
+ * never observed to misbehave. That IS a remaining gap — a stale `minPrice`
+ * can still survive a new search — and it is a deliberate line, unlike the two
+ * slug arrays that were missing by accident.
  *
  * @param entities - This turn's validated entities, straight from the model
  *   (before amenity/feature slug resolution).
@@ -176,22 +202,22 @@ export function dropStaleAmenitiesOnNewSearch(
     previousEntities: SearchIntentEntities | undefined,
     options: { readonly isNewSearch?: boolean } = {}
 ): SearchIntentEntities {
-    // HOS-551 follow-up: the model now STATES its refine-vs-new decision in
-    // `isNewSearch`, so that is the trigger when it is present.
+    // HOS-551: the model STATES its refine-vs-new decision in `isNewSearch`, so
+    // that is the trigger whenever it is present — in BOTH directions.
     //
     // The destination-change test below was only ever a proxy for it, and a
-    // lossy one in both directions: it missed a new search that stayed in the
-    // same destination ("cabaña con pileta en Colón" → "hotel en Colón para 2"),
-    // and it fired on a refinement that legitimately moved the destination.
-    // A stated decision is strictly better evidence than an inferred one, so it
-    // wins outright; the proxy stays as the fallback for when the model omits
-    // the flag, which is exactly the behaviour that shipped before it existed.
-    // A STATED decision wins in BOTH directions: `false` means the model said
-    // "refinement", and overriding that with the proxy would be a lossy guess
-    // beating an explicit answer — precisely wrong for the documented case where
-    // widening to a nearby destination IS a refinement. Only an ABSENT flag
-    // falls through to the proxy, which is why the schema keeps it optional
-    // instead of defaulting it to `false`.
+    // lossy one both ways: it missed a new search that stayed in the same
+    // destination ("cabaña con pileta en Colón" → "hotel en Colón para 2"), and
+    // it fired on a refinement that legitimately moved the destination — which
+    // the prompt documents as a refinement ("y en destinos cercanos"). So a
+    // stated `false` must not be overridden by the proxy either: a lossy guess
+    // may not beat an explicit answer.
+    //
+    // Only an ABSENT flag falls through to the proxy, which is exactly the
+    // behaviour that shipped before the flag existed. That is why the schema
+    // keeps the field optional rather than defaulting it to `false`: collapsing
+    // "said refinement" into "said nothing" would silently disable this
+    // fallback the moment a model stopped emitting it.
     const startedNewSearch =
         options.isNewSearch === undefined
             ? (() => {
@@ -213,19 +239,11 @@ export function dropStaleAmenitiesOnNewSearch(
             changed = true;
         }
     }
-    if (
-        next.amenitySlugs !== undefined &&
-        sameSlugSet(next.amenitySlugs, previousEntities?.amenitySlugs)
-    ) {
-        delete next.amenitySlugs;
-        changed = true;
-    }
-    if (
-        next.featureSlugs !== undefined &&
-        sameSlugSet(next.featureSlugs, previousEntities?.featureSlugs)
-    ) {
-        delete next.featureSlugs;
-        changed = true;
+    for (const key of STALE_PRONE_SLUG_ARRAY_KEYS) {
+        if (next[key] !== undefined && sameSlugSet(next[key], previousEntities?.[key])) {
+            delete next[key];
+            changed = true;
+        }
     }
 
     return changed ? next : entities;
