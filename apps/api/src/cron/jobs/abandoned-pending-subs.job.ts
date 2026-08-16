@@ -61,6 +61,8 @@ import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
 import { planDisplayNameFromPlan } from '../../services/billing/plan-change-reason.js';
 import { CONFIRMED_TERMINAL_STATUSES } from '../../services/billing/reactivation-supersession-complete.js';
+import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
+import { reconcilePartnerForSubscription } from '../../services/partner-reconcile.service.js';
 import { sendNotification } from '../../utils/notification-helper.js';
 import type { CronJobDefinition } from '../types.js';
 
@@ -303,6 +305,25 @@ async function reapPendingCandidate(params: {
     if (!row) {
         return { abandoned: false, reason: 'already-reaped' };
     }
+
+    // Propagate the terminal status to the domain link tables. A commerce or
+    // partner checkout owns a `commerce_listing_subscriptions` /
+    // `partner_subscriptions` row created at checkout time; without these calls
+    // it keeps reporting the pre-abandon status forever, since every OTHER
+    // status-changing path (webhook, dunning, finalize-cancelled) already
+    // reconciles and only this reaper did not. No-op for accommodation subs (no
+    // link row) and non-blocking by construction — both reconcilers swallow
+    // their own errors, mirroring the webhook and dunning call sites.
+    await reconcileCommerceListingForSubscription({
+        subscriptionId: row.id,
+        subscriptionStatus: ABANDONED_STATUS,
+        source: 'abandoned-pending-subs-cron'
+    });
+    await reconcilePartnerForSubscription({
+        subscriptionId: row.id,
+        subscriptionStatus: ABANDONED_STATUS,
+        source: 'abandoned-pending-subs-cron'
+    });
 
     return { abandoned: true, info: row };
 }
