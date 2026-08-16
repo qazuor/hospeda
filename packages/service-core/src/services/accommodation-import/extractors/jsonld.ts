@@ -97,6 +97,8 @@ export interface JsonLdAddressResult {
     readonly addressLocality?: string;
     /** Country name or ISO code (from `addressCountry`). */
     readonly addressCountry?: string;
+    /** Province or state (from `addressRegion`). */
+    readonly addressRegion?: string;
 }
 
 /**
@@ -185,6 +187,12 @@ export interface JsonLdResult {
      * Convenience alias for `RawExtraction.scrapedCountry`.
      */
     readonly scrapedCountry?: string;
+
+    /**
+     * Raw province string lifted from `address.addressRegion`.
+     * Convenience alias for `RawExtraction.scrapedRegion`.
+     */
+    readonly scrapedRegion?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -318,6 +326,7 @@ interface MutableAddress {
     streetAddress?: string;
     addressLocality?: string;
     addressCountry?: string;
+    addressRegion?: string;
 }
 
 /**
@@ -342,6 +351,12 @@ function parseAddress(raw: unknown): JsonLdAddressResult | undefined {
     }
     if (typeof addr.addressCountry === 'string' && addr.addressCountry.length > 0) {
         result.addressCountry = addr.addressCountry;
+    }
+    // The province was already declared on JsonLdAddress and simply went
+    // unparsed. It is the discriminator for the six catalog cities with a
+    // homonym in another province (HOS-346).
+    if (typeof addr.addressRegion === 'string' && addr.addressRegion.length > 0) {
+        result.addressRegion = addr.addressRegion;
     }
 
     return Object.keys(result).length > 0 ? result : undefined;
@@ -391,6 +406,7 @@ interface MutableJsonLdResult {
     lodgingType?: string;
     scrapedLocality?: string;
     scrapedCountry?: string;
+    scrapedRegion?: string;
 }
 
 /**
@@ -425,6 +441,9 @@ function mapNodeToResult(node: JsonLdNode): JsonLdResult {
         }
         if (addr.addressCountry !== undefined) {
             result.scrapedCountry = addr.addressCountry;
+        }
+        if (addr.addressRegion !== undefined) {
+            result.scrapedRegion = addr.addressRegion;
         }
     }
 

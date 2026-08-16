@@ -203,6 +203,7 @@ function mapMlItemToRawExtraction(
         imageUrls?: readonly string[];
         scrapedLocality?: string;
         scrapedCountry?: string;
+        scrapedRegion?: string;
         location?: RawExtraction['location'];
         extraInfo?: RawExtraction['extraInfo'];
     } = {
@@ -255,9 +256,14 @@ function mapMlItemToRawExtraction(
     if (loc) {
         const city = loc.city?.name ?? undefined;
         const country = loc.country?.name ?? undefined;
+        // `state` was already in the ML location shape and simply went unread.
+        // It carries the province, which is what actually discriminates the six
+        // catalog cities that have a homonym elsewhere (HOS-346).
+        const state = loc.state?.name ?? undefined;
 
         if (city) result.scrapedLocality = city;
         if (country) result.scrapedCountry = country;
+        if (state) result.scrapedRegion = state;
 
         const lat = loc.latitude;
         const lng = loc.longitude;
