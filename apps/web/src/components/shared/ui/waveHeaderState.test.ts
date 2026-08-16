@@ -10,6 +10,7 @@
 import { describe, expect, it } from 'vitest';
 import type { WaveHeaderStateConfig } from './waveHeaderState';
 import {
+    coalesceScrollSource,
     computeScrollDelta,
     DEFAULT_WAVE_HEADER_CONFIG,
     nextWaveHeaderState
@@ -421,5 +422,31 @@ describe('computeScrollDelta', () => {
         expect(computeScrollDelta({ source: 'scroll', scrollY: 140, prevScrollY: 100 })).toBe(40);
         expect(computeScrollDelta({ source: 'scroll', scrollY: 60, prevScrollY: 100 })).toBe(-40);
         expect(computeScrollDelta({ source: 'scroll', scrollY: 100, prevScrollY: 100 })).toBe(0);
+    });
+});
+
+describe('coalesceScrollSource', () => {
+    // Second half of the H-47 fix. The caller coalesces every event in one
+    // animation frame into a single evaluation (an rAF `ticking` latch), so a
+    // frame is claimed by whichever event fires FIRST. Forcing resize deltas to
+    // 0 (above) stops resize from CORRUPTING the direction axis, but on its own
+    // it lets resize STARVE it: on mobile, where the URL bar fires `resize` on
+    // nearly every scroll tick, a resize that wins the race to claim the frame
+    // would discard the genuine scroll following it in the same frame, evaluate
+    // with delta 0, and leave the accumulator stuck — the header would never
+    // reach `hidden`, which is the very symptom H-47 reports. Both failure
+    // modes produce the same broken header, so the fix is only complete if a
+    // scroll anywhere in the frame wins the frame.
+    it('upgrades a pending resize frame to scroll when a real scroll lands in it', () => {
+        expect(coalesceScrollSource({ pending: 'resize', incoming: 'scroll' })).toBe('scroll');
+    });
+
+    it('never downgrades a pending scroll frame back to resize', () => {
+        expect(coalesceScrollSource({ pending: 'scroll', incoming: 'resize' })).toBe('scroll');
+    });
+
+    it('keeps the source unchanged when both events agree', () => {
+        expect(coalesceScrollSource({ pending: 'scroll', incoming: 'scroll' })).toBe('scroll');
+        expect(coalesceScrollSource({ pending: 'resize', incoming: 'resize' })).toBe('resize');
     });
 });

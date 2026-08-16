@@ -192,6 +192,49 @@ export function computeScrollDelta({
 }
 
 /**
+ * Input for {@link coalesceScrollSource}.
+ */
+export interface CoalesceScrollSourceInput {
+    /** Source already claimed by the animation frame awaiting evaluation. */
+    readonly pending: WaveHeaderScrollSource;
+    /** Source of the event that arrived while that frame was still pending. */
+    readonly incoming: WaveHeaderScrollSource;
+}
+
+/**
+ * Merges the sources of two events that land in the SAME animation frame,
+ * resolving in favour of `scroll`.
+ *
+ * The caller coalesces every event in one frame into a single evaluation via
+ * an rAF latch, so a frame is claimed by whichever event fires first. That
+ * makes the pairing with {@link computeScrollDelta} load-bearing: forcing a
+ * resize delta to `0` stops resize from CORRUPTING the direction axis, but
+ * without this helper it lets resize STARVE it instead. On a real mobile
+ * device the dynamic URL bar fires `resize` on nearly every scroll tick, so a
+ * resize that wins the race to claim the frame would discard the genuine
+ * scroll arriving right behind it, evaluate with a `0` delta, and leave the
+ * accumulator stuck — the header would never reach `hidden`.
+ *
+ * Both failure modes render the same broken header (H-47, smoke agosto 2026),
+ * so a scroll anywhere in the frame must win the frame. Resolving toward
+ * `scroll` is also the safe direction on its own terms: at worst it credits
+ * the direction axis with a real `scrollY` change that a resize happened to
+ * observe first, which is a genuine movement — whereas resolving toward
+ * `resize` discards movement that actually occurred.
+ *
+ * @param params - The pending frame's source and the newly arrived source.
+ * @param params.pending - Source already claimed by the pending frame.
+ * @param params.incoming - Source of the event arriving into that frame.
+ * @returns The source the frame should ultimately evaluate with.
+ */
+export function coalesceScrollSource({
+    pending,
+    incoming
+}: CoalesceScrollSourceInput): WaveHeaderScrollSource {
+    return pending === 'scroll' || incoming === 'scroll' ? 'scroll' : 'resize';
+}
+
+/**
  * Computes the next wave header state from the current scroll position,
  * scroll delta, and previous state. Pure function — no DOM access, no
  * side effects, safe to unit test in isolation from any browser or

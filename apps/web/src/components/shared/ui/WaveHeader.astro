@@ -79,6 +79,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
    */
   import {
     DEFAULT_WAVE_HEADER_CONFIG,
+    coalesceScrollSource,
     computeScrollDelta,
     nextWaveHeaderState,
     type WaveHeaderScrollSource,
@@ -139,6 +140,7 @@ const { paddingTop = 'listing', class: className } = Astro.props;
       // is what makes this distinction load-bearing there and invisible on
       // desktop, where `resize` essentially never fires mid-scroll.
       let ticking = false;
+      let pendingSource: WaveHeaderScrollSource = 'scroll';
       const evaluate = (source: WaveHeaderScrollSource): void => {
         ticking = false;
         const scrollY = window.scrollY;
@@ -158,10 +160,19 @@ const { paddingTop = 'listing', class: className } = Astro.props;
         apply(result.state);
       };
 
+      // A frame is claimed by whichever event fires first, so a resize landing
+      // just before a genuine scroll must not swallow it: `coalesceScrollSource`
+      // upgrades the pending frame to `scroll`, otherwise on mobile — where the
+      // URL bar fires `resize` on nearly every scroll tick — the direction axis
+      // would starve and the header would never reach `hidden` (H-47).
       const scheduleEvaluate = (source: WaveHeaderScrollSource): void => {
-        if (ticking) return;
+        if (ticking) {
+          pendingSource = coalesceScrollSource({ pending: pendingSource, incoming: source });
+          return;
+        }
         ticking = true;
-        requestAnimationFrame(() => evaluate(source));
+        pendingSource = source;
+        requestAnimationFrame(() => evaluate(pendingSource));
       };
 
       const onScroll = (): void => scheduleEvaluate('scroll');
