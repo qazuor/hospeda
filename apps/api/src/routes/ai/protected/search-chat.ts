@@ -115,6 +115,7 @@ import {
     type LocationCarryoverConflict,
     type PoiLocationConflict
 } from './search-chat.prompt.js';
+import { dropStaleAmenitiesOnLocationChange } from './search-chat.stale-carryover.js';
 import {
     dropDestinationId,
     mapIntentToSearchParams,
@@ -498,6 +499,9 @@ async function resolveDestinationIdFromCity(city: string): Promise<string | unde
  * 4. Call `aiService.generateObject` with `SearchIntentOutputSchema` to extract
  *    the full updated entity set. Mirrors search-intent.ts (same Zod-cast pattern).
  * 5. Safe-parse returned entities; fall back to `{}` on failure.
+ * 5.5. HOS-551 / H-71: drop boolean-amenity / slug carryover that looks like
+ *    unmentioned state from the PRIOR turn, when this turn's entities name a
+ *    genuinely different destination (see `dropStaleAmenitiesOnLocationChange`).
  * 6. Resolve amenity slugs (deduped against boolean shortcuts — see
  *    `dedupeAmenitySlugsAgainstBooleanShortcuts`), feature slugs, and — when a
  *    city was extracted and no explicit geo pair is present — the city name to
@@ -688,6 +692,18 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             );
         }
         validatedEntities = sanitizedEntities;
+
+        // HOS-551 / H-71: drop boolean-amenity / slug carryover that looks
+        // like it survived unmentioned from the PRIOR turn, when this turn
+        // names a genuinely different destination. See
+        // `dropStaleAmenitiesOnLocationChange`'s module doc for the full
+        // rationale (the model owns refine-vs-new-search; this is a narrow,
+        // deterministic mitigation for the specific case a production smoke
+        // reproduced, not a re-implementation of that decision).
+        validatedEntities = dropStaleAmenitiesOnLocationChange(
+            validatedEntities,
+            sanitizedCurrentFilters
+        );
 
         // Step 6: Resolve amenity slugs, feature slugs, and city → destinationId
         // to DB-verified values in parallel.
