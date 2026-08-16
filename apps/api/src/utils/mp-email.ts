@@ -16,8 +16,39 @@
  * Replaces every '+' in the LOCAL part of the email (the part before the
  * last '@') with '.'. The domain is left untouched. This preserves the
  * uniqueness of plus-addressed accounts (e.g. `user+tag@gmail.com`) while
- * avoiding MP's syntax rejection, and for providers like Gmail that ignore
- * '.' in the local part, mail still lands in the same inbox.
+ * avoiding MP's syntax rejection.
+ *
+ * H-95 — what this costs, stated plainly, because the original docblock had it
+ * backwards. It claimed that "for providers like Gmail that ignore '.' in the
+ * local part, mail still lands in the same inbox". The opposite is true, and
+ * for exactly the reason cited: Gmail ignoring dots means `user.tag@gmail.com`
+ * collapses to `usertag@gmail.com` — a DIFFERENT address from `user@gmail.com`,
+ * which is where the discarded `+tag` form would have landed. So the sanitized
+ * address is, for the plus-addressing case, very likely a mailbox nobody reads.
+ *
+ * The blast radius is NOT confined to MercadoPago's own provider notices. The
+ * sanitized value is what `billing_customers.email` stores, and that column is
+ * read back as `recipientEmail` for Hospeda's OWN billing mail — dunning
+ * (`cron/jobs/dunning.job.ts`), cancellation finalisation
+ * (`cron/jobs/finalize-cancelled-subs.ts`), scheduled plan changes, plan price
+ * propagation, abandoned pending subscriptions, and the MercadoPago webhook
+ * notifications (`routes/webhooks/mercadopago/notifications.ts`). For a
+ * plus-addressed signup, every one of those lands in the dead mailbox too.
+ *
+ * What bounds it today: only addresses CONTAINING '+' are altered at all, and
+ * only Gmail-family providers collapse dots. Measured against production on
+ * 2026-08-15, all five mangled rows belong to test accounts and no real user
+ * signed up with a plus alias — the mechanism is live, but it has yet to hit
+ * anyone.
+ *
+ * The fix is tracked as HOS-581: keep this value as the MercadoPago payer
+ * identity (MP needs it) and resolve `users.email` for Hospeda's OWN sends.
+ * That is a behaviour change across seven send sites, not a docblock edit, so
+ * it is deliberately NOT bundled into the change that corrected this comment.
+ *
+ * It also must not be shown to the user. Surfacing this value in the checkout UI
+ * displays an address they never wrote and do not recognise; the notice that did
+ * so was removed under HOS-452/H-82 (see `PlanPurchaseButton.client.tsx`).
  *
  * Defensive: if the input has no '@', or the '@' is the first character
  * (no local part to sanitize), the email is returned unchanged. Idempotent
