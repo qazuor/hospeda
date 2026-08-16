@@ -39,7 +39,12 @@ const {
     const mockDbSelectFn = vi.fn(() => mockSelectChain);
 
     const mockDbUpdateWhere = vi.fn().mockResolvedValue([]);
-    const mockDbUpdateSet = vi.fn(() => ({ where: mockDbUpdateWhere }));
+    // Typed with its argument so tests can inspect the update payload — the
+    // H-80 case asserts on the presence of a key, which an untyped mock's
+    // `calls[0][0]` cannot express.
+    const mockDbUpdateSet = vi.fn((_values: Record<string, unknown>) => ({
+        where: mockDbUpdateWhere
+    }));
     const mockDbUpdateFn = vi.fn(() => ({ set: mockDbUpdateSet }));
 
     const mockDbInsertValues = vi.fn().mockResolvedValue([]);
@@ -233,9 +238,10 @@ describe('uncancelSubscription', () => {
         // match, which cannot fail on a MISSING key — the exact failure mode
         // this test exists to catch.
         expect(mockDbUpdateSet).toHaveBeenCalledTimes(1);
-        const payload = mockDbUpdateSet.mock.calls[0]?.[0] as Record<string, unknown>;
-        expect(Object.hasOwn(payload, 'metadata')).toBe(true);
-        expect(payload.cancelAtPeriodEnd).toBe(false);
+        const payload = mockDbUpdateSet.mock.calls[0]?.[0];
+        expect(payload).toBeDefined();
+        expect(Object.hasOwn(payload ?? {}, 'metadata')).toBe(true);
+        expect(payload?.cancelAtPeriodEnd).toBe(false);
     });
 
     it('idempotent no-op when cancelAtPeriodEnd is already false (no provider call)', async () => {

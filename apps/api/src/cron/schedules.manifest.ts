@@ -322,6 +322,14 @@ export const CRON_SCHEDULES: ReadonlyArray<CronScheduleEntry> = [
             'Archive partners whose endsAt has passed — backup safety net for missed MP webhooks (SPEC-271 T-271-12).'
     },
     {
+        name: 'preapproval-less-expiry',
+        displayName: 'Suscripciones sin preapproval vencidas',
+        category: 'billing',
+        schedule: '30 5 * * *',
+        description:
+            'Expire active/trialing subscriptions that have no MercadoPago preapproval and whose period elapsed (H-21). Without a preapproval they are invisible to subscription-poll and to dunning, so nothing else ever moves them out of active.'
+    },
+    {
         name: 'partner-unpaid-reaper',
         displayName: 'Aliados sin pagar',
         category: 'billing',
