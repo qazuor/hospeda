@@ -1,4 +1,5 @@
-import type { z } from 'zod';
+import { z } from 'zod';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { SocialHashtagSetSchema } from './social-hashtag-set.schema.js';
 
 /**
@@ -21,8 +22,15 @@ export const SocialHashtagSetCreateSchema = SocialHashtagSetSchema.omit({
 /**
  * Input schema for updating an existing social hashtag set.
  * All business fields are optional for partial updates.
+ *
+ * `stripShapeDefaults` is load-bearing: in Zod 4 `.partial()` does NOT suppress
+ * a `.default()`, so without it a PATCH omitting a defaulted field parses that
+ * field back in and the literal SQL `SET` overwrites it. See the guard in
+ * `test/no-defaults-in-patch-schemas.guard.test.ts`.
  */
-export const SocialHashtagSetUpdateSchema = SocialHashtagSetCreateSchema.partial();
+export const SocialHashtagSetUpdateSchema = z
+    .object(stripShapeDefaults(SocialHashtagSetCreateSchema.shape))
+    .partial();
 
 /** TypeScript type for creating a social hashtag set. */
 export type SocialHashtagSetCreate = z.infer<typeof SocialHashtagSetCreateSchema>;

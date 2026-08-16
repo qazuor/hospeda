@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { stripShapeDefaults } from '../../utils/utils.js';
 
 /**
  * Example API Schemas
@@ -37,12 +38,22 @@ export const ExampleTaskCreateSchema = ExampleTaskSchema.omit({
 /**
  * Schema for updating an existing task
  * Makes all fields optional except for timestamps
+ *
+ * This is reference/example code that gets copied, so it models the correct
+ * pattern: `stripShapeDefaults` before `.partial()`, because in Zod 4
+ * `.partial()` does NOT suppress a `.default()`.
  */
-export const ExampleTaskUpdateSchema = ExampleTaskSchema.omit({
-    id: true,
-    createdAt: true,
-    updatedAt: true
-}).partial();
+export const ExampleTaskUpdateSchema = z
+    .object(
+        stripShapeDefaults(
+            ExampleTaskSchema.omit({
+                id: true,
+                createdAt: true,
+                updatedAt: true
+            }).shape
+        )
+    )
+    .partial();
 
 export type ExampleTask = z.infer<typeof ExampleTaskSchema>;
 export type ExampleTaskCreate = z.infer<typeof ExampleTaskCreateSchema>;

@@ -1,4 +1,5 @@
-import type { z } from 'zod';
+import { z } from 'zod';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { SocialPlatformSchema } from './social-platform.schema.js';
 
 /**
@@ -16,10 +17,17 @@ export const SocialPlatformCreateSchema = SocialPlatformSchema.omit({
 });
 
 /**
- * Input schema for updating an existing social platform config row.
+ * Input schema for updating an existing social platform.
  * All business fields are optional for partial updates.
+ *
+ * `stripShapeDefaults` is load-bearing: in Zod 4 `.partial()` does NOT suppress
+ * a `.default()`, so without it a PATCH omitting a defaulted field parses that
+ * field back in and the literal SQL `SET` overwrites it. See the guard in
+ * `test/no-defaults-in-patch-schemas.guard.test.ts`.
  */
-export const SocialPlatformUpdateSchema = SocialPlatformCreateSchema.partial();
+export const SocialPlatformUpdateSchema = z
+    .object(stripShapeDefaults(SocialPlatformCreateSchema.shape))
+    .partial();
 
 /** TypeScript type for creating a social platform. */
 export type SocialPlatformCreate = z.infer<typeof SocialPlatformCreateSchema>;
