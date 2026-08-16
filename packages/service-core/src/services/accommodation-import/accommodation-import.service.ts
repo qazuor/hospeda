@@ -29,9 +29,9 @@
  */
 
 import type { AccommodationImportResponse, ImportFailureCode, ImportSource } from '@repo/schemas';
-import { safeExternalFetch } from '@repo/utils/safe-fetch';
 
 import type { Actor, ServiceConfig } from '../../types/index.js';
+import { needsShortLinkResolution, resolveCanonicalUrl } from '../../utils/short-link.js';
 import { AmenityService } from '../amenity/amenity.service.js';
 import { DestinationService } from '../destination/destination.service.js';
 import type { ExchangeRateConfigService } from '../exchange-rate/exchange-rate-config.service.js';
@@ -54,110 +54,11 @@ import { finalizeImportDraft } from './finalize-import-draft.js';
 // values on the response. The `message` field is now reserved for non-failure
 // advisory notices (e.g. AI-quota warning). Clients map the `failureCode` to a
 // localized string via i18n keys under `host.importFromUrl.errors.failure.*`.
-
-// ---------------------------------------------------------------------------
-// Short-link resolution
-// ---------------------------------------------------------------------------
-
-/**
- * Hostnames that are known share / redirect short-link hosts.
- *
- * A URL on one of these hosts CANNOT be matched or parsed by any adapter
- * without first following its redirect chain to the canonical destination URL.
- * Only these hosts trigger an extra fetch; already-canonical URLs (e.g.
- * `booking.com/hotel/...`, `airbnb.com/rooms/...`) are left untouched so the
- * pipeline incurs no extra network round-trip for them.
- *
- * Hosts included:
- * - `maps.app.goo.gl` — Google Maps modern share link (mobile "Share" button)
- * - `goo.gl`           — Legacy Google short-link (also used for Maps)
- * - `g.co`             — Google short-link variant
- * - `g.page`           — Google Business Profile short-link
- * - `abnb.me`          — Airbnb mobile share link
- */
-const SHORT_LINK_HOSTS = new Set(['maps.app.goo.gl', 'goo.gl', 'g.co', 'g.page', 'abnb.me']);
-
-/**
- * Returns `true` when `url` is a known short-link / redirect host that must
- * be resolved to a canonical URL before adapter selection and extraction.
- *
- * Also detects Booking.com share stubs (`/Share-...` path pattern) even though
- * `booking.com` is not itself a short-link host — the Share path redirects to
- * the canonical hotel page.
- *
- * @param url - The parsed input URL.
- * @returns `true` when a redirect-following fetch is needed.
- */
-function needsShortLinkResolution(url: URL): boolean {
-    const host = url.hostname.toLowerCase();
-
-    // Known pure short-link hostnames
-    if (SHORT_LINK_HOSTS.has(host)) {
-        return true;
-    }
-
-    // Booking.com share stubs: booking.com/Share-XXXXX
-    // Exact host match or subdomain of booking.com; ccTLD variants (booking.com.ar
-    // etc.) use a bounded regex — prevents booking.com.attacker.com from matching.
-    if (
-        (host === 'booking.com' ||
-            host.endsWith('.booking.com') ||
-            /^(?:[a-z0-9-]+\.)*booking\.com\.[a-z]{2,3}$/.test(host)) &&
-        url.pathname.startsWith('/Share-')
-    ) {
-        return true;
-    }
-
-    return false;
-}
-
-/**
- * Resolves a short-link URL to its canonical destination by following the HTTP
- * redirect chain via {@link safeExternalFetch}.
- *
- * **SSRF safety**: every hop is validated by `safeExternalFetch` —
- * private-IP checks, per-hop DNS pinning, scheme allow-list, and the redirect
- * cap (`maxRedirects`) all apply. No additional wrapping is needed.
- *
- * **Graceful degradation**: any failure (network error, SSRF policy block,
- * redirect loop, timeout) returns the original `inputUrl` unchanged so the
- * pipeline continues as-is rather than crashing.
- *
- * **Body discard (resolve-only)**: we only need the `finalUrl` after the
- * redirect chain, not the terminal page body. The previous implementation used
- * a tiny `maxBytes` cap, but the cap fires on the TERMINAL (non-redirect)
- * response — yielding `SafeFetchBlocked` and discarding `finalUrl` whenever the
- * canonical page body exceeded the cap (e.g. the large Google Maps place page).
- * That left Google `maps.app.goo.gl` short links unresolved. We now use
- * `resolveOnly: true`, which follows the redirects and returns the terminal URL
- * without ever reading its body, so a large terminal page no longer blocks
- * resolution.
- *
- * @param inputUrl - The short-link URL string to resolve.
- * @param timeoutMs - Timeout in milliseconds, forwarded from {@link ImportContext}.
- * @returns The canonical URL string (may equal `inputUrl` on any failure).
- */
-async function resolveCanonicalUrl(inputUrl: string, timeoutMs: number): Promise<string> {
-    try {
-        const result = await safeExternalFetch({
-            url: inputUrl,
-            timeoutMs,
-            maxRedirects: 5,
-            resolveOnly: true
-        });
-
-        if (result.ok && result.finalUrl !== inputUrl) {
-            return result.finalUrl;
-        }
-
-        // ok: false (SSRF block / redirect-cap / network error) or no redirect
-        // happened — fall back to the original input so the pipeline continues.
-        return inputUrl;
-    } catch {
-        // safeExternalFetch is documented to never throw, but guard defensively.
-        return inputUrl;
-    }
-}
+//
+// Short-link resolution (`needsShortLinkResolution` / `resolveCanonicalUrl`) used
+// to live here as module-private helpers. It now lives in `utils/short-link.ts`
+// so the external-reputation adapter shares this ONE hardened implementation
+// instead of growing a second copy — the divergence that produced H-132.
 
 // ---------------------------------------------------------------------------
 // Type for the orchestrator's importFromUrl input
@@ -560,8 +461,8 @@ export class AccommodationImportService {
         let effectiveUrlStr = inputUrl;
         let effectiveParsedUrl = parsedUrl;
 
-        if (needsShortLinkResolution(parsedUrl)) {
-            const canonical = await resolveCanonicalUrl(inputUrl, timeoutMs);
+        if (needsShortLinkResolution({ url: parsedUrl })) {
+            const canonical = await resolveCanonicalUrl({ url: inputUrl, timeoutMs });
             if (canonical !== inputUrl) {
                 try {
                     effectiveParsedUrl = new URL(canonical);
