@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { ModerationStatusEnumSchema } from '../enums/index.js';
-import { ImageAttributionSchema } from './media.schema.js';
+import { ImageAttributionSchema, mediaAssetUrl } from './media.schema.js';
 
 // ============================================================================
 // CommerceMediaSchema — shared relational media row shape for commerce
@@ -62,7 +62,7 @@ export const BaseCommerceMediaSchema = z.object({
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
      * Required — every media row must have a URL.
      */
-    url: z.string().url({ message: 'zodError.common.commerceMedia.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.commerceMedia.url.invalid'),
     /**
      * Short display caption (max 100 chars).
      * Nullable/optional — not all uploads include a caption.

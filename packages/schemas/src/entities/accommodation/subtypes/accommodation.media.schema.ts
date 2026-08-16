@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AccommodationIdSchema, AccommodationMediaIdSchema } from '../../../common/id.schema.js';
-import { ImageAttributionSchema } from '../../../common/media.schema.js';
+import { ImageAttributionSchema, mediaAssetUrl } from '../../../common/media.schema.js';
 import { ModerationStatusEnumSchema } from '../../../enums/index.js';
 
 /**
@@ -50,7 +50,7 @@ export const AccommodationMediaSchema = z.object({
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
      * Required — every media row must have a URL.
      */
-    url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.media.image.url.invalid'),
     /**
      * Short display caption (max 100 chars in Zod).
      * Nullable/optional — not all uploads include a caption.
@@ -168,7 +168,7 @@ export const AccommodationMediaAddPayloadSchema = z.object({
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
      * Required — the upload endpoint returns this URL before this call is made.
      */
-    url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.media.image.url.invalid'),
     /**
      * Cloudinary `public_id` (e.g. `hospeda/dev/abc123`).
      * Optional — historic or external-URL payloads may not carry one.
