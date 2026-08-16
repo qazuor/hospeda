@@ -4914,6 +4914,7 @@ export interface AccommodationMediaRow {
  * const added = await accommodationMediaApi.addMedia({ id: 'acc-uuid', body: { url, publicId } });
  * await accommodationMediaApi.removeMedia({ id: 'acc-uuid', mediaId: added.data.media.id });
  * await accommodationMediaApi.setFeaturedMedia({ id: 'acc-uuid', mediaId: added.data.media.id });
+ * await accommodationMediaApi.reorderMedia({ id: 'acc-uuid', orderedIds: ['a', 'b', 'c'] });
  * ```
  */
 export const accommodationMediaApi = {
@@ -5002,6 +5003,32 @@ export const accommodationMediaApi = {
     }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
         return apiClient.put({
             path: `${PROTECTED}/accommodations/${id}/media/${mediaId}/featured`
+        });
+    },
+
+    /**
+     * Reorder the visible gallery photos of an accommodation (HOS-122).
+     *
+     * The server validates that `orderedIds` matches the CURRENT full set of
+     * visible rows exactly — which includes the featured (portada) row, not
+     * just the gallery — and rejects the call otherwise. Callers must include
+     * the featured row's id even though it never moves in the UI.
+     *
+     * @param params - Accommodation ID and the full ordered list of visible
+     *   media UUIDs (featured id + gallery ids, in the desired order)
+     * @returns `{ media: AccommodationMediaRow[] }` — all visible rows in
+     *   their new order
+     */
+    reorderMedia({
+        id,
+        orderedIds
+    }: {
+        readonly id: string;
+        readonly orderedIds: readonly string[];
+    }): Promise<ApiResult<{ readonly media: readonly AccommodationMediaRow[] }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/accommodations/${id}/media/reorder`,
+            body: { orderedIds }
         });
     }
 };

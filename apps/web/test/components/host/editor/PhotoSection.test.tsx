@@ -12,6 +12,15 @@
  * - An operation failure surfaces an inline error and does NOT mutate state
  * - Gallery cap enforcement: add button hidden + message shown at cap
  * - Section title / description always rendered
+ *
+ * HOS-122 additions:
+ * - Multi-select gallery upload: N files → exactly N addMedia calls / images
+ * - Multi-select cap enforcement: rejected up front, nothing uploaded
+ * - Promoting a gallery photo to portada calls setFeaturedMedia only (no
+ *   re-upload) and moves the old portada into the gallery
+ * - Manual reorder (move up/down) sends the FULL ordered id list (featured +
+ *   gallery) to reorderMedia, and boundary buttons are disabled
+ * - Drag-and-drop file upload on both the featured slot and the gallery zone
  */
 
 import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
@@ -30,6 +39,7 @@ const {
     mockAddMedia,
     mockRemoveMedia,
     mockSetFeaturedMedia,
+    mockReorderMedia,
     mockUploadEntityImage,
     mockAddToast
 } = vi.hoisted(() => ({
@@ -37,6 +47,7 @@ const {
     mockAddMedia: vi.fn(),
     mockRemoveMedia: vi.fn(),
     mockSetFeaturedMedia: vi.fn(),
+    mockReorderMedia: vi.fn(),
     mockUploadEntityImage: vi.fn(),
     mockAddToast: vi.fn()
 }));
@@ -83,7 +94,8 @@ vi.mock('@/lib/api/endpoints-protected', () => ({
         listMedia: mockListMedia,
         addMedia: mockAddMedia,
         removeMedia: mockRemoveMedia,
-        setFeaturedMedia: mockSetFeaturedMedia
+        setFeaturedMedia: mockSetFeaturedMedia,
+        reorderMedia: mockReorderMedia
     },
     // protectedMediaApi kept for backward compat (not used by new PhotoSection)
     protectedMediaApi: {
@@ -658,6 +670,245 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
             await waitFor(() => expect(mockAddToast).toHaveBeenCalled());
             const message = mockAddToast.mock.calls[0]?.[0]?.message as string;
             expect(message).toContain(String(DEFAULT_ENTITY_MAX_FILE_SIZE_MB));
+        });
+    });
+
+    // ── 7. Multi-select gallery upload (HOS-122) ───────────────────────────
+
+    describe('multi-select gallery upload (HOS-122)', () => {
+        it('uploads exactly N files for an N-file selection — not N+1, not 1', async () => {
+            mockListMedia.mockReturnValue(makeListEmpty());
+            mockUploadEntityImage
+                .mockReturnValueOnce(
+                    makeUploadOk('https://cdn.example.com/multi-1.jpg', 'g/multi-1')
+                )
+                .mockReturnValueOnce(
+                    makeUploadOk('https://cdn.example.com/multi-2.jpg', 'g/multi-2')
+                )
+                .mockReturnValueOnce(
+                    makeUploadOk('https://cdn.example.com/multi-3.jpg', 'g/multi-3')
+                );
+            mockAddMedia
+                .mockReturnValueOnce(
+                    makeAddOk({
+                        ...NEW_ROW,
+                        id: 'media-multi-1',
+                        url: 'https://cdn.example.com/multi-1.jpg'
+                    })
+                )
+                .mockReturnValueOnce(
+                    makeAddOk({
+                        ...NEW_ROW,
+                        id: 'media-multi-2',
+                        url: 'https://cdn.example.com/multi-2.jpg'
+                    })
+                )
+                .mockReturnValueOnce(
+                    makeAddOk({
+                        ...NEW_ROW,
+                        id: 'media-multi-3',
+                        url: 'https://cdn.example.com/multi-3.jpg'
+                    })
+                );
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const galleryInput = document.querySelector('#gallery-image-input') as HTMLInputElement;
+            expect(galleryInput).toHaveAttribute('multiple');
+
+            const files = [
+                new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+                new File(['b'], 'b.jpg', { type: 'image/jpeg' }),
+                new File(['c'], 'c.jpg', { type: 'image/jpeg' })
+            ];
+            fireEvent.change(galleryInput, { target: { files } });
+
+            await waitFor(() => expect(mockAddMedia).toHaveBeenCalledTimes(3));
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(3));
+        });
+
+        it('rejects a selection that would exceed the remaining gallery slots, before uploading anything', async () => {
+            const cap = ENTITY_GALLERY_CAPS.accommodation;
+            const nearFullGallery = Array.from({ length: cap - 2 }, (_, i) => ({
+                ...GALLERY_ROW_1,
+                id: `g-${i}`,
+                url: `https://cdn.example.com/g${i}.jpg`,
+                publicId: `gallery/g${i}`
+            }));
+            mockListMedia.mockReturnValue(makeListOk(nearFullGallery));
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(cap - 2));
+
+            const galleryInput = document.querySelector('#gallery-image-input') as HTMLInputElement;
+            const files = [
+                new File(['a'], 'a.jpg', { type: 'image/jpeg' }),
+                new File(['b'], 'b.jpg', { type: 'image/jpeg' }),
+                new File(['c'], 'c.jpg', { type: 'image/jpeg' })
+            ];
+            fireEvent.change(galleryInput, { target: { files } });
+
+            await waitFor(() => expect(mockAddToast).toHaveBeenCalled());
+            expect(mockUploadEntityImage).not.toHaveBeenCalled();
+            expect(mockAddMedia).not.toHaveBeenCalled();
+        });
+    });
+
+    // ── 8. Promoting a gallery photo to portada (HOS-122) ───────────────────
+
+    describe('promoting a gallery photo to portada (HOS-122)', () => {
+        it('calls setFeaturedMedia with the existing mediaId and does NOT re-upload', async () => {
+            mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, GALLERY_ROW_1]));
+            const promotedRow = { ...GALLERY_ROW_1, isFeatured: true };
+            mockSetFeaturedMedia.mockReturnValue(
+                Promise.resolve({ ok: true as const, data: { media: promotedRow } })
+            );
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => {
+                expect(screen.getByAltText('Imagen principal')).toHaveAttribute(
+                    'src',
+                    FEATURED_ROW.url
+                );
+            });
+
+            const promoteButton = screen.getByLabelText('Usar foto 1 como portada');
+            fireEvent.click(promoteButton);
+
+            await waitFor(() => {
+                expect(mockSetFeaturedMedia).toHaveBeenCalledWith({
+                    id: ACC_ID,
+                    mediaId: GALLERY_ROW_1.id
+                });
+            });
+            expect(mockUploadEntityImage).not.toHaveBeenCalled();
+            expect(mockAddMedia).not.toHaveBeenCalled();
+
+            await waitFor(() => {
+                expect(screen.getByAltText('Imagen principal')).toHaveAttribute(
+                    'src',
+                    GALLERY_ROW_1.url
+                );
+            });
+
+            // Old portada moved into the gallery
+            await waitFor(() => {
+                const imgs = screen.getAllByRole('img');
+                const urls = imgs.map((i) => i.getAttribute('src'));
+                expect(urls).toContain(FEATURED_ROW.url);
+            });
+        });
+    });
+
+    // ── 9. Manual reordering (HOS-122) ──────────────────────────────────────
+
+    describe('manual reordering (HOS-122)', () => {
+        it('sends the full ordered id list (featured + gallery) with the new order on move-down', async () => {
+            mockListMedia.mockReturnValue(makeListOk([FEATURED_ROW, GALLERY_ROW_1, GALLERY_ROW_2]));
+            const reorderedRows = [FEATURED_ROW, GALLERY_ROW_2, GALLERY_ROW_1];
+            mockReorderMedia.mockReturnValue(
+                Promise.resolve({ ok: true as const, data: { media: reorderedRows } })
+            );
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(3));
+
+            const moveDownButton = screen.getByLabelText('Mover foto 1 hacia abajo');
+            fireEvent.click(moveDownButton);
+
+            await waitFor(() => {
+                expect(mockReorderMedia).toHaveBeenCalledWith({
+                    id: ACC_ID,
+                    orderedIds: [FEATURED_ROW.id, GALLERY_ROW_2.id, GALLERY_ROW_1.id]
+                });
+            });
+        });
+
+        it('disables move-up on the first item and move-down on the last item', async () => {
+            mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
+
+            expect(screen.getByLabelText('Mover foto 1 hacia arriba')).toBeDisabled();
+            expect(screen.getByLabelText('Mover foto 2 hacia abajo')).toBeDisabled();
+            expect(screen.getByLabelText('Mover foto 1 hacia abajo')).not.toBeDisabled();
+            expect(screen.getByLabelText('Mover foto 2 hacia arriba')).not.toBeDisabled();
+        });
+
+        it('does NOT mutate the gallery order when reorderMedia fails', async () => {
+            mockListMedia.mockReturnValue(makeListOk([GALLERY_ROW_1, GALLERY_ROW_2]));
+            mockReorderMedia.mockReturnValue(makeError('reorder failed'));
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(screen.getAllByRole('img')).toHaveLength(2));
+
+            const moveDownButton = screen.getByLabelText('Mover foto 1 hacia abajo');
+            fireEvent.click(moveDownButton);
+
+            await waitFor(() => expect(screen.getByText('reorder failed')).toBeInTheDocument());
+
+            const imgs = screen.getAllByRole('img');
+            expect(imgs[0]).toHaveAttribute('src', GALLERY_ROW_1.url);
+            expect(imgs[1]).toHaveAttribute('src', GALLERY_ROW_2.url);
+        });
+    });
+
+    // ── 10. Drag-and-drop upload (HOS-122) ──────────────────────────────────
+
+    describe('drag-and-drop upload (HOS-122)', () => {
+        it('uploads a file dropped onto the featured slot', async () => {
+            mockListMedia.mockReturnValue(makeListEmpty());
+            mockUploadEntityImage.mockReturnValue(makeUploadOk());
+            mockAddMedia.mockReturnValue(makeAddOk({ ...NEW_ROW, isFeatured: false }));
+            mockSetFeaturedMedia.mockReturnValue(
+                Promise.resolve({
+                    ok: true as const,
+                    data: { media: { ...NEW_ROW, isFeatured: true } }
+                })
+            );
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => {
+                expect(
+                    screen.getByText('Arrastrá una imagen o hacé clic para seleccionar')
+                ).toBeInTheDocument();
+            });
+
+            const dropZone = screen
+                .getByText('Arrastrá una imagen o hacé clic para seleccionar')
+                .closest('button');
+            expect(dropZone).not.toBeNull();
+
+            const file = new File(['img'], 'dropped.jpg', { type: 'image/jpeg' });
+            fireEvent.drop(dropZone as HTMLElement, { dataTransfer: { files: [file] } });
+
+            await waitFor(() => {
+                expect(mockAddMedia).toHaveBeenCalledWith({
+                    id: ACC_ID,
+                    body: expect.objectContaining({ url: NEW_ROW.url })
+                });
+            });
+        });
+
+        it('uploads a file dropped onto the gallery add zone', async () => {
+            mockListMedia.mockReturnValue(makeListEmpty());
+            mockUploadEntityImage.mockReturnValue(makeUploadOk());
+            mockAddMedia.mockReturnValue(makeAddOk());
+
+            render(<PhotoSection {...defaultProps} />);
+            await waitFor(() => expect(mockListMedia).toHaveBeenCalled());
+
+            const galleryDropZone = screen.getByText('+');
+            const file = new File(['img'], 'dropped-gallery.jpg', { type: 'image/jpeg' });
+            fireEvent.drop(galleryDropZone, { dataTransfer: { files: [file] } });
+
+            await waitFor(() => {
+                expect(mockAddMedia).toHaveBeenCalledWith({
+                    id: ACC_ID,
+                    body: expect.objectContaining({ url: NEW_ROW.url })
+                });
+            });
         });
     });
 });
