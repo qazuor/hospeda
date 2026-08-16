@@ -44,6 +44,17 @@
  * cancelled anything. Both `active → expired` and `trialing → expired` are
  * registered edges in the state machine.
  *
+ * ## Commerce listings
+ *
+ * A commerce listing's public visibility is driven by a DENORMALIZED copy of
+ * the status on `commerce_listing_subscriptions`, not by `billing_subscriptions`
+ * itself. `reconcileCommerceListingForSubscription` is the bridge that keeps
+ * the two in step, and every other status-changing path (MP webhook, dunning,
+ * finalize-cancelled-subs) calls it. This job does too: expiring the
+ * subscription while leaving its listing publicly visible against a mirror
+ * that still reads `active` would be an expiry done half way — a worse state
+ * than the bug being fixed. The call is a no-op for the non-commerce majority.
+ *
  * @module cron/jobs/preapproval-less-expiry
  */
 
@@ -61,6 +72,7 @@ import { SubscriptionStatusEnum } from '@repo/schemas';
 import { checkSubscriptionStatusTransition, withServiceTransaction } from '@repo/service-core';
 import { lt } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
+import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
 import { apiLogger } from '../../utils/logger.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
@@ -252,6 +264,23 @@ export const preapprovalLessExpiryJob: CronJobDefinition = {
                     if (row.customerId) {
                         clearEntitlementCache(row.customerId);
                     }
+
+                    // Commerce listings do not read `billing_subscriptions`.
+                    // They read a denormalized copy of the status on
+                    // `commerce_listing_subscriptions`, and this bridge is what
+                    // keeps the two in step — the MP webhook, dunning and
+                    // finalize-cancelled-subs all call it for the same reason.
+                    // Skipping it here would expire the subscription while
+                    // leaving its listing publicly visible on a mirror that
+                    // still claims `active`: an expiry done half way, which is
+                    // a worse state than the bug this job fixes. Non-throwing
+                    // by contract, and a no-op for the non-commerce majority.
+                    await reconcileCommerceListingForSubscription({
+                        subscriptionId: row.id,
+                        subscriptionStatus: SubscriptionStatusEnum.EXPIRED,
+                        source: 'preapproval-less-expiry'
+                    });
+
                     expired++;
                 } catch (err) {
                     errors++;
