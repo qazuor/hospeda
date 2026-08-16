@@ -472,6 +472,15 @@
                     "continues": "continua",
                     "pastError": "Você não pode mover o bloqueio para uma data passada."
                 },
+                "eventDetails": {
+                    "title": "Dia bloqueado",
+                    "eventLabel": "Evento",
+                    "sourceLabel": "Origem",
+                    "datesLabel": "Datas",
+                    "dateRange": "{{from}} a {{to}}",
+                    "untitled": "Sem título no calendário de origem",
+                    "help": "Este bloqueio veio de um calendário que você conectou, então não pode ser editado aqui — a próxima sincronização o recriaria. Para liberar esses dias, apague ou altere o evento no calendário de origem, ou desconecte esse calendário."
+                },
                 "legend": {
                     "title": "Legenda",
                     "free": "Livre",
