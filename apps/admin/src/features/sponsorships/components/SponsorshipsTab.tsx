@@ -24,6 +24,7 @@ import {
 import type { Sponsorship } from '@/features/sponsorships/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { translateAdminApiError } from '@/lib/errors';
+import { formatCalendarShortDate } from '@/lib/format-helpers';
 
 /**
  * Sponsorships Tab
@@ -146,14 +147,18 @@ export function SponsorshipsTab() {
             header: t('admin-billing.sponsorships.columns.startsAt'),
             accessorKey: 'startsAt',
             enableSorting: true,
-            columnType: ColumnType.DATE
+            // Calendar date: CreateSponsorshipDialog writes it from a bare
+            // <input type="date">, which pins it to UTC midnight. ColumnType.DATE
+            // renders in the reader's local timezone, so at UTC-3 it would show
+            // the day before — use the UTC-pinned helper instead.
+            cell: ({ row }) => <span>{formatCalendarShortDate({ date: row.startsAt })}</span>
         },
         {
             id: 'endsAt',
             header: t('admin-billing.sponsorships.columns.endsAt'),
             accessorKey: 'endsAt',
             enableSorting: true,
-            columnType: ColumnType.DATE
+            cell: ({ row }) => <span>{formatCalendarShortDate({ date: row.endsAt })}</span>
         },
         {
             id: 'actions',

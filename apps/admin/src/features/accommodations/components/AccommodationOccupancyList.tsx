@@ -7,9 +7,10 @@
  * read-only view, gated server-side by `ACCOMMODATION_OCCUPANCY_VIEW`.
  */
 
-import { formatDate, type TranslationKey, useTranslations } from '@repo/i18n';
+import { type TranslationKey, useTranslations } from '@repo/i18n';
 import type { AccommodationOccupancy } from '@repo/schemas';
 import { OccupancySourceEnum } from '@repo/schemas';
+import { formatCalendarDate } from '@repo/utils';
 import { Badge } from '@/components/ui/badge';
 import { useAccommodationOccupancyQuery } from '../hooks/useAccommodationOccupancyQuery';
 
@@ -41,17 +42,15 @@ function getSourceBadgeVariant(source: OccupancySourceEnum): 'secondary' | 'outl
 /**
  * Formats a plain `YYYY-MM-DD` occupancy date for display.
  *
- * The DB column is a timezone-less Postgres `date`, so parsing/formatting
- * MUST stay in UTC end-to-end — passing the raw string through
- * `Intl.DateTimeFormat` without pinning `timeZone: 'UTC'` would shift the
- * displayed day backward for any viewer west of UTC (e.g. Argentina, UTC-3).
+ * The DB column is a timezone-less Postgres `date`, so the day must not be
+ * read through the viewer's own timezone — that would shift it backward for
+ * anyone west of UTC (e.g. Argentina, UTC-3). This file used to pin
+ * `timeZone: 'UTC'` by hand, which was correct; it now delegates so the rule
+ * lives in one place. Four screens got it wrong while this one had it right,
+ * and nothing connected them (smoke agosto 2026, H-09/H-63/H-73/H-84).
  */
 function formatOccupancyDate(date: string, locale: string): string {
-    return formatDate({
-        date,
-        locale,
-        options: { dateStyle: 'medium', timeZone: 'UTC' }
-    });
+    return formatCalendarDate({ value: date, locale, options: { dateStyle: 'medium' } }) ?? '—';
 }
 
 export function AccommodationOccupancyList({ accommodationId }: AccommodationOccupancyListProps) {

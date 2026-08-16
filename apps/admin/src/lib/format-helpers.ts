@@ -7,6 +7,7 @@
  */
 
 import { defaultIntlLocale, formatCurrency, formatDate as i18nFormatDate } from '@repo/i18n';
+import { formatCalendarDate } from '@repo/utils';
 
 // ---------------------------------------------------------------------------
 // Input types
@@ -76,6 +77,45 @@ export function formatShortDate({
         locale,
         options: { day: '2-digit', month: '2-digit', year: 'numeric' }
     });
+}
+
+/**
+ * Formats a CALENDAR DATE — a value that names a day, with no time of day — as
+ * `DD/MM/YYYY`.
+ *
+ * Use this instead of {@link formatShortDate} whenever the underlying value is
+ * a day rather than an instant: a service date, a broadcast date, a "valid
+ * from", a promotion window. Two shapes qualify, and both are UTC:
+ *
+ *   - a Postgres `date`, arriving as a bare `'2026-08-13'`;
+ *   - a `timestamptz` written by an `<input type="date">`, which pins it to
+ *     `'2026-08-13T00:00:00.000Z'` — what all 13 date pickers in this app do.
+ *
+ * {@link formatShortDate} renders in the reader's own timezone, which is right
+ * for a real instant and wrong for these: at UTC-3 it lands at 21:00 the
+ * previous day and the screen shows a date that is off by one. The August 2026
+ * smoke found that four separate times before anyone noticed it was one bug
+ * (H-09, H-63, H-73, H-84).
+ *
+ * Returns `'—'` when `date` is absent or names no real day.
+ *
+ * @example
+ * ```ts
+ * formatCalendarShortDate({ date: '2026-08-13T00:00:00.000Z', locale: 'es-AR' })
+ * // => "13/08/2026"   (formatShortDate would say "12/08/2026")
+ * ```
+ */
+export function formatCalendarShortDate({
+    date,
+    locale = defaultIntlLocale
+}: FormatDateHelperInput): string {
+    return (
+        formatCalendarDate({
+            value: typeof date === 'number' ? new Date(date) : date,
+            locale,
+            options: { day: '2-digit', month: '2-digit', year: 'numeric' }
+        }) ?? '—'
+    );
 }
 
 /**

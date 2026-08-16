@@ -9,6 +9,7 @@ import {
     useSendPartnerPaymentLinkMutation
 } from '@/features/partners/hooks/usePartnerQuery';
 import { createErrorComponent, createPendingComponent } from '@/lib/factories';
+import { formatCalendarShortDate } from '@/lib/format-helpers';
 
 export const Route = createFileRoute('/_authed/partners/$id')({
     component: PartnerViewPage,
@@ -67,14 +68,20 @@ function PartnerViewPage() {
                     </div>
                     <div>
                         <span className="font-medium">Inicio:</span>{' '}
+                        {/*
+                          startsAt/endsAt are calendar dates: PartnerForm writes them from a
+                          bare <input type="date">, which pins them to UTC midnight. Format
+                          with the UTC-pinned helper so a reader at UTC-3 doesn't see the
+                          date roll back a day.
+                        */}
                         {partner.startsAt
-                            ? new Date(partner.startsAt).toLocaleDateString('es-AR')
+                            ? formatCalendarShortDate({ date: partner.startsAt })
                             : 'Sin iniciar'}
                     </div>
                     <div>
                         <span className="font-medium">Fin:</span>{' '}
                         {partner.endsAt
-                            ? new Date(partner.endsAt).toLocaleDateString('es-AR')
+                            ? formatCalendarShortDate({ date: partner.endsAt })
                             : 'Sin fecha'}
                     </div>
                     <div className="md:col-span-2">

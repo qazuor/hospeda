@@ -249,6 +249,9 @@ importers:
       '@repo/schemas':
         specifier: workspace:*
         version: link:../../packages/schemas
+      '@repo/utils':
+        specifier: workspace:*
+        version: link:../../packages/utils
       '@sentry/react':
         specifier: ^10.69.0
         version: 10.69.0(react@19.2.7)
