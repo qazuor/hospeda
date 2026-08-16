@@ -9,7 +9,12 @@
 
 import { describe, expect, it } from 'vitest';
 import type { WaveHeaderStateConfig } from './waveHeaderState';
-import { DEFAULT_WAVE_HEADER_CONFIG, nextWaveHeaderState } from './waveHeaderState';
+import {
+    coalesceScrollSource,
+    computeScrollDelta,
+    DEFAULT_WAVE_HEADER_CONFIG,
+    nextWaveHeaderState
+} from './waveHeaderState';
 
 const config: WaveHeaderStateConfig = DEFAULT_WAVE_HEADER_CONFIG;
 
@@ -391,5 +396,57 @@ describe('nextWaveHeaderState', () => {
             expect(result.state).toBe('hidden');
             expect(result.accumulator).toBe(-10);
         });
+    });
+});
+
+describe('computeScrollDelta', () => {
+    // Regression test for H-47 (smoke agosto 2026): the wave-header's `resize`
+    // listener fed a `scrollY - prevScrollY` delta into the SAME direction-axis
+    // accumulator as genuine scroll events. On desktop `resize` almost never
+    // fires mid-scroll, so this was invisible; on a real mobile device the URL
+    // bar shows/hides on every scroll tick, firing `resize` dozens of times
+    // during one continuous downward scroll. If a resize-driven read of
+    // `window.scrollY` is even slightly out of step with the true scroll
+    // position (a documented mobile dynamic-toolbar quirk), that noise flows
+    // straight into the accumulator and can reset the compact→hidden countdown
+    // or bounce the state back toward `expanded` mid-gesture — the header
+    // then never finishes a transition before being interrupted again.
+    // `computeScrollDelta` is the fix: a `resize` source NEVER contributes to
+    // the direction axis, only `scroll` does.
+    it('returns 0 for a resize source, regardless of the scrollY change', () => {
+        expect(computeScrollDelta({ source: 'resize', scrollY: 340, prevScrollY: 40 })).toBe(0);
+        expect(computeScrollDelta({ source: 'resize', scrollY: 0, prevScrollY: 500 })).toBe(0);
+    });
+
+    it('returns the signed scrollY difference for a scroll source', () => {
+        expect(computeScrollDelta({ source: 'scroll', scrollY: 140, prevScrollY: 100 })).toBe(40);
+        expect(computeScrollDelta({ source: 'scroll', scrollY: 60, prevScrollY: 100 })).toBe(-40);
+        expect(computeScrollDelta({ source: 'scroll', scrollY: 100, prevScrollY: 100 })).toBe(0);
+    });
+});
+
+describe('coalesceScrollSource', () => {
+    // Second half of the H-47 fix. The caller coalesces every event in one
+    // animation frame into a single evaluation (an rAF `ticking` latch), so a
+    // frame is claimed by whichever event fires FIRST. Forcing resize deltas to
+    // 0 (above) stops resize from CORRUPTING the direction axis, but on its own
+    // it lets resize STARVE it: on mobile, where the URL bar fires `resize` on
+    // nearly every scroll tick, a resize that wins the race to claim the frame
+    // would discard the genuine scroll following it in the same frame, evaluate
+    // with delta 0, and leave the accumulator stuck — the header would never
+    // reach `hidden`, which is the very symptom H-47 reports. Both failure
+    // modes produce the same broken header, so the fix is only complete if a
+    // scroll anywhere in the frame wins the frame.
+    it('upgrades a pending resize frame to scroll when a real scroll lands in it', () => {
+        expect(coalesceScrollSource({ pending: 'resize', incoming: 'scroll' })).toBe('scroll');
+    });
+
+    it('never downgrades a pending scroll frame back to resize', () => {
+        expect(coalesceScrollSource({ pending: 'scroll', incoming: 'resize' })).toBe('scroll');
+    });
+
+    it('keeps the source unchanged when both events agree', () => {
+        expect(coalesceScrollSource({ pending: 'scroll', incoming: 'scroll' })).toBe('scroll');
+        expect(coalesceScrollSource({ pending: 'resize', incoming: 'resize' })).toBe('resize');
     });
 });
