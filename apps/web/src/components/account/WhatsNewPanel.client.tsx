@@ -1,3 +1,4 @@
+import { formatCalendarDate } from '@repo/utils';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useWhatsNew } from '@/hooks/use-whats-new';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -193,17 +194,16 @@ interface PanelRowProps {
 function PanelRow({ item, locale, onRowClick }: PanelRowProps) {
     const { t } = createTranslations(locale);
 
-    const publishedDate = useMemo(() => {
-        try {
-            return new Date(item.publishedAt).toLocaleDateString(locale, {
-                year: 'numeric',
-                month: 'short',
-                day: 'numeric'
-            });
-        } catch {
-            return '';
-        }
-    }, [item.publishedAt, locale]);
+    // Calendar day, not an instant — see the twin in `WhatsNewPageList.client.tsx`.
+    const publishedDate = useMemo(
+        () =>
+            formatCalendarDate({
+                value: item.publishedAt,
+                locale,
+                options: { year: 'numeric', month: 'short', day: 'numeric' }
+            }) ?? '',
+        [item.publishedAt, locale]
+    );
 
     return (
         <li>

@@ -6,6 +6,7 @@
  * so the two that are genuinely subtle are stated once instead of inline in JSX.
  */
 
+import { parseCalendarDate as parseSharedCalendarDate } from '@repo/utils';
 import type { BenefitUsageDeclaredBy, BenefitUsageStatus } from '@/lib/api/endpoints-protected';
 
 /** The only two fields any of these decisions actually read. */
@@ -95,33 +96,29 @@ export function isAwaitingHostAnswer(usage: BenefitUsageSide): boolean {
 }
 
 /** `YYYY-MM-DD`, the shape a Postgres `date` column travels in. */
-const CALENDAR_DATE = /^(\d{4})-(\d{2})-(\d{2})$/;
+const CALENDAR_DATE = /^\d{4}-\d{2}-\d{2}$/;
 
 /**
  * Reads a `YYYY-MM-DD` service date as the calendar day it names.
  *
  * `new Date('2026-08-01')` is UTC midnight, which is 2026-07-31 21:00 in
  * Argentina — so the obvious one-liner renders every service date one day
- * early. The parts are therefore fed to the local-time constructor instead.
+ * early. The August 2026 smoke found the same defect on four other screens
+ * (H-09, H-63, H-73, H-84), so the date arithmetic now lives once, in
+ * `@repo/utils`; this stays as the host surface's narrow door onto it.
+ *
+ * Narrow on purpose: the shared helper also accepts a full ISO instant, and
+ * this one must not. `servicedAt` is a Postgres `date` and always arrives bare,
+ * so anything else reaching here is the wrong field, and returning null is how
+ * that gets noticed instead of silently rendered.
  *
  * @param value - The calendar date as stored and transported.
  * @returns A local-midnight `Date`, or null when the value names no real day.
  */
 export function parseCalendarDate(value: string): Date | null {
-    const match = CALENDAR_DATE.exec(value);
-    if (!match) return null;
+    if (!CALENDAR_DATE.test(value)) return null;
 
-    const [, year, month, day] = match;
-    const parsed = new Date(Number(year), Number(month) - 1, Number(day));
-
-    // Rejects `2026-02-31`, which the constructor would silently roll into March.
-    if (
-        parsed.getFullYear() !== Number(year) ||
-        parsed.getMonth() !== Number(month) - 1 ||
-        parsed.getDate() !== Number(day)
-    ) {
-        return null;
-    }
-
-    return parsed;
+    // Also rejects `2026-02-31`, which the Date constructor would silently roll
+    // forward into March.
+    return parseSharedCalendarDate({ value });
 }
