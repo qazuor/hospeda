@@ -2,11 +2,11 @@
 
 ## Overview
 
-Owner and complex plan categories include a 14-day trial period. Tourist plans do not have trials.. the free tier (`tourist-free`) serves as the default entry point.
+Owner and complex plan categories include a trial period. Tourist plans do not have trials.. the free tier (`tourist-free`) serves as the default entry point.
 
 | Category | Trial Duration | Default Trial Plan | Eligible |
 |----------|---------------|-------------------|----------|
-| Owner | 14 days | `owner-basico` | Yes |
+| Owner | 30 days (raised from 14, owner decision 2026-08-15) | `owner-basico` | Yes |
 | Complex | 14 days | `complex-basico` | Yes |
 | Tourist | N/A | `tourist-free` (permanent) | No |
 
@@ -15,8 +15,8 @@ Owner and complex plan categories include a 14-day trial period. Tourist plans d
 ```typescript
 import { OWNER_TRIAL_DAYS, COMPLEX_TRIAL_DAYS } from '@repo/billing';
 
-// Both are 14 days
-console.log(OWNER_TRIAL_DAYS);   // 14
+// Deliberately independent since HOS-301 D1 — do not re-couple them.
+console.log(OWNER_TRIAL_DAYS);   // 30
 console.log(COMPLEX_TRIAL_DAYS); // 14
 ```
 
@@ -26,7 +26,7 @@ Trial availability is configured per plan via the `hasTrial` and `trialDays` fie
 
 ```typescript
 // Owner plans have trials
-{ hasTrial: true, trialDays: 14 }
+{ hasTrial: true, trialDays: 30 }
 
 // Tourist plans do not
 { hasTrial: false, trialDays: 0 }
@@ -35,7 +35,7 @@ Trial availability is configured per plan via the `hasTrial` and `trialDays` fie
 ## Lifecycle Summary
 
 1. **Registration** .. Owner/complex users automatically get a trial subscription on the default plan for their category
-2. **Active trial** .. Full access to all entitlements of the trial plan for 14 days
+2. **Active trial** .. Full access to all entitlements of the trial plan for the category's trial length (30 days for owner, 14 for complex)
 3. **Trial expiry** .. Dashboard access is blocked. User data is preserved.
 4. **Upgrade** .. User subscribes to a paid plan at any time (during or after trial)
 
