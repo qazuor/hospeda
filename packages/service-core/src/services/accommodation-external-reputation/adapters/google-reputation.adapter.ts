@@ -13,14 +13,26 @@
  * request with HTTP 400 and the adapter degrades to an empty result — i.e. Google
  * reputation silently never works. See the field-mask regression test.
  *
- * **Place ID resolution**: uses the same pattern as the SPEC-222 import adapter
- * but implemented here independently — the import adapter intentionally omits
- * `rating`/`reviews` from its field mask and must NOT be modified.  A local
- * `resolveGooglePlaceId` helper mirrors the import adapter's extraction logic.
+ * **Place ID resolution** (H-132): a three-rung ladder — follow a share link to
+ * its canonical URL, look for a `ChIJ` token, then resolve by place name +
+ * viewport via Text Search. The ladder used to stop at the `ChIJ` rung, and no
+ * URL Google gives a user today carries that token: the address-bar URL carries
+ * a hexadecimal `ftid` and the *Share* URL carries nothing at all. Every real
+ * listing therefore failed to resolve, and this adapter returned before ever
+ * calling the Places API. The import adapter (SPEC-222) had already grown the
+ * Text Search fallback for exactly this gap; this adapter never received it.
+ * The two extraction paths remain separate implementations because the import
+ * adapter intentionally omits `rating`/`reviews` from its field mask and must
+ * NOT be modified — but the share-link resolver is now shared
+ * (`utils/short-link.ts`) rather than duplicated. The ladder itself lives in
+ * `google-place-id.resolver.ts`.
  *
  * **Degradation contract**: never throws.  Any missing credential, unresolvable
  * Place ID, non-2xx response, or network error returns
- * {@link emptyReputationResult}.
+ * {@link emptyReputationResult} **carrying a `failureCode`**. Populating that
+ * code is not optional bookkeeping: it is the only signal that distinguishes
+ * "Google has no reviews for this place" from "we never asked", and its absence
+ * is why a permanently-broken integration reported success for months.
  *
  * **Attribution**: Google Maps Platform requires that applications show a
  * "Powered by Google" attribution when displaying Places data.  This adapter
@@ -31,8 +43,13 @@
  */
 
 import type { AccommodationExternalListing, ExternalReviewSnippet } from '@repo/schemas';
-import type { ReputationAdapter, ReputationFetchResult } from './adapter.types.js';
+import type {
+    ReputationAdapter,
+    ReputationFailureCode,
+    ReputationFetchResult
+} from './adapter.types.js';
 import { emptyReputationResult } from './adapter.types.js';
+import { resolvePlaceIdFromUrl } from './google-place-id.resolver.js';
 
 // ---------------------------------------------------------------------------
 // Credentials shape
@@ -135,44 +152,29 @@ const MAX_SNIPPETS = 5;
  */
 const GOOGLE_ATTRIBUTION_URL = 'https://www.google.com/maps';
 
-// ---------------------------------------------------------------------------
-// Place ID resolution (local — must NOT modify the SPEC-222 import adapter)
-// ---------------------------------------------------------------------------
+/**
+ * Abort timeout applied to every outbound Places API request, and to the
+ * redirect-following hop that resolves a share link.
+ */
+const REQUEST_TIMEOUT_MS = 15_000;
 
 /**
- * Attempts to extract a Google Place ID from a Maps URL string.
+ * Classifies a non-2xx Places API status into a {@link ReputationFailureCode}.
  *
- * Mirrors the extraction logic in the SPEC-222 `google-places.adapter.ts` but
- * lives here independently so the import adapter's field mask is never changed.
+ * Mirrors the import adapter's mapping so an operator reading either
+ * integration's stored failure sees the same word for the same condition.
  *
- * Extraction strategy (priority order):
- * 1. `place_id` query parameter — `?place_id=ChIJ...`.
- * 2. `ChIJ`-prefixed token anywhere in the URL string.
- *
- * @param rawUrl - The external listing URL string.
- * @returns The extracted Place ID, or `null` when none is found.
+ * @param status - The HTTP status returned by the Places API.
+ * @returns The matching failure code.
  */
-function resolveGooglePlaceId(rawUrl: string): string | null {
-    let parsed: URL;
-    try {
-        parsed = new URL(rawUrl);
-    } catch {
-        return null;
+function httpStatusToFailureCode(status: number): ReputationFailureCode {
+    if (status === 401 || status === 403) {
+        return 'credentials_missing';
     }
-
-    // Strategy 1: explicit `place_id` query param
-    const fromParam = parsed.searchParams.get('place_id');
-    if (fromParam?.startsWith('ChIJ')) {
-        return fromParam;
+    if (status === 404) {
+        return 'not_found';
     }
-
-    // Strategy 2: scan the full URL for a ChIJ-prefixed token
-    const match = /ChIJ[A-Za-z0-9_-]{10,50}/.exec(parsed.href);
-    if (match?.[0]) {
-        return match[0];
-    }
-
-    return null;
+    return 'provider_error';
 }
 
 // ---------------------------------------------------------------------------
@@ -266,13 +268,23 @@ export class GoogleReputationAdapter implements ReputationAdapter {
         // Step 1: Credential check
         const apiKey = this.#credentials.googlePlacesApiKey;
         if (!apiKey) {
-            return emptyReputationResult();
+            return emptyReputationResult({ failureCode: 'credentials_missing' });
         }
 
-        // Step 2: Place ID resolution — prefer externalId, fall back to URL
-        const rawPlaceId = listing.externalId ?? resolveGooglePlaceId(listing.url);
-        if (!rawPlaceId || rawPlaceId.trim() === '') {
-            return emptyReputationResult();
+        // Step 2: Place ID resolution — prefer externalId, fall back to the full
+        // URL ladder (share-link → ChIJ token → Text Search). See H-132: the
+        // ladder used to stop at the ChIJ token, which no real Maps URL carries,
+        // so this method returned before ever reaching step 3.
+        const explicitId = listing.externalId?.trim();
+        let rawPlaceId: string;
+        if (explicitId !== undefined && explicitId !== '') {
+            rawPlaceId = explicitId;
+        } else {
+            const resolution = await resolvePlaceIdFromUrl({ rawUrl: listing.url, apiKey });
+            if (!resolution.ok) {
+                return emptyReputationResult({ failureCode: resolution.reason });
+            }
+            rawPlaceId = resolution.placeId;
         }
 
         // FIX L3: encode the Place ID so an owner-supplied externalId containing
@@ -283,7 +295,7 @@ export class GoogleReputationAdapter implements ReputationAdapter {
         let apiResponse: PlacesReputationApiResponse;
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15_000);
+            const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
             let response: Response;
             try {
@@ -300,7 +312,9 @@ export class GoogleReputationAdapter implements ReputationAdapter {
             }
 
             if (!response.ok) {
-                return emptyReputationResult();
+                return emptyReputationResult({
+                    failureCode: httpStatusToFailureCode(response.status)
+                });
             }
 
             const json = (await response.json()) as
@@ -308,16 +322,19 @@ export class GoogleReputationAdapter implements ReputationAdapter {
                 | PlacesApiErrorResponse;
 
             if ('error' in json && json.error) {
-                return emptyReputationResult();
+                return emptyReputationResult({ failureCode: 'provider_error' });
             }
 
             apiResponse = json as PlacesReputationApiResponse;
-        } catch {
-            // Network error, abort, JSON parse error — degrade
-            return emptyReputationResult();
+        } catch (err) {
+            // Network error, abort, JSON parse error — degrade, but say which.
+            const failureCode: ReputationFailureCode =
+                err instanceof Error && err.name === 'AbortError' ? 'timeout' : 'provider_error';
+            return emptyReputationResult({ failureCode });
         }
 
-        // Step 4: Map the API response to ReputationFetchResult
+        // Step 4: Map the API response to ReputationFetchResult. Reaching here
+        // means Google answered: any `null` below is Google's answer, not ours.
         return buildReputationResult(apiResponse, listing.url);
     }
 }
@@ -367,6 +384,10 @@ function buildReputationResult(
         reviewsCount,
         deepLink,
         snippets,
-        attributionUrl
+        attributionUrl,
+        // Explicitly absent: this function is only reached after Google answered,
+        // so a null `rating` here means "Google has no rating for this place",
+        // never "we could not ask". That distinction is the point of H-132.
+        failureCode: null
     };
 }

@@ -17,6 +17,42 @@
 import type { AccommodationExternalListing, ExternalReviewSnippet } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
+// ReputationFailureCode
+// ---------------------------------------------------------------------------
+
+/**
+ * Why an adapter produced no data.
+ *
+ * **Why this exists (H-132).** Before this type, every adapter failure — a
+ * missing API key, a URL whose place could not be identified, an HTTP 500, a
+ * timeout — collapsed into the same all-null {@link ReputationFetchResult} that
+ * a *successful* fetch of a place with zero reviews produces. The service could
+ * not tell them apart, so it recorded `fetch_status = 'ok'` for all of them.
+ * The Google adapter spent months never once calling the Places API while the
+ * host's dashboard, the API response, and the stored row all said the refresh
+ * had succeeded.
+ *
+ * A `failureCode` is therefore the ONLY way an adapter can say "this run did
+ * not produce data, and here is why". Its absence means the opposite and means
+ * it positively: the platform was reached and answered.
+ *
+ * Vocabulary is deliberately aligned with the import pipeline's
+ * `ImportFailureCode` so the two Google integrations describe the same
+ * conditions with the same words.
+ */
+export type ReputationFailureCode =
+    /** No API key / token configured for this platform. */
+    | 'credentials_missing'
+    /** The listing URL carries no identifier this adapter can resolve. */
+    | 'unresolvable_url'
+    /** The platform was queried and reported the place does not exist. */
+    | 'not_found'
+    /** Non-2xx response, error payload, or malformed body from the platform. */
+    | 'provider_error'
+    /** The request exceeded the adapter's timeout. */
+    | 'timeout';
+
+// ---------------------------------------------------------------------------
 // ReputationFetchResult
 // ---------------------------------------------------------------------------
 
@@ -71,6 +107,19 @@ export interface ReputationFetchResult {
      * `null` or `undefined` when attribution is not required.
      */
     readonly attributionUrl?: string | null;
+    /**
+     * Why this run produced no data, or `null`/absent when the platform was
+     * successfully reached.
+     *
+     * This is the field that distinguishes "Google has no reviews for this
+     * place" (`failureCode` absent, every aggregate `null`) from "we never got
+     * far enough to ask" (`failureCode` set). The service maps it onto the
+     * persisted `fetch_status` / `fetch_message`; see H-132.
+     *
+     * Adapters that have not been migrated to report it simply omit it and keep
+     * their previous behaviour — an absent code is never treated as a failure.
+     */
+    readonly failureCode?: ReputationFailureCode | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -174,18 +223,28 @@ export interface ReputationAdapter {
 // ---------------------------------------------------------------------------
 
 /**
- * Returns an empty / degraded {@link ReputationFetchResult} where all fields
- * are `null`.  Adapters use this as their degradation sentinel so callers can
- * distinguish "fetch ran but found nothing" from a thrown error.
+ * Returns an empty / degraded {@link ReputationFetchResult} where all data
+ * fields are `null`.  Adapters use this as their degradation sentinel.
  *
- * @returns An empty reputation result with all nullable fields set to `null`.
+ * **Always pass a `failureCode`** when the run did not reach the platform. An
+ * empty result with no code is indistinguishable from a successful fetch of a
+ * place that genuinely has no reviews, and the service will record it as `ok`
+ * — which is precisely the failure mode H-132 documents. The parameter is
+ * optional only so that adapters not yet migrated keep compiling with their
+ * existing (pre-H-132) behaviour.
+ *
+ * @param input.failureCode - Why the run produced no data.
+ * @returns An empty reputation result with all nullable data fields set to `null`.
  */
-export function emptyReputationResult(): ReputationFetchResult {
+export function emptyReputationResult(
+    input: { failureCode?: ReputationFailureCode } = {}
+): ReputationFetchResult {
     return {
         rating: null,
         reviewsCount: null,
         deepLink: null,
         snippets: null,
-        attributionUrl: null
+        attributionUrl: null,
+        failureCode: input.failureCode ?? null
     };
 }
