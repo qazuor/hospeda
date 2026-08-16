@@ -73,7 +73,9 @@ import {
 import type { getQZPayBilling } from '../../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
+import { resolvePlanDisplayName } from '../../../services/billing/plan-change-reason.js';
 import { classifySettledTrialCharge } from '../../../services/billing/trial-promise-verification.js';
+import { sendTrialNotGrantedAdminAlert } from './notifications.js';
 import { restoreFullPriceMutation } from '../../../services/promo-renewal-mp.service.js';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -218,6 +220,52 @@ function resolveChargeSettledAt(debitDate: string | null): Date {
 }
 
 /**
+ * Resolve who was affected and raise the H-137 admin alert.
+ *
+ * Kept out of {@link convertTrialOnSettledCharge} so that function stays a pure
+ * database transition with no notification or billing-facade dependency, and so
+ * a lookup failure here can never roll back a conversion that already committed.
+ *
+ * Never throws: the caller invokes it fire-and-forget.
+ *
+ * @internal
+ */
+async function notifyTrialNotGranted(params: {
+    customerId: string;
+    planId: string | null;
+    promisedTrialEnd: Date | null;
+    chargedAt: Date;
+    preapprovalId: string | null;
+    billing: ReturnType<typeof getQZPayBilling>;
+}): Promise<void> {
+    try {
+        const customer = await params.billing?.customers.get(params.customerId);
+        if (!customer?.email) return;
+
+        const planName = params.planId
+            ? ((await resolvePlanDisplayName({ planId: params.planId })) ?? 'Subscription')
+            : 'Subscription';
+
+        await sendTrialNotGrantedAdminAlert({
+            customerId: params.customerId,
+            customerEmail: customer.email,
+            planName,
+            promisedTrialEnd: params.promisedTrialEnd?.toISOString() ?? null,
+            chargedAt: params.chargedAt.toISOString(),
+            mpSubscriptionId: params.preapprovalId
+        });
+    } catch (err) {
+        apiLogger.debug(
+            {
+                customerId: params.customerId,
+                error: err instanceof Error ? err.message : String(err)
+            },
+            'H-137: could not raise the trial-not-granted admin alert'
+        );
+    }
+}
+
+/**
  * Convert a card-first trial the moment MercadoPago's day-N charge settles
  * (HOS-171).
  *
@@ -266,11 +314,19 @@ async function convertTrialOnSettledCharge(params: {
     chargedAt: Date;
     eventId: string | number;
     requestId: string;
-}): Promise<void> {
+}): Promise<{ readonly trialWasNotGranted: boolean }> {
     const { subscription, chargedAt, eventId, requestId } = params;
 
+    /**
+     * Reported to the caller rather than acted on here, because raising the
+     * alert needs the billing instance this function deliberately does not take.
+     * `false` on every path that did not positively establish a broken promise —
+     * including the error path, so a failed write can never manufacture one.
+     */
+    const noFinding = { trialWasNotGranted: false } as const;
+
     if (subscription.status !== SubscriptionStatusEnum.TRIALING) {
-        return;
+        return noFinding;
     }
 
     // H-137: a charge that lands before the promised window could plausibly have
@@ -295,7 +351,7 @@ async function convertTrialOnSettledCharge(params: {
                 { eventId, requestId, localSubscriptionId: subscription.id, reason: guard.reason },
                 'MercadoPago webhook: trial conversion blocked by the status guard — the reconcile cron will retry'
             );
-            return;
+            return noFinding;
         }
 
         await withServiceTransaction(async (ctx) => {
@@ -378,6 +434,8 @@ async function convertTrialOnSettledCharge(params: {
                 'MercadoPago webhook: card-first trial converted to active on its first settled charge'
             );
         }
+
+        return { trialWasNotGranted };
     } catch (err) {
         // The reconcile cron is the backstop; log and let it pick this up.
         apiLogger.error(
@@ -390,6 +448,7 @@ async function convertTrialOnSettledCharge(params: {
             'MercadoPago webhook: failed to convert a card-first trial — the reconcile cron will retry',
             { capture: true }
         );
+        return noFinding;
     }
 }
 
@@ -1105,7 +1164,7 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             // rather than fire-and-forget — it is the PRIMARY conversion path,
             // and until it commits the trial middleware 402s this (paid-up)
             // customer on every write. The daily cron is only the backstop.
-            await convertTrialOnSettledCharge({
+            const { trialWasNotGranted } = await convertTrialOnSettledCharge({
                 subscription: sub,
                 // H-137: MercadoPago's own `debit_date` is when the money moved.
                 // Wall-clock time would be wrong for a webhook this handler
@@ -1117,6 +1176,20 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
                 eventId: event.id,
                 requestId
             });
+
+            // H-137: get a human involved the moment somebody is billed instead
+            // of receiving the trial they were shown. Fire-and-forget — an alert
+            // must never delay the webhook ACK, and the charge already settled.
+            if (trialWasNotGranted) {
+                void notifyTrialNotGranted({
+                    customerId: sub.customerId,
+                    planId: sub.planId,
+                    promisedTrialEnd: sub.trialEnd,
+                    chargedAt: resolveChargeSettledAt(details.debitDate),
+                    preapprovalId: details.preapprovalId,
+                    billing
+                });
+            }
 
             // SPEC-262 T-007: multi-cycle promo discount renewal handling.
             // Anchor the discounted-cycle countdown on this post-charge event
