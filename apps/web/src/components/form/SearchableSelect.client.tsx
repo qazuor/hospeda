@@ -209,7 +209,17 @@ export function SearchableSelect<T extends SelectableItem>({
                 if (cancelled) return;
                 setResults(next);
                 setHighlightedIndex(next.length > 0 ? 0 : -1);
-                setIsOpen(next.length > 0);
+                // Stay open even on zero results (H-136). Closing here hid the
+                // whole listbox — and the listbox is what contains BOTH the
+                // `emptyLabel` status and the `footer` slot. In the city picker
+                // that footer is the "No encuentro mi ciudad" link, i.e. the one
+                // way out for a host whose city the search cannot resolve. It
+                // vanished at precisely the moment it was needed, leaving a
+                // required field, an empty list, and no affordance at all.
+                //
+                // Local mode already keeps the panel open for exactly this
+                // reason (see `showEmpty` below); async mode contradicted it.
+                setIsOpen(true);
             } catch {
                 // Surface as empty results — keeps the UI consistent and the
                 // caller can render a recovery action via the `footer` slot.
