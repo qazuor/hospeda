@@ -112,7 +112,7 @@ async function findExistingSuperAdmin(db: DrizzleClient): Promise<{
  * Exists for callers that need an acting super admin but must never
  * MANUFACTURE one — specifically the versioned data-migration runner
  * (`data-migrations/runner.ts`). The seed pipeline bootstraps the well-known
- * `superadmin@hospeda.com` account on purpose; a migration run must not, or a
+ * `superadmin@hospeda.com.ar` account on purpose; a migration run must not, or a
  * curated production seed (`--required --exclude=users`, which deliberately
  * skips exactly that account) would grow a predictable admin credential as a
  * silent side effect of running migrations.

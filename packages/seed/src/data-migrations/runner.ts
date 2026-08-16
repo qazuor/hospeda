@@ -140,7 +140,7 @@ export async function resolvePendingMigrations(
  * manufacture one.
  *
  * This deliberately does not call `loadSuperAdminAndGetActor()`, which creates
- * the well-known `superadmin@hospeda.com` account (plus its credential row)
+ * the well-known `superadmin@hospeda.com.ar` account (plus its credential row)
  * when none exists. That behavior is correct for the seed pipeline and wrong
  * here: the production day-1 bootstrap seeds with `--required --exclude=users`
  * precisely to keep that predictable admin credential off the box, and since
@@ -161,7 +161,7 @@ async function requireSuperAdminActor(args: { readonly db: DrizzleClient }): Pro
         throw new Error(
             'Cannot run seed data-migrations: this database has no SUPER_ADMIN account. ' +
                 'Migrations record the acting user (createdById/updatedById), so one must exist first. ' +
-                'The migration runner deliberately does NOT create the seeded superadmin@hospeda.com ' +
+                'The migration runner deliberately does NOT create the seeded superadmin@hospeda.com.ar ' +
                 'account as a fallback — on a production day-1 bootstrap, create and promote the real ' +
                 'admin account BEFORE running the data-migration step ' +
                 '(see docs/deployment/first-time-setup.md, Phase 4).'
