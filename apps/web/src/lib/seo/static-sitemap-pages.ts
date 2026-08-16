@@ -133,6 +133,7 @@ export const NON_SITEMAP_STATIC_PAGES: Readonly<Record<string, StaticSitemapExcl
     '/suscriptores/checkout/success/': 'transactional',
     '/suscriptores/checkout/failure/': 'transactional',
     '/suscriptores/checkout/pending/': 'transactional',
+    '/partners/checkout/pending/': 'transactional',
 
     // Guest-messaging landings, reachable only via an emailed access token.
     '/guest/messages/request-access/': 'token-gated',

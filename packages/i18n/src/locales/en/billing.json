@@ -205,6 +205,14 @@
             "cta": "Check status",
             "pageTitle": "Payment processing"
         },
+        "partnerPending": {
+            "pageTitle": "Payment received",
+            "title": "We received your payment",
+            "body": "We are confirming the transaction with MercadoPago. It may take a few minutes, and in some cases up to 24 hours. Once the payment clears, your presence on Hospeda is activated automatically — there is nothing else for you to do.",
+            "note": "Keep the receipt MercadoPago sent you. If anything is unclear, write to us and we will look into it with you.",
+            "homeCta": "Go to homepage",
+            "contactCta": "Contact us"
+        },
         "failure": {
             "title": "Your payment could not be processed",
             "genericMessage": "We were unable to process your payment. Please review your details and try again.",

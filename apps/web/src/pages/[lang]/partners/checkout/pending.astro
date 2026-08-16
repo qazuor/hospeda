@@ -1,0 +1,65 @@
+---
+/**
+ * @file partners/checkout/pending.astro
+ * @description MercadoPago return page for the PARTNER payment link.
+ *
+ * A partner is an external brand with no Hospeda account: an admin generates
+ * the payment link (`apps/api/src/routes/partners/admin/send-link.ts`) and
+ * sends it out, so whoever pays has no session anywhere. The `back_url` used to
+ * point at `${HOSPEDA_ADMIN_URL}/partners`, which put an admin login form on the
+ * last screen of a completed payment. This page is the public replacement.
+ *
+ * The copy deliberately stops at "we received it and are confirming it": the
+ * charge is linked to the local subscription server-to-server by the webhook
+ * (by nonce, Tier 2/3), which can take minutes, so nothing here may claim the
+ * brand is already published.
+ *
+ * @route /{lang}/partners/checkout/pending/
+ * @rendering SSR (no prerender — matches its `suscriptores/checkout` siblings,
+ *   which must read the provider's return query params server-side)
+ */
+
+import CheckoutResult from '@/components/billing/CheckoutResult.astro';
+import StripCheckoutReturnParams from '@/components/billing/StripCheckoutReturnParams.astro';
+import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
+
+export const prerender = false;
+
+const locale = Astro.locals.locale;
+const { t } = createTranslations(locale);
+
+const homeUrl = buildUrl({ locale });
+const contactUrl = buildUrl({ locale, path: 'contacto' });
+---
+
+<MarketingLayout
+	locale={locale}
+	title={t('billing.checkout.partnerPending.pageTitle', 'Pago recibido')}
+	description={t('billing.checkout.partnerPending.title', 'Recibimos tu pago')}
+>
+	{/* HOS-209: scrub `preapproval_id` off the visible URL before PostHog, the
+	   feedback bootstrap, or any cross-origin subresource can capture it. */}
+	<StripCheckoutReturnParams slot="head-early" />
+	<CheckoutResult
+		variant="pending"
+		title={t('billing.checkout.partnerPending.title', 'Recibimos tu pago')}
+		body={t(
+			'billing.checkout.partnerPending.body',
+			'Estamos confirmando la operación con MercadoPago. Cuando el pago se acredite, tu presencia en Hospeda se activa sola.'
+		)}
+		note={t(
+			'billing.checkout.partnerPending.note',
+			'Guardá el comprobante que te envió MercadoPago.'
+		)}
+		primaryCta={{
+			href: homeUrl,
+			label: t('billing.checkout.partnerPending.homeCta', 'Ir al inicio'),
+		}}
+		secondaryCta={{
+			href: contactUrl,
+			label: t('billing.checkout.partnerPending.contactCta', 'Escribinos'),
+		}}
+	/>
+</MarketingLayout>

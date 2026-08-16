@@ -78,6 +78,32 @@ export function buildPaymentMethodReturnUrl(locale: ReturnUrlLocale): string {
 }
 
 /**
+ * MercadoPago `back_url` for a PARTNER preapproval.
+ *
+ * A partner is an external brand, not a Hospeda account: an admin generates the
+ * payment link (`routes/partners/admin/send-link.ts`) and sends it to the
+ * brand, so the person who pays has no session anywhere — not on the web, and
+ * least of all in the admin panel. This URL used to be
+ * `${HOSPEDA_ADMIN_URL}/partners`, which meant the last screen of a completed
+ * payment was an admin login form.
+ *
+ * It is not a correctness bug — linking happens server-to-server through the
+ * webhook fallback by nonce (Tier 2/3), never through this redirect — which is
+ * exactly why the destination can be a plain public page that says the payment
+ * was received and is being confirmed.
+ *
+ * Locale: the buyer's preference is unknowable at link-generation time (there
+ * is no account to read it from), and the admin's own preference is not the
+ * buyer's, so callers pass {@link DEFAULT_RETURN_URL_LOCALE}. The parameter
+ * stays for the day a partner-side locale exists.
+ *
+ * @param locale - Locale to embed in the public return path.
+ */
+export function buildPartnerCheckoutReturnUrl(locale: ReturnUrlLocale): string {
+    return `${env.HOSPEDA_SITE_URL}/${locale}/partners/checkout/pending/`;
+}
+
+/**
  * Webhook destination for the MP preapproval. We pass the application-wide
  * URL explicitly so MercadoPago always reaches this API, even when a
  * legacy app-wide URL exists in the MP dashboard.
