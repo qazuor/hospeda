@@ -39,6 +39,7 @@ import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-fi
 import { AiSearchEntry } from '@/components/ai-search/AiSearchEntry.client';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { buildAvailabilityParams } from '@/lib/availability-params';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -155,10 +156,14 @@ const hasGeoRadius = hasLatLongRadius || hasPoiRadius;
 const sortKey = rawSortKey === 'distance' && !hasGeoRadius ? DEFAULT_SORT_KEY : rawSortKey;
 const sortResolved = SORT_OPTION_MAP[sortKey] ?? SORT_OPTION_MAP[DEFAULT_SORT_KEY];
 
-// Trip-context fields (dates + party size) — informational only today (no
-// availability system yet); forwarded so the sidebar reflects last-known values.
+// Trip-context fields (dates + party size). The dates seed the sidebar AND
+// filter server-side by availability (H-120) — this comment used to say
+// "informational only today (no availability system yet)", which was true of
+// this page but not of the backend: the occupancy filter existed and worked,
+// only the forwarding was missing.
 const checkIn = url.searchParams.get('checkIn') ?? undefined;
 const checkOut = url.searchParams.get('checkOut') ?? undefined;
+const availabilityParams = buildAvailabilityParams({ checkIn, checkOut });
 const adultsParam = url.searchParams.get('adults');
 const childrenParam = url.searchParams.get('children');
 const adults = adultsParam ? Number(adultsParam) : undefined;
@@ -208,7 +213,9 @@ const result = await accommodationsApi.list({
 	longitude: hasLatLongRadius ? longitude : undefined,
 	radius: hasGeoRadius ? radius : undefined,
 	poiId: poiIdRaw,
-	poiSlug: poiSlugRaw
+	poiSlug: poiSlugRaw,
+	// H-120: availability filter, sent as a pair or not at all.
+	...availabilityParams
 });
 
 const hasError = !result.ok;
