@@ -54,10 +54,17 @@ export type SettledTrialChargeOutcome =
  * Input for {@link classifySettledTrialCharge}.
  */
 export interface ClassifySettledTrialChargeInput {
-    /** `billing_subscriptions.trial_start` — when the promised trial began. */
-    readonly trialStart: Date | null;
+    /**
+     * `billing_subscriptions.trial_start` — when the promised trial began.
+     *
+     * Accepts `undefined` as well as `null` on purpose: callers hand this
+     * straight from a database row projection, and a projection that simply
+     * does not select the column yields `undefined`. Collapsing only `null`
+     * would let that case fall through to arithmetic on a missing date.
+     */
+    readonly trialStart: Date | null | undefined;
     /** `billing_subscriptions.trial_end` — when the promised trial was to end. */
-    readonly trialEnd: Date | null;
+    readonly trialEnd: Date | null | undefined;
     /** When the provider's charge actually settled. */
     readonly chargedAt: Date;
 }
@@ -122,21 +129,38 @@ export function classifySettledTrialCharge(
 ): ClassifySettledTrialChargeResult {
     const { trialStart, trialEnd, chargedAt } = input;
 
-    if (trialStart === null || trialEnd === null) {
-        return { outcome: 'no-trial-promised', promisedTrialMs: null, elapsedAtChargeMs: null };
+    const noPromise = {
+        outcome: 'no-trial-promised',
+        promisedTrialMs: null,
+        elapsedAtChargeMs: null
+    } as const;
+
+    if (trialStart == null || trialEnd == null) {
+        return noPromise;
     }
 
-    const promisedTrialMs = trialEnd.getTime() - trialStart.getTime();
+    const startMs = trialStart.getTime();
+    const endMs = trialEnd.getTime();
+    const chargedMs = chargedAt.getTime();
+
+    // An unparseable timestamp cannot support an accusation. Fail open: a missed
+    // detection costs a log line, whereas a false one tells a paying customer we
+    // broke a promise we actually kept.
+    if (Number.isNaN(startMs) || Number.isNaN(endMs) || Number.isNaN(chargedMs)) {
+        return noPromise;
+    }
+
+    const promisedTrialMs = endMs - startMs;
 
     // A non-positive window is not a trial anybody was promised — it is a
     // degenerate row (equal timestamps, or a trial_end written before its
     // start). Treating it as "not granted" would flood the audit trail with
     // findings about subscriptions that never advertised a free period.
     if (promisedTrialMs <= 0) {
-        return { outcome: 'no-trial-promised', promisedTrialMs: null, elapsedAtChargeMs: null };
+        return noPromise;
     }
 
-    const elapsedAtChargeMs = chargedAt.getTime() - trialStart.getTime();
+    const elapsedAtChargeMs = chargedMs - startMs;
     const outcome: SettledTrialChargeOutcome =
         elapsedAtChargeMs < promisedTrialMs * MIN_ELAPSED_FRACTION_FOR_LEGITIMATE_CHARGE
             ? 'trial-not-granted'

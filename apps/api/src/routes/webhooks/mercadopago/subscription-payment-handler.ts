@@ -73,6 +73,7 @@ import {
 import type { getQZPayBilling } from '../../../middlewares/billing.js';
 import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
+import { classifySettledTrialCharge } from '../../../services/billing/trial-promise-verification.js';
 import { restoreFullPriceMutation } from '../../../services/promo-renewal-mp.service.js';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -160,6 +161,13 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
     customerId: string;
     planId: string | null;
     status: string;
+    /**
+     * Start of the promised trial window. Additive for H-137: without it a
+     * settled charge can only be compared against `trialEnd`, which cannot tell
+     * "the trial ran out" from "the provider never granted it" — the two look
+     * identical from one end of the window.
+     */
+    trialStart: Date | null;
     trialEnd: Date | null;
     /**
      * Subscription-vocabulary interval (`'month' | 'year'`), or `null`. Additive
@@ -175,6 +183,7 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
             customerId: billingSubscriptions.customerId,
             planId: billingSubscriptions.planId,
             status: billingSubscriptions.status,
+            trialStart: billingSubscriptions.trialStart,
             trialEnd: billingSubscriptions.trialEnd,
             billingInterval: billingSubscriptions.billingInterval
         })
@@ -187,6 +196,25 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
         )
         .limit(1);
     return rows[0] ?? null;
+}
+
+/**
+ * Resolve when a settled charge actually happened (H-137).
+ *
+ * MercadoPago reports `debit_date` on the authorized payment; it is absent on
+ * some responses and can be unparseable. Falling back to wall-clock time is
+ * correct for the live path (the webhook arrives seconds after the debit) and
+ * is the only option left when the provider did not tell us — but the fallback
+ * is deliberately last, because a late-processed webhook judged by `now` would
+ * mistake a trial that was never granted for one that ran its course.
+ *
+ * @param debitDate - MercadoPago's `debit_date`, when present.
+ * @returns The parsed debit date, or the current time when it is missing or invalid.
+ */
+function resolveChargeSettledAt(debitDate: string | null): Date {
+    if (debitDate === null) return new Date();
+    const parsed = new Date(debitDate);
+    return Number.isNaN(parsed.getTime()) ? new Date() : parsed;
 }
 
 /**
@@ -206,18 +234,55 @@ async function findLocalSubscriptionByPreapprovalId(preapprovalId: string): Prom
  * Never throws: the charge already settled and is already recorded. Failing to
  * flip a status must not turn into a webhook retry storm.
  *
+ * ## H-137 — the same charge, two very different facts
+ *
+ * The conversion itself is unconditional and stays that way: the customer paid,
+ * so gating their writes behind an elapsed trial would be wrong regardless of
+ * how the charge came about. What this function now distinguishes is *why* the
+ * charge arrived. A charge landing before the promised window could plausibly
+ * have elapsed means MercadoPago never granted the `free_trial` — it grants one
+ * per `(payer, preapproval_plan)`, and the plan is shared across every buyer of
+ * a variant, so a payer who already used it is silently billed cycle 1. That
+ * case writes a distinct event, stops the row from advertising a trial it has
+ * already billed, and is logged loudly instead of being filed as a routine
+ * conversion.
+ *
  * @internal
  */
 async function convertTrialOnSettledCharge(params: {
-    subscription: { id: string; customerId: string; status: string; trialEnd: Date | null };
+    subscription: {
+        id: string;
+        customerId: string;
+        status: string;
+        trialStart: Date | null;
+        trialEnd: Date | null;
+    };
+    /**
+     * When the provider's charge actually settled (H-137). Sourced from
+     * MercadoPago's own `debit_date` rather than wall-clock time, so a webhook
+     * replayed days later by `webhook-retry.job.ts` is still judged against the
+     * moment the money moved.
+     */
+    chargedAt: Date;
     eventId: string | number;
     requestId: string;
 }): Promise<void> {
-    const { subscription, eventId, requestId } = params;
+    const { subscription, chargedAt, eventId, requestId } = params;
 
     if (subscription.status !== SubscriptionStatusEnum.TRIALING) {
         return;
     }
+
+    // H-137: a charge that lands before the promised window could plausibly have
+    // elapsed is proof the provider ignored the `free_trial` we asked for. The
+    // conversion below is still correct — the customer paid, so they must not be
+    // 402'd — but it must not be recorded as a trial that ran its course.
+    const trialVerdict = classifySettledTrialCharge({
+        trialStart: subscription.trialStart,
+        trialEnd: subscription.trialEnd,
+        chargedAt
+    });
+    const trialWasNotGranted = trialVerdict.outcome === 'trial-not-granted';
 
     try {
         const guard = checkSubscriptionStatusTransition({
@@ -242,20 +307,40 @@ async function convertTrialOnSettledCharge(params: {
                 .set({
                     status: SubscriptionStatusEnum.ACTIVE,
                     trialConverted: true,
-                    trialConvertedAt: new Date()
+                    trialConvertedAt: new Date(),
+                    // H-137: when the provider never granted the trial, the free
+                    // window really ended the instant the card was charged.
+                    // Leaving the promised `trial_end` in the future on an
+                    // already-charged row is what made the first diagnosis of
+                    // this incident point at the wrong subsystem — the row
+                    // asserted a trial that had already been billed.
+                    ...(trialWasNotGranted ? { trialEnd: chargedAt } : {})
                 })
                 .where(eq(billingSubscriptions.id, subscription.id));
 
             await tx.insert(billingSubscriptionEvents).values({
                 subscriptionId: subscription.id,
-                eventType: BILLING_EVENT_TYPES.TRIAL_RECONCILED,
+                eventType: trialWasNotGranted
+                    ? BILLING_EVENT_TYPES.TRIAL_NOT_GRANTED_BY_PROVIDER
+                    : BILLING_EVENT_TYPES.TRIAL_RECONCILED,
                 previousStatus: subscription.status,
                 newStatus: SubscriptionStatusEnum.ACTIVE,
                 triggerSource: 'subscription-authorized-payment-webhook',
                 metadata: {
+                    // The promise as sold, preserved even when the row above
+                    // stops carrying it — this is the only place the broken
+                    // commitment survives.
                     trialEnd: subscription.trialEnd?.toISOString() ?? null,
                     converted: true,
-                    reconciledAt: new Date().toISOString()
+                    reconciledAt: new Date().toISOString(),
+                    ...(trialWasNotGranted
+                        ? {
+                              trialGranted: false,
+                              chargedAt: chargedAt.toISOString(),
+                              promisedTrialMs: trialVerdict.promisedTrialMs,
+                              elapsedAtChargeMs: trialVerdict.elapsedAtChargeMs
+                          }
+                        : {})
                 }
             });
         });
@@ -264,15 +349,35 @@ async function convertTrialOnSettledCharge(params: {
         // out the 5-minute cache to use what they paid for (INV-1).
         clearEntitlementCache(subscription.customerId);
 
-        apiLogger.info(
-            {
-                eventId,
-                requestId,
-                localSubscriptionId: subscription.id,
-                customerId: subscription.customerId
-            },
-            'MercadoPago webhook: card-first trial converted to active on its first settled charge'
-        );
+        if (trialWasNotGranted) {
+            // Loud on purpose, and captured: every occurrence is a customer who
+            // was shown a free-trial offer and billed instead. Ops needs to see
+            // these individually, not aggregated into conversion traffic.
+            apiLogger.warn(
+                {
+                    eventId,
+                    requestId,
+                    localSubscriptionId: subscription.id,
+                    customerId: subscription.customerId,
+                    promisedTrialEnd: subscription.trialEnd?.toISOString() ?? null,
+                    chargedAt: chargedAt.toISOString(),
+                    promisedTrialMs: trialVerdict.promisedTrialMs,
+                    elapsedAtChargeMs: trialVerdict.elapsedAtChargeMs
+                },
+                'H-137: MercadoPago charged a subscription before its promised free trial could elapse — the trial was never granted',
+                { capture: true }
+            );
+        } else {
+            apiLogger.info(
+                {
+                    eventId,
+                    requestId,
+                    localSubscriptionId: subscription.id,
+                    customerId: subscription.customerId
+                },
+                'MercadoPago webhook: card-first trial converted to active on its first settled charge'
+            );
+        }
     } catch (err) {
         // The reconcile cron is the backstop; log and let it pick this up.
         apiLogger.error(
@@ -1002,6 +1107,13 @@ export const handleSubscriptionAuthorizedPayment: QZPayWebhookHandler = async (c
             // customer on every write. The daily cron is only the backstop.
             await convertTrialOnSettledCharge({
                 subscription: sub,
+                // H-137: MercadoPago's own `debit_date` is when the money moved.
+                // Wall-clock time would be wrong for a webhook this handler
+                // processes late (a retry, or `webhook-retry.job.ts` draining a
+                // backlog): by then `now` can sit past the promised trial window
+                // and a charge that never honoured the trial would read as a
+                // normal end-of-trial conversion.
+                chargedAt: resolveChargeSettledAt(details.debitDate),
                 eventId: event.id,
                 requestId
             });

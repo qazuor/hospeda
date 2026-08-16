@@ -192,6 +192,41 @@ describe('classifySettledTrialCharge — rows with no promise to break', () => {
         expect(endOnly.outcome).toBe('no-trial-promised');
     });
 
+    it('returns no-trial-promised when the column was not selected at all (undefined, not null)', () => {
+        // Arrange — a row projection that omits `trial_start` yields `undefined`,
+        // which is NOT `null`. Collapsing only `null` let this fall through to
+        // arithmetic on a missing date and threw inside the webhook handler.
+        // Act
+        const undefinedStart = classifySettledTrialCharge({
+            trialStart: undefined,
+            trialEnd: PROD_TRIAL_END,
+            chargedAt: PROD_CHARGED_AT
+        });
+        const undefinedEnd = classifySettledTrialCharge({
+            trialStart: PROD_TRIAL_START,
+            trialEnd: undefined,
+            chargedAt: PROD_CHARGED_AT
+        });
+
+        // Assert
+        expect(undefinedStart.outcome).toBe('no-trial-promised');
+        expect(undefinedEnd.outcome).toBe('no-trial-promised');
+    });
+
+    it('fails open on an unparseable timestamp rather than accusing', () => {
+        // Arrange — a false accusation tells a paying customer we broke a promise
+        // we kept; a missed detection only costs a log line.
+        // Act
+        const result = classifySettledTrialCharge({
+            trialStart: new Date('not a date'),
+            trialEnd: PROD_TRIAL_END,
+            chargedAt: PROD_CHARGED_AT
+        });
+
+        // Assert
+        expect(result.outcome).toBe('no-trial-promised');
+    });
+
     it('returns no-trial-promised for a degenerate zero-length window', () => {
         // Arrange — equal timestamps advertise no free period.
         const instant = new Date('2026-08-14T16:46:17.963Z');

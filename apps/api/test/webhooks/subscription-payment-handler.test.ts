@@ -78,7 +78,14 @@ vi.mock('@repo/service-core', () => ({
     // every symbol it imports must be listed — a missing one resolves to
     // undefined and the conversion fails silently inside its own catch.
     // Their own logic is unit-tested in @repo/service-core.
-    BILLING_EVENT_TYPES: { TRIAL_RECONCILED: 'TRIAL_RECONCILED' },
+    BILLING_EVENT_TYPES: {
+        TRIAL_RECONCILED: 'TRIAL_RECONCILED',
+        // H-137. Omitting it does not fail loudly: the key resolves to
+        // `undefined`, the event insert carries `eventType: undefined`, and the
+        // assertion fails somewhere unrelated — exactly the trap the comment
+        // above warns about.
+        TRIAL_NOT_GRANTED_BY_PROVIDER: 'TRIAL_NOT_GRANTED_BY_PROVIDER'
+    },
     checkSubscriptionStatusTransition: vi.fn(() => ({ valid: true })),
     detectExternalChargeInterference: vi.fn(() => null),
     resolveFullPlanPriceCentavos: vi.fn(async () => null),
@@ -834,12 +841,21 @@ describe('handleSubscriptionAuthorizedPayment', () => {
     // that state with HTTP 402 on every write, for up to 24h, right after they
     // paid.
     describe('card-first trial conversion (HOS-171)', () => {
-        /** A local row mid-trial, whose day-N charge is what this event reports. */
+        /**
+         * A local row mid-trial, whose day-N charge is what this event reports.
+         *
+         * `trialStart` is not decoration: H-137 distinguishes a charge that ends
+         * a trial from one that proves the trial never ran, and telling those
+         * apart needs both ends of the window. `makeDetails()` debits on
+         * 2026-06-15, a month past this `trialEnd`, so every test in this block
+         * describes a legitimately elapsed trial.
+         */
         const trialingRow = {
             id: 'local-sub-1',
             customerId: 'cust-1',
             planId: 'plan-1',
             status: 'trialing',
+            trialStart: new Date('2026-05-01T00:00:00.000Z'),
             trialEnd: new Date('2026-05-15T00:00:00.000Z')
         };
 
@@ -878,6 +894,116 @@ describe('handleSubscriptionAuthorizedPayment', () => {
                     newStatus: 'active',
                     triggerSource: 'subscription-authorized-payment-webhook'
                 })
+            );
+        });
+
+        it('H-137: records TRIAL_NOT_GRANTED_BY_PROVIDER when the charge beats the promised trial', async () => {
+            // Arrange — the production incident: a 14-day trial promised at
+            // checkout and charged two minutes later, because MercadoPago had
+            // already spent this payer's free_trial on the shared preapproval
+            // plan. The charge is real, so the conversion must still happen —
+            // but it is not a trial that ran its course.
+            subLookupResult.rows = [
+                {
+                    ...trialingRow,
+                    trialStart: new Date('2026-08-14T16:46:17.963Z'),
+                    trialEnd: new Date('2026-08-28T16:46:17.963Z')
+                }
+            ];
+            dedupeResult.rows = [];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
+                fetchOk(makeDetails({ debitDate: '2026-08-14T16:48:16.220Z' }))
+            );
+            setupBillingMock();
+
+            // Act
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Assert — the broken promise gets its own event type, so it can
+            // never hide inside ordinary conversion traffic.
+            expect(mockTxInsertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: 'TRIAL_NOT_GRANTED_BY_PROVIDER',
+                    previousStatus: 'trialing',
+                    newStatus: 'active'
+                })
+            );
+        });
+
+        it('H-137: stops the row from advertising a trial it has already billed', async () => {
+            // Arrange — same incident. Leaving `trial_end` two weeks in the
+            // future on a charged, active row is what sent the first diagnosis
+            // of this bug at the wrong subsystem.
+            const chargedAt = '2026-08-14T16:48:16.220Z';
+            subLookupResult.rows = [
+                {
+                    ...trialingRow,
+                    trialStart: new Date('2026-08-14T16:46:17.963Z'),
+                    trialEnd: new Date('2026-08-28T16:46:17.963Z')
+                }
+            ];
+            dedupeResult.rows = [];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
+                fetchOk(makeDetails({ debitDate: chargedAt }))
+            );
+            setupBillingMock();
+
+            // Act
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Assert — the free window really ended when the card was charged.
+            expect(mockTxUpdateChain.set).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    status: 'active',
+                    trialEnd: new Date(chargedAt)
+                })
+            );
+        });
+
+        it('H-137: a legitimate day-N conversion never touches trialEnd', async () => {
+            // Arrange — the control. This is the SAME code path, and it must be
+            // left exactly as it was: an elapsed trial keeps the window it
+            // actually served.
+            subLookupResult.rows = [trialingRow];
+            dedupeResult.rows = [];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(fetchOk(makeDetails()));
+            setupBillingMock();
+
+            // Act
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Assert
+            const setArg = mockTxUpdateChain.set.mock.calls.at(-1)?.[0] as Record<string, unknown>;
+            expect(setArg).toBeDefined();
+            expect(setArg).not.toHaveProperty('trialEnd');
+        });
+
+        it('H-137: judges the charge by MercadoPago debit_date, not wall-clock time', async () => {
+            // Arrange — a webhook drained from the retry backlog long after the
+            // debit. The promised window sits entirely in the past, so judging
+            // by wall-clock `now` would call this a normal end-of-trial
+            // conversion; judged by `debit_date` it is still the two-minute
+            // charge it always was. No fake timers needed: real `now` is already
+            // far past this window, which is exactly the condition under test.
+            subLookupResult.rows = [
+                {
+                    ...trialingRow,
+                    trialStart: new Date('2026-01-01T00:00:00.000Z'),
+                    trialEnd: new Date('2026-01-15T00:00:00.000Z')
+                }
+            ];
+            dedupeResult.rows = [];
+            vi.mocked(fetchAuthorizedPaymentDetails).mockResolvedValue(
+                fetchOk(makeDetails({ debitDate: '2026-01-01T00:02:00.000Z' }))
+            );
+            setupBillingMock();
+
+            // Act
+            await handleSubscriptionAuthorizedPayment(makeMockContext() as never, makeEvent());
+
+            // Assert
+            expect(mockTxInsertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({ eventType: 'TRIAL_NOT_GRANTED_BY_PROVIDER' })
             );
         });
 
