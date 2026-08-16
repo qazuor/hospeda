@@ -30,11 +30,15 @@
 import { CommerceLeadService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { createCommerceLeadNotificationPort } from '../../../lib/lead-intake-ports';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const commerceLeadService = new CommerceLeadService({ logger: apiLogger });
+const commerceLeadService = new CommerceLeadService(
+    { logger: apiLogger },
+    createCommerceLeadNotificationPort()
+);
 
 /**
  * Pre-fill-shaped subset of a `CommerceLead` row. Field names are already

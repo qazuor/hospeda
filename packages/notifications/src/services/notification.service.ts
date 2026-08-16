@@ -10,6 +10,7 @@ import {
     AddonExpirationWarning,
     AddonExpired,
     AddonRenewalConfirmation,
+    AdminLeadReceived,
     AdminPaymentFailure,
     AdminSystemEvent,
     AiCostThresholdAlert,
@@ -51,6 +52,7 @@ import type {
     AccommodationCalendarFeedBrokenPayload,
     AddonCancellationPayload,
     AddonEventPayload,
+    AdminLeadReceivedPayload,
     AdminNotificationPayload,
     AiCostThresholdAlertPayload,
     AllianceClaimInvitePayload,
@@ -465,6 +467,21 @@ export class NotificationService {
                     recipientName,
                     severity: p.severity,
                     eventDetails: p.eventDetails
+                });
+            }
+
+            case 'admin_lead_received': {
+                const p = payload as AdminLeadReceivedPayload;
+                return AdminLeadReceived({
+                    funnelLabel: p.funnelLabel,
+                    programLabel: p.programLabel,
+                    contactName: p.contactName,
+                    contactEmail: p.contactEmail,
+                    contactPhone: p.contactPhone,
+                    businessName: p.businessName,
+                    message: p.message,
+                    adminUrl: p.adminUrl,
+                    submittedAtLabel: p.submittedAtLabel
                 });
             }
 

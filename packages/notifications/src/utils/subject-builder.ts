@@ -22,6 +22,11 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.TRIAL_ENDING_REMINDER]: 'Tu período de prueba termina pronto',
     [NotificationType.ADMIN_PAYMENT_FAILURE]: '[Admin] Fallo de pago - {userEmail}',
     [NotificationType.ADMIN_SYSTEM_EVENT]: '[Admin] Evento del sistema - {eventType}',
+    // New acquisition lead (H-62 / H-148). Names the program and the applicant
+    // because ops triages these from the inbox list: "another lead" tells an
+    // operator nothing they can act on without opening the admin, which is the
+    // dependency this alert exists to remove.
+    [NotificationType.ADMIN_LEAD_RECEIVED]: '[Admin] Nuevo lead de {programLabel} — {contactName}',
     [NotificationType.FEEDBACK_REPORT]: '[{reportType}] {reportTitle}',
     [NotificationType.CONTACT_SUBMISSION]: '[Contacto] {contactType} - {senderName}',
     [NotificationType.SUBSCRIPTION_CANCELLED]: 'Tu suscripción {planName} ha sido cancelada',

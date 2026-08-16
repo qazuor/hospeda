@@ -31,6 +31,7 @@ import {
     createCommerceOwnerCreateUserPort,
     createCommerceOwnerCredentialsNotificationPort
 } from '../../../lib/commerce-ports';
+import { createCommerceLeadNotificationPort } from '../../../lib/lead-intake-ports';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
@@ -63,7 +64,10 @@ const ApproveAndProvisionResponseSchema = z.object({
 // Service instance (module-scoped, stateless)
 // ---------------------------------------------------------------------------
 
-const commerceLeadService = new CommerceLeadService({ logger: apiLogger });
+const commerceLeadService = new CommerceLeadService(
+    { logger: apiLogger },
+    createCommerceLeadNotificationPort()
+);
 
 // ---------------------------------------------------------------------------
 // Route

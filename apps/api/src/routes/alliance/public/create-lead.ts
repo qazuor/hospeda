@@ -22,6 +22,7 @@ import { AllianceLeadService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { createAllianceClaimInvitePort } from '../../../lib/alliance-ports';
+import { createAllianceLeadIntakeNotifyPort } from '../../../lib/lead-intake-ports';
 import { getActorFromContext } from '../../../utils/actor';
 import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
@@ -31,9 +32,15 @@ import { createPublicRoute } from '../../../utils/route-factory';
 // already has an owner into an invitation to confirm (HOS-278 §6.2). It is
 // injected, and called fire-and-forget, so that "does this address have an
 // account?" cannot be read off the response time (AC-3).
+// The intake port is the doorbell (H-62): before it, an "aliados" application
+// arriving here told nobody, and the four public forms depended on an operator
+// opening the admin unprompted. It is injected LAST because the decision port
+// (third) is not used on this route — approvals happen in the admin.
 const allianceLeadService = new AllianceLeadService(
     { logger: apiLogger },
-    createAllianceClaimInvitePort(env.HOSPEDA_SITE_URL)
+    createAllianceClaimInvitePort(env.HOSPEDA_SITE_URL),
+    null,
+    createAllianceLeadIntakeNotifyPort()
 );
 
 /**

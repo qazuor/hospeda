@@ -37,6 +37,7 @@ export { finalizeCancelledSubsJob } from './finalize-cancelled-subs.js';
 export { hostTradeStatsReconcileJob } from './host-trade-stats-reconcile.job.js';
 export { hostTradeUsageExpiryJob } from './host-trade-usage-expiry.job.js';
 export { hostTradeUsageReminderJob } from './host-trade-usage-reminder.job.js';
+export { leadIntakeBackstopJob } from './lead-intake-backstop.job.js';
 export { mediaOrphanCleanupJob } from './media-orphan-cleanup.job.js';
 export { newsletterCloseCampaignsJob } from './newsletter-close-campaigns.job.js';
 export { notificationLogPurgeJob } from './notification-log-purge.job.js';

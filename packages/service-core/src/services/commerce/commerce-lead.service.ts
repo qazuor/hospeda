@@ -258,22 +258,26 @@ export class CommerceLeadService extends BaseService {
                 );
                 const created = lead as CommerceLead;
 
-                // Best-effort notification — never blocks the create
+                // Best-effort notification — never blocks the create. A failure
+                // is left for the backstop cron, which finds the lead through
+                // its null `opsNotifiedAt`.
                 if (this._notifier) {
                     try {
                         await this._notifier.notifyNewLead(created);
                     } catch (err) {
-                        this.logger.warn(
+                        this.logger.error(
                             { err, leadId: created.id },
-                            // TODO(SPEC-239): Wire notification channel for lead alerts
-                            '[commerce-lead] Notification failed (non-blocking)'
+                            '[commerce-lead] ops intake alert failed to send'
                         );
                     }
                 } else {
-                    this.logger.debug(
+                    // WARN, not debug. This branch ran on every commerce lead
+                    // ever submitted, and production does not emit debug — so
+                    // the one trace of the path not taken was invisible, which
+                    // is why nobody noticed the alert had never been wired.
+                    this.logger.warn(
                         { leadId: created.id },
-                        // TODO(SPEC-239): Wire notification channel for lead alerts
-                        '[commerce-lead] No notifier configured; skipping ops notification'
+                        '[commerce-lead] no notifier configured; nobody was told about this lead'
                     );
                 }
 
