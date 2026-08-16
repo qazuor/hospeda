@@ -17,7 +17,7 @@
  * only when the render site passes {@link buildOwnerFaqParams}.
  */
 
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
+import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 
 /** One question/answer pair, with its i18n keys and fallbacks. */
 export interface OwnerFaqItem {
@@ -63,12 +63,35 @@ export const OWNER_FAQ_ITEMS: readonly OwnerFaqItem[] = [
     }
 ];
 
+/** Input for {@link buildOwnerFaqParams}. */
+export interface BuildOwnerFaqParamsOptions {
+    /**
+     * Pre-resolved generic trial length (H-98), e.g. already fetched by the
+     * caller for another purpose on the same page (the `/publicar` hero
+     * callout resolves it once and forwards it here so the page does not
+     * fetch the plan catalog twice). When omitted, this function resolves it
+     * itself via {@link resolveGenericOwnerTrialDays}.
+     */
+    readonly trialDays?: number;
+}
+
 /**
  * Interpolation params for the answers above. Only the keys an answer actually
  * references are substituted, so passing this to every answer is inert for the
  * rest — and passing it is mandatory: an answer containing `{{trialDays}}`
  * renders that placeholder verbatim to the user when params are omitted.
+ *
+ * `trialDays` is sourced from the live billing plans (minimum `trialDays`
+ * among active owner plans with `hasTrial`, falling back to the
+ * `OWNER_TRIAL_DAYS` constant on fetch failure — see
+ * `resolveGenericOwnerTrialDays`), not hardcoded, so this answer can never
+ * drift from what checkout actually grants (H-98).
+ *
+ * @param options - RO-RO input, see {@link BuildOwnerFaqParamsOptions}.
  */
-export function buildOwnerFaqParams(): { readonly trialDays: number } {
-    return { trialDays: OWNER_TRIAL_DAYS };
+export async function buildOwnerFaqParams(
+    options: BuildOwnerFaqParamsOptions = {}
+): Promise<{ readonly trialDays: number }> {
+    const trialDays = options.trialDays ?? (await resolveGenericOwnerTrialDays());
+    return { trialDays };
 }

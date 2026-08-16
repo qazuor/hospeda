@@ -62,7 +62,7 @@ const steps = [
 // Shared with /publicar, which renders the same `owners.faq.*` keys. Declaring
 // the array per page is what let the two drift (HOS-331).
 const faqs = OWNER_FAQ_ITEMS;
-const faqParams = buildOwnerFaqParams();
+const faqParams = await buildOwnerFaqParams();
 
 // Split heading to underline the last word with a handwritten accent.
 const heroHeadingFull = t('owners.hero.title', 'Publicá tu alojamiento y llegá a miles de viajeros');

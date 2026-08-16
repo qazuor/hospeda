@@ -40,7 +40,7 @@ import PublishPrecheckPanel from '@/components/host/PublishPrecheckPanel.astro';
 import { hostOnboardingApi } from '@/lib/api/endpoints-protected';
 import type { HostOnboardingPrecheckDecision, HostOnboardingPrecheckDraft } from '@/lib/api/endpoints-protected';
 import { BuildingsIcon, ImageIcon, FileTextIcon, CheckCircleIcon } from '@repo/icons';
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
+import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 
 export const prerender = false;
 
@@ -134,6 +134,16 @@ const editUrl = firstDraft
     ? buildUrl({ locale, path: `mi-cuenta/propiedades/${firstDraft.id}/editar` })
     : undefined;
 const createUrl = buildUrlWithParams({ locale, path: 'publicar/nueva', params: { create: '1' } });
+
+// H-98: read from the live billing plans instead of the hardcoded
+// OWNER_TRIAL_DAYS constant (see `resolveGenericOwnerTrialDays`), so the
+// number shown in the form can never drift from what checkout actually
+// grants. `CreatePropertyMiniForm.client.tsx` is a client island and must
+// never import `@repo/billing` at runtime (see
+// `test/static-guards/billing-barrel-client-isolation.test.ts`), so this
+// stays a plain number resolved server-side and passed as a prop, exactly
+// like the previous constant was.
+const trialDays = showForm ? await resolveGenericOwnerTrialDays() : 0;
 ---
 
 <MarketingLayout
@@ -209,7 +219,7 @@ const createUrl = buildUrlWithParams({ locale, path: 'publicar/nueva', params: {
                     adminUrl={adminUrl}
                     accountPropertiesUrl={accountPropertiesUrl}
                     canAccessAdminPanel={canAccessAdminPanel}
-                    trialDays={OWNER_TRIAL_DAYS}
+                    trialDays={trialDays}
                 />
             ) : (
                 /* BETA-197: precheck panel — resume/pick/delete/upgrade per the decision matrix. */
