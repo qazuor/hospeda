@@ -88,8 +88,8 @@ interface TestUserSpec {
  * The 13 test users created by this seed.
  *
  * NOTE: super-admin@local.test and admin@local.test are intentionally
- * excluded — the required seed already creates superadmin@hospeda.com
- * and admin@hospeda.com via admin-user.json / super-admin-user.json.
+ * excluded — the required seed already creates superadmin@hospeda.com.ar
+ * and admin@hospeda.com.ar via admin-user.json / super-admin-user.json.
  * Those accounts are the canonical admin credentials for local dev.
  */
 const TEST_USERS: readonly TestUserSpec[] = [

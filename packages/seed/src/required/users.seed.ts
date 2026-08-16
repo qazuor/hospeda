@@ -17,7 +17,7 @@ import { createDateTransformer, createSeedFactory, STATUS_ICONS } from '../utils
  * `role` through to `UserService.create` stopped doing anything the moment
  * `users.role` was dropped, silently, because Zod strips the unknown key and
  * Drizzle's `.values()` iterates table columns rather than object keys.
- * Without the hook, `admin@hospeda.com` is created holding zero roles.
+ * Without the hook, `admin@hospeda.com.ar` is created holding zero roles.
  */
 export const seedUsers = createSeedFactory({
     entityName: 'Users',
