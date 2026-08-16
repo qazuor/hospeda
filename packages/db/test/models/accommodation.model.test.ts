@@ -149,6 +149,14 @@ describe('AccommodationModel', () => {
             const mergeable = (model as any).mergeableJsonbColumns as readonly string[];
             expect(mergeable).not.toContain('media');
         });
+
+        // H-121 / G7 smoke: the editor's SEO section can send `seoTitle` alone.
+        // Without `seo` in this list, that PATCH would wholesale-replace the
+        // column and silently drop a previously-stored `description`.
+        it('declares seo as mergeable (H-121)', () => {
+            const mergeable = (model as any).mergeableJsonbColumns as readonly string[];
+            expect(mergeable).toContain('seo');
+        });
     });
 
     describe('findAllWithRelations', () => {

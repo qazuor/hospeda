@@ -480,7 +480,85 @@ export const AccommodationUpdateHttpSchema = z
          * shadow-writes that payload into `accommodation_media`, so photos on
          * create do reach the table and are NOT discarded.
          */
-        media: HttpMediaUpdateSchema.optional()
+        media: HttpMediaUpdateSchema.optional(),
+        /**
+         * Minimum nights required per stay (H-112, G7 smoke).
+         *
+         * Maps to `extraInfo.minNights`. UPDATE-only: neither the full-create nor
+         * the draft-create HTTP schema exposes it (both force a server-side
+         * `minNights: 1` default so a self-service draft is always publishable —
+         * see `httpToDomainAccommodationCreateDraft`). Before this field existed,
+         * the value was writable nowhere post-creation, so every production
+         * accommodation published "Mínimo de noches: 1" regardless of the host's
+         * actual policy.
+         */
+        minNights: z.coerce
+            .number()
+            .int()
+            .min(1, { message: 'zodError.accommodation.extraInfo.minNights.min' })
+            .max(365, { message: 'zodError.accommodation.extraInfo.minNights.max' })
+            .optional(),
+        /**
+         * Street name (H-117, G7 smoke). Maps to `location.street`.
+         *
+         * UPDATE-only, like `number`/`floor`/`apartment` below: the full-create
+         * HTTP schema only carries a single flat `address` string, and the exact
+         * postal address (as opposed to the approximate one shown to visitors —
+         * SPEC-097 strips `location` for every non-owner reader) was writable
+         * nowhere post-creation. Owner decision 2026-08-14: the host CAN store the
+         * exact address; only its public exposure stays gated by presentation-layer
+         * ofuscation, not by withholding the write path.
+         */
+        street: z
+            .string()
+            .min(2, { message: 'zodError.accommodation.location.street.min' })
+            .max(50, { message: 'zodError.accommodation.location.street.max' })
+            .optional(),
+        /** Street number (H-117, G7 smoke). Maps to `location.number`. */
+        number: z
+            .string()
+            .min(1, { message: 'zodError.accommodation.location.number.min' })
+            .max(10, { message: 'zodError.accommodation.location.number.max' })
+            .optional(),
+        /**
+         * Floor (H-117, G7 smoke). Maps to `location.floor`.
+         *
+         * Did not exist in ANY HTTP schema before this change, draft included.
+         */
+        floor: z
+            .string()
+            .min(1, { message: 'zodError.accommodation.location.floor.min' })
+            .max(10, { message: 'zodError.accommodation.location.floor.max' })
+            .optional(),
+        /**
+         * Apartment / unit (H-117, G7 smoke). Maps to `location.apartment`.
+         *
+         * Did not exist in ANY HTTP schema before this change, draft included.
+         */
+        apartment: z
+            .string()
+            .min(1, { message: 'zodError.accommodation.location.apartment.min' })
+            .max(10, { message: 'zodError.accommodation.location.apartment.max' })
+            .optional(),
+        /**
+         * SEO title override (H-121, G7 smoke). Maps to `seo.title`.
+         *
+         * The public detail page only reads `seo.title`/`seo.description` as an
+         * override on the `es` locale (`pickLocalizedSeo` in `apps/web/src/lib/seo.ts`) —
+         * `/en/` and `/pt/` never consult it and fall back to the localized name.
+         * No write surface existed anywhere (host or admin) before this field.
+         */
+        seoTitle: z
+            .string()
+            .min(30, { message: 'zodError.common.seo.title.min' })
+            .max(60, { message: 'zodError.common.seo.title.max' })
+            .optional(),
+        /** SEO description override (H-121, G7 smoke). Maps to `seo.description`. */
+        seoDescription: z
+            .string()
+            .min(70, { message: 'zodError.common.seo.description.min' })
+            .max(160, { message: 'zodError.common.seo.description.max' })
+            .optional()
     });
 
 export type AccommodationUpdateHttp = z.infer<typeof AccommodationUpdateHttpSchema>;
@@ -976,15 +1054,32 @@ export const httpToDomainAccommodationUpdate = (
 
     // ✅ COMPLETED: Nested object mappings for location, price, extraInfo
 
-    // Location mapping (only if coordinates are provided). Postal address only;
-    // geographic context comes from the destination relation.
-    ...(httpData.latitude !== undefined && httpData.longitude !== undefined
+    // Location mapping (SPEC-229 partial-group semantics, extended by H-117 /
+    // G7 smoke for street/number/floor/apartment). Postal address only;
+    // geographic context comes from the destination relation. Coordinates stay
+    // all-or-nothing (only emitted when BOTH lat and long are present) — the
+    // web editor's shared section-form hook enforces that pairing client-side —
+    // but the address fields are independent of coordinates and of each other.
+    ...(httpData.latitude !== undefined ||
+    httpData.longitude !== undefined ||
+    httpData.street !== undefined ||
+    httpData.number !== undefined ||
+    httpData.floor !== undefined ||
+    httpData.apartment !== undefined
         ? {
               location: {
-                  coordinates: {
-                      lat: httpData.latitude?.toString() || '',
-                      long: httpData.longitude?.toString() || ''
-                  }
+                  ...(httpData.latitude !== undefined && httpData.longitude !== undefined
+                      ? {
+                            coordinates: {
+                                lat: httpData.latitude?.toString() || '',
+                                long: httpData.longitude?.toString() || ''
+                            }
+                        }
+                      : {}),
+                  ...(httpData.street === undefined ? {} : { street: httpData.street }),
+                  ...(httpData.number === undefined ? {} : { number: httpData.number }),
+                  ...(httpData.floor === undefined ? {} : { floor: httpData.floor }),
+                  ...(httpData.apartment === undefined ? {} : { apartment: httpData.apartment })
               }
           }
         : {}),
@@ -1044,14 +1139,20 @@ export const httpToDomainAccommodationUpdate = (
     // injected `minNights: 1` / `smokingAllowed: false` defaults — both of which
     // overwrote stored values on every edit. Now a lone field (e.g. `bedrooms`)
     // is merged and unsent siblings (capacity/minNights/bathrooms/...) are kept.
+    //
+    // `minNights` (H-112 / G7 smoke) joins the group the same way: before this,
+    // no HTTP field mapped to it at all, so the create-time `minNights: 1` default
+    // was permanent for every accommodation's whole lifetime.
     ...(httpData.maxGuests !== undefined ||
     httpData.bedrooms !== undefined ||
-    httpData.bathrooms !== undefined
+    httpData.bathrooms !== undefined ||
+    httpData.minNights !== undefined
         ? {
               extraInfo: {
                   ...(httpData.maxGuests === undefined ? {} : { capacity: httpData.maxGuests }),
                   ...(httpData.bedrooms === undefined ? {} : { bedrooms: httpData.bedrooms }),
-                  ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms })
+                  ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms }),
+                  ...(httpData.minNights === undefined ? {} : { minNights: httpData.minNights })
               }
           }
         : {}),
@@ -1062,7 +1163,22 @@ export const httpToDomainAccommodationUpdate = (
 
     // Media (HOS-372): the domain update surface has no `media` field — the HTTP
     // `media` object carries videos only, and they land on the top-level column.
-    ...httpMediaToDomainVideos(httpData.media)
+    ...httpMediaToDomainVideos(httpData.media),
+
+    // SEO override (H-121 / G7 smoke): emit a partial group from whatever is
+    // present. `seo` is a shallow-merged JSONB column (accommodation.model.ts
+    // `mergeableJsonbColumns`), so sending only `seoTitle` preserves a
+    // previously-stored `description` instead of wiping it.
+    ...(httpData.seoTitle !== undefined || httpData.seoDescription !== undefined
+        ? {
+              seo: {
+                  ...(httpData.seoTitle === undefined ? {} : { title: httpData.seoTitle }),
+                  ...(httpData.seoDescription === undefined
+                      ? {}
+                      : { description: httpData.seoDescription })
+              }
+          }
+        : {})
 });
 
 // ============================================================================
