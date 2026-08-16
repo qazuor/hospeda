@@ -21,6 +21,51 @@ interface CacheEntry {
     readonly expires: number;
 }
 
+/**
+ * Response headers that describe THIS request rather than the payload, and so
+ * must never be stored alongside a cached body.
+ *
+ * H-162 (smoke agosto 2026): the rate-limit headers were being captured with
+ * the body and replayed on every hit for the whole TTL. Because a cache hit is
+ * served before the rate-limit middleware ever runs, the replayed
+ * `ratelimit-remaining` was a fossil from whenever the entry was written — 60
+ * consecutive requests all reported `199`, which read as "the limiter is not
+ * counting". Correlating the header against the Redis counter showed the
+ * limiter counts correctly on every miss; only the cached copy lied.
+ *
+ * `x-cache` is here for a different reason: it is set fresh on both paths, so
+ * caching it would make a hit claim to be a miss.
+ *
+ * Keep this list to headers that are genuinely per-request. Anything that
+ * describes the body (`content-type`, `etag`, `cache-control`, …) MUST keep
+ * being cached — dropping those would break content negotiation and
+ * revalidation far worse than a stale counter ever did.
+ */
+const PER_REQUEST_HEADERS: ReadonlySet<string> = new Set([
+    'x-cache',
+    'ratelimit-limit',
+    'ratelimit-remaining',
+    'ratelimit-reset',
+    'ratelimit-policy',
+    'retry-after',
+    'x-ratelimit-limit',
+    'x-ratelimit-remaining',
+    'x-ratelimit-reset'
+]);
+
+/**
+ * Whether a response header describes this request rather than the payload,
+ * and therefore must be excluded from the cached entry.
+ *
+ * @param name - Header name. Hono lower-cases header names when iterating
+ *   `Response.headers`, but this normalises defensively so a future caller
+ *   passing mixed case cannot silently reintroduce the H-162 fossil.
+ * @returns `true` when the header must not be cached.
+ */
+function isPerRequestHeader(name: string): boolean {
+    return PER_REQUEST_HEADERS.has(name.toLowerCase());
+}
+
 /** Maximum number of entries in the cache before eviction */
 const MAX_ENTRIES = 100;
 
@@ -188,8 +233,7 @@ export const createCacheMiddleware = (): MiddlewareHandler<AppBindings> => {
             const responseBody = await c.res.clone().text();
             const headers: Record<string, string> = {};
             c.res.headers.forEach((value, name) => {
-                // Skip the x-cache header itself from being cached
-                if (name !== 'x-cache') {
+                if (!isPerRequestHeader(name)) {
                     headers[name] = value;
                 }
             });
