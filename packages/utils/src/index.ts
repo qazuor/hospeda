@@ -4,6 +4,7 @@
  */
 
 export * from './array';
+export * from './calendar-date';
 export * from './currency';
 export * from './date';
 export * from './markdown-helpers';
