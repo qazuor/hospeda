@@ -5,6 +5,7 @@ import {
     refineHostTradeBenefit
 } from '../../common/host-trade-benefit.schema.js';
 import { HostTradeBenefitTypeEnumSchema } from '../../enums/host-trade-benefit-type.schema.js';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { HostTradeSchema } from './host-trade.schema.js';
 
 /**
@@ -28,12 +29,23 @@ import { HostTradeSchema } from './host-trade.schema.js';
  * which is exactly the information that goes stale and that nobody but the
  * provider can keep current — routing it through an admin queue would make the
  * directory less accurate, not more.
+ *
+ * `stripShapeDefaults` is load-bearing: in Zod 4 `.partial()` does NOT suppress
+ * a `.default()`, so a PATCH omitting a defaulted field parses that field back
+ * in and the literal SQL `SET` overwrites it. See the guard in
+ * `test/no-defaults-in-patch-schemas.guard.test.ts`.
  */
-export const HostTradeOwnerOperationalSchema = HostTradeSchema.pick({
-    contact: true,
-    scheduleText: true,
-    is24h: true
-}).partial();
+export const HostTradeOwnerOperationalSchema = z
+    .object(
+        stripShapeDefaults(
+            HostTradeSchema.pick({
+                contact: true,
+                scheduleText: true,
+                is24h: true
+            }).shape
+        )
+    )
+    .partial();
 
 /**
  * The benefit fields, which do NOT apply immediately.

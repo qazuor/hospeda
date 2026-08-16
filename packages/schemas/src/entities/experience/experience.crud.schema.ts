@@ -216,30 +216,35 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  *   (control fields — HOS-166 §6.2)
  * - `hasActiveSubscription` (subscription lifecycle, admin-only toggle)
  */
-export const ExperienceOwnerUpdateInputSchema = ExperienceSchema.pick({
-    // HOS-166 D-1: identity fields the owner now controls.
-    name: true,
-    description: true,
-    destinationId: true,
-    // Previously owner-editable (SPEC-253 §3 / operational sections).
-    type: true,
-    summary: true,
-    openingHours: true,
-    contactInfo: true,
-    socialNetworks: true,
-    // HOS-372: `media` is not writable — the `media` JSONB column was dropped.
-    // Photos are written through the relational `experience_media` endpoints and
-    // videos through this top-level column.
-    videos: true,
-    isPriceOnRequest: true,
-    priceFrom: true,
-    priceUnit: true,
-    richDescription: true,
-    nameI18n: true,
-    summaryI18n: true,
-    descriptionI18n: true,
-    richDescriptionI18n: true
-})
+export const ExperienceOwnerUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            ExperienceSchema.pick({
+                // HOS-166 D-1: identity fields the owner now controls.
+                name: true,
+                description: true,
+                destinationId: true,
+                // Previously owner-editable (SPEC-253 §3 / operational sections).
+                type: true,
+                summary: true,
+                openingHours: true,
+                contactInfo: true,
+                socialNetworks: true,
+                // HOS-372: `media` is not writable — the `media` JSONB column was dropped.
+                // Photos are written through the relational `experience_media` endpoints and
+                // videos through this top-level column.
+                videos: true,
+                isPriceOnRequest: true,
+                priceFrom: true,
+                priceUnit: true,
+                richDescription: true,
+                nameI18n: true,
+                summaryI18n: true,
+                descriptionI18n: true,
+                richDescriptionI18n: true
+            }).shape
+        )
+    )
     .partial()
     .extend({
         /**
