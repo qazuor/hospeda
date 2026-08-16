@@ -472,6 +472,15 @@
                     "continues": "continued",
                     "pastError": "You can't move the block to a past date."
                 },
+                "eventDetails": {
+                    "title": "Blocked day",
+                    "eventLabel": "Event",
+                    "sourceLabel": "Source",
+                    "datesLabel": "Dates",
+                    "dateRange": "{{from}} to {{to}}",
+                    "untitled": "No title in the source calendar",
+                    "help": "This block came from a calendar you connected, so it cannot be edited here — the next sync would just recreate it. To free these days, delete or change the event in the source calendar, or disconnect that calendar."
+                },
                 "legend": {
                     "title": "Legend",
                     "free": "Free",
