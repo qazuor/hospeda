@@ -10,9 +10,9 @@
  */
 
 import { InfoIcon } from '@repo/icons';
+import { formatCalendarDate } from '@repo/utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
-import { formatDate } from '@/lib/format-utils';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -31,13 +31,17 @@ const t = createT(locale);
 const hasContext = Boolean(checkIn || checkOut || (adults && adults > 0) || (children && children > 0));
 
 /**
- * Format an ISO `YYYY-MM-DD` (already in local-day terms) without TZ shift.
- * `formatDate` accepts a Date; we pin to noon UTC to dodge DST edge cases.
+ * Format an ISO `YYYY-MM-DD` (a calendar day from the URL) without TZ shift.
+ *
+ * This used to pin the instant to noon UTC to dodge the shift — correct, and a
+ * third distinct spelling of the same rule in this repo. It now delegates, so
+ * the rule stops being something each screen invents for itself: that is how
+ * four screens ended up getting it wrong (smoke agosto 2026, H-09/H-63/H-73/H-84).
+ *
+ * Falls back to the raw string when the value names no real day, as before.
  */
 function fmt(iso: string): string {
-	const [y, m, d] = iso.split('-').map(Number);
-	if (!y || !m || !d) return iso;
-	return formatDate({ date: new Date(Date.UTC(y, m - 1, d, 12)), locale });
+	return formatCalendarDate({ value: iso, locale, options: { dateStyle: 'long' } }) ?? iso;
 }
 
 const dateRangeLabel = checkIn && checkOut
