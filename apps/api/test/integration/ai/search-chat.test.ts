@@ -4228,4 +4228,126 @@ describe('POST /api/v1/protected/ai/search-chat — integration gates (SPEC-212 
             expect(streamTextCalls[0]?.system ?? '').not.toContain('LOCATION NOT CARRIED OVER');
         });
     });
+
+    describe('Gate 13 — HOS-551 / H-71: stale amenity carryover on a new destination', () => {
+        it('drops a hasPool carried over unmentioned when the turn names a new destination', async () => {
+            // Reproduces the exact production smoke sequence (Aug 2026): turn 1
+            // set hasPool via "cabaña para 4 personas con pileta"; turn 2
+            // ("hotel en Colón para 2 personas") correctly updates
+            // accommodationType and minGuests (proving the model DID re-extract
+            // from the new message) but — exactly as observed in production —
+            // still echoes hasPool: true, unmentioned anywhere in the new
+            // message. The route must not let it reach `filters.intent` /
+            // `params`.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        accommodationType: 'HOTEL',
+                        minGuests: 2,
+                        destinationId: COLON_DESTINATION_UUID,
+                        hasPool: true
+                    }
+                },
+                usage: { promptTokens: 20, completionTokens: 10, totalTokens: 30 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'cabaña para 4 personas con pileta' },
+                        { role: 'assistant', content: 'Encontré cabañas para 4 con pileta.' },
+                        { role: 'user', content: 'hotel en Colón para 2 personas' }
+                    ],
+                    currentFilters: {
+                        accommodationType: 'CABIN',
+                        minGuests: 4,
+                        hasPool: true
+                    },
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+            };
+
+            // The genuinely-updated fields survive.
+            expect(payload.intent.accommodationType).toBe('HOTEL');
+            expect(payload.intent.minGuests).toBe(2);
+            expect(payload.intent.destinationId).toBe(COLON_DESTINATION_UUID);
+            expect(payload.params.destinationId).toBe(COLON_DESTINATION_UUID);
+
+            // The stale, unmentioned amenity does not.
+            expect('hasPool' in payload.intent).toBe(false);
+            expect(payload.params.hasPool).toBeUndefined();
+        });
+
+        it('keeps hasPool when the destination is unchanged (genuine refinement)', async () => {
+            // Negative control: no NEW destination is introduced this turn —
+            // the guard must not touch an unmentioned-but-still-valid carryover,
+            // which is the whole point of the "refine" conversational mode.
+            nextGenerateObjectResult.current = {
+                object: {
+                    confidence: 0.9,
+                    entities: {
+                        accommodationType: 'CABIN',
+                        minGuests: 4,
+                        destinationId: COLON_DESTINATION_UUID,
+                        hasPool: true,
+                        maxPrice: 50000
+                    }
+                },
+                usage: { promptTokens: 20, completionTokens: 10, totalTokens: 30 },
+                provider: 'stub',
+                model: 'stub-model',
+                finishReason: 'stop'
+            };
+            nextDestinationDbRows.current = DESTINATION_EXISTS_ROWS;
+
+            const res = await app.request(ENDPOINT, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: makeValidBody({
+                    messages: [
+                        { role: 'user', content: 'cabaña en Colón para 4 con pileta' },
+                        {
+                            role: 'assistant',
+                            content: 'Encontré cabañas en Colón para 4 con pileta.'
+                        },
+                        { role: 'user', content: 'más barata, hasta 50 mil' }
+                    ],
+                    currentFilters: {
+                        accommodationType: 'CABIN',
+                        minGuests: 4,
+                        destinationId: COLON_DESTINATION_UUID,
+                        hasPool: true
+                    },
+                    locale: 'es'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            const frames = await readSseFrames(res);
+            const filtersFrame = frames.find((f) => f.event === 'filters');
+            const payload = JSON.parse(filtersFrame?.data ?? '{}') as {
+                params: Record<string, unknown>;
+                intent: Record<string, unknown>;
+            };
+
+            expect(payload.intent.hasPool).toBe(true);
+            expect(payload.params.hasPool).toBe('true');
+            expect(payload.params.maxPrice).toBe('50000');
+        });
+    });
 });

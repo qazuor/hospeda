@@ -254,9 +254,14 @@ export function AiChatWidget({ accommodationId, locale, apiUrl }: AiChatWidgetPr
                     <div className={styles.header}>
                         <h2 className={styles.title}>{t('accommodations.aiChat.panelLabel')}</h2>
                         <div className={styles.headerActions}>
+                            {/* HOS-552 / H-139: hidden below the mobile breakpoint via
+                                 `.expandButton`'s media query — see AiChatWidget.module.css.
+                                 On a narrow viewport the panel is already clamped to
+                                 `max-width: calc(100vw - 48px)`, so expanding has no
+                                 observable effect; a dead control is worse than none. */}
                             <button
                                 type="button"
-                                className={styles.iconButton}
+                                className={`${styles.iconButton} ${styles.expandButton}`}
                                 onClick={() => setIsExpanded(!isExpanded)}
                                 aria-label={
                                     isExpanded

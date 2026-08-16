@@ -194,6 +194,9 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     'ai/protected/search-chat.prompt.ts',
     // Best-effort conversation persistence helper for search-chat (not a Hono route) — SPEC-212 T-007
     'ai/protected/search-chat.persistence.ts',
+    // Pure stale-carryover guard over the model's extracted entities, consumed by
+    // search-chat.ts (not a Hono route) — HOS-551
+    'ai/protected/search-chat.stale-carryover.ts',
     // Pure AI output schema + prompt builder + RawExtraction mapper for import-from-url (not a Hono route) — SPEC-222 T-020
     'accommodation/protected/import-from-url.ai.ts',
     // Shared MP return/notification URL builders consumed by start-paid.ts + trial.ts (not a Hono route) — HOS-114
