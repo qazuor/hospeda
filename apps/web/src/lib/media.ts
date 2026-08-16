@@ -160,6 +160,7 @@ interface MediaImage {
     readonly url?: string;
     readonly caption?: string;
     readonly description?: string;
+    readonly alt?: string;
     readonly attribution?: {
         readonly photographer: string;
         readonly sourceUrl: string;
@@ -186,6 +187,15 @@ export interface GalleryItem {
     readonly url: string;
     readonly caption?: string;
     readonly description?: string;
+    /**
+     * Author-written alternative text for the photo (H-125).
+     *
+     * Distinct from `caption`: the caption is display copy shown beside the
+     * image, the alt describes the image for screen readers and search engines.
+     * Consumers must render `alt ?? caption ?? <entity name>` — never treat the
+     * caption as a substitute when a real alt exists.
+     */
+    readonly alt?: string;
 }
 
 /**
@@ -220,6 +230,13 @@ export interface FeaturedImageResult {
      * (not a plain string) and the caption is a non-empty string.
      */
     readonly caption?: string;
+    /**
+     * Author-written alternative text for the cover photo (H-125).
+     *
+     * Present only when the API returns a structured object carrying a non-empty
+     * `alt`. Consumers must render `alt ?? caption ?? <entity name>`.
+     */
+    readonly alt?: string;
     /**
      * Optional attribution for stock images from Unsplash/Pexels.
      * Present only when the image was imported via the stock image import flow.
@@ -269,6 +286,7 @@ export function extractFeaturedImage(
             const result: {
                 url: string;
                 caption?: string;
+                alt?: string;
                 attribution?: {
                     photographer: string;
                     sourceUrl: string;
@@ -283,6 +301,11 @@ export function extractFeaturedImage(
                 media.featuredImage.caption.length > 0
             ) {
                 result.caption = media.featuredImage.caption;
+            }
+            // H-125: the cover photo is the one that carries the page's LCP and the
+            // share preview — its alt has to survive the extraction too.
+            if (typeof media.featuredImage.alt === 'string' && media.featuredImage.alt.length > 0) {
+                result.alt = media.featuredImage.alt;
             }
             // Extract attribution if present (SPEC-274 stock images)
             const attr = media.featuredImage.attribution as Record<string, unknown> | undefined;
@@ -408,12 +431,18 @@ export function extractGalleryItems(
                 url: string;
                 caption?: string;
                 description?: string;
+                alt?: string;
             } = { url: getMediaUrl(entry.url, { preset }) };
             if (typeof entry.caption === 'string' && entry.caption.length > 0) {
                 item.caption = entry.caption;
             }
             if (typeof entry.description === 'string' && entry.description.length > 0) {
                 item.description = entry.description;
+            }
+            // H-125: the API composes `alt` per row; dropping it here is what made
+            // every photo of a listing share the same fallback alt text.
+            if (typeof entry.alt === 'string' && entry.alt.length > 0) {
+                item.alt = entry.alt;
             }
             return item;
         })

@@ -355,16 +355,19 @@ const whatsappPlansHref = buildUrl({ locale, path: 'suscriptores/turistas' });
 // Build a unified GalleryImage[] from galleryItems (preferred) or URL-only images list.
 // SPEC-186: pass the FULL gallery — the island owns all capping (count-aware grid
 // shows a bounded preview and a "+N más" overlay for the rest).
+// H-125: prefer the owner's alt text, then the caption, then the listing name.
+// Reading the caption as alt is what made every photo of a listing announce the
+// same string — measured in production, all four photos shared one alt.
 const galleryImages = (() => {
     const featured = {
         url: accommodation.featuredImage || '/assets/images/placeholder-accommodation.svg',
-        alt: accommodation.name
+        alt: accommodation.featuredImageAlt ?? accommodation.name
     };
     const extras =
         accommodation.media.galleryItems.length > 0
             ? accommodation.media.galleryItems.map((item) => ({
                   url: item.url,
-                  alt: item.caption ?? accommodation.name,
+                  alt: item.alt ?? item.caption ?? accommodation.name,
                   caption: item.caption
               }))
             : accommodation.media.images.map((url) => ({

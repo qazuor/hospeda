@@ -18,7 +18,8 @@ vi.mock('@/lib/api/client', () => ({
         getProtected: vi.fn(),
         postProtected: vi.fn(),
         delete: vi.fn(),
-        put: vi.fn()
+        put: vi.fn(),
+        patch: vi.fn()
     }
 }));
 
@@ -178,6 +179,34 @@ describe('accommodationMediaApi', () => {
 
             const callArgs = vi.mocked(apiClient.put).mock.calls[0]?.[0];
             expect(callArgs?.path).toMatch(/\/featured$/);
+        });
+    });
+
+    // ── reorderMedia (HOS-122) ─────────────────────────────────────────────
+
+    describe('reorderMedia', () => {
+        it('calls patch with the /reorder path and the full ordered id list', async () => {
+            vi.mocked(apiClient.patch).mockResolvedValue({
+                ok: true,
+                data: { media: [] }
+            });
+
+            const orderedIds = ['f1', 'g1', 'g2'];
+            await accommodationMediaApi.reorderMedia({ id: ACC_ID, orderedIds });
+
+            expect(apiClient.patch).toHaveBeenCalledWith({
+                path: `/api/v1/protected/accommodations/${ACC_ID}/media/reorder`,
+                body: { orderedIds }
+            });
+        });
+
+        it('path ends with /reorder segment', async () => {
+            vi.mocked(apiClient.patch).mockResolvedValue({ ok: true, data: { media: [] } });
+
+            await accommodationMediaApi.reorderMedia({ id: ACC_ID, orderedIds: ['a'] });
+
+            const callArgs = vi.mocked(apiClient.patch).mock.calls[0]?.[0];
+            expect(callArgs?.path).toMatch(/\/reorder$/);
         });
     });
 });

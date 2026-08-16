@@ -52,6 +52,7 @@ import {
     AccommodationIaDataUpdateInputSchema,
     type AccommodationIdType,
     type AccommodationListWrapper,
+    type AccommodationMedia,
     type AccommodationMediaAddInput,
     AccommodationMediaAddInputSchema,
     type AccommodationMediaArchiveInput,
@@ -68,6 +69,8 @@ import {
     type AccommodationMediaSetFeaturedInput,
     AccommodationMediaSetFeaturedInputSchema,
     type AccommodationMediaSingleOutput,
+    type AccommodationMediaUpdateInput,
+    AccommodationMediaUpdateInputSchema,
     type AccommodationOptionsItem,
     type AccommodationRatingInput,
     type AccommodationSearchInput,
@@ -4141,6 +4144,85 @@ export class AccommodationService extends BaseCrudService<
                     throw new ServiceError(
                         ServiceErrorCode.INTERNAL_ERROR,
                         'Failed to retrieve updated media row after set-featured'
+                    );
+                }
+                return { media: updated };
+            }
+        });
+    }
+
+    /**
+     * Updates the text metadata (caption/description/alt/attribution) of a
+     * single accommodation photo (HOS-388).
+     *
+     * Before this endpoint the only way to fix a typo in an `alt` text was to
+     * delete the photo and re-upload it — burning a second Cloudinary asset and
+     * losing the photo's position in the gallery. This is a pure text-metadata
+     * PATCH: it never touches `url`, `publicId`, `moderationState`, `state`,
+     * `isFeatured`, `sortOrder`, or `accommodationId` — those columns are not
+     * even reachable from `AccommodationMediaUpdateInputSchema`.
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as the other media commands).
+     * 2. Verify the target media row exists, belongs to this accommodation, AND is
+     *    not soft-deleted. Any mismatch answers `NOT_FOUND` — never `FORBIDDEN` —
+     *    so a foreign or deleted id does not confirm its own existence.
+     * 3. Build the patch from ONLY the fields present in the payload: `undefined`
+     *    leaves the column untouched, `null` clears it, a value replaces it. The
+     *    schema-level refine already guarantees at least one field is present.
+     * 4. Apply a single-row `UPDATE` and return the resulting row.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId, mediaId, and the text fields to patch.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The updated media row wrapped in a `{ media }` envelope.
+     */
+    public async updateMedia(
+        actor: Actor,
+        data: AccommodationMediaUpdateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaUpdateInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Media not found for this accommodation'
+                    );
+                }
+
+                // Only include keys the caller actually supplied. `undefined` is
+                // excluded on purpose — passing it through would SET the column to
+                // undefined instead of leaving it alone. `null` IS included — it is
+                // the caller's explicit "clear this field" signal.
+                const patch: Partial<
+                    Pick<AccommodationMedia, 'caption' | 'description' | 'alt' | 'attribution'>
+                > = {};
+                if (validated.caption !== undefined) patch.caption = validated.caption;
+                if (validated.description !== undefined) patch.description = validated.description;
+                if (validated.alt !== undefined) patch.alt = validated.alt;
+                if (validated.attribution !== undefined) patch.attribution = validated.attribution;
+
+                const updated = await mediaModel.update({ id: validated.mediaId }, patch, ctx?.tx);
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to retrieve updated media row after update'
                     );
                 }
                 return { media: updated };

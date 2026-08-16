@@ -113,6 +113,9 @@
             },
             "state": {
                 "invalid": "El estado del medio debe ser 'visible' o 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "Tenés que completar al menos uno de los campos: título, descripción, texto alternativo o atribución"
             }
         },
         "name": {
