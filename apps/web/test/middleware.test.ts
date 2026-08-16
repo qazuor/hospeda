@@ -76,7 +76,15 @@ function createContext({
         request: {
             headers: new Headers(cookieHeader ? { cookie: cookieHeader } : {})
         },
-        redirect: vi.fn(),
+        // Real Astro's `context.redirect()` always returns a genuine `Response`
+        // (Location header + status). Defaulting the mock to return one too
+        // (rather than `undefined`) matches production and is required since
+        // H-170: `onRequest` now always reads `.headers` off whatever
+        // `runMiddlewarePipeline` returns, including redirects.
+        redirect: vi.fn(
+            (url: string, status = 302) =>
+                new Response(null, { status, headers: { location: url } })
+        ),
         rewrite: vi.fn(),
         cookies: {
             get: vi.fn()
@@ -471,5 +479,131 @@ describe('middleware onRequest — Step 11 emits the Cache-Tag purge header (HOS
         });
 
         expect(response.headers.get('Cache-Tag')).toBe('list-accom');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// H-170 (August 2026 smoke) — baseline security headers on EVERY response.
+//
+// hospeda.com.ar was missing strict-transport-security, x-content-type-options
+// and referrer-policy in production. apps/api already emits all three via
+// `apps/api/src/middlewares/security.ts`; this closes the gap on apps/web by
+// wrapping the ENTIRE middleware pipeline (`runMiddlewarePipeline`) so every
+// exit path — SSR HTML, a static-asset early return, a redirect, a 404/410
+// rewrite — carries them, not just the CSP branch's HTML-only path.
+// ---------------------------------------------------------------------------
+describe('middleware onRequest — H-170 baseline security headers on every response', () => {
+    /** The exact values apps/api's security middleware defaults to (mirrored here, not env-driven). */
+    const EXPECTED_HEADERS = {
+        'strict-transport-security': 'max-age=31536000; includeSubDomains',
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'strict-origin-when-cross-origin'
+    } as const;
+
+    function expectSecurityHeaders(response: Response) {
+        for (const [name, value] of Object.entries(EXPECTED_HEADERS)) {
+            expect(response.headers.get(name)).toBe(value);
+        }
+    }
+
+    beforeEach(() => {
+        parseSessionUserMock.mockClear();
+    });
+
+    it('carries all three headers on a normal SSR HTML page response', async () => {
+        const context = createContext({ pathname: '/es/alojamientos/' });
+        const next = vi
+            .fn()
+            .mockResolvedValue(
+                new Response('<html></html>', { headers: { 'content-type': 'text/html' } })
+            );
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on a static-asset early return (Step 1) — nosniff matters most here', async () => {
+        // isStaticAssetRoute matches on extension; the middleware returns
+        // next()'s response directly with no further processing.
+        const context = createContext({ pathname: '/favicon.ico' });
+        const next = vi.fn().mockResolvedValue(new Response('binary-data'));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on the /_image endpoint early return (Step 1)', async () => {
+        const context = createContext({ pathname: '/_image' });
+        const next = vi.fn().mockResolvedValue(new Response('image-bytes', { status: 200 }));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on a Server Island response (Step 2)', async () => {
+        const context = createContext({ pathname: '/_server-islands/MobileMenuIsland' });
+        const next = vi.fn().mockResolvedValue(new Response('island-html'));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on a redirect Response (Step 3.2 legacy /blog alias)', async () => {
+        // createContext's default `redirect` mock already returns a real
+        // Response (matching Astro), so no override is needed here.
+        const context = createContext({ pathname: '/es/blog/' });
+
+        const result = (await onRequest(context as any, vi.fn())) as Response;
+
+        expect(result.status).toBe(301);
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on a 404 rewrite (Step 8)', async () => {
+        const context = createContext({ pathname: '/es/no-existe/' });
+        context.rewrite = vi
+            .fn()
+            .mockResolvedValue(
+                new Response('<html>404</html>', { headers: { 'content-type': 'text/html' } })
+            );
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on a 410 Gone rewrite (Step 8b)', async () => {
+        const context = createContext({ pathname: '/es/alojamientos/x/' });
+        context.rewrite = vi.fn().mockResolvedValue(
+            new Response('<html>chrome</html>', {
+                status: 404,
+                headers: { 'content-type': 'text/html' }
+            })
+        );
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 410 }));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expect(result.status).toBe(410);
+        expectSecurityHeaders(result);
+    });
+
+    it('does not overwrite the CSP header the HTML branch already sets — both coexist', async () => {
+        const context = createContext({ pathname: '/es/alojamientos/' });
+        const next = vi
+            .fn()
+            .mockResolvedValue(
+                new Response('<html></html>', { headers: { 'content-type': 'text/html' } })
+            );
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expect(result.headers.get('content-security-policy')).toBeTruthy();
+        expectSecurityHeaders(result);
     });
 });

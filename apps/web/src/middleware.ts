@@ -19,10 +19,18 @@
  * 10. Set X-Robots-Tag noindex on hosts in HOSPEDA_NOINDEX_HOSTS (e.g. staging)
  * 11. Serialize the collected cache tags into the Cache-Tag header on
  *     edge-cacheable responses (HOS-369 W1-1)
+ *
+ * Steps 1-11 above run inside `runMiddlewarePipeline`, which has many early
+ * `return`s (static assets, redirects, 404/410 rewrites). `onRequest` itself
+ * is a thin wrapper around it that applies the baseline security headers
+ * (HSTS, X-Content-Type-Options, Referrer-Policy — H-170) to WHATEVER
+ * Response comes back, so every exit path gets them without having to
+ * duplicate the call at each early return.
  */
 
 import { defineMiddleware } from 'astro:middleware';
 import { CACHE_TAG_HEADER_NAME, serializeCacheTags } from '@repo/cache-tags';
+import type { APIContext, MiddlewareNext } from 'astro';
 import { collectCspHashes } from '../integrations/csp-hash-collector';
 import { schedulePurgeOnDeploy } from './lib/cache/purge-on-deploy';
 import { isEdgeCacheableControl } from './lib/cache/response-cache';
@@ -60,6 +68,7 @@ import {
     parseSessionUser,
     resolveSentryReportUri
 } from './lib/middleware-helpers';
+import { applySecurityHeaders } from './lib/security-headers';
 import { CJS_ESM_BRIDGES_WARMED } from './lib/warm-cjs-esm-bridges';
 
 /**
@@ -146,8 +155,28 @@ if (import.meta.env.SSR) {
 
 /**
  * Main middleware handler for all requests in the web application.
+ *
+ * Delegates to `runMiddlewarePipeline` for the actual Steps 1-11 logic, then
+ * applies the baseline security headers (H-170) to whatever `Response` comes
+ * back — see the module doc above for why this wrapper exists instead of
+ * setting the headers inline at each early return.
  */
 export const onRequest = defineMiddleware(async (context, next) => {
+    const response = await runMiddlewarePipeline(context, next);
+    applySecurityHeaders({ headers: response.headers });
+    return response;
+});
+
+/**
+ * Steps 1-11 of the request pipeline (see the module doc above). Extracted
+ * from `onRequest` so the security-headers wrapper above can apply to every
+ * one of this function's many early-return exit paths in a single place.
+ *
+ * @param context - The Astro `APIContext` for the current request.
+ * @param next - Astro's `MiddlewareNext`, invoking the rest of the pipeline.
+ * @returns The `Response` for this request.
+ */
+async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext): Promise<Response> {
     // Step -1: Take this process's one shot at purging the edge cache for the
     // deploy that started it (HOS-427). Deliberately the FIRST thing in the
     // handler, before the static-asset early return, so that whatever request
@@ -576,4 +605,4 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
 
     return response;
-});
+}
