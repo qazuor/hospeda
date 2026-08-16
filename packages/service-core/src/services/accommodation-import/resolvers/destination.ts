@@ -40,6 +40,7 @@ import { DestinationTypeEnum } from '@repo/schemas';
 import type { Actor } from '../../../types/index.js';
 import type { DestinationService } from '../../destination/destination.service.js';
 import { normalizeLocalityKey, resolveLocalityAlias } from './locality-aliases.js';
+import { splitLocalityQualifiers } from './locality-qualifiers.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -252,6 +253,53 @@ export async function buildDestinationHint(
                     // never be a way around them.
                     confident: countryAllowsConfidence(country) && regionAllowsConfidence(region)
                 };
+            }
+        }
+
+        // Trailing-qualifier retry (HOS-346). `"Colón, Entre Ríos"` finds
+        // nothing because no catalog name contains that whole string, yet the
+        // province written there is the single most useful signal in the
+        // payload. Strip only CLOSED-LIST trailing segments (province, country,
+        // postal code), feed the province to the gate, and require the
+        // remainder to match a catalog name EXACTLY — so this adds no fuzzy
+        // path. `"San José, Colón, Entre Ríos"` leaves `"San José, Colón"`,
+        // which is not a catalog name, and therefore resolves nothing rather
+        // than resolving the department.
+        const qualifiers = splitLocalityQualifiers(trimmedLocality);
+        if (qualifiers.stripped && qualifiers.locality.length > 0) {
+            // A province the adapter reported as a structured field beats one
+            // we parsed out of free text.
+            const effectiveRegion = region ?? qualifiers.region;
+            const retry = await destinationService.search(actor, {
+                q: qualifiers.locality,
+                searchScope: 'name',
+                destinationType: DestinationTypeEnum.CITY,
+                pageSize: MAX_CANDIDATES,
+                page: 1
+            });
+
+            if (!retry.error) {
+                const retryCandidates: DestinationCandidate[] = (retry.data?.items ?? []).map(
+                    (dest) => ({ id: dest.id, name: dest.name })
+                );
+                const retryExact = retryCandidates.filter(
+                    (candidate) =>
+                        normalizeName(candidate.name) === normalizeName(qualifiers.locality)
+                );
+
+                if (retryExact.length > 0) {
+                    return {
+                        scrapedLocality: trimmedLocality,
+                        // Shown even when the province denies confidence: the
+                        // host sees what we found and picks, instead of facing
+                        // an empty required field (owner decision 2026-08-16).
+                        candidates: retryExact,
+                        confident:
+                            retryExact.length === 1 &&
+                            countryAllowsConfidence(country) &&
+                            regionAllowsConfidence(effectiveRegion)
+                    };
+                }
             }
         }
 
