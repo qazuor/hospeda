@@ -20,6 +20,7 @@ import type {
     ModerationStatePatch,
     PublishStatePatch
 } from '@/features/content/hooks/useContentStateMutations';
+import { formatCalendarShortDate, formatShortDate } from '@/lib/format-helpers';
 import { EventCategoryBadge } from '../components/EventCategoryBadge';
 import { EVENT_STATE_MUTATIONS, useUpdateEventMutation } from '../hooks/useEventQuery';
 import type { Event } from '../schemas/events.schemas';
@@ -96,7 +97,19 @@ export const createEventsColumns = (
             header: t('admin-entities.columns.startDate'),
             accessorKey: 'date.start',
             enableSorting: true,
-            columnType: ColumnType.DATE
+            // A MONTH-precision event has no real start time: the day-of-month is
+            // a storage placeholder and the value is pinned to midnight UTC, so
+            // rendering it in the reader's own timezone moves it back a day AND,
+            // for a 1st-of-the-month placeholder, back a MONTH — an event in July
+            // listed under June. That is 41 of the 52 real events in production.
+            // An EXACT event genuinely happened at a time of day and must keep
+            // rendering locally, which is the same split `formatEventDate.ts`
+            // already makes on the public site.
+            columnType: ColumnType.WIDGET,
+            widgetRenderer: (row) =>
+                row.date?.precision === 'MONTH'
+                    ? formatCalendarShortDate({ date: row.date.start })
+                    : formatShortDate({ date: row.date?.start })
         },
         {
             id: 'location',

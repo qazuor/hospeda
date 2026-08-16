@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0056-staff-email-domain-to-com-ar
+ * Data migration: 0057-staff-email-domain-to-com-ar
  *
  * Moves the seeded staff accounts off `@hospeda.com` and onto the platform's
  * real domain, `@hospeda.com.ar`.
@@ -78,7 +78,7 @@ import { sql, users } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0056-staff-email-domain-to-com-ar',
+    name: '0057-staff-email-domain-to-com-ar',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

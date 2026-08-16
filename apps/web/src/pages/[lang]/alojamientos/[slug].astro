@@ -7,6 +7,7 @@
  * @rendering SSR (on-demand)
  */
 
+import { formatCalendarDate } from '@repo/utils';
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { CompareBar } from '@/components/shared/compare/CompareBar.client';
@@ -73,16 +74,22 @@ const ctxChildrenRaw = Astro.url.searchParams.get('children');
 const ctxAdults = ctxAdultsRaw ? Number(ctxAdultsRaw) : undefined;
 const ctxChildren = ctxChildrenRaw ? Number(ctxChildrenRaw) : undefined;
 
-/** Format ISO `YYYY-MM-DD` to a locale-aware label without TZ shift. */
+/**
+ * Format ISO `YYYY-MM-DD` to a locale-aware label without TZ shift.
+ *
+ * A fourth spelling of the same rule — noon-UTC pin plus an explicit UTC
+ * timezone — that this repo had rediscovered screen by screen. Delegated so it
+ * lives in one place. Falls back to the raw string when the value names no real
+ * day, as before.
+ */
 function fmtIsoDay(iso: string): string {
-	const [y, m, d] = iso.split('-').map(Number);
-	if (!y || !m || !d) return iso;
-	return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : locale === 'pt' ? 'pt-BR' : 'es-AR', {
-		day: '2-digit',
-		month: 'long',
-		year: 'numeric',
-		timeZone: 'UTC',
-	}).format(new Date(Date.UTC(y, m - 1, d, 12)));
+	return (
+		formatCalendarDate({
+			value: iso,
+			locale: locale === 'en' ? 'en-US' : locale === 'pt' ? 'pt-BR' : 'es-AR',
+			options: { day: '2-digit', month: 'long', year: 'numeric' },
+		}) ?? iso
+	);
 }
 
 const hasCtxDates = Boolean(ctxCheckIn || ctxCheckOut);

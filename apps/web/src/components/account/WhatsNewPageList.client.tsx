@@ -1,4 +1,5 @@
 import { SparkleIcon } from '@repo/icons';
+import { formatCalendarDate } from '@repo/utils';
 import { useEffect, useMemo } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import type { WhatsNewItem } from '@/hooks/use-whats-new';
@@ -61,17 +62,21 @@ function WhatsNewCard({ item, locale }: WhatsNewCardProps) {
     const { t } = createTranslations(locale);
     const bodyHtml = useMemo(() => renderMarkdownToHtml(item.body), [item.body]);
 
-    const publishedDate = useMemo(() => {
-        try {
-            return new Date(item.publishedAt).toLocaleDateString(locale, {
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric'
-            });
-        } catch {
-            return item.publishedAt;
-        }
-    }, [item.publishedAt, locale]);
+    // `publishedAt` names a DAY. The catalog's own authoring convention writes
+    // entries as `'2026-05-29T00:00:00Z'`, so reading it in the viewer's own
+    // timezone dates every entry one day early for anyone west of UTC — the
+    // same defect the August 2026 smoke found on four other screens (H-09,
+    // H-63, H-73, H-84). The catalog being empty today is the only reason
+    // nobody has hit it yet; the first entry written to convention would.
+    const publishedDate = useMemo(
+        () =>
+            formatCalendarDate({
+                value: item.publishedAt,
+                locale,
+                options: { year: 'numeric', month: 'long', day: 'numeric' }
+            }) ?? item.publishedAt,
+        [item.publishedAt, locale]
+    );
 
     return (
         <article className={`whats-new-card${item.seen ? 'whats-new-card--seen' : ''}`}>

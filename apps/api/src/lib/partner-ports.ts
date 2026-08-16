@@ -13,6 +13,7 @@ import { getDb, PartnerModel, users } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import { PartnerMentionChannelEnum, PreferredContactEnum } from '@repo/schemas';
 import type { PartnerMentionNotifyPort, PartnerRevokeNotifyPort } from '@repo/service-core';
+import { formatCalendarDate } from '@repo/utils';
 import { eq } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
@@ -205,13 +206,21 @@ export function createPartnerMentionNotifyPort(): PartnerMentionNotifyPort {
  * Every row of a submission shares `mentionedAt` by construction — the create
  * schema takes one date for the whole batch — so reading it off the first row
  * is not a sampling shortcut.
+ *
+ * `mentionedAt` names a DAY, not an instant: the admin form offers a bare date
+ * picker, so the value is pinned to midnight UTC. Converting that into Argentine
+ * local time — which this function used to do explicitly — moves it to 21:00 the
+ * previous day, and the email told the partner we broadcast them a day before we
+ * did (smoke agosto 2026, same defect as H-73 but on the outbound side, where a
+ * third party reads it). `formatCalendarDate` pins the timezone to UTC, so the
+ * day survives whatever timezone the API container happens to run in.
  */
 function formatMentionedAt(value: Date | undefined): string {
-    if (!value) return '';
-    return new Intl.DateTimeFormat('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-        timeZone: 'America/Argentina/Buenos_Aires'
-    }).format(value);
+    return (
+        formatCalendarDate({
+            value,
+            locale: 'es-AR',
+            options: { day: 'numeric', month: 'long', year: 'numeric' }
+        }) ?? ''
+    );
 }

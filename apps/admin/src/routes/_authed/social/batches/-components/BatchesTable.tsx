@@ -8,6 +8,7 @@
 
 import type { TranslationKey } from '@repo/i18n';
 import { PermissionEnum, type SocialContentBatch } from '@repo/schemas';
+import { formatCalendarDate } from '@repo/utils';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
@@ -19,19 +20,25 @@ export interface BatchesTableProps {
     readonly onDelete: (item: SocialContentBatch) => void;
 }
 
+/**
+ * Formats a batch window boundary — a calendar day, not an instant.
+ *
+ * `startsAt`/`endsAt` come from a bare `<input type="date">`, so they are
+ * stored as UTC-midnight timestamps. Read in a browser behind UTC (Argentina,
+ * UTC-3) they roll the calendar date back a day (2027-01-01 → "31 dic 2026").
+ * This file pinned `timeZone: 'UTC'` by hand and was right; it now delegates so
+ * the rule lives in one place instead of being rediscovered per screen — which
+ * is exactly what did NOT happen on four other screens (smoke agosto 2026,
+ * H-09/H-63/H-73/H-84).
+ */
 function formatDate(d: Date | undefined | null): string {
-    if (!d) return '—';
-    const date = d instanceof Date ? d : new Date(d);
-    if (Number.isNaN(date.getTime())) return '—';
-    // These are date-only values stored as UTC-midnight timestamps. Format in
-    // UTC so a browser behind UTC (Argentina, UTC-3) doesn't roll the calendar
-    // date back a day (2027-01-01 → "31 dic 2026").
-    return new Intl.DateTimeFormat('es-AR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        timeZone: 'UTC'
-    }).format(date);
+    return (
+        formatCalendarDate({
+            value: d,
+            locale: 'es-AR',
+            options: { day: '2-digit', month: 'short', year: 'numeric' }
+        }) ?? '—'
+    );
 }
 
 function truncate(text: string, max = 50): string {

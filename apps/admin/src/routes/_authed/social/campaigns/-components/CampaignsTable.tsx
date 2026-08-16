@@ -8,6 +8,7 @@
 
 import type { TranslationKey } from '@repo/i18n';
 import { PermissionEnum, type SocialCampaign } from '@repo/schemas';
+import { formatCalendarDate } from '@repo/utils';
 import { PermissionGate } from '@/components/auth/PermissionGate';
 import { Button } from '@/components/ui/button';
 import { useTranslations } from '@/hooks/use-translations';
@@ -19,19 +20,23 @@ export interface CampaignsTableProps {
     readonly onDelete: (item: SocialCampaign) => void;
 }
 
+/**
+ * Formats a campaign window boundary — a calendar day, not an instant.
+ *
+ * Same reasoning as its twin in `BatchesTable.tsx`: `startsAt`/`endsAt` come
+ * from a bare `<input type="date">` and are stored as UTC-midnight timestamps,
+ * so reading them in a browser behind UTC rolls the date back a day. Both files
+ * pinned `timeZone: 'UTC'` by hand and were right; both now delegate, so the
+ * rule stops being something each screen has to rediscover.
+ */
 function formatDate(d: Date | undefined | null): string {
-    if (!d) return '—';
-    const date = d instanceof Date ? d : new Date(d);
-    if (Number.isNaN(date.getTime())) return '—';
-    // These are date-only values stored as UTC-midnight timestamps. Format in
-    // UTC so a browser behind UTC (Argentina, UTC-3) doesn't roll the calendar
-    // date back a day (2027-01-01 → "31 dic 2026").
-    return new Intl.DateTimeFormat('es-AR', {
-        day: '2-digit',
-        month: 'short',
-        year: 'numeric',
-        timeZone: 'UTC'
-    }).format(date);
+    return (
+        formatCalendarDate({
+            value: d,
+            locale: 'es-AR',
+            options: { day: '2-digit', month: 'short', year: 'numeric' }
+        }) ?? '—'
+    );
 }
 
 function truncate(text: string, max = 50): string {

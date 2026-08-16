@@ -3,7 +3,7 @@ import { DeleteIcon, EditIcon, PowerIcon } from '@repo/icons';
 import { BadgeColor, ColumnType, type DataTableColumn } from '@/components/table/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { formatCentsToArs, formatShortDate } from '@/lib/format-helpers';
+import { formatCalendarShortDate, formatCentsToArs } from '@/lib/format-helpers';
 import type { PromoCode } from './types';
 
 /**
@@ -61,10 +61,15 @@ export function getPromoCodeColumns(
 
     /**
      * Format date range from ISO strings using translation patterns.
+     *
+     * `validFrom`/`expiresAt` are calendar dates (written by `PromoCodeFormDialog`'s
+     * bare `<input type="date">`, which pins them to UTC midnight), not instants —
+     * use `formatCalendarShortDate` so a reader at UTC-3 doesn't see the date roll
+     * back a day.
      */
     const formatDateRange = (from: string | null, until: string | null): string => {
-        const fromStr = from ? formatShortDate({ date: new Date(from), locale }) : null;
-        const untilStr = until ? formatShortDate({ date: new Date(until), locale }) : null;
+        const fromStr = from ? formatCalendarShortDate({ date: from, locale }) : null;
+        const untilStr = until ? formatCalendarShortDate({ date: until, locale }) : null;
         if (fromStr && untilStr) {
             return t('admin-billing.promoCodes.columns.validRange')
                 .replace('{from}', fromStr)
