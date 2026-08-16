@@ -37,6 +37,7 @@ import {
     resolvePlanTrialConfig
 } from '@repo/service-core';
 import { env } from '../utils/env.js';
+import { sanitizeEmailForMercadoPago } from '../utils/mp-email.js';
 import {
     resolveReusableCommerceCheckout,
     resolveReusablePartnerCheckout
@@ -1528,7 +1529,15 @@ export async function initiatePaidPlanUpgrade(
         successUrl: urls.successUrl,
         cancelUrl: urls.cancelUrl,
         customerId,
-        customerEmail: customer.email,
+        // HOS-581: THE boundary. This is the only place in the checkout service
+        // that hands an address to MercadoPago — the monthly and annual paths
+        // redirect to MP's hosted share link, which collects the payer itself,
+        // and the `payerEmail` they pass to `createPendingProviderSubscription`
+        // is a local reconciliation snapshot that is never sent. So the '+' →
+        // '.' sanitizing that MercadoPago's error 612 forces on us runs HERE,
+        // against the raw address now stored in `billing_customers.email`,
+        // instead of corrupting that column for every other reader.
+        customerEmail: sanitizeEmailForMercadoPago(customer.email),
         ...(customer.name ? { customerName: customer.name } : {}),
         ...(firstName ? { payerFirstName: firstName } : {}),
         ...(rest.length > 0 ? { payerLastName: rest.join(' ') } : {}),

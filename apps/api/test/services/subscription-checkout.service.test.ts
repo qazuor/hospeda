@@ -1123,6 +1123,35 @@ describe('initiatePaidPlanUpgrade', () => {
         expect(new Date(result.expiresAt).getTime()).toBeGreaterThan(Date.now());
     });
 
+    it('sanitizes the plus-addressed email AT THE BOUNDARY, on the way to MercadoPago (HOS-581)', async () => {
+        // This is the ONLY place the checkout service hands an address to
+        // MercadoPago, which rejects '+' with error 612. The monthly and annual
+        // paths redirect to MP's hosted share link and never send one.
+        //
+        // The mangling used to happen at persistence instead, so
+        // `billing_customers.email` stored an address the user never wrote and
+        // eight of Hospeda's own sends mailed it. Moving it here is the fix —
+        // and this test is what stops it from drifting back: if the call is
+        // removed, the raw '+' reaches MercadoPago and 612 returns.
+        const billing = createUpgradeBillingMock({
+            customer: { ...UPGRADE_CUSTOMER, email: 'qazuor+turista@gmail.com' }
+        });
+
+        await initiatePaidPlanUpgrade({
+            customerId: CUSTOMER_ID,
+            currentSubscriptionId: UPGRADE_SUB_ID,
+            newPlanId: NEW_PLAN_ID,
+            billingInterval: 'month',
+            intervalCount: 1,
+            billing: billing as any,
+            urls: UPGRADE_URLS,
+            now: HALFWAY
+        });
+
+        const call = billing.checkout.create.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(call.customerEmail).toBe('qazuor.turista@gmail.com');
+    });
+
     it('invokes billing.checkout.create with delta line item and full upgrade metadata', async () => {
         const billing = createUpgradeBillingMock();
 
