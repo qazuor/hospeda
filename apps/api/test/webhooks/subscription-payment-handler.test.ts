@@ -118,6 +118,9 @@ const subLookupResult: {
         customerId: string;
         planId?: string | null;
         status?: string;
+        // H-137 needs both ends of the promised window: one end cannot tell a
+        // trial that ran out from one that was never granted.
+        trialStart?: Date | null;
         trialEnd?: Date | null;
     }>;
 } = { rows: [] };

@@ -83,6 +83,37 @@ export const billingMpPlans = pgTable(
          * dimensions.
          */
         discountCycle1AmountArs: integer('discount_cycle1_amount_ars').notNull().default(0),
+        /**
+         * Who this MP plan variant is reserved for (H-137). Either the literal
+         * `'shared'` sentinel or a `billing_customers.id`.
+         *
+         * MercadoPago grants a preapproval's `free_trial` **once per
+         * `(payer, preapproval_plan)`**. While a trial variant was shared across
+         * every buyer, that rule silently overrode ours: a payer who had already
+         * used the trial on the shared plan — a returning customer, a second
+         * household account, an agency paying for several owners — was shown the
+         * trial offer and charged the full first cycle instead. Confirmed in
+         * production on 2026-08-14: the same MercadoPago account received a trial
+         * on two DIFFERENT preapproval plans and was refused on its second use of
+         * one of them, which is what pins the limit to the plan rather than to
+         * the seller.
+         *
+         * Scoping a trial variant to one customer means MercadoPago never has a
+         * prior authorization to key against, so the only judge left is Hospeda's
+         * own `resolveCheckoutFreeTrialDays` — "one trial per customer, for life"
+         * — which is the criterion we actually intend to enforce. It is also
+         * self-limiting: that rule resolves `trialDays` to `0` for a returning
+         * customer, and `0` is a different variant, so a customer can hold at
+         * most one trial-bearing plan.
+         *
+         * `'shared'` (the default) is used for every `trial_days = 0` variant.
+         * Those carry no `free_trial`, so there is nothing for MercadoPago to
+         * refuse and a plan per customer would be pure noise in the provider
+         * dashboard. A sentinel rather than NULL keeps the uniqueness index
+         * NULL-free — Postgres treats NULLs as distinct, which would silently
+         * permit duplicate variant rows.
+         */
+        customerScope: varchar('customer_scope', { length: 64 }).notNull().default('shared'),
         /** Registry lifecycle: `active` | `inactive`. */
         status: varchar('status', { length: 20 }).notNull().default('active'),
         /**
@@ -105,14 +136,17 @@ export const billingMpPlans = pgTable(
     },
     (table) => ({
         // Exactly one MP plan per
-        // (commercial plan × interval × trial length × cycle-1 discount).
-        // HOS-244 added the discount dimension; `0` is the no-discount sentinel so
-        // pre-existing full-price rows remain unique under their original tuple.
+        // (commercial plan × interval × trial length × cycle-1 discount × scope).
+        // HOS-244 added the discount dimension; H-137 added the scope one. Both
+        // use a sentinel (`0`, `'shared'`) rather than NULL so pre-existing rows
+        // stay unique under their original tuple and Postgres' "NULLs are
+        // distinct" rule cannot admit duplicates.
         billingMpPlans_variant_uniq: uniqueIndex('billingMpPlans_variant_uniq').on(
             table.commercialPlanId,
             table.billingInterval,
             table.trialDays,
-            table.discountCycle1AmountArs
+            table.discountCycle1AmountArs,
+            table.customerScope
         ),
         // An MP preapproval_plan id is registered at most once.
         billingMpPlans_mpPreapprovalPlanId_uniq: uniqueIndex(
