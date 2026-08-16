@@ -56,7 +56,9 @@ describe('LocationPicker', () => {
     const defaultProps = {
         locale: 'es' as const,
         value: { latitude: null, longitude: null },
-        onChange: vi.fn()
+        onChange: vi.fn(),
+        addressValue: { street: '', number: '', floor: '', apartment: '' },
+        onAddressChange: vi.fn()
     };
 
     it('should render section title and search input', () => {
@@ -149,5 +151,109 @@ describe('LocationPicker', () => {
     it('does not show Spinner when isSearching is false', () => {
         render(<LocationPicker {...defaultProps} />);
         expect(screen.queryByRole('status')).not.toBeInTheDocument();
+    });
+
+    // -----------------------------------------------------------------------
+    // G7 smoke (H-117): exact postal address fields
+    // -----------------------------------------------------------------------
+
+    it('should render the four exact-address fields', () => {
+        render(<LocationPicker {...defaultProps} />);
+
+        expect(screen.getByLabelText('Calle')).toBeInTheDocument();
+        expect(screen.getByLabelText('Número')).toBeInTheDocument();
+        expect(screen.getByLabelText('Piso')).toBeInTheDocument();
+        expect(screen.getByLabelText('Departamento')).toBeInTheDocument();
+    });
+
+    it('should display the current address values', () => {
+        render(
+            <LocationPicker
+                {...defaultProps}
+                addressValue={{ street: 'Av. Belgrano', number: '123', floor: '4', apartment: 'B' }}
+            />
+        );
+
+        expect((screen.getByLabelText('Calle') as HTMLInputElement).value).toBe('Av. Belgrano');
+        expect((screen.getByLabelText('Número') as HTMLInputElement).value).toBe('123');
+        expect((screen.getByLabelText('Piso') as HTMLInputElement).value).toBe('4');
+        expect((screen.getByLabelText('Departamento') as HTMLInputElement).value).toBe('B');
+    });
+
+    it('should call onAddressChange with the field name when street changes', async () => {
+        const user = userEvent.setup();
+        const onAddressChange = vi.fn();
+
+        render(
+            <LocationPicker
+                {...defaultProps}
+                onAddressChange={onAddressChange}
+            />
+        );
+
+        await user.type(screen.getByLabelText('Calle'), 'X');
+
+        expect(onAddressChange).toHaveBeenCalledWith('street', 'X');
+    });
+
+    it('should fill street and number from a selected geocoding suggestion (H-117)', async () => {
+        // Before this change the search box resolved a parsed street/number and
+        // discarded them — the host saw the full address on screen but only
+        // lat/long reached onChange. This is the regression guard for that fix.
+        vi.mocked(useGeocodingSearch).mockReturnValue({
+            suggestions: [
+                {
+                    label: 'Av. Belgrano 123, Concepción del Uruguay',
+                    lat: -32.48,
+                    lng: -58.23,
+                    street: 'Av. Belgrano',
+                    number: '123'
+                }
+            ],
+            isLoading: false,
+            error: null
+        });
+
+        const user = userEvent.setup();
+        const onAddressChange = vi.fn();
+        const onChange = vi.fn();
+
+        render(
+            <LocationPicker
+                {...defaultProps}
+                onChange={onChange}
+                onAddressChange={onAddressChange}
+            />
+        );
+
+        await user.type(screen.getByLabelText('Buscar dirección'), 'Av. Belgrano');
+        await user.click(screen.getByText('Av. Belgrano 123, Concepción del Uruguay'));
+
+        expect(onChange).toHaveBeenCalledWith({ latitude: -32.48, longitude: -58.23 });
+        expect(onAddressChange).toHaveBeenCalledWith('street', 'Av. Belgrano');
+        expect(onAddressChange).toHaveBeenCalledWith('number', '123');
+    });
+
+    it('should NOT touch street/number when the suggestion carries none', async () => {
+        vi.mocked(useGeocodingSearch).mockReturnValue({
+            suggestions: [{ label: 'Somewhere', lat: -32.48, lng: -58.23 }],
+            isLoading: false,
+            error: null
+        });
+
+        const user = userEvent.setup();
+        const onAddressChange = vi.fn();
+
+        render(
+            <LocationPicker
+                {...defaultProps}
+                onAddressChange={onAddressChange}
+            />
+        );
+
+        await user.type(screen.getByLabelText('Buscar dirección'), 'Somewhere');
+        await user.click(screen.getByText('Somewhere'));
+
+        expect(onAddressChange).not.toHaveBeenCalled();
     });
 });

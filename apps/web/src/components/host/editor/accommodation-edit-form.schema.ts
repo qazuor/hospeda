@@ -98,6 +98,15 @@ const bathroomsField = z
     .nullable()
     .optional();
 
+/** G7 smoke (H-112): mirrors the HTTP schema's min(1)/max(365) bounds. */
+const minNightsField = z
+    .number()
+    .int()
+    .min(1, { message: 'zodError.accommodation.extraInfo.minNights.min' })
+    .max(365, { message: 'zodError.accommodation.extraInfo.minNights.max' })
+    .nullable()
+    .optional();
+
 const basePriceField = z
     .number()
     .positive({ message: 'zodError.common.price.price.positive' })
@@ -146,27 +155,50 @@ export const AccommodationBasicsSchema = z.object({
     destinationId: inherited.destinationId
 });
 
-/** `…/editar/capacidad-precio/` — guests, bedrooms, bathrooms, price, currency. */
+/** `…/editar/capacidad-precio/` — guests, bedrooms, bathrooms, price, currency, minNights. */
 export const AccommodationCapacityPricingSchema = z.object({
     maxGuests: maxGuestsField,
     bedrooms: bedroomsField,
     bathrooms: bathroomsField,
     basePrice: basePriceField,
-    currency: currencyField
+    currency: currencyField,
+    /** G7 smoke (H-112): minimum stay, writable since the HTTP schema grew a slot for it. */
+    minNights: minNightsField
 });
 
 /**
- * `…/editar/ubicacion/` — coordinates.
+ * `…/editar/ubicacion/` — coordinates plus the exact postal address (H-117).
  *
  * Latitude and longitude must always be sent together:
  * `httpToDomainAccommodationUpdate` only emits `location.coordinates` when BOTH
  * are present in the body, so a payload carrying one silently drops the
  * coordinate update with no error anywhere (HOS-190). The pairing is enforced by
  * the shared section-form hook, not here — this schema only bounds the values.
+ *
+ * `street`/`number`/`floor`/`apartment` have no such pairing requirement — each
+ * is sent independently, straight from `AccommodationUpdateHttpSchema.shape`
+ * (no local override needed; all four are already `.optional()` strings there).
  */
 export const AccommodationLocationSchema = z.object({
     latitude: latitudeField,
-    longitude: longitudeField
+    longitude: longitudeField,
+    street: inherited.street,
+    number: inherited.number,
+    floor: inherited.floor,
+    apartment: inherited.apartment
+});
+
+/**
+ * `…/editar/seo/` — search-result title/description override (H-121).
+ *
+ * Only ever applied on the `es` locale by the public detail page today
+ * (`pickLocalizedSeo` in `apps/web/src/lib/seo.ts`) — `SeoSection.client.tsx`
+ * carries that caveat in its copy so the host is not told the override reaches
+ * `/en/`/`/pt/` when it does not.
+ */
+export const AccommodationSeoSchema = z.object({
+    seoTitle: inherited.seoTitle,
+    seoDescription: inherited.seoDescription
 });
 
 /** `…/editar/servicios/` — amenity and feature selections. */
@@ -200,7 +232,8 @@ export const AccommodationEditFormSchema = AccommodationBasicsSchema.extend(
 )
     .extend(AccommodationLocationSchema.shape)
     .extend(AccommodationServicesSchema.shape)
-    .extend(AccommodationContactSchema.shape);
+    .extend(AccommodationContactSchema.shape)
+    .extend(AccommodationSeoSchema.shape);
 
 /**
  * The slices keyed by section id, so a page can look up its own validator from
@@ -211,7 +244,8 @@ export const ACCOMMODATION_SECTION_SCHEMAS = {
     capacityPricing: AccommodationCapacityPricingSchema,
     location: AccommodationLocationSchema,
     amenities: AccommodationServicesSchema,
-    contact: AccommodationContactSchema
+    contact: AccommodationContactSchema,
+    seo: AccommodationSeoSchema
 } as const;
 
 /** Section ids that own a form. The other five sections save on their own. */

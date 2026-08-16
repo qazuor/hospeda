@@ -246,7 +246,9 @@
                 "featuredToggle": "Destacado",
                 "calendar": "Calendar",
                 "capacityPricing": "Capacity and price",
-                "contactSocial": "Contact and social"
+                "contactSocial": "Contact and social",
+                "seo": "Search engines (Google)",
+                "seoDescription": "Choose how your property shows up when someone finds it on Google. Leave these fields blank to use your property's name."
             },
             "sectionNav": {
                 "ariaLabel": "Form section navigation"
@@ -282,7 +284,17 @@
                 "twitter": "Twitter / X",
                 "linkedin": "LinkedIn",
                 "tiktok": "TikTok",
-                "youtube": "YouTube"
+                "youtube": "YouTube",
+                "minNights": "Minimum nights",
+                "minNightsHint": "The minimum number of nights a guest must book. Shown on the public listing.",
+                "street": "Street",
+                "number": "Number",
+                "floor": "Floor",
+                "apartment": "Apartment",
+                "seoTitle": "Google title",
+                "seoTitleHint": "The bold title shown in the search result. For now it only applies in Spanish — English and Portuguese still show your property's name.",
+                "seoDescription": "Google description",
+                "seoDescriptionHint": "The text shown below the title in the search result. Like the title, it only applies in Spanish for now."
             },
             "photo": {
                 "addToGallery": "Add photos to the gallery",
@@ -328,6 +340,21 @@
                 "tooLarge": "File cannot exceed {{maxSize}}MB",
                 "uploadFailed": "Failed to upload image",
                 "uploadingBatch": "Uploading photo {{current}} of {{total}}…"
+            },
+            "video": {
+                "sectionTitle": "Videos",
+                "sectionDescription": "Add links to YouTube, Vimeo or Dailymotion videos showing your property.",
+                "urlLabel": "Video link",
+                "urlPlaceholder": "https://youtube.com/watch?v=...",
+                "captionLabel": "Title (optional)",
+                "addButton": "Add video",
+                "removeAria": "Remove video {{index}}",
+                "empty": "You haven't added any videos yet.",
+                "saveButton": "Save videos",
+                "saveSuccess": "Videos saved",
+                "saveFailed": "The videos could not be saved",
+                "urlInvalid": "Enter a valid video URL",
+                "captionInvalid": "The title must be 3-100 characters, or left blank"
             },
             "faq": {
                 "emptyState": "No questions yet. Add the first one.",
@@ -436,7 +463,8 @@
                 "geolocationUnavailable": "Geolocation is not available in this browser.",
                 "geolocationDenied": "Permission denied. You can type the address manually.",
                 "geolocationError": "Could not get location. Try typing the address.",
-                "searching": "Searching…"
+                "searching": "Searching…",
+                "addressHint": "Exact address. Tourists only ever see an approximate location on the public map."
             },
             "translation": {
                 "sectionTitle": "Translations",

@@ -16,18 +16,20 @@ import {
     AccommodationContactSchema,
     AccommodationEditFormSchema,
     AccommodationLocationSchema,
+    AccommodationSeoSchema,
     AccommodationServicesSchema
 } from '@/components/host/editor/accommodation-edit-form.schema';
 
 describe('slice composition', () => {
-    it('should cover every field of the merged schema across the five slices', () => {
+    it('should cover every field of the merged schema across the six slices', () => {
         const merged = Object.keys(AccommodationEditFormSchema.shape).sort();
         const fromSlices = [
             ...Object.keys(AccommodationBasicsSchema.shape),
             ...Object.keys(AccommodationCapacityPricingSchema.shape),
             ...Object.keys(AccommodationLocationSchema.shape),
             ...Object.keys(AccommodationServicesSchema.shape),
-            ...Object.keys(AccommodationContactSchema.shape)
+            ...Object.keys(AccommodationContactSchema.shape),
+            ...Object.keys(AccommodationSeoSchema.shape)
         ].sort();
 
         expect(fromSlices).toEqual(merged);
@@ -39,13 +41,14 @@ describe('slice composition', () => {
             ...Object.keys(AccommodationCapacityPricingSchema.shape),
             ...Object.keys(AccommodationLocationSchema.shape),
             ...Object.keys(AccommodationServicesSchema.shape),
-            ...Object.keys(AccommodationContactSchema.shape)
+            ...Object.keys(AccommodationContactSchema.shape),
+            ...Object.keys(AccommodationSeoSchema.shape)
         ];
 
         expect(new Set(fromSlices).size).toBe(fromSlices.length);
     });
 
-    it('should validate the exact field set the pre-split editor did', () => {
+    it('should validate the exact field set the pre-split editor did, plus the G7 smoke additions', () => {
         // Hand-written on purpose, and load-bearing: the "cover every field"
         // assertion above CANNOT catch a dropped field, because the merged
         // schema is itself composed from the slices — remove `summary` from a
@@ -53,6 +56,7 @@ describe('slice composition', () => {
         // Mutation-verified: this is the only assertion that fails.
         const expected = [
             'amenityIds',
+            'apartment',
             'basePrice',
             'bathrooms',
             'bedrooms',
@@ -62,13 +66,19 @@ describe('slice composition', () => {
             'email',
             'facebook',
             'featureIds',
+            'floor',
             'instagram',
             'latitude',
             'linkedin',
             'longitude',
             'maxGuests',
+            'minNights',
             'name',
+            'number',
             'phone',
+            'seoDescription',
+            'seoTitle',
+            'street',
             'summary',
             'tiktok',
             'twitter',
@@ -83,7 +93,7 @@ describe('slice composition', () => {
 
     it('should expose a slice for every form-owning section id', () => {
         expect(Object.keys(ACCOMMODATION_SECTION_SCHEMAS).sort()).toEqual(
-            ['amenities', 'basicInfo', 'capacityPricing', 'contact', 'location'].sort()
+            ['amenities', 'basicInfo', 'capacityPricing', 'contact', 'location', 'seo'].sort()
         );
     });
 });
@@ -137,6 +147,20 @@ describe('AccommodationCapacityPricingSchema', () => {
     it('should reject a fractional bedroom count', () => {
         expect(AccommodationCapacityPricingSchema.safeParse({ bedrooms: 2.5 }).success).toBe(false);
     });
+
+    it('should accept a valid minNights (G7 smoke, H-112)', () => {
+        expect(AccommodationCapacityPricingSchema.safeParse({ minNights: 3 }).success).toBe(true);
+    });
+
+    it('should reject minNights below 1', () => {
+        expect(AccommodationCapacityPricingSchema.safeParse({ minNights: 0 }).success).toBe(false);
+    });
+
+    it('should accept an explicit null minNights (host clearing the field)', () => {
+        const result = AccommodationCapacityPricingSchema.safeParse({ minNights: null });
+        expect(result.success).toBe(true);
+        if (result.success) expect(result.data.minNights).toBeNull();
+    });
 });
 
 describe('AccommodationLocationSchema', () => {
@@ -156,6 +180,41 @@ describe('AccommodationLocationSchema', () => {
         ['longitude', -181]
     ])('should reject %s out of range (%i)', (field, value) => {
         expect(AccommodationLocationSchema.safeParse({ [field]: value }).success).toBe(false);
+    });
+
+    it('should accept street/number/floor/apartment independently of coordinates (G7 smoke, H-117)', () => {
+        const result = AccommodationLocationSchema.safeParse({
+            street: 'Av. Belgrano',
+            number: '123',
+            floor: '4',
+            apartment: 'B'
+        });
+
+        expect(result.success).toBe(true);
+    });
+
+    it('should reject a street under the domain minimum (2 chars)', () => {
+        expect(AccommodationLocationSchema.safeParse({ street: 'A' }).success).toBe(false);
+    });
+});
+
+describe('AccommodationSeoSchema (G7 smoke, H-121)', () => {
+    it('should accept a valid seoTitle/seoDescription pair', () => {
+        const result = AccommodationSeoSchema.safeParse({
+            seoTitle: 'A'.repeat(30),
+            seoDescription: 'B'.repeat(70)
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('should reject a seoTitle under 30 chars', () => {
+        expect(AccommodationSeoSchema.safeParse({ seoTitle: 'too short' }).success).toBe(false);
+    });
+
+    it('should reject a seoDescription under 70 chars', () => {
+        expect(AccommodationSeoSchema.safeParse({ seoDescription: 'too short' }).success).toBe(
+            false
+        );
     });
 });
 

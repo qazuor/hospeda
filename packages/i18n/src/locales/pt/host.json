@@ -246,7 +246,9 @@
                 "featuredToggle": "Destacado",
                 "calendar": "Calendário",
                 "capacityPricing": "Capacidade e preço",
-                "contactSocial": "Contato e redes"
+                "contactSocial": "Contato e redes",
+                "seo": "Buscadores (Google)",
+                "seoDescription": "Escolha como sua propriedade aparece quando alguém a encontra no Google. Se deixar estes campos vazios, é usado o nome da sua propriedade."
             },
             "sectionNav": {
                 "ariaLabel": "Navegação de seções do formulário"
@@ -282,7 +284,17 @@
                 "twitter": "Twitter / X",
                 "linkedin": "LinkedIn",
                 "tiktok": "TikTok",
-                "youtube": "YouTube"
+                "youtube": "YouTube",
+                "minNights": "Mínimo de noites",
+                "minNightsHint": "A quantidade mínima de noites que um hóspede deve reservar. Aparece na página pública.",
+                "street": "Rua",
+                "number": "Número",
+                "floor": "Andar",
+                "apartment": "Apartamento",
+                "seoTitle": "Título para o Google",
+                "seoTitleHint": "O título em negrito exibido no resultado de busca. Por enquanto só se aplica em espanhol — em inglês e português ainda é exibido o nome da sua propriedade.",
+                "seoDescription": "Descrição para o Google",
+                "seoDescriptionHint": "O texto exibido abaixo do título no resultado de busca. Assim como o título, por enquanto só se aplica em espanhol."
             },
             "photo": {
                 "addToGallery": "Adicionar fotos à galeria",
@@ -328,6 +340,21 @@
                 "tooLarge": "O arquivo não pode exceder {{maxSize}}MB",
                 "uploadFailed": "Falha ao fazer upload da imagem",
                 "uploadingBatch": "Enviando foto {{current}} de {{total}}…"
+            },
+            "video": {
+                "sectionTitle": "Vídeos",
+                "sectionDescription": "Adicione links de vídeos do YouTube, Vimeo ou Dailymotion que mostrem sua propriedade.",
+                "urlLabel": "Link do vídeo",
+                "urlPlaceholder": "https://youtube.com/watch?v=...",
+                "captionLabel": "Título (opcional)",
+                "addButton": "Adicionar vídeo",
+                "removeAria": "Remover vídeo {{index}}",
+                "empty": "Você ainda não adicionou nenhum vídeo.",
+                "saveButton": "Salvar vídeos",
+                "saveSuccess": "Vídeos salvos",
+                "saveFailed": "Não foi possível salvar os vídeos",
+                "urlInvalid": "Insira uma URL de vídeo válida",
+                "captionInvalid": "O título deve ter entre 3 e 100 caracteres, ou deixe em branco"
             },
             "faq": {
                 "emptyState": "Ainda não há perguntas. Adicione a primeira.",
@@ -436,7 +463,8 @@
                 "geolocationUnavailable": "A geolocalização não está disponível neste navegador.",
                 "geolocationDenied": "Permissão negada. Você pode digitar o endereço manualmente.",
                 "geolocationError": "Não foi possível obter a localização. Tente digitar o endereço.",
-                "searching": "Buscando…"
+                "searching": "Buscando…",
+                "addressHint": "Endereço exato. Os turistas veem apenas uma localização aproximada no mapa público."
             },
             "translation": {
                 "sectionTitle": "Traduções",
