@@ -141,7 +141,7 @@ export type AccommodationSearchHttp = z.infer<typeof AccommodationSearchHttpSche
  * are stripped during domain conversion via the media normaliser.
  */
 const HttpImageSchema = z.object({
-    url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.media.image.url.invalid'),
     caption: z
         .string()
         .min(3, { message: 'zodError.common.media.image.caption.min' })
@@ -173,7 +173,7 @@ const HttpImageSchema = z.object({
  */
 /** Embedded video shape accepted from web clients. */
 const HttpVideoSchema = z.object({
-    url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.media.video.url.invalid'),
     caption: z.string().optional(),
     description: z.string().optional(),
     moderationState: z.string().optional()
@@ -564,6 +564,7 @@ export const httpToDomainAccommodationSearch = (
     // exist in domain schema but not in HTTP schema, so they're not mapped
 });
 
+import { mediaAssetUrl } from '../../common/media.schema.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';

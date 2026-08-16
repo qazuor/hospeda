@@ -206,3 +206,77 @@ describe('attachComposedPostMediaList', () => {
         expect(result[1]?.media?.gallery).toBeUndefined();
     });
 });
+
+/**
+ * Reproduces the exact production state of H-22 / H-23 and pins what the read
+ * path serves for it.
+ *
+ * The post `gualeguaychu-mas-alla-del-carnaval` carries five `post_media` rows
+ * whose `url` is a `blob:` handle — a browser object URL that resolves for
+ * nobody — and the same five URLs still sit in the legacy `media` JSONB blob,
+ * because the `0037` data-migration copied them across. All five rows are
+ * `PENDING`: the old admin gallery persisted a local preview instead of
+ * uploading, so `public_id` is empty and nothing ever approved them.
+ *
+ * The question this test answers is the one the finding could not separate by
+ * observation — both sources hold the same five URLs, so counting rendered
+ * images cannot tell you which one the page read. The relational composition
+ * ALWAYS wins (see the module docblock on why a fallback would resurrect
+ * deleted photos), so with the moderation gate in place the composed media is
+ * empty and the legacy blob does NOT come back to fill the gap.
+ *
+ * Consequence worth stating: deploying the gate stops production serving those
+ * broken images, without any change to the rows themselves.
+ */
+describe('H-22 / H-23 — a post whose only photos are unapproved blob rows', () => {
+    it('serves no gallery, and does not fall back to the legacy blob', async () => {
+        const blobRows = [0, 1, 2, 3, 4].map((i) =>
+            makeRow({
+                id: `00000000-0000-4000-a000-0000000000${10 + i}`,
+                url: `blob:https://admin.hospeda.com.ar/handle-${i}`,
+                sortOrder: i,
+                moderationState: ModerationStatusEnum.PENDING
+            })
+        );
+        const mediaModel = makeMediaModel(new Map([[POST_ID, blobRows]]));
+
+        const result = await attachComposedPostMedia({
+            entity: makePostWithBlob(),
+            mediaModel
+        });
+
+        // Exact comparison. Asserting "no blob: url is present" would also pass
+        // if the whole media object went missing for an unrelated reason.
+        expect(result?.media).toEqual({});
+        expect(JSON.stringify(result?.media)).not.toContain('blob:');
+    });
+
+    it('still serves the approved photos of a post that has both', async () => {
+        // The gate must remove the unapproved rows, not the gallery. Without
+        // this case the assertion above would be satisfied by a composer that
+        // simply returns nothing.
+        const rows = [
+            makeRow({
+                id: '00000000-0000-4000-a000-000000000020',
+                url: 'https://res.cloudinary.com/ok.jpg',
+                sortOrder: 0
+            }),
+            makeRow({
+                id: '00000000-0000-4000-a000-000000000021',
+                url: 'blob:https://admin.hospeda.com.ar/handle-x',
+                sortOrder: 1,
+                moderationState: ModerationStatusEnum.PENDING
+            })
+        ];
+        const mediaModel = makeMediaModel(new Map([[POST_ID, rows]]));
+
+        const result = await attachComposedPostMedia({
+            entity: makePostWithBlob(),
+            mediaModel
+        });
+
+        expect(result?.media?.gallery?.map((i) => i.url)).toEqual([
+            'https://res.cloudinary.com/ok.jpg'
+        ]);
+    });
+});

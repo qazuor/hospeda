@@ -98,13 +98,28 @@ export const FaqChannelVisibilityFields = {
 export type FaqChannelVisibilityFieldsType = typeof FaqChannelVisibilityFields;
 
 /**
- * FAQ creation payload schema: only the core FAQ fields without audit/lifecycle fields
+ * FAQ creation payload schema: only the core FAQ fields without audit/lifecycle fields.
+ *
+ * `.strict()` is load-bearing here, not hygiene (H-119 / H-59). Zod objects
+ * strip unknown keys by default, so before this the two channel-visibility
+ * flags — which are NOT in this pick — were dropped from the request body
+ * before any handler saw them, and the call still answered `200`. The user was
+ * told their FAQ had saved as private while the row was written public.
+ *
+ * A silent discard WITH an acknowledgement of success is worse than a field
+ * that fails to persist: nothing anywhere reports that the intent was lost.
+ * Strict turns that into a `400` naming the offending key, which is the only
+ * outcome a caller can act on.
+ *
+ * Entities whose FAQ table DOES carry the flags use
+ * {@link FaqWithChannelVisibilityCreatePayloadSchema} instead — `.extend()`
+ * preserves strictness, so those routes accept the flags and nothing else.
  */
 export const FaqCreatePayloadSchema = BaseFaqSchema.pick({
     question: true,
     answer: true,
     category: true
-});
+}).strict();
 export type FaqCreatePayloadType = z.infer<typeof FaqCreatePayloadSchema>;
 
 /**

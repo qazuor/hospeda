@@ -2,6 +2,41 @@ import { z } from 'zod';
 import { ModerationStatusEnumSchema } from '../enums/index.js';
 
 /**
+ * The protocols an entity media asset URL may use.
+ *
+ * A stored media URL is a location the SERVER and every visitor's browser must
+ * be able to fetch. That rules out every scheme except `http` and `https`.
+ */
+const MEDIA_ASSET_PROTOCOL = /^https?$/;
+
+/**
+ * Validator for a persisted media asset URL (H-22).
+ *
+ * `z.string().url()` — what every media schema used before — accepts far more
+ * than a fetchable address: `blob:`, `data:` and `javascript:` all pass it.
+ * That is not academic. Nine rows reached production carrying
+ * `blob:https://admin.hospeda.com.ar/<uuid>`, a browser object URL that exists
+ * only inside the tab that created it and resolves for nobody. A real post and
+ * a real event served those as `<img src>` to every visitor until the rows were
+ * cleaned on 2026-08-15.
+ *
+ * The write contract has to be what stops that, not the form: the form was
+ * behaving correctly and the bad rows still landed, from an older client. Any
+ * client — old, new, or a direct API call — must be unable to persist a URL
+ * that is not an asset somebody can actually fetch.
+ *
+ * Uses Zod's native `protocol` option rather than a `.refine()` so the field
+ * stays a plain `ZodString` and never becomes a `ZodEffects`, which would
+ * interfere with `.pick()` / `.omit()` / `.partial()` on the schemas that
+ * embed it.
+ *
+ * @param message - i18n key for the validation error.
+ * @returns A Zod schema accepting only `http` / `https` URLs.
+ */
+export const mediaAssetUrl = (message: string) =>
+    z.url({ protocol: MEDIA_ASSET_PROTOCOL, message });
+
+/**
  * Optional attribution metadata for images sourced from third parties
  * (stock photo services, contributed photography, licensed archives).
  *
@@ -39,7 +74,7 @@ export type ImageAttribution = z.infer<typeof ImageAttributionSchema>;
 
 export const ImageSchema = z.object({
     moderationState: ModerationStatusEnumSchema,
-    url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.media.image.url.invalid'),
     caption: z
         .string({
             message: 'zodError.common.media.image.caption.required'
@@ -83,7 +118,7 @@ export type Image = z.infer<typeof ImageSchema>;
 
 export const VideoSchema = z.object({
     moderationState: ModerationStatusEnumSchema,
-    url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.media.video.url.invalid'),
     caption: z
         .string({
             message: 'zodError.common.media.video.caption.required'
@@ -140,7 +175,7 @@ export type Media = z.infer<typeof MediaSchema>;
 export const BaseMediaObjectSchema = z.object({
     featuredImage: z
         .object({
-            url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+            url: mediaAssetUrl('zodError.common.media.image.url.invalid'),
             caption: z
                 .string()
                 .min(3, { message: 'zodError.common.media.image.caption.min' })
@@ -168,7 +203,7 @@ export const BaseMediaObjectSchema = z.object({
     gallery: z
         .array(
             z.object({
-                url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+                url: mediaAssetUrl('zodError.common.media.image.url.invalid'),
                 caption: z
                     .string()
                     .min(3, { message: 'zodError.common.media.image.caption.min' })
@@ -192,7 +227,7 @@ export const BaseMediaObjectSchema = z.object({
     videos: z
         .array(
             z.object({
-                url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
+                url: mediaAssetUrl('zodError.common.media.video.url.invalid'),
                 caption: z
                     .string()
                     .min(3, { message: 'zodError.common.media.video.caption.min' })
@@ -267,7 +302,7 @@ export const AccommodationEntityMediaFields = {
         archivedGallery: z
             .array(
                 z.object({
-                    url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+                    url: mediaAssetUrl('zodError.common.media.image.url.invalid'),
                     caption: z
                         .string()
                         .min(3, { message: 'zodError.common.media.image.caption.min' })
