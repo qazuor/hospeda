@@ -113,6 +113,9 @@
             },
             "state": {
                 "invalid": "Media state must be 'visible' or 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "You must fill in at least one field: caption, description, alt text or attribution"
             }
         },
         "name": {
