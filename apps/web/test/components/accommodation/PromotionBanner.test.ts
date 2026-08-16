@@ -38,10 +38,16 @@ describe('PromotionBanner.astro — imports', () => {
         expect(componentSrc).toContain('OwnerPromotionPublicItem');
     });
 
-    it('imports formatDate and formatPrice from format-utils', () => {
+    it('imports formatPrice from format-utils and the calendar-date helper from @repo/utils', () => {
         expect(componentSrc).toContain("from '@/lib/format-utils'");
-        expect(componentSrc).toContain('formatDate');
         expect(componentSrc).toContain('formatPrice');
+
+        // `validUntil` names a DAY, so it must NOT go through the generic
+        // `formatDate`: that renders in the viewer's own timezone and dated
+        // every promotion one day early for anyone west of UTC. See the
+        // validity-rendering test below.
+        expect(componentSrc).toContain("from '@repo/utils'");
+        expect(componentSrc).toContain('formatCalendarDate');
     });
 
     it('imports createTranslations for i18n', () => {
@@ -102,11 +108,24 @@ describe('PromotionBanner.astro — validity rendering', () => {
         expect(componentSrc).toContain('accommodations.detail.promotions.sectionTitle');
     });
 
-    it('renders validUntil label when validUntil is set', () => {
+    it('renders validUntil through the calendar-date helper, not the generic formatter', () => {
         expect(componentSrc).toContain('accommodations.detail.promotions.validUntil');
         expect(componentSrc).toContain('promo.validUntil');
-        // Must use formatDate to produce a locale-aware date string
-        expect(componentSrc).toContain('formatDate');
+
+        // Regression — smoke agosto 2026 (H-09 / H-63 / H-73 / H-84).
+        //
+        // `validUntil` names a calendar DAY: the host picks it from a bare date
+        // control, so it is stored pinned to midnight UTC. The generic
+        // `formatDate` renders in the viewer's own timezone, which at UTC-3
+        // lands at 21:00 the previous day — a promotion valid through the 1st
+        // advertised as the 31st, on the tourist-facing detail page.
+        //
+        // Asserted as an ABSENCE plus a presence on purpose: the host-facing
+        // twin (`PromotionList.client.tsx`) had already been fixed while this
+        // one was still wrong, so "renders a date somehow" is exactly the
+        // assertion that let the bug live.
+        expect(componentSrc).toContain('formatCalendarDate');
+        expect(componentSrc).not.toMatch(/\bformatDate\s*\(/);
     });
 
     it('renders minNights label when minNights is set', () => {
