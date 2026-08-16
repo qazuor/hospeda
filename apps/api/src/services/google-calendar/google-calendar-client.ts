@@ -62,6 +62,30 @@ export interface GoogleCalendarEvent {
     readonly start?: GoogleCalendarEventDate;
     /** Event end marker (absent on some cancelled events in incremental results). */
     readonly end?: GoogleCalendarEventDate;
+    /**
+     * Google's own classification of the entry.
+     *
+     * `'default'` is an ordinary calendar event. The other values are entries
+     * Google synthesises on the primary calendar that nobody ever "booked":
+     * `'birthday'` (contact birthdays and anniversaries, recurring yearly and
+     * effectively forever), `'workingLocation'`, `'focusTime'`, `'outOfOffice'`,
+     * `'fromGmail'`.
+     *
+     * Absent on older responses, in which case the entry is treated as
+     * `'default'`.
+     *
+     * @see https://developers.google.com/workspace/calendar/api/v3/reference/events
+     */
+    readonly eventType?: string;
+    /**
+     * Whether the event blocks time on the calendar: `'opaque'` (busy — the
+     * default) or `'transparent'` (free).
+     *
+     * Google marks birthdays and most informational all-day entries
+     * `'transparent'`. An entry the owner does not consider to occupy their own
+     * time cannot sensibly occupy their accommodation either.
+     */
+    readonly transparency?: string;
 }
 
 /**
@@ -88,6 +112,15 @@ export interface ListEventsInput {
     readonly syncToken?: string;
     /** Full-sync lower bound (RFC3339). Only used when `syncToken` is absent. */
     readonly timeMin?: string;
+    /**
+     * Full-sync UPPER bound (RFC3339). Only used when `syncToken` is absent.
+     *
+     * Without it, `singleEvents=true` makes Google expand every yearly
+     * recurrence to the end of its rule — which for a contact birthday is
+     * decades. Bounding the window is what keeps a sync from writing occupancy
+     * rows into 2056 (H-131).
+     */
+    readonly timeMax?: string;
     /** Pagination cursor from a prior page's `nextPageToken`. */
     readonly pageToken?: string;
     /** Page size (default {@link DEFAULT_MAX_RESULTS}). */
@@ -193,12 +226,19 @@ const buildQuery = (input: ListEventsInput): URLSearchParams => {
         singleEvents: 'true',
         maxResults: String(input.maxResults ?? DEFAULT_MAX_RESULTS)
     });
-    if (input.syncToken !== undefined) {
+    if (input.syncToken === undefined) {
+        // Full sync: bound the window on BOTH sides. `timeMin` keeps past events
+        // out; `timeMax` keeps `singleEvents=true` from expanding a yearly
+        // recurrence for the lifetime of its rule (H-131).
+        if (input.timeMin !== undefined) {
+            query.set('timeMin', input.timeMin);
+        }
+        if (input.timeMax !== undefined) {
+            query.set('timeMax', input.timeMax);
+        }
+    } else {
         // Incremental: syncToken is incompatible with timeMin/showDeleted=false.
         query.set('syncToken', input.syncToken);
-    } else if (input.timeMin !== undefined) {
-        // Full sync: bound the window so past events are not re-imported.
-        query.set('timeMin', input.timeMin);
     }
     if (input.pageToken !== undefined) {
         query.set('pageToken', input.pageToken);
