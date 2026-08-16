@@ -1,0 +1,24 @@
+-- H-136 (smoke agosto 2026): declare the `unaccent` extension that `safeIlike()`
+-- depends on.
+--
+-- WHY THIS FILE EXISTS
+-- Production already had `unaccent` installed (public schema, v1.1, verified
+-- 2026-08-15), but it was created by hand: no migration in this repository
+-- declared it. That made it an invisible dependency — a freshly provisioned
+-- database, a new staging environment or a developer's local DB would come up
+-- WITHOUT it, and every text search would fail at runtime with
+-- "function unaccent(text) does not exist" instead of at deploy time.
+--
+-- `safeIlike()` (packages/db/src/utils/drizzle-helpers.ts) now emits
+-- `unaccent(col::text) ILIKE unaccent($1::text)` so accents no longer decide
+-- whether a search finds a row. That made the implicit dependency load-bearing,
+-- so it is written down here.
+--
+-- Idempotent: `IF NOT EXISTS` makes this a no-op wherever the extension is
+-- already present, including production.
+-- Re-applied by `pnpm db:apply-extras` (see root CLAUDE.md "Three migration carriles").
+--
+-- NOTE: this belongs to the extras carril, not to a Drizzle migration, because
+-- an extension is exactly the kind of database object Drizzle does not model.
+
+CREATE EXTENSION IF NOT EXISTS unaccent;
