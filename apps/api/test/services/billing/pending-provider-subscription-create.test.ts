@@ -201,6 +201,36 @@ describe('createPendingProviderSubscription', () => {
         expect(updateSetMock).toHaveBeenCalledWith({ productDomain: 'commerce' });
     });
 
+    it('stamps domainMetadata into the subscription metadata (the subscription → entity path)', async () => {
+        // Path C creates one subscription per checkout CLICK while the domain
+        // link row is UPSERTED per ENTITY, so the entity → subscription link is
+        // destroyed by the second click. The only way a reconciler can recover
+        // the orphaned first subscription is the INVERSE path: coordinates
+        // carried on the subscription itself.
+        await createPendingProviderSubscription({
+            ...BASE_INPUT,
+            productDomain: 'commerce',
+            domainMetadata: { commerceEntityType: 'gastronomy', commerceEntityId: 'entity-1' }
+        });
+
+        const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        const metadata = inserted.metadata as Record<string, unknown>;
+        expect(metadata.commerceEntityType).toBe('gastronomy');
+        expect(metadata.commerceEntityId).toBe('entity-1');
+        // The pre-existing traceability fields are not clobbered by the merge.
+        expect(metadata.source).toBe('start-paid-share-link');
+        expect(metadata.mpPreapprovalPlanId).toBe('mp-plan-1');
+    });
+
+    it('leaves metadata free of domain coordinates when none are supplied', async () => {
+        await createPendingProviderSubscription(BASE_INPUT);
+
+        const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        const metadata = inserted.metadata as Record<string, unknown>;
+        expect(metadata).not.toHaveProperty('commerceEntityId');
+        expect(metadata).not.toHaveProperty('partnerId');
+    });
+
     it('stamps trialGranted=true into metadata when the checkout granted a trial', async () => {
         await createPendingProviderSubscription({ ...BASE_INPUT, trialGranted: true });
 

@@ -1,6 +1,14 @@
 import { and, eq, getDb, isNull, partnerSubscriptions, partners } from '@repo/db';
-import { LifecycleStatusEnum, PartnerSubscriptionStatusEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    PartnerSubscriptionStatusEnum,
+    ProductDomainEnum
+} from '@repo/schemas';
 import { apiLogger } from '../utils/logger.js';
+import {
+    isPublishingSubscriptionStatus,
+    readSubscriptionDomainMetadata
+} from './billing/subscription-domain-metadata.js';
 
 function mapBillingStatusToPartnerState(status: string): {
     subscriptionStatus: PartnerSubscriptionStatusEnum;
@@ -33,6 +41,106 @@ function mapBillingStatusToPartnerState(status: string): {
     }
 }
 
+/**
+ * Recover the partner of a subscription no link row points at, using the
+ * coordinates the checkout stamped on the subscription itself.
+ *
+ * `partner_subscriptions` is UNIQUE on `partner_id` and UPSERTED, while Path C
+ * creates one `pending_provider` subscription per checkout CLICK — so an admin
+ * re-sending the payment link (or the buyer opening it twice) re-points the row
+ * and orphans the earlier subscription, whose MercadoPago share link stays
+ * valid. Paying through that earlier link used to leave the partner PENDING
+ * forever while being charged.
+ *
+ * The status guard and the incumbent guard mirror the commerce reconciler's —
+ * see `recoverCommerceLinkFromSubscriptionMetadata` for the full reasoning:
+ * only a paying status may claim the row, and it is never taken from another
+ * subscription that is itself already paying.
+ *
+ * @param input.subscriptionId - Subscription whose link row is missing.
+ * @param input.subscriptionStatus - Status being reconciled.
+ * @param input.source - Caller label for log diagnostics.
+ * @returns The recovered link (single element), or an empty array.
+ */
+async function recoverPartnerLinkFromSubscriptionMetadata(input: {
+    subscriptionId: string;
+    subscriptionStatus: string;
+    source: string;
+}): Promise<readonly { partnerId: string }[]> {
+    const { subscriptionId, subscriptionStatus, source } = input;
+
+    if (!isPublishingSubscriptionStatus(subscriptionStatus)) {
+        return [];
+    }
+
+    const coordinates = await readSubscriptionDomainMetadata({ subscriptionId });
+    const partnerId = coordinates?.partnerId;
+    if (!partnerId) {
+        return [];
+    }
+
+    const db = getDb();
+    const [incumbent] = await db
+        .select({
+            subscriptionId: partnerSubscriptions.subscriptionId,
+            status: partnerSubscriptions.status
+        })
+        .from(partnerSubscriptions)
+        .where(eq(partnerSubscriptions.partnerId, partnerId))
+        .limit(1);
+
+    if (incumbent && isPublishingSubscriptionStatus(incumbent.status)) {
+        apiLogger.error(
+            {
+                subscriptionId,
+                incumbentSubscriptionId: incumbent.subscriptionId,
+                partnerId,
+                subscriptionStatus,
+                source
+            },
+            'Two paying subscriptions for the same partner — leaving the link row on the incumbent; one of the two charges must be refunded/cancelled by hand'
+        );
+        return [];
+    }
+
+    await db
+        .insert(partnerSubscriptions)
+        .values({
+            subscriptionId,
+            productDomain: ProductDomainEnum.PARTNER,
+            partnerId,
+            status: subscriptionStatus
+        })
+        .onConflictDoUpdate({
+            target: partnerSubscriptions.partnerId,
+            set: { subscriptionId, status: subscriptionStatus, updatedAt: new Date() }
+        });
+
+    apiLogger.warn(
+        {
+            subscriptionId,
+            supersededSubscriptionId: incumbent?.subscriptionId ?? null,
+            partnerId,
+            subscriptionStatus,
+            source
+        },
+        'Recovered a paid partner subscription no link row pointed at (superseded by a later checkout click) — link row re-pointed'
+    );
+
+    return [{ partnerId }];
+}
+
+/**
+ * Mirror a billing subscription's status onto every partner linked to it
+ * (status, lifecycle state, and the `startsAt` seal — HOS-409).
+ *
+ * Non-throwing by contract: runs from the MercadoPago webhook handler and the
+ * billing crons, none of which may break because of a partner-side reconcile.
+ *
+ * @param input.subscriptionId - The billing subscription whose status changed.
+ * @param input.subscriptionStatus - The new status to mirror.
+ * @param input.source - Caller label for log diagnostics (e.g. `'mp-webhook'`).
+ */
 export async function reconcilePartnerForSubscription(input: {
     subscriptionId: string;
     subscriptionStatus: string;
@@ -42,19 +150,33 @@ export async function reconcilePartnerForSubscription(input: {
 
     try {
         const db = getDb();
-        const links = await db
+        const linkedRows = await db
             .select({ partnerId: partnerSubscriptions.partnerId })
             .from(partnerSubscriptions)
             .where(eq(partnerSubscriptions.subscriptionId, subscriptionId));
+
+        // No link row means either a non-partner subscription (the common path)
+        // or a partner subscription orphaned by a later checkout click.
+        const links: readonly { partnerId: string }[] =
+            linkedRows.length > 0
+                ? linkedRows
+                : await recoverPartnerLinkFromSubscriptionMetadata({
+                      subscriptionId,
+                      subscriptionStatus,
+                      source
+                  });
 
         if (links.length === 0) {
             return;
         }
 
-        await db
-            .update(partnerSubscriptions)
-            .set({ status: subscriptionStatus, updatedAt: new Date() })
-            .where(eq(partnerSubscriptions.subscriptionId, subscriptionId));
+        if (linkedRows.length > 0) {
+            // Skipped on the recovery path, whose upsert already wrote it.
+            await db
+                .update(partnerSubscriptions)
+                .set({ status: subscriptionStatus, updatedAt: new Date() })
+                .where(eq(partnerSubscriptions.subscriptionId, subscriptionId));
+        }
 
         const mapped = mapBillingStatusToPartnerState(subscriptionStatus);
 

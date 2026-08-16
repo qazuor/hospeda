@@ -735,6 +735,12 @@ export async function initiateCommerceMonthlySubscription(
         // this is what keeps a commerce subscription from granting its owner the
         // accommodation entitlement set.
         productDomain: ProductDomainEnum.COMMERCE,
+        // The SUBSCRIPTION → ENTITY path. The link row below only encodes the
+        // inverse and is upserted per entity, so a second checkout click
+        // overwrites the pointer to this subscription; if the buyer then
+        // completes THIS (still valid) share link, only these coordinates let
+        // `reconcileCommerceListingForSubscription` find the listing to publish.
+        domainMetadata: { commerceEntityType: entityType, commerceEntityId: entityId },
         // D4: upsert the link row (one per entity) in the SAME transaction. On the
         // UNIQUE(entity_type, entity_id) conflict, update subscriptionId + status
         // so re-subscribing an entity reuses the same link row.
@@ -892,6 +898,10 @@ export async function initiatePartnerMonthlySubscription(
         // address would veto every webhook link instead of corroborating one.
         trialGranted: false,
         productDomain: ProductDomainEnum.PARTNER,
+        // The SUBSCRIPTION → PARTNER path — see the commerce checkout above for
+        // why the upserted link row alone cannot survive a second checkout
+        // click. An admin re-sending the payment link is exactly that case.
+        domainMetadata: { partnerId },
         // Link row upserted in the SAME transaction (one row per partner, on the
         // UNIQUE(partner_id) conflict).
         writeDomainLinkRow: async ({ tx, localSubscriptionId: subscriptionId }) => {

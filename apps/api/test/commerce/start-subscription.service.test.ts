@@ -275,6 +275,23 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
         expect(conflictArg.set.status).toBe(SubscriptionStatusEnum.PENDING_PROVIDER);
     });
 
+    it('stamps the entity coordinates on the subscription itself (subscription → entity path)', async () => {
+        // The link row is upserted per ENTITY, so a second checkout click
+        // destroys the only pointer to the first subscription. These metadata
+        // coordinates are the inverse path the reconciler uses to recover an
+        // orphaned-but-paid subscription — without them a double click can
+        // leave a listing unpublished with a live charge.
+        const { billing } = createBillingMock();
+
+        await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+
+        const arg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(arg.domainMetadata).toEqual({
+            commerceEntityType: 'gastronomy',
+            commerceEntityId: ENTITY_ID
+        });
+    });
+
     it('provisions the MP plan with the buyer-visible display name, not the raw slug', async () => {
         const { billing } = createBillingMock();
 

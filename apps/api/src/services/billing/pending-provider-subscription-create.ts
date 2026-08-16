@@ -167,6 +167,27 @@ export interface CreatePendingProviderSubscriptionInput {
     /** Product domain to stamp on the subscription. Defaults to `'accommodation'`. */
     readonly productDomain?: string;
     /**
+     * Domain coordinates merged into the subscription's `metadata` — the
+     * SUBSCRIPTION → ENTITY path (`{ commerceEntityType, commerceEntityId }`
+     * for commerce, `{ partnerId }` for partner).
+     *
+     * It exists because the domain link rows only encode the INVERSE direction
+     * and cannot be trusted to survive: `commerce_listing_subscriptions` is
+     * UNIQUE on `(entity_type, entity_id)` and `partner_subscriptions` on
+     * `partner_id`, and both are UPSERTED. Path C creates one subscription per
+     * checkout CLICK, so a second click overwrites the only pointer to the
+     * first subscription — and if the buyer then completes the FIRST share link
+     * (still valid), the activating webhook finds no link row and the listing
+     * stays unpublished with a live charge against it. These coordinates are
+     * what lets the reconcilers recover that subscription
+     * (`recoverCommerceLinkFromSubscriptionMetadata` /
+     * `recoverPartnerLinkFromSubscriptionMetadata`).
+     *
+     * Stored on `metadata` (JSONB) deliberately: no schema migration, and the
+     * value is immutable checkout-time context, not mutable state.
+     */
+    readonly domainMetadata?: Readonly<Record<string, string>>;
+    /**
      * Optional domain-specific write executed INSIDE the same transaction as the
      * subscription row and the correlation row.
      *
@@ -246,6 +267,7 @@ export async function createPendingProviderSubscription(
         pendingDiscount,
         pendingTrialExtension,
         writeDomainLinkRow,
+        domainMetadata,
         livemode
     } = input;
     const productDomain = input.productDomain ?? ProductDomainEnum.ACCOMMODATION;
@@ -301,7 +323,11 @@ export async function createPendingProviderSubscription(
                 intendedInterval: billingInterval,
                 priceId,
                 mpPreapprovalPlanId,
-                trialGranted: String(trialGranted)
+                trialGranted: String(trialGranted),
+                // Spread LAST so the domain coordinates are unmistakably part of
+                // the same immutable checkout snapshot; absent entirely when the
+                // caller has no domain entity (the accommodation path).
+                ...(domainMetadata ?? {})
             }
         });
 

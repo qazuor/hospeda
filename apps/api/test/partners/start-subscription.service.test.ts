@@ -267,6 +267,19 @@ describe('initiatePartnerMonthlySubscription (HOS-191 Path C)', () => {
         expect(conflictArg.set.status).toBe(SubscriptionStatusEnum.PENDING_PROVIDER);
     });
 
+    it('stamps the partner id on the subscription itself (subscription → partner path)', async () => {
+        // `partner_subscriptions` is UNIQUE on `partner_id` and upserted, so a
+        // second checkout click destroys the only pointer to the first
+        // subscription. This metadata is the inverse path the reconciler uses
+        // to recover an orphaned-but-paid partner subscription.
+        const { billing } = createBillingMock();
+
+        await initiatePartnerMonthlySubscription({ ...BASE_INPUT, billing });
+
+        const arg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(arg.domainMetadata).toEqual({ partnerId: PARTNER_ID });
+    });
+
     it('provisions the MP plan with the buyer-visible display name, not the raw slug', async () => {
         const { billing } = createBillingMock();
 

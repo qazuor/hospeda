@@ -21,6 +21,7 @@
 
 import type { DrizzleClient } from '@repo/db';
 import {
+    and,
     commerceListingSubscriptions,
     eq,
     experienceModel,
@@ -28,13 +29,17 @@ import {
     getDb
 } from '@repo/db';
 import type { CommerceEntityType } from '@repo/schemas';
-import { resolveListingCompleteness } from '@repo/schemas';
+import { ProductDomainEnum, resolveListingCompleteness } from '@repo/schemas';
 import {
     type CommerceEntityModel,
     type ResolveCommerceListingCompleteness,
     reconcileCommerceListingVisibility
 } from '@repo/service-core';
 import { apiLogger } from '../utils/logger.js';
+import {
+    isPublishingSubscriptionStatus,
+    readSubscriptionDomainMetadata
+} from './billing/subscription-domain-metadata.js';
 import { loadCommerceListingMedia } from './commerce-listing-media.js';
 
 /**
@@ -143,6 +148,121 @@ function bindCompletenessResolver(entityType: string): ResolveCommerceListingCom
 }
 
 /**
+ * A commerce listing this subscription is responsible for.
+ */
+interface CommerceLink {
+    readonly entityType: string;
+    readonly entityId: string;
+}
+
+/**
+ * Recover the listing of a subscription that no link row points at, using the
+ * coordinates the checkout stamped on the subscription itself.
+ *
+ * Path C creates one subscription per checkout CLICK while
+ * `commerce_listing_subscriptions` is UPSERTED per ENTITY, so a second click
+ * re-points the row and orphans the first subscription — whose share link stays
+ * valid on MercadoPago. Completing that first link used to end the reconcile in
+ * an early return: an unpublished listing with a live charge.
+ *
+ * Two guards keep the recovery from being worse than the bug:
+ *
+ * 1. **Only a publishing status may claim a row.** The mirror case of the bug is
+ *    the buyer completing the LAST checkout: the earlier subscriptions are then
+ *    reaped as `cancelled`, and a status-blind recovery would steal the row back
+ *    and unpublish a listing that is being paid for.
+ * 2. **Never take the row from another already-paying subscription.** Two
+ *    completed checkouts mean two live charges for one listing; the listing is
+ *    already public under the incumbent, so the recovery leaves it alone and
+ *    logs loudly instead of silently swapping which charge "owns" it.
+ *
+ * @param input.subscriptionId - Subscription whose link row is missing.
+ * @param input.subscriptionStatus - Status being reconciled.
+ * @param input.source - Caller label for log diagnostics.
+ * @returns The recovered link (single element), or an empty array when there is
+ *   nothing to recover.
+ */
+async function recoverCommerceLinkFromSubscriptionMetadata(input: {
+    subscriptionId: string;
+    subscriptionStatus: string;
+    source: string;
+}): Promise<readonly CommerceLink[]> {
+    const { subscriptionId, subscriptionStatus, source } = input;
+
+    if (!isPublishingSubscriptionStatus(subscriptionStatus)) {
+        return [];
+    }
+
+    const coordinates = await readSubscriptionDomainMetadata({ subscriptionId });
+    const entityType = coordinates?.commerceEntityType;
+    const entityId = coordinates?.commerceEntityId;
+    if (!entityType || !entityId) {
+        return [];
+    }
+
+    const db = getDb();
+    const [incumbent] = await db
+        .select({
+            subscriptionId: commerceListingSubscriptions.subscriptionId,
+            status: commerceListingSubscriptions.status
+        })
+        .from(commerceListingSubscriptions)
+        .where(
+            and(
+                eq(commerceListingSubscriptions.entityType, entityType),
+                eq(commerceListingSubscriptions.entityId, entityId)
+            )
+        )
+        .limit(1);
+
+    if (incumbent && isPublishingSubscriptionStatus(incumbent.status)) {
+        apiLogger.error(
+            {
+                subscriptionId,
+                incumbentSubscriptionId: incumbent.subscriptionId,
+                entityType,
+                entityId,
+                subscriptionStatus,
+                source
+            },
+            'Two paying subscriptions for the same commerce listing — leaving the link row on the incumbent; one of the two charges must be refunded/cancelled by hand'
+        );
+        return [];
+    }
+
+    await db
+        .insert(commerceListingSubscriptions)
+        .values({
+            subscriptionId,
+            productDomain: ProductDomainEnum.COMMERCE,
+            entityType,
+            entityId,
+            status: subscriptionStatus
+        })
+        .onConflictDoUpdate({
+            target: [
+                commerceListingSubscriptions.entityType,
+                commerceListingSubscriptions.entityId
+            ],
+            set: { subscriptionId, status: subscriptionStatus, updatedAt: new Date() }
+        });
+
+    apiLogger.warn(
+        {
+            subscriptionId,
+            supersededSubscriptionId: incumbent?.subscriptionId ?? null,
+            entityType,
+            entityId,
+            subscriptionStatus,
+            source
+        },
+        'Recovered a paid commerce subscription no link row pointed at (superseded by a later checkout click) — link row re-pointed'
+    );
+
+    return [{ entityType, entityId }];
+}
+
+/**
  * Reconcile the visibility of every commerce listing linked to a billing
  * subscription, mapping the new subscription status onto the reconciler.
  *
@@ -164,7 +284,7 @@ export async function reconcileCommerceListingForSubscription(input: {
 
     try {
         const db = getDb();
-        const links = await db
+        const linkedRows = await db
             .select({
                 entityType: commerceListingSubscriptions.entityType,
                 entityId: commerceListingSubscriptions.entityId
@@ -172,17 +292,32 @@ export async function reconcileCommerceListingForSubscription(input: {
             .from(commerceListingSubscriptions)
             .where(eq(commerceListingSubscriptions.subscriptionId, subscriptionId));
 
+        // No link row can mean two very different things: an accommodation
+        // subscription (the overwhelmingly common path, nothing to do) or a
+        // commerce subscription orphaned by a later checkout click, which the
+        // recovery below resolves from the subscription's own metadata.
+        const links: readonly CommerceLink[] =
+            linkedRows.length > 0
+                ? linkedRows
+                : await recoverCommerceLinkFromSubscriptionMetadata({
+                      subscriptionId,
+                      subscriptionStatus,
+                      source
+                  });
+
         if (links.length === 0) {
-            // Not a commerce subscription — the overwhelmingly common path.
             return;
         }
 
-        // Keep the denormalized link-row status in sync so fast public reads and
-        // the reconciler agree on the current status.
-        await db
-            .update(commerceListingSubscriptions)
-            .set({ status: subscriptionStatus, updatedAt: new Date() })
-            .where(eq(commerceListingSubscriptions.subscriptionId, subscriptionId));
+        if (linkedRows.length > 0) {
+            // Keep the denormalized link-row status in sync so fast public reads
+            // and the reconciler agree on the current status. Skipped on the
+            // recovery path, whose upsert already wrote the same status.
+            await db
+                .update(commerceListingSubscriptions)
+                .set({ status: subscriptionStatus, updatedAt: new Date() })
+                .where(eq(commerceListingSubscriptions.subscriptionId, subscriptionId));
+        }
 
         for (const link of links) {
             try {

@@ -205,6 +205,14 @@
             "cta": "Verificar estado",
             "pageTitle": "Pago en proceso"
         },
+        "partnerPending": {
+            "pageTitle": "Pago recibido",
+            "title": "Recibimos tu pago",
+            "body": "Estamos confirmando la operación con MercadoPago. Puede demorar unos minutos, y en algunos casos hasta 24 horas. Cuando el pago se acredite, tu presencia en Hospeda se activa sola: no tenés que hacer nada más.",
+            "note": "Guardá el comprobante que te envió MercadoPago. Si algo no queda claro, escribinos y lo revisamos con vos.",
+            "homeCta": "Ir al inicio",
+            "contactCta": "Escribinos"
+        },
         "failure": {
             "title": "El pago no pudo procesarse",
             "genericMessage": "No pudimos procesar tu pago. Revisá los datos e intentá de nuevo.",
