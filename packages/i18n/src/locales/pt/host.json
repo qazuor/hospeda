@@ -310,6 +310,7 @@
                 "formats": "JPG, PNG ou WebP — máx. {{maxSize}}MB",
                 "gallery": "Galeria de fotos",
                 "galleryAlt": "Foto {{index}}",
+                "galleryCapExceededOnSelect": "Você escolheu {{selected}} fotos, mas restam apenas {{remaining}} espaços livres (máx. {{cap}} no total)",
                 "galleryCapLabel": "Galeria cheia",
                 "galleryCapReached": "Limite da galeria atingido (máx. {{cap}} fotos)",
                 "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
