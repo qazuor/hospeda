@@ -191,13 +191,14 @@
             "amountDetails": "Amount: {{amount}}",
             "verifyingStatus": "Verifying payment status...",
             "verifyingSubtitle": "We are confirming your payment. This may take a moment.",
-            "timeoutTitle": "This is taking longer than usual",
-            "timeoutSubtitle": "Your payment may still be processing. Check your account in a few minutes to confirm your subscription.",
             "cta": "Go to my account",
             "pageTitle": "Payment approved",
             "promoIgnoredNote": "Your code was not applied: it extends a free trial, and this subscription does not have one.",
             "linkErrorTitle": "We couldn't link your payment",
-            "linkErrorSubtitle": "There was a problem linking this payment to your account. If you already paid, contact support with the MercadoPago operation number."
+            "linkErrorSubtitle": "There was a problem linking this payment to your account. If you already paid, contact support with the MercadoPago operation number.",
+            "unresolvedTitle": "We're still confirming your payment",
+            "unresolvedSubtitle": "Your payment was not lost. MercadoPago can take a few minutes to confirm it, and your plan activates automatically as soon as it does. You can close this page: check the status in My Account, or write to us if you still cannot see it in a while.",
+            "unresolvedSupportCta": "Contact us"
         },
         "pending": {
             "title": "Your payment is being processed",

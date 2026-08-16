@@ -191,13 +191,14 @@
             "amountDetails": "Monto: {{amount}}",
             "verifyingStatus": "Verificando estado del pago...",
             "verifyingSubtitle": "Estamos confirmando tu pago. Esto puede tardar unos instantes.",
-            "timeoutTitle": "Está tardando más de lo normal",
-            "timeoutSubtitle": "El pago puede seguir procesándose. Revisá tu cuenta en unos minutos para confirmar tu suscripción.",
             "cta": "Ir a mi cuenta",
             "pageTitle": "Pago aprobado",
             "promoIgnoredNote": "Tu código no se aplicó: es para extender una prueba gratis y esta suscripción no tiene una.",
             "linkErrorTitle": "No pudimos vincular tu pago",
-            "linkErrorSubtitle": "Hubo un problema al vincular este pago con tu cuenta. Si ya realizaste el pago, contactá a soporte con el número de operación de MercadoPago."
+            "linkErrorSubtitle": "Hubo un problema al vincular este pago con tu cuenta. Si ya realizaste el pago, contactá a soporte con el número de operación de MercadoPago.",
+            "unresolvedTitle": "Seguimos confirmando tu pago",
+            "unresolvedSubtitle": "Tu pago no se perdió. MercadoPago puede tardar unos minutos en confirmarlo y, en cuanto lo haga, tu plan queda activo automáticamente. Podés cerrar esta página: revisá el estado en Mi Cuenta, o escribinos si en un rato seguís sin verlo.",
+            "unresolvedSupportCta": "Escribinos"
         },
         "pending": {
             "title": "Tu pago está siendo procesado",
