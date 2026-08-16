@@ -12,10 +12,12 @@
  * ## Status codes
  *
  * The API answers three ways and this page forwards all three (spec D-3b):
- * 410 when a partner WAS published and no longer is, so crawlers deindex the
- * URL fast; 404 when the slug never had a page (a silver partner, or no row).
+ * 410 ONLY when a partner was deliberately revoked, so crawlers deindex the URL
+ * fast; 404 for every other reason it is not visible — a silver partner, no
+ * row, a gold partner never published, or one whose subscription lapsed.
  * Collapsing them would still render fine and would silently cost the deindex
- * signal.
+ * signal; conversely, answering 410 for a lapsed subscription would deindex a
+ * partner who is coming back (HOS-562).
  *
  * ## Indexability
  *
@@ -51,8 +53,9 @@ const slug = Astro.params.slug as string;
 // --- Primary fetch ---
 const result = await partnerApi.getBySlug(slug);
 
-// 410 for a page that was published and is retired; 404 for a URL that never
-// existed. `ApiError.status` already carries the distinction.
+// 410 for a deliberately revoked partner; 404 for every other reason it is not
+// visible. `ApiError.status` already carries the distinction — the decision is
+// the service's (HOS-562), this only forwards it.
 if (!result.ok) {
     return new Response(null, { status: result.error.status === 410 ? 410 : 404 });
 }

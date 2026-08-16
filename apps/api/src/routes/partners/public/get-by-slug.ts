@@ -22,10 +22,13 @@ const partnerService = new PartnerService({ logger: apiLogger });
  * The three service outcomes become three DIFFERENT answers, and the split
  * between the last two is the point:
  *
- * - `gone` -> HTTP 410. The partner is gold but no longer visible, so this URL
- *   really was published and really is retired. 410 is what tells a crawler to
- *   drop it rather than keep re-checking.
- * - `notFound` -> HTTP 404. Not gold, or no row: this URL was never served.
+ * - `gone` -> HTTP 410. The partner was deliberately REVOKED. 410 is the one
+ *   irreversible answer — it tells a crawler to drop the URL for good — so it
+ *   is reserved for the one irreversible state (HOS-562).
+ * - `notFound` -> HTTP 404. Everything else: not gold, no row, never published,
+ *   or a lapsed subscription. All of those are reversible, so none of them may
+ *   earn a permanent deindex. A partner who stops paying and later regularises
+ *   must come back with their ranking intact.
  *
  * Answering 404 for both would still render correctly in a browser and would
  * quietly throw away the deindex signal — which is the only reason the service
@@ -56,9 +59,13 @@ export const getPublicPartnerBySlugHandler = async (
     }
 
     if (result.data?.outcome === 'gone') {
+        // HOS-562: says "revoked", not "no longer published". The old wording
+        // inherited the same assumption the old gate did — it was logged
+        // verbatim against a partner that had NEVER been published, which is
+        // how the smoke found the bug. `gone` now means exactly one thing.
         throw new ServiceError(
             ServiceErrorCode.GONE,
-            `Partner with slug "${slug}" is no longer published`
+            `Partner with slug "${slug}" has been revoked`
         );
     }
 
@@ -72,8 +79,8 @@ export const getPublicPartnerBySlugHandler = async (
 /**
  * GET /api/v1/public/partners/{slug}
  *
- * Returns the public payload for one gold partner. 410 when the partner was
- * published and no longer is; 404 when the slug never had a page.
+ * Returns the public payload for one gold partner. 410 only when the partner
+ * was deliberately revoked; 404 for every other reason it is not visible.
  */
 export const publicGetPartnerBySlugRoute = createPublicRoute({
     method: 'get',
@@ -81,8 +88,11 @@ export const publicGetPartnerBySlugRoute = createPublicRoute({
     summary: 'Get a partner by slug',
     description:
         'Returns the public detail payload for a gold-tier partner. ' +
-        'Responds 410 when the partner was published and no longer is, and ' +
-        '404 when the slug never had a page (a silver partner, or no such row).',
+        'Responds 410 only when the partner was deliberately revoked — the one ' +
+        'permanent state — and 404 for every other reason it is not visible: a ' +
+        'silver partner, no such row, a gold partner never published, or one ' +
+        'whose subscription lapsed (a temporary outage, which must not be ' +
+        'deindexed permanently).',
     tags: ['Partners'],
     requestParams: {
         slug: z
