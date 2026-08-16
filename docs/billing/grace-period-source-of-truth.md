@@ -34,6 +34,23 @@ The constant `BILLING_CRON_LAG_GRACE_HOURS` lives in `packages/billing/src/const
 The implementation is in `apps/api/src/middlewares/entitlement.ts` (the SPEC-148 cron-lag block).
 The operational runbook is in [`billing-runbooks.md §8`](./billing-runbooks.md).
 
+#### Subscriptions with no preapproval are NOT covered by this grace (H-21)
+
+Cron-lag grace reads an elapsed `currentPeriodEnd` as "MercadoPago's renewal webhook is
+late". That reading depends entirely on a webhook being *able* to arrive, which requires a
+preapproval. A subscription with `mp_subscription_id IS NULL` has none: no webhook can ever
+come, `subscription-poll` has no `/preapproval/{id}` to query, and dunning has no failed
+charge to act on. Nothing moves it, so it stays `active` forever while nobody is charged.
+
+The `preapproval-less-expiry` cron
+(`apps/api/src/cron/jobs/preapproval-less-expiry.job.ts`) is the reconciler for exactly that
+population: `active`/`trialing`, no preapproval, period elapsed → `expired`. It reuses
+`BILLING_CRON_LAG_GRACE_HOURS` as a safety margin rather than introducing a fourth duration,
+but it is **not** a fourth grace — it is the missing terminal transition. It excludes `comp`
+(a deliberate permanent grant that has no preapproval by design), pending soft-cancels
+(owned by `finalize-cancelled-subs`) and `past_due` (owned by dunning), so it can never
+overlap with any of the three graces documented here.
+
 ### Soft-cancel grace (SPEC-147)
 
 When a user self-cancels (or a plan disable sets `cancelAtPeriodEnd=true`), the subscription
