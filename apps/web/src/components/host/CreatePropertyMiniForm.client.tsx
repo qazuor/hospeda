@@ -865,6 +865,26 @@ export function CreatePropertyMiniForm({
             }}
             noValidate
         >
+            {/* Step indicator (HOS-456). Creating an accommodation is two
+                stages and nothing said so, which is why hosts hunted for the
+                photo upload inside a form that has no such field. The hero
+                above is read once, before the question exists; this sits with
+                the fields, where the question actually arises. */}
+            <div
+                className={styles.stepIndicator}
+                data-testid="step-indicator"
+            >
+                <p className={styles.stepIndicatorTitle}>
+                    {t('host.miniForm.stepIndicator.title', 'Paso 1 de 2 · Datos básicos')}
+                </p>
+                <p className={styles.stepIndicatorNext}>
+                    {t(
+                        'host.miniForm.stepIndicator.next',
+                        'Después: fotos, precios y el resto de la ficha.'
+                    )}
+                </p>
+            </div>
+
             {/* Import from URL — collapsible section at the top of the form (T-025). */}
             <div
                 className={styles.importSection}
@@ -1712,7 +1732,10 @@ export function CreatePropertyMiniForm({
                     <span className="gradient-btn__label">
                         {isSubmitting
                             ? t('host.miniForm.actions.submitting', 'Creando...')
-                            : t('host.miniForm.actions.submit', 'Crear y continuar en el panel')}
+                            : t(
+                                  'host.miniForm.actions.submit',
+                                  'Crear borrador y seguir al paso 2'
+                              )}
                     </span>
                 </button>
             </div>

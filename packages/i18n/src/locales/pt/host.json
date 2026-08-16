@@ -610,7 +610,7 @@
             "network": "Não conseguimos conectar ao servidor. Verifique sua conexão e tente novamente."
         },
         "actions": {
-            "submit": "Criar e continuar no painel",
+            "submit": "Criar rascunho e ir ao passo 2",
             "submitting": "Criando..."
         },
         "disclaimer": "Vamos criar um rascunho com esses dados. Depois te levamos ao painel para completar fotos, preços e mais.",
@@ -625,6 +625,10 @@
             "ROOM": "Quarto",
             "MOTEL": "Motel",
             "RESORT": "Resort"
+        },
+        "stepIndicator": {
+            "title": "Passo 1 de 2 · Dados básicos",
+            "next": "Depois: fotos, preços e o resto do anúncio."
         }
     },
     "promotions": {
@@ -778,7 +782,8 @@
             "trialCalloutTitle": "{{trialDays}} dias gratis na sua primeira assinatura",
             "trialCalloutTitleIneligible": "Monte sua propriedade",
             "trialNote": "Você pode montar sua propriedade agora. O teste gratuito de {{trialDays}} dias começa quando você escolhe seu plano: cadastra seu cartão e nada é cobrado até terminar. Vale só para a sua primeira assinatura.",
-            "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo."
+            "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo.",
+            "subtitle": "Criamos o rascunho com esses dados. As fotos, os preços e o resto você carrega no passo 2, no painel."
         }
     }
 }

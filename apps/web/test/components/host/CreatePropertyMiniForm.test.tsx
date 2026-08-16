@@ -501,14 +501,48 @@ async function fillAllFields(user: ReturnType<typeof userEvent.setup>): Promise<
     await user.click(citySelect);
 }
 
-/** Get the submit button — text is "Crear y continuar en el panel". */
+/** Get the submit button — text is "Crear borrador y seguir al paso 2" (HOS-456). */
 function getSubmitButton(): HTMLElement {
-    return screen.getByRole('button', { name: /Crear y continuar en el panel/i });
+    return screen.getByRole('button', { name: /Crear borrador y seguir al paso 2/i });
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+describe('CreatePropertyMiniForm — step indicator (HOS-456)', () => {
+    // Creating an accommodation is two stages, and nothing on this screen said
+    // so. Hosts looked for the photo upload inside a form that has no such
+    // field and never will. Two notices already existed and both missed: the
+    // hero is read once before the question exists, and the only text naming
+    // photos sat below the submit button, after 1.770 lines, under a callout
+    // that took the attention.
+    it('should announce step 1 of 2', () => {
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        expect(screen.getByTestId('step-indicator')).toBeVisible();
+        expect(screen.getByText(/Paso 1 de 2/i)).toBeVisible();
+    });
+
+    it('should name the photos as belonging to the next step', () => {
+        // The load-bearing word is "fotos": that is what the host is hunting
+        // for. A step indicator that only said "1 de 2" would not answer it.
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        expect(screen.getByTestId('step-indicator')).toHaveTextContent(/fotos/i);
+    });
+
+    it('should render the indicator before the fields, not after the submit', () => {
+        // Placement IS the fix. The previous notice was correct and unread
+        // because of where it sat, so asserting the text alone would pass on
+        // the broken version too.
+        const { container } = render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        const form = container.querySelector('form');
+        const indicator = screen.getByTestId('step-indicator');
+        expect(form?.firstElementChild).toBe(indicator);
+    });
+});
 
 describe('CreatePropertyMiniForm — post-submit redirect', () => {
     it('redirects to admin edit page on created status', async () => {

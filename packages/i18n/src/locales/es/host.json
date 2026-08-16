@@ -610,7 +610,7 @@
             "network": "No pudimos conectar con el servidor. Verificá tu conexión e intentá de nuevo."
         },
         "actions": {
-            "submit": "Crear y continuar en el panel",
+            "submit": "Crear borrador y seguir al paso 2",
             "submitting": "Creando..."
         },
         "disclaimer": "Vamos a crear un borrador con estos datos. Después te llevamos al panel para completar fotos, precios y demás.",
@@ -625,6 +625,10 @@
             "ROOM": "Habitación",
             "MOTEL": "Motel",
             "RESORT": "Resort"
+        },
+        "stepIndicator": {
+            "title": "Paso 1 de 2 · Datos básicos",
+            "next": "Después: fotos, precios y el resto de la ficha."
         }
     },
     "promotions": {
@@ -778,7 +782,8 @@
             "trialCalloutTitle": "{{trialDays}} días gratis en tu primera suscripción",
             "trialCalloutTitleIneligible": "Armá tu propiedad",
             "trialNote": "Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.",
-            "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo."
+            "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.",
+            "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel."
         }
     }
 }

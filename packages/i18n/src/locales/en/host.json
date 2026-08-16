@@ -610,7 +610,7 @@
             "network": "We couldn't connect to the server. Check your connection and try again."
         },
         "actions": {
-            "submit": "Create and continue in the panel",
+            "submit": "Create draft and go to step 2",
             "submitting": "Creating..."
         },
         "disclaimer": "We'll create a draft with this information. Then we'll take you to the panel to complete photos, prices and more.",
@@ -625,6 +625,10 @@
             "ROOM": "Room",
             "MOTEL": "Motel",
             "RESORT": "Resort"
+        },
+        "stepIndicator": {
+            "title": "Step 1 of 2 · Basic details",
+            "next": "Next: photos, pricing and the rest of the listing."
         }
     },
     "promotions": {
@@ -778,7 +782,8 @@
             "trialCalloutTitle": "{{trialDays}} free days on your first subscription",
             "trialCalloutTitleIneligible": "Set up your property",
             "trialNote": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
-            "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan."
+            "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan.",
+            "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel."
         }
     }
 }
