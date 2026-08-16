@@ -48,6 +48,8 @@ import type { NearbyPoi } from '@repo/schemas';
 import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { translateAmenityName } from '@/lib/catalog-names';
+import { buildLodgingAmenityNames, buildLodgingGeo } from '@/lib/seo/lodging-jsonld';
 import { pickLocalizedSeo } from '@/lib/seo';
 import { buildUrl } from '@/lib/urls';
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -415,10 +417,11 @@ const ACCOMMODATION_TYPE_MAP: Readonly<Record<string, string>> = {
 const lodgingAccommodationType =
     ACCOMMODATION_TYPE_MAP[accommodation.type.toUpperCase()] ?? 'LodgingBusiness';
 
-const lodgingGeo =
-    accommodation.location.lat != null && accommodation.location.lng != null
-        ? { latitude: accommodation.location.lat, longitude: accommodation.location.lng }
-        : undefined;
+// HOS-554: `geo` comes from `approximateLocation`, NEVER from the exact pin —
+// see `buildLodgingGeo` for why.
+const lodgingGeo = buildLodgingGeo({
+    approximateLocation: accommodation.approximateLocation
+});
 
 const lodgingAggregateRating =
     accommodation.averageRating > 0
@@ -433,10 +436,13 @@ const lodgingAggregateRating =
 const lodgingNumberOfRooms =
     accommodation.extraInfo?.bedrooms != null ? accommodation.extraInfo.bedrooms : undefined;
 
-const lodgingAmenities =
-    accommodation.amenities.length > 0
-        ? accommodation.amenities.map((a) => a.name)
-        : undefined;
+// HOS-557: publish the LOCALIZED amenity label, not the catalog slug —
+// see `buildLodgingAmenityNames` for why.
+const lodgingAmenities = buildLodgingAmenityNames({
+    amenities: accommodation.amenities,
+    translateAmenityName,
+    t
+});
 
 // --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;

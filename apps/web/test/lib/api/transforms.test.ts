@@ -783,10 +783,33 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.media.galleryItems).toEqual([]);
         });
 
-        it('should map location with numeric lat/lng', () => {
+        // HOS-554 (H-113): there is no `location` on the detail props any more.
+        //
+        // The field read `item.location.lat` / `.lng` — a flat shape the API
+        // never sends (the canonical one is `location.coordinates.{lat,long}`)
+        // and which, on a PUBLIC read, is absent regardless: SPEC-097 strips
+        // `coordinates` for anyone who is not the owner, so the payload's
+        // `location` is `{}`. This test passed only because the fixture invented
+        // the flat shape — it asserted that the transform agreed with the
+        // fixture, not with the server. The coordinate a public page may read is
+        // `approximateLocation`.
+        it('does NOT expose a `location` coordinate — the public payload has none', () => {
             const result = toAccommodationDetailPageProps({ item: makeFullItem() });
-            expect(result.location.lat).toBe(-30.75);
-            expect(result.location.lng).toBe(-58.04);
+            expect((result as Record<string, unknown>).location).toBeUndefined();
+        });
+
+        it('maps approximateLocation, the one coordinate a public page may read', () => {
+            const result = toAccommodationDetailPageProps({
+                item: {
+                    ...makeFullItem(),
+                    approximateLocation: { lat: -32.4881, lng: -58.3592, radiusMeters: 150 }
+                }
+            });
+            expect(result.approximateLocation).toEqual({
+                lat: -32.4881,
+                lng: -58.3592,
+                radiusMeters: 150
+            });
         });
 
         it('should map destination nested object', () => {
@@ -889,10 +912,10 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.media.videos).toEqual([]);
         });
 
-        it('should default location to null lat/lng', () => {
+        it('omits approximateLocation when the item carries no coordinates (HOS-554)', () => {
             const result = toAccommodationDetailPageProps({ item: {} });
-            expect(result.location.lat).toBeNull();
-            expect(result.location.lng).toBeNull();
+            expect(result.approximateLocation).toBeUndefined();
+            expect((result as Record<string, unknown>).location).toBeUndefined();
         });
 
         it('should default destination to empty strings', () => {
