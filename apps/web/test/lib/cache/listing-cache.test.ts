@@ -24,17 +24,42 @@ describe('hasActiveAccommodationListingFilters', () => {
         expect(hasActiveAccommodationListingFilters({ searchParams: params('') })).toBe(false);
     });
 
-    it('returns false when only pagination / sort / date-context / type params are present', () => {
-        // These do not narrow the underlying result set (sort/pagination) or are
-        // informational (checkIn/checkOut), or are the type facet handled
-        // separately per page.
+    it('returns false when only pagination / sort / type params are present', () => {
+        // These do not narrow the underlying result set (sort/pagination), or
+        // are the type facet handled separately per page.
         expect(
             hasActiveAccommodationListingFilters({
-                searchParams: params(
-                    'page=3&sortBy=priceAsc&sortOrder=asc&checkIn=2026-08-01&checkOut=2026-08-05&types=HOTEL'
-                )
+                searchParams: params('page=3&sortBy=priceAsc&sortOrder=asc&types=HOTEL')
             })
         ).toBe(false);
+    });
+
+    // H-120: this case used to assert `false` for a URL carrying checkIn and
+    // checkOut, on the grounds that the dates were "informational". They are
+    // not any more — the listing pages forward them and the server filters by
+    // availability. Had this stayed `false`, wiring the filter would have made
+    // Cloudflare cache one visitor's date-filtered HTML and serve it to the
+    // next visitor asking for different dates: a missing filter traded for a
+    // wrong one.
+    it('treats a complete date range as an active filter', () => {
+        expect(
+            hasActiveAccommodationListingFilters({
+                searchParams: params('checkIn=2026-08-01&checkOut=2026-08-05')
+            })
+        ).toBe(true);
+    });
+
+    it('treats even a lone date as an active filter', () => {
+        // The API drops a half range, so the RESULTS come back unfiltered — but
+        // this predicate decides SHAREABILITY, and it stays conservative:
+        // erring toward `private` costs a cache miss, while erring the other
+        // way serves the wrong page to the next visitor.
+        expect(
+            hasActiveAccommodationListingFilters({ searchParams: params('checkIn=2026-08-01') })
+        ).toBe(true);
+        expect(
+            hasActiveAccommodationListingFilters({ searchParams: params('checkOut=2026-08-05') })
+        ).toBe(true);
     });
 
     it('treats an explicit adults=2 as an active filter (no more invisible default, BETA-161)', () => {
