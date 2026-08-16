@@ -312,6 +312,25 @@ describe('AiChatWidget', () => {
         expect(screen.queryByRole('button', { name: 'Expand panel' })).not.toBeInTheDocument();
     });
 
+    it('HOS-552 / H-139: only the expand toggle carries the mobile-hide class, not the close button', async () => {
+        // The `.expandButton` class is what AiChatWidget.module.css hides below
+        // the mobile breakpoint (see the sibling guard test that asserts the
+        // actual CSS rule). This test guards the OTHER half: that exactly the
+        // expand toggle carries it, and the close button — which shares the
+        // same base `.iconButton` class — is untouched, so it stays reachable
+        // on mobile.
+        const user = userEvent.setup();
+        render(<AiChatWidget {...defaultProps} />);
+
+        await user.click(screen.getByRole('button', { name: 'Ask AI about this accommodation' }));
+
+        const expandBtn = screen.getByRole('button', { name: 'Expand panel' });
+        const closeBtn = screen.getByRole('button', { name: 'Close chat' });
+
+        expect(expandBtn.className.split(' ')).toContain('expandButton');
+        expect(closeBtn.className.split(' ')).not.toContain('expandButton');
+    });
+
     it('send button aria-label is "Sending…" while streaming and "Send" otherwise (FIX-4)', async () => {
         // Arrange: render with streaming state
         mockUseAccommodationChat.mockReturnValue({
