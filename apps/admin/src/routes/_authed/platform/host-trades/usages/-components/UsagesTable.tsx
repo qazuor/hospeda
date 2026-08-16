@@ -12,7 +12,9 @@
  * produced it.
  */
 
+import { defaultIntlLocale } from '@repo/i18n';
 import type { HostTradeBenefitUsageAdmin } from '@repo/schemas';
+import { formatCalendarDate } from '@repo/utils';
 import { Link } from '@tanstack/react-router';
 import { Button } from '@/components/ui/button';
 import { resolveSuspendAvailability } from '@/features/host-trades/lib/usage-suspension-rules';
@@ -40,11 +42,18 @@ const STATUS_CLASS: Record<string, string> = {
     EXPIRED: 'bg-muted text-muted-foreground'
 };
 
-/** Renders a date as the admin's locale short date, or an em dash. */
-function formatDate(value: Date | string | null | undefined): string {
-    if (!value) return '—';
-    const date = value instanceof Date ? value : new Date(value);
-    return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString();
+/**
+ * Renders the SERVICE DATE — a calendar day, not an instant — or an em dash.
+ *
+ * `servicedAt` is a Postgres `date`, so it arrives as a bare `'2026-08-13'`.
+ * The obvious `new Date(value).toLocaleDateString()` reads that as UTC midnight
+ * and prints the previous day for every operator west of UTC, which is all of
+ * them on this project (smoke agosto 2026, H-09 / H-63). This is the audit
+ * column of a flow where the date IS the evidence a host and a provider have to
+ * agree on, so it goes through the shared calendar-date helper.
+ */
+function formatServicedAt(value: Date | string | null | undefined): string {
+    return formatCalendarDate({ value, locale: defaultIntlLocale }) ?? '—';
 }
 
 /**
@@ -104,7 +113,7 @@ export function UsagesTable({
                                 className="border-b last:border-b-0"
                                 data-testid={`usage-row-${item.id}`}
                             >
-                                <td className={CELL}>{formatDate(item.servicedAt)}</td>
+                                <td className={CELL}>{formatServicedAt(item.servicedAt)}</td>
                                 <td className={CELL}>
                                     {item.hostTrade ? (
                                         <Link

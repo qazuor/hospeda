@@ -23,6 +23,7 @@
 import { AnalyticsEvents } from '@repo/analytics';
 import type { TranslationKey } from '@repo/i18n';
 import type { WhatsNewItem } from '@repo/schemas';
+import { formatCalendarDate } from '@repo/utils';
 import { useCallback, useEffect, useState } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useAuthContext } from '@/hooks/use-auth-context';
@@ -183,11 +184,15 @@ interface WhatsNewPanelRowProps {
 function WhatsNewPanelRow({ item, onRowClick }: WhatsNewPanelRowProps) {
     const { t } = useTranslations();
 
-    const publishedDate = new Date(item.publishedAt).toLocaleDateString('es-AR', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
+    // Calendar day, not an instant: entries are authored pinned to midnight UTC
+    // (`'2026-06-01T00:00:00Z'`), so a local read dates them one day early for
+    // anyone west of UTC — same defect family as H-09 / H-63 / H-73 / H-84.
+    const publishedDate =
+        formatCalendarDate({
+            value: item.publishedAt,
+            locale: 'es-AR',
+            options: { year: 'numeric', month: 'short', day: 'numeric' }
+        }) ?? '';
 
     return (
         <li>
