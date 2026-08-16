@@ -75,7 +75,6 @@ import { clearEntitlementCache } from '../../../middlewares/entitlement.js';
 import { linkPreapprovalToLocalSub } from '../../../services/billing/link-preapproval.service.js';
 import { resolvePlanDisplayName } from '../../../services/billing/plan-change-reason.js';
 import { classifySettledTrialCharge } from '../../../services/billing/trial-promise-verification.js';
-import { sendTrialNotGrantedAdminAlert } from './notifications.js';
 import { restoreFullPriceMutation } from '../../../services/promo-renewal-mp.service.js';
 import { env } from '../../../utils/env.js';
 import { apiLogger } from '../../../utils/logger.js';
@@ -84,6 +83,7 @@ import {
     type MPAuthorizedPaymentDetails
 } from '../../../utils/mp-authorized-payment.js';
 import { cleanupRequestProviderEventId } from './event-handler.js';
+import { sendTrialNotGrantedAdminAlert } from './notifications.js';
 import {
     getWebhookDependencies,
     markEventFailedByProviderId,

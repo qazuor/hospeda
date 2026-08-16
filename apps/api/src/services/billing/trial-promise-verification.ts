@@ -45,10 +45,7 @@
  * - `trial-not-granted` — the charge landed so early that the promised trial
  *   cannot have run. The provider ignored the `free_trial` we asked for.
  */
-export type SettledTrialChargeOutcome =
-    | 'no-trial-promised'
-    | 'trial-elapsed'
-    | 'trial-not-granted';
+export type SettledTrialChargeOutcome = 'no-trial-promised' | 'trial-elapsed' | 'trial-not-granted';
 
 /**
  * Input for {@link classifySettledTrialCharge}.
@@ -116,7 +113,7 @@ const MIN_ELAPSED_FRACTION_FOR_LEGITIMATE_CHARGE = 0.5;
  *
  * @example
  * ```ts
- * // Production H-137: promised 14 days, charged 119 seconds in.
+ * // Production H-137: promised 14 days, charged 118 seconds in.
  * classifySettledTrialCharge({
  *   trialStart: new Date('2026-08-14T16:46:17Z'),
  *   trialEnd: new Date('2026-08-28T16:46:17Z'),
