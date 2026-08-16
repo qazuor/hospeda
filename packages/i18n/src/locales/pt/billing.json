@@ -191,13 +191,14 @@
             "amountDetails": "Valor: {{amount}}",
             "verifyingStatus": "Verificando o status do pagamento...",
             "verifyingSubtitle": "Estamos confirmando seu pagamento. Pode levar alguns instantes.",
-            "timeoutTitle": "Está demorando mais que o normal",
-            "timeoutSubtitle": "Seu pagamento pode ainda estar sendo processado. Verifique sua conta em alguns minutos para confirmar sua assinatura.",
             "cta": "Ir para minha conta",
             "pageTitle": "Pagamento aprovado",
             "promoIgnoredNote": "Seu código não foi aplicado: ele estende um período de teste grátis, e esta assinatura não tem um.",
             "linkErrorTitle": "Não conseguimos vincular seu pagamento",
-            "linkErrorSubtitle": "Houve um problema ao vincular este pagamento à sua conta. Se você já pagou, entre em contato com o suporte com o número da operação do MercadoPago."
+            "linkErrorSubtitle": "Houve um problema ao vincular este pagamento à sua conta. Se você já pagou, entre em contato com o suporte com o número da operação do MercadoPago.",
+            "unresolvedTitle": "Ainda estamos confirmando seu pagamento",
+            "unresolvedSubtitle": "Seu pagamento não foi perdido. O MercadoPago pode levar alguns minutos para confirmá-lo e, assim que isso acontecer, seu plano é ativado automaticamente. Você pode fechar esta página: verifique o status em Minha Conta, ou escreva para nós se daqui a pouco ainda não conseguir vê-lo.",
+            "unresolvedSupportCta": "Fale conosco"
         },
         "pending": {
             "title": "Seu pagamento está sendo processado",
