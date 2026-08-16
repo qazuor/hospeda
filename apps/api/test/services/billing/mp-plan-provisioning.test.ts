@@ -55,9 +55,6 @@ const BASE_INPUT = {
     amountCentavos: 1_500_000,
     // HOS-244: no signup discount by default (sentinel 0 = full price).
     discountCycle1AmountCentavos: 0,
-    // H-137: required, because it is what reserves a trial-bearing variant for
-    // one buyer instead of sharing it with everyone.
-    customerId: 'cus-1',
     currency: 'ARS',
     planName: 'Basic',
     backUrl: BACK_URL
@@ -415,97 +412,6 @@ describe('resolveOrProvisionMpPlan', () => {
  * is precisely why it stayed green while production could not sell a single
  * discounted subscription.
  */
-describe('H-137: a trial-bearing MP plan variant is reserved for one customer', () => {
-    it('keys the registry lookup by customer when the variant carries a trial', async () => {
-        // Arrange — MercadoPago grants free_trial once per (payer, plan). While
-        // the trial variant was shared, a payer who had already used it there was
-        // charged instead, whichever Hospeda account they were buying from.
-        findOne.mockResolvedValue(null);
-        create.mockResolvedValue({ id: 'row1' });
-        const adapter = createAdapter();
-
-        // Act
-        await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT, trialDays: 14 });
-
-        // Assert
-        expect(findOne).toHaveBeenCalledWith(expect.objectContaining({ customerScope: 'cus-1' }));
-        expect(create).toHaveBeenCalledWith(expect.objectContaining({ customerScope: 'cus-1' }));
-    });
-
-    it('keeps a no-trial variant shared across every buyer', async () => {
-        // Arrange — a trialDays=0 variant carries no free_trial, so MercadoPago
-        // has nothing to refuse. A plan per customer would multiply rows in the
-        // provider dashboard for no benefit.
-        findOne.mockResolvedValue(null);
-        create.mockResolvedValue({ id: 'row1' });
-        const adapter = createAdapter();
-
-        // Act
-        await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT, trialDays: 0 });
-
-        // Assert
-        expect(findOne).toHaveBeenCalledWith(expect.objectContaining({ customerScope: 'shared' }));
-        expect(create).toHaveBeenCalledWith(expect.objectContaining({ customerScope: 'shared' }));
-    });
-
-    it('gives two customers on the same plan variant two different MP plans', async () => {
-        // Arrange — this is the whole point. Same commercial plan, same cadence,
-        // same trial length: under the old key these two collapsed onto one
-        // preapproval_plan, and the second buyer inherited the first one's spent
-        // trial whenever they shared a MercadoPago account.
-        findOne.mockResolvedValue(null);
-        create.mockResolvedValue({ id: 'row1' });
-        const adapter = createAdapter();
-        adapter.prices.create
-            .mockResolvedValueOnce('mp_plan_for_a')
-            .mockResolvedValueOnce('mp_plan_for_b');
-
-        // Act
-        const first = await resolveOrProvisionMpPlan({
-            adapter,
-            ...BASE_INPUT,
-            customerId: 'cus-a'
-        });
-        const second = await resolveOrProvisionMpPlan({
-            adapter,
-            ...BASE_INPUT,
-            customerId: 'cus-b'
-        });
-
-        // Assert
-        expect(first.mpPreapprovalPlanId).toBe('mp_plan_for_a');
-        expect(second.mpPreapprovalPlanId).toBe('mp_plan_for_b');
-        expect(findOne).toHaveBeenNthCalledWith(
-            1,
-            expect.objectContaining({ customerScope: 'cus-a' })
-        );
-        expect(findOne).toHaveBeenNthCalledWith(
-            2,
-            expect.objectContaining({ customerScope: 'cus-b' })
-        );
-    });
-
-    it('still reuses the SAME customer’s existing trial variant instead of re-provisioning', async () => {
-        // Arrange — scoping must not turn every checkout attempt into a new
-        // provider plan. A customer who abandons the hosted checkout and retries
-        // has to land back on the plan already created for them.
-        findOne.mockResolvedValue({
-            id: 'row1',
-            mpPreapprovalPlanId: 'mp_existing_for_cus_1',
-            amountArs: 1_500_000,
-            status: 'active'
-        });
-        const adapter = createAdapter();
-
-        // Act
-        const res = await resolveOrProvisionMpPlan({ adapter, ...BASE_INPUT });
-
-        // Assert
-        expect(res).toEqual({ mpPreapprovalPlanId: 'mp_existing_for_cus_1', created: false });
-        expect(adapter.prices.create).not.toHaveBeenCalled();
-    });
-});
-
 describe('H-83: the MP plan reason never exceeds MercadoPago’s 60-character limit', () => {
     /**
      * MercadoPago's hard limit, restated as a literal rather than imported from
@@ -672,9 +578,6 @@ describe('resolveCheckoutMpPlanId', () => {
         currency: 'ARS',
         billingInterval: 'monthly' as const,
         trialDays: 14,
-        // H-137 made this required: an optional customer id let a caller fall
-        // back to the shared trial variant with no type error.
-        customerId: 'cus-1',
         backUrl: BACK_URL
     };
 

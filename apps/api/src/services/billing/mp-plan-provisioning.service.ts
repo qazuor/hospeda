@@ -6,20 +6,8 @@
  * subscription's trial length is **immutable** once authorized (verified in prod,
  * HOS-191 SP-3: `transaction_amount` mutates but `free_trial`/`start_date`/
  * `next_payment_date` do not), each distinct trial length needs its own MP plan.
- * Variants are keyed by `(commercial_plan_id, billing_interval, trial_days,
- * discount_cycle1_amount_ars, customer_scope)` and provisioned **lazily** on
- * first use at checkout.
- *
- * **H-137 — why `customer_scope` exists.** MercadoPago grants a preapproval's
- * `free_trial` once per `(payer, preapproval_plan)`. While trial variants were
- * shared across buyers, that provider-side rule silently overrode Hospeda's own
- * eligibility check — which is keyed on the billing customer — and a payer who
- * had already spent the trial on the shared plan was shown the offer and
- * charged the first cycle two minutes later. Reserving a trial-bearing variant
- * for one customer leaves MercadoPago with no prior authorization to key
- * against, so `resolveCheckoutFreeTrialDays` becomes the only judge. Non-trial
- * variants stay shared: they carry no `free_trial`, so there is nothing to
- * refuse.
+ * Variants are keyed by `(commercial_plan_id, billing_interval, trial_days)` and
+ * provisioned **lazily** on first use at checkout.
  *
  * The registry is a projection of the commercial layer (`billing_plans` /
  * `billing_prices`, DB-wins per HOS-39) — never the source of truth. `amount_ars`
@@ -87,15 +75,6 @@ export interface ResolveOrProvisionMpPlanInput {
      * the drift snapshot regardless.
      */
     readonly discountCycle1AmountCentavos: number;
-    /**
-     * The billing customer this checkout belongs to (`billing_customers.id`).
-     *
-     * Required, not optional: it is what scopes a trial-bearing variant to one
-     * buyer (H-137). Leaving it optional would let a caller silently fall back
-     * to the shared variant and reintroduce the very bug this closes, with no
-     * type error and no runtime signal.
-     */
-    readonly customerId: string;
     /** ISO currency code (e.g. `'ARS'`). */
     readonly currency: string;
     /** Human-readable plan name, used as the MP plan `reason` (dashboard label). */
@@ -247,37 +226,6 @@ function buildPlanReason(input: {
 }
 
 /**
- * Sentinel stored in `billing_mp_plans.customer_scope` for a variant that every
- * buyer may share. See the column's own documentation for why a sentinel rather
- * than NULL.
- */
-export const SHARED_MP_PLAN_SCOPE = 'shared';
-
-/**
- * Decide whether an MP plan variant is shared or reserved for one customer
- * (H-137).
- *
- * Only trial-bearing variants are scoped. A `trial_days = 0` variant carries no
- * `free_trial`, so MercadoPago has nothing to refuse and a plan per customer
- * would multiply rows in the provider dashboard for no benefit.
- *
- * @param input - The variant's resolved trial length and the buying customer.
- * @returns The customer id for a trial-bearing variant, or the shared sentinel.
- *
- * @example
- * ```ts
- * resolveMpPlanCustomerScope({ trialDays: 30, customerId: 'cus_1' }); // 'cus_1'
- * resolveMpPlanCustomerScope({ trialDays: 0, customerId: 'cus_1' });  // 'shared'
- * ```
- */
-export function resolveMpPlanCustomerScope(input: {
-    readonly trialDays: number;
-    readonly customerId: string;
-}): string {
-    return input.trialDays > 0 ? input.customerId : SHARED_MP_PLAN_SCOPE;
-}
-
-/**
  * Create a fresh MercadoPago `preapproval_plan` for the given variant and return
  * its id. Delegates to qzpay's `prices` adapter (`POST /preapproval_plan`), which
  * bakes the `free_trial` into the plan when `trialDays > 0` and omits
@@ -327,13 +275,7 @@ async function createMpPlan(input: ResolveOrProvisionMpPlanInput): Promise<strin
  *    amount, archive the stale one (best-effort), update the row, return the new id.
  * 3. **Miss** → create the MP plan, insert the row. If a concurrent checkout won
  *    the insert race (unique constraint on `(commercial_plan_id, billing_interval,
- *    trial_days, discount_cycle1_amount_ars, customer_scope)`), archive our
- *    just-created orphan plan and return the winner's id.
- *
- * H-137: a trial-bearing variant is keyed to the buying customer, so the race in
- * step 3 can now only be that customer's own concurrent checkouts rather than
- * every buyer of the plan. The CAS and orphan-archival logic is unchanged — it
- * is still reachable, just far narrower.
+ *    trial_days)`), archive our just-created orphan plan and return the winner's id.
  *
  * @param input - Adapter, commercial plan variant key, current price, and label.
  * @returns The resolved `mp_preapproval_plan_id` and whether it was created here.
@@ -358,19 +300,12 @@ async function createMpPlan(input: ResolveOrProvisionMpPlanInput): Promise<strin
 export async function resolveOrProvisionMpPlan(
     input: ResolveOrProvisionMpPlanInput
 ): Promise<ResolveOrProvisionMpPlanResult> {
-    const customerScope = resolveMpPlanCustomerScope({
-        trialDays: input.trialDays,
-        customerId: input.customerId
-    });
     const key = {
         commercialPlanId: input.commercialPlanId,
         billingInterval: input.billingInterval,
         trialDays: input.trialDays,
         // HOS-244: the cycle-1 discount is a second key dimension (0 = no discount).
-        discountCycle1AmountArs: input.discountCycle1AmountCentavos,
-        // H-137: a trial-bearing variant belongs to one customer; everything else
-        // is shared.
-        customerScope
+        discountCycle1AmountArs: input.discountCycle1AmountCentavos
     };
 
     const existing = await billingMpPlanModel.findOne(key);
@@ -437,8 +372,6 @@ export async function resolveOrProvisionMpPlan(
             trialDays: input.trialDays,
             // HOS-244: persist the discount dimension (0 = no discount).
             discountCycle1AmountArs: input.discountCycle1AmountCentavos,
-            // H-137: persist the scope dimension ('shared' = every buyer).
-            customerScope,
             mpPreapprovalPlanId: newId,
             amountArs: input.amountCentavos,
             status: 'active'
@@ -488,24 +421,16 @@ export interface ResolveCheckoutMpPlanIdInput {
      */
     readonly backUrl: string;
     /**
-     * The billing customer id initiating this checkout.
-     *
-     * Two jobs, and the second is why it is REQUIRED as of H-137:
-     *
-     * 1. E2E test-control scope for the `provisionPlan` seam (HOS-191 resilience
-     *    specs), so a `failNext({ operation: 'provisionPlan', scope: customerId })`
-     *    only fails THIS customer's checkout and parallel workers do not consume
-     *    each other's armed failures. Inert in production.
-     * 2. It scopes a trial-bearing MP plan variant to this one buyer, which is
-     *    what stops MercadoPago's per-`(payer, preapproval_plan)` free-trial
-     *    limit from silently overruling ours.
-     *
-     * It used to be optional for "non-checkout callers", of which there are
-     * none. Leaving it optional now would let a caller fall back to the shared
-     * variant with no type error — the exact silent path that made H-137 cost
-     * real money.
+     * The billing customer id initiating this checkout. Used ONLY as the
+     * E2E test-control scope for the `provisionPlan` seam (HOS-191 resilience
+     * specs), so a `failNext({ operation: 'provisionPlan', scope: customerId })`
+     * only fails THIS customer's checkout and parallel workers do not consume
+     * each other's armed failures. Omit outside the checkout callers — an
+     * unscoped seam entry then matches any caller (backward-compat). Inert in
+     * production (`applyTestControl` is a passthrough unless the test-control
+     * gate is enabled).
      */
-    readonly customerId: string;
+    readonly customerId?: string;
 }
 
 /**
@@ -559,8 +484,6 @@ export async function resolveCheckoutMpPlanId(
                     amountCentavos: input.amountCentavos,
                     // HOS-244: default 0 = no discount (backward-compat).
                     discountCycle1AmountCentavos: input.discountCycle1AmountCentavos ?? 0,
-                    // H-137: scopes a trial-bearing variant to this buyer.
-                    customerId: input.customerId,
                     currency: input.currency,
                     planName: input.planName,
                     backUrl: input.backUrl
@@ -595,9 +518,7 @@ export interface BuildPreapprovalPlanShareLinkInput {
      * before any `back_url` return or webhook.
      *
      * Why this matters: the `preapproval_plan_id` is shared across every buyer
-     * of the same plan/interval/trial variant — still true for every non-trial
-     * variant; H-137 narrowed trial-bearing ones to a single customer — so a
-     * webhook-only (F3) linking
+     * of the same plan/interval/trial variant, so a webhook-only (F3) linking
      * with multiple concurrent pending checkouts for the same customer+plan
      * falls back to heuristic reconciliation and can refuse ambiguous
      * candidates (observed in prod, SMOKE-19-07). A per-checkout
