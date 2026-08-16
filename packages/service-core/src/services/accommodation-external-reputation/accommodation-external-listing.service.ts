@@ -332,7 +332,7 @@ export class AccommodationExternalListingService {
             );
             assertCanUpdateAccommodation(actor, ownerId);
 
-            await this.listingModel.softDelete({ id }, ctx?.tx);
+            await this.listingModel.softDelete({ id }, actor.id, ctx?.tx);
 
             return { data: true };
         } catch (err) {

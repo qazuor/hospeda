@@ -3258,7 +3258,7 @@ export class AccommodationService extends BaseCrudService<
                         'FAQ not found for this accommodation'
                     );
                 }
-                await faqModel.softDelete({ id: validated.faqId }, ctx?.tx);
+                await faqModel.softDelete({ id: validated.faqId }, actor.id, ctx?.tx);
                 return { success: true };
             }
         });
@@ -3875,7 +3875,7 @@ export class AccommodationService extends BaseCrudService<
 
                 // Soft-delete + resequence in a single transaction.
                 const doRemove = async (tx: DrizzleClient): Promise<void> => {
-                    await mediaModel.softDelete({ id: validated.mediaId }, tx);
+                    await mediaModel.softDelete({ id: validated.mediaId }, actor.id, tx);
 
                     // Reload the remaining visible rows to resequence them.
                     const { items: remaining } = await mediaModel.findByAccommodation({

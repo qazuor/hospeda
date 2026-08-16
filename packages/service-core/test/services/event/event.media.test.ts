@@ -324,7 +324,11 @@ describe('removeEventMedia', () => {
         );
 
         expect(result.error).toBeUndefined();
-        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, expect.anything());
+        expect(mockMediaModel.softDelete).toHaveBeenCalledWith(
+            { id: MEDIA_ID },
+            authorActor.id,
+            expect.anything()
+        );
         // Row already at index 0 is left alone; the two gapped rows are rewritten.
         expect(mockMediaModel.update).toHaveBeenCalledWith(
             { id: keptB },

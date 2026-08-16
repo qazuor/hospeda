@@ -47,7 +47,11 @@ describe('EventService.softDelete', () => {
         const result = await service.softDelete(actorWithPerm, eventId);
         expectSuccess(result);
         expect(result.data?.count).toBe(1);
-        expect(modelMock.softDelete as Mock).toHaveBeenCalledWith({ id: eventId }, undefined);
+        expect(modelMock.softDelete as Mock).toHaveBeenCalledWith(
+            { id: eventId },
+            actorWithPerm.id,
+            undefined
+        );
     });
 
     it('should return FORBIDDEN if actor lacks permission', async () => {

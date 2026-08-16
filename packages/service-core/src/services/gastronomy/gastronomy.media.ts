@@ -229,7 +229,7 @@ export async function removeGastronomyMedia(
 
         // Soft-delete + resequence in a single transaction.
         const doRemove = async (tx: DrizzleClient): Promise<void> => {
-            await mediaModel.softDelete({ id: validated.mediaId }, tx);
+            await mediaModel.softDelete({ id: validated.mediaId }, actor.id, tx);
 
             // Reload the remaining visible rows to resequence them.
             const { items: remaining } = await mediaModel.findByGastronomy({

@@ -35,10 +35,13 @@ describe('POI ↔ destination unlink (HOS-369)', () => {
         const model = new RDestinationPointOfInterestModel();
 
         await expect(
-            model.softDelete({
-                destinationId: '00000000-0000-0000-0000-000000000001',
-                pointOfInterestId: '00000000-0000-0000-0000-000000000002'
-            })
+            model.softDelete(
+                {
+                    destinationId: '00000000-0000-0000-0000-000000000001',
+                    pointOfInterestId: '00000000-0000-0000-0000-000000000002'
+                },
+                '00000000-0000-0000-0000-000000000003'
+            )
         ).rejects.toThrow(/deletedAt|soft delete is not supported/i);
     });
 
