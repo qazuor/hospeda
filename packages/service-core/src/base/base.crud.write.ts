@@ -242,8 +242,9 @@ export abstract class BaseCrudWrite<
     /**
      * Soft-deletes an entity by its ID.
      *
-     * Marks the entity as deleted by setting `deletedAt` without physical removal.
-     * If the entity is already deleted, returns `{ count: 0 }` without error.
+     * Marks the entity as deleted by setting `deletedAt` and `deletedById`
+     * without physical removal. If the entity is already deleted, returns
+     * `{ count: 0 }` without error.
      *
      * @param actor - The user or system performing the action.
      * @param id - The ID of the entity to soft-delete.
@@ -278,6 +279,10 @@ export abstract class BaseCrudWrite<
                 const result = {
                     count: await this.model.softDelete(
                         where as Record<string, unknown>,
+                        // HOS-556 / HOS-559: the actor is validated three lines
+                        // up and was being dropped right here, which is why
+                        // `deleted_by_id` was NULL on every application delete.
+                        validActor.id,
                         execCtx?.tx
                     )
                 };

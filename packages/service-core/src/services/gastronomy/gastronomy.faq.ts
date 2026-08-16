@@ -259,7 +259,7 @@ export async function removeGastronomyFaq(
             );
         }
 
-        await faqModel.softDelete({ id: validated.faqId }, ctx?.tx);
+        await faqModel.softDelete({ id: validated.faqId }, actor.id, ctx?.tx);
         return { data: { success: true } };
     } catch (err) {
         if (err instanceof ServiceError) {

@@ -466,6 +466,7 @@ export class AttractionService extends BaseCrudRelatedService<
                         destinationId: destinationId as DestinationIdType,
                         attractionId: attractionId as AttractionIdType
                     },
+                    actor.id,
                     execCtx?.tx
                 );
                 if (typeof relation === 'number' || typeof relation === 'string' || !relation) {

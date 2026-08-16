@@ -54,7 +54,11 @@ describe('EntityCommentService.softDeleteOwn', () => {
         asMock(modelMock.findById).mockResolvedValue(makeComment());
         const result = await service.softDeleteOwn(actor, { commentId: COMMENT_ID });
         expectSuccess(result);
-        expect(asMock(modelMock.softDelete)).toHaveBeenCalledWith({ id: COMMENT_ID }, undefined);
+        expect(asMock(modelMock.softDelete)).toHaveBeenCalledWith(
+            { id: COMMENT_ID },
+            actor.id,
+            undefined
+        );
         expect(asMock(postModelMock.adjustCommentCount)).toHaveBeenCalledWith(
             { id: POST_ID, delta: -1 },
             undefined
