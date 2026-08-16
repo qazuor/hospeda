@@ -38,6 +38,10 @@ import {
 } from '@repo/service-core';
 import { env } from '../utils/env.js';
 import {
+    resolveReusableCommerceCheckout,
+    resolveReusablePartnerCheckout
+} from './billing/checkout-idempotency.js';
+import {
     buildPreapprovalPlanShareLink,
     resolveCheckoutMpPlanId
 } from './billing/mp-plan-provisioning.service.js';
@@ -710,6 +714,36 @@ export async function initiateCommerceMonthlySubscription(
         backUrl: urls.paymentMethodReturnUrl
     });
 
+    // ── Idempotency per LISTING (checkout-idempotency.ts) ────────────────────
+    // Path C mints a fresh subscription + a fresh, independently payable share
+    // link on every call, so two clicks on "pay" produced two live MercadoPago
+    // links for ONE listing — and a buyer who paid both was charged twice. The
+    // route-level 409 cannot cover this: it keys on {active, trialing,
+    // past_due}, and an in-flight checkout sits at `pending_provider`, which is
+    // deliberately outside that set (including it would wedge a listing forever
+    // on a single abandoned checkout). Instead, while the checkout is genuinely
+    // in flight, hand back THE SAME link.
+    //
+    // Placed after the MP plan is resolved because the resolved plan is one of
+    // the reuse conditions: `resolveOrProvisionMpPlan` re-provisions on price
+    // drift, and serving a link built on the previous plan would charge the old
+    // price. It resolves from cache, so this costs no extra MercadoPago call.
+    //
+    // Nothing is cancelled or refunded for a superseded pending — the
+    // `abandoned-pending-subs` cron already reaps exactly that row shape.
+    // Living here rather than in the route is what also covers
+    // `routes/commerce/admin/start-subscription.ts`, which has no guard at all.
+    const reusable = await resolveReusableCommerceCheckout({
+        entityType,
+        entityId,
+        customerId,
+        planId: plan.id,
+        mpPreapprovalPlanId: providerPriceId
+    });
+    if (reusable) {
+        return reusable;
+    }
+
     const customer = await billing.customers.get(customerId);
     if (!customer) {
         throw new SubscriptionCheckoutError(
@@ -879,6 +913,26 @@ export async function initiatePartnerMonthlySubscription(
         // preapproval_plan creation too (qzpay-mercadopago 2.5.0).
         backUrl: urls.paymentMethodReturnUrl
     });
+
+    // ── Idempotency per PARTNER (checkout-idempotency.ts) ────────────────────
+    // Same defect and same fix as the commerce checkout above — and more acute
+    // here, because `routes/partners/admin/send-link.ts` has NO guard of any
+    // kind: an admin clicking "send link" twice used to emit two independently
+    // payable MercadoPago links for one partner. While the first checkout is
+    // genuinely in flight, re-send THE SAME link.
+    //
+    // An admin who switched the partner's plan between the two sends does NOT
+    // get the stale link: the resolved `preapproval_plan` (and the commercial
+    // plan id) are part of the reuse conditions.
+    const reusable = await resolveReusablePartnerCheckout({
+        partnerId,
+        customerId,
+        planId: plan.id,
+        mpPreapprovalPlanId: providerPriceId
+    });
+    if (reusable) {
+        return reusable;
+    }
 
     const customer = await billing.customers.get(customerId);
     if (!customer) {

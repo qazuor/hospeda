@@ -91,14 +91,24 @@ vi.mock('../../src/services/billing/pending-provider-subscription-create', () =>
 }));
 
 vi.mock('@repo/db', () => ({
-    getDb: vi.fn(() => ({})),
+    // An EMPTY database: every `select(...)` resolves to no rows. That is what
+    // these cases mean — a listing with nothing in flight — so the per-listing
+    // checkout idempotency (`services/billing/checkout-idempotency.ts`) finds no
+    // bridge row and each call mints a fresh checkout, which is exactly the
+    // behaviour the assertions below pin. Reuse itself is covered in
+    // `test/services/billing/checkout-idempotency-by-entity.test.ts`.
+    getDb: vi.fn(() => ({
+        select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) })
+    })),
     // Retained so the PRE-fix implementation (which wrapped its own
     // `withTransaction`) still loads — the red run must fail on behavior, not
     // on a missing mock export.
     withTransaction: vi.fn((cb: (tx: unknown) => Promise<unknown>) => cb(txStub)),
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ strings, values }),
     eq: vi.fn((col: unknown, val: unknown) => ({ op: 'eq', col, val })),
+    and: vi.fn((...parts: unknown[]) => ({ op: 'and', parts })),
     billingSubscriptions: { __table: 'billing_subscriptions', id: 'id' },
+    billingPendingCheckouts: { __table: 'billing_pending_checkouts' },
     commerceListingSubscriptions: {
         entityType: 'entity_type',
         entityId: 'entity_id'
