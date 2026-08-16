@@ -47,17 +47,26 @@ const ApproveAndProvisionBodySchema = z.object({
 });
 
 /**
- * Response: the updated lead plus the provisioned owner's id and whether a new
- * account was created this call. The temporary password never leaves the
- * provisioning service (delivered by email only).
+ * Response: the updated lead, the provisioned owner's id, and what actually
+ * happened. The temporary password never leaves the provisioning service
+ * (delivered by email only).
+ *
+ * `accountCreated` and `credentialsSent` exist because the admin used to
+ * announce both unconditionally, and with an email that already had an account
+ * neither was true (H-87 / H-150). The backend always knew; the response
+ * shape had no room to say so.
  */
 const ApproveAndProvisionResponseSchema = z.object({
     /** The updated lead (status 'approved', linked to the provisioned owner). */
     lead: CommerceLeadSchema,
     /** UUID of the provisioned COMMERCE_OWNER user. */
     userId: z.string().uuid(),
-    /** `true` when a new owner account was created; `false` when already provisioned. */
-    provisioned: z.boolean()
+    /** `true` when THIS call did the provisioning; `false` on the idempotent no-op. */
+    provisioned: z.boolean(),
+    /** `true` only when a NEW account was created, not when an existing one was granted the role. */
+    accountCreated: z.boolean(),
+    /** `true` only when a credentials email was confirmed delivered. */
+    credentialsSent: z.boolean()
 });
 
 // ---------------------------------------------------------------------------

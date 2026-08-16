@@ -3,7 +3,7 @@
  * @description Port implementations for the CommerceOwnerProvisioningService (SPEC-239 T-050).
  *
  * Bridges the service-layer ports to the API's runtime dependencies
- * (Better Auth for user creation, sendNotification for credential delivery).
+ * (Better Auth for user creation, the notification helper for credential delivery).
  *
  * ## Why this file exists
  *
@@ -23,7 +23,7 @@ import type { CreateUserPort, ProvisioningNotificationPort } from '@repo/service
 import { grantRole } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { apiLogger } from '../utils/logger';
-import { sendNotification } from '../utils/notification-helper';
+import { trySendNotification } from '../utils/notification-helper';
 import { getAuth } from './auth';
 
 // ---------------------------------------------------------------------------
@@ -213,9 +213,10 @@ export function createCommerceOwnerCreateUserPort(headers: Headers): CreateUserP
  * the owner needs it to log in for the first time.  The notification service
  * does NOT store it in plain text beyond the email transport.
  *
- * The returned implementation `await`s the `sendNotification` call so that
- * the provisioning service's best-effort try/catch can capture any transport
- * failures and log them without aborting provisioning.
+ * The returned implementation reports DELIVERY back to the provisioning
+ * service, which passes it up to the admin as `credentialsSent`. Provisioning
+ * still never aborts on a transport failure — the account is worth keeping —
+ * but the operator is no longer told an email went out when it did not.
  *
  * @param siteUrl - Base URL of the public web app (e.g. `https://hospeda.com.ar`).
  *   Used to construct the change-password link.
@@ -236,7 +237,12 @@ export function createCommerceOwnerCredentialsNotificationPort(
 ): ProvisioningNotificationPort {
     return {
         notifyOwnerCredentials: async ({ email, name, temporaryPassword, leadId }) => {
-            await sendNotification({
+            // `trySendNotification`, not `sendNotification`: the latter reports
+            // nothing back, so its resolution says only "we called it". The
+            // admin repeats this outcome to the applicant as "las credenciales
+            // fueron enviadas", and that sentence needs a fact behind it
+            // (H-87 / H-150).
+            return await trySendNotification({
                 type: NotificationType.COMMERCE_OWNER_CREDENTIALS,
                 recipientEmail: email,
                 recipientName: name,

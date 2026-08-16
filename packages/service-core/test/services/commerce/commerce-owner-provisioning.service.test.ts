@@ -97,9 +97,16 @@ function makeExistingUserPort(): CreateUserPort {
     });
 }
 
-function makeNotificationPort(): ProvisioningNotificationPort {
+/**
+ * Port stub for a credentials email that WAS delivered.
+ *
+ * The port reports delivery now (H-87 / H-150): the admin repeats its outcome
+ * to the applicant as "las credenciales fueron enviadas", so resolving is not
+ * the same claim as arriving.
+ */
+function makeNotificationPort(delivered = true): ProvisioningNotificationPort {
     return {
-        notifyOwnerCredentials: vi.fn().mockResolvedValue(undefined)
+        notifyOwnerCredentials: vi.fn().mockResolvedValue({ delivered })
     };
 }
 
@@ -127,6 +134,71 @@ beforeEach(() => {
 
 describe('CommerceOwnerProvisioningService', () => {
     describe('provisionCommerceOwner', () => {
+        // ── H-87 / H-150 ────────────────────────────────────────────────
+        // The admin told the operator "cuenta creada, credenciales enviadas"
+        // in every case, including the one where neither happened. The service
+        // now reports the fact, and these are the three ways it can be false.
+        describe('reports whether credentials actually went out', () => {
+            it('true when the notifier confirms delivery', async () => {
+                const service = makeService(makeCreateUserPort(), makeNotificationPort(true));
+
+                const result = await service.provisionCommerceOwner(adminActor, {
+                    lead: mockLead
+                });
+
+                expect(result.data?.credentialsSent).toBe(true);
+                expect(result.data?.alreadyExisted).toBe(false);
+            });
+
+            it('false when the transport reports it did not send', async () => {
+                const service = makeService(makeCreateUserPort(), makeNotificationPort(false));
+
+                const result = await service.provisionCommerceOwner(adminActor, {
+                    lead: mockLead
+                });
+
+                // The account is still worth keeping — provisioning must not
+                // abort over a mail server. What must not survive is the claim.
+                expect(result.error).toBeUndefined();
+                expect(result.data?.userId).toBe(USER_ID);
+                expect(result.data?.credentialsSent).toBe(false);
+            });
+
+            it('false when the transport throws', async () => {
+                const service = makeService(makeCreateUserPort(), {
+                    notifyOwnerCredentials: vi.fn().mockRejectedValue(new Error('smtp down'))
+                });
+
+                const result = await service.provisionCommerceOwner(adminActor, {
+                    lead: mockLead
+                });
+
+                expect(result.error).toBeUndefined();
+                expect(result.data?.credentialsSent).toBe(false);
+            });
+
+            it('false when no notifier is configured at all', async () => {
+                const service = makeService(makeCreateUserPort(), null);
+
+                const result = await service.provisionCommerceOwner(adminActor, {
+                    lead: mockLead
+                });
+
+                expect(result.data?.credentialsSent).toBe(false);
+            });
+
+            it('false for an email that already had an account, which is owed no email', async () => {
+                const service = makeService(makeExistingUserPort(), makeNotificationPort(true));
+
+                const result = await service.provisionCommerceOwner(adminActor, {
+                    lead: mockLead
+                });
+
+                expect(result.data?.alreadyExisted).toBe(true);
+                expect(result.data?.credentialsSent).toBe(false);
+            });
+        });
+
         it('should create a user via the CreateUserPort', async () => {
             const createUserPort = makeCreateUserPort();
             const service = makeService(createUserPort);

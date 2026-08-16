@@ -179,11 +179,15 @@ describe('leadIntakeBackstopJob', () => {
         expect(result.processed).toBe(2);
         expect(mockAnnounce).toHaveBeenCalledTimes(2);
 
-        const funnels = mockAnnounce.mock.calls.map((call) => call[0].alert.funnel);
+        const funnels = mockAnnounce.mock.calls.map((call) => call[0]?.alert.funnel);
         expect(funnels).toEqual(['commerce', 'alliance']);
 
         // The alert carries the lead, exactly as the intake path builds it.
-        const allianceAlert = mockAnnounce.mock.calls[1][0].alert;
+        const allianceCall = mockAnnounce.mock.calls[1];
+        if (!allianceCall) {
+            throw new Error('expected a second announce call for the alliance lead');
+        }
+        const allianceAlert = allianceCall[0].alert;
         expect(allianceAlert.leadId).toBe('alliance-1');
         expect(allianceAlert.programLabel).toBe('Proveedor');
         expect(allianceAlert.contactEmail).toBe('ana@example.com');

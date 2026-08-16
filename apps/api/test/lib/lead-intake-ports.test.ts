@@ -54,6 +54,21 @@ import {
     type LeadIntakeAlert
 } from '../../src/lib/lead-intake-ports';
 
+/**
+ * The payload handed to the transport on the nth send.
+ *
+ * Indexing `mock.calls` directly types every element as possibly undefined, and
+ * silencing that with `?.` would turn a MISSING call into a passing assertion —
+ * the exact failure shape these tests exist to catch. This throws instead.
+ */
+function sentPayload(index = 0): Record<string, unknown> {
+    const call = mockTrySend.mock.calls[index];
+    if (!call) {
+        throw new Error(`expected a notification send at index ${index}, got none`);
+    }
+    return call[0] as Record<string, unknown>;
+}
+
 const alert = (overrides: Partial<LeadIntakeAlert> = {}): LeadIntakeAlert => ({
     funnel: 'alliance',
     leadId: 'lead-1',
@@ -81,7 +96,7 @@ describe('lead intake ops alert (H-62 / H-148)', () => {
             await announceLeadToOps({ alert: alert() });
 
             expect(mockTrySend).toHaveBeenCalledTimes(2);
-            const recipients = mockTrySend.mock.calls.map((call) => call[0].recipientEmail);
+            const recipients = mockTrySend.mock.calls.map((call) => call[0]?.recipientEmail);
             expect(recipients).toEqual(['ops@hospeda.com.ar', 'socios@hospeda.com.ar']);
         });
 
@@ -91,7 +106,7 @@ describe('lead intake ops alert (H-62 / H-148)', () => {
             // that dependency one click further along.
             await announceLeadToOps({ alert: alert() });
 
-            const payload = mockTrySend.mock.calls[0][0];
+            const payload = sentPayload();
             expect(payload.type).toBe('admin_lead_received');
             expect(payload.contactName).toBe('Juan Pérez');
             expect(payload.contactEmail).toBe('juan@example.com');
@@ -106,10 +121,10 @@ describe('lead intake ops alert (H-62 / H-148)', () => {
         it('points a commerce lead at the commerce queue', async () => {
             await announceLeadToOps({ alert: alert({ funnel: 'commerce' }) });
 
-            expect(mockTrySend.mock.calls[0][0].adminUrl).toBe(
+            expect(sentPayload().adminUrl).toBe(
                 'https://admin.hospeda.com.ar/platform/commerce-leads'
             );
-            expect(mockTrySend.mock.calls[0][0].funnelLabel).toBe('Comercios');
+            expect(sentPayload().funnelLabel).toBe('Comercios');
         });
 
         it('stamps opsNotifiedAt when at least one mailbox received it', async () => {
@@ -154,8 +169,8 @@ describe('lead intake ops alert (H-62 / H-148)', () => {
             } as any);
 
             expect(mockTrySend).toHaveBeenCalled();
-            expect(mockTrySend.mock.calls[0][0].programLabel).toBe('Gastronomía');
-            expect(mockTrySend.mock.calls[0][0].businessName).toBe('La Parrilla de Juan');
+            expect(sentPayload().programLabel).toBe('Gastronomía');
+            expect(sentPayload().businessName).toBe('La Parrilla de Juan');
         });
 
         it('falls back to the raw domain rather than failing to send', async () => {
@@ -174,7 +189,7 @@ describe('lead intake ops alert (H-62 / H-148)', () => {
                 // biome-ignore lint/suspicious/noExplicitAny: see above.
             } as any);
 
-            expect(mockTrySend.mock.calls[0][0].programLabel).toBe('lodging_supplies');
+            expect(sentPayload().programLabel).toBe('lodging_supplies');
         });
     });
 
@@ -197,8 +212,8 @@ describe('lead intake ops alert (H-62 / H-148)', () => {
             });
 
             expect(mockTrySend).toHaveBeenCalled();
-            expect(mockTrySend.mock.calls[0][0].programLabel).toBe('Proveedor');
-            expect(mockTrySend.mock.calls[0][0].funnelLabel).toBe('Aliados');
+            expect(sentPayload().programLabel).toBe('Proveedor');
+            expect(sentPayload().funnelLabel).toBe('Aliados');
         });
     });
 });

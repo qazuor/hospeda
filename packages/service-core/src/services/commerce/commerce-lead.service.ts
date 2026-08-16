@@ -79,7 +79,25 @@ export interface CommerceOwnerProvisioner {
         actor: Actor,
         input: { lead: CommerceLead },
         ctx?: ServiceContext
-    ) => Promise<ServiceOutput<{ userId: string; email: string; name: string }>>;
+    ) => Promise<
+        ServiceOutput<{
+            userId: string;
+            email: string;
+            name: string;
+            /**
+             * Whether the address already had an account, which was granted the
+             * commerce role instead of a second one being created.
+             *
+             * This port used to declare only `userId`, `email` and `name`, so
+             * the distinction was erased at the TYPE level before any code
+             * could drop it — and the screen went on narrating the case that
+             * had not happened (H-87 / H-150).
+             */
+            alreadyExisted: boolean;
+            /** Whether a credentials email was actually delivered. */
+            credentialsSent: boolean;
+        }>
+    >;
 }
 
 // ---------------------------------------------------------------------------
@@ -127,10 +145,33 @@ export interface ApproveAndProvisionResult {
     /** The provisioned COMMERCE_OWNER user id. */
     readonly userId: string;
     /**
-     * `true` when a new owner account was created during this call;
-     * `false` when the lead was already provisioned (idempotent no-op).
+     * `true` when THIS CALL did the provisioning work; `false` when the lead
+     * was already provisioned (idempotent no-op).
+     *
+     * It does NOT mean an account was created — its previous wording said so
+     * and was wrong, which is exactly the trap it laid: an approval that linked
+     * an existing account returns `true` here, and a UI branching on it to
+     * announce "cuenta creada" chooses wrong (H-87 / H-150). Use
+     * {@link accountCreated} for that question.
      */
     readonly provisioned: boolean;
+    /**
+     * `true` only when a NEW user account was created for the lead's email.
+     *
+     * `false` when the address already had an account and was simply granted
+     * the commerce role (HOS-296 G-4), and `false` for the idempotent no-op,
+     * where this call created nothing at all.
+     */
+    readonly accountCreated: boolean;
+    /**
+     * `true` only when a credentials email was actually delivered.
+     *
+     * `false` when the account already existed — its own password stands and
+     * the generated one would not sign anyone in — and `false` when the send
+     * was attempted and failed. Both cases end with an applicant who has no
+     * credentials to look for, so both must read the same way to the operator.
+     */
+    readonly credentialsSent: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -543,7 +584,12 @@ export class CommerceLeadService extends BaseService {
                     return {
                         lead: existing,
                         userId: existing.provisionedUserId,
-                        provisioned: false
+                        provisioned: false,
+                        // This call created nothing and sent nothing. Whatever
+                        // happened on the original approval is not something
+                        // this response may claim.
+                        accountCreated: false,
+                        credentialsSent: false
                     };
                 }
 
@@ -559,7 +605,7 @@ export class CommerceLeadService extends BaseService {
                         provisionResult.error?.message ?? 'Owner provisioning failed'
                     );
                 }
-                const { userId } = provisionResult.data;
+                const { userId, alreadyExisted, credentialsSent } = provisionResult.data;
 
                 // (3) Mark approved + link the provisioned owner in one update.
                 const updatePayload: CommerceLeadAdminUpdateInput = {
@@ -584,7 +630,13 @@ export class CommerceLeadService extends BaseService {
                     execCtx?.tx
                 )) as CommerceLead;
 
-                return { lead: updated, userId, provisioned: true };
+                return {
+                    lead: updated,
+                    userId,
+                    provisioned: true,
+                    accountCreated: !alreadyExisted,
+                    credentialsSent
+                };
             }
         });
     }

@@ -946,14 +946,16 @@
         },
         "approveProvision": {
             "title": "Approve & create owner account",
-            "description": "The lead for {{businessName}} will be approved and a COMMERCE_OWNER account created for {{email}} in a single step. Temporary credentials will be sent by email.",
+            "description": "The lead for {{businessName}} will be approved and {{email}} will be enabled as COMMERCE_OWNER. If that email already has an account, the role is added to it and its password is untouched; otherwise an account is created and temporary credentials are emailed.",
             "noteLabel": "Note (optional)",
             "notePlaceholder": "Internal comment for the team...",
             "confirm": "Approve & create account",
             "submitting": "Processing...",
-            "successMessage": "Lead approved and account created for {{email}}. Credentials have been sent by email.",
+            "successMessage": "Lead approved and account created for {{email}}. Credentials were sent by email.",
             "alreadyProvisionedMessage": "The lead was already provisioned.",
-            "error": "Failed to approve and create the account. Please try again."
+            "error": "Failed to approve and create the account. Please try again.",
+            "successLinkedMessage": "Lead approved. {{email}} already had an account: the commerce role was added and its password is unchanged. No credentials were sent.",
+            "successNoCredentialsMessage": "Lead approved and account created for {{email}}, but the credentials email could not be sent. They cannot sign in yet."
         },
         "handle": {
             "title": "Handle lead",
@@ -969,11 +971,13 @@
         },
         "provision": {
             "title": "Create owner account",
-            "description": "A COMMERCE_OWNER account will be created for {{businessName}} ({{email}}). Temporary credentials will be sent by email.",
+            "description": "This will enable {{businessName}} ({{email}}) as COMMERCE_OWNER. If that email already has an account, the role is added to it and its password is untouched; otherwise an account is created and temporary credentials are emailed.",
             "confirm": "Create account",
             "submitting": "Creating...",
-            "successMessage": "Account created for {{name}} ({{email}}). Credentials have been sent by email.",
-            "error": "Failed to create account. Please try again."
+            "successMessage": "Account created for {{name}} ({{email}}). Credentials were sent by email.",
+            "error": "Failed to create account. Please try again.",
+            "successLinkedMessage": "{{email}} already had an account: the commerce role was added and its password is unchanged. No credentials were sent.",
+            "successNoCredentialsMessage": "Account created for {{name}} ({{email}}), but the credentials email could not be sent. They cannot sign in yet."
         },
         "pagination": {
             "prev": "Previous",
