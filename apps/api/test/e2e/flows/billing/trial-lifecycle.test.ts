@@ -1,7 +1,7 @@
 /**
  * Trial lifecycle — activation case (SPEC-143 T-143-24).
  *
- * Validates the activation leg of the 14-day trial lifecycle exposed by
+ * Validates the activation leg of the owner-tier trial lifecycle exposed by
  * `POST /api/v1/protected/billing/trial/start`. The expiration leg (cron
  * blocking) is covered by T-143-25 in the same file once added.
  *
@@ -15,8 +15,9 @@
  * Trial plan binding: `trial.service.ts:103` hard-codes the trial plan
  * slug as `owner-basico`. Tests seed a plan with that exact name so the
  * service-side lookup succeeds (`billing.plans.list().data.find(p =>
- * p.name === planSlug)`). Trial length is `OWNER_TRIAL_DAYS = 14` from
- * `@repo/billing/constants` (assertions reference the literal 14).
+ * p.name === planSlug)`). Trial length is `OWNER_TRIAL_DAYS` from
+ * `@repo/billing/constants` (30 days as of the 2026-08-15 owner decision;
+ * this suite imports the constant instead of a literal so it never drifts).
  *
  * @module test/e2e/flows/billing/trial-lifecycle
  */
@@ -47,6 +48,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
     };
 });
 
+import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { and, billingSubscriptionEvents, billingSubscriptions, eq } from '@repo/db';
 import { BILLING_EVENT_TYPES } from '@repo/service-core';
 import { Hono } from 'hono';
@@ -80,14 +82,16 @@ stubRef.current = mpStub.adapter;
 const TRIAL_PLAN_NAME = 'owner-basico';
 
 /**
- * Hard-coded by `@repo/billing/constants` as `OWNER_TRIAL_DAYS = 14`.
+ * Sourced from `@repo/billing`'s `OWNER_TRIAL_DAYS` (30 days as of the
+ * 2026-08-15 owner decision) so this fixture never drifts from the real
+ * constant.
  */
-const TRIAL_DAYS = 14;
+const TRIAL_DAYS = OWNER_TRIAL_DAYS;
 
 /**
  * Slack window for trial_end timestamp assertions. Trial creation
- * computes `now + 14 days` server-side; the test compares against its
- * own wall clock a few millis later. One hour is generous enough to
+ * computes `now + TRIAL_DAYS days` server-side; the test compares against
+ * its own wall clock a few millis later. One hour is generous enough to
  * absorb any timezone arithmetic without papering over a missing day
  * addition.
  */
@@ -165,7 +169,7 @@ describe('SPEC-143 trial lifecycle e2e', () => {
             await testDb.clean();
         });
 
-        it('creates a trialing subscription with trial_end ~14 days out', async () => {
+        it('creates a trialing subscription with trial_end ~TRIAL_DAYS days out', async () => {
             // ACT
             const response = await client.post('/api/v1/protected/billing/trial/start', {});
 
@@ -184,7 +188,7 @@ describe('SPEC-143 trial lifecycle e2e', () => {
             expect(body.data.success).toBe(true);
             expect(body.data.subscriptionId).toMatch(/^[0-9a-f-]{36}$/);
 
-            // ASSERT: DB row landed in trialing status with trial_end ~14d.
+            // ASSERT: DB row landed in trialing status with trial_end ~TRIAL_DAYSd.
             const rows = await testDb
                 .getDb()
                 .select()
@@ -196,7 +200,7 @@ describe('SPEC-143 trial lifecycle e2e', () => {
             expect(row?.status).toBe('trialing');
             expect(row?.customerId).toBe(customerId);
 
-            // Trial bounds: trialStart ~now, trialEnd ~ now + 14d. Allow one
+            // Trial bounds: trialStart ~now, trialEnd ~ now + TRIAL_DAYSd. Allow one
             // hour of drift on either side to absorb the small gap between
             // server clock and test clock.
             expect(row?.trialStart).toBeInstanceOf(Date);
