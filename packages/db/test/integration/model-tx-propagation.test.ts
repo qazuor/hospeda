@@ -79,6 +79,11 @@ describe('SPEC-061 Phase B — Model transaction propagation', () => {
             const data = testData.tag();
 
             await withTestTransaction(async (tx) => {
+                // HOS-556: tags.deleted_by_id is a FK to users.id, so the
+                // deleter has to be a real row inside this transaction.
+                const deleter = testData.user();
+                await tx.insert(users).values(deleter);
+
                 const created = await tagModel.create(data, tx);
                 expect(created.id).toBe(data.id);
 
@@ -86,11 +91,13 @@ describe('SPEC-061 Phase B — Model transaction propagation', () => {
                 const afterUpdate = await tagModel.findById(data.id, tx);
                 expect(afterUpdate?.name).toBe('Renamed Tag');
 
-                const softCount = await tagModel.softDelete({ id: data.id }, tx);
+                const softCount = await tagModel.softDelete({ id: data.id }, deleter.id, tx);
                 expect(softCount).toBe(1);
 
                 const afterSoftDelete = await tagModel.findById(data.id, tx);
                 expect(afterSoftDelete?.deletedAt).not.toBeNull();
+                // HOS-556: authorship travels with the delete, inside the tx.
+                expect(afterSoftDelete?.deletedById).toBe(deleter.id);
 
                 const restoreCount = await tagModel.restore({ id: data.id }, tx);
                 expect(restoreCount).toBe(1);
