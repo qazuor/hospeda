@@ -189,6 +189,26 @@ export const accommodationsApi = {
         /** HOS-113 §6.2 — slug form of `poiId`. */
         poiSlug?: string;
         /**
+         * Availability filter — first night of the stay, `YYYY-MM-DD`.
+         *
+         * The server excludes any accommodation with a blocked
+         * `accommodation_occupancy` row inside `[checkIn, checkOut)`, so the
+         * checkout day itself stays free.
+         *
+         * **Both dates are required for the filter to apply**: the model
+         * ignores a lone `checkIn` or `checkOut` (back-compat with pre-HOS-43
+         * callers) and does so silently. Send the pair or neither — use
+         * {@link buildAvailabilityParams}.
+         *
+         * H-120: these were absent from this type, so a listing page that had
+         * the dates in the URL could not forward them even if it tried. The
+         * sidebar echoed the visitor's chosen dates back at them while the
+         * results were never filtered.
+         */
+        checkIn?: string;
+        /** Availability filter — checkout day, `YYYY-MM-DD`. See `checkIn`. */
+        checkOut?: string;
+        /**
          * HOS-103: opt in to the short-TTL SSR cache. Pass
          * `SSR_PUBLIC_CACHE_TTL_MS` ONLY from bounded call sites (the homepage
          * "featured" strip). Do NOT pass it from the filterable listing/map/search

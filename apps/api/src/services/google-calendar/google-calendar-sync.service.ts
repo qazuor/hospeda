@@ -78,6 +78,7 @@ import {
     listEvents
 } from './google-calendar-client.js';
 import { getGoogleCredential } from './google-calendar-credential.repository.js';
+import { classifyOccupancyEvent } from './google-calendar-occupancy-filter.js';
 import { GoogleTokenRefreshError } from './google-token.errors.js';
 import { getValidGoogleToken } from './google-token.service.js';
 
@@ -103,6 +104,22 @@ const PROVIDER = OccupancySourceEnum.GOOGLE_CALENDAR;
 const SYNC_RESPONSE_TIMEZONE = MARKET_TIMEZONE;
 
 /**
+ * How far forward the reconcile window reaches, in months.
+ *
+ * The fetch used to be unbounded on the upper side. Combined with
+ * `singleEvents=true`, that made Google expand a yearly recurrence for the
+ * whole life of its rule: five contact birthdays became 302 blocked days
+ * reaching **2056** on two production accommodations (H-131).
+ *
+ * 24 months is chosen from the range the finding recommends (12–24). The
+ * generous end is deliberate: the window has to be wider than any booking a
+ * host would realistically hold, because truncating a real reservation is the
+ * worse of the two failures. Nothing depends on the exact number — a booking
+ * beyond the horizon simply gets imported by a later run as the window slides.
+ */
+const SYNC_WINDOW_MONTHS = 24;
+
+/**
  * Outcome of a single {@link syncAccommodationCalendar} run.
  */
 export type CalendarSyncResult =
@@ -110,6 +127,14 @@ export type CalendarSyncResult =
           readonly status: 'ok';
           /** Number of calendar events examined this run. */
           readonly eventsProcessed: number;
+          /**
+           * How many live events were skipped as non-occupying (birthdays and
+           * other Google-synthesised or `transparent` entries). Cancelled
+           * events are not counted — they were never candidates. Surfaced so a
+           * host reporting "my calendar blocks nothing" can be answered from
+           * the sync result instead of by guessing (H-131).
+           */
+          readonly eventsExcluded: number;
           /** Number of occupancy rows inserted this run. */
           readonly datesUpserted: number;
           /** Number of occupancy rows removed this run (replaced future rows). */
@@ -183,8 +208,9 @@ const fetchAllPages = async (params: {
     accessToken: string;
     calendarId: string;
     timeMin: string;
+    timeMax: string;
 }): Promise<{ events: GoogleCalendarEvent[] }> => {
-    const { accessToken, calendarId, timeMin } = params;
+    const { accessToken, calendarId, timeMin, timeMax } = params;
     const events: GoogleCalendarEvent[] = [];
     let pageToken: string | undefined;
 
@@ -194,6 +220,7 @@ const fetchAllPages = async (params: {
             calendarId,
             timeZone: SYNC_RESPONSE_TIMEZONE,
             timeMin,
+            timeMax,
             ...(pageToken === undefined ? {} : { pageToken })
         });
         events.push(...page.items);
@@ -290,12 +317,18 @@ export const syncAccommodationCalendar = async (params: {
     //    are extracted (both in SYNC_RESPONSE_TIMEZONE). See
     //    `getTodayInMarketTimezone`'s doc for why UTC would be wrong here.
     const fromDate = getTodayInMarketTimezone();
-    const timeMin = new Date(`${fromDate}T00:00:00-03:00`).toISOString();
+    const windowStart = new Date(`${fromDate}T00:00:00-03:00`);
+    const timeMin = windowStart.toISOString();
+    // Upper bound: without it, `singleEvents=true` expands a yearly recurrence
+    // for the life of its rule — decades of blocked days (H-131).
+    const windowEnd = new Date(windowStart);
+    windowEnd.setMonth(windowEnd.getMonth() + SYNC_WINDOW_MONTHS);
+    const timeMax = windowEnd.toISOString();
 
-    // 3. FULL fetch of every live event from `timeMin` forward.
+    // 3. FULL fetch of every live event inside the reconcile window.
     let fetched: { events: GoogleCalendarEvent[] };
     try {
-        fetched = await fetchAllPages({ accessToken, calendarId, timeMin });
+        fetched = await fetchAllPages({ accessToken, calendarId, timeMin, timeMax });
     } catch (error) {
         if (error instanceof GoogleCalendarApiError) {
             // 401/403 => the grant was revoked at Google; the host must
@@ -314,8 +347,23 @@ export const syncAccommodationCalendar = async (params: {
     //    event to cover a date wins its provenance. Overlaps collapse to a
     //    single row that stays blocked as long as EITHER event is live.
     const desired = new Map<string, { readonly id: string; readonly title: string | null }>();
+    let excludedCount = 0;
     for (const event of fetched.events) {
-        if (event.status === 'cancelled') {
+        // H-131: the connected calendar is the host's PRIMARY one, so it also
+        // holds their private life. A contact birthday is not a booking.
+        const classification = classifyOccupancyEvent({ event });
+        if (!classification.include) {
+            if (classification.reason !== 'cancelled') {
+                excludedCount += 1;
+                apiLogger.debug(
+                    {
+                        accommodationId,
+                        externalEventId: event.id,
+                        reason: classification.reason
+                    },
+                    'google-calendar-sync: event excluded from occupancy'
+                );
+            }
             continue;
         }
         // Truncated to 500 chars (AFTER trimming) to match the DB column's
@@ -379,6 +427,7 @@ export const syncAccommodationCalendar = async (params: {
     return {
         status: 'ok',
         eventsProcessed: fetched.events.length,
+        eventsExcluded: excludedCount,
         datesUpserted: inserted,
         datesRemoved: removed,
         fullSync: true

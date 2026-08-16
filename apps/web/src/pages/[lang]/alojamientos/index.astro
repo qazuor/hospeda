@@ -26,6 +26,7 @@ import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client'
 import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { buildAvailabilityParams } from '@/lib/availability-params';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -153,15 +154,20 @@ const sortBy = sortResolved.sortBy;
 const sortOrder = sortResolved.sortOrder;
 
 // --- Hero search context ---
-// `checkIn` / `checkOut` arrive from the home hero search bar; the listing
-// surfaces them in the sidebar but doesn't filter by them yet (no real-time
-// availability) — they're forwarded to the detail page so the contact form
-// can pre-fill the message.
+// `checkIn` / `checkOut` arrive from the home hero search bar. They DO filter
+// (H-120): the pair goes to the API, which drops any accommodation holding a
+// blocked occupancy row inside `[checkIn, checkOut)`. They are ALSO surfaced in
+// the sidebar and forwarded to the detail page so the contact form can pre-fill
+// the message — that second use is what they were originally added for, and for
+// a long time it was the only one, so the page confirmed a filter it never
+// applied.
 //
 // `adults` / `children` DO filter — their sum is sent to the API as
 // `minGuests` further down so a 3+2 party doesn't see 1-bedroom studios.
 const checkIn = url.searchParams.get('checkIn') ?? undefined;
 const checkOut = url.searchParams.get('checkOut') ?? undefined;
+// Both-or-neither: the server silently ignores a lone date. See the helper.
+const availabilityParams = buildAvailabilityParams({ checkIn, checkOut });
 const adultsParam = url.searchParams.get('adults');
 const childrenParam = url.searchParams.get('children');
 const adults = adultsParam ? Number(adultsParam) : undefined;
@@ -265,6 +271,8 @@ const [destinationsResult, amenitiesResult, featuresResult, result] = await Prom
 	radius: hasGeoRadius ? radius : undefined,
 	poiId: poiIdRaw,
 	poiSlug: poiSlugRaw,
+	// H-120: the availability filter. Spread as a pair or not at all.
+	...availabilityParams,
 	// NOT cached on purpose — see the note above the catalog reads.
 	})
 ]);

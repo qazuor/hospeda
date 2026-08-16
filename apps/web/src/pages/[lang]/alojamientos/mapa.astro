@@ -20,6 +20,7 @@ import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client'
 import type { FilterGroup } from '@/components/shared/filters/FilterSidebar.client';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
+import { buildAvailabilityParams } from '@/lib/availability-params';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -101,9 +102,13 @@ const includeNoPrice =
     url.searchParams.get('includeNoPrice') === 'false' ? false : undefined;
 const includeNoReviews =
     url.searchParams.get('includeNoReviews') === 'false' ? false : undefined;
-// Trip-context (forwarded to detail link, not filtered server-side).
+// Trip-context. The dates are forwarded to the detail link AND used as a
+// server-side availability filter (H-120) — both on the initial SSR fetch and
+// on every viewport refetch, or panning the map would quietly reinstate the
+// unfiltered result set (the BETA-166 failure mode, one filter later).
 const checkIn = url.searchParams.get('checkIn') ?? undefined;
 const checkOut = url.searchParams.get('checkOut') ?? undefined;
+const availabilityParams = buildAvailabilityParams({ checkIn, checkOut });
 const adultsParam = url.searchParams.get('adults');
 const childrenParam = url.searchParams.get('children');
 const adultsContext = adultsParam ? Number(adultsParam) : undefined;
@@ -149,6 +154,8 @@ const result = await accommodationsApi.list({
 	includeAmenities: true,
 	includeNoPrice,
 	includeNoReviews,
+	// H-120: availability filter on the initial SSR fetch.
+	...availabilityParams,
 });
 
 const hasError = !result.ok;
@@ -180,6 +187,10 @@ const mapExtraSearchParams: Record<string, unknown> = {
 	includeAmenities: true,
 	includeNoPrice,
 	includeNoReviews,
+	// H-120: the viewport refetch must carry the availability filter too —
+	// otherwise the first `moveend` replaces the filtered SSR results with
+	// unfiltered ones a few hundred ms after load.
+	...availabilityParams,
 };
 
 const baseCards = items.map((item) => toAccommodationCardProps({ item: item as unknown as Record<string, unknown>, locale }));
