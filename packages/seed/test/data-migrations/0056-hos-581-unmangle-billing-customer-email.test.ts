@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Unit tests for the `0055-hos-581-unmangle-billing-customer-email` data
+ * Unit tests for the `0056-hos-581-unmangle-billing-customer-email` data
  * migration, using a mocked query chain — no real database connection. Same
  * style as `0054-hos374-editorial-trusted-editor.test.ts`.
  *
@@ -14,10 +14,10 @@
  * nothing at all, and that the summary names what changed. The predicate
  * itself is verified by running the migration against a database.
  *
- * @module test/data-migrations/0055-hos-581-unmangle-billing-customer-email
+ * @module test/data-migrations/0056-hos-581-unmangle-billing-customer-email
  */
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0055-hos-581-unmangle-billing-customer-email.js';
+import * as migration from '../../src/data-migrations/0056-hos-581-unmangle-billing-customer-email.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 interface CandidateRow {
@@ -64,7 +64,7 @@ function buildCtx(db: SeedMigrationCtx['db']): SeedMigrationCtx {
     return { db } as unknown as SeedMigrationCtx;
 }
 
-describe('0055-hos-581-unmangle-billing-customer-email', () => {
+describe('0056-hos-581-unmangle-billing-customer-email', () => {
     it('is declared non-destructive and required', () => {
         expect(migration.meta.destructive).toBe(false);
         expect(migration.meta.group).toBe('required');

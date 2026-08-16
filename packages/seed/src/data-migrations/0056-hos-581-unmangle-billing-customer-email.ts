@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0055-hos-581-unmangle-billing-customer-email
+ * Data migration: 0056-hos-581-unmangle-billing-customer-email
  *
  * Restores `billing_customers.email` to the address the user actually typed,
  * for rows mangled while BETA-164's persist-time sanitizing was in force.
@@ -67,7 +67,7 @@ import { and, billingCustomers, eq, isNull, ne, sql, users } from '@repo/db';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0055-hos-581-unmangle-billing-customer-email',
+    name: '0056-hos-581-unmangle-billing-customer-email',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];
