@@ -49,7 +49,18 @@ describe('SearchContextBanner.astro', () => {
         expect(src).toContain('var(--surface-warm)');
     });
 
-    it('uses local-date formatting (UTC noon) to dodge TZ shifts', () => {
-        expect(src).toContain('Date.UTC(y, m - 1, d, 12)');
+    it('renders the search dates through the calendar-date helper, not the plain formatter', () => {
+        // This used to pin the exact arithmetic (`Date.UTC(y, m - 1, d, 12)`) —
+        // one particular spelling of "read a calendar day without letting the
+        // timezone shift it". The repo had six such spellings, and the rule
+        // being re-invented per screen is precisely why four OTHER screens
+        // re-invented it wrong (smoke agosto 2026, H-09/H-63/H-73/H-84).
+        //
+        // So the assertion is now the rule, not the arithmetic: go through the
+        // shared helper, and do NOT fall back to the generic `formatDate`, which
+        // renders in the viewer's own timezone.
+        expect(src).toContain("from '@repo/utils'");
+        expect(src).toContain('formatCalendarDate');
+        expect(src).not.toMatch(/\bformatDate\s*\(/);
     });
 });
