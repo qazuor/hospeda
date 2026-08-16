@@ -5,9 +5,10 @@
  * persisted in billing_subscription_events rows, so any rename would corrupt
  * historical data. Pin the literals here so a rename fails CI immediately.
  *
- * All 24 types are asserted (16 pre-existing + 3 added by SPEC-147 T-002/T-009
+ * All 25 types are asserted (16 pre-existing + 3 added by SPEC-147 T-002/T-009
  * + 1 added by SPEC-147 T-010 + 2 added by SPEC-148 T-004 + 1 added by HOS-171
- * + 1 added by HOS-232 (USER_UNCANCELED)).
+ * + 1 added by HOS-232 (USER_UNCANCELED) + 1 added by H-137
+ * (TRIAL_NOT_GRANTED_BY_PROVIDER)).
  */
 
 import { describe, expect, it } from 'vitest';
@@ -138,8 +139,32 @@ describe('BILLING_EVENT_TYPES', () => {
             expect(value).toBe('USER_UNCANCELED');
         });
 
-        it('the total number of event types is 24', () => {
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(24);
+        it('the total number of event types is 25', () => {
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(25);
+        });
+    });
+
+    describe('H-137 new event type — stable contract value', () => {
+        it('TRIAL_NOT_GRANTED_BY_PROVIDER is exported with the exact string value', () => {
+            // Persisted on billing_subscription_events rows for every customer
+            // charged instead of receiving the trial they were shown, so a
+            // rename would orphan the audit trail of a money incident.
+            expect(BILLING_EVENT_TYPES.TRIAL_NOT_GRANTED_BY_PROVIDER).toBe(
+                'TRIAL_NOT_GRANTED_BY_PROVIDER'
+            );
+        });
+
+        it('TRIAL_NOT_GRANTED_BY_PROVIDER is assignable to BillingEventType', () => {
+            const value: BillingEventType = BILLING_EVENT_TYPES.TRIAL_NOT_GRANTED_BY_PROVIDER;
+            expect(value).toBe('TRIAL_NOT_GRANTED_BY_PROVIDER');
+        });
+
+        it('is distinct from TRIAL_RECONCILED', () => {
+            // The whole point of minting a new type: a broken promise must not
+            // hide inside ordinary conversion traffic.
+            expect(BILLING_EVENT_TYPES.TRIAL_NOT_GRANTED_BY_PROVIDER).not.toBe(
+                BILLING_EVENT_TYPES.TRIAL_RECONCILED
+            );
         });
     });
 

@@ -353,6 +353,7 @@ function formatPriceArs(cents: number): string {
 								currency="ARS"
 								ctaText={ctaText}
 								locale={locale}
+								trialDays={plan.hasTrial ? plan.trialDays : 0}
 							/>
 						</div>
 					</div>

@@ -28,6 +28,7 @@ import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
 import { shouldShowNeedsPlanBanner } from '@/lib/host/needs-plan-banner';
+import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
@@ -163,6 +164,12 @@ const ownerPlansUrl = buildUrl({ locale, path: 'suscriptores/planes' });
 
 const isEmpty = properties.length === 0;
 
+// H-98: resolve the generic owner trial length ONCE for the whole grid (see
+// `PropertyCard`'s `trialDays` prop doc) instead of fetching per card — this
+// page renders one `PropertyCard` per property. Skipped entirely when there
+// is nothing to render (empty state has no card to pass it to).
+const genericTrialDays = isEmpty ? 0 : await resolveGenericOwnerTrialDays();
+
 // HOS-217: proactive "anfitrión en preparación" banner — an owner with at
 // least one DRAFT property but no real owner/complex subscription would
 // otherwise only discover they can't publish by clicking "Publicar" on the
@@ -257,7 +264,7 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
         <div class="props-page__grid" role="list" aria-label={title}>
             {properties.map((property) => (
                 <div class="props-page__item" role="listitem" data-reveal="up">
-                    <PropertyCard property={property} locale={locale} hasActivePlan={hasOwnerPlan} />
+                    <PropertyCard property={property} locale={locale} hasActivePlan={hasOwnerPlan} trialDays={genericTrialDays} />
                 </div>
             ))}
         </div>

@@ -684,9 +684,10 @@ export const ApiEnvBaseSchema = z.object({
 
     /**
      * Testing-only override for the host publish-flow trial length, in days.
-     * When set to a positive integer it replaces the `OWNER_TRIAL_DAYS` (14)
-     * constant used by `TrialService.startTrial`, so a QA run can exercise trial
-     * expiry after e.g. 1 day instead of waiting 14.
+     * When set to a positive integer it replaces the `OWNER_TRIAL_DAYS` (30
+     * as of the 2026-08-15 owner decision) constant used by
+     * `TrialService.startTrial`, so a QA run can exercise trial expiry after
+     * e.g. 1 day instead of waiting 30.
      *
      * Deliberately NOT gated by environment: `NODE_ENV` is `'production'` on BOTH
      * the prod and staging deployments (so it cannot distinguish them), and testing

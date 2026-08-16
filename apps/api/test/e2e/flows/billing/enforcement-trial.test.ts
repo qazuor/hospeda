@@ -88,6 +88,7 @@ vi.mock('@repo/billing', async (importOriginal) => {
 });
 
 import { randomUUID } from 'node:crypto';
+import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { billingSubscriptions, eq } from '@repo/db';
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
@@ -120,8 +121,12 @@ stubRef.current = mpStub.adapter;
  */
 const TRIAL_PLAN_NAME = 'owner-basico';
 
-/** Trial length in days (OWNER_TRIAL_DAYS = 14 from @repo/billing constants). */
-const TRIAL_DAYS = 14;
+/**
+ * Trial length in days, sourced from `@repo/billing` (`OWNER_TRIAL_DAYS`, 30
+ * days as of the 2026-08-15 owner decision) so this fixture never drifts from
+ * the real constant.
+ */
+const TRIAL_DAYS = OWNER_TRIAL_DAYS;
 
 // ---------------------------------------------------------------------------
 // Entitlement key string constants
@@ -281,7 +286,7 @@ describe('SPEC-145 T-019 — trial entitlement grant and expire at route level',
             email: user.email
         });
 
-        // Phase 1: create a trialing sub with trialEnd in the future (~14 days).
+        // Phase 1: create a trialing sub with trialEnd in the future (~TRIAL_DAYS days).
         // We use createTestSubscription with status='trialing' and set trialEnd
         // to a future date by UPDATE so the entitlement middleware's active-status
         // filter accepts it AND blockExpiredTrials' filter (trialEnd <= now) skips it.
@@ -292,7 +297,7 @@ describe('SPEC-145 T-019 — trial entitlement grant and expire at route level',
             metadata: { source: 'test-trial-enforce-active' }
         });
 
-        // Set trialEnd 14 days from now (future — NOT expired).
+        // Set trialEnd TRIAL_DAYS days from now (future — NOT expired).
         const futureTrial = new Date();
         futureTrial.setDate(futureTrial.getDate() + TRIAL_DAYS);
         const trialStart = new Date();
