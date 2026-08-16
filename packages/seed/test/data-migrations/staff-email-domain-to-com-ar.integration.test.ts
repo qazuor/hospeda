@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Integration tests for `0056-staff-email-domain-to-com-ar.ts` (H-76).
+ * Integration tests for `0057-staff-email-domain-to-com-ar.ts` (H-76).
  *
  * Runs against the REAL integration database using the rollback-isolation
  * idiom of `system-account-flag-staff.integration.test.ts`: every test opens a
@@ -24,7 +24,7 @@ import type { Actor } from '@repo/service-core';
 import { config as loadEnv } from 'dotenv';
 import { Pool } from 'pg';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0056-staff-email-domain-to-com-ar.js';
+import * as migration from '../../src/data-migrations/0057-staff-email-domain-to-com-ar.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -140,7 +140,7 @@ async function clearTargets(tx: DrizzleClient): Promise<void> {
     await tx.delete(users).where(inArray(users.email, ALL_TEST_EMAILS));
 }
 
-describe('H-76: 0056-staff-email-domain-to-com-ar (integration)', () => {
+describe('H-76: 0057-staff-email-domain-to-com-ar (integration)', () => {
     beforeAll(async () => {
         if (!process.env.HOSPEDA_DATABASE_URL) {
             throw new Error(
