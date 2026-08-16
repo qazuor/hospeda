@@ -70,7 +70,12 @@ function makeEventsApiResponse(
         JSON.stringify({
             ok: true,
             data: {
-                data: items.map((item) => ({
+                // HOS-560: the key is `items`. This fixture used to say `data`,
+                // matching the bug in `fetchLatestEvents` rather than the API —
+                // which is how the events feed shipped empty to production
+                // undetected. Verified against api.hospeda.com.ar on 2026-08-16.
+                pagination: { page: 1, pageSize: 50, total: items.length, totalPages: 1 },
+                items: items.map((item) => ({
                     id: `id-${item.slug}`,
                     slug: item.slug,
                     name: item.name ?? `Event ${item.slug}`,
@@ -86,10 +91,16 @@ function makeEventsApiResponse(
 }
 
 function makeEmptyEventsApiResponse(): Response {
-    return new Response(JSON.stringify({ ok: true, data: { data: [] } }), {
-        status: 200,
-        headers: { 'Content-Type': 'application/json' }
-    });
+    return new Response(
+        JSON.stringify({
+            ok: true,
+            data: { items: [], pagination: { page: 1, pageSize: 50, total: 0, totalPages: 0 } }
+        }),
+        {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' }
+        }
+    );
 }
 
 // ---------------------------------------------------------------------------
@@ -157,7 +168,7 @@ describe('feeds.ts — events RSS helpers', () => {
                     new Response(
                         JSON.stringify({
                             ok: false,
-                            data: { data: [{ slug: 'hidden-event' }] }
+                            data: { items: [{ slug: 'hidden-event' }] }
                         }),
                         { status: 200 }
                     )
@@ -166,6 +177,45 @@ describe('feeds.ts — events RSS helpers', () => {
 
             const events = await fetchLatestEvents({ apiUrl: 'http://api.test' });
             expect(events).toHaveLength(0);
+        });
+
+        // ---------------------------------------------------------------------
+        // HOS-560 (H-24) — the events feed was empty in production too.
+        //
+        // The original report only measured `/es/publicaciones/rss.xml`. Both
+        // feeds share `feeds.ts` and carried the identical pair of defects, and
+        // events is one of the four entity families holding REAL data in
+        // production, so the impact was larger than reported.
+        // ---------------------------------------------------------------------
+
+        it('reads the items from `data.items`, the key the API actually returns', async () => {
+            vi.stubGlobal(
+                'fetch',
+                vi
+                    .fn()
+                    .mockResolvedValue(
+                        makeEventsApiResponse([{ slug: 'fiesta-playa' }, { slug: 'novembeer' }])
+                    )
+            );
+
+            const events = await fetchLatestEvents({ apiUrl: 'http://api.test' });
+
+            expect(events).toHaveLength(2);
+            expect(events.map((e) => e.slug)).toEqual(['fiesta-playa', 'novembeer']);
+        });
+
+        it('does not send a `status` param — the API answers 400 INVALID_PAGINATION_PARAMS', async () => {
+            const fetchSpy = vi
+                .fn()
+                .mockResolvedValue(makeEventsApiResponse([{ slug: 'fiesta-playa' }]));
+            vi.stubGlobal('fetch', fetchSpy);
+
+            await fetchLatestEvents({ apiUrl: 'http://api.test' });
+
+            const params = new URL(String(fetchSpy.mock.calls[0]?.[0] ?? '')).searchParams;
+            expect(params.has('status')).toBe(false);
+            expect(params.get('sortBy')).toBe('startDate');
+            expect(params.get('sortOrder')).toBe('asc');
         });
     });
 

@@ -825,7 +825,9 @@ export function toAccommodationDetailPageProps({
     readonly locale?: string;
 }): AccommodationDetailData {
     const mediaObj = item.media as { images?: string[]; videos?: string[] } | undefined;
-    const locationObj = item.location as Record<string, unknown> | undefined;
+    // HOS-554: no `locationObj` here. The public payload's `location` is `{}`
+    // (SPEC-097 strips `coordinates` for every non-owner) and nothing in this
+    // transform reads it any more — see the `approximateLocation` note below.
     // SPEC-095: prefer the `cityDestination` projection from the API; fall back
     // to the legacy heavy `destination` relation while older payloads still circulate.
     const cityDestinationObj = item.cityDestination as Record<string, unknown> | undefined;
@@ -914,10 +916,12 @@ export function toAccommodationDetailPageProps({
                 videos
             };
         })(),
-        location: {
-            lat: locationObj?.lat == null ? null : Number(locationObj.lat),
-            lng: locationObj?.lng == null ? null : Number(locationObj.lng)
-        },
+        // HOS-554: no `location` field here. The public payload's `location` is
+        // `{}` — SPEC-097 strips `coordinates` for every non-owner — and the
+        // flat `lat`/`lng` this used to read never existed on it in any case
+        // (the canonical shape is `location.coordinates.{lat,long}`). Both facts
+        // made it a permanent `null` that read like a live coordinate. The one
+        // coordinate a public consumer may use is `approximateLocation` below.
         approximateLocation: (() => {
             const aprox = item.approximateLocation as
                 | { lat?: number; lng?: number; radiusMeters?: number }

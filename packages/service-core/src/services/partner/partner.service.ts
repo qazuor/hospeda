@@ -544,6 +544,13 @@ export class PartnerService extends BaseCrudService<
      * excludes deleted rows; repeating it here costs one comparison and means a
      * regression in that filter cannot turn into a public leak.
      *
+     * ### Which failure answers 410, and which answers 404 (HOS-562)
+     *
+     * Only a partner carrying `revokedAt` answers `gone` (410). Every other way
+     * of failing the visibility pair — never published, or lapsed payment —
+     * answers `notFound` (404), because 410 is the only irreversible signal we
+     * can send a crawler and neither of those states is irreversible.
+     *
      * @param actor - The requesting actor, typically anonymous.
      * @param input - `{ slug }` — the slug from the URL, never a UUID.
      * @param ctx - Optional service execution context.
@@ -578,11 +585,31 @@ export class PartnerService extends BaseCrudService<
                     partner.lifecycleState === LifecycleStatusEnum.ACTIVE &&
                     partner.subscriptionStatus === PartnerSubscriptionStatusEnum.ACTIVE;
 
-                if (!isVisible) {
+                if (isVisible) {
+                    return { outcome: 'found', partner } as const;
+                }
+
+                // HOS-562: "not visible" covers two situations that HTTP answers
+                // differently, and this used to collapse both into 410.
+                //
+                // 410 Gone is the one irreversible answer: it tells a crawler to
+                // drop the URL for good. That is right for a deliberate takedown
+                // and wrong for everything else. A partner who merely stopped
+                // paying is a TEMPORARY outage — de-indexing them means that when
+                // they regularise the payment they come back without their
+                // ranking. A gold partner still in DRAFT never had a page at all.
+                //
+                // `revokedAt` is precisely the "we took them down, on purpose,
+                // and it does not come back" marker, and the column's own docs
+                // draw the same line: `subscriptionStatus` is deliberately left
+                // alone on revoke so it never conflates "we took them down" with
+                // "they stopped paying". So 410 keys off `revokedAt`; every other
+                // non-visible state answers 404.
+                if (partner.revokedAt) {
                     return { outcome: 'gone' } as const;
                 }
 
-                return { outcome: 'found', partner } as const;
+                return { outcome: 'notFound' } as const;
             }
         });
     }

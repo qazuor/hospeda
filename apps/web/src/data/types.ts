@@ -671,14 +671,17 @@ export interface AccommodationDetailData {
             readonly description?: string;
         }[];
     };
-    readonly location: {
-        readonly lat: number | null;
-        readonly lng: number | null;
-    };
     /**
      * SPEC-097 — Privacy-aware obfuscated coordinates for accommodation maps.
      * Present only when the API returns it (anonymous/public visitors).
-     * Owners and admins receive the exact `location` instead.
+     *
+     * HOS-554: this is the ONLY coordinate a public page has. The exact
+     * `location.coordinates` is stripped server-side for anyone who is not the
+     * owner or an `ACCOMMODATION_LOCATION_EXACT_VIEW` holder, so a
+     * `location: { lat, lng }` field used to sit here reading a path the public
+     * payload never carries — permanently `null`, and mistakable for a live
+     * value. It was removed rather than fixed: publishing the exact pin is the
+     * thing SPEC-097 exists to prevent.
      */
     readonly approximateLocation?: {
         readonly lat: number;

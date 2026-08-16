@@ -60,6 +60,16 @@ vi.mock('@astrojs/rss', () => ({
 // Helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * Builds the envelope the public list routes ACTUALLY return.
+ *
+ * HOS-560: this helper used to nest the array under `data.data`, mirroring the
+ * bug in `fetchLatestPosts` instead of the API. That is why the suite stayed
+ * green for months while both production feeds served zero items — the fixture
+ * and the code agreed with each other and neither agreed with the server. The
+ * shape below was verified against `https://api.hospeda.com.ar` on 2026-08-16
+ * and matches `createPublicListRoute`, which returns `{ items, pagination }`.
+ */
 function makePostsApiResponse(
     items: Array<{ slug: string; title?: string; publishedAt?: string; summary?: string }>
 ): Response {
@@ -67,7 +77,8 @@ function makePostsApiResponse(
         JSON.stringify({
             ok: true,
             data: {
-                data: items.map((item) => ({
+                pagination: { page: 1, pageSize: 50, total: items.length, totalPages: 1 },
+                items: items.map((item) => ({
                     id: `id-${item.slug}`,
                     slug: item.slug,
                     title: item.title ?? `Post ${item.slug}`,
@@ -182,7 +193,7 @@ describe('feeds.ts — blog posts RSS helpers', () => {
                     .fn()
                     .mockResolvedValue(
                         new Response(
-                            JSON.stringify({ ok: false, data: { data: [{ slug: 'hidden' }] } }),
+                            JSON.stringify({ ok: false, data: { items: [{ slug: 'hidden' }] } }),
                             { status: 200 }
                         )
                     )
@@ -190,6 +201,84 @@ describe('feeds.ts — blog posts RSS helpers', () => {
 
             const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
             expect(posts).toHaveLength(0);
+        });
+
+        // ---------------------------------------------------------------------
+        // HOS-560 (H-24) — the feed answered 200 with an empty <channel>.
+        //
+        // Two independent defects, either of which alone emptied it, and both
+        // hidden behind the same graceful-degradation `return []`. A silent
+        // discard with a success acknowledgement is worse than an error: no
+        // reader, aggregator or monitor reports it — content simply never
+        // appears again.
+        // ---------------------------------------------------------------------
+
+        it('reads the items from `data.items`, the key the API actually returns', async () => {
+            // Arrange — the real envelope. Under the old `data.data` read this
+            // returns zero items while the request itself succeeded.
+            vi.stubGlobal(
+                'fetch',
+                vi
+                    .fn()
+                    .mockResolvedValue(
+                        makePostsApiResponse([{ slug: 'turismo-litoral' }, { slug: 'costanera' }])
+                    )
+            );
+
+            // Act
+            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
+
+            // Assert
+            expect(posts).toHaveLength(2);
+            expect(posts.map((p) => p.slug)).toEqual(['turismo-litoral', 'costanera']);
+        });
+
+        it('does not send a `status` param — the API rejects it with 400', async () => {
+            // Arrange — `PostSearchHttpSchema` does not declare `status`, and
+            // `createPublicListRoute` rejects unknown query params. Sending it
+            // made the endpoint answer 400, so `response.ok` was false and the
+            // feed degraded to empty before the payload was even parsed.
+            const fetchSpy = vi
+                .fn()
+                .mockResolvedValue(makePostsApiResponse([{ slug: 'turismo-litoral' }]));
+            vi.stubGlobal('fetch', fetchSpy);
+
+            // Act
+            await fetchLatestPosts({ apiUrl: 'http://api.test' });
+
+            // Assert
+            const requestedUrl = String(fetchSpy.mock.calls[0]?.[0] ?? '');
+            const params = new URL(requestedUrl).searchParams;
+            expect(params.has('status')).toBe(false);
+            // The params the endpoint does accept must still be there.
+            expect(params.get('sortBy')).toBe('publishedAt');
+            expect(params.get('sortOrder')).toBe('desc');
+        });
+
+        it('renders the fetched posts as <item> elements, not just an empty channel', async () => {
+            // The end-to-end shape of the bug: a well-formed channel with zero
+            // items and HTTP 200. Asserting on the feed body is what separates
+            // "the feed works" from "the feed responds".
+            vi.stubGlobal(
+                'fetch',
+                vi
+                    .fn()
+                    .mockResolvedValue(
+                        makePostsApiResponse([{ slug: 'turismo-litoral' }, { slug: 'costanera' }])
+                    )
+            );
+
+            const posts = await fetchLatestPosts({ apiUrl: 'http://api.test' });
+            const response = await buildPostsFeed({
+                locale: 'es',
+                siteUrl: 'https://hospeda.com.ar',
+                posts
+            });
+            const body = await response.text();
+
+            expect(response.status).toBe(200);
+            expect(body.split('<item>').length - 1).toBe(2);
+            expect(body).toContain('turismo-litoral');
         });
     });
 

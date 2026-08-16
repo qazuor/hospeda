@@ -42,8 +42,17 @@ export interface EventFeedItem {
     readonly createdAt?: string;
 }
 
+/**
+ * The public list envelope's `data` object.
+ *
+ * HOS-560: the key is `items`, not `data`. Every public list route returns
+ * `{ success, data: { items, pagination } }` (see `createPublicListRoute`), but
+ * this interface declared `data`, so `Array.isArray(json.data.data)` was always
+ * false and every feed silently degraded to zero items — with a 200. Because the
+ * type asserted the wrong shape, TypeScript could not catch it.
+ */
 interface ListApiData<T> {
-    readonly data: readonly T[];
+    readonly items: readonly T[];
 }
 
 interface ListApiResponse<T> {
@@ -108,12 +117,16 @@ export async function fetchLatestPosts({
 }: {
     readonly apiUrl: string;
 }): Promise<readonly PostFeedItem[]> {
+    // HOS-560: no `status` param. `PostSearchHttpSchema` does not declare it and
+    // `createPublicListRoute` rejects unknown query params, so sending it made
+    // the API answer 400 and this function return `[]`. The endpoint is the
+    // PUBLIC list — it already scopes to what an anonymous actor may read, which
+    // is the same set the HTML listing renders.
     const searchParams = new URLSearchParams({
         page: '1',
         pageSize: String(RSS_FEED_SIZE),
         sortBy: 'publishedAt',
-        sortOrder: 'desc',
-        status: 'published'
+        sortOrder: 'desc'
     });
 
     try {
@@ -127,9 +140,9 @@ export async function fetchLatestPosts({
         if (!json.ok && !json.success) return [];
 
         const data = json.data;
-        if (!data || !Array.isArray(data.data)) return [];
+        if (!data || !Array.isArray(data.items)) return [];
 
-        return data.data;
+        return data.items;
     } catch {
         return [];
     }
@@ -147,12 +160,15 @@ export async function fetchLatestEvents({
 }: {
     readonly apiUrl: string;
 }): Promise<readonly EventFeedItem[]> {
+    // HOS-560: same two defects as the posts feed — the events feed was empty in
+    // production too, which the original report had not measured. `status` makes
+    // the endpoint answer 400 (`INVALID_PAGINATION_PARAMS`) and the payload key
+    // is `items`.
     const searchParams = new URLSearchParams({
         page: '1',
         pageSize: String(RSS_FEED_SIZE),
         sortBy: 'startDate',
-        sortOrder: 'asc',
-        status: 'published'
+        sortOrder: 'asc'
     });
 
     try {
@@ -166,9 +182,9 @@ export async function fetchLatestEvents({
         if (!json.ok && !json.success) return [];
 
         const data = json.data;
-        if (!data || !Array.isArray(data.data)) return [];
+        if (!data || !Array.isArray(data.items)) return [];
 
-        return data.data;
+        return data.items;
     } catch {
         return [];
     }
