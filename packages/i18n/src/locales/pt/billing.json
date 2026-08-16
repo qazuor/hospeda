@@ -433,7 +433,16 @@
         "can_view_recommendations": "Recomendações personalizadas",
         "ai_text_improve": "Melhoria de textos com IA",
         "ai_chat": "Consultas sobre a acomodação com IA",
-        "ai_search": "Busca inteligente"
+        "ai_search": "Busca inteligente",
+        "multi_property_management": "Gestão de múltiplas propriedades",
+        "consolidated_analytics": "Análises consolidadas",
+        "centralized_booking": "Reservas centralizadas",
+        "staff_management": "Gestão de equipe",
+        "can_use_collections": "Coleções de favoritos",
+        "vip_promotions_access": "Acesso a promoções VIP",
+        "ai_support": "Assistente de suporte com IA",
+        "ai_translate": "Tradução de conteúdo com IA",
+        "ai_accommodation_import": "Importação de hospedagens com IA"
     },
     "comparison": {
         "unlimited": "Ilimitado",

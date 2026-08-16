@@ -433,7 +433,16 @@
         "can_view_recommendations": "Personalized recommendations",
         "ai_text_improve": "AI writing assistant",
         "ai_chat": "Ask about the accommodation (AI)",
-        "ai_search": "Smart search"
+        "ai_search": "Smart search",
+        "multi_property_management": "Multi-property management",
+        "consolidated_analytics": "Consolidated analytics",
+        "centralized_booking": "Centralized booking",
+        "staff_management": "Staff management",
+        "can_use_collections": "Use favorites collections",
+        "vip_promotions_access": "VIP promotions access",
+        "ai_support": "AI support assistant",
+        "ai_translate": "AI content translation",
+        "ai_accommodation_import": "AI accommodation import"
     },
     "comparison": {
         "unlimited": "Unlimited",
