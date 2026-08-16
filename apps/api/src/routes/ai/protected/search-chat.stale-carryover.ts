@@ -27,31 +27,45 @@
  * divergence is between the model's OWN two outputs for the same turn, not
  * between the model and some separate merge step.
  *
- * ## The chosen fix, and what it deliberately does NOT do
+ * ## Two triggers, in priority order
  *
- * A fully robust fix would change the extraction contract itself — e.g. a
- * dedicated classification call before extraction, or a model-emitted
- * `isNewSearch` flag that controls whether `currentFilters` is even shown to
- * the model. Both are legitimate architecture changes (more provider calls,
- * or a new schema field consumed by prompt logic) and are explicitly OUT OF
- * SCOPE for this fix — they change the LLM contract and the per-turn latency
- * profile, which is a product/architecture tradeoff, not a unilateral bug-fix
- * decision.
+ * **1. The model's stated decision (`isNewSearch`).** The extraction output
+ * schema carries a boolean in which the model reports whether it treated the
+ * turn as a NEW SEARCH or a REFINEMENT. It rides in the SAME `generateObject`
+ * completion the entities come from, so it costs no extra provider call and no
+ * extra latency — the only cost is one field in the schema and a paragraph in
+ * the prompt. When the model says `true`, that is the trigger.
  *
- * This module is the narrower, fully DETERMINISTIC mitigation available
- * without touching that contract. It reuses a signal the route already has —
- * this turn's own extracted location differing from the prior turn's — as
- * evidence that a new search started, and on that evidence alone drops the
- * handful of fields most prone to silent carryover (the boolean amenity
- * shortcuts and the slug arrays) WHEN their value is byte-identical to the
- * prior turn's. It does not attempt to second-guess numeric ranges (guests,
- * price, rating, bedrooms/bathrooms, dates) — those updated correctly in the
- * reported repro, so narrowing the guard to the fields actually observed to
- * stick avoids a false-positive risk on fields that were never shown to
- * misbehave. A truly identical fresh re-mention (e.g. a new destination that
- * ALSO explicitly asks for a pool again) is a smaller, softer failure
- * (over-broad results, not a silently narrowed-to-zero search) than the
- * reported bug, and is an accepted tradeoff of this mitigation.
+ * Asking the model to *state* the branch it took, rather than inferring it from
+ * which fields it omitted, is the whole point: "the model did not mention it"
+ * and "the model meant to keep it" are indistinguishable in an entity set, and
+ * that ambiguity is the bug.
+ *
+ * **2. A destination change (fallback).** Used only when the flag is absent —
+ * an older client, a model that dropped the field, anything that would
+ * otherwise regress to the pre-flag behaviour. It is a lossy proxy in both
+ * directions: it misses a new search that stays in the same destination
+ * ("cabaña con pileta en Colón" → "hotel en Colón para 2") and it fires on a
+ * refinement that legitimately moves the destination. It is kept because
+ * degrading to the previous shipped behaviour beats degrading to none.
+ *
+ * A dedicated classification call before extraction — the other way to close
+ * this — was considered and rejected: it doubles the provider calls per turn
+ * for a marginal gain over a flag the same completion can carry.
+ *
+ * ## What gets dropped, and the tradeoff accepted
+ *
+ * Only the fields most prone to silent carryover (the boolean amenity shortcuts
+ * and the slug arrays), and only when their value is byte-identical to the
+ * prior turn's. Numeric ranges (guests, price, rating, bedrooms/bathrooms,
+ * dates) are deliberately left alone — they updated correctly in the reported
+ * repro, so guarding them would add false-positive risk on fields never
+ * observed to misbehave.
+ *
+ * A genuinely identical fresh re-mention (a new search that also explicitly
+ * asks for a pool again) loses that filter. That is a softer failure —
+ * over-broad results rather than a search silently narrowed to zero — and is an
+ * accepted tradeoff.
  *
  * @module apps/api/routes/ai/protected/search-chat.stale-carryover
  */
@@ -114,16 +128,17 @@ function sameSlugSet(a: readonly string[] | undefined, b: readonly string[] | un
 
 /**
  * Drops amenity/boolean-shortcut slots that look like unmentioned carryover
- * from a PRIOR turn, when this turn introduces a genuinely different
- * destination. See the module doc above for the full rationale.
+ * from a PRIOR turn, when this turn started a new search. See the module doc
+ * above for the full rationale and the two triggers.
  *
- * ## What counts as "introduces a different destination"
+ * ## When it fires
  *
- * `entities` carries a location signal (id, geo, or city) that is DEFINED
- * and DIFFERENT from `previousEntities`'s (including "previous had none at
- * all"). A message naming NO destination never triggers this — that is the
- * documented "keeps the current destination" refinement case, where
- * carryover is correct, not a bug.
+ * `options.isNewSearch === true` (the model said so), or — only when the flag
+ * is absent — `entities` carries a location signal (id, geo, or city) that is
+ * DEFINED and DIFFERENT from `previousEntities`'s, including "previous had none
+ * at all". Under the fallback, a message naming NO destination never triggers
+ * it: that is the documented "keeps the current destination" refinement case,
+ * where carryover is correct rather than a bug.
  *
  * ## What gets dropped
  *
@@ -137,27 +152,55 @@ function sameSlugSet(a: readonly string[] | undefined, b: readonly string[] | un
  * @param previousEntities - The sanitized `currentFilters` echoed by the
  *   client for this turn (the prior turn's accumulated state), or
  *   `undefined` on a first turn.
+ * @param options.isNewSearch - The model's own refine-vs-new classification for
+ *   this turn. Omit (or pass `undefined`) to fall back to the destination-change
+ *   proxy.
  * @returns A copy with stale-looking fields removed, or the SAME reference
  *   when nothing needed to change.
  *
  * @example
  * ```ts
- * dropStaleAmenitiesOnLocationChange(
- *   { accommodationType: 'HOTEL', minGuests: 2, destinationId: COLON_UUID, hasPool: true },
- *   { accommodationType: 'CABIN', minGuests: 4, hasPool: true }
+ * // The model states it started a new search but carried a filter anyway.
+ * dropStaleAmenitiesOnNewSearch(
+ *   { accommodationType: 'HOTEL', minGuests: 2, city: 'Colón', hasPool: true },
+ *   { accommodationType: 'CABIN', minGuests: 4, city: 'Colón', hasPool: true },
+ *   { isNewSearch: true }
  * );
- * // → { accommodationType: 'HOTEL', minGuests: 2, destinationId: COLON_UUID }
- * // (hasPool dropped: identical to the prior turn's value, and a new destination appeared)
+ * // → { accommodationType: 'HOTEL', minGuests: 2, city: 'Colón' }
+ * // hasPool dropped even though the destination never changed — the case the
+ * // destination-change proxy alone could not see.
  * ```
  */
-export function dropStaleAmenitiesOnLocationChange(
+export function dropStaleAmenitiesOnNewSearch(
     entities: SearchIntentEntities,
-    previousEntities: SearchIntentEntities | undefined
+    previousEntities: SearchIntentEntities | undefined,
+    options: { readonly isNewSearch?: boolean } = {}
 ): SearchIntentEntities {
-    const previousSignal = locationSignal(previousEntities);
-    const currentSignal = locationSignal(entities);
-    const introducesNewLocation = currentSignal !== undefined && currentSignal !== previousSignal;
-    if (!introducesNewLocation) {
+    // HOS-551 follow-up: the model now STATES its refine-vs-new decision in
+    // `isNewSearch`, so that is the trigger when it is present.
+    //
+    // The destination-change test below was only ever a proxy for it, and a
+    // lossy one in both directions: it missed a new search that stayed in the
+    // same destination ("cabaña con pileta en Colón" → "hotel en Colón para 2"),
+    // and it fired on a refinement that legitimately moved the destination.
+    // A stated decision is strictly better evidence than an inferred one, so it
+    // wins outright; the proxy stays as the fallback for when the model omits
+    // the flag, which is exactly the behaviour that shipped before it existed.
+    // A STATED decision wins in BOTH directions: `false` means the model said
+    // "refinement", and overriding that with the proxy would be a lossy guess
+    // beating an explicit answer — precisely wrong for the documented case where
+    // widening to a nearby destination IS a refinement. Only an ABSENT flag
+    // falls through to the proxy, which is why the schema keeps it optional
+    // instead of defaulting it to `false`.
+    const startedNewSearch =
+        options.isNewSearch === undefined
+            ? (() => {
+                  const previousSignal = locationSignal(previousEntities);
+                  const currentSignal = locationSignal(entities);
+                  return currentSignal !== undefined && currentSignal !== previousSignal;
+              })()
+            : options.isNewSearch;
+    if (!startedNewSearch) {
         return entities;
     }
 

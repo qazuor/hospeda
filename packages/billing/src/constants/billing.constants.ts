@@ -2,8 +2,19 @@
  * Billing system constants for the Hospeda platform
  */
 
-/** Default trial period in days for owner plans */
-export const OWNER_TRIAL_DAYS = 14;
+/**
+ * Trial period, in days, for self-service owner plans (owner-basico /
+ * owner-pro / owner-premium).
+ *
+ * Owner decision (2026-08-15): raised from 14 to 30 days to match the
+ * self-service tourist tier (`TOURIST_TRIAL_DAYS`, HOS-301 D1). `complex-*`
+ * plans are NOT included in this change and stay at 14 — see
+ * `COMPLEX_TRIAL_DAYS`, which was deliberately decoupled from this constant
+ * in HOS-301 D1 precisely so the two tiers could move independently. Do NOT
+ * re-alias `COMPLEX_TRIAL_DAYS` to this constant; that regression is exactly
+ * what HOS-301 D1 fixed for the tourist tier.
+ */
+export const OWNER_TRIAL_DAYS = 30;
 
 /** Default trial period for complex plans */
 export const COMPLEX_TRIAL_DAYS = 14;

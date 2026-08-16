@@ -61,6 +61,26 @@ export const BILLING_EVENT_TYPES = {
      * the audit trail lie about which behavior ran.
      */
     TRIAL_RECONCILED: 'TRIAL_RECONCILED',
+    /**
+     * Fired when a settled charge proves the provider never granted the free
+     * trial Hospeda promised at checkout (H-137).
+     *
+     * MercadoPago grants a preapproval's `free_trial` once per
+     * `(payer, preapproval_plan)`, while Hospeda decides trial eligibility per
+     * billing customer. A payer who already spent the trial on a shared plan is
+     * therefore shown a trial offer and charged the first cycle minutes later —
+     * observed in production on 2026-08-14, $18.000 charged 118 seconds after
+     * the promise.
+     *
+     * Deliberately a NEW event type rather than a `TRIAL_RECONCILED` with
+     * different metadata, for the same reason `TRIAL_RECONCILED` was not folded
+     * into `TRIAL_BLOCKED`: this one means "we sold a free period the customer
+     * never received", which is a broken commercial promise and not a lifecycle
+     * transition. Conflating them would hide every occurrence inside the normal
+     * conversion traffic, which is precisely how this went unnoticed until a
+     * manual smoke found it.
+     */
+    TRIAL_NOT_GRANTED_BY_PROVIDER: 'TRIAL_NOT_GRANTED_BY_PROVIDER',
     /** Fired when the reactivation audit-log insert fails; used by Sentry and reconciliation jobs */
     REACTIVATION_AUDIT_FAILED: 'REACTIVATION_AUDIT_FAILED',
     /**

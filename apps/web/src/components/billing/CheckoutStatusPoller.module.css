@@ -117,6 +117,31 @@
     opacity: 0.85;
 }
 
+/*
+ * Secondary exit, shown only in the terminal `unresolved` state (H-78).
+ * Outlined rather than filled so it reads as the second option next to
+ * "Ir a mi cuenta" without competing with it.
+ */
+.ctaSecondary {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--space-3) var(--space-8);
+    font-family: var(--font-sans);
+    font-weight: 600;
+    font-size: var(--text-body-lg);
+    border-radius: var(--radius-button);
+    text-decoration: none;
+    background-color: transparent;
+    color: var(--core-foreground);
+    border: 1px solid var(--core-muted-foreground);
+    transition: background-color var(--duration-normal) ease;
+}
+
+.ctaSecondary:hover {
+    background-color: var(--surface-warm);
+}
+
 @media (max-width: 768px) {
     .container {
         padding: var(--space-12) var(--space-container-x);

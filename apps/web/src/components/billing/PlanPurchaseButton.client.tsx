@@ -22,6 +22,7 @@ import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
 import styles from './PlanPurchaseButton.module.css';
+import { TrialWarningDialog } from './TrialWarningDialog.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -68,6 +69,18 @@ export interface PlanPurchaseButtonProps {
      * target. The discount can still be applied later at checkout.
      */
     readonly showPromo?: boolean;
+    /**
+     * Trial length in days this plan offers, or `0` when the plan has no
+     * trial at all. Drives the trial-warning confirmation dialog (owner
+     * decision, real-money incident): MercadoPago grants its free trial once
+     * per (MercadoPago account, plan) pair, a rule Hospeda's own
+     * `billingApi.getTrialEligibility()` check cannot see. When this is `> 0`
+     * and the user has not already been marked ineligible, clicking the CTA
+     * opens {@link TrialWarningDialog} instead of going straight to checkout.
+     * Defaults to `0` (no dialog) so existing callers that do not pass it
+     * keep today's direct-checkout behaviour.
+     */
+    readonly trialDays?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -238,12 +251,15 @@ export function PlanPurchaseButton({
     currency,
     ctaText,
     locale,
-    showPromo = true
+    showPromo = true,
+    trialDays = 0
 }: PlanPurchaseButtonProps): JSX.Element {
     const { data: session, isPending: sessionPending } = useSession();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentPlanSlug, setCurrentPlanSlug] = useState<string | null>(null);
+    // Controls the MercadoPago trial-warning dialog (see `promisesTrial` below).
+    const [showTrialWarning, setShowTrialWarning] = useState(false);
     // HOS-226: `null` = unknown (unauthenticated, still loading, or the lookup
     // failed) — the SSR "N days free" badge stays untouched in that case.
     // `false` is the only value that triggers badge suppression below.
@@ -523,6 +539,13 @@ export function PlanPurchaseButton({
     const isPlanChange =
         isAuthenticated && currentPlanSlug !== null && currentPlanSlug !== planSlug;
 
+    // Whether this checkout actually promises a trial to the user right now.
+    // `trialDays > 0` is the plan-level offer; `trialEligible !== false` mirrors
+    // the badge-suppression effect above — `null` (unauthenticated, still
+    // loading, or the lookup failed) leaves the SSR-promised trial standing, so
+    // the warning must show for it too. Only a confirmed `false` skips it.
+    const promisesTrial = trialDays > 0 && trialEligible !== false;
+
     // Show the promo section only when the user can interact with checkout
     // (never in the plan-change case — promo codes apply at checkout, not here).
     // HOS-451/H-90: never on a free ($0) plan — a promo code has no semantics
@@ -777,7 +800,9 @@ export function PlanPurchaseButton({
 
     /**
      * Handle button click.
-     * Redirects unauthenticated users to sign-in; fires checkout POST for authenticated users.
+     * Redirects unauthenticated users to sign-in; opens the trial-warning
+     * dialog when this checkout promises a trial (see `promisesTrial`);
+     * otherwise fires the checkout POST directly for authenticated users.
      */
     async function handleClick(): Promise<void> {
         // Clear any previous error on each attempt.
@@ -812,6 +837,24 @@ export function PlanPurchaseButton({
             return;
         }
 
+        // MercadoPago-vs-Hospeda trial-eligibility mismatch (real-money incident
+        // in prod): stop here and require explicit confirmation instead of
+        // going straight to MercadoPago. `handleTrialWarningConfirm` re-invokes
+        // `runCheckout` directly once the user accepts.
+        if (promisesTrial) {
+            setShowTrialWarning(true);
+            return;
+        }
+
+        await runCheckout();
+    }
+
+    /**
+     * Fires the actual checkout POST and follows the returned URL. Split out
+     * of `handleClick` so the trial-warning dialog's "continue" action can
+     * invoke it directly, without re-running the trial-warning gate.
+     */
+    async function runCheckout(): Promise<void> {
         setLoading(true);
 
         try {
@@ -874,6 +917,23 @@ export function PlanPurchaseButton({
         } finally {
             setLoading(false);
         }
+    }
+
+    /**
+     * User accepted the trial-warning dialog — close it and proceed to the
+     * checkout that was held back.
+     */
+    function handleTrialWarningConfirm(): void {
+        setShowTrialWarning(false);
+        void runCheckout();
+    }
+
+    /**
+     * User dismissed the trial-warning dialog (Cancel, Escape, or overlay
+     * click) — close it without starting a checkout.
+     */
+    function handleTrialWarningCancel(): void {
+        setShowTrialWarning(false);
     }
 
     const buttonAriaLabel = isCurrentPlan
@@ -1060,6 +1120,13 @@ export function PlanPurchaseButton({
                     )}
                 </div>
             )}
+
+            <TrialWarningDialog
+                isOpen={showTrialWarning}
+                locale={locale}
+                onCancel={handleTrialWarningCancel}
+                onConfirm={handleTrialWarningConfirm}
+            />
         </div>
     );
 }

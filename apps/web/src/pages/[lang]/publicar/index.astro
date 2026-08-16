@@ -26,7 +26,7 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
+import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 import { OWNER_FAQ_ITEMS, buildOwnerFaqParams } from '@/lib/owner-faq';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
@@ -146,12 +146,18 @@ const steps = [
 	{ num: '04', titleKey: 'owners.steps.4.title', titleFb: 'Crecé', descKey: 'owners.steps.4.desc', descFb: 'Accedé a estadísticas, destacá tu publicación y llegá a más viajeros.' },
 ] as const;
 
+// H-98: resolve the generic owner trial length ONCE from the live billing
+// plans (minimum `trialDays` among active owner plans with `hasTrial`), and
+// reuse it for both the hero callout below and the FAQ params — avoids
+// fetching the plan catalog twice on the same request.
+const genericTrialDays = await resolveGenericOwnerTrialDays();
+
 // Shared with /suscriptores/propietarios, which renders the same keys. This page
 // used to keep its own copy, so it still promised a free basic plan long after
 // the other page was corrected, and it rendered `{{trialDays}}` verbatim once
 // the answer stopped hardcoding the number (HOS-331).
 const faqs = OWNER_FAQ_ITEMS;
-const faqParams = buildOwnerFaqParams();
+const faqParams = await buildOwnerFaqParams({ trialDays: genericTrialDays });
 
 const faqJsonLd = {
 	'@context': 'https://schema.org',
@@ -234,7 +240,7 @@ const faqJsonLd = {
 					<div class="publicar-hero__trial-callout" role="note">
 						<span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
 						<p class="publicar-hero__trial-callout-text">
-							{t('host.landing.trialCallout', 'Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba.', { trialDays: OWNER_TRIAL_DAYS })}
+							{t('host.landing.trialCallout', 'Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba.', { trialDays: genericTrialDays })}
 						</p>
 					</div>
 				)}

@@ -24,7 +24,9 @@
  * Sanitizes an email immediately before handing it to MercadoPago.
  *
  * Replaces every '+' in the LOCAL part of the email (the part before the
- * last '@') with '.'. The domain is left untouched.
+ * last '@') with '.'. The domain is left untouched. This preserves the
+ * uniqueness of plus-addressed accounts (e.g. `user+tag@gmail.com`) while
+ * avoiding MP's syntax rejection.
  *
  * H-95 — why the result is very likely a DEAD mailbox, stated plainly because
  * the original docblock claimed the opposite. It justified the choice with
@@ -49,6 +51,10 @@
  * way (the two plus-bearing customer rows predate the sanitizer and never
  * reached MercadoPago). If an MP sandbox smoke shows Checkout Pro accepts '+',
  * this function can be deleted outright rather than merely relocated.
+ *
+ * It also must not be shown to the user. Surfacing this value in the checkout
+ * UI displays an address they never wrote and do not recognise; the notice
+ * that did so was removed under HOS-452/H-82 (see `PlanPurchaseButton.client.tsx`).
  *
  * Defensive: if the input has no '@', or the '@' is the first character
  * (no local part to sanitize), the email is returned unchanged. Idempotent

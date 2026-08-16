@@ -14,9 +14,11 @@
  *   local subscription may still be flipping from `pending_provider` to `active`
  *   via the webhook / polling-fallback cron. The `CheckoutStatusPoller` island
  *   reads the `localSubscriptionId` stashed in sessionStorage before the redirect
- *   and polls `GET /billing/subscriptions/:localId/status` until it activates or
- *   a ~90s timeout is reached. Before this fix the page hung on
- *   "Verificando estado del pago..." forever for every paid conversion.
+ *   and watches it — together with the identity-scoped `GET /users/me/subscription`
+ *   (H-78) — on a backoff schedule until it activates or the ~3 minute budget
+ *   runs out. Before HOS-151 the page hung on "Verificando estado del pago..."
+ *   forever; before H-78 it gave up instantly whenever the stashed id was
+ *   missing, without issuing a single request.
  *
  * HOS-191 Path C ("share link" checkout) adds a third redirect shape: MercadoPago's
  * `back_url` return carries `?preapproval_id=...` (no `collection_status`). That
@@ -32,6 +34,7 @@ import CheckoutResult from '@/components/billing/CheckoutResult.astro';
 import { CheckoutStatusPoller } from '@/components/billing/CheckoutStatusPoller.client';
 import StripCheckoutReturnParams from '@/components/billing/StripCheckoutReturnParams.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { setCheckoutReturnNoStore } from '@/lib/billing/checkout-cache';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
@@ -39,6 +42,11 @@ export const prerender = false;
 
 const locale = Astro.locals.locale;
 const { t } = createTranslations(locale);
+
+// H-15: of the three return pages this is the one that displays the MOST
+// payment-confirmation detail, and it was the one declaring the least. It must
+// never be served from a shared cache.
+setCheckoutReturnNoStore({ response: Astro.response });
 
 const collectionStatus = Astro.url.searchParams.get('collection_status');
 
@@ -69,6 +77,11 @@ const preapprovalId = Astro.url.searchParams.get('preapproval_id');
 const promoIgnored = Astro.url.searchParams.get('promoIgnored') === '1';
 
 const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
+
+// H-78: the second exit out of the poller's terminal state. A buyer whose
+// payment never resolved needs a way to reach a person, not only a link back
+// to a page that will show them the same nothing.
+const supportUrl = buildUrl({ locale, path: 'contacto' });
 
 const title = t('billing.checkout.success.title', '¡Tu suscripción está activa!');
 
@@ -111,6 +124,7 @@ const promoIgnoredNote = promoIgnored
 				client:load
 				locale={locale}
 				miCuentaUrl={miCuentaUrl}
+				supportUrl={supportUrl}
 				preapprovalId={preapprovalId}
 			/>
 		)

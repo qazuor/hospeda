@@ -7,12 +7,12 @@
 
 import { AccommodationTypeEnum, type SearchIntentEntities } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
-import { dropStaleAmenitiesOnLocationChange } from '../../../../src/routes/ai/protected/search-chat.stale-carryover.js';
+import { dropStaleAmenitiesOnNewSearch } from '../../../../src/routes/ai/protected/search-chat.stale-carryover.js';
 
 const COLON_UUID = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee';
 const CONCORDIA_UUID = 'ffffffff-ffff-4fff-8fff-ffffffffffff';
 
-describe('dropStaleAmenitiesOnLocationChange — HOS-551 / H-71 production repro', () => {
+describe('dropStaleAmenitiesOnNewSearch — HOS-551 / H-71 production repro', () => {
     it('drops an unmentioned hasPool that survived identical when a new destinationId appears', () => {
         // Arrange — turn 1: cabaña para 4 con pileta. turn 2 (model output):
         // hotel en Colón para 2 — type and guests genuinely updated, but
@@ -30,7 +30,7 @@ describe('dropStaleAmenitiesOnLocationChange — HOS-551 / H-71 production repro
         };
 
         // Act
-        const result = dropStaleAmenitiesOnLocationChange(current, previous);
+        const result = dropStaleAmenitiesOnNewSearch(current, previous);
 
         // Assert
         expect(result.hasPool).toBeUndefined();
@@ -57,7 +57,7 @@ describe('dropStaleAmenitiesOnLocationChange — HOS-551 / H-71 production repro
         };
 
         // Act
-        const result = dropStaleAmenitiesOnLocationChange(current, previous);
+        const result = dropStaleAmenitiesOnNewSearch(current, previous);
 
         // Assert
         expect(result.hasWifi).toBeUndefined();
@@ -79,7 +79,7 @@ describe('dropStaleAmenitiesOnLocationChange — HOS-551 / H-71 production repro
         };
 
         // Act
-        const result = dropStaleAmenitiesOnLocationChange(current, previous);
+        const result = dropStaleAmenitiesOnNewSearch(current, previous);
 
         // Assert
         expect(result.amenitySlugs).toBeUndefined();
@@ -102,7 +102,7 @@ describe('dropStaleAmenitiesOnLocationChange — HOS-551 / H-71 production repro
         };
 
         // Act
-        const result = dropStaleAmenitiesOnLocationChange(current, previous);
+        const result = dropStaleAmenitiesOnNewSearch(current, previous);
 
         // Assert
         expect(result.hasPool).toBe(true);
@@ -123,7 +123,7 @@ describe('dropStaleAmenitiesOnLocationChange — HOS-551 / H-71 production repro
         };
 
         // Act
-        const result = dropStaleAmenitiesOnLocationChange(current, previous);
+        const result = dropStaleAmenitiesOnNewSearch(current, previous);
 
         // Assert
         expect(result.hasPool).toBe(true);
@@ -143,7 +143,7 @@ describe('dropStaleAmenitiesOnLocationChange — HOS-551 / H-71 production repro
         };
 
         // Act
-        const result = dropStaleAmenitiesOnLocationChange(current, previous);
+        const result = dropStaleAmenitiesOnNewSearch(current, previous);
 
         // Assert
         expect(result.hasPool).toBe(false);
@@ -157,7 +157,7 @@ describe('dropStaleAmenitiesOnLocationChange — HOS-551 / H-71 production repro
         };
 
         // Act
-        const result = dropStaleAmenitiesOnLocationChange(current, undefined);
+        const result = dropStaleAmenitiesOnNewSearch(current, undefined);
 
         // Assert — nothing to compare against, so nothing to drop.
         expect(result).toBe(current);
@@ -176,7 +176,7 @@ describe('dropStaleAmenitiesOnLocationChange — HOS-551 / H-71 production repro
         };
 
         // Act
-        const result = dropStaleAmenitiesOnLocationChange(current, previous);
+        const result = dropStaleAmenitiesOnNewSearch(current, previous);
 
         // Assert
         expect(result.hasPool).toBe(true);
@@ -192,9 +192,101 @@ describe('dropStaleAmenitiesOnLocationChange — HOS-551 / H-71 production repro
         };
 
         // Act
-        const result = dropStaleAmenitiesOnLocationChange(current, previous);
+        const result = dropStaleAmenitiesOnNewSearch(current, previous);
 
         // Assert
         expect(result).toBe(current);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-551 follow-up — the model's own `isNewSearch` classification as trigger.
+//
+// The destination-change proxy could only ever see a new search that MOVED. The
+// flag closes the case it was blind to: a self-contained new query inside the
+// same destination.
+// ---------------------------------------------------------------------------
+
+describe('dropStaleAmenitiesOnNewSearch — isNewSearch as the trigger', () => {
+    it('drops stale carryover on a new search that stays in the SAME destination', () => {
+        // Arrange — the case the destination-change proxy cannot see:
+        // "cabaña con pileta en Colón" → "hotel en Colón para 2". The city is
+        // unchanged, so the fallback would not fire; the model states it began
+        // a new search yet carried hasPool anyway.
+        const previous: SearchIntentEntities = {
+            accommodationType: AccommodationTypeEnum.CABIN,
+            city: 'Colón',
+            hasPool: true
+        };
+        const current: SearchIntentEntities = {
+            accommodationType: AccommodationTypeEnum.HOTEL,
+            city: 'Colón',
+            minGuests: 2,
+            hasPool: true
+        };
+
+        // Act
+        const result = dropStaleAmenitiesOnNewSearch(current, previous, { isNewSearch: true });
+
+        // Assert — the carried filter is gone, the genuinely updated ones stay.
+        expect(result.hasPool).toBeUndefined();
+        expect(result.accommodationType).toBe(AccommodationTypeEnum.HOTEL);
+        expect(result.minGuests).toBe(2);
+        expect(result.city).toBe('Colón');
+    });
+
+    it('leaves a refinement untouched even when it moves the destination', () => {
+        // Arrange — the OTHER direction the proxy got wrong: widening to a
+        // nearby destination is a refinement per the prompt, so the pool the
+        // user asked for two turns ago must survive. The flag says refinement;
+        // the proxy alone would have dropped it.
+        const previous: SearchIntentEntities = { city: 'Colón', hasPool: true };
+        const current: SearchIntentEntities = { city: 'Concordia', hasPool: true };
+
+        // Act
+        const result = dropStaleAmenitiesOnNewSearch(current, previous, { isNewSearch: false });
+
+        // Assert
+        expect(result.hasPool).toBe(true);
+        expect(result).toBe(current);
+    });
+
+    it('falls back to the destination-change proxy when the flag is absent', () => {
+        // Arrange — an older client, or a model that omitted the field. The
+        // behaviour must be exactly what shipped before the flag existed.
+        const previous: SearchIntentEntities = { city: 'Colón', hasPool: true };
+        const current: SearchIntentEntities = { city: 'Concordia', hasPool: true };
+
+        // Act — no `options` argument at all.
+        const result = dropStaleAmenitiesOnNewSearch(current, previous);
+
+        // Assert
+        expect(result.hasPool).toBeUndefined();
+    });
+
+    it('never drops a field the model genuinely changed, even on a new search', () => {
+        // Arrange — hasPool flipped true → false. That is a real update, not
+        // carryover, so `isNewSearch` must not touch it.
+        const previous: SearchIntentEntities = { city: 'Colón', hasPool: true };
+        const current: SearchIntentEntities = { city: 'Colón', hasPool: false };
+
+        // Act
+        const result = dropStaleAmenitiesOnNewSearch(current, previous, { isNewSearch: true });
+
+        // Assert
+        expect(result.hasPool).toBe(false);
+    });
+
+    it('is a no-op on the first turn, where there is nothing to carry over', () => {
+        // Arrange — no prior entities at all. A first turn is trivially a "new
+        // search"; nothing may be dropped from it.
+        const current: SearchIntentEntities = { city: 'Colón', hasPool: true, minGuests: 2 };
+
+        // Act
+        const result = dropStaleAmenitiesOnNewSearch(current, undefined, { isNewSearch: true });
+
+        // Assert
+        expect(result).toEqual(current);
+        expect(result.hasPool).toBe(true);
     });
 });

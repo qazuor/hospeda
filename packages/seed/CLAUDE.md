@@ -113,7 +113,7 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `host-pro@local.test` | HOST | `owner-pro` | MAX_ACCOMMODATIONS=3, MAX_PHOTOS=30 |
 | `host-premium@local.test` | HOST | `owner-premium` | MAX_ACCOMMODATIONS=10, MAX_PHOTOS=50, MAX_ACTIVE_PROMOTIONS=unlimited |
 | `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=50 (30 base + 20 addon). SPEC-143 #32 |
-| `host-trial@local.test` | HOST | `owner-basico` (status=`trialing`, 14d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c) |
+| `host-trial@local.test` | HOST | `owner-basico` (status=`trialing`, 30d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c) |
 | `host-provider@local.test` | HOST | `owner-basico` | **Dual role**: also owns the `plomeria-litoral` host_trades listing. HOS-376 AC-16/AC-17 |
 | `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
 | `complex-pro@local.test` | CLIENT_MANAGER | `complex-pro` | mid complex |

@@ -186,7 +186,13 @@ describe('SPEC-143 T-143-44 — checkout return pages (D1, D2, D3, index)', () =
         it('opts the now role-variant page out of any CDN edge cache', () => {
             // The retry CTA is per-visitor now; caching it at the edge would leak
             // the first visitor's role to the next.
-            expect(failureSrc).toContain("Cache-Control', 'private, no-store'");
+            //
+            // H-15 moved the header from an inline `headers.set` here to the
+            // shared `setCheckoutReturnNoStore`, because the same policy has to
+            // hold for all three return pages and only this one declared it.
+            // Anchored at statement position so the helper's own import line —
+            // or a mention in a comment — cannot satisfy this on its own.
+            expect(failureSrc).toMatch(/^[ \t]*setCheckoutReturnNoStore\(\{/m);
         });
 
         it('routes the support CTA to /contacto', () => {

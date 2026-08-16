@@ -17,6 +17,7 @@
 import CheckoutResult from '@/components/billing/CheckoutResult.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
+import { setCheckoutReturnNoStore } from '@/lib/billing/checkout-cache';
 import { resolveReasonI18nKey } from '@/lib/checkout/resolve-reason';
 import { createTranslations } from '@/lib/i18n';
 import { parseSessionUser, requestHasSessionCookie } from '@/lib/middleware-helpers';
@@ -62,10 +63,12 @@ const planesUrl = buildUrl({
 });
 const supportUrl = buildUrl({ locale, path: 'contacto' });
 
-// The retry CTA is now role-variant (per-visitor), so this page must never be
-// shared from a CDN edge cache — otherwise the first visitor's role would leak
-// to the next. The sibling pricing pages opt INTO edge caching; this one opts OUT.
-Astro.response.headers.set('Cache-Control', 'private, no-store');
+// This page must never be served from a shared cache, for two independent
+// reasons: the retry CTA is role-variant (per-visitor), and — H-15 — the page
+// renders one specific buyer's payment outcome. The sibling pricing pages opt
+// INTO edge caching; every checkout return page opts OUT, through the one
+// shared helper its two siblings now use too.
+setCheckoutReturnNoStore({ response: Astro.response });
 ---
 
 <MarketingLayout

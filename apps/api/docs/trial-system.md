@@ -2,12 +2,12 @@
 
 ## Overview
 
-The Hospeda platform provides a 14-day trial period for owner and complex users. This document describes the trial system implementation, lifecycle, and integration points.
+The Hospeda platform provides a trial period for owner and complex users — 30 days for owner plans (raised from 14, owner decision 2026-08-15) and 14 days for complex plans (`OWNER_TRIAL_DAYS` / `COMPLEX_TRIAL_DAYS`, `@repo/billing`). This document describes the trial system implementation, lifecycle, and integration points.
 
 ## Features
 
 - **Auto-start**: Trial starts automatically when owner/complex users register
-- **14-day countdown**: Trial expires after 14 days from start
+- **Countdown**: Trial expires after the category's trial length from start (30 days owner / 14 days complex)
 - **Auto-block**: Dashboard access is blocked when trial expires
 - **Data preservation**: All user data is preserved when trial expires
 - **Easy upgrade**: Users can upgrade to paid plan at any time
@@ -17,7 +17,7 @@ The Hospeda platform provides a 14-day trial period for owner and complex users.
 
 | User Role | Maps To | Trial Eligible | Trial Plan | Trial Duration |
 |-----------|---------|---------------|------------|----------------|
-| HOST | Owner | ✅ Yes | owner-basico | 14 days |
+| HOST | Owner | ✅ Yes | owner-basico | 30 days |
 | USER | Tourist | ❌ No | tourist-free (permanent) | N/A |
 | GUEST | Tourist | ❌ No | N/A | N/A |
 | Other roles | N/A | ❌ No | N/A | N/A |
@@ -31,7 +31,7 @@ stateDiagram-v2
     [*] --> Registration
     Registration --> TrialActive: Auto-start (owner/complex)
     Registration --> FreePlan: Tourist users
-    TrialActive --> TrialExpired: After 14 days
+    TrialActive --> TrialExpired: After trial length (30 days owner)
     TrialActive --> PaidPlan: User upgrades
     TrialExpired --> PaidPlan: User subscribes
     TrialExpired --> Blocked: No action
@@ -77,7 +77,7 @@ sequenceDiagram
     AuthSync->>TrialService: Start trial
     TrialService->>QZPay: Get basico plan
     TrialService->>QZPay: Create trial subscription
-    TrialService-->>User: Trial active (14 days)
+    TrialService-->>User: Trial active (30 days)
 ```
 
 ## API Reference
@@ -261,7 +261,7 @@ When a new owner or complex user registers:
 1. Better Auth creates user
 2. Auth sync creates DB user record
 3. Billing customer sync creates billing customer
-4. **Trial service auto-starts 14-day trial**
+4. **Trial service auto-starts 30-day trial**
 5. User gets full Basico plan access
 
 ### 2. Dashboard Access
@@ -409,7 +409,7 @@ if (customerId && user.role === 'HOST') {
    - `ADMIN`: Platform administrators. No billing relationship.
    - `EDITOR`: Content editors. No subscription needed.
    - `SPONSOR`: Sponsors have a separate payment flow (sponsorship purchases), not subscription-based trials.
-4. **Single trial plan**: All HOST users start on the `owner-basico` 14-day free trial, as documented in `v1-launch-strategy.md`.
+4. **Single trial plan**: All HOST users start on the `owner-basico` 30-day free trial (`OWNER_TRIAL_DAYS`, raised from 14, owner decision 2026-08-15), as documented in `v1-launch-strategy.md`.
 
 **When to revisit**: This decision should be revisited if a new role is introduced that requires subscription-based access (e.g., a `PROPERTY_MANAGER` role for multi-property management companies), if the SPONSOR role is migrated to a subscription model, or if the platform introduces tiered access for content editors that requires billing.
 

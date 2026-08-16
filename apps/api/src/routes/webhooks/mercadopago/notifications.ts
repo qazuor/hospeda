@@ -89,6 +89,78 @@ export async function sendPaymentSuccessNotification(
 }
 
 /**
+ * Alert admins that a customer was charged instead of receiving the free trial
+ * they were promised (H-137).
+ *
+ * There is deliberately NO customer-facing message here. Telling somebody "the
+ * free period we advertised did not apply and you have been billed" is
+ * commercial copy with a remedy attached (refund? honour the trial anyway?
+ * apologise and continue?), and that remedy is an owner decision, not a default
+ * this function gets to invent. What it does guarantee is that the situation
+ * reaches a human the moment it happens, with the customer's email in hand —
+ * instead of the current state, where the only party informed is MercadoPago.
+ *
+ * Best-effort and never throws: the charge already settled and is recorded.
+ *
+ * @param params.customerId - Billing customer id.
+ * @param params.customerEmail - Who was charged. The point of the alert.
+ * @param params.planName - Human plan label, already resolved.
+ * @param params.promisedTrialEnd - When the trial was supposed to end, ISO.
+ * @param params.chargedAt - When MercadoPago actually took the money, ISO.
+ * @param params.mpSubscriptionId - Preapproval id, for lookup in MercadoPago.
+ */
+export async function sendTrialNotGrantedAdminAlert(params: {
+    readonly customerId: string;
+    readonly customerEmail: string;
+    readonly planName: string;
+    readonly promisedTrialEnd: string | null;
+    readonly chargedAt: string;
+    readonly mpSubscriptionId: string | null;
+}): Promise<void> {
+    try {
+        const adminEmails =
+            env.HOSPEDA_ADMIN_NOTIFICATION_EMAILS?.split(',').map((e) => e.trim()) ?? [];
+
+        for (const adminEmail of adminEmails) {
+            if (!adminEmail) continue;
+
+            await sendNotification({
+                type: NotificationType.ADMIN_SYSTEM_EVENT,
+                recipientEmail: adminEmail,
+                recipientName: 'Admin',
+                userId: null,
+                severity: 'warning' as const,
+                eventDetails: {
+                    eventType: 'trial_not_granted_by_provider',
+                    customerEmail: params.customerEmail,
+                    customerId: params.customerId,
+                    planName: params.planName,
+                    promisedTrialEnd: params.promisedTrialEnd,
+                    chargedAt: params.chargedAt,
+                    mpSubscriptionId: params.mpSubscriptionId
+                }
+            }).catch((err) => {
+                apiLogger.debug(
+                    {
+                        error: err instanceof Error ? err.message : String(err),
+                        adminEmail
+                    },
+                    'Trial-not-granted admin alert failed (will retry)'
+                );
+            });
+        }
+    } catch (error) {
+        apiLogger.debug(
+            {
+                error: error instanceof Error ? error.message : String(error),
+                customerId: params.customerId
+            },
+            'sendTrialNotGrantedAdminAlert failed'
+        );
+    }
+}
+
+/**
  * Send payment failure notifications (best-effort, awaitable).
  *
  * Sends two notifications:

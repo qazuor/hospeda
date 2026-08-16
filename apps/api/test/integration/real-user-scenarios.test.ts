@@ -75,7 +75,7 @@ vi.mock('@repo/logger', () => {
 vi.mock('@repo/billing', () => ({
     DUNNING_RETRY_INTERVALS: [1, 3, 5, 7] as const,
     DUNNING_GRACE_PERIOD_DAYS: 7,
-    OWNER_TRIAL_DAYS: 14,
+    OWNER_TRIAL_DAYS: 30,
     COMPLEX_TRIAL_DAYS: 14,
     PAYMENT_GRACE_PERIOD_DAYS: 3,
     MAX_PAYMENT_RETRY_ATTEMPTS: 3,
