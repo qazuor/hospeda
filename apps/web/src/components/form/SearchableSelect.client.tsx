@@ -296,10 +296,9 @@ export function SearchableSelect<T extends SelectableItem>({
     );
 
     const resolvedPlaceholder =
-        placeholder ?? t('form.searchableSelect.placeholder', 'Buscá una opción');
-    const resolvedLoadingLabel = loadingLabel ?? t('form.searchableSelect.loading', 'Buscando...');
-    const resolvedEmptyLabel =
-        emptyLabel ?? t('form.searchableSelect.empty', 'No hay coincidencias');
+        placeholder ?? t('ui.searchableSelect.placeholder', 'Buscá una opción');
+    const resolvedLoadingLabel = loadingLabel ?? t('ui.searchableSelect.loading', 'Buscando...');
+    const resolvedEmptyLabel = emptyLabel ?? t('ui.searchableSelect.empty', 'No hay coincidencias');
 
     const showDropdown =
         isOpen && (loading || results.length > 0 || query.trim().length >= effectiveMinQuery);
@@ -447,7 +446,7 @@ export function SearchableSelect<T extends SelectableItem>({
                                         className="featured-indicator"
                                         role="img"
                                         aria-label={t(
-                                            'form.searchableSelect.featuredLabel',
+                                            'ui.searchableSelect.featuredLabel',
                                             'Destacado'
                                         )}
                                     >

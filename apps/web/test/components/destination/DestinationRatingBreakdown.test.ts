@@ -88,7 +88,7 @@ describe('DestinationRatingBreakdown.astro', () => {
         });
 
         it('should use t() for dimension labels with key prefix', () => {
-            expect(src).toContain('t(`destination.rating.dimensions.${key}`');
+            expect(src).toContain('t(`destinations.rating.dimensions.${key}`');
         });
     });
 

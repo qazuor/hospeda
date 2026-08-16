@@ -79,7 +79,7 @@ describe('DestinationAttractionsGrid.astro', () => {
         });
 
         it('should use t() for section title with fallback', () => {
-            expect(src).toContain("t('destination.detail.attractions.title'");
+            expect(src).toContain("t('destinations.detail.attractions.title'");
             expect(src).toContain('Qué hacer acá');
         });
     });

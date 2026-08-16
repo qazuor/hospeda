@@ -30,12 +30,12 @@ describe('DestinationFaqAccordion.astro', () => {
     });
 
     it('groups FAQs by category with a localized General fallback placed last', () => {
-        expect(src).toContain("t('destination.detail.faq.generalCategory', 'General')");
+        expect(src).toContain("t('destinations.detail.faq.generalCategory', 'General')");
         expect(src).toContain('faq.category ?? generalLabel');
     });
 
     it('localizes the section title', () => {
-        expect(src).toContain("t('destination.detail.faq.title'");
+        expect(src).toContain("t('destinations.detail.faq.title'");
     });
 
     it('uses design tokens for typography and color', () => {

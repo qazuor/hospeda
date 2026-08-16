@@ -10,6 +10,10 @@
     "backToHome": "Back to home",
     "clear": "Clear",
     "destinations": "Destinations",
+    "legal": {
+        "lastUpdated": "Last updated",
+        "toc": "Contents"
+    },
     "enums": {
         "accommodationType": {
             "apartment": "Apartment",

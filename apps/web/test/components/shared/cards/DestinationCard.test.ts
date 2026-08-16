@@ -222,12 +222,12 @@ describe('DestinationCard.astro', () => {
         });
 
         it('should use t() for accommodation count singular/plural labels', () => {
-            expect(src).toContain("t('destination.card.accommodation_singular'");
-            expect(src).toContain("t('destination.card.accommodation_plural'");
+            expect(src).toContain("t('destinations.card.accommodation_singular'");
+            expect(src).toContain("t('destinations.card.accommodation_plural'");
         });
 
         it('should use t() for CTA label', () => {
-            expect(src).toContain("t('destination.card.cta'");
+            expect(src).toContain("t('destinations.card.cta'");
         });
     });
 

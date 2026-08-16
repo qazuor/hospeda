@@ -102,19 +102,19 @@ const mutedColorScheme = getMutedColorScheme();
             {isTrending && (
                 <span
                     class="featured-card__overlay-badge featured-card__overlay-badge--trending"
-                    aria-label={t('articles.trending', 'Trending')}
+                    aria-label={t('blog.card.trending', 'Trending')}
                     style={`background-color: ${trendingColors.bg}; color: ${trendingColors.text};`}
                 >
-                    🔥 {t('articles.trending', 'Trending')}
+                    🔥 {t('blog.card.trending', 'Trending')}
                 </span>
             )}
             {data.isPromoted && (
                 <span
                     class="featured-card__overlay-badge--promoted featured-badge"
-                    aria-label={t('articles.promoted', 'Destacado')}
+                    aria-label={t('blog.card.promoted', 'Destacado')}
                 >
                     <StarIcon size={12} weight="fill" aria-hidden="true" />
-                    <span>{t('articles.promoted', 'Destacado')}</span>
+                    <span>{t('blog.card.promoted', 'Destacado')}</span>
                 </span>
             )}
         </div>
@@ -132,7 +132,7 @@ const mutedColorScheme = getMutedColorScheme();
 
             <!-- Tags -->
             {visibleTags.length > 0 && (
-                <div class="featured-card__tags" aria-label={t('articles.tags', 'Etiquetas')}>
+                <div class="featured-card__tags" aria-label={t('blog.detail.tags', 'Etiquetas')}>
                     {visibleTags.map((tag) => (
                         <Badge
                             label={tag}
@@ -203,7 +203,7 @@ const mutedColorScheme = getMutedColorScheme();
 
             <!-- CTA -->
             <span class="featured-card__cta" aria-hidden="true">
-                {t('articles.readFull', 'Leer artículo completo')}
+                {t('blog.card.readFull', 'Leer artículo completo')}
                 <span class="featured-card__cta-arrow">→</span>
             </span>
         </div>

@@ -18,7 +18,9 @@
         "navigation": "Destination navigation",
         "previous": "Previous destination",
         "next": "Next destination",
-        "itemOf": "Destination {{current}} of {{total}}"
+        "itemOf": "Destination {{current}} of {{total}}",
+        "slideOf": "{{current}} of {{total}}: {{name}}",
+        "viewDestination": "View destination {{name}}"
     },
     "title": "Tourist Destinations",
     "description": "Discover the best tourist destinations. Explore unique places and plan your next adventure.",
@@ -73,7 +75,20 @@
         "seeMore": "See more",
         "location": "Location",
         "accommodation_one": "{{count}} accommodation",
-        "accommodation_other": "{{count}} accommodations"
+        "accommodation_other": "{{count}} accommodations",
+        "accommodation_singular": "accommodation",
+        "accommodation_plural": "accommodations",
+        "event_singular": "event",
+        "event_plural": "events",
+        "cta": "Explore destination",
+        "attractionsLabel": "Attractions",
+        "badge": {
+            "featured": "Featured"
+        },
+        "rating": {
+            "label": "Rating",
+            "of5": "out of 5"
+        }
     },
     "seeAll": "See all destinations",
     "list": {
@@ -204,10 +219,54 @@
             "rating": "rating",
             "reviews": "reviews"
         },
+        "nearby": {
+            "title": "Other destinations nearby",
+            "subtitle": "Nearby in the region — explore what's around"
+        },
+        "faq": {
+            "generalCategory": "General",
+            "title": "Frequently asked questions"
+        },
+        "gallery": {
+            "title": "Gallery"
+        },
+        "sidebarCtas": {
+            "label": "Quick actions",
+            "accommodations": "Search accommodations",
+            "accommodationsHint": "{{count}} available",
+            "accommodationsHintEmpty": "See nearby options",
+            "events": "View events",
+            "eventsHint": "{{count}} upcoming",
+            "eventsHintEmpty": "Coming soon"
+        },
+        "attractions": {
+            "title": "What to do here"
+        },
+        "relatedPosts": {
+            "title": "{{name}}",
+            "emptyTitle": "About {{name}}",
+            "subtitle": "Related articles and guides",
+            "seeAll": "View all posts",
+            "empty": "There are no articles about this destination yet",
+            "emptyMessage": "We're preparing content so you can learn more about this destination."
+        },
         "reviews": {
+            "title": "Reviews",
+            "empty": "There are no reviews for this destination yet.",
+            "count": "{{count}} reviews",
+            "viewAll": "View all reviews",
             "modal": {
+                "close": "Close",
+                "title": "Destination reviews",
+                "empty": "No reviews available.",
+                "error": "Reviews could not be loaded.",
+                "retry": "Retry",
+                "loadMore": "Load more reviews",
                 "loading": "Loading reviews…"
             }
+        },
+        "rating": {
+            "title": "Rating by dimension"
         }
     },
     "detailPage": {

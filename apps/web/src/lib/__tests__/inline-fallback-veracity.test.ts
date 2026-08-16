@@ -171,9 +171,14 @@ function flatten(prefix: string, value: unknown, sink: Map<string, string>): voi
  *
  * `config.shared.ts` binds `destination.json` to `destinations` and
  * `event.json` to `events`. Deriving the namespace from the file name — the
- * obvious thing — silently gets both wrong: it hides 21 fallbacks that DO
- * render (every `t('destination.…')` call resolves to nothing at runtime) and
- * admits 88 that do not.
+ * obvious thing — silently gets both wrong, mismatching this catalogue against
+ * the keys the call sites actually name.
+ *
+ * The call sites themselves used to carry the same confusion, naming the
+ * singular so that no key ever resolved. That was H-45, and it is fixed;
+ * `i18n-namespace-prefix.guard.test.ts` now fails the build if a call site
+ * names a namespace the catalogue does not register. This map remains because
+ * the file/namespace split is still real on the catalogue side.
  */
 const NAMESPACE_BY_FILE: Readonly<Record<string, string>> = {
     destination: 'destinations',

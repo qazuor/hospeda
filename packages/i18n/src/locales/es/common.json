@@ -10,6 +10,10 @@
     "backToHome": "Volver al inicio",
     "clear": "Limpiar",
     "destinations": "Destinos",
+    "legal": {
+        "lastUpdated": "Última actualización",
+        "toc": "Contenido"
+    },
     "enums": {
         "accommodationType": {
             "apartment": "Apartamento",

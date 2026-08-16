@@ -142,7 +142,7 @@ export function DestinationReviewRatingFields({
             </p>
             {RATING_CATEGORIES.map((category) => {
                 const label = t(
-                    `destination.rating.categories.${category.key}`,
+                    `destinations.rating.categories.${category.key}`,
                     DEFAULT_CATEGORY_LABELS[category.key] ?? category.key
                 );
                 // Header stars show the rounded average of the rated dimensions
@@ -204,13 +204,13 @@ export function DestinationReviewRatingFields({
                                     >
                                         <span className={styles.ratingLabel}>
                                             {t(
-                                                `destination.rating.dimensions.${dim}`,
+                                                `destinations.rating.dimensions.${dim}`,
                                                 DEFAULT_LABELS[dim]
                                             )}
                                         </span>
                                         <StarRow
                                             label={t(
-                                                `destination.rating.dimensions.${dim}`,
+                                                `destinations.rating.dimensions.${dim}`,
                                                 DEFAULT_LABELS[dim]
                                             )}
                                             value={ratings[dim]}

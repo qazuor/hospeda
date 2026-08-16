@@ -147,6 +147,12 @@
             "unknownError": "Unknown error"
         }
     },
+    "searchableSelect": {
+        "placeholder": "Search for an option",
+        "loading": "Searching...",
+        "empty": "No matches found",
+        "featuredLabel": "Featured"
+    },
     "pagination": {
         "previous": "Previous",
         "next": "Next",
@@ -220,5 +226,8 @@
         "activeFiltersHeading": "Active filters (tap one to remove):",
         "removeFilter": "Remove filter",
         "suggestionsHeading": "Or try:"
+    },
+    "announcements": {
+        "dismiss": "Dismiss announcement"
     }
 }

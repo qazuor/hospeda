@@ -84,7 +84,7 @@ describe('DestinationGallery.astro', () => {
         });
 
         it('should use t() for section title with fallback', () => {
-            expect(src).toContain("t('destination.detail.gallery.title'");
+            expect(src).toContain("t('destinations.detail.gallery.title'");
             expect(src).toContain('Galería');
         });
     });
