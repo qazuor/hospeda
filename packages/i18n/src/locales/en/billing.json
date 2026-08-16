@@ -253,6 +253,12 @@
             "errorPlanRestriction": "This code isn't valid for the selected plan.",
             "errorNewUsersOnly": "This code is only for new customers.",
             "errorMinAmount": "Your purchase doesn't meet the minimum required for this code."
+        },
+        "trialWarning": {
+            "title": "The free trial is granted by Mercado Pago",
+            "body": "Mercado Pago grants the trial period only once per account and per plan. If you've already used a trial for this plan with the same Mercado Pago account, Mercado Pago will charge the first period right away instead of applying the trial.",
+            "confirm": "Got it, continue",
+            "cancel": "Cancel"
         }
     },
     "limit": {

@@ -253,6 +253,12 @@
             "errorPlanRestriction": "Este código não é válido para o plano selecionado.",
             "errorNewUsersOnly": "Este código é apenas para novos clientes.",
             "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código."
+        },
+        "trialWarning": {
+            "title": "O período de teste gratuito é concedido pelo Mercado Pago",
+            "body": "O Mercado Pago concede o período de teste apenas uma vez por conta e por plano. Se você já usou um teste deste plano com a mesma conta do Mercado Pago, o Mercado Pago vai cobrar o primeiro período imediatamente em vez de aplicar o teste.",
+            "confirm": "Entendi, continuar",
+            "cancel": "Cancelar"
         }
     },
     "limit": {
