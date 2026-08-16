@@ -233,6 +233,10 @@ export async function finalizeImportDraft(
         const hint = await buildDestinationHint({
             locality: raw.scrapedLocality,
             country: raw.scrapedCountry,
+            // The province only ever DENIES confidence (HOS-346). The catalog is
+            // 100% Entre Ríos, so the country separates nothing while the
+            // province separates the six cities with a homonym elsewhere.
+            region: raw.scrapedRegion,
             destinationService,
             actor
         });

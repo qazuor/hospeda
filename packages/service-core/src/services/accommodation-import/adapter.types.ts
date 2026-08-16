@@ -184,6 +184,20 @@ export interface RawExtraction {
     readonly scrapedCountry?: string | undefined;
 
     /**
+     * Province / state as scraped from the listing page (e.g. "Entre Ríos").
+     *
+     * The whole destination catalog is Entre Ríos, so the country separates
+     * nothing — every Argentine locality passes it — while the province
+     * separates a great deal: six of the 22 catalog cities have a homonym in
+     * another province (Caseros, Villa Elisa, San Justo, Santa Ana, Colón,
+     * San José), and an exact name match against one of them is otherwise
+     * indistinguishable from the real one (HOS-346).
+     *
+     * Used ONLY to deny confidence, never to grant it.
+     */
+    readonly scrapedRegion?: string | undefined;
+
+    /**
      * Machine-readable failure cause when this extraction yielded nothing.
      *
      * Set by adapters on their degraded empty-extraction returns so the
