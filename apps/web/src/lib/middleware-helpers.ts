@@ -406,6 +406,24 @@ export interface SessionUser {
      * this gate exists for.
      */
     readonly mustChangePassword: boolean;
+    /**
+     * Whether this account owns a `host_trades` directory listing (H-158).
+     *
+     * Rides on the SAME `/auth/me` response as everything else here, and that
+     * is the whole point. It cannot be derived from `roles` or `permissions` —
+     * an approved provider is an ordinary account with no role change and no
+     * `HOST_TRADE_*` permission (HOS-278 AC-7) — so the account sidebar
+     * briefly asked `GET /host-trades/mine` from `AccountLayout` instead. That
+     * layout wraps 123 pages, so it added a blocking round-trip (~36 ms
+     * measured) to every `/mi-cuenta/*` render, for a question none of them
+     * were about. Reading it off the session costs nothing.
+     *
+     * Defaults to `false` on a malformed payload, matching `roles` and
+     * `permissions`: the lowest-privilege reading is a missing nav entry, and
+     * the panel it points at is authorised server-side by row ownership
+     * regardless of what this flag says.
+     */
+    readonly ownsHostTradeListing: boolean;
 }
 
 /**
@@ -545,6 +563,12 @@ export async function parseSessionUser({
                             mustChangePassword?: boolean;
                         };
                         isAuthenticated?: boolean;
+                        // H-158: top-level, NOT on the actor — computed by the
+                        // `/auth/me` handler for authenticated callers only,
+                        // exactly like `passwordChangeRequired`. Keeping it off
+                        // the actor keeps the lookup out of every other
+                        // authenticated API request.
+                        ownsHostTradeListing?: boolean;
                     };
                 };
 
@@ -576,7 +600,12 @@ export async function parseSessionUser({
                     // Fail-open on anything but an explicit `true`, matching
                     // the gate's own "if the flag is missing/false, pass
                     // through" semantics.
-                    mustChangePassword: actor.mustChangePassword === true
+                    mustChangePassword: actor.mustChangePassword === true,
+                    // Explicit `true` only, like every other flag here: an
+                    // absent or malformed value reads as "no listing", which
+                    // hides a nav entry rather than advertising a panel the
+                    // account may not own.
+                    ownsHostTradeListing: data?.data?.ownsHostTradeListing === true
                 };
             } catch {
                 span?.setStatus({ code: 2, message: 'internal_error' });

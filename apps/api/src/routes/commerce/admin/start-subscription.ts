@@ -4,10 +4,13 @@
  * Provisions a monthly commerce-listing subscription on behalf of a listing's
  * owner. The admin selects a commerce listing (`entityType` + `entityId`); the
  * route resolves the listing's owner, ensures a billing customer exists, and
- * delegates to {@link initiateCommerceMonthlySubscription} which:
- *   - creates the MP preapproval subscription,
- *   - stamps `billing_subscriptions.product_domain = 'commerce'` (D3),
- *   - upserts the `commerce_listing_subscriptions` link row (D4).
+ * delegates to {@link initiateCommerceMonthlySubscription} which (HOS-191
+ * Path C — no preapproval is created server-side):
+ *   - resolves/provisions the MercadoPago `preapproval_plan`,
+ *   - materializes a `pending_provider` subscription + its correlation row,
+ *     stamped `billing_subscriptions.product_domain = 'commerce'` (D3),
+ *   - upserts the `commerce_listing_subscriptions` link row (D4),
+ *   - returns MercadoPago's hosted share link as the checkout URL.
  *
  * Gated on `PermissionEnum.COMMERCE_EDIT_ALL` (D2, consistent with the
  * gastronomy assign-owner route — no new permission is introduced).

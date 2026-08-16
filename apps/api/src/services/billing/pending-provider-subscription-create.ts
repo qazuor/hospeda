@@ -25,13 +25,20 @@
  * partial write can never leave a `pending_provider` subscription with no
  * correlation row to reconcile it (or vice versa) — the same atomicity
  * guarantee `createCompSubscription` gives the comp-redemption path, whose
- * insert shape this helper deliberately mirrors.
+ * insert shape this helper deliberately mirrors. A caller with its OWN
+ * domain link row to write (commerce, partner) joins that same transaction
+ * through `writeDomainLinkRow` rather than opening a second one.
  *
  * @module services/billing/pending-provider-subscription-create
  */
 
 import { randomBytes } from 'node:crypto';
-import { billingPendingCheckoutModel, billingSubscriptions, eq } from '@repo/db';
+import {
+    billingPendingCheckoutModel,
+    billingSubscriptions,
+    type DrizzleClient,
+    eq
+} from '@repo/db';
 import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import { withServiceTransaction } from '@repo/service-core';
 import { apiLogger } from '../../utils/logger.js';
@@ -101,8 +108,24 @@ export interface CreatePendingProviderSubscriptionInput {
     readonly billingInterval: 'monthly' | 'annual';
     /** The MercadoPago `preapproval_plan` id the customer is being redirected to. */
     readonly mpPreapprovalPlanId: string;
-    /** Snapshot of the customer's email, used as a webhook-fallback reconciliation signal. */
-    readonly payerEmail: string;
+    /**
+     * Snapshot of the customer's email, used as a webhook-fallback reconciliation
+     * signal.
+     *
+     * OPTIONAL, and deliberately so: `verifyPreapprovalOwnership`
+     * (`link-preapproval.service.ts`) treats this snapshot as a VETO — a
+     * CONFIRMED mismatch against the live preapproval's payer email refuses the
+     * link on every tier, while an ABSENT snapshot never blocks one. Omit it
+     * whenever the local billing customer's email is not the payer's real
+     * address, rather than snapshotting a placeholder: a value that can never
+     * match is strictly worse than no value, because it turns every webhook
+     * link into a permanent refusal. The partner checkout is exactly that case
+     * (its customer carries a synthetic `@partners.hospeda.invalid` address —
+     * see `routes/partners/admin/send-link.ts`). Tier 3 candidate selection
+     * already accepts a NULL snapshot (`findReconcileCandidates` matches
+     * `payer_email = X OR payer_email IS NULL`).
+     */
+    readonly payerEmail?: string;
     /**
      * Whether this checkout granted free trial days (baked into the MP plan
      * referenced by {@link mpPreapprovalPlanId} — see `resolveCheckoutMpPlanId`).
@@ -143,6 +166,29 @@ export interface CreatePendingProviderSubscriptionInput {
     };
     /** Product domain to stamp on the subscription. Defaults to `'accommodation'`. */
     readonly productDomain?: string;
+    /**
+     * Optional domain-specific write executed INSIDE the same transaction as the
+     * subscription row and the correlation row.
+     *
+     * The commerce and partner checkouts each own a link table
+     * (`commerce_listing_subscriptions` / `partner_subscriptions`) whose row must
+     * exist for their reconcilers to find the listing/partner when the webhook
+     * later activates the subscription. Writing it after this function returned
+     * would leave a window in which a `pending_provider` commerce subscription
+     * exists with no link row — an unrecoverable state, since the listing could
+     * never be flipped PUBLIC even after the owner pays. Path C creates one such
+     * row per CHECKOUT CLICK (not per payment), so that window is entered far
+     * more often than the pre-Path-C flow's was.
+     *
+     * Receives the transaction client plus the id of the subscription row just
+     * inserted (which this helper generates, so the caller cannot know it before
+     * the call returns). Must not commit or roll back itself; anything it throws
+     * aborts the whole transaction, exactly like a failed correlation-row insert.
+     */
+    readonly writeDomainLinkRow?: (params: {
+        readonly tx: DrizzleClient;
+        readonly localSubscriptionId: string;
+    }) => Promise<void>;
     /** Whether the customer/record is in live mode. */
     readonly livemode: boolean;
 }
@@ -199,6 +245,7 @@ export async function createPendingProviderSubscription(
         freeTrialDays,
         pendingDiscount,
         pendingTrialExtension,
+        writeDomainLinkRow,
         livemode
     } = input;
     const productDomain = input.productDomain ?? ProductDomainEnum.ACCOMMODATION;
@@ -277,7 +324,7 @@ export async function createPendingProviderSubscription(
                 planId,
                 mpPreapprovalPlanId,
                 nonce,
-                payerEmail,
+                ...(payerEmail ? { payerEmail } : {}),
                 ...(pendingDiscount ? { pendingDiscount } : {}),
                 ...(pendingTrialExtension ? { pendingTrialExtension } : {}),
                 status: 'pending',
@@ -285,6 +332,11 @@ export async function createPendingProviderSubscription(
             },
             tx
         );
+
+        // 4. Domain-specific link row (commerce listing / partner), inside the
+        //    SAME transaction — see `writeDomainLinkRow`'s JSDoc for why it
+        //    cannot be written after this function returns.
+        await writeDomainLinkRow?.({ tx, localSubscriptionId });
     });
 
     apiLogger.info(

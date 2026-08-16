@@ -423,7 +423,7 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
     {
         file: 'services/billing/pending-provider-subscription-create.ts',
         requiresCacheClear: false,
-        reason: 'Creates the row in PENDING_PROVIDER status (mirrors the comp-create insert shape) before any MP authorization. No entitlement is granted until the webhook activates it.'
+        reason: "Creates the row in PENDING_PROVIDER status (mirrors the comp-create insert shape) before any MP authorization, and stamps its product_domain ('accommodation' by default, 'commerce'/'partner' for the non-accommodation checkouts that route through it since all four flows moved to Path C). No entitlement is granted until the webhook activates it, and loadEntitlements() filters strictly to product_domain='accommodation' (SPEC-239) anyway."
     },
     {
         file: 'services/plan-disable-lifecycle.service.ts',
@@ -444,11 +444,6 @@ const BILLING_SUBSCRIPTIONS_WRITERS: readonly BillingSubscriptionsWriterEntry[] 
         file: 'services/subscription-cancel.service.ts',
         requiresCacheClear: true,
         reason: 'Subscription cancel — already calls clearEntitlementCache.'
-    },
-    {
-        file: 'services/subscription-checkout.service.ts',
-        requiresCacheClear: false,
-        reason: "Stamps product_domain='commerce'/'partner' on freshly-created non-accommodation subscriptions. loadEntitlements() filters strictly to product_domain='accommodation' (SPEC-239), so these writes never affect the accommodation entitlement cache."
     },
     {
         file: 'services/subscription-comp-create.service.ts',

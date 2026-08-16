@@ -1187,6 +1187,50 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
         expect(fetchMock.mock.calls[0]?.[1]).toMatchObject({ headers: { cookie: COOKIE } });
     });
 
+    /**
+     * H-158: the provider nav gate reads this off the session.
+     *
+     * The property is that the flag TRAVELS — a payload that carries it must
+     * reach `SessionUser` with it intact. If it silently dropped, the sidebar
+     * would simply lose the entry again, which is the original bug and looks
+     * identical to "this account is not a provider".
+     *
+     * It is read from the TOP LEVEL of the payload, not from the actor: the
+     * `/auth/me` handler computes it for authenticated callers only, so that
+     * `actorMiddleware` — which runs on every authenticated API request in the
+     * platform — does not pay for it.
+     */
+    it('carries ownsHostTradeListing from the payload onto the session user', async () => {
+        mockAuthMe({
+            data: {
+                actor: { id: 'u1', name: 'Prov', email: 'p@test', roles: ['USER'] },
+                isAuthenticated: true,
+                ownsHostTradeListing: true
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            ownsHostTradeListing: true
+        });
+    });
+
+    it('reads a non-boolean ownsHostTradeListing as false, never as truthy', async () => {
+        // Same defensive rule as `roles` and `permissions`: a malformed payload
+        // must land on the lowest-privilege reading. `'yes'` is truthy in JS
+        // and would advertise a panel the account may not own.
+        mockAuthMe({
+            data: {
+                actor: { id: 'u1', name: 'Prov', email: 'p@test', roles: ['USER'] },
+                isAuthenticated: true,
+                ownsHostTradeListing: 'yes'
+            }
+        });
+
+        await expect(parseSessionUser({ cookieHeader: COOKIE })).resolves.toMatchObject({
+            ownsHostTradeListing: false
+        });
+    });
+
     it('maps the actor onto the session user, including the FULL role set', async () => {
         mockAuthMe({
             data: {
@@ -1209,7 +1253,10 @@ describe('parseSessionUser — /auth/me (HOS-296)', () => {
             roles: ['USER', 'HOST', 'COMMERCE_OWNER'],
             permissions: ['post.create', 'post.update.own'],
             image: 'https://img.test/a.png',
-            mustChangePassword: false
+            mustChangePassword: false,
+            // Absent from this payload, so it reads as "owns no listing" —
+            // the lowest-privilege default (H-158).
+            ownsHostTradeListing: false
         });
     });
 

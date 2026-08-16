@@ -99,6 +99,22 @@ declare namespace App {
              * to initials (BETA-32).
              */
             readonly image: string | null;
+            /**
+             * Whether this account owns a `host_trades` directory listing
+             * (H-158), from the same `/api/v1/public/auth/me` payload.
+             *
+             * Neither `roles` nor `permissions` can answer this: an approved
+             * provider is an ordinary account with no role change and no
+             * `HOST_TRADE_*` permission (HOS-278 AC-7). It rides on the
+             * session so `AccountLayout` can gate the "Mi ficha de proveedor"
+             * entry without asking the API — that question was briefly a
+             * blocking round-trip on all 123 pages the layout wraps.
+             *
+             * `false` on a malformed payload: hiding a nav entry is the
+             * lowest-privilege reading, and the panel behind it is authorised
+             * server-side by row ownership regardless.
+             */
+            readonly ownsHostTradeListing: boolean;
         } | null;
 
         /**
