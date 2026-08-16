@@ -10,7 +10,9 @@
         "profile": "Perfil",
         "settings": "Configuración",
         "search": "Buscar…",
-        "reportProblem": "Reportar un problema"
+        "reportProblem": "Reportar un problema",
+        "userMenu": "Menú de usuario",
+        "userFallbackName": "Usuario"
     },
     "breadcrumbs": {
         "breadcrumb": "Ruta de navegación"

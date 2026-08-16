@@ -368,7 +368,7 @@ describe('BottomNav — data-tour attribute (SPEC-174 T-012)', () => {
 describe('HeaderUser — data-tour attribute (SPEC-174 T-012)', () => {
     it('renders data-tour="user-menu" on the avatar button', () => {
         render(<HeaderUser />);
-        const button = screen.getByRole('button', { name: 'User menu' });
+        const button = screen.getByRole('button', { name: 'admin-nav.topbar.userMenu' });
         expect(button).toHaveAttribute('data-tour', 'user-menu');
     });
 });

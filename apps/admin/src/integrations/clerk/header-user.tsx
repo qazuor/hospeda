@@ -107,14 +107,14 @@ export function HeaderUser() {
                 type="button"
                 onClick={() => setIsOpen((v) => !v)}
                 className="flex h-8 w-8 items-center justify-center rounded-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                aria-label="User menu"
+                aria-label={t('admin-nav.topbar.userMenu')}
                 data-tour="user-menu"
             >
                 <Avatar className="h-8 w-8 bg-primary text-primary-foreground">
                     {user.avatar ? (
                         <AvatarImage
                             src={getMediaUrl(user.avatar, { preset: 'avatar' })}
-                            alt={user.displayName || 'User'}
+                            alt={user.displayName || t('admin-nav.topbar.userFallbackName')}
                             loading="eager"
                             decoding="async"
                         />
@@ -128,7 +128,9 @@ export function HeaderUser() {
             {isOpen && (
                 <div className="absolute right-0 mt-2 w-56 rounded-md border bg-popover shadow-lg">
                     <div className="border-b px-4 py-3">
-                        <p className="font-medium text-sm">{user.displayName || 'User'}</p>
+                        <p className="font-medium text-sm">
+                            {user.displayName || t('admin-nav.topbar.userFallbackName')}
+                        </p>
                         <p className="truncate text-muted-foreground text-xs">{user.email}</p>
                     </div>
                     <div className="py-1">
@@ -140,7 +142,7 @@ export function HeaderUser() {
                             }}
                             className="block w-full px-4 py-2 text-left text-sm hover:bg-accent"
                         >
-                            Profile
+                            {t('admin-nav.topbar.profile')}
                         </button>
                         <button
                             type="button"
@@ -150,7 +152,7 @@ export function HeaderUser() {
                             }}
                             className="block w-full px-4 py-2 text-left text-sm hover:bg-accent"
                         >
-                            Settings
+                            {t('admin-nav.topbar.settings')}
                         </button>
 
                         {/* Tour entry points (SPEC-174 T-014, §7.8, D8) */}
@@ -222,7 +224,7 @@ export function HeaderUser() {
                             onClick={handleSignOut}
                             className="block w-full px-4 py-2 text-left text-destructive text-sm hover:bg-accent"
                         >
-                            Sign out
+                            {t('auth-ui.userMenu.signOut')}
                         </button>
                     </div>
                 </div>
