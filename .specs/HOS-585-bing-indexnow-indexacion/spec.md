@@ -136,12 +136,31 @@ Consecuencia concreta: si una entidad deja de ser indexable, **no se manda**. Nu
 envía una URL que la página serviría con `noindex`, ni una landing de faceta con 2+
 valores (que es `noindex,follow` por `resolveFacetSeoDecision`).
 
-### 6.3 Emisor
+### 6.3 Emisor — vive en `apps/web`, no en `apps/api` (corregido 17/08)
 
-- Módulo nuevo en `apps/api`, junto al resto de los servicios, con la misma forma de
-  adapter que `revalidation/adapters/`: uno real y uno **noop**.
+> **Corrección del diseño original.** Esta sección decía "módulo nuevo en `apps/api`".
+> Está mal, y la evidencia es el propio repo: `cloudflare-revalidation.adapter.ts` NO
+> llama a Cloudflare — hace `POST` al endpoint `/api/revalidate/` de `apps/web` con un
+> secreto compartido, y ese archivo declara en su cabecera *"This endpoint holds the
+> Cloudflare credentials; the API never sees them"*. La frontera de llamadas externas
+> ya está en el web, y todo lo que IndexNow necesita vive de ese lado.
+
+**El reparto, y por qué cada mitad está donde está:**
+
+| Lado | Hace | Por qué sólo puede hacerlo ahí |
+|---|---|---|
+| `service-core` | Lee el toggle en cada envío. Decide **si** emitir. Manda `{entityType, slug}[]` al web. | Es el único con acceso a la base, y el toggle vive en `platform_settings`. El web no lee la base. |
+| `apps/web` | Mapea entidad → URLs públicas canónicas (las 3 locales). Filtra por indexabilidad. Emite a `api.indexnow.org`. Sirve el `.txt`. | Tiene `buildUrl()`, los predicados de indexabilidad y el sitemap. Duplicar eso en `apps/api` viola el single-source-of-truth. |
+
+- Adapter en `service-core` con la misma forma que `revalidation/adapters/`: uno real
+  (POST a `/api/indexnow/` del web) y uno **noop**. Endpoint propio, hermano del de
+  revalidación y NO colgado de él: si IndexNow falla, se apaga o se satura, el purge de
+  caché no debe enterarse. Comparten origen, no destino.
 - El noop se activa cuando el entorno resuelto no es producción. Mismo criterio y misma
   fuente (`HOSPEDA_DEPLOY_ENV`) que el gate de cache tags — no una variable nueva.
+- **Defensa en profundidad en el web**: el endpoint rechaza si el host es uno de
+  `HOSPEDA_NOINDEX_HOSTS`. Staging sirve `Disallow: /`; mandar sus URLs sería incoherente
+  aunque el gate de entorno fallara.
 - Envío en lote (`POST https://api.indexnow.org/indexnow`), con `host`, `key`,
   `keyLocation` y `urlList`.
 - **No debe tirar nunca.** Igual que `RevalidationAdapter`: el error se captura en el
@@ -152,9 +171,10 @@ valores (que es `noindex,follow` por `resolveFacetSeoDecision`).
 
 - Se genera propia (hex, 8-128 chars). **No hace falta esperar el alta en BWT.**
 - Se sirve desde `apps/web` como `text/plain` en `/<clave>.txt`.
-- **Trampa cruzada de apps**: el `.txt` lo sirve `apps/web`, el ping lo dispara
-  `apps/api`. Si el host del `.txt` no es el host de las URLs enviadas, IndexNow
-  responde **403**.
+- La trampa de host cruzado que esta sección advertía **ya no existe**: con el emisor en
+  `apps/web` (§6.3), el `.txt` y las URLs enviadas salen del mismo origen por
+  construcción. Se deja anotado porque era un riesgo real del diseño anterior y explica
+  por qué el emisor no puede vivir en `apps/api` sin coordinar dos hosts.
 
 ### 6.5 El aviso se prende y se apaga desde el admin (decisión del owner, 17/08)
 
