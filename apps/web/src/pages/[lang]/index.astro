@@ -40,6 +40,8 @@ import { shouldShowSocialProof } from "@/lib/home-guards";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
 import { buildUrl } from "@/lib/urls";
+import { slugForAccommodationType } from "@/lib/facet-slugs";
+import { AccommodationTypeEnum } from "@repo/schemas";
 import { CACHE_TAG_HOME } from "@repo/cache-tags";
 import { applyCacheHeaders } from "@/lib/cache/response-cache";
 
@@ -158,19 +160,21 @@ const categoryTiles = [
     {
         title: t("home.categoryTiles.tiles.countryHouses.title", "Casas quintas"),
         description: t("home.categoryTiles.tiles.countryHouses.description", "Espacio, parque y quincho para escapadas en familia"),
-        href: buildUrl({ locale, path: "/alojamientos/tipo/country-house/" }),
+        // Canonical Spanish slug (H-110) — was the naive "country-house".
+        href: buildUrl({ locale, path: `/alojamientos/tipo/${slugForAccommodationType({ type: AccommodationTypeEnum.COUNTRY_HOUSE })}/` }),
         image: countryHousesImg,
     },
     {
         title: t("home.categoryTiles.tiles.hotels.title", "Hoteles"),
         description: t("home.categoryTiles.tiles.hotels.description", "Comodidad y servicio premium en el corazón de la ciudad"),
-        href: buildUrl({ locale, path: "/alojamientos/tipo/hotel/" }),
+        href: buildUrl({ locale, path: `/alojamientos/tipo/${slugForAccommodationType({ type: AccommodationTypeEnum.HOTEL })}/` }),
         image: hotelsImg,
     },
     {
         title: t("home.categoryTiles.tiles.apartments.title", "Departamentos"),
         description: t("home.categoryTiles.tiles.apartments.description", "Comodidad urbana cerca de todo, ideales para parejas y escapadas cortas"),
-        href: buildUrl({ locale, path: "/alojamientos/tipo/apartment/" }),
+        // Canonical Spanish slug (H-110) — was the naive "apartment".
+        href: buildUrl({ locale, path: `/alojamientos/tipo/${slugForAccommodationType({ type: AccommodationTypeEnum.APARTMENT })}/` }),
         image: apartmentsImg,
     },
     {

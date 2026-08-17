@@ -15,9 +15,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { AccommodationTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { slugForAccommodationType } from '../../src/lib/facet-slugs';
 import { FACET_CONFIG_BY_ID } from '../../src/lib/filters/facet-config';
 import { readFacetActiveValues } from '../../src/lib/filters/read-facet-active-values';
 import { resolveFacetSeoDecision } from '../../src/lib/seo/promoted-facet-canonical';
+
+/** Real per-facet slugify, matching what `alojamientos/index.astro` actually injects. */
+const slugify = (value: string): string =>
+    slugForAccommodationType({ type: value as AccommodationTypeEnum });
 
 const src = readFileSync(
     resolve(__dirname, '../../src/pages/[lang]/alojamientos/index.astro'),
@@ -82,7 +87,8 @@ describe('accommodations facet SEO — composed resolveFacetSeoDecision behavior
             facetValues: [],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: false, canonical: { kind: 'base' } });
     });
@@ -92,7 +98,8 @@ describe('accommodations facet SEO — composed resolveFacetSeoDecision behavior
             facetValues: ['HOTEL'],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision.noindex).toBe(false);
         expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'hotel' });
@@ -103,7 +110,8 @@ describe('accommodations facet SEO — composed resolveFacetSeoDecision behavior
             facetValues: ['HOTEL', 'CABIN'],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
     });
@@ -113,7 +121,8 @@ describe('accommodations facet SEO — composed resolveFacetSeoDecision behavior
             facetValues: ['HOTEL', 'CABIN', 'HOUSE'],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
     });
@@ -133,7 +142,8 @@ describe('accommodations facet SEO — legacy singular-only URL regression (HOS-
             facetValues: activeValues,
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision.noindex).toBe(false);
         expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'hotel' });
@@ -149,7 +159,8 @@ describe('accommodations facet SEO — legacy singular-only URL regression (HOS-
             facetValues: activeValues,
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
     });

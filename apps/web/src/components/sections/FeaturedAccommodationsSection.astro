@@ -16,6 +16,7 @@ import { AccommodationIcon } from '@repo/icons';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { slugForAccommodationType } from '@/lib/facet-slugs';
 import { accommodationsApi, SSR_PUBLIC_CACHE_TTL_MS, toAccommodationCardProps } from '@/lib/api';
 import type { AccommodationCardData } from '@/lib/api/transforms';
 import SectionHeader from '@/components/shared/layout/SectionHeader.astro';
@@ -38,15 +39,18 @@ const { t } = createTranslations(locale);
 
 /** All accommodation types from the canonical enum in @repo/schemas.
  * `type` keeps the enum value (underscore form) for the badge's icon + i18n
- * label resolution; `slug` is the hyphenated URL form for the route href
- * (e.g. APART_HOTEL → type "APART_HOTEL", slug "apart-hotel"). Keeping them
- * separate is required: the icon/label maps are keyed by the enum value, only
- * the route segment uses hyphens. (Bug B10 fix)
+ * label resolution; `slug` is the owner-approved canonical Spanish URL slug
+ * (H-110) for the route href (e.g. APART_HOTEL → type "APART_HOTEL", slug
+ * "apart-hotel"; COUNTRY_HOUSE → slug "casa-de-campo", NOT the mechanical
+ * "country-house"). Keeping them separate is required: the icon/label maps
+ * are keyed by the enum value, only the route segment uses the Spanish slug.
+ * (Bug B10 fix; slug source switched from a naive transform to
+ * `@/lib/facet-slugs` under H-110.)
  */
-const ACCOMMODATION_TYPES = Object.values(AccommodationTypeEnum).map((v) => {
-  const enumValue = String(v);
-  return { type: enumValue, slug: enumValue.toLowerCase().replace(/_/g, '-') };
-});
+const ACCOMMODATION_TYPES = Object.values(AccommodationTypeEnum).map((type) => ({
+  type,
+  slug: slugForAccommodationType({ type })
+}));
 
 // Fetch from API - empty array if unavailable
 let items: AccommodationCardData[] = [];

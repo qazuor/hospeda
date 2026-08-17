@@ -47,25 +47,24 @@ import { getApiUrl } from '@/lib/env';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
-import { AccommodationTypeEnum } from '@repo/schemas';
+import { resolveAccommodationTypeSlug, slugForAccommodationType } from '@/lib/facet-slugs';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { type: typeSlug } = Astro.params;
 
-// Derived from the canonical enum so any new type added to AccommodationTypeEnum
-// is automatically accepted here without code changes (Bug B10 fix).
-const VALID_TYPES: Record<string, string> = Object.fromEntries(
-	Object.values(AccommodationTypeEnum).map((v) => [
-		String(v).toLowerCase().replace(/_/g, '-'),
-		String(v)
-	])
-);
-
-const typeEnum = typeSlug ? VALID_TYPES[typeSlug] : undefined;
+// Resolved against the canonical Spanish slug map (H-110). The legacy
+// English slug (e.g. `cabin`) never reaches this page as a 200 — the
+// middleware 301-redirects it to the Spanish slug before routing gets here.
+const typeEnum = resolveAccommodationTypeSlug({ slug: typeSlug });
 if (!typeEnum) {
 	return new Response(null, { status: 404 });
 }
+
+// Re-derived from the enum (not the raw `typeSlug` param) so a
+// differently-cased inbound slug (the resolver is case-insensitive) still
+// self-canonicalizes to the exact lowercase Spanish slug.
+const canonicalTypeSlug = slugForAccommodationType({ type: typeEnum });
 
 // Keys authored under `accommodations.byType.types.{ENUM}` (SPEC-306): `name`
 // (concise display name), `description` (SEO meta description), `pageTitle`
@@ -245,7 +244,7 @@ const sortOptions = [
 	...(hasGeoRadius ? [{ value: 'distance', label: t('accommodations.sort.distance', 'Más cercanos') }] : [])
 ];
 
-const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${typeSlug}` });
+const baseUrl = buildUrl({ locale, path: `alojamientos/tipo/${canonicalTypeSlug}` });
 
 // Self-canonical for paginated pages (mirrors alojamientos/index.astro). Pages
 // 2+ are served at `/{locale}/alojamientos/tipo/{type}/page/{n}/` via an

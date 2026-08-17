@@ -113,18 +113,26 @@ const BASE_LISTING_DECISION: FacetSeoDecision = {
  * @param dedicatedLandingPattern - The facet's dedicated single-value landing
  *   URL pattern (e.g. `/alojamientos/tipo/{slug}/`), or `undefined` when the
  *   facet has none (see {@link FACET_CONFIG_BY_ID} in `facet-config.ts`).
+ * @param slugify - Converts the single active enum value into the URL slug
+ *   segment for the dedicated landing (H-110). Injected by the caller rather
+ *   than hardcoded here, since this predicate is shared by all three facets
+ *   and each has its own owner-approved Spanish slug map (see
+ *   `@/lib/facet-slugs`) — a naive `.toLowerCase().replace(/_/g, '-')` built
+ *   into this function would silently ship the English slug for every facet.
  * @returns The `noindex`/canonical decision. See {@link FacetSeoDecision}.
  */
 export function resolveFacetSeoDecision({
     facetValues,
     hasOtherFilters,
     validEnumValues,
-    dedicatedLandingPattern
+    dedicatedLandingPattern,
+    slugify
 }: {
     readonly facetValues: readonly string[];
     readonly hasOtherFilters: boolean;
     readonly validEnumValues: readonly string[];
     readonly dedicatedLandingPattern: string | undefined;
+    readonly slugify: (value: string) => string;
 }): FacetSeoDecision {
     if (facetValues.length >= 2) {
         return { noindex: true, canonical: { kind: 'base' } };
@@ -144,7 +152,7 @@ export function resolveFacetSeoDecision({
         noindex: false,
         canonical: {
             kind: 'dedicatedLanding',
-            slug: promotedValue.toLowerCase().replace(/_/g, '-')
+            slug: slugify(promotedValue)
         }
     };
 }

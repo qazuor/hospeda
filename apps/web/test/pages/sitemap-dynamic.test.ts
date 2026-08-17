@@ -18,6 +18,10 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { getApiUrl } from '../../src/lib/env';
+import {
+    ACCOMMODATION_TYPE_SLUG_BY_ENUM,
+    EVENT_CATEGORY_SLUG_BY_ENUM
+} from '../../src/lib/facet-slugs';
 import * as mod from '../../src/pages/sitemap-dynamic.xml.js';
 
 // ---------------------------------------------------------------------------
@@ -491,8 +495,10 @@ describe('sitemap-dynamic.xml — GET handler', () => {
         expect(body).not.toContain('/destinos/concordia');
         expect(body).not.toContain('/eventos/festival');
         expect(body).not.toContain('/publicaciones/turismo');
-        // Static facet-landing entries are still present
-        expect(body).toContain('/eventos/categoria/music/');
+        // Static facet-landing entries are still present (canonical Spanish
+        // slugs — H-110; `music`/`hotel` happen to be identical in both
+        // languages, so this assertion alone would not catch a regression).
+        expect(body).toContain('/eventos/categoria/musica/');
         expect(body).toContain('/alojamientos/tipo/hotel/');
     });
 
@@ -547,24 +553,19 @@ describe('sitemap-dynamic.xml — GET handler', () => {
 
     // SPEC-306: event category and accommodation type facet landings are
     // static (enum-derived) entries, independent of the API fetches above.
-    describe('facet-landing static entries (SPEC-306)', () => {
+    // H-110: the path segment is the owner-approved canonical Spanish slug —
+    // sourced from `@/lib/facet-slugs` (the same map the landing pages and
+    // the middleware redirect resolve against), NOT a hardcoded list here,
+    // so this test can never silently drift from the real slug map.
+    describe('facet-landing static entries (SPEC-306, Spanish slugs since H-110)', () => {
         it('emits all 9 event category landings with /eventos/categoria/ path for all 3 locales', async () => {
             vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
 
             const response = await GET({});
             const body = await response.text();
 
-            const categorySlugs = [
-                'music',
-                'culture',
-                'sports',
-                'gastronomy',
-                'festival',
-                'nature',
-                'theater',
-                'workshop',
-                'other'
-            ];
+            const categorySlugs = Object.values(EVENT_CATEGORY_SLUG_BY_ENUM);
+            expect(categorySlugs).toHaveLength(9);
 
             for (const slug of categorySlugs) {
                 expect(body).toContain(`https://hospeda.test/es/eventos/categoria/${slug}/`);
@@ -579,21 +580,8 @@ describe('sitemap-dynamic.xml — GET handler', () => {
             const response = await GET({});
             const body = await response.text();
 
-            const typeSlugs = [
-                'apartment',
-                'house',
-                'country-house',
-                'cabin',
-                'hotel',
-                'hostel',
-                'camping',
-                'room',
-                'motel',
-                'resort',
-                'apart-hotel',
-                'estancia',
-                'bed-and-breakfast'
-            ];
+            const typeSlugs = Object.values(ACCOMMODATION_TYPE_SLUG_BY_ENUM);
+            expect(typeSlugs).toHaveLength(13);
 
             for (const slug of typeSlugs) {
                 expect(body).toContain(`https://hospeda.test/es/alojamientos/tipo/${slug}/`);
@@ -602,13 +590,26 @@ describe('sitemap-dynamic.xml — GET handler', () => {
             }
         });
 
+        it('does NOT emit any of the retired legacy English slugs (e.g. country-house, cabin, gastronomy)', async () => {
+            vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
+
+            const response = await GET({});
+            const body = await response.text();
+
+            expect(body).not.toContain('/alojamientos/tipo/country-house/');
+            expect(body).not.toContain('/alojamientos/tipo/cabin/');
+            expect(body).not.toContain('/alojamientos/tipo/apartment/');
+            expect(body).not.toContain('/eventos/categoria/gastronomy/');
+            expect(body).not.toContain('/eventos/categoria/culture/');
+        });
+
         it('uses changefreq=monthly and priority=0.7 for facet-landing entries (no lastmod)', async () => {
             vi.stubGlobal('fetch', vi.fn().mockResolvedValue(makeEmptyApiResponse()));
 
             const response = await GET({});
             const body = await response.text();
 
-            const musicEntryStart = body.indexOf('/eventos/categoria/music/');
+            const musicEntryStart = body.indexOf('/eventos/categoria/musica/');
             const musicEntryBlock = body.slice(musicEntryStart, musicEntryStart + 300);
             expect(musicEntryBlock).toContain('<changefreq>monthly</changefreq>');
             expect(musicEntryBlock).toContain('<priority>0.7</priority>');

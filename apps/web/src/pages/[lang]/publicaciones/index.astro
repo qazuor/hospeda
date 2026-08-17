@@ -59,6 +59,7 @@ import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
 import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
+import { slugForPostCategory } from '@/lib/facet-slugs';
 import { XCircleIcon } from '@repo/icons';
 import { PostCategoryEnum } from '@repo/schemas';
 
@@ -245,7 +246,8 @@ const facetSeoDecision = resolveFacetSeoDecision({
     facetValues: postCategoryActiveValues,
     hasOtherFilters: hasOtherPostFilters,
     validEnumValues: Object.values(PostCategoryEnum),
-    dedicatedLandingPattern: FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern
+    dedicatedLandingPattern: FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern,
+    slugify: (value) => slugForPostCategory({ category: value as PostCategoryEnum })
 });
 const canonicalBaseUrl =
     facetSeoDecision.canonical.kind === 'dedicatedLanding' &&
