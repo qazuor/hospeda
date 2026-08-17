@@ -28,6 +28,7 @@ import { adminRestoreMediaRoute } from './restoreMedia';
 import { adminSetFeaturedMediaRoute } from './setFeaturedMedia';
 import { adminUpdateAccommodationRoute } from './update';
 import { adminUpdateFaqRoute } from './updateFaq';
+import { adminUpdateMediaRoute } from './updateMedia';
 import { adminVerifyAccommodationRoute } from './verify';
 
 const app = createRouter();
@@ -119,7 +120,11 @@ app.route('/', adminSetFeaturedMediaRoute);
 app.route('/', adminArchiveMediaRoute);
 app.route('/', adminRestoreMediaRoute);
 
+// PATCH  /:id/media/:mediaId - Correct a photo's text metadata (HOS-388)
 // DELETE /:id/media/:mediaId - Remove a photo from accommodation gallery
+// Both share the same path shape and differ only by method, so they sit after
+// the fixed-suffix routes above for the same reason those come first.
+app.route('/', adminUpdateMediaRoute);
 app.route('/', adminRemoveMediaRoute);
 
 export { app as adminAccommodationRoutes };
