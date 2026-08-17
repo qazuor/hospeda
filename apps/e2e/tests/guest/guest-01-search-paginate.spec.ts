@@ -49,13 +49,33 @@ test.describe('GUEST-01: search + filter + paginate @p0 @guest @discovery', () =
     });
 
     test('type filter narrows results', async ({ page }) => {
-        await page.goto(`${WEB_URL}/es/alojamientos/tipo/cabin/`, {
+        // The dedicated landing lives at the Spanish slug (H-110). Loading it
+        // directly must serve the page, not redirect.
+        const direct = await page.goto(`${WEB_URL}/es/alojamientos/tipo/cabana/`, {
+            waitUntil: 'domcontentloaded'
+        });
+        expect(direct?.status()).toBe(200);
+        expect(page.url()).toContain('/alojamientos/tipo/cabana/');
+        await expect(page.locator('h1').first()).toBeVisible({ timeout: 10_000 });
+    });
+
+    test('the English type segment redirects to the Spanish slug', async ({ page }) => {
+        // `/tipo/cabin/` was the indexed form before H-110. It has to keep
+        // resolving — permanently, and in a single hop, since a redirect chain
+        // is what dilutes the signals the 301 exists to carry.
+        const response = await page.goto(`${WEB_URL}/es/alojamientos/tipo/cabin/`, {
             waitUntil: 'domcontentloaded'
         });
 
-        // The page should load (200) and either show results filtered to cabin
-        // or an empty state. Either is valid as long as no 5xx.
-        const status = page.url();
-        expect(status).toContain('/alojamientos/tipo/cabin/');
+        expect(page.url()).toContain('/alojamientos/tipo/cabana/');
+        expect(response?.status()).toBe(200);
+
+        const chain = response?.request().redirectedFrom();
+        expect(chain, 'expected exactly one redirect into this response').not.toBeNull();
+        expect(
+            chain?.redirectedFrom(),
+            'more than one hop: /tipo/cabin/ should reach /tipo/cabana/ directly'
+        ).toBeNull();
+        expect((await chain?.response())?.status()).toBe(301);
     });
 });
