@@ -38,7 +38,9 @@ import {
 const { stubService } = vi.hoisted(() => ({
     stubService: (createdById: string) =>
         class {
-            getById = async () => ({ data: { id: 'entity-123', createdById } });
+            getById = async () => ({
+                data: { id: 'e1111111-1111-4111-8111-111111111111', createdById }
+            });
         }
 }));
 
@@ -199,7 +201,11 @@ describe('editorial ownership is author-scoped (HOS-374 §5.1.4/OQ-4)', () => {
         vi.clearAllMocks();
         clearEntityFetchers();
         registerEntityFetcher('event', async () => ({
-            data: { id: 'entity-123', authorId: 'author-1', createdById: 'admin-9' }
+            data: {
+                id: 'e1111111-1111-4111-8111-111111111111',
+                authorId: 'author-1',
+                createdById: 'admin-9'
+            }
         }));
 
         const app = new Hono();
@@ -214,7 +220,7 @@ describe('editorial ownership is author-scoped (HOS-374 §5.1.4/OQ-4)', () => {
             roles: [RoleEnum.USER],
             permissions: [PermissionEnum.ACCESS_API_PUBLIC]
         } satisfies Actor);
-        const asAuthor = await app.request('/entity-123');
+        const asAuthor = await app.request('/e1111111-1111-4111-8111-111111111111');
         expect(asAuthor.status).toBe(200);
         expect(await asAuthor.json()).toEqual({ reached: true });
 
@@ -224,8 +230,12 @@ describe('editorial ownership is author-scoped (HOS-374 §5.1.4/OQ-4)', () => {
             roles: [RoleEnum.USER],
             permissions: [PermissionEnum.ACCESS_API_PUBLIC]
         } satisfies Actor);
-        const asCreator = await app.request('/entity-123');
-        expect(asCreator.status).toBe(403);
+        const asCreator = await app.request('/e1111111-1111-4111-8111-111111111111');
+        // 404 rather than 403 since H-72: a non-owner is told nothing about
+        // whether the row exists. The rejection is still unambiguously the
+        // ownership switch — the very same fetcher answered 200 for the author
+        // two assertions above, so the row is definitely there.
+        expect(asCreator.status).toBe(404);
     });
 });
 
@@ -261,7 +271,7 @@ describe('event-family ownership routes no longer 500 (regression, HOS-374)', ()
             app.use('/:id', ownershipMiddleware({ entityType, ownershipFields: ['createdById'] }));
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(200);
         });

@@ -35,7 +35,7 @@ const createUserActor = (id = 'user-123', permissions: PermissionEnum[] = []): A
 
 // Helper to create entities
 const createEntity = (
-    id = 'entity-123',
+    id = 'e1111111-1111-4111-8111-111111111111',
     ownerId: string | null = 'user-123',
     createdById: string | null = 'user-123'
 ) => ({
@@ -93,10 +93,13 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(200);
-            expect(mockFetcher).toHaveBeenCalledWith(userActor, 'entity-123');
+            expect(mockFetcher).toHaveBeenCalledWith(
+                userActor,
+                'e1111111-1111-4111-8111-111111111111'
+            );
         });
 
         it('should fail if no fetcher is registered', async () => {
@@ -112,7 +115,7 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(500);
             const data = await res.json();
@@ -122,7 +125,11 @@ describe('Ownership Middleware', () => {
 
     describe('Ownership Verification', () => {
         beforeEach(() => {
-            const entity = createEntity('entity-123', 'user-123', 'user-456');
+            const entity = createEntity(
+                'e1111111-1111-4111-8111-111111111111',
+                'user-123',
+                'user-456'
+            );
             registerEntityFetcher('accommodation', vi.fn().mockResolvedValue({ data: entity }));
         });
 
@@ -139,13 +146,17 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(200);
         });
 
         it('should allow owner by createdById when ownerId does not match', async () => {
-            const entity = createEntity('entity-123', 'other-user', 'user-123');
+            const entity = createEntity(
+                'e1111111-1111-4111-8111-111111111111',
+                'other-user',
+                'user-123'
+            );
             registerEntityFetcher('accommodation', vi.fn().mockResolvedValue({ data: entity }));
 
             const userActor = createUserActor('user-123');
@@ -160,12 +171,15 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(200);
         });
 
-        it('should deny non-owners', async () => {
+        // 404, not 403: a foreign resource must be indistinguishable from a
+        // missing one, or the pair of statuses tells the caller which ids exist
+        // (H-72). Full contract coverage lives in `ownership.contract.test.ts`.
+        it('should deny non-owners as not-found', async () => {
             const userActor = createUserActor('different-user');
             mockGetActorFromContext.mockReturnValue(userActor);
 
@@ -178,17 +192,21 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
-            expect(res.status).toBe(403);
+            expect(res.status).toBe(404);
             const data = await res.json();
-            expect(data.message).toBe('You do not have permission to access this resource');
+            expect(data.message).toBe('accommodation not found');
         });
     });
 
     describe('Bypass Permission', () => {
         beforeEach(() => {
-            const entity = createEntity('entity-123', 'other-owner', 'other-creator');
+            const entity = createEntity(
+                'e1111111-1111-4111-8111-111111111111',
+                'other-owner',
+                'other-creator'
+            );
             registerEntityFetcher('accommodation', vi.fn().mockResolvedValue({ data: entity }));
         });
 
@@ -208,7 +226,7 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(200);
         });
@@ -227,9 +245,11 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
-            expect(res.status).toBe(403);
+            // Same reason as above: an actor lacking the bypass permission is
+            // simply not an owner, and a non-owner learns nothing (H-72).
+            expect(res.status).toBe(404);
         });
     });
 
@@ -249,7 +269,7 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/nonexistent');
+            const res = await app.request('/e2222222-2222-4222-8222-222222222222');
 
             expect(res.status).toBe(404);
             const data = await res.json();
@@ -276,7 +296,7 @@ describe('Ownership Middleware', () => {
                 return c.json({ entity, isOwner });
             });
 
-            const res = await app.request('/nonexistent');
+            const res = await app.request('/e2222222-2222-4222-8222-222222222222');
 
             expect(res.status).toBe(200);
             const data = await res.json();
@@ -287,7 +307,7 @@ describe('Ownership Middleware', () => {
 
     describe('Context Helpers', () => {
         it('should set entity and isOwner in context', async () => {
-            const entity = createEntity('entity-123', 'user-123', null);
+            const entity = createEntity('e1111111-1111-4111-8111-111111111111', 'user-123', null);
             registerEntityFetcher('accommodation', vi.fn().mockResolvedValue({ data: entity }));
 
             const userActor = createUserActor('user-123');
@@ -306,16 +326,20 @@ describe('Ownership Middleware', () => {
                 return c.json({ entityId: storedEntity?.id, isOwner });
             });
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(200);
             const data = await res.json();
-            expect(data.entityId).toBe('entity-123');
+            expect(data.entityId).toBe('e1111111-1111-4111-8111-111111111111');
             expect(data.isOwner).toBe(true);
         });
 
         it('should correctly report isOwner=false for bypass', async () => {
-            const entity = createEntity('entity-123', 'other-owner', 'other-creator');
+            const entity = createEntity(
+                'e1111111-1111-4111-8111-111111111111',
+                'other-owner',
+                'other-creator'
+            );
             registerEntityFetcher('accommodation', vi.fn().mockResolvedValue({ data: entity }));
 
             const userActor = createUserActor('admin-user', [
@@ -336,7 +360,7 @@ describe('Ownership Middleware', () => {
                 return c.json({ isOwner });
             });
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(200);
             const data = await res.json();
@@ -363,10 +387,13 @@ describe('Ownership Middleware', () => {
             );
             app.get('/accommodations/:accommodationId', (c) => c.json({ success: true }));
 
-            const res = await app.request('/accommodations/custom-id-123');
+            const res = await app.request('/accommodations/e3333333-3333-4333-8333-333333333333');
 
             expect(res.status).toBe(200);
-            expect(mockFetcher).toHaveBeenCalledWith(userActor, 'custom-id-123');
+            expect(mockFetcher).toHaveBeenCalledWith(
+                userActor,
+                'e3333333-3333-4333-8333-333333333333'
+            );
         });
     });
 
@@ -389,7 +416,7 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(500);
             const data = await res.json();
@@ -414,7 +441,7 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(404);
         });
@@ -422,7 +449,11 @@ describe('Ownership Middleware', () => {
 
     describe('Optional Ownership Middleware', () => {
         it('should allow access and load entity without requiring ownership', async () => {
-            const entity = createEntity('entity-123', 'other-owner', 'other-creator');
+            const entity = createEntity(
+                'e1111111-1111-4111-8111-111111111111',
+                'other-owner',
+                'other-creator'
+            );
             registerEntityFetcher('accommodation', vi.fn().mockResolvedValue({ data: entity }));
 
             const userActor = createUserActor('not-owner');
@@ -441,7 +472,7 @@ describe('Ownership Middleware', () => {
                 return c.json({ hasEntity: !!storedEntity, isOwner });
             });
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(200);
             const data = await res.json();
@@ -450,7 +481,7 @@ describe('Ownership Middleware', () => {
         });
 
         it('should correctly identify owner', async () => {
-            const entity = createEntity('entity-123', 'user-123', null);
+            const entity = createEntity('e1111111-1111-4111-8111-111111111111', 'user-123', null);
             registerEntityFetcher('accommodation', vi.fn().mockResolvedValue({ data: entity }));
 
             const userActor = createUserActor('user-123');
@@ -468,7 +499,7 @@ describe('Ownership Middleware', () => {
                 return c.json({ isOwner });
             });
 
-            const res = await app.request('/entity-123');
+            const res = await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(res.status).toBe(200);
             const data = await res.json();
@@ -494,7 +525,7 @@ describe('Ownership Middleware', () => {
                 return c.json({ entity });
             });
 
-            const res = await app.request('/nonexistent');
+            const res = await app.request('/e2222222-2222-4222-8222-222222222222');
 
             expect(res.status).toBe(200);
             const data = await res.json();
@@ -519,7 +550,7 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            await app.request('/entity-123');
+            await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(mockApiLogger.debug).toHaveBeenCalledWith(
                 expect.stringContaining('Ownership check')
@@ -527,7 +558,11 @@ describe('Ownership Middleware', () => {
         });
 
         it('should log ownership denial', async () => {
-            const entity = createEntity('entity-123', 'other-owner', 'other-creator');
+            const entity = createEntity(
+                'e1111111-1111-4111-8111-111111111111',
+                'other-owner',
+                'other-creator'
+            );
             registerEntityFetcher('accommodation', vi.fn().mockResolvedValue({ data: entity }));
 
             const userActor = createUserActor('not-owner');
@@ -542,7 +577,7 @@ describe('Ownership Middleware', () => {
             );
             app.get('/:id', (c) => c.json({ success: true }));
 
-            await app.request('/entity-123');
+            await app.request('/e1111111-1111-4111-8111-111111111111');
 
             expect(mockApiLogger.warn).toHaveBeenCalledWith(
                 expect.stringContaining('Ownership denied')
