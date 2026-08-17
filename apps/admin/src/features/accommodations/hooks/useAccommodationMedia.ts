@@ -205,3 +205,60 @@ export function useAccommodationMediaSetFeatured(accommodationId: string) {
         }
     });
 }
+
+// ---------------------------------------------------------------------------
+// Update-text mutation (HOS-388)
+// ---------------------------------------------------------------------------
+
+/** The text fields a staff member may correct on an existing photo. */
+export interface AccommodationMediaTextPatch {
+    readonly caption?: string | null;
+    readonly description?: string | null;
+    readonly alt?: string | null;
+}
+
+/**
+ * Mutation to correct a photo's text metadata (HOS-388).
+ *
+ * Only `caption`, `description` and `alt` travel from this UI. `attribution`
+ * is accepted by the endpoint but is a composed stock-image credit object, not
+ * something a moderator types over someone else's photo — the host-facing
+ * editor owns it.
+ *
+ * Each field is nullable and OMITTED keys are left untouched by the server, so
+ * the caller must send `null` — not `''` — to clear one. Sending `''` would
+ * store an empty string, which reads as "this photo has an alt" to every
+ * consumer while announcing nothing to a screen reader.
+ *
+ * @param accommodationId - UUID of the accommodation.
+ */
+export function useAccommodationMediaUpdateText(accommodationId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            mediaId,
+            patch
+        }: {
+            readonly mediaId: string;
+            readonly patch: AccommodationMediaTextPatch;
+        }) => {
+            const response = await fetchApi<unknown>({
+                path: `${mediaEndpoint(accommodationId)}/${mediaId}`,
+                method: 'PATCH',
+                body: patch
+            });
+            const body = response.data as { data?: { media?: AccommodationMedia } };
+            const media = body.data?.media;
+            if (!media) {
+                throw new Error(
+                    'updateText response did not include the expected data.media payload'
+                );
+            }
+            return media;
+        },
+        onSuccess: () => {
+            invalidateAfterMediaMutation(queryClient, accommodationId);
+        }
+    });
+}

@@ -1492,6 +1492,23 @@
             "removeFailed": "Não foi possível remover a foto. Tente novamente.",
             "setFeaturedFailed": "Não foi possível definir a capa. Tente novamente.",
             "uploadFailed": "Não foi possível carregar a imagem. Tente novamente."
+        },
+        "photoText": {
+            "title": "Textos da foto",
+            "description": "Corrija o texto exibido com esta foto na pagina publica.",
+            "fieldAlt": "Texto alternativo",
+            "fieldAltHelp": "O que um leitor de tela anuncia. Descreva a foto; nao repita o nome da propriedade.",
+            "fieldCaption": "Legenda",
+            "fieldDescription": "Descricao",
+            "emptyHint": "Deixar um campo vazio o apaga.",
+            "actions": {
+                "edit": "Editar textos",
+                "save": "Salvar",
+                "cancel": "Cancelar"
+            },
+            "errors": {
+                "saveFailed": "Nao foi possivel salvar os textos. Tente novamente."
+            }
         }
     },
     "partnerMentions": {

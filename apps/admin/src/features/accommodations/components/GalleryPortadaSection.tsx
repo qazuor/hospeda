@@ -12,7 +12,7 @@
  *   - The thumbnail + replace/remove controls, when one does.
  */
 
-import { LoaderIcon, UploadIcon, XCircleIcon } from '@repo/icons';
+import { EditIcon, LoaderIcon, UploadIcon, XCircleIcon } from '@repo/icons';
 import type { AccommodationMedia } from '@repo/schemas';
 import type * as React from 'react';
 import { Button } from '@/components/ui/button';
@@ -44,6 +44,12 @@ export interface GalleryPortadaSectionProps {
     readonly fileInputRef: React.RefObject<HTMLInputElement | null>;
     /** Removes the current portada (soft-delete via removeMedia; no separate unfeature endpoint). */
     readonly onRemovePortada: () => void;
+    /**
+     * Opens the text editor for the current portada (HOS-388). Optional and
+     * `undefined` when there is no portada to edit, which is also what keeps
+     * the button from rendering over the empty state.
+     */
+    readonly onEditText?: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -64,11 +70,12 @@ export function GalleryPortadaSection({
     onOpenFilePicker,
     onFileInputChange,
     fileInputRef,
-    onRemovePortada
+    onRemovePortada,
+    onEditText
 }: GalleryPortadaSectionProps) {
     return (
         <section aria-label={t('admin-pages.gallery.portada.title')}>
-            <div className="mb-3 flex items-center justify-between">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                 <div>
                     <h2 className="font-semibold text-base">
                         {t('admin-pages.gallery.portada.title')}
@@ -77,6 +84,20 @@ export function GalleryPortadaSection({
                         {t('admin-pages.gallery.portada.description')}
                     </p>
                 </div>
+
+                {featuredRow && onEditText && (
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={onEditText}
+                        disabled={anyMutationPending}
+                        className="gap-1.5"
+                    >
+                        <EditIcon className="h-4 w-4" />
+                        {t('admin-pages.gallery.photoText.actions.edit')}
+                    </Button>
+                )}
 
                 {featuredRow && (
                     <Button

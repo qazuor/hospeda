@@ -1492,6 +1492,23 @@
             "removeFailed": "Could not remove the photo. Please try again.",
             "setFeaturedFailed": "Could not set the cover photo. Please try again.",
             "uploadFailed": "Could not upload the image. Please try again."
+        },
+        "photoText": {
+            "title": "Photo text",
+            "description": "Correct the text shown with this photo on the public page.",
+            "fieldAlt": "Alt text",
+            "fieldAltHelp": "What a screen reader announces. Describe the photo; do not repeat the property name.",
+            "fieldCaption": "Caption",
+            "fieldDescription": "Description",
+            "emptyHint": "Leaving a field empty clears it.",
+            "actions": {
+                "edit": "Edit text",
+                "save": "Save",
+                "cancel": "Cancel"
+            },
+            "errors": {
+                "saveFailed": "The text could not be saved. Try again."
+            }
         }
     },
     "partnerMentions": {
