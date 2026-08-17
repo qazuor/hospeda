@@ -42,7 +42,10 @@
         "delete": {
             "title": "Excluir tag",
             "confirmButton": "Sim, excluir",
-            "cancelButton": "Cancelar"
+            "cancelButton": "Cancelar",
+            "impactCount": "Esta ação removerá a tag de {{count}} entidades.",
+            "impactCount_one": "Esta ação removerá a tag de {{count}} entidade.",
+            "impactCount_other": "Esta ação removerá a tag de {{count}} entidades."
         }
     },
     "postTags": {
