@@ -414,6 +414,7 @@ describe('removeGastronomyFaq', () => {
         expect(result.data?.success).toBe(true);
         expect(mockFaqModel.softDelete).toHaveBeenCalledWith(
             expect.objectContaining({ id: FAQ_ID }),
+            ownerActor.id,
             undefined
         );
     });

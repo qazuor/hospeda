@@ -883,10 +883,11 @@ export class PostModel extends BaseModel<Post> {
      */
     async softDelete(
         where: Record<string, unknown>,
+        deletedById: string | null,
         tx?: NodePgDatabase<typeof schema>
     ): Promise<number> {
         const post = await this.findOne(where, tx);
-        const count = await super.softDelete(where, tx);
+        const count = await super.softDelete(where, deletedById, tx);
 
         if (post && count > 0) {
             await this.afterSoftDelete(post);
