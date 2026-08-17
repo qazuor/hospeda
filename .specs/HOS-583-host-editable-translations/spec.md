@@ -102,8 +102,8 @@ No work is needed here. The read-side gate this spec depends on exists.
 - `translationMeta` is **NOT** picked into the protected schema (*"internal and
   deliberately NOT picked"*). The host cannot see provenance today.
 
-So the "view" half is a front-end change plus one metadata decision (OQ-2), not
-an API rewrite.
+So the "view" half is a front-end change plus the provenance projection of D-2,
+not an API rewrite.
 
 ### 5.3 Write path — the PATCH cannot carry a translation today
 
@@ -155,7 +155,7 @@ to someone else's row.
 
 This is pre-existing, not introduced here. It matters to this spec because the
 per-field regenerate button rides this same route and widens its parameter
-surface. See OQ-3.
+surface. See OQ-1.
 
 ## 6. Proposed design
 
@@ -242,11 +242,37 @@ translated description; treat it symmetrically.
 
 Two parts.
 
-**Detection** — see OQ-1. Whatever mechanism wins must be per (field, locale)
-and must not react to an unrelated edit (a price change must not mark four
-fields stale). Comparing `translationMeta.<field>.<locale>.translatedAt` against
-`accommodations.updatedAt` is explicitly **rejected**: it marks everything stale
-on every save.
+**Detection — decided (owner, 2026-08-17): a fingerprint of the source text,
+stored in `translationMeta`.**
+
+Every writer of a `(field, locale)` pair also records `sourceHash` — a digest of
+the **source-locale text the translation was produced from**:
+
+```
+translationMeta.description.en = {
+    autoTranslated: false,
+    translatedAt: "2026-08-17T...",
+    sourceHash: "a3f9c1..."      // digest of accommodations.description at write time
+}
+```
+
+A pair is stale ⇔ `hash(current source value) !== sourceHash`. Editing the price
+leaves every hash untouched, so it produces zero notices; editing the Spanish
+`description` invalidates exactly `(description, en)` and `(description, pt)`.
+
+The key is **optional** on `TranslationMetaSchema` — additive, which the
+schema-compat policy allows. Pairs written before this ships carry no hash;
+absence means *unknown*, which renders **no notice** (never a false one), and
+self-heals on the first write to that pair.
+
+Two rejected alternatives, recorded so they are not re-proposed:
+
+- A per-field `sourceUpdatedAt` timestamp compared against `translatedAt`.
+  Equally precise, but it needs a new write on the accommodation update path for
+  every field plus a new place to store it — strictly more moving parts for the
+  same answer, with the same backfill gap.
+- `accommodations.updatedAt` vs `translatedAt`. One price edit marks all four
+  fields stale; the notice becomes noise and hosts learn to ignore it.
 
 **Regenerate** — a button on the stale field only. It calls the existing
 translate route with three things it does not accept today:
@@ -280,8 +306,8 @@ on `accommodations`.
 | --- | --- |
 | `AccommodationUpdateHttpSchema` | + `nameI18n`, `summaryI18n`, `descriptionI18n`, `richDescriptionI18n` (nullish) |
 | `httpToDomainAccommodationUpdate` | forward the four new keys |
-| `AccommodationProtectedSchema` | + translation provenance for the host — raw `translationMeta` or a computed projection (OQ-2) |
-| `TranslationMetaSchema` | + optional staleness key, if OQ-1 lands on the fingerprint option (additive — allowed by the schema-compat policy) |
+| `AccommodationProtectedSchema` | + a computed per-pair provenance projection (`autoTranslated`, `translatedAt`, `isStale`) — never the raw `translationMeta` column (D-2) |
+| `TranslationMetaSchema` | + optional `sourceHash` per (field, locale) — additive, allowed by the schema-compat policy (D-1) |
 | `POST /protected/ai/translate` | + `fields?: string[]`, + `onlyMissing?: boolean`, + scoped override-manual intent |
 | `ai-translate.service.ts` | extract the shared `translationMeta` merge primitive (§6.3) |
 | `gateRichDescription()` | also inspect / neutralize `richDescriptionI18n` |
@@ -369,43 +395,27 @@ Web:
   bundle is pulled into every visitor's payload. Put shared types in a
   `*.types.ts`.
 
-## 11. Open questions
+## 11. Decisions taken and open questions
 
-### OQ-1 — How to detect that the Spanish source changed
+### D-1 — Staleness detection: source fingerprint (owner, 2026-08-17)
 
-`translationMeta` stores `translatedAt`. Contrasting it with
-`accommodations.updatedAt` marks every field stale whenever the host edits the
-price — the trap this question exists to avoid.
+Resolved. See §6.5 for the mechanism and the two rejected alternatives.
 
-1. **Source fingerprint in `translationMeta` (recommended).** Store an optional
-   `sourceHash` per (field, locale) at write time. Stale ⇔
-   `hash(current es value) !== sourceHash`. Field-precise; immune to unrelated
-   edits; no new column; additive to `TranslationMetaSchema`, which the
-   schema-compat policy allows. Cost: a hash computed per field on write, and no
-   signal for pre-existing rows (R-5).
-2. **Per-field source timestamp.** Record `sourceUpdatedAt` per field whenever
-   the plain column changes, and compare against `translatedAt`. Equally
-   precise, but it needs a new write on the accommodation update path for every
-   field and a new place to store it — strictly more moving parts than a hash
-   for the same answer, with the same backfill gap.
-3. **`updatedAt` vs `translatedAt`.** Rejected. One price edit marks everything
-   stale; the notice becomes noise and hosts learn to ignore it.
+### D-2 — Provenance is exposed as a computed projection, not the raw column
 
-### OQ-2 — What provenance is exposed to the host
+The panel needs, per (field, locale): AI or human, when, and whether it is
+stale. The protected GET returns a **reduced per-pair object**
+(`autoTranslated`, `translatedAt`, `isStale`) built server-side, rather than
+picking `translationMeta` into `AccommodationProtectedSchema` raw.
 
-The panel needs to know, per (field, locale): AI or human, when, and whether it
-is stale. Two shapes:
+Two reasons. `provider` and `model` stay internal, which is what the schema's
+existing *"internal and deliberately NOT picked"* comment protects. And
+staleness is computed once, in the place that owns the rule (it needs the source
+text and the hash, both of which the API already has in hand), instead of being
+re-derived in the browser where a second implementation would drift from the
+first.
 
-1. **A computed projection (recommended).** The protected GET returns a reduced
-   per-pair object (`autoTranslated`, `translatedAt`, `isStale`) built
-   server-side. `provider` / `model` stay internal, which is what the schema
-   comment currently protects, and staleness is computed once in the place that
-   owns the rule instead of re-derived in the browser.
-2. **Pick `translationMeta` into `AccommodationProtectedSchema` raw.** Cheapest
-   change; exposes the AI provider and model names to every host and makes the
-   staleness rule a front-end concern.
-
-### OQ-3 — The ungated translate route (§5.6)
+### OQ-1 — The ungated translate route (§5.6)
 
 `POST /protected/ai/translate` writes to any entity id with no ownership check.
 Fix it inside this spec, or as its own Linear issue?
@@ -421,10 +431,14 @@ a translation-panel diff.
   `translationMeta` omit on the update input (pure API, no UI); (2) the write
   contract — HTTP schema, mapper, `richDescriptionI18n` gate, with the gate's
   regression test; (3) the panel's read+edit UI and the section form; (4)
-  staleness + per-field regenerate, once OQ-1 is decided.
+  `sourceHash` + the staleness projection + the per-field regenerate.
 - Slices 1–3 deliver the owner's decision #1 and #3 (view, edit, free) on their
-  own. Slice 4 delivers decision #2's second half (the escape hatch). Slice 4 is
-  what depends on an open question, so it should not block the first three.
+  own. Slice 4 delivers decision #2's second half (the escape hatch) and is the
+  only one that touches the AI route, so it is also the one that wants OQ-1
+  resolved first.
+- Write `sourceHash` from slice 1 onwards even though nothing reads it until
+  slice 4 — every pair written in between then arrives with a baseline, which is
+  exactly the backfill gap R-5 describes.
 - The bulk generate button's `onlyMissing: true` is load-bearing: it is what
   makes today's button incapable of overwriting anything. Do not repurpose it
   for the per-field regenerate — add the explicit scoped intent instead.
