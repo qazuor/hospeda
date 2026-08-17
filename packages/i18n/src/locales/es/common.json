@@ -179,7 +179,8 @@
         "text": "Foto por {{photographer}} en {{provider}}",
         "byline": "Foto por",
         "onProvider": "en {{provider}}",
-        "ariaLabel": "Perfil de {{photographer}} en {{provider}}"
+        "ariaLabel": "Perfil de {{photographer}} en {{provider}}",
+        "ariaLabelNoProvider": "Sitio de {{photographer}}"
     },
     "breadcrumbs": "Ruta de navegación"
 }

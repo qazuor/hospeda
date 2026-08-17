@@ -37,6 +37,7 @@ import {
     extractFeaturedImage,
     extractGalleryItems,
     extractGalleryUrls,
+    type MediaAttribution,
     toRenderableImageUrl
 } from '../media';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
@@ -1102,12 +1103,8 @@ export interface ProcessEntityImagesResult<T extends Record<string, unknown>> {
     readonly featuredImage: {
         readonly url: string;
         readonly caption?: string;
-        readonly attribution?: {
-            readonly photographer: string;
-            readonly sourceUrl: string;
-            readonly license: string;
-            readonly provider: 'unsplash' | 'pexels';
-        };
+        /** Photo credit, already normalised and scheme-checked by `extractFeaturedImage`. */
+        readonly attribution?: MediaAttribution;
     };
     /**
      * Resolved gallery URL list.  Empty array when the entity has no gallery.

@@ -10,6 +10,8 @@
  * All fields are `readonly` to prevent accidental mutation of shared data.
  */
 
+import type { MediaAttribution } from '../lib/media';
+
 // Re-export UI types from split file for backward compatibility
 export type {
     ArticleCardBaseProps,
@@ -502,12 +504,8 @@ export interface ArticleCardData {
     readonly featuredImage: {
         readonly url: string;
         readonly caption?: string;
-        readonly attribution?: {
-            readonly photographer: string;
-            readonly sourceUrl: string;
-            readonly license: string;
-            readonly provider: 'unsplash' | 'pexels';
-        };
+        /** Photo credit, normalised and scheme-checked by `extractFeaturedImage`. */
+        readonly attribution?: MediaAttribution;
     };
     /** Post category slug (e.g. `'travel'`, `'gastronomy'`, `'tips'`). */
     readonly category: string;
@@ -929,12 +927,8 @@ export interface EventDetailData {
     readonly featuredImage: {
         readonly url: string;
         readonly caption?: string;
-        readonly attribution?: {
-            readonly photographer: string;
-            readonly sourceUrl: string;
-            readonly license: string;
-            readonly provider: 'unsplash' | 'pexels';
-        };
+        /** Photo credit, normalised and scheme-checked by `extractFeaturedImage`. */
+        readonly attribution?: MediaAttribution;
     };
     readonly gallery: readonly EventGalleryImage[];
 
