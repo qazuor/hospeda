@@ -1469,6 +1469,7 @@
             "title": "Portada",
             "description": "La imagen principal que se muestra al inicio",
             "empty": "Sin portada. Subí una imagen para establecerla.",
+            "altFallback": "Foto de portada",
             "actions": {
                 "upload": "Subir portada",
                 "replace": "Reemplazar portada",

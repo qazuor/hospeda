@@ -1469,6 +1469,7 @@
             "title": "Foto de capa",
             "description": "A imagem principal exibida no topo",
             "empty": "Sem foto de capa. Carregue uma para defini-la.",
+            "altFallback": "Foto de capa",
             "actions": {
                 "upload": "Carregar capa",
                 "replace": "Substituir capa",

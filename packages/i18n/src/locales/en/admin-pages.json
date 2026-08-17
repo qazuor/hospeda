@@ -1469,6 +1469,7 @@
             "title": "Cover photo",
             "description": "The main image shown at the top",
             "empty": "No cover photo. Upload one to set it.",
+            "altFallback": "Cover photo",
             "actions": {
                 "upload": "Upload cover",
                 "replace": "Replace cover",

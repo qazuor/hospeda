@@ -101,7 +101,17 @@ export function GalleryPortadaSection({
                 <div className="relative inline-block">
                     <img
                         src={featuredRow.url}
-                        alt={featuredRow.alt ?? featuredRow.caption ?? 'Portada'}
+                        // HOS-389 §5: the last resort used to be a hardcoded
+                        // Spanish word — a screen-reader-visible string that
+                        // bypassed @repo/i18n entirely, so an operator running the
+                        // admin in English heard Spanish. It is only ever reached
+                        // when the row carries neither `alt` nor `caption`, which
+                        // is exactly the case nobody clicks through while testing.
+                        alt={
+                            featuredRow.alt ??
+                            featuredRow.caption ??
+                            t('admin-pages.gallery.portada.altFallback')
+                        }
                         className="h-48 w-full max-w-sm rounded-lg border object-cover"
                     />
                     <button
