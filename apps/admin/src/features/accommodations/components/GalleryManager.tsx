@@ -31,11 +31,12 @@
  * - Replacing portada is non-destructive (upload → add → setFeatured; backend clears old)
  */
 
-import { AddIcon, LoaderIcon, XCircleIcon } from '@repo/icons';
+import { AddIcon, EditIcon, LoaderIcon, XCircleIcon } from '@repo/icons';
 import type { AccommodationMedia } from '@repo/schemas';
 import { ENTITY_GALLERY_CAPS, ModerationStatusEnum } from '@repo/schemas';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
+import { GalleryPhotoTextDialog } from '@/features/accommodations/components/GalleryPhotoTextDialog';
 import { GalleryPortadaSection } from '@/features/accommodations/components/GalleryPortadaSection';
 import {
     useAccommodationMediaAdd,
@@ -166,6 +167,9 @@ export function GalleryManager({
     const atCap = galleryRows.length >= GALLERY_CAP;
 
     // ── Error state (per-operation) ───────────────────────────────────────────
+    // HOS-388: which photo's text dialog is open, if any.
+    const [photoBeingEdited, setPhotoBeingEdited] = React.useState<AccommodationMedia | null>(null);
+
     const [addError, setAddError] = React.useState<string | null>(null);
     const [removeError, setRemoveError] = React.useState<string | null>(null);
     const [setFeaturedError, setSetFeaturedError] = React.useState<string | null>(null);
@@ -359,6 +363,9 @@ export function GalleryManager({
                         onFileInputChange={portadaInput.handleChange}
                         fileInputRef={portadaInput.inputRef}
                         onRemovePortada={handleRemovePortada}
+                        onEditText={
+                            featuredRow ? () => setPhotoBeingEdited(featuredRow) : undefined
+                        }
                     />
 
                     {/* ── Gallery grid ─────────────────────────────────────── */}
@@ -416,6 +423,16 @@ export function GalleryManager({
                                         />
                                         <button
                                             type="button"
+                                            onClick={() => setPhotoBeingEdited(item)}
+                                            aria-label={t(
+                                                'admin-pages.gallery.photoText.actions.edit'
+                                            )}
+                                            className="absolute top-1.5 left-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-background text-foreground opacity-0 shadow transition-opacity focus:opacity-100 group-hover:opacity-100"
+                                        >
+                                            <EditIcon className="h-3 w-3" />
+                                        </button>
+                                        <button
+                                            type="button"
                                             onClick={() => handleRemoveGalleryItem(item.id)}
                                             disabled={anyMutationPending}
                                             aria-label={t(
@@ -445,6 +462,13 @@ export function GalleryManager({
                             tabIndex={-1}
                         />
                     </section>
+
+                    {/* HOS-388: text editor for whichever photo was picked. */}
+                    <GalleryPhotoTextDialog
+                        accommodationId={accommodationId}
+                        photo={photoBeingEdited}
+                        onClose={() => setPhotoBeingEdited(null)}
+                    />
                 </>
             )}
         </div>

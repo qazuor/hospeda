@@ -56,6 +56,14 @@ vi.mock('@/features/accommodations/hooks/useAccommodationMedia', () => ({
         mutateAsync: mockSetFeaturedMutateAsync,
         isPending: false,
         isError: false
+    }),
+    // HOS-388: GalleryManager now renders GalleryPhotoTextDialog, which calls
+    // this hook. A module mock has to export everything the tree reaches, not
+    // just what the component under test calls directly.
+    useAccommodationMediaUpdateText: () => ({
+        mutateAsync: vi.fn(),
+        isPending: false,
+        isError: false
     })
 }));
 
