@@ -115,12 +115,18 @@ export const FACET_CONFIG_BY_ID: Readonly<Record<FacetId, FacetConfig>> = Object
         // spec — this PRESERVES that behavior, it does not introduce it. The
         // spec's original "per-facet configuration model" table wrongly
         // stated events had no dedicated landing; that was a documentation
-        // error, not a product decision to regress SPEC-306. Slug transform
-        // (`value.toLowerCase().replace(/_/g, '-')`, applied by
-        // `resolveFacetSeoDecision`) was verified to match every
-        // `EventCategoryEnum` member against the landing route's own
-        // `VALID_CATEGORIES` slug dictionary (no enum member contains `_`,
-        // so both are simple lowercasing — e.g. `MUSIC` -> `music`).
+        // error, not a product decision to regress SPEC-306.
+        //
+        // H-110 (post-HOS-96): the slug segment is NO LONGER a mechanical
+        // `value.toLowerCase().replace(/_/g, '-')` transform — that produced
+        // English slugs inside an otherwise all-Spanish path
+        // (`/eventos/categoria/gastronomy/`, 404 on the Spanish word a user
+        // would actually type). `resolveFacetSeoDecision` now takes an
+        // injected `slugify` per call site, and every caller passes the
+        // owner-approved Spanish slug map in `@/lib/facet-slugs`
+        // (`EVENT_CATEGORY_SLUG_BY_ENUM` for this facet) — the single source
+        // of truth also consumed by the landing page itself and the
+        // middleware's legacy-English-slug redirect.
         // HOS-96 pre-merge review follow-up: T-018's `activeCategories`
         // switch to the PLURAL `categories` param briefly broke this
         // preservation claim for legacy SINGULAR-only links (`?category=X`

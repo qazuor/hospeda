@@ -72,6 +72,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
+import { slugForEventCategory } from '@/lib/facet-slugs';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { EventCategoryEnum } from '@repo/schemas';
 
@@ -313,7 +314,8 @@ const facetSeoDecision = resolveFacetSeoDecision({
     facetValues: activeCategories,
     hasOtherFilters: hasOtherEventFilters,
     validEnumValues: Object.values(EventCategoryEnum),
-    dedicatedLandingPattern: FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern
+    dedicatedLandingPattern: FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern,
+    slugify: (value) => slugForEventCategory({ category: value as EventCategoryEnum })
 });
 const canonicalBaseUrl =
     facetSeoDecision.canonical.kind === 'dedicatedLanding' &&

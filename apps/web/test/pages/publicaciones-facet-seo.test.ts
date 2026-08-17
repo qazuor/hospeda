@@ -19,10 +19,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { PostCategoryEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { resolvePostCategorySlug, slugForPostCategory } from '../../src/lib/facet-slugs';
 import { FACET_CONFIG_BY_ID } from '../../src/lib/filters/facet-config';
 import { readFacetActiveValues } from '../../src/lib/filters/read-facet-active-values';
-import { resolvePostCategorySlug } from '../../src/lib/post-category';
 import { resolveFacetSeoDecision } from '../../src/lib/seo/promoted-facet-canonical';
+
+/** Real per-facet slugify, matching what `publicaciones/index.astro` actually injects. */
+const slugify = (value: string): string =>
+    slugForPostCategory({ category: value as PostCategoryEnum });
 
 const src = readFileSync(
     resolve(__dirname, '../../src/pages/[lang]/publicaciones/index.astro'),
@@ -91,7 +95,8 @@ describe('blog facet SEO — composed resolveFacetSeoDecision behavior (HOS-96 T
             facetValues: [],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: false, canonical: { kind: 'base' } });
     });
@@ -101,10 +106,11 @@ describe('blog facet SEO — composed resolveFacetSeoDecision behavior (HOS-96 T
             facetValues: ['CULTURE'],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision.noindex).toBe(false);
-        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'culture' });
+        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'cultura' });
     });
 
     it('2 active values -> noindex,follow + base canonical', () => {
@@ -112,7 +118,8 @@ describe('blog facet SEO — composed resolveFacetSeoDecision behavior (HOS-96 T
             facetValues: ['CULTURE', 'GASTRONOMY'],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
     });
@@ -122,7 +129,8 @@ describe('blog facet SEO — composed resolveFacetSeoDecision behavior (HOS-96 T
             facetValues: ['CULTURE', 'GASTRONOMY', 'NATURE'],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
     });
@@ -142,10 +150,11 @@ describe('blog facet SEO — legacy singular-only URL regression (HOS-96 pre-mer
             facetValues: activeValues,
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision.noindex).toBe(false);
-        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'culture' });
+        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'cultura' });
     });
 
     it('?categories=CULTURE,GASTRONOMY (plural, 2 values) still correctly resolves noindex+base', () => {
@@ -158,7 +167,8 @@ describe('blog facet SEO — legacy singular-only URL regression (HOS-96 pre-mer
             facetValues: activeValues,
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
     });
@@ -183,7 +193,8 @@ describe('blog dedicated landing slug match — every PostCategoryEnum member (H
                 facetValues: [value],
                 hasOtherFilters: false,
                 validEnumValues: Object.values(PostCategoryEnum),
-                dedicatedLandingPattern: FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern
+                dedicatedLandingPattern: FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern,
+                slugify
             });
             if (decision.canonical.kind !== 'dedicatedLanding') {
                 throw new Error(`Expected a dedicatedLanding decision for ${value}`);

@@ -63,8 +63,9 @@ describe('eventos/categoria/[category]/index.astro — unchanged by HOS-96 T-018
         expect(src).not.toContain('resolveFacetSeoDecision');
     });
 
-    it('still resolves the category slug via its own VALID_CATEGORIES dictionary (unchanged, not delegated to the shared predicate)', () => {
-        expect(src).toContain('const VALID_CATEGORIES');
+    it('resolves the category slug via the shared resolveEventCategorySlug helper (H-110 — the inline VALID_CATEGORIES dictionary was replaced by the canonical Spanish slug map in @/lib/facet-slugs; still not delegated to resolveFacetSeoDecision, that predicate is for query-param facets, not URL-path landings)', () => {
+        expect(src).toContain('resolveEventCategorySlug');
+        expect(src).not.toContain('const VALID_CATEGORIES');
     });
 });
 

@@ -22,9 +22,9 @@
  * Rendering: SSR (prerender = false — must always reflect current published data)
  */
 
-import { AccommodationTypeEnum } from '@repo/schemas';
 import type { APIRoute } from 'astro';
 import { getApiUrl, getSiteUrl } from '../lib/env';
+import { ACCOMMODATION_TYPE_SLUG_BY_ENUM, EVENT_CATEGORY_SLUG_BY_ENUM } from '../lib/facet-slugs';
 import { evaluatePartnerIndexability } from '../lib/seo/partner-indexable';
 import {
     buildLocalizedUrlEntries,
@@ -248,31 +248,20 @@ function resolveUsedAttractionSlugs(
 }
 
 /**
- * Event category facet-landing slugs (SPEC-306 §4). Mirrors the
- * `VALID_CATEGORIES` slug → `EventCategoryEnum` mapping in
- * `pages/[lang]/eventos/categoria/[category]/index.astro` — keep both in
- * sync if the category taxonomy changes.
+ * Event category facet-landing slugs (SPEC-306 §4). Canonical Spanish slugs
+ * (H-110) sourced from `EVENT_CATEGORY_SLUG_BY_ENUM`, the SAME map the
+ * `pages/[lang]/eventos/categoria/[category]/index.astro` landing resolves
+ * against — this can never drift from that page's accepted slugs.
  */
-const EVENT_CATEGORY_SLUGS = [
-    'music',
-    'culture',
-    'sports',
-    'gastronomy',
-    'festival',
-    'nature',
-    'theater',
-    'workshop',
-    'other'
-] as const;
+const EVENT_CATEGORY_SLUGS = Object.values(EVENT_CATEGORY_SLUG_BY_ENUM);
 
 /**
- * Accommodation type facet-landing slugs (SPEC-306 §4). Derived from
- * `AccommodationTypeEnum` the same way `pages/[lang]/alojamientos/tipo/[type]/index.astro`
- * derives `VALID_TYPES`, so this list can never drift from the enum.
+ * Accommodation type facet-landing slugs (SPEC-306 §4). Canonical Spanish
+ * slugs (H-110) sourced from `ACCOMMODATION_TYPE_SLUG_BY_ENUM`, the SAME map
+ * `pages/[lang]/alojamientos/tipo/[type]/index.astro` resolves against — this
+ * list can never drift from the enum OR from what that page accepts.
  */
-const ACCOMMODATION_TYPE_SLUGS = Object.values(AccommodationTypeEnum).map((v) =>
-    String(v).toLowerCase().replace(/_/g, '-')
-);
+const ACCOMMODATION_TYPE_SLUGS = Object.values(ACCOMMODATION_TYPE_SLUG_BY_ENUM);
 
 export const GET: APIRoute = async () => {
     let apiUrl: string;

@@ -5,10 +5,21 @@
  * 1. Skip static assets and API routes
  * 2. Handle Server Island requests (skip locale enforcement; no session
  *    parse — see the Step 2 block below for why)
- * 3. Enforce trailing slash (301 redirect before Astro resolves the route)
- * 3.1. Legacy URL aliases (e.g. `/mi-cuenta/messages` -> `/mi-cuenta/consultas`,
- *      `/blog` -> `/publicaciones`, `/publicaciones/autor` -> `/autores`)
- *      redirect before locale/route resolution
+ * 3. Enforce trailing slash (301/308 redirect before Astro resolves the
+ *    route) — ALSO resolves against every legacy alias below (with the
+ *    slash appended) before falling back to a plain slash-only redirect, so
+ *    a legacy link missing its trailing slash still resolves in one hop
+ *    (H-110; see `@/lib/legacy-redirects`)
+ * 3.1. Legacy URL aliases (`/mi-cuenta/messages` -> `/mi-cuenta/consultas`,
+ *      `/blog` -> `/publicaciones`, `/publicaciones/autor` -> `/autores`,
+ *      and the three H-110 facet-landing legacy-English-slug redirects —
+ *      `/alojamientos/tipo/cabin` -> `/alojamientos/tipo/cabana`,
+ *      `/eventos/categoria/gastronomy` -> `/eventos/categoria/gastronomia`,
+ *      `/publicaciones/categoria/gastronomy` -> `/publicaciones/categoria/gastronomia`)
+ *      redirect before locale/route resolution. Chained aliases (e.g. the
+ *      `/blog` + post-category case) resolve in a SINGLE hop — see
+ *      `resolveLegacyRedirectTarget` in `@/lib/legacy-redirects` for the
+ *      full alias list and the one-hop composition rules.
  * 4. Extract and validate locale from URL path; redirect invalid locales to default
  * 5. Set validated locale in context.locals
  * 6. Parse session only for routes that need it (protected + auth)
@@ -43,6 +54,7 @@ import {
 } from './lib/env';
 import { initIconSprite } from './lib/icon-sprite';
 import { reportInternalBypassSelfCheck } from './lib/internal-bypass-report';
+import { resolveLegacyRedirectTarget } from './lib/legacy-redirects';
 import {
     buildChangePasswordRedirect,
     buildCspHeader,
@@ -245,60 +257,33 @@ async function runMiddlewarePipeline(context: APIContext, next: MiddlewareNext):
     // Step 3: Enforce trailing slash before Astro tries to resolve the route.
     // With trailingSlash: 'always' in astro.config.mjs, a path without a trailing
     // slash would cause Astro to throw instead of returning a clean 404.
+    //
+    // H-110: resolved against `resolveLegacyRedirectTarget` FIRST, with the
+    // slash appended. Without this, a legacy link missing its trailing slash
+    // (e.g. `/es/blog/categoria/gastronomy`, no `/`) would get its OWN 301
+    // right here (just adding the slash) — one hop before Step 3.1 ever gets
+    // a chance to resolve the alias, forcing a SECOND request to discover
+    // it. Checking here first means the fully-resolved destination is used
+    // directly, so even a slash-missing legacy link takes exactly one hop.
     if (path !== '/' && !path.endsWith('/')) {
         const search = context.url.search;
-        return context.redirect(`${path}/${search}`, 301);
+        const pathWithSlash = `${path}/`;
+        const legacyRedirect = resolveLegacyRedirectTarget({ path: pathWithSlash });
+        if (legacyRedirect) {
+            return context.redirect(`${legacyRedirect.target}${search}`, legacyRedirect.status);
+        }
+        return context.redirect(`${pathWithSlash}${search}`, 301);
     }
 
-    // Step 3.1: Legacy URL alias — the inbox page was originally hosted at
-    // `/{locale}/mi-cuenta/messages/...` (English slug). It was renamed to
-    // `/consultas/` for parity with the rest of the account section, which is
-    // all-Spanish. Any old link (bookmark, email) gets a permanent 308
-    // redirect so deep links to specific conversations
-    // (`/messages/{conversationId}`) continue to work.
-    const legacyMessagesMatch = path.match(/^\/(es|en|pt)\/mi-cuenta\/messages(\/.*)?$/);
-    if (legacyMessagesMatch) {
-        const localeSegment = legacyMessagesMatch[1];
-        const tail = legacyMessagesMatch[2] ?? '/';
+    // Step 3.1: Legacy URL aliases (the position ordinary, already-slashed
+    // legacy links resolve at — see the module doc above and
+    // `resolveLegacyRedirectTarget` in `@/lib/legacy-redirects` for the full
+    // alias list, status codes, and the `/blog` + post-category one-hop
+    // composition rule).
+    const legacyRedirect = resolveLegacyRedirectTarget({ path });
+    if (legacyRedirect) {
         const search = context.url.search;
-        return context.redirect(`/${localeSegment}/mi-cuenta/consultas${tail}${search}`, 308);
-    }
-
-    // Step 3.2 (BETA-162): Legacy/natural URL alias — the blog lives at
-    // `/{locale}/publicaciones/` but `/{locale}/blog` is the URL a user or
-    // search engine would naturally type/guess. It 404'd with no redirect.
-    // Permanent 301 (not 308, per BETA-162) since this is a one-way SEO/UX
-    // alias, not a deep-link-preserving rename like the messages case above.
-    const legacyBlogMatch = path.match(/^\/(es|en|pt)\/blog(\/.*)?$/);
-    if (legacyBlogMatch) {
-        const localeSegment = legacyBlogMatch[1];
-        const tail = legacyBlogMatch[2] ?? '/';
-        const search = context.url.search;
-        return context.redirect(`/${localeSegment}/publicaciones${tail}${search}`, 301);
-    }
-
-    // Step 3.3 (HOS-375): The author page moved out from under the blog — it now
-    // carries events as well as posts, so living at `/publicaciones/autor/` said
-    // the wrong thing about its content. One regex covers the whole subtree: the
-    // tail capture carries both the bare slug and the `/page/<n>/` pagination
-    // suffix, whose shape was kept byte-identical on the new route precisely so
-    // this stays a splice of the path's head.
-    //
-    // 301, not the 308 the messages alias uses: 308's only added guarantee is
-    // method preservation on POST/PUT, and this is a GET-only public page. What
-    // matters here is consolidating search authority onto the new URL, which
-    // both codes do.
-    //
-    // `/publicaciones/autor/` with no slug redirects to `/autores/`, which does
-    // not exist yet (NG-1) and 404s. That is deliberate and not a regression:
-    // the old bare URL was a 404 too, since the route it lived on was `[slug]`.
-    // The day an authors index ships, this redirect already points at it.
-    const legacyAuthorMatch = path.match(/^\/(es|en|pt)\/publicaciones\/autor(\/.*)?$/);
-    if (legacyAuthorMatch) {
-        const localeSegment = legacyAuthorMatch[1];
-        const tail = legacyAuthorMatch[2] ?? '/';
-        const search = context.url.search;
-        return context.redirect(`/${localeSegment}/autores${tail}${search}`, 301);
+        return context.redirect(`${legacyRedirect.target}${search}`, legacyRedirect.status);
     }
 
     // Step 4: Extract and validate locale from the URL path.
