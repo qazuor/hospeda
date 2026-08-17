@@ -95,6 +95,25 @@ export enum PermissionCategoryEnum {
 // - ACCOMMODATION_CREATE: Allows creating a new accommodation.
 // - EVENT_PUBLISH_TOGGLE: Allows toggling the published state of an event.
 // - USER_UPDATE_PROFILE: Allows a user to update their own profile.
+//
+// ── Querying these values: use lower(), never a bare LIKE ───────────────────
+//
+// The convention above is not applied uniformly. Thirteen values spell a
+// multi-word entity with dots (`event.organizer.manage`) while their own family
+// spells it in camelCase (`eventOrganizer.create`, plus six siblings). Both
+// spellings are live in production, and renaming any of them means migrating
+// real `role_permission` rows, so the split stays.
+//
+// The consequence is a query trap that has already produced a wrong conclusion
+// during the August 2026 smoke. Postgres `LIKE` is CASE-SENSITIVE:
+//
+//     where permission::text like '%organizer%'         -- returns 1 of 8
+//     where lower(permission::text) like '%organizer%'  -- returns all 8
+//
+// The partial result reads as "this family is seeded to zero roles" — an
+// ABSENCE, which is the most believable false negative there is. Normalise both
+// sides of any comparison. `permission-naming-convention.guard.test.ts` freezes
+// the thirteen known cases so a fourteenth cannot appear unnoticed.
 
 export enum PermissionEnum {
     // ACCOMMODATION: Permissions related to accommodations (hotels, cabins, etc.)
