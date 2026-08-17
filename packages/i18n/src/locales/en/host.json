@@ -324,7 +324,7 @@
                 "formats": "JPG, PNG or WebP — max {{maxSize}}MB",
                 "gallery": "Photo gallery",
                 "galleryAlt": "Photo {{index}}",
-                "galleryCapExceededOnSelect": "You picked {{selected}} photos but only {{remaining}} slots are free (max. {{cap}} in total)",
+                "galleryCapExceededOnSelect": "You picked {{pickedPhrase}} but only {{remainingPhrase}} free (max. {{cap}} in total)",
                 "galleryCapLabel": "Gallery full",
                 "galleryCapReached": "Gallery limit reached (max {{cap}} photos)",
                 "invalidType": "Only JPG, PNG or WebP files are allowed",
@@ -343,8 +343,11 @@
                 "uploadFailed": "Failed to upload image",
                 "galleryCapReached_one": "Gallery limit reached (max {{cap}} photo)",
                 "galleryCapReached_other": "Gallery limit reached (max {{cap}} photos)",
-                "galleryCapLabel": "Gallery full",
-                "uploadingBatch": "Uploading photo {{current}} of {{total}}…"
+                "uploadingBatch": "Uploading photo {{current}} of {{total}}…",
+                "galleryCapExceededOnSelectPicked_one": "{{count}} photo",
+                "galleryCapExceededOnSelectPicked_other": "{{count}} photos",
+                "galleryCapExceededOnSelectRemaining_one": "{{count}} slot is",
+                "galleryCapExceededOnSelectRemaining_other": "{{count}} slots are"
             },
             "video": {
                 "sectionTitle": "Videos",
