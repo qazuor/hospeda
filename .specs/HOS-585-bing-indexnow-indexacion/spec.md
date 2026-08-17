@@ -156,19 +156,59 @@ valores (que es `noindex,follow` por `resolveFacetSeoDecision`).
   `apps/api`. Si el host del `.txt` no es el host de las URLs enviadas, IndexNow
   responde **403**.
 
-### 6.5 Bing Webmaster Tools
+### 6.5 El aviso se prende y se apaga desde el admin (decisión del owner, 17/08)
 
-Si Google Search Console ya está configurado para `hospeda.com.ar`, BWT importa la
-propiedad y la verifica en un click, sin tocar DNS ni meta tags. Ése es el camino
-preferido. Si no, el fallback es el meta `msvalidate.01`.
+El ping **debe poder apagarse sin deploy**. La superficie ya existe y NO hay que
+construir nada nuevo: `apps/admin/src/routes/_authed/platform/configuration/seo.tsx`
+guarda contra un store genérico de settings con clave `seo.defaults`, validado por
+`SeoDefaultsValueSchema`. El toggle es **un campo booleano más en ese schema y un
+`Switch` en esa página** — sin tabla nueva, sin migración, sin pantalla nueva.
 
-Una vez adentro: enviar el sitemap, configurar geo-targeting a Argentina, y **revisar
-si bingbot está siendo bloqueado o desafiado por Cloudflare** — que es la verificación
-que hoy no se puede hacer desde ningún lado.
+Se descartó una env var `HOSPEDA_INDEXNOW_ENABLED` por redundante: sin
+`HOSPEDA_INDEXNOW_KEY` el emisor ya no puede funcionar, así que el corte duro existe
+gratis. Dos interruptores para lo mismo son dos lugares donde mirar cuando algo no anda.
+
+Quedan entonces **tres condiciones, y las tres tienen que darse** para que salga un ping:
+
+1. El entorno resuelto es producción (`HOSPEDA_DEPLOY_ENV`) — si no, adapter noop.
+2. `HOSPEDA_INDEXNOW_KEY` está definida.
+3. El toggle del admin está en ON.
+
+El emisor lee el toggle en cada envío, no al arrancar: apagarlo tiene que surtir efecto
+sin reiniciar el API. Cachear ese valor por más que la ventana de debounce anula el
+propósito del interruptor.
+
+### 6.6 Bing Webmaster Tools
+
+**Confirmado por el owner (17/08): `hospeda.com.ar` YA está cargado y verificado en
+Google Search Console** — sin sitemap enviado ni nada más configurado. Así que el alta
+en BWT es **importar la propiedad desde GSC**, sin tocar DNS ni meta tags. El fallback
+`msvalidate.01` queda descartado.
+
+Al importar hay que registrar si la propiedad de GSC es *Domain* (verificada por DNS,
+cubre subdominios) o *URL prefix*, porque cambia qué termina cubriendo Bing.
+
+Una vez adentro: enviar el sitemap y configurar geo-targeting a Argentina.
+
+La verificación de si Cloudflare bloquea a bingbot **ya se hizo (17/08) y dio negativo**:
+nada en Cloudflare lo bloquea ni lo desafía. Detalle completo en el comentario de
+HOS-585. Lo único que sigue sin poder verificarse fuera de BWT es si el bingbot **real**
+está rastreando — el plan free no ofrece filtro por user-agent en Security Analytics.
 
 ## 7. Data model / contracts
 
-Sin migraciones. Sin cambios de schema.
+Sin migraciones. Sin tabla nueva.
+
+**Campo nuevo en el schema de settings SEO** (`SeoDefaultsValueSchema`, clave
+`seo.defaults` del store genérico que ya usa la página del admin):
+
+| Campo | Tipo | Default | Para qué |
+|---|---|---|---|
+| `indexNowEnabled` | `boolean` | `false` | Prende/apaga el aviso a los buscadores. Arranca en OFF a propósito: el default seguro es no emitir. |
+
+Arrancar en `false` es deliberado — un default `true` haría que el ping empiece a salir
+solo en cuanto se despliegue, antes de que nadie verifique que la clave está bien
+publicada. Que el primer envío sea un acto explícito es parte del diseño.
 
 **Env vars nuevas** (siguen el workflow de `packages/config/src/env-registry.*`, más
 Zod en `apps/api/src/utils/env.ts`, más `.env.example`):
@@ -224,6 +264,14 @@ Ninguno. Es infraestructura, invisible para el usuario final.
   exponer el pin exacto** que SPEC-097 despoja deliberadamente.
 - **AC-10** — Toda página emite `hreflang` regional **además** del genérico. `es`, `en`,
   `pt` y `x-default` siguen presentes: un test lo afirma explícitamente.
+- **AC-11** — Con el toggle del admin en **OFF**, no sale ningún request a
+  `api.indexnow.org`, aunque el entorno sea producción y la clave esté definida. Test
+  con las tres condiciones cruzadas, no sólo el caso feliz.
+- **AC-12** — Apagar el toggle surte efecto **sin reiniciar el API**: el emisor lee el
+  valor en cada envío. Test que cambia el setting entre dos envíos y afirma que el
+  segundo no sale.
+- **AC-13** — El valor por defecto de `indexNowEnabled` es `false`. Un despliegue nuevo
+  no empieza a emitir solo.
 
 ## 10. Risks
 
@@ -243,8 +291,9 @@ Ninguno. Es infraestructura, invisible para el usuario final.
 
 ## 11. Open questions
 
-- **OQ-1** — ¿Está Google Search Console configurado para `hospeda.com.ar`? Decide si el
-  alta en BWT es un click o requiere verificación manual.
+- ~~**OQ-1** — ¿Está Google Search Console configurado para `hospeda.com.ar`?~~
+  **RESUELTA (17/08)**: sí, dominio cargado y verificado, sin sitemap enviado. El alta en
+  BWT es importar desde GSC. Ver §6.6.
 - **OQ-2** — ¿Se sirve el `.txt` de la clave como ruta Astro o como archivo en `public/`?
   Una ruta permite leerlo de la env var (rotación sin deploy de assets); `public/`
   es más simple pero fija la clave en el build.
