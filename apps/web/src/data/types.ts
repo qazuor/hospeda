@@ -615,6 +615,32 @@ export type AccommodationAmenityItem = DetailAmenity;
 export type AccommodationFeatureItem = DetailFeature;
 
 /**
+ * Contact channels exposed on the accommodation public detail page (H-118).
+ *
+ * Deliberately NARROWER than the API's domain `contactInfo` shape — only the
+ * three fields the owner approved for public display (16/08). `whatsapp` is
+ * NOT here: it already renders through its own dedicated, entitlement-gated
+ * flow (`hasWhatsapp` + the `WhatsAppContact` island, HOS-19), and duplicating
+ * it in this narrow public projection would bypass that gate.
+ */
+export interface AccommodationContactInfo {
+    readonly phone?: string;
+    readonly email?: string;
+    readonly website?: string;
+}
+
+/**
+ * Social network links exposed on the accommodation public detail page
+ * (H-118). The API's `socialNetworks` carries more platforms (Twitter,
+ * LinkedIn, TikTok, YouTube), but per owner decision (16/08) the detail page
+ * surfaces only Facebook and Instagram.
+ */
+export interface AccommodationSocialNetworks {
+    readonly facebook?: string;
+    readonly instagram?: string;
+}
+
+/**
  * Typed data shape for the accommodation detail page.
  * Produced by `toAccommodationDetailPageProps()` in transforms.ts.
  */
@@ -645,18 +671,28 @@ export interface AccommodationDetailData {
     readonly averageRating: number;
     readonly reviewsCount: number;
     readonly featuredImage: string;
+    /**
+     * Author-written alternative text for the cover photo (H-125).
+     * Absent when the owner never wrote one; consumers fall back to the
+     * accommodation name.
+     */
+    readonly featuredImageAlt?: string;
     readonly media: {
         readonly images: readonly string[];
         /**
-         * Gallery items carrying the image URL plus optional caption and
-         * description metadata preserved from the API response. Consumed by
-         * the full photo page and lightbox integrations; kept alongside
-         * `images` for backward compatibility.
+         * Gallery items carrying the image URL plus optional caption,
+         * description and alt metadata preserved from the API response.
+         * Consumed by the full photo page and lightbox integrations; kept
+         * alongside `images` for backward compatibility.
+         *
+         * `alt` and `caption` are NOT interchangeable (H-125): the caption is
+         * display copy, the alt is what a screen reader announces.
          */
         readonly galleryItems: readonly {
             readonly url: string;
             readonly caption?: string;
             readonly description?: string;
+            readonly alt?: string;
         }[];
         /**
          * Video entries carrying the URL plus optional caption and description.
@@ -712,6 +748,17 @@ export interface AccommodationDetailData {
         readonly title: string | null;
         readonly description: string | null;
     } | null;
+    /**
+     * H-118: phone/email/website the owner filled in via the contact editor.
+     * Absent when the accommodation has none of the three set — the block
+     * renders nothing rather than an empty card.
+     */
+    readonly contactInfo?: AccommodationContactInfo;
+    /**
+     * H-118: Facebook/Instagram links (subset of the API's full
+     * `socialNetworks`, per owner decision). Absent when neither is set.
+     */
+    readonly socialNetworks?: AccommodationSocialNetworks;
     readonly owner: {
         readonly id: string;
         readonly name: string;

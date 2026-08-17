@@ -266,10 +266,12 @@ export class EntityCommentService extends BaseCrudService<
                     comment.entityType === EntityTypeEnum.POST &&
                     comment.moderationState === ModerationStatusEnum.APPROVED;
 
-                await this.model.softDelete({ id: validated.commentId }, execCtx?.tx);
-                await this.model.updateById(
-                    validated.commentId,
-                    { deletedById: validActor.id },
+                // HOS-556: softDelete stamps deletedById itself now, so the
+                // follow-up updateById that used to patch it in is gone — and
+                // with it the window where the row was deleted but unattributed.
+                await this.model.softDelete(
+                    { id: validated.commentId },
+                    validActor.id,
                     execCtx?.tx
                 );
 

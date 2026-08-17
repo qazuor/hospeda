@@ -190,6 +190,82 @@ describe('socialNetworks in access schemas', () => {
 });
 
 // ---------------------------------------------------------------------------
+// contactInfo public exposure (H-118) — the anfitrión's phone/email/website
+// are approved for public display, but the OTHER contactInfo sub-fields
+// (workEmail/homePhone/workPhone/preferredEmail/preferredPhone, and
+// especially whatsapp — HOS-19's separately entitlement-gated channel) must
+// never reach the public schema.
+// ---------------------------------------------------------------------------
+
+const entityWithFullContactInfo = {
+    ...entityPayload,
+    contactInfo: {
+        mobilePhone: '+5493431234567',
+        personalEmail: 'contacto@hospeda-test.com.ar',
+        website: 'https://hospeda-test.com.ar',
+        workEmail: 'trabajo@hospeda-test.com.ar',
+        homePhone: '+5433421112233',
+        workPhone: '+5433424445566',
+        preferredEmail: 'WORK',
+        preferredPhone: 'MOBILE',
+        whatsapp: '+5493439998877'
+    }
+};
+
+describe('contactInfo public exposure (H-118)', () => {
+    it('AccommodationPublicSchema exposes only mobilePhone/personalEmail/website', () => {
+        const result = AccommodationPublicSchema.safeParse(entityWithFullContactInfo);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.contactInfo).toEqual({
+                mobilePhone: '+5493431234567',
+                personalEmail: 'contacto@hospeda-test.com.ar',
+                website: 'https://hospeda-test.com.ar'
+            });
+        }
+    });
+
+    it('AccommodationPublicSchema strips whatsapp (HOS-19 owns its own gated channel)', () => {
+        const result = AccommodationPublicSchema.safeParse(entityWithFullContactInfo);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.contactInfo).not.toHaveProperty('whatsapp');
+        }
+    });
+
+    it('AccommodationPublicSchema strips workEmail/homePhone/workPhone/preferredEmail/preferredPhone', () => {
+        const result = AccommodationPublicSchema.safeParse(entityWithFullContactInfo);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.contactInfo).not.toHaveProperty('workEmail');
+            expect(result.data.contactInfo).not.toHaveProperty('homePhone');
+            expect(result.data.contactInfo).not.toHaveProperty('workPhone');
+            expect(result.data.contactInfo).not.toHaveProperty('preferredEmail');
+            expect(result.data.contactInfo).not.toHaveProperty('preferredPhone');
+        }
+    });
+
+    it('AccommodationProtectedSchema still exposes the full contactInfo (owner-only tier)', () => {
+        const result = AccommodationProtectedSchema.safeParse(entityWithFullContactInfo);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.contactInfo).toMatchObject({
+                whatsapp: '+5493439998877',
+                workEmail: 'trabajo@hospeda-test.com.ar'
+            });
+        }
+    });
+
+    it('exposes a minimal contactInfo (mobilePhone only) unchanged in the public schema', () => {
+        const result = AccommodationPublicSchema.safeParse(entityPayload);
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.contactInfo).toEqual({ mobilePhone: '+15550123456' });
+        }
+    });
+});
+
+// ---------------------------------------------------------------------------
 // extraInfo tolerance for incomplete DRAFT data (HOS-152)
 // ---------------------------------------------------------------------------
 //

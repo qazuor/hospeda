@@ -35,12 +35,12 @@ import { getInitialsFromName } from '../avatar-utils';
 import { webLogger } from '../logger';
 import {
     extractFeaturedImage,
-    extractFeaturedImageUrl,
     extractGalleryItems,
     extractGalleryUrls,
     toRenderableImageUrl
 } from '../media';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
+import { resolveSafeExternalUrl } from '../safe-external-url';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -840,6 +840,45 @@ export function toAccommodationDetailPageProps({
     const amenitiesArr = item.amenities as readonly Record<string, unknown>[] | undefined;
     const featuresArr = item.features as readonly Record<string, unknown>[] | undefined;
     const faqsArr = item.faqs as readonly Record<string, unknown>[] | undefined;
+    // --- Contact info + social networks (H-118) ---
+    // `contactInfo` on the wire carries only `mobilePhone`/`personalEmail`/
+    // `website` (AccommodationPublicSchema's narrowed public projection —
+    // `whatsapp` deliberately stays off it, see the WHATSAPP note on
+    // `hasWhatsapp` above). `socialNetworks` carries more platforms than the
+    // owner approved for this page; only facebook/instagram are read here.
+    //
+    // `website`/`facebook`/`instagram` are host-authored strings that reach
+    // an `href` unreviewed: `z.string().url()` on the write side does NOT
+    // restrict the scheme (`javascript:`/`data:`/`vbscript:` all parse as
+    // valid URLs), so this is a stored-XSS sink unless filtered here to an
+    // http/https allow-list. `resolveSafeExternalUrl` does that; `phone`/
+    // `email` don't need it — they're appended after a hardcoded `tel:`/
+    // `mailto:` prefix, so the value can never take over the scheme.
+    const contactInfoRaw = item.contactInfo as Record<string, unknown> | undefined;
+    const socialNetworksRaw = item.socialNetworks as Record<string, unknown> | undefined;
+    const safeWebsite = resolveSafeExternalUrl(
+        contactInfoRaw?.website == null ? undefined : String(contactInfoRaw.website)
+    );
+    const safeFacebook = resolveSafeExternalUrl(
+        socialNetworksRaw?.facebook == null ? undefined : String(socialNetworksRaw.facebook)
+    );
+    const safeInstagram = resolveSafeExternalUrl(
+        socialNetworksRaw?.instagram == null ? undefined : String(socialNetworksRaw.instagram)
+    );
+    const phone = contactInfoRaw?.mobilePhone ? String(contactInfoRaw.mobilePhone) : undefined;
+    const email = contactInfoRaw?.personalEmail ? String(contactInfoRaw.personalEmail) : undefined;
+    const contactInfo: AccommodationDetailData['contactInfo'] =
+        phone || email || safeWebsite ? { phone, email, website: safeWebsite } : undefined;
+    const socialNetworks: AccommodationDetailData['socialNetworks'] =
+        safeFacebook || safeInstagram
+            ? { facebook: safeFacebook, instagram: safeInstagram }
+            : undefined;
+    // H-125: the rich shape carries the cover photo's author-written alt text.
+    // The URL-only wrapper drops it, which is why every cover fell back to the
+    // listing name.
+    const featuredImage = extractFeaturedImage(item, {
+        fallback: '/assets/images/placeholder-accommodation.svg'
+    });
 
     return {
         id: String(item.id || ''),
@@ -875,10 +914,10 @@ export function toAccommodationDetailPageProps({
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || 0),
-        featuredImage: extractFeaturedImageUrl(
-            item,
-            '/assets/images/placeholder-accommodation.svg'
-        ),
+        featuredImage: featuredImage.url,
+        // H-125: `extractFeaturedImageUrl` discards everything but the URL, which
+        // is what left the cover photo with a synthetic alt. Read the rich shape.
+        ...(featuredImage.alt ? { featuredImageAlt: featuredImage.alt } : {}),
         media: (() => {
             const galleryItems = extractGalleryItems(item);
             const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
@@ -979,6 +1018,8 @@ export function toAccommodationDetailPageProps({
                   description: seoObj.description ? String(seoObj.description) : null
               }
             : null,
+        contactInfo,
+        socialNetworks,
         owner: {
             id: String(ownerObj?.id || ''),
             name: String(ownerObj?.name || 'Unknown'),
@@ -1692,7 +1733,13 @@ export function toEventDetailProps({
 
 // --- Accommodation Editor Transforms (SPEC-208) ---
 
-import type { AccommodationEditData, AmenityData, DestinationData, MediaImage } from './types';
+import type {
+    AccommodationEditData,
+    AccommodationVideoEntry,
+    AmenityData,
+    DestinationData,
+    MediaImage
+} from './types';
 
 /**
  * Transforms a raw API accommodation object into AccommodationEditData
@@ -1720,8 +1767,16 @@ export function transformAccommodationEdit({
     const featuresArr = item.features as readonly (Record<string, unknown> | string)[] | undefined;
 
     // Coordinates live under location.coordinates.lat / location.coordinates.long (strings in DB)
+    // Address fields (street/number/floor/apartment, G7 smoke H-117) live as
+    // sibling keys of `coordinates` on the same `location` JSONB group.
     const locationObj = item.location as
-        | { coordinates?: { lat?: string | number; long?: string | number } }
+        | {
+              coordinates?: { lat?: string | number; long?: string | number };
+              street?: string | null;
+              number?: string | null;
+              floor?: string | null;
+              apartment?: string | null;
+          }
         | null
         | undefined;
     const coordLat = locationObj?.coordinates?.lat;
@@ -1731,13 +1786,10 @@ export function transformAccommodationEdit({
 
     // Capacity lives under extraInfo (capacity → maxGuests, bedrooms, bathrooms, beds)
     //
-    // `minNights` is read-only here on purpose. It is a publish requirement, so
-    // the hub has to be able to say when it is missing (before H-101 the word
-    // did not occur anywhere in the editor, and a listing blocked solely on it
-    // got no signal at all). But no host-facing write path exposes it: both HTTP
-    // create mappings force `minNights: 1`, precisely so a self-service draft is
-    // always publishable. So it is surfaced to WARN, never to edit — giving it a
-    // form field is a separate piece of work.
+    // `minNights` became writable in G7 smoke (H-112): both HTTP create mappings
+    // still force `minNights: 1` at creation time (so a self-service draft is
+    // always publishable), but `AccommodationUpdateHttpSchema` now accepts it, so
+    // the value read here also feeds the capacity/pricing form's own field.
     const extraInfo = item.extraInfo as
         | {
               capacity?: number | null;
@@ -1749,6 +1801,31 @@ export function transformAccommodationEdit({
         | null
         | undefined;
 
+    // SEO override (G7 smoke, H-121). `seo` is `.strip()`ped by the domain
+    // SeoSchema, so unknown legacy keys (e.g. `keywords`) never surface here.
+    const seoObj = item.seo as
+        | { title?: string | null; description?: string | null }
+        | null
+        | undefined;
+
+    // Embedded videos (G7 smoke, H-121). Composed on read at `media.videos`
+    // (accommodation.media-read.ts) from the domain `videos` column.
+    const mediaObj = item.media as
+        | { videos?: readonly Record<string, unknown>[] }
+        | null
+        | undefined;
+    const videos: readonly AccommodationVideoEntry[] = Array.isArray(mediaObj?.videos)
+        ? mediaObj.videos
+              .filter(
+                  (v): v is Record<string, unknown> & { url: string } => typeof v.url === 'string'
+              )
+              .map((v) => ({
+                  url: v.url,
+                  ...(typeof v.caption === 'string' ? { caption: v.caption } : {}),
+                  ...(typeof v.description === 'string' ? { description: v.description } : {})
+              }))
+        : [];
+
     return {
         id: String(item.id ?? ''),
         name: String(item.name ?? ''),
@@ -1758,11 +1835,18 @@ export function transformAccommodationEdit({
         destinationId: String(item.destinationId ?? ''),
         latitude: Number.isFinite(latitude) ? latitude : null,
         longitude: Number.isFinite(longitude) ? longitude : null,
+        street: String(locationObj?.street ?? ''),
+        number: String(locationObj?.number ?? ''),
+        floor: String(locationObj?.floor ?? ''),
+        apartment: String(locationObj?.apartment ?? ''),
         maxGuests: extraInfo?.capacity == null ? null : Number(extraInfo.capacity),
         bedrooms: extraInfo?.bedrooms == null ? null : Number(extraInfo.bedrooms),
         bathrooms: extraInfo?.bathrooms == null ? null : Number(extraInfo.bathrooms),
         beds: extraInfo?.beds == null ? null : Number(extraInfo.beds),
         minNights: extraInfo?.minNights == null ? null : Number(extraInfo.minNights),
+        seoTitle: String(seoObj?.title ?? ''),
+        seoDescription: String(seoObj?.description ?? ''),
+        videos,
         basePrice:
             priceObj?.price == null
                 ? priceObj?.amount == null

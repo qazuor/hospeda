@@ -19,7 +19,7 @@ import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import styles from './SectionForm.module.css';
 
 /** The fields this page owns. Nothing else can reach the PATCH body. */
-const OWN_FIELDS = ['latitude', 'longitude'] as const;
+const OWN_FIELDS = ['latitude', 'longitude', 'street', 'number', 'floor', 'apartment'] as const;
 
 interface LocationFormProps {
     readonly locale: SupportedLocale;
@@ -55,6 +55,13 @@ export function LocationForm({ locale, accommodationId, initialData }: LocationF
                         form.setValue('latitude', coords.latitude);
                         form.setValue('longitude', coords.longitude);
                     }}
+                    addressValue={{
+                        street: form.values.street,
+                        number: form.values.number,
+                        floor: form.values.floor,
+                        apartment: form.values.apartment
+                    }}
+                    onAddressChange={(field, val) => form.setValue(field, val)}
                     errors={form.fieldErrors}
                 />
             </div>

@@ -225,7 +225,7 @@ export async function removeEventMedia(
         await deleteMediaAssetOrThrow({ provider: mediaProvider ?? null, row: mediaRow });
 
         const doRemove = async (tx: DrizzleClient): Promise<void> => {
-            await mediaModel.softDelete({ id: validated.mediaId }, tx);
+            await mediaModel.softDelete({ id: validated.mediaId }, actor.id, tx);
 
             const { items: remaining } = await mediaModel.findByEvent({
                 eventId: validated.eventId,

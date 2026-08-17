@@ -224,16 +224,23 @@ export interface AccommodationEditData {
     readonly destinationId: string;
     readonly latitude: number | null;
     readonly longitude: number | null;
+    /** Exact street address (G7 smoke, H-117). Maps to `location.street`. */
+    readonly street: string;
+    /** Exact street number (G7 smoke, H-117). Maps to `location.number`. */
+    readonly number: string;
+    /** Floor (G7 smoke, H-117). Maps to `location.floor`. */
+    readonly floor: string;
+    /** Apartment / unit (G7 smoke, H-117). Maps to `location.apartment`. */
+    readonly apartment: string;
     readonly maxGuests: number | null;
     readonly bedrooms: number | null;
     readonly bathrooms: number | null;
     readonly beds: number | null;
     /**
-     * Minimum stay. READ-ONLY in the editor: it is a publish requirement, so the
-     * hub must be able to warn when it is absent, but no host-facing write path
-     * exposes it — both HTTP create mappings force `minNights: 1` so a
-     * self-service draft is always publishable. Do not add it to a form's
-     * `ownFields` without also giving the write path somewhere to put it.
+     * Minimum stay. Writable since G7 smoke (H-112) via the capacity/pricing
+     * section — both HTTP create mappings still force `minNights: 1` at
+     * creation time (so a self-service draft is always publishable), but the
+     * PATCH schema now accepts `minNights` so the host can change it afterward.
      */
     readonly minNights: number | null;
     readonly basePrice: number | null;
@@ -254,6 +261,32 @@ export interface AccommodationEditData {
     readonly linkedinUrl: string;
     readonly tiktokUrl: string;
     readonly youtubeUrl: string;
+    /**
+     * SEO title override (G7 smoke, H-121). Maps to `seo.title`. Empty string
+     * when unset. Only ever applied on the `es` locale by the public detail
+     * page (`pickLocalizedSeo`) — the editor's SEO section surfaces this.
+     */
+    readonly seoTitle: string;
+    /** SEO description override (G7 smoke, H-121). Maps to `seo.description`. */
+    readonly seoDescription: string;
+    /**
+     * Embedded videos (G7 smoke, H-121). Maps to the read-composed
+     * `media.videos` field (HOS-372: the domain column is `videos`, `media` is
+     * assembled on the way out). Written via the SAME field on PATCH
+     * (`media: { videos }`) — see `VideoSection.client.tsx`.
+     */
+    readonly videos: readonly AccommodationVideoEntry[];
+}
+
+/**
+ * One embedded video, as the editor's video section reads/writes it.
+ *
+ * Mirrors `HttpVideoSchema` (`@repo/schemas`): only `url` is required.
+ */
+export interface AccommodationVideoEntry {
+    readonly url: string;
+    readonly caption?: string;
+    readonly description?: string;
 }
 
 /**
@@ -286,6 +319,8 @@ export interface AccommodationMediaItem {
     readonly url: string;
     readonly publicId: string;
     readonly caption?: string;
+    /** Longer photo description (HOS-125 — correctable via updateMedia). */
+    readonly description?: string;
     readonly alt?: string;
     readonly width?: number;
     readonly height?: number;

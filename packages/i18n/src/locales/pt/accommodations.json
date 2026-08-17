@@ -446,6 +446,14 @@
             "upsellText": "Assine o Plus para ver o WhatsApp do anfitrião.",
             "upsellCta": "Ver planos"
         },
+        "contact": {
+            "title": "Contato",
+            "phoneAriaLabel": "Ligar para a acomodação",
+            "emailAriaLabel": "Enviar email para a acomodação",
+            "websiteAriaLabel": "Visitar o site da acomodação",
+            "facebookAriaLabel": "Facebook da acomodação",
+            "instagramAriaLabel": "Instagram da acomodação"
+        },
         "share": "Compartilhar",
         "checkIn": "Check-in",
         "checkOut": "Check-out",

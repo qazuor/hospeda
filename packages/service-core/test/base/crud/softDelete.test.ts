@@ -49,8 +49,11 @@ describe('BaseService: softDelete', () => {
         asMock(modelMock.softDelete).mockResolvedValue(1);
         const result = await service.softDelete(mockAdminActor, MOCK_ENTITY_ID);
         expect(result.data?.count).toBe(1);
+        // HOS-556: the acting user id travels with the where clause, so the
+        // deleted row records who deleted it and not only when.
         expect(asMock(modelMock.softDelete)).toHaveBeenCalledWith(
             { id: MOCK_ENTITY_ID },
+            mockAdminActor.id,
             undefined
         );
     });

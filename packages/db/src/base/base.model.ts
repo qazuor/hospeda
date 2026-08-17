@@ -598,13 +598,31 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
 
     /**
      * Soft deletes entities matching the where clause.
-     * Sets both deletedAt and updatedAt timestamps.
+     *
+     * Stamps `deletedAt`, `updatedAt` and — on every table that declares the
+     * column — `deletedById`, so a deleted row records WHO deleted it and not
+     * only when (HOS-556 / HOS-559).
+     *
+     * `deletedById` is a required argument rather than an optional one on
+     * purpose: it is the only thing that makes a delete auditable, and an
+     * optional parameter is how it went missing on every call site in the
+     * first place. Callers acting without a real user (crons, reconcilers,
+     * system cascades) must pass `null` explicitly — the column is a FK to
+     * `users.id`, so a synthetic actor id would violate it.
+     *
+     * Tables without a `deletedById` column (the `r_*` relation tables, the
+     * qzpay-owned billing tables) simply do not receive the field.
      *
      * @param where - The filter object
+     * @param deletedById - Id of the user performing the delete, or `null` for a system-initiated one
      * @param tx - Optional transaction client
      * @returns Promise resolving to the number of deleted rows
      */
-    async softDelete(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number> {
+    async softDelete(
+        where: Record<string, unknown>,
+        deletedById: string | null,
+        tx?: DrizzleClient
+    ): Promise<number> {
         if (!where || Object.keys(where).length === 0) {
             throw new DbError(
                 this.entityName,
@@ -626,11 +644,11 @@ export abstract class BaseModelImpl<T extends Record<string, unknown>> implement
         try {
             const whereClause = buildWhereClause(safeWhere, this.table);
             const now = new Date();
-            const result = await db
-                .update(this.table)
-                .set({ deletedAt: now, updatedAt: now })
-                .where(whereClause)
-                .returning();
+            const patch: Record<string, unknown> = { deletedAt: now, updatedAt: now };
+            if ('deletedById' in this.table) {
+                patch.deletedById = deletedById;
+            }
+            const result = await db.update(this.table).set(patch).where(whereClause).returning();
             try {
                 logQuery(this.entityName, 'softDelete', safeWhere, result);
             } catch {}

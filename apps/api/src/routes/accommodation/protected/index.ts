@@ -48,6 +48,7 @@ import { protectedSoftDeleteAccommodationRoute } from './softDelete';
 import { protectedUnpublishAccommodationRoute } from './unpublish';
 import { protectedUpdateAccommodationRoute } from './update';
 import { updateFaqRoute } from './updateFaq';
+import { protectedUpdateMediaRoute } from './updateMedia';
 import { protectedUpdateOccupancyEventRoute } from './updateOccupancyEvent';
 
 /**
@@ -171,6 +172,11 @@ app.route('/', protectedAddMediaRoute);
 // PUT /:id/media/:mediaId/featured - Promote a photo as the featured image
 // Registered BEFORE /:id/media/:mediaId (DELETE) so "featured" is not resolved as UUID.
 app.route('/', protectedSetFeaturedMediaRoute);
+
+// PATCH /:id/media/:mediaId - Correct photo text metadata (caption/description/alt/attribution)
+// Different HTTP method than the PATCH /:id/media/reorder fixed-suffix route above, but
+// registered after it anyway for readability (reorder is already ahead of it).
+app.route('/', protectedUpdateMediaRoute);
 
 // DELETE /:id/media/:mediaId - Remove a photo from accommodation gallery
 app.route('/', protectedRemoveMediaRoute);

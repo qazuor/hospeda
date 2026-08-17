@@ -951,3 +951,155 @@ describe('httpToDomainAccommodationSearch — poiId/poiSlug (HOS-113)', () => {
         expect(result.poiSlug).toBeUndefined();
     });
 });
+
+// ---------------------------------------------------------------------------
+// G7 smoke (H-112 / H-117 / H-121): minNights, exact address, SEO override.
+//
+// Every case here asserts the value reaches the DOMAIN object the mapper
+// produces — not just that AccommodationUpdateHttpSchema.safeParse succeeds.
+// A 200 from schema validation proves nothing about persistence; the mapper
+// output is what the route hands to AccommodationService.update.
+// ---------------------------------------------------------------------------
+
+describe('AccommodationUpdateHttpSchema — minNights (H-112)', () => {
+    it('accepts a valid minNights value', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({ minNights: 3 });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects minNights below 1', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({ minNights: 0 });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects minNights above 365', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({ minNights: 400 });
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('httpToDomainAccommodationUpdate — minNights reaches extraInfo (H-112)', () => {
+    it('maps minNights alone into extraInfo, with no sibling defaults', () => {
+        const result = httpToDomainAccommodationUpdate({ minNights: 2 });
+        expect(result.extraInfo).toEqual({ minNights: 2 });
+    });
+
+    it('merges minNights alongside bedrooms when both are sent', () => {
+        const result = httpToDomainAccommodationUpdate({ minNights: 2, bedrooms: 3 });
+        expect(result.extraInfo).toEqual({ minNights: 2, bedrooms: 3 });
+    });
+
+    it('omits extraInfo entirely when minNights is not sent', () => {
+        const result = httpToDomainAccommodationUpdate({ name: 'Hotel' });
+        expect(result.extraInfo).toBeUndefined();
+    });
+});
+
+describe('AccommodationUpdateHttpSchema — exact address street/number/floor/apartment (H-117)', () => {
+    it('accepts all four address fields', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({
+            street: 'Av. Belgrano',
+            number: '123',
+            floor: '4',
+            apartment: 'B'
+        });
+        expect(result.success).toBe(true);
+    });
+});
+
+describe('httpToDomainAccommodationUpdate — exact address reaches location (H-117)', () => {
+    it('maps street/number/floor/apartment into location with no coordinates', () => {
+        const result = httpToDomainAccommodationUpdate({
+            street: 'Av. Belgrano',
+            number: '123',
+            floor: '4',
+            apartment: 'B'
+        });
+        expect(result.location).toEqual({
+            street: 'Av. Belgrano',
+            number: '123',
+            floor: '4',
+            apartment: 'B'
+        });
+    });
+
+    it('maps a lone street without requiring the other three', () => {
+        const result = httpToDomainAccommodationUpdate({ street: 'Av. Belgrano' });
+        expect(result.location).toEqual({ street: 'Av. Belgrano' });
+    });
+
+    it('still emits coordinates together with address fields when both are sent', () => {
+        const result = httpToDomainAccommodationUpdate({
+            latitude: -32.0,
+            longitude: -58.0,
+            street: 'Av. Belgrano'
+        });
+        expect(result.location).toEqual({
+            coordinates: { lat: '-32', long: '-58' },
+            street: 'Av. Belgrano'
+        });
+    });
+
+    it('omits location entirely when no address or coordinate field is sent', () => {
+        const result = httpToDomainAccommodationUpdate({ name: 'Hotel' });
+        expect(result.location).toBeUndefined();
+    });
+});
+
+describe('AccommodationUpdateHttpSchema — seoTitle/seoDescription (H-121)', () => {
+    it('accepts valid seoTitle and seoDescription', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({
+            seoTitle: 'A'.repeat(30),
+            seoDescription: 'B'.repeat(70)
+        });
+        expect(result.success).toBe(true);
+    });
+
+    it('rejects a seoTitle shorter than 30 chars', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({ seoTitle: 'too short' });
+        expect(result.success).toBe(false);
+    });
+
+    it('rejects a seoDescription shorter than 70 chars', () => {
+        const result = AccommodationUpdateHttpSchema.safeParse({ seoDescription: 'too short' });
+        expect(result.success).toBe(false);
+    });
+});
+
+describe('httpToDomainAccommodationUpdate — SEO override reaches seo (H-121)', () => {
+    it('maps seoTitle alone into seo, without an emitted description', () => {
+        const title = 'A'.repeat(30);
+        const result = httpToDomainAccommodationUpdate({ seoTitle: title });
+        expect(result.seo).toEqual({ title });
+    });
+
+    it('maps seoTitle and seoDescription together', () => {
+        const title = 'A'.repeat(30);
+        const description = 'B'.repeat(70);
+        const result = httpToDomainAccommodationUpdate({
+            seoTitle: title,
+            seoDescription: description
+        });
+        expect(result.seo).toEqual({ title, description });
+    });
+
+    it('omits seo entirely when neither seoTitle nor seoDescription is sent', () => {
+        const result = httpToDomainAccommodationUpdate({ name: 'Hotel' });
+        expect(result.seo).toBeUndefined();
+    });
+});
+
+describe('AccommodationUpdateHttpSchema — undeclared fields still silently dropped (regression guard)', () => {
+    it('strips a field the schema never declared instead of erroring', () => {
+        // Guards the project-wide mapper-bypass trap this G7 change fixed for four
+        // real fields: a key NOT declared on AccommodationUpdateHttpSchema must
+        // still parse away silently (200, field discarded) — that pre-existing
+        // behavior for genuinely undeclared keys must not change.
+        const result = AccommodationUpdateHttpSchema.safeParse({
+            name: 'Hotel',
+            thisFieldWasNeverDeclared: 'should be dropped'
+        });
+        expect(result.success).toBe(true);
+        expect(result.data && 'thisFieldWasNeverDeclared' in result.data).toBe(false);
+    });
+});

@@ -104,6 +104,16 @@ export const ACCOMMODATION_EDITOR_SECTIONS: readonly EditorSection[] = [
         labelKey: 'host.properties.editor.section.contactSocial'
     },
     {
+        id: 'seo',
+        slug: 'seo',
+        group: 'content',
+        // G7 smoke (H-121): no prior home for this — SEO is a distinct concern
+        // from both the listing's own content (basicInfo/photos) and reaching
+        // the host (contact), so it gets its own page rather than being folded
+        // into either.
+        labelKey: 'host.properties.editor.section.seo'
+    },
+    {
         id: 'calendar',
         slug: 'calendario',
         group: 'management',

@@ -7,6 +7,14 @@
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
         },
+        "contactInfo": {
+            "email": {
+                "invalid": "El email no es válido"
+            },
+            "phone": {
+                "international": "El número no es válido"
+            }
+        },
         "delete": {
             "deletedAt": {
                 "invalidType": "La fecha de eliminación debe ser una fecha válida"
@@ -43,7 +51,9 @@
                 "required": "La capacidad es obligatoria"
             },
             "minNights": {
-                "required": "La cantidad mínima de noches es obligatoria"
+                "required": "La cantidad mínima de noches es obligatoria",
+                "min": "La cantidad mínima de noches no puede ser menor a {{min}}",
+                "max": "La cantidad mínima de noches no puede superar los {{max}}"
             }
         },
         "featuredToggle": {
@@ -113,6 +123,9 @@
             },
             "state": {
                 "invalid": "El estado del medio debe ser 'visible' o 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "Tenés que completar al menos uno de los campos: título, descripción, texto alternativo o atribución"
             }
         },
         "name": {

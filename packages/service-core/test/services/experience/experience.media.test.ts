@@ -304,7 +304,7 @@ describe('removeExperienceMedia', () => {
 
         expect(result.error).toBeUndefined();
         expect(result.data?.success).toBe(true);
-        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, {});
+        expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, ownerActor.id, {});
         expect(mockMediaModel.update).toHaveBeenCalledWith(
             { id: remainingId2 },
             { sortOrder: 1 },

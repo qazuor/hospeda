@@ -16,7 +16,14 @@ import { useAccommodationSectionForm } from '../use-accommodation-section-form';
 import styles from './SectionForm.module.css';
 
 /** The fields this page owns. Nothing else can reach the PATCH body. */
-const OWN_FIELDS = ['maxGuests', 'bedrooms', 'bathrooms', 'basePrice', 'currency'] as const;
+const OWN_FIELDS = [
+    'maxGuests',
+    'bedrooms',
+    'bathrooms',
+    'basePrice',
+    'currency',
+    'minNights'
+] as const;
 
 interface CapacityPricingFormProps {
     readonly locale: SupportedLocale;
