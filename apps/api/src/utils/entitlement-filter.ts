@@ -1,18 +1,16 @@
 /**
  * Entitlement Filtering Utilities
  *
- * Provides functions to filter accommodation data based on viewer entitlements.
- * These filters ensure that premium content is only visible to users with
- * the appropriate entitlements.
+ * Provides functions to filter accommodation data by the OWNING HOST's
+ * entitlements. Nothing here reads the requesting user: these payloads are
+ * shared-cached with no auth in the cache key, so anything derived from the
+ * viewer would be computed once and replayed to everyone (HOS-19, HOS-353).
  *
  * @module utils/entitlement-filter
  */
 
 import { EntitlementKey } from '@repo/billing';
 import type { Accommodation, I18nText } from '@repo/schemas';
-import type { Context } from 'hono';
-import { hasEntitlement } from '../middlewares/entitlement';
-import type { AppBindings } from '../types';
 import { apiLogger } from './logger';
 
 /**
@@ -30,7 +28,6 @@ export interface AccommodationData {
      * entitlement (`CAN_USE_RICH_DESCRIPTION`) — never gate one without the other.
      */
     richDescriptionI18n?: I18nText | null;
-    videoUrl?: string;
     /**
      * Contact info blob (JSONB `contact_info`). The WhatsApp number lives at
      * `contactInfo.whatsapp` (BETA-151) — there is NO dedicated column. HOS-19
@@ -45,7 +42,20 @@ export interface AccommodationData {
      */
     hasWhatsapp?: boolean;
     isVerified?: boolean;
-    media?: unknown; // May be array of {type, url} (test mocks) or object with featuredImage/gallery/videos (DB)
+    /**
+     * Top-level `videos` JSONB column. HOS-372 moved photos to
+     * `accommodation_media` but left videos here, and `composeAccommodationMedia`
+     * copies this array into `media.videos` on the way out — so the two must be
+     * gated together or neither is gated.
+     */
+    videos?: unknown;
+    /**
+     * Media blob (JSONB). Shape is `{ featuredImage, gallery, videos }` since
+     * HOS-372 made media relational. Typed `unknown` because it is unvalidated:
+     * every reader here narrows it before use. It is NOT an array — a gate that
+     * assumed so was dead code for exactly that reason.
+     */
+    media?: unknown;
     [key: string]: unknown;
 }
 
@@ -149,14 +159,16 @@ function readTrimmedString(value: unknown): string {
  *   lacks CAN_USE_RICH_DESCRIPTION. The two are one gate, never two: the web
  *   transform resolves the visitor's locale from the i18n object in PREFERENCE to
  *   the plain field, so omitting only the plain one omits nothing in practice.
- * - Removes video content if viewer lacks CAN_EMBED_VIDEO
+ * - Removes video content (`media.videos` and video URLs inside `description`)
+ *   when the OWNING HOST lacks CAN_EMBED_VIDEO. Owner-gated, never viewer-gated:
+ *   this payload is shared-cached with no auth in the cache key, so a
+ *   viewer-derived field serves the first viewer's plan result to everyone.
  * - Sets `hasWhatsapp` (owner-derived boolean) from `contactInfo.whatsapp`
  *   (HOS-19). The WhatsApp NUMBER is deliberately NOT emitted here — this
  *   endpoint is shared-cached, so the number is gated by the viewer's plan on
  *   the per-user protected endpoint instead.
  * - Forces `isVerified` to false when the OWNING HOST lacks HAS_VERIFICATION_BADGE
  *
- * @param c - Hono context (contains viewer entitlements)
  * @param accommodation - Accommodation data to filter
  * @param ownerEntitlements - Optional entitlement set for the accommodation owner.
  *   When omitted, the function behaves like an admin/internal call site and leaves
@@ -173,14 +185,13 @@ function readTrimmedString(value: unknown): string {
  *   const accommodation = await accommodationService.getById(id);
  *
  *   // Filter based on viewer's entitlements
- *   const filtered = filterAccommodationByEntitlements(c, accommodation);
+ *   const filtered = filterAccommodationByEntitlements(accommodation, ownerEntitlements);
  *
  *   return c.json(filtered);
  * });
  * ```
  */
 export function filterAccommodationByEntitlements(
-    c: Context<AppBindings>,
     accommodation: AccommodationData,
     ownerEntitlements?: readonly EntitlementKey[]
 ): AccommodationData {
@@ -197,12 +208,13 @@ export function filterAccommodationByEntitlements(
     //    `readTrimmedString`.
     // 3. The owner gates still run first.
     //
-    // Statements that remain non-total, named rather than glossed over: the video block
-    // calls `.replace` on `description` and dereferences `.type` on `media` elements,
-    // both typed but neither validated; `hasEntitlement` dereferences `.has` on a
-    // context value. A throw in any of them is now bounded to VIDEO content. Do not
-    // add a blanket "nothing here can throw" claim without making it true — an earlier
-    // revision asserted exactly that while these statements were reachable.
+    // Statements that remain non-total, named rather than glossed over: the video
+    // strip calls `.replace` on `description`, which is typed but not validated. A
+    // throw there is bounded to VIDEO content, and the catch re-applies that gate
+    // too. Do not add a blanket "nothing here can throw" claim without making it
+    // true — an earlier revision asserted exactly that while these statements were
+    // reachable. The `hasEntitlement` dereference this list used to name is gone:
+    // the function no longer receives the request context at all.
     try {
         // OWNER-gated richDescription omission (FR-3b): when ownerEntitlements
         // are provided, presence of CAN_USE_RICH_DESCRIPTION is the ONLY signal
@@ -260,10 +272,19 @@ export function filterAccommodationByEntitlements(
             );
         }
 
-        // ── Derivations below this line. Both owner gates have already run. ──
-
-        // Check viewer entitlements
-        const canEmbedVideo = hasEntitlement(c, EntitlementKey.CAN_EMBED_VIDEO);
+        // OWNER-gated video content. Same rule as richDescription and isVerified
+        // above, and for a reason that is not stylistic: this payload is served
+        // from `/api/v1/public/accommodations`, which sits in
+        // `PUBLIC_CACHE_ENDPOINTS` with the cache key `public:${path}${query}` —
+        // no authorization component. A field derived from the REQUESTING user's
+        // plan is therefore computed once, by whoever warms the cache, and
+        // replayed to everyone else for the TTL. HOS-19 documents that for the
+        // WhatsApp number and HOS-353 for visibility; the video strip read
+        // `hasEntitlement(c, …)` until now, so the cached description varied with
+        // the first viewer's plan. Whether a listing may publish video is a
+        // property of the OWNER's plan anyway — the viewer never bought it.
+        const ownerCanEmbedVideo =
+            !ownerEntitlements || ownerEntitlements.includes(EntitlementKey.CAN_EMBED_VIDEO);
 
         // HOS-19: WhatsApp display is VIEWER-gated, but `/public/accommodations`
         // is shared-cached (cache key has no auth), so the number MUST NOT ride
@@ -281,29 +302,11 @@ export function filterAccommodationByEntitlements(
         // ungated payload.
         filtered.hasWhatsapp = readTrimmedString(filtered.contactInfo?.whatsapp).length > 0;
 
-        // Remove video content if not entitled
-        if (!canEmbedVideo) {
-            // Remove video URL. `delete`, not `= undefined`, for the same reason as
-            // the rich-description strip above: assigning undefined leaves the key
-            // present and only looks correct because JSON.stringify drops it.
-            if (filtered.videoUrl) {
-                delete filtered.videoUrl;
-            }
-
-            // Remove video embeds from description
-            if (filtered.description) {
-                filtered.description = stripVideoUrls(filtered.description);
-            }
-
-            // Remove video items from media array
-            if (Array.isArray(filtered.media)) {
-                filtered.media = filtered.media.filter(
-                    (item: { type?: string }) => item.type !== 'video'
-                );
-            }
-
+        // Remove video content when the owner is not entitled to publish it.
+        if (!ownerCanEmbedVideo) {
+            stripVideoContent(filtered);
             apiLogger.debug(
-                `Stripped video content from accommodation ${filtered.id} - viewer lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
+                `Stripped video content from accommodation ${filtered.id} - owner lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
             );
         }
     } catch (error) {
@@ -333,6 +336,13 @@ export function filterAccommodationByEntitlements(
         ) {
             filtered.isVerified = false;
         }
+        // Video joins the re-applied set now that it is owner-gated. The old
+        // comment here explained its absence by the strip needing `c` — that
+        // reason is gone, and leaving it out would mean a throw mid-body ships a
+        // non-entitled owner's videos.
+        if (ownerEntitlements && !ownerEntitlements.includes(EntitlementKey.CAN_EMBED_VIDEO)) {
+            stripVideoContent(filtered);
+        }
     }
 
     return filtered;
@@ -340,7 +350,7 @@ export function filterAccommodationByEntitlements(
 
 // `filterAccommodationListByEntitlements` was REMOVED on purpose — do not restore it.
 //
-// It mapped `filterAccommodationByEntitlements(c, accommodation)` over a list WITHOUT
+// It mapped `filterAccommodationByEntitlements(accommodation)` over a list WITHOUT
 // passing `ownerEntitlements`, which means it gated nothing: neither rich-description
 // field, nor `isVerified`. Its JSDoc advertised it as "filter list by entitlements" and
 // gave no hint of that. It had zero call sites, so it was pure latent risk — wiring it
@@ -470,6 +480,90 @@ export function stripMarkdown(text: string): string {
 }
 
 /**
+ * Remove every trace of video content from an accommodation payload, in place.
+ *
+ * THREE surfaces carry video, and all of them must be cleared together — the
+ * same "one gate, several fields" rule `richDescription` and its i18n sibling
+ * follow, for the same reason: clearing a proper subset clears nothing.
+ *
+ * - `videos` — the top-level column. This is where the data actually lives:
+ *   HOS-372 moved photos into `accommodation_media` but left videos in their own
+ *   `accommodation.videos` column, and it is writable through the PATCH body.
+ * - `media.videos` — a COPY of that column, spliced into the composed `media`
+ *   object by `composeAccommodationMedia`. `AccommodationPublicSchema` picks both
+ *   `media` and `videos`, so both reach the wire; stripping one leaves the other
+ *   serving the same URLs.
+ * - `description` — free text where an owner can paste a YouTube link, cleared by
+ *   {@link stripVideoUrls}. This half always worked.
+ *
+ * The branch this replaces missed all of the above: it tested
+ * `Array.isArray(filtered.media)` and filtered `item.type !== 'video'`, a shape
+ * that stopped existing when media went relational. `media` is an OBJECT, so the
+ * `isArray` test was permanently false and the branch never ran on real data.
+ *
+ * The removed `filtered.videoUrl` branch is not reproduced here: that field
+ * exists in no accommodation schema (zero occurrences under
+ * `packages/schemas/src/entities/accommodation/`), so it only ever deleted a key
+ * that was never present.
+ *
+ * `media` is unvalidated JSONB, so nothing about its shape is assumed: a
+ * non-object `media`, or a `videos` that is not an array, both end as an empty
+ * list rather than as a survivor.
+ *
+ * @param filtered - Accommodation payload, mutated in place
+ */
+function stripVideoContent(filtered: AccommodationData): void {
+    if (filtered.description) {
+        filtered.description = stripVideoUrls(filtered.description);
+    }
+
+    // The column itself. `delete`, not `= []`, matching the rich-description
+    // strip: assigning leaves the key present for anything inspecting the object
+    // rather than its serialized form.
+    if ('videos' in filtered) {
+        delete filtered.videos;
+    }
+
+    const media = filtered.media;
+    if (media && typeof media === 'object' && !Array.isArray(media) && 'videos' in media) {
+        // Rebuilt rather than mutated: `media` may be shared with the caller's
+        // object, and the whole point of this module is that it does not mutate
+        // what it was handed.
+        filtered.media = { ...(media as Record<string, unknown>), videos: [] };
+    }
+}
+
+/**
+ * Whether an accommodation carries video content at all.
+ *
+ * Reads the same two surfaces {@link stripVideoContent} clears, so "what the
+ * gate removes" and "what analytics counts" cannot drift apart: the dedicated
+ * `media.videos` array, and a video URL pasted into the free-text description.
+ *
+ * `media` is unvalidated JSONB — a non-object value, or a `videos` that is not
+ * an array, both answer `false` rather than throwing.
+ *
+ * @param accommodation - Accommodation data to inspect
+ * @returns `true` when any video is present
+ */
+function hasVideoContent(accommodation: AccommodationData): boolean {
+    if (Array.isArray(accommodation.videos) && accommodation.videos.length > 0) {
+        return true;
+    }
+
+    const media = accommodation.media;
+    if (media && typeof media === 'object' && !Array.isArray(media)) {
+        const videos = (media as { videos?: unknown }).videos;
+        if (Array.isArray(videos) && videos.length > 0) {
+            return true;
+        }
+    }
+
+    const description = accommodation.description;
+    return typeof description === 'string' && stripVideoUrls(description) !== description.trim();
+}
+
+/**
  * Strip video URLs from text
  *
  * Removes embedded video URLs from common platforms (YouTube, Vimeo, etc.)
@@ -531,12 +625,11 @@ export function checkPremiumFeatures(accommodation: AccommodationData): {
             (accommodation.description && /[*#`[\]>~]/.test(accommodation.description))
     );
 
-    // Check for video content
-    const hasVideo = Boolean(
-        accommodation.videoUrl ||
-            (Array.isArray(accommodation.media) &&
-                accommodation.media.some((item: { type?: string }) => item.type === 'video'))
-    );
+    // Check for video content. Same dead-shape bug the gate itself carried: this
+    // read `videoUrl` (a field no accommodation schema declares) and treated
+    // `media` as an array, so it answered `false` for every real accommodation
+    // and silently under-reported the feature it exists to measure.
+    const hasVideo = hasVideoContent(accommodation);
 
     // Check for WhatsApp (HOS-19: the number lives at contactInfo.whatsapp;
     // there is no stored "direct link" flag — DIRECT is a VIEWER capability).

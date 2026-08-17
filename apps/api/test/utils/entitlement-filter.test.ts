@@ -33,10 +33,18 @@ const BASE_ACCOMMODATION = {
         en: '## Premium EN\n\n**luxury**',
         pt: '## Premium PT\n\n**luxo**'
     },
-    videoUrl: 'https://youtube.com/watch?v=demo',
     contactInfo: { whatsapp: '+5493442123456' },
     isVerified: true,
-    media: [{ type: 'video', url: 'https://youtube.com/watch?v=demo' }]
+    // The REAL shape media has had since HOS-372. This fixture used to carry
+    // `videoUrl: '…'` and `media: [{ type: 'video' }]` — a field that exists in
+    // no accommodation schema and an array shape the database stopped producing.
+    // Both matched what the gate inspected, which is why the suite stayed green
+    // while the gate matched nothing in production.
+    media: {
+        featuredImage: { url: 'https://res.cloudinary.com/x/cover.jpg' },
+        gallery: [],
+        videos: [{ url: 'https://youtube.com/watch?v=demo' }]
+    }
 } as const;
 
 function createViewerContext(viewerEntitlements: EntitlementKey[] = []) {
@@ -60,7 +68,7 @@ describe('filterAccommodationByEntitlements', () => {
         ]);
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, []);
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, []);
             return c.json(filtered);
         });
 
@@ -76,7 +84,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION,
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
@@ -93,7 +101,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION);
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION);
             return c.json(filtered);
         });
 
@@ -104,11 +112,11 @@ describe('filterAccommodationByEntitlements', () => {
         expect(body.isVerified).toBe(true);
     });
 
-    it('keeps video viewer-gated but never emits the WhatsApp number (HOS-19: only hasWhatsapp)', async () => {
+    it('gates video on the OWNER and never emits the WhatsApp number (HOS-19: only hasWhatsapp)', async () => {
         const app = createViewerContext([]);
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION,
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
@@ -119,8 +127,8 @@ describe('filterAccommodationByEntitlements', () => {
         const body = await res.json();
 
         expect(body.richDescription).toBe('## Premium\n\n**luxury**');
-        expect(body.videoUrl).toBeUndefined();
-        expect(body.media).toEqual([]);
+        // Owner list above omits CAN_EMBED_VIDEO, so the videos go.
+        expect(body.media.videos).toEqual([]);
         // HOS-19: the number is never stripped/emitted here — it is not the
         // viewer-gated surface. Only the owner-derived boolean is set, and it is
         // TRUE regardless of the viewer's plan (cache-safe).
@@ -133,7 +141,6 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             const filtered = filterAccommodationByEntitlements(
-                c,
                 { id: 'acc-002', contactInfo: { whatsapp: null } },
                 []
             );
@@ -162,7 +169,6 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             const filtered = filterAccommodationByEntitlements(
-                c,
                 {
                     ...BASE_ACCOMMODATION,
                     contactInfo: { whatsapp } as unknown as { whatsapp?: string | null }
@@ -188,7 +194,6 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             const filtered = filterAccommodationByEntitlements(
-                c,
                 { id: 'acc-003', contactInfo: { whatsapp: '   ' } },
                 []
             );
@@ -210,7 +215,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             // ownerEntitlements provided but WITHOUT HAS_VERIFICATION_BADGE
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION
                 // HAS_VERIFICATION_BADGE intentionally omitted
             ]);
@@ -227,7 +232,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION,
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
@@ -245,7 +250,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext([EntitlementKey.HAS_VERIFICATION_BADGE]);
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
                 // owner entitlements: does NOT include HAS_VERIFICATION_BADGE
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION
             ]);
@@ -268,7 +273,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             // owner does NOT have CAN_USE_RICH_DESCRIPTION
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, []);
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, []);
             return c.json(filtered);
         });
 
@@ -286,7 +291,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
             return c.json(filtered);
@@ -303,7 +308,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
                 EntitlementKey.CAN_USE_RICH_DESCRIPTION,
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
@@ -326,7 +331,7 @@ describe('filterAccommodationByEntitlements', () => {
         const app = createViewerContext();
 
         app.get('/', (c) => {
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION);
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION);
             return c.json(filtered);
         });
 
@@ -352,7 +357,6 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             captured = filterAccommodationByEntitlements(
-                c,
                 { id: 'acc-null', richDescription: null, richDescriptionI18n: null },
                 []
             ) as Record<string, unknown>;
@@ -374,7 +378,6 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             const filtered = filterAccommodationByEntitlements(
-                c,
                 { ...BASE_ACCOMMODATION, media: [null] as unknown as unknown[] },
                 []
             );
@@ -400,7 +403,7 @@ describe('filterAccommodationByEntitlements', () => {
         let captured: Record<string, unknown> | null = null;
 
         app.get('/', (c) => {
-            captured = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, []) as Record<
+            captured = filterAccommodationByEntitlements(BASE_ACCOMMODATION, []) as Record<
                 string,
                 unknown
             >;
@@ -412,8 +415,19 @@ describe('filterAccommodationByEntitlements', () => {
         expect(captured).not.toBeNull();
         expect('richDescription' in (captured ?? {})).toBe(false);
         expect('richDescriptionI18n' in (captured ?? {})).toBe(false);
-        // videoUrl is viewer-gated and follows the same rule.
-        expect('videoUrl' in (captured ?? {})).toBe(false);
+        // Video is gated on two surfaces with two different mechanics, both
+        // asserted on the pre-serialization object for the reason above:
+        // the top-level column is DELETED (like the rich fields), while
+        // `media.videos` is EMPTIED, because `media` is a structured object whose
+        // other keys (featuredImage, gallery) have to survive. The previous
+        // assertion here was about `videoUrl`, a key the fixture invented and the
+        // schema never had.
+        const capturedObject = (captured ?? {}) as {
+            videos?: unknown;
+            media?: { videos?: unknown[] };
+        };
+        expect('videos' in capturedObject).toBe(false);
+        expect(capturedObject.media?.videos).toEqual([]);
     });
 
     it('non-vacuity guard: richDescriptionI18n IS part of the public response contract', () => {
@@ -428,7 +442,7 @@ describe('filterAccommodationByEntitlements', () => {
 
         app.get('/', (c) => {
             // owner does NOT have CAN_USE_RICH_DESCRIPTION
-            const filtered = filterAccommodationByEntitlements(c, BASE_ACCOMMODATION, [
+            const filtered = filterAccommodationByEntitlements(BASE_ACCOMMODATION, [
                 EntitlementKey.HAS_VERIFICATION_BADGE
             ]);
             return c.json(filtered);
@@ -488,5 +502,199 @@ describe('stripRichDescriptionFields', () => {
         expect(() => stripRichDescriptionFields([] as unknown as Record<string, unknown>)).toThrow(
             /\.map\(stripRichDescriptionFields\)/
         );
+    });
+});
+
+// ----------------------------------------------------------------------------
+// Video gate — real media shape, owner-gated (NOSPEC:gate-video-inerte)
+// ----------------------------------------------------------------------------
+
+/**
+ * The shape the DATABASE actually produces for `media`, as opposed to the one
+ * `BASE_ACCOMMODATION` above carries.
+ *
+ * This distinction is the whole finding. The gate inspected `filtered.videoUrl`
+ * — a field that exists in no accommodation schema — and `Array.isArray(media)`
+ * with a `type === 'video'` filter, a shape that died when media went relational
+ * in HOS-372. Both branches were unreachable against real data, and the tests
+ * did not notice because the FIXTURE was written to match the code's assumption
+ * rather than the database. A fixture that reproduces the bug stays green while
+ * the feature is dead.
+ */
+const REAL_MEDIA_ACCOMMODATION = {
+    id: 'acc-real-001',
+    description: 'Mirá el recorrido en https://youtube.com/watch?v=inline',
+    contactInfo: { whatsapp: '+5493442123456' },
+    isVerified: true,
+    // The top-level column where videos actually live (HOS-372 left them here
+    // when photos went relational). `composeAccommodationMedia` copies it into
+    // `media.videos`, and the public schema picks BOTH — so both are on the wire.
+    videos: [
+        { url: 'https://youtube.com/watch?v=tour', caption: 'Recorrido' },
+        { url: 'https://vimeo.com/12345' }
+    ],
+    media: {
+        featuredImage: { url: 'https://res.cloudinary.com/x/cover.jpg' },
+        gallery: [{ url: 'https://res.cloudinary.com/x/a.jpg' }],
+        videos: [
+            { url: 'https://youtube.com/watch?v=tour', caption: 'Recorrido' },
+            { url: 'https://vimeo.com/12345' }
+        ]
+    }
+} as const;
+
+/** Videos surviving the filter, whatever the enclosing shape. */
+function videosOf(body: Record<string, unknown>): readonly unknown[] {
+    const media = body.media as { videos?: readonly unknown[] } | undefined;
+    return media?.videos ?? [];
+}
+
+describe('video gate — the real media shape', () => {
+    it('strips media.videos when the OWNER lacks CAN_EMBED_VIDEO', async () => {
+        const app = createViewerContext([]);
+
+        app.get('/', (c) =>
+            c.json(filterAccommodationByEntitlements(REAL_MEDIA_ACCOMMODATION, []))
+        );
+
+        const body = await (await app.request('/')).json();
+
+        // The assertion the old suite could not make: something was actually removed.
+        expect(videosOf(body)).toHaveLength(0);
+    });
+
+    it('keeps media.videos when the OWNER has CAN_EMBED_VIDEO', async () => {
+        const app = createViewerContext([]);
+
+        app.get('/', (c) =>
+            c.json(
+                filterAccommodationByEntitlements(REAL_MEDIA_ACCOMMODATION, [
+                    EntitlementKey.CAN_EMBED_VIDEO
+                ])
+            )
+        );
+
+        const body = await (await app.request('/')).json();
+
+        expect(videosOf(body)).toHaveLength(2);
+    });
+
+    it('strips the top-level videos COLUMN, not just the composed copy', async () => {
+        const app = createViewerContext([]);
+
+        app.get('/', (c) =>
+            c.json(filterAccommodationByEntitlements(REAL_MEDIA_ACCOMMODATION, []))
+        );
+
+        const body = await (await app.request('/')).json();
+
+        // `media.videos` is a COPY of this column spliced in by
+        // `composeAccommodationMedia`, and `AccommodationPublicSchema` picks both.
+        // Clearing only one of them serves the same URLs from the other — the
+        // exact failure mode `richDescription` + `richDescriptionI18n` document.
+        expect(body.videos).toBeUndefined();
+        expect(videosOf(body)).toHaveLength(0);
+    });
+
+    it('keeps the top-level videos column when the owner is entitled', async () => {
+        const app = createViewerContext([]);
+
+        app.get('/', (c) =>
+            c.json(
+                filterAccommodationByEntitlements(REAL_MEDIA_ACCOMMODATION, [
+                    EntitlementKey.CAN_EMBED_VIDEO
+                ])
+            )
+        );
+
+        const body = await (await app.request('/')).json();
+
+        expect(body.videos).toHaveLength(2);
+    });
+
+    it('leaves the rest of media untouched when videos are stripped', async () => {
+        const app = createViewerContext([]);
+
+        app.get('/', (c) =>
+            c.json(filterAccommodationByEntitlements(REAL_MEDIA_ACCOMMODATION, []))
+        );
+
+        const body = await (await app.request('/')).json();
+        const media = body.media as { featuredImage?: unknown; gallery?: unknown[] };
+
+        // Stripping videos must not take the photos with it.
+        expect(media.featuredImage).toBeDefined();
+        expect(media.gallery).toHaveLength(1);
+    });
+
+    it('does NOT consult the VIEWER — the payload is shared-cached', async () => {
+        // HOS-19 / HOS-353: `/api/v1/public/accommodations` is in
+        // PUBLIC_CACHE_ENDPOINTS and its cache key is `public:${path}${query}` with
+        // no authorization component. A viewer-gated field therefore serves the
+        // FIRST viewer's plan result to everyone for the TTL. This test is the
+        // one that fails if anyone re-derives the gate from the request context.
+        const entitledViewer = createViewerContext([EntitlementKey.CAN_EMBED_VIDEO]);
+
+        entitledViewer.get('/', (c) =>
+            c.json(filterAccommodationByEntitlements(REAL_MEDIA_ACCOMMODATION, []))
+        );
+
+        const body = await (await entitledViewer.request('/')).json();
+
+        // Owner is not entitled, so a premium VIEWER must not unlock the videos.
+        expect(videosOf(body)).toHaveLength(0);
+    });
+
+    it('strips inline video URLs from the description on the OWNER gate too', async () => {
+        const entitledViewer = createViewerContext([EntitlementKey.CAN_EMBED_VIDEO]);
+
+        entitledViewer.get('/', (c) =>
+            c.json(filterAccommodationByEntitlements(REAL_MEDIA_ACCOMMODATION, []))
+        );
+
+        const body = await (await entitledViewer.request('/')).json();
+
+        // Previously this branch WORKED but read the viewer's plan, so the cached
+        // description varied with whoever warmed the cache first.
+        expect(body.description).not.toContain('youtube.com');
+    });
+
+    it('keeps the inline video URL when the owner is entitled, whatever the viewer has', async () => {
+        const anonymous = createViewerContext([]);
+
+        anonymous.get('/', (c) =>
+            c.json(
+                filterAccommodationByEntitlements(REAL_MEDIA_ACCOMMODATION, [
+                    EntitlementKey.CAN_EMBED_VIDEO
+                ])
+            )
+        );
+
+        const body = await (await anonymous.request('/')).json();
+
+        expect(body.description).toContain('youtube.com');
+    });
+
+    it('leaves videos alone when ownerEntitlements is omitted (admin/internal call sites)', async () => {
+        const app = createViewerContext([]);
+
+        app.get('/', (c) => c.json(filterAccommodationByEntitlements(REAL_MEDIA_ACCOMMODATION)));
+
+        const body = await (await app.request('/')).json();
+
+        // Same contract richDescription and isVerified already follow.
+        expect(videosOf(body)).toHaveLength(2);
+    });
+
+    it('survives a media blob that is not the expected shape', async () => {
+        const app = createViewerContext([]);
+        const malformed = { id: 'acc-bad', media: { videos: 'not-an-array' } };
+
+        app.get('/', (c) => c.json(filterAccommodationByEntitlements(malformed, [])));
+
+        const res = await app.request('/');
+        expect(res.status).toBe(200);
+        // Fail closed: an unusable videos value must not survive as-is.
+        expect(videosOf(await res.json())).toHaveLength(0);
     });
 });
