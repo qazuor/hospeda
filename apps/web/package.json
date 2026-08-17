@@ -28,7 +28,7 @@
         "clean": "rm -rf node_modules dist .astro"
     },
     "dependencies": {
-        "@astrojs/node": "^11.0.3",
+        "@astrojs/node": "^11.1.0",
         "@astrojs/react": "^6.0.2",
         "@astrojs/rss": "^4.0.19",
         "@repo/analytics": "workspace:*",
@@ -47,7 +47,7 @@
         "@tiptap/react": "^3.29.2",
         "@tiptap/starter-kit": "^3.29.2",
         "@vercel/og": "^1.0.1",
-        "astro": "^7.1.6",
+        "astro": "^7.2.0",
         "better-auth": "^1.6.23",
         "clsx": "^2.1.1",
         "dompurify": "^3.4.13",
