@@ -31,6 +31,7 @@ import { SocialDraftIngestionService, SocialImagePipelineService } from '@repo/s
 import { getMediaProvider } from '../../../services/media';
 import { getDecryptedSocialCredential } from '../../../services/social-credential-vault.service.js';
 import { getActorFromContext } from '../../../utils/actor';
+import { parseRefinedBody } from '../../../utils/refined-body';
 import { createApiKeyRoute } from '../../../utils/route-factory-tiered';
 
 // ---------------------------------------------------------------------------
@@ -128,6 +129,18 @@ export const socialDraftsRoute = createApiKeyRoute({
         if (!pinValid) {
             return ctx.json(buildErrorJson('FORBIDDEN', 'Invalid operator pin'), 403) as never;
         }
+
+        // Re-parse with the full schema so its refinement runs (H-54).
+        //
+        // `CreateSocialDraftSchema` requires a non-empty root `openaiFileIdRefs`
+        // when `image.mode === 'openai_file_refs'`, but the route factory
+        // rebuilds the declared `requestBody` for OpenAPI and drops
+        // `.superRefine()` in the process. Without this, the pipeline reads
+        // `openaiFileIdRefs?.[0]`, finds nothing, and publishes a draft with no
+        // image — degraded rather than refused, which is why it went unnoticed.
+        // Runs AFTER the PIN check so an unauthenticated caller cannot use
+        // validation messages to probe the schema.
+        parseRefinedBody({ schema: CreateSocialDraftSchema, body });
 
         // ----------------------------------------------------------------
         // Step 2: Call the ingestion service
