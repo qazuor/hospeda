@@ -64,6 +64,51 @@ describe('SeoDefaultsValueSchema', () => {
         });
         expect(result.success).toBe(false);
     });
+
+    describe('indexNowEnabled (HOS-585 / AC-13)', () => {
+        /**
+         * The load-bearing one. Every `seo.defaults` row written before this
+         * field existed lacks it, and the admin page calls `safeParse` on the
+         * stored value before rendering. A required boolean would fail all of
+         * them and take the page down. Asserting the resulting VALUE — not just
+         * `.success` — is what makes this test able to fail: a schema that
+         * dropped the field entirely would still parse, but would not produce
+         * `false`.
+         */
+        it('parses a row stored before the field existed, defaulting to false', () => {
+            const result = SeoDefaultsValueSchema.safeParse(validSeo);
+
+            expect(result.success).toBe(true);
+            expect(result.success && result.data.indexNowEnabled).toBe(false);
+        });
+
+        it('preserves an explicit true', () => {
+            const result = SeoDefaultsValueSchema.safeParse({
+                ...validSeo,
+                indexNowEnabled: true
+            });
+
+            expect(result.success && result.data.indexNowEnabled).toBe(true);
+        });
+
+        it('preserves an explicit false', () => {
+            const result = SeoDefaultsValueSchema.safeParse({
+                ...validSeo,
+                indexNowEnabled: false
+            });
+
+            expect(result.success && result.data.indexNowEnabled).toBe(false);
+        });
+
+        it('rejects a non-boolean', () => {
+            const result = SeoDefaultsValueSchema.safeParse({
+                ...validSeo,
+                indexNowEnabled: 'true'
+            });
+
+            expect(result.success).toBe(false);
+        });
+    });
 });
 
 describe('MaintenanceModeValueSchema', () => {

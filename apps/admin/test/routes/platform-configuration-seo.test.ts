@@ -71,4 +71,41 @@ describe('platform/configuration/seo.tsx (T-020 + T-030)', () => {
         expect(seoSrc).toContain("'admin-pages.systemSettings.seo.sitemapGeneration'");
         expect(seoSrc).toContain("'admin-pages.systemSettings.seo.robotsTxt'");
     });
+
+    /**
+     * These are WIRING assertions, not rendering ones — a source-string test
+     * cannot prove the Switch reaches the DOM. What it can prove is the set of
+     * mistakes that would leave a control visible but inert, which is the
+     * failure mode worth guarding here: a Switch bound to a literal instead of
+     * state, or one that renders but never writes back.
+     */
+    describe('IndexNow toggle (HOS-585)', () => {
+        it('renders a Switch, not another read-only Badge', () => {
+            expect(seoSrc).toContain("'admin-pages.systemSettings.seo.indexNow'");
+            expect(seoSrc).toContain('<Switch');
+            expect(seoSrc).toContain("from '@/components/ui/switch'");
+        });
+
+        it('binds the Switch to form state, not a hardcoded value', () => {
+            expect(seoSrc).toMatch(/checked=\{settings\.indexNowEnabled\}/);
+            expect(seoSrc).not.toMatch(/checked=\{(true|false)\}/);
+        });
+
+        it('writes back through handleToggle so the change can be saved', () => {
+            expect(seoSrc).toMatch(/handleToggle\('indexNowEnabled',\s*checked\)/);
+        });
+
+        /**
+         * `handleChange` is typed for string fields. Routing a boolean through
+         * it would put `"true"` into the value and fail `safeParse` at save
+         * time — visible only when the operator clicks Save.
+         */
+        it('does NOT route the boolean through the string handler', () => {
+            expect(seoSrc).not.toMatch(/handleChange\('indexNowEnabled'/);
+        });
+
+        it('seeds the form default to false (AC-13)', () => {
+            expect(seoSrc).toMatch(/indexNowEnabled:\s*false/);
+        });
+    });
 });

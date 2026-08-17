@@ -1189,6 +1189,8 @@
             "robotsTxt": "Robots.txt",
             "robotsTxtDesc": "Search engine crawling configuration",
             "robotsConfigured": "Configured",
+            "indexNow": "Search engine notification (IndexNow)",
+            "indexNowDesc": "Notifies Bing and other search engines whenever public content is published or updated",
             "apiNote": "Note: These settings will be connected to the API in a future update",
             "save": "Save Changes",
             "saved": "Saved"
