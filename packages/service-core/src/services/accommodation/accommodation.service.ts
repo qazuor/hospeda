@@ -969,6 +969,54 @@ export class AccommodationService extends BaseCrudService<
         );
     }
 
+    /**
+     * Schedules public-page (ISR/Cloudflare) revalidation for one accommodation.
+     *
+     * This is the MECHANISM only — resolve the destination slug, hand the entity
+     * to the revalidation service, and swallow any failure into a warning so a
+     * purge problem can never roll back the write that triggered it.
+     *
+     * **The decision of WHETHER to revalidate stays at the call site.** The
+     * callers do not share one condition: `_afterCreate` revalidates only when
+     * the listing is public NOW, `_afterUpdate` also revalidates when it WAS
+     * public before (an ACTIVE→DRAFT unpublish has to purge the page that just
+     * disappeared), and the visibility/lifecycle hooks revalidate
+     * unconditionally. Folding any of those into this helper would silently
+     * change one of them.
+     *
+     * Extracted in HOS-389: this block was copy-pasted at nine call sites, and
+     * the media methods needed six more. Fifteen copies of a best-effort side
+     * effect is how the two halves drift — one gets a fix the other never sees.
+     *
+     * @param entity - The accommodation to purge (needs `id`, `slug`, `destinationId`).
+     * @param logPrefix - Optional prefix for the warning, e.g. `'[accommodation.publish] '`.
+     */
+    private async _scheduleAccommodationRevalidation(
+        entity: {
+            readonly id: string;
+            readonly slug: string;
+            readonly destinationId?: string | null;
+        },
+        logPrefix = ''
+    ): Promise<void> {
+        const destinationSlug = entity.destinationId
+            ? await this._resolveDestinationSlug(entity.destinationId)
+            : undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation',
+                id: entity.id,
+                slug: entity.slug,
+                destinationSlug
+            });
+        } catch (error) {
+            this.logger.warn(
+                { error, entityType: 'accommodation' },
+                `${logPrefix}Revalidation scheduling failed (non-blocking)`
+            );
+        }
+    }
+
     protected async _afterCreate(
         entity: Accommodation,
         _actor: Actor,
@@ -1034,22 +1082,7 @@ export class AccommodationService extends BaseCrudService<
         // A create can never have a prior public footprint, so `is public now`
         // is a sufficient and always-safe condition here.
         if (this._isPubliclyVisible(entity)) {
-            const destinationSlug = entity.destinationId
-                ? await this._resolveDestinationSlug(entity.destinationId)
-                : undefined;
-            try {
-                getRevalidationService()?.scheduleRevalidation({
-                    entityType: 'accommodation',
-                    id: entity.id,
-                    slug: entity.slug,
-                    destinationSlug
-                });
-            } catch (error) {
-                this.logger.warn(
-                    { error, entityType: 'accommodation' },
-                    'Revalidation scheduling failed (non-blocking)'
-                );
-            }
+            await this._scheduleAccommodationRevalidation(entity);
         }
 
         // SPEC-212: fire-and-forget auto-translation
@@ -1244,22 +1277,7 @@ export class AccommodationService extends BaseCrudService<
         // `undefined` (before-state unknown) falls through to revalidating — the safe default.
         const wasPubliclyVisible = ctx.hookState?.previousPubliclyVisible;
         if (this._isPubliclyVisible(entity) || wasPubliclyVisible !== false) {
-            const destinationSlug = entity.destinationId
-                ? await this._resolveDestinationSlug(entity.destinationId)
-                : undefined;
-            try {
-                getRevalidationService()?.scheduleRevalidation({
-                    entityType: 'accommodation',
-                    id: entity.id,
-                    slug: entity.slug,
-                    destinationSlug
-                });
-            } catch (error) {
-                this.logger.warn(
-                    { error, entityType: 'accommodation' },
-                    'Revalidation scheduling failed (non-blocking)'
-                );
-            }
+            await this._scheduleAccommodationRevalidation(entity);
         }
 
         // Auto-assign HOST role when accommodation becomes ACTIVE.
@@ -1928,22 +1946,7 @@ export class AccommodationService extends BaseCrudService<
                     { timeoutMs: 5000 }
                 );
 
-                const destinationSlug = updated.destinationId
-                    ? await this._resolveDestinationSlug(updated.destinationId)
-                    : undefined;
-                try {
-                    getRevalidationService()?.scheduleRevalidation({
-                        entityType: 'accommodation',
-                        id: updated.id,
-                        slug: updated.slug,
-                        destinationSlug
-                    });
-                } catch (error) {
-                    this.logger.warn(
-                        { error, entityType: 'accommodation' },
-                        '[accommodation.publish] Revalidation scheduling failed (non-blocking)'
-                    );
-                }
+                await this._scheduleAccommodationRevalidation(updated, '[accommodation.publish] ');
 
                 return updated;
             }
@@ -2081,22 +2084,10 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
 
-                const destinationSlug = updated.destinationId
-                    ? await this._resolveDestinationSlug(updated.destinationId)
-                    : undefined;
-                try {
-                    getRevalidationService()?.scheduleRevalidation({
-                        entityType: 'accommodation',
-                        id: updated.id,
-                        slug: updated.slug,
-                        destinationSlug
-                    });
-                } catch (error) {
-                    this.logger.warn(
-                        { error, entityType: 'accommodation' },
-                        '[accommodation.unpublish] Revalidation scheduling failed (non-blocking)'
-                    );
-                }
+                await this._scheduleAccommodationRevalidation(
+                    updated,
+                    '[accommodation.unpublish] '
+                );
 
                 return updated;
             }
@@ -2165,22 +2156,7 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Accommodation> {
-        const destinationSlug = entity.destinationId
-            ? await this._resolveDestinationSlug(entity.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: entity.id,
-                slug: entity.slug,
-                destinationSlug
-            });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        await this._scheduleAccommodationRevalidation(entity);
         return entity;
     }
 
@@ -4470,22 +4446,10 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
 
-                const destinationSlug = updated.destinationId
-                    ? await this._resolveDestinationSlug(updated.destinationId)
-                    : undefined;
-                try {
-                    getRevalidationService()?.scheduleRevalidation({
-                        entityType: 'accommodation',
-                        id: updated.id,
-                        slug: updated.slug,
-                        destinationSlug
-                    });
-                } catch (error) {
-                    this.logger.warn(
-                        { error, entityType: 'accommodation' },
-                        '[accommodation.verifyAccommodation] Revalidation scheduling failed (non-blocking)'
-                    );
-                }
+                await this._scheduleAccommodationRevalidation(
+                    updated,
+                    '[accommodation.verifyAccommodation] '
+                );
 
                 return updated;
             }
