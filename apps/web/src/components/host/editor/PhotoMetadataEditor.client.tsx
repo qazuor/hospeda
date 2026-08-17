@@ -74,6 +74,8 @@ export function PhotoMetadataEditor({
     const [alt, setAlt] = useState(item.alt ?? '');
     const [caption, setCaption] = useState(item.caption ?? '');
     const [description, setDescription] = useState(item.description ?? '');
+    const [photographer, setPhotographer] = useState(item.attribution?.photographer ?? '');
+    const [creditUrl, setCreditUrl] = useState(item.attribution?.sourceUrl ?? '');
     const [fieldErrors, setFieldErrors] = useState<PhotoMetadataFieldErrors>({});
     const [isSaving, setIsSaving] = useState(false);
     const [justSaved, setJustSaved] = useState(false);
@@ -87,6 +89,8 @@ export function PhotoMetadataEditor({
             setAlt(item.alt ?? '');
             setCaption(item.caption ?? '');
             setDescription(item.description ?? '');
+            setPhotographer(item.attribution?.photographer ?? '');
+            setCreditUrl(item.attribution?.sourceUrl ?? '');
             setFieldErrors({});
             setJustSaved(false);
         }
@@ -95,7 +99,7 @@ export function PhotoMetadataEditor({
 
     const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const values = { alt, caption, description };
+        const values = { alt, caption, description, photographer, creditUrl };
         const errors = validatePhotoMetadataFields(values, t);
         setFieldErrors(errors);
         if (Object.keys(errors).length > 0) {
@@ -104,7 +108,9 @@ export function PhotoMetadataEditor({
 
         setIsSaving(true);
         setJustSaved(false);
-        const ok = await onSave(item, buildPhotoMetadataUpdateBody(values));
+        // The row's existing credit is passed along so a stock import keeps its
+        // provider and licence when the host only corrects the photographer.
+        const ok = await onSave(item, buildPhotoMetadataUpdateBody(values, item.attribution));
         setIsSaving(false);
         if (ok) {
             setJustSaved(true);
@@ -209,6 +215,73 @@ export function PhotoMetadataEditor({
                             <p className={styles.fieldError}>{fieldErrors.description}</p>
                         )}
                     </div>
+
+                    <fieldset className={styles.metadataCreditGroup}>
+                        <legend className={styles.formLabel}>
+                            {t(
+                                'host.properties.editor.photo.creditLegend',
+                                'Crédito de la foto (opcional)'
+                            )}
+                        </legend>
+                        <p className={styles.formHint}>
+                            {t(
+                                'host.properties.editor.photo.creditHint',
+                                'Dejalo vacío si la foto es tuya. Completalo cuando la sacó otra persona: un fotógrafo que contrataste, alguien que te la prestó, o una imagen de un banco de fotos. En esos casos suele ser una condición de uso nombrar al autor, y publicarla sin crédito puede ser un problema legal para vos. El crédito se muestra debajo de la foto en tu ficha.'
+                            )}
+                        </p>
+
+                        <div className={styles.formGroup}>
+                            <label
+                                className={styles.formLabel}
+                                htmlFor={fieldId('photographer')}
+                            >
+                                {t(
+                                    'host.properties.editor.photo.photographerLabel',
+                                    '¿Quién sacó la foto?'
+                                )}
+                            </label>
+                            <input
+                                id={fieldId('photographer')}
+                                type="text"
+                                className={styles.formInput}
+                                value={photographer}
+                                onChange={(e) => setPhotographer(e.target.value)}
+                                placeholder={t(
+                                    'host.properties.editor.photo.photographerPlaceholder',
+                                    'Ej: Estudio Paraná'
+                                )}
+                                disabled={!canOperate || isSaving}
+                            />
+                            {fieldErrors.photographer && (
+                                <p className={styles.fieldError}>{fieldErrors.photographer}</p>
+                            )}
+                        </div>
+
+                        <div className={styles.formGroup}>
+                            <label
+                                className={styles.formLabel}
+                                htmlFor={fieldId('creditUrl')}
+                            >
+                                {t(
+                                    'host.properties.editor.photo.creditUrlLabel',
+                                    'Link del autor (opcional)'
+                                )}
+                            </label>
+                            <input
+                                id={fieldId('creditUrl')}
+                                type="url"
+                                inputMode="url"
+                                className={styles.formInput}
+                                value={creditUrl}
+                                onChange={(e) => setCreditUrl(e.target.value)}
+                                placeholder="https://..."
+                                disabled={!canOperate || isSaving}
+                            />
+                            {fieldErrors.creditUrl && (
+                                <p className={styles.fieldError}>{fieldErrors.creditUrl}</p>
+                            )}
+                        </div>
+                    </fieldset>
 
                     <div className={styles.metadataActions}>
                         <button

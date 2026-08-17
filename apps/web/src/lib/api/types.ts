@@ -3,6 +3,8 @@
  * Maps to the standard response shapes from @repo/schemas.
  */
 
+import type { MediaAttribution } from '../media';
+
 /** Pagination metadata returned by list endpoints */
 export interface PaginationMeta {
     readonly page: number;
@@ -322,6 +324,12 @@ export interface AccommodationMediaItem {
     /** Longer photo description (HOS-125 — correctable via updateMedia). */
     readonly description?: string;
     readonly alt?: string;
+    /**
+     * Photo credit written by the host, or carried in from a stock import
+     * (H-125). Read back into the metadata panel every time it opens, so an
+     * existing credit is corrected rather than silently overwritten.
+     */
+    readonly attribution?: MediaAttribution;
     readonly width?: number;
     readonly height?: number;
     readonly isFeatured: boolean;

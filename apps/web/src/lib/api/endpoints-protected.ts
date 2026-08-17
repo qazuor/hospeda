@@ -37,6 +37,7 @@ import type {
     ValidationResult
 } from '@repo/schemas';
 import { MAX_BULK_CHECK_ENTITY_IDS } from '@repo/schemas';
+import type { MediaAttribution } from '../media';
 import { apiClient } from './client';
 import type { ApiResult, PaginatedResponse } from './types';
 
@@ -4895,6 +4896,8 @@ export interface AccommodationMediaRow {
     readonly caption?: string;
     readonly description?: string;
     readonly alt?: string;
+    /** Photo credit (H-125). `null` when the row has none. */
+    readonly attribution?: MediaAttribution | null;
     readonly isFeatured: boolean;
     readonly sortOrder: number;
     readonly state: 'visible' | 'archived';
@@ -5061,6 +5064,8 @@ export const accommodationMediaApi = {
             readonly caption?: string | null;
             readonly description?: string | null;
             readonly alt?: string | null;
+            /** Whole credit object, or `null` to clear it. */
+            readonly attribution?: MediaAttribution | null;
         };
     }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
         return apiClient.patch({
