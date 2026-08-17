@@ -192,7 +192,8 @@
             }
         },
         "usage": {
-            "label": "{{current}} of {{max}} properties",
+            "label_one": "{{current}} of {{max}} property",
+            "label_other": "{{current}} of {{max}} properties",
             "unlimited": "Unlimited properties",
             "upgrade": "Upgrade plan"
         },
@@ -295,7 +296,8 @@
                 "invalidType": "Only JPG, PNG or WebP files are allowed",
                 "tooLarge": "File cannot exceed {{maxSize}}MB",
                 "uploadFailed": "Failed to upload image",
-                "galleryCapReached": "Gallery limit reached (max {{cap}} photos)",
+                "galleryCapReached_one": "Gallery limit reached (max {{cap}} photo)",
+                "galleryCapReached_other": "Gallery limit reached (max {{cap}} photos)",
                 "galleryCapLabel": "Gallery full"
             },
             "faq": {
@@ -549,12 +551,16 @@
                 "status": {
                     "missingDescription": "⚠ Description missing",
                     "missingPrice": "⚠ No price set",
-                    "guests": "Up to {{count}} guests",
+                    "guests_one": "Up to {{count}} guest",
+                    "guests_other": "Up to {{count}} guests",
                     "missingCoordinates": "⚠ Not placed on the map",
-                    "selected": "{{count}} selected",
-                    "photos": "{{count}} photos",
+                    "selected_one": "{{count}} selected",
+                    "selected_other": "{{count}} selected",
+                    "photos_one": "{{count}} photo",
+                    "photos_other": "{{count}} photos",
                     "missingPhotos": "⚠ No photos",
-                    "faqs": "{{count}} questions",
+                    "faqs_one": "{{count}} question",
+                    "faqs_other": "{{count}} questions",
                     "missingContact": "⚠ No contact details",
                     "blockedFromPublishing": "⛔ Needed to publish: {{fields}}"
                 }
@@ -605,7 +611,8 @@
                 "phone": "Phone",
                 "website": "Website",
                 "coordinatesLabel": "Imported location",
-                "amenitiesCount": "{{count}} imported amenities"
+                "amenitiesCount_one": "{{count}} imported amenity",
+                "amenitiesCount_other": "{{count}} imported amenities"
             }
         },
         "errors": {
@@ -792,7 +799,17 @@
             "trialCalloutTitleIneligible": "Set up your property",
             "trialNote": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
             "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan.",
-            "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel."
+            "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
+            "precheck": {
+                "resumeDeleteOrUpgrade": {
+                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
+                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan."
+                },
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
+                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one."
+                }
+            }
         }
     }
 }

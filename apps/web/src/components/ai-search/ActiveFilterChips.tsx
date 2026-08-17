@@ -180,6 +180,7 @@ function resolveChipLabel(
     key: keyof SearchIntentEntities,
     value: unknown,
     t: ReturnType<typeof createTranslations>['t'],
+    tPlural: ReturnType<typeof createTranslations>['tPlural'],
     destinations?: Readonly<Record<string, string>>
 ): ChipDescriptor {
     // Skip undefined/null.
@@ -245,9 +246,18 @@ function resolveChipLabel(
         };
     }
 
-    // Numeric ranges.
+    // Numeric ranges. `minGuests`/`maxGuests` carry a real countable noun
+    // ("huésped(es)") and pluralize; the rest (price, rating, bedrooms,
+    // bathrooms) are bare numeric labels with no noun to agree with.
     if (key in NUMERIC_CHIP_KEYS) {
         const i18nKey = NUMERIC_CHIP_KEYS[key] as string;
+        const numericValue = Number(value);
+        if (key === 'minGuests' || key === 'maxGuests') {
+            return {
+                label: tPlural(i18nKey, numericValue, { value: numericValue }),
+                visible: true
+            };
+        }
         return {
             label: t(i18nKey, `${key}: {{value}}`, { value: String(value) }),
             visible: true
@@ -382,6 +392,7 @@ function resolveCityDestinationChip(
     filters: SearchIntentEntities,
     appliedParams: Readonly<Record<string, unknown>> | null | undefined,
     t: ReturnType<typeof createTranslations>['t'],
+    tPlural: ReturnType<typeof createTranslations>['tPlural'],
     destinations?: Readonly<Record<string, string>>
 ): { readonly key: keyof SearchIntentEntities; readonly label: string } | null {
     // HOS-298: a destination id that cannot identify a row is treated as absent
@@ -402,12 +413,13 @@ function resolveCityDestinationChip(
                 'destinationId',
                 appliedParams.destinationId,
                 t,
+                tPlural,
                 destinations
             );
             return descriptor.visible ? { key: 'destinationId', label: descriptor.label } : null;
         }
         if (typeof appliedParams.q === 'string') {
-            const descriptor = resolveChipLabel('city', appliedParams.q, t, destinations);
+            const descriptor = resolveChipLabel('city', appliedParams.q, t, tPlural, destinations);
             return descriptor.visible ? { key: 'city', label: descriptor.label } : null;
         }
         // Extracted but never applied (e.g. dropped in favor of geo, or the
@@ -417,10 +429,16 @@ function resolveCityDestinationChip(
 
     // Legacy mode (no applied-params snapshot) — best-effort from raw intent.
     if (intentDestinationId !== undefined) {
-        const descriptor = resolveChipLabel('destinationId', intentDestinationId, t, destinations);
+        const descriptor = resolveChipLabel(
+            'destinationId',
+            intentDestinationId,
+            t,
+            tPlural,
+            destinations
+        );
         return descriptor.visible ? { key: 'destinationId', label: descriptor.label } : null;
     }
-    const descriptor = resolveChipLabel('city', filters.city, t, destinations);
+    const descriptor = resolveChipLabel('city', filters.city, t, tPlural, destinations);
     return descriptor.visible ? { key: 'city', label: descriptor.label } : null;
 }
 
@@ -452,7 +470,7 @@ export function ActiveFilterChips({
     destinations,
     appliedParams
 }: ActiveFilterChipsProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     if (!filters) return null;
 
@@ -472,7 +490,13 @@ export function ActiveFilterChips({
         if (CITY_DESTINATION_KEYS.has(key)) {
             if (cityDestinationChipRendered) continue;
             cityDestinationChipRendered = true;
-            const resolved = resolveCityDestinationChip(filters, appliedParams, t, destinations);
+            const resolved = resolveCityDestinationChip(
+                filters,
+                appliedParams,
+                t,
+                tPlural,
+                destinations
+            );
             if (resolved) chips.push(resolved);
             continue;
         }
@@ -485,7 +509,7 @@ export function ActiveFilterChips({
             // a real geo pair later in the entries must still get its chip.
             if (isOrphanedDestinationLocationType(key, filters)) continue;
             // Only render if at least one location key has a non-null value.
-            const descriptor = resolveChipLabel(key, value, t, destinations);
+            const descriptor = resolveChipLabel(key, value, t, tPlural, destinations);
             if (!descriptor.visible) continue;
             // Use 'locationType' as the canonical key to remove for the location group.
             chips.push({ key: 'locationType', label: descriptor.label });
@@ -493,7 +517,7 @@ export function ActiveFilterChips({
             continue;
         }
 
-        const descriptor = resolveChipLabel(key, value, t, destinations);
+        const descriptor = resolveChipLabel(key, value, t, tPlural, destinations);
         if (!descriptor.visible) continue;
         chips.push({ key, label: descriptor.label });
     }

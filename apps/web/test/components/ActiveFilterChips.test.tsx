@@ -41,7 +41,16 @@ vi.mock('@/lib/i18n', () => {
         }
         return raw;
     };
-    const translations = { t };
+    // No real translation strings exist in this mock, so build a value
+    // directly from the key + merged params (mirrors pluralize()'s own
+    // merge) rather than trying to interpolate into a template that isn't
+    // there. The key is included so assertions can still identify which
+    // filter a chip came from.
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>): string =>
+        `${key} ${Object.values({ ...params, count })
+            .map(String)
+            .join(' ')}`;
+    const translations = { t, tPlural };
     return {
         createTranslations: (_locale: string) => translations
     };

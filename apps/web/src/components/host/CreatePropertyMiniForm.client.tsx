@@ -260,7 +260,7 @@ export function CreatePropertyMiniForm({
     canAccessAdminPanel,
     trialDays
 }: CreatePropertyMiniFormProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     const nameId = useId();
     const summaryId = useId();
@@ -1707,10 +1707,10 @@ export function CreatePropertyMiniForm({
                                 <div data-testid="extras-amenities">
                                     <span className={styles.extrasAmenityChip}>
                                         ✓{' '}
-                                        {t(
+                                        {tPlural(
                                             'host.miniForm.importedExtras.fields.amenitiesCount',
-                                            `${String(extras.amenityIds.length)} amenidades importadas`
-                                        ).replace('{{count}}', String(extras.amenityIds.length))}
+                                            extras.amenityIds.length
+                                        )}
                                     </span>
                                 </div>
                             ) : null}

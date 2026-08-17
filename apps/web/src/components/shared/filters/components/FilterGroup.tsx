@@ -57,7 +57,7 @@ export function FilterGroup({
     onReset,
     children
 }: FilterGroupProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const showCountBadge = typeof activeCount === 'number' && activeCount > 0;
 
     return (
@@ -85,10 +85,7 @@ export function FilterGroup({
                             <span
                                 className={styles.groupCountBadge}
                                 role="img"
-                                aria-label={t(
-                                    'ui.filter.activeSelections',
-                                    `${activeCount} selecciones activas`
-                                ).replace('{{count}}', String(activeCount))}
+                                aria-label={tPlural('ui.filter.activeSelections', activeCount ?? 0)}
                             >
                                 {activeCount}
                             </span>

@@ -30,18 +30,22 @@ import { ComparisonMatrix } from '../../../../src/components/shared/compare/Comp
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../../src/lib/i18n', () => ({
-    createT:
-        (_locale: string) => (key: string, fallback?: string, params?: Record<string, unknown>) => {
-            const template = fallback ?? key;
-            if (!params) {
-                return template;
-            }
-            return template.replace(/\{\{(\w+)\}\}/g, (_match, name: string) =>
-                name in params ? String(params[name]) : `{{${name}}}`
-            );
-        }
-}));
+vi.mock('../../../../src/lib/i18n', () => {
+    const interpolate = (template: string, params?: Record<string, unknown>): string => {
+        if (!params) return template;
+        return template.replace(/\{\{(\w+)\}\}/g, (_match, name: string) =>
+            name in params ? String(params[name]) : `{{${name}}}`
+        );
+    };
+    const t = (key: string, fallback?: string, params?: Record<string, unknown>) =>
+        interpolate(fallback ?? key, params);
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>) =>
+        interpolate(key, { ...params, count });
+    return {
+        createT: (_locale: string) => t,
+        createTranslations: (_locale: string) => ({ t, tPlural })
+    };
+});
 
 vi.mock('../../../../src/components/shared/compare/ComparisonMatrix.module.css', () => ({
     default: new Proxy({} as Record<string, string>, { get: (_t, prop) => String(prop) })

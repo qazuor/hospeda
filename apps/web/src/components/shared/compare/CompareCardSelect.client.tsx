@@ -60,7 +60,7 @@ import type { FC, KeyboardEvent, MouseEvent } from 'react';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { useCompareMode } from '@/store/compare-store';
 import { addToast } from '@/store/toast-store';
 import styles from './CompareCardSelect.module.css';
@@ -107,7 +107,7 @@ export const CompareCardSelect: FC<CompareCardSelectProps> = ({
     locale = 'es',
     className
 }) => {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
     const compareMode = useCompareMode();
     const { isInList, isLoading, maxItems, toggle } = useCompareGuard();
 
@@ -183,11 +183,7 @@ export const CompareCardSelect: FC<CompareCardSelectProps> = ({
         // result.reason === 'limit'
         addToast({
             type: 'warning',
-            message: t(
-                'accommodations.comparison.limit.message',
-                'Tu plan permite comparar hasta {{max}} alojamientos a la vez.',
-                { max: maxItems }
-            )
+            message: tPlural('accommodations.comparison.limit.message', maxItems, { max: maxItems })
         });
     };
 

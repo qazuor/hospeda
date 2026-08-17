@@ -86,7 +86,14 @@ vi.mock('../../../../src/lib/i18n', () => ({
                       raw
                   )
                 : raw;
-        }
+        },
+        // Matches the real `createTranslations().tPlural`: no fallback arg,
+        // just key + count + optional extra params.
+        tPlural: (key: string, count: number, params?: Record<string, string | number>): string =>
+            Object.entries({ ...params, count }).reduce(
+                (acc, [name, value]) => acc.replaceAll(`{{${name}}}`, String(value)),
+                key
+            )
     })
 }));
 

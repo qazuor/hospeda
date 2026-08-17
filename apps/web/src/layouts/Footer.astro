@@ -41,7 +41,7 @@ interface Props {
 }
 
 const { locale } = Astro.props;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 // Auth state for the NewsletterForm island (SPEC-101 T-101-33). The App.Locals
 // type does not yet declare `user` — narrowed cast matches the workaround used
@@ -130,7 +130,9 @@ const legalLinks = [
 const cookiePreferencesLabel = t("cookieConsent.footer.preferencesLink", "Preferencias de cookies");
 const trustLabel = t("footer.trustSignals.label", "Por qué elegirnos");
 const paymentsLabel = t("footer.payments.label", "Métodos de pago");
-const accommodationsCountLabel = t("footer.trustSignals.accommodationsCount", "+{{count}} alojamientos").replace("{{count}}", formattedCount);
+const accommodationsCountLabel = tPlural("footer.trustSignals.accommodationsCount", statsAccommodations, {
+    formatted: formattedCount
+});
 
 /** Payment method logos rendered as inline SVG from `@repo/icons` (single-
  *  color brand marks). Naranja X is intentionally omitted — no mark

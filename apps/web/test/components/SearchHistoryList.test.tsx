@@ -44,7 +44,10 @@ vi.mock('../../src/lib/i18n', () => ({
                 fallback
             );
         },
-        tPlural: (_key: string, count: number) => `${count} filtro(s)`
+        tPlural: (key: string, count: number) => {
+            if (key === 'account.searchHistory.results') return `${count} resultados`;
+            return `${count} filtro(s)`;
+        }
     })
 }));
 

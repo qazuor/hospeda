@@ -51,7 +51,7 @@ const {
     subscriptionUrl
 } = Astro.props;
 
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const content = resolvePrecheckPanelContent({
     decision,
@@ -63,7 +63,11 @@ const content = resolvePrecheckPanelContent({
 
 const title = t(content.titleKey, content.titleFallback);
 const body = content.showQuota
-    ? t(content.bodyKey, content.bodyFallback, { currentCount, maxAllowed })
+    ? tPlural(
+          content.bodyKey,
+          content.bodyPluralBasis === 'maxAllowed' ? maxAllowed : currentCount,
+          { currentCount, maxAllowed }
+      )
     : t(content.bodyKey, content.bodyFallback);
 
 // Only decisions with draftCount > 1 (pick_draft_*) show the context list.

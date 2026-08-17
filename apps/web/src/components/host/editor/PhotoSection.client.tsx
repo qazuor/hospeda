@@ -134,7 +134,7 @@ export function PhotoSection({
     initialFeaturedImage = null,
     initialGallery = []
 }: PhotoSectionProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const featuredInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -363,10 +363,11 @@ export function PhotoSection({
 
             if (isGalleryFull) {
                 reportUploadError(
-                    t(
+                    tPlural(
                         'host.properties.editor.photo.galleryCapReached',
-                        `Límite de galería alcanzado (máx. ${ACCOMMODATION_GALLERY_CAP} fotos)`
-                    ).replace('{{cap}}', String(ACCOMMODATION_GALLERY_CAP))
+                        ACCOMMODATION_GALLERY_CAP,
+                        { cap: ACCOMMODATION_GALLERY_CAP }
+                    )
                 );
                 if (galleryInputRef.current) {
                     galleryInputRef.current.value = '';
@@ -426,7 +427,7 @@ export function PhotoSection({
                 }
             }
         },
-        [accommodationId, isGalleryFull, validateFile, t, reportUploadError]
+        [accommodationId, isGalleryFull, validateFile, t, reportUploadError, tPlural]
     );
 
     /**
@@ -567,10 +568,11 @@ export function PhotoSection({
 
                 {isGalleryFull && (
                     <p className={styles.error}>
-                        {t(
+                        {tPlural(
                             'host.properties.editor.photo.galleryCapReached',
-                            `Límite de galería alcanzado (máx. ${ACCOMMODATION_GALLERY_CAP} fotos)`
-                        ).replace('{{cap}}', String(ACCOMMODATION_GALLERY_CAP))}
+                            ACCOMMODATION_GALLERY_CAP,
+                            { cap: ACCOMMODATION_GALLERY_CAP }
+                        )}
                     </p>
                 )}
 

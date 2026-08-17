@@ -188,8 +188,12 @@ export function DestinationPOIFilter({ categories, locale }: DestinationPOIFilte
             'destinations.detailPage.pointsOfInterestFilterClear',
             'Limpiar ({{count}})'
         ),
+        // `buildClearFacetChip` only renders this chip when `count >= 2` (see its
+        // own doc comment), so the singular `_one` form can never be reached
+        // here — the `_other` key is read directly rather than faking a
+        // ternary over an unreachable branch.
         ariaLabelTemplate: t(
-            'destinations.detailPage.pointsOfInterestFilterClearAria',
+            'destinations.detailPage.pointsOfInterestFilterClearAria_other',
             'Quitar los {{count}} filtros de categoría'
         ),
         icon: XCircleIcon

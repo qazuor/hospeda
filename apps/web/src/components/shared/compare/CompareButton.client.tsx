@@ -28,7 +28,7 @@ import type { FC, MouseEvent } from 'react';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { useCompareMode } from '@/store/compare-store';
 import { addToast } from '@/store/toast-store';
 import styles from './CompareButton.module.css';
@@ -88,7 +88,7 @@ export const CompareButton: FC<CompareButtonProps> = ({
     locale = 'es',
     className
 }) => {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
     const { isInList, isLoading, maxItems, toggle } = useCompareGuard();
     const compareMode = useCompareMode();
 
@@ -163,11 +163,7 @@ export const CompareButton: FC<CompareButtonProps> = ({
         // result.reason === 'limit'
         addToast({
             type: 'warning',
-            message: t(
-                'accommodations.comparison.limit.message',
-                'Tu plan permite comparar hasta {{max}} alojamientos a la vez.',
-                { max: maxItems }
-            )
+            message: tPlural('accommodations.comparison.limit.message', maxItems, { max: maxItems })
         });
     };
 

@@ -458,7 +458,7 @@ export function SearchHistoryList({
     function formatResultCount(count: number | null): string {
         if (count === null) return '';
         if (count === 0) return t('account.searchHistory.noResults', 'Sin resultados');
-        return t('account.searchHistory.results', '{{count}} resultados', { count });
+        return tPlural('account.searchHistory.results', count);
     }
 
     // Locale-aware upgrade CTA target for the entitlement-gated empty state

@@ -144,11 +144,10 @@
         "bnb": "B&B",
         "rural": "Rural",
         "viewAriaLabel": "View {{type}} accommodations",
-        "viewWithCountAriaLabel": "View {{count}} {{type}} accommodations",
+        "viewWithCountAriaLabel_one": "View {{count}} {{type}} accommodation",
+        "viewWithCountAriaLabel_other": "View {{count}} {{type}} accommodations",
         "count_one": "{{count}} accommodation",
-        "count_other": "{{count}} accommodations",
-        "countSingular": "{{count}} accommodation",
-        "countPlural": "{{count}} accommodations"
+        "count_other": "{{count}} accommodations"
     },
     "newsletter": {
         "title": "Get the best deals from the Litoral",
@@ -244,7 +243,10 @@
         "checkOutLabel": "Check-out",
         "adultsLabel": "Adults",
         "childrenLabel": "Children",
-        "guestsSummary": "{adults} adults, {children} children",
+        "guestsAdultsCount_one": "{{count}} adult",
+        "guestsAdultsCount_other": "{{count}} adults",
+        "guestsChildrenCount_one": "{{count}} child",
+        "guestsChildrenCount_other": "{{count}} children",
         "ctaLabel": "Search",
         "loadingText": "Loading...",
         "noDestinationsText": "No destinations available",

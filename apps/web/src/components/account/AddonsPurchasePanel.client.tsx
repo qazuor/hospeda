@@ -24,7 +24,7 @@ import { billingApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import styles from './AddonsPurchasePanel.module.css';
 
@@ -62,7 +62,7 @@ export function AddonsPurchasePanel({
     ownedAddonSlugs,
     accommodations
 }: AddonsPurchasePanelProps) {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     /** Selected target accommodation id, keyed by addon slug. */
     const [selectedAccommodationBySlug, setSelectedAccommodationBySlug] = useState<
@@ -194,9 +194,7 @@ export function AddonsPurchasePanel({
                     <span className={styles.billingType}>{billingTypeLabel}</span>
                     {addon.billingType === 'one_time' && addon.durationDays !== null && (
                         <span className={styles.duration}>
-                            {t('account.addons.duration', '{{days}} días', {
-                                days: addon.durationDays
-                            })}
+                            {tPlural('account.addons.duration', addon.durationDays)}
                         </span>
                     )}
                 </div>

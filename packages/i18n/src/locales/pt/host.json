@@ -192,7 +192,8 @@
             }
         },
         "usage": {
-            "label": "{{current}} de {{max}} propriedades",
+            "label_one": "{{current}} de {{max}} propriedade",
+            "label_other": "{{current}} de {{max}} propriedades",
             "unlimited": "Propriedades ilimitadas",
             "upgrade": "Melhorar plano"
         },
@@ -295,7 +296,8 @@
                 "invalidType": "Apenas arquivos JPG, PNG ou WebP são permitidos",
                 "tooLarge": "O arquivo não pode exceder {{maxSize}}MB",
                 "uploadFailed": "Falha ao fazer upload da imagem",
-                "galleryCapReached": "Limite da galeria atingido (máx. {{cap}} fotos)",
+                "galleryCapReached_one": "Limite da galeria atingido (máx {{cap}} foto)",
+                "galleryCapReached_other": "Limite da galeria atingido (máx {{cap}} fotos)",
                 "galleryCapLabel": "Galeria cheia"
             },
             "faq": {
@@ -549,12 +551,16 @@
                 "status": {
                     "missingDescription": "⚠ Falta a descrição",
                     "missingPrice": "⚠ Sem preço",
-                    "guests": "Até {{count}} hóspedes",
+                    "guests_one": "Até {{count}} hóspede",
+                    "guests_other": "Até {{count}} hóspedes",
                     "missingCoordinates": "⚠ Sem localização no mapa",
-                    "selected": "{{count}} selecionados",
-                    "photos": "{{count}} fotos",
+                    "selected_one": "{{count}} selecionado",
+                    "selected_other": "{{count}} selecionados",
+                    "photos_one": "{{count}} foto",
+                    "photos_other": "{{count}} fotos",
                     "missingPhotos": "⚠ Sem fotos",
-                    "faqs": "{{count}} perguntas",
+                    "faqs_one": "{{count}} pergunta",
+                    "faqs_other": "{{count}} perguntas",
                     "missingContact": "⚠ Sem dados de contato",
                     "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
                 }
@@ -605,7 +611,8 @@
                 "phone": "Telefone",
                 "website": "Site",
                 "coordinatesLabel": "Localização importada",
-                "amenitiesCount": "{{count}} comodidades importadas"
+                "amenitiesCount_one": "{{count}} comodidade importada",
+                "amenitiesCount_other": "{{count}} comodidades importadas"
             }
         },
         "errors": {
@@ -792,7 +799,17 @@
             "trialCalloutTitleIneligible": "Monte sua propriedade",
             "trialNote": "Você pode montar sua propriedade agora. O teste gratuito de {{trialDays}} dias começa quando você escolhe seu plano: cadastra seu cartão e nada é cobrado até terminar. Vale só para a sua primeira assinatura.",
             "trialNoteIneligible": "Voce pode criar e editar seu rascunho agora. Para publica-lo e ficar visivel vai precisar de um plano de anfitriao ativo.",
-            "subtitle": "Criamos o rascunho com esses dados. As fotos, os preços e o resto você carrega no passo 2, no painel."
+            "subtitle": "Criamos o rascunho com esses dados. As fotos, os preços e o resto você carrega no passo 2, no painel.",
+            "precheck": {
+                "resumeDeleteOrUpgrade": {
+                    "body_one": "Você está usando {{currentCount}} propriedade e seu plano permite {{maxAllowed}}. Você pode retomar seu rascunho, excluí-lo para liberar espaço ou fazer upgrade do plano.",
+                    "body_other": "Você está usando {{currentCount}} propriedades e seu plano permite {{maxAllowed}}. Você pode retomar seu rascunho, excluí-lo para liberar espaço ou fazer upgrade do plano."
+                },
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "Você está usando {{currentCount}} propriedade e seu plano permite {{maxAllowed}}. Edite um dos seus rascunhos existentes ou faça upgrade do plano para criar um novo.",
+                    "body_other": "Você está usando {{currentCount}} propriedades e seu plano permite {{maxAllowed}}. Edite um dos seus rascunhos existentes ou faça upgrade do plano para criar um novo."
+                }
+            }
         }
     }
 }

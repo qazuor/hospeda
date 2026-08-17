@@ -346,21 +346,26 @@ vi.mock('../../../src/components/form/SearchableSelect.client', () => ({
  * the placeholder untestable — which is exactly how this file went red when the
  * trial copy stopped hardcoding its number.
  */
-vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
-            const raw = fallback ?? _key;
-            if (!params) return raw;
-            return Object.keys(params).reduce(
-                (acc, k) =>
-                    acc
-                        .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k]))
-                        .replace(new RegExp(`\\{${k}\\}`, 'g'), String(params[k])),
-                raw
-            );
-        }
-    })
-}));
+vi.mock('../../../src/lib/i18n', () => {
+    const t = (_key: string, fallback?: string, params?: Record<string, unknown>) => {
+        const raw = fallback ?? _key;
+        if (!params) return raw;
+        return Object.keys(params).reduce(
+            (acc, k) =>
+                acc
+                    .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k]))
+                    .replace(new RegExp(`\\{${k}\\}`, 'g'), String(params[k])),
+            raw
+        );
+    };
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>) =>
+        `${key} ${Object.values({ ...params, count })
+            .map(String)
+            .join(' ')}`;
+    return {
+        createTranslations: (_locale: string) => ({ t, tPlural })
+    };
+});
 
 /** Mock logger to suppress output in tests. */
 vi.mock('../../../src/lib/logger', () => ({

@@ -118,7 +118,7 @@ export function DestinationsIsland(props: DestinationsIslandProps) {
 }
 
 function DestinationsIslandInner({ destinations, locale }: DestinationsIslandProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     const [activeIndex, setActiveIndex] = useState(0);
     const total = destinations.length;
@@ -242,16 +242,10 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                                     locale,
                                     path: `destinos/${destination.slug}`
                                 });
-                                const accommodationsLabel =
-                                    destination.accommodationsCount === 1
-                                        ? t(
-                                              'destinations.card.accommodation_singular',
-                                              'alojamiento'
-                                          )
-                                        : t(
-                                              'destinations.card.accommodation_plural',
-                                              'alojamientos'
-                                          );
+                                const accommodationsLabel = tPlural(
+                                    'destinations.card.accommodation',
+                                    destination.accommodationsCount
+                                );
                                 const ratingAriaLabel = `${t(
                                     'destinations.card.rating.label',
                                     'Calificación'
@@ -333,7 +327,6 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                                                     {destination.name}
                                                 </h3>
                                                 <p className={styles.cardCount}>
-                                                    {destination.accommodationsCount}{' '}
                                                     {accommodationsLabel}
                                                 </p>
                                                 {(destination.attractions?.length ?? 0) > 0 && (

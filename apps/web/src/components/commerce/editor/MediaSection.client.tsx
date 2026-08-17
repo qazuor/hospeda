@@ -252,7 +252,7 @@ export function MediaSection({
     initialFeaturedImage = null,
     initialGallery = []
 }: MediaSectionProps): JSX.Element {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const featuredInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -468,12 +468,7 @@ export function MediaSection({
                 return;
             }
             if (isGalleryFull) {
-                reportError(
-                    t(
-                        'commerce.owner.editor.media.capReached',
-                        'Límite de galería alcanzado (máx. {{cap}} fotos)'
-                    ).replace('{{cap}}', String(galleryCap))
-                );
+                reportError(tPlural('commerce.owner.editor.media.capReached', galleryCap));
                 if (galleryInputRef.current) {
                     galleryInputRef.current.value = '';
                 }
@@ -525,7 +520,7 @@ export function MediaSection({
                 }
             }
         },
-        [isGalleryFull, validateFile, vertical, listingId, t, reportError, galleryCap]
+        [isGalleryFull, validateFile, vertical, listingId, t, reportError, galleryCap, tPlural]
     );
 
     /**

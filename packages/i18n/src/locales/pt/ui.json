@@ -99,7 +99,6 @@
         "closeModal": "Fechar janela",
         "mapMarkers": "Marcadores do mapa",
         "goToImageOfTotal": "Ir para imagem {current} de {total}",
-        "mapShowingLocations": "Mapa mostrando {count} localizações",
         "rateStars": "Avaliar {{count}} estrela(s)",
         "ratingOutOf": "Avaliação: {{rating}} de 5 estrelas"
     },
@@ -136,7 +135,8 @@
         "searchPlaceholder": "Buscar {entityType}...",
         "selectItems": "Selecionar itens...",
         "selectItem": "Selecionar item...",
-        "selectedCount": "{count} selecionados",
+        "selectedCount_one": "{{count}} selecionado",
+        "selectedCount_other": "{{count}} selecionados",
         "errors": {
             "loadingSelection": "Erro ao carregar seleção",
             "loadingOptions": "Erro ao carregar opções",
@@ -192,9 +192,10 @@
         "featured": "Destaques",
         "openFilters": "Filtros",
         "closeFilters": "Fechar filtros",
-        "activeCount": "{{count}} filtro ativo",
-        "activeCountPlural": "{{count}} filtros ativos",
-        "activeSelections": "{{count}} seleções ativas",
+        "activeCount_one": "{{count}} filtro ativo",
+        "activeCount_other": "{{count}} filtros ativos",
+        "activeSelections_one": "{{count}} seleção ativa",
+        "activeSelections_other": "{{count}} seleções ativas",
         "featuredOption": "Destaque",
         "close": "Fechar",
         "noResults": "Nenhum resultado",
@@ -229,5 +230,9 @@
     },
     "announcements": {
         "dismiss": "Fechar comunicado"
+    },
+    "listing": {
+        "resultsFound_one": "{{count}} resultado encontrado",
+        "resultsFound_other": "{{count}} resultados encontrados"
     }
 }

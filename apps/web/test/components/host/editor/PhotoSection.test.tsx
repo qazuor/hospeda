@@ -49,7 +49,11 @@ const {
 // (BETA-98 regression: galleryAlt must interpolate {{index}} via params, not
 // via a pre-interpolated fallback string).
 const MOCK_TRANSLATIONS: Record<string, string> = {
-    'host.properties.editor.photo.galleryAlt': 'Foto {{index}}'
+    'host.properties.editor.photo.galleryAlt': 'Foto {{index}}',
+    'host.properties.editor.photo.galleryCapReached_one':
+        'Límite de galería alcanzado (máx {{cap}} foto)',
+    'host.properties.editor.photo.galleryCapReached_other':
+        'Límite de galería alcanzado (máx {{cap}} fotos)'
 };
 
 vi.mock('@/lib/i18n', () => ({
@@ -64,7 +68,14 @@ vi.mock('@/lib/i18n', () => ({
                 raw
             );
         },
-        tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
+        tPlural: (key: string, count: number, params?: Record<string, unknown>) => {
+            const suffixedKey = `${key}_${count === 1 ? 'one' : 'other'}`;
+            const raw = MOCK_TRANSLATIONS[suffixedKey] ?? suffixedKey;
+            return Object.entries({ ...params, count }).reduce(
+                (acc, [k, v]) => acc.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v)),
+                raw
+            );
+        }
     })
 }));
 

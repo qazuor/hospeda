@@ -209,7 +209,7 @@ export function buildSearchUrl(args: {
 }
 
 function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const barRef = useRef<HTMLDivElement>(null);
     const isMobileSheet = useIsMobileSheet();
 
@@ -508,11 +508,10 @@ function SearchBarInner({ locale, destinations, searchBaseUrl }: SearchBarProps)
         return t(`home.searchBar.types.${first}`, first);
     }, [selectedTypes, t]);
 
-    // Guests display value
-    const guestsDisplay = t('home.searchBar.guestsSummary', '{adults} adultos, {children} niños', {
-        adults,
-        children
-    });
+    // Guests display value — composed from two independently pluralized
+    // counters (adults, children) rather than one combined template, so
+    // "1 adulto" and "1 niño" read correctly alongside their plural siblings.
+    const guestsDisplay = `${tPlural('home.searchBar.guestsAdultsCount', adults)}, ${tPlural('home.searchBar.guestsChildrenCount', children)}`;
 
     return (
         // biome-ignore lint/a11y/useSemanticElements: <search> element has inconsistent browser support

@@ -62,7 +62,6 @@
         "clearFilters": "Limpiar filtros",
         "noResults": "No se encontraron destinos",
         "noResultsMessage": "Intenta ajustar los filtros o limpiar la búsqueda.",
-        "resultsAnnouncement": "{{count}} destinos encontrados",
         "loadingParents": "Cargando opciones...",
         "noParentsAvailable": "Sin opciones disponibles",
         "errorLoading": "Error al cargar",
@@ -76,10 +75,8 @@
         "location": "Ubicación",
         "accommodation_one": "{{count}} alojamiento",
         "accommodation_other": "{{count}} alojamientos",
-        "accommodation_singular": "alojamiento",
-        "accommodation_plural": "alojamientos",
-        "event_singular": "evento",
-        "event_plural": "eventos",
+        "event_one": "{{count}} evento",
+        "event_other": "{{count}} eventos",
         "cta": "Explorar destino",
         "attractionsLabel": "Atracciones",
         "badge": {
@@ -141,16 +138,10 @@
             }
         },
         "card": {
-            "accommodations": "{{count}} alojamiento | {{count}} alojamientos",
             "accommodation_one": "{{count}} alojamiento",
             "accommodation_other": "{{count}} alojamientos",
-            "accommodationSingular": "{{count}} alojamiento",
-            "accommodationPlural": "{{count}} alojamientos",
             "event_one": "{{count}} evento",
             "event_other": "{{count}} eventos",
-            "events": "{{count}} evento | {{count}} eventos",
-            "eventSingular": "{{count}} evento",
-            "eventPlural": "{{count}} eventos",
             "ratingLabel": "Puntuación: {{rating}} de 5",
             "featured": "Destacado",
             "attractions": "Atracciones",
@@ -213,11 +204,15 @@
         "location": "Ubicación",
         "stats": {
             "title": "En este destino",
-            "accommodations": "alojamientos",
-            "events": "eventos",
-            "attractions": "atracciones",
+            "accommodations_one": "alojamiento",
+            "accommodations_other": "alojamientos",
+            "events_one": "evento",
+            "events_other": "eventos",
+            "attractions_one": "atracción",
+            "attractions_other": "atracciones",
             "rating": "puntuación",
-            "reviews": "reseñas"
+            "reviews_one": "reseña",
+            "reviews_other": "reseñas"
         },
         "nearby": {
             "title": "Otros destinos en la zona",
@@ -253,7 +248,8 @@
         "reviews": {
             "title": "Reseñas",
             "empty": "Todavía no hay reseñas para este destino.",
-            "count": "{{count}} reseñas",
+            "count_one": "{{count}} reseña",
+            "count_other": "{{count}} reseñas",
             "viewAll": "Ver todas las reseñas",
             "modal": {
                 "close": "Cerrar",
@@ -299,7 +295,8 @@
         "pointsOfInterestTitle": "Puntos de interés",
         "pointsOfInterestFilterLabel": "Filtrar por categoría",
         "pointsOfInterestFilterClear": "Limpiar ({{count}})",
-        "pointsOfInterestFilterClearAria": "Quitar los {{count}} filtros de categoría",
+        "pointsOfInterestFilterClearAria_one": "Quitar el {{count}} filtro de categoría",
+        "pointsOfInterestFilterClearAria_other": "Quitar los {{count}} filtros de categoría",
         "pointsOfInterestEmptyFiltered": "No hay puntos de interés para las categorías seleccionadas."
     },
     "rating": {

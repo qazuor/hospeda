@@ -42,8 +42,10 @@
     "lowConfidenceMessage": "We couldn't understand your search. Try rephrasing it with different words.",
     "chips": {
         "type": "Type: {{value}}",
-        "minGuests": "Min. {{value}} guests",
-        "maxGuests": "Up to {{value}} guests",
+        "minGuests_one": "Min. {{value}} guest",
+        "minGuests_other": "Min. {{value}} guests",
+        "maxGuests_one": "Up to {{value}} guest",
+        "maxGuests_other": "Up to {{value}} guests",
         "minPrice": "From {{value}}",
         "maxPrice": "Up to {{value}}",
         "city": "City: {{value}}",

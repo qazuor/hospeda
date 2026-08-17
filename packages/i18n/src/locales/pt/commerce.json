@@ -205,7 +205,8 @@
                 "tooLarge": "O arquivo não pode exceder {{maxSize}}MB",
                 "uploadFailed": "Erro ao enviar a imagem",
                 "uploadTimeout": "O envio demorou demais. Tente novamente.",
-                "capReached": "Limite da galeria atingido (máx. {{cap}} fotos)"
+                "capReached_one": "Limite da galeria atingido (máx. {{cap}} foto)",
+                "capReached_other": "Limite da galeria atingido (máx. {{cap}} fotos)"
             },
             "slugImmutableNotice": "A URL pública é gerada a partir do nome ao criar o comércio e não pode ser alterada depois."
         },

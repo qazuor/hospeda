@@ -33,7 +33,8 @@
         },
         "limit": {
             "title": "Você atingiu o máximo",
-            "message": "Seu plano permite comparar até {{max}} hospedagens por vez.",
+            "message_one": "Seu plano permite comparar até {{max}} hospedagem por vez.",
+            "message_other": "Seu plano permite comparar até {{max}} hospedagens por vez.",
             "hint": "Remova uma para adicionar outra."
         },
         "bar": {
@@ -103,7 +104,6 @@
     "emptyMessage": "Em breve adicionaremos mais opcoes de hospedagem para voce.",
     "heading": "Hospedagens",
     "subheading": "Descubra hospedagens unicas e encontre o lugar perfeito para a sua proxima aventura",
-    "found": "hospedagens encontradas",
     "seeAll": "Ver todas as hospedagens →",
     "filters": {
         "title": "Filtros",
@@ -459,8 +459,10 @@
             "bathrooms": "Banheiros",
             "minNights": "Mínimo de noites",
             "maxNights": "Máximo de noites",
-            "guests": "{n} hóspedes",
-            "nights": "{n} noites"
+            "guests_one": "{{count}} hóspede",
+            "guests_other": "{{count}} hóspedes",
+            "nights_one": "{{count}} noite",
+            "nights_other": "{{count}} noites"
         },
         "gallery": {
             "viewAll": "Ver todas as fotos",
@@ -481,9 +483,12 @@
             "optional": "opcional",
             "perNightFlag": "por noite",
             "perGuestFlag": "por hóspede",
-            "capacityFact": "Até {n} hóspedes",
-            "minNightsFact": "Estadia mínima {n} noites",
-            "maxNightsFact": "Estadia máxima {n} noites",
+            "capacityFact_one": "Até {{count}} hóspede",
+            "capacityFact_other": "Até {{count}} hóspedes",
+            "minNightsFact_one": "Estadia mínima {{count}} noite",
+            "minNightsFact_other": "Estadia mínima {{count}} noites",
+            "maxNightsFact_one": "Estadia máxima {{count}} noite",
+            "maxNightsFact_other": "Estadia máxima {{count}} noites",
             "fees": {
                 "cleaning": "Limpeza",
                 "tax": "Impostos",
@@ -511,7 +516,8 @@
         },
         "reviewsDetail": {
             "noReviews": "Ainda não há avaliações",
-            "viewAll": "Ver todas as {n} avaliações",
+            "viewAll_one": "Ver a {{count}} avaliação",
+            "viewAll_other": "Ver todas as {{count}} avaliações",
             "breakdownLabel": "Pontuações detalhadas",
             "categories": {
                 "cleanliness": "Limpeza",
@@ -542,7 +548,8 @@
         },
         "amenitiesDetail": {
             "title": "Comodidades",
-            "viewAll": "Ver todas as {n} comodidades",
+            "viewAll_one": "Ver a {{count}} comodidade",
+            "viewAll_other": "Ver todas as {{count}} comodidades",
             "collapse": "Ver menos",
             "additionalCost": "(custo adicional)"
         },
@@ -581,7 +588,8 @@
         "promotions": {
             "sectionTitle": "Promoções especiais",
             "validUntil": "Válido até {date}",
-            "minNights": "Mínimo {n} noites",
+            "minNights_one": "Mínimo {{count}} noite",
+            "minNights_other": "Mínimo {{count}} noites",
             "discountOff": "de desconto"
         },
         "priceAlert": {
@@ -835,9 +843,10 @@
             "dateRange": "De {from} a {to}",
             "dateFrom": "A partir de {from}",
             "dateTo": "Até {to}",
-            "guests": "{adults} adultos · {children} crianças",
-            "guestsAdultsOnly": "{adults} adultos",
-            "guestsChildrenOnly": "{children} crianças"
+            "guestsAdultsOnly_one": "{{count}} adulto",
+            "guestsAdultsOnly_other": "{{count}} adultos",
+            "guestsChildrenOnly_one": "{{count}} criança",
+            "guestsChildrenOnly_other": "{{count}} crianças"
         }
     },
     "emptyChip": {

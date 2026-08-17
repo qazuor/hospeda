@@ -33,7 +33,8 @@
         },
         "limit": {
             "title": "You've reached the maximum",
-            "message": "Your plan lets you compare up to {{max}} accommodations at a time.",
+            "message_one": "Your plan lets you compare up to {{max}} accommodation at a time.",
+            "message_other": "Your plan lets you compare up to {{max}} accommodations at a time.",
             "hint": "Remove one to add another."
         },
         "bar": {
@@ -103,7 +104,6 @@
     "emptyMessage": "We'll be adding more lodging options for you soon.",
     "heading": "Accommodations",
     "subheading": "Discover unique accommodations and find the perfect place for your next adventure",
-    "found": "accommodations found",
     "seeAll": "See all accommodations →",
     "filters": {
         "title": "Filters",
@@ -459,8 +459,10 @@
             "bathrooms": "Bathrooms",
             "minNights": "Minimum nights",
             "maxNights": "Maximum nights",
-            "guests": "{n} guests",
-            "nights": "{n} nights"
+            "guests_one": "{{count}} guest",
+            "guests_other": "{{count}} guests",
+            "nights_one": "{{count}} night",
+            "nights_other": "{{count}} nights"
         },
         "gallery": {
             "viewAll": "View all photos",
@@ -481,9 +483,12 @@
             "optional": "optional",
             "perNightFlag": "per night",
             "perGuestFlag": "per guest",
-            "capacityFact": "Up to {n} guests",
-            "minNightsFact": "Minimum stay {n} nights",
-            "maxNightsFact": "Maximum stay {n} nights",
+            "capacityFact_one": "Up to {{count}} guest",
+            "capacityFact_other": "Up to {{count}} guests",
+            "minNightsFact_one": "Minimum stay {{count}} night",
+            "minNightsFact_other": "Minimum stay {{count}} nights",
+            "maxNightsFact_one": "Maximum stay {{count}} night",
+            "maxNightsFact_other": "Maximum stay {{count}} nights",
             "fees": {
                 "cleaning": "Cleaning",
                 "tax": "Taxes",
@@ -511,7 +516,8 @@
         },
         "reviewsDetail": {
             "noReviews": "No reviews yet",
-            "viewAll": "View all {n} reviews",
+            "viewAll_one": "View the {{count}} review",
+            "viewAll_other": "View all {{count}} reviews",
             "breakdownLabel": "Detailed scores",
             "categories": {
                 "cleanliness": "Cleanliness",
@@ -542,7 +548,8 @@
         },
         "amenitiesDetail": {
             "title": "Amenities",
-            "viewAll": "View all {n} amenities",
+            "viewAll_one": "View the {{count}} amenity",
+            "viewAll_other": "View all {{count}} amenities",
             "collapse": "View less",
             "additionalCost": "(additional cost)"
         },
@@ -581,7 +588,8 @@
         "promotions": {
             "sectionTitle": "Special promotions",
             "validUntil": "Valid until {date}",
-            "minNights": "Minimum {n} nights",
+            "minNights_one": "Minimum {{count}} night",
+            "minNights_other": "Minimum {{count}} nights",
             "discountOff": "off"
         },
         "priceAlert": {
@@ -835,9 +843,10 @@
             "dateRange": "From {from} to {to}",
             "dateFrom": "From {from}",
             "dateTo": "Until {to}",
-            "guests": "{adults} adults · {children} children",
-            "guestsAdultsOnly": "{adults} adults",
-            "guestsChildrenOnly": "{children} children"
+            "guestsAdultsOnly_one": "{{count}} adult",
+            "guestsAdultsOnly_other": "{{count}} adults",
+            "guestsChildrenOnly_one": "{{count}} child",
+            "guestsChildrenOnly_other": "{{count}} children"
         }
     },
     "emptyChip": {

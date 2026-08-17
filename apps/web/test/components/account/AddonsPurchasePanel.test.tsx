@@ -35,7 +35,9 @@ vi.mock('../../../src/components/account/AddonsPurchasePanel.module.css', () => 
 const CATALOG_TRANSLATIONS: Record<string, string> = {
     'account.addons.catalog.extra-photos-20.name': 'Pack de fotos extra (localizado)',
     'account.addons.catalog.extra-photos-20.description': 'Descripción localizada de fotos.',
-    'account.addons.catalog.visibility-boost-7d.name': 'Impulso de visibilidad (localizado)'
+    'account.addons.catalog.visibility-boost-7d.name': 'Impulso de visibilidad (localizado)',
+    'account.addons.duration_one': '{{count}} día',
+    'account.addons.duration_other': '{{count}} días'
 };
 
 vi.mock('../../../src/lib/i18n', () => {
@@ -47,7 +49,9 @@ vi.mock('../../../src/lib/i18n', () => {
             raw
         );
     };
-    return { createT: () => t, createTranslations: () => ({ t }) };
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>): string =>
+        t(`${key}_${count === 1 ? 'one' : 'other'}`, undefined, { ...params, count });
+    return { createT: () => t, createTranslations: () => ({ t, tPlural }) };
 });
 
 const mockPurchaseAddon = vi.fn();

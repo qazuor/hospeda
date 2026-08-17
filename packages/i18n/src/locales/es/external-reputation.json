@@ -19,7 +19,8 @@
     },
     "aggregate": {
         "rating": "Puntuación promedio",
-        "reviewsCount": "{{count}} reseñas",
+        "reviewsCount_one": "{{count}} reseña",
+        "reviewsCount_other": "{{count}} reseñas",
         "noData": "Sin datos disponibles"
     },
     "snippets": {
@@ -36,7 +37,8 @@
         "masterToggle": "Mostrar sección de reputación externa",
         "refresh": "Actualizar reseñas",
         "lastUpdated": "Última actualización: {{date}}",
-        "rateLimitHit": "Podés actualizar nuevamente en {{minutes}} minutos",
+        "rateLimitHit_one": "Podés actualizar nuevamente en {{minutes}} minuto",
+        "rateLimitHit_other": "Podés actualizar nuevamente en {{minutes}} minutos",
         "googleOnlyExplainer": "El texto de las reseñas solo está disponible para Google. Las demás plataformas muestran el puntaje y un enlace.",
         "verifiedHint": "El enlace fue verificado y corresponde a este alojamiento",
         "loading": "Cargando listados…",

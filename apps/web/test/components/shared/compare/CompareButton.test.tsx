@@ -31,9 +31,17 @@ import { setCompareMode } from '../../../../src/store/compare-store';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../../src/lib/i18n', () => ({
-    createT: (_locale: string) => (key: string, fallback?: string) => fallback ?? key
-}));
+vi.mock('../../../../src/lib/i18n', () => {
+    const t = (key: string, fallback?: string) => fallback ?? key;
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>) =>
+        `${key} ${Object.values({ ...params, count })
+            .map(String)
+            .join(' ')}`;
+    return {
+        createT: (_locale: string) => t,
+        createTranslations: (_locale: string) => ({ t, tPlural })
+    };
+});
 
 vi.mock('../../../../src/lib/cn', () => ({
     cn: (...classes: (string | undefined | false | null)[]) => classes.filter(Boolean).join(' ')

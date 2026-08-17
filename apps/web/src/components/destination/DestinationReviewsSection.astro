@@ -25,7 +25,7 @@ interface Props {
 }
 
 const { destinationId, averageRating, reviewsCount, locale, ratingBreakdown } = Astro.props;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const showBreakdown = reviewsCount > 0 && ratingBreakdown != null;
 ---
@@ -55,7 +55,7 @@ const showBreakdown = reviewsCount > 0 && ratingBreakdown != null;
                 </span>
                 <StarIcon size={22} weight="fill" color="var(--rating-star)" aria-hidden="true" />
                 <span class="dest-reviews__count">
-                    {t('destinations.detail.reviews.count', '{{count}} reseñas', { count: reviewsCount })}
+                    {tPlural('destinations.detail.reviews.count', reviewsCount)}
                 </span>
             </div>
 

@@ -192,7 +192,8 @@
             }
         },
         "usage": {
-            "label": "{{current}} de {{max}} propiedades",
+            "label_one": "{{current}} de {{max}} propiedad",
+            "label_other": "{{current}} de {{max}} propiedades",
             "unlimited": "Propiedades ilimitadas",
             "upgrade": "Mejorar plan"
         },
@@ -295,7 +296,8 @@
                 "invalidType": "Solo se permiten archivos JPG, PNG o WebP",
                 "tooLarge": "El archivo no puede superar {{maxSize}}MB",
                 "uploadFailed": "Error al subir la imagen",
-                "galleryCapReached": "Límite de galería alcanzado (máx. {{cap}} fotos)",
+                "galleryCapReached_one": "Límite de galería alcanzado (máx {{cap}} foto)",
+                "galleryCapReached_other": "Límite de galería alcanzado (máx {{cap}} fotos)",
                 "galleryCapLabel": "Galería llena"
             },
             "faq": {
@@ -549,12 +551,16 @@
                 "status": {
                     "missingDescription": "⚠ Falta la descripción",
                     "missingPrice": "⚠ Sin precio",
-                    "guests": "Hasta {{count}} huéspedes",
+                    "guests_one": "Hasta {{count}} huésped",
+                    "guests_other": "Hasta {{count}} huéspedes",
                     "missingCoordinates": "⚠ Sin ubicación en el mapa",
-                    "selected": "{{count}} seleccionados",
-                    "photos": "{{count}} fotos",
+                    "selected_one": "{{count}} seleccionado",
+                    "selected_other": "{{count}} seleccionados",
+                    "photos_one": "{{count}} foto",
+                    "photos_other": "{{count}} fotos",
                     "missingPhotos": "⚠ Sin fotos",
-                    "faqs": "{{count}} preguntas",
+                    "faqs_one": "{{count}} pregunta",
+                    "faqs_other": "{{count}} preguntas",
                     "missingContact": "⚠ Sin datos de contacto",
                     "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
                 }
@@ -605,7 +611,8 @@
                 "phone": "Teléfono",
                 "website": "Sitio web",
                 "coordinatesLabel": "Ubicación importada",
-                "amenitiesCount": "{{count}} amenidades importadas"
+                "amenitiesCount_one": "{{count}} comodidad importada",
+                "amenitiesCount_other": "{{count}} comodidades importadas"
             }
         },
         "errors": {
@@ -792,7 +799,17 @@
             "trialCalloutTitleIneligible": "Armá tu propiedad",
             "trialNote": "Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.",
             "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.",
-            "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel."
+            "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel.",
+            "precheck": {
+                "resumeDeleteOrUpgrade": {
+                    "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.",
+                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan."
+                },
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.",
+                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo."
+                }
+            }
         }
     }
 }

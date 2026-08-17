@@ -58,7 +58,7 @@ export function DowngradePreviewPanel({
     onBack,
     isPending
 }: DowngradePreviewPanelProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     // ── Local selection state ───────────────────────────────────────────────
 
@@ -220,10 +220,10 @@ export function DowngradePreviewPanel({
                             .replace('{cap}', String(accCap))}
                     </h3>
                     <p className={styles.sectionHint}>
-                        {t(
+                        {tPlural(
                             'account.pages.subscription.downgradePreview.accommodationsHint',
-                            'Seleccioná hasta {cap} alojamientos para mantener activos. El resto quedará inactivo.'
-                        ).replace('{cap}', String(accCap))}
+                            accCap
+                        )}
                     </p>
 
                     {accOverCap && (
@@ -296,10 +296,10 @@ export function DowngradePreviewPanel({
                             .replace('{cap}', String(promoCap))}
                     </h3>
                     <p className={styles.sectionHint}>
-                        {t(
+                        {tPlural(
                             'account.pages.subscription.downgradePreview.promotionsHint',
-                            'Seleccioná hasta {cap} promociones para mantener activas.'
-                        ).replace('{cap}', String(promoCap))}
+                            promoCap
+                        )}
                     </p>
 
                     {promoOverCap && (

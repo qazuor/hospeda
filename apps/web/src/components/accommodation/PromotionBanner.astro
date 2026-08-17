@@ -31,7 +31,7 @@ const { promos, locale } = Astro.props;
 // Render nothing when there are no active promotions.
 if (promos.length === 0) return;
 
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 /**
  * Returns a locale-aware discount label for a given promotion.
@@ -82,9 +82,7 @@ function formatDiscount(promo: OwnerPromotionPublicItem): string {
                   })
                 : null;
             const minNightsLabel = promo.minNights != null
-                ? t('accommodations.detail.promotions.minNights', undefined, {
-                      n: promo.minNights
-                  })
+                ? tPlural('accommodations.detail.promotions.minNights', promo.minNights)
                 : null;
 
             return (
