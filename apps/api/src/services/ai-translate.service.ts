@@ -624,6 +624,62 @@ export async function loadTranslatableFields(
     return fields;
 }
 
+/**
+ * The ownership columns of a translatable row, as the authorization policy
+ * needs them (HOS-584).
+ *
+ * One shape covers all entity types because they do not share a single owner
+ * column: an accommodation carries `ownerId`, editorial content (`event`,
+ * `post`) carries `authorId`, and a destination carries neither. A column the
+ * table does not have reads as `null` here, which the policy treats as "this
+ * row is not tied to anyone through that field" — never as a match. Deciding
+ * WHICH columns count for a given entity type is the policy's job, not this
+ * loader's; see `routes/ai/protected/translate.authorization.ts`.
+ */
+export interface TranslationEntityOwnership {
+    readonly ownerId: string | null;
+    readonly authorId: string | null;
+    readonly createdById: string | null;
+}
+
+/**
+ * Reads a translatable row's ownership columns.
+ *
+ * Deliberately a separate query from {@link loadTranslatableFields} rather than
+ * a widened return on it: this runs BEFORE any authorization decision, and the
+ * caller must be able to refuse without ever having loaded — let alone
+ * translated — the content. One extra indexed primary-key read is nothing next
+ * to the up-to-eight provider calls it guards.
+ *
+ * Soft-deleted rows are NOT filtered out, matching `loadTranslatableFields`.
+ *
+ * @param entityType - The content table to read.
+ * @param entityId - The row's UUID.
+ * @returns The ownership columns, or `null` when no such row exists.
+ */
+export async function loadTranslationEntityOwnership(
+    entityType: TranslatableEntityType,
+    entityId: string
+): Promise<TranslationEntityOwnership | null> {
+    const table = getEntityTable(entityType);
+    const db = getDb();
+    const [row] = await db.select().from(table).where(eq(table.id, entityId)).limit(1);
+
+    if (!row) {
+        return null;
+    }
+
+    const data = row as Record<string, unknown>;
+    const readId = (value: unknown): string | null =>
+        typeof value === 'string' && value.length > 0 ? value : null;
+
+    return {
+        ownerId: readId(data.ownerId),
+        authorId: readId(data.authorId),
+        createdById: readId(data.createdById)
+    };
+}
+
 /** Input for an admin manual translation override. */
 export interface ManualOverrideInput {
     entityType: TranslatableEntityType;

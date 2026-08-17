@@ -20,6 +20,7 @@ import { protectedAuthMiddleware } from '../../../middlewares/authorization';
 import { entitlementMiddleware } from '../../../middlewares/entitlement';
 import {
     loadTranslatableFields,
+    loadTranslationEntityOwnership,
     persistTranslations,
     translateEntity
 } from '../../../services/ai-translate.service';
@@ -27,6 +28,7 @@ import { getActorFromContext } from '../../../utils/actor';
 import { meterAiUsage } from '../../../utils/ai-usage-metering';
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
+import { mayTranslateEntity, PROTECTED_TRANSLATABLE_ENTITY_TYPES } from './translate.authorization';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -40,7 +42,10 @@ const FEATURE: AiFeature = 'translate';
 
 const TranslateRequestSchema = z
     .object({
-        entityType: z.enum(['accommodation', 'destination', 'event', 'post']),
+        // Derived from the authorization module's list, never re-typed here:
+        // an accepted entity type must always have a rule saying who may write
+        // it (HOS-584).
+        entityType: z.enum(PROTECTED_TRANSLATABLE_ENTITY_TYPES),
         entityId: z.string().uuid(),
         // Locale the host is editing in; translations flow OUT of it. Defaults
         // to Spanish for backward compatibility.
@@ -109,20 +114,54 @@ protectedAiTranslateRoute.post('/', async (c) => {
         completionTokens: number;
     } | null = null;
 
+    /** The 404 this route answers for anything the caller may not translate. */
+    const notFound = () =>
+        c.json(
+            {
+                success: false,
+                error: {
+                    code: 'NOT_FOUND',
+                    message: `${entityType} with id ${entityId} not found`
+                }
+            },
+            404
+        );
+
     try {
+        // HOS-584: authorize BEFORE loading or translating anything. This route
+        // takes the target row's id from the request BODY, so nothing upstream
+        // can check it — `ownershipMiddleware` reads `c.req.param(...)`, and the
+        // auth / entitlement / quota middlewares only ever look at the actor.
+        // Without this gate any authenticated user holding `AI_TRANSLATE` could
+        // persist translations into another host's accommodation, or into staff
+        // content, simply by knowing its id.
+        //
+        // A refused request answers 404, byte-identical to a genuinely missing
+        // row, and never 403: a 403 would confirm the id exists, turning this
+        // endpoint into an existence oracle over every content row in the
+        // platform. Same rule as the host-trade routes (HOS-376).
+        const ownership = await loadTranslationEntityOwnership(entityType, entityId);
+
+        if (
+            ownership === null ||
+            !mayTranslateEntity({
+                entityType,
+                ownership,
+                actorId: actor.id,
+                actorPermissions: actor.permissions ?? []
+            })
+        ) {
+            apiLogger.warn(
+                { userId: actor.id, entityType, entityId, exists: ownership !== null },
+                'ai-translate: refused — actor may not translate this entity'
+            );
+            return notFound();
+        }
+
         const fields = await loadTranslatableFields(entityType, entityId, sourceLocale);
 
         if (fields === null) {
-            return c.json(
-                {
-                    success: false,
-                    error: {
-                        code: 'NOT_FOUND',
-                        message: `${entityType} with id ${entityId} not found`
-                    }
-                },
-                404
-            );
+            return notFound();
         }
 
         if (Object.keys(fields).length === 0) {
