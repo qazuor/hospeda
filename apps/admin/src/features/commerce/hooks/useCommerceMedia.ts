@@ -14,8 +14,8 @@
  *  - useCommerceMediaRemove(vertical, entityId)      → remove mutation (DELETE)
  *  - useCommerceMediaSetFeatured(vertical, entityId) → set-featured mutation (PUT)
  *
- * All mutations invalidate the list query on success via the shared query key
- * factory. Reorder is intentionally omitted, mirroring the accommodation
+ * All mutations invalidate BOTH the list query and the cached entity on success
+ * via the shared query key factories (HOS-389 §3). Reorder is intentionally omitted, mirroring the accommodation
  * gallery precedent (SPEC-204 locked decision: no drag/reorder in the admin
  * gallery UI). Archive/restore are also omitted — unlike `accommodation_media`,
  * the admin API exposes no archive/restore routes for `gastronomy_media` /
@@ -37,6 +37,7 @@ import type {
 } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
+import { createEntityQueryKeys } from '@/lib/query-keys/factory';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -89,6 +90,37 @@ const VERTICAL_ROUTE_SEGMENT: Record<CommerceMediaVertical, string> = {
 
 const mediaEndpoint = (vertical: CommerceMediaVertical, entityId: string) =>
     `/api/v1/admin/${VERTICAL_ROUTE_SEGMENT[vertical]}/${entityId}/media`;
+
+/**
+ * Invalidates everything a gallery mutation just made stale (HOS-389 §3).
+ *
+ * The media list is the obvious half. The other half is the cached ENTITY: its
+ * server-composed `media` object is what feeds the edit page's quality score
+ * (`score-signals.ts`), so invalidating only the list left the page reporting
+ * "no cover" right after one was uploaded, until some unrelated refetch
+ * happened to refresh it.
+ *
+ * The entity key is built from the same `VERTICAL_ROUTE_SEGMENT` map the
+ * endpoint uses, which is also the `entityName` the commerce entity hooks are
+ * created with (`'gastronomies'` / `'experiences'`) — so the two cannot drift
+ * apart into invalidating a key nobody reads.
+ *
+ * Written once and shared by all three mutations rather than pasted into each
+ * `onSuccess`: three copies is how one of them silently keeps the stale-entity
+ * bug after the others are fixed.
+ */
+function invalidateAfterMediaMutation(
+    queryClient: ReturnType<typeof useQueryClient>,
+    vertical: CommerceMediaVertical,
+    entityId: string
+): void {
+    queryClient.invalidateQueries({
+        queryKey: commerceMediaQueryKeys.list(vertical, entityId)
+    });
+    queryClient.invalidateQueries({
+        queryKey: createEntityQueryKeys(VERTICAL_ROUTE_SEGMENT[vertical]).detail(entityId)
+    });
+}
 
 // ---------------------------------------------------------------------------
 // List query
@@ -157,9 +189,7 @@ export function useCommerceMediaAdd(vertical: CommerceMediaVertical, entityId: s
             return media;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: commerceMediaQueryKeys.list(vertical, entityId)
-            });
+            invalidateAfterMediaMutation(queryClient, vertical, entityId);
         }
     });
 }
@@ -189,9 +219,7 @@ export function useCommerceMediaRemove(vertical: CommerceMediaVertical, entityId
             return mediaId;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: commerceMediaQueryKeys.list(vertical, entityId)
-            });
+            invalidateAfterMediaMutation(queryClient, vertical, entityId);
         }
     });
 }
@@ -230,9 +258,7 @@ export function useCommerceMediaSetFeatured(vertical: CommerceMediaVertical, ent
             return media;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: commerceMediaQueryKeys.list(vertical, entityId)
-            });
+            invalidateAfterMediaMutation(queryClient, vertical, entityId);
         }
     });
 }

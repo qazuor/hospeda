@@ -16,7 +16,7 @@ import { ModerationStatusEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchApi } from '@/lib/api/client';
 import {
     commerceMediaQueryKeys,
@@ -313,5 +313,93 @@ describe('useCommerceMediaSetFeatured', () => {
                 queryKey: commerceMediaQueryKeys.list('gastronomy', 'ent-1')
             })
         );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-389 §3 — the cached ENTITY must be invalidated too
+// ---------------------------------------------------------------------------
+
+describe('gallery mutations invalidate the cached entity (HOS-389 §3)', () => {
+    /**
+     * Every mutation, driven through the same harness. Before this fix each one
+     * invalidated only the media list, so the edit page kept rendering the stale
+     * entity — whose server-composed `media` object feeds the quality score —
+     * and reported "no cover" right after a cover was uploaded.
+     */
+    const MUTATIONS = [
+        {
+            name: 'add',
+            run: (vertical: 'gastronomy' | 'experience', id: string) =>
+                renderHook(() => useCommerceMediaAdd(vertical, id), { wrapper: makeWrapper() }),
+            args: { url: 'https://example.com/x.jpg' } as never
+        }
+    ] as const;
+
+    let queryClient: QueryClient;
+    let invalidateSpy: ReturnType<typeof vi.spyOn>;
+
+    function makeWrapper() {
+        return ({ children }: { readonly children: React.ReactNode }) =>
+            React.createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    beforeEach(() => {
+        queryClient = new QueryClient({
+            defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
+        });
+        invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+        mockedFetchApi.mockResolvedValue({
+            data: { success: true, data: { media: makeMedia() } },
+            status: 201
+        });
+    });
+
+    it.each(MUTATIONS)('$name invalidates the gastronomy entity detail', async ({ run, args }) => {
+        const { result } = run('gastronomy', 'ent-1');
+
+        await act(async () => {
+            await result.current.mutateAsync(args);
+        });
+
+        // 'gastronomies' is the entityName the commerce entity hooks are created
+        // with — asserting the resolved key, not the helper, is what proves the
+        // media hook and the entity hook agree on where the cache lives.
+        expect(invalidateSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ queryKey: ['gastronomies', 'detail', 'ent-1'] })
+        );
+    });
+
+    it('maps the experience vertical to its own entity key', async () => {
+        // The vertical→entityName mapping is the part that can silently point at
+        // a key nobody reads; both branches have to be exercised.
+        const { result } = renderHook(() => useCommerceMediaAdd('experience', 'ent-2'), {
+            wrapper: makeWrapper()
+        });
+
+        await act(async () => {
+            await result.current.mutateAsync({ url: 'https://example.com/x.jpg' } as never);
+        });
+
+        expect(invalidateSpy).toHaveBeenCalledWith(
+            expect.objectContaining({ queryKey: ['experiences', 'detail', 'ent-2'] })
+        );
+    });
+
+    it('still invalidates the media list — the entity key is an addition, not a swap', async () => {
+        const { result } = renderHook(() => useCommerceMediaAdd('gastronomy', 'ent-1'), {
+            wrapper: makeWrapper()
+        });
+
+        await act(async () => {
+            await result.current.mutateAsync({ url: 'https://example.com/x.jpg' } as never);
+        });
+
+        expect(invalidateSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                queryKey: commerceMediaQueryKeys.list('gastronomy', 'ent-1')
+            })
+        );
+        expect(invalidateSpy).toHaveBeenCalledTimes(2);
     });
 });
