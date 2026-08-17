@@ -68,10 +68,15 @@ export const protectedPatchAccommodationRoute = createProtectedRoute({
         // contact...) still persists unchanged. `undefined` means neither
         // gate touched the description (entitled actor, or plain text).
         const descriptionOverride = ctx.get('accommodationDescriptionOverride');
-        const effectiveBody =
-            descriptionOverride === undefined
-                ? body
-                : { ...body, description: descriptionOverride };
+        // Same treatment for the dedicated `videos` column: `gateVideoEmbed`
+        // stashes an empty array when a non-entitled actor submits videos, and it
+        // is applied here rather than rejecting the whole PATCH.
+        const videosOverride = ctx.get('accommodationVideosOverride');
+        const effectiveBody = {
+            ...body,
+            ...(descriptionOverride === undefined ? {} : { description: descriptionOverride }),
+            ...(videosOverride === undefined ? {} : { videos: videosOverride })
+        };
 
         // Convert flat HTTP body to domain-shaped input before calling the service.
         // Without this conversion, nested fields (location.coordinates, price.price,

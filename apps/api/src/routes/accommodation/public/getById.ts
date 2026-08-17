@@ -74,7 +74,7 @@ export const publicGetAccommodationByIdRoute = createPublicRoute({
         const ownerEntitlements = accommodation.ownerId
             ? await resolveOwnerEntitlementsForOwnerId(accommodation.ownerId)
             : [];
-        const filtered = filterAccommodationByEntitlements(ctx, accommodation, ownerEntitlements);
+        const filtered = filterAccommodationByEntitlements(accommodation, ownerEntitlements);
 
         return filtered;
     },

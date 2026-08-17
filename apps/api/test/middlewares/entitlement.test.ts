@@ -2310,6 +2310,106 @@ describe('Accommodation Entitlement Gates', () => {
             expect(data.override).toContain('Check out this video');
         });
 
+        it('neutralizes the dedicated videos column, not just the description', async () => {
+            // The gate only ever inspected `description`, so a host with no video
+            // entitlement could fill the `videos` column freely through the same
+            // PATCH — and the read filter meant to hide it was matching a shape
+            // that stopped existing in HOS-372.
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                return next();
+            });
+            app.use(gateVideoEmbed());
+            app.post('/test', (c) =>
+                c.json({ videosOverride: c.get('accommodationVideosOverride') ?? null })
+            );
+
+            const res = await app.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    videos: [{ url: 'https://www.youtube.com/watch?v=abc123' }]
+                })
+            });
+
+            const data = await res.json();
+            expect(data.videosOverride).toEqual([]);
+        });
+
+        it('leaves the videos column alone when the actor IS entitled', async () => {
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set([EntitlementKey.CAN_EMBED_VIDEO]));
+                return next();
+            });
+            app.use(gateVideoEmbed());
+            app.post('/test', (c) =>
+                c.json({ videosOverride: c.get('accommodationVideosOverride') ?? null })
+            );
+
+            const res = await app.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    videos: [{ url: 'https://www.youtube.com/watch?v=abc123' }]
+                })
+            });
+
+            const data = await res.json();
+            expect(data.videosOverride).toBeNull();
+        });
+
+        it('does NOT wipe videos when the PATCH does not mention them', async () => {
+            // `undefined` means "no change" in a PATCH. Turning an absent key into
+            // `[]` would delete an entitled history the moment the owner edits an
+            // unrelated field after a downgrade.
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                return next();
+            });
+            app.use(gateVideoEmbed());
+            app.post('/test', (c) =>
+                c.json({ videosOverride: c.get('accommodationVideosOverride') ?? null })
+            );
+
+            const res = await app.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: 'Cabaña sin videos' })
+            });
+
+            const data = await res.json();
+            expect(data.videosOverride).toBeNull();
+        });
+
+        it('neutralizes BOTH surfaces when a submission carries each', async () => {
+            app.use((c, next) => {
+                c.set('userEntitlements', new Set<EntitlementKey>());
+                return next();
+            });
+            app.use(gateVideoEmbed());
+            app.post('/test', (c) =>
+                c.json({
+                    descriptionOverride: c.get('accommodationDescriptionOverride') ?? null,
+                    videosOverride: c.get('accommodationVideosOverride') ?? null
+                })
+            );
+
+            const res = await app.request('/test', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    description: 'Mirá https://www.youtube.com/watch?v=abc123',
+                    videos: [{ url: 'https://vimeo.com/12345' }]
+                })
+            });
+
+            const data = await res.json();
+            // Gating one surface and not the other gates nothing: the same
+            // content simply arrives through the half left open.
+            expect(data.descriptionOverride).not.toContain('youtube.com');
+            expect(data.videosOverride).toEqual([]);
+        });
+
         it('composes with a prior gateRichDescription pass instead of reverting it', async () => {
             // HOS-216: when both gates fire (actor lacks both entitlements),
             // gateVideoEmbed must sanitize the ALREADY-sanitized description

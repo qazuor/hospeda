@@ -226,7 +226,7 @@ describe('API routes — isVerified badge gate guard (HOS-341)', () => {
         // backtick log message naming a gate would satisfy it if `code()` left
         // template literals alone. That is why this copy blanks them.
         expect(
-            usesBadgeGate(code('const log = `ran filterAccommodationByEntitlements(ctx, a, e)`;'))
+            usesBadgeGate(code('const log = `ran filterAccommodationByEntitlements(a, e)`;'))
         ).toBe(false);
         expect(
             usesBadgeGate(
@@ -239,9 +239,7 @@ describe('API routes — isVerified badge gate guard (HOS-341)', () => {
         expect(usesBadgeGate('return filterAccommodationListByOwnerEntitlements(rows, map);')).toBe(
             true
         );
-        expect(usesBadgeGate('const f = filterAccommodationByEntitlements(ctx, acc, ents);')).toBe(
-            true
-        );
+        expect(usesBadgeGate('const f = filterAccommodationByEntitlements(acc, ents);')).toBe(true);
     });
 
     it('discovers the schema through an intermediate const, not just a responseSchema line', () => {
