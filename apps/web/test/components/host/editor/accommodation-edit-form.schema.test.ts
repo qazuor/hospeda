@@ -138,6 +138,18 @@ describe('AccommodationCapacityPricingSchema', () => {
         expect(AccommodationCapacityPricingSchema.safeParse({ basePrice: 0 }).success).toBe(false);
     });
 
+    it('should reject a fractional base price with the integer message key (H-111)', () => {
+        // Before this fix, 1234.56 passed validation, was stored verbatim, and
+        // the public sidebar's `Intl.NumberFormat({ maximumFractionDigits: 0 })`
+        // rounded it UP to $1.235 — the host set less than what the guest saw.
+        const result = AccommodationCapacityPricingSchema.safeParse({ basePrice: 1234.56 });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            expect(result.error.issues[0]?.message).toBe('zodError.common.price.price.integer');
+        }
+    });
+
     it('should reject maxGuests above the cap', () => {
         expect(AccommodationCapacityPricingSchema.safeParse({ maxGuests: 201 }).success).toBe(
             false

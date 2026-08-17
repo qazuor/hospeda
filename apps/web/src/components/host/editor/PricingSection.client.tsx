@@ -55,6 +55,11 @@ export function PricingSection({ locale, data, errors, onFieldChange }: PricingS
                         // any current value that wasn't already a multiple of 100
                         // (or had decimals), silently blocking "Guardar" (BETA-179).
                         step={1}
+                        // H-111: whole pesos, no cents — `inputMode="numeric"` hints
+                        // mobile keyboards to skip the decimal-point key. `step={1}`
+                        // above is what actually blocks a decimal value (native
+                        // `stepMismatch`); this only steers input toward the same rule.
+                        inputMode="numeric"
                         onChange={(e) =>
                             onFieldChange(
                                 'basePrice',

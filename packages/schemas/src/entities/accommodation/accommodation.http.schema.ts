@@ -295,8 +295,23 @@ export const AccommodationCreateHttpSchema = z.object({
         .max(100, { message: 'zodError.accommodation.extraInfo.bathrooms.max' }),
 
     // Pricing
-    basePrice: z.coerce.number().min(0, { message: 'zodError.accommodation.price.price.min' }),
-    currency: PriceCurrencyEnumSchema.default(PriceCurrencyEnum.USD),
+    // H-111: whole pesos only, no cents. A DB row like `{"price": 1234.56}`
+    // renders on the public sidebar via `Intl.NumberFormat` with
+    // `maximumFractionDigits: 0`, which rounds UP — the host typed 1234.56 and
+    // the guest is shown $1.235, more than what was set. `.int()` rejects the
+    // decimal at the write boundary instead of silently rounding it somewhere
+    // downstream. The READ path (`AccommodationPriceReadSchema`, HOS-190) stays
+    // untouched so a legacy decimal row already in the DB keeps parsing.
+    basePrice: z.coerce
+        .number()
+        .int({ message: 'zodError.common.price.price.integer' })
+        .min(0, { message: 'zodError.accommodation.price.price.min' }),
+    // H-167: ARS, matching `accommodation.model.ts`'s documented contract
+    // ("stores the nightly base price under `price.price` in ARS") and the
+    // public render's own fallback (`PricingSidebar.astro`'s `?? 'ARS'`).
+    // Defaulting to USD here was a latent bug — nothing else in the accommodation
+    // domain treats USD as the implicit currency.
+    currency: PriceCurrencyEnumSchema.default(PriceCurrencyEnum.ARS),
 
     // Boolean properties
     // isFeatured is intentionally omitted from this general update schema: it is
@@ -418,8 +433,17 @@ export const AccommodationCreateDraftHttpSchema = z.object({
         .optional(),
 
     // --- Optional pricing (→ price) ---
-    /** Base nightly price. Maps to `price.price`. */
-    basePrice: z.coerce.number().min(0).optional(),
+    /**
+     * Base nightly price. Maps to `price.price`.
+     *
+     * H-111: whole pesos only, no cents — see the identical `.int()` note on
+     * `AccommodationCreateHttpSchema.basePrice` for why.
+     */
+    basePrice: z.coerce
+        .number()
+        .int({ message: 'zodError.common.price.price.integer' })
+        .min(0)
+        .optional(),
     /** Currency code. Maps to `price.currency`. Defaults to USD when basePrice is supplied without it. */
     currency: PriceCurrencyEnumSchema.optional(),
 
@@ -988,11 +1012,23 @@ export const httpToDomainAccommodationCreateDraft = (
         : {}),
 
     // --- Optional: pricing (→ price JSONB) ---
+    // H-167: whenever `basePrice` is being set, a `currency` MUST travel with
+    // it — defaulting to ARS when the client omitted it — so the row never
+    // lands as a bare `{"price": N}` with no unit (the exact shape 2 prod rows
+    // have today). A lone `currency` (no `basePrice`) is untouched: it only
+    // re-labels an existing stored price and needs no default of its own.
     ...(httpData.basePrice !== undefined || httpData.currency !== undefined
         ? {
               price: {
-                  ...(httpData.basePrice === undefined ? {} : { price: httpData.basePrice }),
-                  ...(httpData.currency === undefined ? {} : { currency: httpData.currency })
+                  ...(httpData.basePrice === undefined
+                      ? {}
+                      : {
+                            price: httpData.basePrice,
+                            currency: httpData.currency ?? PriceCurrencyEnum.ARS
+                        }),
+                  ...(httpData.basePrice === undefined && httpData.currency !== undefined
+                      ? { currency: httpData.currency }
+                      : {})
               }
           }
         : {}),
@@ -1085,14 +1121,29 @@ export const httpToDomainAccommodationUpdate = (
         : {}),
 
     // Price mapping (SPEC-229): emit a partial group from whatever is present.
-    // A lone `currency` (or lone `basePrice`) is now preserved-merged onto the
-    // stored JSONB instead of being dropped. No defaults are injected so omitted
-    // siblings survive the shallow merge.
+    // A lone `currency` (or lone `basePrice`) is preserved-merged onto the
+    // stored JSONB instead of being dropped.
+    //
+    // H-167 exception to "no defaults are injected": whenever `basePrice` is
+    // being set, `currency` MUST travel with it — defaulting to ARS when the
+    // client omitted it. Without this, a PATCH carrying only `basePrice`
+    // shallow-merges a `price` key onto the stored JSONB with no `currency`
+    // sibling to inherit from (this is the exact write path that produced the
+    // 2 currency-less rows found in prod). A lone `currency` update is
+    // untouched: it only re-labels an existing stored price and needs no
+    // default of its own.
     ...(httpData.basePrice !== undefined || httpData.currency !== undefined
         ? {
               price: {
-                  ...(httpData.basePrice === undefined ? {} : { price: httpData.basePrice }),
-                  ...(httpData.currency === undefined ? {} : { currency: httpData.currency })
+                  ...(httpData.basePrice === undefined
+                      ? {}
+                      : {
+                            price: httpData.basePrice,
+                            currency: httpData.currency ?? PriceCurrencyEnum.ARS
+                        }),
+                  ...(httpData.basePrice === undefined && httpData.currency !== undefined
+                      ? { currency: httpData.currency }
+                      : {})
               }
           }
         : {}),
