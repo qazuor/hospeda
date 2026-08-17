@@ -2,7 +2,7 @@
     "attribution": "© Colaboradores do OpenStreetMap",
     "zoomIn": "Aproximar",
     "zoomOut": "Afastar",
-    "approximateDisclaimer": "Localização aproximada. O endereço exato será compartilhado com a reserva confirmada.",
+    "approximateDisclaimer": "Localização aproximada. O proprietário informa o endereço exato quando você entra em contato.",
     "openInExternalMap": "Abrir em mapa externo",
     "openInGoogleMaps": "Ver no Google Maps",
     "openAddressInGoogleMaps": "Ver {{address}} no Google Maps",

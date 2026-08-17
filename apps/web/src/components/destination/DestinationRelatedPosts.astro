@@ -46,10 +46,10 @@ const seeAllHref = `/${locale}/publicaciones/${destinationId ? `?destinationId=$
 <section class="dest-related-posts" aria-labelledby="dest-related-posts-title">
     <header class="dest-related-posts__header">
         <h2 class="dest-related-posts__title" id="dest-related-posts-title">
-            {t('destination.detail.relatedPosts.title', '{{name}}', { name: destinationName })}
+            {t('destinations.detail.relatedPosts.title', '{{name}}', { name: destinationName })}
         </h2>
         <p class="dest-related-posts__subtitle">
-            {t('destination.detail.relatedPosts.subtitle', 'Notas y guías relacionadas')}
+            {t('destinations.detail.relatedPosts.subtitle', 'Notas y guías relacionadas')}
         </p>
     </header>
 
@@ -72,7 +72,7 @@ const seeAllHref = `/${locale}/publicaciones/${destinationId ? `?destinationId=$
     {hasMore && (
         <div class="dest-related-posts__more">
             <a href={seeAllHref} class="dest-related-posts__more-link">
-                {t('destination.detail.relatedPosts.seeAll', 'Ver todas las publicaciones')}
+                {t('destinations.detail.relatedPosts.seeAll', 'Ver todas las publicaciones')}
             </a>
         </div>
     )}

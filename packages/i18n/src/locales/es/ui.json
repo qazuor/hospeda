@@ -147,6 +147,12 @@
             "unknownError": "Error desconocido"
         }
     },
+    "searchableSelect": {
+        "placeholder": "Buscá una opción",
+        "loading": "Buscando...",
+        "empty": "No hay coincidencias",
+        "featuredLabel": "Destacado"
+    },
     "pagination": {
         "previous": "Anterior",
         "next": "Siguiente",
@@ -220,5 +226,8 @@
         "activeFiltersHeading": "Filtros aplicados (tocá uno para quitarlo):",
         "removeFilter": "Quitar filtro",
         "suggestionsHeading": "O probá:"
+    },
+    "announcements": {
+        "dismiss": "Cerrar anuncio"
     }
 }

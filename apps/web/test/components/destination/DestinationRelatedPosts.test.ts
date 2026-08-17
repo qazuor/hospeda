@@ -74,7 +74,7 @@ describe('DestinationRelatedPosts.astro', () => {
 
         it('should render the "see all" link conditionally on hasMore', () => {
             expect(src).toContain('hasMore');
-            expect(src).toContain("'destination.detail.relatedPosts.seeAll'");
+            expect(src).toContain("'destinations.detail.relatedPosts.seeAll'");
         });
 
         it('should pass lang={locale} to RelatedPostCard', () => {
@@ -96,12 +96,12 @@ describe('DestinationRelatedPosts.astro', () => {
         });
 
         it('should use t() for section title with destinationName interpolation', () => {
-            expect(src).toContain("'destination.detail.relatedPosts.title'");
+            expect(src).toContain("'destinations.detail.relatedPosts.title'");
             expect(src).toContain('name: destinationName');
         });
 
         it('should use t() for subtitle', () => {
-            expect(src).toContain("'destination.detail.relatedPosts.subtitle'");
+            expect(src).toContain("'destinations.detail.relatedPosts.subtitle'");
         });
 
         it('should include Spanish fallback for subtitle', () => {

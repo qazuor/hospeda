@@ -32,14 +32,14 @@ const showBreakdown = reviewsCount > 0 && ratingBreakdown != null;
 
 <section class="dest-reviews" aria-labelledby="dest-reviews-title">
     <h2 class="dest-reviews__title" id="dest-reviews-title">
-        {t('destination.detail.reviews.title', 'Reseñas')}
+        {t('destinations.detail.reviews.title', 'Reseñas')}
     </h2>
 
     {reviewsCount === 0 ? (
         <>
             <p class="dest-reviews__empty">
                 {t(
-                    'destination.detail.reviews.empty',
+                    'destinations.detail.reviews.empty',
                     'Todavía no hay reseñas para este destino.'
                 )}
             </p>
@@ -55,14 +55,14 @@ const showBreakdown = reviewsCount > 0 && ratingBreakdown != null;
                 </span>
                 <StarIcon size={22} weight="fill" color="var(--rating-star)" aria-hidden="true" />
                 <span class="dest-reviews__count">
-                    {t('destination.detail.reviews.count', '{{count}} reseñas', { count: reviewsCount })}
+                    {t('destinations.detail.reviews.count', '{{count}} reseñas', { count: reviewsCount })}
                 </span>
             </div>
 
             {showBreakdown && (
                 <div class="dest-reviews__breakdown">
                     <h3 class="dest-reviews__breakdown-title">
-                        {t('destination.detail.rating.title', 'Calificación por dimensión')}
+                        {t('destinations.detail.rating.title', 'Calificación por dimensión')}
                     </h3>
                     <DestinationRatingBreakdown rating={ratingBreakdown} locale={locale} />
                 </div>
@@ -76,7 +76,7 @@ const showBreakdown = reviewsCount > 0 && ratingBreakdown != null;
                     data-destination-id={destinationId}
                     aria-haspopup="dialog"
                 >
-                    {t('destination.detail.reviews.viewAll', 'Ver todas las reseñas')}
+                    {t('destinations.detail.reviews.viewAll', 'Ver todas las reseñas')}
                 </button>
                 <slot name="actions" />
             </div>

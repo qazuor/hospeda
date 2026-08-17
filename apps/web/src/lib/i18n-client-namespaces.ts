@@ -127,6 +127,11 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'commerce.lead',
     'commerce.owner',
     'common.anonymous',
+    // Named directly by the review islands' network-failure branch. It is also
+    // listed in EXTERNAL_I18N_KEY_PREFIXES, which covers the copy built inside
+    // a workspace package — that entry cannot serve these call sites, because
+    // the shipped asset is filtered by this list alone.
+    'common.apiError',
     'common.auth',
     'common.back',
     'common.cancel',
@@ -160,9 +165,14 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'cookieConsent.description',
     'cookieConsent.learnMore',
     'cookieConsent.title',
+    'destinations.card',
+    'destinations.carousel',
     'destinations.climate',
+    'destinations.detail',
     'destinations.detailPage',
+    'destinations.map',
     'destinations.poiTypeLabels',
+    'destinations.rating',
     'destinations.weather',
     'events.categories',
     'experience.reviews',
@@ -239,6 +249,7 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'ui.errors',
     'ui.favorite',
     'ui.filter',
+    'ui.searchableSelect',
     'validation'
 ] as const;
 

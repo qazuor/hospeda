@@ -57,7 +57,7 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 			<h1 class="legal-header__title">{resolvedTitle}</h1>
 			{lastUpdated && (
 				<p class="legal-header__date">
-					{t('legal.lastUpdated', 'Última actualización')}: {lastUpdated}
+					{t('common.legal.lastUpdated', 'Última actualización')}: {lastUpdated}
 				</p>
 			)}
 		</div>
@@ -75,7 +75,7 @@ const resolvedDescription = description ?? 'Información legal de Hospeda';
 		<div class:list={['legal-body__container', { 'legal-body__container--no-toc': !showToc }]}>
 			{showToc && (
 				<aside class="legal-toc">
-					<h2 class="legal-toc__heading">{t('legal.toc', 'Contenido')}</h2>
+					<h2 class="legal-toc__heading">{t('common.legal.toc', 'Contenido')}</h2>
 					<slot name="toc" />
 				</aside>
 			)}

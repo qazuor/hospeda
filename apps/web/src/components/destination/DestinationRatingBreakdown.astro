@@ -79,7 +79,7 @@ if (activeDimensions.length === 0) return;
 		{activeDimensions.map((key) => {
 			const value = (rating[key] as number);
 			const pct = (value / 5) * 100;
-			const label = t(`destination.rating.dimensions.${key}`, DIMENSION_LABELS[key]);
+			const label = t(`destinations.rating.dimensions.${key}`, DIMENSION_LABELS[key]);
 			return (
 				<div class="dest-rating-bar">
 					<span class="dest-rating-bar__label">{label}</span>
@@ -89,7 +89,7 @@ if (activeDimensions.length === 0) return;
 						aria-valuenow={value}
 						aria-valuemin={0}
 						aria-valuemax={5}
-						aria-label={`${label}: ${value.toFixed(1)} ${t('destination.rating.outOf', 'de 5')}`}
+						aria-label={`${label}: ${value.toFixed(1)} ${t('destinations.rating.outOf', 'de 5')}`}
 					>
 						<div class="dest-rating-bar__fill" style={`width: ${pct}%`} />
 					</div>

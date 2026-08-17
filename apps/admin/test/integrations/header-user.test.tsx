@@ -150,7 +150,7 @@ describe('HeaderUser', () => {
     it('should render initials when no avatar', () => {
         render(<HeaderUser />);
 
-        const button = screen.getByRole('button', { name: 'User menu' });
+        const button = screen.getByRole('button', { name: 'admin-nav.topbar.userMenu' });
         expect(button.textContent).toBe('JD');
     });
 
@@ -162,7 +162,7 @@ describe('HeaderUser', () => {
         };
         render(<HeaderUser />);
 
-        const button = screen.getByRole('button', { name: 'User menu' });
+        const button = screen.getByRole('button', { name: 'admin-nav.topbar.userMenu' });
         expect(button.textContent).toBe('T');
     });
 
@@ -170,7 +170,7 @@ describe('HeaderUser', () => {
         const user = userEvent.setup();
         render(<HeaderUser />);
 
-        const button = screen.getByRole('button', { name: 'User menu' });
+        const button = screen.getByRole('button', { name: 'admin-nav.topbar.userMenu' });
         await user.click(button);
 
         expect(screen.getByText('John Doe')).toBeInTheDocument();
@@ -181,7 +181,7 @@ describe('HeaderUser', () => {
         const user = userEvent.setup();
         render(<HeaderUser />);
 
-        await user.click(screen.getByRole('button', { name: 'User menu' }));
+        await user.click(screen.getByRole('button', { name: 'admin-nav.topbar.userMenu' }));
 
         expect(screen.getByText('John Doe')).toBeInTheDocument();
         expect(screen.getByText('john@example.com')).toBeInTheDocument();
@@ -199,8 +199,8 @@ describe('HeaderUser', () => {
 
         render(<HeaderUser />);
 
-        await user.click(screen.getByRole('button', { name: 'User menu' }));
-        await user.click(screen.getByText('Sign out'));
+        await user.click(screen.getByRole('button', { name: 'admin-nav.topbar.userMenu' }));
+        await user.click(screen.getByText('auth-ui.userMenu.signOut'));
 
         await waitFor(() => {
             expect(mockSignOut).toHaveBeenCalled();
@@ -219,7 +219,7 @@ describe('HeaderUser', () => {
         render(<HeaderUser />);
 
         // Should immediately show the user button (not skeleton, not nothing)
-        const button = screen.getByRole('button', { name: 'User menu' });
+        const button = screen.getByRole('button', { name: 'admin-nav.topbar.userMenu' });
         expect(button).toBeInTheDocument();
     });
 
@@ -227,8 +227,8 @@ describe('HeaderUser', () => {
         const user = userEvent.setup();
         render(<HeaderUser />);
 
-        await user.click(screen.getByRole('button', { name: 'User menu' }));
-        await user.click(screen.getByText('Profile'));
+        await user.click(screen.getByRole('button', { name: 'admin-nav.topbar.userMenu' }));
+        await user.click(screen.getByText('admin-nav.topbar.profile'));
 
         expect(mockNavigate).toHaveBeenCalledWith({ to: '/account/profile' });
     });
@@ -237,8 +237,8 @@ describe('HeaderUser', () => {
         const user = userEvent.setup();
         render(<HeaderUser />);
 
-        await user.click(screen.getByRole('button', { name: 'User menu' }));
-        await user.click(screen.getByText('Settings'));
+        await user.click(screen.getByRole('button', { name: 'admin-nav.topbar.userMenu' }));
+        await user.click(screen.getByText('admin-nav.topbar.settings'));
 
         expect(mockNavigate).toHaveBeenCalledWith({ to: '/account/preferences' });
     });
