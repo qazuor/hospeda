@@ -40,7 +40,7 @@ interface Props {
 }
 
 const { data, locale, isTrending = false } = Astro.props;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 // `--info-foreground` is the theme-paired ink for `--info`: near-white in light
 // (dark info surface) and dark ink in dark mode (light info surface). Hardcoding
 // white failed WCAG AA in dark (white on the light-blue dark `--info` = 2.92:1);
@@ -53,7 +53,7 @@ const expiryDays = expiryStatus.daysRemaining ?? 0;
 const expiryLabel =
     expiryDays === 0
         ? t('blog.card.expiresToday', 'Expira hoy')
-        : t('blog.card.expiresIn', `Expira en ${expiryDays} días`).replace('{{count}}', String(expiryDays));
+        : tPlural('blog.card.expiresIn', expiryDays);
 
 const articleUrl = buildUrl({ locale, path: `/publicaciones/${data.slug}/` });
 const categoryColor = getPostCategoryColor({ category: data.category });

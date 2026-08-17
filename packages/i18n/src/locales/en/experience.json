@@ -81,7 +81,8 @@
         "title": "Reviews",
         "submit": "Leave a review",
         "empty": "No reviews yet. Be the first to share your experience!",
-        "more": "+ {{n}} more reviews",
+        "more_one": "+ {{count}} more review",
+        "more_other": "+ {{count}} more reviews",
         "loading": "Loading reviews…"
     },
     "faq": {

@@ -87,7 +87,9 @@ describe('static-translations', () => {
         });
 
         it('should handle double curly braces interpolation', () => {
-            const translation = getTranslation('ui.entitySelect.selectedCount', { count: 5 });
+            // Base key is pluralized (`_one`/`_other`, HOS plural audit); `_other`
+            // is the one this fixed count=5 exercises.
+            const translation = getTranslation('ui.entitySelect.selectedCount_other', { count: 5 });
             expect(translation).toBe('5 seleccionados');
         });
 

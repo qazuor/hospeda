@@ -167,7 +167,7 @@ export const EntityEditContent = ({
         setErrors
     } = useEntityForm();
     const { addToast } = useToast();
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
 
     const sections = getEditableSections();
 
@@ -229,12 +229,7 @@ export const EntityEditContent = ({
 
             if (Object.keys(fieldErrors).length > 0) {
                 const fieldCount = Object.keys(fieldErrors).length;
-                errorMessage =
-                    fieldCount === 1
-                        ? t('error.form.validation-failed-field')
-                        : t('error.form.validation-failed-fields-plural', {
-                              count: fieldCount
-                          });
+                errorMessage = tPlural('error.form.validation-failed-fields', fieldCount);
                 setErrors(fieldErrors);
 
                 // Collect sections that contain errors so we can expand them
@@ -257,7 +252,7 @@ export const EntityEditContent = ({
                 variant: 'error'
             });
         }
-    }, [save, addToast, t, setErrors, orderedSections]);
+    }, [save, addToast, t, tPlural, setErrors, orderedSections]);
 
     /**
      * Shared per-section body builder — same logic for accordion and flat modes.

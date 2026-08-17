@@ -134,7 +134,7 @@ export function ContentGalleryManager({
     entityName,
     isEntityLoading = false
 }: ContentGalleryManagerProps) {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
 
     // ── Data ──────────────────────────────────────────────────────────────────
     const {
@@ -397,10 +397,7 @@ export function ContentGalleryManager({
                                 role="alert"
                                 className="mb-3 text-amber-700 text-sm"
                             >
-                                {t('admin-pages.gallery.grid.cap').replace(
-                                    '{{count}}',
-                                    String(galleryCap)
-                                )}
+                                {tPlural('admin-pages.gallery.grid.cap', galleryCap)}
                             </p>
                         )}
 

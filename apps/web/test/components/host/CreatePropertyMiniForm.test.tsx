@@ -346,21 +346,39 @@ vi.mock('../../../src/components/form/SearchableSelect.client', () => ({
  * the placeholder untestable — which is exactly how this file went red when the
  * trial copy stopped hardcoding its number.
  */
-vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
-            const raw = fallback ?? _key;
-            if (!params) return raw;
-            return Object.keys(params).reduce(
-                (acc, k) =>
-                    acc
-                        .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k]))
-                        .replace(new RegExp(`\\{${k}\\}`, 'g'), String(params[k])),
-                raw
-            );
-        }
-    })
-}));
+vi.mock('../../../src/lib/i18n', () => {
+    const t = (_key: string, fallback?: string, params?: Record<string, unknown>) => {
+        const raw = fallback ?? _key;
+        if (!params) return raw;
+        return Object.keys(params).reduce(
+            (acc, k) =>
+                acc
+                    .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k]))
+                    .replace(new RegExp(`\\{${k}\\}`, 'g'), String(params[k])),
+            raw
+        );
+    };
+    // Real `_other` fallback text for the keys this file asserts on by exact
+    // string (the trial callout, HOS plural audit) — everything else falls
+    // back to echoing the key + values, which is all the OTHER assertions in
+    // this file need (e.g. the amenity-count chip just checks the number
+    // appears in the text).
+    const PLURAL_FALLBACKS: Record<string, string> = {
+        'host.pages.nueva.trialCalloutTitle': '{{trialDays}} días gratis en tu primera suscripción',
+        'host.pages.nueva.trialNote':
+            'Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.'
+    };
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>) => {
+        const template = PLURAL_FALLBACKS[key];
+        if (template) return t(key, template, { ...params, count });
+        return `${key} ${Object.values({ ...params, count })
+            .map(String)
+            .join(' ')}`;
+    };
+    return {
+        createTranslations: (_locale: string) => ({ t, tPlural })
+    };
+});
 
 /** Mock logger to suppress output in tests. */
 vi.mock('../../../src/lib/logger', () => ({

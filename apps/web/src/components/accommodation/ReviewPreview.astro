@@ -25,7 +25,7 @@ interface Props {
 }
 
 const { accommodation, lang, ratingBreakdown } = Astro.props;
-const { t } = createTranslations(lang as SupportedLocale);
+const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 const hasReviews = accommodation.reviewsCount > 0;
 ---
@@ -46,7 +46,7 @@ const hasReviews = accommodation.reviewsCount > 0;
 
       <GradientButton
         as="button"
-        label={t('accommodations.detail.reviewsDetail.viewAll', undefined, { n: accommodation.reviewsCount })}
+        label={tPlural('accommodations.detail.reviewsDetail.viewAll', accommodation.reviewsCount)}
         variant="outline-primary"
         size="sm"
         shape="rounded"

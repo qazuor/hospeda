@@ -19,7 +19,8 @@
     },
     "aggregate": {
         "rating": "Average score",
-        "reviewsCount": "{{count}} reviews",
+        "reviewsCount_one": "{{count}} review",
+        "reviewsCount_other": "{{count}} reviews",
         "noData": "No data available"
     },
     "snippets": {
@@ -36,7 +37,8 @@
         "masterToggle": "Show external reputation section",
         "refresh": "Refresh reviews",
         "lastUpdated": "Last updated: {{date}}",
-        "rateLimitHit": "You can refresh again in {{minutes}} minutes",
+        "rateLimitHit_one": "You can refresh again in {{minutes}} minute",
+        "rateLimitHit_other": "You can refresh again in {{minutes}} minutes",
         "googleOnlyExplainer": "Review text is only available for Google. Other platforms display the score and a link.",
         "verifiedHint": "The link has been verified and corresponds to this accommodation",
         "loading": "Loading listings…",

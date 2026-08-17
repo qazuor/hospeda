@@ -1197,7 +1197,8 @@
             "minutes": "{n} min ago",
             "hours": "{n}h ago",
             "oneDay": "1 day ago",
-            "days": "{n} days ago"
+            "days_one": "{{count}} day ago",
+            "days_other": "{{count}} days ago"
         },
         "manualOverrideDialog": {
             "title": "Create Manual Override",
@@ -1279,7 +1280,8 @@
             "error": "Error loading history:",
             "unknownError": "Unknown error",
             "noRecords": "No records found",
-            "showingCount": "Showing {n} records"
+            "showingCount_one": "Showing {{count}} record",
+            "showingCount_other": "Showing {{count}} records"
         }
     },
     "promoCodes": {

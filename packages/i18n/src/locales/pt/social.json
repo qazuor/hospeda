@@ -624,7 +624,8 @@
     },
     "platformFormats": {
         "title": "Formatos de Plataforma",
-        "total": "{{count}} formatos",
+        "total_one": "{{count}} formato",
+        "total_other": "{{count}} formatos",
         "list": {
             "error": "Erro ao carregar formatos de plataforma",
             "empty": "Nenhum formato de plataforma configurado",
@@ -664,7 +665,8 @@
     },
     "settings": {
         "title": "Configurações Sociais",
-        "total": "{{count}} parâmetros",
+        "total_one": "{{count}} parâmetro",
+        "total_other": "{{count}} parâmetros",
         "list": {
             "error": "Erro ao carregar as configurações",
             "empty": "Nenhuma configuração encontrada",

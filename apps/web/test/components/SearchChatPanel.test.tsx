@@ -35,7 +35,10 @@ import {
 vi.mock('@/lib/i18n', () => ({
     createTranslations: (_locale: string) => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
-        tPlural: (_key: string, _count: number, fallback?: string) => fallback ?? _key
+        tPlural: (key: string, count: number, params?: Record<string, unknown>) =>
+            `${key} ${Object.values({ ...params, count })
+                .map(String)
+                .join(' ')}`
     })
 }));
 

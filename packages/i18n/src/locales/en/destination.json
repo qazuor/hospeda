@@ -62,7 +62,6 @@
         "clearFilters": "Clear filters",
         "noResults": "No destinations found",
         "noResultsMessage": "Try adjusting your filters or clearing the search.",
-        "resultsAnnouncement": "{{count}} destinations found",
         "loadingParents": "Loading options...",
         "noParentsAvailable": "No options available",
         "errorLoading": "Error loading",
@@ -76,10 +75,8 @@
         "location": "Location",
         "accommodation_one": "{{count}} accommodation",
         "accommodation_other": "{{count}} accommodations",
-        "accommodation_singular": "accommodation",
-        "accommodation_plural": "accommodations",
-        "event_singular": "event",
-        "event_plural": "events",
+        "event_one": "{{count}} event",
+        "event_other": "{{count}} events",
         "cta": "Explore destination",
         "attractionsLabel": "Attractions",
         "badge": {
@@ -141,16 +138,10 @@
             }
         },
         "card": {
-            "accommodations": "{{count}} accommodation | {{count}} accommodations",
             "accommodation_one": "{{count}} accommodation",
             "accommodation_other": "{{count}} accommodations",
-            "accommodationSingular": "{{count}} accommodation",
-            "accommodationPlural": "{{count}} accommodations",
             "event_one": "{{count}} event",
             "event_other": "{{count}} events",
-            "events": "{{count}} event | {{count}} events",
-            "eventSingular": "{{count}} event",
-            "eventPlural": "{{count}} events",
             "ratingLabel": "Rating: {{rating}} out of 5",
             "featured": "Featured",
             "attractions": "Attractions",
@@ -213,11 +204,15 @@
         "location": "Location",
         "stats": {
             "title": "In this destination",
-            "accommodations": "accommodations",
-            "events": "events",
-            "attractions": "attractions",
+            "accommodations_one": "accommodation",
+            "accommodations_other": "accommodations",
+            "events_one": "event",
+            "events_other": "events",
+            "attractions_one": "attraction",
+            "attractions_other": "attractions",
             "rating": "rating",
-            "reviews": "reviews"
+            "reviews_one": "review",
+            "reviews_other": "reviews"
         },
         "nearby": {
             "title": "Other destinations nearby",
@@ -233,10 +228,12 @@
         "sidebarCtas": {
             "label": "Quick actions",
             "accommodations": "Search accommodations",
-            "accommodationsHint": "{{count}} available",
+            "accommodationsHint_one": "{{count}} available",
+            "accommodationsHint_other": "{{count}} available",
             "accommodationsHintEmpty": "See nearby options",
             "events": "View events",
-            "eventsHint": "{{count}} upcoming",
+            "eventsHint_one": "{{count}} upcoming",
+            "eventsHint_other": "{{count}} upcoming",
             "eventsHintEmpty": "Coming soon"
         },
         "attractions": {
@@ -253,7 +250,8 @@
         "reviews": {
             "title": "Reviews",
             "empty": "There are no reviews for this destination yet.",
-            "count": "{{count}} reviews",
+            "count_one": "{{count}} review",
+            "count_other": "{{count}} reviews",
             "viewAll": "View all reviews",
             "modal": {
                 "close": "Close",
@@ -299,7 +297,8 @@
         "pointsOfInterestTitle": "Points of interest",
         "pointsOfInterestFilterLabel": "Filter by category",
         "pointsOfInterestFilterClear": "Clear ({{count}})",
-        "pointsOfInterestFilterClearAria": "Remove the {{count}} category filters",
+        "pointsOfInterestFilterClearAria_one": "Remove the {{count}} category filter",
+        "pointsOfInterestFilterClearAria_other": "Remove the {{count}} category filters",
         "pointsOfInterestEmptyFiltered": "No points of interest for the selected categories."
     },
     "rating": {

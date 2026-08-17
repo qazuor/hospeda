@@ -107,7 +107,8 @@
     "filters": "Filtros",
     "filterChips": {
         "clearLabel": "Limpiar ({{count}})",
-        "clearAriaLabel": "Limpiar {{count}} filtros"
+        "clearAriaLabel_one": "Limpiar {{count}} filtro",
+        "clearAriaLabel_other": "Limpiar {{count}} filtros"
     },
     "goHome": "Volver al inicio",
     "in": "en",

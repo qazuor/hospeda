@@ -100,7 +100,7 @@ export function PhotoSection({
     initialFeaturedImage = null,
     initialGallery = []
 }: PhotoSectionProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     const {
         featuredItem,
@@ -265,10 +265,11 @@ export function PhotoSection({
 
                 {isGalleryFull && (
                     <p className={styles.error}>
-                        {t(
+                        {tPlural(
                             'host.properties.editor.photo.galleryCapReached',
-                            `Límite de galería alcanzado (máx. ${ACCOMMODATION_GALLERY_CAP} fotos)`
-                        ).replace('{{cap}}', String(ACCOMMODATION_GALLERY_CAP))}
+                            ACCOMMODATION_GALLERY_CAP,
+                            { cap: ACCOMMODATION_GALLERY_CAP }
+                        )}
                     </p>
                 )}
 

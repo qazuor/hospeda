@@ -29,15 +29,23 @@ import { FOCUSABLE_SELECTORS } from '../../../src/lib/focus-trap';
  * fallback (which is what the component always passes) so the visible text
  * matches the literal Spanish strings in the source.
  */
-vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string, vars?: Record<string, unknown>) => {
-            const base = fallback ?? _key;
-            if (!vars) return base;
-            return base.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
-        }
-    })
-}));
+vi.mock('../../../src/lib/i18n', () => {
+    const t = (_key: string, fallback?: string, vars?: Record<string, unknown>) => {
+        const base = fallback ?? _key;
+        if (!vars) return base;
+        return base.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
+    };
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>) => {
+        if (key === 'home.searchBar.guestsAdultsCount')
+            return `${count} adulto${count === 1 ? '' : 's'}`;
+        if (key === 'home.searchBar.guestsChildrenCount')
+            return `${count} niño${count === 1 ? '' : 's'}`;
+        return t(key, undefined, { ...params, count });
+    };
+    return {
+        createTranslations: (_locale: string) => ({ t, tPlural })
+    };
+});
 
 /**
  * Capture analytics calls so the submit flow can assert the payload shape.

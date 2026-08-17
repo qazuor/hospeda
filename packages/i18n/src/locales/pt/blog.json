@@ -41,7 +41,7 @@
         "promoted": "Destaque",
         "news": "Notícia",
         "expiresToday": "Expira hoje",
-        "expiresIn": "Expira em {{count}} dias",
+        "expiresIn_other": "Expira em {{count}} dias",
         "expiresIn_one": "Expira em {{count}} dia",
         "about": "Sobre"
     },

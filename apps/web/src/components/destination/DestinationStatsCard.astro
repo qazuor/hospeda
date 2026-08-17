@@ -25,7 +25,7 @@ interface Props {
 }
 
 const { stats, locale } = Astro.props;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 interface StatRow {
 	value: string;
@@ -40,17 +40,17 @@ const rows: StatRow[] = [];
 // when there is something meaningful to show (rating=0 means no scores yet).
 rows.push({
 	value: String(stats.accommodationsCount),
-	label: t('destinations.detail.stats.accommodations', 'alojamientos'),
+	label: tPlural('destinations.detail.stats.accommodations', stats.accommodationsCount),
 	icon: 'bed'
 });
 rows.push({
 	value: String(stats.eventsCount),
-	label: t('destinations.detail.stats.events', 'eventos'),
+	label: tPlural('destinations.detail.stats.events', stats.eventsCount),
 	icon: 'calendar'
 });
 rows.push({
 	value: String(stats.attractionsCount),
-	label: t('destinations.detail.stats.attractions', 'atracciones'),
+	label: tPlural('destinations.detail.stats.attractions', stats.attractionsCount),
 	icon: 'location'
 });
 if (stats.averageRating > 0) {
@@ -63,7 +63,7 @@ if (stats.averageRating > 0) {
 if (stats.reviewsCount > 0) {
 	rows.push({
 		value: String(stats.reviewsCount),
-		label: t('destinations.detail.stats.reviews', 'reseñas'),
+		label: tPlural('destinations.detail.stats.reviews', stats.reviewsCount),
 		icon: 'chat'
 	});
 }

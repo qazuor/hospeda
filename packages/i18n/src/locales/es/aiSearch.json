@@ -59,8 +59,10 @@
     },
     "chips": {
         "type": "Tipo: {{value}}",
-        "minGuests": "Mínimo {{value}} huéspedes",
-        "maxGuests": "Hasta {{value}} huéspedes",
+        "minGuests_one": "Mínimo {{value}} huésped",
+        "minGuests_other": "Mínimo {{value}} huéspedes",
+        "maxGuests_one": "Hasta {{value}} huésped",
+        "maxGuests_other": "Hasta {{value}} huéspedes",
         "minPrice": "Desde {{value}}",
         "maxPrice": "Hasta {{value}}",
         "city": "Ciudad: {{value}}",

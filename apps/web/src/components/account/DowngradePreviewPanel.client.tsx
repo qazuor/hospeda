@@ -58,7 +58,7 @@ export function DowngradePreviewPanel({
     onBack,
     isPending
 }: DowngradePreviewPanelProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     // ── Local selection state ───────────────────────────────────────────────
 
@@ -220,10 +220,10 @@ export function DowngradePreviewPanel({
                             .replace('{cap}', String(accCap))}
                     </h3>
                     <p className={styles.sectionHint}>
-                        {t(
+                        {tPlural(
                             'account.pages.subscription.downgradePreview.accommodationsHint',
-                            'Seleccioná hasta {cap} alojamientos para mantener activos. El resto quedará inactivo.'
-                        ).replace('{cap}', String(accCap))}
+                            accCap
+                        )}
                     </p>
 
                     {accOverCap && (
@@ -233,11 +233,16 @@ export function DowngradePreviewPanel({
                         >
                             {t(
                                 'account.pages.subscription.downgradePreview.overCapWarning',
-                                'Tenés {selected} seleccionados pero el plan permite {cap}. Deseleccioná {extra}.'
-                            )
-                                .replace('{selected}', String(accSelected))
-                                .replace('{cap}', String(accCap))
-                                .replace('{extra}', String(accSelected - accCap))}
+                                'Tenés {{selectedPhrase}} pero el plan permite {cap}. Deseleccioná {extra}.',
+                                {
+                                    selectedPhrase: tPlural(
+                                        'account.pages.subscription.downgradePreview.overCapWarningSelectedCount',
+                                        accSelected
+                                    ),
+                                    cap: accCap,
+                                    extra: accSelected - accCap
+                                }
+                            )}
                         </p>
                     )}
 
@@ -296,10 +301,10 @@ export function DowngradePreviewPanel({
                             .replace('{cap}', String(promoCap))}
                     </h3>
                     <p className={styles.sectionHint}>
-                        {t(
+                        {tPlural(
                             'account.pages.subscription.downgradePreview.promotionsHint',
-                            'Seleccioná hasta {cap} promociones para mantener activas.'
-                        ).replace('{cap}', String(promoCap))}
+                            promoCap
+                        )}
                     </p>
 
                     {promoOverCap && (
@@ -309,11 +314,16 @@ export function DowngradePreviewPanel({
                         >
                             {t(
                                 'account.pages.subscription.downgradePreview.overCapWarning',
-                                'Tenés {selected} seleccionados pero el plan permite {cap}. Deseleccioná {extra}.'
-                            )
-                                .replace('{selected}', String(promoSelected))
-                                .replace('{cap}', String(promoCap))
-                                .replace('{extra}', String(promoSelected - promoCap))}
+                                'Tenés {{selectedPhrase}} pero el plan permite {cap}. Deseleccioná {extra}.',
+                                {
+                                    selectedPhrase: tPlural(
+                                        'account.pages.subscription.downgradePreview.overCapWarningSelectedCount',
+                                        promoSelected
+                                    ),
+                                    cap: promoCap,
+                                    extra: promoSelected - promoCap
+                                }
+                            )}
                         </p>
                     )}
 

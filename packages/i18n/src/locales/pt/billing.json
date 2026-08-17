@@ -52,8 +52,6 @@
             "description": "Escolha um plano para começar a publicar suas acomodações"
         },
         "trial": {
-            "daysRemaining": "Você tem {{count}} dias de teste restantes",
-            "dayRemaining": "Você tem 1 dia de teste restante",
             "noCharge": "Nenhuma cobrança foi realizada",
             "subscribeNow": "Assinar agora",
             "expiredBanner": {
@@ -273,38 +271,45 @@
     "limit": {
         "max_favorites": {
             "title": "Você atingiu o limite de favoritos",
-            "message": "Você já salvou {{currentCount}} de {{maxAllowed}} favoritos no seu plano. Faça um upgrade para salvar mais.",
+            "message_one": "Você já salvou {{currentCount}} de {{maxAllowed}} favorito no seu plano. Faça um upgrade para salvar mais.",
+            "message_other": "Você já salvou {{currentCount}} de {{maxAllowed}} favoritos no seu plano. Faça um upgrade para salvar mais.",
             "cta": "Ver minha assinatura"
         },
         "max_accommodations": {
             "title": "Você atingiu o limite de propriedades",
-            "message": "Você tem {{currentCount}} de {{maxAllowed}} propriedades no seu plano. Faça um upgrade para publicar mais.",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} propriedade no seu plano. Faça um upgrade para publicar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} propriedades no seu plano. Faça um upgrade para publicar mais.",
             "cta": "Ver minha assinatura",
             "atLimitPanel": {
                 "title": "Você atingiu o limite do seu plano",
-                "body": "Você está usando {{currentCount}} de {{maxAllowed}} propriedades. Para publicar outra, faça upgrade do seu plano.",
+                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} propriedade. Para publicar outra, faça upgrade do seu plano.",
+                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} propriedades. Para publicar outra, faça upgrade do seu plano.",
                 "primaryCta": "Ver minha assinatura",
                 "secondaryCta": "Ver minhas propriedades"
             }
         },
         "max_photos_per_accommodation": {
             "title": "Você atingiu o limite de fotos",
-            "message": "Você já enviou {{currentCount}} de {{maxAllowed}} fotos permitidas no seu plano. Faça um upgrade para enviar mais.",
+            "message_one": "Você já enviou {{currentCount}} de {{maxAllowed}} foto permitida no seu plano. Faça um upgrade para enviar mais.",
+            "message_other": "Você já enviou {{currentCount}} de {{maxAllowed}} fotos permitidas no seu plano. Faça um upgrade para enviar mais.",
             "cta": "Ver minha assinatura"
         },
         "max_active_promotions": {
             "title": "Você atingiu o limite de promoções",
-            "message": "Você tem {{currentCount}} de {{maxAllowed}} promoções ativas no seu plano. Faça um upgrade para criar mais.",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} promoção ativa no seu plano. Faça um upgrade para criar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} promoções ativas no seu plano. Faça um upgrade para criar mais.",
             "cta": "Ver minha assinatura"
         },
         "max_properties": {
             "title": "Você atingiu o limite de propriedades",
-            "message": "Você tem {{currentCount}} de {{maxAllowed}} propriedades no seu plano. Faça um upgrade para adicionar mais.",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} propriedade no seu plano. Faça um upgrade para adicionar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} propriedades no seu plano. Faça um upgrade para adicionar mais.",
             "cta": "Ver minha assinatura"
         },
         "max_staff_accounts": {
             "title": "Você atingiu o limite de contas de staff",
-            "message": "Você tem {{currentCount}} de {{maxAllowed}} contas de staff no seu plano. Faça um upgrade para adicionar mais.",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} conta de staff no seu plano. Faça um upgrade para adicionar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} contas de staff no seu plano. Faça um upgrade para adicionar mais.",
             "cta": "Ver minha assinatura"
         },
         "generic": {

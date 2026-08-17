@@ -102,7 +102,7 @@ export function usePhotoSection({
     initialFeaturedImage = null,
     initialGallery = []
 }: UsePhotoSectionParams): UsePhotoSectionResult {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const featuredInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -282,7 +282,8 @@ export function usePhotoSection({
                         selectedCount: files.length,
                         remainingSlots,
                         cap: galleryCap,
-                        t
+                        t,
+                        tPlural
                     })
                 );
                 return;
@@ -354,7 +355,7 @@ export function usePhotoSection({
                 galleryInputRef.current.value = '';
             }
         },
-        [accommodationId, galleryCap, galleryItems.length, t, reportUploadError]
+        [accommodationId, galleryCap, galleryItems.length, t, tPlural, reportUploadError]
     );
 
     const handleGallerySelect = useCallback(

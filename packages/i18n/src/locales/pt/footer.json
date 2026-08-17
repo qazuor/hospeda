@@ -61,7 +61,8 @@
     "categoryNature": "Natureza",
     "trustSignals": {
         "label": "Por que escolher-nos",
-        "accommodationsCount": "{{count}}+ alojamentos",
+        "accommodationsCount_one": "{{formatted}}+ hospedagem",
+        "accommodationsCount_other": "{{formatted}}+ hospedagens",
         "destinationsCount": "{{count}}+ destinos",
         "averageRating": "{{rating}} de média",
         "localSupport": "Suporte local em espanhol",

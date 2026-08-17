@@ -39,7 +39,7 @@ interface Props {
 }
 
 const { locale, accommodationId, hasTranslations, statuses } = Astro.props;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const visible = ACCOMMODATION_EDITOR_SECTIONS.filter(
 	(section) => section.id !== 'translations' || hasTranslations,
@@ -80,7 +80,9 @@ const groups = EDITOR_SECTION_GROUPS.map((group) => ({
 															.map((key) => t(key))
 															.join(', '),
 													})
-												: t(status.labelKey, undefined, status.params)}
+												: typeof status.params?.count === 'number'
+													? tPlural(status.labelKey, status.params.count, status.params)
+													: t(status.labelKey, undefined, status.params)}
 										</span>
 									)}
 								</span>

@@ -67,7 +67,9 @@ describe('eventos/index.astro — category chips wired to real multi-select (HOS
 
         it('resolves the Clear(N) label/ariaLabel via the shared common.filterChips i18n keys', () => {
             expect(src).toContain("t('common.filterChips.clearLabel')");
-            expect(src).toContain("t('common.filterChips.clearAriaLabel')");
+            // buildClearFacetChip only renders at count >= 2, so `_other` is read
+            // directly (HOS plural audit) — `_one` can never be reached here.
+            expect(src).toContain("t('common.filterChips.clearAriaLabel_other')");
         });
     });
 

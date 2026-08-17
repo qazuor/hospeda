@@ -24,9 +24,8 @@
         "save-success": "Saved successfully",
         "save-success-message": "Your changes were saved correctly",
         "unexpected-error": "An unexpected error occurred",
-        "validation-failed-fields": "Validation failed for {{count}} field{{plural}}. Please check the highlighted fields.",
-        "validation-failed-field": "Validation failed for 1 field. Please check the highlighted field.",
-        "validation-failed-fields-plural": "Validation failed for {{count}} fields. Please check the highlighted fields.",
+        "validation-failed-fields_one": "Validation failed for {{count}} field. Please check the highlighted fields.",
+        "validation-failed-fields_other": "Validation failed for {{count}} fields. Please check the highlighted fields.",
         "save-changes": "Save changes",
         "saving": "Saving..."
     },

@@ -463,7 +463,8 @@ const postCategoryClearChip = buildClearFacetChip({
     singularParamKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey,
     count: postCategoryActiveValues.length,
     labelTemplate: t('common.filterChips.clearLabel'),
-    ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),
+    // buildClearFacetChip only renders at count >= 2, so `_one` is unreachable here.
+    ariaLabelTemplate: t('common.filterChips.clearAriaLabel_other'),
     icon: XCircleIcon
 });
 ---

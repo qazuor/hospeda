@@ -93,8 +93,13 @@
             "dateRange": "Estoy mirando del {from} al {to}.",
             "dateFrom": "Estoy mirando a partir del {from}.",
             "dateTo": "Estoy mirando hasta el {to}.",
-            "guests": "Somos {adults} adultos y {children} niños.",
-            "guestsAdultsOnly": "Somos {adults} adultos.",
+            "guestsAdultsCount_one": "{{count}} adulto",
+            "guestsAdultsCount_other": "{{count}} adultos",
+            "guestsChildrenCount_one": "{{count}} niño",
+            "guestsChildrenCount_other": "{{count}} niños",
+            "guestsTemplate": "Somos {{adultsPhrase}} y {{childrenPhrase}}.",
+            "guestsAdultsOnly_one": "Somos {{adults}} adulto.",
+            "guestsAdultsOnly_other": "Somos {{adults}} adultos.",
             "outro": "¿Me podrías confirmar disponibilidad?"
         }
     },

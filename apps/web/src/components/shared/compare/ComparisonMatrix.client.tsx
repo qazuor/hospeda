@@ -37,13 +37,14 @@
 import { StarIcon } from '@repo/icons';
 import { type FC, type ReactNode, useEffect, useState } from 'react';
 import type { AccommodationCardData } from '@/data/types';
+import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { protectedAccommodationsApi } from '@/lib/api/endpoints-protected';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { cn } from '@/lib/cn';
 import { getAccommodationTypeLabel } from '@/lib/colors';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { useCompareStore } from '@/store/compare-store';
 import styles from './ComparisonMatrix.module.css';
 import { computeBestValue } from './computeBestValue';
@@ -138,8 +139,11 @@ function classifyError(error: {
  * @returns The matrix, or an empty / loading / error panel.
  */
 export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) => {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
     const { ids } = useCompareStore();
+    // Needed only to interpolate the per-plan cap into the limit-reached
+    // message below — the matrix itself still renders from `useCompareStore`.
+    const { maxItems } = useCompareGuard();
 
     const [status, setStatus] = useState<MatrixStatus>(
         ids.length >= MIN_TO_COMPARE ? { kind: 'loading' } : { kind: 'empty' }
@@ -246,10 +250,7 @@ export const ComparisonMatrix: FC<ComparisonMatrixProps> = ({ locale = 'es' }) =
                   'Comparar alojamientos está disponible en los planes Plus y VIP.'
               )
             : isLimit
-              ? t(
-                    'accommodations.comparison.limit.message',
-                    'Tu plan permite comparar hasta {{max}} alojamientos a la vez.'
-                )
+              ? tPlural('accommodations.comparison.limit.message', maxItems, { max: maxItems })
               : t(
                     'accommodations.comparison.error.message',
                     'Ocurrió un error al cargar los alojamientos. Intentá de nuevo.'

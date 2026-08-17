@@ -60,7 +60,7 @@ import { applyCacheHeaders } from '@/lib/cache/response-cache';
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 const { slug } = Astro.params;
 
 if (!slug) return new Response(null, { status: 404 });
@@ -128,17 +128,13 @@ if (hasCtxDates || hasCtxGuests) {
 		const c = ctxChildren && !Number.isNaN(ctxChildren) ? ctxChildren : 0;
 		if (c > 0) {
 			parts.push(
-				t('conversations.form.prefill.guests', 'Somos {adults} adultos y {children} niños.', {
-					adults: a,
-					children: c,
+				t('conversations.form.prefill.guestsTemplate', 'Somos {{adultsPhrase}} y {{childrenPhrase}}.', {
+					adultsPhrase: tPlural('conversations.form.prefill.guestsAdultsCount', a),
+					childrenPhrase: tPlural('conversations.form.prefill.guestsChildrenCount', c),
 				})
 			);
 		} else if (a > 0) {
-			parts.push(
-				t('conversations.form.prefill.guestsAdultsOnly', 'Somos {adults} adultos.', {
-					adults: a,
-				})
-			);
+			parts.push(tPlural('conversations.form.prefill.guestsAdultsOnly', a));
 		}
 	}
 

@@ -22,6 +22,17 @@ export type Translate = (
     params?: Record<string, unknown>
 ) => string;
 
+/**
+ * Count-aware translator. Mirrors `createTranslations().tPlural` — the count is
+ * the SECOND argument, unlike `Translate`, where the second slot is the
+ * fallback.
+ */
+export type PluralTranslate = (
+    key: string,
+    count: number,
+    params?: Record<string, unknown>
+) => string;
+
 const ALLOWED_MIME_TYPES = ['image/jpeg', 'image/png', 'image/webp'] as const;
 
 /**
@@ -59,17 +70,37 @@ export function buildCapExceededOnSelectMessage({
     selectedCount,
     remainingSlots,
     cap,
-    t
+    t,
+    tPlural
 }: {
     readonly selectedCount: number;
     readonly remainingSlots: number;
     readonly cap: number;
     readonly t: Translate;
+    readonly tPlural: PluralTranslate;
 }): string {
+    // Two independent counts, so two pairs composed in rather than one. A
+    // single `_one`/`_other` pair cannot express both: picking one photo with
+    // several slots free needs the singular in one half and the plural in the
+    // other. `cap` takes no pair — "máx. {{cap}} en total" has no noun to
+    // inflect.
+    const remaining = Math.max(remainingSlots, 0);
     return t(
         'host.properties.editor.photo.galleryCapExceededOnSelect',
-        'Elegiste {{selected}} fotos pero solo quedan {{remaining}} lugares libres (máx. {{cap}} en total)',
-        { selected: selectedCount, remaining: Math.max(remainingSlots, 0), cap }
+        'Elegiste {{pickedPhrase}} pero solo queda(n) {{remainingPhrase}} (máx. {{cap}} en total)',
+        {
+            pickedPhrase: tPlural(
+                'host.properties.editor.photo.galleryCapExceededOnSelectPicked',
+                selectedCount,
+                { count: selectedCount }
+            ),
+            remainingPhrase: tPlural(
+                'host.properties.editor.photo.galleryCapExceededOnSelectRemaining',
+                remaining,
+                { count: remaining }
+            ),
+            cap
+        }
     );
 }
 

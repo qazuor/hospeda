@@ -7,7 +7,8 @@
     "faq": {
         "1": {
             "q": "How much does it cost to list my property?",
-            "a": "Listing requires a host plan. If it is your first subscription, every plan includes a {{trialDays}}-day free trial. We charge no booking commission: the subscription is the only cost."
+            "a_one": "Listing requires a host plan. If it is your first subscription, every plan includes a {{trialDays}}-day free trial. We charge no booking commission: the subscription is the only cost.",
+            "a_other": "Listing requires a host plan. If it is your first subscription, every plan includes a {{trialDays}}-day free trial. We charge no booking commission: the subscription is the only cost."
         },
         "2": {
             "q": "How do I receive bookings?",

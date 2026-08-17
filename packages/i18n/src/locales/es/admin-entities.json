@@ -452,8 +452,10 @@
             "chips": {
                 "unique": "Únicos",
                 "total": "Totales",
-                "ariaUnique": "{{window}}: {{count}} visitantes únicos",
-                "ariaTotal": "{{window}}: {{count}} vistas totales"
+                "ariaUnique_one": "{{window}}: {{count}} visitante único",
+                "ariaUnique_other": "{{window}}: {{count}} visitantes únicos",
+                "ariaTotal_one": "{{window}}: {{count}} vista total",
+                "ariaTotal_other": "{{window}}: {{count}} vistas totales"
             }
         }
     },
@@ -657,7 +659,8 @@
                 "searching": "Buscando...",
                 "searchPrompt": "Escribí una búsqueda para encontrar imágenes stock",
                 "noResults": "Sin resultados para «{query}»",
-                "resultsCount": "{count} resultados",
+                "resultsCount_one": "{{count}} resultado",
+                "resultsCount_other": "{{count}} resultados",
                 "loadMore": "Cargar más",
                 "importButton": "Importar",
                 "importing": "Importando...",
@@ -674,7 +677,8 @@
                 "searchError": "Error al buscar imágenes. Intentá nuevamente.",
                 "importError": "Error al importar la imagen. Intentá nuevamente.",
                 "entityNotFound": "Entidad no encontrada",
-                "galleryLimitExceeded": "Límite de galería alcanzado (máx: {limit} imágenes)"
+                "galleryLimitExceeded_one": "Límite de galería alcanzado (máx: {{limit}} imagen)",
+                "galleryLimitExceeded_other": "Límite de galería alcanzado (máx: {{limit}} imágenes)"
             }
         },
         "avatar": {
@@ -769,7 +773,8 @@
         "titleDefault": "Llegaste al límite de tu plan",
         "descriptionTemplate": "Estás usando {{currentCount}} de {{maxAllowed}}. Actualizá tu plan para tener más.",
         "upgradeLink": "Ver mi suscripción",
-        "belowLimit": "Te quedan {max} - {current} disponibles en tu plan.",
+        "belowLimit_one": "Te queda {{count}} disponible en tu plan.",
+        "belowLimit_other": "Te quedan {{count}} disponibles en tu plan.",
         "atLimit": "Llegaste al máximo permitido por tu plan. Para sumar más, mejorá el plan."
     },
     "ownerPromotions": {
@@ -842,7 +847,7 @@
                 "label": "Imagen principal cargada"
             },
             "galleryPhotos": {
-                "label": "Al menos {target} fotos en la galería",
+                "label": "Al menos {{target}} fotos en la galería",
                 "hint": "{current} de {target} cargadas"
             },
             "photosAlt": {

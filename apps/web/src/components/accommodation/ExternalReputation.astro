@@ -46,7 +46,7 @@ interface Props {
 }
 
 const { reputationData, locale } = Astro.props;
-const { t } = createTranslations(locale as SupportedLocale);
+const { t, tPlural } = createTranslations(locale as SupportedLocale);
 
 // Nothing to render when all platforms are hidden.
 const { items: configuredItems } = reputationData;
@@ -115,7 +115,7 @@ const showReviewsBlock = googleItemWithSnippets != null || googleItemTtlExpired 
                         )}
                         {item.reviewsCount != null && (
                             <span class={styles.chipReviewCount}>
-                                {t('external-reputation.aggregate.reviewsCount', '{{count}} reseñas', { count: item.reviewsCount })}
+                                {tPlural('external-reputation.aggregate.reviewsCount', item.reviewsCount)}
                             </span>
                         )}
                     </div>

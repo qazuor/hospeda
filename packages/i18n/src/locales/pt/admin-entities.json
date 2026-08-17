@@ -452,8 +452,10 @@
             "chips": {
                 "unique": "Únicos",
                 "total": "Totais",
-                "ariaUnique": "{{window}}: {{count}} visitantes únicos",
-                "ariaTotal": "{{window}}: {{count}} visualizações totais"
+                "ariaUnique_one": "{{window}}: {{count}} visitante único",
+                "ariaUnique_other": "{{window}}: {{count}} visitantes únicos",
+                "ariaTotal_one": "{{window}}: {{count}} visualização total",
+                "ariaTotal_other": "{{window}}: {{count}} visualizações totais"
             }
         }
     },
@@ -681,7 +683,8 @@
                 "searching": "Buscando...",
                 "searchPrompt": "Digite um termo de busca para encontrar imagens stock",
                 "noResults": "Sem resultados para «{query}»",
-                "resultsCount": "{count} resultados",
+                "resultsCount_one": "{{count}} resultado",
+                "resultsCount_other": "{{count}} resultados",
                 "loadMore": "Carregar mais",
                 "importButton": "Importar",
                 "importing": "Importando...",
@@ -698,7 +701,8 @@
                 "searchError": "Erro ao buscar imagens. Tente novamente.",
                 "importError": "Erro ao importar imagem. Tente novamente.",
                 "entityNotFound": "Entidade não encontrada",
-                "galleryLimitExceeded": "Limite da galeria atingido (máx: {limit} imagens)"
+                "galleryLimitExceeded_one": "Limite da galeria atingido (máx: {{limit}} imagem)",
+                "galleryLimitExceeded_other": "Limite da galeria atingido (máx: {{limit}} imagens)"
             }
         },
         "avatar": {
@@ -795,7 +799,8 @@
         "titleDefault": "Atingiste o limite do teu plano",
         "descriptionTemplate": "Estás usando {{currentCount}} de {{maxAllowed}}. Atualiza o teu plano para teres mais.",
         "upgradeLink": "Ver minha assinatura",
-        "belowLimit": "Te restam {max} - {current} disponíveis no seu plano.",
+        "belowLimit_one": "Te resta {{count}} disponível no seu plano.",
+        "belowLimit_other": "Te restam {{count}} disponíveis no seu plano.",
         "atLimit": "Você atingiu o limite do seu plano. Para adicionar mais, atualize o plano."
     },
     "selects": {
@@ -842,7 +847,7 @@
                 "label": "Imagem principal carregada"
             },
             "galleryPhotos": {
-                "label": "Pelo menos {target} fotos na galeria",
+                "label": "Pelo menos {{target}} fotos na galeria",
                 "hint": "{current} de {target} carregadas"
             },
             "photosAlt": {

@@ -24,9 +24,8 @@
         "save-success": "Salvo com sucesso",
         "save-success-message": "As alterações foram salvas corretamente",
         "unexpected-error": "Ocorreu um erro inesperado",
-        "validation-failed-fields": "A validação falhou para {{count}} campo{{plural}}. Por favor, revise os campos destacados.",
-        "validation-failed-field": "A validação falhou para 1 campo. Por favor, revise o campo destacado.",
-        "validation-failed-fields-plural": "A validação falhou para {{count}} campos. Por favor, revise os campos destacados.",
+        "validation-failed-fields_one": "A validação falhou para {{count}} campo. Por favor, revise os campos destacados.",
+        "validation-failed-fields_other": "A validação falhou para {{count}} campos. Por favor, revise os campos destacados.",
         "save-changes": "Salvar alterações",
         "saving": "Salvando..."
     },

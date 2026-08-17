@@ -105,7 +105,8 @@
                 },
                 "cost": {
                     "question": "¿Cuánto cuesta publicar?",
-                    "answer": "Publicar tu alojamiento requiere un plan de anfitrión. Si es tu primera suscripción, todos incluyen {{trialDays}} días de prueba gratis: cargás tu tarjeta al empezar y no se cobra nada hasta que la prueba termina. No cobramos comisión por reserva, así que la suscripción es el único costo. Mirá los precios de cada plan en la página de Planes para propietarios."
+                    "answer_one": "Publicar tu alojamiento requiere un plan de anfitrión. Si es tu primera suscripción, todos incluyen {{trialDays}} día de prueba gratis: cargás tu tarjeta al empezar y no se cobra nada hasta que la prueba termina. No cobramos comisión por reserva, así que la suscripción es el único costo. Mirá los precios de cada plan en la página de Planes para propietarios.",
+                    "answer_other": "Publicar tu alojamiento requiere un plan de anfitrión. Si es tu primera suscripción, todos incluyen {{trialDays}} días de prueba gratis: cargás tu tarjeta al empezar y no se cobra nada hasta que la prueba termina. No cobramos comisión por reserva, así que la suscripción es el único costo. Mirá los precios de cada plan en la página de Planes para propietarios."
                 },
                 "commission": {
                     "question": "¿Cobran comisión por reserva?",

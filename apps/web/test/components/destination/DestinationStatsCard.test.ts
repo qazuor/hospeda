@@ -80,12 +80,15 @@ describe('DestinationStatsCard.astro', () => {
             expect(src).toContain('En este destino');
         });
 
-        it('should use t() for each stat label', () => {
-            expect(src).toContain("t('destinations.detail.stats.accommodations'");
-            expect(src).toContain("t('destinations.detail.stats.events'");
-            expect(src).toContain("t('destinations.detail.stats.attractions'");
+        it('should pluralize the countable stat labels and use t() for rating', () => {
+            // accommodations/events/attractions/reviews carry a real count and are
+            // pluralized ("1 alojamiento" vs "3 alojamientos" — HOS plural audit);
+            // rating has no count and stays a plain t() lookup.
+            expect(src).toContain("tPlural('destinations.detail.stats.accommodations'");
+            expect(src).toContain("tPlural('destinations.detail.stats.events'");
+            expect(src).toContain("tPlural('destinations.detail.stats.attractions'");
+            expect(src).toContain("tPlural('destinations.detail.stats.reviews'");
             expect(src).toContain("t('destinations.detail.stats.rating'");
-            expect(src).toContain("t('destinations.detail.stats.reviews'");
         });
 
         it('should use the plural `destinations` namespace, not the non-existent singular `destination` (BETA-188)', () => {
@@ -103,14 +106,10 @@ describe('DestinationStatsCard.astro', () => {
         // reads actually EXIST in es/en/pt, so /en/ and /pt/ render translated
         // labels instead of falling back to the Spanish default.
         const LOCALES = ['es', 'en', 'pt'] as const;
-        const STAT_KEYS = [
-            'title',
-            'accommodations',
-            'events',
-            'attractions',
-            'rating',
-            'reviews'
-        ] as const;
+        // `title`/`rating` are plain (no count); the rest are pluralized
+        // (HOS plural audit) so only their `_other` form is checked here.
+        const STAT_KEYS = ['title', 'rating'] as const;
+        const PLURAL_STAT_KEYS = ['accommodations', 'events', 'attractions', 'reviews'] as const;
 
         const loadDestinationDict = (locale: string): Record<string, unknown> =>
             JSON.parse(
@@ -133,6 +132,14 @@ describe('DestinationStatsCard.astro', () => {
                     expect(
                         typeof stats?.[key] === 'string' && (stats[key] as string).length > 0,
                         `detail.stats.${key} missing/empty in ${locale}`
+                    ).toBe(true);
+                }
+                for (const key of PLURAL_STAT_KEYS) {
+                    const otherKey = `${key}_other`;
+                    expect(
+                        typeof stats?.[otherKey] === 'string' &&
+                            (stats[otherKey] as string).length > 0,
+                        `detail.stats.${otherKey} missing/empty in ${locale}`
                     ).toBe(true);
                 }
                 expect(

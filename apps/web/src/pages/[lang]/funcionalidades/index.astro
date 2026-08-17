@@ -52,7 +52,7 @@ import { OWNER_TRIAL_DAYS } from '@repo/billing';
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 // --- Edge cacheability (HOS-369 W2-2) ---
 // No session, no API call — the content is i18n + code, so it only changes on
@@ -287,7 +287,7 @@ const subnavSectionIds = SUBNAV_LINKS.map((link) => link.id);
 						<BannerIcon size={28} weight="regular" />
 					</span>
 					<div class="fx-banner__tx">
-						<h3>{t('features.anfitriones.banner.title', undefined, trialParams)}</h3>
+						<h3>{tPlural('features.anfitriones.banner.title', OWNER_TRIAL_DAYS, trialParams)}</h3>
 						<p>{t('features.anfitriones.banner.description')}</p>
 					</div>
 				</div>
@@ -448,7 +448,7 @@ const subnavSectionIds = SUBNAV_LINKS.map((link) => link.id);
 					<span class="fx-cta__sun" aria-hidden="true"></span>
 					<span class="fx-hand fx-cta__hand">{t('features.cta.tagline')}</span>
 					<h2 class="fx-cta__title">{t('features.cta.title')}</h2>
-					<p class="fx-cta__desc">{t('features.cta.description', undefined, trialParams)}</p>
+					<p class="fx-cta__desc">{tPlural('features.cta.description', OWNER_TRIAL_DAYS, trialParams)}</p>
 					<GradientButton
 						href={buildUrl({ locale, path: 'publicar' })}
 						label={t('features.cta.button')}

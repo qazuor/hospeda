@@ -28,6 +28,20 @@ const t = vi.fn((_key: string, fallback?: string, params?: Record<string, unknow
     );
 });
 
+/**
+ * Count-aware stub. Returns the resolved KEY rather than copy, so an assertion
+ * can tell `_one` from `_other` — a stub returning prose would pass whichever
+ * branch was taken.
+ */
+const tPlural = vi.fn((key: string, count: number, params?: Record<string, unknown>) => {
+    const suffixed = `${key}${count === 1 ? '_one' : '_other'}`;
+    if (!params) return suffixed;
+    return Object.entries(params).reduce(
+        (acc, [k, v]) => acc.replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(v)),
+        `${suffixed}:${String(params.count ?? count)}`
+    );
+});
+
 describe('validatePhotoFile', () => {
     it('accepts a valid JPEG under the size cap', () => {
         const file = new File(['x'], 'photo.jpg', { type: 'image/jpeg' });
@@ -55,7 +69,8 @@ describe('buildCapExceededOnSelectMessage', () => {
             selectedCount: 5,
             remainingSlots: 2,
             cap: 50,
-            t
+            t,
+            tPlural
         });
         expect(message).toContain('5');
         expect(message).toContain('2');
@@ -67,10 +82,29 @@ describe('buildCapExceededOnSelectMessage', () => {
             selectedCount: 3,
             remainingSlots: -4,
             cap: 50,
-            t
+            t,
+            tPlural
         });
         expect(message).not.toContain('-4');
         expect(message).toContain('0');
+    });
+
+    it('inflects each count independently', () => {
+        // Both counts appear in one sentence, so the singular and the plural
+        // must be able to show up together. A single shared `_one`/`_other`
+        // pair cannot express that, which is why the message composes two —
+        // and this is the case that proves it.
+        const message = buildCapExceededOnSelectMessage({
+            selectedCount: 1,
+            remainingSlots: 3,
+            cap: 50,
+            t,
+            tPlural
+        });
+        expect(message).toContain('galleryCapExceededOnSelectPicked_one');
+        expect(message).toContain('galleryCapExceededOnSelectRemaining_other');
+        expect(message).not.toContain('Picked_other');
+        expect(message).not.toContain('Remaining_one');
     });
 });
 

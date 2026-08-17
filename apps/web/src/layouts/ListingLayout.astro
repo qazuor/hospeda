@@ -8,7 +8,7 @@
  */
 
 import { getSiteUrl } from '@/lib/env';
-import { createT } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
@@ -73,12 +73,10 @@ const hasTopFilters = showFilters && filterPosition === 'top';
 // WaveHeader band (via ListingPageHeader), detached from the filters/results
 // it describes. It now renders here, at the top of the content column, level
 // with the filters sidebar and aligned with the grid it summarizes.
-const t = createT(locale);
+const { tPlural } = createTranslations(locale);
 const resultsSummaryLabel =
 	filterSummary ??
-	(totalCount !== undefined
-		? `${totalCount} ${t('ui.listing.resultsFound', 'resultados encontrados')}`
-		: undefined);
+	(totalCount !== undefined ? tPlural('ui.listing.resultsFound', totalCount) : undefined);
 ---
 
 <BaseLayout locale={locale} title={resolvedTitle} description={resolvedDescription}>

@@ -33,7 +33,7 @@ import {
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 // --- Edge cacheability (HOS-369 W2-2) ---
 // No session, no API call — the content is i18n + code, so it only changes on
@@ -163,7 +163,13 @@ const resolvedCategories = categories.map((cat) => ({
 	items: cat.items.map((itemKey) => ({
 		key: itemKey,
 		question: t(`faq.categories.${cat.key}.items.${itemKey}.question`),
-		answer: t(`faq.categories.${cat.key}.items.${itemKey}.answer`, undefined, faqParams)
+		// The owners/cost answer is the only FAQ item whose copy carries a real
+		// count ({{trialDays}}) — pluralized (HOS plural audit); everything
+		// else in this generic loop stays plain t() with the shared faqParams.
+		answer:
+			cat.key === 'owners' && itemKey === 'cost'
+				? tPlural(`faq.categories.${cat.key}.items.${itemKey}.answer`, OWNER_TRIAL_DAYS, faqParams)
+				: t(`faq.categories.${cat.key}.items.${itemKey}.answer`, undefined, faqParams)
 	}))
 }));
 

@@ -26,7 +26,8 @@ function formatRelativeTime(
         minutes: string;
         hours: string;
         oneDay: string;
-        days: string;
+        /** Pluralized on the actual day count — `days_one`/`days_other`. */
+        days: (count: number) => string;
         locale?: string;
     }
 ): string {
@@ -41,7 +42,7 @@ function formatRelativeTime(
     if (diffMin < 60) return translations.minutes.replace('{n}', String(diffMin));
     if (diffHr < 24) return translations.hours.replace('{n}', String(diffHr));
     if (diffDay === 1) return translations.oneDay;
-    if (diffDay < 30) return translations.days.replace('{n}', String(diffDay));
+    if (diffDay < 30) return translations.days(diffDay);
 
     return formatDate({
         date,
@@ -92,6 +93,8 @@ interface ExchangeRateColumnsOptions {
     isDeleting?: boolean;
     /** Translation function from useTranslations hook */
     t: (key: string) => string;
+    /** Plural translation function from useTranslations hook */
+    tPlural: (key: string, count: number) => string;
     /** BCP 47 locale string (e.g. 'es-AR', 'en-US') */
     locale?: string;
 }
@@ -102,14 +105,14 @@ interface ExchangeRateColumnsOptions {
 export function getExchangeRateColumns(
     options: ExchangeRateColumnsOptions
 ): ReadonlyArray<DataTableColumn<ExchangeRate>> {
-    const { onDelete, isDeleting, t, locale = defaultIntlLocale } = options;
+    const { onDelete, isDeleting, t, tPlural, locale = defaultIntlLocale } = options;
 
     const relativeTimeTranslations = {
         justNow: t('admin-billing.exchangeRates.relativeTime.justNow'),
         minutes: t('admin-billing.exchangeRates.relativeTime.minutes'),
         hours: t('admin-billing.exchangeRates.relativeTime.hours'),
         oneDay: t('admin-billing.exchangeRates.relativeTime.oneDay'),
-        days: t('admin-billing.exchangeRates.relativeTime.days'),
+        days: (count: number) => tPlural('admin-billing.exchangeRates.relativeTime.days', count),
         locale
     };
 

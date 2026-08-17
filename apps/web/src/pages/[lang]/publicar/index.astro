@@ -27,7 +27,7 @@ import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
-import { OWNER_FAQ_ITEMS, buildOwnerFaqParams } from '@/lib/owner-faq';
+import { OWNER_FAQ_ITEMS, buildOwnerFaqParams, resolveOwnerFaqAnswer } from '@/lib/owner-faq';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import {
@@ -43,7 +43,7 @@ import {
 } from '@repo/icons';
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const cameFromAdmin = Astro.url.searchParams.get('from') === 'admin';
 
@@ -167,7 +167,7 @@ const faqJsonLd = {
 		name: t(faq.qKey, faq.qFb),
 		acceptedAnswer: {
 			'@type': 'Answer',
-			text: t(faq.aKey, faq.aFb, faqParams),
+			text: resolveOwnerFaqAnswer({ faq, t, tPlural, faqParams }),
 		},
 	})),
 };
@@ -240,7 +240,7 @@ const faqJsonLd = {
 					<div class="publicar-hero__trial-callout" role="note">
 						<span class="publicar-hero__trial-callout-icon" aria-hidden="true">✨</span>
 						<p class="publicar-hero__trial-callout-text">
-							{t('host.landing.trialCallout', 'Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba.', { trialDays: genericTrialDays })}
+							{tPlural('host.landing.trialCallout', genericTrialDays, { trialDays: genericTrialDays })}
 						</p>
 					</div>
 				)}
@@ -329,7 +329,7 @@ const faqJsonLd = {
 				{faqs.map((faq) => (
 					<details class="publicar-faq__item">
 						<summary class="publicar-faq__question">{t(faq.qKey, faq.qFb)}</summary>
-						<p class="publicar-faq__answer">{t(faq.aKey, faq.aFb, faqParams)}</p>
+						<p class="publicar-faq__answer">{resolveOwnerFaqAnswer({ faq, t, tPlural, faqParams })}</p>
 					</details>
 				))}
 			</div>

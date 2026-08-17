@@ -78,7 +78,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
 
         // Hooks
         const { addToast } = useToast();
-        const { t } = useTranslations();
+        const { t, tPlural } = useTranslations();
 
         // Component state
         const [open, setOpen] = React.useState(false);
@@ -363,7 +363,7 @@ export const EntitySelectField = React.forwardRef<HTMLButtonElement, EntitySelec
         const getDisplayText = () => {
             if (isMultiple) {
                 return selectedOptions.length > 0
-                    ? t('ui.entitySelect.selectedCount', { count: selectedOptions.length })
+                    ? tPlural('ui.entitySelect.selectedCount', selectedOptions.length)
                     : placeholder || t('ui.entitySelect.selectItems');
             }
             const selectedOption = selectedOptions.find((opt) => opt.value === value);

@@ -144,11 +144,10 @@
         "bnb": "B&B",
         "rural": "Rural",
         "viewAriaLabel": "Ver alojamientos tipo {{type}}",
-        "viewWithCountAriaLabel": "Ver {{count}} alojamientos tipo {{type}}",
+        "viewWithCountAriaLabel_one": "Ver {{count}} alojamiento tipo {{type}}",
+        "viewWithCountAriaLabel_other": "Ver {{count}} alojamientos tipo {{type}}",
         "count_one": "{{count}} alojamiento",
-        "count_other": "{{count}} alojamientos",
-        "countSingular": "{{count}} alojamiento",
-        "countPlural": "{{count}} alojamientos"
+        "count_other": "{{count}} alojamientos"
     },
     "newsletter": {
         "title": "Recibi las mejores ofertas del Litoral",
@@ -248,7 +247,10 @@
         "checkOutLabel": "Salida",
         "adultsLabel": "Adultos",
         "childrenLabel": "Niños",
-        "guestsSummary": "{adults} adultos, {children} niños",
+        "guestsAdultsCount_one": "{{count}} adulto",
+        "guestsAdultsCount_other": "{{count}} adultos",
+        "guestsChildrenCount_one": "{{count}} niño",
+        "guestsChildrenCount_other": "{{count}} niños",
         "ctaLabel": "Buscar",
         "loadingText": "Cargando...",
         "noDestinationsText": "No hay destinos disponibles",

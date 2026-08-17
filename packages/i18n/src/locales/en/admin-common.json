@@ -220,7 +220,8 @@
         "minutes": "{{n}} minute(s) ago",
         "hours": "{{n}} hour(s) ago",
         "oneDay": "1 day ago",
-        "days": "{{n}} days ago",
+        "days_one": "{{count}} day ago",
+        "days_other": "{{count}} days ago",
         "notAvailable": "N/A"
     },
     "placeholders": {
@@ -276,7 +277,8 @@
         "srSubmitting": "Form is being submitted...",
         "srSuccess": "Form submitted successfully",
         "srFailed": "Form submission failed: {{error}}",
-        "srHasErrors": "Form has {{count}} validation errors"
+        "srHasErrors_one": "Form has {{count}} validation error",
+        "srHasErrors_other": "Form has {{count}} validation errors"
     },
     "entityPage": {
         "viewTitle": "{entity}",

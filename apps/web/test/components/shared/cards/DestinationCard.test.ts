@@ -221,9 +221,9 @@ describe('DestinationCard.astro', () => {
             expect(src).toContain('createTranslations(locale)');
         });
 
-        it('should use t() for accommodation count singular/plural labels', () => {
-            expect(src).toContain("t('destinations.card.accommodation_singular'");
-            expect(src).toContain("t('destinations.card.accommodation_plural'");
+        it('should pluralize the accommodation/event count labels via tPlural (HOS plural audit)', () => {
+            expect(src).toContain("tPlural('destinations.card.accommodation'");
+            expect(src).toContain("tPlural('destinations.card.event'");
         });
 
         it('should use t() for CTA label', () => {

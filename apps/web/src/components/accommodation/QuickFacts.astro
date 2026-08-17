@@ -15,7 +15,7 @@ interface Props {
 }
 
 const { extraInfo, lang } = Astro.props;
-const { t } = createTranslations(lang as SupportedLocale);
+const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 if (!extraInfo) return;
 ---
@@ -25,7 +25,7 @@ if (!extraInfo) return;
     <div class="quick-facts__pill">
       <GuestsIcon size="sm" weight="duotone" aria-hidden="true" />
       <div class="quick-facts__text">
-        <span class="quick-facts__value">{t('accommodations.detail.quickFacts.guests', undefined, { n: extraInfo.capacity })}</span>
+        <span class="quick-facts__value">{tPlural('accommodations.detail.quickFacts.guests', extraInfo.capacity)}</span>
         <span class="quick-facts__label">{t('accommodations.detail.quickFacts.capacity')}</span>
       </div>
     </div>
@@ -61,7 +61,7 @@ if (!extraInfo) return;
     <div class="quick-facts__pill">
       <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
       <div class="quick-facts__text">
-        <span class="quick-facts__value">{t('accommodations.detail.quickFacts.nights', undefined, { n: extraInfo.minNights })}</span>
+        <span class="quick-facts__value">{tPlural('accommodations.detail.quickFacts.nights', extraInfo.minNights)}</span>
         <span class="quick-facts__label">{t('accommodations.detail.quickFacts.minNights')}</span>
       </div>
     </div>
@@ -70,7 +70,7 @@ if (!extraInfo) return;
     <div class="quick-facts__pill">
       <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
       <div class="quick-facts__text">
-        <span class="quick-facts__value">{t('accommodations.detail.quickFacts.nights', undefined, { n: extraInfo.maxNights })}</span>
+        <span class="quick-facts__value">{tPlural('accommodations.detail.quickFacts.nights', extraInfo.maxNights)}</span>
         <span class="quick-facts__label">{t('accommodations.detail.quickFacts.maxNights')}</span>
       </div>
     </div>

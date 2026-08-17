@@ -226,8 +226,8 @@
     },
     "notifications": {
         "title": "Notificaciones",
-        "unreadSingular": "{{count}} notificación sin leer",
-        "unreadPlural": "{{count}} notificaciones sin leer",
+        "unread_one": "{{count}} notificación sin leer",
+        "unread_other": "{{count}} notificaciones sin leer",
         "allRead": "Todas las notificaciones leídas",
         "clearAll": "Borrar todo",
         "empty": "Sin notificaciones",
@@ -471,7 +471,8 @@
                 "subtitle": "Solicitudes de IA en la ventana",
                 "subtitleTokensIn": "Tokens de prompt consumidos",
                 "subtitleTokensOut": "Tokens de completado generados",
-                "subtitleCost": "{{total}} tokens totales",
+                "subtitleCost_one": "{{total}} token total",
+                "subtitleCost_other": "{{total}} tokens totales",
                 "loadError": "No se pudo cargar el resumen de uso.",
                 "loadErrorHint": "Verificá que la API sea accesible y reintentá."
             },
@@ -1125,7 +1126,8 @@
         "title": "Tasas de Cambio",
         "subtitle": "Gestiona las tasas de cambio entre divisas con actualizaciones automáticas y overrides manuales",
         "confirmDelete": "¿Estás seguro de que deseas eliminar este override manual?",
-        "ratesAvailable": "{{count}} tasas de cambio disponibles",
+        "ratesAvailable_one": "{{count}} tasa de cambio disponible",
+        "ratesAvailable_other": "{{count}} tasas de cambio disponibles",
         "updating": "Actualizando...",
         "updateNow": "Actualizar Ahora",
         "createOverride": "Crear Override Manual",
@@ -1138,7 +1140,8 @@
         "configTitle": "Configuración de Actualización",
         "configDesc": "Configura cómo y cuándo se actualizan las tasas de cambio automáticamente",
         "fetchSuccess": "Tasas actualizadas",
-        "fetchSuccessMsg": "{{count}} tasas almacenadas correctamente",
+        "fetchSuccessMsg_one": "{{count}} tasa almacenada correctamente",
+        "fetchSuccessMsg_other": "{{count}} tasas almacenadas correctamente",
         "fetchError": "Error al actualizar tasas",
         "errorTitle": "Error"
     },
@@ -1475,7 +1478,8 @@
         "grid": {
             "title": "Galería",
             "empty": "No hay fotos en la galería. Subí la primera.",
-            "cap": "Límite alcanzado ({{count}} fotos). Eliminá una para agregar otra.",
+            "cap_one": "Límite alcanzado ({{count}} foto). Eliminá una para agregar otra.",
+            "cap_other": "Límite alcanzado ({{count}} fotos). Eliminá una para agregar otra.",
             "actions": {
                 "add": "Agregar foto",
                 "remove": "Quitar foto"
@@ -1557,8 +1561,8 @@
         "suspensions": {
             "title": "Declaraciones suspendidas",
             "description": "Proveedores que no pueden registrar usos hasta que alguien levante la suspensión.",
-            "count": "{{count}} proveedor suspendido",
-            "count_plural": "{{count}} proveedores suspendidos",
+            "count_one": "{{count}} proveedor suspendido",
+            "count_other": "{{count}} proveedores suspendidos",
             "empty": "Ningún proveedor tiene la declaración suspendida.",
             "loading": "Cargando suspensiones…",
             "error": "No se pudieron cargar las suspensiones.",
@@ -1594,8 +1598,8 @@
             "empty": "Todavía no hay usos declarados.",
             "emptyFiltered": "Ningún uso coincide con los filtros aplicados.",
             "clearFilters": "Limpiar filtros",
-            "results": "{{count}} uso",
-            "results_plural": "{{count}} usos",
+            "results_one": "{{count}} uso",
+            "results_other": "{{count}} usos",
             "pagination": "Página {{page}} de {{totalPages}} · {{total}} en total",
             "prevPage": "Anterior",
             "nextPage": "Siguiente",

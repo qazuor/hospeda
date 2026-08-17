@@ -12,7 +12,7 @@
 import { InfoIcon } from '@repo/icons';
 import { formatCalendarDate } from '@repo/utils';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 
 interface Props {
 	readonly locale: SupportedLocale;
@@ -23,7 +23,7 @@ interface Props {
 }
 
 const { locale, checkIn, checkOut, adults, children } = Astro.props;
-const t = createT(locale);
+const { t, tPlural } = createTranslations(locale);
 
 // Show the banner when ANY context is supplied. We treat 0 as "not supplied"
 // for guests because emitting children=0 / adults=0 has no informational value
@@ -60,16 +60,16 @@ const hasChildren = children !== undefined && Number.isFinite(children) && child
 
 const guestsLabel = (() => {
 	if (hasAdults && hasChildren) {
-		return t('accommodations.list.searchContext.guests', undefined, {
-			adults,
-			children,
-		});
+		// Composed from the two independently pluralized single-counter keys
+		// below rather than one combined template, so "1 adulto" / "1 niño"
+		// read correctly alongside their plural siblings.
+		return `${tPlural('accommodations.list.searchContext.guestsAdultsOnly', adults as number)} · ${tPlural('accommodations.list.searchContext.guestsChildrenOnly', children as number)}`;
 	}
 	if (hasAdults) {
-		return t('accommodations.list.searchContext.guestsAdultsOnly', undefined, { adults });
+		return tPlural('accommodations.list.searchContext.guestsAdultsOnly', adults as number);
 	}
 	if (hasChildren) {
-		return t('accommodations.list.searchContext.guestsChildrenOnly', undefined, { children });
+		return tPlural('accommodations.list.searchContext.guestsChildrenOnly', children as number);
 	}
 	return null;
 })();

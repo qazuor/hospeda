@@ -146,7 +146,7 @@ try {
 // i18n
 // ---------------------------------------------------------------------------
 
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const title = t('host.properties.list.title', 'Mis propiedades');
 const subtitle = t('host.properties.list.subtitle', 'Gestioná tus publicaciones');
@@ -230,9 +230,9 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
     {usageData && usageData.maxAllowed > 0 && (
         <div class={`props-page__usage props-page__usage--${usageData.threshold}`} role="status">
             <span class="props-page__usage-label">
-                {t('host.properties.usage.label', '{{current}} de {{max}} propiedades', {
-                    current: String(usageData.currentUsage),
-                    max: String(usageData.maxAllowed)
+                {tPlural('host.properties.usage.label', usageData.maxAllowed, {
+                    current: usageData.currentUsage,
+                    max: usageData.maxAllowed
                 })}
             </span>
             {usageData.threshold !== 'ok' && (

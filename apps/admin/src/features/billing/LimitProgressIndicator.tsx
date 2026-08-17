@@ -58,7 +58,7 @@ export const LimitProgressIndicator = React.memo(function LimitProgressIndicator
     upgradeUrl,
     className
 }: LimitProgressIndicatorProps) {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
     const { limit, isLoading, error } = useMyEntitlements();
 
     // While loading or on error we keep silent rather than flashing — the
@@ -90,9 +90,10 @@ export const LimitProgressIndicator = React.memo(function LimitProgressIndicator
     }[tone];
 
     const resolvedUpgradeUrl = upgradeUrl ?? '/billing/my-plan';
-    const labelKey = atLimit
-        ? 'admin-entities.limitGate.atLimit'
-        : 'admin-entities.limitGate.belowLimit';
+    // `belowLimit` previously interpolated {max} and {current} verbatim
+    // ("Te quedan 5 - 3 disponibles") instead of subtracting them — the
+    // remaining count is computed here, once, and pluralized on that.
+    const remaining = Math.max(0, maxAllowed - currentCount);
 
     return (
         <div
@@ -133,7 +134,9 @@ export const LimitProgressIndicator = React.memo(function LimitProgressIndicator
                 />
             </div>
             <p className="mt-1 text-muted-foreground text-xs">
-                {t(labelKey, { current: currentCount, max: maxAllowed })}
+                {atLimit
+                    ? t('admin-entities.limitGate.atLimit')
+                    : tPlural('admin-entities.limitGate.belowLimit', remaining)}
             </p>
         </div>
     );

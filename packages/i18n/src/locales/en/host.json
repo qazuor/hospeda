@@ -192,7 +192,8 @@
             }
         },
         "usage": {
-            "label": "{{current}} of {{max}} properties",
+            "label_one": "{{current}} of {{max}} property",
+            "label_other": "{{current}} of {{max}} properties",
             "unlimited": "Unlimited properties",
             "upgrade": "Upgrade plan"
         },
@@ -224,7 +225,8 @@
             "unpublishError": "Could not unpublish. Please try again.",
             "deleteError": "Could not delete. Please try again.",
             "publishError": "Could not publish. Please try again.",
-            "publishSubscriptionRequiredMessage": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free days.",
+            "publishSubscriptionRequiredMessage_one": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free day.",
+            "publishSubscriptionRequiredMessage_other": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free days.",
             "publishSubscriptionRequiredCta": "View plans",
             "priceOnRequest": "Price on request",
             "publishMissingRequirementsMessage": "To publish, you still need: {{fields}}.",
@@ -322,7 +324,7 @@
                 "formats": "JPG, PNG or WebP — max {{maxSize}}MB",
                 "gallery": "Photo gallery",
                 "galleryAlt": "Photo {{index}}",
-                "galleryCapExceededOnSelect": "You picked {{selected}} photos but only {{remaining}} slots are free (max. {{cap}} in total)",
+                "galleryCapExceededOnSelect": "You picked {{pickedPhrase}} but only {{remainingPhrase}} free (max. {{cap}} in total)",
                 "galleryCapLabel": "Gallery full",
                 "galleryCapReached": "Gallery limit reached (max {{cap}} photos)",
                 "invalidType": "Only JPG, PNG or WebP files are allowed",
@@ -339,7 +341,13 @@
                 "reorderFailed": "The new order could not be saved",
                 "tooLarge": "File cannot exceed {{maxSize}}MB",
                 "uploadFailed": "Failed to upload image",
-                "uploadingBatch": "Uploading photo {{current}} of {{total}}…"
+                "galleryCapReached_one": "Gallery limit reached (max {{cap}} photo)",
+                "galleryCapReached_other": "Gallery limit reached (max {{cap}} photos)",
+                "uploadingBatch": "Uploading photo {{current}} of {{total}}…",
+                "galleryCapExceededOnSelectPicked_one": "{{count}} photo",
+                "galleryCapExceededOnSelectPicked_other": "{{count}} photos",
+                "galleryCapExceededOnSelectRemaining_one": "{{count}} slot is",
+                "galleryCapExceededOnSelectRemaining_other": "{{count}} slots are"
             },
             "video": {
                 "sectionTitle": "Videos",
@@ -608,12 +616,16 @@
                 "status": {
                     "missingDescription": "⚠ Description missing",
                     "missingPrice": "⚠ No price set",
-                    "guests": "Up to {{count}} guests",
+                    "guests_one": "Up to {{count}} guest",
+                    "guests_other": "Up to {{count}} guests",
                     "missingCoordinates": "⚠ Not placed on the map",
-                    "selected": "{{count}} selected",
-                    "photos": "{{count}} photos",
+                    "selected_one": "{{count}} selected",
+                    "selected_other": "{{count}} selected",
+                    "photos_one": "{{count}} photo",
+                    "photos_other": "{{count}} photos",
                     "missingPhotos": "⚠ No photos",
-                    "faqs": "{{count}} questions",
+                    "faqs_one": "{{count}} question",
+                    "faqs_other": "{{count}} questions",
                     "missingContact": "⚠ No contact details",
                     "blockedFromPublishing": "⛔ Needed to publish: {{fields}}"
                 }
@@ -636,7 +648,8 @@
         "heroSubheadline": "List it in minutes and start welcoming guests",
         "primaryCta": "List your property",
         "secondaryCta": "View my properties",
-        "trialCallout": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
+        "trialCallout_one": "Try Hospeda free for {{trialDays}} day on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends.",
+        "trialCallout_other": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
     },
     "fromAdminBanner": {
         "eyebrow": "We brought you here from the admin panel — you need to publish a property first to manage your listings."
@@ -664,7 +677,8 @@
                 "phone": "Phone",
                 "website": "Website",
                 "coordinatesLabel": "Imported location",
-                "amenitiesCount": "{{count}} imported amenities"
+                "amenitiesCount_one": "{{count}} imported amenity",
+                "amenitiesCount_other": "{{count}} imported amenities"
             }
         },
         "errors": {
@@ -847,11 +861,23 @@
     },
     "pages": {
         "nueva": {
-            "trialCalloutTitle": "{{trialDays}} free days on your first subscription",
+            "trialCalloutTitle_one": "{{trialDays}} free day on your first subscription",
+            "trialCalloutTitle_other": "{{trialDays}} free days on your first subscription",
             "trialCalloutTitleIneligible": "Set up your property",
-            "trialNote": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
+            "trialNote_one": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
+            "trialNote_other": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
             "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan.",
-            "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel."
+            "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
+            "precheck": {
+                "resumeDeleteOrUpgrade": {
+                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
+                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan."
+                },
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
+                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one."
+                }
+            }
         }
     }
 }

@@ -64,7 +64,7 @@ function getSourceBadge(source: string): React.ReactNode {
 }
 
 export function RateHistoryView() {
-    const { t, locale } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
     const [filters, setFilters] = useState<ExchangeRateHistoryFilters>({
         fromCurrency: undefined,
         toCurrency: undefined,
@@ -352,9 +352,9 @@ export function RateHistoryView() {
                 {/* Pagination Info */}
                 {!isLoading && !error && history && history.length > 0 && (
                     <div className="border-t px-4 py-3 text-muted-foreground text-sm">
-                        {t('admin-billing.exchangeRates.historyView.showingCount').replace(
-                            '{n}',
-                            String(history.length)
+                        {tPlural(
+                            'admin-billing.exchangeRates.historyView.showingCount',
+                            history.length
                         )}
                     </div>
                 )}

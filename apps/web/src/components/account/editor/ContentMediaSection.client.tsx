@@ -231,7 +231,7 @@ export function ContentMediaSection({
     entityId,
     disabled = false
 }: ContentMediaSectionProps): JSX.Element {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const featuredInputRef = useRef<HTMLInputElement>(null);
     const galleryInputRef = useRef<HTMLInputElement>(null);
 
@@ -454,13 +454,7 @@ export function ContentMediaSection({
                 return;
             }
             if (isGalleryFull) {
-                reportError(
-                    t(
-                        'account.myContent.editor.media.capReached',
-                        'Límite de galería alcanzado (máx. {{cap}} fotos)',
-                        { cap: galleryCap }
-                    )
-                );
+                reportError(tPlural('account.myContent.editor.media.capReached', galleryCap));
                 if (galleryInputRef.current) {
                     galleryInputRef.current.value = '';
                 }
@@ -512,7 +506,17 @@ export function ContentMediaSection({
                 }
             }
         },
-        [canWrite, isGalleryFull, validateFile, entity, entityId, t, reportError, galleryCap]
+        [
+            canWrite,
+            isGalleryFull,
+            validateFile,
+            entity,
+            entityId,
+            t,
+            reportError,
+            galleryCap,
+            tPlural
+        ]
     );
 
     /**
@@ -644,11 +648,9 @@ export function ContentMediaSection({
                     onChange={handleGallerySelect}
                 />
                 <span className={styles.mediaHint}>
-                    {t(
-                        'account.myContent.editor.media.uploadHint',
-                        'JPG, PNG o WebP — máx. {{maxSize}}MB. Hasta {{cap}} fotos en la galería.',
-                        { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB, cap: galleryCap }
-                    )}
+                    {tPlural('account.myContent.editor.media.uploadHint', galleryCap, {
+                        maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB
+                    })}
                 </span>
             </div>
 
