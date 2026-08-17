@@ -2,6 +2,13 @@
 
 Developer reference for the three-tier route architecture used throughout the Hospeda API.
 
+> **What a route answers when it refuses**: see
+> [`error-contract.md`](./error-contract.md). It fixes the ORDER the checks run in
+> (auth → permission → input shape → existence/ownership → business rules) and
+> which status and `error.code` each refusal carries — including why a resource
+> owned by somebody else answers 404 rather than 403. Static guards enforce it,
+> and `createProtectedRoute` refuses to boot a route that leaves it.
+
 ---
 
 ## Three-Tier URL Convention

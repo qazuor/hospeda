@@ -16,6 +16,7 @@ import type {
 } from '../schemas/response-schemas';
 import { readEntitlementCause } from '../utils/entitlement-cause';
 import { env, getResponseConfig } from '../utils/env';
+import { resolveErrorCodeForStatus } from '../utils/http-error-codes';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -400,29 +401,23 @@ export const createErrorHandler = () => {
             statusCode = error.status;
             errorMessage = error.message;
 
-            // Map HTTP status to ServiceErrorCode
-            if (statusCode === 400) {
-                errorCode = ServiceErrorCode.VALIDATION_ERROR;
-            } else if (statusCode === 401) {
-                errorCode = ServiceErrorCode.UNAUTHORIZED;
-            } else if (statusCode === 403) {
-                errorCode = ServiceErrorCode.FORBIDDEN;
-            } else if (statusCode === 404) {
-                errorCode = ServiceErrorCode.NOT_FOUND;
-            } else if (statusCode === 409) {
-                errorCode = ServiceErrorCode.ALREADY_EXISTS;
-            } else if (statusCode === 402) {
+            // Map HTTP status to ServiceErrorCode through the SHARED table in
+            // `utils/http-error-codes.ts`, which `handleRouteError`
+            // (utils/response-helpers.ts) reads too. The if/else chain this
+            // replaces was one of two hand-maintained copies, and the statuses
+            // it omitted — 410, 422, 429, 502, 503, 504 — all reached the
+            // client as INTERNAL_ERROR (H-105).
+            errorCode = resolveErrorCodeForStatus(statusCode);
+
+            if (statusCode === 402) {
                 // A 402 is a business gate (expired trial, no active plan, no
-                // billing account), NOT a server fault. Falling through to
-                // INTERNAL_ERROR made every gated write read as "something broke
-                // on our side", which sends the user to retry instead of to the
-                // plans page (HOS-283).
-                errorCode = ServiceErrorCode.ENTITLEMENT_REQUIRED;
+                // billing account), NOT a server fault. Beyond the code, it
+                // carries a cause-specific `reason` so the client can send the
+                // user to the right remedy rather than to the generic plan copy
+                // (HOS-283).
                 const cause = readEntitlementCause(error);
                 errorReason = cause.reason;
                 errorDetails = cause.details;
-            } else {
-                errorCode = ServiceErrorCode.INTERNAL_ERROR;
             }
         }
         // Priority 3: JSON parsing errors

@@ -26,20 +26,21 @@ import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
  * Roles:
  * - HOST: regular property owner managing their own listings.
  * - ADMIN / SUPER_ADMIN: platform staff.
- * - CLIENT_MANAGER: agency/business account.
  *
  * A plain USER (tourist who browses/saves favorites) does NOT have
  * host-level access. Neither does EDITOR: editorial rights are about posts and
  * events, and the seed never grants an editor `ACCOMMODATION_CREATE`. It was
  * listed here (and in the mirrored map) until the sidebar was found offering
  * an editor a host area that every underlying endpoint refused.
+ *
+ * Nor does CLIENT_MANAGER, removed for the identical reason once H-20 found it
+ * still here after the EDITOR fix: the seed grants that role
+ * `ACCOMMODATION_VIEW_ALL`/`_VIEW_PRIVATE` and nothing that creates. Because
+ * this constant and the mirrored map are BOTH hand-maintained, the drift test
+ * between them stays green while the two agree on a wrong answer — which is
+ * why the role membership itself is asserted in `nav-gating.test.ts`.
  */
-export const ROLES_WITH_ACCOMMODATIONS_NAV = new Set<string>([
-    'HOST',
-    'ADMIN',
-    'SUPER_ADMIN',
-    'CLIENT_MANAGER'
-]);
+export const ROLES_WITH_ACCOMMODATIONS_NAV = new Set<string>(['HOST', 'ADMIN', 'SUPER_ADMIN']);
 
 /** Owner (host) pricing page, locale-agnostic. */
 const OWNER_PLANS_PATH = 'suscriptores/planes';

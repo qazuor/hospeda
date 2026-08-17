@@ -36,11 +36,8 @@
  */
 
 import { createAdminRoutes } from '@qazuor/qzpay-hono';
-import { PermissionEnum } from '@repo/schemas';
-import type { MiddlewareHandler } from 'hono';
-import { HTTPException } from 'hono/http-exception';
-import { getActorFromContext } from '../../../middlewares/actor';
 import { getQZPayBilling } from '../../../middlewares/billing';
+import { billingAdminAuthMiddleware } from '../../../middlewares/billing-admin-auth.middleware';
 import { createPerRouteRateLimitMiddleware } from '../../../middlewares/rate-limit';
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
@@ -65,68 +62,6 @@ import { subscriptionPromoEffectRoute } from './subscription-promo-effect';
 import { adminSubscriptionTrialExtensionRouter } from './subscription-trial-extension';
 import { adminSubscriptionsViewRouter } from './subscriptions-view';
 import { getAdminCustomerUsageSummaryRoute } from './usage';
-
-/**
- * Auth middleware applied to every qzpay-hono admin route. Enforces a base
- * `BILLING_READ_ALL` permission for any request, plus stricter permissions
- * on write paths:
- *  - subscriptions {cancel,force-cancel,pause,resume,change-plan,extend-trial}: MANAGE_SUBSCRIPTIONS
- *  - payments/invoices write paths + entitlements/limits manage: BILLING_MANAGE
- *
- * Authentication itself is established upstream by the global auth chain;
- * this middleware only enforces *permission*. We throw HTTPException so the
- * existing error mapper turns it into the project's standard 403 envelope.
- */
-const adminBillingAuthMiddleware: MiddlewareHandler = async (c, next) => {
-    const actor = getActorFromContext(c);
-
-    if (!actor?.id) {
-        throw new HTTPException(401, { message: 'Authentication required' });
-    }
-
-    const permissions: readonly string[] = actor.permissions ?? [];
-
-    if (!permissions.includes(PermissionEnum.BILLING_READ_ALL)) {
-        throw new HTTPException(403, { message: 'Admin billing access required' });
-    }
-
-    const method = c.req.method.toUpperCase();
-    if (method !== 'GET') {
-        const path = c.req.path;
-
-        const isSubscriptionWrite =
-            path.includes('/subscriptions/') &&
-            (path.endsWith('/cancel') ||
-                path.endsWith('/force-cancel') ||
-                path.endsWith('/pause') ||
-                path.endsWith('/resume') ||
-                path.endsWith('/change-plan') ||
-                path.endsWith('/extend-trial'));
-
-        if (isSubscriptionWrite && !permissions.includes(PermissionEnum.MANAGE_SUBSCRIPTIONS)) {
-            throw new HTTPException(403, {
-                message: 'Subscription management permission required'
-            });
-        }
-
-        const isMoneyMove =
-            path.endsWith('/refund') ||
-            path.endsWith('/force-refund') ||
-            path.endsWith('/pay') ||
-            path.endsWith('/mark-paid') ||
-            path.endsWith('/void') ||
-            path.includes('/entitlements') ||
-            path.includes('/limits/');
-
-        if (isMoneyMove && !permissions.includes(PermissionEnum.BILLING_MANAGE)) {
-            throw new HTTPException(403, {
-                message: 'Billing management permission required'
-            });
-        }
-    }
-
-    await next();
-};
 
 const app = createRouter();
 
@@ -238,7 +173,7 @@ export function mountQZPayAdminTier(): void {
     const qzpayAdmin = createAdminRoutes({
         billing,
         prefix: '',
-        authMiddleware: adminBillingAuthMiddleware,
+        authMiddleware: billingAdminAuthMiddleware,
         hooks: adminBillingHooks
     });
     app.route('/', qzpayAdmin);

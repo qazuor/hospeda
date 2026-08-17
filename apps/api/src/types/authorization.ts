@@ -4,6 +4,7 @@
  */
 
 import type { PermissionEnum } from '@repo/schemas';
+import type { ZodTypeAny } from 'zod';
 
 /**
  * Authorization levels for API routes
@@ -60,6 +61,23 @@ export interface OwnershipConfig {
     ownershipFields: OwnershipField[];
     /** The parameter name containing the entity ID (defaults to 'id') */
     paramIdField?: string;
+    /**
+     * Schema the raw path parameter must satisfy BEFORE the entity fetcher runs.
+     *
+     * The route already declares this shape in `requestParams`, but that
+     * validation belongs to the route handler and the factory installs ownership
+     * as a *middleware* — i.e. ahead of it. So without this field the fetcher
+     * receives whatever the URL carried and hands it to Postgres, where a failed
+     * `uuid` cast surfaced as a 500 on 19 protected routes (H-68).
+     *
+     * `createProtectedRoute` injects the route's own declaration automatically;
+     * set it by hand only when calling the middleware outside the factory.
+     *
+     * Defaults to a UUID check — fail-closed, because every ownable entity in
+     * this repo is keyed by UUID and an unvalidated id is exactly the hole this
+     * closes.
+     */
+    idSchema?: ZodTypeAny;
     /** Permission that allows bypassing ownership check (e.g., UPDATE_ANY) */
     bypassPermission?: PermissionEnum;
     /** Whether to allow access if entity is not found (defaults to false) */

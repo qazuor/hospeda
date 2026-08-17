@@ -33,8 +33,12 @@ import {
     checkCanCountFeatures,
     checkCanCreateFeature,
     checkCanDeleteFeature,
-    checkCanGetAccommodationsByFeature,
-    checkCanGetFeaturesForAccommodation,
+    // `checkCanGetAccommodationsByFeature` / `checkCanGetFeaturesForAccommodation`
+    // are deliberately NOT imported: both read methods below serve routes on the
+    // public tier, and gating a public read behind an EDIT permission is what
+    // killed those two endpoints in production (H-38). The helpers stay in
+    // `feature.permissions.ts` for a future admin-tier route — the defect was
+    // calling them from a public path, not the helpers themselves.
     checkCanListFeatures,
     checkCanRemoveFeatureFromAccommodation,
     checkCanUpdateFeature,
@@ -413,8 +417,16 @@ export class FeatureService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: GetFeaturesForAccommodationSchema,
             ctx,
-            execute: async (validatedParams, actor) => {
-                checkCanGetFeaturesForAccommodation(actor);
+            execute: async (validatedParams) => {
+                // No permission gate: this serves `GET
+                // /api/v1/public/features/accommodation/{id}`, a PUBLIC route
+                // (`createPublicRoute`, no `requiredPermissions`, `cacheTTL: 300`).
+                //
+                // It used to call `checkCanGetFeaturesForAccommodation`, which
+                // demands `ACCOMMODATION_FEATURES_EDIT` — permission to EDIT the
+                // catalog — so every visitor got 403 and the endpoint was dead in
+                // production (H-38). A feature list is already rendered on the
+                // public accommodation page; there was nothing to protect.
                 const { accommodationId } = validatedParams;
                 // Single query with JOIN instead of 2 sequential queries
                 const { items: relationsWithFeature } =
@@ -459,8 +471,19 @@ export class FeatureService extends BaseCrudRelatedService<
             input: { actor, ...params },
             schema: GetAccommodationsByFeatureSchema,
             ctx,
-            execute: async (validatedParams, actor) => {
-                checkCanGetAccommodationsByFeature(actor);
+            execute: async (validatedParams) => {
+                // No permission gate: this serves `GET
+                // /api/v1/public/features/{featureId}/accommodations`, a PUBLIC
+                // list route (`createPublicListRoute`, no `requiredPermissions`,
+                // `cacheTTL: 300`).
+                //
+                // It used to call `checkCanGetAccommodationsByFeature`, which
+                // demands `ACCOMMODATION_FEATURES_EDIT`, so every visitor got 403
+                // (H-38). Per the note above, that gate was DECORATIVE anyway —
+                // the cache runs before auth on this prefix and its key carries
+                // no Authorization. What keeps the payload anonymous-safe is the
+                // `PUBLIC` + `ACTIVE` + soft-delete filtering below, and that
+                // stays exactly as it was.
                 const { featureId } = validatedParams;
                 const feature = await this.model.findOne({ id: featureId as FeatureIdType });
                 if (!feature) {

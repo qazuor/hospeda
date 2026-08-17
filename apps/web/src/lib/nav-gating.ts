@@ -48,7 +48,7 @@ export interface GatedNavNode {
  *
  * Derived from `apps/web/src/lib/account-roles.ts`:
  * - `ACCOMMODATION_CREATE` ← `ROLES_WITH_ACCOMMODATIONS_NAV`
- *   (HOST, ADMIN, SUPER_ADMIN, CLIENT_MANAGER).
+ *   (HOST, ADMIN, SUPER_ADMIN).
  * - `COMMERCE_EDIT_OWN` ← `ROLES_WITH_COMMERCE_NAV`
  *   (COMMERCE_OWNER, ADMIN, SUPER_ADMIN).
  *
@@ -78,11 +78,17 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
     // `ACCOMMODATION_REVIEW_CREATE`/`_UPDATE`, never `ACCOMMODATION_CREATE`, so
     // listing it here made the sidebar offer a host area the editor could not
     // use. An editor is not a host — its own area is the `editorial` nav group.
+    //
+    // CLIENT_MANAGER is ABSENT for exactly the same reason, and was removed for
+    // it much later (H-20): the seed grants it only `ACCOMMODATION_VIEW_ALL` and
+    // `ACCOMMODATION_VIEW_PRIVATE`, and the production database agrees. The roles
+    // that really hold `accommodation.create` in production are ADMIN, HOST and
+    // SUPER_ADMIN. Nobody noticed because no CLIENT_MANAGER exists yet — the
+    // first one created would have seen the whole host group answer 403.
     [PermissionEnum.ACCOMMODATION_CREATE]: new Set<RoleEnum>([
         RoleEnum.HOST,
         RoleEnum.ADMIN,
-        RoleEnum.SUPER_ADMIN,
-        RoleEnum.CLIENT_MANAGER
+        RoleEnum.SUPER_ADMIN
     ]),
     [PermissionEnum.COMMERCE_EDIT_OWN]: new Set<RoleEnum>([
         RoleEnum.COMMERCE_OWNER,
