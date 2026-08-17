@@ -8,6 +8,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+    AccommodationCreateDraftHttpSchema,
     AccommodationCreateHttpSchema,
     AccommodationSearchHttpSchema,
     AccommodationUpdateHttpSchema,
@@ -224,6 +225,83 @@ describe('AccommodationCreateHttpSchema — sibling numeric field validation mes
         expect(findIssueMessage(result, 'basePrice')).toBe(
             'zodError.accommodation.price.price.min'
         );
+    });
+
+    it('rejects a fractional basePrice with the common price.price.integer key (H-111)', () => {
+        // Before this fix, nothing in the write path had `.int()` — a decimal
+        // like 1234.56 was accepted, stored verbatim, and the public sidebar's
+        // `Intl.NumberFormat({ maximumFractionDigits: 0 })` rounded it UP to
+        // $1.235, more than the host actually set.
+        const result = AccommodationCreateHttpSchema.safeParse({
+            ...baseCreatePayload,
+            basePrice: 1234.56
+        });
+        expect(findIssueMessage(result, 'basePrice')).toBe('zodError.common.price.price.integer');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// H-111 / H-167: currency default + integer-only basePrice on every write path
+// ---------------------------------------------------------------------------
+
+describe('AccommodationCreateHttpSchema — currency default (H-167)', () => {
+    it('defaults currency to ARS when omitted, not USD', () => {
+        // Regression: this field used to default to USD, contradicting
+        // `accommodation.model.ts`'s documented contract ("stores the nightly
+        // base price under `price.price` in ARS") and the public render's own
+        // `?? 'ARS'` fallback (PricingSidebar.astro).
+        const { currency: _omitted, ...payloadWithoutCurrency } = baseCreatePayload;
+        const result = AccommodationCreateHttpSchema.safeParse(payloadWithoutCurrency);
+
+        expect(result.success).toBe(true);
+        if (result.success) {
+            expect(result.data.currency).toBe(PriceCurrencyEnum.ARS);
+        }
+    });
+});
+
+describe('AccommodationCreateDraftHttpSchema — basePrice integer-only (H-111)', () => {
+    it('rejects a fractional basePrice with the common price.price.integer key', () => {
+        const result = AccommodationCreateDraftHttpSchema.safeParse({
+            name: 'Test Hotel',
+            summary: 'A short summary for the test hotel',
+            type: AccommodationTypeEnum.HOTEL,
+            destinationId: 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e',
+            basePrice: 999.99
+        });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            const issue = result.error.issues.find((i) => i.path[0] === 'basePrice');
+            expect(issue?.message).toBe('zodError.common.price.price.integer');
+        }
+    });
+
+    it('accepts a whole-number basePrice', () => {
+        const result = AccommodationCreateDraftHttpSchema.safeParse({
+            name: 'Test Hotel',
+            summary: 'A short summary for the test hotel',
+            type: AccommodationTypeEnum.HOTEL,
+            destinationId: 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e',
+            basePrice: 1000
+        });
+        expect(result.success).toBe(true);
+    });
+});
+
+describe('AccommodationUpdateHttpSchema — basePrice integer-only (H-111)', () => {
+    it('rejects a fractional basePrice on a PATCH payload', () => {
+        // `.partial()` is applied on top of this schema by the patch route
+        // (apps/api/src/routes/accommodation/protected/patch.ts); asserting
+        // directly against the exported schema is enough since `.partial()`
+        // only toggles required-ness, not per-field validators like `.int()`.
+        const result = AccommodationUpdateHttpSchema.safeParse({ basePrice: 15000.5 });
+
+        expect(result.success).toBe(false);
+        if (!result.success) {
+            const issue = result.error.issues.find((i) => i.path[0] === 'basePrice');
+            expect(issue?.message).toBe('zodError.common.price.price.integer');
+        }
     });
 });
 
@@ -793,6 +871,13 @@ describe('httpToDomainAccommodationCreate — videos reach their own column (HOS
 // this preserves sibling keys the client did not touch. The previous behaviour
 // dropped lone fields (a bare `currency`) or injected defaults (`minNights: 1`,
 // `smokingAllowed: false`, `mobilePhone: ''`) that clobbered stored values.
+//
+// H-167 is the ONE deliberate exception to "no synthetic defaults": a lone
+// `basePrice` now gets a `currency: 'ARS'` default injected alongside it,
+// because emitting `{ price: N }` with no currency is exactly the write path
+// that produced 2 currency-less rows in prod (verified: `{"price": 45000}`
+// with no `currency` key). A lone `currency` (no `basePrice`) still gets no
+// default — it only re-labels an existing stored price.
 // ---------------------------------------------------------------------------
 
 describe('httpToDomainAccommodationUpdate — partial price (SPEC-229)', () => {
@@ -802,10 +887,9 @@ describe('httpToDomainAccommodationUpdate — partial price (SPEC-229)', () => {
         expect(result.price && 'price' in result.price).toBe(false);
     });
 
-    it('emits a partial price with only the amount when currency is absent', () => {
+    it('defaults currency to ARS when basePrice is sent alone (H-167)', () => {
         const result = httpToDomainAccommodationUpdate({ basePrice: 50000 });
-        expect(result.price).toEqual({ price: 50000 });
-        expect(result.price && 'currency' in result.price).toBe(false);
+        expect(result.price).toEqual({ price: 50000, currency: PriceCurrencyEnum.ARS });
     });
 
     it('emits the full price when both are sent', () => {
@@ -878,6 +962,37 @@ describe('httpToDomainAccommodationCreateDraft — extraInfo minNights default (
             bedrooms: 2,
             bathrooms: 1
         });
+    });
+});
+
+describe('httpToDomainAccommodationCreateDraft — price currency default (H-167)', () => {
+    const baseDraft = {
+        name: 'Draft Hotel',
+        summary: 'A short summary for the onboarding draft.',
+        type: AccommodationTypeEnum.HOUSE,
+        destinationId: 'b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e'
+    };
+    const ownerId = 'c3d4e5f6-a7b8-4c9d-ae1f-2a3b4c5d6e7f';
+
+    it('defaults currency to ARS when basePrice is sent without one', () => {
+        const result = httpToDomainAccommodationCreateDraft(
+            { ...baseDraft, basePrice: 30000 },
+            ownerId
+        );
+        expect(result.price).toEqual({ price: 30000, currency: PriceCurrencyEnum.ARS });
+    });
+
+    it('keeps an explicit currency when both are sent', () => {
+        const result = httpToDomainAccommodationCreateDraft(
+            { ...baseDraft, basePrice: 30000, currency: PriceCurrencyEnum.USD },
+            ownerId
+        );
+        expect(result.price).toEqual({ price: 30000, currency: PriceCurrencyEnum.USD });
+    });
+
+    it('leaves price undefined when neither basePrice nor currency is sent', () => {
+        const result = httpToDomainAccommodationCreateDraft(baseDraft, ownerId);
+        expect(result.price).toBeUndefined();
     });
 });
 
