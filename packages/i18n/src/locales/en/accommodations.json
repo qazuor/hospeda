@@ -446,6 +446,14 @@
             "upsellText": "Subscribe to Plus to see the host's WhatsApp.",
             "upsellCta": "View plans"
         },
+        "contact": {
+            "title": "Contact",
+            "phoneAriaLabel": "Call the accommodation",
+            "emailAriaLabel": "Email the accommodation",
+            "websiteAriaLabel": "Visit the accommodation's website",
+            "facebookAriaLabel": "Accommodation's Facebook",
+            "instagramAriaLabel": "Accommodation's Instagram"
+        },
         "share": "Share",
         "checkIn": "Check-in",
         "checkOut": "Check-out",

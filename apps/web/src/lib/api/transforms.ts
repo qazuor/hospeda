@@ -40,6 +40,7 @@ import {
     toRenderableImageUrl
 } from '../media';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
+import { resolveSafeExternalUrl } from '../safe-external-url';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -839,6 +840,39 @@ export function toAccommodationDetailPageProps({
     const amenitiesArr = item.amenities as readonly Record<string, unknown>[] | undefined;
     const featuresArr = item.features as readonly Record<string, unknown>[] | undefined;
     const faqsArr = item.faqs as readonly Record<string, unknown>[] | undefined;
+    // --- Contact info + social networks (H-118) ---
+    // `contactInfo` on the wire carries only `mobilePhone`/`personalEmail`/
+    // `website` (AccommodationPublicSchema's narrowed public projection —
+    // `whatsapp` deliberately stays off it, see the WHATSAPP note on
+    // `hasWhatsapp` above). `socialNetworks` carries more platforms than the
+    // owner approved for this page; only facebook/instagram are read here.
+    //
+    // `website`/`facebook`/`instagram` are host-authored strings that reach
+    // an `href` unreviewed: `z.string().url()` on the write side does NOT
+    // restrict the scheme (`javascript:`/`data:`/`vbscript:` all parse as
+    // valid URLs), so this is a stored-XSS sink unless filtered here to an
+    // http/https allow-list. `resolveSafeExternalUrl` does that; `phone`/
+    // `email` don't need it — they're appended after a hardcoded `tel:`/
+    // `mailto:` prefix, so the value can never take over the scheme.
+    const contactInfoRaw = item.contactInfo as Record<string, unknown> | undefined;
+    const socialNetworksRaw = item.socialNetworks as Record<string, unknown> | undefined;
+    const safeWebsite = resolveSafeExternalUrl(
+        contactInfoRaw?.website == null ? undefined : String(contactInfoRaw.website)
+    );
+    const safeFacebook = resolveSafeExternalUrl(
+        socialNetworksRaw?.facebook == null ? undefined : String(socialNetworksRaw.facebook)
+    );
+    const safeInstagram = resolveSafeExternalUrl(
+        socialNetworksRaw?.instagram == null ? undefined : String(socialNetworksRaw.instagram)
+    );
+    const phone = contactInfoRaw?.mobilePhone ? String(contactInfoRaw.mobilePhone) : undefined;
+    const email = contactInfoRaw?.personalEmail ? String(contactInfoRaw.personalEmail) : undefined;
+    const contactInfo: AccommodationDetailData['contactInfo'] =
+        phone || email || safeWebsite ? { phone, email, website: safeWebsite } : undefined;
+    const socialNetworks: AccommodationDetailData['socialNetworks'] =
+        safeFacebook || safeInstagram
+            ? { facebook: safeFacebook, instagram: safeInstagram }
+            : undefined;
     // H-125: the rich shape carries the cover photo's author-written alt text.
     // The URL-only wrapper drops it, which is why every cover fell back to the
     // listing name.
@@ -984,6 +1018,8 @@ export function toAccommodationDetailPageProps({
                   description: seoObj.description ? String(seoObj.description) : null
               }
             : null,
+        contactInfo,
+        socialNetworks,
         owner: {
             id: String(ownerObj?.id || ''),
             name: String(ownerObj?.name || 'Unknown'),

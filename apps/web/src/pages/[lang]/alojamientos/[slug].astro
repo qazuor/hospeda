@@ -18,6 +18,7 @@ import { ImageGallery } from '@/components/ImageGallery.client';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
+import AccommodationContactBlock from '@/components/accommodation/AccommodationContactBlock.astro';
 import { renderContent as renderRich } from '@/lib/render-content';
 import { renderPlain } from '@/lib/render-plain';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
@@ -546,6 +547,16 @@ const faqSections = accommodation.faqs.map((faq) => ({
         ) : (
             <Description summary={accommodation.summary} descriptionText={safeDescriptionText} />
         )}
+
+        <!-- Contact + social block (H-118: phone/email/website/Facebook/Instagram
+             the host filled in via the editor's contact form, previously captured
+             but never shown on the public page). The existing WhatsApp button
+             (sidebar, OwnerCard) is untouched — this block never carries that number. -->
+        <AccommodationContactBlock
+            contactInfo={accommodation.contactInfo}
+            socialNetworks={accommodation.socialNetworks}
+            locale={locale}
+        />
 
         <FeaturesGrid features={accommodation.features} smokingAllowed={accommodation.extraInfo?.smokingAllowed ?? null} lang={locale} />
         <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />

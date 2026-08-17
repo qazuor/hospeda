@@ -42,6 +42,18 @@ import { z } from 'zod';
  *    re-tightened to the shared `InternationalPhoneRegex` — the same E.164
  *    pattern `ProfileEditSchema.phone` enforces. `''` stays valid so a host can
  *    clear the field (HOS-190).
+ *  - `phone`/`email`: also get accommodation-scoped messages
+ *    (`zodError.accommodation.contactInfo.*`) instead of the shared
+ *    `zodError.common.contact.mobilePhone.international` /
+ *    `.personalEmail.invalid` (H-118). This form's on-screen labels are the
+ *    generic "Numero" / "Email" (`ContactInfoSection.client.tsx`) for a
+ *    PROPERTY's contact section, not a person's profile, so the shared
+ *    person-profile wording ("El telefono celular...", "El email
+ *    personal...") read as a mismatch. The shared keys are untouched: every
+ *    other consumer (user profile, commerce, experience, event organizer)
+ *    keeps using them. `whatsapp`/`website` are NOT touched here: their
+ *    existing messages ("El numero de WhatsApp...", "El sitio web...")
+ *    already match their labels.
  *
  * The numeric fields are widened with `.nullable()`: the inherited
  * `z.coerce.number()` would otherwise silently coerce an explicit `null` (host
@@ -119,9 +131,19 @@ const phoneField = z
     .union([
         z.literal(''),
         z.string().regex(InternationalPhoneRegex, {
-            message: 'zodError.common.contact.mobilePhone.international'
+            message: 'zodError.accommodation.contactInfo.phone.international'
         })
     ])
+    .optional();
+
+/**
+ * H-118: same `.email()` bound as `inherited.email`
+ * (`AccommodationUpdateHttpSchema.shape.email`), overridden ONLY for the
+ * error message — see the file header note on `phone`/`email`.
+ */
+const emailField = z
+    .string()
+    .email({ message: 'zodError.accommodation.contactInfo.email.invalid' })
     .optional();
 
 const whatsappField = z
@@ -211,7 +233,7 @@ export const AccommodationServicesSchema = z.object({
 export const AccommodationContactSchema = z.object({
     phone: phoneField,
     whatsapp: whatsappField,
-    email: inherited.email,
+    email: emailField,
     website: inherited.website,
     facebook: inherited.facebook,
     instagram: inherited.instagram,
