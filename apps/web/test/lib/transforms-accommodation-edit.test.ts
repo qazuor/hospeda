@@ -32,14 +32,19 @@ describe('transformAccommodationEdit', () => {
                 coordinates: {
                     lat: '-32.47',
                     long: '-58.23'
-                }
+                },
+                street: 'Av. Belgrano',
+                number: '123',
+                floor: '4',
+                apartment: 'B'
             },
             // Capacity fields live under extraInfo per the domain schema.
             extraInfo: {
                 capacity: 4,
                 bedrooms: 2,
                 bathrooms: 1,
-                beds: 3
+                beds: 3,
+                minNights: 2
             },
             price: { price: 15000, currency: 'ARS' },
             isAvailable: true,
@@ -51,7 +56,14 @@ describe('transformAccommodationEdit', () => {
             features: [
                 { featureId: 'ft-1', feature: { id: 'ft-1' } },
                 { featureId: 'ft-2', feature: { id: 'ft-2' } }
-            ]
+            ],
+            seo: { title: 'A'.repeat(30), description: 'B'.repeat(70) },
+            media: {
+                videos: [
+                    { url: 'https://youtube.com/watch?v=abc', caption: 'Tour' },
+                    { url: 'https://vimeo.com/123' }
+                ]
+            }
         };
 
         const result = transformAccommodationEdit({ item: raw });
@@ -66,16 +78,27 @@ describe('transformAccommodationEdit', () => {
         expect(result.destinationId).toBe('dest-456');
         expect(result.latitude).toBe(-32.47);
         expect(result.longitude).toBe(-58.23);
+        expect(result.street).toBe('Av. Belgrano');
+        expect(result.number).toBe('123');
+        expect(result.floor).toBe('4');
+        expect(result.apartment).toBe('B');
         expect(result.maxGuests).toBe(4);
         expect(result.bedrooms).toBe(2);
         expect(result.bathrooms).toBe(1);
         expect(result.beds).toBe(3);
+        expect(result.minNights).toBe(2);
         expect(result.basePrice).toBe(15000);
         expect(result.currency).toBe('ARS');
         expect(result.isAvailable).toBe(true);
         expect(result.isFeatured).toBe(false);
         expect(result.amenityIds).toEqual(['am-1', 'am-2']);
         expect(result.featureIds).toEqual(['ft-1', 'ft-2']);
+        expect(result.seoTitle).toBe('A'.repeat(30));
+        expect(result.seoDescription).toBe('B'.repeat(70));
+        expect(result.videos).toEqual([
+            { url: 'https://youtube.com/watch?v=abc', caption: 'Tour' },
+            { url: 'https://vimeo.com/123' }
+        ]);
     });
 
     it('should default missing fields to safe fallbacks', () => {
@@ -96,16 +119,24 @@ describe('transformAccommodationEdit', () => {
         expect(result.destinationId).toBe('dest-789');
         expect(result.latitude).toBeNull();
         expect(result.longitude).toBeNull();
+        expect(result.street).toBe('');
+        expect(result.number).toBe('');
+        expect(result.floor).toBe('');
+        expect(result.apartment).toBe('');
         expect(result.maxGuests).toBeNull();
         expect(result.bedrooms).toBeNull();
         expect(result.bathrooms).toBeNull();
         expect(result.beds).toBeNull();
+        expect(result.minNights).toBeNull();
         expect(result.basePrice).toBeNull();
         expect(result.currency).toBeNull();
         expect(result.isAvailable).toBe(true);
         expect(result.isFeatured).toBe(false);
         expect(result.amenityIds).toEqual([]);
         expect(result.featureIds).toEqual([]);
+        expect(result.seoTitle).toBe('');
+        expect(result.seoDescription).toBe('');
+        expect(result.videos).toEqual([]);
     });
 
     it('should handle price nested under price.price or price.amount', () => {

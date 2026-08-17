@@ -31,6 +31,7 @@ const ROUTE_FILES = readdirSync(ROUTES_DIR).filter((file) => file.endsWith('.ast
 /** Section components that must appear on exactly one route each. */
 const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     PhotoSection: 'fotos.astro',
+    VideoSection: 'fotos.astro',
     FaqSection: 'preguntas.astro',
     CalendarSection: 'calendario.astro',
     TranslationPanel: 'traducciones.astro',
@@ -39,7 +40,8 @@ const SECTION_COMPONENTS: Readonly<Record<string, string>> = {
     CapacityPricingForm: 'capacidad-precio.astro',
     LocationForm: 'ubicacion.astro',
     ServicesForm: 'servicios.astro',
-    ContactForm: 'contacto.astro'
+    ContactForm: 'contacto.astro',
+    SeoForm: 'seo.astro'
 };
 
 describe('editor routes — one file per section', () => {

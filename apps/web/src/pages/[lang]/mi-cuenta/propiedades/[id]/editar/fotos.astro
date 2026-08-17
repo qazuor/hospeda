@@ -1,13 +1,19 @@
 ---
 /**
  * @file fotos.astro
- * @description Photo section of the accommodation editor (HOS-318 T-012).
+ * @description Photo AND video section of the accommodation editor
+ * (HOS-318 T-012, videos added by G7 smoke H-121).
  *
  * `PhotoSection` already persists every change against its own endpoints, so no
- * form logic moved here — this page only loads the media and mounts it.
+ * form logic moved here for photos — this page only loads the media and mounts
+ * it. `VideoSection` is a second, independent widget on the same page: videos
+ * travel through the general accommodation PATCH (`media.videos`), a different
+ * persistence model than the granular photo endpoints, so it owns its own
+ * save action rather than sharing one with PhotoSection.
  */
 
 import { PhotoSection } from '@/components/host/editor/PhotoSection.client';
+import { VideoSection } from '@/components/host/editor/VideoSection.client';
 import EditorSectionLayout from '@/layouts/EditorSectionLayout.astro';
 import { resolveEditorPage } from '@/lib/editor/resolve-editor-page';
 import { createTranslations } from '@/lib/i18n';
@@ -40,6 +46,12 @@ const { t } = createTranslations(locale);
 		accommodationId={accommodationId}
 		initialFeaturedImage={data.featuredImage}
 		initialGallery={data.gallery}
+		client:load
+	/>
+	<VideoSection
+		locale={locale}
+		accommodationId={accommodationId}
+		initialVideos={data.accommodation.videos}
 		client:load
 	/>
 </EditorSectionLayout>

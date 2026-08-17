@@ -43,7 +43,9 @@
                 "required": "La capacidad es obligatoria"
             },
             "minNights": {
-                "required": "La cantidad mínima de noches es obligatoria"
+                "required": "La cantidad mínima de noches es obligatoria",
+                "min": "La cantidad mínima de noches no puede ser menor a {{min}}",
+                "max": "La cantidad mínima de noches no puede superar los {{max}}"
             }
         },
         "featuredToggle": {

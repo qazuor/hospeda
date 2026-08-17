@@ -1,4 +1,4 @@
-/* CapacitySection.module.css — SPEC-208 */
+/* SeoSection.module.css — G7 smoke (H-121) */
 
 .section {
     border: none;
@@ -16,15 +16,17 @@
     border-bottom: 1px solid var(--border);
 }
 
-.row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: var(--space-4, 1.5rem);
+.sectionDescription {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    color: var(--core-muted-foreground);
+    margin: 0 0 var(--space-4, 1.5rem);
 }
 
 .field {
     display: flex;
     flex-direction: column;
+    margin-bottom: var(--space-4, 1.5rem);
 }
 
 .fieldLabel {
@@ -64,5 +66,13 @@
     font-family: var(--font-sans);
     font-size: 0.8125rem;
     color: var(--core-muted-foreground);
+    margin: var(--space-1, 0.25rem) 0 0;
+}
+
+.charCount {
+    font-family: var(--font-sans);
+    font-size: 0.75rem;
+    color: var(--core-muted-foreground);
+    text-align: right;
     margin: var(--space-1, 0.25rem) 0 0;
 }

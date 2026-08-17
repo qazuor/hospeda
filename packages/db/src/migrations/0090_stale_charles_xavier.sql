@@ -1,0 +1,1 @@
+ALTER TABLE "accommodations" DROP COLUMN "schedule";
