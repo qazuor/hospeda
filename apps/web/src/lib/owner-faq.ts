@@ -63,6 +63,41 @@ export const OWNER_FAQ_ITEMS: readonly OwnerFaqItem[] = [
     }
 ];
 
+/**
+ * Resolves one FAQ item's answer text.
+ *
+ * Item 1 is the only answer whose copy carries a real count
+ * (`{{trialDays}}`) — pluralized (HOS plural audit), since the live trial
+ * length genuinely reaches 1 (e.g. the `owner-test-daily` plan). Every other
+ * item stays a plain `t()` lookup. Centralized here — not duplicated per
+ * page — because `/publicar` and `/suscriptores/propietarios` both render
+ * this same array, and duplicating the special-case is exactly the kind of
+ * per-page copy that drifted before (HOS-331).
+ *
+ * @param params - RO-RO input.
+ * @param params.faq - The FAQ item being rendered.
+ * @param params.t - Plain translation function.
+ * @param params.tPlural - Plural translation function.
+ * @param params.faqParams - Interpolation params from {@link buildOwnerFaqParams}.
+ * @returns The resolved answer text.
+ */
+export function resolveOwnerFaqAnswer({
+    faq,
+    t,
+    tPlural,
+    faqParams
+}: {
+    readonly faq: OwnerFaqItem;
+    readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
+    readonly tPlural: (key: string, count: number, params?: Record<string, unknown>) => string;
+    readonly faqParams: { readonly trialDays: number };
+}): string {
+    if (faq.aKey === 'owners.faq.1.a') {
+        return tPlural(faq.aKey, faqParams.trialDays, faqParams);
+    }
+    return t(faq.aKey, faq.aFb, faqParams);
+}
+
 /** Input for {@link buildOwnerFaqParams}. */
 export interface BuildOwnerFaqParamsOptions {
     /**

@@ -225,7 +225,8 @@
             "unpublishError": "Could not unpublish. Please try again.",
             "deleteError": "Could not delete. Please try again.",
             "publishError": "Could not publish. Please try again.",
-            "publishSubscriptionRequiredMessage": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free days.",
+            "publishSubscriptionRequiredMessage_one": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free day.",
+            "publishSubscriptionRequiredMessage_other": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free days.",
             "publishSubscriptionRequiredCta": "View plans",
             "priceOnRequest": "Price on request",
             "publishMissingRequirementsMessage": "To publish, you still need: {{fields}}.",
@@ -583,7 +584,8 @@
         "heroSubheadline": "List it in minutes and start welcoming guests",
         "primaryCta": "List your property",
         "secondaryCta": "View my properties",
-        "trialCallout": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
+        "trialCallout_one": "Try Hospeda free for {{trialDays}} day on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends.",
+        "trialCallout_other": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
     },
     "fromAdminBanner": {
         "eyebrow": "We brought you here from the admin panel — you need to publish a property first to manage your listings."
@@ -795,9 +797,11 @@
     },
     "pages": {
         "nueva": {
-            "trialCalloutTitle": "{{trialDays}} free days on your first subscription",
+            "trialCalloutTitle_one": "{{trialDays}} free day on your first subscription",
+            "trialCalloutTitle_other": "{{trialDays}} free days on your first subscription",
             "trialCalloutTitleIneligible": "Set up your property",
-            "trialNote": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
+            "trialNote_one": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
+            "trialNote_other": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
             "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan.",
             "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
             "precheck": {

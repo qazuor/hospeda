@@ -228,10 +228,12 @@
         "sidebarCtas": {
             "label": "Ações rápidas",
             "accommodations": "Buscar acomodações",
-            "accommodationsHint": "{{count}} disponíveis",
+            "accommodationsHint_one": "{{count}} disponível",
+            "accommodationsHint_other": "{{count}} disponíveis",
             "accommodationsHintEmpty": "Ver opções próximas",
             "events": "Ver eventos",
-            "eventsHint": "{{count}} em breve",
+            "eventsHint_one": "{{count}} em breve",
+            "eventsHint_other": "{{count}} em breve",
             "eventsHintEmpty": "Em breve"
         },
         "attractions": {

@@ -105,7 +105,8 @@
                 },
                 "cost": {
                     "question": "Quanto custa publicar?",
-                    "answer": "Publicar sua hospedagem exige um plano de anfitrião. Se for sua primeira assinatura, todos incluem {{trialDays}} dias de teste grátis: você cadastra seu cartão no início e nada é cobrado até o teste terminar. Não cobramos comissão por reserva, então a assinatura é o único custo. Veja o preço de cada plano na página de Planos para anfitriões."
+                    "answer_one": "Publicar sua hospedagem exige um plano de anfitrião. Se for sua primeira assinatura, todos incluem {{trialDays}} dia de teste grátis: você cadastra seu cartão no início e nada é cobrado até o teste terminar. Não cobramos comissão por reserva, então a assinatura é o único custo. Veja o preço de cada plano na página de Planos para anfitriões.",
+                    "answer_other": "Publicar sua hospedagem exige um plano de anfitrião. Se for sua primeira assinatura, todos incluem {{trialDays}} dias de teste grátis: você cadastra seu cartão no início e nada é cobrado até o teste terminar. Não cobramos comissão por reserva, então a assinatura é o único custo. Veja o preço de cada plano na página de Planos para anfitriões."
                 },
                 "commission": {
                     "question": "Vocês cobram comissão por reserva?",

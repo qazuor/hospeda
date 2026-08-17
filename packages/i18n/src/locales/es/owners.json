@@ -7,7 +7,8 @@
     "faq": {
         "1": {
             "q": "¿Cuánto cuesta publicar mi alojamiento?",
-            "a": "Publicar requiere un plan de anfitrión. Si es tu primera suscripción, todos incluyen {{trialDays}} días de prueba gratis. No cobramos comisión por reserva: la suscripción es el único costo."
+            "a_one": "Publicar requiere un plan de anfitrión. Si es tu primera suscripción, todos incluyen {{trialDays}} día de prueba gratis. No cobramos comisión por reserva: la suscripción es el único costo.",
+            "a_other": "Publicar requiere un plan de anfitrión. Si es tu primera suscripción, todos incluyen {{trialDays}} días de prueba gratis. No cobramos comisión por reserva: la suscripción es el único costo."
         },
         "2": {
             "q": "¿Cómo recibo las reservas?",

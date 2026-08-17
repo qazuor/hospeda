@@ -23,7 +23,7 @@ interface Props {
 }
 
 const { slug, accommodationsCount, eventsCount, locale } = Astro.props;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const accommodationsHref = buildUrl({ locale, path: `destinos/${slug}/alojamientos` });
 const eventsHref = buildUrl({ locale, path: `destinos/${slug}/eventos` });
@@ -43,11 +43,7 @@ const reportHref = `${buildUrl({ locale, path: 'colaborar/reportar' })}?destino=
 			</span>
 			<span class="dest-cta-card__hint">
 				{accommodationsCount > 0
-					? t(
-							'destinations.detail.sidebarCtas.accommodationsHint',
-							'{{count}} disponibles',
-							{ count: accommodationsCount }
-						)
+					? tPlural('destinations.detail.sidebarCtas.accommodationsHint', accommodationsCount)
 					: t('destinations.detail.sidebarCtas.accommodationsHintEmpty', 'Ver opciones cercanas')}
 			</span>
 		</span>
@@ -64,11 +60,7 @@ const reportHref = `${buildUrl({ locale, path: 'colaborar/reportar' })}?destino=
 			</span>
 			<span class="dest-cta-card__hint">
 				{eventsCount > 0
-					? t(
-							'destinations.detail.sidebarCtas.eventsHint',
-							'{{count}} próximos',
-							{ count: eventsCount }
-						)
+					? tPlural('destinations.detail.sidebarCtas.eventsHint', eventsCount)
 					: t('destinations.detail.sidebarCtas.eventsHintEmpty', 'Próximamente')}
 			</span>
 		</span>

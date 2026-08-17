@@ -233,11 +233,16 @@ export function DowngradePreviewPanel({
                         >
                             {t(
                                 'account.pages.subscription.downgradePreview.overCapWarning',
-                                'Tenés {selected} seleccionados pero el plan permite {cap}. Deseleccioná {extra}.'
-                            )
-                                .replace('{selected}', String(accSelected))
-                                .replace('{cap}', String(accCap))
-                                .replace('{extra}', String(accSelected - accCap))}
+                                'Tenés {{selectedPhrase}} pero el plan permite {cap}. Deseleccioná {extra}.',
+                                {
+                                    selectedPhrase: tPlural(
+                                        'account.pages.subscription.downgradePreview.overCapWarningSelectedCount',
+                                        accSelected
+                                    ),
+                                    cap: accCap,
+                                    extra: accSelected - accCap
+                                }
+                            )}
                         </p>
                     )}
 
@@ -309,11 +314,16 @@ export function DowngradePreviewPanel({
                         >
                             {t(
                                 'account.pages.subscription.downgradePreview.overCapWarning',
-                                'Tenés {selected} seleccionados pero el plan permite {cap}. Deseleccioná {extra}.'
-                            )
-                                .replace('{selected}', String(promoSelected))
-                                .replace('{cap}', String(promoCap))
-                                .replace('{extra}', String(promoSelected - promoCap))}
+                                'Tenés {{selectedPhrase}} pero el plan permite {cap}. Deseleccioná {extra}.',
+                                {
+                                    selectedPhrase: tPlural(
+                                        'account.pages.subscription.downgradePreview.overCapWarningSelectedCount',
+                                        promoSelected
+                                    ),
+                                    cap: promoCap,
+                                    extra: promoSelected - promoCap
+                                }
+                            )}
                         </p>
                     )}
 

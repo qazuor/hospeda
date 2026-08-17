@@ -225,7 +225,8 @@
             "unpublishError": "No se pudo despublicar. Intentá de nuevo.",
             "deleteError": "No se pudo eliminar. Intentá de nuevo.",
             "publishError": "No se pudo publicar. Intentá de nuevo.",
-            "publishSubscriptionRequiredMessage": "Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} días gratis.",
+            "publishSubscriptionRequiredMessage_one": "Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} día gratis.",
+            "publishSubscriptionRequiredMessage_other": "Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} días gratis.",
             "publishSubscriptionRequiredCta": "Ver planes",
             "priceOnRequest": "Precio a consultar",
             "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
@@ -583,7 +584,8 @@
         "heroSubheadline": "Publicá en minutos y empezá a recibir huéspedes",
         "primaryCta": "Publicar tu propiedad",
         "secondaryCta": "Ver mis propiedades",
-        "trialCallout": "Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba."
+        "trialCallout_one": "Probá Hospeda gratis por {{trialDays}} día en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba.",
+        "trialCallout_other": "Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba."
     },
     "fromAdminBanner": {
         "eyebrow": "Te trajimos desde el panel — necesitás publicar una propiedad para gestionar tus alojamientos."
@@ -795,9 +797,11 @@
     },
     "pages": {
         "nueva": {
-            "trialCalloutTitle": "{{trialDays}} días gratis en tu primera suscripción",
+            "trialCalloutTitle_one": "{{trialDays}} día gratis en tu primera suscripción",
+            "trialCalloutTitle_other": "{{trialDays}} días gratis en tu primera suscripción",
             "trialCalloutTitleIneligible": "Armá tu propiedad",
-            "trialNote": "Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.",
+            "trialNote_one": "Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} día arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.",
+            "trialNote_other": "Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.",
             "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.",
             "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel.",
             "precheck": {

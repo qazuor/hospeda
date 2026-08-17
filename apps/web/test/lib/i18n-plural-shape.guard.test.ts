@@ -42,6 +42,15 @@
  *   an "N of TOTAL noun" pagination/quota-window summary, where TOTAL, not
  *   N, would govern agreement). The small `KNOWN_NON_BUGS` list below is
  *   exactly those verified exceptions, each commented with why.
+ *
+ *   `KNOWN_NON_BUGS` holds ONLY "this is not a bug" verdicts — never "this is
+ *   a bug, deferred". A known-broken key sitting in that list would make the
+ *   guard pass while the defect ships to users, which is the exact fail-open
+ *   this file exists to prevent: it reads as "covered" to anyone who has not
+ *   re-audited every entry. When a real bug is found and not fixed in the
+ *   same change, it stays a RED, named test failure (or gets its own tracked
+ *   follow-up outside this file) — it does not get allowlisted here to turn
+ *   the suite green early.
  * - The noun vocabulary is derived from nouns THIS repo already pluralizes
  *   correctly (harvested from existing `_other` values) plus a short seed of
  *   nouns confirmed broken by the HOS plural audit that had no `_other`
@@ -108,7 +117,19 @@ const LEGACY_PAREN_RE = /\(e?s\)/i;
  * would otherwise pollute the noun vocabulary derived from `_other` values
  * below. Not nouns, never subject to CLDR pluralization.
  */
-const VOCAB_BLOCKLIST = new Set(['mais', 'más', 'more', 'menos', 'comparás', 'across']);
+const VOCAB_BLOCKLIST = new Set([
+    'mais',
+    'más',
+    'more',
+    'menos',
+    'comparás',
+    'across',
+    // Conjugated verbs ("tenés" = you have; "allows") harvested from strings
+    // like "Ya tenés {{currentCount}} de..." / "...the plan allows {cap}" —
+    // adjacent to a placeholder by chance, not a noun taking a plural form.
+    'tenés',
+    'allows'
+]);
 
 /**
  * Seed nouns confirmed broken by the HOS plural audit that (by definition of
@@ -223,10 +244,24 @@ function buildVocab(locale: Locale, namespaces: Map<string, FlatDict>): Set<stri
 /**
  * `namespace::key` pairs the heuristic flags but which are verified NOT to
  * be the pluralization bug — either because a second placeholder (not the
- * adjacent one) governs agreement, the "count" isn't actually a count, or
- * the fix is deliberately deferred and tracked separately. Every entry here
- * is one this file's author individually reviewed; this is not a blanket
- * suppression.
+ * adjacent one) governs agreement, the "count" isn't actually a count, or a
+ * DIFFERENT bug already owns the placeholder (see the `qualityScore` entry
+ * below). Every entry here is one this file's author individually reviewed.
+ *
+ * This set is exclusively for "this is not a bug" — never for "this is a
+ * bug I have not fixed yet". A known-broken key sitting here would make the
+ * guard green while the defect ships, which is precisely the fail-open this
+ * guard exists to prevent: the next reader has no way to tell a reviewed
+ * non-bug from a deferred one without re-auditing every entry by hand. Ten
+ * entries that WERE "deferred" (the HOS-252-style trial-copy paragraphs and
+ * the two multi-counter strings) have since been fixed and removed — see
+ * git history for `faq.categories.owners.items.cost.answer`,
+ * `features.anfitriones.banner.title`, `features.cta.description`,
+ * `host.properties.card.publishSubscriptionRequiredMessage`,
+ * `host.landing.trialCallout`, `host.pages.nueva.trialCalloutTitle`,
+ * `host.pages.nueva.trialNote`, `owners.faq.1.a`,
+ * `account.pages.subscription.downgradePreview.overCapWarning`, and
+ * `destination.detail.sidebarCtas.accommodationsHint`.
  */
 const KNOWN_NON_BUGS = new Set<string>([
     // --- "N of TOTAL noun" pagination/quota-window summaries: the noun
@@ -250,37 +285,20 @@ const KNOWN_NON_BUGS = new Set<string>([
     // this key glues two ALREADY-pluralized phrases (adultsPhrase/childrenPhrase,
     // each resolved via its own tPlural call) together — it takes no count itself.
     'conversations::form.prefill.guestsTemplate',
-    // --- Deferred: same root cause as HOS-252 (pricing.trial, fixed), not
-    // yet expanded to these marketing-copy call sites. Tracked in the HOS
-    // plural-audit follow-up, not silently dropped.
-    'faq::categories.owners.items.cost.answer',
-    'features::anfitriones.banner.title',
-    'features::cta.description',
-    'host::properties.card.publishSubscriptionRequiredMessage',
-    'host::landing.trialCallout',
-    'host::pages.nueva.trialCalloutTitle',
-    'host::pages.nueva.trialNote',
-    'owners::faq.1.a',
-    // --- Deferred: validation.json's `max` messages describe a fixed
-    // developer-set schema constant that is realistically never 1, in a
-    // 1900+-key namespace with its own dedicated parity guards.
+    // --- validation.json's `max` messages describe a fixed developer-set
+    // schema constant that is realistically never 1, in a 1900+-key
+    // namespace with its own dedicated parity guards.
     'validation::billing.plan.entitlements.max',
     'validation::common.options.limit.max',
     'validation::entityComment.pageSize.max',
-    // --- Known pre-existing bug, NOT a pluralization defect: the call site
+    // --- A DIFFERENT bug, not a pluralization defect: the call site
     // (`QualityScore.tsx`'s generic `SignalRow`) never passes `{ target }`
     // at all, across 4 separate score-signals config files, so `{{target}}`
     // renders unresolved today regardless of count. Fixing it needs a
     // `labelParams` threading change to the shared quality-score signal
     // type, tracked separately — pluralizing on top of a placeholder that
     // never resolves would just be a second bug stacked on the first.
-    'admin-entities::qualityScore.signals.galleryPhotos.label',
-    // --- Deferred: multi-counter quota copy discovered by this audit's live
-    // sweep but not yet fixed (needs the same two-counter decomposition
-    // already applied elsewhere in this pass); flagged for follow-up rather
-    // than fixed under time pressure.
-    'account::pages.subscription.downgradePreview.overCapWarning',
-    'destination::detail.sidebarCtas.accommodationsHint'
+    'admin-entities::qualityScore.signals.galleryPhotos.label'
 ]);
 
 // ---------------------------------------------------------------------------
@@ -390,6 +408,18 @@ function walk(dir: string, out: string[] = []): string[] {
 /** `t(` calls naming a literal >=2-segment key, never `tPlural(`. */
 const BARE_T_CALL = /(?<![.\w])t\(\s*['"`]([A-Za-z0-9_-]+(?:\.[A-Za-z0-9_-]+)+)['"`]/g;
 
+/**
+ * Blanks comments so a `t(...)` example inside a JSDoc block (e.g.
+ * `PublishButton.client.tsx`'s usage example) cannot be mistaken for a real
+ * call site, while preserving every newline so reported line numbers stay
+ * true to the file. Mirrors `i18n-namespace-prefix.guard.test.ts`'s own
+ * `blankComments` — same failure mode, same fix.
+ */
+const blankComments = (src: string): string =>
+    src
+        .replace(/\/\*[\s\S]*?\*\//g, (block) => block.replace(/[^\n]/g, ' '))
+        .replace(/^([ \t]*)\/\/.*$/gm, (_line, indent: string) => indent);
+
 interface CallSiteOffence {
     readonly key: string;
     readonly where: string;
@@ -415,7 +445,7 @@ function findCallSiteOffences(pluralKeys: ReadonlySet<string>): CallSiteOffence[
     const offences: CallSiteOffence[] = [];
     const files = [...walk(WEB_SRC), ...walk(ADMIN_SRC)];
     for (const file of files) {
-        const src = readFileSync(file, 'utf8');
+        const src = blankComments(readFileSync(file, 'utf8'));
         for (const match of src.matchAll(BARE_T_CALL)) {
             const key = match[1] as string;
             if (!pluralKeys.has(key)) continue;

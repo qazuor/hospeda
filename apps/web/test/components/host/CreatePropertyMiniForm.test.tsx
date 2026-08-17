@@ -358,10 +358,23 @@ vi.mock('../../../src/lib/i18n', () => {
             raw
         );
     };
-    const tPlural = (key: string, count: number, params?: Record<string, unknown>) =>
-        `${key} ${Object.values({ ...params, count })
+    // Real `_other` fallback text for the keys this file asserts on by exact
+    // string (the trial callout, HOS plural audit) — everything else falls
+    // back to echoing the key + values, which is all the OTHER assertions in
+    // this file need (e.g. the amenity-count chip just checks the number
+    // appears in the text).
+    const PLURAL_FALLBACKS: Record<string, string> = {
+        'host.pages.nueva.trialCalloutTitle': '{{trialDays}} días gratis en tu primera suscripción',
+        'host.pages.nueva.trialNote':
+            'Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.'
+    };
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>) => {
+        const template = PLURAL_FALLBACKS[key];
+        if (template) return t(key, template, { ...params, count });
+        return `${key} ${Object.values({ ...params, count })
             .map(String)
             .join(' ')}`;
+    };
     return {
         createTranslations: (_locale: string) => ({ t, tPlural })
     };

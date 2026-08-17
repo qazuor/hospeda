@@ -1765,11 +1765,9 @@ export function CreatePropertyMiniForm({
                     <p className="form-trial-callout__title">
                         {trialEligible === false
                             ? t('host.pages.nueva.trialCalloutTitleIneligible', 'Armá tu propiedad')
-                            : t(
-                                  'host.pages.nueva.trialCalloutTitle',
-                                  '{{trialDays}} días gratis en tu primera suscripción',
-                                  { trialDays }
-                              )}
+                            : tPlural('host.pages.nueva.trialCalloutTitle', trialDays, {
+                                  trialDays
+                              })}
                     </p>
                     <p className="form-trial-callout__text">
                         {trialEligible === false
@@ -1777,11 +1775,7 @@ export function CreatePropertyMiniForm({
                                   'host.pages.nueva.trialNoteIneligible',
                                   'Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.'
                               )
-                            : t(
-                                  'host.pages.nueva.trialNote',
-                                  'Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.',
-                                  { trialDays }
-                              )}
+                            : tPlural('host.pages.nueva.trialNote', trialDays, { trialDays })}
                     </p>
                 </div>
             </aside>
