@@ -3790,6 +3790,20 @@ export class AccommodationService extends BaseCrudService<
                 };
 
                 const createdMedia = await mediaModel.create(rowToCreate, ctx?.tx);
+
+                // HOS-389 §4: the gallery IS the public page's content, so a
+                // photo change has to purge it. Before this, none of the seven
+                // media methods scheduled anything — a host replaced the cover
+                // and the listing kept serving the old one from cache until some
+                // unrelated edit happened to purge it.
+                //
+                // Guarded on public visibility for the same reason `_afterCreate`
+                // is (HOS-203): a DRAFT/PRIVATE listing has no public footprint,
+                // so purging its paths is wasted work and logged 404s in prod.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: createdMedia };
             }
         });
@@ -3877,6 +3891,11 @@ export class AccommodationService extends BaseCrudService<
                     await doRemove(ctx.tx);
                 } else {
                     await withTransaction(doRemove);
+                }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
                 }
 
                 return { success: true };
@@ -3991,6 +4010,11 @@ export class AccommodationService extends BaseCrudService<
                         return row ? { ...row, sortOrder: idx } : null;
                     })
                     .filter((r): r is NonNullable<typeof r> => r !== null);
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
 
                 return { media: reordered };
             }
@@ -4122,6 +4146,14 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after set-featured'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale. This is
+                // the loudest case: changing the cover changes the first image a
+                // visitor and every social preview sees.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: updated };
             }
         });
@@ -4201,6 +4233,14 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after update'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale. `alt`
+                // is rendered into the public page, so correcting it has to
+                // reach the cache.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: updated };
             }
         });
@@ -4282,6 +4322,12 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after archive'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: archived };
             }
         });
@@ -4369,6 +4415,14 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after restore'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                // Restoring an archived photo puts it back in the public
+                // gallery, so it purges exactly like archiving does.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: restored };
             }
         });
