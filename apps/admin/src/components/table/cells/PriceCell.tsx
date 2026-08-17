@@ -1,5 +1,6 @@
 import { defaultIntlLocale, formatNumber } from '@repo/i18n';
-import type { PriceCurrencyEnum, PriceType } from '@repo/schemas';
+import type { PriceType } from '@repo/schemas';
+import { PriceCurrencyEnum } from '@repo/schemas';
 import type { ReactNode } from 'react';
 import { useTranslations } from '@/hooks/use-translations';
 
@@ -33,7 +34,15 @@ export const PriceCell = ({ value, locale = defaultIntlLocale }: PriceCellProps)
     }
 
     const price = Number(priceData.price);
-    const currency = priceData.currency;
+    // H-167: 2 legacy accommodations in prod store `{"price": N}` with no
+    // `currency` sibling (the write path used to accept a price without one —
+    // see accommodation.http.schema.ts). ARS is the accommodation domain's
+    // documented storage currency (`accommodation.model.ts`) and the same
+    // fallback the public sidebar already uses (`PricingSidebar.astro`'s
+    // `?? 'ARS'`), so a missing currency here renders identically to an
+    // explicit ARS row instead of falling into the 2-decimal `default` branch
+    // below, which made it look like an unrelated currency was in play.
+    const currency = priceData.currency ?? PriceCurrencyEnum.ARS;
 
     // Handle invalid price numbers
     if (Number.isNaN(price)) {
@@ -62,11 +71,7 @@ export const PriceCell = ({ value, locale = defaultIntlLocale }: PriceCellProps)
  * @param currency - Currency code (ARS, USD, etc.)
  * @param locale - BCP 47 locale string for formatting
  */
-function formatPrice(
-    price: number,
-    currency: PriceCurrencyEnum | undefined,
-    locale: string
-): string {
+function formatPrice(price: number, currency: PriceCurrencyEnum, locale: string): string {
     switch (currency) {
         case 'ARS':
             return formatNumber({

@@ -1879,6 +1879,7 @@
         },
         "price": {
             "price": {
+                "integer": "O preço deve ser um número inteiro, em pesos, sem centavos",
                 "positive": "El precio debe ser un número positivo",
                 "required": "El precio es obligatorio"
             }
