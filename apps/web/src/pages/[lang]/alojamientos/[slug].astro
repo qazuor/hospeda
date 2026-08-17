@@ -15,6 +15,7 @@ import LodgingBusinessJsonLd from '@/components/seo/LodgingBusinessJsonLd.astro'
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
+import { formatPhotoCredit } from '@/lib/photo-credit';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
@@ -355,17 +356,22 @@ const whatsappPlansHref = buildUrl({ locale, path: 'suscriptores/turistas' });
 // H-125: prefer the owner's alt text, then the caption, then the listing name.
 // Reading the caption as alt is what made every photo of a listing announce the
 // same string — measured in production, all four photos shared one alt.
+// H-125: the credit is composed HERE, on the server, and handed to the island
+// ready to render — the island is React and cannot reach the shared Astro
+// renderer, and pre-composing keeps the http/https check off the client.
 const galleryImages = (() => {
     const featured = {
         url: accommodation.featuredImage || '/assets/images/placeholder-accommodation.svg',
-        alt: accommodation.featuredImageAlt ?? accommodation.name
+        alt: accommodation.featuredImageAlt ?? accommodation.name,
+        credit: formatPhotoCredit(accommodation.featuredImageAttribution, t)
     };
     const extras =
         accommodation.media.galleryItems.length > 0
             ? accommodation.media.galleryItems.map((item) => ({
                   url: item.url,
                   alt: item.alt ?? item.caption ?? accommodation.name,
-                  caption: item.caption
+                  caption: item.caption,
+                  credit: formatPhotoCredit(item.attribution, t)
               }))
             : accommodation.media.images.map((url) => ({
                   url,

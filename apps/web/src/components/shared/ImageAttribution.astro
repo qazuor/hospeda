@@ -1,27 +1,29 @@
 ---
 /**
  * @file ImageAttribution.astro
- * @description Renders visible attribution for stock images from Unsplash/Pexels.
- * Shows "Photo by [photographer] on [provider]" with a link to the photographer's profile.
+ * @description Renders the visible credit for a photo — "Photo by [photographer]",
+ * plus " on [provider]" when the photo came from a stock service.
  *
- * Requirements (SPEC-274):
- * - Visible attribution (not just alt text) per Unsplash/Pexels API terms
- * - Link to photographer profile with rel="nofollow"
- * - Only renders when attribution data exists (gracefully skips for user uploads)
+ * Two independent sources feed this (H-125):
+ * - Stock imports (SPEC-274, Unsplash/Pexels) carry all four subfields, and the
+ *   providers' API terms REQUIRE a visible credit linking the photographer.
+ * - A host crediting the photo on their own listing types a name and, if they
+ *   have one, a link. Nothing else.
+ *
+ * So every field except `photographer` is optional here, and the provider suffix
+ * only renders for a provider the component can actually name. The previous
+ * version defaulted every non-Unsplash value to "Pexels", which would have
+ * published "Photo by <the host's photographer> on Pexels" — a false claim about
+ * where the photo came from, next to an outbound link.
  */
 
+import type { MediaAttribution } from '@/lib/media';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-
-interface Attribution {
-    readonly photographer: string;
-    readonly sourceUrl: string;
-    readonly license: string;
-    readonly provider: 'unsplash' | 'pexels';
-}
+import { formatPhotoCredit } from '@/lib/photo-credit';
 
 interface Props {
-    readonly attribution: Attribution;
+    readonly attribution: MediaAttribution;
     readonly locale: SupportedLocale;
     readonly variant?: 'overlay' | 'inline';
 }
@@ -29,48 +31,29 @@ interface Props {
 const { attribution, locale, variant = 'inline' } = Astro.props;
 const { t } = createTranslations(locale);
 
-const providerName = attribution.provider === 'unsplash' ? 'Unsplash' : 'Pexels';
-
+// Composed by the shared formatter so this and the lightbox island (React,
+// which cannot import an Astro component) phrase the same credit identically.
+const credit = formatPhotoCredit(attribution, t);
 ---
 
-{attribution && (
+{credit && (
     <div class="image-attribution" data-variant={variant}>
         <span class="image-attribution__text">
-            {variant === 'overlay' ? (
-                <>
-                    {t('common.attribution.byline')}
-                    <a
-                        href={attribution.sourceUrl}
-                        class="image-attribution__link"
-                        target="_blank"
-                        rel="nofollow noopener noreferrer"
-                        aria-label={t('common.attribution.ariaLabel', undefined, {
-                            photographer: attribution.photographer,
-                            provider: providerName
-                        })}
-                    >
-                        {attribution.photographer}
-                    </a>
-                    {t('common.attribution.onProvider', undefined, { provider: providerName })}
-                </>
+            {credit.byline}
+            {credit.url ? (
+                <a
+                    href={credit.url}
+                    class="image-attribution__link"
+                    target="_blank"
+                    rel="nofollow noopener noreferrer"
+                    aria-label={credit.ariaLabel}
+                >
+                    {credit.photographer}
+                </a>
             ) : (
-                <>
-                    {t('common.attribution.byline')}
-                    <a
-                        href={attribution.sourceUrl}
-                        class="image-attribution__link"
-                        target="_blank"
-                        rel="nofollow noopener noreferrer"
-                        aria-label={t('common.attribution.ariaLabel', undefined, {
-                            photographer: attribution.photographer,
-                            provider: providerName
-                        })}
-                    >
-                        {attribution.photographer}
-                    </a>
-                    {t('common.attribution.onProvider', undefined, { provider: providerName })}
-                </>
+                <span class="image-attribution__name">{credit.photographer}</span>
             )}
+            {credit.providerSuffix}
         </span>
     </div>
 )}
@@ -101,7 +84,8 @@ const providerName = attribution.provider === 'unsplash' ? 'Unsplash' : 'Pexels'
         margin-top: var(--space-2, 8px);
     }
 
-    .image-attribution__link {
+    .image-attribution__link,
+    .image-attribution__name {
         color: var(--core-foreground);
         font-weight: 500;
         text-decoration: none;

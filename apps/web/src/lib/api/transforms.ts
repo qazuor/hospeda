@@ -37,6 +37,7 @@ import {
     extractFeaturedImage,
     extractGalleryItems,
     extractGalleryUrls,
+    type MediaAttribution,
     toRenderableImageUrl
 } from '../media';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
@@ -918,6 +919,11 @@ export function toAccommodationDetailPageProps({
         // H-125: `extractFeaturedImageUrl` discards everything but the URL, which
         // is what left the cover photo with a synthetic alt. Read the rich shape.
         ...(featuredImage.alt ? { featuredImageAlt: featuredImage.alt } : {}),
+        // Same reason as the alt above: the cover photo can be somebody else's
+        // work, and the credit only reaches the page if it is read out here.
+        ...(featuredImage.attribution
+            ? { featuredImageAttribution: featuredImage.attribution }
+            : {}),
         media: (() => {
             const galleryItems = extractGalleryItems(item);
             const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
@@ -1102,12 +1108,8 @@ export interface ProcessEntityImagesResult<T extends Record<string, unknown>> {
     readonly featuredImage: {
         readonly url: string;
         readonly caption?: string;
-        readonly attribution?: {
-            readonly photographer: string;
-            readonly sourceUrl: string;
-            readonly license: string;
-            readonly provider: 'unsplash' | 'pexels';
-        };
+        /** Photo credit, already normalised and scheme-checked by `extractFeaturedImage`. */
+        readonly attribution?: MediaAttribution;
     };
     /**
      * Resolved gallery URL list.  Empty array when the entity has no gallery.

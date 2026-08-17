@@ -631,6 +631,25 @@
     max-width: 600px;
 }
 
+/* Photo credit under the caption (H-125). Its own line and dimmer than the
+ * caption, so it reads as provenance rather than as part of the description. */
+.lightboxCredit {
+    display: block;
+    margin-top: var(--space-1, 4px);
+    color: oklch(1 0 0 / 0.55);
+    font-size: 0.75rem;
+}
+
+.lightboxCreditLink {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.lightboxCreditLink:hover,
+.lightboxCreditLink:focus-visible {
+    color: oklch(1 0 0 / 0.85);
+}
+
 /* Thumbnail strip at bottom */
 .lightboxThumbs {
     position: absolute;

@@ -180,7 +180,8 @@
         "text": "Foto por {{photographer}} no {{provider}}",
         "byline": "Foto por",
         "onProvider": "no {{provider}}",
-        "ariaLabel": "Perfil de {{photographer}} no {{provider}}"
+        "ariaLabel": "Perfil de {{photographer}} no {{provider}}",
+        "ariaLabelNoProvider": "Site de {{photographer}}"
     },
     "breadcrumbs": "Trilha de navegação"
 }

@@ -1,13 +1,28 @@
 /**
  * @file ImageAttribution.astro.test.ts
- * @description Tests for the ImageAttribution component (SPEC-274 T-274-08/09).
+ * @description Source-level invariants for the photo-credit component
+ * (SPEC-274 T-274-08/09, revisited by H-125).
  *
- * Tests verify:
- * - Attribution renders correctly with all required fields
- * - Component gracefully skips when attribution is missing
- * - Both variants (overlay/inline) render correctly
- * - Link has correct attributes (rel, target, href)
- * - i18n strings are properly interpolated
+ * An `.astro` component cannot be rendered under vitest, so what is left here
+ * is a static guard — and a static guard is only worth its runtime when its
+ * predicate is a real invariant rather than the shape the code happens to have
+ * today. The previous version of this file failed that test in the most
+ * literal way possible: it asserted
+ *
+ *     "attribution.provider === 'unsplash' ? 'Unsplash' : 'Pexels'"
+ *
+ * verbatim, which pinned the exact expression that published "Foto por <the
+ * host's photographer> en Pexels" for any photo that was not from Unsplash.
+ * The test was green the entire time the component was lying about where a
+ * photo came from, because it was checking that a line existed, not that the
+ * component was right. Nine of its cases broke on a refactor that FIXED that
+ * bug — the signature of a test measuring form instead of behaviour.
+ *
+ * So the wording, the provider mapping and the URL handling are now covered by
+ * behaviour tests over `formatPhotoCredit` (`test/lib/photo-credit.test.ts`),
+ * which can actually execute. What stays here is only what a behaviour test
+ * cannot reach: the rendered markup's security attributes, the scoped CSS, and
+ * the presence of the i18n keys the formatter names.
  */
 
 import { readFileSync } from 'node:fs';
@@ -19,67 +34,72 @@ const componentSrc = readFileSync(
     'utf8'
 );
 
+const esCommon = readFileSync(
+    resolve(__dirname, '../../../../../packages/i18n/src/locales/es/common.json'),
+    'utf8'
+);
+
 describe('ImageAttribution.astro', () => {
     describe('Structure', () => {
-        it('should render container div with data-variant attribute', () => {
+        it('renders the container with its variant attribute', () => {
             expect(componentSrc).toContain('div class="image-attribution" data-variant={variant}');
         });
 
-        it('should use conditional rendering for attribution', () => {
-            expect(componentSrc).toContain('{attribution && (');
+        it('renders nothing at all when there is no credit to show', () => {
+            // The whole block is gated, so an uncredited photo emits no empty
+            // container that CSS margins would still reserve space for.
+            expect(componentSrc).toContain('{credit && (');
         });
 
-        it('should support overlay variant', () => {
-            expect(componentSrc).toContain("variant === 'overlay'");
-        });
-
-        it('should support inline variant', () => {
-            expect(componentSrc).toContain('variant="overlay"');
+        it('supports the overlay variant', () => {
+            expect(componentSrc).toContain('data-variant="overlay"');
         });
     });
 
-    describe('Link attributes (SPEC-274 legal requirements)', () => {
-        it('should have photographer profile link', () => {
-            expect(componentSrc).toContain('href={attribution.sourceUrl}');
-        });
-
-        it('should have target="_blank" for external link', () => {
+    describe('Outbound link (SPEC-274 legal requirement + H-125 hardening)', () => {
+        it('opens the credit link in a new tab', () => {
             expect(componentSrc).toContain('target="_blank"');
         });
 
-        it('should have rel="nofollow noopener noreferrer"', () => {
+        it('marks the credit link nofollow, noopener and noreferrer', () => {
+            // Host-supplied outbound links must not pass ranking signal, and
+            // `target="_blank"` without `noopener` hands the opener to the
+            // destination.
             expect(componentSrc).toContain('rel="nofollow noopener noreferrer"');
         });
 
-        it('should have aria-label for accessibility', () => {
-            expect(componentSrc).toContain("aria-label={t('common.attribution.ariaLabel'");
+        it('never puts the raw stored URL into an href', () => {
+            // The write side validates `sourceUrl` with `z.string().url()`,
+            // which accepts `javascript:` and `data:`. The only value allowed
+            // into an href is the one `formatPhotoCredit` already scheme-checked
+            // through `resolveSafeExternalUrl`.
+            expect(componentSrc).not.toContain('href={attribution.sourceUrl}');
+            expect(componentSrc).toContain('href={credit.url}');
+        });
+
+        it('labels the link for screen readers', () => {
+            expect(componentSrc).toContain('aria-label={credit.ariaLabel}');
+        });
+
+        it('still shows the photographer when the credit carries no link', () => {
+            // A name with no URL is the common case for a host crediting a
+            // friend; dropping it would silently discard a credit they wrote.
+            expect(componentSrc).toContain('image-attribution__name');
         });
     });
 
-    describe('i18n integration', () => {
-        it('should use common.attribution.byline key in both variants', () => {
-            expect(componentSrc).toContain("t('common.attribution.byline'");
+    describe('Wording comes from the shared formatter', () => {
+        it('composes the credit through formatPhotoCredit, not inline', () => {
+            // Two surfaces render this credit (this component and the React
+            // lightbox). Composing it in either one is how they drift apart.
+            expect(componentSrc).toContain('formatPhotoCredit');
         });
 
-        it('should use common.attribution.onProvider key', () => {
-            expect(componentSrc).toContain("t('common.attribution.onProvider'");
-        });
-
-        it('should interpolate photographer and provider params', () => {
-            expect(componentSrc).toContain('photographer: attribution.photographer');
-            expect(componentSrc).toContain('provider: providerName');
-        });
-    });
-
-    describe('Provider name mapping', () => {
-        it('should map unsplash to "Unsplash"', () => {
-            expect(componentSrc).toContain(
-                "attribution.provider === 'unsplash' ? 'Unsplash' : 'Pexels'"
-            );
-        });
-
-        it('should map pexels to "Pexels"', () => {
-            expect(componentSrc).toContain("Unsplash' : 'Pexels'");
+        it('does not hardcode a provider name', () => {
+            // The regression this file used to enshrine: mapping every
+            // non-Unsplash value to 'Pexels'.
+            expect(componentSrc).not.toContain("'Pexels'");
+            expect(componentSrc).not.toContain("'Unsplash'");
         });
     });
 
@@ -126,35 +146,26 @@ describe('ImageAttribution.astro', () => {
 
 describe('ImageAttribution i18n keys', () => {
     it('should have attribution.text key with interpolation placeholders', () => {
-        const esCommon = readFileSync(
-            resolve(__dirname, '../../../../../packages/i18n/src/locales/es/common.json'),
-            'utf8'
-        );
         expect(esCommon).toContain('"attribution":');
         expect(esCommon).toContain('"text": "Foto por {{photographer}} en {{provider}}"');
     });
 
     it('should have attribution.byline key', () => {
-        const esCommon = readFileSync(
-            resolve(__dirname, '../../../../../packages/i18n/src/locales/es/common.json'),
-            'utf8'
-        );
         expect(esCommon).toContain('"byline": "Foto por"');
     });
 
     it('should have attribution.onProvider key', () => {
-        const esCommon = readFileSync(
-            resolve(__dirname, '../../../../../packages/i18n/src/locales/es/common.json'),
-            'utf8'
-        );
         expect(esCommon).toContain('"onProvider": "en {{provider}}"');
     });
 
     it('should have attribution.ariaLabel key', () => {
-        const esCommon = readFileSync(
-            resolve(__dirname, '../../../../../packages/i18n/src/locales/es/common.json'),
-            'utf8'
-        );
         expect(esCommon).toContain('"ariaLabel": "Perfil de {{photographer}} en {{provider}}"');
+    });
+
+    it('should have attribution.ariaLabelNoProvider key for a credit with no provider', () => {
+        // Without this key the no-provider branch falls back to the inline
+        // Spanish default on /en/ and /pt/ — the silent failure mode H-125's
+        // sibling finding is about.
+        expect(esCommon).toContain('"ariaLabelNoProvider":');
     });
 });

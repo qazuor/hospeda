@@ -15,6 +15,7 @@
 
 import type { MediaPreset } from '@repo/media';
 import { getMediaUrl } from '@repo/media';
+import { resolveSafeExternalUrl } from './safe-external-url';
 
 const DEFAULT_PLACEHOLDER = '/assets/images/placeholder.svg';
 
@@ -161,12 +162,104 @@ interface MediaImage {
     readonly caption?: string;
     readonly description?: string;
     readonly alt?: string;
-    readonly attribution?: {
-        readonly photographer: string;
-        readonly sourceUrl: string;
-        readonly license: string;
-        readonly provider: 'unsplash' | 'pexels';
+    /**
+     * Raw credit metadata straight off the API payload. Deliberately typed as
+     * `unknown` rather than the normalised shape: every subfield is optional in
+     * `ImageAttributionSchema`, and older clients can persist values outside the
+     * provider enum. {@link normalizeAttribution} is the single gate that turns
+     * this into something renderable.
+     */
+    readonly attribution?: unknown;
+}
+
+/** Providers `ImageAttributionSchema` accepts for a credit's `provider`. */
+const MEDIA_ATTRIBUTION_PROVIDERS = ['unsplash', 'pexels', 'user-upload'] as const;
+
+/** Source a credited photo came from. `user-upload` is the host's own photo. */
+export type MediaAttributionProvider = (typeof MEDIA_ATTRIBUTION_PROVIDERS)[number];
+
+/**
+ * Photo credit as the render layer consumes it.
+ *
+ * Every field is optional, mirroring `ImageAttributionSchema` in
+ * `@repo/schemas` — a host crediting a friend types a name and nothing else,
+ * while a stock import fills all four. The one invariant the extractors
+ * enforce is that `photographer` is present whenever the object itself is:
+ * it is the only field with anything to show, so a credit without it is not a
+ * credit, it is noise.
+ */
+export interface MediaAttribution {
+    /** Who took the photo. The visible half of the credit. */
+    readonly photographer?: string;
+    /**
+     * Link to the author or the source. Guaranteed `http`/`https` — it has
+     * already passed {@link resolveSafeExternalUrl}, because the host types
+     * this by hand and `z.string().url()` on the write side accepts
+     * `javascript:` and `data:` (H-118 precedent).
+     */
+    readonly sourceUrl?: string;
+    /** Licence the photo is published under, when the author declared one. */
+    readonly license?: string;
+    /** Where the photo came from; absent when an older payload named something unknown. */
+    readonly provider?: MediaAttributionProvider;
+}
+
+/**
+ * Normalise raw `attribution` from an API payload into a renderable credit.
+ *
+ * Drops what cannot be shown rather than dropping the whole object — the
+ * previous behaviour required all four subfields at once, so a credit carrying
+ * only a photographer was silently discarded even though the API had stored it
+ * and the schema considers it valid.
+ *
+ * @param raw - `attribution` exactly as it arrived from the API
+ * @returns A credit with at least a photographer, or `undefined`
+ */
+function normalizeAttribution(raw: unknown): MediaAttribution | undefined {
+    if (!raw || typeof raw !== 'object') {
+        return undefined;
+    }
+    const candidate = raw as Record<string, unknown>;
+
+    const readText = (value: unknown): string | undefined => {
+        if (typeof value !== 'string') {
+            return undefined;
+        }
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : undefined;
     };
+
+    const photographer = readText(candidate.photographer);
+    // No photographer, nothing to render — a bare licence or link credits nobody.
+    if (!photographer) {
+        return undefined;
+    }
+
+    const result: {
+        photographer: string;
+        sourceUrl?: string;
+        license?: string;
+        provider?: MediaAttributionProvider;
+    } = { photographer };
+
+    // The host types this URL by hand, so it reaches an href only after the
+    // scheme check — never straight from the payload.
+    const sourceUrl = resolveSafeExternalUrl(readText(candidate.sourceUrl));
+    if (sourceUrl) {
+        result.sourceUrl = sourceUrl;
+    }
+
+    const license = readText(candidate.license);
+    if (license) {
+        result.license = license;
+    }
+
+    const provider = readText(candidate.provider);
+    if (provider && (MEDIA_ATTRIBUTION_PROVIDERS as readonly string[]).includes(provider)) {
+        result.provider = provider as MediaAttributionProvider;
+    }
+
+    return result;
 }
 
 interface MediaObject {
@@ -196,6 +289,14 @@ export interface GalleryItem {
      * caption as a substitute when a real alt exists.
      */
     readonly alt?: string;
+    /**
+     * Photo credit written by the host (or carried in from a stock import).
+     *
+     * Present only when the payload names a photographer. Renderers must show
+     * it beside the photo — the write surface exists precisely so an author who
+     * is not the owner gets named on the public listing.
+     */
+    readonly attribution?: MediaAttribution;
 }
 
 /**
@@ -238,15 +339,10 @@ export interface FeaturedImageResult {
      */
     readonly alt?: string;
     /**
-     * Optional attribution for stock images from Unsplash/Pexels.
-     * Present only when the image was imported via the stock image import flow.
+     * Photo credit for the cover image — a stock import (Unsplash/Pexels) or a
+     * credit the host wrote for a photo somebody else took.
      */
-    readonly attribution?: {
-        readonly photographer: string;
-        readonly sourceUrl: string;
-        readonly license: string;
-        readonly provider: 'unsplash' | 'pexels';
-    };
+    readonly attribution?: MediaAttribution;
 }
 
 /**
@@ -287,12 +383,7 @@ export function extractFeaturedImage(
                 url: string;
                 caption?: string;
                 alt?: string;
-                attribution?: {
-                    photographer: string;
-                    sourceUrl: string;
-                    license: string;
-                    provider: 'unsplash' | 'pexels';
-                };
+                attribution?: MediaAttribution;
             } = {
                 url: getMediaUrl(media.featuredImage.url, { preset: resolvedPreset })
             };
@@ -307,15 +398,13 @@ export function extractFeaturedImage(
             if (typeof media.featuredImage.alt === 'string' && media.featuredImage.alt.length > 0) {
                 result.alt = media.featuredImage.alt;
             }
-            // Extract attribution if present (SPEC-274 stock images)
-            const attr = media.featuredImage.attribution as Record<string, unknown> | undefined;
-            if (attr?.photographer && attr?.sourceUrl && attr?.license && attr?.provider) {
-                result.attribution = {
-                    photographer: String(attr.photographer),
-                    sourceUrl: String(attr.sourceUrl),
-                    license: String(attr.license),
-                    provider: attr.provider as 'unsplash' | 'pexels'
-                };
+            // Photo credit — a SPEC-274 stock import, or one the host wrote for
+            // a photo somebody else took (H-125). Requiring all four subfields
+            // here is what used to throw away the host's credit, since the
+            // editor only ever collects photographer + link.
+            const attribution = normalizeAttribution(media.featuredImage.attribution);
+            if (attribution) {
+                result.attribution = attribution;
             }
             return result;
         }
@@ -432,6 +521,7 @@ export function extractGalleryItems(
                 caption?: string;
                 description?: string;
                 alt?: string;
+                attribution?: MediaAttribution;
             } = { url: getMediaUrl(entry.url, { preset }) };
             if (typeof entry.caption === 'string' && entry.caption.length > 0) {
                 item.caption = entry.caption;
@@ -443,6 +533,13 @@ export function extractGalleryItems(
             // every photo of a listing share the same fallback alt text.
             if (typeof entry.alt === 'string' && entry.alt.length > 0) {
                 item.alt = entry.alt;
+            }
+            // H-125 (credit half): the API stores and serialises the credit,
+            // but dropping it here made the host's editor decorative — the same
+            // failure `alt` had, one field over.
+            const attribution = normalizeAttribution(entry.attribution);
+            if (attribution) {
+                item.attribution = attribution;
             }
             return item;
         })

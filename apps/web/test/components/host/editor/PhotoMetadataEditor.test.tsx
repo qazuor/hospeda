@@ -155,7 +155,8 @@ describe('PhotoMetadataEditor', () => {
             expect(onSave).toHaveBeenCalledWith(itemWithAllFields, {
                 alt: null,
                 caption: null,
-                description: null
+                description: null,
+                attribution: null
             });
         });
 
@@ -335,5 +336,119 @@ describe('PhotoMetadataEditor', () => {
 
         await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
         expect(screen.queryByText('Guardado')).not.toBeInTheDocument();
+    });
+
+    // ── Photo credit (H-125, attribution half) ────────────────────────────
+
+    describe('photo credit', () => {
+        it('explains WHEN the credit has to be filled in, not just what it is', () => {
+            render(<PhotoMetadataEditor {...makeProps()} />);
+            openPanel();
+
+            const hint = screen.getByText(/Dejalo vacío si la foto es tuya/);
+            // The point of the copy is the obligation, not the field name: a host
+            // has to learn that somebody else's photo usually requires naming them.
+            expect(hint.textContent).toMatch(/fotógrafo|banco de fotos/);
+        });
+
+        it('saves the two credit fields as an attribution object', async () => {
+            const onSave = vi.fn().mockResolvedValue(true);
+            render(<PhotoMetadataEditor {...makeProps({ onSave })} />);
+            openPanel();
+
+            fireEvent.change(screen.getByLabelText('¿Quién sacó la foto?'), {
+                target: { value: 'Estudio Paraná' }
+            });
+            fireEvent.change(screen.getByLabelText('Link del autor (opcional)'), {
+                target: { value: 'https://estudioparana.com.ar' }
+            });
+            fireEvent.click(screen.getByText('Guardar'));
+
+            await waitFor(() => {
+                expect(onSave).toHaveBeenCalledWith(
+                    BASE_ITEM,
+                    expect.objectContaining({
+                        attribution: {
+                            photographer: 'Estudio Paraná',
+                            sourceUrl: 'https://estudioparana.com.ar',
+                            provider: 'user-upload'
+                        }
+                    })
+                );
+            });
+        });
+
+        it('saves with neither credit field filled — both are optional', async () => {
+            const onSave = vi.fn().mockResolvedValue(true);
+            render(<PhotoMetadataEditor {...makeProps({ onSave })} />);
+            openPanel();
+
+            fireEvent.change(screen.getByLabelText('¿Qué muestra la foto?'), {
+                target: { value: 'Living con sofá' }
+            });
+            fireEvent.click(screen.getByText('Guardar'));
+
+            await waitFor(() => {
+                expect(onSave).toHaveBeenCalledWith(
+                    BASE_ITEM,
+                    expect.objectContaining({ attribution: null })
+                );
+            });
+        });
+
+        it('shows the CURRENT credit when the panel opens', () => {
+            const credited: AccommodationMediaItem = {
+                ...BASE_ITEM,
+                attribution: {
+                    photographer: 'Ana Gómez',
+                    sourceUrl: 'https://anagomez.example',
+                    provider: 'user-upload'
+                }
+            };
+            render(<PhotoMetadataEditor {...makeProps({ item: credited })} />);
+            openPanel();
+
+            expect((screen.getByLabelText('¿Quién sacó la foto?') as HTMLInputElement).value).toBe(
+                'Ana Gómez'
+            );
+            expect(
+                (screen.getByLabelText('Link del autor (opcional)') as HTMLInputElement).value
+            ).toBe('https://anagomez.example');
+        });
+
+        it('refuses a non-http credit link and never calls onSave', async () => {
+            const onSave = vi.fn().mockResolvedValue(true);
+            render(<PhotoMetadataEditor {...makeProps({ onSave })} />);
+            openPanel();
+
+            fireEvent.change(screen.getByLabelText('¿Quién sacó la foto?'), {
+                target: { value: 'Mallory' }
+            });
+            fireEvent.change(screen.getByLabelText('Link del autor (opcional)'), {
+                target: { value: 'javascript:alert(1)' }
+            });
+            fireEvent.click(screen.getByText('Guardar'));
+
+            await waitFor(() => {
+                expect(screen.getByText(/http:\/\/ o https:\/\//)).toBeInTheDocument();
+            });
+            expect(onSave).not.toHaveBeenCalled();
+        });
+
+        it('refuses a link with no name behind it', async () => {
+            const onSave = vi.fn().mockResolvedValue(true);
+            render(<PhotoMetadataEditor {...makeProps({ onSave })} />);
+            openPanel();
+
+            fireEvent.change(screen.getByLabelText('Link del autor (opcional)'), {
+                target: { value: 'https://estudioparana.com.ar' }
+            });
+            fireEvent.click(screen.getByText('Guardar'));
+
+            await waitFor(() => {
+                expect(screen.getByText(/Escribí a quién pertenece la foto/)).toBeInTheDocument();
+            });
+            expect(onSave).not.toHaveBeenCalled();
+        });
     });
 });

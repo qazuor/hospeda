@@ -953,7 +953,12 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 expect(mockUpdateMedia).toHaveBeenCalledWith({
                     id: ACC_ID,
                     mediaId: GALLERY_ROW_1.id,
-                    body: { alt: 'Living con sofá', caption: null, description: null }
+                    body: {
+                        alt: 'Living con sofá',
+                        caption: null,
+                        description: null,
+                        attribution: null
+                    }
                 });
             });
 
@@ -1025,7 +1030,12 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 expect(mockUpdateMedia).toHaveBeenCalledWith({
                     id: ACC_ID,
                     mediaId: FEATURED_ROW.id,
-                    body: { alt: 'Portada corregida', caption: null, description: null }
+                    body: {
+                        alt: 'Portada corregida',
+                        caption: null,
+                        description: null,
+                        attribution: null
+                    }
                 });
             });
             expect(mockUpdateMedia).not.toHaveBeenCalledWith(
@@ -1060,7 +1070,7 @@ describe('PhotoSection (SPEC-204 — self-contained)', () => {
                 expect(mockUpdateMedia).toHaveBeenCalledWith({
                     id: ACC_ID,
                     mediaId: galleryWithFields.id,
-                    body: { alt: null, caption: null, description: null }
+                    body: { alt: null, caption: null, description: null, attribution: null }
                 });
             });
 
