@@ -109,6 +109,21 @@ export interface AppBindings {
          * `undefined` means neither gate touched the description.
          */
         accommodationDescriptionOverride?: string;
+        /**
+         * Sanitized replacement for `body.videos` on `PATCH /accommodations/:id`,
+         * stashed by `gateVideoEmbed` when the actor lacks `CAN_EMBED_VIDEO`.
+         *
+         * Separate from {@link accommodationDescriptionOverride} because the two
+         * carry different surfaces of the same gate: a description with a pasted
+         * YouTube link, and the dedicated `videos` column the editor writes. The
+         * gate used to inspect only the first, so an actor with no video
+         * entitlement could still fill the column — and the read filter that was
+         * supposed to hide it was matching a shape that no longer exists.
+         *
+         * Always the empty array when set (neutralize, not reject — HOS-216).
+         * `undefined` means the gate did not touch the videos.
+         */
+        accommodationVideosOverride?: readonly unknown[];
     };
 }
 
