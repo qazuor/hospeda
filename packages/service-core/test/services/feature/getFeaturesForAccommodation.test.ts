@@ -6,11 +6,7 @@ import { getMockAccommodationId } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
 import { FeatureFactoryBuilder } from '../../factories/featureFactory';
 import { getMockId } from '../../factories/utilsFactory';
-import {
-    expectForbiddenError,
-    expectInternalError,
-    expectValidationError
-} from '../../helpers/assertions';
+import { expectInternalError, expectValidationError } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 describe('FeatureService.getFeaturesForAccommodation', () => {
@@ -70,22 +66,36 @@ describe('FeatureService.getFeaturesForAccommodation', () => {
         expect(result.data?.features).toHaveLength(0);
     });
 
-    it('should return FORBIDDEN if actor lacks permission', async () => {
+    /**
+     * H-38. The inverted assertion: `/public/features/accommodation/<id>` is
+     * declared public — no `requiredPermissions`, `cacheTTL: 300` — but the
+     * service demanded `ACCOMMODATION_FEATURES_EDIT`, a catalog-editing
+     * permission no visitor can hold, so the endpoint answered 403 to everyone
+     * in production. A feature list is exactly what the public accommodation
+     * page already renders.
+     */
+    it('serves a guest, because the route is public (H-38)', async () => {
         const model = createModelMock();
         const service = new FeatureService(
             ctx,
             model as unknown as FeatureModel,
             model as unknown as RAccommodationFeatureModel
         );
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [{ featureId: feature.id }] });
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [feature] });
+        // `findAllWithRelations`, not `findAll` — the version of this test that
+        // asserted 403 mocked the wrong method and never noticed, because the
+        // permission check short-circuited before any query ran. Removing the
+        // gate is what made the mock's inaccuracy observable.
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [{ featureId: feature.id, feature }],
+            total: 1
+        });
 
         const result = await service.getFeaturesForAccommodation(actorNoPerms, {
             accommodationId
         });
 
-        expect(result.error).toBeDefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(result.error).toBeUndefined();
+        expect(result.data?.features[0]).toEqual(feature);
     });
 
     it('should return validation error for invalid input', async () => {
@@ -135,7 +145,7 @@ describe('FeatureService.getFeaturesForAccommodation', () => {
         expect(Array.isArray(result.data?.features)).toBe(true);
     });
 
-    it('should return FORBIDDEN for actor with unrelated permissions', async () => {
+    it('serves an actor holding unrelated permissions (H-38)', async () => {
         const model = createModelMock();
         const service = new FeatureService(
             ctx,
@@ -143,12 +153,14 @@ describe('FeatureService.getFeaturesForAccommodation', () => {
             model as unknown as RAccommodationFeatureModel
         );
         const unrelatedActor = createActor({ permissions: [PermissionEnum.DESTINATION_CREATE] });
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [{ featureId: feature.id }] });
-        (model.findAll as Mock).mockResolvedValueOnce({ items: [feature] });
+        (model.findAllWithRelations as Mock).mockResolvedValueOnce({
+            items: [{ featureId: feature.id, feature }],
+            total: 1
+        });
         const result = await service.getFeaturesForAccommodation(unrelatedActor, {
             accommodationId
         });
-        expectForbiddenError(result);
+        expect(result.error).toBeUndefined();
     });
 
     it('should reject null for required fields', async () => {
