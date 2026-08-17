@@ -1197,7 +1197,8 @@
             "minutes": "hace {n} min",
             "hours": "hace {n}h",
             "oneDay": "hace 1 día",
-            "days": "hace {n} días"
+            "days_one": "hace {{count}} día",
+            "days_other": "hace {{count}} días"
         },
         "manualOverrideDialog": {
             "title": "Crear Override Manual",
@@ -1279,7 +1280,8 @@
             "error": "Error al cargar historial:",
             "unknownError": "Error desconocido",
             "noRecords": "No se encontraron registros",
-            "showingCount": "Mostrando {n} registros"
+            "showingCount_one": "Mostrando {{count}} registro",
+            "showingCount_other": "Mostrando {{count}} registros"
         }
     },
     "promoCodes": {

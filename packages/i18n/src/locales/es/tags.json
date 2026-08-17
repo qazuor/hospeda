@@ -42,8 +42,7 @@
         "delete": {
             "title": "Eliminar etiqueta",
             "confirmButton": "Sí, eliminar",
-            "cancelButton": "Cancelar",
-            "impactCount": "Esta acción eliminará la etiqueta de {{count}} entidades."
+            "cancelButton": "Cancelar"
         }
     },
     "postTags": {

@@ -452,8 +452,10 @@
             "chips": {
                 "unique": "Unique",
                 "total": "Total",
-                "ariaUnique": "{{window}}: {{count}} unique visitors",
-                "ariaTotal": "{{window}}: {{count}} total views"
+                "ariaUnique_one": "{{window}}: {{count}} unique visitor",
+                "ariaUnique_other": "{{window}}: {{count}} unique visitors",
+                "ariaTotal_one": "{{window}}: {{count}} total view",
+                "ariaTotal_other": "{{window}}: {{count}} total views"
             }
         }
     },
@@ -681,7 +683,8 @@
                 "searching": "Searching...",
                 "searchPrompt": "Type a search term to find stock images",
                 "noResults": "No results for «{query}»",
-                "resultsCount": "{count} results",
+                "resultsCount_one": "{{count}} result",
+                "resultsCount_other": "{{count}} results",
                 "loadMore": "Load more",
                 "importButton": "Import",
                 "importing": "Importing...",
@@ -698,7 +701,8 @@
                 "searchError": "Error searching images. Please try again.",
                 "importError": "Error importing image. Please try again.",
                 "entityNotFound": "Entity not found",
-                "galleryLimitExceeded": "Gallery limit reached (max: {limit} images)"
+                "galleryLimitExceeded_one": "Gallery limit reached (max: {{limit}} image)",
+                "galleryLimitExceeded_other": "Gallery limit reached (max: {{limit}} images)"
             }
         },
         "avatar": {
@@ -795,7 +799,8 @@
         "titleDefault": "You reached your plan limit",
         "descriptionTemplate": "You are using {{currentCount}} of {{maxAllowed}}. Upgrade your plan to get more.",
         "upgradeLink": "View my subscription",
-        "belowLimit": "{max} - {current} slots left on your current plan.",
+        "belowLimit_one": "{{count}} slot left on your current plan.",
+        "belowLimit_other": "{{count}} slots left on your current plan.",
         "atLimit": "You've hit your plan's limit. Upgrade to add more."
     },
     "selects": {
@@ -842,7 +847,7 @@
                 "label": "Featured image uploaded"
             },
             "galleryPhotos": {
-                "label": "At least {target} gallery photos",
+                "label": "At least {{target}} gallery photos",
                 "hint": "{current} of {target} uploaded"
             },
             "photosAlt": {

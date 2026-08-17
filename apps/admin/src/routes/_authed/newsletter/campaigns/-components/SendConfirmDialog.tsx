@@ -54,7 +54,7 @@ export interface SendConfirmDialogProps {
  * @param props - SendConfirmDialogProps
  */
 export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmDialogProps) {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
     const { addToast } = useToast();
     const navigate = useNavigate();
 
@@ -143,12 +143,16 @@ export function SendConfirmDialog({ open, onOpenChange, campaign }: SendConfirmD
 
                             {/* Audience count */}
                             <p className="text-sm">
-                                {t('admin-newsletter.campaigns.confirmSendAudience')
-                                    .replace(
-                                        '{count}',
-                                        audienceCount === null ? '...' : String(audienceCount)
-                                    )
-                                    .replace('{locale}', localeLabel)}
+                                {audienceCount === null
+                                    ? t('admin-newsletter.campaigns.confirmSendAudience_other', {
+                                          count: '...',
+                                          locale: localeLabel
+                                      })
+                                    : tPlural(
+                                          'admin-newsletter.campaigns.confirmSendAudience',
+                                          audienceCount,
+                                          { locale: localeLabel }
+                                      )}
                             </p>
 
                             {/* Soft-cap notice */}

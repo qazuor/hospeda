@@ -56,7 +56,7 @@ function getVariantForType(
 }
 
 function NotificationsPage() {
-    const { t, locale } = useTranslations();
+    const { t, tPlural, locale } = useTranslations();
     const [notifications, setNotifications] = useState<Notification[]>([]);
 
     useEffect(() => {
@@ -84,7 +84,7 @@ function NotificationsPage() {
                 <div className="flex items-center justify-between">
                     <p className="text-muted-foreground">
                         {unreadCount > 0
-                            ? `${unreadCount} ${unreadCount > 1 ? t('admin-pages.notifications.unreadPlural').replace('{{count}}', String(unreadCount)) : t('admin-pages.notifications.unreadSingular').replace('{{count}}', String(unreadCount))}`
+                            ? tPlural('admin-pages.notifications.unread', unreadCount)
                             : t('admin-pages.notifications.allRead')}
                     </p>
                     {notifications.length > 0 && (

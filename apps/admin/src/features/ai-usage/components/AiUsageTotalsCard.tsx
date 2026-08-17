@@ -115,7 +115,7 @@ const SKELETON_KEYS = ['calls', 'tokens-in', 'tokens-out', 'cost'] as const;
  * @param props - {@link AiUsageTotalsCardProps}
  */
 export function AiUsageTotalsCard({ search }: AiUsageTotalsCardProps) {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
 
     // Re-use the by-model hook with a large pageSize to capture as many rows as
     // possible without a dedicated /totals endpoint. The hook is shared with the
@@ -179,7 +179,7 @@ export function AiUsageTotalsCard({ search }: AiUsageTotalsCardProps) {
             <MetricCard
                 label={t('admin-pages.ai.usage.totals.estCost')}
                 value={formatMicroUsd(totals.costMicroUsd)}
-                sublabel={t('admin-pages.ai.usage.totals.subtitleCost', {
+                sublabel={tPlural('admin-pages.ai.usage.totals.subtitleCost', totalTokens, {
                     total: totalTokens.toLocaleString()
                 })}
             />

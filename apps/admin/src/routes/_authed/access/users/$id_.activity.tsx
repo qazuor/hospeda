@@ -43,7 +43,9 @@ function getTimeSince({
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.floor(diffMs / (1000 * 60));
 
-    if (diffDays > 1) return t('admin-common.relativeTime.days', { n: diffDays });
+    // Guarded to diffDays > 1 above (diffDays === 1 uses `oneDay` below), so
+    // the `_one` form can never be reached here — read `_other` directly.
+    if (diffDays > 1) return t('admin-common.relativeTime.days_other', { count: diffDays });
     if (diffDays === 1) return t('admin-common.relativeTime.oneDay');
     if (diffHours > 0) return t('admin-common.relativeTime.hours', { n: diffHours });
     if (diffMinutes > 0) return t('admin-common.relativeTime.minutes', { n: diffMinutes });

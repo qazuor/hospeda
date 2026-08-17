@@ -74,24 +74,22 @@ interface ChipGroupProps {
 }
 
 function ChipGroup({ stats }: ChipGroupProps) {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
 
     const uniqueLabel = t('admin-entities.detail.viewStats.chips.unique' as TranslationKey);
     const totalLabel = t('admin-entities.detail.viewStats.chips.total' as TranslationKey);
 
     const buildAriaUnique = (win: '7d' | '30d', count: number | null) => {
         if (count === null) return '';
-        return t('admin-entities.detail.viewStats.chips.ariaUnique' as TranslationKey, {
-            window: win,
-            count: String(count)
+        return tPlural('admin-entities.detail.viewStats.chips.ariaUnique', count, {
+            window: win
         });
     };
 
     const buildAriaTotal = (win: '7d' | '30d', count: number | null) => {
         if (count === null) return '';
-        return t('admin-entities.detail.viewStats.chips.ariaTotal' as TranslationKey, {
-            window: win,
-            count: String(count)
+        return tPlural('admin-entities.detail.viewStats.chips.ariaTotal', count, {
+            window: win
         });
     };
 

@@ -37,7 +37,7 @@ const SKELETON_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5'] as const;
 
 /** Admin social platform formats config list page. */
 function PlatformFormatsPage() {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
     const [page, setPage] = useState(1);
 
     const [editItem, setEditItem] = useState<SocialPlatformFormat | null>(null);
@@ -66,9 +66,7 @@ function PlatformFormatsPage() {
                     </h1>
                     {pagination && (
                         <span className="text-muted-foreground text-sm">
-                            {t('social.platformFormats.total' as TranslationKey, {
-                                count: pagination.total
-                            })}
+                            {tPlural('social.platformFormats.total', pagination.total)}
                         </span>
                     )}
                 </div>
