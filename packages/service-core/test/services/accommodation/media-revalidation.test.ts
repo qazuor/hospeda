@@ -5,9 +5,9 @@
  *
  * `AccommodationService` schedules ISR/Cloudflare revalidation from its create,
  * update, publish, unpublish, visibility and delete paths — but NOT from any of
- * its six media methods. So a host could replace the cover photo and the public
- * listing kept serving the old one from cache until some unrelated edit happened
- * to purge it.
+ * its seven mutating media methods. So a host could replace the cover photo and
+ * the public listing kept serving the old one from cache until some unrelated
+ * edit happened to purge it.
  *
  * Two kinds of coverage, deliberately:
  *
@@ -15,9 +15,9 @@
  *     important, that it does NOT schedule for a listing with no public page.
  *     `updateMedia` is the vehicle because its DB shape is already pinned down
  *     by `updateMedia.test.ts`.
- *  2. A static guard over all six media methods. What regresses here is a
- *     SEVENTH media method arriving without the call, and a behavioral test only
- *     ever covers the method it drives.
+ *  2. A static guard over every mutating media method. What regresses here is an
+ *     EIGHTH one arriving without the call, and a behavioral test only ever
+ *     covers the method it drives.
  */
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';

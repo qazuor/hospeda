@@ -94,6 +94,7 @@ import {
     type CountResponse,
     DestinationTypeEnum,
     type EntityFilters,
+    getGalleryCap,
     httpToDomainAccommodationCreateDraft,
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
@@ -3778,6 +3779,28 @@ export class AccommodationService extends BaseCrudService<
                 const topOrder = existing.items[0]?.sortOrder ?? -1;
                 const nextSortOrder =
                     typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
+
+                // HOS-389 §2: the per-entity gallery cap WAS already enforced
+                // server-side — but only at the UPLOAD routes
+                // (`media/protected/upload-entity.ts`, `media/admin/upload.ts`),
+                // which is the step that costs a Cloudinary asset. Registering
+                // the row was never capped, so anything reaching `addMedia`
+                // directly with an already-uploaded URL walked straight past it.
+                //
+                // Same `getGalleryCap` constant those routes read, and the same
+                // `state: 'visible'` filter `resolveVisibleGalleryCount` applies
+                // for accommodations — an archived photo does not occupy a slot.
+                // The count is the one this method ALREADY fetched for
+                // `sortOrder`: `findAll` returns a full `total` from its own
+                // count query, independent of `pageSize`. So this costs nothing.
+                const galleryCap = getGalleryCap('accommodation');
+                if (existing.total >= galleryCap) {
+                    throw new ServiceError(
+                        ServiceErrorCode.QUOTA_EXCEEDED,
+                        `Gallery limit of ${galleryCap} photos reached for this accommodation`,
+                        { currentCount: existing.total, maxAllowed: galleryCap }
+                    );
+                }
 
                 const rowToCreate = {
                     ...validated.media,
