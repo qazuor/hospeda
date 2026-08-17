@@ -675,6 +675,11 @@ export interface AccommodationDetailData {
      * accommodation name.
      */
     readonly featuredImageAlt?: string;
+    /**
+     * Photo credit for the cover image (H-125). Absent when the photo needs
+     * none — most hosts photograph their own place.
+     */
+    readonly featuredImageAttribution?: MediaAttribution;
     readonly media: {
         readonly images: readonly string[];
         /**
@@ -691,6 +696,8 @@ export interface AccommodationDetailData {
             readonly caption?: string;
             readonly description?: string;
             readonly alt?: string;
+            /** Photo credit, when the photo is somebody else's work (H-125). */
+            readonly attribution?: MediaAttribution;
         }[];
         /**
          * Video entries carrying the URL plus optional caption and description.

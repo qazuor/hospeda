@@ -737,3 +737,89 @@ describe('DetailVariant — cell images show a loading skeleton (BETA-147)', () 
         }
     });
 });
+
+// ─── Photo credit in the lightbox (H-125) ─────────────────────────────────────
+
+describe('photo credit in the lightbox', () => {
+    const CREDITED: GalleryImage[] = [
+        {
+            url: '/img1.jpg',
+            alt: 'Photo 1',
+            caption: 'Vista al río',
+            credit: {
+                byline: 'Foto por',
+                photographer: 'Estudio Paraná',
+                providerSuffix: '',
+                url: 'https://estudioparana.com.ar',
+                ariaLabel: 'Sitio de Estudio Paraná'
+            }
+        }
+    ];
+
+    it('shows the credit once the lightbox is open', () => {
+        const { container } = renderDetail(CREDITED);
+        fireEvent.click(container.querySelector('img') as HTMLImageElement);
+
+        const link = screen.getByRole('link', { name: 'Sitio de Estudio Paraná' });
+        expect(link).toHaveAttribute('href', 'https://estudioparana.com.ar');
+        expect(link.textContent).toBe('Estudio Paraná');
+    });
+
+    it('marks the outbound credit link nofollow and noopener', () => {
+        const { container } = renderDetail(CREDITED);
+        fireEvent.click(container.querySelector('img') as HTMLImageElement);
+
+        const link = screen.getByRole('link', { name: 'Sitio de Estudio Paraná' });
+        expect(link.getAttribute('rel')).toContain('nofollow');
+        expect(link.getAttribute('rel')).toContain('noopener');
+    });
+
+    it('renders the credit as plain text when it carries no link', () => {
+        const noLink: GalleryImage[] = [
+            {
+                url: '/img1.jpg',
+                alt: 'Photo 1',
+                credit: {
+                    byline: 'Foto por',
+                    photographer: 'Ana Gómez',
+                    providerSuffix: '',
+                    ariaLabel: 'Sitio de Ana Gómez'
+                }
+            }
+        ];
+        const { container } = renderDetail(noLink);
+        fireEvent.click(container.querySelector('img') as HTMLImageElement);
+
+        expect(screen.getByText(/Ana Gómez/)).toBeInTheDocument();
+        expect(screen.queryByRole('link', { name: /Ana Gómez/ })).not.toBeInTheDocument();
+    });
+
+    it('shows the credit even for a photo with no caption', () => {
+        const noCaption: GalleryImage[] = [
+            {
+                url: '/img1.jpg',
+                alt: 'Photo 1',
+                credit: {
+                    byline: 'Foto por',
+                    photographer: 'Ana Gómez',
+                    providerSuffix: '',
+                    ariaLabel: 'Sitio de Ana Gómez'
+                }
+            }
+        ];
+        const { container } = renderDetail(noCaption);
+        fireEvent.click(container.querySelector('img') as HTMLImageElement);
+
+        // The caption block used to be the only thing rendered in the figcaption,
+        // so gating on `caption` alone would hide every credit on an uncaptioned
+        // photo — which is most of them.
+        expect(screen.getByText(/Ana Gómez/)).toBeInTheDocument();
+    });
+
+    it('renders no credit block for a photo without one', () => {
+        const { container } = renderDetail(makeImages(1));
+        fireEvent.click(container.querySelector('img') as HTMLImageElement);
+
+        expect(screen.queryByText('Foto por')).not.toBeInTheDocument();
+    });
+});

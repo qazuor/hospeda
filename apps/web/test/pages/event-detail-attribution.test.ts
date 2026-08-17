@@ -94,14 +94,26 @@ describe('Event detail page - Type safety', () => {
         );
 
         expect(eventDetailDataMatch).toBeTruthy();
+        // Asserted outside an `if`, so a regex that stops matching fails the
+        // test instead of skipping every assertion below it.
+        const mediaBlock = eventDetailDataMatch?.[0] ?? '';
 
-        if (eventDetailDataMatch) {
-            const mediaBlock = eventDetailDataMatch[0];
-            expect(mediaBlock).toContain('attribution?:');
-            expect(mediaBlock).toContain('photographer: string');
-            expect(mediaBlock).toContain('sourceUrl: string');
-            expect(mediaBlock).toContain('license: string');
-            expect(mediaBlock).toContain("provider: 'unsplash' | 'pexels'");
-        }
+        expect(mediaBlock).toContain('attribution?:');
+        // The shared type, not a fourth inline copy of the same four fields.
+        // The inline copies were what let each consumer declare its own subtly
+        // different shape — one of them requiring all four subfields, which is
+        // what silently discarded a credit that carried only a photographer
+        // (H-125).
+        expect(mediaBlock).toContain('MediaAttribution');
+    });
+
+    it('declares the credit through the shared type, not a local copy', () => {
+        const typesFile = readFileSync(resolve(__dirname, '../../src/data/types.ts'), 'utf8');
+
+        // A re-declared `provider: 'unsplash' | 'pexels'` union anywhere in this
+        // file means a consumer has forked the shape again — and a fork here
+        // cannot express `user-upload`, the provider a host's own photo carries.
+        expect(typesFile).not.toMatch(/provider:\s*'unsplash'\s*\|\s*'pexels'/);
+        expect(typesFile).toContain("import type { MediaAttribution } from '../lib/media'");
     });
 });

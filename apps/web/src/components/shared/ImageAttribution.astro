@@ -20,7 +20,7 @@
 import type { MediaAttribution } from '@/lib/media';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+import { formatPhotoCredit } from '@/lib/photo-credit';
 
 interface Props {
     readonly attribution: MediaAttribution;
@@ -31,46 +31,29 @@ interface Props {
 const { attribution, locale, variant = 'inline' } = Astro.props;
 const { t } = createTranslations(locale);
 
-/** Only stock providers have a public name to print. `user-upload` has none. */
-const PROVIDER_NAMES = { unsplash: 'Unsplash', pexels: 'Pexels' } as const;
-const providerName =
-    attribution.provider === 'unsplash' || attribution.provider === 'pexels'
-        ? PROVIDER_NAMES[attribution.provider]
-        : undefined;
-
-/**
- * Defence in depth. `extractFeaturedImage`/`extractGalleryItems` already ran the
- * scheme check, but this component is also handed payloads that never passed
- * through them, and the write side accepts `javascript:` (`z.string().url()`).
- */
-const profileUrl = resolveSafeExternalUrl(attribution.sourceUrl);
-
-const photographer = attribution.photographer;
-
-const linkAriaLabel = providerName
-    ? t('common.attribution.ariaLabel', undefined, { photographer, provider: providerName })
-    : t('common.attribution.ariaLabelNoProvider', undefined, { photographer });
+// Composed by the shared formatter so this and the lightbox island (React,
+// which cannot import an Astro component) phrase the same credit identically.
+const credit = formatPhotoCredit(attribution, t);
 ---
 
-{photographer && (
+{credit && (
     <div class="image-attribution" data-variant={variant}>
         <span class="image-attribution__text">
-            {t('common.attribution.byline')}
-            {profileUrl ? (
+            {credit.byline}
+            {credit.url ? (
                 <a
-                    href={profileUrl}
+                    href={credit.url}
                     class="image-attribution__link"
                     target="_blank"
                     rel="nofollow noopener noreferrer"
-                    aria-label={linkAriaLabel}
+                    aria-label={credit.ariaLabel}
                 >
-                    {photographer}
+                    {credit.photographer}
                 </a>
             ) : (
-                <span class="image-attribution__name">{photographer}</span>
+                <span class="image-attribution__name">{credit.photographer}</span>
             )}
-            {providerName &&
-                t('common.attribution.onProvider', undefined, { provider: providerName })}
+            {credit.providerSuffix}
         </span>
     </div>
 )}
