@@ -22,6 +22,8 @@ const baseLayoutSrc = readFileSync(
 
 const endpointsSrc = readFileSync(resolve(__dirname, '../../src/lib/api/endpoints.ts'), 'utf8');
 
+const SUPPORTED_LOCALES = ['es', 'en', 'pt'] as const;
+
 describe('GlobalAnnouncements.astro (T-041)', () => {
     describe('SSR data flow', () => {
         it('imports the announcementsApi from the central endpoints module', () => {
@@ -77,9 +79,32 @@ describe('GlobalAnnouncements.astro (T-041)', () => {
         });
 
         it('localizes the dismiss aria-label for the 3 supported locales', () => {
-            expect(componentSrc).toContain('Dismiss announcement');
-            expect(componentSrc).toContain('Fechar comunicado');
-            expect(componentSrc).toContain('Cerrar anuncio');
+            // The three strings used to sit in a locale map inside the
+            // component, and this test pinned them by reading the source. They
+            // now live in the catalogue (H-45), so assert both halves: the
+            // component reads the key, and every locale answers it.
+            expect(componentSrc).toContain("t('ui.announcements.dismiss'");
+
+            const copy = SUPPORTED_LOCALES.map((locale) => {
+                const dict = JSON.parse(
+                    readFileSync(
+                        resolve(
+                            __dirname,
+                            `../../../../packages/i18n/src/locales/${locale}/ui.json`
+                        ),
+                        'utf8'
+                    )
+                ) as { announcements?: { dismiss?: string } };
+                return dict.announcements?.dismiss;
+            });
+
+            for (const value of copy) {
+                expect(typeof value === 'string' && value.length > 0).toBe(true);
+            }
+            // Distinct per locale. Identical copy across locales is exactly how
+            // one language silently ships another's string, and reading the
+            // catalogue rather than the source is what makes that visible here.
+            expect(new Set(copy).size).toBe(SUPPORTED_LOCALES.length);
         });
     });
 
