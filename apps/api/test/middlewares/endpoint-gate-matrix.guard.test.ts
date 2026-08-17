@@ -205,7 +205,12 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     // (not a Hono route) — HOS-435. Lives beside its two callers so neither can
     // be edited without the other; the gates it runs behind are the rows for
     // those two handlers.
-    'event/protected/to-domain-update.ts'
+    'event/protected/to-domain-update.ts',
+    // Pure ownership/permission policy consumed by translate.ts (not a Hono
+    // route) — HOS-584. It lives beside its single caller so the accepted
+    // entity-type list and the rule table cannot drift apart; the gate it runs
+    // behind is the row for `ai/protected/translate.ts`.
+    'ai/protected/translate.authorization.ts'
 ]);
 
 /**

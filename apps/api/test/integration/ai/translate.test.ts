@@ -269,7 +269,7 @@ vi.mock('@repo/db', async () => {
 
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { EntitlementKey, LimitKey } from '@repo/billing';
-import { RoleEnum } from '@repo/schemas';
+import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { actorMiddleware } from '../../../src/middlewares/actor';
 import { createErrorHandler } from '../../../src/middlewares/response';
@@ -288,12 +288,14 @@ const UNIQUE_USER_ID = '22222222-2222-4222-2222-222222222222';
 // Helpers
 // ---------------------------------------------------------------------------
 
-function makeMockActorHeaders(overrides: Record<string, string> = {}): Record<string, string> {
+function makeMockActorHeaders(
+    overrides: { actorId?: string; role?: string; permissions?: readonly string[] } = {}
+): Record<string, string> {
     return {
         'content-type': 'application/json',
         'x-mock-actor-id': overrides.actorId ?? UNIQUE_USER_ID,
         'x-mock-actor-role': overrides.role ?? RoleEnum.USER,
-        'x-mock-actor-permissions': JSON.stringify([])
+        'x-mock-actor-permissions': JSON.stringify(overrides.permissions ?? [])
     };
 }
 
@@ -312,10 +314,20 @@ function buildTestApp(): OpenAPIHono<AppBindings> {
  * entity a test targets. The per-field i18n columns are `null` so
  * `loadExistingTranslations` reports no existing translations and every target
  * locale is treated as missing (the AI stub then "translates" each one).
+ *
+ * HOS-584: the row is owned by the default mock actor (`ownerId` for an
+ * accommodation, `authorId` for an event/post), because the route now refuses
+ * to translate a row the actor cannot write. Every happy-path test below reads
+ * as "the owner translates their own row"; the ownership suite overrides these
+ * two columns to build the foreign cases. A destination has neither column —
+ * it is staff content, gated on `DESTINATION_UPDATE` instead.
  */
 function makeEntityRow(): Record<string, unknown> {
     return {
         id: '00000000-0000-4000-8000-000000000001',
+        ownerId: UNIQUE_USER_ID,
+        authorId: UNIQUE_USER_ID,
+        createdById: UNIQUE_USER_ID,
         name: 'Cabaña del Río',
         title: 'Título de Prueba',
         summary: 'Resumen breve del contenido.',
@@ -548,9 +560,14 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
     });
 
     it('accepts destination as entityType', async () => {
+        // HOS-584: a destination has no owner column, so the actor needs
+        // DESTINATION_UPDATE. Without it this request is a 404 — see the
+        // ownership suite.
         const res = await testApp.request(`${TEST_PATH}`, {
             method: 'POST',
-            headers: makeMockActorHeaders(),
+            headers: makeMockActorHeaders({
+                permissions: [PermissionEnum.DESTINATION_UPDATE]
+            }),
             body: JSON.stringify({
                 entityType: 'destination',
                 entityId: '11111111-1111-4111-8111-111111111111'
@@ -604,6 +621,150 @@ describe('POST /api/v1/protected/ai/translate (integration)', () => {
         });
 
         expect(res.status).toBe(404);
+    });
+
+    // -----------------------------------------------------------------------
+    // HOS-584 — ownership.
+    //
+    // Regression guard: this route took `entityType` + `entityId` straight from
+    // the body and never checked who owned the row. Any authenticated user
+    // holding `AI_TRANSLATE` could persist translations onto ANY accommodation,
+    // destination, event or post by id — burning their own quota, but writing
+    // into someone else's content.
+    //
+    // A refused request answers 404, never 403: a 403 would confirm the id
+    // exists, turning the endpoint into an existence oracle over every content
+    // row in the platform (the HOS-376 convention).
+    // -----------------------------------------------------------------------
+
+    describe('HOS-584 — ownership', () => {
+        const STRANGER_ID = '99999999-9999-4999-8999-999999999999';
+
+        /** A row that belongs to somebody else, whatever the entity type. */
+        function makeForeignEntityRow(): Record<string, unknown> {
+            return {
+                ...makeEntityRow(),
+                ownerId: STRANGER_ID,
+                authorId: STRANGER_ID,
+                createdById: STRANGER_ID
+            };
+        }
+
+        it('returns 404 and writes nothing for an accommodation owned by someone else', async () => {
+            entityRowHolder.current = makeForeignEntityRow();
+
+            const res = await testApp.request(`${TEST_PATH}`, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    entityType: 'accommodation',
+                    entityId: '00000000-0000-4000-8000-000000000001'
+                })
+            });
+
+            expect(res.status).toBe(404);
+
+            // The refusal must happen BEFORE any provider call: otherwise the
+            // caller still pays for the tokens, and — worse — the write lands.
+            expect(generateTextCalls).toHaveLength(0);
+            expect(mockRecordAiUsage).not.toHaveBeenCalled();
+        });
+
+        it('answers a foreign entity exactly like a missing one', async () => {
+            // The anti-oracle property. If these two bodies ever diverge, the
+            // endpoint starts leaking which ids exist.
+            entityRowHolder.current = makeForeignEntityRow();
+            const foreign = await testApp.request(`${TEST_PATH}`, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    entityType: 'accommodation',
+                    entityId: '00000000-0000-4000-8000-000000000001'
+                })
+            });
+            const foreignBody = await foreign.text();
+
+            entityRowHolder.current = null;
+            const missing = await testApp.request(`${TEST_PATH}`, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    entityType: 'accommodation',
+                    entityId: '00000000-0000-4000-8000-000000000001'
+                })
+            });
+            const missingBody = await missing.text();
+
+            expect(foreign.status).toBe(missing.status);
+            expect(foreignBody).toBe(missingBody);
+        });
+
+        it('allows a foreign accommodation to an actor holding ACCOMMODATION_UPDATE_ANY', async () => {
+            entityRowHolder.current = makeForeignEntityRow();
+
+            const res = await testApp.request(`${TEST_PATH}`, {
+                method: 'POST',
+                headers: makeMockActorHeaders({
+                    permissions: [PermissionEnum.ACCOMMODATION_UPDATE_ANY]
+                }),
+                body: JSON.stringify({
+                    entityType: 'accommodation',
+                    entityId: '00000000-0000-4000-8000-000000000001'
+                })
+            });
+
+            expect(res.status).toBe(200);
+            expect(generateTextCalls.length).toBeGreaterThan(0);
+        });
+
+        it('returns 404 for an event authored by someone else', async () => {
+            entityRowHolder.current = makeForeignEntityRow();
+
+            const res = await testApp.request(`${TEST_PATH}`, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    entityType: 'event',
+                    entityId: '33333333-3333-4333-8333-333333333333'
+                })
+            });
+
+            expect(res.status).toBe(404);
+            expect(generateTextCalls).toHaveLength(0);
+        });
+
+        it('returns 404 for a post authored by someone else', async () => {
+            entityRowHolder.current = makeForeignEntityRow();
+
+            const res = await testApp.request(`${TEST_PATH}`, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    entityType: 'post',
+                    entityId: '44444444-4444-4444-8444-444444444444'
+                })
+            });
+
+            expect(res.status).toBe(404);
+            expect(generateTextCalls).toHaveLength(0);
+        });
+
+        it('returns 404 for a destination when the actor lacks DESTINATION_UPDATE', async () => {
+            // The row exists and the actor is entitled to AI_TRANSLATE. What
+            // stops them is that a destination has no owner — it is staff
+            // content, and "nobody owns it" resolves to nobody, not everybody.
+            const res = await testApp.request(`${TEST_PATH}`, {
+                method: 'POST',
+                headers: makeMockActorHeaders(),
+                body: JSON.stringify({
+                    entityType: 'destination',
+                    entityId: '11111111-1111-4111-8111-111111111111'
+                })
+            });
+
+            expect(res.status).toBe(404);
+            expect(generateTextCalls).toHaveLength(0);
+        });
     });
 
     // -----------------------------------------------------------------------
