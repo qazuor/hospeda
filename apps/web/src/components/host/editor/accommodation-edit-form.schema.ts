@@ -119,8 +119,15 @@ const minNightsField = z
     .nullable()
     .optional();
 
+/**
+ * H-111: whole pesos only, no cents. Without `.int()` the form accepted
+ * `1234.56`, the row was stored as `{"price": 1234.56}`, and the public
+ * sidebar's `Intl.NumberFormat({ maximumFractionDigits: 0 })` rounded it UP to
+ * $1.235 — the host set less than what the guest was shown.
+ */
 const basePriceField = z
     .number()
+    .int({ message: 'zodError.common.price.price.integer' })
     .positive({ message: 'zodError.common.price.price.positive' })
     .nullable()
     .optional();
