@@ -35,7 +35,7 @@ describe('publicaciones/index.astro — inline filterGroups category id + sideba
 
     it('seeds the categories key from postCategoryActiveValues (the same array already computed for the API fetch)', () => {
         expect(src).toMatch(
-            /sidebarInitialParams\['categories'\]\s*=\s*postCategoryActiveValues\.join\(','\)/
+            /sidebarInitialParams\['categories'\]\s*=\s*canonicalizeFacetValues\(\{\s*values:\s*postCategoryActiveValues\s*\}\)\.join\(','\)/
         );
     });
 

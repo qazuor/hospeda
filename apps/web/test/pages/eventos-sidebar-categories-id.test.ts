@@ -26,7 +26,7 @@ describe('eventos/index.astro — sidebar categories group id round-trip (HOS-96
 
     it('seeds the categories key from activeCategories (the same array already computed for the API fetch), not the singular category', () => {
         expect(src).toMatch(
-            /sidebarInitialParams\['categories'\]\s*=\s*activeCategories\.join\(','\)/
+            /sidebarInitialParams\['categories'\]\s*=\s*canonicalizeFacetValues\(\{\s*values:\s*activeCategories\s*\}\)\.join\(','\)/
         );
     });
 

@@ -35,6 +35,7 @@ import {
     streamSearchChat
 } from '@/lib/api/search-chat-stream';
 import type { PaginatedResponse } from '@/lib/api/types';
+import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 
 // ─── Public types ──────────────────────────────────────────────────────────────
 
@@ -249,9 +250,14 @@ function filtersParamsToApiParams(
             if (value instanceof Date) {
                 out[key] = value.toISOString().slice(0, 10);
             } else if (Array.isArray(value)) {
-                // amenities/features arrays — join as comma-separated string
+                // amenities/features/types arrays — join as comma-separated
+                // string. HOS-524: in canonical order, so two conversations that
+                // reach the same filter set hit ONE entry of the SSR fetch cache
+                // instead of one per order the model happened to emit.
                 if (value.length > 0) {
-                    out[key] = (value as unknown[]).join(',');
+                    out[key] = canonicalizeFacetValues({
+                        values: (value as unknown[]).map(String)
+                    }).join(',');
                 }
             } else {
                 out[key] = value;

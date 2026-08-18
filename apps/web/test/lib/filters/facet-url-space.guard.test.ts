@@ -34,30 +34,69 @@ function collectSourceFiles(dir: string): readonly string[] {
 }
 
 /**
- * A `<params>.set(<key>, <something>.join(','))` write — the exact shape that
- * serializes a facet's values into a CSV query param. Anchored on the `.set(`
- * call so a rename of the surrounding helper cannot slip past it, and matched
- * across line breaks because Biome wraps the longer call sites.
+ * Every `.join(',')` in the tree, by byte offset — the ONLY syntactic shape a
+ * CSV facet param can be built with, whatever wraps it.
+ *
+ * The first version of this guard anchored on `.set(x, y.join(','))` instead,
+ * and five real shapes walked straight past it: `.append()`, a plain object
+ * property (`params.types = values.join(',')` — which is how the seventh
+ * writer, `SearchHistoryList.client.tsx`, was already doing it), a template
+ * literal, an object literal passed to `new URLSearchParams({...})`, and any
+ * `.set(` whose arguments wrapped past the pattern's character budget. Matching
+ * the join itself has no such holes.
  */
-const CSV_PARAM_WRITE = /\.set\(\s*[^;]{0,120}?\.join\(','\)/;
+const CSV_JOIN = /\.join\(','\)/g;
+
+/** How far back to look for the canonicalizing call that feeds a join. */
+const CANONICALIZE_LOOKBACK = 240;
 
 /**
- * The files allowed to write a facet CSV param. Every one of them is asserted
- * below to canonicalize; this list exists so a NEW writer fails the guard
- * instead of silently inheriting the old click-ordered behavior.
+ * Files that join on a comma for something that is NOT a facet query param.
+ * Each needs a reason, because "it is not a facet" is exactly the claim a
+ * future reader has to be able to check without re-deriving it.
  */
-const KNOWN_CSV_WRITERS: readonly string[] = [
+const NON_FACET_JOINS: Readonly<Record<string, string>> = Object.freeze({
+    'components/GlobalAnnouncements.astro': 'dismissed-announcement ids in a cookie value',
+    'components/account/ProfileEditAvatarSection.tsx': "the <input> `accept` attribute's MIME list",
+    'components/destination/DestinationPOISection.astro':
+        'a `data-poi-categories` attribute read as a SET by the client filter',
+    'components/shared/navigation/UserMenu.client.tsx': 'a pre-sorted useMemo cache key'
+});
+
+/**
+ * Files allowed to serialize a facet CSV param. Every join in these is asserted
+ * below to be fed by `canonicalizeFacetValues` — per CALL SITE, not per file,
+ * so adding a second uncanonicalized join to an already-listed file fails too.
+ */
+const FACET_CSV_WRITERS: readonly string[] = [
     'lib/filters/toggle-multi-query-param.ts',
     'components/shared/filters/filter-reducer.ts',
-    'pages/[lang]/destinos/index.astro',
-    // Found BY this guard while it was being written — three writers the
-    // HOS-524 analysis had missed: the hero search bar (a fourth `?types=`
-    // writer) and the removable active-filter chips on both accommodation
-    // listings, which re-serialize the surviving values after a removal.
     'components/sections/SearchBar.client.tsx',
+    'components/account/SearchHistoryList.client.tsx',
+    'components/ai-search/useSearchChat.ts',
+    'pages/[lang]/destinos/index.astro',
     'pages/[lang]/alojamientos/index.astro',
-    'pages/[lang]/alojamientos/tipo/[type]/index.astro'
+    'pages/[lang]/alojamientos/tipo/[type]/index.astro',
+    'pages/[lang]/eventos/index.astro',
+    'pages/[lang]/publicaciones/index.astro'
 ];
+
+/**
+ * Per-CALL-SITE exemptions inside a facet-writer file: a join that is not a
+ * query param at all. Keyed by file, anchored on a literal snippet that must
+ * appear within the lookback window of the join, so the exemption covers one
+ * site and not the whole file. A snippet that stops matching fails the
+ * staleness test below rather than silently widening.
+ */
+const EXEMPT_JOIN_SITES: Readonly<Record<string, readonly (readonly [string, string])[]>> =
+    Object.freeze({
+        'pages/[lang]/destinos/index.astro': [
+            [
+                'const attractionIdsAttr',
+                'a `data-attraction-ids` card attribute read as a SET by the client filter'
+            ]
+        ]
+    });
 
 /** Listing surfaces whose chip rows publish crawlable facet links. */
 const CAPPED_CHIP_PAGES: readonly string[] = [
@@ -66,39 +105,87 @@ const CAPPED_CHIP_PAGES: readonly string[] = [
     'pages/[lang]/publicaciones/index.astro'
 ];
 
+/**
+ * Every `.join(',')` in `src` that is NOT fed by a canonicalizing call.
+ *
+ * A literal `.sort().join(',')` counts as canonical too: that is precisely the
+ * helper's contract (de-duplicate, then sort), and destinos' inline no-JS
+ * script has to inline it because a `<script is:inline>` cannot import.
+ */
+function uncanonicalizedJoins(src: string, rel: string): number {
+    const exemptions = EXEMPT_JOIN_SITES[rel] ?? [];
+    let count = 0;
+    for (const match of src.matchAll(CSV_JOIN)) {
+        const at = match.index ?? 0;
+        const before = src.slice(Math.max(0, at - CANONICALIZE_LOOKBACK), at);
+        const canonical =
+            before.includes('canonicalizeFacetValues') ||
+            before.endsWith('.sort()') ||
+            exemptions.some(([snippet]) => before.includes(snippet));
+        if (!canonical) count += 1;
+    }
+    return count;
+}
+
 describe('HOS-524 facet URL-space guard', () => {
-    const files = collectSourceFiles(SRC_ROOT);
+    const files = collectSourceFiles(SRC_ROOT).map((file) => ({
+        rel: relative(SRC_ROOT, file),
+        src: readFileSync(file, 'utf8')
+    }));
 
     it('finds source files to scan (the scan itself must not silently be empty)', () => {
         expect(files.length).toBeGreaterThan(100);
     });
 
-    it('no source file outside the known writers serializes a facet CSV query param', () => {
-        const offenders = files
-            .map((file) => ({ rel: relative(SRC_ROOT, file), src: readFileSync(file, 'utf8') }))
-            .filter(({ src }) => CSV_PARAM_WRITE.test(src))
+    it("every file that joins on ',' is either a declared facet writer or a declared non-facet use", () => {
+        const undeclared = files
+            .filter(({ src }) => src.includes(".join(',')"))
             .map(({ rel }) => rel)
-            .filter((rel) => !KNOWN_CSV_WRITERS.includes(rel));
+            .filter(
+                (rel) =>
+                    !FACET_CSV_WRITERS.includes(rel) &&
+                    !Object.hasOwn(NON_FACET_JOINS, rel) &&
+                    rel !== 'lib/filters/canonical-facet-order.ts'
+            );
 
         expect(
-            offenders,
-            `New CSV query-param writer(s) found: ${offenders.join(', ')}. Serialize through canonicalizeFacetValues() (src/lib/filters/canonical-facet-order.ts) and add the file to KNOWN_CSV_WRITERS, or the facet re-opens the permutation URL space HOS-524 closed.`
+            undeclared,
+            `Undeclared comma-join(s): ${undeclared.join(', ')}. If it serializes a facet query param, route it through canonicalizeFacetValues() and add it to FACET_CSV_WRITERS; if it does not, add it to NON_FACET_JOINS with the reason.`
         ).toEqual([]);
     });
 
-    it.each(KNOWN_CSV_WRITERS)('%s canonicalizes before serializing', (rel) => {
+    it.each(FACET_CSV_WRITERS)('%s canonicalizes at EVERY call site', (rel) => {
         const src = readFileSync(join(SRC_ROOT, rel), 'utf8');
-        expect(src).toContain('canonicalizeFacetValues');
+        expect(
+            uncanonicalizedJoins(src, rel),
+            `${rel} builds a CSV param without canonicalizeFacetValues() within ${CANONICALIZE_LOOKBACK} characters. Per call site, not per file: a second join in an already-listed file re-opens the permutation URL space HOS-524 closed.`
+        ).toBe(0);
     });
 
     it.each(CAPPED_CHIP_PAGES)('%s resolves chip hrefs through the depth cap', (rel) => {
         const src = readFileSync(join(SRC_ROOT, rel), 'utf8');
         expect(src).toContain('resolveFacetChipHref(');
-        // The raw toggle builder has no cap: importing it here would let a chip
-        // row link one level deeper forever.
-        expect(src).not.toContain(
-            "import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param'"
-        );
+        // Matched on any IMPORT of the symbol, not on one exact import line: a
+        // combined import (`import { buildClearFacetChip,
+        // buildMultiToggleParamHref } from ...`) walked past the exact-string
+        // check this replaces. Prose in the file's JSDoc names the uncapped
+        // builder on purpose (to say not to use it), so the predicate has to be
+        // about importing it, not about mentioning it.
+        expect(src).not.toMatch(/import\s*\{[^}]*\bbuildMultiToggleParamHref\b[^}]*\}/);
+    });
+
+    it('every declared per-call-site exemption still matches its file (no stale escape hatch)', () => {
+        const stale: string[] = [];
+        for (const [rel, sites] of Object.entries(EXEMPT_JOIN_SITES)) {
+            const src = readFileSync(join(SRC_ROOT, rel), 'utf8');
+            for (const [snippet] of sites) {
+                if (!src.includes(snippet)) stale.push(`${rel}: ${snippet}`);
+            }
+        }
+        expect(
+            stale,
+            `Exemption(s) whose anchor no longer exists: ${stale.join(', ')}. A stale anchor silently exempts nothing today and anything tomorrow — delete it.`
+        ).toEqual([]);
     });
 
     it("destinos' inline no-JS filter script sorts its own CSV write (it cannot import the helper)", () => {
@@ -110,5 +197,27 @@ describe('HOS-524 facet URL-space guard', () => {
         const src = readFileSync(join(SRC_ROOT, 'pages/[lang]/destinos/index.astro'), 'utf8');
         expect(src).toContain('FACET_CHIP_MAX_ACTIVE_VALUES');
         expect(src).toContain('data-facet-max-active');
+    });
+
+    it('every capped chip surface ships a screen-reader note, never an aria-label on a generic element', () => {
+        // ARIA prohibits naming a `generic` element, which is what both a
+        // role-less <span> and an <a> without href are. An aria-label there is
+        // not weak — it is never computed at all.
+        const chips = readFileSync(
+            join(SRC_ROOT, 'components/shared/ui/FilterChips.astro'),
+            'utf8'
+        );
+        const cappedBranch = chips.slice(
+            chips.indexOf(') : ('),
+            chips.indexOf(')}\n', chips.indexOf(') : ('))
+        );
+        expect(cappedBranch).toContain('<span');
+        expect(cappedBranch).toContain('aria-disabled="true"');
+        expect(cappedBranch).toContain('class="sr-only"');
+        expect(cappedBranch).not.toContain('aria-label');
+
+        const destinos = readFileSync(join(SRC_ROOT, 'pages/[lang]/destinos/index.astro'), 'utf8');
+        expect(destinos).toContain('data-capped-note');
+        expect(destinos).toContain('class="sr-only"');
     });
 });
