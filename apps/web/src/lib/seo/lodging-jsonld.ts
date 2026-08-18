@@ -61,6 +61,34 @@ export function buildLodgingGeo({
     return { latitude: lat, longitude: lng };
 }
 
+/**
+ * Builds the JSON-LD `telephone` value from the accommodation's contact block.
+ *
+ * HOS-585 P-4: Bing assembles its local pack from NAP — name, address, phone —
+ * and the component emitted a complete `PostalAddress` with no phone at all.
+ *
+ * Publishes nothing new: `AccommodationContactBlock` already renders this exact
+ * number as a `tel:` link on the same page. That is the whole reason this is
+ * safe while `geo` needed HOS-554's obfuscated coordinate — the phone is
+ * already public, the exact pin is deliberately not.
+ *
+ * Emitted VERBATIM (trimmed). Numbers entered through the editor already carry
+ * an international dial code (`composePhoneValue`), and for a legacy value that
+ * does not, guessing one would publish a number that dials somewhere else.
+ * An unprefixed number is a weaker signal; a wrong number is a defect.
+ *
+ * @param input.contactInfo - The public contact block, when present.
+ * @returns The phone string, or `undefined` when there is nothing to publish.
+ */
+export function buildLodgingTelephone({
+    contactInfo
+}: {
+    readonly contactInfo?: { readonly phone?: string } | undefined;
+}): string | undefined {
+    const phone = contactInfo?.phone?.trim();
+    return phone ? phone : undefined;
+}
+
 /** The amenity shape the detail transform produces (`name` carries the slug). */
 export interface LodgingAmenityInput {
     /**

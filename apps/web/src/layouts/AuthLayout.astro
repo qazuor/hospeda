@@ -6,7 +6,7 @@
  * and a minimal copyright footer.
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
+import { type SupportedLocale, toRegionalLocaleTag } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import Logo from '@/components/shared/navigation/Logo.astro';
@@ -47,7 +47,7 @@ const isAuthenticatedHint = Astro.locals.user ? 'true' : 'false';
 ---
 
 <!doctype html>
-<html lang={locale} data-user-authenticated={isAuthenticatedHint}>
+<html lang={toRegionalLocaleTag({ locale })} data-locale={locale} data-user-authenticated={isAuthenticatedHint}>
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />

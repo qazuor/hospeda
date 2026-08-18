@@ -219,14 +219,26 @@ function isAuthenticated(): boolean {
     return document.documentElement.getAttribute('data-user-authenticated') === 'true';
 }
 
+/**
+ * The locale segment the app's routes are keyed by.
+ *
+ * Reads `data-locale`, NOT `lang`. Since HOS-585 G-5 the `lang` attribute
+ * carries a regional tag (`es-AR`) for search engines, and there is no
+ * `/es-AR/...` route — building a URL from it 404s. The bare locale lives in
+ * `data-locale` precisely so the two uses cannot be confused again.
+ *
+ * @returns The locale path segment, defaulting to Spanish.
+ */
+function readLocaleSegment(): string {
+    return document.documentElement.getAttribute('data-locale') ?? 'es';
+}
+
 function buildSignupUrl(): string {
-    const lang = document.documentElement.getAttribute('lang') ?? 'es';
-    return `/${lang}${SIGNUP_PATH_PREFIX}/`;
+    return `/${readLocaleSegment()}${SIGNUP_PATH_PREFIX}/`;
 }
 
 function buildBenefitsUrl(): string {
-    const lang = document.documentElement.getAttribute('lang') ?? 'es';
-    return `/${lang}${BENEFITS_PATH_PREFIX}/`;
+    return `/${readLocaleSegment()}${BENEFITS_PATH_PREFIX}/`;
 }
 
 function showNudge(): void {

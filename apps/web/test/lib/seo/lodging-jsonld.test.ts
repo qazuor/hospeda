@@ -12,11 +12,17 @@
  * - HOS-557 (H-114): `amenityFeature[].name` published raw catalog slugs
  *   (`air_conditioning`, `full_kitchen`) — machine ids, in English, on a
  *   Spanish site.
+ * - HOS-585 (P-4): `telephone` was never emitted, so the NAP triplet Bing
+ *   builds its local pack from was missing a leg.
  */
 
 import { describe, expect, it } from 'vitest';
 import { translateAmenityName } from '../../../src/lib/catalog-names';
-import { buildLodgingAmenityNames, buildLodgingGeo } from '../../../src/lib/seo/lodging-jsonld';
+import {
+    buildLodgingAmenityNames,
+    buildLodgingGeo,
+    buildLodgingTelephone
+} from '../../../src/lib/seo/lodging-jsonld';
 
 /**
  * A translator with the same contract as `createTranslations().t`: it returns
@@ -169,5 +175,46 @@ describe('buildLodgingAmenityNames — HOS-557 (H-114)', () => {
         });
 
         expect(names).toEqual(['Air conditioning']);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// buildLodgingTelephone (HOS-585 P-4)
+// ---------------------------------------------------------------------------
+
+describe('buildLodgingTelephone', () => {
+    it('publishes the number the page already shows', () => {
+        expect(buildLodgingTelephone({ contactInfo: { phone: '+54 9 3442 123456' } })).toBe(
+            '+54 9 3442 123456'
+        );
+    });
+
+    it('leaves the number untouched — no reformatting, no guessed country code', () => {
+        // A legacy value with no dial code stays as it is. Prefixing a guessed
+        // `+54` would publish a number that dials somewhere else, and a wrong
+        // phone in machine-readable markup is worse than a weak one.
+        expect(buildLodgingTelephone({ contactInfo: { phone: '3442 123456' } })).toBe(
+            '3442 123456'
+        );
+    });
+
+    it('omits the field when there is no contact block', () => {
+        expect(buildLodgingTelephone({ contactInfo: undefined })).toBeUndefined();
+    });
+
+    it('omits the field when the phone is absent', () => {
+        expect(buildLodgingTelephone({ contactInfo: { phone: undefined } })).toBeUndefined();
+    });
+
+    it('omits the field for a blank phone rather than emitting an empty string', () => {
+        // `telephone: ""` is a declared-but-empty property: it tells a consumer
+        // the business has a phone and then gives it nothing to call.
+        expect(buildLodgingTelephone({ contactInfo: { phone: '   ' } })).toBeUndefined();
+    });
+
+    it('trims surrounding whitespace', () => {
+        expect(buildLodgingTelephone({ contactInfo: { phone: '  +54 343 1234567  ' } })).toBe(
+            '+54 343 1234567'
+        );
     });
 });

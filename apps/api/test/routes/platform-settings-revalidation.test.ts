@@ -87,7 +87,13 @@ const seoPersistedRow = {
     value: {
         metaTitleTemplate: '%s | Hospeda',
         metaDescriptionDefault: 'Alojamientos en Concepción del Uruguay',
-        ogImageDefault: 'https://hospeda.com.ar/og.png'
+        ogImageDefault: 'https://hospeda.com.ar/og.png',
+        // HOS-585 AC-13: the schema default lands on every parsed payload, so a
+        // persisted row carries it whether or not the client sent it. Spelled
+        // out in the fixture rather than relaxing the assertion below to
+        // objectContaining — that the stored default is OFF is the guarantee,
+        // and a fixture that omits it would stop proving the round trip.
+        indexNowEnabled: false
     },
     updatedAt: new Date('2026-05-29T00:00:00Z'),
     updatedBy: SUPER_ADMIN_ACTOR.id

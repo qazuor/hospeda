@@ -6,7 +6,7 @@
  */
 
 import { getSiteUrl } from '@/lib/env';
-import { SUPPORTED_LOCALES, type SupportedLocale } from '@/lib/i18n';
+import { REGIONAL_LOCALE_TAGS, SUPPORTED_LOCALES, type SupportedLocale } from '@/lib/i18n';
 import { BRAND_NAME, TITLE_SEPARATOR, TWITTER_SITE_HANDLE } from '@/lib/constants';
 import { buildOgImagePath } from '@/lib/og-template';
 
@@ -86,7 +86,13 @@ const esUrl = generateAlternateUrl('es');
 const enUrl = generateAlternateUrl('en');
 const ptUrl = generateAlternateUrl('pt');
 
-const OG_LOCALE_MAP = { es: 'es_AR', en: 'en_US', pt: 'pt_BR' } as const;
+// og:locale wants the same regional information as hreflang, in underscore
+// form. Derived from the one map rather than restated, so the two cannot drift.
+const OG_LOCALE_MAP = {
+    es: REGIONAL_LOCALE_TAGS.es.replace('-', '_'),
+    en: REGIONAL_LOCALE_TAGS.en.replace('-', '_'),
+    pt: REGIONAL_LOCALE_TAGS.pt.replace('-', '_'),
+} as const;
 const ogLocale = OG_LOCALE_MAP[locale];
 // og:locale:alternate for the other two locales so OG consumers (Facebook etc.)
 // know the page has translations. hreflang already covers this for Google.
@@ -163,4 +169,14 @@ const ogImageUrl = new URL(image ?? generatedOgPath, siteBase).href;
 <link rel="alternate" hreflang="es" href={esUrl} />
 <link rel="alternate" hreflang="en" href={enUrl} />
 <link rel="alternate" hreflang="pt" href={ptUrl} />
+<!--
+  Regional variants ADDED to the generic tags above, never replacing them
+  (HOS-585 G-5 / AC-10). Bing reads country signals more explicitly than Google,
+  but swapping `es` for `es-AR` would drop the site out of the generic Spanish
+  bucket and lose es-ES / es-MX coverage — a trade that costs more than the
+  signal is worth (spec R-3).
+-->
+<link rel="alternate" hreflang={REGIONAL_LOCALE_TAGS.es} href={esUrl} />
+<link rel="alternate" hreflang={REGIONAL_LOCALE_TAGS.en} href={enUrl} />
+<link rel="alternate" hreflang={REGIONAL_LOCALE_TAGS.pt} href={ptUrl} />
 <link rel="alternate" hreflang="x-default" href={esUrl} />

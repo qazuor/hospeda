@@ -83,7 +83,12 @@ describe('legacyAdapters.seoDefaults', () => {
         expect(legacyAdapters.seoDefaults.read()).toEqual({
             metaTitleTemplate: '{page} | Hospeda',
             metaDescriptionDefault: 'Descripción de respaldo',
-            ogImageDefault: 'https://cdn.example.com/og.png'
+            ogImageDefault: 'https://cdn.example.com/og.png',
+            // HOS-585 AC-13: a legacy payload predates the toggle entirely, and
+            // the schema default fills it in as OFF. Asserted here rather than
+            // relaxed to objectContaining — the whole point is that a settings
+            // blob migrated from localStorage cannot switch notifications ON.
+            indexNowEnabled: false
         });
     });
 
@@ -99,7 +104,8 @@ describe('legacyAdapters.seoDefaults', () => {
         expect(legacyAdapters.seoDefaults.read()).toEqual({
             metaTitleTemplate: '{page} | Hospeda',
             metaDescriptionDefault: 'Otro fallback',
-            ogImageDefault: 'https://cdn.example.com/og2.png'
+            ogImageDefault: 'https://cdn.example.com/og2.png',
+            indexNowEnabled: false
         });
     });
 

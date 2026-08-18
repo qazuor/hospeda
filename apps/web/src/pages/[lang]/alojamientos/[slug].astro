@@ -52,7 +52,7 @@ import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardPr
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { translateAmenityName } from '@/lib/catalog-names';
-import { buildLodgingAmenityNames, buildLodgingGeo } from '@/lib/seo/lodging-jsonld';
+import { buildLodgingAmenityNames, buildLodgingGeo, buildLodgingTelephone } from '@/lib/seo/lodging-jsonld';
 import { pickLocalizedSeo } from '@/lib/seo';
 import { buildUrl } from '@/lib/urls';
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -436,6 +436,10 @@ const lodgingGeo = buildLodgingGeo({
     approximateLocation: accommodation.approximateLocation
 });
 
+// HOS-585 P-4: the same number `AccommodationContactBlock` already renders as a
+// `tel:` link, so this publishes nothing the page does not.
+const lodgingTelephone = buildLodgingTelephone({ contactInfo: accommodation.contactInfo });
+
 const lodgingAggregateRating =
     accommodation.averageRating > 0
         ? {
@@ -500,6 +504,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
         }}
         accommodationType={lodgingAccommodationType}
         geo={lodgingGeo}
+        telephone={lodgingTelephone}
         aggregateRating={lodgingAggregateRating}
         numberOfRooms={lodgingNumberOfRooms}
         amenities={lodgingAmenities}

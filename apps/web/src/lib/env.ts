@@ -205,6 +205,20 @@ export function getNoindexHosts(): string | undefined {
 }
 
 /**
+ * Get the IndexNow API key (HOS-585).
+ *
+ * Server-only. Used both to serve the key file at `/<key>.txt` and to sign
+ * submissions to `api.indexnow.org`. When unset, the search-engine notification
+ * is off regardless of the admin toggle — an unset key is the hard kill switch,
+ * which is why no separate `*_ENABLED` variable exists.
+ *
+ * @returns The key, or undefined when not configured
+ */
+export function getIndexNowKey(): string | undefined {
+    return getEnv().HOSPEDA_INDEXNOW_KEY;
+}
+
+/**
  * Get the Cloudflare Turnstile site key for the invisible bot-detection widget.
  *
  * Public by design — used by the FeedbackHeadlessHost and standalone feedback page

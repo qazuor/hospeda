@@ -144,6 +144,51 @@ export class PlatformSettingsService extends BaseService {
     }
 
     /**
+     * Whether publishing or updating public content should notify the search
+     * engines through IndexNow (HOS-585 G-1).
+     *
+     * **Why this method instead of `get`**: same reason as
+     * {@link findActiveAnnouncements}. `get` enforces a per-key permission gate
+     * meant for the admin read, and the only caller here is a fire-and-forget
+     * hook running next to a content write — there is no actor to gate on and
+     * nothing to gate: the answer is a single boolean the operator set for the
+     * whole platform.
+     *
+     * **Read on every send, never cached.** The toggle's entire purpose is to
+     * stop submissions without a deploy; a value memoized at startup would make
+     * turning it off require the very restart it exists to avoid (AC-12).
+     *
+     * Fails closed. A missing row, an unparseable value, or a read error all
+     * answer `false`: not notifying is always recoverable, and notifying when
+     * the operator asked you not to is not.
+     *
+     * @returns Whether IndexNow notifications are enabled.
+     */
+    async isIndexNowEnabled(): Promise<boolean> {
+        try {
+            const row = await this.model.findByKey('seo.defaults');
+            if (!row) return false;
+
+            const parsed = SeoDefaultsValueSchema.safeParse(row.value);
+            if (!parsed.success) {
+                this.logger.warn(
+                    { issues: parsed.error.issues },
+                    'Stored seo.defaults value failed schema validation — IndexNow stays disabled'
+                );
+                return false;
+            }
+
+            return parsed.data.indexNowEnabled;
+        } catch (error) {
+            this.logger.warn(
+                { error: error instanceof Error ? error.message : String(error) },
+                'Could not read seo.defaults — IndexNow stays disabled'
+            );
+            return false;
+        }
+    }
+
+    /**
      * Upserts a setting row. The value shape is validated by a per-key Zod
      * branch (discriminated union) so an SEO payload sent under
      * `maintenance.mode` is rejected before it reaches the DB.

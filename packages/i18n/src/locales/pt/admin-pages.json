@@ -1189,6 +1189,8 @@
             "robotsTxt": "Robots.txt",
             "robotsTxtDesc": "Configuração de rastreamento de mecanismos de busca",
             "robotsConfigured": "Configurado",
+            "indexNow": "Aviso aos buscadores (IndexNow)",
+            "indexNowDesc": "Avisa o Bing e outros buscadores sempre que conteúdo público é publicado ou atualizado",
             "apiNote": "Nota: Estas configurações serão conectadas à API em uma atualização futura",
             "save": "Salvar Alterações",
             "saved": "Salvo"

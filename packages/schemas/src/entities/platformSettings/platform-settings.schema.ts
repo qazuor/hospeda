@@ -49,7 +49,27 @@ export const SeoDefaultsValueSchema = z.object({
     /** Fallback `<meta name="description">` when a page does not set its own. */
     metaDescriptionDefault: z.string().min(1).max(500),
     /** Default Open Graph image URL. */
-    ogImageDefault: z.string().url()
+    ogImageDefault: z.string().url(),
+    /**
+     * Whether publishing or updating indexable public content notifies the
+     * search engines through IndexNow (HOS-585 G-1).
+     *
+     * `.default(false)` rather than a bare `.optional()`, deliberately, and it
+     * carries two guarantees at once:
+     *
+     * 1. **Additive-only compliance.** Rows written before this field existed
+     *    parse without it, so no stored `seo.defaults` value is invalidated —
+     *    the policy at the top of this file. A required boolean here would make
+     *    every pre-existing row fail `safeParse` and take the admin page down.
+     * 2. **Off is the safe default.** Consumers get a plain `boolean`, never
+     *    `undefined`, and a fresh deployment does not start emitting on its own
+     *    before anyone has verified the key file is published and reachable.
+     *    The first ping must be a deliberate act.
+     *
+     * This flag is NOT the only condition: the emitter also requires a
+     * production environment and a configured key. See the spec's §6.5.
+     */
+    indexNowEnabled: z.boolean().default(false)
 });
 
 /** Inferred type for the `seo.defaults` value. */

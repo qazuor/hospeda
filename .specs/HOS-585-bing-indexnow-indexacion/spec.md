@@ -136,12 +136,31 @@ Consecuencia concreta: si una entidad deja de ser indexable, **no se manda**. Nu
 envía una URL que la página serviría con `noindex`, ni una landing de faceta con 2+
 valores (que es `noindex,follow` por `resolveFacetSeoDecision`).
 
-### 6.3 Emisor
+### 6.3 Emisor — vive en `apps/web`, no en `apps/api` (corregido 17/08)
 
-- Módulo nuevo en `apps/api`, junto al resto de los servicios, con la misma forma de
-  adapter que `revalidation/adapters/`: uno real y uno **noop**.
+> **Corrección del diseño original.** Esta sección decía "módulo nuevo en `apps/api`".
+> Está mal, y la evidencia es el propio repo: `cloudflare-revalidation.adapter.ts` NO
+> llama a Cloudflare — hace `POST` al endpoint `/api/revalidate/` de `apps/web` con un
+> secreto compartido, y ese archivo declara en su cabecera *"This endpoint holds the
+> Cloudflare credentials; the API never sees them"*. La frontera de llamadas externas
+> ya está en el web, y todo lo que IndexNow necesita vive de ese lado.
+
+**El reparto, y por qué cada mitad está donde está:**
+
+| Lado | Hace | Por qué sólo puede hacerlo ahí |
+|---|---|---|
+| `service-core` | Lee el toggle en cada envío. Decide **si** emitir. Manda `{entityType, slug}[]` al web. | Es el único con acceso a la base, y el toggle vive en `platform_settings`. El web no lee la base. |
+| `apps/web` | Mapea entidad → URLs públicas canónicas (las 3 locales). Filtra por indexabilidad. Emite a `api.indexnow.org`. Sirve el `.txt`. | Tiene `buildUrl()`, los predicados de indexabilidad y el sitemap. Duplicar eso en `apps/api` viola el single-source-of-truth. |
+
+- Adapter en `service-core` con la misma forma que `revalidation/adapters/`: uno real
+  (POST a `/api/indexnow/` del web) y uno **noop**. Endpoint propio, hermano del de
+  revalidación y NO colgado de él: si IndexNow falla, se apaga o se satura, el purge de
+  caché no debe enterarse. Comparten origen, no destino.
 - El noop se activa cuando el entorno resuelto no es producción. Mismo criterio y misma
   fuente (`HOSPEDA_DEPLOY_ENV`) que el gate de cache tags — no una variable nueva.
+- **Defensa en profundidad en el web**: el endpoint rechaza si el host es uno de
+  `HOSPEDA_NOINDEX_HOSTS`. Staging sirve `Disallow: /`; mandar sus URLs sería incoherente
+  aunque el gate de entorno fallara.
 - Envío en lote (`POST https://api.indexnow.org/indexnow`), con `host`, `key`,
   `keyLocation` y `urlList`.
 - **No debe tirar nunca.** Igual que `RevalidationAdapter`: el error se captura en el
@@ -152,23 +171,64 @@ valores (que es `noindex,follow` por `resolveFacetSeoDecision`).
 
 - Se genera propia (hex, 8-128 chars). **No hace falta esperar el alta en BWT.**
 - Se sirve desde `apps/web` como `text/plain` en `/<clave>.txt`.
-- **Trampa cruzada de apps**: el `.txt` lo sirve `apps/web`, el ping lo dispara
-  `apps/api`. Si el host del `.txt` no es el host de las URLs enviadas, IndexNow
-  responde **403**.
+- La trampa de host cruzado que esta sección advertía **ya no existe**: con el emisor en
+  `apps/web` (§6.3), el `.txt` y las URLs enviadas salen del mismo origen por
+  construcción. Se deja anotado porque era un riesgo real del diseño anterior y explica
+  por qué el emisor no puede vivir en `apps/api` sin coordinar dos hosts.
 
-### 6.5 Bing Webmaster Tools
+### 6.5 El aviso se prende y se apaga desde el admin (decisión del owner, 17/08)
 
-Si Google Search Console ya está configurado para `hospeda.com.ar`, BWT importa la
-propiedad y la verifica en un click, sin tocar DNS ni meta tags. Ése es el camino
-preferido. Si no, el fallback es el meta `msvalidate.01`.
+El ping **debe poder apagarse sin deploy**. La superficie ya existe y NO hay que
+construir nada nuevo: `apps/admin/src/routes/_authed/platform/configuration/seo.tsx`
+guarda contra un store genérico de settings con clave `seo.defaults`, validado por
+`SeoDefaultsValueSchema`. El toggle es **un campo booleano más en ese schema y un
+`Switch` en esa página** — sin tabla nueva, sin migración, sin pantalla nueva.
 
-Una vez adentro: enviar el sitemap, configurar geo-targeting a Argentina, y **revisar
-si bingbot está siendo bloqueado o desafiado por Cloudflare** — que es la verificación
-que hoy no se puede hacer desde ningún lado.
+Se descartó una env var `HOSPEDA_INDEXNOW_ENABLED` por redundante: sin
+`HOSPEDA_INDEXNOW_KEY` el emisor ya no puede funcionar, así que el corte duro existe
+gratis. Dos interruptores para lo mismo son dos lugares donde mirar cuando algo no anda.
+
+Quedan entonces **tres condiciones, y las tres tienen que darse** para que salga un ping:
+
+1. El entorno resuelto es producción (`HOSPEDA_DEPLOY_ENV`) — si no, adapter noop.
+2. `HOSPEDA_INDEXNOW_KEY` está definida.
+3. El toggle del admin está en ON.
+
+El emisor lee el toggle en cada envío, no al arrancar: apagarlo tiene que surtir efecto
+sin reiniciar el API. Cachear ese valor por más que la ventana de debounce anula el
+propósito del interruptor.
+
+### 6.6 Bing Webmaster Tools
+
+**Confirmado por el owner (17/08): `hospeda.com.ar` YA está cargado y verificado en
+Google Search Console** — sin sitemap enviado ni nada más configurado. Así que el alta
+en BWT es **importar la propiedad desde GSC**, sin tocar DNS ni meta tags. El fallback
+`msvalidate.01` queda descartado.
+
+Al importar hay que registrar si la propiedad de GSC es *Domain* (verificada por DNS,
+cubre subdominios) o *URL prefix*, porque cambia qué termina cubriendo Bing.
+
+Una vez adentro: enviar el sitemap y configurar geo-targeting a Argentina.
+
+La verificación de si Cloudflare bloquea a bingbot **ya se hizo (17/08) y dio negativo**:
+nada en Cloudflare lo bloquea ni lo desafía. Detalle completo en el comentario de
+HOS-585. Lo único que sigue sin poder verificarse fuera de BWT es si el bingbot **real**
+está rastreando — el plan free no ofrece filtro por user-agent en Security Analytics.
 
 ## 7. Data model / contracts
 
-Sin migraciones. Sin cambios de schema.
+Sin migraciones. Sin tabla nueva.
+
+**Campo nuevo en el schema de settings SEO** (`SeoDefaultsValueSchema`, clave
+`seo.defaults` del store genérico que ya usa la página del admin):
+
+| Campo | Tipo | Default | Para qué |
+|---|---|---|---|
+| `indexNowEnabled` | `boolean` | `false` | Prende/apaga el aviso a los buscadores. Arranca en OFF a propósito: el default seguro es no emitir. |
+
+Arrancar en `false` es deliberado — un default `true` haría que el ping empiece a salir
+solo en cuanto se despliegue, antes de que nadie verifique que la clave está bien
+publicada. Que el primer envío sea un acto explícito es parte del diseño.
 
 **Env vars nuevas** (siguen el workflow de `packages/config/src/env-registry.*`, más
 Zod en `apps/api/src/utils/env.ts`, más `.env.example`):
@@ -211,8 +271,14 @@ Ninguno. Es infraestructura, invisible para el usuario final.
   la clave como único contenido.
 - **AC-3** — La misma operación en staging **no** emite ningún request saliente a
   `api.indexnow.org`. Guardado por test, no sólo por configuración.
-- **AC-4** — Una entidad que la página serviría con `noindex` **nunca** se encola. Test
-  con el caso de faceta de 2+ valores.
+- **AC-4** — Una entidad que la página serviría con `noindex` **nunca** se encola.
+  **Implementado como filtro AL ENVIAR, no al encolar (18/08).** El enganche vive en
+  `scheduleRevalidation`, y ese hook dispara en una DESPUBLICACIÓN a propósito: purgar
+  la página que acaba de desaparecer es justamente el punto de un purge de caché. O sea
+  que el emisor VE la despublicación. `isEntityPubliclyVisible`
+  (`apps/api/src/lib/indexnow-visibility.ts`) pregunta a la DB en el flush si el sitio
+  todavía serviría esa ficha — publicada, pública y no borrada — y falla cerrado ante
+  cualquier duda. Es obligatorio por tipos: un deploy no puede olvidarse de cablearlo.
 - **AC-5** — Un fallo del emisor (timeout, 403, 429) **no** hace fallar la escritura de
   contenido que lo originó. Test con el adapter tirando.
 - **AC-6** — `robots.txt` de producción contiene un bloque `User-agent: bingbot` con las
@@ -224,6 +290,14 @@ Ninguno. Es infraestructura, invisible para el usuario final.
   exponer el pin exacto** que SPEC-097 despoja deliberadamente.
 - **AC-10** — Toda página emite `hreflang` regional **además** del genérico. `es`, `en`,
   `pt` y `x-default` siguen presentes: un test lo afirma explícitamente.
+- **AC-11** — Con el toggle del admin en **OFF**, no sale ningún request a
+  `api.indexnow.org`, aunque el entorno sea producción y la clave esté definida. Test
+  con las tres condiciones cruzadas, no sólo el caso feliz.
+- **AC-12** — Apagar el toggle surte efecto **sin reiniciar el API**: el emisor lee el
+  valor en cada envío. Test que cambia el setting entre dos envíos y afirma que el
+  segundo no sale.
+- **AC-13** — El valor por defecto de `indexNowEnabled` es `false`. Un despliegue nuevo
+  no empieza a emitir solo.
 
 ## 10. Risks
 
@@ -238,16 +312,27 @@ Ninguno. Es infraestructura, invisible para el usuario final.
   pierde la cobertura de es-ES / es-MX. Mitigado por AC-10, que lo afirma en un test.
 - **R-4 — Acoplarse al debounce de Cloudflare.** Si se elige la Opción B, la ventana de
   IndexNow queda atada a una calibrada para purgar cache. Mitigado eligiendo A.
-- **R-5 — P-5 puede ser falso.** El diseño asume que `geo` está vacío hoy. Si resulta
-  que ya se emite, AC-9 se cierra sin trabajo. **Medir primero.**
+- ~~**R-5 — P-5 puede ser falso.**~~ **MEDIDO (17/08): P-5 ERA FALSO.** `geo` ya se
+  emite, desde `approximateLocation`, y lo arregló HOS-554 (`buildLodgingGeo` en
+  `apps/web/src/lib/seo/lodging-jsonld.ts`, con tests). **AC-9 se cerró sin
+  trabajo** y el pin exacto sigue despojado. G-4 se redujo a `telephone`, que sí
+  faltaba (P-4 confirmado).
 
 ## 11. Open questions
 
-- **OQ-1** — ¿Está Google Search Console configurado para `hospeda.com.ar`? Decide si el
-  alta en BWT es un click o requiere verificación manual.
-- **OQ-2** — ¿Se sirve el `.txt` de la clave como ruta Astro o como archivo en `public/`?
-  Una ruta permite leerlo de la env var (rotación sin deploy de assets); `public/`
-  es más simple pero fija la clave en el build.
+- ~~**OQ-1** — ¿Está Google Search Console configurado para `hospeda.com.ar`?~~
+  **RESUELTA (17/08)**: sí, dominio cargado y verificado, sin sitemap enviado. El alta en
+  BWT es importar desde GSC. Ver §6.6.
+- ~~**OQ-2** — ¿Se sirve el `.txt` de la clave como ruta Astro o como archivo en
+  `public/`?~~ **RESUELTA (17/08)**: ruta Astro dinámica
+  (`apps/web/src/pages/[key].txt.ts`). El nombre del archivo ES la clave, así que
+  `public/` la fijaría en el build y la dejaría en git para siempre; rotarla
+  exigiría commit + review + deploy. La ruta lee `HOSPEDA_INDEXNOW_KEY` por
+  request, así que rotar es cambiar la env var y nada más. Se sirve con
+  `no-store`: no hay tag de caché que la purgue y, como la rotación cambia la
+  URL, un 404 cacheado sobre la clave NUEVA haría que IndexNow rechace todos los
+  envíos hasta que expire el TTL. El guard de HOS-369 W1-1 cazó la primera
+  versión con `max-age=3600` y tenía razón.
 - **OQ-3** — ¿Se le avisa a IndexNow también de las **bajas** (410 Gone)? El protocolo lo
   admite y acelera la desindexación, pero se cruza con HOS-256 / HOS-262, que todavía
   están en curso.

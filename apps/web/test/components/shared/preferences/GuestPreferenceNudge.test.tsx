@@ -23,7 +23,12 @@ describe('GuestPreferenceNudge', () => {
     beforeEach(() => {
         clearToasts();
         sessionStorage.clear();
-        document.documentElement.setAttribute('lang', 'es');
+        // Mirrors what every layout emits since HOS-585 G-5: a REGIONAL `lang`
+        // for search engines and the bare locale in `data-locale`. Setting only
+        // `lang` here would let the CTA assertions below pass on the code's
+        // 'es' fallback rather than on the attribute they claim to read.
+        document.documentElement.setAttribute('lang', 'es-AR');
+        document.documentElement.setAttribute('data-locale', 'es');
         setAuthState(false);
         vi.useFakeTimers({ shouldAdvanceTime: true });
     });
@@ -92,12 +97,27 @@ describe('GuestPreferenceNudge', () => {
         expect(toast?.secondaryAction?.href).toBe('/es/beneficios/');
     });
 
-    it('honors the lang attribute on <html> for CTA URLs', () => {
-        document.documentElement.setAttribute('lang', 'en');
+    it('honors the data-locale attribute on <html> for CTA URLs', () => {
+        document.documentElement.setAttribute('data-locale', 'en');
         render(<GuestPreferenceNudge />);
         dispatchPreferenceChange({ kind: 'theme', value: 'dark' });
         const toast = getToasts()[0];
         expect(toast?.action?.href).toBe('/en/auth/signup/');
         expect(toast?.secondaryAction?.href).toBe('/en/beneficios/');
+    });
+
+    it('ignores the regional lang attribute, which is not a route segment', () => {
+        // HOS-585 G-5 moved `<html lang>` to a regional BCP-47 tag for Bing.
+        // Reading it here would produce `/es-AR/auth/signup/`, which 404s. This
+        // test is the one that caught the regression while it was being made.
+        document.documentElement.setAttribute('lang', 'en-US');
+        document.documentElement.setAttribute('data-locale', 'en');
+
+        render(<GuestPreferenceNudge />);
+        dispatchPreferenceChange({ kind: 'theme', value: 'dark' });
+
+        const toast = getToasts()[0];
+        expect(toast?.action?.href).toBe('/en/auth/signup/');
+        expect(toast?.action?.href).not.toContain('en-US');
     });
 });
