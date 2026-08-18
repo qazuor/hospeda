@@ -15,6 +15,10 @@ export {
 } from '@repo/schemas';
 export * from './base';
 /**
+ * Exports the IndexNow search-engine notification service (HOS-585).
+ */
+export * from './indexnow';
+/**
  * --- REVALIDATION ---
  * Exports ISR revalidation adapter interfaces and implementations.
  */
