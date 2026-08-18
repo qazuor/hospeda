@@ -10,13 +10,26 @@
  */
 
 import type { CacheTagEnvironment } from '@repo/cache-tags';
+import { resolveCacheTagEnvironment } from '@repo/cache-tags';
+import { createLogger } from '@repo/logger';
 import { createIndexNowAdapter } from './adapters/adapter-factory.js';
 import { IndexNowService } from './indexnow.service.js';
 
+const logger = createLogger('indexnow-init');
+
 /** Parameters for {@link initializeIndexNowService}. */
 export interface InitIndexNowParams {
-    /** Resolved deployment environment. Only `'prod'` gets a live adapter. */
-    readonly cacheTagEnvironment?: CacheTagEnvironment;
+    /**
+     * Raw `HOSPEDA_DEPLOY_ENV`. Passed RAW, not pre-resolved, for the same
+     * reason `initializeRevalidationService` does: the rules that decide which
+     * deployment a process is (and which fallbacks are refused) live in
+     * `resolveCacheTagEnvironment` alone. A second copy in the API layer is how
+     * a staging process ends up believing it is production — which here means
+     * announcing `Disallow: /` URLs to Bing.
+     */
+    readonly deployEnv?: string;
+    /** Node environment, used as the fallback input to the same resolver. */
+    readonly nodeEnv?: string;
     /** Shared secret matching `HOSPEDA_REVALIDATION_SECRET` on the web app. */
     readonly revalidationSecret?: string;
     /** Base site URL, e.g. `https://hospeda.com.ar`. */
@@ -45,9 +58,24 @@ let _instance: IndexNowService | undefined;
 export function initializeIndexNowService(params: InitIndexNowParams): IndexNowService {
     if (_instance !== undefined) return _instance;
 
+    // Fail closed, exactly like the revalidation initializer: a process that
+    // cannot name its own deployment gets the no-op adapter rather than a
+    // guess. An unresolved environment is never treated as production.
+    let cacheTagEnvironment: CacheTagEnvironment | undefined;
+    try {
+        cacheTagEnvironment = resolveCacheTagEnvironment({
+            deployEnv: params.deployEnv,
+            nodeEnv: params.nodeEnv
+        });
+    } catch (error) {
+        logger.error(
+            `IndexNow notification DISABLED: cannot resolve the deployment environment. ${error instanceof Error ? error.message : String(error)}`
+        );
+    }
+
     _instance = new IndexNowService({
         adapter: createIndexNowAdapter({
-            cacheTagEnvironment: params.cacheTagEnvironment,
+            cacheTagEnvironment,
             revalidationSecret: params.revalidationSecret,
             siteUrl: params.siteUrl
         }),
