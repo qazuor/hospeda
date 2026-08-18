@@ -28,6 +28,46 @@ export type SupportedLocale = (typeof SUPPORTED_LOCALES)[number];
 export const DEFAULT_LOCALE: SupportedLocale = 'es';
 
 /**
+ * The regional variant each supported locale actually targets (HOS-585 G-5).
+ *
+ * Bing weighs country signals more explicitly than Google does, and the site is
+ * written for one market per language: Argentina, and the US/Brazil visitors
+ * most likely to book here. These tags are what `<html lang>` and the regional
+ * `hreflang` alternates declare.
+ *
+ * **Added to the generic tags, never substituted for them.** Replacing
+ * `hreflang="es"` with `es-AR` would drop the site out of the generic Spanish
+ * bucket and lose es-ES / es-MX coverage entirely — the exact trade the spec
+ * refuses (R-3), and the reason AC-10 is stated as "regional AS WELL AS
+ * generic" with a test that says so.
+ *
+ * This is also the single source for `og:locale`, which wants the same
+ * information in underscore form (`es_AR`).
+ */
+export const REGIONAL_LOCALE_TAGS = {
+    es: 'es-AR',
+    en: 'en-US',
+    pt: 'pt-BR'
+} as const satisfies Record<SupportedLocale, string>;
+
+/** A BCP-47 language tag carrying a region, as emitted by this app. */
+export type RegionalLocaleTag = (typeof REGIONAL_LOCALE_TAGS)[SupportedLocale];
+
+/**
+ * The regional BCP-47 tag for a locale (`'es'` → `'es-AR'`).
+ *
+ * @param params.locale - The bare supported locale.
+ * @returns The regional tag.
+ */
+export function toRegionalLocaleTag({
+    locale
+}: {
+    readonly locale: SupportedLocale;
+}): RegionalLocaleTag {
+    return REGIONAL_LOCALE_TAGS[locale];
+}
+
+/**
  * Type representing translation records (string values or nested objects).
  */
 export type TranslationRecord = Record<string, string | Record<string, unknown>>;
