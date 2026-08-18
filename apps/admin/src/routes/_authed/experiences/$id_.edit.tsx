@@ -22,6 +22,7 @@ import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { FaqManager } from '@/components/faqs/FaqManager';
 import { experienceTabs, PageTabs } from '@/components/layout/PageTabs';
+import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
 import { useExperiencePage } from '@/features/experience';
 import { useTranslations } from '@/hooks/use-translations';
@@ -48,10 +49,16 @@ function ExperienceEditPage() {
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_EDIT_ALL]}>
             <div className="space-y-4">
-                <PageTabs
-                    tabs={experienceTabs}
-                    basePath={`/experiences/${id}`}
-                />
+                <div className="flex items-center justify-between gap-4">
+                    <PageTabs
+                        tabs={experienceTabs}
+                        basePath={`/experiences/${id}`}
+                    />
+                    <RevalidateEntityButton
+                        entityType="experience"
+                        entityId={id}
+                    />
+                </div>
 
                 <EntityPageBase
                     entityType="experience"
