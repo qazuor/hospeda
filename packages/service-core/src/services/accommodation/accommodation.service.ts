@@ -2187,21 +2187,25 @@ export class AccommodationService extends BaseCrudService<
         if (restored?.destinationId) {
             await this.destinationService.updateAccommodationsCount(restored.destinationId, ctx);
         }
-        const destinationSlug = restored?.destinationId
-            ? await this._resolveDestinationSlug(restored.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: restored?.id,
-                slug: restored?.slug,
-                destinationSlug
+        // HOS-389: restored comes out of `ctx.hookState`, which the matching
+        // `_before*` hook may never have populated. The previous code scheduled
+        // unconditionally, so in that case it queued a purge for
+        // `{ id: undefined, slug: undefined }` — a purge of nothing, and a NULL
+        // `revalidation_log.entity_id`, which is the exact symptom HOS-424 was
+        // filed to eliminate.
+        //
+        // The HOS-424 guard did not catch it: it asserts that a call site
+        // forwarding `slug` also forwards `id`, and both keys WERE present. What
+        // nothing checked was that their VALUES are not undefined.
+        //
+        // With the entity proven present, these three sites can finally use the
+        // canonical helper like the other six.
+        if (restored?.id && restored.slug) {
+            await this._scheduleAccommodationRevalidation({
+                id: restored.id,
+                slug: restored.slug,
+                destinationId: restored.destinationId
             });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
         }
         return result;
     }
@@ -2250,21 +2254,25 @@ export class AccommodationService extends BaseCrudService<
         if (deleted?.destinationId) {
             await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx);
         }
-        const destinationSlug = deleted?.destinationId
-            ? await this._resolveDestinationSlug(deleted.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: deleted?.id,
-                slug: deleted?.slug,
-                destinationSlug
+        // HOS-389: deleted comes out of `ctx.hookState`, which the matching
+        // `_before*` hook may never have populated. The previous code scheduled
+        // unconditionally, so in that case it queued a purge for
+        // `{ id: undefined, slug: undefined }` — a purge of nothing, and a NULL
+        // `revalidation_log.entity_id`, which is the exact symptom HOS-424 was
+        // filed to eliminate.
+        //
+        // The HOS-424 guard did not catch it: it asserts that a call site
+        // forwarding `slug` also forwards `id`, and both keys WERE present. What
+        // nothing checked was that their VALUES are not undefined.
+        //
+        // With the entity proven present, these three sites can finally use the
+        // canonical helper like the other six.
+        if (deleted?.id && deleted.slug) {
+            await this._scheduleAccommodationRevalidation({
+                id: deleted.id,
+                slug: deleted.slug,
+                destinationId: deleted.destinationId
             });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
         }
         return result;
     }
@@ -2296,21 +2304,25 @@ export class AccommodationService extends BaseCrudService<
         if (deleted?.destinationId) {
             await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx);
         }
-        const destinationSlug = deleted?.destinationId
-            ? await this._resolveDestinationSlug(deleted.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: deleted?.id,
-                slug: deleted?.slug,
-                destinationSlug
+        // HOS-389: deleted comes out of `ctx.hookState`, which the matching
+        // `_before*` hook may never have populated. The previous code scheduled
+        // unconditionally, so in that case it queued a purge for
+        // `{ id: undefined, slug: undefined }` — a purge of nothing, and a NULL
+        // `revalidation_log.entity_id`, which is the exact symptom HOS-424 was
+        // filed to eliminate.
+        //
+        // The HOS-424 guard did not catch it: it asserts that a call site
+        // forwarding `slug` also forwards `id`, and both keys WERE present. What
+        // nothing checked was that their VALUES are not undefined.
+        //
+        // With the entity proven present, these three sites can finally use the
+        // canonical helper like the other six.
+        if (deleted?.id && deleted.slug) {
+            await this._scheduleAccommodationRevalidation({
+                id: deleted.id,
+                slug: deleted.slug,
+                destinationId: deleted.destinationId
             });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
         }
         // Best-effort Cloudinary cleanup after confirmed hard delete
         if (result.count > 0 && ctx.hookState?.deletedEntityId && this.mediaProvider) {

@@ -252,6 +252,75 @@ describe('AccommodationService — revalidation hooks', () => {
         );
     });
 
+    // ── HOS-389: never schedule a purge for an entity we do not have ────────
+
+    /**
+     * `_afterRestore`, `_afterSoftDelete` and `_afterHardDelete` read their
+     * entity out of `ctx.hookState`, and every field access used `?.`. With an
+     * empty hookState the old code still called `scheduleRevalidation`, passing
+     * `{ id: undefined, slug: undefined }` — a purge of nothing, and a NULL
+     * `revalidation_log.entity_id`, which is the exact symptom HOS-424 exists to
+     * prevent. The HOS-424 guard cannot see it: it asserts that a call site
+     * forwarding `slug` also forwards `id`, and both KEYS were present. Nothing
+     * checked their VALUES.
+     *
+     * **This state is not reachable through the public methods**, and the tests
+     * below drive the hooks directly for that reason. `_before*` populates the
+     * state under `if (entity && ctx.hookState)`: a falsy `entity` makes the
+     * service answer NOT_FOUND long before the after-hook runs, and the base
+     * runner always initialises `hookState` to `{}`. So this is hardening plus
+     * the removal of the last three copies of the scheduling block — not a fix
+     * for something users hit today. Asserting it through `softDelete()` would
+     * have produced a test that passes because nothing ran.
+     */
+    it('_afterSoftDelete schedules nothing when the hook state is empty', async () => {
+        // biome-ignore lint/suspicious/noExplicitAny: reaching a protected hook is the point
+        const hooks = service as any;
+
+        await hooks._afterSoftDelete({ count: 1 }, createAdminActor(), { hookState: {} });
+
+        expect(mockScheduleRevalidation).not.toHaveBeenCalled();
+    });
+
+    it('_afterHardDelete schedules nothing when the hook state is empty', async () => {
+        // biome-ignore lint/suspicious/noExplicitAny: reaching a protected hook is the point
+        const hooks = service as any;
+
+        await hooks._afterHardDelete({ count: 1 }, createAdminActor(), { hookState: {} });
+
+        expect(mockScheduleRevalidation).not.toHaveBeenCalled();
+    });
+
+    it('_afterRestore schedules nothing when the hook state is empty', async () => {
+        // biome-ignore lint/suspicious/noExplicitAny: reaching a protected hook is the point
+        const hooks = service as any;
+
+        await hooks._afterRestore({ count: 1 }, createAdminActor(), { hookState: {} });
+
+        expect(mockScheduleRevalidation).not.toHaveBeenCalled();
+    });
+
+    it('_afterSoftDelete still carries a real id and slug when the state IS there', async () => {
+        // The other half: proof the guard did not simply switch the feature off.
+        // Asserted field by field rather than with `objectContaining`, which is
+        // blind to a key whose value is undefined — the very blindness that let
+        // this shape survive.
+        // biome-ignore lint/suspicious/noExplicitAny: reaching a protected hook is the point
+        const hooks = service as any;
+
+        await hooks._afterSoftDelete({ count: 1 }, createAdminActor(), {
+            hookState: {
+                deletedEntity: { id: 'acc-real', slug: 'hotel-real', destinationId: undefined }
+            }
+        });
+
+        expect(mockScheduleRevalidation).toHaveBeenCalledTimes(1);
+        const [payload] = mockScheduleRevalidation.mock.calls[0] as [Record<string, unknown>];
+        expect(payload.id).toBe('acc-real');
+        expect(payload.slug).toBe('hotel-real');
+        expect(payload.entityType).toBe('accommodation');
+    });
+
     it('does NOT throw when getRevalidationService() returns undefined (optional chaining)', async () => {
         // Arrange — simulate the service not yet initialized
         asMock(getRevalidationService).mockReturnValue(undefined);
