@@ -166,6 +166,20 @@ export const serverEnvBaseSchema = z.object({
      */
     HOSPEDA_NOINDEX_HOSTS: z.string().optional(),
     /**
+     * IndexNow API key (HOS-585). Its presence is what makes the search-engine
+     * notification possible at all: the web serves it as `/<key>.txt` and signs
+     * every submission with it. Absent = the feature is off no matter what the
+     * admin toggle says.
+     *
+     * The protocol accepts 8-128 hexadecimal characters. Validating the shape
+     * here turns a mistyped key into a startup error instead of a `403 key not
+     * valid` discovered days later in Bing Webmaster Tools.
+     */
+    HOSPEDA_INDEXNOW_KEY: z
+        .string()
+        .regex(/^[a-fA-F0-9]{8,128}$/, 'must be 8-128 hexadecimal characters')
+        .optional(),
+    /**
      * Opt-in flag for client-side console logging in non-dev builds.
      * Read by isLoggingEnabled() in src/lib/env.ts. Dev builds always
      * log regardless of this flag.

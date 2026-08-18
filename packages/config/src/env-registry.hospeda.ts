@@ -2263,6 +2263,23 @@ export const HOSPEDA_ENV_VARS = [
             'Configurar en Coolify para hospeda-web-staging así los buscadores no indexan el mirror de staging. En producción (hospeda.com.ar) dejarla sin setear (cae al default de staging, lo cual también está OK porque el host de prod no está en esa lista).'
     },
     {
+        name: 'HOSPEDA_INDEXNOW_KEY',
+        description:
+            'IndexNow API key. The web app serves it as /<key>.txt and signs every search-engine change notification with it. One submission reaches Bing, Yandex, Seznam, Naver and Yep. When unset the notification is off regardless of the admin toggle — an unset key is the hard kill switch.',
+        descriptionEs:
+            'Clave de API de IndexNow. El web la sirve como /<clave>.txt y firma con ella cada aviso de contenido nuevo a los buscadores. Un solo envío llega a Bing, Yandex, Seznam, Naver y Yep. Si no está seteada el aviso queda apagado sin importar el toggle del admin — la ausencia de la clave es el corte duro.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
+        apps: ['web'],
+        category: 'features',
+        howToObtain:
+            'Generate 8-128 hexadecimal characters (e.g. `openssl rand -hex 16`) — the key is self-issued, Bing Webmaster Tools is NOT required to mint one. Set it in Coolify for hospeda-web-prod only: staging must never notify search engines, and the endpoint refuses on any host listed in HOSPEDA_NOINDEX_HOSTS. To rotate, generate a new value and redeploy; the key file follows the env var.',
+        howToObtainEs:
+            'Generar 8-128 caracteres hexadecimales (por ejemplo `openssl rand -hex 16`) — la clave se emite uno mismo, NO hace falta Bing Webmaster Tools para obtenerla. Setearla en Coolify sólo para hospeda-web-prod: staging nunca debe avisar a los buscadores, y el endpoint rechaza cualquier host que esté en HOSPEDA_NOINDEX_HOSTS. Para rotarla, generar un valor nuevo y redeployar; el archivo de la clave sigue a la env var.'
+    },
+    {
         name: 'HOSPEDA_TAG_USER_QUOTA_PER_USER',
         description:
             'Maximum number of tags a single user may create (service-core tag service). Optional — falls back to a built-in default of 50 when unset or not a finite positive integer.',
