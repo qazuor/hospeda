@@ -17,6 +17,17 @@ const logger = createLogger('indexnow-service');
 /** Default coalescing window for notifications. */
 const DEFAULT_DEBOUNCE_MS = 30_000;
 
+/**
+ * Compile-time proof that every `EntityChangeData` variant was considered.
+ *
+ * @param value - The value TypeScript has narrowed to `never`.
+ * @returns Never returns a notifiable entity; present so the switch type-checks.
+ */
+function assertNever(value: never): undefined {
+    void value;
+    return undefined;
+}
+
 /** Configuration for {@link IndexNowService}. */
 export interface IndexNowServiceConfig {
     /** Transport. Never throws; failures come back in its result. */
@@ -35,7 +46,7 @@ export interface IndexNowServiceConfig {
 /**
  * Reduce a change event to the entity whose own public page changed.
  *
- * Three kinds of event produce nothing, each for a different reason:
+ * Four kinds of event produce nothing, each for a different reason:
  *
  * - `tag` / `amenity` have no page of their own.
  * - Any event without a slug cannot address a URL. `slug` is optional on every
@@ -43,6 +54,13 @@ export interface IndexNowServiceConfig {
  *   case and not defensive padding.
  * - Reviews are folded into their PARENT: a new review changes the
  *   accommodation's page, and the review has no URL.
+ * - `attraction`, `partner` and `pointOfInterest` all HAVE pages and all appear
+ *   in the sitemap, but none is unconditionally public: a silver partner 404s
+ *   and a retired gold one answers 410, only POIs carrying `hasOwnPage` render
+ *   at all, and an attraction landing is closer to a facet than to a detail
+ *   page. Submitting a URL that answers 404 is what IndexNow penalizes, and the
+ *   visibility each one needs is not knowable here. Deferred deliberately, not
+ *   forgotten — see `entity-public-urls.ts` in the web app for the same list.
  *
  * Deliberately does NOT cascade. An accommodation event carries the parent
  * `destinationSlug`, and that destination's listing did technically change —
@@ -60,6 +78,8 @@ export function toNotifiableEntity(event: EntityChangeData): NotifiableEntity | 
         case 'destination':
         case 'event':
         case 'post':
+        case 'gastronomy':
+        case 'experience':
             return event.slug ? { entityType: event.entityType, slug: event.slug } : undefined;
         case 'accommodation_review':
             return event.accommodationSlug
@@ -71,7 +91,17 @@ export function toNotifiableEntity(event: EntityChangeData): NotifiableEntity | 
                 : undefined;
         case 'tag':
         case 'amenity':
+        case 'attraction':
+        case 'partner':
+        case 'pointOfInterest':
             return undefined;
+        default:
+            // Exhaustiveness check, and the whole reason it is here: this switch
+            // shipped handling 8 of the union's 13 variants and dropped the
+            // other 5 in SILENCE, because a switch with no default just falls
+            // through to `undefined`. A 14th variant must be a compile error,
+            // not a content type that quietly stops being announced.
+            return assertNever(event);
     }
 }
 

@@ -41,7 +41,9 @@ describe('toNotifiableEntity', () => {
         ['accommodation', { entityType: 'accommodation', slug: 'hotel-x' }, 'accommodation'],
         ['destination', { entityType: 'destination', slug: 'colon' }, 'destination'],
         ['event', { entityType: 'event', slug: 'fiesta' }, 'event'],
-        ['post', { entityType: 'post', slug: 'guia' }, 'post']
+        ['post', { entityType: 'post', slug: 'guia' }, 'post'],
+        ['gastronomy', { entityType: 'gastronomy', slug: 'parrilla-x' }, 'gastronomy'],
+        ['experience', { entityType: 'experience', slug: 'kayak-x' }, 'experience']
     ])('maps a %s to itself', (_label, event, expectedType) => {
         expect(toNotifiableEntity(event as EntityChangeData)?.entityType).toBe(expectedType);
     });
@@ -69,6 +71,24 @@ describe('toNotifiableEntity', () => {
     });
 
     /**
+     * These three DO have pages and DO appear in the sitemap — dropping them is
+     * a decision, not an omission. None is unconditionally public: a silver
+     * partner 404s and a retired gold one answers 410, only POIs carrying
+     * `hasOwnPage` render, and an attraction landing is closer to a facet than
+     * to a detail page. Announcing a URL that answers 404 is what IndexNow
+     * penalizes, and the visibility each needs is not knowable at this hook.
+     */
+    it.each([
+        'attraction',
+        'partner',
+        'pointOfInterest'
+    ])('drops %s, whose page is conditional, even WITH a slug', (entityType) => {
+        expect(
+            toNotifiableEntity({ entityType, slug: 'algo' } as EntityChangeData)
+        ).toBeUndefined();
+    });
+
+    /**
      * `slug` is optional on every variant of the union — some call sites only
      * hold a UUID. Without a slug there is no URL to announce.
      */
@@ -76,7 +96,9 @@ describe('toNotifiableEntity', () => {
         'accommodation',
         'destination',
         'event',
-        'post'
+        'post',
+        'gastronomy',
+        'experience'
     ])('drops a slugless %s event', (entityType) => {
         expect(toNotifiableEntity({ entityType, id: 'uuid' } as EntityChangeData)).toBeUndefined();
     });
