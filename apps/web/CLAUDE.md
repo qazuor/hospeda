@@ -965,6 +965,48 @@ value → indexable + the facet's dedicated-landing canonical (via
 `test/components/seo/facet-noindex.test.ts` asserts the three listings wire
 `noindex={facetSeoDecision.noindex}` conditionally and never a hardcoded literal.
 
+**Two rules bound the URL space these chips publish (HOS-524)** — the chip rows were
+a measured crawler trap: Meta's `meta-webindexer` walked them on 2026-08-12 at ~3 req/s,
+**104.997 requests in 24 h, 88% of the site's whole traffic**, and 99,98% of it bypassed
+Cloudflare, because a listing with a query string is `DYNAMIC` by design and reaches the
+origin and the DB on every hit.
+
+1. **Canonical order** (`canonicalizeFacetValues`, `src/lib/filters/canonical-facet-order.ts`).
+   Every facet CSV param is serialized **de-duplicated and lexicographically sorted**, never
+   in click order. Click order made `?types=HOTEL,CABIN` and `?types=CABIN,HOTEL` two
+   different URLs with identical content, so the reachable space was the enum's
+   PERMUTATIONS (~10^10 for 13 types) instead of its subsets (8.192). Click order was never
+   a decision: HOS-96's OQ-4 resolved **de-duplication** and nothing else — "first-seen
+   order" was the incidental behavior of de-duplicating through a `Set`, and the old JSDoc
+   mis-cited OQ-4 as having chosen it. Nothing reads the order (active state is set
+   MEMBERSHIP, the API combines with `inArray`, the SEO decision only counts).
+2. **Depth cap** (`FACET_CHIP_MAX_ACTIVE_VALUES = 3`, `src/lib/filters/facet-chip-depth.ts`).
+   A chip that would grow the selection past 3 gets **no href** and renders inert, so the
+   page stops publishing "one level deeper" links: 377 URLs for accommodations, 129 for
+   events, 987 for blog, a few thousand for destinos. Removing a value is **never** capped,
+   at any depth — a crafted deep URL is always exitable. The `FilterSidebar` keeps unlimited
+   multi-select: it navigates from JavaScript and publishes no links, so it is not crawl
+   surface. **The cap bounds the LINK GRAPH, not what a user may filter by.**
+
+There are **six** writers of these CSV params, and every one of them must canonicalize — the
+static guard `test/lib/filters/facet-url-space.guard.test.ts` fails on a seventh that does
+not (three of the six were found BY that guard, not by the original analysis): the chip href
+builder, the `FilterSidebar` reducer (`buildParamsFromState`), the destinos badge builder AND
+its inline no-JS script, the hero `SearchBar`, and the removable active-filter chips on both
+accommodation listings. Listing pages must resolve chip hrefs through `resolveFacetChipHref`,
+**never** `buildMultiToggleParamHref` directly — the raw builder has no cap and is what the
+sidebar and the client-side POI filter (which needs an uncapped toggle) use.
+
+`rel="nofollow"` and the `robots.txt` `Disallow: /*?*<key>=` directives
+(`facet-crawl-policy.ts`) are unchanged and still correct — they stop every crawler that
+obeys them. `meta-webindexer` obeys neither (**0 requests to `/robots.txt`** in those 24 h),
+which is why the trap had to be closed in the HTML and, as a stopgap, at the Cloudflare edge.
+
+**The POI thematic filter (HOS-147) is deliberately NOT capped**: its hrefs are computed
+from `window.location`, which is empty during SSR, so the served HTML always emits depth-1
+links. Its crawlable space is bounded by construction, and capping it would only cost the
+user a filter the crawler can never see.
+
 > Gotcha: `AccommodationSearchHttpSchema.types` has NO enum `.pipe()` validation
 > (unlike events/posts `categories`), so `?types=HOTEL,BOGUS` returns 200 (the bogus
 > value just matches nothing), not a 400. This is pre-existing and out of HOS-96 scope.
