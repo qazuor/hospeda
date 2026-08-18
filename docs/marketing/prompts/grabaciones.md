@@ -62,7 +62,7 @@ más margen, de una sola toma.
 
 | # | Grabar | Tipo | Videos |
 |:-:|---|:-:|---|
-| P1 | Home | scroll | V2 V3 V4 |
+| P1 | Home | scroll | V2 V3 V4 V9 |
 | P2 | Listado de alojamientos | scroll | V2 V8 V30 |
 | P3 | Buscador con filtros aplicados | acción | V30 |
 | P4 | Buscador en lenguaje natural | acción | V30 |
@@ -93,13 +93,25 @@ más margen, de una sola toma.
 | A9 | Directorio de oficios | scroll | V28 |
 | A10 | **Importar ficha**: pegar el link, esperar, la ficha aparece completa | acción | V1 |
 
+### Lo que NO es grabación de pantalla
+
+Dos videos necesitan **filmación real**, que no entra en este catálogo y hay que
+conseguir aparte:
+
+| Video | Qué hace falta |
+|---|---|
+| **V26** | platos y mesas de los gastronómicos que se sumen |
+| **V27** | actividades reales: kayak, bicicletas, pesca |
+
+No se generan con IA. El detalle está en el `capturas.md` de cada uno.
+
 ### Fuera de la plataforma
 
 | # | Grabar | Tipo | Videos |
 |:-:|---|:-:|---|
 | E1 | Búsqueda en Google que devuelve la ficha | acción | V22 |
 | E2 | Consulta a una IA que menciona un alojamiento | acción | V22 |
-| E3 | Interfaces de Airbnb / Booking / Instagram | scroll | V23 |
+| E3 | Interfaces de Airbnb / Booking / Instagram / Facebook | scroll | V23 |
 
 ---
 
