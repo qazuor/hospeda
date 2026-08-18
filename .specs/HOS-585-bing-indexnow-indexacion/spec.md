@@ -271,8 +271,14 @@ Ninguno. Es infraestructura, invisible para el usuario final.
   la clave como único contenido.
 - **AC-3** — La misma operación en staging **no** emite ningún request saliente a
   `api.indexnow.org`. Guardado por test, no sólo por configuración.
-- **AC-4** — Una entidad que la página serviría con `noindex` **nunca** se encola. Test
-  con el caso de faceta de 2+ valores.
+- **AC-4** — Una entidad que la página serviría con `noindex` **nunca** se encola.
+  **Implementado como filtro AL ENVIAR, no al encolar (18/08).** El enganche vive en
+  `scheduleRevalidation`, y ese hook dispara en una DESPUBLICACIÓN a propósito: purgar
+  la página que acaba de desaparecer es justamente el punto de un purge de caché. O sea
+  que el emisor VE la despublicación. `isEntityPubliclyVisible`
+  (`apps/api/src/lib/indexnow-visibility.ts`) pregunta a la DB en el flush si el sitio
+  todavía serviría esa ficha — publicada, pública y no borrada — y falla cerrado ante
+  cualquier duda. Es obligatorio por tipos: un deploy no puede olvidarse de cablearlo.
 - **AC-5** — Un fallo del emisor (timeout, 403, 429) **no** hace fallar la escritura de
   contenido que lo originó. Test con el adapter tirando.
 - **AC-6** — `robots.txt` de producción contiene un bloque `User-agent: bingbot` con las
