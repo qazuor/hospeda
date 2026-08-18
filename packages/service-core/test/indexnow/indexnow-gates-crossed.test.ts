@@ -29,8 +29,10 @@ const CREDENTIALS = {
 const NOTIFIABLE_EVENT = { entityType: 'accommodation', slug: 'hotel-a' } as const;
 
 function stubFetch() {
+    // Typed parameters, not a bare `async () =>`: without them `mock.calls` is
+    // an empty tuple and reading calls[0][0] to assert the URL is a type error.
     return vi.fn(
-        async () =>
+        async (_input: string | URL | Request, _init?: RequestInit) =>
             new Response(JSON.stringify({ submitted: 3 }), {
                 status: 200,
                 headers: { 'Content-Type': 'application/json' }
