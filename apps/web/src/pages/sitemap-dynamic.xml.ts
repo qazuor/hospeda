@@ -416,7 +416,7 @@ export const GET: APIRoute = async () => {
         ...buildEntriesForEntity({
             items: resolvedGastronomy,
             siteUrl,
-            pathFn: (slug) => `/gastronomia/${slug}/`,
+            pathFn: ENTITY_PUBLIC_PATHS.gastronomy,
             changefreq: 'weekly',
             priority: 0.8
         })
@@ -427,7 +427,7 @@ export const GET: APIRoute = async () => {
         ...buildEntriesForEntity({
             items: resolvedExperiences,
             siteUrl,
-            pathFn: (slug) => `/experiencias/${slug}/`,
+            pathFn: ENTITY_PUBLIC_PATHS.experience,
             changefreq: 'weekly',
             priority: 0.8
         })

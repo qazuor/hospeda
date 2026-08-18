@@ -187,6 +187,37 @@ describe('POST /api/indexnow — what it submits', () => {
     });
 
     /**
+     * The commerce listings, end to end. They reach this endpoint through the
+     * same union as everything else, and their Spanish segments (`gastronomia`,
+     * `experiencias`) are the ones the site actually serves in every locale.
+     */
+    it('accepts a gastronomy listing and builds its Spanish-segment URLs', async () => {
+        await post(
+            makeRequest({ body: { entities: [{ entityType: 'gastronomy', slug: 'parrilla-x' }] } })
+        );
+
+        const { payload } = submitToIndexNow.mock.calls[0][0];
+        expect(payload.urlList).toEqual([
+            `${SITE}/es/gastronomia/parrilla-x/`,
+            `${SITE}/en/gastronomia/parrilla-x/`,
+            `${SITE}/pt/gastronomia/parrilla-x/`
+        ]);
+    });
+
+    it('accepts an experience listing and builds its Spanish-segment URLs', async () => {
+        await post(
+            makeRequest({ body: { entities: [{ entityType: 'experience', slug: 'kayak-x' }] } })
+        );
+
+        const { payload } = submitToIndexNow.mock.calls[0][0];
+        expect(payload.urlList).toEqual([
+            `${SITE}/es/experiencias/kayak-x/`,
+            `${SITE}/en/experiencias/kayak-x/`,
+            `${SITE}/pt/experiencias/kayak-x/`
+        ]);
+    });
+
+    /**
      * The same-origin guarantee that removes the protocol's 403/422 host
      * failure modes: the key file is advertised on the very host whose URLs are
      * being submitted.

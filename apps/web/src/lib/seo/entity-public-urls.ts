@@ -16,10 +16,23 @@
  * would describe different sites and nothing would fail loudly. So the map lives
  * here once and both import it.
  *
- * Deliberately scoped to the four entity types that have a page of their own AND
- * emit revalidation events. POIs, facet landings and static pages are sitemap-only
- * concerns and stay in the sitemap: they are not driven by a content write, so
- * nothing would ever notify about them.
+ * Scoped to the entity types that have a page of their own, emit revalidation
+ * events carrying a slug, AND are unconditionally public once published.
+ *
+ * That last clause is what keeps three sitemap entities out, and each for a
+ * reason that would otherwise mean advertising a dead URL:
+ *
+ * - `partner` — only GOLD partners have a page. A silver partner's URL 404s,
+ *   and a gold one that was unpublished answers 410. The tier is not knowable
+ *   at the hook that fires the notification.
+ * - `pointOfInterest` — only the curated few carrying `hasOwnPage` render; the
+ *   other ~839 catalog rows 404 by design (see the sitemap's own note).
+ * - `attraction` — its landing lists the destinations that have it, so it is
+ *   closer to a facet page than to a content detail page.
+ *
+ * They are tracked as a follow-up rather than forgotten. Facet landings and
+ * static pages stay sitemap-only for the original reason: no content write
+ * drives them, so nothing would ever notify about them.
  */
 
 import { SITEMAP_LOCALES } from './sitemap-xml';
@@ -32,8 +45,20 @@ import { SITEMAP_LOCALES } from './sitemap-xml';
  * page, not one of their own) and `tag` / `amenity` (which have no page at all).
  * Callers normalize or drop those before reaching this module — an entity type
  * in this list is one that maps to exactly one canonical URL per locale.
+ *
+ * `gastronomy` and `experience` qualify on the same terms as the original four:
+ * a plain detail page, a slug on the event, and a publisher
+ * (`scheduleCommerceListingRevalidation`) that already refuses to schedule
+ * anything `isCommerceListingPubliclyVisible` rejects.
  */
-export const NOTIFIABLE_ENTITY_TYPES = ['accommodation', 'destination', 'event', 'post'] as const;
+export const NOTIFIABLE_ENTITY_TYPES = [
+    'accommodation',
+    'destination',
+    'event',
+    'post',
+    'gastronomy',
+    'experience'
+] as const;
 
 /** An entity type that maps to exactly one public page per locale. */
 export type NotifiableEntityType = (typeof NOTIFIABLE_ENTITY_TYPES)[number];
@@ -51,7 +76,9 @@ export const ENTITY_PUBLIC_PATHS: Readonly<Record<NotifiableEntityType, (slug: s
         accommodation: (slug) => `/alojamientos/${slug}/`,
         destination: (slug) => `/destinos/${slug}/`,
         event: (slug) => `/eventos/${slug}/`,
-        post: (slug) => `/publicaciones/${slug}/`
+        post: (slug) => `/publicaciones/${slug}/`,
+        gastronomy: (slug) => `/gastronomia/${slug}/`,
+        experience: (slug) => `/experiencias/${slug}/`
     };
 
 /**

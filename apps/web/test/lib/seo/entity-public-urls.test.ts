@@ -22,12 +22,18 @@ import {
 const SITE = 'https://hospeda.com.ar';
 
 describe('NOTIFIABLE_ENTITY_TYPES', () => {
-    it('covers exactly the four entity types with a detail page', () => {
+    it('covers exactly the six unconditionally-public detail-page entities', () => {
+        // A frozen literal, not a derivation: this list is one half of a
+        // cross-package contract (service-core decides what to send, this
+        // module decides what a URL looks like), and deriving it from the
+        // module under test would make the assertion pass by construction.
         expect([...NOTIFIABLE_ENTITY_TYPES]).toEqual([
             'accommodation',
             'destination',
             'event',
-            'post'
+            'post',
+            'gastronomy',
+            'experience'
         ]);
     });
 
@@ -55,6 +61,21 @@ describe('isNotifiableEntityType', () => {
         'tag',
         'amenity'
     ])('rejects %s, which has no page of its own', (type) => {
+        expect(isNotifiableEntityType(type)).toBe(false);
+    });
+
+    /**
+     * These three DO have pages and DO appear in the sitemap. They are rejected
+     * because none is unconditionally public: a silver partner 404s and a
+     * retired gold one answers 410, only POIs carrying `hasOwnPage` render, and
+     * an attraction landing is closer to a facet than a detail page. Submitting
+     * a URL that answers 404 is precisely what IndexNow penalizes.
+     */
+    it.each([
+        'attraction',
+        'partner',
+        'pointOfInterest'
+    ])('rejects %s, whose page is conditional', (type) => {
         expect(isNotifiableEntityType(type)).toBe(false);
     });
 
@@ -99,7 +120,9 @@ describe('buildEntityLocaleUrls', () => {
         ['accommodation', 'alojamientos'],
         ['destination', 'destinos'],
         ['event', 'eventos'],
-        ['post', 'publicaciones']
+        ['post', 'publicaciones'],
+        ['gastronomy', 'gastronomia'],
+        ['experience', 'experiencias']
     ] as const)('maps %s to /%s/', (entityType, segment) => {
         const [first] = buildEntityLocaleUrls({ entityType, slug: 's', siteUrl: SITE });
 
@@ -143,16 +166,22 @@ describe('anti-drift: the sitemap consumes this map', () => {
     });
 
     /**
-     * The actual guard. If any of the four detail-page paths is re-inlined as a
-     * template literal, the sitemap and the emitter can disagree again — which
-     * is exactly the failure this module was created to prevent, and it would
+     * The actual guard. If any detail-page path is re-inlined as a template
+     * literal, the sitemap and the emitter can disagree again — which is
+     * exactly the failure this module was created to prevent, and it would
      * otherwise fail silently.
+     *
+     * It covered only the first four segments until now, which is why the
+     * sitemap kept its own inline copies of `/gastronomia/` and
+     * `/experiencias/` unnoticed. A guard proves exactly what its list says.
      */
     it.each([
         'alojamientos',
         'destinos',
         'eventos',
-        'publicaciones'
+        'publicaciones',
+        'gastronomia',
+        'experiencias'
     ])('does not re-inline the /%s/{slug}/ detail path', (segment) => {
         expect(sitemapSrc).not.toContain(`\`/${segment}/\${slug}/\``);
     });
