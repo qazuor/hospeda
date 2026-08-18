@@ -18,6 +18,8 @@ import {
     destinations,
     EventModel,
     eq,
+    experiences,
+    gastronomies,
     getDb,
     PostModel
 } from '@repo/db';
@@ -59,11 +61,23 @@ export function createEntityResolver(): EntityResolver {
                         return await resolveEventById({ entityId });
                     case 'post':
                         return await resolvePostById({ entityId });
+                    case 'gastronomy':
+                    case 'experience':
+                        return await resolveCommerceListingById({ entityType, entityId });
                     case 'accommodation_review':
                     case 'destination_review':
                     case 'tag':
                     case 'amenity':
-                        // These types are not individually resolvable by ID
+                    case 'pointOfInterest':
+                    case 'attraction':
+                    case 'partner':
+                        // Not individually resolvable by ID here. The first four
+                        // have no detail page of their own; the last three do,
+                        // but nothing calls this resolver for them yet — they
+                        // are listed so a future caller lands on a deliberate
+                        // `null` instead of the "unknown entity type" warning
+                        // below, which would read like a typo rather than an
+                        // unimplemented case.
                         return null;
                     default:
                         logger.warn(
@@ -149,6 +163,54 @@ async function resolveEventById(params: {
     return {
         entityType: 'event' as const,
         slug: entity.slug
+    };
+}
+
+// ---------------------------------------------------------------------------
+// Commerce listing resolvers
+// ---------------------------------------------------------------------------
+
+/**
+ * Resolves a single commerce listing (gastronomy or experience) by ID.
+ *
+ * One function for both verticals because they are the same shape to the cache:
+ * a detail page, a listing page, and an optional parent destination whose page
+ * surfaces them. The tag mapper already treats them as one arm for exactly that
+ * reason, so splitting them here would be two copies of one query.
+ *
+ * `id` is returned alongside `slug` because the commerce cache tags are built
+ * from both — the same pair the automatic purge path emits, so a manual
+ * revalidation evicts precisely what a photo upload would have.
+ *
+ * @param params.entityType - Which vertical to read, and the discriminant of the returned data.
+ * @param params.entityId - The listing's UUID.
+ * @returns The change data for the listing, or `null` when no such row exists.
+ */
+async function resolveCommerceListingById(params: {
+    readonly entityType: 'gastronomy' | 'experience';
+    readonly entityId: string;
+}): Promise<EntityChangeData | null> {
+    const table = params.entityType === 'gastronomy' ? gastronomies : experiences;
+
+    const db = getDb();
+    const rows = await db
+        .select({
+            slug: table.slug,
+            destinationSlug: destinations.slug
+        })
+        .from(table)
+        .leftJoin(destinations, eq(table.destinationId, destinations.id))
+        .where(eq(table.id, params.entityId))
+        .limit(1);
+
+    const row = rows[0];
+    if (!row) return null;
+
+    return {
+        entityType: params.entityType,
+        id: params.entityId,
+        slug: row.slug,
+        destinationSlug: row.destinationSlug ?? undefined
     };
 }
 

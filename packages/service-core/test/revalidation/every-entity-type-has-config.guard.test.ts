@@ -18,11 +18,22 @@
  * Deliberately DERIVED from both files rather than asserting a hand-maintained
  * list: a list would need updating by the same person who forgot the config row,
  * so it would rot in precisely the case it exists to catch.
+ *
+ * HOS-389 §4b added a THIRD side: `RevalidationEntityTypeEnum`, the enum every
+ * HTTP-facing revalidation surface validates against. It had drifted five values
+ * behind the other two — `gastronomy`, `experience`, `pointOfInterest`,
+ * `attraction` and `partner` all had a config row and a tag-mapper arm, but the
+ * API rejected them at validation and the admin log filter could not name them.
+ *
+ * That drift is invisible from the purge side, which is why it lasted: automatic
+ * purges scheduled from service hooks never pass through this enum at all, so
+ * everything looked healthy while the manual surfaces were blind.
  */
 
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { RevalidationEntityTypeEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -92,6 +103,39 @@ describe('every EntityChangeData type has a revalidation_config baseline row', (
         expect(
             orphaned,
             `These revalidation_config baseline rows have no matching entityType in the EntityChangeData union, so nothing can ever look them up: ${orphaned.join(', ')}.`
+        ).toEqual([]);
+    });
+});
+
+describe('the HTTP revalidation enum matches the entity types that actually exist', () => {
+    /**
+     * Enumerable at runtime, unlike the union above — so this side is read from
+     * the enum itself rather than parsed out of its source.
+     */
+    const httpEntityTypes = (): readonly string[] => [...RevalidationEntityTypeEnum.options].sort();
+
+    it('accepts every entity type that schedules revalidation', () => {
+        const missing = declaredEntityTypes().filter(
+            (entityType) => !httpEntityTypes().includes(entityType)
+        );
+
+        expect(
+            missing,
+            `These entity types schedule revalidation but RevalidationEntityTypeEnum does not list them, so POST /revalidate/entity and /revalidate/type reject them at validation and the admin log filter cannot select them: ${missing.join(', ')}. Add them to packages/schemas/src/entities/revalidation/revalidation-config.schema.ts.`
+        ).toEqual([]);
+    });
+
+    it('lists no entity type that cannot be purged', () => {
+        // The other direction: an enum value with no union member is a type the
+        // API accepts and the tag mapper then falls through to its `default`
+        // arm for — a request that answers 200 having evicted nothing.
+        const unpurgeable = httpEntityTypes().filter(
+            (entityType) => !declaredEntityTypes().includes(entityType)
+        );
+
+        expect(
+            unpurgeable,
+            `RevalidationEntityTypeEnum accepts these values but no EntityChangeData member declares them, so the cache-tag mapper falls through to its default arm and the request reports success while purging nothing: ${unpurgeable.join(', ')}.`
         ).toEqual([]);
     });
 });
