@@ -581,7 +581,7 @@ describe('ProviderQrPanel', () => {
         );
 
         expect(
-            screen.getByText(new RegExp(URL_TARGET.replace(/[/.]/g, '\\$&')))
+            screen.getByText(new RegExp(URL_TARGET.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')))
         ).toBeInTheDocument();
     });
 
