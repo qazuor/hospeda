@@ -29,6 +29,7 @@ import { startCronScheduler } from './cron';
 import { registerAppLogDbSink } from './lib/app-log-sink';
 import { registerAuditLogPersistence } from './lib/audit-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
+import { isEntityPubliclyVisible } from './lib/indexnow-visibility';
 import { shutdownPostHog } from './lib/posthog';
 import { getRequestContext } from './lib/request-context';
 import { closeSentry, initializeSentry } from './lib/sentry';
@@ -315,7 +316,11 @@ const startServer = async (): Promise<void> => {
                 nodeEnv: env.NODE_ENV,
                 revalidationSecret: env.HOSPEDA_REVALIDATION_SECRET,
                 siteUrl: env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar',
-                isEnabled: () => settingsService.isIndexNowEnabled()
+                isEnabled: () => settingsService.isIndexNowEnabled(),
+                // AC-4: the same hook fires on an UNPUBLISH, because purging the
+                // page that just disappeared is the point of a cache purge.
+                // Announcing it would advertise a URL that now 404s.
+                isPubliclyVisible: isEntityPubliclyVisible
             });
             apiLogger.info(`IndexNow service initialized (adapter: ${indexNow.getAdapterName()})`);
 
