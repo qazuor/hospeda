@@ -56,6 +56,12 @@ vi.mock('@/components/layout/PageTabs', () => ({
     PageTabs: () => <div data-testid="page-tabs" />,
     gastronomyTabs: []
 }));
+// The revalidate button is real UI with its own hooks (react-query, toast,
+// permissions). This file is about field handlers, so it is stubbed here
+// rather than dragged in with a provider tree it does not otherwise need.
+vi.mock('@/components/RevalidateEntityButton', () => ({
+    RevalidateEntityButton: () => <div data-testid="revalidate-entity-button" />
+}));
 vi.mock('@/features/gastronomy', () => ({
     useGastronomyPage: () => ({ entity: null, isLoading: false, error: null, permissions: {} })
 }));

@@ -9,6 +9,7 @@ import {
     RevalidationResponseSchema,
     RevalidationStatsSchema
 } from '../../../src/entities/revalidation/revalidation.http.schema.js';
+import { RevalidationEntityTypeEnum } from '../../../src/entities/revalidation/revalidation-config.schema.js';
 
 // ---------------------------------------------------------------------------
 // ManualRevalidateRequestSchema
@@ -169,22 +170,31 @@ describe('RevalidateEntityRequestSchema', () => {
         });
 
         it('should validate all valid entity types', () => {
-            const validTypes = [
-                'accommodation',
-                'destination',
-                'event',
-                'post',
-                'accommodation_review',
-                'destination_review',
-                'tag',
-                'amenity'
-            ] as const;
-            for (const entityType of validTypes) {
+            // Derived from the enum rather than hand-listed. The hand-listed
+            // version of this test named the original eight and stayed green
+            // through the whole five-value drift that HOS-389 §4b fixed — it
+            // could only ever confirm that the values it already knew about
+            // still parsed, which is the one thing that was never in doubt.
+            for (const entityType of RevalidationEntityTypeEnum.options) {
                 const result = RevalidateEntityRequestSchema.safeParse({
                     entityType,
                     entityId: 'abc-123'
                 });
-                expect(result.success).toBe(true);
+                expect(result.success, `entity type "${entityType}" was rejected`).toBe(true);
+            }
+        });
+
+        it('should accept the commerce listing types (HOS-389 §4b regression)', () => {
+            // The admin "revalidate" button on a gastronomy/experience edit page
+            // posts exactly this body. While these two were missing from the
+            // enum the request failed validation, which is what made the button
+            // unaddable in the first place.
+            for (const entityType of ['gastronomy', 'experience'] as const) {
+                const result = RevalidateEntityRequestSchema.safeParse({
+                    entityType,
+                    entityId: 'abc-123'
+                });
+                expect(result.success, `entity type "${entityType}" was rejected`).toBe(true);
             }
         });
 

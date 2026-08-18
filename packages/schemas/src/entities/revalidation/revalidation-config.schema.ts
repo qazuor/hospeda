@@ -3,6 +3,19 @@ import { z } from 'zod';
 /**
  * Supported entity types for ISR revalidation.
  * Each value corresponds to a content entity that can be revalidated on-demand.
+ *
+ * This list MUST stay in step with two things that already knew about the five
+ * types below long before this enum did: the `EntityChangeData` union in
+ * `@repo/service-core` (which the cache-tag mapper switches on) and the
+ * `revalidation_config` table (seeded for `pointOfInterest`/`attraction`/
+ * `gastronomy`/`experience` by data-migration 0036, and for `partner` by 0046).
+ *
+ * While it lagged, the drift was silent in the worst way: purges scheduled from
+ * service hooks worked fine — they never pass through this enum — but every
+ * surface that DOES was blind to those types. The admin log filter could not
+ * filter them, "revalidate by type" could not name them, and
+ * `POST /revalidate/entity` rejected them at validation, which is what made the
+ * commerce revalidate button impossible to add (HOS-389 §4b).
  */
 export const RevalidationEntityTypeEnum = z.enum([
     'accommodation',
@@ -12,7 +25,12 @@ export const RevalidationEntityTypeEnum = z.enum([
     'accommodation_review',
     'destination_review',
     'tag',
-    'amenity'
+    'amenity',
+    'gastronomy',
+    'experience',
+    'pointOfInterest',
+    'attraction',
+    'partner'
 ]);
 
 /** Union type of all supported revalidation entity types */

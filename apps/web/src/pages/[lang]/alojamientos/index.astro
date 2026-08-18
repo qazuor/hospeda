@@ -24,6 +24,7 @@ import FilterChips from '@/components/shared/ui/FilterChips.astro';
 import { AccommodationTypeEnum } from '@repo/schemas';
 import { FilterSidebar } from '@/components/shared/filters/FilterSidebar.client';
 import { buildAccommodationsFilterGroups } from '@/lib/filters/accommodations-filter-groups';
+import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { accommodationsApi, amenitiesApi, destinationsApi, featuresApi, SSR_PUBLIC_CACHE_TTL_MS } from '@/lib/api/endpoints';
 import { toAccommodationCardProps } from '@/lib/api/transforms';
 import { buildAvailabilityParams } from '@/lib/availability-params';
@@ -37,7 +38,7 @@ import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache'
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
-import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import { resolveCappedChipNote, resolveFacetChipHref } from '@/lib/filters/facet-chip-depth';
 import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
 import { XCircleIcon } from '@repo/icons';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
@@ -544,21 +545,44 @@ applyCacheHeaders({
  * sweep flagged it as an `aria-allowed-attr` violation (invalid on `<a>`).
  * `typeActiveValues` itself is computed once, above, alongside the SEO
  * decision (T-017) — reused here, not recomputed.
+ *
+ * HOS-524 (crawl trap): the href is resolved through `resolveFacetChipHref`,
+ * NOT `buildMultiToggleParamHref` directly — a chip that would grow the
+ * selection past `FACET_CHIP_MAX_ACTIVE_VALUES` gets `undefined` and renders
+ * as an inert chip instead of publishing yet another deeper URL. The
+ * accumulating chip row was the mechanism that turned this listing into a
+ * combinatorial URL space a crawler walked at ~3 req/s (88% of the site's
+ * traffic on 2026-08-12). Removing an active value is never capped.
  */
+// Both plural forms are passed: `resolveCappedChipNote` picks one from the
+// count, so lowering FACET_CHIP_MAX_ACTIVE_VALUES to 1 cannot start
+// announcing "already 1 filters active". (The "Clear (N)" chip above CAN read
+// `_other` directly — its own floor of 2 is a fixed rule, not a tunable.)
+const cappedNoteOneTemplate = t('common.filterChips.cappedNote_one');
+const cappedNoteOtherTemplate = t('common.filterChips.cappedNote_other');
+
 const typeChips = Object.values(AccommodationTypeEnum).map((value) => {
     const enumValue = String(value);
     const active = typeActiveValues.includes(enumValue);
+    const label = getAccommodationTypeLabel({ type: enumValue, t });
     return {
-        label: getAccommodationTypeLabel({ type: enumValue, t }),
-        href: buildMultiToggleParamHref({
+        label,
+        href: resolveFacetChipHref({
             baseUrl,
             searchParams: url.searchParams,
             key: FACET_CONFIG_BY_ID.accommodationType.paramKey,
             value: enumValue,
-            singularKey: FACET_CONFIG_BY_ID.accommodationType.singularParamKey
+            singularKey: FACET_CONFIG_BY_ID.accommodationType.singularParamKey,
+            activeValues: typeActiveValues
         }),
         icon: getAccommodationTypeIcon({ type: enumValue }),
-        active
+        active,
+        capNote: resolveCappedChipNote({
+            active,
+            activeCount: typeActiveValues.length,
+            oneTemplate: cappedNoteOneTemplate,
+            otherTemplate: cappedNoteOtherTemplate
+        })
     };
 });
 
@@ -590,7 +614,8 @@ const typeClearChip = buildClearFacetChip({
 // which already seed their sidebar from their own hoisted active-values var.
 const initialParams: Record<string, string> = {};
 if (q) initialParams.q = q;
-if (typeActiveValues.length > 0) initialParams.types = typeActiveValues.join(',');
+if (typeActiveValues.length > 0)
+	initialParams.types = canonicalizeFacetValues({ values: typeActiveValues }).join(',');
 if (destinationIds) initialParams.destinationIds = destinationIds;
 if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);
@@ -644,11 +669,18 @@ const urlWithoutKeys = (keys: readonly string[]): string => {
 	return qs ? `${baseUrl}?${qs}` : baseUrl;
 };
 
-/** Build a URL with a single value removed from a comma-separated list param. */
+/**
+ * Build a URL with a single value removed from a comma-separated list param.
+ *
+ * HOS-524: the surviving values are re-serialized through the shared canonical
+ * order, so removing a value from a legacy click-ordered URL lands on the SAME
+ * URL the chip row and the sidebar would produce for that selection instead of
+ * carrying the old order forward.
+ */
 const urlWithoutListValue = (key: string, value: string): string => {
 	const sp = new URLSearchParams(url.searchParams);
 	const current = (sp.get(key) ?? '').split(',').filter(Boolean);
-	const next = current.filter((v) => v !== value);
+	const next = canonicalizeFacetValues({ values: current.filter((v) => v !== value) });
 	if (next.length > 0) sp.set(key, next.join(','));
 	else sp.delete(key);
 	sp.delete('page');

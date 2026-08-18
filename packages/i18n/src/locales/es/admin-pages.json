@@ -1471,6 +1471,7 @@
             "title": "Portada",
             "description": "La imagen principal que se muestra al inicio",
             "empty": "Sin portada. Subí una imagen para establecerla.",
+            "altFallback": "Foto de portada",
             "actions": {
                 "upload": "Subir portada",
                 "replace": "Reemplazar portada",
@@ -1484,7 +1485,8 @@
             "cap_other": "Límite alcanzado ({{count}} fotos). Eliminá una para agregar otra.",
             "actions": {
                 "add": "Agregar foto",
-                "remove": "Quitar foto"
+                "remove": "Quitar foto",
+                "makeCover": "Hacer portada"
             }
         },
         "errors": {
@@ -1493,6 +1495,23 @@
             "removeFailed": "No se pudo eliminar la foto. Intentá de nuevo.",
             "setFeaturedFailed": "No se pudo establecer la portada. Intentá de nuevo.",
             "uploadFailed": "No se pudo subir la imagen. Intentá de nuevo."
+        },
+        "photoText": {
+            "title": "Textos de la foto",
+            "description": "Corregí el texto que acompaña a esta foto en la ficha pública.",
+            "fieldAlt": "Texto alternativo",
+            "fieldAltHelp": "Lo que anuncia un lector de pantalla. Describí la foto, no repitas el nombre del alojamiento.",
+            "fieldCaption": "Leyenda",
+            "fieldDescription": "Descripción",
+            "emptyHint": "Dejar un campo vacío lo borra.",
+            "actions": {
+                "edit": "Editar textos",
+                "save": "Guardar",
+                "cancel": "Cancelar"
+            },
+            "errors": {
+                "saveFailed": "No se pudieron guardar los textos. Intentá de nuevo."
+            }
         }
     },
     "partnerMentions": {

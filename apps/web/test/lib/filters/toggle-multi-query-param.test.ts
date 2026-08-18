@@ -4,6 +4,16 @@
  * quick-filter chip href builder that accumulates/removes a value inside a
  * CSV array query param (multi-select) while preserving every other active
  * filter/sort param and always resetting pagination (HOS-96 T-008).
+ *
+ * HOS-524: every CSV expectation below changed from CLICK order to the shared
+ * CANONICAL order (`canonicalizeFacetValues`). That is a deliberate behavior
+ * change, not a test being bent to fit the code: click order made
+ * `?types=HOTEL,CABIN` and `?types=CABIN,HOTEL` two distinct, identically
+ * rendered, edge-uncacheable URLs, which is what turned this chip row into a
+ * crawler trap of ~10^10 URLs. The spec ACs these tests came from (US-1/US-3)
+ * are about ACCUMULATING rather than replacing, and about not scrambling the
+ * rest of the selection when one value is removed — both still hold under a
+ * canonical order, which is stable under removal by construction.
  */
 
 import { describe, expect, it } from 'vitest';
@@ -25,34 +35,34 @@ describe('buildMultiToggleParamHref', () => {
         expect(query(href).getAll('types')).toEqual(['HOTEL']);
     });
 
-    it('appends a new value (accumulates, does not replace) preserving order', () => {
+    it('accumulates a new value (does not replace) in canonical order', () => {
         const href = buildMultiToggleParamHref({
             baseUrl: '/es/alojamientos/',
             searchParams: new URLSearchParams('types=HOTEL'),
             key: 'types',
             value: 'CABIN'
         });
-        expect(query(href).get('types')).toBe('HOTEL,CABIN');
+        expect(query(href).get('types')).toBe('CABIN,HOTEL');
     });
 
-    it('appends a third value preserving insertion order', () => {
+    it('accumulates a third value in canonical order, regardless of click order', () => {
         const href = buildMultiToggleParamHref({
             baseUrl: '/es/alojamientos/',
             searchParams: new URLSearchParams('types=HOTEL,CABIN'),
             key: 'types',
             value: 'APARTMENT'
         });
-        expect(query(href).get('types')).toBe('HOTEL,CABIN,APARTMENT');
+        expect(query(href).get('types')).toBe('APARTMENT,CABIN,HOTEL');
     });
 
-    it('removes only the clicked value when it is present', () => {
+    it('removes only the clicked value when it is present (US-3: the rest survives)', () => {
         const href = buildMultiToggleParamHref({
             baseUrl: '/es/alojamientos/',
             searchParams: new URLSearchParams('types=HOTEL,CABIN,APARTMENT'),
             key: 'types',
             value: 'CABIN'
         });
-        expect(query(href).get('types')).toBe('HOTEL,APARTMENT');
+        expect(query(href).get('types')).toBe('APARTMENT,HOTEL');
     });
 
     it('drops the param entirely when removing the last remaining value (no empty ?key=)', () => {
@@ -77,7 +87,7 @@ describe('buildMultiToggleParamHref', () => {
         expect(params.get('q')).toBe('rio');
         expect(params.get('sortBy')).toBe('featured');
         expect(params.get('categories')).toBe('MUSIC');
-        expect(params.get('types')).toBe('HOTEL,CABIN');
+        expect(params.get('types')).toBe('CABIN,HOTEL');
     });
 
     it('always drops page regardless of add or remove', () => {
@@ -88,7 +98,7 @@ describe('buildMultiToggleParamHref', () => {
             value: 'CABIN'
         });
         expect(query(added).has('page')).toBe(false);
-        expect(query(added).get('types')).toBe('HOTEL,CABIN');
+        expect(query(added).get('types')).toBe('CABIN,HOTEL');
 
         const removed = buildMultiToggleParamHref({
             baseUrl: '/es/alojamientos/',
@@ -102,14 +112,14 @@ describe('buildMultiToggleParamHref', () => {
 
     it('de-duplicates repeated members from a crafted URL (OQ-4)', () => {
         // Adding a brand-new value to a param that already contains duplicates
-        // normalizes the whole param to unique values, preserving first-seen order.
+        // normalizes the whole param to unique values in canonical order.
         const href = buildMultiToggleParamHref({
             baseUrl: '/es/alojamientos/',
             searchParams: new URLSearchParams('types=HOTEL,HOTEL,CABIN'),
             key: 'types',
             value: 'APARTMENT'
         });
-        expect(query(href).get('types')).toBe('HOTEL,CABIN,APARTMENT');
+        expect(query(href).get('types')).toBe('APARTMENT,CABIN,HOTEL');
     });
 
     it('toggling off a duplicated value removes all its occurrences', () => {
@@ -132,7 +142,7 @@ describe('buildMultiToggleParamHref', () => {
             key: 'types',
             value: 'APARTMENT'
         });
-        expect(query(href).get('types')).toBe('HOTEL,CABIN,APARTMENT');
+        expect(query(href).get('types')).toBe('APARTMENT,CABIN,HOTEL');
     });
 
     it('trims whitespace around CSV members', () => {
@@ -142,12 +152,12 @@ describe('buildMultiToggleParamHref', () => {
             key: 'types',
             value: 'APARTMENT'
         });
-        expect(query(href).get('types')).toBe('HOTEL,CABIN,APARTMENT');
+        expect(query(href).get('types')).toBe('APARTMENT,CABIN,HOTEL');
     });
 });
 
 describe('buildMultiToggleParamHref — legacy singular-param fallback (HOS-96 pre-merge review, Option A)', () => {
-    it('?category=MUSIC + click CULTURE -> ?categories=MUSIC,CULTURE with NO category= remaining (seeds from singular, migrates to plural)', () => {
+    it('?category=MUSIC + click CULTURE -> ?categories=CULTURE,MUSIC with NO category= remaining (seeds from singular, migrates to plural)', () => {
         const href = buildMultiToggleParamHref({
             baseUrl: '/es/eventos/',
             searchParams: new URLSearchParams('category=MUSIC'),
@@ -156,7 +166,7 @@ describe('buildMultiToggleParamHref — legacy singular-param fallback (HOS-96 p
             singularKey: 'category'
         });
         const params = query(href);
-        expect(params.get('categories')).toBe('MUSIC,CULTURE');
+        expect(params.get('categories')).toBe('CULTURE,MUSIC');
         expect(params.has('category')).toBe(false);
     });
 
@@ -200,7 +210,7 @@ describe('buildMultiToggleParamHref — legacy singular-param fallback (HOS-96 p
         const params = query(href);
         expect(params.get('q')).toBe('asado');
         expect(params.get('sortBy')).toBe('upcoming');
-        expect(params.get('categories')).toBe('MUSIC,CULTURE');
+        expect(params.get('categories')).toBe('CULTURE,MUSIC');
         expect(params.has('category')).toBe(false);
     });
 

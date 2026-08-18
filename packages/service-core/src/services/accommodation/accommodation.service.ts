@@ -94,6 +94,7 @@ import {
     type CountResponse,
     DestinationTypeEnum,
     type EntityFilters,
+    getGalleryCap,
     httpToDomainAccommodationCreateDraft,
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
@@ -969,6 +970,54 @@ export class AccommodationService extends BaseCrudService<
         );
     }
 
+    /**
+     * Schedules public-page (ISR/Cloudflare) revalidation for one accommodation.
+     *
+     * This is the MECHANISM only — resolve the destination slug, hand the entity
+     * to the revalidation service, and swallow any failure into a warning so a
+     * purge problem can never roll back the write that triggered it.
+     *
+     * **The decision of WHETHER to revalidate stays at the call site.** The
+     * callers do not share one condition: `_afterCreate` revalidates only when
+     * the listing is public NOW, `_afterUpdate` also revalidates when it WAS
+     * public before (an ACTIVE→DRAFT unpublish has to purge the page that just
+     * disappeared), and the visibility/lifecycle hooks revalidate
+     * unconditionally. Folding any of those into this helper would silently
+     * change one of them.
+     *
+     * Extracted in HOS-389: this block was copy-pasted at nine call sites, and
+     * the media methods needed six more. Fifteen copies of a best-effort side
+     * effect is how the two halves drift — one gets a fix the other never sees.
+     *
+     * @param entity - The accommodation to purge (needs `id`, `slug`, `destinationId`).
+     * @param logPrefix - Optional prefix for the warning, e.g. `'[accommodation.publish] '`.
+     */
+    private async _scheduleAccommodationRevalidation(
+        entity: {
+            readonly id: string;
+            readonly slug: string;
+            readonly destinationId?: string | null;
+        },
+        logPrefix = ''
+    ): Promise<void> {
+        const destinationSlug = entity.destinationId
+            ? await this._resolveDestinationSlug(entity.destinationId)
+            : undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation',
+                id: entity.id,
+                slug: entity.slug,
+                destinationSlug
+            });
+        } catch (error) {
+            this.logger.warn(
+                { error, entityType: 'accommodation' },
+                `${logPrefix}Revalidation scheduling failed (non-blocking)`
+            );
+        }
+    }
+
     protected async _afterCreate(
         entity: Accommodation,
         _actor: Actor,
@@ -1034,22 +1083,7 @@ export class AccommodationService extends BaseCrudService<
         // A create can never have a prior public footprint, so `is public now`
         // is a sufficient and always-safe condition here.
         if (this._isPubliclyVisible(entity)) {
-            const destinationSlug = entity.destinationId
-                ? await this._resolveDestinationSlug(entity.destinationId)
-                : undefined;
-            try {
-                getRevalidationService()?.scheduleRevalidation({
-                    entityType: 'accommodation',
-                    id: entity.id,
-                    slug: entity.slug,
-                    destinationSlug
-                });
-            } catch (error) {
-                this.logger.warn(
-                    { error, entityType: 'accommodation' },
-                    'Revalidation scheduling failed (non-blocking)'
-                );
-            }
+            await this._scheduleAccommodationRevalidation(entity);
         }
 
         // SPEC-212: fire-and-forget auto-translation
@@ -1244,22 +1278,7 @@ export class AccommodationService extends BaseCrudService<
         // `undefined` (before-state unknown) falls through to revalidating — the safe default.
         const wasPubliclyVisible = ctx.hookState?.previousPubliclyVisible;
         if (this._isPubliclyVisible(entity) || wasPubliclyVisible !== false) {
-            const destinationSlug = entity.destinationId
-                ? await this._resolveDestinationSlug(entity.destinationId)
-                : undefined;
-            try {
-                getRevalidationService()?.scheduleRevalidation({
-                    entityType: 'accommodation',
-                    id: entity.id,
-                    slug: entity.slug,
-                    destinationSlug
-                });
-            } catch (error) {
-                this.logger.warn(
-                    { error, entityType: 'accommodation' },
-                    'Revalidation scheduling failed (non-blocking)'
-                );
-            }
+            await this._scheduleAccommodationRevalidation(entity);
         }
 
         // Auto-assign HOST role when accommodation becomes ACTIVE.
@@ -1928,22 +1947,7 @@ export class AccommodationService extends BaseCrudService<
                     { timeoutMs: 5000 }
                 );
 
-                const destinationSlug = updated.destinationId
-                    ? await this._resolveDestinationSlug(updated.destinationId)
-                    : undefined;
-                try {
-                    getRevalidationService()?.scheduleRevalidation({
-                        entityType: 'accommodation',
-                        id: updated.id,
-                        slug: updated.slug,
-                        destinationSlug
-                    });
-                } catch (error) {
-                    this.logger.warn(
-                        { error, entityType: 'accommodation' },
-                        '[accommodation.publish] Revalidation scheduling failed (non-blocking)'
-                    );
-                }
+                await this._scheduleAccommodationRevalidation(updated, '[accommodation.publish] ');
 
                 return updated;
             }
@@ -2081,22 +2085,10 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
 
-                const destinationSlug = updated.destinationId
-                    ? await this._resolveDestinationSlug(updated.destinationId)
-                    : undefined;
-                try {
-                    getRevalidationService()?.scheduleRevalidation({
-                        entityType: 'accommodation',
-                        id: updated.id,
-                        slug: updated.slug,
-                        destinationSlug
-                    });
-                } catch (error) {
-                    this.logger.warn(
-                        { error, entityType: 'accommodation' },
-                        '[accommodation.unpublish] Revalidation scheduling failed (non-blocking)'
-                    );
-                }
+                await this._scheduleAccommodationRevalidation(
+                    updated,
+                    '[accommodation.unpublish] '
+                );
 
                 return updated;
             }
@@ -2165,22 +2157,7 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Accommodation> {
-        const destinationSlug = entity.destinationId
-            ? await this._resolveDestinationSlug(entity.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: entity.id,
-                slug: entity.slug,
-                destinationSlug
-            });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        await this._scheduleAccommodationRevalidation(entity);
         return entity;
     }
 
@@ -2210,21 +2187,25 @@ export class AccommodationService extends BaseCrudService<
         if (restored?.destinationId) {
             await this.destinationService.updateAccommodationsCount(restored.destinationId, ctx);
         }
-        const destinationSlug = restored?.destinationId
-            ? await this._resolveDestinationSlug(restored.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: restored?.id,
-                slug: restored?.slug,
-                destinationSlug
+        // HOS-389: restored comes out of `ctx.hookState`, which the matching
+        // `_before*` hook may never have populated. The previous code scheduled
+        // unconditionally, so in that case it queued a purge for
+        // `{ id: undefined, slug: undefined }` — a purge of nothing, and a NULL
+        // `revalidation_log.entity_id`, which is the exact symptom HOS-424 was
+        // filed to eliminate.
+        //
+        // The HOS-424 guard did not catch it: it asserts that a call site
+        // forwarding `slug` also forwards `id`, and both keys WERE present. What
+        // nothing checked was that their VALUES are not undefined.
+        //
+        // With the entity proven present, these three sites can finally use the
+        // canonical helper like the other six.
+        if (restored?.id && restored.slug) {
+            await this._scheduleAccommodationRevalidation({
+                id: restored.id,
+                slug: restored.slug,
+                destinationId: restored.destinationId
             });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
         }
         return result;
     }
@@ -2273,21 +2254,25 @@ export class AccommodationService extends BaseCrudService<
         if (deleted?.destinationId) {
             await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx);
         }
-        const destinationSlug = deleted?.destinationId
-            ? await this._resolveDestinationSlug(deleted.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: deleted?.id,
-                slug: deleted?.slug,
-                destinationSlug
+        // HOS-389: deleted comes out of `ctx.hookState`, which the matching
+        // `_before*` hook may never have populated. The previous code scheduled
+        // unconditionally, so in that case it queued a purge for
+        // `{ id: undefined, slug: undefined }` — a purge of nothing, and a NULL
+        // `revalidation_log.entity_id`, which is the exact symptom HOS-424 was
+        // filed to eliminate.
+        //
+        // The HOS-424 guard did not catch it: it asserts that a call site
+        // forwarding `slug` also forwards `id`, and both keys WERE present. What
+        // nothing checked was that their VALUES are not undefined.
+        //
+        // With the entity proven present, these three sites can finally use the
+        // canonical helper like the other six.
+        if (deleted?.id && deleted.slug) {
+            await this._scheduleAccommodationRevalidation({
+                id: deleted.id,
+                slug: deleted.slug,
+                destinationId: deleted.destinationId
             });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
         }
         return result;
     }
@@ -2319,21 +2304,25 @@ export class AccommodationService extends BaseCrudService<
         if (deleted?.destinationId) {
             await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx);
         }
-        const destinationSlug = deleted?.destinationId
-            ? await this._resolveDestinationSlug(deleted.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: deleted?.id,
-                slug: deleted?.slug,
-                destinationSlug
+        // HOS-389: deleted comes out of `ctx.hookState`, which the matching
+        // `_before*` hook may never have populated. The previous code scheduled
+        // unconditionally, so in that case it queued a purge for
+        // `{ id: undefined, slug: undefined }` — a purge of nothing, and a NULL
+        // `revalidation_log.entity_id`, which is the exact symptom HOS-424 was
+        // filed to eliminate.
+        //
+        // The HOS-424 guard did not catch it: it asserts that a call site
+        // forwarding `slug` also forwards `id`, and both keys WERE present. What
+        // nothing checked was that their VALUES are not undefined.
+        //
+        // With the entity proven present, these three sites can finally use the
+        // canonical helper like the other six.
+        if (deleted?.id && deleted.slug) {
+            await this._scheduleAccommodationRevalidation({
+                id: deleted.id,
+                slug: deleted.slug,
+                destinationId: deleted.destinationId
             });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
         }
         // Best-effort Cloudinary cleanup after confirmed hard delete
         if (result.count > 0 && ctx.hookState?.deletedEntityId && this.mediaProvider) {
@@ -3803,6 +3792,28 @@ export class AccommodationService extends BaseCrudService<
                 const nextSortOrder =
                     typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
 
+                // HOS-389 §2: the per-entity gallery cap WAS already enforced
+                // server-side — but only at the UPLOAD routes
+                // (`media/protected/upload-entity.ts`, `media/admin/upload.ts`),
+                // which is the step that costs a Cloudinary asset. Registering
+                // the row was never capped, so anything reaching `addMedia`
+                // directly with an already-uploaded URL walked straight past it.
+                //
+                // Same `getGalleryCap` constant those routes read, and the same
+                // `state: 'visible'` filter `resolveVisibleGalleryCount` applies
+                // for accommodations — an archived photo does not occupy a slot.
+                // The count is the one this method ALREADY fetched for
+                // `sortOrder`: `findAll` returns a full `total` from its own
+                // count query, independent of `pageSize`. So this costs nothing.
+                const galleryCap = getGalleryCap('accommodation');
+                if (existing.total >= galleryCap) {
+                    throw new ServiceError(
+                        ServiceErrorCode.QUOTA_EXCEEDED,
+                        `Gallery limit of ${galleryCap} photos reached for this accommodation`,
+                        { currentCount: existing.total, maxAllowed: galleryCap }
+                    );
+                }
+
                 const rowToCreate = {
                     ...validated.media,
                     accommodationId: validated.accommodationId as AccommodationIdType,
@@ -3814,6 +3825,20 @@ export class AccommodationService extends BaseCrudService<
                 };
 
                 const createdMedia = await mediaModel.create(rowToCreate, ctx?.tx);
+
+                // HOS-389 §4: the gallery IS the public page's content, so a
+                // photo change has to purge it. Before this, none of the seven
+                // media methods scheduled anything — a host replaced the cover
+                // and the listing kept serving the old one from cache until some
+                // unrelated edit happened to purge it.
+                //
+                // Guarded on public visibility for the same reason `_afterCreate`
+                // is (HOS-203): a DRAFT/PRIVATE listing has no public footprint,
+                // so purging its paths is wasted work and logged 404s in prod.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: createdMedia };
             }
         });
@@ -3901,6 +3926,11 @@ export class AccommodationService extends BaseCrudService<
                     await doRemove(ctx.tx);
                 } else {
                     await withTransaction(doRemove);
+                }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
                 }
 
                 return { success: true };
@@ -4015,6 +4045,11 @@ export class AccommodationService extends BaseCrudService<
                         return row ? { ...row, sortOrder: idx } : null;
                     })
                     .filter((r): r is NonNullable<typeof r> => r !== null);
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
 
                 return { media: reordered };
             }
@@ -4146,6 +4181,14 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after set-featured'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale. This is
+                // the loudest case: changing the cover changes the first image a
+                // visitor and every social preview sees.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: updated };
             }
         });
@@ -4225,6 +4268,14 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after update'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale. `alt`
+                // is rendered into the public page, so correcting it has to
+                // reach the cache.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: updated };
             }
         });
@@ -4306,6 +4357,12 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after archive'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: archived };
             }
         });
@@ -4393,6 +4450,14 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after restore'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                // Restoring an archived photo puts it back in the public
+                // gallery, so it purges exactly like archiving does.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: restored };
             }
         });
@@ -4470,22 +4535,10 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
 
-                const destinationSlug = updated.destinationId
-                    ? await this._resolveDestinationSlug(updated.destinationId)
-                    : undefined;
-                try {
-                    getRevalidationService()?.scheduleRevalidation({
-                        entityType: 'accommodation',
-                        id: updated.id,
-                        slug: updated.slug,
-                        destinationSlug
-                    });
-                } catch (error) {
-                    this.logger.warn(
-                        { error, entityType: 'accommodation' },
-                        '[accommodation.verifyAccommodation] Revalidation scheduling failed (non-blocking)'
-                    );
-                }
+                await this._scheduleAccommodationRevalidation(
+                    updated,
+                    '[accommodation.verifyAccommodation] '
+                );
 
                 return updated;
             }

@@ -1471,6 +1471,7 @@
             "title": "Cover photo",
             "description": "The main image shown at the top",
             "empty": "No cover photo. Upload one to set it.",
+            "altFallback": "Cover photo",
             "actions": {
                 "upload": "Upload cover",
                 "replace": "Replace cover",
@@ -1484,7 +1485,8 @@
             "cap_other": "Limit reached ({{count}} photos). Delete one to add another.",
             "actions": {
                 "add": "Add photo",
-                "remove": "Remove photo"
+                "remove": "Remove photo",
+                "makeCover": "Make cover"
             }
         },
         "errors": {
@@ -1493,6 +1495,23 @@
             "removeFailed": "Could not remove the photo. Please try again.",
             "setFeaturedFailed": "Could not set the cover photo. Please try again.",
             "uploadFailed": "Could not upload the image. Please try again."
+        },
+        "photoText": {
+            "title": "Photo text",
+            "description": "Correct the text shown with this photo on the public page.",
+            "fieldAlt": "Alt text",
+            "fieldAltHelp": "What a screen reader announces. Describe the photo; do not repeat the property name.",
+            "fieldCaption": "Caption",
+            "fieldDescription": "Description",
+            "emptyHint": "Leaving a field empty clears it.",
+            "actions": {
+                "edit": "Edit text",
+                "save": "Save",
+                "cancel": "Cancel"
+            },
+            "errors": {
+                "saveFailed": "The text could not be saved. Try again."
+            }
         }
     },
     "partnerMentions": {

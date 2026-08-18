@@ -182,10 +182,16 @@ describe('accommodations sidebar seed coherence — unlike events/blog, this pag
     it('seeds the sidebar initialParams.types from typeActiveValues (fallback-aware), not the raw types URL string', () => {
         const initialParamsBlock = src.slice(
             src.indexOf('const initialParams: Record<string, string> = {};'),
-            src.indexOf('const initialParams: Record<string, string> = {};') + 200
+            src.indexOf('const initialParams: Record<string, string> = {};') + 400
         );
+        // HOS-524 wrapped the value in `canonicalizeFacetValues`, so the
+        // pattern now REQUIRES that wrapper as well as the join: it still
+        // asserts the value comes from the hoisted active-values array and
+        // is a CSV string (never the raw array, which `serializeParams`
+        // would stringify implicitly), and additionally that it is
+        // serialized in the one canonical order every writer shares.
         expect(initialParamsBlock).toMatch(
-            /if\s*\(typeActiveValues\.length\s*>\s*0\)\s*initialParams\.types\s*=\s*typeActiveValues\.join\(','\);/
+            /if\s*\(typeActiveValues\.length\s*>\s*0\)\s*initialParams\.types\s*=\s*canonicalizeFacetValues\(\{\s*values:\s*typeActiveValues\s*\}\)\.join\(','\);/
         );
         expect(initialParamsBlock).not.toMatch(
             /if\s*\(types\)\s*initialParams\.types\s*=\s*types;/

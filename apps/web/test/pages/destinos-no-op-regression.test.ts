@@ -66,6 +66,11 @@ describe('destinos/index.astro — AND-combination behavior markers still presen
 
     it('still uses its own client-side AND-matching logic (cardAttractionIds / next.size / target.searchParams), not a shared OR-union helper', () => {
         expect(src).toContain('cardAttractionIds');
-        expect(src).toContain("target.searchParams.set('attractions'");
+        // HOS-524 reformatted this write across lines (the value now goes
+        // through `canonicalizeFacetValues`), so the single-line marker no
+        // longer exists. Re-anchored as ONE regex spanning the call rather than
+        // two independent `toContain`s, which could each be satisfied by an
+        // unrelated occurrence elsewhere in the file.
+        expect(src).toMatch(/target\.searchParams\.set\(\s*'attractions',/);
     });
 });

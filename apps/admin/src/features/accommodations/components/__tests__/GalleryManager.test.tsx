@@ -56,6 +56,14 @@ vi.mock('@/features/accommodations/hooks/useAccommodationMedia', () => ({
         mutateAsync: mockSetFeaturedMutateAsync,
         isPending: false,
         isError: false
+    }),
+    // HOS-388: GalleryManager now renders GalleryPhotoTextDialog, which calls
+    // this hook. A module mock has to export everything the tree reaches, not
+    // just what the component under test calls directly.
+    useAccommodationMediaUpdateText: () => ({
+        mutateAsync: vi.fn(),
+        isPending: false,
+        isError: false
     })
 }));
 
@@ -532,5 +540,63 @@ describe('GalleryManager — load error', () => {
         const alert = screen.getByRole('alert');
         expect(alert).toBeDefined();
         expect(alert.textContent).toContain('admin-pages.gallery.errors.loadFailed');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-389 §1 — promoting an existing gallery photo to portada
+// ---------------------------------------------------------------------------
+
+describe('make cover (HOS-389 §1)', () => {
+    /**
+     * Setting a cover is a three-step chain: upload → addMedia → setFeatured.
+     * When only the last step fails the row lands in the gallery unfeatured,
+     * and before this action the ONLY recovery was uploading the same file
+     * again — a second row and a second billed Cloudinary asset.
+     *
+     * The mutation was already wired into this component for the upload flow;
+     * what was missing was any way to reach it for a photo already in the grid.
+     * That is exactly the shape of gap a rendered-button assertion catches and
+     * a hook test does not.
+     */
+    /**
+     * The button is `opacity-0` until hover/focus but IS in the DOM, so it is
+     * queried by its aria-label attribute — the same approach the remove-button
+     * tests above use, and the reason they do not use a visibility-aware query.
+     */
+    function findMakeCoverButtons() {
+        const gallerySection = screen.getByRole('region', {
+            name: 'admin-pages.gallery.grid.title'
+        });
+        return Array.from(
+            gallerySection.querySelectorAll(
+                'button[aria-label="admin-pages.gallery.grid.actions.makeCover"]'
+            )
+        );
+    }
+
+    it('exposes a make-cover action on every gallery tile', () => {
+        // The harness renders an EMPTY gallery by default, so the rows have to
+        // be seeded or this passes by rendering nothing at all.
+        mockListData.data = [makeGalleryRow('g-1'), makeGalleryRow('g-2')];
+
+        renderGalleryManager();
+
+        expect(findMakeCoverButtons()).toHaveLength(2);
+    });
+
+    it('promotes the clicked photo, by id', () => {
+        mockListData.data = [makeGalleryRow('g-1'), makeGalleryRow('g-2')];
+        mockSetFeaturedMutateAsync.mockResolvedValue({ id: 'g-2' });
+
+        renderGalleryManager();
+
+        const buttons = findMakeCoverButtons();
+        fireEvent.click(buttons[1] as Element);
+
+        expect(mockSetFeaturedMutateAsync).toHaveBeenCalledTimes(1);
+        // Asserts the id, not merely that something was called: a handler
+        // closing over the wrong variable still satisfies a call-count check.
+        expect(mockSetFeaturedMutateAsync).toHaveBeenCalledWith({ mediaId: 'g-2' });
     });
 });

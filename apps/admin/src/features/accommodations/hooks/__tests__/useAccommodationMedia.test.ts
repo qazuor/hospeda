@@ -14,8 +14,9 @@ import { ModerationStatusEnum } from '@repo/schemas';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import * as React from 'react';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fetchApi } from '@/lib/api/client';
+import { accommodationQueryKeys } from '../accommodationQueryKeys';
 import {
     accommodationMediaQueryKeys,
     useAccommodationMediaAdd,
@@ -288,6 +289,90 @@ describe('useAccommodationMediaSetFeatured', () => {
         expect(invalidateSpy).toHaveBeenCalledWith(
             expect.objectContaining({
                 queryKey: accommodationMediaQueryKeys.list('acc-1')
+            })
+        );
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-389 §3 — the cached ENTITY must be invalidated too
+// ---------------------------------------------------------------------------
+
+describe('gallery mutations invalidate the cached accommodation (HOS-389 §3)', () => {
+    /**
+     * Before this fix each mutation invalidated only the media list, so the edit
+     * page kept rendering the stale entity — whose server-composed `media`
+     * object feeds the quality score — and reported "no cover" right after a
+     * cover was uploaded, until some unrelated refetch happened to refresh it.
+     */
+    const ACCOMMODATION_ID = 'acc-1';
+
+    let queryClient: QueryClient;
+    let invalidateSpy: ReturnType<typeof vi.spyOn>;
+
+    function wrapper({ children }: { readonly children: React.ReactNode }) {
+        return React.createElement(QueryClientProvider, { client: queryClient }, children);
+    }
+
+    beforeEach(() => {
+        queryClient = new QueryClient({
+            defaultOptions: { queries: { retry: false }, mutations: { retry: false } }
+        });
+        invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries');
+    });
+
+    it('add invalidates the accommodation detail as well as the media list', async () => {
+        mockedFetchApi.mockResolvedValue({
+            data: { success: true, data: { media: makeMedia() } },
+            status: 201
+        });
+
+        const { result } = renderHook(() => useAccommodationMediaAdd(ACCOMMODATION_ID), {
+            wrapper
+        });
+
+        await act(async () => {
+            await result.current.mutateAsync({
+                url: 'https://example.com/x.jpg',
+                publicId: 'x'
+            } as never);
+        });
+
+        // The resolved key, not the helper: this is what proves the media hook
+        // and the entity hook agree on where the cached entity lives.
+        expect(invalidateSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                queryKey: accommodationQueryKeys.detail(ACCOMMODATION_ID)
+            })
+        );
+        // An addition, not a swap — the list must still be invalidated.
+        expect(invalidateSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                queryKey: accommodationMediaQueryKeys.list(ACCOMMODATION_ID)
+            })
+        );
+        expect(invalidateSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('set-featured invalidates the accommodation detail', async () => {
+        // The loudest case: promoting a cover is exactly when the page's
+        // "no cover" signal has to stop being true.
+        mockedFetchApi.mockResolvedValue({
+            data: { success: true, data: { media: makeMedia() } },
+            status: 200
+        });
+
+        const { result } = renderHook(() => useAccommodationMediaSetFeatured(ACCOMMODATION_ID), {
+            wrapper
+        });
+
+        await act(async () => {
+            await result.current.mutateAsync({ mediaId: 'media-1' } as never);
+        });
+
+        expect(invalidateSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+                queryKey: accommodationQueryKeys.detail(ACCOMMODATION_ID)
             })
         );
     });
