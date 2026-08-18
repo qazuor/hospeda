@@ -571,3 +571,49 @@ describe('CommerceGalleryManager — vertical prop wiring', () => {
         });
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-389 §1 — promote an existing gallery photo to portada
+// ---------------------------------------------------------------------------
+
+describe('CommerceGalleryManager — make cover', () => {
+    /**
+     * Scoped to the grid region so the portada slot's own controls can never
+     * be mistaken for a tile action.
+     */
+    function findMakeCoverButtons() {
+        const gallerySection = screen.getByRole('region', {
+            name: 'admin-pages.gallery.grid.title'
+        });
+        return Array.from(
+            gallerySection.querySelectorAll(
+                'button[aria-label="admin-pages.gallery.grid.actions.makeCover"]'
+            )
+        );
+    }
+
+    it('exposes a make-cover action on every gallery tile', () => {
+        // The harness renders an EMPTY gallery by default, so the rows have to
+        // be seeded or this passes by rendering nothing at all.
+        mockListData.data = [makeGalleryRow('g-1'), makeGalleryRow('g-2', 2)];
+
+        renderGalleryManager();
+
+        expect(findMakeCoverButtons()).toHaveLength(2);
+    });
+
+    it('promotes the clicked photo, by id', () => {
+        mockListData.data = [makeGalleryRow('g-1'), makeGalleryRow('g-2', 2)];
+        mockSetFeaturedMutateAsync.mockResolvedValue({ id: 'g-2' });
+
+        renderGalleryManager();
+
+        const buttons = findMakeCoverButtons();
+        fireEvent.click(buttons[1] as Element);
+
+        expect(mockSetFeaturedMutateAsync).toHaveBeenCalledTimes(1);
+        // Asserts the id, not merely that something was called: a handler
+        // closing over the wrong variable still satisfies a call-count check.
+        expect(mockSetFeaturedMutateAsync).toHaveBeenCalledWith({ mediaId: 'g-2' });
+    });
+});
