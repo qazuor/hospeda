@@ -25,6 +25,7 @@
 import type { APIRoute } from 'astro';
 import { getApiUrl, getSiteUrl } from '../lib/env';
 import { ACCOMMODATION_TYPE_SLUG_BY_ENUM, EVENT_CATEGORY_SLUG_BY_ENUM } from '../lib/facet-slugs';
+import { ENTITY_PUBLIC_PATHS } from '../lib/seo/entity-public-urls';
 import { evaluatePartnerIndexability } from '../lib/seo/partner-indexable';
 import {
     buildLocalizedUrlEntries,
@@ -362,7 +363,7 @@ export const GET: APIRoute = async () => {
         ...buildEntriesForEntity({
             items: resolvedAccommodations,
             siteUrl,
-            pathFn: (slug) => `/alojamientos/${slug}/`,
+            pathFn: ENTITY_PUBLIC_PATHS.accommodation,
             changefreq: 'weekly',
             priority: 0.8
         })
@@ -382,7 +383,7 @@ export const GET: APIRoute = async () => {
         ...buildEntriesForEntity({
             items: indexableDestinations,
             siteUrl,
-            pathFn: (slug) => `/destinos/${slug}/`,
+            pathFn: ENTITY_PUBLIC_PATHS.destination,
             changefreq: 'weekly',
             priority: 0.8
         })
@@ -393,7 +394,7 @@ export const GET: APIRoute = async () => {
         ...buildEntriesForEntity({
             items: resolvedEvents,
             siteUrl,
-            pathFn: (slug) => `/eventos/${slug}/`,
+            pathFn: ENTITY_PUBLIC_PATHS.event,
             changefreq: 'weekly',
             priority: 0.8
         })
@@ -404,7 +405,7 @@ export const GET: APIRoute = async () => {
         ...buildEntriesForEntity({
             items: resolvedPosts,
             siteUrl,
-            pathFn: (slug) => `/publicaciones/${slug}/`,
+            pathFn: ENTITY_PUBLIC_PATHS.post,
             changefreq: 'weekly',
             priority: 0.8
         })
