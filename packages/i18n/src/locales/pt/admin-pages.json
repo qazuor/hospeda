@@ -1483,7 +1483,8 @@
             "cap_other": "Limite atingido ({{count}} fotos). Exclua uma para adicionar outra.",
             "actions": {
                 "add": "Adicionar foto",
-                "remove": "Remover foto"
+                "remove": "Remover foto",
+                "makeCover": "Definir como capa"
             }
         },
         "errors": {

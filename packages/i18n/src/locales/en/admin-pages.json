@@ -1483,7 +1483,8 @@
             "cap_other": "Limit reached ({{count}} photos). Delete one to add another.",
             "actions": {
                 "add": "Add photo",
-                "remove": "Remove photo"
+                "remove": "Remove photo",
+                "makeCover": "Make cover"
             }
         },
         "errors": {
