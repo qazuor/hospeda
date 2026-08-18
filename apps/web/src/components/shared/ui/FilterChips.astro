@@ -52,6 +52,14 @@
  * shift under the user mid-selection). Removing an active value is never
  * capped, so a capped row is always exitable.
  *
+ * That capped `<span>` carries no `role`, so its implicit role is `generic` —
+ * and ARIA PROHIBITS naming a `generic` element. An `aria-label` on it is not
+ * merely ignored by some screen readers: the accessible name is never computed,
+ * and axe flags it (`aria-prohibited-attr`, the same family as the
+ * `aria-pressed`-on-`<a>` violation HOS-96 had to remove). The explanation
+ * therefore ships as visually-hidden TEXT inside the chip (`capNote`), which
+ * every screen reader reads and no sighted user sees.
+ *
  * Rendering: Static (no client JavaScript besides the scroll-fade/arrow script).
  */
 import type { ComponentType } from 'react';
@@ -93,6 +101,13 @@ interface ChipItem {
      * compatible.
      */
     readonly ariaLabel?: string;
+    /**
+     * Screen-reader-only explanation for a chip the depth cap made inert
+     * (HOS-524), from `resolveCappedChipNote`. Rendered as visually-hidden text
+     * inside the chip — see the ARIA note in this file's header for why it is
+     * NOT an `aria-label`. Ignored on a chip that has an `href`.
+     */
+    readonly capNote?: string;
     /** Optional leading icon component (already resolved by the caller). */
     readonly icon?: ComponentType<IconProps>;
 }
@@ -139,7 +154,7 @@ const {
     <nav class="filter-chips__nav" aria-label={ariaLabel}>
         <div class="filter-chips__fade-wrapper">
             <ul class="filter-chips__list" role="list" data-filter-chips-list>
-                {chips.map(({ label, href, active, icon: Icon, ariaLabel }) => {
+                {chips.map(({ label, href, active, icon: Icon, ariaLabel, capNote }) => {
                     // HOS-369 WA-2: nofollow only the query-param facet views;
                     // path-based landings keep their crawlable link equity.
                     const rel = href && shouldNofollowFacetHref({ href }) ? 'nofollow' : undefined;
@@ -169,9 +184,9 @@ const {
                                 <span
                                     class="filter-chips__chip filter-chips__chip--capped"
                                     aria-disabled="true"
-                                    aria-label={ariaLabel}
                                 >
                                     {chipBody}
+                                    {capNote && <span class="sr-only">{capNote}</span>}
                                 </span>
                             )}
                         </li>

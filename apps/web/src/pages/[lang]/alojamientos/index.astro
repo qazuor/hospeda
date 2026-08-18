@@ -38,10 +38,7 @@ import { hasActiveAccommodationListingFilters } from '@/lib/cache/listing-cache'
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
-import {
-    resolveCappedChipAriaLabel,
-    resolveFacetChipHref
-} from '@/lib/filters/facet-chip-depth';
+import { resolveCappedChipNote, resolveFacetChipHref } from '@/lib/filters/facet-chip-depth';
 import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
 import { XCircleIcon } from '@repo/icons';
 import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
@@ -557,11 +554,12 @@ applyCacheHeaders({
  * combinatorial URL space a crawler walked at ~3 req/s (88% of the site's
  * traffic on 2026-08-12). Removing an active value is never capped.
  */
-// `resolveCappedChipAriaLabel` only produces a name at or above
-// FACET_CHIP_MAX_ACTIVE_VALUES (3), so the `_one` plural form is unreachable
-// here — the `_other` key is read directly rather than faking a ternary over an
-// impossible branch (same reasoning as the "Clear (N)" chip above).
-const cappedChipAriaLabelTemplate = t('common.filterChips.cappedAriaLabel_other');
+// Both plural forms are passed: `resolveCappedChipNote` picks one from the
+// count, so lowering FACET_CHIP_MAX_ACTIVE_VALUES to 1 cannot start
+// announcing "already 1 filters active". (The "Clear (N)" chip above CAN read
+// `_other` directly — its own floor of 2 is a fixed rule, not a tunable.)
+const cappedNoteOneTemplate = t('common.filterChips.cappedNote_one');
+const cappedNoteOtherTemplate = t('common.filterChips.cappedNote_other');
 
 const typeChips = Object.values(AccommodationTypeEnum).map((value) => {
     const enumValue = String(value);
@@ -579,11 +577,11 @@ const typeChips = Object.values(AccommodationTypeEnum).map((value) => {
         }),
         icon: getAccommodationTypeIcon({ type: enumValue }),
         active,
-        ariaLabel: resolveCappedChipAriaLabel({
-            label,
+        capNote: resolveCappedChipNote({
             active,
             activeCount: typeActiveValues.length,
-            ariaLabelTemplate: cappedChipAriaLabelTemplate
+            oneTemplate: cappedNoteOneTemplate,
+            otherTemplate: cappedNoteOtherTemplate
         })
     };
 });
@@ -616,7 +614,8 @@ const typeClearChip = buildClearFacetChip({
 // which already seed their sidebar from their own hoisted active-values var.
 const initialParams: Record<string, string> = {};
 if (q) initialParams.q = q;
-if (typeActiveValues.length > 0) initialParams.types = typeActiveValues.join(',');
+if (typeActiveValues.length > 0)
+	initialParams.types = canonicalizeFacetValues({ values: typeActiveValues }).join(',');
 if (destinationIds) initialParams.destinationIds = destinationIds;
 if (minPrice !== undefined) initialParams.minPrice = String(minPrice);
 if (maxPrice !== undefined) initialParams.maxPrice = String(maxPrice);

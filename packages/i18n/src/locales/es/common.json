@@ -109,8 +109,8 @@
         "clearLabel": "Limpiar ({{count}})",
         "clearAriaLabel_one": "Limpiar {{count}} filtro",
         "clearAriaLabel_other": "Limpiar {{count}} filtros",
-        "cappedAriaLabel_one": "{{label}} — no disponible: ya hay {{count}} filtro activo",
-        "cappedAriaLabel_other": "{{label}} — no disponible: ya hay {{count}} filtros activos"
+        "cappedNote_one": "No disponible: ya hay {{count}} filtro activo",
+        "cappedNote_other": "No disponible: ya hay {{count}} filtros activos"
     },
     "goHome": "Volver al inicio",
     "in": "en",

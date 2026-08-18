@@ -51,9 +51,34 @@ describe('FilterChips.astro', () => {
         });
 
         it('renders an href-less chip as an inert <span>, never as an <a> (HOS-524)', () => {
-            expect(src).toMatch(/<span\s[\s\S]*?aria-disabled="true"/);
+            // Scoped to the ternary's FALSE branch. An unscoped
+            // /<span[\s\S]*?aria-disabled/ over the whole file is vacuous: the
+            // lazy quantifier bridges from the icon <span> on any earlier line
+            // to any later aria-disabled, so it keeps matching even with the
+            // capped element mutated back to an <a>. Verified by doing exactly
+            // that — the old assertion stayed green.
+            const cappedBranch = src.slice(
+                src.indexOf(') : ('),
+                src.indexOf(')}\n', src.indexOf(') : ('))
+            );
+            expect(cappedBranch).toContain('<span');
+            expect(cappedBranch).not.toContain('<a');
+            expect(cappedBranch).toContain('aria-disabled="true"');
             // The anchor branch must be conditional on the href existing.
             expect(src).toMatch(/\{href \? \(/);
+        });
+
+        it('gives the inert chip a screen-reader note, NOT an aria-label (HOS-524)', () => {
+            // A role-less <span> is `generic`, and ARIA prohibits naming a
+            // generic element: an aria-label there is never computed into an
+            // accessible name at all, and axe flags it (aria-prohibited-attr).
+            const cappedBranch = src.slice(
+                src.indexOf(') : ('),
+                src.indexOf(')}\n', src.indexOf(') : ('))
+            );
+            expect(cappedBranch).toContain('class="sr-only"');
+            expect(cappedBranch).toContain('capNote');
+            expect(cappedBranch).not.toContain('aria-label');
         });
 
         it('defines an optional readonly icon property (BETA-113 icon parity)', () => {

@@ -60,6 +60,7 @@ describe('publicaciones/index.astro — category chips wired to real multi-selec
         it('builds each category chip href via resolveFacetChipHref keyed on the postCategory paramKey (categories)', () => {
             expect(chipsBlock).toContain('resolveFacetChipHref({');
             expect(chipsBlock).toContain('activeValues: postCategoryActiveValues');
+            expect(chipsBlock).toContain('capNote: resolveCappedChipNote({');
             expect(chipsBlock).toContain('FACET_CONFIG_BY_ID.postCategory.paramKey');
         });
 
@@ -96,8 +97,14 @@ describe('publicaciones/index.astro — category chips wired to real multi-selec
             );
             expect(fetchBlock).toContain('category,');
             expect(fetchBlock).toContain('categories:');
+            // HOS-524 wrapped the value in `canonicalizeFacetValues`, so the
+            // pattern now REQUIRES that wrapper as well as the join: it still
+            // asserts the value comes from the hoisted active-values array and
+            // is a CSV string (never the raw array, which `serializeParams`
+            // would stringify implicitly), and additionally that it is
+            // serialized in the one canonical order every writer shares.
             expect(fetchBlock).toMatch(
-                /categories:\s*postCategoryActiveValues\.length\s*>\s*0\s*\?\s*postCategoryActiveValues\.join\(','\)\s*:\s*undefined/
+                /categories:\s*postCategoryActiveValues\.length\s*>\s*0\s*\?\s*canonicalizeFacetValues\(\{\s*values:\s*postCategoryActiveValues\s*\}\)\.join\(','\)\s*:\s*undefined/
             );
         });
     });

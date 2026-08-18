@@ -8,12 +8,22 @@
  * remaining value, each linking one value DEEPER. `?types=CABIN` published
  * twelve `?types=CABIN,<X>` links, each of which published eleven more, and so
  * on — the full subset lattice of the facet, published as real links by the
- * page itself. Canonical ordering alone brings accommodations down to 8.192
- * URLs and post categories to 262.144, and destinos (whose attraction badges
- * are DB-driven, dozens of values) stays in the billions. Capping the ADD
- * affordance at {@link FACET_CHIP_MAX_ACTIVE_VALUES} bounds each facet to the
- * subsets of size <= N: 377 URLs for accommodations, 129 for events, 987 for
- * blog, a few thousand for destinos.
+ * page itself. Capping the ADD affordance at
+ * {@link FACET_CHIP_MAX_ACTIVE_VALUES} bounds each facet to the subsets of
+ * size <= N.
+ *
+ * Counted over the chips each page ACTUALLY emits, which is not the size of
+ * the backing enum: eventos and publicaciones render hardcoded rows of 8
+ * (`CATEGORY_CHIP_DEFS` / `POST_CATEGORY_CHIP_DEFS`) against enums of 9 and
+ * 18, and destinos' badges are DB-driven (45 today, the union of attractions
+ * across every loaded destination).
+ *
+ * | facet          | chips | canonical only | capped at 3 |
+ * |----------------|-------|----------------|-------------|
+ * | accommodations |    13 |          8.192 |         377 |
+ * | events         |     8 |            256 |          92 |
+ * | blog           |     8 |            256 |          92 |
+ * | destinos       |    45 |       ~3,5e+13 |      15.225 |
  *
  * **What the cap does NOT do.** It never blocks REMOVING a value: an active
  * chip keeps its href at any depth, so a crafted deep URL is always exitable
@@ -99,44 +109,52 @@ export function resolveFacetChipHref({
     return buildMultiToggleParamHref({ baseUrl, searchParams, key, value, singularKey });
 }
 
-interface ResolveCappedChipAriaLabelParams {
-    /** The chip's visible label (e.g. `"Cabaña"`). */
-    readonly label: string;
+interface ResolveCappedChipNoteParams {
     /** Whether this chip's value is currently active (an active chip is never capped). */
     readonly active: boolean;
     /** How many values of this facet are currently active. */
     readonly activeCount: number;
     /**
-     * Raw i18n template with literal `{{label}}` / `{{count}}` placeholders
-     * (`t('common.filterChips.cappedAriaLabel')`), interpolated here — the same
-     * framework-agnostic convention `buildClearFacetChip` uses, which keeps
-     * this module free of any i18n dependency.
+     * Raw i18n templates with a literal `{{count}}` placeholder
+     * (`t('common.filterChips.cappedNote_one' | '..._other')`), interpolated
+     * here — the same framework-agnostic convention `buildClearFacetChip`
+     * uses, which keeps this module free of any i18n dependency.
+     *
+     * BOTH forms are required even though the singular is unreachable at the
+     * current cap of 3. {@link FACET_CHIP_MAX_ACTIVE_VALUES} is presented as an
+     * owner-tunable number, and a caller that hardcoded the plural would start
+     * announcing "already 1 filters active" the day it drops to 1.
      */
-    readonly ariaLabelTemplate: string;
+    readonly oneTemplate: string;
+    readonly otherTemplate: string;
 }
 
 /**
- * Build the accessible name for a chip the depth cap has made inert, or
- * `undefined` for a chip that is still interactive (which keeps its visible
- * label as its accessible name — no attribute is rendered).
+ * Build the screen-reader note for a chip the depth cap has made inert, or
+ * `undefined` for a chip that is still interactive.
  *
- * A muted, non-clickable chip with no explanation is the failure mode this
- * avoids: without it, the only signal that the row stopped accepting new values
- * is a visual opacity change, which conveys nothing to a screen reader.
+ * Rendered as visually-hidden text INSIDE the chip (see `FilterChips.astro`),
+ * never as an `aria-label` on it: a capped chip is a `<span>` with no `role`,
+ * whose implicit role is `generic`, and ARIA prohibits naming a `generic`
+ * element — the label would simply not be computed, and axe flags it
+ * (`aria-prohibited-attr`). The note therefore excludes the chip's own label,
+ * which the visible text already provides.
  *
- * @param params - See {@link ResolveCappedChipAriaLabelParams}.
- * @returns The interpolated accessible name, or `undefined` when not capped.
+ * Without it, the only signal that the row stopped accepting new values is a
+ * change in opacity, which conveys nothing to a screen reader.
+ *
+ * @param params - See {@link ResolveCappedChipNoteParams}.
+ * @returns The interpolated note, or `undefined` when not capped.
  */
-export function resolveCappedChipAriaLabel({
-    label,
+export function resolveCappedChipNote({
     active,
     activeCount,
-    ariaLabelTemplate
-}: ResolveCappedChipAriaLabelParams): string | undefined {
+    oneTemplate,
+    otherTemplate
+}: ResolveCappedChipNoteParams): string | undefined {
     if (active || activeCount < FACET_CHIP_MAX_ACTIVE_VALUES) {
         return undefined;
     }
-    return ariaLabelTemplate
-        .replace(/\{\{label\}\}/g, label)
-        .replace(/\{\{count\}\}/g, String(activeCount));
+    const template = activeCount === 1 ? oneTemplate : otherTemplate;
+    return template.replace(/\{\{count\}\}/g, String(activeCount));
 }

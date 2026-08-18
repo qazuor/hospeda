@@ -67,6 +67,10 @@ describe('alojamientos/index.astro — type chips wired to real multi-select (HO
             expect(typeChipsBlock).toContain('activeValues: typeActiveValues');
         });
 
+        it('passes the capped screen-reader note to each chip (HOS-524)', () => {
+            expect(typeChipsBlock).toContain('capNote: resolveCappedChipNote({');
+        });
+
         it('no longer navigates to the dedicated /tipo/{slug}/ route from the chip href (landing-escape: base listing only)', () => {
             expect(typeChipsBlock).not.toContain('path: `/alojamientos/tipo/');
         });

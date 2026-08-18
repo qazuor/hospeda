@@ -109,8 +109,8 @@
         "clearLabel": "Clear ({{count}})",
         "clearAriaLabel_one": "Clear {{count}} filter",
         "clearAriaLabel_other": "Clear {{count}} filters",
-        "cappedAriaLabel_one": "{{label}} — unavailable: {{count}} filter is already active",
-        "cappedAriaLabel_other": "{{label}} — unavailable: {{count}} filters are already active"
+        "cappedNote_one": "Unavailable: {{count}} filter is already active",
+        "cappedNote_other": "Unavailable: {{count}} filters are already active"
     },
     "goHome": "Back to home",
     "in": "in",

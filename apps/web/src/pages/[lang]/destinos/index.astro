@@ -44,7 +44,10 @@ import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
 import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
-import { FACET_CHIP_MAX_ACTIVE_VALUES } from '@/lib/filters/facet-chip-depth';
+import {
+	FACET_CHIP_MAX_ACTIVE_VALUES,
+	resolveCappedChipNote
+} from '@/lib/filters/facet-chip-depth';
 
 /**
  * How many attraction chips render in the first row before the "Ver más"
@@ -198,6 +201,21 @@ const showEmptyBanner = isFilterActive && visibleCardCount === 0;
 // back at the filter row + grid instead of the page header.
 const FILTER_ANCHOR = '#dest-filter-top';
 
+// HOS-524: the capped-badge screen-reader note, resolved through the SAME
+// helper the chip rows use rather than re-deriving the plural here — a second
+// copy of that rule is exactly what would rot if the cap ever moves. A capped
+// badge is by definition inactive at the cap, so the helper always answers;
+// the `?? ''` is unreachable and only satisfies the `string | undefined`
+// signature. Computed once (the count never varies per badge) instead of per
+// badge.
+const cappedNoteTemplate =
+	resolveCappedChipNote({
+		active: false,
+		activeCount: FACET_CHIP_MAX_ACTIVE_VALUES,
+		oneTemplate: t('common.filterChips.cappedNote_one'),
+		otherTemplate: t('common.filterChips.cappedNote_other')
+	}) ?? '';
+
 // Build the canonical href for a badge. Toggle the badge id in the active set:
 // click an inactive badge → adds it; click an active one → removes it. When
 // the resulting set is empty, drop the `attractions` query param entirely so
@@ -309,6 +327,16 @@ const itemListEntries = sortedCards.map((card) => ({
 								rel="nofollow"
 								data-attraction-id={attr.id}
 							>
+								{/* HOS-524: an <a> WITHOUT href has no `link` role either — it
+								    is `generic`, which ARIA forbids naming — so the capped
+								    explanation ships as visually-hidden text, exactly like
+								    `FilterChips.astro`. Rendered on every badge and toggled
+								    via `hidden`, because the inline script below flips badges
+								    in and out of the capped state client-side and cannot
+								    create i18n text of its own. */}
+								<span class="sr-only" data-capped-note hidden={badgeHref !== undefined}>
+									{cappedNoteTemplate}
+								</span>
 								<span class="dest-attractions-filter__badge-icon" aria-hidden="true">
 									<Icon size={14} weight="regular" />
 								</span>
@@ -812,12 +840,15 @@ const itemListEntries = sortedCards.map((card) => ({
 					badge.setAttribute('aria-current', isActive ? 'true' : 'false');
 					var nextHref = buildHrefToggling(id, active);
 					badge.classList.toggle(BADGE_CAPPED_CLASS, nextHref === null);
+					var note = badge.querySelector('[data-capped-note]');
 					if (nextHref === null) {
 						badge.removeAttribute('href');
 						badge.setAttribute('aria-disabled', 'true');
+						if (note) note.removeAttribute('hidden');
 					} else {
 						badge.setAttribute('href', nextHref);
 						badge.removeAttribute('aria-disabled');
+						if (note) note.setAttribute('hidden', '');
 					}
 					if (isActive && j >= VISIBLE_LIMIT) overflowActive = true;
 				}

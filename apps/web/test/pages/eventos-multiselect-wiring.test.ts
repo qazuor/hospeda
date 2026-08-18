@@ -55,6 +55,7 @@ describe('eventos/index.astro — category chips wired to real multi-select (HOS
             const chipBlock = src.slice(start, src.indexOf('\n});', start));
             expect(chipBlock).toContain('resolveFacetChipHref({');
             expect(chipBlock).toContain('activeValues: activeCategories');
+            expect(chipBlock).toContain('capNote: resolveCappedChipNote({');
             expect(chipBlock).toContain('FACET_CONFIG_BY_ID.eventCategory.paramKey');
             expect(chipBlock).not.toContain("key: 'category',");
         });
@@ -90,8 +91,14 @@ describe('eventos/index.astro — category chips wired to real multi-select (HOS
             expect(fetchBlock).toContain('categories:');
             // Must be a .join(',') string expression, never the raw array itself
             // (String(array) in serializeParams is an implicit/fragile footgun).
+            // HOS-524 wrapped the value in `canonicalizeFacetValues`, so the
+            // pattern now REQUIRES that wrapper as well as the join: it still
+            // asserts the value comes from the hoisted active-values array and
+            // is a CSV string (never the raw array, which `serializeParams`
+            // would stringify implicitly), and additionally that it is
+            // serialized in the one canonical order every writer shares.
             expect(fetchBlock).toMatch(
-                /categories:\s*activeCategories\.length\s*>\s*0\s*\?\s*activeCategories\.join\(','\)\s*:\s*undefined/
+                /categories:\s*activeCategories\.length\s*>\s*0\s*\?\s*canonicalizeFacetValues\(\{\s*values:\s*activeCategories\s*\}\)\.join\(','\)\s*:\s*undefined/
             );
         });
     });

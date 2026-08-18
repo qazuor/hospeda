@@ -56,10 +56,8 @@ import {
     DEFAULT_EVENT_CATEGORIES
 } from '@/lib/event-listing-summary';
 import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
-import {
-    resolveCappedChipAriaLabel,
-    resolveFacetChipHref
-} from '@/lib/filters/facet-chip-depth';
+import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
+import { resolveCappedChipNote, resolveFacetChipHref } from '@/lib/filters/facet-chip-depth';
 import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
 import { XCircleIcon } from '@repo/icons';
 import {
@@ -204,7 +202,10 @@ const result = await eventsApi.list({
     // string (never the raw JS array — `serializeParams` in `api/client.ts`
     // does `String(value)`, which on an array yields a comma-joined string
     // too, but relying on that implicit coercion is fragile; join explicitly).
-    categories: activeCategories.length > 0 ? activeCategories.join(',') : undefined,
+    categories:
+        activeCategories.length > 0
+            ? canonicalizeFacetValues({ values: activeCategories }).join(',')
+            : undefined,
     sortBy: sortResolved.sortBy,
     sortOrder: sortResolved.sortOrder,
     startDateAfter,
@@ -393,7 +394,10 @@ const resolvedCards = cards;
  */
 const sidebarInitialParams: Record<string, string> = {};
 if (q)              sidebarInitialParams['q']        = q;
-if (activeCategories.length > 0) sidebarInitialParams['categories'] = activeCategories.join(',');
+if (activeCategories.length > 0)
+    sidebarInitialParams['categories'] = canonicalizeFacetValues({
+        values: activeCategories
+    }).join(',');
 if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
 if (destinationId)  sidebarInitialParams['destinationId'] = destinationId;
 if (startDateAfterFilter)  sidebarInitialParams['startDateAfter']  = startDateAfterFilter;
@@ -459,11 +463,12 @@ const CATEGORY_CHIP_DEFS = [
     { value: 'WORKSHOP', label: t('events.categories.workshop', 'Taller') }
 ] as const;
 
-// `resolveCappedChipAriaLabel` only produces a name at or above
-// FACET_CHIP_MAX_ACTIVE_VALUES (3), so the `_one` plural form is unreachable
-// here — the `_other` key is read directly rather than faking a ternary over an
-// impossible branch (same reasoning as the "Clear (N)" chip above).
-const cappedChipAriaLabelTemplate = t('common.filterChips.cappedAriaLabel_other');
+// Both plural forms are passed: `resolveCappedChipNote` picks one from the
+// count, so lowering FACET_CHIP_MAX_ACTIVE_VALUES to 1 cannot start
+// announcing "already 1 filters active". (The "Clear (N)" chip above CAN read
+// `_other` directly — its own floor of 2 is a fixed rule, not a tunable.)
+const cappedNoteOneTemplate = t('common.filterChips.cappedNote_one');
+const cappedNoteOtherTemplate = t('common.filterChips.cappedNote_other');
 
 const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
     const active = activeCategories.includes(value);
@@ -486,11 +491,11 @@ const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
         }),
         active,
         icon,
-        ariaLabel: resolveCappedChipAriaLabel({
-            label,
+        capNote: resolveCappedChipNote({
             active,
             activeCount: activeCategories.length,
-            ariaLabelTemplate: cappedChipAriaLabelTemplate
+            oneTemplate: cappedNoteOneTemplate,
+            otherTemplate: cappedNoteOtherTemplate
         })
     };
 });

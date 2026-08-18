@@ -14,6 +14,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     FACET_CHIP_MAX_ACTIVE_VALUES,
+    resolveCappedChipNote,
     resolveFacetChipHref
 } from '../../../src/lib/filters/facet-chip-depth';
 
@@ -128,5 +129,64 @@ describe('resolveFacetChipHref', () => {
         // C(6,1) + C(6,2) + C(6,3) = 6 + 15 + 20 = 41 filtered URLs, plus the
         // bare listing reached by removing the last active value.
         expect(seen.size).toBe(42);
+    });
+});
+
+describe('resolveCappedChipNote', () => {
+    const templates = {
+        oneTemplate: 'No disponible: ya hay {{count}} filtro activo',
+        otherTemplate: 'No disponible: ya hay {{count}} filtros activos'
+    };
+
+    it('returns undefined below the cap (the chip is still interactive)', () => {
+        expect(
+            resolveCappedChipNote({ active: false, activeCount: 2, ...templates })
+        ).toBeUndefined();
+    });
+
+    it('returns undefined for an ACTIVE chip even at or past the cap', () => {
+        // An active chip is never capped — it still removes its own value, so
+        // announcing it as unavailable would be a lie.
+        expect(
+            resolveCappedChipNote({ active: true, activeCount: 5, ...templates })
+        ).toBeUndefined();
+    });
+
+    it('returns the interpolated plural note at the cap', () => {
+        expect(resolveCappedChipNote({ active: false, activeCount: 3, ...templates })).toBe(
+            'No disponible: ya hay 3 filtros activos'
+        );
+    });
+
+    it('returns undefined at a count of 1 — the singular form is UNREACHABLE while the cap is 3', () => {
+        // Stated rather than asserted the other way round, because the cap
+        // guard runs first: at count 1 there is no capped chip at all. The
+        // singular template is defensive, for the day
+        // FACET_CHIP_MAX_ACTIVE_VALUES drops to 1 (it is presented as an
+        // owner-tunable number). Passing BOTH forms is what makes that day
+        // correct by construction instead of announcing "already 1 filters
+        // active" — which is exactly what a caller reading `_other` by hand
+        // would do, and what the three listing pages used to do.
+        expect(
+            resolveCappedChipNote({ active: false, activeCount: 1, ...templates })
+        ).toBeUndefined();
+    });
+
+    it('picks the plural form for every count the cap can actually produce', () => {
+        for (const activeCount of [FACET_CHIP_MAX_ACTIVE_VALUES, 4, 7]) {
+            expect(resolveCappedChipNote({ active: false, activeCount, ...templates })).toBe(
+                `No disponible: ya hay ${activeCount} filtros activos`
+            );
+        }
+    });
+
+    it('does NOT embed the chip label — the visible text already carries it', () => {
+        const note = resolveCappedChipNote({ active: false, activeCount: 3, ...templates });
+        expect(note).not.toContain('{{label}}');
+    });
+
+    it('leaves no uninterpolated placeholder behind', () => {
+        const note = resolveCappedChipNote({ active: false, activeCount: 4, ...templates });
+        expect(note).not.toMatch(/\{\{\w+\}\}/);
     });
 });
