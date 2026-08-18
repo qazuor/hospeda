@@ -56,7 +56,10 @@ import {
     DEFAULT_EVENT_CATEGORIES
 } from '@/lib/event-listing-summary';
 import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
-import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import {
+    resolveCappedChipAriaLabel,
+    resolveFacetChipHref
+} from '@/lib/filters/facet-chip-depth';
 import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
 import { XCircleIcon } from '@repo/icons';
 import {
@@ -456,6 +459,12 @@ const CATEGORY_CHIP_DEFS = [
     { value: 'WORKSHOP', label: t('events.categories.workshop', 'Taller') }
 ] as const;
 
+// `resolveCappedChipAriaLabel` only produces a name at or above
+// FACET_CHIP_MAX_ACTIVE_VALUES (3), so the `_one` plural form is unreachable
+// here — the `_other` key is read directly rather than faking a ternary over an
+// impossible branch (same reasoning as the "Clear (N)" chip above).
+const cappedChipAriaLabelTemplate = t('common.filterChips.cappedAriaLabel_other');
+
 const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
     const active = activeCategories.includes(value);
     // BETA-113 (icon parity): reuse the same category → icon mapping the
@@ -464,15 +473,25 @@ const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
     const icon = getEventCategoryIconComponent(value);
     return {
         label,
-        href: buildMultiToggleParamHref({
+        // HOS-524: `resolveFacetChipHref`, never the raw toggle builder —
+        // see `facet-chip-depth.ts`. A capped chip gets no href and renders
+        // inert instead of publishing another deeper URL.
+        href: resolveFacetChipHref({
             baseUrl,
             searchParams: paginationParams,
             key: FACET_CONFIG_BY_ID.eventCategory.paramKey,
             value,
-            singularKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
+            singularKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey,
+            activeValues: activeCategories
         }),
         active,
-        icon
+        icon,
+        ariaLabel: resolveCappedChipAriaLabel({
+            label,
+            active,
+            activeCount: activeCategories.length,
+            ariaLabelTemplate: cappedChipAriaLabelTemplate
+        })
     };
 });
 

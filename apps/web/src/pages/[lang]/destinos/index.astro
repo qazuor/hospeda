@@ -43,6 +43,8 @@ import { CloseIcon } from '@repo/icons';
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { hasOnlyPaginationParams } from '@/lib/cache/listing-cache';
+import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
+import { FACET_CHIP_MAX_ACTIVE_VALUES } from '@/lib/filters/facet-chip-depth';
 
 /**
  * How many attraction chips render in the first row before the "Ver más"
@@ -202,13 +204,27 @@ const FILTER_ANCHOR = '#dest-filter-top';
 // `/destinos/` stays clean. The inline script below intercepts the click and
 // drives the same transition through the History API; the href is the
 // no-JS fallback (and what `target=_blank` / copy-link / right-click use).
-function buildBadgeHref(badgeId: string): string {
+// HOS-524: returns `undefined` for a badge that would grow the selection past
+// FACET_CHIP_MAX_ACTIVE_VALUES, and serializes through the shared canonical
+// order. This page is the WORST case of the crawler trap the accommodation
+// listing made famous: its badges are DB-driven (the union of attractions
+// across every loaded destination, dozens of values), so the uncapped,
+// click-ordered link space it published was larger than every enum facet in
+// the repo combined. Removing an active badge is never capped, so a crafted
+// deep URL always has a way back out.
+function buildBadgeHref(badgeId: string): string | undefined {
+    const removes = activeIds.has(badgeId);
+    if (!removes && activeIds.size >= FACET_CHIP_MAX_ACTIVE_VALUES) return undefined;
     const next = new Set(activeIds);
-    if (next.has(badgeId)) next.delete(badgeId);
+    if (removes) next.delete(badgeId);
     else next.add(badgeId);
     const target = new URL(url.toString());
     if (next.size === 0) target.searchParams.delete('attractions');
-    else target.searchParams.set('attractions', [...next].join(','));
+    else
+        target.searchParams.set(
+            'attractions',
+            canonicalizeFacetValues({ values: [...next] }).join(',')
+        );
     return `${target.pathname}${target.search}${FILTER_ANCHOR}`;
 }
 
@@ -266,20 +282,30 @@ const itemListEntries = sortedCards.map((card) => ({
 			id="dest-filter-top"
 			class="dest-attractions-filter"
 			aria-label={t('destinations.filter.attractionsAriaLabel', 'Filtrar por atracciones')}
+			data-facet-max-active={FACET_CHIP_MAX_ACTIVE_VALUES}
 		>
 			<ul class="dest-attractions-filter__list">
 				{availableAttractions.map((attr) => {
 					const active = activeIds.has(attr.id);
 					const Icon = getAttractionIcon({ icon: attr.icon });
+					// HOS-524: a capped badge renders as an anchor with NO href
+					// — not a link, so nothing to crawl, and not focusable. It
+					// stays an <a> (rather than the <span> `FilterChips.astro`
+					// uses for the same state) because the inline script below
+					// puts the href BACK the moment the user drops under the
+					// cap; a <span> could never become navigable again.
+					const badgeHref = buildBadgeHref(attr.id);
 					return (
 						<li>
 							<a
-								href={buildBadgeHref(attr.id)}
+								href={badgeHref}
 								class:list={[
 									'dest-attractions-filter__badge',
-									{ 'dest-attractions-filter__badge--active': active }
+									{ 'dest-attractions-filter__badge--active': active },
+									{ 'dest-attractions-filter__badge--capped': badgeHref === undefined }
 								]}
 								aria-current={active ? 'true' : undefined}
+								aria-disabled={badgeHref === undefined ? 'true' : undefined}
 								rel="nofollow"
 								data-attraction-id={attr.id}
 							>
@@ -485,6 +511,18 @@ const itemListEntries = sortedCards.map((card) => ({
 		border-color: var(--brand-accent);
 	}
 
+	/* HOS-524: a badge past the depth cap carries no href. It has to LOOK
+	   unavailable too, and `:hover` (0,2,0) outranks a bare modifier class
+	   (0,1,0), so the hover state is neutralized explicitly. */
+	.dest-attractions-filter__badge--capped,
+	.dest-attractions-filter__badge--capped:hover {
+		background-color: var(--core-card);
+		color: var(--core-foreground);
+		border-color: var(--border, var(--brand-primary-a25));
+		opacity: 0.45;
+		cursor: default;
+	}
+
 	.dest-attractions-filter__badge--active,
 	.dest-attractions-filter__badge--active:hover {
 		background-color: var(--brand-accent);
@@ -682,6 +720,7 @@ const itemListEntries = sortedCards.map((card) => ({
 		var FILTER_ROOT_ID = 'dest-filter-top';
 		var BADGE_SEL = '.dest-attractions-filter__badge';
 		var BADGE_ACTIVE_CLASS = 'dest-attractions-filter__badge--active';
+		var BADGE_CAPPED_CLASS = 'dest-attractions-filter__badge--capped';
 		var CARD_WRAP_SEL = '.dest-card-wrap';
 		var CARD_HIDDEN_CLASS = 'dest-card-wrap--hidden';
 		var BANNER_SEL = '.dest-listing__empty-filter';
@@ -717,16 +756,30 @@ const itemListEntries = sortedCards.map((card) => ({
 				);
 			}
 
+			// HOS-524: the depth cap, read off the nav rather than hardcoded,
+			// so this inline script and `FACET_CHIP_MAX_ACTIVE_VALUES` cannot
+			// drift apart. A missing or unparsable attribute falls back to the
+			// same 3 — never to "no cap".
+			var maxActive = parseInt(filterRoot.getAttribute('data-facet-max-active'), 10);
+			if (!(maxActive > 0)) maxActive = 3;
+
 			function buildHref(active) {
 				var url = new URL(window.location.href);
 				if (active.size === 0) url.searchParams.delete('attractions');
-				else url.searchParams.set('attractions', Array.from(active).join(','));
+				// HOS-524: same canonical (sorted, de-duplicated) serialization
+				// as `canonicalizeFacetValues` — click order here would mint a
+				// URL the SSR render would never produce for that selection.
+				else url.searchParams.set('attractions', Array.from(active).sort().join(','));
 				return url.pathname + url.search + '#' + FILTER_ROOT_ID;
 			}
 
+			// Returns null for a badge that would grow the selection past the
+			// cap — mirrors `buildBadgeHref`'s `undefined` in the frontmatter.
 			function buildHrefToggling(badgeId, active) {
+				var removes = active.has(badgeId);
+				if (!removes && active.size >= maxActive) return null;
 				var next = new Set(active);
-				if (next.has(badgeId)) next.delete(badgeId);
+				if (removes) next.delete(badgeId);
 				else next.add(badgeId);
 				return buildHref(next);
 			}
@@ -757,7 +810,15 @@ const itemListEntries = sortedCards.map((card) => ({
 					var isActive = active.has(id);
 					badge.classList.toggle(BADGE_ACTIVE_CLASS, isActive);
 					badge.setAttribute('aria-current', isActive ? 'true' : 'false');
-					badge.setAttribute('href', buildHrefToggling(id, active));
+					var nextHref = buildHrefToggling(id, active);
+					badge.classList.toggle(BADGE_CAPPED_CLASS, nextHref === null);
+					if (nextHref === null) {
+						badge.removeAttribute('href');
+						badge.setAttribute('aria-disabled', 'true');
+					} else {
+						badge.setAttribute('href', nextHref);
+						badge.removeAttribute('aria-disabled');
+					}
 					if (isActive && j >= VISIBLE_LIMIT) overflowActive = true;
 				}
 
@@ -817,6 +878,10 @@ const itemListEntries = sortedCards.map((card) => ({
 				if (badge && filterRoot.contains(badge)) {
 					var id = badge.getAttribute('data-attraction-id');
 					if (!id) return;
+					// HOS-524: a capped badge carries no href — clicking it
+					// must do nothing here too, or the JS path would quietly
+					// exceed a cap the no-JS path enforces.
+					if (!badge.getAttribute('href')) return;
 					var current = readActiveFromUrl();
 					nextActive = new Set(current);
 					if (nextActive.has(id)) nextActive.delete(id);

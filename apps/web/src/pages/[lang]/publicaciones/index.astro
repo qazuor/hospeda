@@ -56,7 +56,10 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
-import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import {
+    resolveCappedChipAriaLabel,
+    resolveFacetChipHref
+} from '@/lib/filters/facet-chip-depth';
 import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
 import { slugForPostCategory } from '@/lib/facet-slugs';
@@ -438,19 +441,35 @@ const POST_CATEGORY_CHIP_DEFS = [
     { value: 'TIPS',       slug: 'tips',       label: t('blog.categories.tips',       'Consejos') }
 ] as const;
 
+// `resolveCappedChipAriaLabel` only produces a name at or above
+// FACET_CHIP_MAX_ACTIVE_VALUES (3), so the `_one` plural form is unreachable
+// here — the `_other` key is read directly rather than faking a ternary over an
+// impossible branch (same reasoning as the "Clear (N)" chip above).
+const cappedChipAriaLabelTemplate = t('common.filterChips.cappedAriaLabel_other');
+
 const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map(({ value, slug, label }) => {
     const active = postCategoryActiveValues.includes(value);
     return {
         label,
-        href: buildMultiToggleParamHref({
+        // HOS-524: `resolveFacetChipHref`, never the raw toggle builder —
+        // see `facet-chip-depth.ts`. 18 post categories is the widest facet
+        // in the repo (2^18 subsets uncapped).
+        href: resolveFacetChipHref({
             baseUrl,
             searchParams: paginationParams,
             key: FACET_CONFIG_BY_ID.postCategory.paramKey,
             value,
-            singularKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey
+            singularKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey,
+            activeValues: postCategoryActiveValues
         }),
         icon: getPostCategoryIcon({ category: slug }),
-        active
+        active,
+        ariaLabel: resolveCappedChipAriaLabel({
+            label,
+            active,
+            activeCount: postCategoryActiveValues.length,
+            ariaLabelTemplate: cappedChipAriaLabelTemplate
+        })
     };
 });
 

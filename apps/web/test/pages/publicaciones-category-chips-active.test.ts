@@ -33,12 +33,13 @@ describe('publicaciones/index.astro — category chip active/aria-current state 
         expect(src).toMatch(/readFacetActiveValues\(\{[^}]*searchParams:\s*url\.searchParams/);
     });
 
-    it('builds each chip href via buildMultiToggleParamHref keyed on the categories array param (HOS-96 T-012)', () => {
-        const chipsBlock = src.slice(
-            src.indexOf('const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map'),
-            src.indexOf('const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map') + 400
-        );
-        expect(chipsBlock).toContain('buildMultiToggleParamHref({');
+    it('builds each chip href via resolveFacetChipHref keyed on the categories array param (HOS-96 T-012, capped by HOS-524)', () => {
+        // Sliced to the END of the map expression rather than a fixed
+        // character budget: a fixed window silently starts asserting over half
+        // a block the moment a comment is added inside it.
+        const start = src.indexOf('const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map');
+        const chipsBlock = src.slice(start, src.indexOf('\n});', start));
+        expect(chipsBlock).toContain('resolveFacetChipHref({');
         expect(chipsBlock).toContain('FACET_CONFIG_BY_ID.postCategory.paramKey');
         expect(chipsBlock).not.toContain('path: `/publicaciones/categoria/');
     });

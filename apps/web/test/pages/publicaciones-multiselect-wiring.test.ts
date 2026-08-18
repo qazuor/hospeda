@@ -39,8 +39,13 @@ function query(href: string): URLSearchParams {
 
 describe('publicaciones/index.astro — category chips wired to real multi-select (HOS-96 T-012)', () => {
     describe('source wiring', () => {
-        it('imports buildMultiToggleParamHref and buildClearFacetChip', () => {
-            expect(src).toContain(
+        it('imports resolveFacetChipHref (the CAPPED builder, HOS-524) and buildClearFacetChip', () => {
+            // HOS-524: a chip row that calls `buildMultiToggleParamHref`
+            // directly has no depth cap and re-opens the combinatorial link
+            // space this listing published to crawlers.
+            expect(src).toContain("} from '@/lib/filters/facet-chip-depth'");
+            expect(src).toContain('resolveFacetChipHref');
+            expect(src).not.toContain(
                 "import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param'"
             );
             expect(src).toContain(
@@ -52,8 +57,9 @@ describe('publicaciones/index.astro — category chips wired to real multi-selec
             expect(src).toContain('XCircleIcon');
         });
 
-        it('builds each category chip href via buildMultiToggleParamHref keyed on the postCategory paramKey (categories)', () => {
-            expect(chipsBlock).toContain('buildMultiToggleParamHref({');
+        it('builds each category chip href via resolveFacetChipHref keyed on the postCategory paramKey (categories)', () => {
+            expect(chipsBlock).toContain('resolveFacetChipHref({');
+            expect(chipsBlock).toContain('activeValues: postCategoryActiveValues');
             expect(chipsBlock).toContain('FACET_CONFIG_BY_ID.postCategory.paramKey');
         });
 
