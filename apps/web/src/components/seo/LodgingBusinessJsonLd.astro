@@ -77,6 +77,15 @@ interface Props {
 	readonly accommodationType?: string;
 	/** GPS coordinates for GeoCoordinates structured data */
 	readonly geo?: GeoCoordinates;
+	/**
+	 * Public telephone number (HOS-585 P-4).
+	 *
+	 * Bing builds its local pack from NAP — name, address, phone — so a
+	 * complete `PostalAddress` with no phone is a half-signal. Callers pass the
+	 * number the page already renders publicly; this component never sources
+	 * contact data itself.
+	 */
+	readonly telephone?: string;
 	/** Aggregate rating data from reviews */
 	readonly aggregateRating?: AggregateRating;
 	/** Number of rooms / bedrooms */
@@ -94,6 +103,7 @@ const {
 	amenities,
 	accommodationType = 'LodgingBusiness',
 	geo,
+	telephone,
 	aggregateRating,
 	numberOfRooms,
 } = Astro.props;
@@ -135,6 +145,10 @@ if (amenities && amenities.length > 0) {
 		'@type': 'LocationFeatureSpecification',
 		name: amenity,
 	}));
+}
+
+if (telephone) {
+	structuredData.telephone = telephone;
 }
 
 if (geo) {
