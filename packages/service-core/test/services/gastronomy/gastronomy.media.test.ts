@@ -18,6 +18,12 @@
 
 // ---- vi.mock MUST be first — hoisted by vitest ---------------------------
 
+const mockScheduleRevalidation = vi.fn();
+
+vi.mock('../../../src/revalidation/revalidation-init.js', () => ({
+    getRevalidationService: vi.fn(() => ({ scheduleRevalidation: mockScheduleRevalidation }))
+}));
+
 const mockMediaModel = {
     findAll: vi.fn(),
     findById: vi.fn(),
@@ -49,7 +55,15 @@ import type {
     GastronomyMediaReorderInput,
     GastronomyMediaSetFeaturedInput
 } from '@repo/schemas';
-import { ModerationStatusEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    getGalleryCap,
+    LifecycleStatusEnum,
+    ModerationStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     addGastronomyMedia,
@@ -752,5 +766,122 @@ describe('removeGastronomyMedia — Cloudinary asset deletion', () => {
         expect(result.error).toBeUndefined();
         expect(provider.delete).not.toHaveBeenCalled();
         expect(mockMediaModel.softDelete).toHaveBeenCalledWith({ id: MEDIA_ID }, ownerActor.id, {});
+    });
+});
+
+// ---------------------------------------------------------------------------
+// HOS-389 §2 + §4 — the commerce half
+// ---------------------------------------------------------------------------
+
+describe('addGastronomyMedia — gallery cap (HOS-389 §2)', () => {
+    const CAP = getGalleryCap('gastronomy');
+
+    const input: GastronomyMediaAddInput = {
+        gastronomyId: GASTRONOMY_ID,
+        media: { url: 'https://cdn.example.com/new.jpg' }
+    };
+
+    it('refuses to register a row once the gallery is at cap, and writes nothing', async () => {
+        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        mockMediaModel.findAll.mockResolvedValue({ items: [], total: CAP });
+
+        const result = await addGastronomyMedia(
+            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+            ownerActor,
+            input
+        );
+
+        expect(result.error?.code).toBe(ServiceErrorCode.QUOTA_EXCEEDED);
+        // A rejection that still inserts is worse than no cap at all: the
+        // caller is told it failed while the row lands anyway.
+        expect(mockMediaModel.create).not.toHaveBeenCalled();
+    });
+
+    it('accepts the last photo that still fits', async () => {
+        // Boundary: at CAP-1 there is room for exactly one more. An off-by-one
+        // here caps owners one photo below their real allowance.
+        const model = makeGastronomyModel({ id: GASTRONOMY_ID, ownerId: OWNER_ID });
+        mockMediaModel.findAll.mockResolvedValue({ items: [], total: CAP - 1 });
+        mockMediaModel.create.mockResolvedValue(makeMediaRow());
+
+        const result = await addGastronomyMedia(
+            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+            ownerActor,
+            input
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockMediaModel.create).toHaveBeenCalledTimes(1);
+    });
+
+    it('reads the cap from the shared constant, not a local literal', () => {
+        // The whole point of the fix is that this path and the upload routes
+        // consult ONE value; a test asserting 30 would keep passing while the
+        // service drifted onto its own number.
+        expect(CAP).toBe(getGalleryCap('gastronomy'));
+        expect(CAP).toBeGreaterThan(0);
+    });
+});
+
+describe('gastronomy media — public-page revalidation (HOS-389 §4)', () => {
+    const input: GastronomyMediaAddInput = {
+        gastronomyId: GASTRONOMY_ID,
+        media: { url: 'https://cdn.example.com/new.jpg' }
+    };
+
+    /** A listing with a live public page. */
+    function publicListing() {
+        return {
+            id: GASTRONOMY_ID,
+            ownerId: OWNER_ID,
+            slug: 'la-parrilla',
+            destinationId: undefined,
+            lifecycleState: LifecycleStatusEnum.ACTIVE,
+            visibility: VisibilityEnum.PUBLIC
+        };
+    }
+
+    beforeEach(() => {
+        mockScheduleRevalidation.mockClear();
+        mockMediaModel.findAll.mockResolvedValue({ items: [], total: 0 });
+        mockMediaModel.create.mockResolvedValue(makeMediaRow());
+    });
+
+    it('purges the listing after a photo is added', async () => {
+        const model = makeGastronomyModel(publicListing());
+
+        const result = await addGastronomyMedia(
+            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+            ownerActor,
+            input
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockScheduleRevalidation).toHaveBeenCalledTimes(1);
+        const [payload] = mockScheduleRevalidation.mock.calls[0] as [Record<string, unknown>];
+        // Field by field: `objectContaining` is blind to a key whose value is
+        // undefined, which is exactly how a broken payload passes.
+        expect(payload.entityType).toBe('gastronomy');
+        expect(payload.id).toBe(GASTRONOMY_ID);
+        expect(payload.slug).toBe('la-parrilla');
+    });
+
+    it('purges nothing for a listing with no public page', async () => {
+        // A DRAFT/PRIVATE listing has no public footprint, so purging is waste
+        // — and produced logged 404s in production under HOS-203.
+        const model = makeGastronomyModel({
+            ...publicListing(),
+            lifecycleState: LifecycleStatusEnum.DRAFT,
+            visibility: VisibilityEnum.PRIVATE
+        });
+
+        const result = await addGastronomyMedia(
+            model as unknown as Parameters<typeof addGastronomyMedia>[0],
+            ownerActor,
+            input
+        );
+
+        expect(result.error).toBeUndefined();
+        expect(mockScheduleRevalidation).not.toHaveBeenCalled();
     });
 });

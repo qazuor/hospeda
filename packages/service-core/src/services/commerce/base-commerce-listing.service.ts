@@ -25,17 +25,10 @@
 
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
-import {
-    DestinationTypeEnum,
-    LifecycleStatusEnum,
-    PermissionEnum,
-    ServiceErrorCode,
-    VisibilityEnum
-} from '@repo/schemas';
+import { DestinationTypeEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ZodObject, ZodRawShape, z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
-import { getRevalidationService } from '../../revalidation';
 import type {
     Actor,
     AdminSearchExecuteParams,
@@ -49,6 +42,10 @@ import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { syncCommerceAmenityJunction, syncCommerceFeatureJunction } from './commerce.junction-sync';
 import type { CommerceListingHookState } from './commerce.types';
+import {
+    isCommerceListingPubliclyVisible,
+    scheduleCommerceListingRevalidation
+} from './commerce-revalidation.js';
 
 // ---------------------------------------------------------------------------
 // Minimal catalog/junction interfaces (injected by concrete services)
@@ -562,25 +559,16 @@ export abstract class BaseCommerceListingService<
      * @param entity - The listing as it now stands after the write.
      */
     private async _scheduleListingRevalidation(entity: TEntity): Promise<void> {
-        if (!this._isListingPubliclyVisible(entity)) return;
-
-        try {
-            const destinationSlug = entity.destinationId
-                ? await this._resolveDestinationSlugForRevalidation(entity.destinationId)
-                : undefined;
-
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: this._revalidationEntityType,
-                id: entity.id,
-                slug: entity.slug,
-                destinationSlug
-            });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: this._revalidationEntityType },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        // HOS-389: the mechanism moved to `commerce-revalidation.ts` so the
+        // gallery mutations — standalone modules that never see this service —
+        // share ONE implementation with it instead of carrying a copy.
+        await scheduleCommerceListingRevalidation({
+            entityType: this._revalidationEntityType,
+            entity,
+            resolveDestinationSlug: (destinationId) =>
+                this._resolveDestinationSlugForRevalidation(destinationId),
+            logger: this.logger
+        });
     }
 
     /**
@@ -593,10 +581,7 @@ export abstract class BaseCommerceListingService<
      * @returns `true` when the listing is publicly visible.
      */
     private _isListingPubliclyVisible(entity: TEntity): boolean {
-        return (
-            entity.lifecycleState === LifecycleStatusEnum.ACTIVE &&
-            entity.visibility === VisibilityEnum.PUBLIC
-        );
+        return isCommerceListingPubliclyVisible(entity);
     }
 
     /**
