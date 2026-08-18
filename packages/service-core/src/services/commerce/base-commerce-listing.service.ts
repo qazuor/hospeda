@@ -42,10 +42,7 @@ import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
 import { syncCommerceAmenityJunction, syncCommerceFeatureJunction } from './commerce.junction-sync';
 import type { CommerceListingHookState } from './commerce.types';
-import {
-    isCommerceListingPubliclyVisible,
-    scheduleCommerceListingRevalidation
-} from './commerce-revalidation.js';
+import { scheduleCommerceListingRevalidation } from './commerce-revalidation.js';
 
 // ---------------------------------------------------------------------------
 // Minimal catalog/junction interfaces (injected by concrete services)
@@ -569,19 +566,6 @@ export abstract class BaseCommerceListingService<
                 this._resolveDestinationSlugForRevalidation(destinationId),
             logger: this.logger
         });
-    }
-
-    /**
-     * Whether a listing is visible to the public, and therefore worth purging.
-     *
-     * Reads the two string fields `CommerceListingEntity` declares rather than
-     * a typed enum, because that interface types them as `string | null`.
-     *
-     * @param entity - The listing to test.
-     * @returns `true` when the listing is publicly visible.
-     */
-    private _isListingPubliclyVisible(entity: TEntity): boolean {
-        return isCommerceListingPubliclyVisible(entity);
     }
 
     /**
