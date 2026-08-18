@@ -460,7 +460,9 @@ describe('categories checkbox group — multi-select round-trip (HOS-96 T-014/T-
         });
 
         const params = buildParamsFromState({ state: withTwo, filters: [categoriesGroup] });
-        expect(params.get('categories')).toBe('MUSIC,CULTURE');
+        // HOS-524: canonical (sorted) serialization — the same one the chip
+        // hrefs use, so chips and sidebar cannot mint two URLs for one filter.
+        expect(params.get('categories')).toBe('CULTURE,MUSIC');
         expect(params.has('category')).toBe(false);
     });
 

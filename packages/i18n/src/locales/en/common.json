@@ -108,7 +108,9 @@
     "filterChips": {
         "clearLabel": "Clear ({{count}})",
         "clearAriaLabel_one": "Clear {{count}} filter",
-        "clearAriaLabel_other": "Clear {{count}} filters"
+        "clearAriaLabel_other": "Clear {{count}} filters",
+        "cappedNote_one": "Unavailable: {{count}} filter is already active",
+        "cappedNote_other": "Unavailable: {{count}} filters are already active"
     },
     "goHome": "Back to home",
     "in": "in",

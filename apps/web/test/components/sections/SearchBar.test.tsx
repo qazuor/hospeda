@@ -90,12 +90,27 @@ describe('buildSearchUrl', () => {
         expect(url).toContain('destinationIds=11111111-2222-3333-4444-555555555555');
     });
 
-    it('emits types as comma-separated when a strict subset is selected', () => {
+    it('emits types as comma-separated, in canonical order, when a strict subset is selected', () => {
         const url = buildSearchUrl({
             ...DEFAULTS,
             types: new Set(['HOTEL', 'CABIN']) as ReadonlySet<'HOTEL' | 'CABIN'>
         });
-        expect(url).toContain('types=HOTEL%2CCABIN');
+        // HOS-524: sorted, not checkbox order — the hero search bar is one of
+        // four writers of `?types=` and they must all mint the SAME URL for
+        // the same selection.
+        expect(url).toContain('types=CABIN%2CHOTEL');
+    });
+
+    it('emits the SAME url regardless of the order the types were checked (HOS-524)', () => {
+        const a = buildSearchUrl({
+            ...DEFAULTS,
+            types: new Set(['HOTEL', 'CABIN']) as ReadonlySet<'HOTEL' | 'CABIN'>
+        });
+        const b = buildSearchUrl({
+            ...DEFAULTS,
+            types: new Set(['CABIN', 'HOTEL']) as ReadonlySet<'HOTEL' | 'CABIN'>
+        });
+        expect(a).toBe(b);
     });
 
     it('omits types when ALL accommodation types are selected (no filter intent)', () => {

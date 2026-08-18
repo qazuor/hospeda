@@ -277,7 +277,10 @@ describe('events/blog sidebar writes multiple selections under "categories", nev
             state: withTwo,
             filters: [EVENT_CATEGORIES_GROUP as FilterGroup]
         });
-        expect(params.get('categories')).toBe('MUSIC,CULTURE');
+        // HOS-524: the sidebar serializes through the SAME canonical order as
+        // the chip row, so both writers mint one URL per selection instead of
+        // one per click sequence.
+        expect(params.get('categories')).toBe('CULTURE,MUSIC');
         expect(params.has('category')).toBe(false);
     });
 

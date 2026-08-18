@@ -23,6 +23,7 @@ import { getAccommodationTypeIcon } from '@/lib/accommodation-type-icons';
 import { WebEvents } from '@/lib/analytics/events';
 import { trackEvent } from '@/lib/analytics/posthog-client';
 import { cn } from '@/lib/cn';
+import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { trapFocus } from '@/lib/focus-trap';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -187,7 +188,13 @@ export function buildSearchUrl(args: {
         params.set('destinationIds', args.destinationId);
     }
     if (args.types.size > 0 && args.types.size < ACCOMMODATION_TYPES.length) {
-        params.set('types', Array.from(args.types).join(','));
+        // HOS-524: the hero search bar is a FOURTH writer of `?types=` (after
+        // the chip row, the sidebar and the removable active-filter chips). It
+        // publishes no crawlable link — it navigates on submit — but a Set
+        // serialized in checkbox order still mints a URL the other three would
+        // never produce for the same selection, which fragments the edge cache
+        // and the analytics for identical results.
+        params.set('types', canonicalizeFacetValues({ values: [...args.types] }).join(','));
     }
     if (args.checkIn) {
         params.set('checkIn', formatIsoDate(args.checkIn));

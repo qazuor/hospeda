@@ -29,8 +29,13 @@ function query(href: string): URLSearchParams {
 
 describe('eventos/index.astro — category chips wired to real multi-select (HOS-96 T-013)', () => {
     describe('source wiring', () => {
-        it('imports buildMultiToggleParamHref and buildClearFacetChip', () => {
-            expect(src).toContain(
+        it('imports resolveFacetChipHref (the CAPPED builder, HOS-524) and buildClearFacetChip', () => {
+            // HOS-524: a chip row that calls `buildMultiToggleParamHref`
+            // directly has no depth cap and re-opens the combinatorial link
+            // space this listing published to crawlers.
+            expect(src).toContain("} from '@/lib/filters/facet-chip-depth'");
+            expect(src).toContain('resolveFacetChipHref');
+            expect(src).not.toContain(
                 "import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param'"
             );
             expect(src).toContain(
@@ -42,12 +47,15 @@ describe('eventos/index.astro — category chips wired to real multi-select (HOS
             expect(src).toContain('XCircleIcon');
         });
 
-        it('builds each category chip href via buildMultiToggleParamHref keyed on the eventCategory paramKey (categories), replacing the single-select buildToggleParamHref', () => {
-            const chipBlock = src.slice(
-                src.indexOf('const categoryChips = CATEGORY_CHIP_DEFS.map'),
-                src.indexOf('const categoryChips = CATEGORY_CHIP_DEFS.map') + 700
-            );
-            expect(chipBlock).toContain('buildMultiToggleParamHref({');
+        it('builds each category chip href via resolveFacetChipHref keyed on the eventCategory paramKey (categories), replacing the single-select buildToggleParamHref', () => {
+            // Sliced to the END of the map expression rather than a fixed
+            // character budget: a fixed window silently starts asserting over
+            // half a block the moment a comment is added inside it.
+            const start = src.indexOf('const categoryChips = CATEGORY_CHIP_DEFS.map');
+            const chipBlock = src.slice(start, src.indexOf('\n});', start));
+            expect(chipBlock).toContain('resolveFacetChipHref({');
+            expect(chipBlock).toContain('activeValues: activeCategories');
+            expect(chipBlock).toContain('capNote: resolveCappedChipNote({');
             expect(chipBlock).toContain('FACET_CONFIG_BY_ID.eventCategory.paramKey');
             expect(chipBlock).not.toContain("key: 'category',");
         });
@@ -83,8 +91,14 @@ describe('eventos/index.astro — category chips wired to real multi-select (HOS
             expect(fetchBlock).toContain('categories:');
             // Must be a .join(',') string expression, never the raw array itself
             // (String(array) in serializeParams is an implicit/fragile footgun).
+            // HOS-524 wrapped the value in `canonicalizeFacetValues`, so the
+            // pattern now REQUIRES that wrapper as well as the join: it still
+            // asserts the value comes from the hoisted active-values array and
+            // is a CSV string (never the raw array, which `serializeParams`
+            // would stringify implicitly), and additionally that it is
+            // serialized in the one canonical order every writer shares.
             expect(fetchBlock).toMatch(
-                /categories:\s*activeCategories\.length\s*>\s*0\s*\?\s*activeCategories\.join\(','\)\s*:\s*undefined/
+                /categories:\s*activeCategories\.length\s*>\s*0\s*\?\s*canonicalizeFacetValues\(\{\s*values:\s*activeCategories\s*\}\)\.join\(','\)\s*:\s*undefined/
             );
         });
     });
@@ -103,14 +117,15 @@ describe('events category multi-select — composed helper behavior (HOS-96 T-01
         expect(query(href).get('categories')).toBe('MUSIC');
     });
 
-    it('accumulate: with Música active, clicking Cultura ADDS it (does not replace)', () => {
+    it('accumulate: with Música active, clicking Cultura ADDS it (does not replace), in canonical order', () => {
         const href = buildMultiToggleParamHref({
             baseUrl,
             searchParams: new URLSearchParams('categories=MUSIC'),
             key: 'categories',
             value: 'CULTURE'
         });
-        expect(query(href).get('categories')).toBe('MUSIC,CULTURE');
+        // HOS-524: canonical (sorted) order, not click order.
+        expect(query(href).get('categories')).toBe('CULTURE,MUSIC');
     });
 
     it('deselect: clicking the active Música chip while Música+Cultura are active removes only Música', () => {
