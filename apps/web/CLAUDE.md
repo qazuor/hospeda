@@ -982,18 +982,40 @@ origin and the DB on every hit.
    MEMBERSHIP, the API combines with `inArray`, the SEO decision only counts).
 2. **Depth cap** (`FACET_CHIP_MAX_ACTIVE_VALUES = 3`, `src/lib/filters/facet-chip-depth.ts`).
    A chip that would grow the selection past 3 gets **no href** and renders inert, so the
-   page stops publishing "one level deeper" links: 377 URLs for accommodations, 129 for
-   events, 987 for blog, a few thousand for destinos. Removing a value is **never** capped,
-   at any depth — a crafted deep URL is always exitable. The `FilterSidebar` keeps unlimited
+   page stops publishing "one level deeper" links. Removing a value is **never** capped, at
+   any depth — a crafted deep URL is always exitable. The `FilterSidebar` keeps unlimited
    multi-select: it navigates from JavaScript and publishes no links, so it is not crawl
    surface. **The cap bounds the LINK GRAPH, not what a user may filter by.**
 
-There are **six** writers of these CSV params, and every one of them must canonicalize — the
-static guard `test/lib/filters/facet-url-space.guard.test.ts` fails on a seventh that does
-not (three of the six were found BY that guard, not by the original analysis): the chip href
-builder, the `FilterSidebar` reducer (`buildParamsFromState`), the destinos badge builder AND
-its inline no-JS script, the hero `SearchBar`, and the removable active-filter chips on both
-accommodation listings. Listing pages must resolve chip hrefs through `resolveFacetChipHref`,
+   Count the chips a page actually EMITS, not the enum behind them — eventos and
+   publicaciones render hardcoded rows of 8 (`CATEGORY_CHIP_DEFS` /
+   `POST_CATEGORY_CHIP_DEFS`) against enums of 9 and 18, and destinos' badges come from
+   the DB:
+
+   | facet | chips | canonical only | capped at 3 |
+   |---|---|---|---|
+   | alojamientos `types` | 13 | 8.192 | **377** |
+   | eventos `categories` | 8 | 256 | **92** |
+   | publicaciones `categories` | 8 | 256 | **92** |
+   | destinos `attractions` | 45 (DB) | ~3,5×10^13 | **15.225** |
+
+   A capped chip's explanation is **visually-hidden text inside it**, never an
+   `aria-label`: the inert element is a role-less `<span>` (and on destinos, an `<a>`
+   without href), whose implicit role is `generic` — ARIA prohibits naming a `generic`
+   element, so the label would never be computed and axe flags it
+   (`aria-prohibited-attr`). Note that `apps/web/scripts/a11y-sweep/sweep.ts` visits the
+   listings WITHOUT a query string, so no capped state is ever in its sample: that ruling
+   is held by the guard test, not by the sweep.
+
+There are **ten** writers of these CSV params, and every one of them must canonicalize —
+the static guard `test/lib/filters/facet-url-space.guard.test.ts` fails on an eleventh that
+does not, and on a second uncanonicalized write inside a file already on the list: the chip
+href builder, the `FilterSidebar` reducer (`buildParamsFromState`), the destinos badge
+builder AND its inline no-JS script, the hero `SearchBar`, the removable active-filter chips
+on both accommodation listings, the saved-search replay in `SearchHistoryList.client.tsx`,
+the AI search param serializer, and the API-call params plus sidebar seeds on the three
+listings. **Most of them were found by the guard, not by reading** — the first pass of this
+work believed there were two. Listing pages must resolve chip hrefs through `resolveFacetChipHref`,
 **never** `buildMultiToggleParamHref` directly — the raw builder has no cap and is what the
 sidebar and the client-side POI filter (which needs an uncapped toggle) use.
 
