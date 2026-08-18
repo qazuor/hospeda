@@ -4,6 +4,7 @@
  * Extracted to keep the orchestrator component focused on rendering logic.
  */
 
+import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import type { FilterAction, FilterGroup, FilterState } from './filter-types/filter.types';
 
 // --- Reducer ---
@@ -409,7 +410,16 @@ export function buildParamsFromState({
     if (state.search) params.set('q', state.search);
     if (state.sort) params.set('sortBy', state.sort);
     for (const [id, values] of Object.entries(state.selections)) {
-        if (values.length > 0) params.set(id, values.join(','));
+        // HOS-524: the sidebar is the SECOND writer of the facet CSV params the
+        // chip rows write (`types`, `categories`, `attractions`, plus its own
+        // `amenities`/`features`). It publishes no crawlable links — it
+        // navigates from JavaScript — but serializing in checkbox-click order
+        // would still mint a DIFFERENT URL than the chips for the very same
+        // selection, splitting the edge cache and the analytics. One ordering
+        // rule, applied at every writer.
+        if (values.length > 0) {
+            params.set(id, canonicalizeFacetValues({ values }).join(','));
+        }
     }
     for (const [id, range] of Object.entries(state.ranges)) {
         const cap = id.charAt(0).toUpperCase() + id.slice(1);
