@@ -13,8 +13,11 @@ import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
 import { configureLogger, LogFormat, LogLevel, registerCaptureHook } from '@repo/logger';
 import {
     ensureDefaultPromoCodes,
+    getIndexNowService,
+    initializeIndexNowService,
     initializeRevalidationService,
     initializeTranslationService,
+    PlatformSettingsService,
     setPermissionChangeAuditEmitter,
     setUserPermissionsCacheInvalidator
 } from '@repo/service-core';
@@ -301,6 +304,21 @@ const startServer = async (): Promise<void> => {
 
         // Initialize ISR revalidation service (optional — only if secret is configured)
         if (env.HOSPEDA_REVALIDATION_SECRET) {
+            // HOS-585 G-1: search-engine notification rides the same write hook
+            // as the cache purge but keeps its own gates — production only, and
+            // an operator toggle read at send time. Initialized FIRST so the
+            // revalidation service's observer finds it, though the lookup below
+            // is lazy and does not actually depend on this order.
+            const settingsService = new PlatformSettingsService({ logger: apiLogger });
+            const indexNow = initializeIndexNowService({
+                deployEnv: env.HOSPEDA_DEPLOY_ENV,
+                nodeEnv: env.NODE_ENV,
+                revalidationSecret: env.HOSPEDA_REVALIDATION_SECRET,
+                siteUrl: env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar',
+                isEnabled: () => settingsService.isIndexNowEnabled()
+            });
+            apiLogger.info(`IndexNow service initialized (adapter: ${indexNow.getAdapterName()})`);
+
             initializeRevalidationService({
                 nodeEnv: env.NODE_ENV,
                 revalidationSecret: env.HOSPEDA_REVALIDATION_SECRET,
@@ -309,7 +327,8 @@ const startServer = async (): Promise<void> => {
                 // is namespaced by. MUST be the same value the web app carries,
                 // or purges address tags nothing emitted.
                 deployEnv: env.HOSPEDA_DEPLOY_ENV,
-                entityResolver: createEntityResolver()
+                entityResolver: createEntityResolver(),
+                onEntityChange: (event) => getIndexNowService()?.scheduleNotification(event)
             });
             apiLogger.info('ISR revalidation service initialized');
         }
