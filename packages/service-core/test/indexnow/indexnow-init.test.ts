@@ -17,12 +17,14 @@ import {
 } from '../../src/indexnow/indexnow-init.js';
 
 const alwaysEnabled = () => Promise.resolve(true);
+const alwaysVisible = () => Promise.resolve(true);
 
 /** Every parameter a live adapter needs, minus the environment. */
 const LIVE_CREDENTIALS = {
     revalidationSecret: 'shared-secret',
     siteUrl: 'https://hospeda.com.ar',
-    isEnabled: alwaysEnabled
+    isEnabled: alwaysEnabled,
+    isPubliclyVisible: alwaysVisible
 } as const;
 
 describe('initializeIndexNowService', () => {
@@ -61,6 +63,7 @@ describe('initializeIndexNowService', () => {
         const service = initializeIndexNowService({
             siteUrl: 'https://hospeda.com.ar',
             isEnabled: alwaysEnabled,
+            isPubliclyVisible: alwaysVisible,
             deployEnv: 'prod'
         });
 
@@ -71,6 +74,7 @@ describe('initializeIndexNowService', () => {
         const service = initializeIndexNowService({
             revalidationSecret: 'shared-secret',
             isEnabled: alwaysEnabled,
+            isPubliclyVisible: alwaysVisible,
             deployEnv: 'prod'
         });
 

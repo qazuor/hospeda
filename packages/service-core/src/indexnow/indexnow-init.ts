@@ -13,6 +13,7 @@ import type { CacheTagEnvironment } from '@repo/cache-tags';
 import { resolveCacheTagEnvironment } from '@repo/cache-tags';
 import { createLogger } from '@repo/logger';
 import { createIndexNowAdapter } from './adapters/adapter-factory.js';
+import type { NotifiableEntity } from './adapters/indexnow.adapter.js';
 import { IndexNowService } from './indexnow.service.js';
 
 const logger = createLogger('indexnow-init');
@@ -40,6 +41,15 @@ export interface InitIndexNowParams {
      * it without a database).
      */
     readonly isEnabled: () => Promise<boolean>;
+    /**
+     * Answers whether an entity is still publicly visible at send time (AC-4).
+     *
+     * Required for the same reason `isEnabled` is: this hook rides
+     * `scheduleRevalidation`, which fires on an UNPUBLISH by design (purging
+     * the page that just disappeared is the point). Without this check the
+     * notifier would announce a URL that just stopped being public.
+     */
+    readonly isPubliclyVisible: (entity: NotifiableEntity) => Promise<boolean>;
     /** Coalescing window in ms. Defaults to the service's own default. */
     readonly debounceMs?: number;
 }
@@ -80,6 +90,7 @@ export function initializeIndexNowService(params: InitIndexNowParams): IndexNowS
             siteUrl: params.siteUrl
         }),
         isEnabled: params.isEnabled,
+        isPubliclyVisible: params.isPubliclyVisible,
         debounceMs: params.debounceMs
     });
 

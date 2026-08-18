@@ -132,6 +132,7 @@ describe('IndexNowService', () => {
         const { adapter, notify } = makeAdapter();
         const service = new IndexNowService({
             adapter,
+            isPubliclyVisible: async () => true,
             isEnabled: async () => true,
             debounceMs: 1000
         });
@@ -150,6 +151,7 @@ describe('IndexNowService', () => {
         const { adapter, notify } = makeAdapter();
         const service = new IndexNowService({
             adapter,
+            isPubliclyVisible: async () => true,
             isEnabled: async () => true,
             debounceMs: 1000
         });
@@ -164,6 +166,7 @@ describe('IndexNowService', () => {
         const { adapter, notify } = makeAdapter();
         const service = new IndexNowService({
             adapter,
+            isPubliclyVisible: async () => true,
             isEnabled: async () => false,
             debounceMs: 1000
         });
@@ -185,6 +188,7 @@ describe('IndexNowService', () => {
         let enabled = true;
         const service = new IndexNowService({
             adapter,
+            isPubliclyVisible: async () => true,
             isEnabled: async () => enabled,
             debounceMs: 1000
         });
@@ -201,6 +205,7 @@ describe('IndexNowService', () => {
         let enabled = false;
         const service = new IndexNowService({
             adapter,
+            isPubliclyVisible: async () => true,
             isEnabled: async () => enabled,
             debounceMs: 1000
         });
@@ -220,6 +225,7 @@ describe('IndexNowService', () => {
         const { adapter, notify } = makeAdapter();
         const service = new IndexNowService({
             adapter,
+            isPubliclyVisible: async () => true,
             isEnabled: async () => true,
             debounceMs: 1000
         });
@@ -239,6 +245,7 @@ describe('IndexNowService', () => {
         });
         const service = new IndexNowService({
             adapter: { name: 'exploding', notify } as unknown as IndexNowAdapter,
+            isPubliclyVisible: async () => true,
             isEnabled: async () => true,
             debounceMs: 1000
         });
@@ -252,6 +259,7 @@ describe('IndexNowService', () => {
         const { adapter, notify } = makeAdapter();
         const service = new IndexNowService({
             adapter,
+            isPubliclyVisible: async () => true,
             isEnabled: async () => {
                 throw new Error('db down');
             },

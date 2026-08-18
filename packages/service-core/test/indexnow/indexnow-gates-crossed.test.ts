@@ -22,7 +22,8 @@ import {
 
 const CREDENTIALS = {
     revalidationSecret: 'shared-secret',
-    siteUrl: 'https://hospeda.com.ar'
+    siteUrl: 'https://hospeda.com.ar',
+    isPubliclyVisible: () => Promise.resolve(true)
 } as const;
 
 /** A change that IS notifiable, so a dropped event cannot explain a silent run. */
@@ -100,6 +101,7 @@ describe('IndexNow gates, crossed (AC-11)', () => {
     it('sends NOTHING in production without the secret, toggle on', async () => {
         const service = initializeIndexNowService({
             siteUrl: CREDENTIALS.siteUrl,
+            isPubliclyVisible: CREDENTIALS.isPubliclyVisible,
             deployEnv: 'prod',
             isEnabled: () => Promise.resolve(true)
         });
