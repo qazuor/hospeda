@@ -4,9 +4,10 @@
 prompts/
 ├── fondos.md        los 30 fondos de escena, un prompt cada uno
 ├── personaje.md     las 5 láminas de referencia del personaje
-├── grabaciones.md   el estándar del teléfono y las 25 grabaciones de pantalla
+├── grabaciones.md   el estándar del teléfono, las 26 grabaciones y los fijos
 └── vN/              una carpeta por video
     ├── montaje.md   diálogo, hoja de corte y los cortes
+    ├── capturas.md  qué grabar con el celular y qué fijos hacen falta
     ├── t1.md        una toma por archivo
     ├── t2.md
     └── voz.md       la tirada de la que sale la pista de audio
@@ -102,6 +103,73 @@ un modelo, la ausencia de un bloque no es una prohibición: es un hueco que llen
 
 ---
 
+## La pantalla del teléfono
+
+**Ningún teléfono entra en cuadro con la pantalla gris.** El gris de los fondos es una
+máscara de posición; en la tirada se reemplaza por un fijo real que se adjunta con el
+marcador `@######PANTALLA#######`. El estándar del fijo —que es un frame de la
+grabación, nunca un screenshot— está en [`grabaciones.md`](grabaciones.md).
+
+El molde probado está en [`v9/t2.md`](v9/t2.md) y [`v30/t2.md`](v30/t2.md). Son cuatro
+piezas y van las cuatro:
+
+1. **En la tabla de reemplazos**, con su conteo de apariciones:
+
+   | Marcador | Archivo a adjuntar | Veces |
+   |---|---|:-:|
+   | `@######PANTALLA#######` | `../../capturas/p1.png` | 3 |
+
+2. **En `THE REFERENCES`**:
+
+   > `@######PANTALLA####### is a real screenshot of a website open in a mobile browser:`
+   > `it is exactly what is displayed on the phone screen, and it must be reproduced`
+   > `faithfully, never redesigned or reinvented.`
+
+3. **En `OPENING COMPOSITION`**, colgado del teléfono: `...holding a smartphone up in one`
+   `hand with its screen facing the camera and showing the website from`
+   `@######PANTALLA#######.`
+
+4. **Un bloque `THE PHONE SCREEN` propio**, del mismo peso que los demás:
+
+   > `THE PHONE SCREEN: it always shows the website from @######PANTALLA####### — the`
+   > `same layout, colours, logo, headline and search fields, in the same positions,`
+   > `sharp and free of glare. Never redesign it and never invent a generic app screen.`
+
+Cuando el teléfono es el de un fondo, va además el ancla de forma, para que el modelo no
+lo reemplace por otro modelo de celular al dibujarle contenido:
+
+> `THE PHONE: its shape, proportions and screen aspect ratio are exactly those of the`
+> `phone in @######ESCENAN#######. Do not reshape it and do not substitute a different`
+> `phone model.`
+
+### El teléfono quieto es innegociable
+
+Cuando el teléfono queda en primer plano, **tiene que tener cero movimiento**. No es una
+preferencia estética: la grabación real se compone después dentro de ese marco, y un
+marco que deriva, escala o rota obliga a trackearlo cuadro a cuadro. Con un objeto
+animado por un modelo de video, ese track no cierra nunca.
+
+**El resto de la escena sí se puede mover** —el entorno, el pelo, la ropa, la gente de
+fondo, la respiración del personaje—. Lo único congelado es el teléfono.
+
+Se pide en dos lugares a la vez, porque con uno solo el modelo lo desobedece:
+
+- **En el `TIMING`**, cerrando el tramo largo del plano:
+
+  > `30-100% the phone is held completely still in close-up. No drift, no creeping`
+  > `forward, no scale change.`
+  >
+  > `The phone must never still be moving after 30%.`
+
+- **En la lista cerrada de lo que hace mientras sostiene**, dejando el teléfono afuera
+  de todo lo que se mueve: `he holds the phone up steadily with both the phone and the`
+  `framing completely still`.
+
+En las tomas de patrón B el mismo requisito cae sobre el rectángulo del inserto, que
+además no puede taparse con la mano ni con el brazo.
+
+---
+
 ## Los patrones y su efecto en el montaje
 
 El patrón asignado a cada video está en la tabla *Puesta en escena por video* de
@@ -133,8 +201,9 @@ hasta el final, no queda margen para cortar.
 
 **Que el círculo naranja no se pegue a la cabeza** ni caiga en la franja derecha.
 
-**En las tomas con teléfono, que la pantalla quede vacía y quieta.** Los modelos tienden
-a llenar una superficie vacía.
+**En las tomas con teléfono, que la pantalla sea la del fijo y quede quieta.** Que
+Hailuo no la haya rediseñado ni inventado una app genérica, y que no derive, parpadee ni
+cambie de contenido a lo largo del clip.
 
 **En la tirada de voz, que no haya ambiente audible** y que la última frase esté
 completa: es lo único irrecuperable en edición.

@@ -69,10 +69,22 @@ atención justo donde el espectador tiene que estar mirando a Hospedín.
 ## La pantalla del teléfono
 
 Todos los fondos que muestran un teléfono comparten una regla que **no se negocia**:
-su pantalla es donde se compone después una grabación real, así que tiene que tener la
-proporción del teléfono con el que se graba — **el alto es 2,17 veces el ancho**.
+su pantalla tiene que tener la proporción del teléfono con el que se graba — **el alto
+es 2,17 veces el ancho**.
 
-El estándar completo está en [`grabaciones.md`](grabaciones.md).
+**En el fondo la pantalla va gris, y eso no cambia.** El gris es una máscara de
+posición, no el resultado: un mismo fondo lo usan varios videos con pantallas distintas,
+así que hornearle una interfaz lo dejaría servible para uno solo.
+
+Lo que cambió es qué pasa después. La pantalla ya **no se compone siempre en edición**:
+en la tirada de video se le adjunta un fijo con el marcador `@######PANTALLA#######` y
+Hailuo la dibuja, de modo que **ningún teléfono llega a cuadro en gris**. La grabación
+real se compone encima solo en las tomas donde el teléfono queda quieto y hace falta que
+se lea.
+
+Por eso la proporción importa el doble: si el fijo y el marco no coinciden, la grabación
+que va encima tampoco calza. El estándar completo está en
+[`grabaciones.md`](grabaciones.md).
 
 ---
 
