@@ -306,17 +306,27 @@ Ninguno. Es infraestructura, invisible para el usuario final.
   pierde la cobertura de es-ES / es-MX. Mitigado por AC-10, que lo afirma en un test.
 - **R-4 — Acoplarse al debounce de Cloudflare.** Si se elige la Opción B, la ventana de
   IndexNow queda atada a una calibrada para purgar cache. Mitigado eligiendo A.
-- **R-5 — P-5 puede ser falso.** El diseño asume que `geo` está vacío hoy. Si resulta
-  que ya se emite, AC-9 se cierra sin trabajo. **Medir primero.**
+- ~~**R-5 — P-5 puede ser falso.**~~ **MEDIDO (17/08): P-5 ERA FALSO.** `geo` ya se
+  emite, desde `approximateLocation`, y lo arregló HOS-554 (`buildLodgingGeo` en
+  `apps/web/src/lib/seo/lodging-jsonld.ts`, con tests). **AC-9 se cerró sin
+  trabajo** y el pin exacto sigue despojado. G-4 se redujo a `telephone`, que sí
+  faltaba (P-4 confirmado).
 
 ## 11. Open questions
 
 - ~~**OQ-1** — ¿Está Google Search Console configurado para `hospeda.com.ar`?~~
   **RESUELTA (17/08)**: sí, dominio cargado y verificado, sin sitemap enviado. El alta en
   BWT es importar desde GSC. Ver §6.6.
-- **OQ-2** — ¿Se sirve el `.txt` de la clave como ruta Astro o como archivo en `public/`?
-  Una ruta permite leerlo de la env var (rotación sin deploy de assets); `public/`
-  es más simple pero fija la clave en el build.
+- ~~**OQ-2** — ¿Se sirve el `.txt` de la clave como ruta Astro o como archivo en
+  `public/`?~~ **RESUELTA (17/08)**: ruta Astro dinámica
+  (`apps/web/src/pages/[key].txt.ts`). El nombre del archivo ES la clave, así que
+  `public/` la fijaría en el build y la dejaría en git para siempre; rotarla
+  exigiría commit + review + deploy. La ruta lee `HOSPEDA_INDEXNOW_KEY` por
+  request, así que rotar es cambiar la env var y nada más. Se sirve con
+  `no-store`: no hay tag de caché que la purgue y, como la rotación cambia la
+  URL, un 404 cacheado sobre la clave NUEVA haría que IndexNow rechace todos los
+  envíos hasta que expire el TTL. El guard de HOS-369 W1-1 cazó la primera
+  versión con `max-age=3600` y tenía razón.
 - **OQ-3** — ¿Se le avisa a IndexNow también de las **bajas** (410 Gone)? El protocolo lo
   admite y acelera la desindexación, pero se cruza con HOS-256 / HOS-262, que todavía
   están en curso.
