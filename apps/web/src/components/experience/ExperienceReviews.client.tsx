@@ -91,7 +91,7 @@ export function ExperienceReviews({
     averageRating,
     locale
 }: ExperienceReviewsProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     // Session resolved client-side (HOS-369 WB0-4). The reviews themselves are
     // public and stay server-rendered; only the CTA depends on the visitor.
@@ -341,10 +341,7 @@ export function ExperienceReviews({
                             label={t('experience.reviews.loading', 'Cargando reseñas…')}
                         />
                     ) : (
-                        t('experience.reviews.more', '+ más reseñas').replace(
-                            '{{n}}',
-                            String(totalReviews - reviews.length)
-                        )
+                        tPlural('experience.reviews.more', totalReviews - reviews.length)
                     )}
                 </button>
             )}

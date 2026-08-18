@@ -15,6 +15,57 @@ import { ExperienceSchema } from './experience.schema.js';
  */
 
 // ============================================================================
+// CROSS-FIELD RULES
+// ============================================================================
+
+/**
+ * `priceUnit` is REQUIRED unless the price is on request (H-156).
+ *
+ * `experiences.price_unit` became nullable so that an experience with no price
+ * is not forced to declare the unit of a price that does not exist. But a
+ * listing that DOES carry a price still needs to say how it is charged — "$8000"
+ * with no unit is not publishable information. Nullability alone cannot express
+ * that; it is a relationship between two fields, so it lives here.
+ *
+ * Applied to the CREATE schemas only. Update schemas are `.partial()`, where an
+ * absent key means "no change" rather than "cleared", so the same rule there
+ * would reject every partial edit that happens not to mention pricing.
+ *
+ * ## Why this is exported as a separate `*Checked` schema
+ *
+ * Zod 4 does NOT silently drop refinements when a schema is sliced — it THROWS
+ * at runtime: `.pick() cannot be used on object schemas containing refinements`.
+ * TypeScript does not catch it (`.superRefine()` returns `this`, so `.pick()`
+ * still type-checks), so attaching this rule directly to
+ * {@link ExperienceOwnerCreateInputSchema} compiles cleanly and then blows up on
+ * module load in `CommerceCreateForm.client.tsx`, which picks a subset of it.
+ *
+ * So the plain create schemas stay slice-able and the rule lives in the
+ * `*CheckedSchema` variants, which the API routes validate against. Do NOT move
+ * the `superRefine` onto the plain schemas — verify with an actual `.pick()`
+ * before assuming otherwise; the compiler will not tell you.
+ *
+ * @param value - The parsed create input.
+ * @param ctx - Zod refinement context; the issue is attached to `priceUnit` so
+ *   the form highlights the field the operator has to fill in.
+ */
+export function requirePriceUnitUnlessOnRequest(
+    value: { readonly priceUnit?: string | null; readonly isPriceOnRequest?: boolean },
+    ctx: z.RefinementCtx
+): void {
+    if (value.isPriceOnRequest === true) {
+        return;
+    }
+    if (value.priceUnit === null || value.priceUnit === undefined) {
+        ctx.addIssue({
+            code: 'custom',
+            path: ['priceUnit'],
+            message: 'zodError.experience.priceUnit.requiredUnlessOnRequest'
+        });
+    }
+}
+
+// ============================================================================
 // ADMIN CREATE SCHEMAS
 // ============================================================================
 
@@ -48,10 +99,26 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
         .min(2, { message: 'zodError.commerce.slug.min' })
         .max(100, { message: 'zodError.commerce.slug.max' })
         .optional(),
-    /** Optional owner UUID; admin may assign another user as owner on creation. */
-    ownerId: UserIdSchema.optional(),
-    /** Optional destination UUID for the listing. */
-    destinationId: DestinationIdSchema.optional(),
+    /**
+     * Owning user UUID. REQUIRED (H-88): `experiences.owner_id` is NOT NULL with
+     * no default, so a create without it cannot produce a row — the insert fails
+     * with a 23502 and the caller gets an opaque 500 "A database error occurred"
+     * that names nothing. Declaring it required rejects the payload at the
+     * boundary with a 400 that names the field instead.
+     *
+     * Deliberately NOT defaulted to the acting admin: the documented flow is
+     * "admins create the listing and provision the owner", so the owner is a
+     * real merchant account rather than whoever filled in the form. The owner
+     * self-create route (`routes/commerce/protected/create.ts`) already supplies
+     * `ownerId: actor.id` explicitly and is unaffected.
+     */
+    ownerId: UserIdSchema,
+    /**
+     * Destination UUID for the listing. REQUIRED for the same reason as
+     * {@link ownerId} — `experiences.destination_id` is NOT NULL with no
+     * default (H-88).
+     */
+    destinationId: DestinationIdSchema,
     /**
      * Optional list of amenity UUIDs to associate on create (write-only).
      * Syncs the junction table transactionally alongside the experience row.
@@ -69,6 +136,16 @@ export const ExperienceAdminCreateInputSchema = ExperienceSchema.omit({
         .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
         .optional()
 });
+
+/**
+ * {@link ExperienceAdminCreateInputSchema} plus the cross-field pricing rule
+ * (see {@link requirePriceUnitUnlessOnRequest}). Routes validate against THIS
+ * one; the plain schema above stays free of refinements so it remains
+ * slice-able.
+ */
+export const ExperienceAdminCreateInputCheckedSchema = ExperienceAdminCreateInputSchema.superRefine(
+    requirePriceUnitUnlessOnRequest
+);
 
 /** TypeScript type for {@link ExperienceAdminCreateInputSchema}. */
 export type ExperienceAdminCreateInput = z.infer<typeof ExperienceAdminCreateInputSchema>;
@@ -139,30 +216,35 @@ export type ExperienceAdminCreateOutput = z.infer<typeof ExperienceAdminCreateOu
  *   (control fields — HOS-166 §6.2)
  * - `hasActiveSubscription` (subscription lifecycle, admin-only toggle)
  */
-export const ExperienceOwnerUpdateInputSchema = ExperienceSchema.pick({
-    // HOS-166 D-1: identity fields the owner now controls.
-    name: true,
-    description: true,
-    destinationId: true,
-    // Previously owner-editable (SPEC-253 §3 / operational sections).
-    type: true,
-    summary: true,
-    openingHours: true,
-    contactInfo: true,
-    socialNetworks: true,
-    // HOS-372: `media` is not writable — the `media` JSONB column was dropped.
-    // Photos are written through the relational `experience_media` endpoints and
-    // videos through this top-level column.
-    videos: true,
-    isPriceOnRequest: true,
-    priceFrom: true,
-    priceUnit: true,
-    richDescription: true,
-    nameI18n: true,
-    summaryI18n: true,
-    descriptionI18n: true,
-    richDescriptionI18n: true
-})
+export const ExperienceOwnerUpdateInputSchema = z
+    .object(
+        stripShapeDefaults(
+            ExperienceSchema.pick({
+                // HOS-166 D-1: identity fields the owner now controls.
+                name: true,
+                description: true,
+                destinationId: true,
+                // Previously owner-editable (SPEC-253 §3 / operational sections).
+                type: true,
+                summary: true,
+                openingHours: true,
+                contactInfo: true,
+                socialNetworks: true,
+                // HOS-372: `media` is not writable — the `media` JSONB column was dropped.
+                // Photos are written through the relational `experience_media` endpoints and
+                // videos through this top-level column.
+                videos: true,
+                isPriceOnRequest: true,
+                priceFrom: true,
+                priceUnit: true,
+                richDescription: true,
+                nameI18n: true,
+                summaryI18n: true,
+                descriptionI18n: true,
+                richDescriptionI18n: true
+            }).shape
+        )
+    )
     .partial()
     .extend({
         /**
@@ -242,6 +324,19 @@ export const ExperienceOwnerCreateInputSchema = ExperienceSchema.omit({
         .array(z.string().uuid({ message: 'zodError.experience.featureIds.invalidUuid' }))
         .optional()
 });
+
+/**
+ * {@link ExperienceOwnerCreateInputSchema} plus the cross-field pricing rule
+ * (see {@link requirePriceUnitUnlessOnRequest}). The owner create route
+ * validates against THIS one.
+ *
+ * The plain schema above must stay refinement-free: `CommerceCreateForm`
+ * `.pick()`s a subset of it, and Zod 4 throws on `.pick()` over a refined
+ * object schema.
+ */
+export const ExperienceOwnerCreateInputCheckedSchema = ExperienceOwnerCreateInputSchema.superRefine(
+    requirePriceUnitUnlessOnRequest
+);
 
 /** TypeScript type for {@link ExperienceOwnerCreateInputSchema}. */
 export type ExperienceOwnerCreateInput = z.infer<typeof ExperienceOwnerCreateInputSchema>;

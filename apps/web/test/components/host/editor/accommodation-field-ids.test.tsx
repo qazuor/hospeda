@@ -26,6 +26,7 @@ import { BasicsForm } from '@/components/host/editor/forms/BasicsForm.client';
 import { CapacityPricingForm } from '@/components/host/editor/forms/CapacityPricingForm.client';
 import { ContactForm } from '@/components/host/editor/forms/ContactForm.client';
 import { LocationForm } from '@/components/host/editor/forms/LocationForm.client';
+import { SeoForm } from '@/components/host/editor/forms/SeoForm.client';
 import { ServicesForm } from '@/components/host/editor/forms/ServicesForm.client';
 import { buildFieldId } from '@/lib/forms/build-field-id';
 
@@ -57,10 +58,15 @@ const MOCK_INITIAL_DATA = {
     destinationId: 'dest-456',
     latitude: -32.47,
     longitude: -58.23,
+    street: 'Av. Belgrano',
+    number: '123',
+    floor: '',
+    apartment: '',
     maxGuests: 4,
     bedrooms: 2,
     bathrooms: 1,
     beds: 3,
+    minNights: 2,
     basePrice: 15000,
     currency: 'ARS',
     isAvailable: true,
@@ -76,7 +82,10 @@ const MOCK_INITIAL_DATA = {
     twitterUrl: '',
     linkedinUrl: '',
     tiktokUrl: '',
-    youtubeUrl: ''
+    youtubeUrl: '',
+    seoTitle: '',
+    seoDescription: '',
+    videos: []
     // biome-ignore lint/suspicious/noExplicitAny: test fixture stands in for the full entity
 } as any;
 
@@ -118,6 +127,8 @@ function renderSection(section: string) {
             );
         case 'contact':
             return render(<ContactForm {...COMMON} />);
+        case 'seo':
+            return render(<SeoForm {...COMMON} />);
         default:
             throw new Error(`unknown section "${section}"`);
     }
@@ -146,8 +157,13 @@ const SECTION_OF: Readonly<Record<string, { section: string; controlName?: strin
     bedrooms: { section: 'capacityPricing' },
     bathrooms: { section: 'capacityPricing' },
     basePrice: { section: 'capacityPricing' },
+    minNights: { section: 'capacityPricing' },
     latitude: { section: 'location' },
     longitude: { section: 'location' },
+    street: { section: 'location' },
+    number: { section: 'location' },
+    floor: { section: 'location' },
+    apartment: { section: 'location' },
     phone: { section: 'contact' },
     whatsapp: { section: 'contact' },
     email: { section: 'contact' },
@@ -157,7 +173,9 @@ const SECTION_OF: Readonly<Record<string, { section: string; controlName?: strin
     twitter: { section: 'contact' },
     linkedin: { section: 'contact' },
     tiktok: { section: 'contact' },
-    youtube: { section: 'contact' }
+    youtube: { section: 'contact' },
+    seoTitle: { section: 'seo' },
+    seoDescription: { section: 'seo' }
 };
 
 /**

@@ -57,6 +57,30 @@ describe('PERMISSION_ROLE_MAP', () => {
         expect(ROLES_WITH_ACCOMMODATIONS_NAV.has(RoleEnum.EDITOR)).toBe(false);
     });
 
+    it('does NOT map CLIENT_MANAGER to ACCOMMODATION_CREATE (H-20)', () => {
+        // The very same drift as EDITOR above, left behind when EDITOR was
+        // removed — the fix landed one line below the role that still needed it.
+        //
+        // Verified three ways rather than argued: the seed
+        // (`rolePermissions.seed.ts`) grants CLIENT_MANAGER only
+        // ACCOMMODATION_VIEW_ALL and ACCOMMODATION_VIEW_PRIVATE; the production
+        // database matches; and the roles that really hold
+        // `accommodation.create` in production are ADMIN, HOST and SUPER_ADMIN.
+        // The web map was the only one of the three that added CLIENT_MANAGER.
+        //
+        // Latent, not active: no CLIENT_MANAGER exists in production today. It
+        // activates the day one is created — that account would see the entire
+        // "Anfitrión" sidebar group, and every entry in it would answer 403.
+        //
+        // Asserted on BOTH copies for the reason the EDITOR case documents: the
+        // mirrored-constant test compares the two hand-maintained copies against
+        // each other, so it stays green while both are wrong together.
+        expect(
+            PERMISSION_ROLE_MAP[PermissionEnum.ACCOMMODATION_CREATE]?.has(RoleEnum.CLIENT_MANAGER)
+        ).toBe(false);
+        expect(ROLES_WITH_ACCOMMODATIONS_NAV.has(RoleEnum.CLIENT_MANAGER)).toBe(false);
+    });
+
     it('grants POST_CREATE to EDITOR (and platform staff), but not HOST or COMMERCE_OWNER (HOS-134 editor door signal)', () => {
         const mapped = PERMISSION_ROLE_MAP[PermissionEnum.POST_CREATE];
         expect(mapped).toBeDefined();

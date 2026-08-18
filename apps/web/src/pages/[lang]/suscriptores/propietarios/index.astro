@@ -14,7 +14,7 @@ import JsonLd from '@/components/seo/JsonLd.astro';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
-import { OWNER_FAQ_ITEMS, buildOwnerFaqParams } from '@/lib/owner-faq';
+import { OWNER_FAQ_ITEMS, buildOwnerFaqParams, resolveOwnerFaqAnswer } from '@/lib/owner-faq';
 import { HomeIcon, LocationIcon, MapIcon, SettingsIcon, ShieldIcon, SparkleIcon, StarIcon } from '@repo/icons';
 
 interface BenefitDefinition {
@@ -26,7 +26,7 @@ interface BenefitDefinition {
 }
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const benefits: ReadonlyArray<BenefitDefinition> = [
 	{
@@ -62,7 +62,7 @@ const steps = [
 // Shared with /publicar, which renders the same `owners.faq.*` keys. Declaring
 // the array per page is what let the two drift (HOS-331).
 const faqs = OWNER_FAQ_ITEMS;
-const faqParams = buildOwnerFaqParams();
+const faqParams = await buildOwnerFaqParams();
 
 // Split heading to underline the last word with a handwritten accent.
 const heroHeadingFull = t('owners.hero.title', 'Publicá tu alojamiento y llegá a miles de viajeros');
@@ -78,7 +78,7 @@ const faqJsonLd = {
 		name: t(faq.qKey, faq.qFb),
 		acceptedAnswer: {
 			'@type': 'Answer',
-			text: t(faq.aKey, faq.aFb, faqParams),
+			text: resolveOwnerFaqAnswer({ faq, t, tPlural, faqParams }),
 		},
 	})),
 };
@@ -196,7 +196,7 @@ const faqJsonLd = {
 				{faqs.map((faq) => (
 					<details class="owners-faq__item">
 						<summary class="owners-faq__question">{t(faq.qKey, faq.qFb)}</summary>
-						<p class="owners-faq__answer">{t(faq.aKey, faq.aFb, faqParams)}</p>
+						<p class="owners-faq__answer">{resolveOwnerFaqAnswer({ faq, t, tPlural, faqParams })}</p>
 					</details>
 				))}
 			</div>

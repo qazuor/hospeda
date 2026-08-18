@@ -52,8 +52,6 @@
             "description": "Choose a plan to start publishing your accommodations"
         },
         "trial": {
-            "daysRemaining": "You have {{count}} days left in your trial",
-            "dayRemaining": "You have 1 day left in your trial",
             "noCharge": "No charges have been made",
             "subscribeNow": "Subscribe now",
             "expiredBanner": {
@@ -191,19 +189,28 @@
             "amountDetails": "Amount: {{amount}}",
             "verifyingStatus": "Verifying payment status...",
             "verifyingSubtitle": "We are confirming your payment. This may take a moment.",
-            "timeoutTitle": "This is taking longer than usual",
-            "timeoutSubtitle": "Your payment may still be processing. Check your account in a few minutes to confirm your subscription.",
             "cta": "Go to my account",
             "pageTitle": "Payment approved",
             "promoIgnoredNote": "Your code was not applied: it extends a free trial, and this subscription does not have one.",
             "linkErrorTitle": "We couldn't link your payment",
-            "linkErrorSubtitle": "There was a problem linking this payment to your account. If you already paid, contact support with the MercadoPago operation number."
+            "linkErrorSubtitle": "There was a problem linking this payment to your account. If you already paid, contact support with the MercadoPago operation number.",
+            "unresolvedTitle": "We're still confirming your payment",
+            "unresolvedSubtitle": "Your payment was not lost. MercadoPago can take a few minutes to confirm it, and your plan activates automatically as soon as it does. You can close this page: check the status in My Account, or write to us if you still cannot see it in a while.",
+            "unresolvedSupportCta": "Contact us"
         },
         "pending": {
             "title": "Your payment is being processed",
             "body": "It may take up to 24 hours to confirm. We'll email you when it clears.",
             "cta": "Check status",
             "pageTitle": "Payment processing"
+        },
+        "partnerPending": {
+            "pageTitle": "Payment received",
+            "title": "We received your payment",
+            "body": "We are confirming the transaction with MercadoPago. It may take a few minutes, and in some cases up to 24 hours. Once the payment clears, your presence on Hospeda is activated automatically — there is nothing else for you to do.",
+            "note": "Keep the receipt MercadoPago sent you. If anything is unclear, write to us and we will look into it with you.",
+            "homeCta": "Go to homepage",
+            "contactCta": "Contact us"
         },
         "failure": {
             "title": "Your payment could not be processed",
@@ -225,10 +232,6 @@
             "currentPlan": "Current plan",
             "currentPlanAriaLabel": "This is your current plan",
             "changePlan": "Switch to this plan"
-        },
-        "monthlyEmailNotice": {
-            "title": "Before you continue",
-            "text": "You'll pay with the MercadoPago account linked to {{email}}. If your MercadoPago account uses a different email, you won't be able to complete the monthly payment."
         },
         "promoApply": {
             "toggle": "Have a discount code?",
@@ -257,43 +260,56 @@
             "errorPlanRestriction": "This code isn't valid for the selected plan.",
             "errorNewUsersOnly": "This code is only for new customers.",
             "errorMinAmount": "Your purchase doesn't meet the minimum required for this code."
+        },
+        "trialWarning": {
+            "title": "The free trial is granted by Mercado Pago",
+            "body": "Mercado Pago grants the trial period only once per account and per plan. If you've already used a trial for this plan with the same Mercado Pago account, Mercado Pago will charge the first period right away instead of applying the trial.",
+            "confirm": "Got it, continue",
+            "cancel": "Cancel"
         }
     },
     "limit": {
         "max_favorites": {
             "title": "You've reached your favorites limit",
-            "message": "You've saved {{currentCount}} of {{maxAllowed}} favorites in your plan. Upgrade to save more.",
+            "message_one": "You've saved {{currentCount}} of {{maxAllowed}} favorite in your plan. Upgrade to save more.",
+            "message_other": "You've saved {{currentCount}} of {{maxAllowed}} favorites in your plan. Upgrade to save more.",
             "cta": "View my subscription"
         },
         "max_accommodations": {
             "title": "You've reached your property limit",
-            "message": "You have {{currentCount}} of {{maxAllowed}} properties in your plan. Upgrade to publish more.",
+            "message_one": "You have {{currentCount}} of {{maxAllowed}} property in your plan. Upgrade to publish more.",
+            "message_other": "You have {{currentCount}} of {{maxAllowed}} properties in your plan. Upgrade to publish more.",
             "cta": "View my subscription",
             "atLimitPanel": {
                 "title": "You've reached your plan limit",
-                "body": "You're using {{currentCount}} of {{maxAllowed}} properties. To publish another, upgrade your plan.",
+                "body_one": "You're using {{currentCount}} of {{maxAllowed}} property. To publish another, upgrade your plan.",
+                "body_other": "You're using {{currentCount}} of {{maxAllowed}} properties. To publish another, upgrade your plan.",
                 "primaryCta": "View my subscription",
                 "secondaryCta": "View my properties"
             }
         },
         "max_photos_per_accommodation": {
             "title": "You've reached your photo limit",
-            "message": "You've uploaded {{currentCount}} of {{maxAllowed}} photos allowed in your plan. Upgrade to upload more.",
+            "message_one": "You've uploaded {{currentCount}} of {{maxAllowed}} photo allowed in your plan. Upgrade to upload more.",
+            "message_other": "You've uploaded {{currentCount}} of {{maxAllowed}} photos allowed in your plan. Upgrade to upload more.",
             "cta": "View my subscription"
         },
         "max_active_promotions": {
             "title": "You've reached your promotions limit",
-            "message": "You have {{currentCount}} of {{maxAllowed}} active promotions in your plan. Upgrade to create more.",
+            "message_one": "You have {{currentCount}} of {{maxAllowed}} active promotion in your plan. Upgrade to create more.",
+            "message_other": "You have {{currentCount}} of {{maxAllowed}} active promotions in your plan. Upgrade to create more.",
             "cta": "View my subscription"
         },
         "max_properties": {
             "title": "You've reached your property limit",
-            "message": "You have {{currentCount}} of {{maxAllowed}} properties in your plan. Upgrade to add more.",
+            "message_one": "You have {{currentCount}} of {{maxAllowed}} property in your plan. Upgrade to add more.",
+            "message_other": "You have {{currentCount}} of {{maxAllowed}} properties in your plan. Upgrade to add more.",
             "cta": "View my subscription"
         },
         "max_staff_accounts": {
             "title": "You've reached your staff account limit",
-            "message": "You have {{currentCount}} of {{maxAllowed}} staff accounts in your plan. Upgrade to add more.",
+            "message_one": "You have {{currentCount}} of {{maxAllowed}} staff account in your plan. Upgrade to add more.",
+            "message_other": "You have {{currentCount}} of {{maxAllowed}} staff accounts in your plan. Upgrade to add more.",
             "cta": "View my subscription"
         },
         "generic": {
@@ -422,7 +438,16 @@
         "can_view_recommendations": "Personalized recommendations",
         "ai_text_improve": "AI writing assistant",
         "ai_chat": "Ask about the accommodation (AI)",
-        "ai_search": "Smart search"
+        "ai_search": "Smart search",
+        "multi_property_management": "Multi-property management",
+        "consolidated_analytics": "Consolidated analytics",
+        "centralized_booking": "Centralized booking",
+        "staff_management": "Staff management",
+        "can_use_collections": "Use favorites collections",
+        "vip_promotions_access": "VIP promotions access",
+        "ai_support": "AI support assistant",
+        "ai_translate": "AI content translation",
+        "ai_accommodation_import": "AI accommodation import"
     },
     "comparison": {
         "unlimited": "Unlimited",

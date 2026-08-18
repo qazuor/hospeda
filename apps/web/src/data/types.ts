@@ -10,6 +10,8 @@
  * All fields are `readonly` to prevent accidental mutation of shared data.
  */
 
+import type { MediaAttribution } from '../lib/media';
+
 // Re-export UI types from split file for backward compatibility
 export type {
     ArticleCardBaseProps,
@@ -502,12 +504,8 @@ export interface ArticleCardData {
     readonly featuredImage: {
         readonly url: string;
         readonly caption?: string;
-        readonly attribution?: {
-            readonly photographer: string;
-            readonly sourceUrl: string;
-            readonly license: string;
-            readonly provider: 'unsplash' | 'pexels';
-        };
+        /** Photo credit, normalised and scheme-checked by `extractFeaturedImage`. */
+        readonly attribution?: MediaAttribution;
     };
     /** Post category slug (e.g. `'travel'`, `'gastronomy'`, `'tips'`). */
     readonly category: string;
@@ -615,6 +613,32 @@ export type AccommodationAmenityItem = DetailAmenity;
 export type AccommodationFeatureItem = DetailFeature;
 
 /**
+ * Contact channels exposed on the accommodation public detail page (H-118).
+ *
+ * Deliberately NARROWER than the API's domain `contactInfo` shape — only the
+ * three fields the owner approved for public display (16/08). `whatsapp` is
+ * NOT here: it already renders through its own dedicated, entitlement-gated
+ * flow (`hasWhatsapp` + the `WhatsAppContact` island, HOS-19), and duplicating
+ * it in this narrow public projection would bypass that gate.
+ */
+export interface AccommodationContactInfo {
+    readonly phone?: string;
+    readonly email?: string;
+    readonly website?: string;
+}
+
+/**
+ * Social network links exposed on the accommodation public detail page
+ * (H-118). The API's `socialNetworks` carries more platforms (Twitter,
+ * LinkedIn, TikTok, YouTube), but per owner decision (16/08) the detail page
+ * surfaces only Facebook and Instagram.
+ */
+export interface AccommodationSocialNetworks {
+    readonly facebook?: string;
+    readonly instagram?: string;
+}
+
+/**
  * Typed data shape for the accommodation detail page.
  * Produced by `toAccommodationDetailPageProps()` in transforms.ts.
  */
@@ -645,18 +669,35 @@ export interface AccommodationDetailData {
     readonly averageRating: number;
     readonly reviewsCount: number;
     readonly featuredImage: string;
+    /**
+     * Author-written alternative text for the cover photo (H-125).
+     * Absent when the owner never wrote one; consumers fall back to the
+     * accommodation name.
+     */
+    readonly featuredImageAlt?: string;
+    /**
+     * Photo credit for the cover image (H-125). Absent when the photo needs
+     * none — most hosts photograph their own place.
+     */
+    readonly featuredImageAttribution?: MediaAttribution;
     readonly media: {
         readonly images: readonly string[];
         /**
-         * Gallery items carrying the image URL plus optional caption and
-         * description metadata preserved from the API response. Consumed by
-         * the full photo page and lightbox integrations; kept alongside
-         * `images` for backward compatibility.
+         * Gallery items carrying the image URL plus optional caption,
+         * description and alt metadata preserved from the API response.
+         * Consumed by the full photo page and lightbox integrations; kept
+         * alongside `images` for backward compatibility.
+         *
+         * `alt` and `caption` are NOT interchangeable (H-125): the caption is
+         * display copy, the alt is what a screen reader announces.
          */
         readonly galleryItems: readonly {
             readonly url: string;
             readonly caption?: string;
             readonly description?: string;
+            readonly alt?: string;
+            /** Photo credit, when the photo is somebody else's work (H-125). */
+            readonly attribution?: MediaAttribution;
         }[];
         /**
          * Video entries carrying the URL plus optional caption and description.
@@ -671,14 +712,17 @@ export interface AccommodationDetailData {
             readonly description?: string;
         }[];
     };
-    readonly location: {
-        readonly lat: number | null;
-        readonly lng: number | null;
-    };
     /**
      * SPEC-097 — Privacy-aware obfuscated coordinates for accommodation maps.
      * Present only when the API returns it (anonymous/public visitors).
-     * Owners and admins receive the exact `location` instead.
+     *
+     * HOS-554: this is the ONLY coordinate a public page has. The exact
+     * `location.coordinates` is stripped server-side for anyone who is not the
+     * owner or an `ACCOMMODATION_LOCATION_EXACT_VIEW` holder, so a
+     * `location: { lat, lng }` field used to sit here reading a path the public
+     * payload never carries — permanently `null`, and mistakable for a live
+     * value. It was removed rather than fixed: publishing the exact pin is the
+     * thing SPEC-097 exists to prevent.
      */
     readonly approximateLocation?: {
         readonly lat: number;
@@ -709,6 +753,17 @@ export interface AccommodationDetailData {
         readonly title: string | null;
         readonly description: string | null;
     } | null;
+    /**
+     * H-118: phone/email/website the owner filled in via the contact editor.
+     * Absent when the accommodation has none of the three set — the block
+     * renders nothing rather than an empty card.
+     */
+    readonly contactInfo?: AccommodationContactInfo;
+    /**
+     * H-118: Facebook/Instagram links (subset of the API's full
+     * `socialNetworks`, per owner decision). Absent when neither is set.
+     */
+    readonly socialNetworks?: AccommodationSocialNetworks;
     readonly owner: {
         readonly id: string;
         readonly name: string;
@@ -879,12 +934,8 @@ export interface EventDetailData {
     readonly featuredImage: {
         readonly url: string;
         readonly caption?: string;
-        readonly attribution?: {
-            readonly photographer: string;
-            readonly sourceUrl: string;
-            readonly license: string;
-            readonly provider: 'unsplash' | 'pexels';
-        };
+        /** Photo credit, normalised and scheme-checked by `extractFeaturedImage`. */
+        readonly attribution?: MediaAttribution;
     };
     readonly gallery: readonly EventGalleryImage[];
 
@@ -1170,8 +1221,12 @@ export interface ExperienceCardData {
      * Zero when `isPriceOnRequest` is true (price stored as 0 per the spec decision).
      */
     readonly priceFrom: number;
-    /** Billing unit for the price (per_day | per_hour | per_person | per_group). */
-    readonly priceUnit: string;
+    /**
+     * Billing unit for the price (per_day | per_hour | per_person | per_group).
+     * `null` when the experience has no price to bill (H-156) — the card shows
+     * "Consultar precio" and never reads the unit.
+     */
+    readonly priceUnit: string | null;
     /**
      * When true the UI shows "Consultar precio" instead of the numeric price.
      * The stored `priceFrom` value is ignored on display.

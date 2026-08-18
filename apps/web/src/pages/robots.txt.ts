@@ -96,6 +96,32 @@ const AI_CITATION_USER_AGENTS = [
 ] as const;
 
 /**
+ * Classic search-engine crawlers named EXPLICITLY (HOS-585 G-3).
+ *
+ * These emit the same block `*` already grants, so naming them changes nothing
+ * about what any crawler may fetch today. That is the point, and it is worth
+ * stating plainly so nobody deletes this list as dead weight:
+ *
+ * WA-4's rule (owner decision D-3) is that every agent this site has an opinion
+ * about is declared here **exactly once, in exactly one direction**. Bing was the
+ * one search engine the site actively cares about that had no opinion recorded —
+ * it survived only by falling through to `*`. That is fine until someone narrows
+ * `*` for an unrelated reason, at which point Bing loses access as collateral
+ * damage and nothing in this file shows that a decision was ever made about it.
+ * An explicit block turns a silent inheritance into a stated policy.
+ *
+ * `Googlebot` is deliberately NOT here. It is not an omission: `Google-Extended`
+ * above governs Gemini grounding and is a robots token only, while Googlebot
+ * itself has never been in question and adding it would imply this list is the
+ * complete set of allowed crawlers — it is not. `*` is.
+ *
+ * Bing's other tokens (`adidxbot` for Bing Ads, the retired `msnbot` /
+ * `BingPreview`) are out of scope: `bingbot` is the one that governs organic
+ * search inclusion, which is what HOS-585 is about.
+ */
+const SEARCH_ENGINE_USER_AGENTS = ['bingbot'] as const;
+
+/**
  * User-agents denied the whole site (`Disallow: /`).
  *
  * Two groups, one rule:
@@ -183,10 +209,11 @@ function buildBlockedAgentBlock(userAgent: string): string {
 /**
  * Build the robots.txt body for indexable hosts.
  *
- * Emits, in order: the `*` block, one allow block per citation agent, one deny
- * block per blocked agent, then the Sitemap directive. Every agent this site has
- * an opinion about is named exactly once, in exactly one direction — that single
- * statement is the point of WA-4 (owner decision D-3).
+ * Emits, in order: the `*` block, one allow block per search engine, one allow
+ * block per citation agent, one deny block per blocked agent, then the Sitemap
+ * directive. Every agent this site has an opinion about is named exactly once, in
+ * exactly one direction — that single statement is the point of WA-4 (owner
+ * decision D-3).
  *
  * @returns The robots.txt content string
  */
@@ -196,6 +223,7 @@ function buildPermissiveBody(): string {
 
     const blocks = [
         buildAgentBlock('*'),
+        ...SEARCH_ENGINE_USER_AGENTS.map((ua) => buildAgentBlock(ua)),
         ...AI_CITATION_USER_AGENTS.map((ua) => buildAgentBlock(ua)),
         ...BLOCKED_USER_AGENTS.map((ua) => buildBlockedAgentBlock(ua))
     ];

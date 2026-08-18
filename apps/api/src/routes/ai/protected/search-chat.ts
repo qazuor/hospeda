@@ -115,6 +115,7 @@ import {
     type LocationCarryoverConflict,
     type PoiLocationConflict
 } from './search-chat.prompt.js';
+import { dropStaleAmenitiesOnNewSearch } from './search-chat.stale-carryover.js';
 import {
     dropDestinationId,
     mapIntentToSearchParams,
@@ -498,6 +499,9 @@ async function resolveDestinationIdFromCity(city: string): Promise<string | unde
  * 4. Call `aiService.generateObject` with `SearchIntentOutputSchema` to extract
  *    the full updated entity set. Mirrors search-intent.ts (same Zod-cast pattern).
  * 5. Safe-parse returned entities; fall back to `{}` on failure.
+ * 5.5. HOS-551 / H-71: drop boolean-amenity / slug carryover that looks like
+ *    unmentioned state from the PRIOR turn, when this turn's entities name a
+ *    genuinely different destination (see `dropStaleAmenitiesOnNewSearch`).
  * 6. Resolve amenity slugs (deduped against boolean shortcuts — see
  *    `dedupeAmenitySlugsAgainstBooleanShortcuts`), feature slugs, and — when a
  *    city was extracted and no explicit geo pair is present — the city name to
@@ -688,6 +692,44 @@ export const protectedAiSearchChatRoute = createProtectedStreamingRoute({
             );
         }
         validatedEntities = sanitizedEntities;
+
+        // HOS-551 / H-71: drop boolean-amenity / slug carryover that looks like
+        // it survived unmentioned from the PRIOR turn.
+        //
+        // The trigger is the model's OWN refine-vs-new-search classification,
+        // which it now states in `isNewSearch` rather than leaving implicit in
+        // which fields it omitted. The flag rides in the same `generateObject`
+        // completion as the entities, so it costs no extra provider call. When
+        // it is absent the guard falls back to the destination-change proxy that
+        // shipped before it existed. See the module doc for both triggers.
+        // Passed through verbatim, NOT coerced: `undefined` (the model said
+        // nothing) must stay distinguishable from an explicit `false`, or the
+        // fallback silently disappears.
+        const modelSaysNewSearch = typedObject.isNewSearch;
+
+        // Logged unconditionally so the classification is auditable: this is the
+        // one signal that says how often the model gets refine-vs-new right, and
+        // `droppedStaleFields` says how often it contradicted itself by carrying
+        // a filter into a search it had just declared new.
+        const entitiesBeforeGuard = validatedEntities;
+        validatedEntities = dropStaleAmenitiesOnNewSearch(
+            validatedEntities,
+            sanitizedCurrentFilters,
+            { isNewSearch: modelSaysNewSearch }
+        );
+        apiLogger.info(
+            {
+                locale,
+                // `undefined` here means the model omitted the field and the
+                // destination-change fallback decided instead — worth seeing in
+                // the logs, because a sustained run of it says the prompt change
+                // is not landing.
+                isNewSearch: modelSaysNewSearch ?? null,
+                hadPriorFilters: sanitizedCurrentFilters !== undefined,
+                droppedStaleFields: entitiesBeforeGuard !== validatedEntities
+            },
+            'search-chat: refine-vs-new classification'
+        );
 
         // Step 6: Resolve amenity slugs, feature slugs, and city → destinationId
         // to DB-verified values in parallel.

@@ -22,6 +22,7 @@ import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import { buildUrl } from '../../lib/urls';
 import styles from './PlanPurchaseButton.module.css';
+import { TrialWarningDialog } from './TrialWarningDialog.client';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -68,6 +69,18 @@ export interface PlanPurchaseButtonProps {
      * target. The discount can still be applied later at checkout.
      */
     readonly showPromo?: boolean;
+    /**
+     * Trial length in days this plan offers, or `0` when the plan has no
+     * trial at all. Drives the trial-warning confirmation dialog (owner
+     * decision, real-money incident): MercadoPago grants its free trial once
+     * per (MercadoPago account, plan) pair, a rule Hospeda's own
+     * `billingApi.getTrialEligibility()` check cannot see. When this is `> 0`
+     * and the user has not already been marked ineligible, clicking the CTA
+     * opens {@link TrialWarningDialog} instead of going straight to checkout.
+     * Defaults to `0` (no dialog) so existing callers that do not pass it
+     * keep today's direct-checkout behaviour.
+     */
+    readonly trialDays?: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -238,12 +251,15 @@ export function PlanPurchaseButton({
     currency,
     ctaText,
     locale,
-    showPromo = true
+    showPromo = true,
+    trialDays = 0
 }: PlanPurchaseButtonProps): JSX.Element {
     const { data: session, isPending: sessionPending } = useSession();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentPlanSlug, setCurrentPlanSlug] = useState<string | null>(null);
+    // Controls the MercadoPago trial-warning dialog (see `promisesTrial` below).
+    const [showTrialWarning, setShowTrialWarning] = useState(false);
     // HOS-226: `null` = unknown (unauthenticated, still loading, or the lookup
     // failed) — the SSR "N days free" badge stays untouched in that case.
     // `false` is the only value that triggers badge suppression below.
@@ -523,34 +539,39 @@ export function PlanPurchaseButton({
     const isPlanChange =
         isAuthenticated && currentPlanSlug !== null && currentPlanSlug !== planSlug;
 
+    // Whether this checkout actually promises a trial to the user right now.
+    // `trialDays > 0` is the plan-level offer; `trialEligible !== false` mirrors
+    // the badge-suppression effect above — `null` (unauthenticated, still
+    // loading, or the lookup failed) leaves the SSR-promised trial standing, so
+    // the warning must show for it too. Only a confirmed `false` skips it.
+    const promisesTrial = trialDays > 0 && trialEligible !== false;
+
     // Show the promo section only when the user can interact with checkout
     // (never in the plan-change case — promo codes apply at checkout, not here).
+    // HOS-451/H-90: never on a free ($0) plan — a promo code has no semantics
+    // against a price that is already zero, and the validate endpoint rejects
+    // amount=0 outright (`ValidatePromoCodeSchema.amount` is `.positive()`), so
+    // offering the field here only produces a guaranteed error. A user who
+    // wants a `comp` grant applies it on a paid plan, where it works.
     const showPromoSection =
-        showPromo && isAuthenticated && !isCurrentPlan && !isAnnualUnavailable && !isPlanChange;
-
-    // BETA-183: a MercadoPago preapproval (used by every MONTHLY plan) is created
-    // with a fixed payer_email = the Hospeda signup email. MP rejects the payment
-    // if the paying MP account is under a different email — a surprise the user
-    // only hits on MP's own screen, with no prior warning in Hospeda. Surface an
-    // up-front notice before the redirect so the user can use (or switch to) an MP
-    // account under this email. Monthly-only: annual is a one-time charge and any
-    // MP account can pay it. Layer 1 (notice only) — capturing an alternate
-    // payer_email is a follow-up.
-    const userEmail = session?.user?.email ?? '';
-    const showMonthlyEmailNotice =
+        showPromo &&
         isAuthenticated &&
-        billingInterval === 'monthly' &&
         !isCurrentPlan &&
+        !isAnnualUnavailable &&
         !isPlanChange &&
-        userEmail !== '';
-    const monthlyEmailNoticeTitle = t(
-        'billing.checkout.monthlyEmailNotice.title',
-        'Antes de continuar'
-    );
-    const monthlyEmailNoticeText = t(
-        'billing.checkout.monthlyEmailNotice.text',
-        'Vas a pagar con la cuenta de MercadoPago asociada a {{email}}. Si tu cuenta de MercadoPago usa otro correo, no vas a poder completar el pago mensual.'
-    ).replace('{{email}}', userEmail);
+        displayPriceCents > 0;
+
+    // HOS-452/H-82: the payer-email notice that used to live here (BETA-183)
+    // was removed. It warned that MercadoPago required the paying account to
+    // share the Hospeda signup email — true for the OLD inline-preapproval
+    // flow this component used when BETA-183 shipped (2026-07-18), but
+    // superseded the very next day by HOS-191 (2026-07-19), which moved
+    // accommodation checkout (monthly AND annual) to MercadoPago's hosted
+    // `preapproval_plan` share-link checkout — MP itself collects the payer
+    // account on its own page, and no `payer_email` is ever sent from here.
+    // Verified live 13/08: a checkout completed with a DIFFERENT MP account
+    // email than the Hospeda signup email, without issue. Do not re-add this
+    // notice without re-verifying the constraint still holds.
 
     // ---------------------------------------------------------------------------
     // Promo helpers
@@ -632,10 +653,20 @@ export function PlanPurchaseButton({
             });
 
             if (!result.ok) {
+                // HOS-451/H-90: a 400 here is a validation rejection (e.g. a bad
+                // `amount`), not a transient failure — showing the "couldn't
+                // verify, try again" copy invites a retry that will fail
+                // identically every time. Route it through the same "invalid
+                // code" fallback as an unrecognized errorCode; reserve the
+                // transient-sounding message for network/5xx failures, where a
+                // retry can plausibly succeed.
                 setPromo((prev) => ({
                     ...prev,
                     status: 'error',
-                    errorMsg: promoErrorGeneric,
+                    errorMsg:
+                        result.error.status === 400
+                            ? resolvePromoError(undefined)
+                            : promoErrorGeneric,
                     appliedCode: null
                 }));
                 return;
@@ -769,7 +800,9 @@ export function PlanPurchaseButton({
 
     /**
      * Handle button click.
-     * Redirects unauthenticated users to sign-in; fires checkout POST for authenticated users.
+     * Redirects unauthenticated users to sign-in; opens the trial-warning
+     * dialog when this checkout promises a trial (see `promisesTrial`);
+     * otherwise fires the checkout POST directly for authenticated users.
      */
     async function handleClick(): Promise<void> {
         // Clear any previous error on each attempt.
@@ -804,6 +837,24 @@ export function PlanPurchaseButton({
             return;
         }
 
+        // MercadoPago-vs-Hospeda trial-eligibility mismatch (real-money incident
+        // in prod): stop here and require explicit confirmation instead of
+        // going straight to MercadoPago. `handleTrialWarningConfirm` re-invokes
+        // `runCheckout` directly once the user accepts.
+        if (promisesTrial) {
+            setShowTrialWarning(true);
+            return;
+        }
+
+        await runCheckout();
+    }
+
+    /**
+     * Fires the actual checkout POST and follows the returned URL. Split out
+     * of `handleClick` so the trial-warning dialog's "continue" action can
+     * invoke it directly, without re-running the trial-warning gate.
+     */
+    async function runCheckout(): Promise<void> {
         setLoading(true);
 
         try {
@@ -866,6 +917,23 @@ export function PlanPurchaseButton({
         } finally {
             setLoading(false);
         }
+    }
+
+    /**
+     * User accepted the trial-warning dialog — close it and proceed to the
+     * checkout that was held back.
+     */
+    function handleTrialWarningConfirm(): void {
+        setShowTrialWarning(false);
+        void runCheckout();
+    }
+
+    /**
+     * User dismissed the trial-warning dialog (Cancel, Escape, or overlay
+     * click) — close it without starting a checkout.
+     */
+    function handleTrialWarningCancel(): void {
+        setShowTrialWarning(false);
     }
 
     const buttonAriaLabel = isCurrentPlan
@@ -952,17 +1020,6 @@ export function PlanPurchaseButton({
                 >
                     {error}
                 </p>
-            )}
-
-            {/* BETA-183: monthly MP email-mismatch notice (layer 1 — notice only) */}
-            {showMonthlyEmailNotice && (
-                <aside
-                    className={styles.monthlyNotice}
-                    data-testid="monthly-email-notice"
-                >
-                    <p className={styles.monthlyNoticeTitle}>{monthlyEmailNoticeTitle}</p>
-                    <p className={styles.monthlyNoticeText}>{monthlyEmailNoticeText}</p>
-                </aside>
             )}
 
             {/* Promo code section — only shown when the user can actually checkout */}
@@ -1063,6 +1120,13 @@ export function PlanPurchaseButton({
                     )}
                 </div>
             )}
+
+            <TrialWarningDialog
+                isOpen={showTrialWarning}
+                locale={locale}
+                onCancel={handleTrialWarningCancel}
+                onConfirm={handleTrialWarningConfirm}
+            />
         </div>
     );
 }

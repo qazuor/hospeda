@@ -74,7 +74,7 @@ const {
 	ctaText,
 } = Astro.props;
 
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 const hasPlans = plans.length > 0;
 
 // Annual toggle: only render the UI when at least one plan in the grid has
@@ -86,14 +86,9 @@ const hasAnyAnnualPrice = plans.some(
 
 const recommendedLabel = t('pricing.recommended', 'Recomendado');
 const featuresLabel = t('pricing.features.label', 'Incluye');
-const trialFallback = t('pricing.trial', '{days} días gratis');
 const includesEverythingTemplate = t(
 	'pricing.includesEverything',
 	'Todo lo del plan {plan}, más:'
-);
-const inheritedSummaryTemplate = t(
-	'pricing.inheritedSummary',
-	'+{count} funciones del plan {plan}'
 );
 const baseHighlightTitle = t('pricing.baseHighlightTitle', 'Ideal para empezar');
 const baseHighlightText = t(
@@ -235,9 +230,9 @@ function formatPriceArs(cents: number): string {
 					? includesEverythingTemplate.replace('{plan}', getPlanName({ plan: previousPlan, t }))
 					: '';
 				const inheritedSummaryLabel = previousPlan
-					? inheritedSummaryTemplate
-							.replace('{count}', String(previousPlan.entitlements.length))
-							.replace('{plan}', getPlanName({ plan: previousPlan, t }))
+					? tPlural('pricing.inheritedSummary', previousPlan.entitlements.length, {
+							plan: getPlanName({ plan: previousPlan, t }),
+					  })
 					: '';
 
 				return (
@@ -287,7 +282,7 @@ function formatPriceArs(cents: number): string {
 						</div>
 						{plan.hasTrial && plan.trialDays > 0 && (
 							<p class="pricing-card__trial">
-								{trialFallback.replace('{days}', String(plan.trialDays))}
+								{tPlural('pricing.trial', plan.trialDays)}
 							</p>
 						)}
 						{visibleFeatures.length > 0 && (
@@ -353,6 +348,7 @@ function formatPriceArs(cents: number): string {
 								currency="ARS"
 								ctaText={ctaText}
 								locale={locale}
+								trialDays={plan.hasTrial ? plan.trialDays : 0}
 							/>
 						</div>
 					</div>

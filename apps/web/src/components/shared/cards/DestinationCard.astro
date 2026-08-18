@@ -42,13 +42,12 @@ const {
 	variant = 'grid',
 } = Astro.props;
 
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const detailUrl = buildUrl({ locale, path: `destinos/${destination.slug}` });
 
-const accommodationsLabel = destination.accommodationsCount === 1
-	? t('destination.card.accommodation_singular', 'alojamiento')
-	: t('destination.card.accommodation_plural', 'alojamientos');
+const accommodationsLabel = tPlural('destinations.card.accommodation', destination.accommodationsCount);
+const eventsLabel = tPlural('destinations.card.event', destination.eventsCount);
 
 const isExternalImage = destination.featuredImage.url.startsWith('http');
 
@@ -107,7 +106,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 			{destination.isFeatured && (
 				<div class="dest-card__featured-badge featured-badge">
 					<StarIcon size={12} weight="fill" aria-hidden="true" />
-					<span>{t('destination.card.badge.featured', 'Destacado')}</span>
+					<span>{t('destinations.card.badge.featured', 'Destacado')}</span>
 				</div>
 			)}
 
@@ -128,7 +127,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 				<div class="dest-card__overlay-content">
 					<h3 class="dest-card__name dest-card__name--overlay">{destination.name}</h3>
 					<p class="dest-card__count dest-card__count--overlay">
-						{destination.accommodationsCount} {accommodationsLabel}
+						{accommodationsLabel}
 					</p>
 					<p class="dest-card__description dest-card__description--overlay">
 						{destination.summary}
@@ -151,13 +150,11 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 				<!-- Accommodation count badge -->
 				<div class="dest-card__count-row">
 					<span class="dest-card__count-badge">
-						{destination.accommodationsCount} {accommodationsLabel}
+						{accommodationsLabel}
 					</span>
 					{destination.eventsCount > 0 && (
 						<span class="dest-card__events-badge">
-							{destination.eventsCount} {destination.eventsCount === 1
-								? t('destination.card.event_singular', 'evento')
-								: t('destination.card.event_plural', 'eventos')}
+							{eventsLabel}
 						</span>
 					)}
 				</div>
@@ -195,7 +192,7 @@ const remainingAttractions = Math.max(0, (destination.attractions?.length ?? 0) 
 				<!-- CTA row -->
 				<div class="dest-card__cta-row">
 					<span class="dest-card__cta-btn">
-						{t('destination.card.cta', 'Explorar destino')} →
+						{t('destinations.card.cta', 'Explorar destino')} →
 					</span>
 				</div>
 			</div>

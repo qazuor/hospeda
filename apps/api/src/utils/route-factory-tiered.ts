@@ -140,9 +140,31 @@ export const createProtectedRoute = (options: ProtectedRouteOptions) => {
         ...(routeOptions.options?.middlewares || [])
     ];
 
-    // Add ownership middleware if configured
+    // Add ownership middleware if configured.
+    //
+    // The ownership check runs as a MIDDLEWARE, which puts it ahead of the
+    // route's own `requestParams` validation — so the id it reads is whatever
+    // the URL carried. Handing the route's declared schema down closes that
+    // gap at the single place every ownership route passes through, instead of
+    // 19 times by hand (H-68).
     if (ownership) {
-        middlewares.push(ownershipMiddleware(ownership));
+        const paramIdField = ownership.paramIdField ?? 'id';
+        const declaredIdSchema = options.requestParams?.[paramIdField];
+
+        // Fail at boot, not per request: a route that guards ownership on a
+        // parameter it never declared has no shape to validate against, and
+        // would fall back to the UUID default silently. Better to refuse to
+        // start than to let the next such route inherit the original hole.
+        if (!declaredIdSchema) {
+            throw new Error(
+                `Route ${options.method.toUpperCase()} ${options.path} declares ownership on ` +
+                    `"${paramIdField}" but no matching requestParams schema. Declare ` +
+                    `requestParams: { ${paramIdField}: <schema> } so the id is validated ` +
+                    'before the entity fetcher runs (H-68).'
+            );
+        }
+
+        middlewares.push(ownershipMiddleware({ ...ownership, idSchema: declaredIdSchema }));
     }
 
     return createCRUDRoute({

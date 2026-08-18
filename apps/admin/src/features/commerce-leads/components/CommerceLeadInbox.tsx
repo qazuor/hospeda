@@ -17,6 +17,7 @@
  * @module features/commerce-leads/components/CommerceLeadInbox
  */
 
+import type { TranslationKey } from '@repo/i18n';
 import type { CommerceLead } from '@repo/schemas';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -175,6 +176,59 @@ type ProvisionDialogProps = {
 };
 
 /**
+ * Picks the message that describes what provisioning ACTUALLY did
+ * (H-87 / H-150).
+ *
+ * The admin used to announce "cuenta creada, credenciales enviadas" on every
+ * success. With an email that already had an account, HOS-296 correctly
+ * resolves it to that account, grants the commerce role additively and skips
+ * the credential email — so neither half of the sentence was true, and the
+ * operator closed the ticket telling the applicant to look for a mail nobody
+ * had sent.
+ *
+ * Two booleans, not one: an account can be created and its credential email
+ * still fail to go out, which leaves an owner who cannot sign in. That case
+ * reads like success to everyone unless it is named.
+ *
+ * @param outcome - What the server reported.
+ * @returns The i18n key for the message that matches it.
+ */
+function provisionOutcomeKey(outcome: {
+    readonly accountCreated: boolean;
+    readonly credentialsSent: boolean;
+}): TranslationKey {
+    if (!outcome.accountCreated) {
+        return 'admin-entities.commerceLeads.provision.successLinkedMessage';
+    }
+
+    return outcome.credentialsSent
+        ? 'admin-entities.commerceLeads.provision.successMessage'
+        : 'admin-entities.commerceLeads.provision.successNoCredentialsMessage';
+}
+
+/**
+ * The approve-and-provision counterpart of {@link provisionOutcomeKey}.
+ *
+ * Only called when `provisioned` is true — the idempotent no-op has its own
+ * message, because that call did nothing at all.
+ *
+ * @param outcome - What the server reported.
+ * @returns The i18n key for the message that matches it.
+ */
+function approveOutcomeKey(outcome: {
+    readonly accountCreated: boolean;
+    readonly credentialsSent: boolean;
+}): TranslationKey {
+    if (!outcome.accountCreated) {
+        return 'admin-entities.commerceLeads.approveProvision.successLinkedMessage';
+    }
+
+    return outcome.credentialsSent
+        ? 'admin-entities.commerceLeads.approveProvision.successMessage'
+        : 'admin-entities.commerceLeads.approveProvision.successNoCredentialsMessage';
+}
+
+/**
  * Confirmation dialog to provision a COMMERCE_OWNER account for a lead.
  * On success shows the returned {name, email} in a toast — NEVER a password.
  */
@@ -188,7 +242,7 @@ function ProvisionDialog({ lead, onClose }: ProvisionDialogProps) {
 
         addToast({
             variant: 'success',
-            message: t('admin-entities.commerceLeads.provision.successMessage', {
+            message: t(provisionOutcomeKey(result), {
                 name: result.name,
                 email: result.email
             })
@@ -266,9 +320,7 @@ function ApproveProvisionDialog({ lead, onClose }: ApproveProvisionDialogProps) 
         addToast({
             variant: 'success',
             message: result.provisioned
-                ? t('admin-entities.commerceLeads.approveProvision.successMessage', {
-                      email: lead.email
-                  })
+                ? t(approveOutcomeKey(result), { email: lead.email })
                 : t('admin-entities.commerceLeads.approveProvision.alreadyProvisionedMessage')
         });
 

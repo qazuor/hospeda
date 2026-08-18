@@ -12,6 +12,7 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { calendarSyncGoogleJob } from '../../src/cron/jobs/calendar-sync-google.job.js';
 import type { CronJobContext } from '../../src/cron/types.js';
 
 const { mockFindAllActiveByProvider, mockSyncAccommodationCalendar } = vi.hoisted(() => ({
@@ -36,13 +37,8 @@ const buildCtx = (dryRun = false): CronJobContext => ({
 });
 
 describe('calendar-sync-google job', () => {
-    let calendarSyncGoogleJob: typeof import('../../src/cron/jobs/calendar-sync-google.job.js').calendarSyncGoogleJob;
-
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks();
-        ({ calendarSyncGoogleJob } = await import(
-            '../../src/cron/jobs/calendar-sync-google.job.js'
-        ));
     });
 
     it('has the expected name and 6-hourly schedule', () => {

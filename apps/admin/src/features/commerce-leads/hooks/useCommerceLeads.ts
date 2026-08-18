@@ -53,6 +53,16 @@ export type ProvisionOwnerResult = {
     readonly userId: string;
     readonly email: string;
     readonly name: string;
+    /**
+     * `true` only when a NEW account was created.
+     *
+     * `false` when the email already had one and was granted the commerce role
+     * additively (HOS-296 G-4) — the case the success copy used to narrate as
+     * a creation that never happened (H-87 / H-150).
+     */
+    readonly accountCreated: boolean;
+    /** `true` only when a credentials email was confirmed delivered. */
+    readonly credentialsSent: boolean;
 };
 
 /** Payload for the combined approve-and-provision mutation (SPEC-249 Part D). */
@@ -65,8 +75,16 @@ export type ApproveAndProvisionPayload = {
 export type ApproveAndProvisionResult = {
     readonly lead: CommerceLead;
     readonly userId: string;
-    /** `true` when a new owner account was created; `false` when already provisioned. */
+    /**
+     * `true` when THIS call did the provisioning work; `false` on the
+     * idempotent no-op. It does NOT mean an account was created — branching a
+     * message on it announces a creation that may not have happened.
+     */
     readonly provisioned: boolean;
+    /** `true` only when a NEW account was created. */
+    readonly accountCreated: boolean;
+    /** `true` only when a credentials email was confirmed delivered. */
+    readonly credentialsSent: boolean;
 };
 
 // ---------------------------------------------------------------------------

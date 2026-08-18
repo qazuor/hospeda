@@ -25,7 +25,7 @@ import {
 import { userBookmarkCollectionsApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import { CreateEditCollectionModal } from './CreateEditCollectionModal.client';
 import styles from './MoveToCollectionModal.module.css';
@@ -109,7 +109,7 @@ export function MoveToCollectionModal({
     collections,
     isAtLimit = false
 }: MoveToCollectionModalProps) {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     // ── State ──────────────────────────────────────────────────────────────
 
@@ -388,10 +388,9 @@ export function MoveToCollectionModal({
                                                 <span
                                                     className={styles.countBadge}
                                                     role="img"
-                                                    aria-label={t(
+                                                    aria-label={tPlural(
                                                         'account.favorites.collections.bookmark_count',
-                                                        '{{count}} alojamientos',
-                                                        { count: collection.bookmarkCount }
+                                                        collection.bookmarkCount
                                                     )}
                                                 >
                                                     {collection.bookmarkCount}

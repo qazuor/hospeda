@@ -39,14 +39,36 @@ export interface LocationPickerValue {
     readonly longitude: number | null;
 }
 
+/**
+ * Exact postal address value (G7 smoke, H-117).
+ *
+ * Kept separate from {@link LocationPickerValue}: coordinates are set together
+ * (map/geocoding) while the address fields are set independently of each other
+ * and of the coordinates.
+ */
+export interface LocationAddressValue {
+    readonly street: string;
+    readonly number: string;
+    readonly floor: string;
+    readonly apartment: string;
+}
+
 /** Props for LocationPicker. */
 export interface LocationPickerProps {
     readonly locale: SupportedLocale;
     readonly value: LocationPickerValue;
     readonly onChange: (value: LocationPickerValue) => void;
+    /** Exact address value (G7 smoke, H-117). */
+    readonly addressValue: LocationAddressValue;
+    /** Fired when any single address field changes. */
+    readonly onAddressChange: (field: keyof LocationAddressValue, value: string) => void;
     readonly errors?: Readonly<{
         latitude?: string;
         longitude?: string;
+        street?: string;
+        number?: string;
+        floor?: string;
+        apartment?: string;
     }>;
     readonly disabled?: boolean;
 }
@@ -64,6 +86,8 @@ export function LocationPicker({
     locale,
     value,
     onChange,
+    addressValue,
+    onAddressChange,
     errors,
     disabled = false
 }: LocationPickerProps) {
@@ -116,15 +140,28 @@ export function LocationPicker({
         lat != null && lng != null && Number.isFinite(lat) && Number.isFinite(lng);
 
     const handleSelectSuggestion = useCallback(
-        (suggestion: { lat: number; lng: number; label: string }) => {
+        (suggestion: {
+            lat: number;
+            lng: number;
+            label: string;
+            street?: string;
+            number?: string;
+        }) => {
             onChange({
                 latitude: suggestion.lat,
                 longitude: suggestion.lng
             });
+            // H-117 (G7 smoke): the search box already resolves a parsed
+            // street/number — it used to be discarded here, showing the host a
+            // full address on screen that never reached the PATCH body. Only
+            // fill fields the geocoder actually returned; an empty response
+            // leaves whatever the host already typed untouched.
+            if (suggestion.street) onAddressChange('street', suggestion.street);
+            if (suggestion.number) onAddressChange('number', suggestion.number);
             setSearchInput(suggestion.label);
             setShowSuggestions(false);
         },
-        [onChange]
+        [onChange, onAddressChange]
     );
 
     const handleMapMove = useCallback(
@@ -344,6 +381,82 @@ export function LocationPicker({
                         max={180}
                         step="0.000001"
                         onChange={(e) => handleLngChange(e.target.value)}
+                        disabled={disabled}
+                    />
+                </div>
+            </div>
+
+            {/*
+             * Exact postal address (G7 smoke, H-117). Owner decision 2026-08-14:
+             * the host CAN store the exact address here — only its public
+             * exposure stays gated (visitors only ever see the approximate pin;
+             * SPEC-097 strips `location` from every non-owner reader response).
+             */}
+            <p className={styles.hint}>
+                {t(
+                    'host.properties.editor.location.addressHint',
+                    'Dirección exacta. Los turistas solo ven una ubicación aproximada en el mapa público.'
+                )}
+            </p>
+            <div className={styles.coordRow}>
+                <div className={styles.field}>
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="street"
+                        label={t('host.properties.editor.field.street', 'Calle')}
+                        labelClassName={styles.fieldLabel}
+                        className={styles.fieldInput}
+                        error={errors?.street}
+                        type="text"
+                        value={addressValue.street}
+                        onChange={(e) => onAddressChange('street', e.target.value)}
+                        disabled={disabled}
+                    />
+                </div>
+
+                <div className={styles.field}>
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="number"
+                        label={t('host.properties.editor.field.number', 'Número')}
+                        labelClassName={styles.fieldLabel}
+                        className={styles.fieldInput}
+                        error={errors?.number}
+                        type="text"
+                        value={addressValue.number}
+                        onChange={(e) => onAddressChange('number', e.target.value)}
+                        disabled={disabled}
+                    />
+                </div>
+            </div>
+
+            <div className={styles.coordRow}>
+                <div className={styles.field}>
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="floor"
+                        label={t('host.properties.editor.field.floor', 'Piso')}
+                        labelClassName={styles.fieldLabel}
+                        className={styles.fieldInput}
+                        error={errors?.floor}
+                        type="text"
+                        value={addressValue.floor}
+                        onChange={(e) => onAddressChange('floor', e.target.value)}
+                        disabled={disabled}
+                    />
+                </div>
+
+                <div className={styles.field}>
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="apartment"
+                        label={t('host.properties.editor.field.apartment', 'Departamento')}
+                        labelClassName={styles.fieldLabel}
+                        className={styles.fieldInput}
+                        error={errors?.apartment}
+                        type="text"
+                        value={addressValue.apartment}
+                        onChange={(e) => onAddressChange('apartment', e.target.value)}
                         disabled={disabled}
                     />
                 </div>

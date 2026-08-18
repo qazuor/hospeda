@@ -56,7 +56,8 @@ import {
     DEFAULT_EVENT_CATEGORIES
 } from '@/lib/event-listing-summary';
 import { buildEventsFilterGroups } from '@/lib/filters/events-filter-groups';
-import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
+import { resolveCappedChipNote, resolveFacetChipHref } from '@/lib/filters/facet-chip-depth';
 import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
 import { XCircleIcon } from '@repo/icons';
 import {
@@ -72,6 +73,7 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
+import { slugForEventCategory } from '@/lib/facet-slugs';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
 import { EventCategoryEnum } from '@repo/schemas';
 
@@ -200,7 +202,10 @@ const result = await eventsApi.list({
     // string (never the raw JS array — `serializeParams` in `api/client.ts`
     // does `String(value)`, which on an array yields a comma-joined string
     // too, but relying on that implicit coercion is fragile; join explicitly).
-    categories: activeCategories.length > 0 ? activeCategories.join(',') : undefined,
+    categories:
+        activeCategories.length > 0
+            ? canonicalizeFacetValues({ values: activeCategories }).join(',')
+            : undefined,
     sortBy: sortResolved.sortBy,
     sortOrder: sortResolved.sortOrder,
     startDateAfter,
@@ -313,7 +318,8 @@ const facetSeoDecision = resolveFacetSeoDecision({
     facetValues: activeCategories,
     hasOtherFilters: hasOtherEventFilters,
     validEnumValues: Object.values(EventCategoryEnum),
-    dedicatedLandingPattern: FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern
+    dedicatedLandingPattern: FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern,
+    slugify: (value) => slugForEventCategory({ category: value as EventCategoryEnum })
 });
 const canonicalBaseUrl =
     facetSeoDecision.canonical.kind === 'dedicatedLanding' &&
@@ -388,7 +394,10 @@ const resolvedCards = cards;
  */
 const sidebarInitialParams: Record<string, string> = {};
 if (q)              sidebarInitialParams['q']        = q;
-if (activeCategories.length > 0) sidebarInitialParams['categories'] = activeCategories.join(',');
+if (activeCategories.length > 0)
+    sidebarInitialParams['categories'] = canonicalizeFacetValues({
+        values: activeCategories
+    }).join(',');
 if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
 if (destinationId)  sidebarInitialParams['destinationId'] = destinationId;
 if (startDateAfterFilter)  sidebarInitialParams['startDateAfter']  = startDateAfterFilter;
@@ -454,6 +463,13 @@ const CATEGORY_CHIP_DEFS = [
     { value: 'WORKSHOP', label: t('events.categories.workshop', 'Taller') }
 ] as const;
 
+// Both plural forms are passed: `resolveCappedChipNote` picks one from the
+// count, so lowering FACET_CHIP_MAX_ACTIVE_VALUES to 1 cannot start
+// announcing "already 1 filters active". (The "Clear (N)" chip above CAN read
+// `_other` directly — its own floor of 2 is a fixed rule, not a tunable.)
+const cappedNoteOneTemplate = t('common.filterChips.cappedNote_one');
+const cappedNoteOtherTemplate = t('common.filterChips.cappedNote_other');
+
 const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
     const active = activeCategories.includes(value);
     // BETA-113 (icon parity): reuse the same category → icon mapping the
@@ -462,15 +478,25 @@ const categoryChips = CATEGORY_CHIP_DEFS.map(({ value, label }) => {
     const icon = getEventCategoryIconComponent(value);
     return {
         label,
-        href: buildMultiToggleParamHref({
+        // HOS-524: `resolveFacetChipHref`, never the raw toggle builder —
+        // see `facet-chip-depth.ts`. A capped chip gets no href and renders
+        // inert instead of publishing another deeper URL.
+        href: resolveFacetChipHref({
             baseUrl,
             searchParams: paginationParams,
             key: FACET_CONFIG_BY_ID.eventCategory.paramKey,
             value,
-            singularKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey
+            singularKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey,
+            activeValues: activeCategories
         }),
         active,
-        icon
+        icon,
+        capNote: resolveCappedChipNote({
+            active,
+            activeCount: activeCategories.length,
+            oneTemplate: cappedNoteOneTemplate,
+            otherTemplate: cappedNoteOtherTemplate
+        })
     };
 });
 
@@ -485,7 +511,8 @@ const categoryClearChip = buildClearFacetChip({
     singularParamKey: FACET_CONFIG_BY_ID.eventCategory.singularParamKey,
     count: activeCategories.length,
     labelTemplate: t('common.filterChips.clearLabel'),
-    ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),
+    // buildClearFacetChip only renders at count >= 2, so `_one` is unreachable here.
+    ariaLabelTemplate: t('common.filterChips.clearAriaLabel_other'),
     icon: XCircleIcon
 });
 

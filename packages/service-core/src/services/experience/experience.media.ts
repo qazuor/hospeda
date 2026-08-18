@@ -46,11 +46,13 @@ import {
     type ExperienceMediaSetFeaturedInput,
     ExperienceMediaSetFeaturedInputSchema,
     type ExperienceMediaSingleOutput,
+    getGalleryCap,
     ModerationStatusEnum,
     ServiceErrorCode
 } from '@repo/schemas';
 import type { Actor, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { scheduleCommerceMediaRevalidation } from '../commerce/commerce-revalidation.js';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { checkExperienceCanEditMedia } from './experience.permissions';
 
@@ -141,6 +143,23 @@ export async function addExperienceMedia(
         const topOrder = existing.items[0]?.sortOrder ?? -1;
         const nextSortOrder = typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
 
+        // HOS-389 §2: the per-entity cap was enforced only at the UPLOAD routes
+        // — the step that costs a Cloudinary asset. Registering the row was
+        // never capped, so anything reaching this function directly with an
+        // already-uploaded URL walked past the limit. Same `getGalleryCap`
+        // constant those routes read, and the same `state: 'visible'` filter
+        // `resolveVisibleGalleryCount` applies, reusing the count this function
+        // already fetched for `sortOrder` — no extra query.
+        const galleryCap = getGalleryCap('experience');
+        if (existing.total >= galleryCap) {
+            return {
+                error: {
+                    code: ServiceErrorCode.QUOTA_EXCEEDED,
+                    message: `Gallery limit of ${galleryCap} photos reached for this listing`
+                }
+            };
+        }
+
         const rowToCreate = {
             ...validated.media,
             experienceId: validated.experienceId,
@@ -151,6 +170,11 @@ export async function addExperienceMedia(
         };
 
         const createdMedia = await mediaModel.create(rowToCreate, ctx?.tx);
+        // HOS-389 §4: the gallery IS the public page's content, so a photo
+        // change has to purge it. Shares one implementation with the service's
+        // create/update path — see `commerce-revalidation.ts`.
+        await scheduleCommerceMediaRevalidation({ entityType: 'experience', listing: experience });
+
         return { data: { media: createdMedia } };
     } catch (err) {
         if (err instanceof ServiceError) {
@@ -230,7 +254,7 @@ export async function removeExperienceMedia(
 
         // Soft-delete + resequence in a single transaction.
         const doRemove = async (tx: DrizzleClient): Promise<void> => {
-            await mediaModel.softDelete({ id: validated.mediaId }, tx);
+            await mediaModel.softDelete({ id: validated.mediaId }, actor.id, tx);
 
             // Reload the remaining visible rows to resequence them.
             const { items: remaining } = await mediaModel.findByExperience({
@@ -254,6 +278,11 @@ export async function removeExperienceMedia(
         } else {
             await withTransaction(doRemove);
         }
+
+        // HOS-389 §4: the gallery IS the public page's content, so a photo
+        // change has to purge it. Shares one implementation with the service's
+        // create/update path — see `commerce-revalidation.ts`.
+        await scheduleCommerceMediaRevalidation({ entityType: 'experience', listing: experience });
 
         return { data: { success: true } };
     } catch (err) {
@@ -377,6 +406,9 @@ export async function reorderExperienceMedia(
                 return row ? { ...row, sortOrder: idx } : null;
             })
             .filter((r): r is NonNullable<typeof r> => r !== null);
+
+        // HOS-389 §4 — see `addExperienceMedia` for the rationale.
+        await scheduleCommerceMediaRevalidation({ entityType: 'experience', listing: experience });
 
         return { data: { media: reordered } };
     } catch (err) {
@@ -540,6 +572,9 @@ export async function setFeaturedExperienceMedia(
                 'Failed to retrieve updated media row after set-featured'
             );
         }
+        // HOS-389 §4 — see `addExperienceMedia` for the rationale.
+        await scheduleCommerceMediaRevalidation({ entityType: 'experience', listing: experience });
+
         return { data: { media: updated } };
     } catch (err) {
         if (err instanceof ServiceError) {

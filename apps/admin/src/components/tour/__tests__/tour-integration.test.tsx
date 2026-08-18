@@ -875,7 +875,7 @@ describe('SPEC-174 T-018 — tour cross-surface integration', () => {
             );
 
             // Open the dropdown menu
-            const avatarBtn = screen.getByRole('button', { name: /user menu/i });
+            const avatarBtn = screen.getByRole('button', { name: /admin-nav\.topbar\.userMenu/i });
             await user.click(avatarBtn);
 
             // Assert — "Ver guía" item appears (tour.replay i18n key)
@@ -916,7 +916,7 @@ describe('SPEC-174 T-018 — tour cross-surface integration', () => {
             );
 
             // Open the dropdown menu
-            const avatarBtn = screen.getByRole('button', { name: /user menu/i });
+            const avatarBtn = screen.getByRole('button', { name: /admin-nav\.topbar\.userMenu/i });
             await user.click(avatarBtn);
 
             // Assert — contextual replay button appears
@@ -949,7 +949,7 @@ describe('SPEC-174 T-018 — tour cross-surface integration', () => {
             );
 
             // Open the dropdown menu
-            const avatarBtn = screen.getByRole('button', { name: /user menu/i });
+            const avatarBtn = screen.getByRole('button', { name: /admin-nav\.topbar\.userMenu/i });
             await user.click(avatarBtn);
 
             // Wait for menu to open

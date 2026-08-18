@@ -93,8 +93,13 @@
             "dateRange": "I'm looking from {from} to {to}.",
             "dateFrom": "I'm looking from {from} onward.",
             "dateTo": "I'm looking up to {to}.",
-            "guests": "We are {adults} adults and {children} children.",
-            "guestsAdultsOnly": "We are {adults} adults.",
+            "guestsAdultsCount_one": "{{count}} adult",
+            "guestsAdultsCount_other": "{{count}} adults",
+            "guestsChildrenCount_one": "{{count}} child",
+            "guestsChildrenCount_other": "{{count}} children",
+            "guestsTemplate": "We are {{adultsPhrase}} and {{childrenPhrase}}.",
+            "guestsAdultsOnly_one": "We are {{adults}} adult.",
+            "guestsAdultsOnly_other": "We are {{adults}} adults.",
             "outro": "Could you confirm availability?"
         }
     },

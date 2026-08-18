@@ -17,7 +17,7 @@
  * only when the render site passes {@link buildOwnerFaqParams}.
  */
 
-import { OWNER_TRIAL_DAYS } from '@repo/billing';
+import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 
 /** One question/answer pair, with its i18n keys and fallbacks. */
 export interface OwnerFaqItem {
@@ -64,11 +64,69 @@ export const OWNER_FAQ_ITEMS: readonly OwnerFaqItem[] = [
 ];
 
 /**
+ * Resolves one FAQ item's answer text.
+ *
+ * Item 1 is the only answer whose copy carries a real count
+ * (`{{trialDays}}`) — pluralized (HOS plural audit), since the live trial
+ * length genuinely reaches 1 (e.g. the `owner-test-daily` plan). Every other
+ * item stays a plain `t()` lookup. Centralized here — not duplicated per
+ * page — because `/publicar` and `/suscriptores/propietarios` both render
+ * this same array, and duplicating the special-case is exactly the kind of
+ * per-page copy that drifted before (HOS-331).
+ *
+ * @param params - RO-RO input.
+ * @param params.faq - The FAQ item being rendered.
+ * @param params.t - Plain translation function.
+ * @param params.tPlural - Plural translation function.
+ * @param params.faqParams - Interpolation params from {@link buildOwnerFaqParams}.
+ * @returns The resolved answer text.
+ */
+export function resolveOwnerFaqAnswer({
+    faq,
+    t,
+    tPlural,
+    faqParams
+}: {
+    readonly faq: OwnerFaqItem;
+    readonly t: (key: string, fallback?: string, params?: Record<string, unknown>) => string;
+    readonly tPlural: (key: string, count: number, params?: Record<string, unknown>) => string;
+    readonly faqParams: { readonly trialDays: number };
+}): string {
+    if (faq.aKey === 'owners.faq.1.a') {
+        return tPlural(faq.aKey, faqParams.trialDays, faqParams);
+    }
+    return t(faq.aKey, faq.aFb, faqParams);
+}
+
+/** Input for {@link buildOwnerFaqParams}. */
+export interface BuildOwnerFaqParamsOptions {
+    /**
+     * Pre-resolved generic trial length (H-98), e.g. already fetched by the
+     * caller for another purpose on the same page (the `/publicar` hero
+     * callout resolves it once and forwards it here so the page does not
+     * fetch the plan catalog twice). When omitted, this function resolves it
+     * itself via {@link resolveGenericOwnerTrialDays}.
+     */
+    readonly trialDays?: number;
+}
+
+/**
  * Interpolation params for the answers above. Only the keys an answer actually
  * references are substituted, so passing this to every answer is inert for the
  * rest — and passing it is mandatory: an answer containing `{{trialDays}}`
  * renders that placeholder verbatim to the user when params are omitted.
+ *
+ * `trialDays` is sourced from the live billing plans (minimum `trialDays`
+ * among active owner plans with `hasTrial`, falling back to the
+ * `OWNER_TRIAL_DAYS` constant on fetch failure — see
+ * `resolveGenericOwnerTrialDays`), not hardcoded, so this answer can never
+ * drift from what checkout actually grants (H-98).
+ *
+ * @param options - RO-RO input, see {@link BuildOwnerFaqParamsOptions}.
  */
-export function buildOwnerFaqParams(): { readonly trialDays: number } {
-    return { trialDays: OWNER_TRIAL_DAYS };
+export async function buildOwnerFaqParams(
+    options: BuildOwnerFaqParamsOptions = {}
+): Promise<{ readonly trialDays: number }> {
+    const trialDays = options.trialDays ?? (await resolveGenericOwnerTrialDays());
+    return { trialDays };
 }

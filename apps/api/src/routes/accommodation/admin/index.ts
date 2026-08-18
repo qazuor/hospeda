@@ -16,6 +16,7 @@ import { adminGetMediaRoute } from './getMedia';
 import { adminGetOccupancyRoute } from './getOccupancy';
 import { adminHardDeleteAccommodationRoute } from './hardDelete';
 import { adminListAccommodationsRoute } from './list';
+import { adminModerateAccommodationRoute } from './moderate';
 import { adminAccommodationOptionsRoute } from './options';
 import { adminPatchAccommodationRoute } from './patch';
 import { adminRemoveFaqRoute } from './removeFaq';
@@ -27,6 +28,7 @@ import { adminRestoreMediaRoute } from './restoreMedia';
 import { adminSetFeaturedMediaRoute } from './setFeaturedMedia';
 import { adminUpdateAccommodationRoute } from './update';
 import { adminUpdateFaqRoute } from './updateFaq';
+import { adminUpdateMediaRoute } from './updateMedia';
 import { adminVerifyAccommodationRoute } from './verify';
 
 const app = createRouter();
@@ -69,6 +71,11 @@ app.route('/', adminRestoreAccommodationRoute);
 
 // POST /:id/verify - Verify / unverify accommodation
 app.route('/', adminVerifyAccommodationRoute);
+
+// POST /:id/moderate - Apply the moderation verdict (H-102). Posts and events
+// have had this since HOS-374; without it no accommodation could ever leave
+// PENDING, and the admin's pending counter could only grow.
+app.route('/', adminModerateAccommodationRoute);
 
 // GET /:id/occupancy - Occupancy calendar (staff, ACCOMMODATION_OCCUPANCY_VIEW) - HOS-43
 app.route('/', adminGetOccupancyRoute);
@@ -113,7 +120,11 @@ app.route('/', adminSetFeaturedMediaRoute);
 app.route('/', adminArchiveMediaRoute);
 app.route('/', adminRestoreMediaRoute);
 
+// PATCH  /:id/media/:mediaId - Correct a photo's text metadata (HOS-388)
 // DELETE /:id/media/:mediaId - Remove a photo from accommodation gallery
+// Both share the same path shape and differ only by method, so they sit after
+// the fixed-suffix routes above for the same reason those come first.
+app.route('/', adminUpdateMediaRoute);
 app.route('/', adminRemoveMediaRoute);
 
 export { app as adminAccommodationRoutes };

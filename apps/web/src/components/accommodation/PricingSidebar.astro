@@ -18,7 +18,7 @@ interface Props {
 }
 
 const { price, extraInfo, lang } = Astro.props;
-const { t } = createTranslations(lang as SupportedLocale);
+const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 const hasPrice = price?.price != null && price.price > 0;
 const currency = price?.currency ?? 'ARS';
@@ -134,7 +134,7 @@ const hasDiscounts = discountEntries.length > 0;
           <span class="pricing-sidebar__fact-icon">
             <UsersIcon size="sm" weight="duotone" aria-hidden="true" />
           </span>
-          <span>{t('accommodations.detail.pricing.capacityFact', undefined, { n: capacity })}</span>
+          <span>{tPlural('accommodations.detail.pricing.capacityFact', capacity)}</span>
         </li>
       )}
       {minNights != null && minNights > 1 && (
@@ -142,7 +142,7 @@ const hasDiscounts = discountEntries.length > 0;
           <span class="pricing-sidebar__fact-icon">
             <MoonIcon size="sm" weight="duotone" aria-hidden="true" />
           </span>
-          <span>{t('accommodations.detail.pricing.minNightsFact', undefined, { n: minNights })}</span>
+          <span>{tPlural('accommodations.detail.pricing.minNightsFact', minNights)}</span>
         </li>
       )}
       {maxNights != null && maxNights > 0 && maxNights < 30 && (
@@ -150,7 +150,7 @@ const hasDiscounts = discountEntries.length > 0;
           <span class="pricing-sidebar__fact-icon">
             <CalendarIcon size="sm" weight="duotone" aria-hidden="true" />
           </span>
-          <span>{t('accommodations.detail.pricing.maxNightsFact', undefined, { n: maxNights })}</span>
+          <span>{tPlural('accommodations.detail.pricing.maxNightsFact', maxNights)}</span>
         </li>
       )}
     </ul>

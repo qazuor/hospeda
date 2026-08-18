@@ -1,10 +1,19 @@
 {
+    "reviewMarkedFields": "Verifique os campos destacados.",
     "accommodation": {
         "address": {
             "required": "La dirección es obligatoria"
         },
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
+        },
+        "contactInfo": {
+            "email": {
+                "invalid": "El email no es válido"
+            },
+            "phone": {
+                "international": "El número no es válido"
+            }
         },
         "delete": {
             "deletedAt": {
@@ -42,7 +51,9 @@
                 "required": "La capacidad es obligatoria"
             },
             "minNights": {
-                "required": "La cantidad mínima de noches es obligatoria"
+                "required": "La cantidad mínima de noches es obligatoria",
+                "min": "La cantidad mínima de noches no puede ser menor a {{min}}",
+                "max": "La cantidad mínima de noches no puede superar los {{max}}"
             }
         },
         "featuredToggle": {
@@ -112,6 +123,9 @@
             },
             "state": {
                 "invalid": "O estado da mídia deve ser 'visible' ou 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "Você precisa preencher ao menos um campo: legenda, descrição, texto alternativo ou atribuição"
             }
         },
         "name": {
@@ -1865,6 +1879,7 @@
         },
         "price": {
             "price": {
+                "integer": "O preço deve ser um número inteiro, em pesos, sem centavos",
                 "positive": "El precio debe ser un número positivo",
                 "required": "El precio es obligatorio"
             }
@@ -2803,6 +2818,9 @@
         },
         "priceFrom": {
             "nonnegative": "El precio debe ser mayor o igual a 0"
+        },
+        "priceUnit": {
+            "requiredUnlessOnRequest": "Escolha a unidade de preço (por dia, por hora, por pessoa ou por grupo). Se a experiência não tem preço fixo, marque «Preço sob consulta»."
         },
         "review": {
             "content": {

@@ -30,6 +30,7 @@
  */
 
 import type { AccommodationMedia, Image, Media, Video } from '@repo/schemas';
+import { ModerationStatusEnum } from '@repo/schemas';
 
 // ---------------------------------------------------------------------------
 // Input type
@@ -114,8 +115,16 @@ function bySortOrder(a: AccommodationMedia, b: AccommodationMedia): number {
  * @returns The composed {@link Media} object (possibly empty `{}`).
  */
 export function composeAccommodationMedia({ rows, videos }: ComposeAccommodationMediaInput): Media {
-    const visible = rows.filter((r) => r.state === 'visible');
-    const archived = rows.filter((r) => r.state === 'archived');
+    // H-23: mirrors the gate in `commerce-media-compose.ts`. `moderationState`
+    // was carried into the output but never consulted, so a photo nobody had
+    // approved was composed — and served — exactly like an approved one.
+    // Unconditional on purpose: an opt-in flag would be fail-open at the next
+    // read path added. Media MANAGEMENT is unaffected, reading raw rows through
+    // the dedicated `getMedia` endpoints rather than a composed entity.
+    const approved = rows.filter((r) => r.moderationState === ModerationStatusEnum.APPROVED);
+
+    const visible = approved.filter((r) => r.state === 'visible');
+    const archived = approved.filter((r) => r.state === 'archived');
 
     const featuredRow = visible.find((r) => r.isFeatured);
     const galleryRows = visible

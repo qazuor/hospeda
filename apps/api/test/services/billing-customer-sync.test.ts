@@ -35,6 +35,11 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
+const clearEntitlementCacheMock = vi.fn();
+vi.mock('../../src/middlewares/entitlement', () => ({
+    clearEntitlementCache: (...args: unknown[]) => clearEntitlementCacheMock(...args)
+}));
+
 // ─── Imports — after mocks ────────────────────────────────────────────────────
 
 import type { QZPayBilling, QZPayCustomer } from '@qazuor/qzpay-core';
@@ -171,13 +176,24 @@ describe('BillingCustomerSyncService', () => {
             });
         });
 
-        it('should sanitize a plus-addressed email before calling billing.customers.create (BETA-164)', async () => {
+        it('persists a plus-addressed email UNCHANGED (HOS-581, reverses BETA-164)', async () => {
+            // BETA-164 mangled '+' to '.' here, so `billing_customers.email`
+            // stored an address the user never wrote. That column is read back
+            // as `recipientEmail` for Hospeda's OWN billing mail (dunning,
+            // cancellation, plan changes, price propagation, abandoned
+            // checkouts), and Gmail collapses dots — so `qazuor.turista@` is a
+            // DIFFERENT mailbox from the `qazuor@` the '+' form would reach.
+            // Every one of those messages went to a mailbox nobody reads.
+            //
+            // The mangling now happens at the ONE boundary that actually sends
+            // the address to MercadoPago (the prorated-upgrade Checkout Pro
+            // preference), not at persistence. See `mp-email.ts`.
             // Arrange
             vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(null);
             vi.mocked(mockBilling.customers!.create).mockResolvedValue({
                 ...mockCustomer,
                 id: 'cus_new',
-                email: 'qazuor.turista@gmail.com'
+                email: 'qazuor+turista@gmail.com'
             });
 
             // Act
@@ -187,11 +203,11 @@ describe('BillingCustomerSyncService', () => {
                 name: 'Plus User'
             });
 
-            // Assert — MP-safe email reaches the create call, not the raw one
+            // Assert — the address the user actually typed is what gets stored.
             expect(result).toBe('cus_new');
             expect(mockBilling.customers!.create).toHaveBeenCalledWith({
                 externalId: 'user_789',
-                email: 'qazuor.turista@gmail.com',
+                email: 'qazuor+turista@gmail.com',
                 name: 'Plus User',
                 metadata: {
                     source: 'better-auth',
@@ -359,12 +375,18 @@ describe('BillingCustomerSyncService', () => {
             });
         });
 
-        it('should sanitize a plus-addressed email before calling billing.customers.update (BETA-164)', async () => {
+        it('syncs a plus-addressed email UNCHANGED (HOS-581, reverses BETA-164)', async () => {
+            // The update path matters beyond new signups: it is what heals a
+            // row that was mangled while BETA-164 was in force. Better Auth
+            // fires it on `user.update.after`, so an existing mangled customer
+            // converges to the real address the next time that user's record
+            // changes. That is opportunistic rather than guaranteed, which is
+            // why a data-migration converges the rest.
             // Arrange
             vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
             vi.mocked(mockBilling.customers!.update).mockResolvedValue({
                 ...mockCustomer,
-                email: 'qazuor.turista@gmail.com'
+                email: 'qazuor+turista@gmail.com'
             });
 
             // Act
@@ -374,10 +396,10 @@ describe('BillingCustomerSyncService', () => {
                 name: 'Test User'
             });
 
-            // Assert — MP-safe email reaches the update call, not the raw one
+            // Assert — the raw address reaches the update call.
             expect(result).toBe('cus_123');
             expect(mockBilling.customers!.update).toHaveBeenCalledWith('cus_123', {
-                email: 'qazuor.turista@gmail.com',
+                email: 'qazuor+turista@gmail.com',
                 name: 'Test User',
                 metadata: {
                     ...mockCustomer.metadata,
@@ -439,6 +461,53 @@ describe('BillingCustomerSyncService', () => {
 
             // Assert
             expect(mockBilling.customers!.delete).not.toHaveBeenCalled();
+        });
+
+        // ─── INV-1 ───────────────────────────────────────────────────────────────
+        //
+        // The cascade above soft-deletes every subscription of this customer, and
+        // qzpay's `findByCustomerId` filters on `deleted_at IS NULL` — so after this
+        // runs, `loadEntitlements` would resolve to the role defaults. Without an
+        // explicit invalidation the 5-minute entitlement cache keeps serving the
+        // deleted customer's old plan, exactly as the comp-grant path did (HOS-453).
+        // There is no MercadoPago webhook on account deletion, so nothing else can
+        // clear it.
+
+        it('INV-1: clears the entitlement cache for the deleted customer', async () => {
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
+
+            // Act
+            await service.handleUserDeletion({ userId: 'user_123' });
+
+            // Assert — keyed by the BILLING CUSTOMER id, which is what the
+            // entitlement cache is keyed by, never the Better Auth user id.
+            expect(clearEntitlementCacheMock).toHaveBeenCalledWith('cus_123');
+        });
+
+        it('INV-1: does not clear the entitlement cache when there is no customer', async () => {
+            // Arrange
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(null);
+
+            // Act
+            await service.handleUserDeletion({ userId: 'user_123' });
+
+            // Assert — nothing was deleted, so there is nothing to invalidate.
+            expect(clearEntitlementCacheMock).not.toHaveBeenCalled();
+        });
+
+        it('INV-1: still clears the cache when the cascade transaction fails', async () => {
+            // Arrange — the qzpay customer delete succeeds but the local cascade
+            // blows up. The service deliberately swallows that error, so the
+            // invalidation must not be collateral damage of the failure path.
+            vi.mocked(mockBilling.customers!.getByExternalId).mockResolvedValue(mockCustomer);
+            vi.mocked(withTransaction).mockRejectedValueOnce(new Error('cascade exploded'));
+
+            // Act
+            await service.handleUserDeletion({ userId: 'user_123' });
+
+            // Assert
+            expect(clearEntitlementCacheMock).toHaveBeenCalledWith('cus_123');
         });
 
         // ─── T-044 + T-045 ───────────────────────────────────────────────────────

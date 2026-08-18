@@ -346,21 +346,39 @@ vi.mock('../../../src/components/form/SearchableSelect.client', () => ({
  * the placeholder untestable — which is exactly how this file went red when the
  * trial copy stopped hardcoding its number.
  */
-vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string, params?: Record<string, unknown>) => {
-            const raw = fallback ?? _key;
-            if (!params) return raw;
-            return Object.keys(params).reduce(
-                (acc, k) =>
-                    acc
-                        .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k]))
-                        .replace(new RegExp(`\\{${k}\\}`, 'g'), String(params[k])),
-                raw
-            );
-        }
-    })
-}));
+vi.mock('../../../src/lib/i18n', () => {
+    const t = (_key: string, fallback?: string, params?: Record<string, unknown>) => {
+        const raw = fallback ?? _key;
+        if (!params) return raw;
+        return Object.keys(params).reduce(
+            (acc, k) =>
+                acc
+                    .replace(new RegExp(`\\{\\{${k}\\}\\}`, 'g'), String(params[k]))
+                    .replace(new RegExp(`\\{${k}\\}`, 'g'), String(params[k])),
+            raw
+        );
+    };
+    // Real `_other` fallback text for the keys this file asserts on by exact
+    // string (the trial callout, HOS plural audit) — everything else falls
+    // back to echoing the key + values, which is all the OTHER assertions in
+    // this file need (e.g. the amenity-count chip just checks the number
+    // appears in the text).
+    const PLURAL_FALLBACKS: Record<string, string> = {
+        'host.pages.nueva.trialCalloutTitle': '{{trialDays}} días gratis en tu primera suscripción',
+        'host.pages.nueva.trialNote':
+            'Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.'
+    };
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>) => {
+        const template = PLURAL_FALLBACKS[key];
+        if (template) return t(key, template, { ...params, count });
+        return `${key} ${Object.values({ ...params, count })
+            .map(String)
+            .join(' ')}`;
+    };
+    return {
+        createTranslations: (_locale: string) => ({ t, tPlural })
+    };
+});
 
 /** Mock logger to suppress output in tests. */
 vi.mock('../../../src/lib/logger', () => ({
@@ -501,14 +519,48 @@ async function fillAllFields(user: ReturnType<typeof userEvent.setup>): Promise<
     await user.click(citySelect);
 }
 
-/** Get the submit button — text is "Crear y continuar en el panel". */
+/** Get the submit button — text is "Crear borrador y seguir al paso 2" (HOS-456). */
 function getSubmitButton(): HTMLElement {
-    return screen.getByRole('button', { name: /Crear y continuar en el panel/i });
+    return screen.getByRole('button', { name: /Crear borrador y seguir al paso 2/i });
 }
 
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
+
+describe('CreatePropertyMiniForm — step indicator (HOS-456)', () => {
+    // Creating an accommodation is two stages, and nothing on this screen said
+    // so. Hosts looked for the photo upload inside a form that has no such
+    // field and never will. Two notices already existed and both missed: the
+    // hero is read once before the question exists, and the only text naming
+    // photos sat below the submit button, after 1.770 lines, under a callout
+    // that took the attention.
+    it('should announce step 1 of 2', () => {
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        expect(screen.getByTestId('step-indicator')).toBeVisible();
+        expect(screen.getByText(/Paso 1 de 2/i)).toBeVisible();
+    });
+
+    it('should name the photos as belonging to the next step', () => {
+        // The load-bearing word is "fotos": that is what the host is hunting
+        // for. A step indicator that only said "1 de 2" would not answer it.
+        render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        expect(screen.getByTestId('step-indicator')).toHaveTextContent(/fotos/i);
+    });
+
+    it('should render the indicator before the fields, not after the submit', () => {
+        // Placement IS the fix. The previous notice was correct and unread
+        // because of where it sat, so asserting the text alone would pass on
+        // the broken version too.
+        const { container } = render(<CreatePropertyMiniForm {...DEFAULT_PROPS} />);
+
+        const form = container.querySelector('form');
+        const indicator = screen.getByTestId('step-indicator');
+        expect(form?.firstElementChild).toBe(indicator);
+    });
+});
 
 describe('CreatePropertyMiniForm — post-submit redirect', () => {
     it('redirects to admin edit page on created status', async () => {

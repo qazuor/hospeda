@@ -192,7 +192,8 @@
             }
         },
         "usage": {
-            "label": "{{current}} of {{max}} properties",
+            "label_one": "{{current}} of {{max}} property",
+            "label_other": "{{current}} of {{max}} properties",
             "unlimited": "Unlimited properties",
             "upgrade": "Upgrade plan"
         },
@@ -216,18 +217,20 @@
                 "deleteYes": "Yes, delete",
                 "publishConfirmTitle": "Publish this accommodation?",
                 "publishConfirmNote": "It will appear on the site, visible to travellers.",
-                "publishYes": "Yes, publish"
+                "publishYes": "Yes, publish",
+                "choosePlan": "Choose a host plan"
             },
             "pricePerNight": "per night",
             "unpublishSuccess": "Property unpublished",
             "unpublishError": "Could not unpublish. Please try again.",
             "deleteError": "Could not delete. Please try again.",
             "publishError": "Could not publish. Please try again.",
-            "publishSubscriptionRequiredMessage": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free days.",
+            "publishSubscriptionRequiredMessage_one": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free day.",
+            "publishSubscriptionRequiredMessage_other": "You need an active plan to publish. If this is your first subscription, you start with {{trialDays}} free days.",
             "publishSubscriptionRequiredCta": "View plans",
-            "publishIncompleteCapacityMessage": "Capacity details (guests, bedrooms, or bathrooms) are missing. Complete them in the editor before publishing.",
-            "publishIncompleteCapacityCta": "Complete in editor",
-            "priceOnRequest": "Price on request"
+            "priceOnRequest": "Price on request",
+            "publishMissingRequirementsMessage": "To publish, you still need: {{fields}}.",
+            "publishMissingRequirementsCta": "Complete in the editor"
         },
         "editor": {
             "section": {
@@ -245,7 +248,9 @@
                 "featuredToggle": "Destacado",
                 "calendar": "Calendar",
                 "capacityPricing": "Capacity and price",
-                "contactSocial": "Contact and social"
+                "contactSocial": "Contact and social",
+                "seo": "Search engines (Google)",
+                "seoDescription": "Choose how your property shows up when someone finds it on Google. Leave these fields blank to use your property's name."
             },
             "sectionNav": {
                 "ariaLabel": "Form section navigation"
@@ -281,21 +286,91 @@
                 "twitter": "Twitter / X",
                 "linkedin": "LinkedIn",
                 "tiktok": "TikTok",
-                "youtube": "YouTube"
+                "youtube": "YouTube",
+                "minNights": "Minimum nights",
+                "minNightsHint": "The minimum number of nights a guest must book. Shown on the public listing.",
+                "street": "Street",
+                "number": "Number",
+                "floor": "Floor",
+                "apartment": "Apartment",
+                "seoTitle": "Google title",
+                "seoTitleHint": "The bold title shown in the search result. For now it only applies in Spanish — English and Portuguese still show your property's name.",
+                "seoDescription": "Google description",
+                "seoDescriptionHint": "The text shown below the title in the search result. Like the title, it only applies in Spanish for now."
             },
             "photo": {
+                "addToGallery": "Add photos to the gallery",
+                "altHint": "This is what a screen reader announces when a guest can't see the photo, and what search engines index. Be specific: \"Main bedroom with double bed\", not \"photo1\".",
+                "altLabel": "What does the photo show?",
+                "altPlaceholder": "E.g.: Living room with sofa and garden-facing window",
+                "altTooLong": "This text can't be longer than {{max}} characters",
+                "captionLabel": "Caption (optional)",
+                "captionPlaceholder": "E.g.: View from the balcony",
+                "captionTooLong": "The caption can't be longer than {{max}} characters",
+                "captionTooShort": "The caption must be at least {{min}} characters, or leave it empty",
+                "closeDetailsAria": "Close text editor for photo {{index}}",
+                "closeFeaturedDetailsAria": "Close text editor for the cover photo",
+                "creditHint": "Leave this empty if the photo is yours. Fill it in when somebody else took it: a photographer you hired, someone who lent it to you, or a stock image. In those cases naming the author is usually a condition of use, and publishing without a credit can become a legal problem for you. The credit appears below the photo on your listing.",
+                "creditLegend": "Photo credit (optional)",
+                "creditUrlInvalid": "The link has to start with http:// or https://",
+                "creditUrlLabel": "Author's link (optional)",
+                "descriptionLabel": "Description (optional)",
+                "descriptionPlaceholder": "E.g.: Balcony with table for two, perfect for afternoon mate",
+                "descriptionTooLong": "The description can't be longer than {{max}} characters",
+                "descriptionTooShort": "The description must be at least {{min}} characters, or leave it empty",
+                "dropOrClick": "Drag an image or click to select",
+                "editDetailsAria": "Edit text for photo {{index}}",
+                "editDetailsLabel": "Edit text",
+                "editFeaturedDetailsAria": "Edit text for the cover photo",
                 "featured": "Featured image",
                 "featuredAlt": "Featured image",
+                "featuredFailed": "The photo could not be set as the cover",
+                "formats": "JPG, PNG or WebP — max {{maxSize}}MB",
                 "gallery": "Photo gallery",
                 "galleryAlt": "Photo {{index}}",
-                "dropOrClick": "Drag an image or click to select",
-                "formats": "JPG, PNG or WebP — max {{maxSize}}MB",
-                "remove": "Remove",
+                "galleryCapExceededOnSelect": "You picked {{pickedPhrase}} but only {{remainingPhrase}} free (max. {{cap}} in total)",
+                "galleryCapLabel": "Gallery full",
+                "galleryCapReached": "Gallery limit reached (max {{cap}} photos)",
                 "invalidType": "Only JPG, PNG or WebP files are allowed",
+                "metadataSaveFailed": "Couldn't save the photo's details",
+                "metadataSavedConfirmation": "Saved",
+                "moveDownAria": "Move photo {{index}} down",
+                "moveUpAria": "Move photo {{index}} up",
+                "persistFailed": "The photo could not be saved",
+                "photographerLabel": "Who took the photo?",
+                "photographerPlaceholder": "E.g.: Estudio Paraná",
+                "photographerRequiredWithUrl": "Add who the photo belongs to so we can link their site",
+                "photographerTooLong": "The credit can't be longer than {{max}} characters",
+                "promoteFailed": "This photo could not be set as the cover",
+                "promoteToFeaturedAria": "Use photo {{index}} as the cover",
+                "promoteToFeaturedShort": "Cover",
+                "remove": "Remove",
+                "removeFailed": "The photo could not be removed",
+                "reorderFailed": "The new order could not be saved",
                 "tooLarge": "File cannot exceed {{maxSize}}MB",
                 "uploadFailed": "Failed to upload image",
-                "galleryCapReached": "Gallery limit reached (max {{cap}} photos)",
-                "galleryCapLabel": "Gallery full"
+                "galleryCapReached_one": "Gallery limit reached (max {{cap}} photo)",
+                "galleryCapReached_other": "Gallery limit reached (max {{cap}} photos)",
+                "uploadingBatch": "Uploading photo {{current}} of {{total}}…",
+                "galleryCapExceededOnSelectPicked_one": "{{count}} photo",
+                "galleryCapExceededOnSelectPicked_other": "{{count}} photos",
+                "galleryCapExceededOnSelectRemaining_one": "{{count}} slot is",
+                "galleryCapExceededOnSelectRemaining_other": "{{count}} slots are"
+            },
+            "video": {
+                "sectionTitle": "Videos",
+                "sectionDescription": "Add links to YouTube, Vimeo or Dailymotion videos showing your property.",
+                "urlLabel": "Video link",
+                "urlPlaceholder": "https://youtube.com/watch?v=...",
+                "captionLabel": "Title (optional)",
+                "addButton": "Add video",
+                "removeAria": "Remove video {{index}}",
+                "empty": "You haven't added any videos yet.",
+                "saveButton": "Save videos",
+                "saveSuccess": "Videos saved",
+                "saveFailed": "The videos could not be saved",
+                "urlInvalid": "Enter a valid video URL",
+                "captionInvalid": "The title must be 3-100 characters, or left blank"
             },
             "faq": {
                 "emptyState": "No questions yet. Add the first one.",
@@ -404,7 +479,8 @@
                 "geolocationUnavailable": "Geolocation is not available in this browser.",
                 "geolocationDenied": "Permission denied. You can type the address manually.",
                 "geolocationError": "Could not get location. Try typing the address.",
-                "searching": "Searching…"
+                "searching": "Searching…",
+                "addressHint": "Exact address. Tourists only ever see an approximate location on the public map."
             },
             "translation": {
                 "sectionTitle": "Translations",
@@ -470,6 +546,15 @@
                     "deleteError": "We couldn't delete the block. Please try again.",
                     "continues": "continued",
                     "pastError": "You can't move the block to a past date."
+                },
+                "eventDetails": {
+                    "title": "Blocked day",
+                    "eventLabel": "Event",
+                    "sourceLabel": "Source",
+                    "datesLabel": "Dates",
+                    "dateRange": "{{from}} to {{to}}",
+                    "untitled": "No title in the source calendar",
+                    "help": "This block came from a calendar you connected, so it cannot be edited here — the next sync would just recreate it. To free these days, delete or change the event in the source calendar, or disconnect that calendar."
                 },
                 "legend": {
                     "title": "Legend",
@@ -539,14 +624,26 @@
                 "status": {
                     "missingDescription": "⚠ Description missing",
                     "missingPrice": "⚠ No price set",
-                    "guests": "Up to {{count}} guests",
+                    "guests_one": "Up to {{count}} guest",
+                    "guests_other": "Up to {{count}} guests",
                     "missingCoordinates": "⚠ Not placed on the map",
-                    "selected": "{{count}} selected",
-                    "photos": "{{count}} photos",
+                    "selected_one": "{{count}} selected",
+                    "selected_other": "{{count}} selected",
+                    "photos_one": "{{count}} photo",
+                    "photos_other": "{{count}} photos",
                     "missingPhotos": "⚠ No photos",
-                    "faqs": "{{count}} questions",
-                    "missingContact": "⚠ No contact details"
+                    "faqs_one": "{{count}} question",
+                    "faqs_other": "{{count}} questions",
+                    "missingContact": "⚠ No contact details",
+                    "blockedFromPublishing": "⛔ Needed to publish: {{fields}}"
                 }
+            },
+            "publishRequirement": {
+                "capacity": "guests",
+                "minNights": "minimum nights",
+                "bedrooms": "bedrooms",
+                "bathrooms": "bathrooms",
+                "mainImage": "the main photo"
             }
         },
         "empty": {
@@ -559,7 +656,8 @@
         "heroSubheadline": "List it in minutes and start welcoming guests",
         "primaryCta": "List your property",
         "secondaryCta": "View my properties",
-        "trialCallout": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
+        "trialCallout_one": "Try Hospeda free for {{trialDays}} day on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends.",
+        "trialCallout_other": "Try Hospeda free for {{trialDays}} days on your first subscription. You pick your plan, add your card, and nothing is charged until the trial ends."
     },
     "fromAdminBanner": {
         "eyebrow": "We brought you here from the admin panel — you need to publish a property first to manage your listings."
@@ -587,7 +685,8 @@
                 "phone": "Phone",
                 "website": "Website",
                 "coordinatesLabel": "Imported location",
-                "amenitiesCount": "{{count}} imported amenities"
+                "amenitiesCount_one": "{{count}} imported amenity",
+                "amenitiesCount_other": "{{count}} imported amenities"
             }
         },
         "errors": {
@@ -601,7 +700,7 @@
             "network": "We couldn't connect to the server. Check your connection and try again."
         },
         "actions": {
-            "submit": "Create and continue in the panel",
+            "submit": "Create draft and go to step 2",
             "submitting": "Creating..."
         },
         "disclaimer": "We'll create a draft with this information. Then we'll take you to the panel to complete photos, prices and more.",
@@ -616,6 +715,10 @@
             "ROOM": "Room",
             "MOTEL": "Motel",
             "RESORT": "Resort"
+        },
+        "stepIndicator": {
+            "title": "Step 1 of 2 · Basic details",
+            "next": "Next: photos, pricing and the rest of the listing."
         }
     },
     "promotions": {
@@ -766,10 +869,23 @@
     },
     "pages": {
         "nueva": {
-            "trialCalloutTitle": "{{trialDays}} free days on your first subscription",
+            "trialCalloutTitle_one": "{{trialDays}} free day on your first subscription",
+            "trialCalloutTitle_other": "{{trialDays}} free days on your first subscription",
             "trialCalloutTitleIneligible": "Set up your property",
-            "trialNote": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
-            "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan."
+            "trialNote_one": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
+            "trialNote_other": "You can build your property now. The {{trialDays}}-day free trial starts when you pick your plan: you add your card and nothing is charged until it ends. It applies to your first subscription only.",
+            "trialNoteIneligible": "You can create and edit your draft now. To publish it and go live you'll need an active host plan.",
+            "subtitle": "We'll create the draft with this information. Photos, pricing and the rest go in step 2, from the panel.",
+            "precheck": {
+                "resumeDeleteOrUpgrade": {
+                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
+                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan."
+                },
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",
+                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one."
+                }
+            }
         }
     }
 }

@@ -18,6 +18,8 @@
 import { describe, expect, it } from 'vitest';
 import {
     canUndoRejection,
+    canUndoRejectionFrom,
+    isAwaitingAnswerFrom,
     isAwaitingHostAnswer,
     parseCalendarDate
 } from '../../../src/lib/host/benefit-usage-view';
@@ -30,6 +32,45 @@ function usage(overrides: Partial<Parameters<typeof canUndoRejection>[0]> = {}) 
         ...overrides
     };
 }
+
+/**
+ * The mirror half of the flow (H-06/H-65/H-159).
+ *
+ * These two tables exist because the provider's side of "A declara, B confirma"
+ * was never built: a usage a host declared sat PENDING until it expired, since
+ * the only screen that could answer it belonged to the host. Asserting BOTH
+ * sides of the same predicate is what makes the symmetry a property of the code
+ * rather than a coincidence of whichever screen was written first.
+ */
+describe('isAwaitingAnswerFrom / canUndoRejectionFrom — both sides', () => {
+    it.each([
+        // declaredBy, side, awaits an answer from side
+        ['PROVIDER', 'HOST', true],
+        ['HOST', 'PROVIDER', true],
+        ['HOST', 'HOST', false],
+        ['PROVIDER', 'PROVIDER', false]
+    ] as const)('a PENDING row declared by %s awaits %s: %s', (declaredBy, side, expected) => {
+        expect(isAwaitingAnswerFrom(usage({ status: 'PENDING', declaredBy }), side)).toBe(expected);
+    });
+
+    it.each([
+        ['PROVIDER', 'HOST', true],
+        ['HOST', 'PROVIDER', true],
+        ['HOST', 'HOST', false],
+        ['PROVIDER', 'PROVIDER', false]
+    ] as const)('a REJECTED row declared by %s may be undone by %s: %s', (declaredBy, side, expected) => {
+        expect(canUndoRejectionFrom(usage({ status: 'REJECTED', declaredBy }), side)).toBe(
+            expected
+        );
+    });
+
+    it.each(['CONFIRMED', 'EXPIRED'] as const)('leaves a %s row inert for both sides', (status) => {
+        for (const side of ['HOST', 'PROVIDER'] as const) {
+            expect(isAwaitingAnswerFrom(usage({ status, declaredBy: 'HOST' }), side)).toBe(false);
+            expect(canUndoRejectionFrom(usage({ status, declaredBy: 'HOST' }), side)).toBe(false);
+        }
+    });
+});
 
 describe('canUndoRejection', () => {
     it('allows undoing a provider-declared usage the host rejected', () => {

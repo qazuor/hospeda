@@ -4,9 +4,9 @@
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `OWNER_TRIAL_DAYS` | `14` | Trial period in days for owner plans |
+| `OWNER_TRIAL_DAYS` | `30` | Trial period in days for owner plans (owner-basico/pro/premium; raised from 14, owner decision 2026-08-15) |
 | `COMPLEX_TRIAL_DAYS` | `14` | Trial period in days for complex plans |
-| `TOURIST_TRIAL_DAYS` | `14` | Trial period in days for self-service tourist plans (tourist-plus / tourist-vip). Aliased to `OWNER_TRIAL_DAYS` so it can never drift from the owner tier |
+| `TOURIST_TRIAL_DAYS` | `30` | Trial period in days for self-service tourist plans (tourist-plus / tourist-vip). A literal, independent of `OWNER_TRIAL_DAYS` since HOS-301 D1 (no longer aliased) |
 | `PAYMENT_GRACE_PERIOD_DAYS` | `3` | Reference constant for the initial-payment grace window; NOT enforced at runtime (qzpay-core uses `DUNNING_GRACE_PERIOD_DAYS` for both) |
 | `DUNNING_GRACE_PERIOD_DAYS` | `7` | Days of dunning process before subscription cancellation |
 | `DUNNING_RETRY_INTERVALS` | `[1, 3, 5, 7]` | Days after failure when retry attempts occur |

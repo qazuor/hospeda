@@ -18,16 +18,28 @@
  */
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import {
+    exchangeAuthorizationCode,
+    MLOAuthClientError,
+    refreshAccessToken
+} from '../../../src/services/mercadolibre-oauth/ml-oauth-client.js';
 
 // ---------------------------------------------------------------------------
 // Controlled env mock
 // ---------------------------------------------------------------------------
 
-const mockEnv: Record<string, string | undefined> = {
-    HOSPEDA_MERCADOLIBRE_CLIENT_ID: 'test-client-id',
-    HOSPEDA_MERCADOLIBRE_CLIENT_SECRET: 'super-secret-value-should-never-leak',
-    NODE_ENV: 'test'
-};
+// Hoisted, like the fetch mock below, because the vi.mock() factory that
+// consumes it is itself hoisted above every import. As a plain `const` this
+// threw "Cannot access 'mockEnv' before initialization" the moment the module
+// under test was imported statically — the previous `await import()` inside a
+// hook only hid that by deferring evaluation until after this line had run.
+const { mockEnv } = vi.hoisted(() => ({
+    mockEnv: {
+        HOSPEDA_MERCADOLIBRE_CLIENT_ID: 'test-client-id',
+        HOSPEDA_MERCADOLIBRE_CLIENT_SECRET: 'super-secret-value-should-never-leak',
+        NODE_ENV: 'test'
+    } as Record<string, string | undefined>
+}));
 
 vi.mock('../../../src/utils/env.js', () => ({
     env: mockEnv
@@ -42,16 +54,9 @@ const { mockFetch } = vi.hoisted(() => ({
 }));
 
 describe('ml-oauth-client', () => {
-    let exchangeAuthorizationCode: typeof import('../../../src/services/mercadolibre-oauth/ml-oauth-client.js').exchangeAuthorizationCode;
-    let refreshAccessToken: typeof import('../../../src/services/mercadolibre-oauth/ml-oauth-client.js').refreshAccessToken;
-    let MLOAuthClientError: typeof import('../../../src/services/mercadolibre-oauth/ml-oauth-client.js').MLOAuthClientError;
-
-    beforeEach(async () => {
+    beforeEach(() => {
         vi.clearAllMocks();
         global.fetch = mockFetch;
-        ({ exchangeAuthorizationCode, refreshAccessToken, MLOAuthClientError } = await import(
-            '../../../src/services/mercadolibre-oauth/ml-oauth-client.js'
-        ));
     });
 
     const jsonResponse = (

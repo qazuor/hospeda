@@ -9,8 +9,8 @@ import {
     AccommodationFaqSingleOutputSchema,
     type AccommodationFaqUpdateInput,
     AccommodationIdSchema,
-    FaqUpdatePayloadSchema,
-    type FaqUpdatePayloadType
+    FaqWithChannelVisibilityUpdatePayloadSchema,
+    type FaqWithChannelVisibilityUpdatePayloadType
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -35,7 +35,7 @@ export const updateFaqRoute = createCRUDRoute({
         id: AccommodationIdSchema,
         faqId: AccommodationFaqIdSchema
     },
-    requestBody: FaqUpdatePayloadSchema,
+    requestBody: FaqWithChannelVisibilityUpdatePayloadSchema,
     responseSchema: AccommodationFaqSingleOutputSchema,
     handler: async (c: Context, params, body) => {
         // Get actor from context (authenticated user for protected endpoint)
@@ -45,7 +45,7 @@ export const updateFaqRoute = createCRUDRoute({
         const input: AccommodationFaqUpdateInput = {
             accommodationId: params.id as string,
             faqId: params.faqId as string,
-            faq: body as FaqUpdatePayloadType
+            faq: body as FaqWithChannelVisibilityUpdatePayloadType
         };
 
         // Update FAQ for accommodation

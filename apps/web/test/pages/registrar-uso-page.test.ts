@@ -125,7 +125,7 @@ describe('registrar-uso page — the service date', () => {
 });
 
 // ---------------------------------------------------------------------------
-// The three terminal states
+// The four terminal states
 // ---------------------------------------------------------------------------
 
 describe('registrar-uso page — terminal states', () => {
@@ -149,6 +149,41 @@ describe('registrar-uso page — terminal states', () => {
         // invites a click that can never succeed.
         expect(pageSrc).toContain("outcome === 'error' ? (");
         expect(pageSrc).toContain('registerUsage.loadError.retry');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// H-05 — a 403 (non-host scanned the QR) is NOT a load error
+// ---------------------------------------------------------------------------
+
+describe('registrar-uso page — 403 is a gate, not a failure (H-05)', () => {
+    /** The branch body between `outcome = 'accessDenied';` and the next `} else`. */
+    const accessDeniedBranch =
+        /outcome = 'accessDenied';([\s\S]*?)\n\s*\} else if/.exec(pageSrc)?.[1] ?? '';
+
+    it('branches on the 403 status, distinct from 404/422/other errors', () => {
+        expect(pageSrc).toContain('result.error.status === 403');
+        expect(pageSrc).toContain("outcome = 'accessDenied'");
+    });
+
+    it('does not log an expected 403 as a failure', () => {
+        // Without this branch existing, the previous test already proves the
+        // bug; this one guards the regression once it does exist — a 403
+        // must never reach the `logger.error` call reserved for the
+        // transient/unknown branch.
+        expect(accessDeniedBranch.length).toBeGreaterThan(0);
+        expect(accessDeniedBranch).not.toContain('logger.error');
+    });
+
+    it('renders the shared host-only gate for a 403, not the generic "could not load" card', () => {
+        expect(pageSrc).toContain('HostTradesAccessDenied');
+        expect(pageSrc).toMatch(/outcome === 'accessDenied' \? \(\s*<HostTradesAccessDenied/);
+    });
+
+    it('never shows the "reload the page" retry CTA for an access-denied read', () => {
+        // The 403 keeps firing by design (HOST_TRADE_VIEW) — retrying can
+        // never succeed for this outcome, unlike the transient 'error' case.
+        expect(pageSrc).not.toMatch(/outcome === 'accessDenied'[\s\S]{0,80}loadError\.retry/);
     });
 });
 

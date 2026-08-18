@@ -14,6 +14,21 @@ export enum NotificationType {
     TRIAL_ENDING_REMINDER = 'trial_ending_reminder',
     ADMIN_PAYMENT_FAILURE = 'admin_payment_failure',
     ADMIN_SYSTEM_EVENT = 'admin_system_event',
+    /**
+     * H-62 / H-148 — sent to the ops mailbox the moment a partner or commerce
+     * application arrives through one of the five public acquisition forms.
+     *
+     * Both funnels are served by ONE type rather than two. What ops needs to
+     * read is identical — who applied, for what, how to reach them, where to
+     * answer — and the only thing that differs between "Sumar mi negocio" and
+     * the four "aliados" forms is a label. Two types would mean two templates
+     * and two subjects to keep in step, for the same email.
+     *
+     * ADMIN category: it goes to the operations list, never to the applicant,
+     * and it is not opt-out-able — an alert nobody receives is the defect this
+     * type exists to close.
+     */
+    ADMIN_LEAD_RECEIVED = 'admin_lead_received',
     FEEDBACK_REPORT = 'feedback_report',
     CONTACT_SUBMISSION = 'contact_submission',
     SUBSCRIPTION_CANCELLED = 'subscription_cancelled',
@@ -1092,7 +1107,65 @@ export interface PlanPriceChangeNoticePayload extends BaseNotificationPayload {
 }
 
 /** Union of all notification payloads */
+/**
+ * Payload for the ADMIN_LEAD_RECEIVED notification (H-62 / H-148).
+ *
+ * Carries what an operator needs to act WITHOUT opening the admin: who wrote,
+ * what they want and how to reach them. The point of the alert is that the
+ * lead stops depending on somebody remembering to go and look, so an email
+ * that only says "there is a new lead" would rebuild the same dependency.
+ *
+ * `message` is the applicant's own words, verbatim and untruncated. The four
+ * "aliados" forms fold their per-kind answers into it, so cutting it short
+ * would drop the only place a `service_provider` states its benefit.
+ *
+ * @example
+ * ```ts
+ * const payload: AdminLeadReceivedPayload = {
+ *   type: NotificationType.ADMIN_LEAD_RECEIVED,
+ *   recipientEmail: 'ops@hospeda.com.ar',
+ *   recipientName: 'Equipo Hospeda',
+ *   userId: null,
+ *   leadId: 'lead-uuid',
+ *   funnelLabel: 'Aliados',
+ *   programLabel: 'Proveedor',
+ *   contactName: 'Juan Pérez',
+ *   contactEmail: 'juan@example.com',
+ *   adminUrl: 'https://admin.hospeda.com.ar/alliance/leads',
+ * };
+ * ```
+ */
+export interface AdminLeadReceivedPayload extends BaseNotificationPayload {
+    readonly type: NotificationType.ADMIN_LEAD_RECEIVED;
+    /** UUID of the lead row, so the alert can be traced to the record. */
+    readonly leadId: string;
+    /** Which funnel it came through — "Comercios" or "Aliados". */
+    readonly funnelLabel: string;
+    /**
+     * The concrete program or domain applied for (e.g. "Proveedor",
+     * "Gastronomía"). A human label resolved by the caller, never a slug: this
+     * package does not depend on `@repo/schemas` and must not start doing so
+     * for a display string.
+     */
+    readonly programLabel: string;
+    /** Who applied. */
+    readonly contactName: string;
+    /** Their email, so ops can reply without opening the admin. */
+    readonly contactEmail: string;
+    /** Their phone, when the form collected one. */
+    readonly contactPhone?: string;
+    /** The business name, when the funnel asks for one. */
+    readonly businessName?: string;
+    /** The applicant's message, verbatim. */
+    readonly message?: string;
+    /** Deep link to the admin queue where the lead is resolved. */
+    readonly adminUrl: string;
+    /** When it arrived — already formatted for display. */
+    readonly submittedAtLabel: string;
+}
+
 export type NotificationPayload =
+    | AdminLeadReceivedPayload
     | PurchaseConfirmationPayload
     | PaymentNotificationPayload
     | SubscriptionEventPayload

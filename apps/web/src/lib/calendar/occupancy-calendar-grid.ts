@@ -11,6 +11,8 @@
  * midnight in any timezone behind UTC (e.g. Argentina, UTC-3).
  */
 
+import { parseCalendarDate } from '@repo/utils';
+
 /** A single `YYYY-MM-DD` date key, matching the `AccommodationOccupancy.date` shape. */
 export type DateKey = string;
 
@@ -20,6 +22,13 @@ export type DateKey = string;
 
 /**
  * Formats a `Date` as a local `YYYY-MM-DD` key.
+ *
+ * Stays hand-written rather than delegating to `@repo/utils`, and the reason is
+ * the one thing that is easy to get backwards here: this reads LOCAL
+ * components, while `getCalendarDateParts` reads UTC ones. For a local-midnight
+ * `Date` east of UTC the two disagree by a day, so swapping them would break the
+ * grid in exactly the timezones this file is careful about. It is the inverse of
+ * {@link parseDateKey}, not of anything in the shared module.
  *
  * @param params - The date to format.
  * @returns The local date key.
@@ -34,12 +43,21 @@ export function toDateKey({ date }: { readonly date: Date }): DateKey {
 /**
  * Parses a `YYYY-MM-DD` key into a local midnight `Date`.
  *
+ * Delegates the parse: this was the fifth independent implementation of "read a
+ * calendar day without letting the timezone shift it" in this repo, and four
+ * screens got the same rule wrong while these five had it right, with nothing
+ * connecting them (smoke agosto 2026, H-09/H-63/H-73/H-84).
+ *
+ * Keys only ever come from {@link toDateKey} or from the occupancy `date`
+ * column, so a value that names no real day is not a reachable state; it now
+ * yields an invalid `Date` rather than being silently rolled forward into the
+ * next month, which is the better of the two failure modes.
+ *
  * @param params - The date key to parse.
  * @returns The parsed local date.
  */
 export function parseDateKey({ dateKey }: { readonly dateKey: DateKey }): Date {
-    const [year, month, day] = dateKey.split('-').map(Number);
-    return new Date(year ?? 1970, (month ?? 1) - 1, day ?? 1);
+    return parseCalendarDate({ value: dateKey }) ?? new Date(Number.NaN);
 }
 
 // ---------------------------------------------------------------------------

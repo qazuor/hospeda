@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { AccommodationIdSchema, AccommodationMediaIdSchema } from '../../../common/id.schema.js';
-import { ImageAttributionSchema } from '../../../common/media.schema.js';
+import { ImageAttributionSchema, mediaAssetUrl } from '../../../common/media.schema.js';
 import { ModerationStatusEnumSchema } from '../../../enums/index.js';
 
 /**
@@ -50,7 +50,7 @@ export const AccommodationMediaSchema = z.object({
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
      * Required — every media row must have a URL.
      */
-    url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.media.image.url.invalid'),
     /**
      * Short display caption (max 100 chars in Zod).
      * Nullable/optional — not all uploads include a caption.
@@ -168,7 +168,7 @@ export const AccommodationMediaAddPayloadSchema = z.object({
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
      * Required — the upload endpoint returns this URL before this call is made.
      */
-    url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.media.image.url.invalid'),
     /**
      * Cloudinary `public_id` (e.g. `hospeda/dev/abc123`).
      * Optional — historic or external-URL payloads may not carry one.
@@ -410,3 +410,91 @@ export const AccommodationMediaRestoreInputSchema = z.object({
 
 /** Inferred type for the restore-media service input. */
 export type AccommodationMediaRestoreInput = z.infer<typeof AccommodationMediaRestoreInputSchema>;
+
+// ----------------------------------------------------------------------------
+// Update Text Metadata Input Schema (HOS-388 — PATCH /:id/media/:mediaId)
+// ----------------------------------------------------------------------------
+
+/**
+ * HTTP payload schema for `PATCH /:id/media/:mediaId`.
+ *
+ * Lets an owner correct the text metadata of an already-uploaded photo without
+ * deleting and re-uploading it (burns a second Cloudinary asset, loses the
+ * photo's gallery position — previously the ONLY way to fix an `alt` typo).
+ * Only these four text fields are editable — `url`, `publicId`,
+ * `moderationState`, `state`, `isFeatured`, `sortOrder`, and `accommodationId`
+ * are server-controlled and intentionally absent, so extra keys in the body
+ * cannot smuggle them through (Zod strips unknown keys on a plain `z.object()`).
+ *
+ * All four fields are NULLABLE as well as optional:
+ * - omitted (`undefined`) → leave the existing column value untouched.
+ * - `null` → explicitly CLEAR the column (half of "correct a mistake").
+ * - a value → replace the column (same min/max as `AccommodationMediaAddPayloadSchema`).
+ *
+ * NO `.refine()` here on purpose (Zod 4 gotcha): `.refine()` returns a
+ * `ZodEffects` wrapper whose `.shape` is inaccessible, so it can never again be
+ * `.pick()`/`.omit()`/`.partial()`'d — and `AccommodationMediaUpdateInputSchema`
+ * below needs this object's `.shape` to build the combined service input. The
+ * "at least one field present" rule is refined on that INPUT schema instead.
+ */
+export const AccommodationMediaUpdatePayloadSchema = z.object({
+    /** Short display caption (max 100 chars). `null` clears it; omit to leave unchanged. */
+    caption: z
+        .string()
+        .min(3, { message: 'zodError.common.media.image.caption.min' })
+        .max(100, { message: 'zodError.common.media.image.caption.max' })
+        .nullable()
+        .optional(),
+    /** Longer photo description (max 300 chars). `null` clears it; omit to leave unchanged. */
+    description: z
+        .string()
+        .min(10, { message: 'zodError.common.media.image.description.min' })
+        .max(300, { message: 'zodError.common.media.image.description.max' })
+        .nullable()
+        .optional(),
+    /** Accessible alt text. `null` clears it; omit to leave unchanged. */
+    alt: z
+        .string()
+        .min(1, { message: 'zodError.common.media.image.alt.min' })
+        .max(200, { message: 'zodError.common.media.image.alt.max' })
+        .nullable()
+        .optional(),
+    /** Optional credits/source metadata. `null` clears it; omit to leave unchanged. */
+    attribution: ImageAttributionSchema.nullable().optional()
+});
+
+/** Inferred type for the update-media HTTP payload. */
+export type AccommodationMediaUpdatePayload = z.infer<typeof AccommodationMediaUpdatePayloadSchema>;
+
+/**
+ * Service input schema for `AccommodationService.updateMedia`.
+ *
+ * Combines the URL params (`accommodationId`, `mediaId`) with the four payload
+ * fields spread from `AccommodationMediaUpdatePayloadSchema.shape`, then adds
+ * the cross-field rule the flat payload schema cannot express alone: at least
+ * one of the four text fields must be present (`!== undefined` — `null` counts
+ * as present, since clearing a field is a real edit). A body with all four
+ * fields omitted is a no-op PATCH, rejected as `VALIDATION_ERROR` instead of
+ * silently returning 200. This is the "refined, exported separately" schema
+ * referenced in the payload schema's JSDoc above — refine lives HERE so the
+ * reusable base payload schema stays un-refined.
+ */
+export const AccommodationMediaUpdateInputSchema = z
+    .object({
+        /** UUID of the parent accommodation (from URL param `/:id`). */
+        accommodationId: AccommodationIdSchema,
+        /** UUID of the media row to update (from URL param `/:mediaId`). */
+        mediaId: AccommodationMediaIdSchema,
+        ...AccommodationMediaUpdatePayloadSchema.shape
+    })
+    .refine(
+        (data) =>
+            data.caption !== undefined ||
+            data.description !== undefined ||
+            data.alt !== undefined ||
+            data.attribution !== undefined,
+        { message: 'zodError.accommodation.media.update.atLeastOneField' }
+    );
+
+/** Inferred type for the update-media service input. */
+export type AccommodationMediaUpdateInput = z.infer<typeof AccommodationMediaUpdateInputSchema>;

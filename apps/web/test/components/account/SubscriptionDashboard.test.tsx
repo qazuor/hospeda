@@ -545,6 +545,37 @@ describe('SubscriptionDashboard — complimentary (comp) gating (HOS-242)', () =
         expect(screen.getByText(/sin vencimiento/i)).toBeInTheDocument();
         expect(screen.queryByText(/próxima facturación/i)).not.toBeInTheDocument();
     });
+
+    it('does NOT claim MercadoPago as the payment method of a comp (H-34)', async () => {
+        // A comp is created without a MercadoPago preapproval, so the API
+        // returns paymentMethod: null and the DB holds no default method. The
+        // "no card → MercadoPago" fallback is right for a PAID subscription
+        // whose card data failed to load; on a comp it asserts a charging
+        // method that does not exist and never will — three lines under the
+        // card's own "PLAN DE CORTESÍA" label.
+        mockSubscriptionSuccess(COMP_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+        expect(screen.queryByText(/mercadopago/i)).not.toBeInTheDocument();
+    });
+
+    it('states plainly that a comp has no payment method (H-34)', async () => {
+        // Branching on isComplimentary must replace the false claim with the
+        // truth, not merely blank the row.
+        mockSubscriptionSuccess(COMP_SUBSCRIPTION);
+        renderDashboard();
+        await waitForLoaded();
+        expect(screen.getByText(/sin método de pago/i)).toBeInTheDocument();
+    });
+
+    it('a PAID subscription with no card still falls back to MercadoPago (H-34 does not over-reach)', async () => {
+        // The fallback exists for a reason; narrowing it to comps must leave
+        // the paid case exactly as it was.
+        mockSubscriptionSuccess({ ...ACTIVE_SUBSCRIPTION, paymentMethod: null });
+        renderDashboard();
+        await waitForLoaded();
+        expect(screen.getByText(/mercadopago/i)).toBeInTheDocument();
+    });
 });
 
 describe('SubscriptionDashboard — cancel modal: open / close', () => {

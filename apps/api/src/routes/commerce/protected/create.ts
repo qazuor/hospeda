@@ -48,9 +48,9 @@
  * @module routes/commerce/protected/create
  */
 import {
-    ExperienceAdminCreateInputSchema,
+    ExperienceAdminCreateInputCheckedSchema,
     type ExperienceOwnerCreateInput,
-    ExperienceOwnerCreateInputSchema,
+    ExperienceOwnerCreateInputCheckedSchema,
     ExperienceProtectedSchema,
     GastronomyAdminCreateInputSchema,
     type GastronomyOwnerCreateInput,
@@ -58,6 +58,7 @@ import {
     GastronomyProtectedSchema,
     LifecycleStatusEnum,
     PermissionEnum,
+    ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
 import { ExperienceService, GastronomyService, ServiceError } from '@repo/service-core';
@@ -135,12 +136,30 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
     // Same rationale as the gastronomy handler above: re-parse through the
     // full admin create schema so isFeatured/moderationState/reviewsCount/
     // averageRating/hasActiveSubscription get their schema defaults.
-    const createInput = ExperienceAdminCreateInputSchema.parse({
+    //
+    // `safeParse`, not `.parse()` (H-156): the CHECKED schema carries the
+    // cross-field pricing rule, and the route factory does NOT enforce
+    // refinements at the requestBody boundary — verified against a running API,
+    // where a listing with a price but no unit sailed past validation and blew
+    // up here as an unmapped ZodError, i.e. a 500 for what is plainly a bad
+    // request. Mapping it to a 422 keeps the field name reaching the caller.
+    const parsed = ExperienceAdminCreateInputCheckedSchema.safeParse({
         ...data,
         ownerId: actor.id,
         visibility: VisibilityEnum.PRIVATE,
         lifecycleState: LifecycleStatusEnum.DRAFT
     });
+
+    if (!parsed.success) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            parsed.error.issues
+                .map((issue) => `${issue.path.join('.')}: ${issue.message}`)
+                .join('; ')
+        );
+    }
+
+    const createInput = parsed.data;
 
     const result = await experienceService.create(actor, createInput);
 
@@ -165,7 +184,9 @@ export const protectedCreateExperienceListingRoute = createProtectedRoute({
         'Creates an experience listing owned by the authenticated caller. Starts hidden (PRIVATE/DRAFT) until the owner completes and pays for it. Requires COMMERCE_CREATE.',
     tags: ['Commerce'],
     requiredPermissions: [PermissionEnum.COMMERCE_CREATE],
-    requestBody: ExperienceOwnerCreateInputSchema,
+    // H-156: the CHECKED variant carries the cross-field pricing rule
+    // (priceUnit required unless the price is on request).
+    requestBody: ExperienceOwnerCreateInputCheckedSchema,
     responseSchema: ExperienceProtectedSchema,
     successStatusCode: 201,
     handler: async (

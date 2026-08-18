@@ -106,6 +106,25 @@ export interface RevalidationServiceConfig {
      * with a no-op adapter and an error log; it is never a normal condition.
      */
     readonly cacheTagEnvironment?: CacheTagEnvironment;
+    /**
+     * Extra observer invoked for every event passed to
+     * {@link RevalidationService.scheduleRevalidation} (HOS-585 G-1).
+     *
+     * Injected rather than imported so this service keeps knowing nothing about
+     * who else cares about a content change. HOS-585 wires the IndexNow
+     * notifier here, whose gates (production only, key configured, operator
+     * toggle) are entirely its own and deliberately stricter than a cache
+     * purge's — staging has a real cache to purge and no business telling Bing
+     * about URLs the same deployment serves under `Disallow: /`.
+     *
+     * Called BEFORE the `revalidation_config` lookup, so an entity type with
+     * `enabled: false` still notifies. That table decides how this deployment's
+     * CACHE behaves; it is not a publication switch.
+     *
+     * Must not throw. If it does, the failure is logged and revalidation
+     * continues — an observer never gets to fail a publish.
+     */
+    readonly onEntityChange?: (event: EntityChangeData) => void;
 }
 
 /** Trigger source for revalidation log entries */
@@ -204,6 +223,7 @@ export class RevalidationService {
     private readonly cacheTagEnvironment: CacheTagEnvironment | undefined;
     private readonly logRetentionDaysConfig: number;
     private readonly entityResolverInstance: EntityResolver | undefined;
+    private readonly onEntityChange: ((event: EntityChangeData) => void) | undefined;
     private readonly pendingTimers = new Map<string, PendingEntityDebounce>();
     /** Groups waiting for the next shared purge (HOS-297). */
     private readonly pendingPurgeGroups: PendingPurgeGroup[] = [];
@@ -232,6 +252,7 @@ export class RevalidationService {
         this.cacheTagEnvironment = config.cacheTagEnvironment;
         this.logRetentionDaysConfig = config.logRetentionDays ?? DEFAULT_LOG_RETENTION_DAYS;
         this.entityResolverInstance = config.entityResolver;
+        this.onEntityChange = config.onEntityChange;
         this.logModel = new RevalidationLogModel();
         this.configModel = new RevalidationConfigModel();
     }
@@ -287,8 +308,32 @@ export class RevalidationService {
      * @param reason - Optional human-readable reason for logging
      */
     scheduleRevalidation(event: EntityChangeData, reason?: string): void {
+        this.notifyEntityChangeObserver(event);
+
         // Resolve config asynchronously and schedule -- fully fire-and-forget
         void this.resolveConfigAndSchedule(event, reason);
+    }
+
+    /**
+     * Hand the event to the configured `onEntityChange` observer, if any.
+     *
+     * Runs before the config lookup and outside the debounce on purpose: the
+     * observer has its own coalescing window and its own switches, and coupling
+     * it to this service's would make one entity type's disabled cache config
+     * silently suppress search-engine notifications too.
+     *
+     * @param event - The change event, forwarded verbatim.
+     */
+    private notifyEntityChangeObserver(event: EntityChangeData): void {
+        if (!this.onEntityChange) return;
+
+        try {
+            this.onEntityChange(event);
+        } catch (error) {
+            this.logger.warn(
+                `Entity-change observer threw for ${event.entityType}: ${error instanceof Error ? error.message : String(error)}`
+            );
+        }
     }
 
     /**

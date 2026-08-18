@@ -8,8 +8,8 @@ import {
     AccommodationFaqSingleOutputSchema,
     type AccommodationFaqUpdateInput,
     AccommodationIdSchema,
-    FaqUpdatePayloadSchema,
-    type FaqUpdatePayloadType
+    FaqWithChannelVisibilityUpdatePayloadSchema,
+    type FaqWithChannelVisibilityUpdatePayloadType
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
@@ -39,7 +39,7 @@ export const adminUpdateFaqRoute = createAdminRoute({
         id: AccommodationIdSchema,
         faqId: AccommodationFaqIdSchema
     },
-    requestBody: FaqUpdatePayloadSchema,
+    requestBody: FaqWithChannelVisibilityUpdatePayloadSchema,
     responseSchema: AccommodationFaqSingleOutputSchema,
     handler: async (
         ctx: Context,
@@ -51,7 +51,7 @@ export const adminUpdateFaqRoute = createAdminRoute({
         const input: AccommodationFaqUpdateInput = {
             accommodationId: params.id as string,
             faqId: params.faqId as string,
-            faq: body as FaqUpdatePayloadType
+            faq: body as FaqWithChannelVisibilityUpdatePayloadType
         };
 
         const result = await accommodationService.updateFaq(actor, input);

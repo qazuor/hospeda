@@ -65,6 +65,11 @@ vi.mock('@repo/service-core', () => ({
     redeemAndRecordUsage: (...args: unknown[]) => redeemAndRecordUsageMock(...args)
 }));
 
+const clearEntitlementCacheMock = vi.fn();
+vi.mock('../../src/middlewares/entitlement', () => ({
+    clearEntitlementCache: (...args: unknown[]) => clearEntitlementCacheMock(...args)
+}));
+
 import { createCompSubscription } from '../../src/services/subscription-comp-create.service';
 
 describe('createCompSubscription', () => {
@@ -206,5 +211,44 @@ describe('createCompSubscription', () => {
         ).rejects.toThrow(/plan.*not found/i);
 
         expect(withTransactionMock).not.toHaveBeenCalled();
+    });
+
+    // HOS-453 / H-91 — the comp path served stale (pre-comp) entitlements from
+    // the in-memory cache for up to the full 5-minute TTL, because unlike every
+    // other money-mutating lifecycle handler (INV-1), this service never called
+    // clearEntitlementCache(customerId). Regression test for the fix below.
+    it('HOS-453: clears the entitlement cache for the customer on success (INV-1)', async () => {
+        const result = await createCompSubscription({
+            customerId: 'cust-1',
+            planId: 'plan-uuid-1',
+            promoCodeId: 'pc-1',
+            code: 'COMPVIP',
+            interval: 'monthly',
+            livemode: true
+        });
+
+        expect(clearEntitlementCacheMock).toHaveBeenCalledOnce();
+        expect(clearEntitlementCacheMock).toHaveBeenCalledWith('cust-1');
+        expect(result.localSubscriptionId).toMatch(/[0-9a-f-]{36}/);
+    });
+
+    it('HOS-453: does NOT clear the entitlement cache when the redemption fails (fail-closed, nothing granted)', async () => {
+        redeemAndRecordUsageMock.mockResolvedValue({
+            success: false,
+            error: { code: 'PROMO_CODE_MAX_USES', message: 'exhausted' }
+        });
+
+        await expect(
+            createCompSubscription({
+                customerId: 'cust-1',
+                planId: 'plan-uuid-1',
+                promoCodeId: 'pc-1',
+                code: 'COMPVIP',
+                interval: 'monthly',
+                livemode: false
+            })
+        ).rejects.toThrow(/Comp redemption failed/);
+
+        expect(clearEntitlementCacheMock).not.toHaveBeenCalled();
     });
 });

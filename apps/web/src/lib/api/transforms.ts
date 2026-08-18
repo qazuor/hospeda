@@ -35,12 +35,13 @@ import { getInitialsFromName } from '../avatar-utils';
 import { webLogger } from '../logger';
 import {
     extractFeaturedImage,
-    extractFeaturedImageUrl,
     extractGalleryItems,
     extractGalleryUrls,
+    type MediaAttribution,
     toRenderableImageUrl
 } from '../media';
 import { type I18nTextLike, resolveI18nText } from '../resolve-i18n-text';
+import { resolveSafeExternalUrl } from '../safe-external-url';
 
 // Re-export types from canonical source for backward compatibility
 export type {
@@ -284,7 +285,7 @@ export function toAccommodationCardProps({
         entity: 'accommodation',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/images/placeholder-accommodation.svg'
+        fallback: '/assets/images/placeholder-accommodation.svg'
     });
 
     // photoCount: prefer gallery length; fall back to 1 if only the featured
@@ -374,7 +375,7 @@ export function toAccommodationDetailedProps({
         entity: 'accommodation-detailed',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/images/placeholder-accommodation.svg'
+        fallback: '/assets/images/placeholder-accommodation.svg'
     });
     const images = galleryUrls.length > 0 ? galleryUrls : [featuredImage.url];
 
@@ -431,7 +432,7 @@ export function toDestinationCardProps({
         entity: 'destination',
         id: String(item.slug || ''),
         extract: true,
-        fallback: '/images/placeholder-destination.svg'
+        fallback: '/assets/images/placeholder-destination.svg'
     });
 
     // `gallery` on DestinationCardData carries `{ url, caption }` objects,
@@ -620,7 +621,7 @@ export function toEventCardProps({
         entity: 'event',
         id: String(item.slug || ''),
         extract: true,
-        fallback: '/images/placeholder-event.svg'
+        fallback: '/assets/images/placeholder-event.svg'
     });
 
     const dateObj = item.date as { start?: string; end?: string; precision?: string } | undefined;
@@ -825,7 +826,9 @@ export function toAccommodationDetailPageProps({
     readonly locale?: string;
 }): AccommodationDetailData {
     const mediaObj = item.media as { images?: string[]; videos?: string[] } | undefined;
-    const locationObj = item.location as Record<string, unknown> | undefined;
+    // HOS-554: no `locationObj` here. The public payload's `location` is `{}`
+    // (SPEC-097 strips `coordinates` for every non-owner) and nothing in this
+    // transform reads it any more — see the `approximateLocation` note below.
     // SPEC-095: prefer the `cityDestination` projection from the API; fall back
     // to the legacy heavy `destination` relation while older payloads still circulate.
     const cityDestinationObj = item.cityDestination as Record<string, unknown> | undefined;
@@ -838,6 +841,45 @@ export function toAccommodationDetailPageProps({
     const amenitiesArr = item.amenities as readonly Record<string, unknown>[] | undefined;
     const featuresArr = item.features as readonly Record<string, unknown>[] | undefined;
     const faqsArr = item.faqs as readonly Record<string, unknown>[] | undefined;
+    // --- Contact info + social networks (H-118) ---
+    // `contactInfo` on the wire carries only `mobilePhone`/`personalEmail`/
+    // `website` (AccommodationPublicSchema's narrowed public projection —
+    // `whatsapp` deliberately stays off it, see the WHATSAPP note on
+    // `hasWhatsapp` above). `socialNetworks` carries more platforms than the
+    // owner approved for this page; only facebook/instagram are read here.
+    //
+    // `website`/`facebook`/`instagram` are host-authored strings that reach
+    // an `href` unreviewed: `z.string().url()` on the write side does NOT
+    // restrict the scheme (`javascript:`/`data:`/`vbscript:` all parse as
+    // valid URLs), so this is a stored-XSS sink unless filtered here to an
+    // http/https allow-list. `resolveSafeExternalUrl` does that; `phone`/
+    // `email` don't need it — they're appended after a hardcoded `tel:`/
+    // `mailto:` prefix, so the value can never take over the scheme.
+    const contactInfoRaw = item.contactInfo as Record<string, unknown> | undefined;
+    const socialNetworksRaw = item.socialNetworks as Record<string, unknown> | undefined;
+    const safeWebsite = resolveSafeExternalUrl(
+        contactInfoRaw?.website == null ? undefined : String(contactInfoRaw.website)
+    );
+    const safeFacebook = resolveSafeExternalUrl(
+        socialNetworksRaw?.facebook == null ? undefined : String(socialNetworksRaw.facebook)
+    );
+    const safeInstagram = resolveSafeExternalUrl(
+        socialNetworksRaw?.instagram == null ? undefined : String(socialNetworksRaw.instagram)
+    );
+    const phone = contactInfoRaw?.mobilePhone ? String(contactInfoRaw.mobilePhone) : undefined;
+    const email = contactInfoRaw?.personalEmail ? String(contactInfoRaw.personalEmail) : undefined;
+    const contactInfo: AccommodationDetailData['contactInfo'] =
+        phone || email || safeWebsite ? { phone, email, website: safeWebsite } : undefined;
+    const socialNetworks: AccommodationDetailData['socialNetworks'] =
+        safeFacebook || safeInstagram
+            ? { facebook: safeFacebook, instagram: safeInstagram }
+            : undefined;
+    // H-125: the rich shape carries the cover photo's author-written alt text.
+    // The URL-only wrapper drops it, which is why every cover fell back to the
+    // listing name.
+    const featuredImage = extractFeaturedImage(item, {
+        fallback: '/assets/images/placeholder-accommodation.svg'
+    });
 
     return {
         id: String(item.id || ''),
@@ -873,7 +915,15 @@ export function toAccommodationDetailPageProps({
         createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
         averageRating: Number(item.averageRating || 0),
         reviewsCount: Number(item.reviewsCount || 0),
-        featuredImage: extractFeaturedImageUrl(item, '/images/placeholder-accommodation.svg'),
+        featuredImage: featuredImage.url,
+        // H-125: `extractFeaturedImageUrl` discards everything but the URL, which
+        // is what left the cover photo with a synthetic alt. Read the rich shape.
+        ...(featuredImage.alt ? { featuredImageAlt: featuredImage.alt } : {}),
+        // Same reason as the alt above: the cover photo can be somebody else's
+        // work, and the credit only reaches the page if it is read out here.
+        ...(featuredImage.attribution
+            ? { featuredImageAttribution: featuredImage.attribution }
+            : {}),
         media: (() => {
             const galleryItems = extractGalleryItems(item);
             const rawVideos = mediaObj?.videos as readonly unknown[] | undefined;
@@ -911,10 +961,12 @@ export function toAccommodationDetailPageProps({
                 videos
             };
         })(),
-        location: {
-            lat: locationObj?.lat == null ? null : Number(locationObj.lat),
-            lng: locationObj?.lng == null ? null : Number(locationObj.lng)
-        },
+        // HOS-554: no `location` field here. The public payload's `location` is
+        // `{}` — SPEC-097 strips `coordinates` for every non-owner — and the
+        // flat `lat`/`lng` this used to read never existed on it in any case
+        // (the canonical shape is `location.coordinates.{lat,long}`). Both facts
+        // made it a permanent `null` that read like a live coordinate. The one
+        // coordinate a public consumer may use is `approximateLocation` below.
         approximateLocation: (() => {
             const aprox = item.approximateLocation as
                 | { lat?: number; lng?: number; radiusMeters?: number }
@@ -972,6 +1024,8 @@ export function toAccommodationDetailPageProps({
                   description: seoObj.description ? String(seoObj.description) : null
               }
             : null,
+        contactInfo,
+        socialNetworks,
         owner: {
             id: String(ownerObj?.id || ''),
             name: String(ownerObj?.name || 'Unknown'),
@@ -1054,12 +1108,8 @@ export interface ProcessEntityImagesResult<T extends Record<string, unknown>> {
     readonly featuredImage: {
         readonly url: string;
         readonly caption?: string;
-        readonly attribution?: {
-            readonly photographer: string;
-            readonly sourceUrl: string;
-            readonly license: string;
-            readonly provider: 'unsplash' | 'pexels';
-        };
+        /** Photo credit, already normalised and scheme-checked by `extractFeaturedImage`. */
+        readonly attribution?: MediaAttribution;
     };
     /**
      * Resolved gallery URL list.  Empty array when the entity has no gallery.
@@ -1089,7 +1139,7 @@ export interface ProcessEntityImagesResult<T extends Record<string, unknown>> {
  * When `extract` is `true` the helper returns a
  * {@link ProcessEntityImagesResult} object that carries `featuredImageUrl`
  * and `galleryUrls`.  Pass `fallback` to control the placeholder used when
- * no image is found (defaults to `'/images/placeholder.svg'`).
+ * no image is found (defaults to `'/assets/images/placeholder.svg'`).
  *
  * Call-sites that only need the smell-detection side-effect can still call
  * the function without `extract` and get back the original item directly
@@ -1685,7 +1735,13 @@ export function toEventDetailProps({
 
 // --- Accommodation Editor Transforms (SPEC-208) ---
 
-import type { AccommodationEditData, AmenityData, DestinationData, MediaImage } from './types';
+import type {
+    AccommodationEditData,
+    AccommodationVideoEntry,
+    AmenityData,
+    DestinationData,
+    MediaImage
+} from './types';
 
 /**
  * Transforms a raw API accommodation object into AccommodationEditData
@@ -1713,8 +1769,16 @@ export function transformAccommodationEdit({
     const featuresArr = item.features as readonly (Record<string, unknown> | string)[] | undefined;
 
     // Coordinates live under location.coordinates.lat / location.coordinates.long (strings in DB)
+    // Address fields (street/number/floor/apartment, G7 smoke H-117) live as
+    // sibling keys of `coordinates` on the same `location` JSONB group.
     const locationObj = item.location as
-        | { coordinates?: { lat?: string | number; long?: string | number } }
+        | {
+              coordinates?: { lat?: string | number; long?: string | number };
+              street?: string | null;
+              number?: string | null;
+              floor?: string | null;
+              apartment?: string | null;
+          }
         | null
         | undefined;
     const coordLat = locationObj?.coordinates?.lat;
@@ -1723,15 +1787,46 @@ export function transformAccommodationEdit({
     const longitude = coordLong != null && String(coordLong).length > 0 ? Number(coordLong) : null;
 
     // Capacity lives under extraInfo (capacity → maxGuests, bedrooms, bathrooms, beds)
+    //
+    // `minNights` became writable in G7 smoke (H-112): both HTTP create mappings
+    // still force `minNights: 1` at creation time (so a self-service draft is
+    // always publishable), but `AccommodationUpdateHttpSchema` now accepts it, so
+    // the value read here also feeds the capacity/pricing form's own field.
     const extraInfo = item.extraInfo as
         | {
               capacity?: number | null;
               bedrooms?: number | null;
               bathrooms?: number | null;
               beds?: number | null;
+              minNights?: number | null;
           }
         | null
         | undefined;
+
+    // SEO override (G7 smoke, H-121). `seo` is `.strip()`ped by the domain
+    // SeoSchema, so unknown legacy keys (e.g. `keywords`) never surface here.
+    const seoObj = item.seo as
+        | { title?: string | null; description?: string | null }
+        | null
+        | undefined;
+
+    // Embedded videos (G7 smoke, H-121). Composed on read at `media.videos`
+    // (accommodation.media-read.ts) from the domain `videos` column.
+    const mediaObj = item.media as
+        | { videos?: readonly Record<string, unknown>[] }
+        | null
+        | undefined;
+    const videos: readonly AccommodationVideoEntry[] = Array.isArray(mediaObj?.videos)
+        ? mediaObj.videos
+              .filter(
+                  (v): v is Record<string, unknown> & { url: string } => typeof v.url === 'string'
+              )
+              .map((v) => ({
+                  url: v.url,
+                  ...(typeof v.caption === 'string' ? { caption: v.caption } : {}),
+                  ...(typeof v.description === 'string' ? { description: v.description } : {})
+              }))
+        : [];
 
     return {
         id: String(item.id ?? ''),
@@ -1742,10 +1837,18 @@ export function transformAccommodationEdit({
         destinationId: String(item.destinationId ?? ''),
         latitude: Number.isFinite(latitude) ? latitude : null,
         longitude: Number.isFinite(longitude) ? longitude : null,
+        street: String(locationObj?.street ?? ''),
+        number: String(locationObj?.number ?? ''),
+        floor: String(locationObj?.floor ?? ''),
+        apartment: String(locationObj?.apartment ?? ''),
         maxGuests: extraInfo?.capacity == null ? null : Number(extraInfo.capacity),
         bedrooms: extraInfo?.bedrooms == null ? null : Number(extraInfo.bedrooms),
         bathrooms: extraInfo?.bathrooms == null ? null : Number(extraInfo.bathrooms),
         beds: extraInfo?.beds == null ? null : Number(extraInfo.beds),
+        minNights: extraInfo?.minNights == null ? null : Number(extraInfo.minNights),
+        seoTitle: String(seoObj?.title ?? ''),
+        seoDescription: String(seoObj?.description ?? ''),
+        videos,
         basePrice:
             priceObj?.price == null
                 ? priceObj?.amount == null
@@ -2446,7 +2549,7 @@ export function toGastronomyCardProps({
         entity: 'gastronomy',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/images/placeholder-gastronomy.svg'
+        fallback: '/assets/images/placeholder-gastronomy.svg'
     });
 
     // Resolve destination name from API join (destinationId is the FK)
@@ -2607,7 +2710,7 @@ export function toExperienceCardProps({
         entity: 'experience',
         id: String(item.id || ''),
         extract: true,
-        fallback: '/images/placeholder-experience.svg'
+        fallback: '/assets/images/placeholder-experience.svg'
     });
 
     const destinationObj = item.destination as { name?: unknown; nameI18n?: unknown } | undefined;
@@ -2631,7 +2734,13 @@ export function toExperienceCardProps({
         destinationId: String(item.destinationId || ''),
         destinationName,
         priceFrom: Number(item.priceFrom ?? 0),
-        priceUnit: String(item.priceUnit || 'per_day'),
+        // H-156: pass a missing unit through as null instead of inventing
+        // `'per_day'`. `priceUnit` is nullable now, and null means "this
+        // experience has no price, so it has no billing unit" — substituting a
+        // real unit would make the card assert a charging model the owner never
+        // chose. `ExperiencePriceTag` renders "a consultar" in that case and
+        // never reads the unit.
+        priceUnit: item.priceUnit == null ? null : String(item.priceUnit),
         isPriceOnRequest: Boolean(item.isPriceOnRequest),
         averageRating: Number(item.averageRating ?? 0),
         reviewsCount: Number(item.reviewsCount ?? 0),

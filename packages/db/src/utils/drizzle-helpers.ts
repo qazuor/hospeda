@@ -4,13 +4,13 @@ import {
     desc,
     eq,
     gte,
-    ilike,
     inArray,
     isNull,
     lte,
     or,
     type SQL,
     type SQLWrapper,
+    sql,
     type Table
 } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
@@ -48,12 +48,46 @@ export function escapeLikePattern(term: string): string {
 
 /**
  * Safe wrapper around Drizzle's `ilike()` that automatically escapes LIKE
- * wildcard metacharacters (`%`, `_`, `\`) in user-provided search terms.
+ * wildcard metacharacters (`%`, `_`, `\`) in user-provided search terms AND
+ * folds accents on both sides of the comparison.
  *
- * Equivalent to: `ilike(column, \`%${escapeLikePattern(term)}%\`)`
+ * Equivalent to: `unaccent(column::text) ILIKE unaccent(\`%${escapeLikePattern(term)}%\`)`
  *
  * Always use this instead of raw `ilike()` to prevent LIKE wildcard injection.
  * The only place that should import `ilike` directly from `drizzle-orm` is this file.
+ *
+ * ## Why `unaccent()` on BOTH sides
+ *
+ * `ILIKE` is case-insensitive but ACCENT-SENSITIVE: `'Colón' ILIKE '%Colon%'`
+ * is false. That made 6 of the 22 catalog cities unreachable from the
+ * accommodation sign-up city picker whenever a host typed them without
+ * accents — and City is a required field, so the sign-up could not be
+ * completed at all (H-136, smoke agosto 2026).
+ *
+ * Folding only the query would fix that single direction and leave the mirror
+ * case broken: a row stored WITHOUT an accent would still be missed by a user
+ * who types it WITH one. Both sides are folded so the comparison is symmetric.
+ *
+ * ## Cost
+ *
+ * None that is measurable here. Every `safeIlike` call already emits a
+ * `%term%` pattern, which no B-tree index can serve, and the database has no
+ * trigram (`pg_trgm`) index on any column — verified against production on
+ * 2026-08-15. These scans were sequential before this change and remain
+ * sequential after it; `unaccent()` adds a per-row function call and defeats
+ * no index, because there is no index to defeat. Should a trigram index ever
+ * be introduced, it must be declared over `unaccent(column)` to stay usable.
+ *
+ * `unaccent()` is `STABLE`, not `IMMUTABLE`, which is fine inside a `WHERE`
+ * clause but means it cannot be indexed or used in a generated column without
+ * an `IMMUTABLE` wrapper.
+ *
+ * The `::text` cast keeps the call resolvable for `varchar` columns and for
+ * any non-`text` column a caller may pass, since `unaccent()` is declared over
+ * `text` only.
+ *
+ * The extension is created by
+ * `packages/db/src/migrations/extras/035-unaccent.extension.sql`.
  *
  * @param column - Drizzle column reference
  * @param term - Raw user-provided search term (will be escaped and wrapped with %)
@@ -65,11 +99,12 @@ export function escapeLikePattern(term: string): string {
  * ilike(users.name, `%${escapeLikePattern(q)}%`)
  *
  * // After:
- * safeIlike(users.name, q)
+ * safeIlike(users.name, q)   // 'Colon' now matches 'Colón', and vice versa
  * ```
  */
 export function safeIlike(column: PgColumn, term: string): SQL {
-    return ilike(column, `%${escapeLikePattern(term)}%`);
+    const pattern = `%${escapeLikePattern(term)}%`;
+    return sql`unaccent(${column}::text) ILIKE unaccent(${pattern}::text)`;
 }
 
 /**

@@ -13,8 +13,9 @@
  *  - free_night  → reuses host.promotions.discountTypes.free_night label
  */
 
+import { formatCalendarDate } from '@repo/utils';
 import type { OwnerPromotionPublicItem } from '@/lib/api/endpoints';
-import { formatDate, formatPrice } from '@/lib/format-utils';
+import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 
@@ -30,7 +31,7 @@ const { promos, locale } = Astro.props;
 // Render nothing when there are no active promotions.
 if (promos.length === 0) return;
 
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 /**
  * Returns a locale-aware discount label for a given promotion.
@@ -63,15 +64,25 @@ function formatDiscount(promo: OwnerPromotionPublicItem): string {
     <ul class="promo-banner__list" role="list">
         {promos.map((promo) => {
             const discountLabel = formatDiscount(promo);
+            // `validUntil` names a DAY: the host picks it from a bare date
+            // control, so it is stored pinned to midnight UTC. Rendered in the
+            // viewer's own timezone it slips back a day for anyone west of UTC,
+            // and a promotion valid through the 1st would advertise the 31st.
+            // The host-facing twin (`PromotionList.client.tsx`) already got this
+            // right; this tourist-facing copy did not (smoke agosto 2026, same
+            // defect family as H-09 / H-63 / H-73 / H-84).
             const validUntilLabel = promo.validUntil
                 ? t('accommodations.detail.promotions.validUntil', undefined, {
-                      date: formatDate({ date: promo.validUntil, locale })
+                      date:
+                          formatCalendarDate({
+                              value: promo.validUntil,
+                              locale,
+                              options: { dateStyle: 'long' }
+                          }) ?? ''
                   })
                 : null;
             const minNightsLabel = promo.minNights != null
-                ? t('accommodations.detail.promotions.minNights', undefined, {
-                      n: promo.minNights
-                  })
+                ? tPlural('accommodations.detail.promotions.minNights', promo.minNights)
                 : null;
 
             return (

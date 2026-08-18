@@ -40,6 +40,7 @@
  * @see SPEC-175 T-016
  */
 
+import { formatCalendarDate } from '@repo/utils';
 import { fetchApi } from '@/lib/api/client';
 import {
     buildDashboardQueryKey,
@@ -82,24 +83,27 @@ interface WhatsNewApiEnvelope {
 // ============================================================================
 
 /**
- * Formats a `publishedAt` ISO string to a short local date.
+ * Formats a `publishedAt` ISO string as the calendar day it names.
  *
  * Uses `es-AR` locale (dd/mm/yyyy) — the dashboard admin default.
- * Falls back to the raw ISO string if `Date` parsing fails.
+ * Falls back to the raw ISO string when the value names no real day.
+ *
+ * The `@param` example below is the whole problem: entries are authored pinned
+ * to midnight UTC, so reading one in the admin's own timezone (UTC-3) dated it
+ * `31/05/2026` — one day early, the same defect the August 2026 smoke found on
+ * four other screens (H-09, H-63, H-73, H-84).
  *
  * @param iso - An ISO 8601 datetime string (e.g. `'2026-06-01T00:00:00Z'`).
  * @returns A formatted date string such as `'01/06/2026'`.
  */
 function formatPublishedAt(iso: string): string {
-    try {
-        return new Date(iso).toLocaleDateString('es-AR', {
-            day: '2-digit',
-            month: '2-digit',
-            year: 'numeric'
-        });
-    } catch {
-        return iso;
-    }
+    return (
+        formatCalendarDate({
+            value: iso,
+            locale: 'es-AR',
+            options: { day: '2-digit', month: '2-digit', year: 'numeric' }
+        }) ?? iso
+    );
 }
 
 // ============================================================================

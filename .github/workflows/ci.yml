@@ -251,6 +251,13 @@ jobs:
         run: bash scripts/check-web-loading-patterns.sh
       - name: Check partner-mentions copy for metric vocabulary (HOS-377 AC-3)
         run: bash scripts/check-partner-mention-copy.sh
+      - name: Check seed data-migrations for schema-existence probes (HOS-513)
+        run: bash scripts/check-seed-migration-schema-probe.sh
+      # Being listed in `pnpm check:guards` is NOT what makes a guard run here:
+      # this job invokes each script as its own step, so a guard added only to
+      # that npm script would never execute in CI. It is in both on purpose.
+      - name: Check soft deletes record their actor (HOS-556 / HOS-559)
+        run: pnpm check:soft-delete-actor
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
@@ -294,6 +301,43 @@ jobs:
       # env:check:rules need a real .env.local, which CI does not have (HOS-79 OQ-2).
       - name: Env usage-vs-registry parity (HOS-79)
         run: pnpm env:check:usage
+      # The two suites below cover the tooling under scripts/ — including most
+      # of the guard scripts run as steps in THIS job. They need their own
+      # steps because `scripts/` is not a pnpm workspace member
+      # (pnpm-workspace.yaml lists only apps/*, packages/*, infra/cloudflare/*),
+      # so `turbo run test` never reaches them and the `test-unit` shards
+      # cannot see them either.
+      #
+      # They ran nowhere for weeks, and the cost was measured, not theoretical:
+      # generate-env-registry-json.test.ts sat red from the commit that replaced
+      # `z.coerce.boolean()` with the `boolEnv` helper until 2026-08-15, and
+      # nothing reported it.
+      - name: Test scripts/ tooling and guards
+        run: pnpm test:scripts
+      - name: Test the interactive CLI (scripts/cli)
+        run: pnpm test:cli
+      # `hops` (scripts/server-tools) is the third suite that ran nowhere, and
+      # the one that matters most: it is the tool operators point at
+      # PRODUCTION. It needs its own runtime because the package is
+      # deliberately outside the pnpm workspace — own package.json, own
+      # committed bun.lock, `engines.bun >= 1.1.0` — and the shipped binary is
+      # produced by `bun build --compile`. Running its tests on the runtime it
+      # ships on is the honest option; porting them to vitest would mean
+      # pulling the package into the workspace, which changes how the binary is
+      # installed and built on the VPS.
+      #
+      # Cheap in practice: ~0.5s to install, ~0.4s to run the ~300 tests.
+      - name: Set up bun (for scripts/server-tools)
+        uses: oven-sh/setup-bun@v2
+      - name: Install server-tools dependencies
+        # Its deps (execa, @clack/prompts) are NOT installed by the root pnpm
+        # install. Without this step 13 tests fail with "Cannot find package",
+        # which reads like a broken suite and is not one.
+        working-directory: scripts/server-tools
+        run: bun install --frozen-lockfile
+      - name: Test the hops CLI (scripts/server-tools)
+        working-directory: scripts/server-tools
+        run: bun test
 
   # ------------------------------------------------------------------
   # Build all packages and apps. Required by typecheck and tests.

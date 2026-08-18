@@ -23,6 +23,7 @@ import type { SearchHistoryFilters, UserSearchHistoryListItem } from '@repo/sche
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
 import { translateApiError } from '@/lib/api-errors';
+import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
 import { formatRelativeTime } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -154,13 +155,22 @@ function buildRerunUrl({
         if (filtersJson.type) {
             params.types = filtersJson.type;
         } else if (filtersJson.types?.length) {
-            params.types = filtersJson.types.join(',');
+            // HOS-524: canonical order, like every other writer of these CSV
+            // params. A saved search replayed from history has to land on the
+            // SAME listing URL the chips and the sidebar produce for that
+            // selection — otherwise one filter keeps two edge-cache entries and
+            // two rows in the analytics.
+            params.types = canonicalizeFacetValues({ values: filtersJson.types }).join(',');
         }
         if (filtersJson.amenities?.length) {
-            params.amenities = filtersJson.amenities.join(',');
+            params.amenities = canonicalizeFacetValues({
+                values: filtersJson.amenities
+            }).join(',');
         }
         if (filtersJson.features?.length) {
-            params.features = filtersJson.features.join(',');
+            params.features = canonicalizeFacetValues({
+                values: filtersJson.features
+            }).join(',');
         }
         if (filtersJson.checkIn) {
             const d =
@@ -458,7 +468,7 @@ export function SearchHistoryList({
     function formatResultCount(count: number | null): string {
         if (count === null) return '';
         if (count === 0) return t('account.searchHistory.noResults', 'Sin resultados');
-        return t('account.searchHistory.results', '{{count}} resultados', { count });
+        return tPlural('account.searchHistory.results', count);
     }
 
     // Locale-aware upgrade CTA target for the entitlement-gated empty state

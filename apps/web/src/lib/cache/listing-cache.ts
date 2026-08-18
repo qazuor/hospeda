@@ -100,20 +100,26 @@ const DEFAULT_CHILDREN = 0;
  * presence does not make a response "filtered":
  *   - `page` / `sortBy` / `sortOrder`: pagination and ordering (bounded set of
  *     variants, all serving the same underlying result set);
- *   - `checkIn` / `checkOut`: informational trip context (no real-time
- *     availability filtering yet);
  *   - `type` / `types`: the accommodation-type facet, handled separately per
  *     page (via the `noindex` SEO decision on the base listing, or fixed by the
  *     URL path on the dedicated `/tipo/{slug}/` landing).
  * `adults` / `children` are handled explicitly below (any explicit `adults`
  * value is a filter; `children` is a filter only away from its 0 default).
+ *
+ * **`checkIn` / `checkOut` used to be listed here**, described as
+ * "informational trip context (no real-time availability filtering yet)". That
+ * was accurate for as long as the listing pages read the dates and never
+ * forwarded them. Since H-120 the pair IS forwarded and DOES narrow the result
+ * set, so leaving them here would mark a date-filtered response `public` and
+ * let Cloudflare serve one visitor's availability results to a visitor asking
+ * for entirely different dates. Removing them is part of that fix, not an
+ * unrelated tightening — wiring the filter without this change would have
+ * traded a missing filter for a wrong one.
  */
 const NON_FILTERING_PARAMS: ReadonlySet<string> = new Set([
     'page',
     'sortBy',
     'sortOrder',
-    'checkIn',
-    'checkOut',
     'type',
     'types'
 ]);

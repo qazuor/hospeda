@@ -12,6 +12,7 @@
 
 import CheckoutResult from '@/components/billing/CheckoutResult.astro';
 import MarketingLayout from '@/layouts/MarketingLayout.astro';
+import { setCheckoutReturnNoStore } from '@/lib/billing/checkout-cache';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 
@@ -21,6 +22,11 @@ const locale = Astro.locals.locale;
 const { t } = createTranslations(locale);
 
 const miCuentaUrl = buildUrl({ locale, path: 'mi-cuenta' });
+
+// H-15: this page renders one specific buyer's payment state (MercadoPago
+// redirects here with `payment_id` / `collection_id` in the query), so it must
+// never be served from a shared cache.
+setCheckoutReturnNoStore({ response: Astro.response });
 ---
 
 <MarketingLayout

@@ -91,7 +91,8 @@
                 "media": "Fotos",
                 "translations": "Traducciones",
                 "amenities": "Servicios",
-                "price": "Precio"
+                "price": "Precio",
+                "faqs": "Preguntas frecuentes"
             },
             "sections": {
                 "type": "Categoría",
@@ -204,7 +205,8 @@
                 "tooLarge": "El archivo no puede superar {{maxSize}}MB",
                 "uploadFailed": "Error al subir la imagen",
                 "uploadTimeout": "La subida tardó demasiado. Probá de nuevo.",
-                "capReached": "Límite de galería alcanzado (máx. {{cap}} fotos)"
+                "capReached_one": "Límite de galería alcanzado (máx. {{cap}} foto)",
+                "capReached_other": "Límite de galería alcanzado (máx. {{cap}} fotos)"
             },
             "slugImmutableNotice": "La URL pública se genera a partir del nombre al crear el comercio y no se puede cambiar después."
         },

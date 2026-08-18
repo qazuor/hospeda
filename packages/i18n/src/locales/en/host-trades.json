@@ -222,7 +222,13 @@
                 "dateRequired": "Choose the day of the service.",
                 "dateFuture": "The service cannot be in the future.",
                 "generic": "We could not record the usage. Please try again in a moment."
-            }
+            },
+            "pending": {
+                "title": "Awaiting your confirmation",
+                "empty": "You have no usages awaiting confirmation.",
+                "declaredByHost": "The host recorded this one. Confirm it so it counts towards your numbers."
+            },
+            "counterpart": "the host"
         },
         "reviews": {
             "title": "Reviews",

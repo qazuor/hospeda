@@ -226,8 +226,8 @@
     },
     "notifications": {
         "title": "Notifications",
-        "unreadSingular": "{{count}} unread notification",
-        "unreadPlural": "{{count}} unread notifications",
+        "unread_one": "{{count}} unread notification",
+        "unread_other": "{{count}} unread notifications",
         "allRead": "All notifications read",
         "clearAll": "Clear All",
         "empty": "No notifications",
@@ -471,7 +471,8 @@
                 "subtitle": "AI requests in window",
                 "subtitleTokensIn": "Prompt tokens consumed",
                 "subtitleTokensOut": "Completion tokens generated",
-                "subtitleCost": "{{total}} total tokens",
+                "subtitleCost_one": "{{total}} total token",
+                "subtitleCost_other": "{{total}} total tokens",
                 "loadError": "Failed to load usage totals.",
                 "loadErrorHint": "Check that the API is reachable and retry."
             },
@@ -1125,7 +1126,8 @@
         "title": "Exchange Rates",
         "subtitle": "Manage currency exchange rates with automatic updates and manual overrides",
         "confirmDelete": "Are you sure you want to delete this manual override?",
-        "ratesAvailable": "{{count}} exchange rates available",
+        "ratesAvailable_one": "{{count}} exchange rate available",
+        "ratesAvailable_other": "{{count}} exchange rates available",
         "updating": "Updating...",
         "updateNow": "Update Now",
         "createOverride": "Create Manual Override",
@@ -1138,7 +1140,8 @@
         "configTitle": "Update Configuration",
         "configDesc": "Configure how and when exchange rates are updated automatically",
         "fetchSuccess": "Rates updated",
-        "fetchSuccessMsg": "{{count}} rates stored successfully",
+        "fetchSuccessMsg_one": "{{count}} rate stored successfully",
+        "fetchSuccessMsg_other": "{{count}} rates stored successfully",
         "fetchError": "Error updating rates",
         "errorTitle": "Error"
     },
@@ -1186,6 +1189,8 @@
             "robotsTxt": "Robots.txt",
             "robotsTxtDesc": "Search engine crawling configuration",
             "robotsConfigured": "Configured",
+            "indexNow": "Search engine notification (IndexNow)",
+            "indexNowDesc": "Notifies Bing and other search engines whenever public content is published or updated",
             "apiNote": "Note: These settings will be connected to the API in a future update",
             "save": "Save Changes",
             "saved": "Saved"
@@ -1466,6 +1471,7 @@
             "title": "Cover photo",
             "description": "The main image shown at the top",
             "empty": "No cover photo. Upload one to set it.",
+            "altFallback": "Cover photo",
             "actions": {
                 "upload": "Upload cover",
                 "replace": "Replace cover",
@@ -1475,10 +1481,12 @@
         "grid": {
             "title": "Gallery",
             "empty": "No photos in the gallery yet. Upload the first one.",
-            "cap": "Limit reached ({{count}} photos). Delete one to add another.",
+            "cap_one": "Limit reached ({{count}} photo). Delete one to add another.",
+            "cap_other": "Limit reached ({{count}} photos). Delete one to add another.",
             "actions": {
                 "add": "Add photo",
-                "remove": "Remove photo"
+                "remove": "Remove photo",
+                "makeCover": "Make cover"
             }
         },
         "errors": {
@@ -1487,6 +1495,23 @@
             "removeFailed": "Could not remove the photo. Please try again.",
             "setFeaturedFailed": "Could not set the cover photo. Please try again.",
             "uploadFailed": "Could not upload the image. Please try again."
+        },
+        "photoText": {
+            "title": "Photo text",
+            "description": "Correct the text shown with this photo on the public page.",
+            "fieldAlt": "Alt text",
+            "fieldAltHelp": "What a screen reader announces. Describe the photo; do not repeat the property name.",
+            "fieldCaption": "Caption",
+            "fieldDescription": "Description",
+            "emptyHint": "Leaving a field empty clears it.",
+            "actions": {
+                "edit": "Edit text",
+                "save": "Save",
+                "cancel": "Cancel"
+            },
+            "errors": {
+                "saveFailed": "The text could not be saved. Try again."
+            }
         }
     },
     "partnerMentions": {
@@ -1557,8 +1582,8 @@
         "suspensions": {
             "title": "Suspended declarations",
             "description": "Providers who cannot record usages until someone lifts the suspension.",
-            "count": "{{count}} suspended provider",
-            "count_plural": "{{count}} suspended providers",
+            "count_one": "{{count}} suspended provider",
+            "count_other": "{{count}} suspended providers",
             "empty": "No provider is suspended from declaring.",
             "loading": "Loading suspensions…",
             "error": "Suspensions could not be loaded.",
@@ -1594,8 +1619,8 @@
             "empty": "No usages have been declared yet.",
             "emptyFiltered": "No usage matches the applied filters.",
             "clearFilters": "Clear filters",
-            "results": "{{count}} usage",
-            "results_plural": "{{count}} usages",
+            "results_one": "{{count}} usage",
+            "results_other": "{{count}} usages",
             "pagination": "Page {{page}} of {{totalPages}} · {{total}} in total",
             "prevPage": "Previous",
             "nextPage": "Next",

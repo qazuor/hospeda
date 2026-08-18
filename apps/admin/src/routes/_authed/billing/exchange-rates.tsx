@@ -44,7 +44,7 @@ type TabId = 'current' | 'history' | 'config';
 
 function ExchangeRatesPage() {
     const { addToast } = useToast();
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
     const [activeTab, setActiveTab] = useState<TabId>('current');
     const [overrideDialogOpen, setOverrideDialogOpen] = useState(false);
 
@@ -73,10 +73,7 @@ function ExchangeRatesPage() {
             const result = await triggerFetchMutation.mutateAsync();
             addToast({
                 title: t('admin-pages.exchangeRates.fetchSuccess'),
-                message: t('admin-pages.exchangeRates.fetchSuccessMsg').replace(
-                    '{{count}}',
-                    String(result.totalStored)
-                ),
+                message: tPlural('admin-pages.exchangeRates.fetchSuccessMsg', result.totalStored),
                 variant: 'success'
             });
         } catch {
@@ -95,7 +92,8 @@ function ExchangeRatesPage() {
     const columns = getExchangeRateColumns({
         onDelete: handleDelete,
         isDeleting: deleteOverrideMutation.isPending,
-        t: t as (key: string) => string
+        t: t as (key: string) => string,
+        tPlural: tPlural as (key: string, count: number) => string
     });
 
     const ratesList = (Array.isArray(rates) ? rates : []) as ExchangeRate[];
@@ -145,9 +143,9 @@ function ExchangeRatesPage() {
                         <div className="flex items-center justify-between gap-4">
                             <div className="text-muted-foreground text-sm">
                                 {ratesList.length > 0 &&
-                                    t('admin-pages.exchangeRates.ratesAvailable').replace(
-                                        '{{count}}',
-                                        String(ratesList.length)
+                                    tPlural(
+                                        'admin-pages.exchangeRates.ratesAvailable',
+                                        ratesList.length
                                     )}
                             </div>
                             <div className="flex gap-2">

@@ -164,7 +164,11 @@ describe('AC-A3 — the app-generated robots.txt expresses one policy per agent'
             g.rules.some((r) => r.directive === 'disallow' && r.value === '/')
         );
 
-        expect(rootAllow.length).toBe(7); // `*` + 6 citation agents
+        // `*` + 1 search engine (bingbot, HOS-585 G-3) + 6 citation agents.
+        // These counts are hand-maintained on purpose: deriving them from the
+        // route's own constants would make the assertion agree with whatever
+        // the file happens to emit, which is the opposite of a guard.
+        expect(rootAllow.length).toBe(8);
         expect(rootDisallow.length).toBe(9); // 4 training-only + 5 ex-Cloudflare
     });
 

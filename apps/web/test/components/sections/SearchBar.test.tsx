@@ -29,15 +29,23 @@ import { FOCUSABLE_SELECTORS } from '../../../src/lib/focus-trap';
  * fallback (which is what the component always passes) so the visible text
  * matches the literal Spanish strings in the source.
  */
-vi.mock('../../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string, vars?: Record<string, unknown>) => {
-            const base = fallback ?? _key;
-            if (!vars) return base;
-            return base.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
-        }
-    })
-}));
+vi.mock('../../../src/lib/i18n', () => {
+    const t = (_key: string, fallback?: string, vars?: Record<string, unknown>) => {
+        const base = fallback ?? _key;
+        if (!vars) return base;
+        return base.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? ''));
+    };
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>) => {
+        if (key === 'home.searchBar.guestsAdultsCount')
+            return `${count} adulto${count === 1 ? '' : 's'}`;
+        if (key === 'home.searchBar.guestsChildrenCount')
+            return `${count} niño${count === 1 ? '' : 's'}`;
+        return t(key, undefined, { ...params, count });
+    };
+    return {
+        createTranslations: (_locale: string) => ({ t, tPlural })
+    };
+});
 
 /**
  * Capture analytics calls so the submit flow can assert the payload shape.
@@ -82,12 +90,27 @@ describe('buildSearchUrl', () => {
         expect(url).toContain('destinationIds=11111111-2222-3333-4444-555555555555');
     });
 
-    it('emits types as comma-separated when a strict subset is selected', () => {
+    it('emits types as comma-separated, in canonical order, when a strict subset is selected', () => {
         const url = buildSearchUrl({
             ...DEFAULTS,
             types: new Set(['HOTEL', 'CABIN']) as ReadonlySet<'HOTEL' | 'CABIN'>
         });
-        expect(url).toContain('types=HOTEL%2CCABIN');
+        // HOS-524: sorted, not checkbox order — the hero search bar is one of
+        // four writers of `?types=` and they must all mint the SAME URL for
+        // the same selection.
+        expect(url).toContain('types=CABIN%2CHOTEL');
+    });
+
+    it('emits the SAME url regardless of the order the types were checked (HOS-524)', () => {
+        const a = buildSearchUrl({
+            ...DEFAULTS,
+            types: new Set(['HOTEL', 'CABIN']) as ReadonlySet<'HOTEL' | 'CABIN'>
+        });
+        const b = buildSearchUrl({
+            ...DEFAULTS,
+            types: new Set(['CABIN', 'HOTEL']) as ReadonlySet<'HOTEL' | 'CABIN'>
+        });
+        expect(a).toBe(b);
     });
 
     it('omits types when ALL accommodation types are selected (no filter intent)', () => {

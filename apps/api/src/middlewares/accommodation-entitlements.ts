@@ -164,35 +164,63 @@ export function gateVideoEmbed(): AppMiddleware {
             return;
         }
 
-        // Compose with a prior gateRichDescription pass: prefer its
-        // sanitized override (already stripped of markdown) over the raw
-        // body so neither gate's neutralization undoes the other's.
+        // The body is read once and shared by both halves of this gate. The
+        // description half composes with a prior `gateRichDescription` pass:
+        // prefer its sanitized override (already stripped of markdown) over the
+        // raw body so neither gate's neutralization undoes the other's.
         const priorOverride = c.get('accommodationDescriptionOverride');
-        let description: unknown = priorOverride;
+        let body: { description?: unknown; videos?: unknown } | undefined;
 
-        if (description === undefined) {
-            let body: { description?: unknown };
+        if (priorOverride === undefined) {
             try {
-                body = (await c.req.raw.clone().json()) as { description?: unknown };
+                body = (await c.req.raw.clone().json()) as {
+                    description?: unknown;
+                    videos?: unknown;
+                };
             } catch {
                 await next();
                 return;
             }
-            description = body?.description;
+        } else {
+            // Still need the raw body for `videos`; the override only covers
+            // `description`. A parse failure here is not fatal — the description
+            // half can proceed on the override alone.
+            try {
+                body = (await c.req.raw.clone().json()) as {
+                    description?: unknown;
+                    videos?: unknown;
+                };
+            } catch {
+                body = undefined;
+            }
         }
 
-        if (typeof description !== 'string' || !containsVideoEmbed(description)) {
-            await next();
-            return;
+        const description: unknown = priorOverride ?? body?.description;
+
+        if (typeof description === 'string' && containsVideoEmbed(description)) {
+            apiLogger.warn(
+                `gateVideoEmbed: neutralized video embed in description — user lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
+            );
+            // HOS-216: neutralize only the video-URL portion, let the rest of
+            // the PATCH proceed. See the doc comment above for the full rationale.
+            c.set('accommodationDescriptionOverride', stripVideoEmbeds(description));
         }
 
-        apiLogger.warn(
-            `gateVideoEmbed: neutralized video embed in description — user lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
-        );
-
-        // HOS-216: neutralize only the video-URL portion, let the rest of
-        // the PATCH proceed. See the doc comment above for the full rationale.
-        c.set('accommodationDescriptionOverride', stripVideoEmbeds(description));
+        // The dedicated `videos` column — the surface the owner's video editor
+        // actually writes (H-121). Gating only the description let a host with no
+        // video entitlement fill this column freely, and the read filter that was
+        // meant to hide it inspected a shape that stopped existing in HOS-372.
+        //
+        // Neutralized to `[]` rather than rejected, matching the description half.
+        // An absent `videos` key is left absent: `undefined` means "no change" to
+        // the PATCH, and turning that into `[]` would silently wipe an entitled
+        // history when an unrelated field is edited.
+        if (Array.isArray(body?.videos) && body.videos.length > 0) {
+            apiLogger.warn(
+                `gateVideoEmbed: neutralized ${body.videos.length} video(s) — user lacks ${EntitlementKey.CAN_EMBED_VIDEO}`
+            );
+            c.set('accommodationVideosOverride', []);
+        }
 
         await next();
     };

@@ -192,7 +192,8 @@
             }
         },
         "usage": {
-            "label": "{{current}} de {{max}} propiedades",
+            "label_one": "{{current}} de {{max}} propiedad",
+            "label_other": "{{current}} de {{max}} propiedades",
             "unlimited": "Propiedades ilimitadas",
             "upgrade": "Mejorar plan"
         },
@@ -216,18 +217,20 @@
                 "deleteYes": "Sí, eliminar",
                 "publishConfirmTitle": "¿Publicar este alojamiento?",
                 "publishConfirmNote": "Va a aparecer en el sitio, visible para los turistas.",
-                "publishYes": "Sí, publicar"
+                "publishYes": "Sí, publicar",
+                "choosePlan": "Elegir plan de anfitrión"
             },
             "pricePerNight": "por noche",
             "unpublishSuccess": "Propiedad despublicada",
             "unpublishError": "No se pudo despublicar. Intentá de nuevo.",
             "deleteError": "No se pudo eliminar. Intentá de nuevo.",
             "publishError": "No se pudo publicar. Intentá de nuevo.",
-            "publishSubscriptionRequiredMessage": "Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} días gratis.",
+            "publishSubscriptionRequiredMessage_one": "Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} día gratis.",
+            "publishSubscriptionRequiredMessage_other": "Necesitás un plan activo para publicar. Si es tu primera suscripción, empezás con {{trialDays}} días gratis.",
             "publishSubscriptionRequiredCta": "Ver planes",
-            "publishIncompleteCapacityMessage": "Faltan datos de capacidad (huéspedes, habitaciones o baños). Completalos en el editor antes de publicar.",
-            "publishIncompleteCapacityCta": "Completar en el editor",
-            "priceOnRequest": "Precio a consultar"
+            "priceOnRequest": "Precio a consultar",
+            "publishMissingRequirementsMessage": "Para publicar falta completar: {{fields}}.",
+            "publishMissingRequirementsCta": "Completar en el editor"
         },
         "editor": {
             "section": {
@@ -245,7 +248,9 @@
                 "featuredToggle": "Destacado",
                 "calendar": "Calendario",
                 "capacityPricing": "Capacidad y precio",
-                "contactSocial": "Contacto y redes"
+                "contactSocial": "Contacto y redes",
+                "seo": "Buscadores (Google)",
+                "seoDescription": "Elegí cómo se muestra tu alojamiento cuando alguien lo encuentra en Google. Si dejás estos campos vacíos, se usa el nombre de tu propiedad."
             },
             "sectionNav": {
                 "ariaLabel": "Navegación de secciones del formulario"
@@ -281,21 +286,91 @@
                 "twitter": "Twitter / X",
                 "linkedin": "LinkedIn",
                 "tiktok": "TikTok",
-                "youtube": "YouTube"
+                "youtube": "YouTube",
+                "minNights": "Mínimo de noches",
+                "minNightsHint": "La cantidad mínima de noches que un huésped debe reservar. Se muestra en la ficha pública.",
+                "street": "Calle",
+                "number": "Número",
+                "floor": "Piso",
+                "apartment": "Departamento",
+                "seoTitle": "Título para Google",
+                "seoTitleHint": "El título en negrita que se ve en el resultado de búsqueda. Por ahora solo se aplica en español — en inglés y portugués se sigue mostrando el nombre de tu propiedad.",
+                "seoDescription": "Descripción para Google",
+                "seoDescriptionHint": "El texto que se ve debajo del título en el resultado de búsqueda. Como el título, por ahora solo se aplica en español."
             },
             "photo": {
+                "addToGallery": "Agregar fotos a la galería",
+                "altHint": "Así la describe un lector de pantalla cuando el huésped no puede ver la imagen, y así la encuentran los buscadores. Sé concreto: \"Dormitorio principal con cama matrimonial\", no \"foto1\".",
+                "altLabel": "¿Qué muestra la foto?",
+                "altPlaceholder": "Ej: Living con sofá y ventanal al jardín",
+                "altTooLong": "El texto no puede superar {{max}} caracteres",
+                "captionLabel": "Epígrafe (opcional)",
+                "captionPlaceholder": "Ej: Vista desde el balcón",
+                "captionTooLong": "El epígrafe no puede superar {{max}} caracteres",
+                "captionTooShort": "El epígrafe debe tener al menos {{min}} caracteres, o dejalo vacío",
+                "closeDetailsAria": "Cerrar edición de textos de la foto {{index}}",
+                "closeFeaturedDetailsAria": "Cerrar edición de textos de la portada",
+                "creditHint": "Dejalo vacío si la foto es tuya. Completalo cuando la sacó otra persona: un fotógrafo que contrataste, alguien que te la prestó, o una imagen de un banco de fotos. En esos casos suele ser una condición de uso nombrar al autor, y publicarla sin crédito puede ser un problema legal para vos. El crédito se muestra debajo de la foto en tu ficha.",
+                "creditLegend": "Crédito de la foto (opcional)",
+                "creditUrlInvalid": "El link tiene que empezar con http:// o https://",
+                "creditUrlLabel": "Link del autor (opcional)",
+                "descriptionLabel": "Descripción (opcional)",
+                "descriptionPlaceholder": "Ej: Balcón con mesa para dos, ideal para el mate de la tarde",
+                "descriptionTooLong": "La descripción no puede superar {{max}} caracteres",
+                "descriptionTooShort": "La descripción debe tener al menos {{min}} caracteres, o dejala vacía",
+                "dropOrClick": "Arrastrá una imagen o hacé clic para seleccionar",
+                "editDetailsAria": "Editar textos de la foto {{index}}",
+                "editDetailsLabel": "Editar textos",
+                "editFeaturedDetailsAria": "Editar textos de la portada",
                 "featured": "Imagen principal",
                 "featuredAlt": "Imagen principal",
+                "featuredFailed": "No se pudo marcar la imagen como portada",
+                "formats": "JPG, PNG o WebP — máx. {{maxSize}}MB",
                 "gallery": "Galería de fotos",
                 "galleryAlt": "Foto {{index}}",
-                "dropOrClick": "Arrastrá una imagen o hacé clic para seleccionar",
-                "formats": "JPG, PNG o WebP — máx. {{maxSize}}MB",
-                "remove": "Eliminar",
+                "galleryCapExceededOnSelect": "Elegiste {{pickedPhrase}} pero solo queda(n) {{remainingPhrase}} (máx. {{cap}} en total)",
+                "galleryCapLabel": "Galería llena",
+                "galleryCapReached": "Límite de galería alcanzado (máx. {{cap}} fotos)",
                 "invalidType": "Solo se permiten archivos JPG, PNG o WebP",
+                "metadataSaveFailed": "No se pudieron guardar los datos de la foto",
+                "metadataSavedConfirmation": "Guardado",
+                "moveDownAria": "Mover foto {{index}} hacia abajo",
+                "moveUpAria": "Mover foto {{index}} hacia arriba",
+                "persistFailed": "No se pudo guardar la imagen",
+                "photographerLabel": "¿Quién sacó la foto?",
+                "photographerPlaceholder": "Ej: Estudio Paraná",
+                "photographerRequiredWithUrl": "Escribí a quién pertenece la foto para poder enlazar su sitio",
+                "photographerTooLong": "El crédito no puede superar {{max}} caracteres",
+                "promoteFailed": "No se pudo usar esta foto como portada",
+                "promoteToFeaturedAria": "Usar foto {{index}} como portada",
+                "promoteToFeaturedShort": "Portada",
+                "remove": "Eliminar",
+                "removeFailed": "No se pudo eliminar la imagen",
+                "reorderFailed": "No se pudo guardar el nuevo orden",
                 "tooLarge": "El archivo no puede superar {{maxSize}}MB",
                 "uploadFailed": "Error al subir la imagen",
-                "galleryCapReached": "Límite de galería alcanzado (máx. {{cap}} fotos)",
-                "galleryCapLabel": "Galería llena"
+                "galleryCapReached_one": "Límite de galería alcanzado (máx {{cap}} foto)",
+                "galleryCapReached_other": "Límite de galería alcanzado (máx {{cap}} fotos)",
+                "uploadingBatch": "Subiendo foto {{current}} de {{total}}…",
+                "galleryCapExceededOnSelectPicked_one": "{{count}} foto",
+                "galleryCapExceededOnSelectPicked_other": "{{count}} fotos",
+                "galleryCapExceededOnSelectRemaining_one": "{{count}} lugar libre",
+                "galleryCapExceededOnSelectRemaining_other": "{{count}} lugares libres"
+            },
+            "video": {
+                "sectionTitle": "Videos",
+                "sectionDescription": "Agregá enlaces a videos de YouTube, Vimeo o Dailymotion que muestren tu propiedad.",
+                "urlLabel": "Enlace del video",
+                "urlPlaceholder": "https://youtube.com/watch?v=...",
+                "captionLabel": "Título (opcional)",
+                "addButton": "Agregar video",
+                "removeAria": "Eliminar video {{index}}",
+                "empty": "Todavía no cargaste ningún video.",
+                "saveButton": "Guardar videos",
+                "saveSuccess": "Videos guardados",
+                "saveFailed": "No se pudieron guardar los videos",
+                "urlInvalid": "Ingresá una URL de video válida",
+                "captionInvalid": "El título debe tener entre 3 y 100 caracteres, o dejalo vacío"
             },
             "faq": {
                 "emptyState": "Todavía no hay preguntas. Agregá la primera.",
@@ -404,7 +479,8 @@
                 "geolocationUnavailable": "La geolocalización no está disponible en este navegador.",
                 "geolocationDenied": "Permiso denegado. Podés escribir la dirección manualmente.",
                 "geolocationError": "No se pudo obtener la ubicación. Probá escribir la dirección.",
-                "searching": "Buscando…"
+                "searching": "Buscando…",
+                "addressHint": "Dirección exacta. Los turistas solo ven una ubicación aproximada en el mapa público."
             },
             "translation": {
                 "sectionTitle": "Traducciones",
@@ -470,6 +546,15 @@
                     "deleteError": "No pudimos eliminar el bloqueo. Intentá de nuevo.",
                     "continues": "continúa",
                     "pastError": "No podés mover el bloqueo a una fecha pasada."
+                },
+                "eventDetails": {
+                    "title": "Día bloqueado",
+                    "eventLabel": "Evento",
+                    "sourceLabel": "Origen",
+                    "datesLabel": "Fechas",
+                    "dateRange": "{{from}} al {{to}}",
+                    "untitled": "Sin título en el calendario de origen",
+                    "help": "Este bloqueo llegó desde un calendario que conectaste, así que no se edita desde acá: la próxima sincronización volvería a crearlo. Para liberar estos días, borrá o cambiá el evento en el calendario de origen, o desconectá ese calendario."
                 },
                 "legend": {
                     "title": "Referencias",
@@ -539,14 +624,26 @@
                 "status": {
                     "missingDescription": "⚠ Falta la descripción",
                     "missingPrice": "⚠ Sin precio",
-                    "guests": "Hasta {{count}} huéspedes",
+                    "guests_one": "Hasta {{count}} huésped",
+                    "guests_other": "Hasta {{count}} huéspedes",
                     "missingCoordinates": "⚠ Sin ubicación en el mapa",
-                    "selected": "{{count}} seleccionados",
-                    "photos": "{{count}} fotos",
+                    "selected_one": "{{count}} seleccionado",
+                    "selected_other": "{{count}} seleccionados",
+                    "photos_one": "{{count}} foto",
+                    "photos_other": "{{count}} fotos",
                     "missingPhotos": "⚠ Sin fotos",
-                    "faqs": "{{count}} preguntas",
-                    "missingContact": "⚠ Sin datos de contacto"
+                    "faqs_one": "{{count}} pregunta",
+                    "faqs_other": "{{count}} preguntas",
+                    "missingContact": "⚠ Sin datos de contacto",
+                    "blockedFromPublishing": "⛔ Falta para publicar: {{fields}}"
                 }
+            },
+            "publishRequirement": {
+                "capacity": "huéspedes",
+                "minNights": "noches mínimas",
+                "bedrooms": "habitaciones",
+                "bathrooms": "baños",
+                "mainImage": "la foto principal"
             }
         },
         "empty": {
@@ -559,7 +656,8 @@
         "heroSubheadline": "Publicá en minutos y empezá a recibir huéspedes",
         "primaryCta": "Publicar tu propiedad",
         "secondaryCta": "Ver mis propiedades",
-        "trialCallout": "Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba."
+        "trialCallout_one": "Probá Hospeda gratis por {{trialDays}} día en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba.",
+        "trialCallout_other": "Probá Hospeda gratis por {{trialDays}} días en tu primera suscripción. Elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba."
     },
     "fromAdminBanner": {
         "eyebrow": "Te trajimos desde el panel — necesitás publicar una propiedad para gestionar tus alojamientos."
@@ -587,7 +685,8 @@
                 "phone": "Teléfono",
                 "website": "Sitio web",
                 "coordinatesLabel": "Ubicación importada",
-                "amenitiesCount": "{{count}} amenidades importadas"
+                "amenitiesCount_one": "{{count}} comodidad importada",
+                "amenitiesCount_other": "{{count}} comodidades importadas"
             }
         },
         "errors": {
@@ -601,7 +700,7 @@
             "network": "No pudimos conectar con el servidor. Verificá tu conexión e intentá de nuevo."
         },
         "actions": {
-            "submit": "Crear y continuar en el panel",
+            "submit": "Crear borrador y seguir al paso 2",
             "submitting": "Creando..."
         },
         "disclaimer": "Vamos a crear un borrador con estos datos. Después te llevamos al panel para completar fotos, precios y demás.",
@@ -616,6 +715,10 @@
             "ROOM": "Habitación",
             "MOTEL": "Motel",
             "RESORT": "Resort"
+        },
+        "stepIndicator": {
+            "title": "Paso 1 de 2 · Datos básicos",
+            "next": "Después: fotos, precios y el resto de la ficha."
         }
     },
     "promotions": {
@@ -766,10 +869,23 @@
     },
     "pages": {
         "nueva": {
-            "trialCalloutTitle": "{{trialDays}} días gratis en tu primera suscripción",
+            "trialCalloutTitle_one": "{{trialDays}} día gratis en tu primera suscripción",
+            "trialCalloutTitle_other": "{{trialDays}} días gratis en tu primera suscripción",
             "trialCalloutTitleIneligible": "Armá tu propiedad",
-            "trialNote": "Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.",
-            "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo."
+            "trialNote_one": "Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} día arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.",
+            "trialNote_other": "Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.",
+            "trialNoteIneligible": "Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.",
+            "subtitle": "Creamos el borrador con estos datos. Las fotos, los precios y el resto los cargás en el paso 2, desde el panel.",
+            "precheck": {
+                "resumeDeleteOrUpgrade": {
+                    "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.",
+                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan."
+                },
+                "pickDraftDeleteOrUpgrade": {
+                    "body_one": "Estás usando {{currentCount}} propiedad y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.",
+                    "body_other": "Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo."
+                }
+            }
         }
     }
 }

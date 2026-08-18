@@ -7,7 +7,8 @@
     "faq": {
         "1": {
             "q": "Quanto custa publicar minha hospedagem?",
-            "a": "Publicar exige um plano de anfitrião. Se for sua primeira assinatura, todos incluem {{trialDays}} dias de teste grátis. Não cobramos comissão por reserva: a assinatura é o único custo."
+            "a_one": "Publicar exige um plano de anfitrião. Se for sua primeira assinatura, todos incluem {{trialDays}} dia de teste grátis. Não cobramos comissão por reserva: a assinatura é o único custo.",
+            "a_other": "Publicar exige um plano de anfitrião. Se for sua primeira assinatura, todos incluem {{trialDays}} dias de teste grátis. Não cobramos comissão por reserva: a assinatura é o único custo."
         },
         "2": {
             "q": "Como recebo as reservas?",

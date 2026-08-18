@@ -251,8 +251,14 @@ const REGISTRY: readonly EnvVarDefinition[] = ENV_REGISTRY;
  * key per build, so edge-cached HTML can carry a payload the next build cannot
  * decrypt. Consumed by Astro itself at build time, never by our runtime, so it
  * is deliberately absent from serverEnvSchema. 275 + 1 = 276.
+ *
+ * +1 = HOSPEDA_INDEXNOW_KEY (HOS-585, features category, optional, secret, web
+ * only) — the IndexNow key the web app serves as `/<key>.txt` and signs every
+ * search-engine change notification with. Optional because an unset key IS the
+ * feature's hard kill switch: with no key the emitter cannot run, whatever the
+ * admin toggle says. 276 + 1 = 277.
  */
-const EXPECTED_VAR_COUNT = 276;
+const EXPECTED_VAR_COUNT = 277;
 
 /** Valid type values for an EnvVarDefinition. */
 const VALID_TYPES = ['string', 'url', 'number', 'boolean', 'enum'] as const;

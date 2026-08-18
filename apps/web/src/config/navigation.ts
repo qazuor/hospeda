@@ -342,6 +342,40 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
 ];
 
 /**
+ * The provider self-service management nav entry ("Mi ficha de proveedor",
+ * H-158). Deliberately kept OUTSIDE `ACCOUNT_NAV_GROUPS`: every group in that
+ * catalog is gated by `requiredPermission` (evaluated by
+ * `isVisibleByPermissions` / `isVisibleByRoles`), but an approved service
+ * provider holds NO permission and NO role change (HOS-278 AC-7 — see
+ * `src/config/discovery-doors.ts`'s `serviceProvider` option doc). There is
+ * no `PermissionEnum` value this group could declare without inventing a
+ * fake one, which AC-7 explicitly forbids. Ownership of the `host_trades` row
+ * is the real gate.
+ *
+ * `AccountLayout.astro` splices this group into the sidebar only when its own
+ * `GET /host-trades/mine` fetch confirms ownership — the SAME signal
+ * `mi-cuenta/aliados/index.astro` already uses to force-acquire the
+ * `serviceProvider` discovery-door option (`resolveDoorOptionState`'s
+ * `acquiredOptionIds` override in `src/lib/nav-gating.ts`). Shaped exactly
+ * like the `comercio` group (`suppressHeaderWhenSingle`, single item) so it
+ * reads as the same kind of "manage what you have" entry.
+ */
+export const PROVIDER_NAV_GROUP: NavGroup = {
+    id: 'proveedor',
+    i18nKey: 'account.nav.groupProvider',
+    suppressHeaderWhenSingle: true,
+    items: [
+        {
+            id: 'provider',
+            i18nKey: 'account.nav.provider',
+            href: 'mi-cuenta/proveedor',
+            icon: WrenchIcon,
+            surfaces: FULL_SURFACES
+        }
+    ]
+};
+
+/**
  * A predicate that decides whether a gated node (a `NavGroup` or `NavItem`)
  * should be visible, given its `requiredPermission` declaration. Implemented
  * by `isVisibleByPermissions` and `isVisibleByRoles` in `src/lib/nav-gating.ts`.

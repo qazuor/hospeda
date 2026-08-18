@@ -52,6 +52,7 @@ import {
     AccommodationIaDataUpdateInputSchema,
     type AccommodationIdType,
     type AccommodationListWrapper,
+    type AccommodationMedia,
     type AccommodationMediaAddInput,
     AccommodationMediaAddInputSchema,
     type AccommodationMediaArchiveInput,
@@ -68,6 +69,8 @@ import {
     type AccommodationMediaSetFeaturedInput,
     AccommodationMediaSetFeaturedInputSchema,
     type AccommodationMediaSingleOutput,
+    type AccommodationMediaUpdateInput,
+    AccommodationMediaUpdateInputSchema,
     type AccommodationOptionsItem,
     type AccommodationRatingInput,
     type AccommodationSearchInput,
@@ -84,9 +87,14 @@ import {
     type AccommodationUpdateInput,
     AccommodationUpdateInputSchema,
     type ApproximateLocationType,
+    // The one shared publish-requirement list (H-101) — the editor hub reads the
+    // very same module, which is what stops the two lists from drifting again.
+    buildPublishRequirementsReason,
+    type ContentModerationChangeInput,
     type CountResponse,
     DestinationTypeEnum,
     type EntityFilters,
+    getGalleryCap,
     httpToDomainAccommodationCreateDraft,
     type IdOrSlugParams,
     IdOrSlugParamsSchema,
@@ -96,6 +104,7 @@ import {
     PermissionEnum,
     RoleEnum,
     RoleGrantReason,
+    resolveMissingPublishRequirements,
     ServiceErrorCode,
     type Success,
     VisibilityEnum,
@@ -132,6 +141,7 @@ import {
     generateSlug
 } from './accommodation.helpers';
 import { syncAmenityJunction, syncFeatureJunction } from './accommodation.junction-sync';
+import { composeAccommodationMedia } from './accommodation.media-compose';
 import { attachComposedMedia, attachComposedMediaList } from './accommodation.media-read';
 import { syncAccommodationMedia } from './accommodation.media-sync';
 import {
@@ -148,6 +158,7 @@ import {
     checkCanFindOptions,
     checkCanHardDelete,
     checkCanList,
+    checkCanModerate,
     checkCanRestore,
     checkCanSoftDelete,
     checkCanUpdate,
@@ -847,6 +858,16 @@ export class AccommodationService extends BaseCrudService<
         // through without going through `publish()` — would otherwise bypass the guard.
         // Re-check here so the "ACTIVE => complete capacity" invariant holds on every
         // create path (mirrors the publish() capacity guard).
+        //
+        // KNOWN, DELIBERATE DIVERGENCE (H-101): this checks the four capacity
+        // fields only, while `publish()` also requires a main image. It is not an
+        // oversight. This path is admin-only, and at create time the media arrives
+        // in the same payload rather than in `accommodation_media`, so the main
+        // image cannot be resolved the way the publish gate resolves it. An admin
+        // creating an ACTIVE listing with no photo therefore still can — which is
+        // the same public page with a broken <img> the owner decided to stop the
+        // OWNER from producing. Closing this needs the media to be readable here,
+        // which is a change to the create pipeline, not to this guard.
         if (data.lifecycleState === LifecycleStatusEnum.ACTIVE) {
             const capacityCheck = AccommodationExtraInfoRequiredForPublishSchema.safeParse(
                 data.extraInfo ?? {}
@@ -949,6 +970,54 @@ export class AccommodationService extends BaseCrudService<
         );
     }
 
+    /**
+     * Schedules public-page (ISR/Cloudflare) revalidation for one accommodation.
+     *
+     * This is the MECHANISM only — resolve the destination slug, hand the entity
+     * to the revalidation service, and swallow any failure into a warning so a
+     * purge problem can never roll back the write that triggered it.
+     *
+     * **The decision of WHETHER to revalidate stays at the call site.** The
+     * callers do not share one condition: `_afterCreate` revalidates only when
+     * the listing is public NOW, `_afterUpdate` also revalidates when it WAS
+     * public before (an ACTIVE→DRAFT unpublish has to purge the page that just
+     * disappeared), and the visibility/lifecycle hooks revalidate
+     * unconditionally. Folding any of those into this helper would silently
+     * change one of them.
+     *
+     * Extracted in HOS-389: this block was copy-pasted at nine call sites, and
+     * the media methods needed six more. Fifteen copies of a best-effort side
+     * effect is how the two halves drift — one gets a fix the other never sees.
+     *
+     * @param entity - The accommodation to purge (needs `id`, `slug`, `destinationId`).
+     * @param logPrefix - Optional prefix for the warning, e.g. `'[accommodation.publish] '`.
+     */
+    private async _scheduleAccommodationRevalidation(
+        entity: {
+            readonly id: string;
+            readonly slug: string;
+            readonly destinationId?: string | null;
+        },
+        logPrefix = ''
+    ): Promise<void> {
+        const destinationSlug = entity.destinationId
+            ? await this._resolveDestinationSlug(entity.destinationId)
+            : undefined;
+        try {
+            getRevalidationService()?.scheduleRevalidation({
+                entityType: 'accommodation',
+                id: entity.id,
+                slug: entity.slug,
+                destinationSlug
+            });
+        } catch (error) {
+            this.logger.warn(
+                { error, entityType: 'accommodation' },
+                `${logPrefix}Revalidation scheduling failed (non-blocking)`
+            );
+        }
+    }
+
     protected async _afterCreate(
         entity: Accommodation,
         _actor: Actor,
@@ -1014,22 +1083,7 @@ export class AccommodationService extends BaseCrudService<
         // A create can never have a prior public footprint, so `is public now`
         // is a sufficient and always-safe condition here.
         if (this._isPubliclyVisible(entity)) {
-            const destinationSlug = entity.destinationId
-                ? await this._resolveDestinationSlug(entity.destinationId)
-                : undefined;
-            try {
-                getRevalidationService()?.scheduleRevalidation({
-                    entityType: 'accommodation',
-                    id: entity.id,
-                    slug: entity.slug,
-                    destinationSlug
-                });
-            } catch (error) {
-                this.logger.warn(
-                    { error, entityType: 'accommodation' },
-                    'Revalidation scheduling failed (non-blocking)'
-                );
-            }
+            await this._scheduleAccommodationRevalidation(entity);
         }
 
         // SPEC-212: fire-and-forget auto-translation
@@ -1224,22 +1278,7 @@ export class AccommodationService extends BaseCrudService<
         // `undefined` (before-state unknown) falls through to revalidating — the safe default.
         const wasPubliclyVisible = ctx.hookState?.previousPubliclyVisible;
         if (this._isPubliclyVisible(entity) || wasPubliclyVisible !== false) {
-            const destinationSlug = entity.destinationId
-                ? await this._resolveDestinationSlug(entity.destinationId)
-                : undefined;
-            try {
-                getRevalidationService()?.scheduleRevalidation({
-                    entityType: 'accommodation',
-                    id: entity.id,
-                    slug: entity.slug,
-                    destinationSlug
-                });
-            } catch (error) {
-                this.logger.warn(
-                    { error, entityType: 'accommodation' },
-                    'Revalidation scheduling failed (non-blocking)'
-                );
-            }
+            await this._scheduleAccommodationRevalidation(entity);
         }
 
         // Auto-assign HOST role when accommodation becomes ACTIVE.
@@ -1760,28 +1799,6 @@ export class AccommodationService extends BaseCrudService<
                     return accommodation;
                 }
 
-                // Capacity completeness guard (HOS-152): `extraInfo` is intentionally
-                // relaxed on the read/write schemas so a DRAFT can be fetched/PATCHed
-                // while the host is still filling in capacity data (see
-                // `AccommodationExtraInfoSchema`'s docblock). Publishing is the one
-                // place completeness MUST be enforced — a listing without capacity/
-                // minNights/bedrooms/bathrooms must never go live. This guard covers
-                // every path that reaches `publish()`, including `update()`'s
-                // ACTIVE-transition dispatch (see the override above). A direct
-                // `create({ lifecycleState: 'ACTIVE' })` (reachable via
-                // `POST /api/v1/admin/accommodations`) does NOT reach `publish()`, so
-                // the same completeness check is mirrored in `_beforeCreate` (HOS-153) —
-                // an ACTIVE create with incomplete capacity is rejected there before insert.
-                const extraInfoCheck = AccommodationExtraInfoRequiredForPublishSchema.safeParse(
-                    accommodation.extraInfo ?? {}
-                );
-                if (!extraInfoCheck.success) {
-                    throw new ServiceError(
-                        ServiceErrorCode.VALIDATION_ERROR,
-                        'Cannot publish accommodation: capacity details (capacity, minNights, bedrooms, bathrooms) are incomplete'
-                    );
-                }
-
                 // Owners with admin-grade roles (ADMIN/SUPER_ADMIN/CLIENT_MANAGER)
                 // bypass billing entirely. Regular HOST users — including the
                 // ones promoted from USER at draft creation — go through the
@@ -1790,6 +1807,13 @@ export class AccommodationService extends BaseCrudService<
                 // HOS-296: reads `user_role` rather than the dropped
                 // `users.role` scalar, so the full user row is no longer loaded
                 // just to read one column.
+                //
+                // This runs BEFORE the completeness guard below (H-99). It used to
+                // run after, which meant an owner with no plan was told to go fill
+                // in `bathrooms`, did so, retried, and only THEN hit the
+                // subscription wall — two frustrations in the most expensive order.
+                // A missing subscription is the one rejection the host cannot
+                // resolve by editing, so it is the one they should see first.
                 const ownerRoles = await getUserRoles({
                     userId: accommodation.ownerId,
                     ...(execCtx === undefined ? {} : { ctx: execCtx })
@@ -1825,6 +1849,61 @@ export class AccommodationService extends BaseCrudService<
                     ) {
                         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'subscription_required');
                     }
+                }
+
+                // Publish-completeness guard (HOS-152, rewritten for H-101/H-94).
+                // `extraInfo` is intentionally relaxed on the read/write schemas so a
+                // DRAFT can be fetched/PATCHed while the host is still filling it in
+                // (see `AccommodationExtraInfoSchema`'s docblock). Publishing is the
+                // one place completeness MUST be enforced. This guard covers every
+                // path that reaches `publish()`, including `update()`'s
+                // ACTIVE-transition dispatch (see the override above). A direct
+                // `create({ lifecycleState: 'ACTIVE' })` (reachable via
+                // `POST /api/v1/admin/accommodations`) does NOT reach `publish()`, so
+                // the same completeness check is mirrored in `_beforeCreate` (HOS-153).
+                //
+                // The requirement list is deliberately NOT spelled out here. It lives
+                // in `ACCOMMODATION_PUBLISH_REQUIREMENTS`, which the editor hub reads
+                // too — that one shared definition IS the fix for H-101, where this
+                // gate and the editor's warnings had no field in common at all.
+                //
+                // The rejection names the fields that actually failed, and carries
+                // them in `reason`, never `details`: production forces
+                // `HOSPEDA_API_DEBUG_ERRORS=false`, which strips `details` from every
+                // ServiceError response, while `reason` is emitted unconditionally.
+                // Putting the field list in `details` would reproduce H-94 exactly —
+                // the server knowing which field failed and the host never told.
+                // Composed from the relational rows directly, NOT via
+                // `attachComposedMedia`. That helper falls back to the entity's own
+                // `media` value when no rows exist, and `media` is the JSONB blob
+                // HOS-372 dropped — so the fallback can only ever return something
+                // stale, and here it would answer "has a main image" for a listing
+                // whose photos table is empty. The pure composer has no fallback.
+                const mediaRowsById = await this._accommodationMediaModel.findByAccommodations({
+                    accommodationIds: [accommodation.id],
+                    ...(execCtx?.tx === undefined ? {} : { tx: execCtx.tx })
+                });
+                const composedMedia = composeAccommodationMedia({
+                    rows: mediaRowsById.get(accommodation.id) ?? [],
+                    videos: accommodation.videos
+                });
+                const publishExtraInfo = accommodation.extraInfo ?? {};
+                const missingRequirements = resolveMissingPublishRequirements({
+                    input: {
+                        capacity: publishExtraInfo.capacity,
+                        minNights: publishExtraInfo.minNights,
+                        bedrooms: publishExtraInfo.bedrooms,
+                        bathrooms: publishExtraInfo.bathrooms,
+                        hasMainImage: Boolean(composedMedia.featuredImage?.url)
+                    }
+                });
+                if (missingRequirements.length > 0) {
+                    throw new ServiceError(
+                        ServiceErrorCode.VALIDATION_ERROR,
+                        `Cannot publish accommodation: missing ${missingRequirements.join(', ')}`,
+                        undefined,
+                        buildPublishRequirementsReason({ missing: missingRequirements })
+                    );
                 }
 
                 // Visibility promotion (SPEC-217): onboarding drafts are created
@@ -1868,20 +1947,67 @@ export class AccommodationService extends BaseCrudService<
                     { timeoutMs: 5000 }
                 );
 
-                const destinationSlug = updated.destinationId
-                    ? await this._resolveDestinationSlug(updated.destinationId)
-                    : undefined;
-                try {
-                    getRevalidationService()?.scheduleRevalidation({
-                        entityType: 'accommodation',
-                        id: updated.id,
-                        slug: updated.slug,
-                        destinationSlug
-                    });
-                } catch (error) {
-                    this.logger.warn(
-                        { error, entityType: 'accommodation' },
-                        '[accommodation.publish] Revalidation scheduling failed (non-blocking)'
+                await this._scheduleAccommodationRevalidation(updated, '[accommodation.publish] ');
+
+                return updated;
+            }
+        });
+    }
+
+    /**
+     * Applies the platform's moderation verdict to one accommodation (H-102).
+     *
+     * Until this existed, an accommodation could not leave `PENDING` by any
+     * route: `ACCOMMODATION_MODERATION_CHANGE` was granted in the seed and read
+     * by nothing, and the only moderation endpoint under `routes/accommodation/`
+     * moderated REVIEWS, not the listing. Every accommodation row in production
+     * was `PENDING`, published ones included, and the admin's pending counter —
+     * which does count them — had no action that could ever bring it down.
+     *
+     * Touches `moderationState` and nothing else, exactly like the post and
+     * event equivalents: approving does not publish, rejecting does not
+     * unpublish. Public visibility stays governed by `lifecycleState` and
+     * `visibility` alone. That is deliberate and matches every other content
+     * entity — no public read of an accommodation, post, event or destination
+     * filters on `moderationState` today, so making this one gate reads would
+     * have pulled live listings off the site on deploy.
+     *
+     * @param input - actor, accommodation id, and the new moderation state
+     * @param ctx - optional service context for transaction propagation
+     * @returns The updated accommodation or a service error
+     */
+    public async moderate(
+        input: { readonly actor: Actor; readonly id: string } & ContentModerationChangeInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<Accommodation>> {
+        return this.runWithLoggingAndValidation({
+            methodName: `moderate(id=${input.id})`,
+            input: { actor: input.actor },
+            schema: z.object({}),
+            ctx,
+            execute: async (_, validatedActor, execCtx) => {
+                checkCanModerate(validatedActor);
+
+                const accommodation = await this.model.findById(input.id, execCtx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `Accommodation ${input.id} not found`
+                    );
+                }
+
+                const updated = await this.model.update(
+                    { id: input.id },
+                    {
+                        moderationState: input.moderationState,
+                        updatedById: validatedActor.id
+                    },
+                    execCtx?.tx
+                );
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to update accommodation moderationState'
                     );
                 }
 
@@ -1959,22 +2085,10 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
 
-                const destinationSlug = updated.destinationId
-                    ? await this._resolveDestinationSlug(updated.destinationId)
-                    : undefined;
-                try {
-                    getRevalidationService()?.scheduleRevalidation({
-                        entityType: 'accommodation',
-                        id: updated.id,
-                        slug: updated.slug,
-                        destinationSlug
-                    });
-                } catch (error) {
-                    this.logger.warn(
-                        { error, entityType: 'accommodation' },
-                        '[accommodation.unpublish] Revalidation scheduling failed (non-blocking)'
-                    );
-                }
+                await this._scheduleAccommodationRevalidation(
+                    updated,
+                    '[accommodation.unpublish] '
+                );
 
                 return updated;
             }
@@ -2043,22 +2157,7 @@ export class AccommodationService extends BaseCrudService<
         _actor: Actor,
         _ctx: ServiceContext
     ): Promise<Accommodation> {
-        const destinationSlug = entity.destinationId
-            ? await this._resolveDestinationSlug(entity.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: entity.id,
-                slug: entity.slug,
-                destinationSlug
-            });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
-        }
+        await this._scheduleAccommodationRevalidation(entity);
         return entity;
     }
 
@@ -2088,21 +2187,25 @@ export class AccommodationService extends BaseCrudService<
         if (restored?.destinationId) {
             await this.destinationService.updateAccommodationsCount(restored.destinationId, ctx);
         }
-        const destinationSlug = restored?.destinationId
-            ? await this._resolveDestinationSlug(restored.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: restored?.id,
-                slug: restored?.slug,
-                destinationSlug
+        // HOS-389: restored comes out of `ctx.hookState`, which the matching
+        // `_before*` hook may never have populated. The previous code scheduled
+        // unconditionally, so in that case it queued a purge for
+        // `{ id: undefined, slug: undefined }` — a purge of nothing, and a NULL
+        // `revalidation_log.entity_id`, which is the exact symptom HOS-424 was
+        // filed to eliminate.
+        //
+        // The HOS-424 guard did not catch it: it asserts that a call site
+        // forwarding `slug` also forwards `id`, and both keys WERE present. What
+        // nothing checked was that their VALUES are not undefined.
+        //
+        // With the entity proven present, these three sites can finally use the
+        // canonical helper like the other six.
+        if (restored?.id && restored.slug) {
+            await this._scheduleAccommodationRevalidation({
+                id: restored.id,
+                slug: restored.slug,
+                destinationId: restored.destinationId
             });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
         }
         return result;
     }
@@ -2151,21 +2254,25 @@ export class AccommodationService extends BaseCrudService<
         if (deleted?.destinationId) {
             await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx);
         }
-        const destinationSlug = deleted?.destinationId
-            ? await this._resolveDestinationSlug(deleted.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: deleted?.id,
-                slug: deleted?.slug,
-                destinationSlug
+        // HOS-389: deleted comes out of `ctx.hookState`, which the matching
+        // `_before*` hook may never have populated. The previous code scheduled
+        // unconditionally, so in that case it queued a purge for
+        // `{ id: undefined, slug: undefined }` — a purge of nothing, and a NULL
+        // `revalidation_log.entity_id`, which is the exact symptom HOS-424 was
+        // filed to eliminate.
+        //
+        // The HOS-424 guard did not catch it: it asserts that a call site
+        // forwarding `slug` also forwards `id`, and both keys WERE present. What
+        // nothing checked was that their VALUES are not undefined.
+        //
+        // With the entity proven present, these three sites can finally use the
+        // canonical helper like the other six.
+        if (deleted?.id && deleted.slug) {
+            await this._scheduleAccommodationRevalidation({
+                id: deleted.id,
+                slug: deleted.slug,
+                destinationId: deleted.destinationId
             });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
         }
         return result;
     }
@@ -2197,21 +2304,25 @@ export class AccommodationService extends BaseCrudService<
         if (deleted?.destinationId) {
             await this.destinationService.updateAccommodationsCount(deleted.destinationId, ctx);
         }
-        const destinationSlug = deleted?.destinationId
-            ? await this._resolveDestinationSlug(deleted.destinationId)
-            : undefined;
-        try {
-            getRevalidationService()?.scheduleRevalidation({
-                entityType: 'accommodation',
-                id: deleted?.id,
-                slug: deleted?.slug,
-                destinationSlug
+        // HOS-389: deleted comes out of `ctx.hookState`, which the matching
+        // `_before*` hook may never have populated. The previous code scheduled
+        // unconditionally, so in that case it queued a purge for
+        // `{ id: undefined, slug: undefined }` — a purge of nothing, and a NULL
+        // `revalidation_log.entity_id`, which is the exact symptom HOS-424 was
+        // filed to eliminate.
+        //
+        // The HOS-424 guard did not catch it: it asserts that a call site
+        // forwarding `slug` also forwards `id`, and both keys WERE present. What
+        // nothing checked was that their VALUES are not undefined.
+        //
+        // With the entity proven present, these three sites can finally use the
+        // canonical helper like the other six.
+        if (deleted?.id && deleted.slug) {
+            await this._scheduleAccommodationRevalidation({
+                id: deleted.id,
+                slug: deleted.slug,
+                destinationId: deleted.destinationId
             });
-        } catch (error) {
-            this.logger.warn(
-                { error, entityType: 'accommodation' },
-                'Revalidation scheduling failed (non-blocking)'
-            );
         }
         // Best-effort Cloudinary cleanup after confirmed hard delete
         if (result.count > 0 && ctx.hookState?.deletedEntityId && this.mediaProvider) {
@@ -3139,7 +3250,7 @@ export class AccommodationService extends BaseCrudService<
                         'FAQ not found for this accommodation'
                     );
                 }
-                await faqModel.softDelete({ id: validated.faqId }, ctx?.tx);
+                await faqModel.softDelete({ id: validated.faqId }, actor.id, ctx?.tx);
                 return { success: true };
             }
         });
@@ -3681,6 +3792,28 @@ export class AccommodationService extends BaseCrudService<
                 const nextSortOrder =
                     typeof topOrder === 'number' && topOrder >= 0 ? topOrder + 1 : 0;
 
+                // HOS-389 §2: the per-entity gallery cap WAS already enforced
+                // server-side — but only at the UPLOAD routes
+                // (`media/protected/upload-entity.ts`, `media/admin/upload.ts`),
+                // which is the step that costs a Cloudinary asset. Registering
+                // the row was never capped, so anything reaching `addMedia`
+                // directly with an already-uploaded URL walked straight past it.
+                //
+                // Same `getGalleryCap` constant those routes read, and the same
+                // `state: 'visible'` filter `resolveVisibleGalleryCount` applies
+                // for accommodations — an archived photo does not occupy a slot.
+                // The count is the one this method ALREADY fetched for
+                // `sortOrder`: `findAll` returns a full `total` from its own
+                // count query, independent of `pageSize`. So this costs nothing.
+                const galleryCap = getGalleryCap('accommodation');
+                if (existing.total >= galleryCap) {
+                    throw new ServiceError(
+                        ServiceErrorCode.QUOTA_EXCEEDED,
+                        `Gallery limit of ${galleryCap} photos reached for this accommodation`,
+                        { currentCount: existing.total, maxAllowed: galleryCap }
+                    );
+                }
+
                 const rowToCreate = {
                     ...validated.media,
                     accommodationId: validated.accommodationId as AccommodationIdType,
@@ -3692,6 +3825,20 @@ export class AccommodationService extends BaseCrudService<
                 };
 
                 const createdMedia = await mediaModel.create(rowToCreate, ctx?.tx);
+
+                // HOS-389 §4: the gallery IS the public page's content, so a
+                // photo change has to purge it. Before this, none of the seven
+                // media methods scheduled anything — a host replaced the cover
+                // and the listing kept serving the old one from cache until some
+                // unrelated edit happened to purge it.
+                //
+                // Guarded on public visibility for the same reason `_afterCreate`
+                // is (HOS-203): a DRAFT/PRIVATE listing has no public footprint,
+                // so purging its paths is wasted work and logged 404s in prod.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: createdMedia };
             }
         });
@@ -3756,7 +3903,7 @@ export class AccommodationService extends BaseCrudService<
 
                 // Soft-delete + resequence in a single transaction.
                 const doRemove = async (tx: DrizzleClient): Promise<void> => {
-                    await mediaModel.softDelete({ id: validated.mediaId }, tx);
+                    await mediaModel.softDelete({ id: validated.mediaId }, actor.id, tx);
 
                     // Reload the remaining visible rows to resequence them.
                     const { items: remaining } = await mediaModel.findByAccommodation({
@@ -3779,6 +3926,11 @@ export class AccommodationService extends BaseCrudService<
                     await doRemove(ctx.tx);
                 } else {
                     await withTransaction(doRemove);
+                }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
                 }
 
                 return { success: true };
@@ -3893,6 +4045,11 @@ export class AccommodationService extends BaseCrudService<
                         return row ? { ...row, sortOrder: idx } : null;
                     })
                     .filter((r): r is NonNullable<typeof r> => r !== null);
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
 
                 return { media: reordered };
             }
@@ -4024,6 +4181,101 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after set-featured'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale. This is
+                // the loudest case: changing the cover changes the first image a
+                // visitor and every social preview sees.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
+                return { media: updated };
+            }
+        });
+    }
+
+    /**
+     * Updates the text metadata (caption/description/alt/attribution) of a
+     * single accommodation photo (HOS-388).
+     *
+     * Before this endpoint the only way to fix a typo in an `alt` text was to
+     * delete the photo and re-upload it — burning a second Cloudinary asset and
+     * losing the photo's position in the gallery. This is a pure text-metadata
+     * PATCH: it never touches `url`, `publicId`, `moderationState`, `state`,
+     * `isFeatured`, `sortOrder`, or `accommodationId` — those columns are not
+     * even reachable from `AccommodationMediaUpdateInputSchema`.
+     *
+     * Steps:
+     * 1. Gate on `_canUpdate` (ANY or OWN + ownership — same as the other media commands).
+     * 2. Verify the target media row exists, belongs to this accommodation, AND is
+     *    not soft-deleted. Any mismatch answers `NOT_FOUND` — never `FORBIDDEN` —
+     *    so a foreign or deleted id does not confirm its own existence.
+     * 3. Build the patch from ONLY the fields present in the payload: `undefined`
+     *    leaves the column untouched, `null` clears it, a value replaces it. The
+     *    schema-level refine already guarantees at least one field is present.
+     * 4. Apply a single-row `UPDATE` and return the resulting row.
+     *
+     * @param actor - The actor performing the action.
+     * @param data  - Input containing accommodationId, mediaId, and the text fields to patch.
+     * @param ctx   - Optional service context for transaction propagation.
+     * @returns The updated media row wrapped in a `{ media }` envelope.
+     */
+    public async updateMedia(
+        actor: Actor,
+        data: AccommodationMediaUpdateInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<AccommodationMediaSingleOutput>> {
+        return this.runWithLoggingAndValidation({
+            methodName: 'updateMedia',
+            input: { ...data, actor },
+            schema: AccommodationMediaUpdateInputSchema,
+            execute: async (validated) => {
+                const accommodation = await this.model.findById(validated.accommodationId, ctx?.tx);
+                if (!accommodation) {
+                    throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+                }
+                await this._canUpdate(actor, accommodation);
+
+                const mediaModel = new AccommodationMediaModel();
+                const mediaRow = await mediaModel.findById(validated.mediaId, ctx?.tx);
+                if (
+                    !mediaRow ||
+                    mediaRow.accommodationId !== validated.accommodationId ||
+                    mediaRow.deletedAt
+                ) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        'Media not found for this accommodation'
+                    );
+                }
+
+                // Only include keys the caller actually supplied. `undefined` is
+                // excluded on purpose — passing it through would SET the column to
+                // undefined instead of leaving it alone. `null` IS included — it is
+                // the caller's explicit "clear this field" signal.
+                const patch: Partial<
+                    Pick<AccommodationMedia, 'caption' | 'description' | 'alt' | 'attribution'>
+                > = {};
+                if (validated.caption !== undefined) patch.caption = validated.caption;
+                if (validated.description !== undefined) patch.description = validated.description;
+                if (validated.alt !== undefined) patch.alt = validated.alt;
+                if (validated.attribution !== undefined) patch.attribution = validated.attribution;
+
+                const updated = await mediaModel.update({ id: validated.mediaId }, patch, ctx?.tx);
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        'Failed to retrieve updated media row after update'
+                    );
+                }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale. `alt`
+                // is rendered into the public page, so correcting it has to
+                // reach the cache.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: updated };
             }
         });
@@ -4105,6 +4357,12 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after archive'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: archived };
             }
         });
@@ -4192,6 +4450,14 @@ export class AccommodationService extends BaseCrudService<
                         'Failed to retrieve updated media row after restore'
                     );
                 }
+
+                // HOS-389 §4 — see `addMedia` for the guard's rationale.
+                // Restoring an archived photo puts it back in the public
+                // gallery, so it purges exactly like archiving does.
+                if (this._isPubliclyVisible(accommodation)) {
+                    await this._scheduleAccommodationRevalidation(accommodation);
+                }
+
                 return { media: restored };
             }
         });
@@ -4269,22 +4535,10 @@ export class AccommodationService extends BaseCrudService<
                     );
                 }
 
-                const destinationSlug = updated.destinationId
-                    ? await this._resolveDestinationSlug(updated.destinationId)
-                    : undefined;
-                try {
-                    getRevalidationService()?.scheduleRevalidation({
-                        entityType: 'accommodation',
-                        id: updated.id,
-                        slug: updated.slug,
-                        destinationSlug
-                    });
-                } catch (error) {
-                    this.logger.warn(
-                        { error, entityType: 'accommodation' },
-                        '[accommodation.verifyAccommodation] Revalidation scheduling failed (non-blocking)'
-                    );
-                }
+                await this._scheduleAccommodationRevalidation(
+                    updated,
+                    '[accommodation.verifyAccommodation] '
+                );
 
                 return updated;
             }

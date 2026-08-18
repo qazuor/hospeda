@@ -1,4 +1,5 @@
-import type { z } from 'zod';
+import { z } from 'zod';
+import { stripShapeDefaults } from '../../utils/utils.js';
 import { SocialContentBatchSchema } from './social-content-batch.schema.js';
 
 /**
@@ -21,8 +22,15 @@ export const SocialContentBatchCreateSchema = SocialContentBatchSchema.omit({
 /**
  * Input schema for updating an existing social content batch.
  * All business fields are optional for partial updates.
+ *
+ * `stripShapeDefaults` is load-bearing: in Zod 4 `.partial()` does NOT suppress
+ * a `.default()`, so without it a PATCH omitting a defaulted field parses that
+ * field back in and the literal SQL `SET` overwrites it. See the guard in
+ * `test/no-defaults-in-patch-schemas.guard.test.ts`.
  */
-export const SocialContentBatchUpdateSchema = SocialContentBatchCreateSchema.partial();
+export const SocialContentBatchUpdateSchema = z
+    .object(stripShapeDefaults(SocialContentBatchCreateSchema.shape))
+    .partial();
 
 /** TypeScript type for creating a social content batch. */
 export type SocialContentBatchCreate = z.infer<typeof SocialContentBatchCreateSchema>;

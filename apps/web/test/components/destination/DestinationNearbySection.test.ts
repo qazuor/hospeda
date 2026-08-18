@@ -114,7 +114,7 @@ describe('DestinationNearbySection.astro', () => {
         });
 
         it('should use t() for section title', () => {
-            expect(src).toContain("'destination.detail.nearby.title'");
+            expect(src).toContain("'destinations.detail.nearby.title'");
         });
 
         it('should include Spanish fallback for section title', () => {
@@ -122,7 +122,7 @@ describe('DestinationNearbySection.astro', () => {
         });
 
         it('should use t() for subtitle', () => {
-            expect(src).toContain("'destination.detail.nearby.subtitle'");
+            expect(src).toContain("'destinations.detail.nearby.subtitle'");
         });
 
         it('should include Spanish fallback for subtitle', () => {

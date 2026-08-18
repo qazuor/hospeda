@@ -33,7 +33,10 @@ const { CapacityPricingForm } = await import(
     '@/components/host/editor/forms/CapacityPricingForm.client'
 );
 const { ContactForm } = await import('@/components/host/editor/forms/ContactForm.client');
+const { LocationForm } = await import('@/components/host/editor/forms/LocationForm.client');
+const { SeoForm } = await import('@/components/host/editor/forms/SeoForm.client');
 const { ServicesForm } = await import('@/components/host/editor/forms/ServicesForm.client');
+const { VideoSection } = await import('@/components/host/editor/VideoSection.client');
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -48,9 +51,14 @@ const INITIAL = {
     destinationId: 'dest-456',
     latitude: -32.47,
     longitude: -58.23,
+    street: '',
+    number: '',
+    floor: '',
+    apartment: '',
     maxGuests: 4,
     bedrooms: 2,
     bathrooms: 1,
+    minNights: 1,
     basePrice: 15000,
     currency: 'ARS',
     amenityIds: ['am-1'],
@@ -64,7 +72,10 @@ const INITIAL = {
     twitterUrl: '',
     linkedinUrl: '',
     tiktokUrl: '',
-    youtubeUrl: ''
+    youtubeUrl: '',
+    seoTitle: '',
+    seoDescription: '',
+    videos: []
     // biome-ignore lint/suspicious/noExplicitAny: test fixture stands in for the full entity
 } as any;
 
@@ -300,5 +311,141 @@ describe('social fields', () => {
         const body = firstPatchBody();
         expect(body).not.toHaveProperty('facebook');
         expect(body).not.toHaveProperty('instagram');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// G7 smoke (H-112 / H-117 / H-121): the four fields this PR wires up.
+//
+// Each test drives the ACTUAL rendered input and asserts the PATCH body the
+// mocked API receives — the persistence-level test the task calls for,
+// not merely "the form rendered" or "schema.safeParse succeeded".
+// ---------------------------------------------------------------------------
+
+describe('G7 smoke — minNights reaches the PATCH body (H-112)', () => {
+    it('should send minNights when the host changes it, and nothing else', async () => {
+        const user = userEvent.setup();
+        render(<CapacityPricingForm {...COMMON} />);
+
+        const minNights = screen.getByLabelText(/mínimo de noches/i) as HTMLInputElement;
+        await user.clear(minNights);
+        await user.type(minNights, '3');
+        submitFrom(minNights);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        const body = firstPatchBody();
+        expect(body).toEqual({ minNights: 3 });
+    });
+});
+
+describe('G7 smoke — exact address reaches the PATCH body (H-117)', () => {
+    it('should send street alone when only street changes', async () => {
+        const user = userEvent.setup();
+        render(<LocationForm {...COMMON} />);
+
+        const street = screen.getByLabelText(/^calle$/i) as HTMLInputElement;
+        await user.type(street, 'Av. Belgrano');
+        submitFrom(street);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        const body = firstPatchBody();
+        expect(body).toEqual({ street: 'Av. Belgrano' });
+    });
+
+    it('should send number/floor/apartment when the host fills all three', async () => {
+        const user = userEvent.setup();
+        render(<LocationForm {...COMMON} />);
+
+        await user.type(screen.getByLabelText(/^número$/i), '123');
+        await user.type(screen.getByLabelText(/^piso$/i), '4');
+        const apartment = screen.getByLabelText(/^departamento$/i);
+        await user.type(apartment, 'B');
+        submitFrom(apartment);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        const body = firstPatchBody();
+        expect(body).toEqual({ number: '123', floor: '4', apartment: 'B' });
+        expect(body).not.toHaveProperty('latitude');
+        expect(body).not.toHaveProperty('longitude');
+    });
+});
+
+describe('G7 smoke — SEO override reaches the PATCH body (H-121)', () => {
+    it('should send seoTitle alone when only the title changes', async () => {
+        const user = userEvent.setup();
+        render(<SeoForm {...COMMON} />);
+
+        const title = screen.getByLabelText(/título para google/i) as HTMLInputElement;
+        await user.type(title, 'A'.repeat(30));
+        submitFrom(title);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        const body = firstPatchBody();
+        expect(body).toEqual({ seoTitle: 'A'.repeat(30) });
+    });
+
+    it('should reject a title under 30 chars without calling the API', async () => {
+        const user = userEvent.setup();
+        render(<SeoForm {...COMMON} />);
+
+        const title = screen.getByLabelText(/título para google/i) as HTMLInputElement;
+        await user.type(title, 'too short');
+        submitFrom(title);
+
+        await waitFor(() =>
+            expect(mockAddToast).toHaveBeenCalledWith(expect.objectContaining({ type: 'error' }))
+        );
+        expect(mockUpdate).not.toHaveBeenCalled();
+    });
+});
+
+describe('G7 smoke — videos reach the PATCH body nested under media (H-121)', () => {
+    it('should send { media: { videos } }, not a flat videos field', async () => {
+        const user = userEvent.setup();
+        render(
+            <VideoSection
+                locale="es"
+                accommodationId="acc-123"
+                initialVideos={[]}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /agregar video/i }));
+        const urlInput = screen.getByLabelText(/enlace del video/i) as HTMLInputElement;
+        await user.type(urlInput, 'https://youtube.com/watch?v=abc123');
+        submitFrom(urlInput);
+
+        await waitFor(() => expect(mockUpdate).toHaveBeenCalled());
+
+        const body = firstPatchBody();
+        expect(body).toEqual({
+            media: { videos: [{ url: 'https://youtube.com/watch?v=abc123' }] }
+        });
+        // Regression guard: a flat `videos` key would be silently discarded by
+        // AccommodationUpdateHttpSchema (it only declares `media.videos`).
+        expect(body).not.toHaveProperty('videos');
+    });
+
+    it('should reject an invalid URL without calling the API', async () => {
+        const user = userEvent.setup();
+        render(
+            <VideoSection
+                locale="es"
+                accommodationId="acc-123"
+                initialVideos={[]}
+            />
+        );
+
+        await user.click(screen.getByRole('button', { name: /agregar video/i }));
+        const urlInput = screen.getByLabelText(/enlace del video/i) as HTMLInputElement;
+        await user.type(urlInput, 'not-a-url');
+        submitFrom(urlInput);
+
+        await waitFor(() => expect(screen.getByRole('alert')).toBeInTheDocument());
+        expect(mockUpdate).not.toHaveBeenCalled();
     });
 });

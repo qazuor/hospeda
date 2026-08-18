@@ -33,7 +33,8 @@
         },
         "limit": {
             "title": "Llegaste al máximo",
-            "message": "Tu plan permite comparar hasta {{max}} alojamientos a la vez.",
+            "message_one": "Tu plan permite comparar hasta {{max}} alojamiento a la vez.",
+            "message_other": "Tu plan permite comparar hasta {{max}} alojamientos a la vez.",
             "hint": "Quitá uno para agregar otro."
         },
         "bar": {
@@ -331,7 +332,6 @@
     "emptyMessage": "Pronto agregaremos más opciones de hospedaje para ti.",
     "heading": "Alojamientos",
     "subheading": "Descubre alojamientos únicos y encuentra el lugar perfecto para tu próxima aventura",
-    "found": "alojamientos encontrados",
     "seeAll": "Ver todos los alojamientos →",
     "filters": {
         "title": "Filtros",
@@ -674,6 +674,14 @@
             "upsellText": "Suscribite a Plus para ver el WhatsApp del anfitrión.",
             "upsellCta": "Ver planes"
         },
+        "contact": {
+            "title": "Contacto",
+            "phoneAriaLabel": "Llamar al alojamiento",
+            "emailAriaLabel": "Enviar email al alojamiento",
+            "websiteAriaLabel": "Visitar sitio web del alojamiento",
+            "facebookAriaLabel": "Facebook del alojamiento",
+            "instagramAriaLabel": "Instagram del alojamiento"
+        },
         "share": "Compartir",
         "checkIn": "Check-in",
         "checkOut": "Check-out",
@@ -687,8 +695,10 @@
             "bathrooms": "Baños",
             "minNights": "Mínimo de noches",
             "maxNights": "Máximo de noches",
-            "guests": "{n} huéspedes",
-            "nights": "{n} noches"
+            "guests_one": "{{count}} huésped",
+            "guests_other": "{{count}} huéspedes",
+            "nights_one": "{{count}} noche",
+            "nights_other": "{{count}} noches"
         },
         "gallery": {
             "viewAll": "Ver todas las fotos",
@@ -709,9 +719,12 @@
             "optional": "opcional",
             "perNightFlag": "por noche",
             "perGuestFlag": "por huésped",
-            "capacityFact": "Hasta {n} huéspedes",
-            "minNightsFact": "Estadía mínima {n} noches",
-            "maxNightsFact": "Estadía máxima {n} noches",
+            "capacityFact_one": "Hasta {{count}} huésped",
+            "capacityFact_other": "Hasta {{count}} huéspedes",
+            "minNightsFact_one": "Estadía mínima {{count}} noche",
+            "minNightsFact_other": "Estadía mínima {{count}} noches",
+            "maxNightsFact_one": "Estadía máxima {{count}} noche",
+            "maxNightsFact_other": "Estadía máxima {{count}} noches",
             "fees": {
                 "cleaning": "Limpieza",
                 "tax": "Impuestos",
@@ -739,7 +752,8 @@
         },
         "reviewsDetail": {
             "noReviews": "No hay opiniones todavía",
-            "viewAll": "Ver las {n} opiniones",
+            "viewAll_one": "Ver la {{count}} opinión",
+            "viewAll_other": "Ver las {{count}} opiniones",
             "breakdownLabel": "Puntajes desglosados",
             "categories": {
                 "cleanliness": "Limpieza",
@@ -770,7 +784,8 @@
         },
         "amenitiesDetail": {
             "title": "Comodidades",
-            "viewAll": "Ver todas las {n} comodidades",
+            "viewAll_one": "Ver la {{count}} comodidad",
+            "viewAll_other": "Ver todas las {{count}} comodidades",
             "collapse": "Ver menos",
             "additionalCost": "(costo adicional)"
         },
@@ -809,7 +824,8 @@
         "promotions": {
             "sectionTitle": "Promociones especiales",
             "validUntil": "Válido hasta el {date}",
-            "minNights": "Mínimo {n} noches",
+            "minNights_one": "Mínimo {{count}} noche",
+            "minNights_other": "Mínimo {{count}} noches",
             "discountOff": "de descuento"
         },
         "priceAlert": {
@@ -835,9 +851,10 @@
             "dateRange": "Del {from} al {to}",
             "dateFrom": "Desde el {from}",
             "dateTo": "Hasta el {to}",
-            "guests": "{adults} adultos · {children} niños",
-            "guestsAdultsOnly": "{adults} adultos",
-            "guestsChildrenOnly": "{children} niños"
+            "guestsAdultsOnly_one": "{{count}} adulto",
+            "guestsAdultsOnly_other": "{{count}} adultos",
+            "guestsChildrenOnly_one": "{{count}} niño",
+            "guestsChildrenOnly_other": "{{count}} niños"
         }
     },
     "emptyChip": {

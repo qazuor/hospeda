@@ -56,9 +56,11 @@ import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import { FACET_CONFIG_BY_ID } from '@/lib/filters/facet-config';
 import { readFacetActiveValues } from '@/lib/filters/read-facet-active-values';
-import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param';
+import { canonicalizeFacetValues } from '@/lib/filters/canonical-facet-order';
+import { resolveCappedChipNote, resolveFacetChipHref } from '@/lib/filters/facet-chip-depth';
 import { buildClearFacetChip } from '@/lib/filters/build-clear-facet-chip';
 import { resolveFacetSeoDecision } from '@/lib/seo/promoted-facet-canonical';
+import { slugForPostCategory } from '@/lib/facet-slugs';
 import { XCircleIcon } from '@repo/icons';
 import { PostCategoryEnum } from '@repo/schemas';
 
@@ -157,7 +159,10 @@ const result = await postsApi.list({
     // string (never the raw JS array — `serializeParams` in `api/client.ts`
     // does `String(value)`, which on an array yields a comma-joined string
     // too, but relying on that implicit coercion is fragile; join explicitly).
-    categories: postCategoryActiveValues.length > 0 ? postCategoryActiveValues.join(',') : undefined,
+    categories:
+        postCategoryActiveValues.length > 0
+            ? canonicalizeFacetValues({ values: postCategoryActiveValues }).join(',')
+            : undefined,
     sortBy: sortResolved.sortBy,
     sortOrder: sortResolved.sortOrder,
     isFeatured: isFeatured ?? undefined,
@@ -245,7 +250,8 @@ const facetSeoDecision = resolveFacetSeoDecision({
     facetValues: postCategoryActiveValues,
     hasOtherFilters: hasOtherPostFilters,
     validEnumValues: Object.values(PostCategoryEnum),
-    dedicatedLandingPattern: FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern
+    dedicatedLandingPattern: FACET_CONFIG_BY_ID.postCategory.dedicatedLandingPattern,
+    slugify: (value) => slugForPostCategory({ category: value as PostCategoryEnum })
 });
 const canonicalBaseUrl =
     facetSeoDecision.canonical.kind === 'dedicatedLanding' &&
@@ -382,7 +388,10 @@ const sortOptions = [
  */
 const sidebarInitialParams: Record<string, string> = {};
 if (q)                          sidebarInitialParams['q'] = q;
-if (postCategoryActiveValues.length > 0) sidebarInitialParams['categories'] = postCategoryActiveValues.join(',');
+if (postCategoryActiveValues.length > 0)
+    sidebarInitialParams['categories'] = canonicalizeFacetValues({
+        values: postCategoryActiveValues
+    }).join(',');
 if (isFeaturedParam === 'true') sidebarInitialParams['isFeatured'] = 'true';
 if (destinationId)              sidebarInitialParams['destinationId'] = destinationId;
 if (publishedAfterFilter)       sidebarInitialParams['publishedAfter'] = publishedAfterFilter;
@@ -436,19 +445,37 @@ const POST_CATEGORY_CHIP_DEFS = [
     { value: 'TIPS',       slug: 'tips',       label: t('blog.categories.tips',       'Consejos') }
 ] as const;
 
+// Both plural forms are passed: `resolveCappedChipNote` picks one from the
+// count, so lowering FACET_CHIP_MAX_ACTIVE_VALUES to 1 cannot start
+// announcing "already 1 filters active". (The "Clear (N)" chip above CAN read
+// `_other` directly — its own floor of 2 is a fixed rule, not a tunable.)
+const cappedNoteOneTemplate = t('common.filterChips.cappedNote_one');
+const cappedNoteOtherTemplate = t('common.filterChips.cappedNote_other');
+
 const postCategoryChips = POST_CATEGORY_CHIP_DEFS.map(({ value, slug, label }) => {
     const active = postCategoryActiveValues.includes(value);
     return {
         label,
-        href: buildMultiToggleParamHref({
+        // HOS-524: `resolveFacetChipHref`, never the raw toggle builder —
+        // see `facet-chip-depth.ts`. This row renders 8 of the enum's 18
+        // categories, so the space it published was 2^8, not 2^18 — count the
+        // chips the page emits, not the enum behind them.
+        href: resolveFacetChipHref({
             baseUrl,
             searchParams: paginationParams,
             key: FACET_CONFIG_BY_ID.postCategory.paramKey,
             value,
-            singularKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey
+            singularKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey,
+            activeValues: postCategoryActiveValues
         }),
         icon: getPostCategoryIcon({ category: slug }),
-        active
+        active,
+        capNote: resolveCappedChipNote({
+            active,
+            activeCount: postCategoryActiveValues.length,
+            oneTemplate: cappedNoteOneTemplate,
+            otherTemplate: cappedNoteOtherTemplate
+        })
     };
 });
 
@@ -463,7 +490,8 @@ const postCategoryClearChip = buildClearFacetChip({
     singularParamKey: FACET_CONFIG_BY_ID.postCategory.singularParamKey,
     count: postCategoryActiveValues.length,
     labelTemplate: t('common.filterChips.clearLabel'),
-    ariaLabelTemplate: t('common.filterChips.clearAriaLabel'),
+    // buildClearFacetChip only renders at count >= 2, so `_one` is unreachable here.
+    ariaLabelTemplate: t('common.filterChips.clearAriaLabel_other'),
     icon: XCircleIcon
 });
 ---

@@ -20,7 +20,7 @@
  */
 
 import { OccupancySourceEnum } from '@repo/schemas';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { CalendarSectionProps } from '@/components/host/editor/CalendarSection.client';
@@ -115,6 +115,25 @@ const GOOGLE_ROW = {
     isBlocked: true,
     source: OccupancySourceEnum.GOOGLE_CALENDAR,
     externalEventId: 'gcal-evt-1',
+    note: null,
+    createdById: 'system',
+    createdAt: new Date('2026-07-01T00:00:00Z'),
+    updatedAt: new Date('2026-07-01T00:00:00Z')
+};
+
+/**
+ * A Google contact birthday imported as occupancy, exactly as production held
+ * it: `eventTitle` populated, `note` NULL (sync rows never write `note`).
+ * This is the shape H-131 filled hosts' calendars with.
+ */
+const GOOGLE_BIRTHDAY_ROW = {
+    id: 'occ-google-bday',
+    accommodationId: ACC_ID,
+    date: '2026-07-23',
+    isBlocked: true,
+    source: OccupancySourceEnum.GOOGLE_CALENDAR,
+    externalEventId: 'gcal-bday-1',
+    eventTitle: 'Delfina Asrilevich - Cumpleaños',
     note: null,
     createdById: 'system',
     createdAt: new Date('2026-07-01T00:00:00Z'),
@@ -373,6 +392,63 @@ describe('CalendarSection', () => {
                 isBlocked: false
             });
         });
+    });
+
+    // H-131 follow-up: a host who sees a day blocked by an imported event must
+    // be able to find out WHAT it is. The bar used to be an `aria-hidden` div
+    // whose only affordance was a hover tooltip, so on a phone — and for anyone
+    // using a screen reader — the answer was unreachable.
+    it('exposes a sync bar as a real, reachable button', async () => {
+        mockList.mockReturnValue(makeListOk([GOOGLE_BIRTHDAY_ROW]));
+        render(<CalendarSection {...defaultProps} />);
+
+        const bar = await screen.findByRole('button', {
+            name: /Día bloqueado: Delfina Asrilevich - Cumpleaños/i
+        });
+
+        // Reachable by role means: focusable, clickable, and announced. The
+        // previous div was none of those.
+        expect(bar).toBeInTheDocument();
+        expect(bar).not.toHaveAttribute('aria-hidden');
+    });
+
+    it('opens the detail dialog naming the event and its source when a sync bar is clicked', async () => {
+        mockList.mockReturnValue(makeListOk([GOOGLE_BIRTHDAY_ROW]));
+        const user = userEvent.setup();
+        render(<CalendarSection {...defaultProps} />);
+
+        const bar = await screen.findByRole('button', {
+            name: /Día bloqueado: Delfina Asrilevich - Cumpleaños/i
+        });
+        await user.click(bar);
+
+        const dialog = await screen.findByRole('dialog');
+        // The two answers the host came for, in full and untruncated.
+        expect(within(dialog).getByText('Delfina Asrilevich - Cumpleaños')).toBeInTheDocument();
+        expect(within(dialog).getByText('Google Calendar')).toBeInTheDocument();
+    });
+
+    it('offers no edit or delete for an imported block', async () => {
+        mockList.mockReturnValue(makeListOk([GOOGLE_BIRTHDAY_ROW]));
+        const user = userEvent.setup();
+        render(<CalendarSection {...defaultProps} />);
+
+        await user.click(
+            await screen.findByRole('button', {
+                name: /Día bloqueado: Delfina Asrilevich - Cumpleaños/i
+            })
+        );
+
+        // Deleting a sync row here would be undone by the next reconcile, so
+        // the dialog must not offer it. A MANUAL bar still gets both actions —
+        // see 'opens the edit dialog when a MANUAL event bar is clicked'.
+        const dialog = await screen.findByRole('dialog');
+        expect(
+            within(dialog).queryByRole('button', { name: 'Eliminar bloqueo' })
+        ).not.toBeInTheDocument();
+        expect(
+            within(dialog).queryByRole('button', { name: 'Guardar cambios' })
+        ).not.toBeInTheDocument();
     });
 
     it('never leaks a raw i18n key into the rendered output', async () => {

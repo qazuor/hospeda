@@ -94,6 +94,7 @@ function formatPriceArs(cents: number): string {
 								ctaText={t('pricing.comparison.cta', 'Elegir plan')}
 								locale={locale}
 								showPromo={false}
+								trialDays={plan.hasTrial ? plan.trialDays : 0}
 							/>
 						</span>
 					</th>

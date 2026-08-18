@@ -2,7 +2,7 @@
     "$schema": "../../schemas/user.schema.json",
     "id": "admin-user",
     "slug": "admin-user",
-    "email": "admin@hospeda.com",
+    "email": "admin@hospeda.com.ar",
     "emailVerified": true,
     "role": "ADMIN",
     "permissions": [
@@ -136,8 +136,8 @@
     "lastName": "User",
     "displayName": "Admin User",
     "contactInfo": {
-        "personalEmail": "admin@hospeda.com",
-        "workEmail": "admin@hospeda.com",
+        "personalEmail": "admin@hospeda.com.ar",
+        "workEmail": "admin@hospeda.com.ar",
         "mobilePhone": "+541155550002",
         "homePhone": "+541144440002",
         "preferredEmail": "WORK",

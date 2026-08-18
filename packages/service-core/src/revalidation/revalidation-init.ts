@@ -3,6 +3,7 @@ import { resolveCacheTagEnvironment } from '@repo/cache-tags';
 import { createLogger } from '@repo/logger';
 import { createRevalidationAdapter } from './adapters/adapter-factory.js';
 import { NoOpRevalidationAdapter } from './adapters/noop-revalidation.adapter.js';
+import type { EntityChangeData } from './entity-change.types.js';
 import type { EntityResolver, RevalidationServiceConfig } from './revalidation.service.js';
 import { RevalidationService } from './revalidation.service.js';
 
@@ -55,6 +56,15 @@ export interface InitRevalidationParams {
      * evict nothing while reporting success.
      */
     readonly deployEnv?: string;
+    /**
+     * Observer notified of every scheduled entity change (HOS-585 G-1).
+     *
+     * Forwarded verbatim to {@link RevalidationServiceConfig.onEntityChange}.
+     * The API layer passes a lazy lookup of the IndexNow singleton here rather
+     * than the instance itself, so the two initializers stay independent of
+     * each other's startup order.
+     */
+    readonly onEntityChange?: (event: EntityChangeData) => void;
 }
 
 /**
@@ -116,7 +126,8 @@ export function initializeRevalidationService(params: InitRevalidationParams): R
         cacheTagEnvironment,
         debounceMs: params.debounceMs,
         logRetentionDays: params.logRetentionDays,
-        entityResolver: params.entityResolver
+        entityResolver: params.entityResolver,
+        onEntityChange: params.onEntityChange
     };
 
     _instance = new RevalidationService(config);

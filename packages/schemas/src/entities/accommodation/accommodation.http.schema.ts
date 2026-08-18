@@ -141,7 +141,7 @@ export type AccommodationSearchHttp = z.infer<typeof AccommodationSearchHttpSche
  * are stripped during domain conversion via the media normaliser.
  */
 const HttpImageSchema = z.object({
-    url: z.string().url({ message: 'zodError.common.media.image.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.media.image.url.invalid'),
     caption: z
         .string()
         .min(3, { message: 'zodError.common.media.image.caption.min' })
@@ -173,7 +173,7 @@ const HttpImageSchema = z.object({
  */
 /** Embedded video shape accepted from web clients. */
 const HttpVideoSchema = z.object({
-    url: z.string().url({ message: 'zodError.common.media.video.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.media.video.url.invalid'),
     caption: z.string().optional(),
     description: z.string().optional(),
     moderationState: z.string().optional()
@@ -295,8 +295,23 @@ export const AccommodationCreateHttpSchema = z.object({
         .max(100, { message: 'zodError.accommodation.extraInfo.bathrooms.max' }),
 
     // Pricing
-    basePrice: z.coerce.number().min(0, { message: 'zodError.accommodation.price.price.min' }),
-    currency: PriceCurrencyEnumSchema.default(PriceCurrencyEnum.USD),
+    // H-111: whole pesos only, no cents. A DB row like `{"price": 1234.56}`
+    // renders on the public sidebar via `Intl.NumberFormat` with
+    // `maximumFractionDigits: 0`, which rounds UP — the host typed 1234.56 and
+    // the guest is shown $1.235, more than what was set. `.int()` rejects the
+    // decimal at the write boundary instead of silently rounding it somewhere
+    // downstream. The READ path (`AccommodationPriceReadSchema`, HOS-190) stays
+    // untouched so a legacy decimal row already in the DB keeps parsing.
+    basePrice: z.coerce
+        .number()
+        .int({ message: 'zodError.common.price.price.integer' })
+        .min(0, { message: 'zodError.accommodation.price.price.min' }),
+    // H-167: ARS, matching `accommodation.model.ts`'s documented contract
+    // ("stores the nightly base price under `price.price` in ARS") and the
+    // public render's own fallback (`PricingSidebar.astro`'s `?? 'ARS'`).
+    // Defaulting to USD here was a latent bug — nothing else in the accommodation
+    // domain treats USD as the implicit currency.
+    currency: PriceCurrencyEnumSchema.default(PriceCurrencyEnum.ARS),
 
     // Boolean properties
     // isFeatured is intentionally omitted from this general update schema: it is
@@ -418,8 +433,17 @@ export const AccommodationCreateDraftHttpSchema = z.object({
         .optional(),
 
     // --- Optional pricing (→ price) ---
-    /** Base nightly price. Maps to `price.price`. */
-    basePrice: z.coerce.number().min(0).optional(),
+    /**
+     * Base nightly price. Maps to `price.price`.
+     *
+     * H-111: whole pesos only, no cents — see the identical `.int()` note on
+     * `AccommodationCreateHttpSchema.basePrice` for why.
+     */
+    basePrice: z.coerce
+        .number()
+        .int({ message: 'zodError.common.price.price.integer' })
+        .min(0)
+        .optional(),
     /** Currency code. Maps to `price.currency`. Defaults to USD when basePrice is supplied without it. */
     currency: PriceCurrencyEnumSchema.optional(),
 
@@ -480,7 +504,85 @@ export const AccommodationUpdateHttpSchema = z
          * shadow-writes that payload into `accommodation_media`, so photos on
          * create do reach the table and are NOT discarded.
          */
-        media: HttpMediaUpdateSchema.optional()
+        media: HttpMediaUpdateSchema.optional(),
+        /**
+         * Minimum nights required per stay (H-112, G7 smoke).
+         *
+         * Maps to `extraInfo.minNights`. UPDATE-only: neither the full-create nor
+         * the draft-create HTTP schema exposes it (both force a server-side
+         * `minNights: 1` default so a self-service draft is always publishable —
+         * see `httpToDomainAccommodationCreateDraft`). Before this field existed,
+         * the value was writable nowhere post-creation, so every production
+         * accommodation published "Mínimo de noches: 1" regardless of the host's
+         * actual policy.
+         */
+        minNights: z.coerce
+            .number()
+            .int()
+            .min(1, { message: 'zodError.accommodation.extraInfo.minNights.min' })
+            .max(365, { message: 'zodError.accommodation.extraInfo.minNights.max' })
+            .optional(),
+        /**
+         * Street name (H-117, G7 smoke). Maps to `location.street`.
+         *
+         * UPDATE-only, like `number`/`floor`/`apartment` below: the full-create
+         * HTTP schema only carries a single flat `address` string, and the exact
+         * postal address (as opposed to the approximate one shown to visitors —
+         * SPEC-097 strips `location` for every non-owner reader) was writable
+         * nowhere post-creation. Owner decision 2026-08-14: the host CAN store the
+         * exact address; only its public exposure stays gated by presentation-layer
+         * ofuscation, not by withholding the write path.
+         */
+        street: z
+            .string()
+            .min(2, { message: 'zodError.accommodation.location.street.min' })
+            .max(50, { message: 'zodError.accommodation.location.street.max' })
+            .optional(),
+        /** Street number (H-117, G7 smoke). Maps to `location.number`. */
+        number: z
+            .string()
+            .min(1, { message: 'zodError.accommodation.location.number.min' })
+            .max(10, { message: 'zodError.accommodation.location.number.max' })
+            .optional(),
+        /**
+         * Floor (H-117, G7 smoke). Maps to `location.floor`.
+         *
+         * Did not exist in ANY HTTP schema before this change, draft included.
+         */
+        floor: z
+            .string()
+            .min(1, { message: 'zodError.accommodation.location.floor.min' })
+            .max(10, { message: 'zodError.accommodation.location.floor.max' })
+            .optional(),
+        /**
+         * Apartment / unit (H-117, G7 smoke). Maps to `location.apartment`.
+         *
+         * Did not exist in ANY HTTP schema before this change, draft included.
+         */
+        apartment: z
+            .string()
+            .min(1, { message: 'zodError.accommodation.location.apartment.min' })
+            .max(10, { message: 'zodError.accommodation.location.apartment.max' })
+            .optional(),
+        /**
+         * SEO title override (H-121, G7 smoke). Maps to `seo.title`.
+         *
+         * The public detail page only reads `seo.title`/`seo.description` as an
+         * override on the `es` locale (`pickLocalizedSeo` in `apps/web/src/lib/seo.ts`) —
+         * `/en/` and `/pt/` never consult it and fall back to the localized name.
+         * No write surface existed anywhere (host or admin) before this field.
+         */
+        seoTitle: z
+            .string()
+            .min(30, { message: 'zodError.common.seo.title.min' })
+            .max(60, { message: 'zodError.common.seo.title.max' })
+            .optional(),
+        /** SEO description override (H-121, G7 smoke). Maps to `seo.description`. */
+        seoDescription: z
+            .string()
+            .min(70, { message: 'zodError.common.seo.description.min' })
+            .max(160, { message: 'zodError.common.seo.description.max' })
+            .optional()
     });
 
 export type AccommodationUpdateHttp = z.infer<typeof AccommodationUpdateHttpSchema>;
@@ -564,6 +666,7 @@ export const httpToDomainAccommodationSearch = (
     // exist in domain schema but not in HTTP schema, so they're not mapped
 });
 
+import { mediaAssetUrl } from '../../common/media.schema.js';
 import { LifecycleStatusEnum } from '../../enums/lifecycle-state.enum.js';
 import { ModerationStatusEnum } from '../../enums/moderation-status.enum.js';
 import { VisibilityEnum } from '../../enums/visibility.enum.js';
@@ -909,11 +1012,23 @@ export const httpToDomainAccommodationCreateDraft = (
         : {}),
 
     // --- Optional: pricing (→ price JSONB) ---
+    // H-167: whenever `basePrice` is being set, a `currency` MUST travel with
+    // it — defaulting to ARS when the client omitted it — so the row never
+    // lands as a bare `{"price": N}` with no unit (the exact shape 2 prod rows
+    // have today). A lone `currency` (no `basePrice`) is untouched: it only
+    // re-labels an existing stored price and needs no default of its own.
     ...(httpData.basePrice !== undefined || httpData.currency !== undefined
         ? {
               price: {
-                  ...(httpData.basePrice === undefined ? {} : { price: httpData.basePrice }),
-                  ...(httpData.currency === undefined ? {} : { currency: httpData.currency })
+                  ...(httpData.basePrice === undefined
+                      ? {}
+                      : {
+                            price: httpData.basePrice,
+                            currency: httpData.currency ?? PriceCurrencyEnum.ARS
+                        }),
+                  ...(httpData.basePrice === undefined && httpData.currency !== undefined
+                      ? { currency: httpData.currency }
+                      : {})
               }
           }
         : {}),
@@ -975,28 +1090,60 @@ export const httpToDomainAccommodationUpdate = (
 
     // ✅ COMPLETED: Nested object mappings for location, price, extraInfo
 
-    // Location mapping (only if coordinates are provided). Postal address only;
-    // geographic context comes from the destination relation.
-    ...(httpData.latitude !== undefined && httpData.longitude !== undefined
+    // Location mapping (SPEC-229 partial-group semantics, extended by H-117 /
+    // G7 smoke for street/number/floor/apartment). Postal address only;
+    // geographic context comes from the destination relation. Coordinates stay
+    // all-or-nothing (only emitted when BOTH lat and long are present) — the
+    // web editor's shared section-form hook enforces that pairing client-side —
+    // but the address fields are independent of coordinates and of each other.
+    ...(httpData.latitude !== undefined ||
+    httpData.longitude !== undefined ||
+    httpData.street !== undefined ||
+    httpData.number !== undefined ||
+    httpData.floor !== undefined ||
+    httpData.apartment !== undefined
         ? {
               location: {
-                  coordinates: {
-                      lat: httpData.latitude?.toString() || '',
-                      long: httpData.longitude?.toString() || ''
-                  }
+                  ...(httpData.latitude !== undefined && httpData.longitude !== undefined
+                      ? {
+                            coordinates: {
+                                lat: httpData.latitude?.toString() || '',
+                                long: httpData.longitude?.toString() || ''
+                            }
+                        }
+                      : {}),
+                  ...(httpData.street === undefined ? {} : { street: httpData.street }),
+                  ...(httpData.number === undefined ? {} : { number: httpData.number }),
+                  ...(httpData.floor === undefined ? {} : { floor: httpData.floor }),
+                  ...(httpData.apartment === undefined ? {} : { apartment: httpData.apartment })
               }
           }
         : {}),
 
     // Price mapping (SPEC-229): emit a partial group from whatever is present.
-    // A lone `currency` (or lone `basePrice`) is now preserved-merged onto the
-    // stored JSONB instead of being dropped. No defaults are injected so omitted
-    // siblings survive the shallow merge.
+    // A lone `currency` (or lone `basePrice`) is preserved-merged onto the
+    // stored JSONB instead of being dropped.
+    //
+    // H-167 exception to "no defaults are injected": whenever `basePrice` is
+    // being set, `currency` MUST travel with it — defaulting to ARS when the
+    // client omitted it. Without this, a PATCH carrying only `basePrice`
+    // shallow-merges a `price` key onto the stored JSONB with no `currency`
+    // sibling to inherit from (this is the exact write path that produced the
+    // 2 currency-less rows found in prod). A lone `currency` update is
+    // untouched: it only re-labels an existing stored price and needs no
+    // default of its own.
     ...(httpData.basePrice !== undefined || httpData.currency !== undefined
         ? {
               price: {
-                  ...(httpData.basePrice === undefined ? {} : { price: httpData.basePrice }),
-                  ...(httpData.currency === undefined ? {} : { currency: httpData.currency })
+                  ...(httpData.basePrice === undefined
+                      ? {}
+                      : {
+                            price: httpData.basePrice,
+                            currency: httpData.currency ?? PriceCurrencyEnum.ARS
+                        }),
+                  ...(httpData.basePrice === undefined && httpData.currency !== undefined
+                      ? { currency: httpData.currency }
+                      : {})
               }
           }
         : {}),
@@ -1043,14 +1190,20 @@ export const httpToDomainAccommodationUpdate = (
     // injected `minNights: 1` / `smokingAllowed: false` defaults — both of which
     // overwrote stored values on every edit. Now a lone field (e.g. `bedrooms`)
     // is merged and unsent siblings (capacity/minNights/bathrooms/...) are kept.
+    //
+    // `minNights` (H-112 / G7 smoke) joins the group the same way: before this,
+    // no HTTP field mapped to it at all, so the create-time `minNights: 1` default
+    // was permanent for every accommodation's whole lifetime.
     ...(httpData.maxGuests !== undefined ||
     httpData.bedrooms !== undefined ||
-    httpData.bathrooms !== undefined
+    httpData.bathrooms !== undefined ||
+    httpData.minNights !== undefined
         ? {
               extraInfo: {
                   ...(httpData.maxGuests === undefined ? {} : { capacity: httpData.maxGuests }),
                   ...(httpData.bedrooms === undefined ? {} : { bedrooms: httpData.bedrooms }),
-                  ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms })
+                  ...(httpData.bathrooms === undefined ? {} : { bathrooms: httpData.bathrooms }),
+                  ...(httpData.minNights === undefined ? {} : { minNights: httpData.minNights })
               }
           }
         : {}),
@@ -1061,7 +1214,22 @@ export const httpToDomainAccommodationUpdate = (
 
     // Media (HOS-372): the domain update surface has no `media` field — the HTTP
     // `media` object carries videos only, and they land on the top-level column.
-    ...httpMediaToDomainVideos(httpData.media)
+    ...httpMediaToDomainVideos(httpData.media),
+
+    // SEO override (H-121 / G7 smoke): emit a partial group from whatever is
+    // present. `seo` is a shallow-merged JSONB column (accommodation.model.ts
+    // `mergeableJsonbColumns`), so sending only `seoTitle` preserves a
+    // previously-stored `description` instead of wiping it.
+    ...(httpData.seoTitle !== undefined || httpData.seoDescription !== undefined
+        ? {
+              seo: {
+                  ...(httpData.seoTitle === undefined ? {} : { title: httpData.seoTitle }),
+                  ...(httpData.seoDescription === undefined
+                      ? {}
+                      : { description: httpData.seoDescription })
+              }
+          }
+        : {})
 });
 
 // ============================================================================

@@ -3,10 +3,14 @@
  * (SPEC-249 T-024, AC-5 — verify-only).
  *
  * Asserts that provisioning a commerce owner delivers the credentials email:
- * the port calls `sendNotification` with the COMMERCE_OWNER_CREDENTIALS type,
- * the owner's email as recipient, the temporary password, and a
- * change-password URL. The template + send path already exist (SPEC-239) —
- * this only asserts the contract.
+ * the port calls `trySendNotification` with the COMMERCE_OWNER_CREDENTIALS
+ * type, the owner's email as recipient, the temporary password, and a
+ * change-password URL.
+ *
+ * It uses `trySendNotification`, not `sendNotification`, because the admin
+ * repeats this outcome to the applicant as "las credenciales fueron enviadas".
+ * A helper that reports nothing back makes that sentence unverifiable, and the
+ * operator ends up chasing a mail nobody sent (H-87 / H-150).
  *
  * @module test/lib/commerce-ports.test
  */
@@ -16,13 +20,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mock the notification transport so no real email is sent.
 vi.mock('../../src/utils/notification-helper', () => ({
-    sendNotification: vi.fn().mockResolvedValue(undefined)
+    trySendNotification: vi.fn().mockResolvedValue({ delivered: true })
 }));
 
 import { createCommerceOwnerCredentialsNotificationPort } from '../../src/lib/commerce-ports';
-import { sendNotification } from '../../src/utils/notification-helper';
+import { trySendNotification } from '../../src/utils/notification-helper';
 
-const mockedSend = vi.mocked(sendNotification);
+const mockedSend = vi.mocked(trySendNotification);
 
 describe('createCommerceOwnerCredentialsNotificationPort (SPEC-249 T-024, AC-5)', () => {
     beforeEach(() => {
@@ -48,5 +52,34 @@ describe('createCommerceOwnerCredentialsNotificationPort (SPEC-249 T-024, AC-5)'
         expect(payload.changePasswordUrl).toBe(
             'https://hospeda.com.ar/mi-cuenta/cambiar-contrasena'
         );
+    });
+
+    it('reports the delivery back to the caller', async () => {
+        const port = createCommerceOwnerCredentialsNotificationPort('https://hospeda.com.ar');
+
+        const result = await port.notifyOwnerCredentials({
+            email: 'owner@example.com',
+            name: 'Lead Owner',
+            temporaryPassword: 'temp-pass-abcdef123456',
+            leadId: '00000000-0000-4000-a000-0000000000aa'
+        });
+
+        expect(result).toEqual({ delivered: true });
+    });
+
+    it('passes a non-delivery through instead of reporting success', async () => {
+        // The provisioning service turns this into `credentialsSent: false`,
+        // which is what stops the admin announcing an email that never left.
+        mockedSend.mockResolvedValueOnce({ delivered: false });
+        const port = createCommerceOwnerCredentialsNotificationPort('https://hospeda.com.ar');
+
+        const result = await port.notifyOwnerCredentials({
+            email: 'owner@example.com',
+            name: 'Lead Owner',
+            temporaryPassword: 'temp-pass-abcdef123456',
+            leadId: '00000000-0000-4000-a000-0000000000aa'
+        });
+
+        expect(result).toEqual({ delivered: false });
     });
 });

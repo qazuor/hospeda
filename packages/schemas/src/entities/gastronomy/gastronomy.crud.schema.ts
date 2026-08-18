@@ -48,10 +48,26 @@ export const GastronomyAdminCreateInputSchema = GastronomySchema.omit({
         .min(2, { message: 'zodError.commerce.slug.min' })
         .max(100, { message: 'zodError.commerce.slug.max' })
         .optional(),
-    /** Optional owner UUID; admin may assign another user as owner on creation. */
-    ownerId: UserIdSchema.optional(),
-    /** Optional destination UUID for the listing. */
-    destinationId: DestinationIdSchema.optional(),
+    /**
+     * Owning user UUID. REQUIRED (H-88): `gastronomies.owner_id` is NOT NULL
+     * with no default, so a create without it cannot produce a row — the insert
+     * fails with a 23502 and the caller gets an opaque 500 "A database error
+     * occurred" that names nothing. Declaring it required rejects the payload at
+     * the boundary with a 400 that names the field instead.
+     *
+     * Deliberately NOT defaulted to the acting admin: the documented flow is
+     * "admins create the listing and provision the owner", so the owner is a
+     * real merchant account rather than whoever filled in the form. The owner
+     * self-create route (`routes/commerce/protected/create.ts`) already supplies
+     * `ownerId: actor.id` explicitly and is unaffected.
+     */
+    ownerId: UserIdSchema,
+    /**
+     * Destination UUID for the listing. REQUIRED for the same reason as
+     * {@link ownerId} — `gastronomies.destination_id` is NOT NULL with no
+     * default (H-88).
+     */
+    destinationId: DestinationIdSchema,
     /**
      * Optional list of amenity UUIDs to associate on create (write-only).
      * Syncs the junction table transactionally alongside the gastronomy row.

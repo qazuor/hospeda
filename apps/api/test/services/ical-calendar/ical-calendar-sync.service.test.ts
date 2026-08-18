@@ -37,6 +37,15 @@
 
 import { OccupancySourceEnum } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+// Imported statically even though the mocks below must be in place first:
+// `vi.hoisted()` and `vi.mock()` are lifted above every import by vitest's
+// transform, so the mocked modules are registered before this one evaluates.
+//
+// It used to be a dynamic `await import()` inside `beforeEach`, which made the
+// first test of the file pay the whole module graph inside a hook budget of
+// 10s (hookTimeout is NOT covered by this project's testTimeout: 30000) — see
+// the beforeEach below.
+import { syncAccommodationIcalCalendar } from '../../../src/services/ical-calendar/ical-calendar-sync.service.js';
 import type {
     IcalCredential,
     IcalProvider
@@ -126,9 +135,18 @@ const buildCredential = (overrides?: Partial<IcalCredential>): IcalCredential =>
 });
 
 describe('ical-calendar-sync.service', () => {
-    let syncAccommodationIcalCalendar: typeof import('../../../src/services/ical-calendar/ical-calendar-sync.service.js').syncAccommodationIcalCalendar;
-
-    beforeEach(async () => {
+    // No `await import()` here on purpose. The module was re-imported before
+    // every one of the 16 tests, and with no `vi.resetModules()` in this file
+    // calls 2..16 only hit the ES module cache — the re-import bought nothing
+    // and the FIRST call paid the entire graph (~9.4s of import time locally).
+    //
+    // vitest's hookTimeout defaults to 10000ms and this project only raises
+    // testTimeout (to 30000), so that cost sat 500ms under a budget it did not
+    // share with the tests. On a loaded CI runner it crossed the line and the
+    // first test of the file failed with "Hook timed out in 10000ms" — an
+    // assertion-free failure that looks like a bug in the code under test.
+    // Real occurrence: PR #2817, shard 2/5, file duration 10514ms.
+    beforeEach(() => {
         vi.clearAllMocks();
         mockUpdateSyncState.mockResolvedValue(null);
         // Default: connection was previously OK — a fresh failure is a
@@ -139,10 +157,6 @@ describe('ical-calendar-sync.service', () => {
         mockSendNotification.mockResolvedValue(undefined);
         mockUserFindById.mockResolvedValue(HOST_USER);
         mockAccommodationFindById.mockResolvedValue(ACCOMMODATION_ROW);
-
-        ({ syncAccommodationIcalCalendar } = await import(
-            '../../../src/services/ical-calendar/ical-calendar-sync.service.js'
-        ));
     });
 
     describe('skips', () => {

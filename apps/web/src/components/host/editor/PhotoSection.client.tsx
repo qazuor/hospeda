@@ -7,6 +7,27 @@
  * add/remove/set-featured call hits the API immediately — no buffering in the
  * parent PATCH payload.
  *
+ * HOS-122 added four owner-declared gaps on top of that persistence layer,
+ * all UI-only (the backend already existed):
+ *   1. Multi-select gallery upload — the gallery `<input>` now takes
+ *      `multiple` and uploads are processed SEQUENTIALLY (one XHR at a time,
+ *      not in parallel) so upload progress stays meaningful and the cap is
+ *      checked once, up front, against the whole batch — see
+ *      `use-photo-section.ts`'s `processGalleryFiles`.
+ *   2. Manual reordering via `accommodationMediaApi.reorderMedia` — BUTTON
+ *      driven (move up / move down per photo, in `PhotoGalleryItem`), not
+ *      drag-and-drop: the editor's audience is largely non-technical hosts,
+ *      and plain `<button>`s are keyboard/screen-reader operable for free.
+ *   3. Promoting an existing gallery photo to portada via
+ *      `setFeaturedMedia` alone — no re-upload, no second Cloudinary asset.
+ *   4. Drag-and-drop FILE upload (dropping an image onto the featured slot
+ *      or the gallery grid) — the copy already promised this before HOS-122
+ *      built it.
+ *
+ * All state and handlers live in `usePhotoSection` (`use-photo-section.ts`) —
+ * this file is render-only, kept that way to stay under the repo's 500-line
+ * ceiling once the above landed on top of the original SPEC-204 shape.
+ *
  * UX shape is preserved:
  *   - "Portada" slot (top): the `isFeatured` row from accommodation_media.
  *   - "Galería" grid (below): all visible, non-featured rows.
@@ -14,76 +35,25 @@
  * On mount the component hydrates from `listMedia`. The `initial*` props are
  * used only for first-paint (SSR) display until the API response arrives —
  * they lack DB ids and are display-only.
- *
- * Featured-replace invariant: setting a new portada uploads → addMedia →
- * setFeaturedMedia. The backend unmarked the old row; we update local state
- * to reflect that. The old featured row moves to the gallery; it is NOT deleted.
- *
- * publicId collision avoidance: featured uploads use `role: 'gallery'` (not
- * 'featured') since the old fixed publicId path (`/featured`) would collide in
- * Cloudinary once multiple rows exist in the relational table.
  */
 
-import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
+import { DEFAULT_ENTITY_MAX_FILE_SIZE_MB } from '@repo/media';
 import { ENTITY_GALLERY_CAPS } from '@repo/schemas';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { type AccommodationMediaRow, accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { webLogger } from '@/lib/logger';
-import { uploadEntityImage } from '@/lib/media/upload-entity';
-import { addToast } from '@/store/toast-store';
+import { PhotoGalleryItem } from './PhotoGalleryItem.client';
+import { PhotoMetadataEditor } from './PhotoMetadataEditor.client';
 import styles from './PhotoSection.module.css';
+import { usePhotoSection } from './use-photo-section';
 
+// Re-export upload helper so existing callers of PhotoSection.client can still import it
+export { uploadEntityImage } from '@/lib/media/upload-entity';
 // Re-export types for consumers that import from this module
 export type { AccommodationMediaItem, MediaImage };
 
 /** Gallery cap for accommodation entities (mirrors server-side enforcement). */
 const ACCOMMODATION_GALLERY_CAP = ENTITY_GALLERY_CAPS.accommodation;
-
-// ---------------------------------------------------------------------------
-// Internal helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Map an `AccommodationMediaRow` (from the API) to the richer `AccommodationMediaItem`
- * shape used by the photo editor's local state.
- */
-function rowToItem(row: AccommodationMediaRow): AccommodationMediaItem {
-    return {
-        id: row.id,
-        url: row.url,
-        publicId: row.publicId ?? '',
-        caption: row.caption,
-        alt: row.alt,
-        isFeatured: row.isFeatured
-    };
-}
-
-/**
- * Map a legacy `MediaImage` (no DB id, SSR-only) to a partial display object.
- * Used only for the first-paint placeholder; once listMedia resolves, these
- * are replaced by real `AccommodationMediaItem` values that carry DB ids.
- *
- * We model it as `AccommodationMediaItem` with an empty id to keep the local
- * state type uniform — the empty id prevents any API call until the real rows load.
- */
-function legacyToDisplay(img: MediaImage, isFeatured: boolean): AccommodationMediaItem {
-    return {
-        id: '',
-        url: img.url,
-        publicId: img.publicId,
-        isFeatured
-    };
-}
-
-// Re-export upload helper so existing callers of PhotoSection.client can still import it
-export { uploadEntityImage } from '@/lib/media/upload-entity';
-
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
 
 /**
  * @deprecated Legacy shape kept for backwards compat; no longer emitted by the
@@ -111,16 +81,12 @@ export interface PhotoSectionProps {
     readonly initialGallery?: readonly MediaImage[];
 }
 
-// ---------------------------------------------------------------------------
-// Component
-// ---------------------------------------------------------------------------
-
 /**
  * Self-contained photo section for the accommodation editor.
  *
  * Hydrates on mount from `listMedia`. Each user operation (add gallery photo,
- * set portada, remove) is persisted immediately via a granular API call.
- * The parent PATCH no longer carries media data.
+ * set portada, remove, reorder, promote) is persisted immediately via a
+ * granular API call. The parent PATCH no longer carries media data.
  *
  * Errors are shown inline AND surfaced via the global toast store (BETA-144):
  * the inline message can be scrolled out of view (e.g. user is looking at the
@@ -134,337 +100,43 @@ export function PhotoSection({
     initialFeaturedImage = null,
     initialGallery = []
 }: PhotoSectionProps) {
-    const { t } = createTranslations(locale);
-    const featuredInputRef = useRef<HTMLInputElement>(null);
-    const galleryInputRef = useRef<HTMLInputElement>(null);
+    const { t, tPlural } = createTranslations(locale);
 
-    // --- Local state ---
-
-    // null = not yet hydrated from API; AccommodationMediaItem | null = loaded
-    const [featuredItem, setFeaturedItem] = useState<AccommodationMediaItem | null>(() =>
-        initialFeaturedImage ? legacyToDisplay(initialFeaturedImage, true) : null
-    );
-    const [galleryItems, setGalleryItems] = useState<readonly AccommodationMediaItem[]>(() =>
-        initialGallery.map((img) => legacyToDisplay(img, false))
-    );
-
-    const [isHydrated, setIsHydrated] = useState(false);
-    const [isUploading, setIsUploading] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-    const [opLoading, setOpLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    // --- Derived ---
-
-    const isGalleryFull = galleryItems.length >= ACCOMMODATION_GALLERY_CAP;
-
-    // --- Hydrate from API on mount ---
-
-    useEffect(() => {
-        let cancelled = false;
-
-        accommodationMediaApi
-            .listMedia({ id: accommodationId })
-            .then((result) => {
-                if (cancelled) return;
-                if (!result.ok) {
-                    webLogger.warn('[PhotoSection] listMedia failed:', result.error);
-                    // Keep SSR placeholders; flag as hydrated so ops become available
-                    setIsHydrated(true);
-                    return;
-                }
-                const rows = result.data.media;
-                const featured = rows.find((r) => r.isFeatured) ?? null;
-                const gallery = rows.filter((r) => !r.isFeatured);
-                setFeaturedItem(featured ? rowToItem(featured) : null);
-                setGalleryItems(gallery.map(rowToItem));
-                setIsHydrated(true);
-            })
-            .catch((err: unknown) => {
-                if (cancelled) return;
-                webLogger.warn('[PhotoSection] listMedia error:', err);
-                setIsHydrated(true);
-            });
-
-        return () => {
-            cancelled = true;
-        };
-    }, [accommodationId]);
-
-    // --- File validation ---
-
-    const validateFile = useCallback(
-        (file: File): string | null => {
-            const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-            if (!allowedTypes.includes(file.type)) {
-                return t(
-                    'host.properties.editor.photo.invalidType',
-                    'Solo se permiten archivos JPG, PNG o WebP'
-                );
-            }
-            if (file.size > mbToBytes(DEFAULT_ENTITY_MAX_FILE_SIZE_MB)) {
-                return t(
-                    'host.properties.editor.photo.tooLarge',
-                    'El archivo no puede superar {{maxSize}}MB',
-                    { maxSize: DEFAULT_ENTITY_MAX_FILE_SIZE_MB }
-                );
-            }
-            return null;
-        },
-        [t]
-    );
-
-    /**
-     * Report an upload failure both inline (existing behavior) and via the
-     * global toast store (BETA-144). The user may be scrolled down to the
-     * gallery when a featured-image upload fails and never see the inline
-     * message at the top of the editor — the toast is visible regardless of
-     * scroll position.
-     */
-    const reportUploadError = useCallback((message: string) => {
-        setError(message);
-        addToast({ type: 'error', message });
-    }, []);
-
-    // --- Featured image handlers ---
-
-    /**
-     * Upload a new photo and mark it as the portada.
-     *
-     * Flow: XHR upload → addMedia (create row) → setFeaturedMedia (mark featured).
-     * The backend's single-featured invariant unmarks the previous featured row.
-     * We move the old featured item to the gallery locally.
-     */
-    const handleFeaturedSelect = useCallback(
-        async (e: React.ChangeEvent<HTMLInputElement>) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-
-            const validationError = validateFile(file);
-            if (validationError) {
-                reportUploadError(validationError);
-                return;
-            }
-
-            setError(null);
-            setIsUploading(true);
-            setUploadProgress(0);
-
-            try {
-                // Step 1: upload to Cloudinary
-                const uploaded = await uploadEntityImage({
-                    file,
-                    accommodationId,
-                    onProgress: setUploadProgress
-                });
-
-                // Step 2: create the DB row
-                const addResult = await accommodationMediaApi.addMedia({
-                    id: accommodationId,
-                    body: {
-                        url: uploaded.url,
-                        publicId: uploaded.publicId,
-                        moderationState: 'APPROVED'
-                    }
-                });
-
-                if (!addResult.ok) {
-                    reportUploadError(
-                        addResult.error.message ??
-                            t(
-                                'host.properties.editor.photo.persistFailed',
-                                'No se pudo guardar la imagen en la base de datos'
-                            )
-                    );
-                    return;
-                }
-
-                const newRow = addResult.data.media;
-
-                // Step 3: mark as featured
-                const featuredResult = await accommodationMediaApi.setFeaturedMedia({
-                    id: accommodationId,
-                    mediaId: newRow.id
-                });
-
-                if (!featuredResult.ok) {
-                    reportUploadError(
-                        featuredResult.error.message ??
-                            t(
-                                'host.properties.editor.photo.featuredFailed',
-                                'No se pudo marcar la imagen como portada'
-                            )
-                    );
-                    return;
-                }
-
-                // Step 4: update local state
-                // The old featured becomes a gallery item; new row is the featured.
-                setGalleryItems((prev) => {
-                    const base = featuredItem
-                        ? [...prev, { ...featuredItem, isFeatured: false }]
-                        : [...prev];
-                    return base;
-                });
-                setFeaturedItem(rowToItem(featuredResult.data.media));
-            } catch (err) {
-                reportUploadError(
-                    err instanceof Error
-                        ? err.message
-                        : t('host.properties.editor.photo.uploadFailed', 'Error al subir la imagen')
-                );
-            } finally {
-                setIsUploading(false);
-                setUploadProgress(null);
-                if (featuredInputRef.current) {
-                    featuredInputRef.current.value = '';
-                }
-            }
-        },
-        [accommodationId, validateFile, featuredItem, t, reportUploadError]
-    );
-
-    /**
-     * Delete the current featured (portada) row.
-     * There is no "unfeature" endpoint — removing is the clear action.
-     */
-    const handleFeaturedRemove = useCallback(async () => {
-        if (!featuredItem?.id) return;
-        setError(null);
-        setOpLoading(true);
-
-        const result = await accommodationMediaApi.removeMedia({
-            id: accommodationId,
-            mediaId: featuredItem.id
-        });
-
-        if (result.ok) {
-            setFeaturedItem(null);
-        } else {
-            setError(
-                result.error.message ??
-                    t('host.properties.editor.photo.removeFailed', 'No se pudo eliminar la imagen')
-            );
-        }
-        setOpLoading(false);
-    }, [featuredItem, accommodationId, t]);
-
-    // --- Gallery handlers ---
-
-    /**
-     * Upload a new gallery photo and persist it immediately.
-     *
-     * Flow: XHR upload → addMedia (creates visible, non-featured row) → append to state.
-     */
-    const handleGallerySelect = useCallback(
-        async (e: React.ChangeEvent<HTMLInputElement>) => {
-            const file = e.target.files?.[0];
-            if (!file) return;
-
-            if (isGalleryFull) {
-                reportUploadError(
-                    t(
-                        'host.properties.editor.photo.galleryCapReached',
-                        `Límite de galería alcanzado (máx. ${ACCOMMODATION_GALLERY_CAP} fotos)`
-                    ).replace('{{cap}}', String(ACCOMMODATION_GALLERY_CAP))
-                );
-                if (galleryInputRef.current) {
-                    galleryInputRef.current.value = '';
-                }
-                return;
-            }
-
-            const validationError = validateFile(file);
-            if (validationError) {
-                reportUploadError(validationError);
-                return;
-            }
-
-            setError(null);
-            setIsUploading(true);
-            setUploadProgress(0);
-
-            try {
-                const uploaded = await uploadEntityImage({
-                    file,
-                    accommodationId,
-                    onProgress: setUploadProgress
-                });
-
-                const addResult = await accommodationMediaApi.addMedia({
-                    id: accommodationId,
-                    body: {
-                        url: uploaded.url,
-                        publicId: uploaded.publicId,
-                        moderationState: 'APPROVED'
-                    }
-                });
-
-                if (!addResult.ok) {
-                    reportUploadError(
-                        addResult.error.message ??
-                            t(
-                                'host.properties.editor.photo.persistFailed',
-                                'No se pudo guardar la imagen en la base de datos'
-                            )
-                    );
-                    return;
-                }
-
-                setGalleryItems((prev) => [...prev, rowToItem(addResult.data.media)]);
-            } catch (err) {
-                reportUploadError(
-                    err instanceof Error
-                        ? err.message
-                        : t('host.properties.editor.photo.uploadFailed', 'Error al subir la imagen')
-                );
-            } finally {
-                setIsUploading(false);
-                setUploadProgress(null);
-                if (galleryInputRef.current) {
-                    galleryInputRef.current.value = '';
-                }
-            }
-        },
-        [accommodationId, isGalleryFull, validateFile, t, reportUploadError]
-    );
-
-    /**
-     * Delete a gallery photo by its DB UUID.
-     * On failure: keeps the item in state (consistent with server).
-     */
-    const handleGalleryRemove = useCallback(
-        async (item: AccommodationMediaItem) => {
-            if (!item.id) return;
-            setError(null);
-            setOpLoading(true);
-
-            const result = await accommodationMediaApi.removeMedia({
-                id: accommodationId,
-                mediaId: item.id
-            });
-
-            if (result.ok) {
-                setGalleryItems((prev) => prev.filter((g) => g.id !== item.id));
-            } else {
-                setError(
-                    result.error.message ??
-                        t(
-                            'host.properties.editor.photo.removeFailed',
-                            'No se pudo eliminar la imagen'
-                        )
-                );
-            }
-            setOpLoading(false);
-        },
-        [accommodationId, t]
-    );
-
-    // --- Computed disabled states ---
-
-    const anyOpInFlight = isUploading || opLoading;
-    // Ops require hydrated DB ids; SSR placeholders (id='') cannot be operated on
-    const opsReady = isHydrated;
+    const {
+        featuredItem,
+        galleryItems,
+        isUploading,
+        uploadProgress,
+        uploadBatch,
+        error,
+        isDragOverFeatured,
+        isDragOverGallery,
+        isGalleryFull,
+        opsReady,
+        anyOpInFlight,
+        featuredInputRef,
+        galleryInputRef,
+        handleFeaturedSelect,
+        handleFeaturedDrop,
+        handleFeaturedDragOver,
+        handleFeaturedDragLeave,
+        handleFeaturedRemove,
+        handleGallerySelect,
+        handleGalleryDrop,
+        handleGalleryDragOver,
+        handleGalleryDragLeave,
+        handleGalleryRemove,
+        handlePromoteToFeatured,
+        handleMoveUp,
+        handleMoveDown,
+        handleUpdateMediaText
+    } = usePhotoSection({
+        locale,
+        accommodationId,
+        galleryCap: ACCOMMODATION_GALLERY_CAP,
+        initialFeaturedImage,
+        initialGallery
+    });
 
     return (
         <div className={styles.section}>
@@ -508,12 +180,29 @@ export function PhotoSection({
                                 ✕
                             </button>
                         </div>
+                        <PhotoMetadataEditor
+                            locale={locale}
+                            item={featuredItem}
+                            disabled={anyOpInFlight || !opsReady}
+                            toggleAriaLabel={t(
+                                'host.properties.editor.photo.editFeaturedDetailsAria',
+                                'Editar textos de la portada'
+                            )}
+                            closeAriaLabel={t(
+                                'host.properties.editor.photo.closeFeaturedDetailsAria',
+                                'Cerrar edición de textos de la portada'
+                            )}
+                            onSave={handleUpdateMediaText}
+                        />
                     </div>
                 ) : (
                     <button
                         type="button"
-                        className={`${styles.uploadArea} ${anyOpInFlight ? styles.uploadAreaDisabled : ''}`}
+                        className={`${styles.uploadArea} ${anyOpInFlight ? styles.uploadAreaDisabled : ''} ${isDragOverFeatured ? styles.uploadAreaDragOver : ''}`}
                         onClick={() => !anyOpInFlight && featuredInputRef.current?.click()}
+                        onDrop={handleFeaturedDrop}
+                        onDragOver={handleFeaturedDragOver}
+                        onDragLeave={handleFeaturedDragLeave}
                         disabled={anyOpInFlight}
                     >
                         <span className={styles.uploadIcon}>📷</span>
@@ -552,6 +241,15 @@ export function PhotoSection({
                     />
                 </div>
             )}
+            {isUploading && uploadBatch && uploadBatch.total > 1 && (
+                <p className={styles.uploadBatchStatus}>
+                    {t(
+                        'host.properties.editor.photo.uploadingBatch',
+                        'Subiendo foto {{current}} de {{total}}…',
+                        { current: uploadBatch.current, total: uploadBatch.total }
+                    )}
+                </p>
+            )}
 
             {/* Inline Error */}
             {error && <div className={styles.error}>{error}</div>}
@@ -567,52 +265,45 @@ export function PhotoSection({
 
                 {isGalleryFull && (
                     <p className={styles.error}>
-                        {t(
+                        {tPlural(
                             'host.properties.editor.photo.galleryCapReached',
-                            `Límite de galería alcanzado (máx. ${ACCOMMODATION_GALLERY_CAP} fotos)`
-                        ).replace('{{cap}}', String(ACCOMMODATION_GALLERY_CAP))}
+                            ACCOMMODATION_GALLERY_CAP,
+                            { cap: ACCOMMODATION_GALLERY_CAP }
+                        )}
                     </p>
                 )}
 
                 <div className={styles.gallery}>
                     {galleryItems.map((item, index) => (
-                        <div
+                        <PhotoGalleryItem
                             key={item.id || item.url}
-                            className={styles.galleryItem}
-                        >
-                            <img
-                                src={item.url}
-                                alt={
-                                    item.alt ??
-                                    t('host.properties.editor.photo.galleryAlt', undefined, {
-                                        index: index + 1
-                                    })
-                                }
-                                className={styles.galleryItemImage}
-                            />
-                            <div className={styles.galleryItemActions}>
-                                <button
-                                    type="button"
-                                    className={styles.previewButton}
-                                    onClick={() => handleGalleryRemove(item)}
-                                    disabled={anyOpInFlight || !opsReady || !item.id}
-                                    aria-label={t(
-                                        'host.properties.editor.photo.remove',
-                                        'Eliminar'
-                                    )}
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
+                            locale={locale}
+                            item={item}
+                            position={index + 1}
+                            isFirst={index === 0}
+                            isLast={index === galleryItems.length - 1}
+                            disabled={anyOpInFlight || !opsReady}
+                            onRemove={handleGalleryRemove}
+                            onPromote={handlePromoteToFeatured}
+                            onMoveUp={handleMoveUp}
+                            onMoveDown={handleMoveDown}
+                            onUpdateMetadata={handleUpdateMediaText}
+                        />
                     ))}
 
                     {!isGalleryFull && (
                         <button
                             type="button"
-                            className={styles.galleryAddButton}
+                            className={`${styles.galleryAddButton} ${isDragOverGallery ? styles.galleryDragOver : ''}`}
                             onClick={() => !anyOpInFlight && galleryInputRef.current?.click()}
+                            onDrop={handleGalleryDrop}
+                            onDragOver={handleGalleryDragOver}
+                            onDragLeave={handleGalleryDragLeave}
                             disabled={anyOpInFlight}
+                            aria-label={t(
+                                'host.properties.editor.photo.addToGallery',
+                                'Agregar fotos a la galería'
+                            )}
                         >
                             +
                         </button>
@@ -624,6 +315,7 @@ export function PhotoSection({
                     id="gallery-image-input"
                     type="file"
                     accept="image/jpeg,image/png,image/webp"
+                    multiple
                     className={styles.fileInput}
                     onChange={handleGallerySelect}
                 />

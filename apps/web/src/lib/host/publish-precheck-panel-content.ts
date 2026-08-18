@@ -61,6 +61,15 @@ export interface PrecheckPanelContent {
     readonly bodyFallback: string;
     /** Whether the body should be interpolated with `{{currentCount}}`/`{{maxAllowed}}`. */
     readonly showQuota: boolean;
+    /**
+     * Which quota number the body's `_one`/`_other` plural form is keyed on.
+     * `undefined` when `showQuota` is `false` (no plural resolution needed).
+     * `'currentCount'` when the noun immediately follows the current count
+     * (e.g. "Estás usando {{currentCount}} propiedades..."); `'maxAllowed'`
+     * when it follows the plan's cap in an "X of Y noun" construction (e.g.
+     * "...de {{maxAllowed}} propiedades.").
+     */
+    readonly bodyPluralBasis?: 'currentCount' | 'maxAllowed';
     readonly actions: readonly PrecheckPanelAction[];
 }
 
@@ -123,6 +132,7 @@ export function resolvePrecheckPanelContent(
                 bodyFallback:
                     'Estás usando {{currentCount}} de {{maxAllowed}} propiedades. Para publicar otra, actualizá tu plan.',
                 showQuota: true,
+                bodyPluralBasis: 'maxAllowed',
                 actions: [
                     {
                         kind: 'link',
@@ -175,6 +185,7 @@ export function resolvePrecheckPanelContent(
                 bodyFallback:
                     'Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Podés retomar tu borrador, borrarlo para liberar lugar, o subir de plan.',
                 showQuota: true,
+                bodyPluralBasis: 'currentCount',
                 actions: [
                     {
                         kind: 'link',
@@ -236,6 +247,7 @@ export function resolvePrecheckPanelContent(
                 bodyFallback:
                     'Estás usando {{currentCount}} propiedades y tu plan permite {{maxAllowed}}. Editá uno de tus borradores existentes o subí de plan para crear uno nuevo.',
                 showQuota: true,
+                bodyPluralBasis: 'currentCount',
                 actions: [
                     {
                         kind: 'link',

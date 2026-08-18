@@ -39,6 +39,8 @@ import { DestinationTypeEnum } from '@repo/schemas';
 
 import type { Actor } from '../../../types/index.js';
 import type { DestinationService } from '../../destination/destination.service.js';
+import { normalizeLocalityKey, resolveLocalityAlias } from './locality-aliases.js';
+import { splitLocalityQualifiers } from './locality-qualifiers.js';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -55,6 +57,17 @@ export interface BuildDestinationHintInput {
      * Optional — used to narrow the search when the search service supports it.
      */
     readonly country?: string;
+    /**
+     * Province/state scraped from the listing page (e.g. "Entre Ríos").
+     *
+     * The whole catalog is Entre Ríos, so the country alone separates nothing
+     * (HOS-346 domain fact #5) while the province separates a great deal: six
+     * of the 22 catalog cities have a homonym in another province — Caseros,
+     * Villa Elisa, San Justo, Santa Ana, Colón and San José — and an exact name
+     * match against any of them is otherwise indistinguishable from the real
+     * one.
+     */
+    readonly region?: string;
     /** Instantiated DestinationService used to perform the candidate lookup. */
     readonly destinationService: DestinationService;
     /** Actor performing the import operation (passed through to the service layer). */
@@ -154,7 +167,7 @@ const MAX_CANDIDATES = 5;
 export async function buildDestinationHint(
     input: BuildDestinationHintInput
 ): Promise<DestinationHint> {
-    const { locality, country, destinationService, actor } = input;
+    const { locality, country, region, destinationService, actor } = input;
 
     // Guard: nothing to search when locality is absent or blank.
     if (!locality || locality.trim().length === 0) {
@@ -210,8 +223,84 @@ export async function buildDestinationHint(
                 // sharing a normalized name would otherwise ship
                 // `confident: true` alongside an ambiguous pair, and the field
                 // is documented as "safe to pre-fill".
-                confident: exactMatches.length === 1 && countryAllowsConfidence(country)
+                confident:
+                    exactMatches.length === 1 &&
+                    countryAllowsConfidence(country) &&
+                    regionAllowsConfidence(region)
             };
+        }
+
+        // Curated alias fallback (HOS-346). Reached only when the substring
+        // search produced no exact name match, which is the case for every
+        // abbreviation: `"C. del Uruguay"` does not occur inside `"Concepción
+        // del Uruguay"`, so the ILIKE returns nothing at all.
+        //
+        // This is a lookup by slug, not another matching layer — see
+        // `locality-aliases.ts` for why the distinction is the whole point.
+        const aliasSlug = resolveLocalityAlias(trimmedLocality);
+        if (aliasSlug !== undefined) {
+            const aliased = await resolveAliasedCity({
+                slug: aliasSlug,
+                destinationService,
+                actor
+            });
+            if (aliased) {
+                return {
+                    scrapedLocality: trimmedLocality,
+                    candidates: [aliased],
+                    // The alias says WHICH city; it never says the listing is
+                    // in our region. Both gates still apply, so an alias can
+                    // never be a way around them.
+                    confident: countryAllowsConfidence(country) && regionAllowsConfidence(region)
+                };
+            }
+        }
+
+        // Trailing-qualifier retry (HOS-346). `"Colón, Entre Ríos"` finds
+        // nothing because no catalog name contains that whole string, yet the
+        // province written there is the single most useful signal in the
+        // payload. Strip only CLOSED-LIST trailing segments (province, country,
+        // postal code), feed the province to the gate, and require the
+        // remainder to match a catalog name EXACTLY — so this adds no fuzzy
+        // path. `"San José, Colón, Entre Ríos"` leaves `"San José, Colón"`,
+        // which is not a catalog name, and therefore resolves nothing rather
+        // than resolving the department.
+        const qualifiers = splitLocalityQualifiers(trimmedLocality);
+        if (qualifiers.stripped && qualifiers.locality.length > 0) {
+            // A province the adapter reported as a structured field beats one
+            // we parsed out of free text.
+            const effectiveRegion = region ?? qualifiers.region;
+            const retry = await destinationService.search(actor, {
+                q: qualifiers.locality,
+                searchScope: 'name',
+                destinationType: DestinationTypeEnum.CITY,
+                pageSize: MAX_CANDIDATES,
+                page: 1
+            });
+
+            if (!retry.error) {
+                const retryCandidates: DestinationCandidate[] = (retry.data?.items ?? []).map(
+                    (dest) => ({ id: dest.id, name: dest.name })
+                );
+                const retryExact = retryCandidates.filter(
+                    (candidate) =>
+                        normalizeName(candidate.name) === normalizeName(qualifiers.locality)
+                );
+
+                if (retryExact.length > 0) {
+                    return {
+                        scrapedLocality: trimmedLocality,
+                        // Shown even when the province denies confidence: the
+                        // host sees what we found and picks, instead of facing
+                        // an empty required field (owner decision 2026-08-16).
+                        candidates: retryExact,
+                        confident:
+                            retryExact.length === 1 &&
+                            countryAllowsConfidence(country) &&
+                            regionAllowsConfidence(effectiveRegion)
+                    };
+                }
+            }
         }
 
         return { scrapedLocality: trimmedLocality, candidates, confident: false };
@@ -225,26 +314,88 @@ export async function buildDestinationHint(
  * Normalizes a place name for comparison: lowercase, accents stripped, every
  * non-alphanumeric character collapsed to a single space.
  *
- * Deliberately the ONLY normalization applied. Anything looser — substring,
- * token overlap, edit distance, address-qualifier parsing — turns a wrong city
- * into a single confident candidate that the review UI writes into
- * `destinationId`. Resolving abbreviated / misspelled / qualified localities is
- * real work with its own adversarial test corpus, tracked separately.
+ * Deliberately the ONLY normalization applied to NAMES. Anything looser —
+ * substring, token overlap, edit distance, address-qualifier parsing — turns a
+ * wrong city into a single confident candidate that the review UI writes into
+ * `destinationId`.
+ *
+ * Shares its implementation with the alias table (HOS-346) so a key written
+ * there and a catalog name compared here can never normalize differently.
  *
  * @param name - A destination name or a scraped locality.
  * @returns The normalized form.
  */
-function normalizeName(name: string): string {
-    return (
-        name
-            .toLowerCase()
-            .normalize('NFD')
-            // \p{Mn} (nonspacing marks) after NFD is the idiomatic accent strip
-            // and avoids biome's noMisleadingCharacterClass.
-            .replace(/\p{Mn}/gu, '')
-            .replace(/[^a-z0-9]+/g, ' ')
-            .trim()
-    );
+const normalizeName = normalizeLocalityKey;
+
+/**
+ * Province terms that mean "inside Hospeda's catalog region".
+ *
+ * The catalog is 100% Entre Ríos, so the country separates nothing (every
+ * Argentine locality passes it) while the province separates a great deal:
+ * six of the 22 cities have a homonym in another province.
+ */
+const DOMESTIC_REGION_TERMS: ReadonlySet<string> = new Set([
+    'entre rios',
+    'provincia de entre rios',
+    'er'
+]);
+
+/**
+ * Whether the scraped province leaves the pre-fill admissible.
+ *
+ * **Fail-open on absence** (owner decision, 2026-08-16): a missing province does
+ * not block, because several adapters do not carry one and denying them would
+ * remove pre-fills that work correctly today. Only a province that is present
+ * AND contradicts Entre Ríos denies confidence.
+ *
+ * The cost is recorded rather than hidden: HOS-346 domain fact #6 warns that
+ * treating the unknown as permission is how a failure becomes a permit. The
+ * residual hole is a payload carrying neither province nor country. For
+ * MercadoLibre — the adapter where the abbreviation was measured — the country
+ * IS populated, so a Brazilian listing is already denied by
+ * {@link countryAllowsConfidence}.
+ *
+ * This function can only ever REMOVE confidence. It grants no match of its own,
+ * so it cannot introduce a wrong pre-fill.
+ *
+ * @param region - The province the adapter scraped, if any.
+ * @returns `true` when nothing contradicts the catalog's province.
+ */
+function regionAllowsConfidence(region?: string): boolean {
+    const trimmed = region?.trim();
+    if (trimmed === undefined || trimmed.length === 0) {
+        return true;
+    }
+    return DOMESTIC_REGION_TERMS.has(normalizeName(trimmed));
+}
+
+/**
+ * Resolves a curated alias slug to a catalog CITY.
+ *
+ * Exact lookup by slug — no `ILIKE`, so it cannot return a neighbouring
+ * locality. Degrades to `undefined` on every failure mode: a stale alias whose
+ * slug no longer exists, a row that is not a CITY, or a service error. The
+ * host's own City picker queries CITY only, so the resolver must never produce
+ * an id that picker could not itself have produced.
+ *
+ * @param input - Alias slug plus the service and actor to resolve it with.
+ * @returns The candidate, or `undefined` when the alias cannot be honoured.
+ */
+async function resolveAliasedCity(input: {
+    readonly slug: string;
+    readonly destinationService: DestinationService;
+    readonly actor: Actor;
+}): Promise<DestinationCandidate | undefined> {
+    const { slug, destinationService, actor } = input;
+    try {
+        const result = await destinationService.getBySlug(actor, slug);
+        const destination = result.error ? null : result.data;
+        if (!destination) return undefined;
+        if (destination.destinationType !== DestinationTypeEnum.CITY) return undefined;
+        return { id: destination.id, name: destination.name };
+    } catch {
+        return undefined;
+    }
 }
 
 /**

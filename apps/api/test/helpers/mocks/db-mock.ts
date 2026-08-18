@@ -224,6 +224,15 @@ export function createDbMock() {
             transaction: vi.fn()
         })),
         initializeDb: vi.fn(),
+
+        // safeIlike() escapes LIKE metacharacters; production code must never use
+        // drizzle's raw ilike(). Shape-only stub: enough for a WHERE builder to
+        // hold, and inspectable by tests that assert on the emitted condition.
+        safeIlike: vi.fn((col: unknown, term: string) => ({
+            type: 'safeIlike',
+            col,
+            term
+        })),
         /**
          * Simulates withTransaction by executing the callback with a stub tx client.
          * The stub tx client supports the same chained query builder methods as getDb().
@@ -758,6 +767,11 @@ export function createDbMock() {
             customerId: 'customer_id',
             planId: 'plan_id',
             status: 'status',
+            billingInterval: 'billing_interval',
+            currentPeriodStart: 'current_period_start',
+            currentPeriodEnd: 'current_period_end',
+            trialEnd: 'trial_end',
+            productDomain: 'product_domain',
             mpSubscriptionId: 'mp_subscription_id',
             promoCodeId: 'promo_code_id',
             promoEffectRemainingCycles: 'promo_effect_remaining_cycles',
@@ -766,6 +780,50 @@ export function createDbMock() {
             deletedAt: 'deleted_at',
             createdAt: 'created_at',
             updatedAt: 'updated_at'
+        },
+
+        // Admin billing VIEW service (HOS-474) joins these four to turn qzpay's
+        // customerId/planId into a user and a plan. They are imported at module
+        // scope by the payments/subscriptions view routes, so EVERY test that
+        // boots the API route tree resolves them through this mock — not only
+        // the billing ones.
+        billingPayments: {
+            id: 'id',
+            customerId: 'customer_id',
+            subscriptionId: 'subscription_id',
+            invoiceId: 'invoice_id',
+            amount: 'amount',
+            currency: 'currency',
+            refundedAmount: 'refunded_amount',
+            status: 'status',
+            provider: 'provider',
+            providerPaymentIds: 'provider_payment_ids',
+            createdAt: 'created_at',
+            deletedAt: 'deleted_at'
+        },
+        billingCustomers: {
+            id: 'id',
+            externalId: 'external_id',
+            email: 'email',
+            name: 'name',
+            deletedAt: 'deleted_at'
+        },
+        billingPlans: {
+            id: 'id',
+            name: 'name',
+            displayName: 'display_name',
+            monthlyPriceArs: 'monthly_price_ars',
+            annualPriceArs: 'annual_price_ars',
+            productDomain: 'product_domain',
+            deletedAt: 'deleted_at'
+        },
+        users: {
+            id: 'id',
+            email: 'email',
+            displayName: 'display_name',
+            firstName: 'first_name',
+            lastName: 'last_name',
+            deletedAt: 'deleted_at'
         },
 
         // Promo code effect columns (HOS-75 T-022) — typed Drizzle columns as

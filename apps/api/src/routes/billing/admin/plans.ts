@@ -51,6 +51,7 @@ import { disablePlanLifecycle } from '../../../services/plan-disable-lifecycle.s
 import { AuditEventType, auditLog } from '../../../utils/audit-logger';
 import { createRouter } from '../../../utils/create-app';
 import { apiLogger } from '../../../utils/logger';
+import { parseRefinedBody } from '../../../utils/refined-body';
 import { createAdminListRoute, createAdminRoute } from '../../../utils/route-factory';
 
 /** Singleton plan service instance */
@@ -179,22 +180,15 @@ export const adminCreatePlanRoute = createAdminRoute({
     },
     handler: async (c, _params, body) => {
         const actor = getActorFromContext(c);
-        const input = body as {
-            slug: string;
-            name: string;
-            description: string;
-            category: 'owner' | 'complex' | 'tourist';
-            monthlyPriceArs: number;
-            annualPriceArs: number | null;
-            monthlyPriceUsdRef: number;
-            hasTrial: boolean;
-            trialDays: number;
-            isDefault: boolean;
-            sortOrder: number;
-            entitlements: string[];
-            limits: Record<string, number>;
-            isActive: boolean;
-        };
+        // Re-parse with the full schema so its refinement runs (H-54).
+        //
+        // `CreateBillingPlanSchema` requires `trialDays > 0` when `hasTrial` is
+        // set, but the route factory rebuilds the declared `requestBody` for
+        // OpenAPI and drops `.refine()` in the process. Without this, a plan
+        // could be created with `hasTrial: true, trialDays: 0`, and
+        // `resolvePlanTrialConfig` would then read 0 and offer no trial at all —
+        // a plan that silently is not what the admin asked for.
+        const input = parseRefinedBody({ schema: CreateBillingPlanSchema, body });
 
         apiLogger.info({ slug: input.slug, actorId: actor.id }, 'Admin creating billing plan');
 

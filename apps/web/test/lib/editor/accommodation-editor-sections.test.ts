@@ -52,8 +52,8 @@ function resolveHostKey(key: string): string | undefined {
 }
 
 describe('ACCOMMODATION_EDITOR_SECTIONS', () => {
-    it('should declare exactly the ten sections the spec defines', () => {
-        expect(ACCOMMODATION_EDITOR_SECTIONS).toHaveLength(10);
+    it('should declare exactly the eleven sections (ten from the spec plus G7 smoke SEO)', () => {
+        expect(ACCOMMODATION_EDITOR_SECTIONS).toHaveLength(11);
     });
 
     it('should have a unique slug per section', () => {
@@ -238,14 +238,14 @@ describe('getVisibleEditorSections', () => {
     it('should include translations when translation data exists', () => {
         const visible = getVisibleEditorSections({ hasTranslations: true });
 
-        expect(visible).toHaveLength(10);
+        expect(visible).toHaveLength(11);
         expect(visible.map((section) => section.id)).toContain('translations');
     });
 
     it('should drop translations when there is no translation data', () => {
         const visible = getVisibleEditorSections({ hasTranslations: false });
 
-        expect(visible).toHaveLength(9);
+        expect(visible).toHaveLength(10);
         expect(visible.map((section) => section.id)).not.toContain('translations');
     });
 

@@ -222,7 +222,13 @@
                 "dateRequired": "Escolha o dia do serviço.",
                 "dateFuture": "O serviço não pode ser no futuro.",
                 "generic": "Não conseguimos registrar o uso. Tente novamente em instantes."
-            }
+            },
+            "pending": {
+                "title": "Aguardam a sua confirmação",
+                "empty": "Você não tem usos pendentes de confirmação.",
+                "declaredByHost": "O anfitrião registrou este uso. Confirme para que conte nos seus números."
+            },
+            "counterpart": "o anfitrião"
         },
         "reviews": {
             "title": "Avaliações",

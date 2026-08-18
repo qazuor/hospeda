@@ -668,6 +668,13 @@ function buildRawExtraction(place: PlaceObject): RawExtraction {
     // Country from address components
     const scrapedCountry = findAddressComponent(components, 'country');
 
+    // Province from address components (HOS-346). Matters most on THIS adapter:
+    // `extractLocality` falls back to the whole `formattedAddress` when Google
+    // returns no `locality` component, so the locality reaching the resolver can
+    // be "Av. Costanera 500, Colón, Entre Ríos, Argentina". The province is a
+    // separate, structured component and stays trustworthy either way.
+    const scrapedRegion = findAddressComponent(components, 'administrative_area_level_1');
+
     // Best-effort street / number from address components
     const streetName = findAddressComponent(components, 'route');
     const streetNumber = findAddressComponent(components, 'street_number');
@@ -721,7 +728,8 @@ function buildRawExtraction(place: PlaceObject): RawExtraction {
             : {}),
 
         ...(scrapedLocality ? { scrapedLocality } : {}),
-        ...(scrapedCountry ? { scrapedCountry } : {})
+        ...(scrapedCountry ? { scrapedCountry } : {}),
+        ...(scrapedRegion ? { scrapedRegion } : {})
     };
 
     return result;

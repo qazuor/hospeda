@@ -8,8 +8,8 @@
  *  - useAccommodationMediaRemove(accommodationId)      → remove mutation (DELETE)
  *  - useAccommodationMediaSetFeatured(accommodationId) → set-featured mutation (PUT)
  *
- * All mutations invalidate the list query on success via the shared query key
- * factory. Reorder is intentionally omitted — admin decided no drag/reorder
+ * All mutations invalidate BOTH the list query and the cached entity on success
+ * via the shared query key factories (HOS-389 §3). Reorder is intentionally omitted — admin decided no drag/reorder
  * in the admin gallery UI (SPEC-204 locked decision).
  *
  * Response envelope shape (mirrors the FAQ endpoints):
@@ -21,6 +21,7 @@
 import type { AccommodationMedia, AccommodationMediaAddPayload } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
+import { invalidateAccommodationDetail } from './accommodationQueryKeys';
 
 // ---------------------------------------------------------------------------
 // Query key factory
@@ -43,6 +44,30 @@ export const accommodationMediaQueryKeys = {
 
 const mediaEndpoint = (accommodationId: string) =>
     `/api/v1/admin/accommodations/${accommodationId}/media`;
+
+/**
+ * Invalidates everything a gallery mutation just made stale (HOS-389 §3).
+ *
+ * The media list is the obvious half. The other half is the cached ENTITY: its
+ * server-composed `media` object feeds the edit page's quality score, so
+ * invalidating only the list left the page reporting "no cover" right after one
+ * was uploaded, until some unrelated refetch happened to refresh it.
+ *
+ * Written once and shared by all three mutations rather than pasted into each
+ * `onSuccess`: three copies is how one of them silently keeps the stale-entity
+ * bug after the others are fixed.
+ */
+function invalidateAfterMediaMutation(
+    queryClient: ReturnType<typeof useQueryClient>,
+    accommodationId: string
+): void {
+    queryClient.invalidateQueries({
+        queryKey: accommodationMediaQueryKeys.list(accommodationId)
+    });
+    queryClient.invalidateQueries({
+        queryKey: invalidateAccommodationDetail(accommodationId)
+    });
+}
 
 // ---------------------------------------------------------------------------
 // List query
@@ -109,9 +134,7 @@ export function useAccommodationMediaAdd(accommodationId: string) {
             return media;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: accommodationMediaQueryKeys.list(accommodationId)
-            });
+            invalidateAfterMediaMutation(queryClient, accommodationId);
         }
     });
 }
@@ -140,9 +163,7 @@ export function useAccommodationMediaRemove(accommodationId: string) {
             return mediaId;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: accommodationMediaQueryKeys.list(accommodationId)
-            });
+            invalidateAfterMediaMutation(queryClient, accommodationId);
         }
     });
 }
@@ -180,9 +201,64 @@ export function useAccommodationMediaSetFeatured(accommodationId: string) {
             return media;
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({
-                queryKey: accommodationMediaQueryKeys.list(accommodationId)
+            invalidateAfterMediaMutation(queryClient, accommodationId);
+        }
+    });
+}
+
+// ---------------------------------------------------------------------------
+// Update-text mutation (HOS-388)
+// ---------------------------------------------------------------------------
+
+/** The text fields a staff member may correct on an existing photo. */
+export interface AccommodationMediaTextPatch {
+    readonly caption?: string | null;
+    readonly description?: string | null;
+    readonly alt?: string | null;
+}
+
+/**
+ * Mutation to correct a photo's text metadata (HOS-388).
+ *
+ * Only `caption`, `description` and `alt` travel from this UI. `attribution`
+ * is accepted by the endpoint but is a composed stock-image credit object, not
+ * something a moderator types over someone else's photo — the host-facing
+ * editor owns it.
+ *
+ * Each field is nullable and OMITTED keys are left untouched by the server, so
+ * the caller must send `null` — not `''` — to clear one. Sending `''` would
+ * store an empty string, which reads as "this photo has an alt" to every
+ * consumer while announcing nothing to a screen reader.
+ *
+ * @param accommodationId - UUID of the accommodation.
+ */
+export function useAccommodationMediaUpdateText(accommodationId: string) {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: async ({
+            mediaId,
+            patch
+        }: {
+            readonly mediaId: string;
+            readonly patch: AccommodationMediaTextPatch;
+        }) => {
+            const response = await fetchApi<unknown>({
+                path: `${mediaEndpoint(accommodationId)}/${mediaId}`,
+                method: 'PATCH',
+                body: patch
             });
+            const body = response.data as { data?: { media?: AccommodationMedia } };
+            const media = body.data?.media;
+            if (!media) {
+                throw new Error(
+                    'updateText response did not include the expected data.media payload'
+                );
+            }
+            return media;
+        },
+        onSuccess: () => {
+            invalidateAfterMediaMutation(queryClient, accommodationId);
         }
     });
 }

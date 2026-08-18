@@ -220,7 +220,8 @@
         "minutes": "Há {{n}} minuto(s)",
         "hours": "Há {{n}} hora(s)",
         "oneDay": "Há 1 dia",
-        "days": "Há {{n}} dias",
+        "days_one": "Há {{count}} dia",
+        "days_other": "Há {{count}} dias",
         "notAvailable": "N/D"
     },
     "placeholders": {
@@ -276,7 +277,8 @@
         "srSubmitting": "O formulário está sendo enviado...",
         "srSuccess": "Formulário enviado com sucesso",
         "srFailed": "Falha ao enviar formulário: {{error}}",
-        "srHasErrors": "O formulário tem {{count}} erros de validação"
+        "srHasErrors_one": "O formulário tem {{count}} erro de validação",
+        "srHasErrors_other": "O formulário tem {{count}} erros de validação"
     },
     "entityPage": {
         "viewTitle": "{entity}",

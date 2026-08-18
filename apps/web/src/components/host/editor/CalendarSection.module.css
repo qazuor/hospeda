@@ -659,3 +659,59 @@
         display: none;
     }
 }
+
+/* ---------------------------------------------------------------------------
+ * Sync-block detail dialog ("why is this day blocked?")
+ *
+ * Read-only counterpart to the manual edit form above. A definition list rather
+ * than a form: nothing here is editable, and pairing each value with its own
+ * label is what lets a screen reader announce "Origen: Google Calendar" instead
+ * of an unlabelled string.
+ * ------------------------------------------------------------------------- */
+
+.detailsList {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-2) var(--space-4);
+    margin: 0;
+}
+
+.detailsList dt {
+    color: var(--core-muted-foreground);
+    font-weight: 500;
+}
+
+.detailsList dd {
+    margin: 0;
+    color: var(--core-foreground);
+    /* An event title comes from an external calendar, so it can be long and
+       unbroken. Wrap it rather than let it widen the dialog past the viewport. */
+    overflow-wrap: anywhere;
+}
+
+.detailsMuted {
+    color: var(--core-muted-foreground);
+    font-style: italic;
+}
+
+.detailsHelp {
+    margin: var(--space-4) 0 0;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--border);
+    color: var(--core-muted-foreground);
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+/* Single column on narrow screens — the label/value pair reads better stacked
+   than squeezed, and this dialog exists mainly for the phone case. */
+@media (max-width: 30rem) {
+    .detailsList {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+
+    .detailsList dd:not(:last-of-type) {
+        margin-bottom: var(--space-3);
+    }
+}

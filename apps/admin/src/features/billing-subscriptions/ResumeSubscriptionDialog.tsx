@@ -45,7 +45,8 @@ export function ResumeSubscriptionDialog({
                     <DialogTitle>{t('admin-billing.subscriptions.resumeDialog.title')}</DialogTitle>
                     <DialogDescription>
                         {t('admin-billing.subscriptions.resumeDialog.description')}{' '}
-                        {subscription.userName}
+                        {subscription.user?.displayName ??
+                            t('admin-billing.subscriptions.unknownUser')}
                     </DialogDescription>
                 </DialogHeader>
 

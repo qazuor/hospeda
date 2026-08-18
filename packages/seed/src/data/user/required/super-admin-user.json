@@ -2,7 +2,7 @@
     "$schema": "../../schemas/user.schema.json",
     "id": "super-admin-user",
     "slug": "super-admin-user",
-    "email": "superadmin@hospeda.com",
+    "email": "superadmin@hospeda.com.ar",
     "emailVerified": true,
     "role": "SUPER_ADMIN",
     "permissions": [
@@ -140,8 +140,8 @@
     "lastName": "Admin",
     "displayName": "Super Admin User",
     "contactInfo": {
-        "personalEmail": "superadmin@hospeda.com",
-        "workEmail": "admin@hospeda.com",
+        "personalEmail": "superadmin@hospeda.com.ar",
+        "workEmail": "admin@hospeda.com.ar",
         "mobilePhone": "+541155550001",
         "preferredEmail": "WORK",
         "preferredPhone": "MOBILE"

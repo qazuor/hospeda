@@ -5,6 +5,8 @@
  * using Argentine Spanish locale conventions.
  */
 
+import { formatCalendarDate } from '@repo/utils';
+
 /**
  * Input parameters for {@link formatCurrency}.
  */
@@ -57,8 +59,19 @@ export function formatCurrency({ amount, currency }: FormatCurrencyInput): strin
  * Converts an ISO 8601 date string to a long-form Spanish date using
  * the Argentine Spanish locale (e.g. "15 de marzo de 2026").
  *
+ * Every value that reaches this function is rendered as a DAY — no template
+ * shows a time — so the day is pinned to UTC rather than left to whatever
+ * timezone the process happens to run in. That is not a behaviour change in
+ * production: the API container runs in UTC, so this is exactly what it already
+ * produced. What it removes is the dependence on that fact. Before, the two
+ * examples below were only true under `TZ=UTC`; on a developer machine at UTC-3
+ * both came out a day early, which is the same defect the August 2026 smoke
+ * found on four screens (H-09, H-63, H-73, H-84) — here it was merely hidden by
+ * the container's timezone rather than absent.
+ *
  * @param params - ISO date string to format
- * @returns Formatted date string in Argentine Spanish locale
+ * @returns Formatted date string in Argentine Spanish locale, or `''` when the
+ *          value names no real day.
  *
  * @example
  * ```ts
@@ -67,10 +80,11 @@ export function formatCurrency({ amount, currency }: FormatCurrencyInput): strin
  * ```
  */
 export function formatDate({ dateString }: FormatDateInput): string {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
+    return (
+        formatCalendarDate({
+            value: dateString,
+            locale: 'es-AR',
+            options: { day: 'numeric', month: 'long', year: 'numeric' }
+        }) ?? ''
+    );
 }

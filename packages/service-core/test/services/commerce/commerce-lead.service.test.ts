@@ -312,6 +312,81 @@ describe('CommerceLeadService', () => {
             expect(result.error).toBeUndefined();
             expect(result.data).toBeNull();
         });
+
+        // ── H-155 ───────────────────────────────────────────────────────────
+        //
+        // The pre-fill is scoped by owner and NOTHING else, so the experience
+        // create form was filling itself in from a gastronomy lead. That is not
+        // a cosmetic wrong default: the create form derives the public slug from
+        // `name`, and the editor states the slug cannot be changed afterwards —
+        // so a merchant who does not notice the pre-filled restaurant name ships
+        // an excursion under it, permanently.
+        //
+        // The listing owner can legitimately hold leads in both verticals (the
+        // product invites it — "+ Nuevo comercio", both verticals under one
+        // owner), so filtering by owner alone can never be enough.
+
+        it('filters by domain when one is requested, so a gastronomy lead cannot pre-fill an experience (H-155)', async () => {
+            const service = makeService();
+            const model = {
+                create: vi.fn(),
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+                findById: vi.fn(),
+                update: vi.fn()
+            };
+            (service as any)._model = model;
+
+            const result = await service.getMyLead(ownerActor, { domain: 'experience' });
+
+            expect(result.error).toBeUndefined();
+            expect(model.findAll).toHaveBeenCalledWith(
+                { provisionedUserId: OWNER_ACTOR_ID, domain: 'experience' },
+                expect.objectContaining({ page: 1, pageSize: 1, sortOrder: 'desc' }),
+                undefined,
+                undefined
+            );
+        });
+
+        it('still scopes by owner alone when no domain is requested', async () => {
+            const service = makeService();
+            const model = {
+                create: vi.fn(),
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+                findById: vi.fn(),
+                update: vi.fn()
+            };
+            (service as any)._model = model;
+
+            await service.getMyLead(ownerActor, {});
+
+            expect(model.findAll).toHaveBeenCalledWith(
+                { provisionedUserId: OWNER_ACTOR_ID },
+                expect.objectContaining({ page: 1, pageSize: 1 }),
+                undefined,
+                undefined
+            );
+        });
+
+        it('rejects an unknown domain rather than silently ignoring the filter', async () => {
+            const service = makeService();
+            const model = {
+                create: vi.fn(),
+                findAll: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+                findById: vi.fn(),
+                update: vi.fn()
+            };
+            (service as any)._model = model;
+
+            const result = await service.getMyLead(ownerActor, {
+                domain: 'not-a-vertical'
+            } as never);
+
+            expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+            // A dropped filter would return the WRONG lead, which is the failure
+            // mode this whole block exists to prevent — so it must not fall
+            // through to an unfiltered query.
+            expect(model.findAll).not.toHaveBeenCalled();
+        });
     });
 
     describe('approveAndProvision (SPEC-249 Part D)', () => {
@@ -354,6 +429,131 @@ describe('CommerceLeadService', () => {
                 }),
                 undefined
             );
+        });
+
+        // ── H-87 / H-150 ────────────────────────────────────────────────
+        // Approving a lead whose email already has an account told the operator
+        // "cuenta creada, credenciales enviadas". Neither happened: HOS-296
+        // resolves the email to the existing account, grants the commerce role
+        // additively and deliberately skips the credential email, because the
+        // generated password was never set on that account.
+        //
+        // The backend distinguishes the two paths and says so — the
+        // provisioner returns `alreadyExisted` — and this method threw the
+        // field away, keeping only `userId`. The screen then narrated the case
+        // that had not happened, and the operator closed the ticket telling the
+        // applicant to look for a mail that was never sent and never will be.
+        //
+        // These assertions are on the FIELDS the message branches on. Asserting
+        // the copy alone would let the copy be right for the wrong reason.
+        describe('reports what actually happened (H-87 / H-150)', () => {
+            it('an email that already had an account: no account created, no credentials sent', async () => {
+                const service = makeService();
+                const model = makeLeadModel();
+                (service as any)._model = model;
+                const provisioner = {
+                    provisionCommerceOwner: vi.fn().mockResolvedValue({
+                        data: {
+                            userId: PROVISIONED_USER_ID,
+                            email: 'juan@example.com',
+                            name: 'Juan Pérez',
+                            alreadyExisted: true,
+                            credentialsSent: false
+                        }
+                    })
+                };
+
+                const result = await service.approveAndProvision(
+                    adminActor,
+                    { id: LEAD_ID, handledById: ACTOR_ID },
+                    provisioner
+                );
+
+                expect(result.error).toBeUndefined();
+                expect(result.data?.accountCreated).toBe(false);
+                expect(result.data?.credentialsSent).toBe(false);
+                // Still provisioned: the role WAS granted. `provisioned` means
+                // "this call did the work", not "an account was created" — the
+                // conflation its old JSDoc invited is what made a frontend
+                // branch on it and choose wrong.
+                expect(result.data?.provisioned).toBe(true);
+            });
+
+            it('a genuinely new account: created and credentials sent', async () => {
+                const service = makeService();
+                const model = makeLeadModel();
+                (service as any)._model = model;
+                const provisioner = {
+                    provisionCommerceOwner: vi.fn().mockResolvedValue({
+                        data: {
+                            userId: PROVISIONED_USER_ID,
+                            email: 'juan@example.com',
+                            name: 'Juan Pérez',
+                            alreadyExisted: false,
+                            credentialsSent: true
+                        }
+                    })
+                };
+
+                const result = await service.approveAndProvision(
+                    adminActor,
+                    { id: LEAD_ID, handledById: ACTOR_ID },
+                    provisioner
+                );
+
+                expect(result.data?.accountCreated).toBe(true);
+                expect(result.data?.credentialsSent).toBe(true);
+            });
+
+            it('a new account whose credential email did not go out is not reported as sent', async () => {
+                // The second source of the same lie: provisioning swallows a
+                // transport failure so it never blocks the account, which is
+                // right — but it must not be reported as a delivery.
+                const service = makeService();
+                const model = makeLeadModel();
+                (service as any)._model = model;
+                const provisioner = {
+                    provisionCommerceOwner: vi.fn().mockResolvedValue({
+                        data: {
+                            userId: PROVISIONED_USER_ID,
+                            email: 'juan@example.com',
+                            name: 'Juan Pérez',
+                            alreadyExisted: false,
+                            credentialsSent: false
+                        }
+                    })
+                };
+
+                const result = await service.approveAndProvision(
+                    adminActor,
+                    { id: LEAD_ID, handledById: ACTOR_ID },
+                    provisioner
+                );
+
+                expect(result.data?.accountCreated).toBe(true);
+                expect(result.data?.credentialsSent).toBe(false);
+            });
+
+            it('an already-provisioned lead claims neither, because this call did nothing', async () => {
+                const service = makeService();
+                const model = makeLeadModel({
+                    ...mockLead,
+                    status: 'approved',
+                    provisionedUserId: PROVISIONED_USER_ID
+                } as typeof mockLead);
+                (service as any)._model = model;
+                const provisioner = makeProvisioner();
+
+                const result = await service.approveAndProvision(
+                    adminActor,
+                    { id: LEAD_ID, handledById: ACTOR_ID },
+                    provisioner
+                );
+
+                expect(result.data?.provisioned).toBe(false);
+                expect(result.data?.accountCreated).toBe(false);
+                expect(result.data?.credentialsSent).toBe(false);
+            });
         });
 
         it('does NOT double-provision when the lead is already provisioned', async () => {

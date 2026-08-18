@@ -17,7 +17,20 @@
  * (`?types=HOTEL,CABIN`) and repeated keys (`?types=HOTEL&types=CABIN`) — and
  * trims whitespace around members (via {@link readFacetActiveValues}, the
  * shared reader). The resulting param is normalized to a single de-duplicated
- * CSV param, preserving first-seen order (resolved OQ-4).
+ * CSV param (OQ-4) serialized in the CANONICAL order every facet writer shares
+ * (`canonicalizeFacetValues`, HOS-524) — NOT in click order.
+ *
+ * HOS-524: click order was never a product decision. OQ-4 resolved
+ * de-duplication and nothing else; "first-seen order" was the incidental
+ * behavior of de-duplicating through a `Set`, and this file's own JSDoc used to
+ * mis-cite OQ-4 as having decided it. Preserving it made `?types=HOTEL,CABIN`
+ * and `?types=CABIN,HOTEL` two distinct, identically-rendered, uncacheable
+ * URLs — the permutation space a crawler enumerated at ~3 req/s for 88% of the
+ * site's traffic. Nothing reads the order: chip and sidebar active state are
+ * set MEMBERSHIP (`readFacetActiveValues().includes(value)`), the API combines
+ * the values with `inArray` (an unordered SQL `IN`), and the 2+-value SEO
+ * decision only counts them. Spec AC US-3 ("order of the rest preserved" when
+ * removing one value) still holds: a canonical order is stable under removal.
  *
  * HOS-96 pre-merge review (Option A, owner-approved): optionally accepts the
  * facet's legacy `singularKey` (e.g. `'category'`, `'type'`). When provided,
@@ -30,6 +43,7 @@
  * `?categories=`.
  */
 
+import { canonicalizeFacetValues } from './canonical-facet-order';
 import { readFacetActiveValues } from './read-facet-active-values';
 
 interface BuildMultiToggleParamHrefParams {
@@ -66,7 +80,8 @@ interface BuildMultiToggleParamHrefParams {
  *   key: 'types',
  *   value: 'CABIN'
  * });
- * // '/es/alojamientos/?types=HOTEL%2CCABIN' (CABIN appended, HOTEL preserved)
+ * // '/es/alojamientos/?types=CABIN%2CHOTEL' (CABIN added, HOTEL preserved,
+ * //  both serialized in canonical order)
  * ```
  */
 export function buildMultiToggleParamHref({
@@ -92,7 +107,7 @@ export function buildMultiToggleParamHref({
         params.delete(singularKey);
     }
     if (next.length > 0) {
-        params.set(key, next.join(','));
+        params.set(key, canonicalizeFacetValues({ values: next }).join(','));
     }
 
     const qs = params.toString();

@@ -402,6 +402,37 @@ export const SearchIntentOutputSchema = z.object({
      */
     confidence: z.number().min(0).max(1).default(0),
     /**
+     * Whether the model classified this turn as a NEW search rather than a
+     * refinement of the accumulated filter set (HOS-551).
+     *
+     * The refine-vs-new decision is the model's by design (SPEC-212): it is
+     * asked to return the COMPLETE updated entity set every turn, carrying
+     * prior filters forward on a refinement and discarding them on a new
+     * search. Asking it to *state* that decision instead of leaving it implicit
+     * in which fields it omitted costs nothing — this rides in the same
+     * `generateObject` completion, with no extra provider call — and turns an
+     * inference into an auditable, binary answer the server can act on.
+     *
+     * Why it exists: in an August 2026 production smoke the model correctly
+     * re-extracted `accommodationType` and `minGuests` for a self-contained new
+     * query while silently carrying a `hasPool: true` from two turns earlier.
+     * Nothing downstream could tell that apart from a deliberate carry-over,
+     * because "the model did not mention it" and "the model meant to keep it"
+     * look identical in the entity set.
+     *
+     * OPTIONAL, deliberately — NOT `.default(false)`.
+     *
+     * The three states must stay distinguishable at the consumer: `true` (the
+     * model started a new search), `false` (it refined — trust that and leave
+     * carried filters alone), and ABSENT (it said nothing, so fall back to the
+     * destination-change heuristic that shipped before this field existed).
+     * A `.default(false)` would collapse "it said refinement" into "it said
+     * nothing", which silently disables that fallback the moment a model stops
+     * emitting the field — the guard would fail open and the original bug would
+     * come back unnoticed.
+     */
+    isNewSearch: z.boolean().optional(),
+    /**
      * Extracted slot values from the user's NL query.
      * Validated against {@link SearchIntentEntitiesSchema} — only known slots
      * are retained; unknown model keys are silently dropped.

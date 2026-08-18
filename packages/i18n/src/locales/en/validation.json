@@ -1,10 +1,19 @@
 {
+    "reviewMarkedFields": "Check the highlighted fields.",
     "accommodation": {
         "address": {
             "required": "La dirección es obligatoria"
         },
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
+        },
+        "contactInfo": {
+            "email": {
+                "invalid": "El email no es válido"
+            },
+            "phone": {
+                "international": "El número no es válido"
+            }
         },
         "delete": {
             "deletedAt": {
@@ -42,7 +51,9 @@
                 "required": "La capacidad es obligatoria"
             },
             "minNights": {
-                "required": "La cantidad mínima de noches es obligatoria"
+                "required": "La cantidad mínima de noches es obligatoria",
+                "min": "La cantidad mínima de noches no puede ser menor a {{min}}",
+                "max": "La cantidad mínima de noches no puede superar los {{max}}"
             }
         },
         "featuredToggle": {
@@ -112,6 +123,9 @@
             },
             "state": {
                 "invalid": "Media state must be 'visible' or 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "You must fill in at least one field: caption, description, alt text or attribution"
             }
         },
         "name": {
@@ -1865,6 +1879,7 @@
         },
         "price": {
             "price": {
+                "integer": "Price must be a whole number, in pesos, with no cents",
                 "positive": "El precio debe ser un número positivo",
                 "required": "El precio es obligatorio"
             }
@@ -2803,6 +2818,9 @@
         },
         "priceFrom": {
             "nonnegative": "El precio debe ser mayor o igual a 0"
+        },
+        "priceUnit": {
+            "requiredUnlessOnRequest": "Choose a price unit (per day, per hour, per person or per group). If the experience has no fixed price, tick \"Price on request\"."
         },
         "review": {
             "content": {

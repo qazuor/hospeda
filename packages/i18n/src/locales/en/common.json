@@ -10,6 +10,10 @@
     "backToHome": "Back to home",
     "clear": "Clear",
     "destinations": "Destinations",
+    "legal": {
+        "lastUpdated": "Last updated",
+        "toc": "Contents"
+    },
     "enums": {
         "accommodationType": {
             "apartment": "Apartment",
@@ -56,7 +60,7 @@
     "apiError": {
         "GENERIC": "Something went wrong. Please try again in a moment.",
         "RATE_LIMIT_EXCEEDED": "Too many requests. Please wait a few seconds and try again.",
-        "VALIDATION_ERROR": "The data you sent is invalid. Check the highlighted fields.",
+        "VALIDATION_ERROR": "The data you sent is invalid.",
         "UNAUTHORIZED": "You need to sign in to do this.",
         "FORBIDDEN": "You don't have permission to do this.",
         "NOT_FOUND": "We couldn't find what you were looking for.",
@@ -103,7 +107,10 @@
     "filters": "Filters",
     "filterChips": {
         "clearLabel": "Clear ({{count}})",
-        "clearAriaLabel": "Clear {{count}} filters"
+        "clearAriaLabel_one": "Clear {{count}} filter",
+        "clearAriaLabel_other": "Clear {{count}} filters",
+        "cappedNote_one": "Unavailable: {{count}} filter is already active",
+        "cappedNote_other": "Unavailable: {{count}} filters are already active"
     },
     "goHome": "Back to home",
     "in": "in",
@@ -175,7 +182,8 @@
         "text": "Photo by {{photographer}} on {{provider}}",
         "byline": "Photo by",
         "onProvider": "on {{provider}}",
-        "ariaLabel": "{{photographer}}'s profile on {{provider}}"
+        "ariaLabel": "{{photographer}}'s profile on {{provider}}",
+        "ariaLabelNoProvider": "{{photographer}}'s website"
     },
     "breadcrumbs": "Breadcrumb"
 }

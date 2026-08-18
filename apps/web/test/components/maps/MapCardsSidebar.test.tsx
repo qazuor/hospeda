@@ -24,9 +24,14 @@ import { clearCompare, setCompareMode } from '../../../src/store/compare-store';
 // Same stub as CompareButton.test.tsx / DetailCompareButton.test.tsx: returns
 // the fallback copy verbatim (no `{{name}}` interpolation) so assertions don't
 // depend on the real @repo/i18n locale catalog.
-vi.mock('../../../src/lib/i18n', () => ({
-    createT: (_locale: string) => (key: string, fallback?: string) => fallback ?? key
-}));
+vi.mock('../../../src/lib/i18n', () => {
+    const t = (key: string, fallback?: string) => fallback ?? key;
+    const tPlural = (key: string, count: number) => `${count} ${key}`;
+    return {
+        createT: (_locale: string) => t,
+        createTranslations: (_locale: string) => ({ t, tPlural })
+    };
+});
 
 // CSS modules → identity proxy so class names match their keys.
 vi.mock('../../../src/components/maps/MapCardsSidebar.module.css', () => ({

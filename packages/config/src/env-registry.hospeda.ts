@@ -645,9 +645,9 @@ export const HOSPEDA_ENV_VARS = [
     {
         name: 'HOSPEDA_ADMIN_NOTIFICATION_EMAILS',
         description:
-            'Comma-separated admin emails for operational alerts: MercadoPago disputes/webhooks AND newsletter campaigns that close with failed deliveries (SPEC-108).',
+            'Comma-separated admin emails for operational alerts: MercadoPago disputes/webhooks, newsletter campaigns that close with failed deliveries (SPEC-108), AND new acquisition leads from the commerce and alliance funnels (H-62 / H-148).',
         descriptionEs:
-            'Emails de admin separados por comas para alertas operativas: disputas/webhooks de MercadoPago Y campañas de newsletter que cierran con entregas fallidas (SPEC-108).',
+            'Emails de admin separados por comas para alertas operativas: disputas/webhooks de MercadoPago, campañas de newsletter que cierran con entregas fallidas (SPEC-108) Y leads nuevos de los embudos de comercio y aliados (H-62 / H-148).',
         type: 'string',
         required: false,
         secret: false,
@@ -655,9 +655,9 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'email',
         howToObtain:
-            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, newsletter campaigns that close with failed > 0. Example: alice@hospeda.ar,bob@hospeda.ar. Unset = those alerts are silently skipped (the features that depend on the value gracefully no-op).',
+            'List of email addresses (comma-separated, no spaces) that receive ops alerts: payment disputes, webhook failures, newsletter campaigns that close with failed > 0, and every new commerce/alliance lead. Example: alice@hospeda.ar,bob@hospeda.ar. Unset = those alerts are silently skipped, which for leads means an acquisition funnel nobody hears — the API logs a WARN per dropped lead and the lead-intake-backstop cron keeps retrying it.',
         howToObtainEs:
-            'Lista de emails (separados por comas, sin espacios) que reciben alertas operativas: disputas de pagos, fallos de webhooks, campañas de newsletter que cierran con failed > 0. Ejemplo: alice@hospeda.ar,bob@hospeda.ar. Si queda sin setear, esas alertas se omiten silenciosamente (las features que dependen del valor caen a no-op).'
+            'Lista de emails (separados por comas, sin espacios) que reciben alertas operativas: disputas de pagos, fallos de webhooks, campañas de newsletter que cierran con failed > 0, y cada lead nuevo de comercio/aliados. Ejemplo: alice@hospeda.ar,bob@hospeda.ar. Si queda sin setear, esas alertas se omiten: para los leads eso significa un embudo de captación que nadie escucha — la API loguea un WARN por lead descartado y el cron lead-intake-backstop lo sigue reintentando.'
     },
 
     // -------------------------------------------------------------------------
@@ -1574,7 +1574,7 @@ export const HOSPEDA_ENV_VARS = [
         apps: ['api'],
         category: 'testing',
         howToObtain:
-            'Set to a positive integer (e.g. 1) to shorten the host publish trial so QA can exercise trial expiry without waiting 14 days. NOT gated by environment (NODE_ENV is "production" on both the prod and staging deployments and cannot distinguish them, and testing must be possible against production). It is an explicit ops knob: it affects EVERY trial started while it is set, so set it, run the test, then UNSET it. Unset by default in every environment.',
+            'Set to a positive integer (e.g. 1) to shorten the host publish trial so QA can exercise trial expiry without waiting 30 days. NOT gated by environment (NODE_ENV is "production" on both the prod and staging deployments and cannot distinguish them, and testing must be possible against production). It is an explicit ops knob: it affects EVERY trial started while it is set, so set it, run the test, then UNSET it. Unset by default in every environment.',
         howToObtainEs:
             'Poné un entero positivo (ej. 1) para acortar el trial de publicación de host y poder probar la expiración sin esperar 14 días. NO tiene gate de entorno (NODE_ENV es "production" tanto en la instancia de prod como en la de staging, así que no las distingue, y hay que poder testear contra producción). Es una perilla explícita de ops: afecta a TODO trial que arranque mientras esté seteada, así que la seteás, hacés la prueba y la SACÁS. Sin setear por defecto en todos los entornos.'
     },
@@ -2261,6 +2261,23 @@ export const HOSPEDA_ENV_VARS = [
             'Set in Coolify for hospeda-web-staging to keep search engines from indexing the staging mirror. Production (hospeda.com.ar) should leave it unset (which falls back to the staging default — also acceptable since the prod host is not in that list).',
         howToObtainEs:
             'Configurar en Coolify para hospeda-web-staging así los buscadores no indexan el mirror de staging. En producción (hospeda.com.ar) dejarla sin setear (cae al default de staging, lo cual también está OK porque el host de prod no está en esa lista).'
+    },
+    {
+        name: 'HOSPEDA_INDEXNOW_KEY',
+        description:
+            'IndexNow API key. The web app serves it as /<key>.txt and signs every search-engine change notification with it. One submission reaches Bing, Yandex, Seznam, Naver and Yep. When unset the notification is off regardless of the admin toggle — an unset key is the hard kill switch.',
+        descriptionEs:
+            'Clave de API de IndexNow. El web la sirve como /<clave>.txt y firma con ella cada aviso de contenido nuevo a los buscadores. Un solo envío llega a Bing, Yandex, Seznam, Naver y Yep. Si no está seteada el aviso queda apagado sin importar el toggle del admin — la ausencia de la clave es el corte duro.',
+        type: 'string',
+        required: false,
+        secret: true,
+        exampleValue: 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4',
+        apps: ['web'],
+        category: 'features',
+        howToObtain:
+            'Generate 8-128 hexadecimal characters (e.g. `openssl rand -hex 16`) — the key is self-issued, Bing Webmaster Tools is NOT required to mint one. Set it in Coolify for hospeda-web-prod only: staging must never notify search engines, and the endpoint refuses on any host listed in HOSPEDA_NOINDEX_HOSTS. To rotate, generate a new value and redeploy; the key file follows the env var.',
+        howToObtainEs:
+            'Generar 8-128 caracteres hexadecimales (por ejemplo `openssl rand -hex 16`) — la clave se emite uno mismo, NO hace falta Bing Webmaster Tools para obtenerla. Setearla en Coolify sólo para hospeda-web-prod: staging nunca debe avisar a los buscadores, y el endpoint rechaza cualquier host que esté en HOSPEDA_NOINDEX_HOSTS. Para rotarla, generar un valor nuevo y redeployar; el archivo de la clave sigue a la env var.'
     },
     {
         name: 'HOSPEDA_TAG_USER_QUOTA_PER_USER',

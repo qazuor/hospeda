@@ -93,8 +93,13 @@
             "dateRange": "Estou pensando entre {from} e {to}.",
             "dateFrom": "Estou pensando a partir de {from}.",
             "dateTo": "Estou pensando até {to}.",
-            "guests": "Somos {adults} adultos e {children} crianças.",
-            "guestsAdultsOnly": "Somos {adults} adultos.",
+            "guestsAdultsCount_one": "{{count}} adulto",
+            "guestsAdultsCount_other": "{{count}} adultos",
+            "guestsChildrenCount_one": "{{count}} criança",
+            "guestsChildrenCount_other": "{{count}} crianças",
+            "guestsTemplate": "Somos {{adultsPhrase}} e {{childrenPhrase}}.",
+            "guestsAdultsOnly_one": "Somos {{adults}} adulto.",
+            "guestsAdultsOnly_other": "Somos {{adults}} adultos.",
             "outro": "Poderia confirmar a disponibilidade?"
         }
     },

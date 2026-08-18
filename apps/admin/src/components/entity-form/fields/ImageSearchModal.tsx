@@ -91,7 +91,7 @@ export const ImageSearchModal: React.FC<ImageSearchModalProps> = ({
     entityId,
     targetRole
 }) => {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
     const [isOpen, setIsOpen] = React.useState(open ?? false);
 
     const [searchState, setSearchState] = React.useState<SearchState>({
@@ -235,9 +235,14 @@ export const ImageSearchModal: React.FC<ImageSearchModalProps> = ({
                     const limit = (err.body as { error?: { details?: { limit?: number } } })?.error
                         ?.details?.limit;
                     setError(
-                        t('admin-entities.fields.image.stock.galleryLimitExceeded', {
-                            limit: limit?.toString() ?? '?'
-                        })
+                        limit === undefined
+                            ? t('admin-entities.fields.image.stock.galleryLimitExceeded_other', {
+                                  limit: '?'
+                              })
+                            : tPlural(
+                                  'admin-entities.fields.image.stock.galleryLimitExceeded',
+                                  limit
+                              )
                     );
                 } else if (err.status === 404) {
                     setError(t('admin-entities.fields.image.stock.entityNotFound'));
@@ -479,9 +484,10 @@ export const ImageSearchModal: React.FC<ImageSearchModalProps> = ({
                     <div className="text-muted-foreground text-sm">
                         {results.length > 0 && (
                             <span>
-                                {t('admin-entities.fields.image.stock.resultsCount', {
-                                    count: results.length
-                                })}
+                                {tPlural(
+                                    'admin-entities.fields.image.stock.resultsCount',
+                                    results.length
+                                )}
                             </span>
                         )}
                     </div>

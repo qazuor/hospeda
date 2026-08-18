@@ -91,11 +91,16 @@ export interface UseZodFormResult<TSchema extends ZodTypeAny> {
      */
     readonly validate: (payload: unknown) => SafeParseResult<TSchema>;
     /**
-     * Maps an API 400 error to field errors (via {@link apiErrorToFieldErrors}).
-     * When the API sent no per-field details (the common production case for
-     * `ServiceError`-driven 400s — see `field-errors.ts` module doc), falls
-     * back to setting `formError` from `translateApiError` (or the raw
-     * `message`/`fallback` when no `t` was supplied).
+     * Maps an API 400 error to field errors (via {@link apiErrorToFieldErrors},
+     * localized when a `t` was supplied) AND sets `formError` from
+     * `translateApiError` (or the raw `message`/`fallback` when no `t` was
+     * supplied).
+     *
+     * The banner is set even when per-field errors were mapped, because a
+     * caller may not render those fields at all — `HostTradeEditForm` and
+     * `PartnerEditForm` read only `formError`, so returning early on a mapped
+     * error left them with a submit that looked like it did nothing (the same
+     * silence H-28 produced in the admin).
      */
     readonly handleApiError: (apiError: HandleApiErrorInput, fallback?: string) => void;
     /** Clears a single field's error (call on that field's `onChange`). */
@@ -175,16 +180,33 @@ export function useZodForm<TSchema extends ZodTypeAny>({
 
     const handleApiError = useCallback(
         (apiError: HandleApiErrorInput, fallback?: string) => {
-            const mapped = apiErrorToFieldErrors(apiError);
-            if (Object.keys(mapped).length > 0) {
+            const mapped = apiErrorToFieldErrors(apiError, t);
+            const markedSomeFields = Object.keys(mapped).length > 0;
+            if (markedSomeFields) {
                 setFieldErrors((prev) => ({ ...prev, ...mapped }));
-                return;
             }
 
             const message = t
                 ? translateApiError({ error: apiError ?? null, t, fallback })
                 : (apiError?.message ?? fallback ?? null);
-            setFormErrorState(message ?? null);
+
+            // Only send the user looking for marked fields once some are marked
+            // (H-108). The `VALIDATION_ERROR` copy used to carry "Revisá los
+            // campos marcados" unconditionally, and in production it almost never
+            // could be true: `details` is stripped whenever
+            // HOSPEDA_API_DEBUG_ERRORS is false, so there is nothing to map and
+            // nothing gets highlighted. A live rejection in the editor rendered
+            // exactly that sentence with no field marked anywhere on the page —
+            // which does not read as "vague", it reads as "look elsewhere" or
+            // "this page is broken".
+            const reviewInvite = markedSomeFields
+                ? (t?.('validation.reviewMarkedFields', 'Revisá los campos marcados.') ??
+                  'Revisá los campos marcados.')
+                : null;
+
+            setFormErrorState(
+                message && reviewInvite ? `${message} ${reviewInvite}` : (message ?? null)
+            );
         },
         [t]
     );

@@ -35,9 +35,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { EventCategoryEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
+import { slugForEventCategory } from '../../src/lib/facet-slugs';
 import { FACET_CONFIG_BY_ID } from '../../src/lib/filters/facet-config';
 import { readFacetActiveValues } from '../../src/lib/filters/read-facet-active-values';
 import { resolveFacetSeoDecision } from '../../src/lib/seo/promoted-facet-canonical';
+
+/** Real per-facet slugify, matching what `eventos/index.astro` actually injects. */
+const slugify = (value: string): string =>
+    slugForEventCategory({ category: value as EventCategoryEnum });
 
 const src = readFileSync(resolve(__dirname, '../../src/pages/[lang]/eventos/index.astro'), 'utf8');
 
@@ -102,20 +107,22 @@ describe('events facet SEO — composed resolveFacetSeoDecision behavior (HOS-96
             facetValues: [],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: false, canonical: { kind: 'base' } });
     });
 
-    it('1 active value, no other filter -> indexable, dedicated-landing canonical /eventos/categoria/{slug}/ (SPEC-306 preserved)', () => {
+    it('1 active value, no other filter -> indexable, dedicated-landing canonical /eventos/categoria/{slug}/ with the canonical Spanish slug (SPEC-306 preserved, slug in Spanish since H-110)', () => {
         const decision = resolveFacetSeoDecision({
             facetValues: ['MUSIC'],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision.noindex).toBe(false);
-        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'music' });
+        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'musica' });
     });
 
     it('2 active values -> noindex,follow + base canonical', () => {
@@ -123,7 +130,8 @@ describe('events facet SEO — composed resolveFacetSeoDecision behavior (HOS-96
             facetValues: ['MUSIC', 'CULTURE'],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
     });
@@ -133,7 +141,8 @@ describe('events facet SEO — composed resolveFacetSeoDecision behavior (HOS-96
             facetValues: ['MUSIC', 'CULTURE', 'SPORTS'],
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
     });
@@ -153,10 +162,11 @@ describe('events facet SEO — legacy singular-only URL regression (HOS-96 pre-m
             facetValues: activeValues,
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision.noindex).toBe(false);
-        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'music' });
+        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'musica' });
     });
 
     it('?categories=MUSIC,CULTURE (plural, 2 values) still correctly resolves noindex+base — the plural param still wins and the 2+ rule still fires', () => {
@@ -169,7 +179,8 @@ describe('events facet SEO — legacy singular-only URL regression (HOS-96 pre-m
             facetValues: activeValues,
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
         expect(decision).toEqual({ noindex: true, canonical: { kind: 'base' } });
     });
@@ -184,9 +195,10 @@ describe('events facet SEO — legacy singular-only URL regression (HOS-96 pre-m
             facetValues: activeValues,
             hasOtherFilters: false,
             validEnumValues,
-            dedicatedLandingPattern
+            dedicatedLandingPattern,
+            slugify
         });
-        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'culture' });
+        expect(decision.canonical).toEqual({ kind: 'dedicatedLanding', slug: 'cultura' });
     });
 });
 
@@ -202,23 +214,25 @@ describe('events chip active state — legacy singular-only URL (HOS-96 pre-merg
     });
 });
 
-describe('events dedicated landing slug match — every EventCategoryEnum member (HOS-96 T-018 critical verification)', () => {
+describe('events dedicated landing slug match — every EventCategoryEnum member (HOS-96 T-018 critical verification, Spanish slugs since H-110)', () => {
     /**
-     * Mirrors `eventos/categoria/[category]/index.astro`'s own
-     * `VALID_CATEGORIES` slug->enum dictionary EXACTLY (hand-verified against
-     * the route source, not re-derived) so this test fails loudly if the
-     * route's dictionary and the predicate's generic transform ever diverge.
+     * Owner-approved Spanish slug->enum dictionary, hand-verified against the
+     * H-110 task spec (NOT re-derived from `@/lib/facet-slugs`, the module
+     * under test here) so this test fails loudly if the real map ever
+     * diverges from what was actually approved. Mirrors what
+     * `eventos/categoria/[category]/index.astro` resolves via
+     * `resolveEventCategorySlug`.
      */
     const ROUTE_VALID_CATEGORIES: Record<string, string> = {
-        music: 'MUSIC',
-        culture: 'CULTURE',
-        sports: 'SPORTS',
-        gastronomy: 'GASTRONOMY',
+        musica: 'MUSIC',
+        cultura: 'CULTURE',
+        deportes: 'SPORTS',
+        gastronomia: 'GASTRONOMY',
         festival: 'FESTIVAL',
-        nature: 'NATURE',
-        theater: 'THEATER',
-        workshop: 'WORKSHOP',
-        other: 'OTHER'
+        naturaleza: 'NATURE',
+        teatro: 'THEATER',
+        taller: 'WORKSHOP',
+        otros: 'OTHER'
     };
 
     it("every EventCategoryEnum member's predicate-generated slug resolves back to the SAME enum value via the route's own dictionary", () => {
@@ -227,7 +241,8 @@ describe('events dedicated landing slug match — every EventCategoryEnum member
                 facetValues: [value],
                 hasOtherFilters: false,
                 validEnumValues: Object.values(EventCategoryEnum),
-                dedicatedLandingPattern: FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern
+                dedicatedLandingPattern: FACET_CONFIG_BY_ID.eventCategory.dedicatedLandingPattern,
+                slugify
             });
             if (decision.canonical.kind !== 'dedicatedLanding') {
                 throw new Error(`Expected a dedicatedLanding decision for ${value}`);

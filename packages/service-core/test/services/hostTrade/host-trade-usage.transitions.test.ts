@@ -705,6 +705,50 @@ describe('listForProvider', () => {
             .calls[0]?.[0] as Record<string, unknown>;
         expect(where).not.toHaveProperty('status');
     });
+
+    /**
+     * The provider's INBOX is `PENDING` + `declaredBy = HOST`, and it has to be
+     * the DATABASE that narrows it (H-06 / H-65 / H-159).
+     *
+     * Splitting a `status=PENDING` page client-side looks equivalent and is not:
+     * a page of 20 pending rows that happens to hold 20 of the provider's OWN
+     * declarations yields an empty inbox and the screen then says "nothing waits
+     * on you" while a host waits for an answer. A wrong all-clear is the one
+     * failure this queue must not produce, so the filter belongs in the query.
+     */
+    it('filters by declaredBy when one is given', async () => {
+        const { service, model } = buildProviderList();
+
+        await service.listForProvider(
+            {
+                hostTradeId: HT_ID,
+                status: 'PENDING' as never,
+                declaredBy: 'HOST' as never,
+                page: 1,
+                pageSize: 10
+            },
+            actorOf(OWNER_ID)
+        );
+
+        const where = (model.findAll as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0]?.[0] as Record<string, unknown>;
+        expect(where.declaredBy).toBe('HOST');
+        expect(where.status).toBe('PENDING');
+    });
+
+    /** No `declaredBy` means both sides — the record, not the queue. */
+    it('does not filter by declaredBy when none is given', async () => {
+        const { service, model } = buildProviderList();
+
+        await service.listForProvider(
+            { hostTradeId: HT_ID, page: 1, pageSize: 10 },
+            actorOf(OWNER_ID)
+        );
+
+        const where = (model.findAll as unknown as { mock: { calls: unknown[][] } }).mock
+            .calls[0]?.[0] as Record<string, unknown>;
+        expect(where).not.toHaveProperty('declaredBy');
+    });
 });
 
 describe('listLinkedHosts', () => {

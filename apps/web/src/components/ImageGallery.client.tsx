@@ -24,6 +24,7 @@ import {
 } from '@/components/shared/ui/Dialog.client';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import type { PhotoCreditParts } from '@/lib/photo-credit.types';
 import styles from './ImageGallery.module.css';
 
 /**
@@ -36,6 +37,15 @@ export interface GalleryImage {
     readonly alt: string;
     /** Optional caption shown in lightbox */
     readonly caption?: string;
+    /**
+     * Photo credit shown under the caption in the lightbox (H-125).
+     *
+     * Pre-composed by `formatPhotoCredit` on the server rather than built here:
+     * the credit's wording is shared with the SSR photo page, and `url` has
+     * already passed the http/https check that keeps a `javascript:` value the
+     * write side accepts out of this `href`.
+     */
+    readonly credit?: PhotoCreditParts;
 }
 
 /**
@@ -409,9 +419,28 @@ function Lightbox({ images, initialIndex, onClose, t }: LightboxProps) {
                         onLoad={() => setIsImgLoading(false)}
                         onError={() => setIsImgLoading(false)}
                     />
-                    {current?.caption && (
+                    {(current?.caption || current?.credit) && (
                         <figcaption className={styles.lightboxCaption}>
                             {current.caption}
+                            {current.credit && (
+                                <span className={styles.lightboxCredit}>
+                                    {current.credit.byline}{' '}
+                                    {current.credit.url ? (
+                                        <a
+                                            href={current.credit.url}
+                                            className={styles.lightboxCreditLink}
+                                            target="_blank"
+                                            rel="nofollow noopener noreferrer"
+                                            aria-label={current.credit.ariaLabel}
+                                        >
+                                            {current.credit.photographer}
+                                        </a>
+                                    ) : (
+                                        current.credit.photographer
+                                    )}{' '}
+                                    {current.credit.providerSuffix}
+                                </span>
+                            )}
                         </figcaption>
                     )}
                 </figure>

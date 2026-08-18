@@ -20,7 +20,7 @@ import { postsApi } from '@/lib/api/endpoints';
 import { toArticleCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { resolvePostCategorySlug } from '@/lib/post-category';
+import { resolvePostCategorySlug, slugForPostCategory } from '@/lib/facet-slugs';
 import { buildUrl } from '@/lib/urls';
 
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -30,13 +30,18 @@ const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { category: catSlug } = Astro.params;
 
-// Normalize the slug to lowercase so uppercase inbound URLs (e.g. /CULTURE/)
-// resolve cleanly. The helper is case-insensitive internally.
+// Resolved against the canonical Spanish slug map (H-110). The helper is
+// case-insensitive. The legacy English slug (e.g. `gastronomy`) never reaches
+// this page as a 200 — the middleware 301-redirects it to the Spanish slug
+// before routing gets here.
 const catEnum = resolvePostCategorySlug({ slug: catSlug });
 if (!catEnum) return new Response(null, { status: 404 });
 
-// Canonical lowercase slug for URLs and i18n key lookups.
-const catSlugLower = catEnum.toLowerCase();
+// `blog.categories.<key>` i18n keys are authored as the English-lowercased
+// enum value (e.g. `gastronomy`, `nightlife`) — a pre-existing, separate
+// naming convention from the URL slug map above. Deriving it from the enum
+// keeps display copy correct regardless of which Spanish slug the URL uses.
+const catI18nKey = catEnum.toLowerCase();
 
 // --- Edge cacheability (HOS-369 W2-3) ---
 // After the 404 guard, so an unknown category is never marked shareable. The
@@ -58,8 +63,13 @@ const items = result.ok ? result.data.items : [];
 const total = result.ok ? result.data.pagination.total : 0;
 const totalPages = result.ok ? result.data.pagination.totalPages : 0;
 const cards = items.map((item) => toArticleCardProps({ item: item as unknown as Record<string, unknown>, locale }));
-const catLabel = t(`blog.categories.${catSlugLower}`, catSlugLower);
-const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${catSlugLower}` });
+const catLabel = t(`blog.categories.${catI18nKey}`, catI18nKey);
+// Re-derived from the enum (not the raw `catSlug` param) so a differently
+//-cased inbound slug (the resolver is case-insensitive) still self-canonicalizes
+// to the exact lowercase Spanish slug, instead of echoing back whatever casing
+// the visitor typed.
+const canonicalSlug = slugForPostCategory({ category: catEnum });
+const baseUrl = buildUrl({ locale, path: `publicaciones/categoria/${canonicalSlug}` });
 ---
 
 <ListingLayout locale={locale} title={`${catLabel} - ${t('blog.title', 'Publicaciones')}`} description={`Publicaciones de ${catLabel}`} showFilters={false} noindex={true} totalCount={total}>

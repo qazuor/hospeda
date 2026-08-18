@@ -452,8 +452,10 @@
             "chips": {
                 "unique": "Únicos",
                 "total": "Totales",
-                "ariaUnique": "{{window}}: {{count}} visitantes únicos",
-                "ariaTotal": "{{window}}: {{count}} vistas totales"
+                "ariaUnique_one": "{{window}}: {{count}} visitante único",
+                "ariaUnique_other": "{{window}}: {{count}} visitantes únicos",
+                "ariaTotal_one": "{{window}}: {{count}} vista total",
+                "ariaTotal_other": "{{window}}: {{count}} vistas totales"
             }
         }
     },
@@ -657,7 +659,8 @@
                 "searching": "Buscando...",
                 "searchPrompt": "Escribí una búsqueda para encontrar imágenes stock",
                 "noResults": "Sin resultados para «{query}»",
-                "resultsCount": "{count} resultados",
+                "resultsCount_one": "{{count}} resultado",
+                "resultsCount_other": "{{count}} resultados",
                 "loadMore": "Cargar más",
                 "importButton": "Importar",
                 "importing": "Importando...",
@@ -674,7 +677,8 @@
                 "searchError": "Error al buscar imágenes. Intentá nuevamente.",
                 "importError": "Error al importar la imagen. Intentá nuevamente.",
                 "entityNotFound": "Entidad no encontrada",
-                "galleryLimitExceeded": "Límite de galería alcanzado (máx: {limit} imágenes)"
+                "galleryLimitExceeded_one": "Límite de galería alcanzado (máx: {{limit}} imagen)",
+                "galleryLimitExceeded_other": "Límite de galería alcanzado (máx: {{limit}} imágenes)"
             }
         },
         "avatar": {
@@ -769,7 +773,8 @@
         "titleDefault": "Llegaste al límite de tu plan",
         "descriptionTemplate": "Estás usando {{currentCount}} de {{maxAllowed}}. Actualizá tu plan para tener más.",
         "upgradeLink": "Ver mi suscripción",
-        "belowLimit": "Te quedan {max} - {current} disponibles en tu plan.",
+        "belowLimit_one": "Te queda {{count}} disponible en tu plan.",
+        "belowLimit_other": "Te quedan {{count}} disponibles en tu plan.",
         "atLimit": "Llegaste al máximo permitido por tu plan. Para sumar más, mejorá el plan."
     },
     "ownerPromotions": {
@@ -842,7 +847,7 @@
                 "label": "Imagen principal cargada"
             },
             "galleryPhotos": {
-                "label": "Al menos {target} fotos en la galería",
+                "label": "Al menos {{target}} fotos en la galería",
                 "hint": "{current} de {target} cargadas"
             },
             "photosAlt": {
@@ -946,14 +951,16 @@
         },
         "approveProvision": {
             "title": "Aprobar y crear cuenta de propietario",
-            "description": "Se aprobará el lead de {{businessName}} y se creará una cuenta COMMERCE_OWNER para {{email}} en un solo paso. Las credenciales temporales serán enviadas por email.",
+            "description": "Se aprobará el lead de {{businessName}} y {{email}} quedará habilitado como COMMERCE_OWNER. Si ese email ya tiene cuenta, se le suma el permiso y conserva su contraseña; si no, se crea la cuenta y se le envían credenciales temporales por email.",
             "noteLabel": "Nota (opcional)",
             "notePlaceholder": "Comentario interno para el equipo...",
             "confirm": "Aprobar y crear cuenta",
             "submitting": "Procesando...",
             "successMessage": "Lead aprobado y cuenta creada para {{email}}. Las credenciales fueron enviadas por email.",
             "alreadyProvisionedMessage": "El lead ya tenía una cuenta provisionada.",
-            "error": "Error al aprobar y crear la cuenta. Intentá de nuevo."
+            "error": "Error al aprobar y crear la cuenta. Intentá de nuevo.",
+            "successLinkedMessage": "Lead aprobado. {{email}} ya tenía cuenta: se le sumó el permiso de comercio y conserva su contraseña. No se enviaron credenciales.",
+            "successNoCredentialsMessage": "Lead aprobado y cuenta creada para {{email}}, pero el email con las credenciales no se pudo enviar. Todavía no puede entrar."
         },
         "handle": {
             "title": "Resolver lead",
@@ -969,11 +976,13 @@
         },
         "provision": {
             "title": "Crear cuenta de propietario",
-            "description": "Se creará una cuenta COMMERCE_OWNER para {{businessName}} ({{email}}). Las credenciales temporales serán enviadas por email.",
+            "description": "Se habilitará a {{businessName}} ({{email}}) como COMMERCE_OWNER. Si ese email ya tiene cuenta, se le suma el permiso y conserva su contraseña; si no, se crea la cuenta y se le envían credenciales temporales por email.",
             "confirm": "Crear cuenta",
             "submitting": "Creando...",
             "successMessage": "Cuenta creada para {{name}} ({{email}}). Las credenciales fueron enviadas por email.",
-            "error": "Error al crear la cuenta. Intentá de nuevo."
+            "error": "Error al crear la cuenta. Intentá de nuevo.",
+            "successLinkedMessage": "{{email}} ya tenía cuenta: se le sumó el permiso de comercio y conserva su contraseña. No se enviaron credenciales.",
+            "successNoCredentialsMessage": "Cuenta creada para {{name}} ({{email}}), pero el email con las credenciales no se pudo enviar. Todavía no puede entrar."
         },
         "pagination": {
             "prev": "Anterior",

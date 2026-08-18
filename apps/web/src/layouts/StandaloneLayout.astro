@@ -43,7 +43,7 @@
  * ```
  */
 
-import type { SupportedLocale } from '@/lib/i18n';
+import { type SupportedLocale, toRegionalLocaleTag } from '@/lib/i18n';
 import { BRAND_THEME_COLOR, BRAND_THEME_COLOR_DARK } from '@/lib/constants';
 import FontsLoader from '@/components/shared/FontsLoader.astro';
 import ThemeFoucScript from '@/components/shared/ThemeFoucScript.astro';
@@ -59,7 +59,7 @@ const { locale } = Astro.props;
 ---
 
 <!doctype html>
-<html lang={locale}>
+<html lang={toRegionalLocaleTag({ locale })} data-locale={locale}>
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />

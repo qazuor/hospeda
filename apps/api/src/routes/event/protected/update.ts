@@ -5,9 +5,7 @@
 import {
     EventIdSchema,
     EventProtectedSchema,
-    type EventUpdateHttp,
     EventUpdateHttpSchema,
-    httpToDomainEventUpdate,
     PermissionEnum
 } from '@repo/schemas';
 import { EventService, ServiceError } from '@repo/service-core';
@@ -15,6 +13,7 @@ import type { Context } from 'hono';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
+import { toEventDomainUpdate } from './to-domain-update';
 
 const eventService = new EventService({ logger: apiLogger });
 
@@ -46,8 +45,9 @@ export const protectedUpdateEventRoute = createProtectedRoute({
         const actor = getActorFromContext(ctx);
         const id = params.id as string;
 
-        // Convert HTTP input to domain input
-        const domainInput = httpToDomainEventUpdate(body as EventUpdateHttp);
+        // Convert HTTP input to domain input, through the same helper the PATCH
+        // on this resource uses.
+        const domainInput = toEventDomainUpdate({ body });
         const result = await eventService.update(actor, id, domainInput);
 
         if (result.error) {

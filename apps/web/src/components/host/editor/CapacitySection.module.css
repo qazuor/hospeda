@@ -59,3 +59,10 @@
 .fieldInput[aria-invalid="true"] {
     border-color: oklch(0.55 0.22 25);
 }
+
+.fieldHint {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: var(--space-1, 0.25rem) 0 0;
+}

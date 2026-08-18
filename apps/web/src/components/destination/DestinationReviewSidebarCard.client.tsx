@@ -299,7 +299,7 @@ export function DestinationReviewSidebarCard({
             } catch {
                 setError(
                     t(
-                        'apiError.NETWORK_ERROR',
+                        'common.apiError.NETWORK_ERROR',
                         'No pudimos conectar con el servidor. Probá de nuevo.'
                     )
                 );

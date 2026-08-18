@@ -72,6 +72,34 @@ const AccommodationContactInfoReadSchema = z.object({
     preferredPhone: PreferredContactEnumSchema.nullish()
 });
 
+/**
+ * PUBLIC contactInfo shape (H-118) — only `mobilePhone`/`personalEmail`/
+ * `website`, the three fields the host contact form actually collects
+ * (`ContactForm.client.tsx`'s `OWN_FIELDS`: phone/whatsapp/email/website +
+ * socials) and that the owner approved for public display alongside the
+ * existing WhatsApp button and social links (owner decision, H-118).
+ *
+ * Deliberately EXCLUDES the rest of {@link AccommodationContactInfoReadSchema}:
+ * - `workEmail`/`workPhone`/`homePhone`: not collected by the current contact
+ *   form, so a value here can only come from another write path (admin edit,
+ *   an import) the host never reviewed for public exposure. Stays
+ *   protected/admin-only.
+ * - `whatsapp`: already has its own dedicated, per-VIEWER-entitlement-gated
+ *   public channel — the owner-derived `hasWhatsapp` boolean on this same
+ *   schema plus `GET /protected/accommodations/:id/whatsapp` (HOS-19).
+ *   Re-exposing the raw number in an unauthenticated `contactInfo.whatsapp`
+ *   would silently bypass that gate for every accommodation, publishing the
+ *   number to viewers whose plan is not entitled to see it.
+ * - `preferredEmail`/`preferredPhone`: internal channel-preference metadata
+ *   (which of the two the host prefers to be reached on), not a contact
+ *   value — no public UI has a use for it.
+ */
+const AccommodationPublicContactInfoSchema = AccommodationContactInfoReadSchema.pick({
+    mobilePhone: true,
+    personalEmail: true,
+    website: true
+});
+
 /** Social read shape — plain strings (legacy variant URLs like `m.facebook.com`/mobile share links fail the platform regex). */
 const AccommodationSocialNetworksReadSchema = z.object({
     facebook: z.string().optional(),
@@ -285,6 +313,16 @@ export const AccommodationPublicSchema = AccommodationSchema.pick({
     seo: AccommodationSeoReadSchema.nullish(),
     price: AccommodationPriceReadSchema.nullish(),
     socialNetworks: AccommodationSocialNetworksReadSchema.nullish(),
+    /**
+     * H-118: narrow public projection of the host's contact channels
+     * (phone/email/website only — see {@link AccommodationPublicContactInfoSchema}
+     * for exactly what is included and why). Added via `.extend()`, not
+     * `.pick()`, since the base `.pick()` call above deliberately omits
+     * `contactInfo` entirely (mirrors the gastronomy/experience public
+     * schemas' "Omits: ... contactInfo (direct)" precedent) — this schema
+     * re-adds a deliberately narrowed shape instead of the full one.
+     */
+    contactInfo: AccommodationPublicContactInfoSchema.nullish(),
     location: AccommodationLocationReadSchema.nullish(),
     /**
      * Rich-text (markdown) variant of the description for entitled hosts.

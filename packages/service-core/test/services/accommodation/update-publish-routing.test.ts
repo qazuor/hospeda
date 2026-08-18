@@ -62,6 +62,38 @@ function createPublishDeps(
     };
 }
 
+/**
+ * Media model stub returning one featured image.
+ *
+ * `publish()` now reads the listing's media because the main image is a publish
+ * requirement (H-101). These tests are about ROUTING — that an ACTIVE transition
+ * reaches `publish()` at all — so they hand it a complete listing and let the
+ * completeness suite in `publish.test.ts` cover the missing-field cases.
+ *
+ * @returns A model mock exposing only what the composer calls.
+ */
+function createMediaModelMock() {
+    return {
+        findByAccommodations: vi.fn(
+            async ({ accommodationIds }: { accommodationIds: string[] }) =>
+                new Map(
+                    accommodationIds.map((id) => [
+                        id,
+                        [
+                            {
+                                url: 'https://cdn.example.test/main.jpg',
+                                isFeatured: true,
+                                state: 'visible',
+                                sortOrder: 0,
+                                moderationState: 'APPROVED'
+                            }
+                        ]
+                    ])
+                )
+        )
+    };
+}
+
 function buildService(
     model: ReturnType<typeof createMockBaseModel>,
     userModel: UserModel,
@@ -73,7 +105,12 @@ function buildService(
         model as AccommodationModel,
         null,
         userModel,
-        publishDeps ?? null
+        publishDeps ?? null,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        createMediaModelMock() as never
     );
 }
 

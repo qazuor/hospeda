@@ -118,6 +118,26 @@ describe('loadAccommodationEditorData — request scoping', () => {
         expect(destinationsList).toHaveBeenCalledTimes(1);
         expect(amenitiesList).not.toHaveBeenCalled();
     });
+
+    // H-107 (smoke agosto 2026): the Destino dropdown listed all 26 live
+    // destinations, but only 22 are cities. The other four — Argentina
+    // (COUNTRY), Entre Rios (PROVINCE), Litoral Argentino (REGION) and
+    // Departamento Uruguay (DEPARTMENT) — render identically to a city and are
+    // rejected on save by `_assertDestinationIsCity` (SPEC-095). Picking one
+    // was a dead end: a legitimate-looking option that can never be saved.
+    //
+    // The server rule is correct and stays; the list is what has to reflect it.
+    it('should scope the destinations list to CITY (H-107)', async () => {
+        await loadAccommodationEditorData({
+            accommodationId: 'acc',
+            cookieHeader: COOKIE,
+            need: ['destinations']
+        });
+
+        expect(destinationsList).toHaveBeenCalledWith(
+            expect.objectContaining({ destinationType: 'CITY' })
+        );
+    });
 });
 
 describe('loadAccommodationEditorData — payload shape', () => {

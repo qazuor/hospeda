@@ -6,20 +6,31 @@ Mascota oficial, presentador virtual y guía turístico de Hospeda.
 
 ## Imágenes de referencia
 
-Están en esta misma carpeta y son la fuente de verdad visual. **Van en cada generación junto con este texto.**
+Están en las subcarpetas de `docs/marketing/` y son la fuente de verdad visual. **Van en cada generación junto con este texto.**
+
+Los nombres son cortos, sin acentos ni espacios, para poder referenciarlos como `@personaje`, `@poses`, `@expresiones`, `@bocas`, `@acciones`, `@escena7`, `@pantalla` y `@voz` en los modelos que aceptan referencias etiquetadas.
 
 | Archivo | Qué contiene |
 |---|---|
-| `Hospedin.png` | El personaje en pose principal, cuerpo entero, alta resolución |
-| `Guía de personaje de Hospedín.png` | Paleta, cinco vistas (frente, 3/4, perfil, atrás, 3/4 atrás), cinco expresiones, cuatro poses de uso |
-| `Guía de personaje de Hospedín2.png` | Poses ampliadas, diez expresiones, **hoja de bocas para sincronización labial**, usos con accesorios |
+| `personaje/personaje.png` | **Lámina madre.** El personaje en pose principal, cuerpo entero, alta resolución |
+| `personaje/poses.png` | Turnaround de cinco vistas (frente, 3/4 adelante, perfil, espaldas, 3/4 atrás) + la paleta con los cinco códigos hex |
+| `personaje/expresiones.png` | Quince expresiones faciales rotuladas, en tres filas de cinco |
+| `personaje/bocas.png` | **Hoja de bocas para sincronización labial**: quince formas rotuladas (A, E, I, O, U, M, B, P, F, V, L, T, D, S, R) |
+| `personaje/acciones.png` | Diecinueve poses de cuerpo entero rotuladas |
+| `personaje/voz.wav` | Seis segundos de la voz de Hospedín, para los modelos que clonan timbre a partir de un audio |
+| `escenas/escena1.png` … `escena30.png` | Hospedín integrado en distintos lugares del Litoral, listos para usar como cuadro de partida. Cuál es cuál: [`prompts/fondos.md`](prompts/fondos.md) |
+| `capturas/pantalla.png` | Captura real de la home de Hospeda en móvil, para lo que se vea en pantalla. Proporciones y cómo grabar: [`prompts/grabaciones.md`](prompts/grabaciones.md) |
+| `placas/final.png` | Placa de cierre con logo, dirección y llamado a la acción |
 
 **Cuál usar según el caso:**
 
-- **Un plano nuevo del personaje** → `Hospedin.png` como referencia principal
-- **Una vista o ángulo específico** → la vista correspondiente de la primera guía
-- **Una expresión** → la hoja de expresiones de la segunda guía
-- **Lip sync** → la hoja de bocas de la segunda guía, que tiene las formas para A, E, I, O, U, M, B, P, F, V, L, T, D, S y R
+- **Un plano nuevo del personaje** → `personaje/personaje.png` como referencia principal
+- **Una vista o ángulo específico** → la vista correspondiente de `personaje/poses.png`
+- **Una expresión** → la que corresponda de `personaje/expresiones.png`
+- **Una pose de cuerpo entero** → la que corresponda de `personaje/acciones.png`
+- **Lip sync** → `personaje/bocas.png`, que tiene las formas para A, E, I, O, U, M, B, P, F, V, L, T, D, S y R
+- **Una escena concreta** → la de `escenas/` que corresponda: ya traen personaje y lugar integrados en una sola pieza
+- **La voz** → `personaje/voz.wav` en los modelos que aceptan audio de referencia
 
 ---
 
@@ -131,7 +142,7 @@ Su diseño combina visualmente los tres elementos del logo, que son los tres ele
 - **Boca simple y muy expresiva**
 - **Brazos y manos azules**
 - **Piernas azules**
-- **Buzo canguro blanco con capucha**, con el logo de Hospeda al frente y **`hospeda.com.ar` impreso en la espalda**
+- **Buzo canguro blanco con capucha** y cordones azules, con el logo de Hospeda al frente —el símbolo **y debajo la palabra `hospeda`**, en minúsculas y azul oscuro, como una sola pieza— y **`hospeda.com.ar` impreso en la espalda**
 - **Zapatillas blancas** con detalles en azul, verde y turquesa
 
 ### El círculo naranja
@@ -139,6 +150,8 @@ Su diseño combina visualmente los tres elementos del logo, que son los tres ele
 Hospedín tiene un **círculo naranja flotante** junto a la zona superior derecha de su cabeza.
 
 Ese círculo **representa el sol** y proviene directamente del logo de Hospeda. Es una parte esencial de la identidad visual del personaje.
+
+**Flota separado de la cabeza**, con aire visible entre los dos. No la toca, no se apoya en el contorno y no se mete adentro. Cuando el personaje gira, el círculo lo acompaña: queda del lado que corresponda por el giro, pero nunca desaparece.
 
 > ⚠️ **Nunca eliminarlo.** Debe permanecer visualmente asociado a Hospedín en toda generación.
 
@@ -292,16 +305,32 @@ Los ojos, cejas y boca de Hospedín son muy expresivos.
 | **Divertido** | Pequeña sonrisa, posibilidad de guiño cuando sea apropiado |
 | **Serio / informativo** | Expresión neutral pero amigable, postura tranquila, mirada atenta |
 
+### Las cinco expresiones negativas
+
+Hospedín también nombra el problema antes de resolverlo, y para eso necesita expresiones que no sean alegres. **Son incómodas, nunca agresivas**: la sección 5 pone "agresivo" en la lista de lo que el personaje no debe ser, y eso no se levanta acá.
+
+| Expresión | Cómo se ve |
+|---|---|
+| **Fastidio** | Párpados a media asta, cejas caídas, boca en línea torcida. Resignado, no enojado |
+| **Molesto** | Cejas juntas hacia adentro, boca recta. Es lo más lejos que llega: fastidio con el ceño fruncido |
+| **Agobio** | Cejas caídas hacia afuera, ojos grandes, boca hacia abajo. Desbordado, pidiendo ayuda |
+| **Susto** | Cejas altas, ojos muy abiertos, boca chica abierta. Sorpresa desagradable, breve |
+| **Preocupación** | Cejas caídas, mirada baja, boca en arco hacia abajo. Es la más suave de las cinco |
+
 ### Expresiones ya generadas
 
-Están en las guías de referencia y conviene partir de ellas antes de generar una nueva:
+Las quince de `personaje/expresiones.png`. Conviene partir de una de ellas antes de generar una nueva:
 
-`alegre` · `risueño` · `guiñando` · `entusiasmado` · `pensando` · `duda` · `contento` · `serio` · `divertido` · `sorprendido`
+`alegre` · `risueño` · `guiñando` · `entusiasmado` · `contento` · `pensando` · `duda` · `serio` · `sorprendido` · `divertido` · `fastidio` · `molesto` · `agobio` · `susto` · `preocupación`
 
 ### Poses ya generadas
 
-`te explico` · `descubrí` · `es fácil` · `¡vamos!` · `saludando` · `señalando` · `con el teléfono mostrando la pantalla` · `con valija` · `con mochila` · `con la notebook` · `con el mapa` · `con la cámara de fotos` · `con la lamparita de idea`
+Las diecinueve de `personaje/acciones.png`:
 
+`saludando` · `señalando` · `te explico` · `descubrí` · `es fácil` · `enumerando` · `¡vamos!` · `pensando` · `negando` · `agobiado` · `caminando` · `con la llave` · `con el teléfono mostrando la pantalla` · `con valija` · `con mochila` · `con la notebook` · `con el mapa` · `con la cámara de fotos` · `con la lamparita de idea`
+
+> **Al usar `acciones.png` como referencia**: en `con la notebook`, `con el mapa` y `con la cámara`, el objeto tapa el logo del buzo. Es un defecto de esa lámina, no una licencia: el logo con la palabra `hospeda` debajo del símbolo va siempre visible salvo que el objeto lo tape físicamente en el plano. Para esas tres, tomar el logo de `personaje/personaje.png`.
+>
 > Hospedín **nunca** debe resultar aterrador, agresivo, perturbador, extraño ni siniestro.
 
 ---

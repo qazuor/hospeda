@@ -44,7 +44,8 @@ vi.mock('@/components/host/editor/RichTextEditor.client', () => ({
 
 vi.mock('../../../../src/lib/i18n', () => ({
     createTranslations: () => ({
-        t: (key: string, fallback?: string) => fallback ?? `[MISSING:${key}]`
+        t: (key: string, fallback?: string) => fallback ?? `[MISSING:${key}]`,
+        tPlural: (key: string, count: number) => `[MISSING:${key}] ${count}`
     })
 }));
 

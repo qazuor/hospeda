@@ -456,13 +456,18 @@ export class AccommodationModel extends BaseModelImpl<Accommodation> {
      *   was replaced with the partial object. Merging preserves the unsent
      *   fields. The merge is shallow, which is correct: each group is one level
      *   deep (`location.coordinates` travels as a unit).
+     * - `seo` (H-121 / G7 smoke) — same hazard as the five above: the editor's
+     *   SEO section can send `seoTitle` alone, and without the merge that would
+     *   wholesale-replace the column and silently drop a previously-stored
+     *   `description` (or vice versa).
      */
     protected override readonly mergeableJsonbColumns = [
         'price',
         'extraInfo',
         'contactInfo',
         'socialNetworks',
-        'location'
+        'location',
+        'seo'
     ] as const;
 
     protected getTableName(): string {

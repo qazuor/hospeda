@@ -37,6 +37,7 @@ import type {
     ValidationResult
 } from '@repo/schemas';
 import { MAX_BULK_CHECK_ENTITY_IDS } from '@repo/schemas';
+import type { MediaAttribution } from '../media';
 import { apiClient } from './client';
 import type { ApiResult, PaginatedResponse } from './types';
 
@@ -2540,23 +2541,36 @@ export const hostTradesApi = {
     /**
      * The usages recorded on the caller's own listing (HOS-376 T-050).
      *
-     * @param params - Optional `status` filter, page window, `cookieHeader` from SSR.
+     * `status: 'PENDING'` + `declaredBy: 'HOST'` is the PROVIDER'S INBOX — the
+     * mirror of {@link hostTradesApi.listPendingUsages} on the host's side. The
+     * counterpart answers, always, so "waiting on me" is exactly "pending, and
+     * I did not open it".
+     *
+     * Both filters are sent to the API rather than applied to the page here.
+     * Narrowing a `PENDING` page client-side would drop rows that live on the
+     * next page, and the failure it produces is an EMPTY inbox announcing "no
+     * tenés usos pendientes" to a provider a host is waiting on (H-06/H-65/H-159).
+     *
+     * @param params - Optional `status` and `declaredBy` filters, page window,
+     *   `cookieHeader` from SSR.
      * @returns The page of usages plus its pagination envelope.
      */
     listOwnUsages({
         status,
+        declaredBy,
         page,
         pageSize,
         cookieHeader
     }: {
         status?: BenefitUsageStatus;
+        declaredBy?: BenefitUsageDeclaredBy;
         page?: number;
         pageSize?: number;
         cookieHeader?: string;
     } = {}): Promise<ApiResult<PaginatedResponse<BenefitUsage>>> {
         return apiClient.getListProtected({
             path: `${PROTECTED}/host-trades/mine/usages`,
-            params: { status, page, pageSize },
+            params: { status, declaredBy, page, pageSize },
             cookieHeader
         });
     },
@@ -4882,6 +4896,8 @@ export interface AccommodationMediaRow {
     readonly caption?: string;
     readonly description?: string;
     readonly alt?: string;
+    /** Photo credit (H-125). `null` when the row has none. */
+    readonly attribution?: MediaAttribution | null;
     readonly isFeatured: boolean;
     readonly sortOrder: number;
     readonly state: 'visible' | 'archived';
@@ -4901,6 +4917,8 @@ export interface AccommodationMediaRow {
  * const added = await accommodationMediaApi.addMedia({ id: 'acc-uuid', body: { url, publicId } });
  * await accommodationMediaApi.removeMedia({ id: 'acc-uuid', mediaId: added.data.media.id });
  * await accommodationMediaApi.setFeaturedMedia({ id: 'acc-uuid', mediaId: added.data.media.id });
+ * await accommodationMediaApi.reorderMedia({ id: 'acc-uuid', orderedIds: ['a', 'b', 'c'] });
+ * await accommodationMediaApi.updateMedia({ id: 'acc-uuid', mediaId: added.data.media.id, body: { alt: 'Living con ventanal al jardín' } });
  * ```
  */
 export const accommodationMediaApi = {
@@ -4989,6 +5007,70 @@ export const accommodationMediaApi = {
     }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
         return apiClient.put({
             path: `${PROTECTED}/accommodations/${id}/media/${mediaId}/featured`
+        });
+    },
+
+    /**
+     * Reorder the visible gallery photos of an accommodation (HOS-122).
+     *
+     * The server validates that `orderedIds` matches the CURRENT full set of
+     * visible rows exactly — which includes the featured (portada) row, not
+     * just the gallery — and rejects the call otherwise. Callers must include
+     * the featured row's id even though it never moves in the UI.
+     *
+     * @param params - Accommodation ID and the full ordered list of visible
+     *   media UUIDs (featured id + gallery ids, in the desired order)
+     * @returns `{ media: AccommodationMediaRow[] }` — all visible rows in
+     *   their new order
+     */
+    reorderMedia({
+        id,
+        orderedIds
+    }: {
+        readonly id: string;
+        readonly orderedIds: readonly string[];
+    }): Promise<ApiResult<{ readonly media: readonly AccommodationMediaRow[] }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/accommodations/${id}/media/reorder`,
+            body: { orderedIds }
+        });
+    },
+
+    /**
+     * Correct a media row's text metadata — caption, description, and alt
+     * (HOS-125). Lets an owner fix a typo or write missing accessible text
+     * without deleting and re-uploading the photo (which would burn a second
+     * Cloudinary asset and lose the row's gallery position).
+     *
+     * Each field is nullable and optional: omit it to leave the column
+     * untouched, send `null` to CLEAR it, send a value to replace it. At
+     * least one field must be present — an empty body is rejected by the API
+     * as `VALIDATION_ERROR`. `attribution` is intentionally not exposed
+     * here — it targets image-bank imports (photographer/license/source),
+     * not an owner's own photo.
+     *
+     * @param params - Accommodation ID, media row ID (DB UUID), and the
+     *   fields to update
+     * @returns `{ media: AccommodationMediaRow }` — the updated row
+     */
+    updateMedia({
+        id,
+        mediaId,
+        body
+    }: {
+        readonly id: string;
+        readonly mediaId: string;
+        readonly body: {
+            readonly caption?: string | null;
+            readonly description?: string | null;
+            readonly alt?: string | null;
+            /** Whole credit object, or `null` to clear it. */
+            readonly attribution?: MediaAttribution | null;
+        };
+    }): Promise<ApiResult<{ readonly media: AccommodationMediaRow }>> {
+        return apiClient.patch({
+            path: `${PROTECTED}/accommodations/${id}/media/${mediaId}`,
+            body
         });
     }
 };

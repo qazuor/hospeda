@@ -154,9 +154,15 @@ describe('PlatformSettingsService', () => {
 
             expectSuccess(result);
             expect(result.data).toEqual(seoRow);
+            // The persisted value is the PARSED one, not the raw input: the
+            // caller sent three fields and `indexNowEnabled` is filled in by the
+            // schema's `.default(false)` (HOS-585). Asserting the full object
+            // rather than `seoRow.value` is what pins that down — a round-trip
+            // assertion would pass even if the default silently stopped being
+            // written.
             expect(modelMock.upsertByKey).toHaveBeenCalledWith(
                 'seo.defaults',
-                seoRow.value,
+                { ...seoRow.value, indexNowEnabled: false },
                 VALID_UUID,
                 undefined
             );

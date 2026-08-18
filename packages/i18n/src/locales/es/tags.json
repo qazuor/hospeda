@@ -43,7 +43,9 @@
             "title": "Eliminar etiqueta",
             "confirmButton": "Sí, eliminar",
             "cancelButton": "Cancelar",
-            "impactCount": "Esta acción eliminará la etiqueta de {{count}} entidades."
+            "impactCount": "Esta acción eliminará la etiqueta de {{count}} entidades.",
+            "impactCount_one": "Esta acción eliminará la etiqueta de {{count}} entidad.",
+            "impactCount_other": "Esta acción eliminará la etiqueta de {{count}} entidades."
         }
     },
     "postTags": {

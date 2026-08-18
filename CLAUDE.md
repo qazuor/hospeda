@@ -6,9 +6,9 @@
 
 ### Technology Stack
 
-- **Runtime**: Node.js >= 18
+- **Runtime**: Node.js >= 22.19 (`engines` in the root `package.json`; CI runs Node 22)
 - **Language**: TypeScript (strict mode)
-- **Package Manager**: pnpm 9.x (workspaces)
+- **Package Manager**: pnpm 11.x (workspaces) — pinned by `packageManager`, so use `corepack pnpm`
 - **Build System**: TurboRepo
 - **Linter/Formatter**: Biome
 - **Testing**: Vitest
@@ -523,6 +523,8 @@ Full details: [docs/guides/dependency-policy.md](docs/guides/dependency-policy.m
 - **`db:push` is dev-only** — NEVER run `drizzle-kit push` against the VPS. Use `pnpm db:migrate` for staging and production. On VPS use `hops db-migrate --target=staging|prod`.
 - **`db:generate` before a schema PR** — the drift guard blocks CI if the TS schema changed without a committed migration file.
 - **LIKE wildcard injection**: NEVER use raw `ilike()` from `drizzle-orm`. Always use `safeIlike()` from `@repo/db`, which auto-escapes `%`, `_`, and `\` metacharacters. CI will reject PRs with raw `ilike()` in production source. See `packages/db/src/utils/drizzle-helpers.ts`.
+- **Querying `PermissionEnum` values: `lower()`, never a bare `LIKE`** — the enum does NOT use one convention. 13 values across 8 families spell a multi-word entity with dots (`event.organizer.manage`) while their own family uses camelCase (`eventOrganizer.create` + 6 siblings). Postgres `LIKE` is **case-sensitive**, so `where permission::text like '%organizer%'` returns **1 of 8** — and that partial result reads exactly like "the family is seeded to zero roles", which is the most believable false negative there is. Use `lower(permission::text)`. Both spellings are live in production and renaming means migrating real `role_permission` rows, so the split stays; `packages/schemas/test/enums/permission-naming-convention.guard.test.ts` freezes the 13 so a 14th cannot appear unnoticed.
+- **API error contract** — what a route answers when it refuses is fixed by [`apps/api/docs/error-contract.md`](apps/api/docs/error-contract.md): the ORDER (auth 401 → permission 403 → input shape 400 → existence/ownership 404 → business rules) and the status/`error.code` pair for each case. Three rules bite most often: a 4xx is **never** `INTERNAL_ERROR`; a resource owned by somebody else answers **404, not 403** (a 403 confirms the id exists); and the guest actor carries a **real UUID**, so an auth guard must ask `isGuestActor(actor)` and never `!actor?.id`. Static guards enforce it and `createProtectedRoute` refuses to boot a route that leaves it.
 
 ## Single Source of Truth
 

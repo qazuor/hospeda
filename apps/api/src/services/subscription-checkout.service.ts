@@ -1,48 +1,51 @@
 /**
- * Subscription Checkout Service (SPEC-126 D8)
+ * Subscription Checkout Service (SPEC-126 D8, rearchitected by HOS-191)
  *
  * Encapsulates the business logic that initiates a paid subscription:
- *   - plan slug -> qzpay plan lookup,
- *   - active monthly price resolution,
- *   - `billing.subscriptions.create({ mode: 'paid' })` call,
- *   - `providerInitPoint` extraction with sandbox fallback,
+ *   - plan slug (or id) -> qzpay plan lookup,
+ *   - active price resolution for the requested cadence,
+ *   - MercadoPago `preapproval_plan` resolution/provisioning,
+ *   - `pending_provider` local subscription + correlation row materialization,
  *   - response shape (`checkoutUrl`, `localSubscriptionId`, `expiresAt`).
  *
- * The function is intentionally framework-agnostic: it takes the resolved
+ * ALL FOUR checkout entry points here — accommodation monthly, accommodation
+ * annual, commerce, and partner — take the SAME "Path C" hosted share-link
+ * flow. No preapproval is ever created server-side: `billing.subscriptions
+ * .create({ mode: 'paid', providerPriceId })` issues a `POST /preapproval`
+ * carrying a `preapproval_plan_id` and no `card_token_id`, which MercadoPago
+ * rejects with HTTP 400 ("card_token_id is required") because this self-serve
+ * checkout never tokenizes a card. MercadoPago's own hosted page collects it
+ * instead, and the real preapproval id is linked back afterwards (F2 back_url /
+ * F3 webhook — `billing/link-preapproval.service.ts`).
+ *
+ * The functions are intentionally framework-agnostic: they take the resolved
  * `billing` instance, the validated input, and the env-resolved URL
- * builders, and returns either a success response or throws a
+ * builders, and return either a success response or throw a
  * {@link SubscriptionCheckoutError} with a discriminated `code` that the
  * caller maps to its own protocol (HTTP, gRPC, CLI exit code, etc.).
- *
- * The annual branch is intentionally NOT implemented here — it remains
- * deferred per the SPEC-126 D1 annual follow-up note in `spec.md`.
  *
  * @module services/subscription-checkout.service
  */
 
-import type { QZPayBilling, QZPayPollingResourceType } from '@qazuor/qzpay-core';
+import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { TEST_DAILY_PLAN } from '@repo/billing';
-import {
-    billingSubscriptions,
-    commerceListingSubscriptions,
-    type DrizzleClient,
-    eq,
-    partnerSubscriptions,
-    withTransaction
-} from '@repo/db';
-import { ProductDomainEnum } from '@repo/schemas';
+import { commerceListingSubscriptions, type DrizzleClient, partnerSubscriptions } from '@repo/db';
+import { ProductDomainEnum, SubscriptionStatusEnum } from '@repo/schemas';
 import {
     calculatePromoCodeEffect,
     resolveCheckoutFreeTrialDays,
     resolvePlanTrialConfig
 } from '@repo/service-core';
 import { env } from '../utils/env.js';
-import { apiLogger } from '../utils/logger.js';
+import { sanitizeEmailForMercadoPago } from '../utils/mp-email.js';
+import {
+    resolveReusableCommerceCheckout,
+    resolveReusablePartnerCheckout
+} from './billing/checkout-idempotency.js';
 import {
     buildPreapprovalPlanShareLink,
     resolveCheckoutMpPlanId
 } from './billing/mp-plan-provisioning.service.js';
-import { createPaidSubscription } from './billing/paid-subscription-create.js';
 import type { PendingCheckoutDiscount } from './billing/pending-provider-subscription-create.js';
 import { createPendingProviderSubscription } from './billing/pending-provider-subscription-create.js';
 import { planDisplayNameFromPlan } from './billing/plan-change-reason.js';
@@ -66,105 +69,6 @@ export { SubscriptionCheckoutError };
  * messages or schedules that should agree with the reaper.
  */
 export const PENDING_PROVIDER_TTL_MS = 30 * 60 * 1000;
-
-/**
- * Inputs for {@link schedulePollingForSubscription}.
- *
- * Aggregates everything the polling-job storage needs plus a `sourceLabel`
- * for log diagnostics (so an operator can tell which checkout flow
- * enqueued the job from log lines alone). Kept internal because it
- * only makes sense inside this module.
- */
-interface SchedulePollingInput {
-    readonly billing: QZPayBilling;
-    readonly subscriptionId: string;
-    readonly providerResourceId: string;
-    readonly resourceType: QZPayPollingResourceType;
-    readonly planSlug: string;
-    readonly sourceLabel: string;
-}
-
-/**
- * Shared helper to enqueue a subscription-polling job after a paid
- * subscription is initiated. Both monthly (`subscription`) and annual
- * (`one_time_payment`) flows call this so the env-flag check, error
- * handling, and log shapes stay in one place.
- *
- * Skipped silently when:
- *   - The {@link env.HOSPEDA_BILLING_POLLING_ENABLED} flag is off (test/legacy environments).
- *   - The configured storage adapter does not expose `subscriptionPollingJobs`.
- *   - The provider returned no resource id to poll (defensive guard for
- *     callers that pass an empty string).
- *
- * Non-fatal: a polling-enqueue failure is logged but does not throw —
- * the underlying subscription was created successfully and the webhook
- * remains the primary activation path. This mirrors how the prior
- * inline implementation behaved on the monthly flow.
- */
-async function schedulePollingForSubscription(input: SchedulePollingInput): Promise<void> {
-    const { billing, subscriptionId, providerResourceId, resourceType, planSlug, sourceLabel } =
-        input;
-
-    if (!env.HOSPEDA_BILLING_POLLING_ENABLED) {
-        return;
-    }
-
-    if (!providerResourceId) {
-        apiLogger.warn(
-            { subscriptionId, resourceType, sourceLabel },
-            'Skipping polling enqueue — provider returned no resource id (cannot poll)'
-        );
-        return;
-    }
-
-    const pollingStorage = billing.getStorage().subscriptionPollingJobs;
-    if (!pollingStorage) {
-        return;
-    }
-
-    try {
-        const job = await pollingStorage.create({
-            subscriptionId,
-            providerResourceId,
-            resourceType,
-            provider: 'mercadopago',
-            metadata: {
-                source: sourceLabel,
-                planSlug
-            }
-        });
-        if (job) {
-            apiLogger.debug(
-                {
-                    jobId: job.id,
-                    subscriptionId,
-                    providerResourceId,
-                    resourceType,
-                    nextPollAt: job.nextPollAt.toISOString()
-                },
-                'Scheduled subscription polling fallback'
-            );
-        } else {
-            apiLogger.warn(
-                { subscriptionId, providerResourceId, resourceType },
-                'Active polling job already exists for subscription — skipping enqueue'
-            );
-        }
-    } catch (error) {
-        // Non-fatal: subscription was created successfully; failing to
-        // schedule polling means we rely entirely on the webhook for
-        // activation. Log so an operator can investigate.
-        apiLogger.error(
-            {
-                subscriptionId,
-                providerResourceId,
-                resourceType,
-                error: error instanceof Error ? error.message : String(error)
-            },
-            'Failed to enqueue subscription polling job — webhook is the only path now'
-        );
-    }
-}
 
 /**
  * Resolve a plan by its slug. Hospeda treats `QZPayPlan.name` as the
@@ -721,8 +625,6 @@ export interface InitiateCommerceMonthlySubscriptionInput {
         readonly paymentMethodReturnUrl: string;
         readonly notificationUrl: string;
     };
-    /** Drizzle client override for tests. */
-    readonly db?: DrizzleClient;
 }
 
 /**
@@ -736,23 +638,42 @@ export interface InitiateCommerceMonthlySubscriptionResult {
 }
 
 /**
- * Initiate a monthly commerce-listing subscription (SPEC-239 T-048).
+ * Initiate a monthly commerce-listing subscription (SPEC-239 T-048), through the
+ * same Path C hosted share-link checkout the accommodation flows use (HOS-191).
  *
- * Reuses the accommodation `mode: 'paid'` MP preapproval flow, then:
- *   1. (D3) stamps `billing_subscriptions.product_domain = 'commerce'` via a
- *      typed Drizzle UPDATE.
- *   2. (D4) upserts the `commerce_listing_subscriptions` link row keyed on the
- *      UNIQUE(entity_type, entity_id) constraint (one link per entity), so a
- *      re-subscription overwrites `subscriptionId` + `status` rather than
- *      inserting a duplicate.
+ * Commerce used to call `createPaidSubscription` →
+ * `billing.subscriptions.create({ mode: 'paid', providerPriceId })`, which issues
+ * a server-side `POST /preapproval` carrying a `preapproval_plan_id` and NO
+ * `card_token_id` — the exact request MercadoPago answers with HTTP 400
+ * ("card_token_id is required"), since this self-serve checkout never tokenizes a
+ * card. HOS-191 fixed the two accommodation paths and left commerce and partner
+ * on the broken hybrid; this is that same fix applied here. The 400 was latent
+ * only because the completeness gate (H-154) rejected commerce checkouts with a
+ * 422 earlier in the handler — once that gate was corrected the 400 became
+ * reachable.
  *
- * The link row is created with `status = subscription.status` (qzpay's
- * `incomplete` until the preapproval webhook activates it). The visibility
- * reconciler flips the listing to PUBLIC once the webhook/cron applies an
- * active status.
+ * Flow:
+ *   1. resolve/provision the no-trial MP `preapproval_plan` for this commercial
+ *      plan variant (`resolveCheckoutMpPlanId`);
+ *   2. materialize a `pending_provider` `billing_subscriptions` row stamped
+ *      `product_domain = 'commerce'` (D3) plus its `billing_pending_checkouts`
+ *      correlation row, and — in the SAME transaction — upsert the
+ *      `commerce_listing_subscriptions` link row (D4);
+ *   3. redirect the browser to MercadoPago's hosted share link, where MP itself
+ *      collects the card. The real preapproval id is linked back later by the
+ *      back_url handler (F2) or the webhook fallback (F3).
  *
- * @throws SubscriptionCheckoutError When the plan or monthly price is missing,
- *   or when the payment adapter returns no init point.
+ * The link row is created at `pending_provider` (Path C's birth status) rather
+ * than qzpay's `incomplete`. Both are inactive for visibility purposes —
+ * `ACTIVE_STATUSES` in `commerce-visibility.ts` is `{active, trialing}` — so the
+ * listing stays PRIVATE until the webhook reports a paying status, exactly as
+ * before. `reconcileCommerceListingForSubscription` then updates the link row and
+ * flips the listing on the `pending_provider → active` transition.
+ *
+ * @param input - See {@link InitiateCommerceMonthlySubscriptionInput}.
+ * @returns The hosted checkout URL, the local subscription id, and its expiry.
+ * @throws SubscriptionCheckoutError When the plan, monthly price, or billing
+ *   customer is missing, or when the MP plan could not be provisioned.
  */
 export async function initiateCommerceMonthlySubscription(
     input: InitiateCommerceMonthlySubscriptionInput
@@ -772,13 +693,13 @@ export async function initiateCommerceMonthlySubscription(
         );
     }
 
-    // AC-7: the `mode: 'paid'` create + checkoutUrl resolution + fail-closed
-    // MISSING_INIT_POINT guard live in the shared `createPaidSubscription`
-    // helper (`billing/paid-subscription-create.ts`), same as the accommodation
-    // and reactivation flows. Pure extraction — no behavior change versus the
-    // previous inline block.
     // HOS-191: commerce listings are always no-trial (trialDays: 0); subscribe
     // against the no-trial MP preapproval_plan for uniform plan-based checkout.
+    // `planName` is the buyer-visible display name — it becomes the MP plan's
+    // `reason`, i.e. what the buyer reads on MercadoPago's hosted page. With the
+    // `billing.subscriptions.create` call gone, this is now the ONLY reason MP
+    // ever sees for a commerce checkout (qzpay's `buildCreateBody` used to build
+    // a second one from the raw plan SLUG).
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
@@ -788,92 +709,131 @@ export async function initiateCommerceMonthlySubscription(
         currency: monthlyPrice.currency,
         billingInterval: 'monthly',
         trialDays: 0,
-        // Same URL used below as the preapproval's back_url; MP requires it on
-        // preapproval_plan creation too (qzpay-mercadopago 2.5.0).
+        // Same URL later used as the preapproval's back_url once the real
+        // preapproval exists (F2); MP also requires it on preapproval_plan
+        // creation (qzpay-mercadopago 2.5.0).
         backUrl: urls.paymentMethodReturnUrl
     });
 
-    const { subscription, checkoutUrl } = await createPaidSubscription({
-        billing,
+    // ── Idempotency per LISTING (checkout-idempotency.ts) ────────────────────
+    // Path C mints a fresh subscription + a fresh, independently payable share
+    // link on every call, so two clicks on "pay" produced two live MercadoPago
+    // links for ONE listing — and a buyer who paid both was charged twice. The
+    // route-level 409 cannot cover this: it keys on {active, trialing,
+    // past_due}, and an in-flight checkout sits at `pending_provider`, which is
+    // deliberately outside that set (including it would wedge a listing forever
+    // on a single abandoned checkout). Instead, while the checkout is genuinely
+    // in flight, hand back THE SAME link.
+    //
+    // Placed after the MP plan is resolved because the resolved plan is one of
+    // the reuse conditions: `resolveOrProvisionMpPlan` re-provisions on price
+    // drift, and serving a link built on the previous plan would charge the old
+    // price. It resolves from cache, so this costs no extra MercadoPago call.
+    //
+    // Nothing is cancelled or refunded for a superseded pending — the
+    // `abandoned-pending-subs` cron already reaps exactly that row shape.
+    // Living here rather than in the route is what also covers
+    // `routes/commerce/admin/start-subscription.ts`, which has no guard at all.
+    const reusable = await resolveReusableCommerceCheckout({
+        entityType,
+        entityId,
+        customerId,
+        planId: plan.id,
+        mpPreapprovalPlanId: providerPriceId
+    });
+    if (reusable) {
+        return reusable;
+    }
+
+    const customer = await billing.customers.get(customerId);
+    if (!customer) {
+        throw new SubscriptionCheckoutError(
+            'CUSTOMER_NOT_FOUND',
+            `Customer '${customerId}' not found`
+        );
+    }
+
+    const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
-        providerPriceId,
-        paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
-        notificationUrl: urls.notificationUrl,
-        metadata: {
-            source: 'start-commerce-monthly',
-            createdBy: 'commerce-subscription-flow',
-            productDomain: ProductDomainEnum.COMMERCE,
-            entityType,
-            entityId
-        }
+        billingInterval: 'monthly',
+        mpPreapprovalPlanId: providerPriceId,
+        // The listing owner IS the payer here (both the owner self-checkout and
+        // the admin-initiated route resolve the OWNER's billing customer), so the
+        // snapshot is a real identity signal for the webhook linker — unlike the
+        // partner flow below.
+        payerEmail: customer.email,
+        trialGranted: false,
+        // D3: stamped inside the helper's transaction. ADR-035 / SPEC-239 —
+        // `loadEntitlements()` filters to `product_domain = 'accommodation'`, so
+        // this is what keeps a commerce subscription from granting its owner the
+        // accommodation entitlement set.
+        productDomain: ProductDomainEnum.COMMERCE,
+        // The SUBSCRIPTION → ENTITY path. The link row below only encodes the
+        // inverse and is upserted per entity, so a second checkout click
+        // overwrites the pointer to this subscription; if the buyer then
+        // completes THIS (still valid) share link, only these coordinates let
+        // `reconcileCommerceListingForSubscription` find the listing to publish.
+        domainMetadata: { commerceEntityType: entityType, commerceEntityId: entityId },
+        // D4: upsert the link row (one per entity) in the SAME transaction. On the
+        // UNIQUE(entity_type, entity_id) conflict, update subscriptionId + status
+        // so re-subscribing an entity reuses the same link row.
+        writeDomainLinkRow: async ({ tx, localSubscriptionId: subscriptionId }) => {
+            await tx
+                .insert(commerceListingSubscriptions)
+                .values({
+                    subscriptionId,
+                    productDomain: ProductDomainEnum.COMMERCE,
+                    entityType,
+                    entityId,
+                    status: SubscriptionStatusEnum.PENDING_PROVIDER
+                })
+                .onConflictDoUpdate({
+                    target: [
+                        commerceListingSubscriptions.entityType,
+                        commerceListingSubscriptions.entityId
+                    ],
+                    set: {
+                        subscriptionId,
+                        status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                        updatedAt: new Date()
+                    }
+                });
+        },
+        livemode: customer.livemode
     });
 
-    // D3 + D4 are wrapped in a single transaction so the commerce path can never
-    // end up with a billing_subscriptions row stamped 'commerce' but no link row
-    // (or vice versa). A partial write would leave the listing unrecoverable: it
-    // could never be reconciled to PUBLIC even after the owner pays.
-    await withTransaction(async (tx) => {
-        // D3: stamp product_domain='commerce' on the freshly-created subscription.
-        // (tx reuses a caller-provided boundary via input.db when present.)
-        await tx
-            .update(billingSubscriptions)
-            .set({ productDomain: ProductDomainEnum.COMMERCE })
-            .where(eq(billingSubscriptions.id, subscription.id));
-
-        // D4: upsert the commerce_listing_subscriptions link row (one per entity).
-        // On the UNIQUE(entity_type, entity_id) conflict, update subscriptionId +
-        // status so re-subscribing an entity reuses the same link row.
-        await tx
-            .insert(commerceListingSubscriptions)
-            .values({
-                subscriptionId: subscription.id,
-                productDomain: ProductDomainEnum.COMMERCE,
-                entityType,
-                entityId,
-                status: subscription.status
-            })
-            .onConflictDoUpdate({
-                target: [
-                    commerceListingSubscriptions.entityType,
-                    commerceListingSubscriptions.entityId
-                ],
-                set: {
-                    subscriptionId: subscription.id,
-                    status: subscription.status,
-                    updatedAt: new Date()
-                }
-            });
-    }, input.db);
-
-    // Polling fallback — same as the accommodation monthly flow.
-    await schedulePollingForSubscription({
-        billing,
-        subscriptionId: subscription.id,
-        providerResourceId: subscription.providerSubscriptionIds?.mercadopago ?? '',
-        resourceType: 'subscription',
-        planSlug,
-        sourceLabel: 'start-commerce-monthly'
+    // No polling enqueue — Path C creates no MP resource synchronously, so there
+    // is no `providerResourceId` to poll. See the accommodation monthly path.
+    const checkoutUrl = buildPreapprovalPlanShareLink({
+        mpPreapprovalPlanId: providerPriceId,
+        externalReference: nonce
     });
 
-    return {
-        checkoutUrl,
-        localSubscriptionId: subscription.id,
-        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString()
-    };
+    return { checkoutUrl, localSubscriptionId, expiresAt };
 }
 
+/**
+ * Input for {@link initiatePartnerMonthlySubscription} (SPEC-271).
+ *
+ * Unlike commerce this takes a plan UUID, not a slug: the partner's plan is
+ * chosen by an admin and stored on the partner row (`partners.planId`).
+ */
 export interface InitiatePartnerMonthlySubscriptionInput {
+    /** Hospeda billing customer ID (the synthetic partner customer, see `send-link.ts`). */
     readonly customerId: string;
+    /** Target plan id (`billing_plans.id`, a UUID — NOT a slug). */
     readonly planId: string;
+    /** UUID of the partner being subscribed. */
     readonly partnerId: string;
+    /** Resolved qzpay billing instance. */
     readonly billing: QZPayBilling;
+    /** URL builders the route already resolved from env. */
     readonly urls: {
         readonly paymentMethodReturnUrl: string;
         readonly notificationUrl: string;
     };
-    readonly db?: DrizzleClient;
 }
 
 export interface InitiatePartnerMonthlySubscriptionResult {
@@ -883,7 +843,40 @@ export interface InitiatePartnerMonthlySubscriptionResult {
 }
 
 /**
- * Initiate a monthly partner-directory subscription (SPEC-271).
+ * Initiate a monthly partner-directory subscription (SPEC-271), through the same
+ * Path C hosted share-link checkout the accommodation and commerce flows use
+ * (HOS-191).
+ *
+ * Like commerce, this path used to issue a server-side `POST /preapproval` from a
+ * `preapproval_plan_id` with no `card_token_id` — the shape MercadoPago answers
+ * with HTTP 400 ("card_token_id is required"). See
+ * {@link initiateCommerceMonthlySubscription} for the full rationale.
+ *
+ * ## Why the payer email is NOT snapshotted here
+ *
+ * A partner is paid for by an EXTERNAL brand: an admin generates the link
+ * (`routes/partners/admin/send-link.ts`) and sends it out, and the person who
+ * pays has no Hospeda session — a partner is not a user account at all. The
+ * back_url (F2, `routes/billing/link-preapproval.ts`) is session-authenticated
+ * and points at the ADMIN panel, so it can never run for this buyer; linking
+ * always happens server-to-server through the webhook fallback (F3), which
+ * resolves the checkout by nonce (Tier 2, carried on the share link as
+ * `external_reference` since HOS-209) or heuristically (Tier 3: MP plan id +
+ * 24h window + exactly one candidate). Neither tier needs a session.
+ *
+ * What both tiers DO consult is the payer-email snapshot, as a VETO: a CONFIRMED
+ * mismatch against the live preapproval refuses the link, while an ABSENT
+ * snapshot never blocks one (`verifyPreapprovalOwnership`). The partner billing
+ * customer carries a synthetic address (`partner-<id>@partners.hospeda.invalid`)
+ * that can never equal a real MercadoPago payer email, so snapshotting it would
+ * turn every partner payment for which MP reports an email into a permanent
+ * refusal — a real charge with nowhere to land. It is therefore omitted, which
+ * is also honest: at checkout time we genuinely do not know who will pay.
+ *
+ * @param input - See {@link InitiatePartnerMonthlySubscriptionInput}.
+ * @returns The hosted checkout URL, the local subscription id, and its expiry.
+ * @throws SubscriptionCheckoutError When the plan, monthly price, or billing
+ *   customer is missing, or when the MP plan could not be provisioned.
  */
 export async function initiatePartnerMonthlySubscription(
     input: InitiatePartnerMonthlySubscriptionInput
@@ -904,7 +897,10 @@ export async function initiatePartnerMonthlySubscription(
     }
 
     // HOS-191: partner directory subscriptions are no-trial (trialDays: 0);
-    // subscribe against the no-trial MP preapproval_plan.
+    // subscribe against the no-trial MP preapproval_plan. `planName` is the
+    // buyer-visible display name and becomes the MP plan's `reason` — now the
+    // ONLY reason MercadoPago shows, since no `subscriptions.create` builds a
+    // second one from the raw plan slug any more.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
@@ -914,66 +910,83 @@ export async function initiatePartnerMonthlySubscription(
         currency: monthlyPrice.currency,
         billingInterval: 'monthly',
         trialDays: 0,
-        // Same URL used below as the preapproval's back_url; MP requires it on
+        // Same URL later used as the preapproval's back_url; MP requires it on
         // preapproval_plan creation too (qzpay-mercadopago 2.5.0).
         backUrl: urls.paymentMethodReturnUrl
     });
 
-    // AC-7: shared `createPaidSubscription` helper — see the commerce flow above.
-    const { subscription, checkoutUrl } = await createPaidSubscription({
-        billing,
+    // ── Idempotency per PARTNER (checkout-idempotency.ts) ────────────────────
+    // Same defect and same fix as the commerce checkout above — and more acute
+    // here, because `routes/partners/admin/send-link.ts` has NO guard of any
+    // kind: an admin clicking "send link" twice used to emit two independently
+    // payable MercadoPago links for one partner. While the first checkout is
+    // genuinely in flight, re-send THE SAME link.
+    //
+    // An admin who switched the partner's plan between the two sends does NOT
+    // get the stale link: the resolved `preapproval_plan` (and the commercial
+    // plan id) are part of the reuse conditions.
+    const reusable = await resolveReusablePartnerCheckout({
+        partnerId,
+        customerId,
+        planId: plan.id,
+        mpPreapprovalPlanId: providerPriceId
+    });
+    if (reusable) {
+        return reusable;
+    }
+
+    const customer = await billing.customers.get(customerId);
+    if (!customer) {
+        throw new SubscriptionCheckoutError(
+            'CUSTOMER_NOT_FOUND',
+            `Customer '${customerId}' not found`
+        );
+    }
+
+    const { localSubscriptionId, expiresAt, nonce } = await createPendingProviderSubscription({
         customerId,
         planId: plan.id,
         priceId: monthlyPrice.id,
-        providerPriceId,
-        paymentMethodReturnUrl: urls.paymentMethodReturnUrl,
-        notificationUrl: urls.notificationUrl,
-        metadata: {
-            source: 'start-partner-monthly',
-            createdBy: 'partner-subscription-flow',
-            productDomain: ProductDomainEnum.PARTNER,
-            partnerId
-        }
+        billingInterval: 'monthly',
+        mpPreapprovalPlanId: providerPriceId,
+        // No `payerEmail` — see this function's JSDoc. The synthetic partner
+        // address would veto every webhook link instead of corroborating one.
+        trialGranted: false,
+        productDomain: ProductDomainEnum.PARTNER,
+        // The SUBSCRIPTION → PARTNER path — see the commerce checkout above for
+        // why the upserted link row alone cannot survive a second checkout
+        // click. An admin re-sending the payment link is exactly that case.
+        domainMetadata: { partnerId },
+        // Link row upserted in the SAME transaction (one row per partner, on the
+        // UNIQUE(partner_id) conflict).
+        writeDomainLinkRow: async ({ tx, localSubscriptionId: subscriptionId }) => {
+            await tx
+                .insert(partnerSubscriptions)
+                .values({
+                    subscriptionId,
+                    productDomain: ProductDomainEnum.PARTNER,
+                    partnerId,
+                    status: SubscriptionStatusEnum.PENDING_PROVIDER
+                })
+                .onConflictDoUpdate({
+                    target: partnerSubscriptions.partnerId,
+                    set: {
+                        subscriptionId,
+                        status: SubscriptionStatusEnum.PENDING_PROVIDER,
+                        updatedAt: new Date()
+                    }
+                });
+        },
+        livemode: customer.livemode
     });
 
-    await withTransaction(async (tx) => {
-        await tx
-            .update(billingSubscriptions)
-            .set({ productDomain: ProductDomainEnum.PARTNER })
-            .where(eq(billingSubscriptions.id, subscription.id));
-
-        await tx
-            .insert(partnerSubscriptions)
-            .values({
-                subscriptionId: subscription.id,
-                productDomain: ProductDomainEnum.PARTNER,
-                partnerId,
-                status: subscription.status
-            })
-            .onConflictDoUpdate({
-                target: partnerSubscriptions.partnerId,
-                set: {
-                    subscriptionId: subscription.id,
-                    status: subscription.status,
-                    updatedAt: new Date()
-                }
-            });
-    }, input.db);
-
-    await schedulePollingForSubscription({
-        billing,
-        subscriptionId: subscription.id,
-        providerResourceId: subscription.providerSubscriptionIds?.mercadopago ?? '',
-        resourceType: 'subscription',
-        planSlug: plan.name,
-        sourceLabel: 'start-partner-monthly'
+    // No polling enqueue — Path C creates no MP resource synchronously.
+    const checkoutUrl = buildPreapprovalPlanShareLink({
+        mpPreapprovalPlanId: providerPriceId,
+        externalReference: nonce
     });
 
-    return {
-        checkoutUrl,
-        localSubscriptionId: subscription.id,
-        expiresAt: new Date(Date.now() + PENDING_PROVIDER_TTL_MS).toISOString()
-    };
+    return { checkoutUrl, localSubscriptionId, expiresAt };
 }
 
 /**
@@ -1516,7 +1529,15 @@ export async function initiatePaidPlanUpgrade(
         successUrl: urls.successUrl,
         cancelUrl: urls.cancelUrl,
         customerId,
-        customerEmail: customer.email,
+        // HOS-581: THE boundary. This is the only place in the checkout service
+        // that hands an address to MercadoPago — the monthly and annual paths
+        // redirect to MP's hosted share link, which collects the payer itself,
+        // and the `payerEmail` they pass to `createPendingProviderSubscription`
+        // is a local reconciliation snapshot that is never sent. So the '+' →
+        // '.' sanitizing that MercadoPago's error 612 forces on us runs HERE,
+        // against the raw address now stored in `billing_customers.email`,
+        // instead of corrupting that column for every other reader.
+        customerEmail: sanitizeEmailForMercadoPago(customer.email),
         ...(customer.name ? { customerName: customer.name } : {}),
         ...(firstName ? { payerFirstName: firstName } : {}),
         ...(rest.length > 0 ? { payerLastName: rest.join(' ') } : {}),

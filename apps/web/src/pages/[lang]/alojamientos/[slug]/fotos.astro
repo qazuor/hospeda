@@ -16,6 +16,8 @@ import { accommodationsApi } from '@/lib/api/endpoints';
 import { toAccommodationDetailPageProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import ImageAttribution from '@/components/shared/ImageAttribution.astro';
+import type { MediaAttribution } from '@/lib/media';
 import { getMediaUrl } from '@repo/media';
 
 export const prerender = false;
@@ -59,6 +61,12 @@ interface GalleryItem {
     alt: string;
     caption?: string;
     description?: string;
+    /**
+     * Photo credit (H-125). Rendered under the grid cell, because a credit
+     * only inside the lightbox is invisible to anyone who never opens one —
+     * and to the crawler that indexes this page.
+     */
+    attribution?: MediaAttribution;
 }
 
 const galleryItems: GalleryItem[] = [];
@@ -73,7 +81,9 @@ if (accommodation.featuredImage && !accommodation.featuredImage.includes('placeh
         // Apply galleryHalf preset for the grid cell thumbnail (4:3, c_fill, 640px).
         // Non-Cloudinary URLs pass through unchanged.
         thumbGrid: getMediaUrl(featuredSrc, { preset: 'galleryHalf' }),
-        alt: accommodation.name
+        // H-125: the owner's alt text wins over the listing name.
+        alt: accommodation.featuredImageAlt ?? accommodation.name,
+        attribution: accommodation.featuredImageAttribution
     });
 }
 
@@ -86,15 +96,19 @@ for (const entry of galleryEntries) {
     if (entry.url !== accommodation.featuredImage) {
         const caption = 'caption' in entry ? entry.caption : undefined;
         const description = 'description' in entry ? entry.description : undefined;
+        const alt = 'alt' in entry ? entry.alt : undefined;
+        const attribution = 'attribution' in entry ? entry.attribution : undefined;
         galleryItems.push({
             type: 'image',
             src: entry.url,
             thumb: entry.url,
             // Grid thumbnail: c_fill 4:3 crop via galleryHalf preset.
             thumbGrid: getMediaUrl(entry.url, { preset: 'galleryHalf' }),
-            alt: caption ?? accommodation.name,
+            // H-125: alt first, caption second, listing name last.
+            alt: alt ?? caption ?? accommodation.name,
             caption,
-            description
+            description,
+            attribution
         });
     }
 }
@@ -189,6 +203,12 @@ const jsonLd = {
                             <span class="fotos__play" aria-hidden="true">&#9654;</span>
                         )}
                     </a>
+                    {item.attribution && (
+                        <ImageAttribution
+                            attribution={item.attribution}
+                            locale={locale}
+                        />
+                    )}
                 </div>
             ))}
         </div>

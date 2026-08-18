@@ -49,25 +49,50 @@ function resolveKey(obj: Record<string, unknown>, key: string): unknown {
     }, obj);
 }
 
+/**
+ * Every string form of a trial key: the bare leaf, or the CLDR `_one`/`_other`
+ * pair it becomes once pluralised.
+ *
+ * Both halves are read, not just one. The forbidden-phrase check below used to
+ * resolve a single value and coerce a miss to `''` — and `''` contains no
+ * forbidden phrase, so that check passed happily on a key that had been
+ * renamed out from under it. Returning every variant catches a no-card promise
+ * hiding in `_other`, and lets an empty result fail instead of pass.
+ */
+function resolveTrialCopy(dict: Record<string, unknown>, key: string): readonly string[] {
+    return [key, `${key}_one`, `${key}_other`]
+        .map((candidate) => resolveKey(dict, candidate))
+        .filter((value): value is string => typeof value === 'string' && value.length > 0);
+}
+
 describe('owners trial copy is card-first compatible (BETA-185)', () => {
     for (const [locale, dict] of LOCALES) {
         for (const key of TRIAL_KEYS) {
             it(`${locale}: ${key} exists and is non-empty`, () => {
-                const value = resolveKey(dict, key);
+                const variants = resolveTrialCopy(dict, key);
                 expect(
-                    typeof value === 'string' && value.length > 0,
-                    `${locale}/host.json:${key}`
+                    variants.length > 0,
+                    `${locale}/host.json:${key} — neither the bare key nor a _one/_other pair resolves`
                 ).toBe(true);
             });
 
             it(`${locale}: ${key} does not promise a no-card trial`, () => {
-                const value = resolveKey(dict, key);
-                const text = typeof value === 'string' ? value.toLowerCase() : '';
-                const hit = FORBIDDEN_NO_CARD_PHRASES.find((phrase) => text.includes(phrase));
+                const variants = resolveTrialCopy(dict, key);
+                // Guard the instrument: with nothing to search, "found no
+                // forbidden phrase" would be vacuously true.
                 expect(
-                    hit,
-                    `${locale}/host.json:${key} still promises "${hit}" — card-first (HOS-171) collects the card on day 1`
-                ).toBeUndefined();
+                    variants.length,
+                    `${locale}/host.json:${key} resolves to nothing`
+                ).toBeGreaterThan(0);
+
+                for (const value of variants) {
+                    const text = value.toLowerCase();
+                    const hit = FORBIDDEN_NO_CARD_PHRASES.find((phrase) => text.includes(phrase));
+                    expect(
+                        hit,
+                        `${locale}/host.json:${key} still promises "${hit}" — card-first (HOS-171) collects the card on day 1`
+                    ).toBeUndefined();
+                }
             });
         }
     }

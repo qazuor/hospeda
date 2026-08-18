@@ -1,10 +1,19 @@
 {
+    "reviewMarkedFields": "Revisá los campos marcados.",
     "accommodation": {
         "address": {
             "required": "La dirección es obligatoria"
         },
         "amenityIds": {
             "invalidUuid": "El ID de servicio debe ser un UUID válido"
+        },
+        "contactInfo": {
+            "email": {
+                "invalid": "El email no es válido"
+            },
+            "phone": {
+                "international": "El número no es válido"
+            }
         },
         "delete": {
             "deletedAt": {
@@ -42,7 +51,9 @@
                 "required": "La capacidad es obligatoria"
             },
             "minNights": {
-                "required": "La cantidad mínima de noches es obligatoria"
+                "required": "La cantidad mínima de noches es obligatoria",
+                "min": "La cantidad mínima de noches no puede ser menor a {{min}}",
+                "max": "La cantidad mínima de noches no puede superar los {{max}}"
             }
         },
         "featuredToggle": {
@@ -112,6 +123,9 @@
             },
             "state": {
                 "invalid": "El estado del medio debe ser 'visible' o 'archived'"
+            },
+            "update": {
+                "atLeastOneField": "Tenés que completar al menos uno de los campos: título, descripción, texto alternativo o atribución"
             }
         },
         "name": {
@@ -1865,6 +1879,7 @@
         },
         "price": {
             "price": {
+                "integer": "El precio debe ser un número entero en pesos, sin centavos",
                 "positive": "El precio debe ser un número positivo",
                 "required": "El precio es obligatorio"
             }
@@ -2803,6 +2818,9 @@
         },
         "priceFrom": {
             "nonnegative": "El precio debe ser mayor o igual a 0"
+        },
+        "priceUnit": {
+            "requiredUnlessOnRequest": "Elegí la unidad de precio (por día, por hora, por persona o por grupo). Si la experiencia no tiene precio fijo, marcá «Precio a consultar»."
         },
         "review": {
             "content": {

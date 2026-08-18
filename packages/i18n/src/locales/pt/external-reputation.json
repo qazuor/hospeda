@@ -19,7 +19,8 @@
     },
     "aggregate": {
         "rating": "Pontuação média",
-        "reviewsCount": "{{count}} avaliações",
+        "reviewsCount_one": "{{count}} avaliação",
+        "reviewsCount_other": "{{count}} avaliações",
         "noData": "Sem dados disponíveis"
     },
     "snippets": {
@@ -36,7 +37,8 @@
         "masterToggle": "Exibir seção de reputação externa",
         "refresh": "Atualizar avaliações",
         "lastUpdated": "Última atualização: {{date}}",
-        "rateLimitHit": "Você pode atualizar novamente em {{minutes}} minutos",
+        "rateLimitHit_one": "Você pode atualizar novamente em {{minutes}} minuto",
+        "rateLimitHit_other": "Você pode atualizar novamente em {{minutes}} minutos",
         "googleOnlyExplainer": "O texto das avaliações está disponível apenas para o Google. As outras plataformas exibem a pontuação e um link.",
         "verifiedHint": "O link foi verificado e corresponde a esta hospedagem",
         "loading": "Carregando listagens…",

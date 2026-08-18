@@ -15,9 +15,16 @@
  * below is the safety net for an SSR edge case where middleware did not run,
  * following the sibling directory page.
  *
- * Three terminal states are rendered instead of the form, and they are three
- * because the host may be holding a sticker printed a season ago:
- *   - 404          → no provider carries this slug
+ * Four terminal states are rendered instead of the form:
+ *   - 403          → caller lacks HOST_TRADE_VIEW — a tourist who is not yet
+ *                    a host scanned a provider's sticker. The gate is working
+ *                    as designed; only the presentation was wrong (H-05,
+ *                    August 2026 smoke) — it used to fall into the generic
+ *                    "load error" branch below and tell the visitor to retry
+ *                    a request that can never succeed. Renders the shared
+ *                    {@link HostTradesAccessDenied}.
+ *   - 404          → no provider carries this slug (the host may be holding a
+ *                    sticker printed a season ago)
  *   - 422 REVOKED  → the provider was taken down (the row survives, HOS-278 R-4)
  *   - other errors → transient, offer a retry
  *
@@ -28,6 +35,7 @@
 import { LockIcon, WrenchIcon } from '@repo/icons';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import accountSectionStyles from '@/components/account/AccountSection.module.css';
+import HostTradesAccessDenied from '@/components/host/host-trades/HostTradesAccessDenied.astro';
 import { RegisterUsageForm } from '@/components/host/host-trades/RegisterUsageForm.client';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import { hostTradesApi } from '@/lib/api/endpoints-protected';
@@ -75,7 +83,7 @@ const today = new Intl.DateTimeFormat('en-CA', {
 // Read the provider the QR named.
 // ---------------------------------------------------------------------------
 
-type LoadOutcome = 'ok' | 'notFound' | 'revoked' | 'error';
+type LoadOutcome = 'ok' | 'notFound' | 'revoked' | 'accessDenied' | 'error';
 
 let provider: DirectoryProvider | null = null;
 let outcome: LoadOutcome = 'error';
@@ -88,6 +96,12 @@ if (result.ok) {
     outcome = 'ok';
 } else if (result.error.status === 404) {
     outcome = 'notFound';
+} else if (result.error.status === 403) {
+    // Expected, not a failure: a tourist who is not yet a host scanned a
+    // provider's QR sticker and HOST_TRADE_VIEW did exactly its job (H-05).
+    // Logged at `warn` — this must never be counted as an application error.
+    outcome = 'accessDenied';
+    logger.warn('[registrar-uso] Non-host scanned a provider QR (403 HOST_TRADE_VIEW)', `slug=${slug}`);
 } else if (result.error.code === 'PROVIDER_REVOKED') {
     // Matched on the CODE rather than the 422 status: 422 is also what a
     // validation failure would use, and those are two different screens.
@@ -161,6 +175,8 @@ const backToDirectory = t('host-trades.registerUsage.backToDirectory', 'Volver a
                 today={today}
             />
         </div>
+    ) : outcome === 'accessDenied' ? (
+        <HostTradesAccessDenied locale={locale} />
     ) : (
         <div class:list={['register-usage__terminal', accountSectionStyles.branded]} role="alert">
             <span class="register-usage__terminal-icon" aria-hidden="true">

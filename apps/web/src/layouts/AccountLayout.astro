@@ -20,7 +20,7 @@ import { WhatsNewCountPill } from '@/components/shared/whats-new/WhatsNewCountPi
 import { BenefitUsagesCountPill } from '@/components/host/host-trades/BenefitUsagesCountPill.client';
 import BaseLayout from './BaseLayout.astro';
 import SEOHead from '@/components/seo/SEOHead.astro';
-import { getNavForSurface } from '@/config/navigation';
+import { getNavForSurface, PROVIDER_NAV_GROUP } from '@/config/navigation';
 import type { NavItem } from '@/config/navigation';
 import { ACCOUNT_DISCOVERY_DOORS } from '@/config/discovery-doors';
 import { isDoorVisible, isVisibleByRoles, resolveDoorLabelKey } from '@/lib/nav-gating';
@@ -79,10 +79,34 @@ function getActiveSectionKey(href: string): string {
 	return href === 'mi-cuenta' ? href : href.replace('mi-cuenta/', '');
 }
 
-const { groups: navGroups } = getNavForSurface({
+const { groups: baseNavGroups } = getNavForSurface({
 	surface: 'sidebar',
 	visibility: (node) => isVisibleByRoles(node, userRoles),
 });
+
+/**
+ * The provider self-service nav entry ("Mi ficha de proveedor", H-158) is
+ * gated by ROW OWNERSHIP, not a permission or role (HOS-278 AC-7 — an
+ * approved provider is an ordinary account with no permission/role change).
+ * `PROVIDER_NAV_GROUP` therefore lives OUTSIDE `ACCOUNT_NAV_GROUPS`, whose
+ * only gating primitive is `requiredPermission`.
+ *
+ * The ownership answer arrives ON THE SESSION, from the same
+ * `GET /api/v1/public/auth/me` call the middleware already makes once per
+ * protected request — so this gate costs the same as the permission-gated
+ * groups above: nothing. It briefly issued its own `GET /host-trades/mine`
+ * here instead, which put a blocking round-trip (~36 ms measured) on all 123
+ * pages this layout wraps, asking a question none of them were about.
+ *
+ * Read as a plain truthy check, NOT "and not revoked": a revoked listing
+ * still resolves to a meaningful page (mi-cuenta/proveedor renders a "listing
+ * taken down" state with the admin's reason), and hiding the door the moment
+ * a listing is revoked would strand that provider with no way back besides a
+ * typed URL — the same shape of bug this fixes, one step later.
+ */
+const isProvider = Astro.locals.user?.ownsHostTradeListing === true;
+
+const navGroups = isProvider ? [...baseNavGroups, PROVIDER_NAV_GROUP] : baseNavGroups;
 
 /**
  * Discovery doors (HOS-131 §6.2/§6.3) render ONLY on this surface — they're

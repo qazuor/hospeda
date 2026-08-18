@@ -99,10 +99,20 @@ export interface BaseModel<T extends Record<string, unknown>> {
     updateById(id: string, data: Partial<T>, tx?: DrizzleClient): Promise<void>;
 
     /**
-     * Soft-delete entities matching `where` (sets `deletedAt`). Returns count of affected rows.
+     * Soft-delete entities matching `where` (sets `deletedAt`, plus `deletedById`
+     * on tables that declare it). Returns count of affected rows.
+     *
+     * `deletedById` is a required argument — pass `null` for a system-initiated
+     * delete — so that no call site can silently drop the actor and leave the
+     * row unauditable (HOS-556 / HOS-559).
+     *
      * @throws {DbError} When the database operation fails, where clause is empty, or table lacks deletedAt
      */
-    softDelete(where: Record<string, unknown>, tx?: DrizzleClient): Promise<number>;
+    softDelete(
+        where: Record<string, unknown>,
+        deletedById: string | null,
+        tx?: DrizzleClient
+    ): Promise<number>;
 
     /**
      * Restore soft-deleted entities matching `where` (clears `deletedAt`). Returns count of affected rows.

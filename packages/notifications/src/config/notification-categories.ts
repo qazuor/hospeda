@@ -22,6 +22,11 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     [NotificationType.ADMIN_PAYMENT_FAILURE]: NotificationCategory.ADMIN,
     [NotificationType.ADMIN_SYSTEM_EVENT]: NotificationCategory.ADMIN,
 
+    // New acquisition lead (H-62 / H-148) - goes to the ops list, never to the
+    // applicant, and must not be opt-out-able: the whole defect it closes is an
+    // alert that reached nobody.
+    [NotificationType.ADMIN_LEAD_RECEIVED]: NotificationCategory.ADMIN,
+
     // Feedback - Sent to admin notification list, not end-user
     [NotificationType.FEEDBACK_REPORT]: NotificationCategory.ADMIN,
 

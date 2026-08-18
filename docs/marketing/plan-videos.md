@@ -699,6 +699,135 @@ Es el video de ejemplo desarrollado arriba. **Prioridad 1, corto, 22 s.**
 
 ---
 
+## Puesta en escena por video
+
+Qué **patrón** de comportamiento y qué **fondo** usa cada video. Los patrones están en
+[`patrones-de-puesta-en-escena.md`](patrones-de-puesta-en-escena.md) y los veinte
+fondos en [`prompts/fondos.md`](prompts/fondos.md).
+
+> Esto es una asignación de partida, no una condena. Si al escribir el prompt de un
+> video el patrón no le cierra, se cambia — pero conviene que el cambio sea deliberado
+> y quede anotado acá, no que cada video invente su propia puesta.
+
+**Los trece patrones**: A portal · B presentador al costado · C reacción sin lip sync ·
+D objeto en la mano · E llega al lugar · F sentado en la reposera · G sentado a la mesa ·
+H selfie · I primer plano · J apoyado · K en contacto con el lugar · L plano general ·
+M dos Hospedines.
+
+**Los patrones nuevos tienen fondos propios**, y los más usados tienen varios para que
+dos videos del mismo bloque no repitan lugar:
+
+| Patrón | Fondos disponibles |
+|---|---|
+| B inserto lateral | 15 cabaña · 21 costanera · 22 balneario · 23 palmar |
+| F reposera | 13 playa · 24 termas · 25 galería |
+| G mesa | 14 cervecería · 26 restaurante · 27 costanera |
+| H selfie | 16 costanera · 28 balneario · 29 carnaval |
+| I primer plano | 17 exterior de día · 30 interior de noche |
+| J apoyado | 18 |
+| K en contacto | 19 |
+| L plano general | 20 |
+
+Los patrones A, C, D y E usan los fondos 1 al 12.
+
+### Marca
+
+| Video | Patrón | Fondo | Por qué |
+|---|---|---|---|
+| V2 · Qué es Hospeda | **B** | 21 inserto costanera | 40 s recorriendo la plataforma: el inserto deja que la grabación dure lo que haga falta |
+| V3 · Qué es Hospeda corta | **F** | 24 reposera termas | sin voz en off ni lip sync, cortes rápidos sobre texto |
+| V4 · Por qué armamos Hospeda | **C** | 17 primer plano | el plan pide agobio con las manos en la cabeza: en primer plano esa cara pega el doble |
+| V5 · Quién está detrás | **E** → **I** | 1 cabaña → 17 primer plano | presenta, le cede el cuadro a la persona real, y cierra en primer plano |
+| V6 · Estamos construyendo Hospeda | **E** | 4 costanera | montaje de la región, el fondo es el tema |
+
+### Anfitriones — captación
+
+| Video | Patrón | Fondo | Por qué |
+|---|---|---|---|
+| V1 · Pegá el link | **A** | 1 cabaña | el portal está pensado justo para esto: mensaje corto más demo corta |
+| V7 · Si tenés un alojamiento | **B** | 15 inserto cabaña | recorre una ficha entera, y la cabaña es el fondo del anfitrión |
+| V8 · Formás parte del destino | **D** mapa | 5 palmar | es una idea, no una pantalla: el mapa es el argumento |
+| V9 · Sin comisión por reserva | **A** | 7 balneario | ✅ prompt escrito |
+| V10 · Todo lo que podés mostrar | **B** | 15 inserto cabaña | recorrido sección por sección |
+| V11 · Publicar es simple | **B** | 15 inserto cabaña | el alta completa tiene que verse entera |
+| V12 · Treinta días para probarlo | **F** | 25 reposera galería | mensaje único sin presión, y la galería es el patio del anfitrión |
+| V13 · Planes para cada tamaño | **B** | 22 inserto balneario | comparación de funciones en pantalla |
+| V14 · Sumate ahora | **D** lamparita | 4 costanera | conceptual, sin pantalla que mostrar |
+| V15 · Somos anfitriones, como vos | **G** → **I** | 14 cervecería → 30 primer plano interior | de anfitrión a anfitrión, y el remate en primer plano: el 30 es de interior nocturno, así que la luz empalma con la cervecería |
+
+### Anfitriones — funciones
+
+| Video | Patrón | Fondo | Por qué |
+|---|---|---|---|
+| V16 · El calendario se sincroniza solo | **A** | 1 cabaña | susto y alivio alrededor de una demo corta |
+| V17 · La IA te escribe la descripción | **A** | 1 cabaña | el antes y después vive en la pantalla |
+| V18 · Las consultas van a tu WhatsApp | **A** | 18 apoyado | 18 s, una sola función, y el fondo 18 ya trae el celular en la mano |
+| V19 · Traé tus opiniones de Google | **A** | 1 cabaña | el cambio visual en la ficha es el mensaje |
+| V20 · Mirá cómo te va | **B** | 21 inserto costanera | el panel necesita tiempo en pantalla |
+| V21 · Pagás con Mercado Pago | **C** | 17 primer plano | sobrio: el logo hace el trabajo, no hace falta que hable |
+| V22 · Presencia en Google y en las IA | **D** lamparita | 4 costanera | idea abstracta, sin demo posible |
+| V23 · Hospeda no reemplaza nada, suma | **D** mochila | 4 costanera | conceptual, desactiva dos objeciones |
+
+### Anfitriones — consejos
+
+| Video | Patrón | Fondo | Por qué |
+|---|---|---|---|
+| V24 · Mostrá mejor tu alojamiento | **B** | 15 inserto cabaña | la comparación de fotos va en el inserto |
+| V25 · Una buena descripción vende mejor | **B** | 22 inserto balneario | ídem, el antes y después es todo |
+
+### Gastronomía, experiencias y oficios
+
+| Video | Patrón | Fondo | Por qué |
+|---|---|---|---|
+| V26 · También es para gastronómicos | **G** | 26 mesa restaurante | el fondo hace la mitad del argumento |
+| V27 · ¿Ofrecés experiencias? | **E** | 12 bote de pesca | la actividad es el tema; sirve también 19 muelle |
+| V28 · Directorio de oficios | **C** | 17 primer plano | cara de problema y alivio, sin diálogo |
+
+### Turistas
+
+| Video | Patrón | Fondo | Por qué |
+|---|---|---|---|
+| V29 · Un fin de semana en Concepción | **B** | 23 inserto palmar | 45 s recorriendo cinco secciones |
+| V30 · Buscá según tu viaje | **A** | 5 palmar | ✅ prompt escrito |
+| V31 · Guardá tus favoritos | **F** | 13 reposera playa | el turista planificando, sin apuro |
+| V32 · Compará antes de decidir | **B** | 23 inserto palmar | la tabla comparativa necesita pantalla y aire |
+
+### Destinos y comunidad
+
+| Video | Patrón | Fondo | Por qué |
+|---|---|---|---|
+| V33 · Descubrí un destino (serie) | **L** → **E** | 20 palmar → varía | abre con el plano general y cierra llegando; después 2, 4, 5, 6, 8, 11 o 12 según el destino |
+| V34 · Qué hacer este fin de semana (serie) | **H** | 29 selfie carnaval · rota con 16 y 28 | es semanal: el selfie es el formato más rápido y el más nativo, y el fondo rota según el evento de la semana |
+| V35 · Buscamos editores locales | **D** notebook | 2 muelle de las islas | convoca a alguien de la zona: el fondo es el argumento |
+| V36 · Mostranos tu ciudad | **H** + cámara | 16 selfie costanera | pide fotos de tu ciudad: hablado de cerca y grabado por él mismo convierte más |
+| V37 · Qué es ser partner | **G** | 27 mesa costanera | conversación entre organizaciones: de día es más institucional que la cervecería |
+
+### Cómo quedó repartido
+
+Ningún bloque de videos repite fondo dentro del mismo patrón:
+
+| Patrón | Fondo | Videos |
+|---|---|---|
+| B | 15 cabaña | V7 · V10 · V11 · V24 |
+| B | 21 costanera | V2 · V20 |
+| B | 22 balneario | V13 · V25 |
+| B | 23 palmar | V29 · V32 |
+| F | 13 playa | V31 |
+| F | 24 termas | V3 |
+| F | 25 galería | V12 |
+| G | 14 cervecería | V15 |
+| G | 26 restaurante | V26 |
+| G | 27 costanera | V37 |
+| H | 16 costanera | V36 |
+| H | 29 carnaval · rota | V34 |
+| I | 17 exterior | V4 · V5 · V21 · V28 |
+| I | 30 interior | V15 como remate |
+
+El fondo 15 lleva cuatro videos y los cuatro son sobre la propiedad del anfitrión, así
+que la cabaña corresponde en todos. El resto quedó a dos o menos.
+
+---
+
 ## Resumen
 
 **37 videos.** Doce cortos y el resto largos, más dos series abiertas (destinos y agenda semanal) que se repiten indefinidamente.

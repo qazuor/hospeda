@@ -20,7 +20,7 @@ const { t } = createTranslations(lang as SupportedLocale);
 if (faqs.length === 0) return;
 
 // Group by category. Null category → "General", placed last.
-const generalLabel = t('destination.detail.faq.generalCategory', 'General');
+const generalLabel = t('destinations.detail.faq.generalCategory', 'General');
 const groups = new Map<string, DetailFaq[]>();
 
 for (const faq of faqs) {
@@ -40,7 +40,7 @@ const sortedGroups = [...groups.entries()].sort((a, b) => {
 
 <section class="faq-section" aria-labelledby="dest-faq-title">
   <h2 class="faq-section__title" id="dest-faq-title">
-    {t('destination.detail.faq.title', 'Preguntas frecuentes')}
+    {t('destinations.detail.faq.title', 'Preguntas frecuentes')}
   </h2>
 
   {sortedGroups.map(([category, items]) => (

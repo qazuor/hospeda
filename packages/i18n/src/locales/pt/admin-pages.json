@@ -226,8 +226,8 @@
     },
     "notifications": {
         "title": "Notificações",
-        "unreadSingular": "{{count}} notificação não lida",
-        "unreadPlural": "{{count}} notificações não lidas",
+        "unread_one": "{{count}} notificação não lida",
+        "unread_other": "{{count}} notificações não lidas",
         "allRead": "Todas as notificações lidas",
         "clearAll": "Limpar tudo",
         "empty": "Sem notificações",
@@ -471,7 +471,8 @@
                 "subtitle": "Solicitações de IA na janela",
                 "subtitleTokensIn": "Tokens de prompt consumidos",
                 "subtitleTokensOut": "Tokens de conclusão gerados",
-                "subtitleCost": "{{total}} tokens totais",
+                "subtitleCost_one": "{{total}} token total",
+                "subtitleCost_other": "{{total}} tokens totais",
                 "loadError": "Não foi possível carregar o resumo de uso.",
                 "loadErrorHint": "Verifique se a API está acessível e tente novamente."
             },
@@ -1125,7 +1126,8 @@
         "title": "Taxas de Câmbio",
         "subtitle": "Gerencie as taxas de câmbio entre moedas com atualizações automáticas e substituições manuais",
         "confirmDelete": "Tem certeza de que deseja excluir esta substituição manual?",
-        "ratesAvailable": "{{count}} taxas de câmbio disponíveis",
+        "ratesAvailable_one": "{{count}} taxa de câmbio disponível",
+        "ratesAvailable_other": "{{count}} taxas de câmbio disponíveis",
         "updating": "Atualizando...",
         "updateNow": "Atualizar Agora",
         "createOverride": "Criar Substituição Manual",
@@ -1138,7 +1140,8 @@
         "configTitle": "Configuração de Atualização",
         "configDesc": "Configure como e quando as taxas de câmbio são atualizadas automaticamente",
         "fetchSuccess": "Taxas atualizadas",
-        "fetchSuccessMsg": "{{count}} taxas armazenadas com sucesso",
+        "fetchSuccessMsg_one": "{{count}} taxa armazenada com sucesso",
+        "fetchSuccessMsg_other": "{{count}} taxas armazenadas com sucesso",
         "fetchError": "Erro ao atualizar taxas",
         "errorTitle": "Erro"
     },
@@ -1186,6 +1189,8 @@
             "robotsTxt": "Robots.txt",
             "robotsTxtDesc": "Configuração de rastreamento de mecanismos de busca",
             "robotsConfigured": "Configurado",
+            "indexNow": "Aviso aos buscadores (IndexNow)",
+            "indexNowDesc": "Avisa o Bing e outros buscadores sempre que conteúdo público é publicado ou atualizado",
             "apiNote": "Nota: Estas configurações serão conectadas à API em uma atualização futura",
             "save": "Salvar Alterações",
             "saved": "Salvo"
@@ -1466,6 +1471,7 @@
             "title": "Foto de capa",
             "description": "A imagem principal exibida no topo",
             "empty": "Sem foto de capa. Carregue uma para defini-la.",
+            "altFallback": "Foto de capa",
             "actions": {
                 "upload": "Carregar capa",
                 "replace": "Substituir capa",
@@ -1475,10 +1481,12 @@
         "grid": {
             "title": "Galeria",
             "empty": "Nenhuma foto na galeria ainda. Carregue a primeira.",
-            "cap": "Limite atingido ({{count}} fotos). Exclua uma para adicionar outra.",
+            "cap_one": "Limite atingido ({{count}} foto). Exclua uma para adicionar outra.",
+            "cap_other": "Limite atingido ({{count}} fotos). Exclua uma para adicionar outra.",
             "actions": {
                 "add": "Adicionar foto",
-                "remove": "Remover foto"
+                "remove": "Remover foto",
+                "makeCover": "Definir como capa"
             }
         },
         "errors": {
@@ -1487,6 +1495,23 @@
             "removeFailed": "Não foi possível remover a foto. Tente novamente.",
             "setFeaturedFailed": "Não foi possível definir a capa. Tente novamente.",
             "uploadFailed": "Não foi possível carregar a imagem. Tente novamente."
+        },
+        "photoText": {
+            "title": "Textos da foto",
+            "description": "Corrija o texto exibido com esta foto na pagina publica.",
+            "fieldAlt": "Texto alternativo",
+            "fieldAltHelp": "O que um leitor de tela anuncia. Descreva a foto; nao repita o nome da propriedade.",
+            "fieldCaption": "Legenda",
+            "fieldDescription": "Descricao",
+            "emptyHint": "Deixar um campo vazio o apaga.",
+            "actions": {
+                "edit": "Editar textos",
+                "save": "Salvar",
+                "cancel": "Cancelar"
+            },
+            "errors": {
+                "saveFailed": "Nao foi possivel salvar os textos. Tente novamente."
+            }
         }
     },
     "partnerMentions": {
@@ -1557,8 +1582,8 @@
         "suspensions": {
             "title": "Declarações suspensas",
             "description": "Fornecedores que não podem registrar usos até alguém levantar a suspensão.",
-            "count": "{{count}} fornecedor suspenso",
-            "count_plural": "{{count}} fornecedores suspensos",
+            "count_one": "{{count}} fornecedor suspenso",
+            "count_other": "{{count}} fornecedores suspensos",
             "empty": "Nenhum fornecedor está com a declaração suspensa.",
             "loading": "Carregando suspensões…",
             "error": "Não foi possível carregar as suspensões.",
@@ -1594,8 +1619,8 @@
             "empty": "Ainda não há usos declarados.",
             "emptyFiltered": "Nenhum uso corresponde aos filtros aplicados.",
             "clearFilters": "Limpar filtros",
-            "results": "{{count}} uso",
-            "results_plural": "{{count}} usos",
+            "results_one": "{{count}} uso",
+            "results_other": "{{count}} usos",
             "pagination": "Página {{page}} de {{totalPages}} · {{total}} no total",
             "prevPage": "Anterior",
             "nextPage": "Próxima",

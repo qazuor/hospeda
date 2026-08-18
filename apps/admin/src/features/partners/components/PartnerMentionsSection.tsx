@@ -19,6 +19,7 @@
  */
 
 import type { PartnerMention } from '@repo/schemas';
+import { formatCalendarDate } from '@repo/utils';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
 import { PartnerMentionForm } from '@/features/partners/components/PartnerMentionForm';
@@ -32,6 +33,13 @@ import { useTranslations } from '@/hooks/use-translations';
 export interface PartnerMentionsSectionProps {
     readonly partnerId: string;
 }
+
+/** Long-form day, matching what the partner-facing log shows. */
+const DATE_FORMAT: Intl.DateTimeFormatOptions = {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric'
+};
 
 interface MentionBatch {
     readonly key: string;
@@ -88,12 +96,21 @@ function groupByBatch(mentions: readonly PartnerMention[]): MentionBatch[] {
     return batches;
 }
 
-function formatDate(value: Date): string {
-    return value.toLocaleDateString('es-AR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-    });
+/**
+ * Renders the BROADCAST DATE — a calendar day, not an instant.
+ *
+ * `mentionedAt` is a `timestamptz`, but nothing about it carries a time of day:
+ * the form offers a bare date picker, which pins the value to midnight UTC.
+ * Rendering that in the reader's own timezone showed every mention registered
+ * through the UI one day early (smoke agosto 2026, H-73), and because the log
+ * groups by day, a broadcast could even land under the wrong heading next to
+ * another campaign.
+ *
+ * H-84 is why this reads "calendar date" and not "date column": the column type
+ * was never what decided it.
+ */
+function formatMentionedAt(value: Date): string {
+    return formatCalendarDate({ value, locale: 'es-AR', options: DATE_FORMAT }) ?? '—';
 }
 
 export function PartnerMentionsSection({ partnerId }: PartnerMentionsSectionProps) {
@@ -170,7 +187,7 @@ export function PartnerMentionsSection({ partnerId }: PartnerMentionsSectionProp
                         key={batch.key}
                         className="rounded-md border p-3"
                     >
-                        <p className="font-medium">{formatDate(batch.mentionedAt)}</p>
+                        <p className="font-medium">{formatMentionedAt(batch.mentionedAt)}</p>
                         <ul className="mt-2 space-y-2">
                             {batch.mentions.map((mention) => (
                                 <PartnerMentionRow

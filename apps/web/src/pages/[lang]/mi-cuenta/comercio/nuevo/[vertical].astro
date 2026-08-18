@@ -71,7 +71,11 @@ const [destinationsResult, myLead] = await Promise.all([
     // HOS-257 D-4: pre-fill ONLY — `myLead` is `null` for the common case (no
     // provisioned lead) or on any fetch failure, and the form renders
     // identically usable either way (AC-10/AC-11). See module doc.
-    fetchMyCommerceLead({ cookieHeader })
+    //
+    // H-155: scoped to THIS vertical. Unscoped, the owner's most recent lead in
+    // ANY vertical was used, so the experience form pre-filled itself with a
+    // gastronomy lead's business name — and that name becomes an immutable slug.
+    fetchMyCommerceLead({ vertical, cookieHeader })
 ]);
 const destinations = destinationsResult.ok
     ? destinationsResult.data.items.map((item) => ({ id: item.id, name: item.name }))

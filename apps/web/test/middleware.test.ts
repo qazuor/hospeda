@@ -45,6 +45,12 @@ vi.mock('../src/lib/middleware-helpers', async (importOriginal) => {
     };
 });
 
+import {
+    ACCOMMODATION_TYPE_LEGACY_ENGLISH_SLUGS,
+    EVENT_CATEGORY_LEGACY_ENGLISH_SLUGS,
+    POST_CATEGORY_LEGACY_ENGLISH_SLUGS
+} from '../src/lib/facet-slugs';
+
 // Imported statically, NOT via `await import(...)` inside each test.
 //
 // `src/middleware` pulls a large module graph (env, i18n, media, cache-tags,
@@ -76,7 +82,15 @@ function createContext({
         request: {
             headers: new Headers(cookieHeader ? { cookie: cookieHeader } : {})
         },
-        redirect: vi.fn(),
+        // Real Astro's `context.redirect()` always returns a genuine `Response`
+        // (Location header + status). Defaulting the mock to return one too
+        // (rather than `undefined`) matches production and is required since
+        // H-170: `onRequest` now always reads `.headers` off whatever
+        // `runMiddlewarePipeline` returns, including redirects.
+        redirect: vi.fn(
+            (url: string, status = 302) =>
+                new Response(null, { status, headers: { location: url } })
+        ),
         rewrite: vi.fn(),
         cookies: {
             get: vi.fn()
@@ -285,6 +299,299 @@ describe('middleware onRequest — HOS-375 /publicaciones/autor/* redirects to /
     });
 });
 
+describe('middleware onRequest — H-110 legacy English facet-landing slugs redirect to Spanish', () => {
+    beforeEach(() => {
+        parseSessionUserMock.mockClear();
+    });
+
+    /** Run the middleware for one path and return the redirect call's arguments. */
+    async function redirectFor(pathname: string): Promise<readonly [string, number]> {
+        const context = createContext({ pathname });
+        const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+        await onRequest(context as any, next);
+
+        expect(next).not.toHaveBeenCalled();
+        expect(context.redirect).toHaveBeenCalledTimes(1);
+        return context.redirect.mock.calls[0] as unknown as readonly [string, number];
+    }
+
+    describe('accommodation type (/alojamientos/tipo/)', () => {
+        it.each(
+            Object.entries(ACCOMMODATION_TYPE_LEGACY_ENGLISH_SLUGS)
+        )('301-redirects every legacy English slug %s -> %s', async (englishSlug, spanishSlug) => {
+            const [target, status] = await redirectFor(`/es/alojamientos/tipo/${englishSlug}/`);
+            expect(target).toBe(`/es/alojamientos/tipo/${spanishSlug}/`);
+            expect(status).toBe(301);
+        });
+
+        it('redirects in every supported locale (the path segment itself never changes by locale)', async () => {
+            for (const locale of ['es', 'en', 'pt'] as const) {
+                const [target, status] = await redirectFor(`/${locale}/alojamientos/tipo/cabin/`);
+                expect(target).toBe(`/${locale}/alojamientos/tipo/cabana/`);
+                expect(status).toBe(301);
+            }
+        });
+
+        it('preserves the /page/<n>/ tail AND the query string together', async () => {
+            const [target, status] = await redirectFor(
+                '/es/alojamientos/tipo/country-house/page/2/?sortBy=priceAsc'
+            );
+            expect(target).toBe('/es/alojamientos/tipo/casa-de-campo/page/2/?sortBy=priceAsc');
+            expect(status).toBe(301);
+        });
+
+        it('does NOT redirect a slug identical in English and Spanish (loop safety — all 7: hotel, hostel, camping, motel, apart-hotel, estancia, bed-and-breakfast)', async () => {
+            for (const identicalSlug of [
+                'hotel',
+                'hostel',
+                'camping',
+                'motel',
+                'apart-hotel',
+                'estancia',
+                'bed-and-breakfast'
+            ]) {
+                const context = createContext({
+                    pathname: `/es/alojamientos/tipo/${identicalSlug}/`
+                });
+                const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+                await onRequest(context as any, next);
+
+                expect(context.redirect).not.toHaveBeenCalled();
+            }
+        });
+
+        it('does NOT redirect an already-canonical Spanish slug (loop safety, e.g. cabana)', async () => {
+            const context = createContext({ pathname: '/es/alojamientos/tipo/cabana/' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).not.toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT redirect an unknown/garbage slug — leaves it for the landing page 404', async () => {
+            const context = createContext({ pathname: '/es/alojamientos/tipo/not-a-real-type/' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).not.toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('event category (/eventos/categoria/)', () => {
+        it.each(
+            Object.entries(EVENT_CATEGORY_LEGACY_ENGLISH_SLUGS)
+        )('301-redirects every legacy English slug %s -> %s', async (englishSlug, spanishSlug) => {
+            const [target, status] = await redirectFor(`/es/eventos/categoria/${englishSlug}/`);
+            expect(target).toBe(`/es/eventos/categoria/${spanishSlug}/`);
+            expect(status).toBe(301);
+        });
+
+        it('preserves the /page/<n>/ tail AND the query string together', async () => {
+            const [target, status] = await redirectFor(
+                '/en/eventos/categoria/gastronomy/page/3/?when=weekend'
+            );
+            expect(target).toBe('/en/eventos/categoria/gastronomia/page/3/?when=weekend');
+            expect(status).toBe(301);
+        });
+
+        it('does NOT redirect a slug identical in English and Spanish (loop safety, e.g. festival)', async () => {
+            const context = createContext({ pathname: '/es/eventos/categoria/festival/' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).not.toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT redirect an already-canonical Spanish slug (loop safety, e.g. gastronomia)', async () => {
+            const context = createContext({ pathname: '/es/eventos/categoria/gastronomia/' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).not.toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT redirect an unknown/garbage slug — leaves it for the landing page 404', async () => {
+            const context = createContext({
+                pathname: '/es/eventos/categoria/not-a-real-category/'
+            });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).not.toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('post category (/publicaciones/categoria/)', () => {
+        it.each(
+            Object.entries(POST_CATEGORY_LEGACY_ENGLISH_SLUGS)
+        )('301-redirects every legacy English slug %s -> %s', async (englishSlug, spanishSlug) => {
+            const [target, status] = await redirectFor(
+                `/es/publicaciones/categoria/${englishSlug}/`
+            );
+            expect(target).toBe(`/es/publicaciones/categoria/${spanishSlug}/`);
+            expect(status).toBe(301);
+        });
+
+        it('preserves the /page/<n>/ tail AND the query string together', async () => {
+            const [target, status] = await redirectFor(
+                '/pt/publicaciones/categoria/nightlife/page/2/?sortBy=newest'
+            );
+            expect(target).toBe('/pt/publicaciones/categoria/noche/page/2/?sortBy=newest');
+            expect(status).toBe(301);
+        });
+
+        it('does NOT redirect a slug identical in English and Spanish (loop safety, e.g. general/rural)', async () => {
+            for (const identicalSlug of ['general', 'rural']) {
+                const context = createContext({
+                    pathname: `/es/publicaciones/categoria/${identicalSlug}/`
+                });
+                const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+                await onRequest(context as any, next);
+
+                expect(context.redirect).not.toHaveBeenCalled();
+            }
+        });
+
+        it('does NOT redirect an already-canonical Spanish slug (loop safety, e.g. gastronomia)', async () => {
+            const context = createContext({ pathname: '/es/publicaciones/categoria/gastronomia/' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).not.toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
+        });
+
+        it('does NOT redirect an unknown/garbage slug — leaves it for the landing page 404', async () => {
+            const context = createContext({
+                pathname: '/es/publicaciones/categoria/not-a-real-category/'
+            });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).not.toHaveBeenCalled();
+            expect(next).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('the /blog alias composes with the post-category legacy-slug redirect into ONE 301 (SEO — no chained hops)', () => {
+        it('resolves /blog/categoria/<english>/ directly to /publicaciones/categoria/<spanish>/ in a SINGLE redirect call', async () => {
+            const context = createContext({ pathname: '/es/blog/categoria/gastronomy/' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            // The whole point: exactly ONE call to context.redirect, straight
+            // to the final destination — never an intermediate
+            // `/publicaciones/categoria/gastronomy/` hop.
+            expect(next).not.toHaveBeenCalled();
+            expect(context.redirect).toHaveBeenCalledTimes(1);
+            expect(context.redirect).toHaveBeenCalledWith(
+                '/es/publicaciones/categoria/gastronomia/',
+                301
+            );
+        });
+
+        it('carries the query string through the single composed redirect', async () => {
+            const context = createContext({ pathname: '/en/blog/categoria/nightlife/?x=1' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).toHaveBeenCalledTimes(1);
+            expect(context.redirect).toHaveBeenCalledWith(
+                '/en/publicaciones/categoria/noche/?x=1',
+                301
+            );
+        });
+
+        it('leaves an ordinary /blog post-detail link as a plain single-hop rewrite (composition never fires for non-category paths)', async () => {
+            const context = createContext({ pathname: '/es/blog/una-nota-cualquiera/' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).toHaveBeenCalledTimes(1);
+            expect(context.redirect).toHaveBeenCalledWith(
+                '/es/publicaciones/una-nota-cualquiera/',
+                301
+            );
+        });
+
+        it('leaves a /blog/categoria/<already-Spanish> link alone at the composition step too (no self-redirect)', async () => {
+            const context = createContext({ pathname: '/es/blog/categoria/gastronomia/' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).toHaveBeenCalledTimes(1);
+            expect(context.redirect).toHaveBeenCalledWith(
+                '/es/publicaciones/categoria/gastronomia/',
+                301
+            );
+        });
+    });
+
+    describe('a legacy link missing its trailing slash ALSO resolves in ONE hop (H-110 — Step 3 composes too)', () => {
+        it('resolves /alojamientos/tipo/cabin (no trailing slash) directly to the canonical Spanish landing in a single redirect', async () => {
+            const context = createContext({ pathname: '/es/alojamientos/tipo/cabin' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).toHaveBeenCalledTimes(1);
+            expect(context.redirect).toHaveBeenCalledWith('/es/alojamientos/tipo/cabana/', 301);
+        });
+
+        it('resolves /blog/categoria/gastronomy (no trailing slash, chained AND slash-missing) in a single redirect', async () => {
+            const context = createContext({ pathname: '/es/blog/categoria/gastronomy' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).toHaveBeenCalledTimes(1);
+            expect(context.redirect).toHaveBeenCalledWith(
+                '/es/publicaciones/categoria/gastronomia/',
+                301
+            );
+        });
+
+        it('resolves /mi-cuenta/messages (no trailing slash) to the 308 consultas alias in a single redirect, preserving the 308 status', async () => {
+            const context = createContext({ pathname: '/es/mi-cuenta/messages' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).toHaveBeenCalledTimes(1);
+            expect(context.redirect).toHaveBeenCalledWith('/es/mi-cuenta/consultas/', 308);
+        });
+
+        it('still adds a plain trailing slash (no alias match) for an ordinary route missing one', async () => {
+            const context = createContext({ pathname: '/es/alojamientos' });
+            const next = vi.fn().mockResolvedValue(new Response('ok'));
+
+            await onRequest(context as any, next);
+
+            expect(context.redirect).toHaveBeenCalledTimes(1);
+            expect(context.redirect).toHaveBeenCalledWith('/es/alojamientos/', 301);
+        });
+    });
+});
+
 // ---------------------------------------------------------------------------
 // Regression: Step 4 (locale redirect) dropped the query string.
 //
@@ -471,5 +778,131 @@ describe('middleware onRequest — Step 11 emits the Cache-Tag purge header (HOS
         });
 
         expect(response.headers.get('Cache-Tag')).toBe('list-accom');
+    });
+});
+
+// ---------------------------------------------------------------------------
+// H-170 (August 2026 smoke) — baseline security headers on EVERY response.
+//
+// hospeda.com.ar was missing strict-transport-security, x-content-type-options
+// and referrer-policy in production. apps/api already emits all three via
+// `apps/api/src/middlewares/security.ts`; this closes the gap on apps/web by
+// wrapping the ENTIRE middleware pipeline (`runMiddlewarePipeline`) so every
+// exit path — SSR HTML, a static-asset early return, a redirect, a 404/410
+// rewrite — carries them, not just the CSP branch's HTML-only path.
+// ---------------------------------------------------------------------------
+describe('middleware onRequest — H-170 baseline security headers on every response', () => {
+    /** The exact values apps/api's security middleware defaults to (mirrored here, not env-driven). */
+    const EXPECTED_HEADERS = {
+        'strict-transport-security': 'max-age=31536000; includeSubDomains',
+        'x-content-type-options': 'nosniff',
+        'referrer-policy': 'strict-origin-when-cross-origin'
+    } as const;
+
+    function expectSecurityHeaders(response: Response) {
+        for (const [name, value] of Object.entries(EXPECTED_HEADERS)) {
+            expect(response.headers.get(name)).toBe(value);
+        }
+    }
+
+    beforeEach(() => {
+        parseSessionUserMock.mockClear();
+    });
+
+    it('carries all three headers on a normal SSR HTML page response', async () => {
+        const context = createContext({ pathname: '/es/alojamientos/' });
+        const next = vi
+            .fn()
+            .mockResolvedValue(
+                new Response('<html></html>', { headers: { 'content-type': 'text/html' } })
+            );
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on a static-asset early return (Step 1) — nosniff matters most here', async () => {
+        // isStaticAssetRoute matches on extension; the middleware returns
+        // next()'s response directly with no further processing.
+        const context = createContext({ pathname: '/favicon.ico' });
+        const next = vi.fn().mockResolvedValue(new Response('binary-data'));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on the /_image endpoint early return (Step 1)', async () => {
+        const context = createContext({ pathname: '/_image' });
+        const next = vi.fn().mockResolvedValue(new Response('image-bytes', { status: 200 }));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on a Server Island response (Step 2)', async () => {
+        const context = createContext({ pathname: '/_server-islands/MobileMenuIsland' });
+        const next = vi.fn().mockResolvedValue(new Response('island-html'));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on a redirect Response (Step 3.2 legacy /blog alias)', async () => {
+        // createContext's default `redirect` mock already returns a real
+        // Response (matching Astro), so no override is needed here.
+        const context = createContext({ pathname: '/es/blog/' });
+
+        const result = (await onRequest(context as any, vi.fn())) as Response;
+
+        expect(result.status).toBe(301);
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on a 404 rewrite (Step 8)', async () => {
+        const context = createContext({ pathname: '/es/no-existe/' });
+        context.rewrite = vi
+            .fn()
+            .mockResolvedValue(
+                new Response('<html>404</html>', { headers: { 'content-type': 'text/html' } })
+            );
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 404 }));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expectSecurityHeaders(result);
+    });
+
+    it('carries all three headers on a 410 Gone rewrite (Step 8b)', async () => {
+        const context = createContext({ pathname: '/es/alojamientos/x/' });
+        context.rewrite = vi.fn().mockResolvedValue(
+            new Response('<html>chrome</html>', {
+                status: 404,
+                headers: { 'content-type': 'text/html' }
+            })
+        );
+        const next = vi.fn().mockResolvedValue(new Response(null, { status: 410 }));
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expect(result.status).toBe(410);
+        expectSecurityHeaders(result);
+    });
+
+    it('does not overwrite the CSP header the HTML branch already sets — both coexist', async () => {
+        const context = createContext({ pathname: '/es/alojamientos/' });
+        const next = vi
+            .fn()
+            .mockResolvedValue(
+                new Response('<html></html>', { headers: { 'content-type': 'text/html' } })
+            );
+
+        const result = (await onRequest(context as any, next)) as Response;
+
+        expect(result.headers.get('content-security-policy')).toBeTruthy();
+        expectSecurityHeaders(result);
     });
 });

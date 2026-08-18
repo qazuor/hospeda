@@ -24,8 +24,16 @@ import { adminLogger } from '@/utils/logger';
  * the same columns.
  */
 
-/** Entity segment of the admin API path. */
-export type ContentStateEntity = 'posts' | 'events';
+/**
+ * Entity segment of the admin API path.
+ *
+ * `accommodations` carries ONLY the `moderate` endpoint. There is no admin
+ * `publish-state` or `lifecycle-state` route for a listing — its lifecycle moves
+ * through the owner's publish/unpublish and through its own inline lifecycle
+ * column — so the accommodation wiring uses `useModerateMutation` alone. The
+ * other two hooks exist for it but would 404 if anything called them.
+ */
+export type ContentStateEntity = 'posts' | 'events' | 'accommodations';
 
 /** Query keys the mutations invalidate on success. */
 export interface ContentStateQueryKeys {

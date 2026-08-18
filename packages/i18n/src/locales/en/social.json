@@ -624,7 +624,8 @@
     },
     "platformFormats": {
         "title": "Platform Formats",
-        "total": "{{count}} formats",
+        "total_one": "{{count}} format",
+        "total_other": "{{count}} formats",
         "list": {
             "error": "Error loading platform formats",
             "empty": "No platform formats configured",
@@ -664,7 +665,8 @@
     },
     "settings": {
         "title": "Social Settings",
-        "total": "{{count}} settings",
+        "total_one": "{{count}} setting",
+        "total_other": "{{count}} settings",
         "list": {
             "error": "Error loading settings",
             "empty": "No settings found",

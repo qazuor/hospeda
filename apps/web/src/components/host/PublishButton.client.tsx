@@ -17,10 +17,30 @@
  *               failures get a dedicated banner instead, because retrying
  *               them changes nothing: `403 subscription_required` (no active
  *               plan — links to the plans page) and `400 VALIDATION_ERROR`
- *               (the HOS-152 capacity-completeness guard, when
- *               `capacity`/`minNights`/`bedrooms`/`bathrooms` are missing —
- *               links to the editor).
+ *               (the publish-completeness gate — links to the editor and
+ *               names the fields the server reported).
  *  6. No (cancel) → returns to step 1.
+ *
+ * ## Without a plan there is no step 1 at all (H-99)
+ *
+ * When `hasActivePlan` is false the button is never rendered: the plan link
+ * takes its place. Publishing used to be offered with the same prominence as
+ * Edit and Delete to an owner with no subscription at all, opening a dialog
+ * that promised "va a aparecer en el sitio, visible para los turistas" —
+ * something that could not happen — and failing only on confirm. Worse, the
+ * failure cited missing bathrooms rather than the missing plan, because the
+ * server checked completeness first. Both halves are fixed: the guard order
+ * flipped server-side, and this button no longer offers what it cannot deliver.
+ *
+ * ## The rejection names real fields (H-94)
+ *
+ * The completeness branch used to map ANY 400 onto one fixed sentence naming
+ * capacity, guests and bathrooms — its own comment admitted treating "cualquier
+ * otro 400 como capacidad incompleta". In production that told a host their
+ * guests and bedrooms were missing while the form showed 11 and 3, and never
+ * mentioned bathrooms, the one field actually absent. The fields now come from
+ * the server's `reason`, resolved through the same shared requirement list the
+ * gate rejects from.
  *
  * ## Publishing does NOT start a trial (HOS-171)
  *
@@ -51,17 +71,29 @@
  *   errorText={t('host.properties.card.publishError', '...')}
  *   subscriptionRequiredMessage={t('host.properties.card.publishSubscriptionRequiredMessage', '...')}
  *   subscriptionRequiredCta={t('host.properties.card.publishSubscriptionRequiredCta', 'Ver planes')}
- *   incompleteCapacityMessage={t('host.properties.card.publishIncompleteCapacityMessage', '...')}
- *   incompleteCapacityCta={t('host.properties.card.publishIncompleteCapacityCta', 'Completar en el editor')}
+ *   missingRequirementsMessage={t('host.properties.card.publishMissingRequirementsMessage', '...')}
+ *   missingRequirementsCta={t('host.properties.card.publishMissingRequirementsCta', 'Completar en el editor')}
+ *   hasActivePlan={hasOwnerPlan}
+ *   choosePlanLabel={t('host.properties.card.actions.choosePlan', 'Elegir plan de anfitrión')}
  * />
  * ```
  */
 
+import {
+    ACCOMMODATION_PUBLISH_REQUIREMENTS,
+    type AccommodationPublishRequirementId,
+    parsePublishRequirementsReason
+} from '@repo/schemas';
 import { type JSX, useState } from 'react';
 import { accommodationEditApi } from '@/lib/api/endpoints-protected';
-import type { SupportedLocale } from '@/lib/i18n';
+import { createTranslations, type SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
 import styles from './PublishButton.module.css';
+
+/** Requirement id → its i18n label key, built once from the shared list. */
+const REQUIREMENT_LABEL_KEYS: Readonly<Record<string, string>> = Object.fromEntries(
+    ACCOMMODATION_PUBLISH_REQUIREMENTS.map((requirement) => [requirement.id, requirement.labelKey])
+);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -74,7 +106,7 @@ type PublishState =
     | 'pending'
     | 'error'
     | 'subscriptionRequired'
-    | 'incompleteCapacity';
+    | 'missingRequirements';
 
 /**
  * Props for the PublishButton component.
@@ -105,14 +137,29 @@ export interface PublishButtonProps {
     /** Label for the link to the plans page in that same case (already-translated). */
     readonly subscriptionRequiredCta: string;
     /**
-     * Message shown when publish fails because the accommodation's capacity
-     * details are incomplete (`400` from the capacity-completeness guard —
-     * HOS-152 — missing `capacity`/`minNights`/`bedrooms`/`bathrooms`,
-     * already-translated).
+     * Message shown when publish fails because the listing is missing
+     * publish requirements. Takes a `{{fields}}` placeholder, which is filled
+     * with the fields the SERVER said were missing (already-translated).
+     *
+     * It used to be a fixed sentence naming capacity, guests and bathrooms for
+     * every 400 whatsoever, which in production told a host that guests and
+     * bedrooms were missing from a form showing 11 and 3 (H-94).
      */
-    readonly incompleteCapacityMessage: string;
+    readonly missingRequirementsMessage: string;
     /** Label for the link to the editor in that same case (already-translated). */
-    readonly incompleteCapacityCta: string;
+    readonly missingRequirementsCta: string;
+    /**
+     * Whether the owner has a live host plan. When `false` the button does not
+     * offer to publish at all: it offers the plan instead (H-99).
+     *
+     * The page already knows this — it renders a "necesitás un plan de anfitrión
+     * activo" banner above the very same grid — but the button ignored it, so
+     * publishing was offered with the same prominence as Edit and Delete, opened
+     * a dialog promising "va a aparecer en el sitio", and only then failed.
+     */
+    readonly hasActivePlan: boolean;
+    /** Label for the "choose a plan" action shown in place of Publish. */
+    readonly choosePlanLabel: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -139,11 +186,17 @@ export function PublishButton({
     errorText,
     subscriptionRequiredMessage,
     subscriptionRequiredCta,
-    incompleteCapacityMessage,
-    incompleteCapacityCta
+    missingRequirementsMessage,
+    missingRequirementsCta,
+    hasActivePlan,
+    choosePlanLabel
 }: PublishButtonProps): JSX.Element {
     const [state, setState] = useState<PublishState>('idle');
     const [apiError, setApiError] = useState<string | null>(null);
+    const [missingRequirements, setMissingRequirements] = useState<
+        readonly AccommodationPublishRequirementId[]
+    >([]);
+    const { t } = createTranslations(locale);
 
     /** User clicked the main "Publicar" button → enter confirmation mode. */
     function handleRequestConfirm(): void {
@@ -173,16 +226,22 @@ export function PublishButton({
                 setState('subscriptionRequired');
                 return;
             }
-            // HOS-152: the capacity-completeness guard rejects publish with a
-            // 400 `VALIDATION_ERROR` (`AccommodationService.publish()` throws
-            // `ServiceError(VALIDATION_ERROR, ...)`) when extraInfo is missing
-            // capacity/minNights/bedrooms/bathrooms. Matching on the error
-            // code (not bare status) keeps this from mislabeling some future,
-            // different 400 on `/publish` as "incomplete capacity" — retrying
-            // without fixing the accommodation's data would fail identically,
-            // so route the host to the editor instead of a generic "try again".
+            // The publish gate rejects with a 400 `VALIDATION_ERROR` and names
+            // the fields it actually found missing in `reason`. Retrying without
+            // fixing them fails identically, so the host goes to the editor
+            // rather than a generic "try again".
+            //
+            // This branch used to set one fixed message —"Faltan datos de
+            // capacidad (huéspedes, habitaciones o baños)"— for ANY 400, its own
+            // comment admitting it treated "cualquier otro 400 como capacidad
+            // incompleta". Measured in production that sentence named three
+            // fields of which two were filled in, and never mentioned the one
+            // that was actually missing (H-94).
             if (result.error.status === 400 && result.error.code === 'VALIDATION_ERROR') {
-                setState('incompleteCapacity');
+                setMissingRequirements(
+                    parsePublishRequirementsReason({ reason: result.error.reason })
+                );
+                setState('missingRequirements');
                 return;
             }
             setApiError(errorText);
@@ -192,6 +251,22 @@ export function PublishButton({
 
         // Reload so the card re-renders with the new ACTIVE status.
         window.location.reload();
+    }
+
+    // ── No plan ───────────────────────────────────────────────────────────
+    // Offering "Publicar" here would open a dialog promising the listing goes
+    // live, and then fail — and until the guard order was flipped it failed
+    // citing bathrooms, never the plan. The page already knows the plan is
+    // missing; the button just never asked (H-99).
+    if (!hasActivePlan) {
+        return (
+            <a
+                href={buildUrl({ locale, path: 'suscriptores/planes' })}
+                className={`${styles.action} ${styles.primary}`}
+            >
+                {choosePlanLabel}
+            </a>
+        );
     }
 
     // ── Idle ──────────────────────────────────────────────────────────────
@@ -257,15 +332,25 @@ export function PublishButton({
         );
     }
 
-    // ── Incomplete capacity (HOS-152) ────────────────────────────────────
-    // Publish failed because extraInfo is missing capacity/minNights/
-    // bedrooms/bathrooms. Show a banner pointing to the editor instead of a
-    // retryable error — the same shape doomed to fail again unmodified.
-    if (state === 'incompleteCapacity') {
+    // ── Missing publish requirements (H-94) ──────────────────────────────
+    // Publish failed on completeness. The banner points at the editor and names
+    // the fields the SERVER reported, so the host is never sent to correct
+    // something that is already filled in.
+    if (state === 'missingRequirements') {
         const editUrl = buildUrl({
             locale,
             path: `mi-cuenta/propiedades/${accommodationId}/editar`
         });
+        // Falls back to the generic sentence only when the server sent no
+        // recognisable reason — an old API build, say. It is vague, but it
+        // never claims a specific field is missing when it is not.
+        const fieldList = missingRequirements
+            .map((id) => t(REQUIREMENT_LABEL_KEYS[id] ?? id))
+            .join(', ');
+        const message =
+            fieldList.length > 0
+                ? missingRequirementsMessage.replace('{{fields}}', fieldList)
+                : missingRequirementsMessage.replace('{{fields}}', '').trim();
         return (
             <span
                 role="alert"
@@ -284,13 +369,13 @@ export function PublishButton({
                         width: '100%'
                     }}
                 >
-                    {incompleteCapacityMessage}
+                    {message}
                 </span>
                 <a
                     href={editUrl}
                     className={`${styles.action} ${styles.primary}`}
                 >
-                    {incompleteCapacityCta}
+                    {missingRequirementsCta}
                 </a>
             </span>
         );

@@ -15,7 +15,9 @@
  *
  * Footer — AC-5.1 "why only Google" explainer always rendered.
  *
- * Renders NOTHING when the block is empty (items array empty).
+ * Renders NOTHING when the block is empty (items array empty) OR when every
+ * configured platform came back with no score, no count, no link and no
+ * snippets — see `lib/external-reputation-visibility.ts` and H-133.
  *
  * AC-4.5: each chip header (platformLabel) labels the source platform.
  * AC-5.1: googleOnly note always rendered below.
@@ -25,6 +27,11 @@ import { ExternalLinkIcon, StarIcon } from '@repo/icons';
 import { ExternalReviews } from './ExternalReviews.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import {
+    hasAggregate,
+    hasValidSnippets,
+    selectVisibleReputationItems
+} from '@/lib/external-reputation-visibility';
 import type { ExternalReputationBlock, ExternalReputationPlatformItem } from '@repo/schemas';
 import styles from './ExternalReputation.module.css';
 
@@ -39,11 +46,11 @@ interface Props {
 }
 
 const { reputationData, locale } = Astro.props;
-const { t } = createTranslations(locale as SupportedLocale);
+const { t, tPlural } = createTranslations(locale as SupportedLocale);
 
 // Nothing to render when all platforms are hidden.
-const { items } = reputationData;
-if (items.length === 0) {
+const { items: configuredItems } = reputationData;
+if (configuredItems.length === 0) {
     return;
 }
 
@@ -56,16 +63,6 @@ function platformLabel(platform: ExternalReputationPlatformItem['platform']): st
 }
 
 /**
- * Determines if a platform item has Google snippets that are still valid.
- * The public schema only includes snippets when TTL is valid at build time
- * (buildExternalReputationBlock strips them). An empty/null array means either
- * not Google, no snippets fetched, or TTL expired.
- */
-function hasValidSnippets(item: ExternalReputationPlatformItem): boolean {
-    return item.platform === 'GOOGLE' && Array.isArray(item.snippets) && item.snippets.length > 0;
-}
-
-/**
  * Determines if a platform item should show the "snippets temporarily unavailable"
  * note. Uses the explicit `snippetsTtlExpired` flag set by buildExternalReputationBlock
  * rather than inferring from missing snippets — prevents showing the note when the
@@ -75,10 +72,23 @@ function isGoogleTtlExpired(item: ExternalReputationPlatformItem): boolean {
     return item.snippetsTtlExpired === true;
 }
 
+// Drop platforms that came back with nothing at all. When that leaves nothing,
+// say nothing rather than publish a section promising reviews it does not have
+// (H-133). The predicates live in `lib/external-reputation-visibility.ts` so
+// they can be unit-tested — Astro components cannot be rendered under Vitest.
+const items = selectVisibleReputationItems({ items: configuredItems });
+if (items.length === 0) {
+    return;
+}
+
 // Derive Block 2 state once so the template stays clean.
-const googleItemWithSnippets = items.find(hasValidSnippets);
+const googleItemWithSnippets = items.find((item) => hasValidSnippets({ item }));
+// The TTL note reads "…mostrando solo el puntaje", so it may only appear when
+// there IS a score to show. Without this guard it rendered two lines below
+// "Sin datos disponibles", contradicting it (H-133).
 const googleItemTtlExpired = items.find(
-    (item) => item.platform === 'GOOGLE' && isGoogleTtlExpired(item)
+    (item) =>
+        item.platform === 'GOOGLE' && isGoogleTtlExpired(item) && hasAggregate({ item })
 );
 const showReviewsBlock = googleItemWithSnippets != null || googleItemTtlExpired != null;
 ---
@@ -105,7 +115,7 @@ const showReviewsBlock = googleItemWithSnippets != null || googleItemTtlExpired 
                         )}
                         {item.reviewsCount != null && (
                             <span class={styles.chipReviewCount}>
-                                {t('external-reputation.aggregate.reviewsCount', '{{count}} reseñas', { count: item.reviewsCount })}
+                                {tPlural('external-reputation.aggregate.reviewsCount', item.reviewsCount)}
                             </span>
                         )}
                     </div>

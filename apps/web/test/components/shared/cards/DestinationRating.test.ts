@@ -80,8 +80,8 @@ describe('DestinationRating.astro', () => {
         });
 
         it('should use t() for the rating aria-label', () => {
-            expect(src).toContain("t('destination.card.rating.label'");
-            expect(src).toContain("t('destination.card.rating.of5'");
+            expect(src).toContain("t('destinations.card.rating.label'");
+            expect(src).toContain("t('destinations.card.rating.of5'");
         });
 
         it('should use t() for the reviews label', () => {

@@ -68,7 +68,7 @@ describe('DestinationReviewsSection.astro', () => {
         });
 
         it('should render empty state i18n key', () => {
-            expect(src).toContain("'destination.detail.reviews.empty'");
+            expect(src).toContain("'destinations.detail.reviews.empty'");
         });
 
         it('should include Spanish fallback for empty state', () => {
@@ -101,7 +101,7 @@ describe('DestinationReviewsSection.astro', () => {
         });
 
         it('should render reviews count i18n key', () => {
-            expect(src).toContain("'destination.detail.reviews.count'");
+            expect(src).toContain("'destinations.detail.reviews.count'");
         });
 
         it('should render the view-all button with trigger data attributes', () => {
@@ -114,7 +114,7 @@ describe('DestinationReviewsSection.astro', () => {
         });
 
         it('should use i18n key for view-all button label', () => {
-            expect(src).toContain("'destination.detail.reviews.viewAll'");
+            expect(src).toContain("'destinations.detail.reviews.viewAll'");
         });
 
         it('should mount DestinationReviewsModal with client:idle directive', () => {
@@ -130,7 +130,7 @@ describe('DestinationReviewsSection.astro', () => {
         });
 
         it('should use t() for section title', () => {
-            expect(src).toContain("'destination.detail.reviews.title'");
+            expect(src).toContain("'destinations.detail.reviews.title'");
         });
 
         it('should include Spanish fallback for section title', () => {

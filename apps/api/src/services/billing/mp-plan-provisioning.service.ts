@@ -129,10 +129,75 @@ const BILLING_INTERVAL_LABELS_ES: Record<BillingIntervalLabel, string> = {
 };
 
 /**
+ * MercadoPago's hard cap on a `preapproval_plan` `reason`. Exceeding it makes
+ * `POST /preapproval_plan` fail with `Reason has more than 60 characters`, which
+ * qzpay surfaces as `Create price - Reason has more than 60 characters` and
+ * {@link resolveCheckoutMpPlanId} maps to a 502 — killing the checkout before
+ * any subscription exists (H-83).
+ *
+ * The cap counts CHARACTERS, not bytes: a 55-character reason carrying three
+ * 3-byte em dashes (61 bytes) was accepted by MercadoPago in production on
+ * 2026-07-23, so the accented, em-dashed Spanish wording is safe to keep.
+ */
+const MP_PLAN_REASON_MAX_LENGTH = 60;
+
+/**
+ * Marker appended to a plan provisioned at a discounted signup amount (HOS-244).
+ *
+ * It deliberately carries NO amount. The formatted price it replaces
+ * (`" — desc. 1er ciclo $9000.00"`, 27 characters) was the largest fragment of
+ * the reason and is what pushed every discounted variant past MercadoPago's
+ * limit — in production that meant a 502 on every coupon redemption, on every
+ * plan (H-83). It was also destined to go stale: the promo engine mutates the
+ * preapproval's `transaction_amount` back to full price once the discounted
+ * cycles are spent, while the plan NAME would have kept advertising the old
+ * amount forever; and for a multi-cycle promo like `LANZAMIENTO50` the words
+ * "1er ciclo" were already inaccurate the day they were written. The only thing
+ * that stays true for the life of the plan is that it was born under a promo.
+ */
+const DISCOUNT_MARKER = ' — promo';
+
+/**
+ * Truncate a string to at most `maxLength` characters, appending an ellipsis
+ * when it had to give ground. Operates on code POINTS rather than UTF-16 code
+ * units, so a display name containing an astral character can never be cut in
+ * half into a lone surrogate.
+ *
+ * @param value - The string to fit.
+ * @param maxLength - Maximum number of characters allowed in the result.
+ * @returns `value` unchanged when it already fits, otherwise a truncated form of
+ *   exactly `maxLength` characters (or the empty string when there is no room).
+ */
+function truncateToLength(value: string, maxLength: number): string {
+    if (maxLength <= 0) return '';
+    const chars = Array.from(value);
+    if (chars.length <= maxLength) return value;
+    if (maxLength === 1) return '…';
+    return `${chars.slice(0, maxLength - 1).join('')}…`;
+}
+
+/**
  * Build the MercadoPago plan `reason` (its buyer- and dashboard-visible name).
  * Kept descriptive and deterministic so operators can identify a variant at a
  * glance. Rendered in Spanish (Hospeda's default locale) — the `planName` is a
  * brand display name (e.g. `Plus`) and is left as-is.
+ *
+ * The result is GUARANTEED to fit {@link MP_PLAN_REASON_MAX_LENGTH}. Every
+ * fragment but the plan name is bounded by this module, so the plan name — the
+ * one caller-supplied, admin-editable, unbounded field — is what gives ground
+ * when the budget runs out. That ordering is deliberate: the cadence and trial
+ * fragments are what tell two MP plans for the same product apart, so dropping
+ * them would make distinct variants indistinguishable in the MercadoPago
+ * dashboard, whereas a clipped name is still recognisable to its buyer.
+ *
+ * Two discounted variants of the same plan/cadence/trial (say `BIENVENIDO30`
+ * and `LANZAMIENTO50` on Basic) do collapse to the same reason. They remain
+ * distinct MercadoPago plans with distinct `transaction_amount`s, and
+ * `billing_mp_plans` keys them apart on the full variant tuple — the reason is
+ * a label, never the identifier.
+ *
+ * @param input - Plan label, cadence, resolved trial length and signup discount.
+ * @returns A reason string of at most 60 characters.
  */
 function buildPlanReason(input: {
     planName: string;
@@ -146,9 +211,18 @@ function buildPlanReason(input: {
     // full-price plan in the MercadoPago dashboard. Only appended when discounted.
     const discountLabel =
         input.discountCycle1AmountCentavos && input.discountCycle1AmountCentavos > 0
-            ? ` — desc. 1er ciclo $${(input.discountCycle1AmountCentavos / 100).toFixed(2)}`
+            ? DISCOUNT_MARKER
             : '';
-    return `${input.planName} — ${intervalLabel} — ${trialLabel}${discountLabel}`;
+    const suffix = ` — ${intervalLabel} — ${trialLabel}${discountLabel}`;
+    const planName = truncateToLength(
+        input.planName,
+        MP_PLAN_REASON_MAX_LENGTH - Array.from(suffix).length
+    );
+    // Belt-and-suspenders: the budget above already fits, but an absurd trial
+    // length could make the suffix overflow on its own. Clamping the assembled
+    // string means no input — however the commercial layer changes underneath
+    // us — can hand MercadoPago a reason it will reject.
+    return truncateToLength(`${planName}${suffix}`, MP_PLAN_REASON_MAX_LENGTH);
 }
 
 /**

@@ -117,7 +117,9 @@ const detailsJson = showDevDetails && error?.details !== undefined
 
 <script>
 	function buildFeedbackUrl(banner: HTMLElement): string {
-		const lang = document.documentElement.lang || 'es';
+		// `data-locale`, not `lang`: since HOS-585 G-5 `lang` carries a regional
+		// tag (`es-AR`) and there is no `/es-AR/...` route to link to.
+		const lang = document.documentElement.getAttribute('data-locale') || 'es';
 		const params = new URLSearchParams();
 
 		params.set('type', 'bug-js');

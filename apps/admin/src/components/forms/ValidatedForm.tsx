@@ -386,8 +386,7 @@ export const ValidatedForm = <TFormData extends Record<string, unknown>>({
                     t('admin-common.validatedForm.srFailed', {
                         error: submissionState.submitError
                     })}
-                {isInvalid &&
-                    t('admin-common.validatedForm.srHasErrors', { count: allErrors.length })}
+                {isInvalid && tPlural('admin-common.validatedForm.srHasErrors', allErrors.length)}
             </div>
         </form>
     );

@@ -94,6 +94,10 @@ function ToastActionLink({
                 href={action.href}
                 onClick={onAfterClick}
                 className={className}
+                // Opt-in hard navigation (HOS-566). Astro reads the attribute's
+                // presence, so it must be omitted entirely — not set to "false" —
+                // when the action does not ask for it.
+                {...(action.reload ? { 'data-astro-reload': '' } : {})}
             >
                 {action.label}
             </a>

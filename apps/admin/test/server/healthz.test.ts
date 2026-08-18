@@ -28,6 +28,7 @@
  */
 
 import { describe, expect, it, vi } from 'vitest';
+import { SECURITY_HEADER_VALUES } from '../../src/lib/security-headers';
 
 // Mock @tanstack/react-start/server so createStartHandler does not attempt
 // framework initialisation in jsdom. The mocked resolver returns a plain
@@ -57,6 +58,18 @@ describe('healthcheckResponse (SPEC-209 AC-1.1 / T-005)', () => {
         expect(res.headers.get('content-type')).toBe('application/json');
         const body = await res.json();
         expect(body).toEqual({ status: 'ok' });
+    });
+
+    it('carries the H-170 baseline security headers even though it bypasses cspMiddleware', async () => {
+        // /healthz is intercepted before createStartHandler runs, so it never
+        // reaches cspMiddleware — healthcheckResponse must apply them itself.
+        const request = new Request('http://localhost/healthz');
+
+        const response = healthcheckResponse(request) as Response;
+
+        for (const [name, value] of Object.entries(SECURITY_HEADER_VALUES)) {
+            expect(response.headers.get(name)).toBe(value);
+        }
     });
 
     it('returns 200 for /healthz with a query string (pathname still matches)', async () => {

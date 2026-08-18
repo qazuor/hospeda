@@ -38,17 +38,30 @@ vi.mock('../../../../src/services/plan.service', () => ({
 }));
 
 // ─── Mock @repo/billing ───────────────────────────────────────────────────────
-// PAYMENT_GRACE_PERIOD_DAYS is still needed by subscription.ts; getPlanBySlug
-// is intentionally absent so any residual import would surface a TypeError.
+// Only the two entitlement loaders are stubbed. Everything else — including
+// `isEntitlementGrantingStatus` and `ENTITLEMENT_GRANTING_STATUSES` — comes
+// from the REAL module via importOriginal.
+//
+// The predicate used to be re-implemented here by hand. That is exactly the
+// drift these routes suffer from (H-70): a copy of the canonical rule that can
+// disagree with it, in the test that is supposed to catch the disagreement. A
+// hand-written mock also silently omits any export the routes later start
+// using — which is how a route importing `ENTITLEMENT_GRANTING_STATUSES` got an
+// `undefined` here and fell into its own catch, reporting `plan: null`.
+//
+// `getPlanBySlug` is deliberately overridden to `undefined` so any residual
+// import of it still surfaces as a TypeError, which was the point of the
+// original full-replacement mock.
 
-vi.mock('@repo/billing', () => ({
-    PAYMENT_GRACE_PERIOD_DAYS: 7,
-    getDefaultEntitlements: vi.fn(() => ({ entitlements: [], limits: [] })),
-    getUnlimitedEntitlements: vi.fn(() => ({ entitlements: [], limits: [] })),
-    // HOS-242: subscription.ts composes on the canonical predicate.
-    isEntitlementGrantingStatus: (status: string) =>
-        status === 'active' || status === 'trialing' || status === 'comp'
-}));
+vi.mock('@repo/billing', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/billing')>();
+    return {
+        ...actual,
+        getPlanBySlug: undefined,
+        getDefaultEntitlements: vi.fn(() => ({ entitlements: [], limits: [] })),
+        getUnlimitedEntitlements: vi.fn(() => ({ entitlements: [], limits: [] }))
+    };
+});
 
 // ─── Mock QZPay billing accessor ─────────────────────────────────────────────
 

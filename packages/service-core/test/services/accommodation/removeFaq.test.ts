@@ -85,7 +85,12 @@ describe('AccommodationService.removeFaq', () => {
         expect(result.data).toEqual({ success: true });
         expect(modelMock.findById).toHaveBeenCalledWith(accommodation.id as any, undefined);
         expect(faqModelMock.findById).toHaveBeenCalledWith(faq.id as any, undefined);
-        expect(faqModelMock.softDelete).toHaveBeenCalledWith({ id: faq.id as any }, undefined);
+        // HOS-556: removing a FAQ must record who removed it.
+        expect(faqModelMock.softDelete).toHaveBeenCalledWith(
+            { id: faq.id as any },
+            actor.id,
+            undefined
+        );
     });
 
     it('should return NOT_FOUND if accommodation does not exist', async () => {

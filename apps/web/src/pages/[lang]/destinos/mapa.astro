@@ -52,7 +52,7 @@ const cards = items.map((item) => toDestinationCardProps({ item: item as unknown
 // `totalCount`/`filterSummary` results-summary handling. Built locally with
 // the same visual treatment, placed in the content column above the map
 // instead of inside the page header.
-const resultsSummaryLabel = `${total} ${t('ui.listing.resultsFound', 'resultados encontrados')}`;
+const resultsSummaryLabel = tPlural('ui.listing.resultsFound', total);
 
 const mapItems = cards
 	.filter((c) => c.coordinates?.lat && c.coordinates?.long)

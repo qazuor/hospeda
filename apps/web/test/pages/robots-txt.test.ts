@@ -319,6 +319,78 @@ describe('robots.txt — GET handler', () => {
     // AEO: explicit AI crawler allow blocks
     // -----------------------------------------------------------------------
 
+    describe('search-engine policy (HOS-585 G-3 / AC-6)', () => {
+        /**
+         * Classic search crawlers this site names explicitly. Kept as its own
+         * hand-maintained list (not imported from the route) on purpose: a test
+         * that reads the same constant it verifies passes no matter what that
+         * constant says.
+         */
+        const SEARCH_BOTS = ['bingbot'];
+
+        it('emits an explicit User-agent block for every named search engine', async () => {
+            const body = await getPermissiveBody();
+
+            for (const bot of SEARCH_BOTS) {
+                expect(body, `missing block for ${bot}`).toContain(`User-agent: ${bot}`);
+            }
+        });
+
+        it('each search engine carries Allow: / so it may crawl public pages', async () => {
+            const body = await getPermissiveBody();
+
+            for (const bot of SEARCH_BOTS) {
+                const block = body.slice(body.indexOf(`User-agent: ${bot}`));
+                const firstLines = block.split('\n').slice(0, 2).join('\n');
+                expect(firstLines, `${bot} is not allowed`).toContain('Allow: /');
+            }
+        });
+
+        /**
+         * The reason a named block is not free: RFC 9309 gives a named group NO
+         * inheritance from `*`. Emitting `User-agent: bingbot` + `Allow: /` and
+         * nothing else would hand Bing the private paths every other agent is
+         * denied. The block must carry the SAME disallow set as `*`, byte for
+         * byte — asserting equality rather than containment is what catches
+         * drift when a new rule is added to one list and not the other.
+         */
+        it('each search-engine block repeats the * block disallows exactly', async () => {
+            const body = await getPermissiveBody();
+            const blocks = body.split('\n\n');
+
+            const disallowsOf = (block: string): string[] =>
+                block.split('\n').filter((line) => line.startsWith('Disallow: '));
+
+            const starBlock = blocks.find((b) => b.startsWith('User-agent: *'));
+            expect(starBlock, 'no * block found').toBeDefined();
+            const expected = disallowsOf(starBlock as string);
+            // Guard against a vacuous comparison: if the * block ever stopped
+            // emitting disallows, every equality below would pass trivially.
+            expect(expected.length).toBeGreaterThan(0);
+
+            for (const bot of SEARCH_BOTS) {
+                const block = blocks.find((b) => b.startsWith(`User-agent: ${bot}\n`));
+                expect(block, `block for ${bot}`).toBeDefined();
+                expect(disallowsOf(block as string), `${bot} disallows drifted from *`).toEqual(
+                    expected
+                );
+            }
+        });
+
+        it('never denies a named search engine (a block here must not be a Disallow: /)', async () => {
+            const body = await getPermissiveBody();
+            const blocks = body.split('\n\n');
+
+            for (const bot of SEARCH_BOTS) {
+                const block = blocks.find((b) => b.startsWith(`User-agent: ${bot}\n`));
+                expect(block, `block for ${bot}`).toBeDefined();
+                expect(block, `${bot} must not be blocked outright`).not.toBe(
+                    `User-agent: ${bot}\nDisallow: /`
+                );
+            }
+        });
+    });
+
     describe('AI crawler policy (AEO, HOS-369 WA-4)', () => {
         /**
          * Agents that produce CITATIONS — the visibility Hospeda actually wants.

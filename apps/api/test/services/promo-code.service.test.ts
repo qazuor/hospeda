@@ -106,11 +106,19 @@ vi.mock('@repo/db', () => ({
         status: 'status',
         livemode: 'livemode'
     },
+    // HOS-450: the `newCustomersOnly` check maps the Better Auth user id to its
+    // billing customer id(s) through `billing_customers.external_id`, so both the
+    // table and the `inArray` operator must be part of this mock.
+    billingCustomers: {
+        id: 'id',
+        externalId: 'externalId'
+    },
     and: vi.fn((...args) => args),
     count: vi.fn(() => 'count-fn'),
     desc: vi.fn((field) => `desc(${field})`),
     eq: vi.fn((field, value) => ({ field, value, op: 'eq' })),
     getTableColumns: vi.fn(() => ({})),
+    inArray: vi.fn((field, values) => ({ field, values, op: 'inArray' })),
     ilike: vi.fn((field, value) => ({ field, value, op: 'ilike' })),
     safeIlike: vi.fn((field, value) => ({ field, value, op: 'safeIlike' })),
     isNull: vi.fn((field) => ({ field, op: 'isNull' })),

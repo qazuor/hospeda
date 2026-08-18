@@ -118,7 +118,7 @@ export function DestinationsIsland(props: DestinationsIslandProps) {
 }
 
 function DestinationsIslandInner({ destinations, locale }: DestinationsIslandProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     const [activeIndex, setActiveIndex] = useState(0);
     const total = destinations.length;
@@ -189,11 +189,11 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                     onSelectDestination={setActiveIndex}
                     destinations={destinations}
                     mapLabel={t(
-                        'destination.map.label',
+                        'destinations.map.label',
                         'Interactive map of destinations in Entre Ríos, Argentina'
                     )}
                     pinLabel={(name) =>
-                        t('destination.map.viewDestination', 'View destination {{name}}', { name })
+                        t('destinations.map.viewDestination', 'View destination {{name}}', { name })
                     }
                 />
             </div>
@@ -242,25 +242,19 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                                     locale,
                                     path: `destinos/${destination.slug}`
                                 });
-                                const accommodationsLabel =
-                                    destination.accommodationsCount === 1
-                                        ? t(
-                                              'destination.card.accommodation_singular',
-                                              'alojamiento'
-                                          )
-                                        : t(
-                                              'destination.card.accommodation_plural',
-                                              'alojamientos'
-                                          );
+                                const accommodationsLabel = tPlural(
+                                    'destinations.card.accommodation',
+                                    destination.accommodationsCount
+                                );
                                 const ratingAriaLabel = `${t(
-                                    'destination.card.rating.label',
+                                    'destinations.card.rating.label',
                                     'Calificación'
                                 )}: ${destination.averageRating.toFixed(1)} ${t(
-                                    'destination.card.rating.of5',
+                                    'destinations.card.rating.of5',
                                     'de 5'
                                 )}`;
                                 const slideAriaLabel = t(
-                                    'destination.carousel.slideOf',
+                                    'destinations.carousel.slideOf',
                                     '{{current}} de {{total}}: {{name}}',
                                     {
                                         current: i + 1,
@@ -269,7 +263,7 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                                     }
                                 );
                                 const cardAriaLabel = t(
-                                    'destination.carousel.viewDestination',
+                                    'destinations.carousel.viewDestination',
                                     'Ver destino {{name}}',
                                     { name: destination.name }
                                 );
@@ -333,14 +327,13 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                                                     {destination.name}
                                                 </h3>
                                                 <p className={styles.cardCount}>
-                                                    {destination.accommodationsCount}{' '}
                                                     {accommodationsLabel}
                                                 </p>
                                                 {(destination.attractions?.length ?? 0) > 0 && (
                                                     <ul
                                                         className={styles.cardAttractions}
                                                         aria-label={t(
-                                                            'destination.card.attractionsLabel',
+                                                            'destinations.card.attractionsLabel',
                                                             'Atracciones'
                                                         )}
                                                     >
@@ -409,13 +402,13 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                 {/* Slide counter + arrow navigation (replaces dots when >7 items) */}
                 <nav
                     className={styles.controls}
-                    aria-label={t('destination.carousel.navigation', 'Destination navigation')}
+                    aria-label={t('destinations.carousel.navigation', 'Destination navigation')}
                 >
                     <button
                         type="button"
                         className={styles.arrowButton}
                         onClick={scrollPrev}
-                        aria-label={t('destination.carousel.previous', 'Previous destination')}
+                        aria-label={t('destinations.carousel.previous', 'Previous destination')}
                     >
                         ←
                     </button>
@@ -426,7 +419,7 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                         aria-live="polite"
                         aria-atomic="true"
                         aria-label={t(
-                            'destination.carousel.itemOf',
+                            'destinations.carousel.itemOf',
                             'Destination {{current}} of {{total}}',
                             { current: activeIndex + 1, total }
                         )}
@@ -438,7 +431,7 @@ function DestinationsIslandInner({ destinations, locale }: DestinationsIslandPro
                         type="button"
                         className={styles.arrowButton}
                         onClick={scrollNext}
-                        aria-label={t('destination.carousel.next', 'Next destination')}
+                        aria-label={t('destinations.carousel.next', 'Next destination')}
                     >
                         →
                     </button>

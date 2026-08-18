@@ -23,6 +23,42 @@ export interface VisualViewportInset {
 const NO_INSET: VisualViewportInset = { height: null, bottomInset: 0 };
 
 /**
+ * Delays (ms) at which the hook re-reads `visualViewport` after `enabled`
+ * flips true, IN ADDITION to the `resize`/`scroll` listeners (HOS-309 /
+ * HOS-138 — H-138).
+ *
+ * ## Why this exists
+ *
+ * The first `measure()` call below runs before the mobile keyboard has
+ * finished animating in: the caller's own autofocus (which is what triggers
+ * the keyboard) runs in a LATER effect of the same render, so at the moment
+ * this effect fires the keyboard has not opened yet — that part is expected
+ * and not a bug. What SHOULD close the gap is the keyboard's own
+ * `visualViewport` `resize` event once it finishes settling. A production
+ * smoke (Chrome/Android, HOS-138) reproduced ONE case where that did not
+ * happen on the very FIRST focus of a fresh page load: the dialog opened
+ * with the pre-keyboard measurement baked into its layout and stayed that
+ * way — no error, no crash, just a dialog whose title sat above the visible
+ * area — and only self-corrected on a SECOND focus (which fired its own
+ * `resize` normally). That is consistent with a browser that drops or
+ * delays exactly one `visualViewport` event around the very first IME
+ * activation on a page, not with anything wrong in the layout math itself
+ * (the reflow used to fix it -- a bare re-focus -- proves the numbers were
+ * always right once measured).
+ *
+ * This was reproduced exactly once and is NOT fully characterized (see the
+ * module-level caller docs) — there is no real device in this environment to
+ * confirm the exact browser mechanism, so the fix is a resilience net rather
+ * than a targeted patch for a diagnosed root cause: re-run `measure()` a few
+ * more times over the following ~600 ms regardless of whether a `resize`
+ * event arrived. Each call is a cheap read + state update that is a no-op if
+ * nothing changed, so this costs nothing on the (overwhelmingly common) path
+ * where `resize` fires normally — it only matters on the rare turn where it
+ * does not.
+ */
+const SETTLE_REMEASURE_DELAYS_MS: readonly number[] = [100, 300, 600];
+
+/**
  * Reports the visible viewport while `enabled`.
  *
  * `100vh` is the wrong unit for anything that has to survive a keyboard: it
@@ -65,9 +101,19 @@ export function useVisualViewportInset({
         measure();
         viewport.addEventListener('resize', measure);
         viewport.addEventListener('scroll', measure);
+
+        // HOS-309 / HOS-138: safety-net remeasures — see
+        // `SETTLE_REMEASURE_DELAYS_MS`'s doc for why these exist.
+        const settleTimeouts = SETTLE_REMEASURE_DELAYS_MS.map((delay) =>
+            window.setTimeout(measure, delay)
+        );
+
         return () => {
             viewport.removeEventListener('resize', measure);
             viewport.removeEventListener('scroll', measure);
+            for (const timeoutId of settleTimeouts) {
+                window.clearTimeout(timeoutId);
+            }
             setInset(NO_INSET);
         };
     }, [enabled]);

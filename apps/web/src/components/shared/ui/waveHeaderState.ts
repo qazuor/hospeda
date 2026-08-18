@@ -24,6 +24,12 @@
  * oscillating near a threshold (e.g. a trackpad micro-bounce) can cross a
  * hide/reveal threshold via the NET of two opposite movements even though
  * neither movement alone was a sustained scroll in one direction.
+ *
+ * {@link computeScrollDelta} is a second, small pure helper the caller uses
+ * to build the `delta` fed into {@link nextWaveHeaderState}: it forces a
+ * `resize`-sourced tick to `0` so it can never perturb the direction axis
+ * (H-47, smoke agosto 2026 — see its own doc comment for the mobile-only
+ * mechanism this fixes).
  */
 
 /**
@@ -127,6 +133,105 @@ function updateAccumulator(accumulator: number, delta: number): number {
 
     const sameDirection = accumulator === 0 || Math.sign(accumulator) === Math.sign(delta);
     return sameDirection ? accumulator + delta : delta;
+}
+
+/**
+ * Origin of a single evaluation tick fed into {@link computeScrollDelta}.
+ *
+ * - `scroll` — a genuine `scroll` event: the caller intends to report real
+ *   user scroll movement, so the delta feeds the direction axis.
+ * - `resize` — a `resize` event. On desktop this rarely fires mid-scroll, but
+ *   on a real mobile device the dynamic URL bar shows/hides on nearly every
+ *   scroll tick, firing `resize` far more often than on desktop while the
+ *   user is actively scrolling (H-47, smoke agosto 2026). A `resize` is not a
+ *   scroll gesture, so it must never contribute to the direction axis.
+ */
+export type WaveHeaderScrollSource = 'scroll' | 'resize';
+
+/**
+ * Input for {@link computeScrollDelta}.
+ */
+export interface ComputeScrollDeltaInput {
+    /** Which kind of DOM event triggered this evaluation tick. */
+    readonly source: WaveHeaderScrollSource;
+    /** Current `window.scrollY` reading. */
+    readonly scrollY: number;
+    /** `window.scrollY` as of the previous evaluation tick. */
+    readonly prevScrollY: number;
+}
+
+/**
+ * Computes the signed scroll delta to feed into {@link nextWaveHeaderState}.
+ *
+ * A `resize` source always returns `0`, regardless of how `scrollY` and
+ * `prevScrollY` compare. This is the fix for H-47 (smoke agosto 2026): the
+ * `resize` listener used to hand its own `scrollY - prevScrollY` straight to
+ * the direction-axis accumulator, as if a resize were a scroll gesture. That
+ * coupling was invisible on desktop, where `resize` almost never fires while
+ * scrolling, but on a real mobile device the dynamic URL bar fires `resize`
+ * on nearly every scroll tick — feeding the accumulator a stream of
+ * resize-driven noise that could reset the compact→hidden countdown or bounce
+ * the state back toward `expanded` mid-gesture, so the header never finished
+ * a transition before the next interruption. `resize` still triggers a fresh
+ * evaluation (so the position axis re-settles after e.g. an orientation
+ * change), it just never moves the accumulator.
+ *
+ * @param input - The event source plus the current and previous `scrollY`.
+ * @returns `0` for a `resize` source; `scrollY - prevScrollY` for `scroll`.
+ */
+export function computeScrollDelta({
+    source,
+    scrollY,
+    prevScrollY
+}: ComputeScrollDeltaInput): number {
+    if (source === 'resize') {
+        return 0;
+    }
+
+    return scrollY - prevScrollY;
+}
+
+/**
+ * Input for {@link coalesceScrollSource}.
+ */
+export interface CoalesceScrollSourceInput {
+    /** Source already claimed by the animation frame awaiting evaluation. */
+    readonly pending: WaveHeaderScrollSource;
+    /** Source of the event that arrived while that frame was still pending. */
+    readonly incoming: WaveHeaderScrollSource;
+}
+
+/**
+ * Merges the sources of two events that land in the SAME animation frame,
+ * resolving in favour of `scroll`.
+ *
+ * The caller coalesces every event in one frame into a single evaluation via
+ * an rAF latch, so a frame is claimed by whichever event fires first. That
+ * makes the pairing with {@link computeScrollDelta} load-bearing: forcing a
+ * resize delta to `0` stops resize from CORRUPTING the direction axis, but
+ * without this helper it lets resize STARVE it instead. On a real mobile
+ * device the dynamic URL bar fires `resize` on nearly every scroll tick, so a
+ * resize that wins the race to claim the frame would discard the genuine
+ * scroll arriving right behind it, evaluate with a `0` delta, and leave the
+ * accumulator stuck — the header would never reach `hidden`.
+ *
+ * Both failure modes render the same broken header (H-47, smoke agosto 2026),
+ * so a scroll anywhere in the frame must win the frame. Resolving toward
+ * `scroll` is also the safe direction on its own terms: at worst it credits
+ * the direction axis with a real `scrollY` change that a resize happened to
+ * observe first, which is a genuine movement — whereas resolving toward
+ * `resize` discards movement that actually occurred.
+ *
+ * @param params - The pending frame's source and the newly arrived source.
+ * @param params.pending - Source already claimed by the pending frame.
+ * @param params.incoming - Source of the event arriving into that frame.
+ * @returns The source the frame should ultimately evaluate with.
+ */
+export function coalesceScrollSource({
+    pending,
+    incoming
+}: CoalesceScrollSourceInput): WaveHeaderScrollSource {
+    return pending === 'scroll' || incoming === 'scroll' ? 'scroll' : 'resize';
 }
 
 /**

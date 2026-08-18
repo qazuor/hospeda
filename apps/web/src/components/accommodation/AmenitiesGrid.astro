@@ -20,7 +20,7 @@ interface Props {
 }
 
 const { amenities, lang } = Astro.props;
-const { t } = createTranslations(lang as SupportedLocale);
+const { t, tPlural } = createTranslations(lang as SupportedLocale);
 
 if (amenities.length === 0) return;
 
@@ -46,7 +46,7 @@ function getIcon(iconName: string | null) {
 
 const hasOverflow = amenities.length > VISIBLE_COUNT;
 const additionalCostLabel = t('accommodations.detail.amenitiesDetail.additionalCost');
-const viewAllLabel = t('accommodations.detail.amenitiesDetail.viewAll', undefined, { n: amenities.length });
+const viewAllLabel = tPlural('accommodations.detail.amenitiesDetail.viewAll', amenities.length);
 const viewLessLabel = t('accommodations.detail.amenitiesDetail.collapse', 'Ver menos');
 ---
 

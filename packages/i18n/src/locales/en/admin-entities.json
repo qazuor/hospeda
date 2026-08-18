@@ -452,8 +452,10 @@
             "chips": {
                 "unique": "Unique",
                 "total": "Total",
-                "ariaUnique": "{{window}}: {{count}} unique visitors",
-                "ariaTotal": "{{window}}: {{count}} total views"
+                "ariaUnique_one": "{{window}}: {{count}} unique visitor",
+                "ariaUnique_other": "{{window}}: {{count}} unique visitors",
+                "ariaTotal_one": "{{window}}: {{count}} total view",
+                "ariaTotal_other": "{{window}}: {{count}} total views"
             }
         }
     },
@@ -681,7 +683,8 @@
                 "searching": "Searching...",
                 "searchPrompt": "Type a search term to find stock images",
                 "noResults": "No results for «{query}»",
-                "resultsCount": "{count} results",
+                "resultsCount_one": "{{count}} result",
+                "resultsCount_other": "{{count}} results",
                 "loadMore": "Load more",
                 "importButton": "Import",
                 "importing": "Importing...",
@@ -698,7 +701,8 @@
                 "searchError": "Error searching images. Please try again.",
                 "importError": "Error importing image. Please try again.",
                 "entityNotFound": "Entity not found",
-                "galleryLimitExceeded": "Gallery limit reached (max: {limit} images)"
+                "galleryLimitExceeded_one": "Gallery limit reached (max: {{limit}} image)",
+                "galleryLimitExceeded_other": "Gallery limit reached (max: {{limit}} images)"
             }
         },
         "avatar": {
@@ -795,7 +799,8 @@
         "titleDefault": "You reached your plan limit",
         "descriptionTemplate": "You are using {{currentCount}} of {{maxAllowed}}. Upgrade your plan to get more.",
         "upgradeLink": "View my subscription",
-        "belowLimit": "{max} - {current} slots left on your current plan.",
+        "belowLimit_one": "{{count}} slot left on your current plan.",
+        "belowLimit_other": "{{count}} slots left on your current plan.",
         "atLimit": "You've hit your plan's limit. Upgrade to add more."
     },
     "selects": {
@@ -842,7 +847,7 @@
                 "label": "Featured image uploaded"
             },
             "galleryPhotos": {
-                "label": "At least {target} gallery photos",
+                "label": "At least {{target}} gallery photos",
                 "hint": "{current} of {target} uploaded"
             },
             "photosAlt": {
@@ -946,14 +951,16 @@
         },
         "approveProvision": {
             "title": "Approve & create owner account",
-            "description": "The lead for {{businessName}} will be approved and a COMMERCE_OWNER account created for {{email}} in a single step. Temporary credentials will be sent by email.",
+            "description": "The lead for {{businessName}} will be approved and {{email}} will be enabled as COMMERCE_OWNER. If that email already has an account, the role is added to it and its password is untouched; otherwise an account is created and temporary credentials are emailed.",
             "noteLabel": "Note (optional)",
             "notePlaceholder": "Internal comment for the team...",
             "confirm": "Approve & create account",
             "submitting": "Processing...",
-            "successMessage": "Lead approved and account created for {{email}}. Credentials have been sent by email.",
+            "successMessage": "Lead approved and account created for {{email}}. Credentials were sent by email.",
             "alreadyProvisionedMessage": "The lead was already provisioned.",
-            "error": "Failed to approve and create the account. Please try again."
+            "error": "Failed to approve and create the account. Please try again.",
+            "successLinkedMessage": "Lead approved. {{email}} already had an account: the commerce role was added and its password is unchanged. No credentials were sent.",
+            "successNoCredentialsMessage": "Lead approved and account created for {{email}}, but the credentials email could not be sent. They cannot sign in yet."
         },
         "handle": {
             "title": "Handle lead",
@@ -969,11 +976,13 @@
         },
         "provision": {
             "title": "Create owner account",
-            "description": "A COMMERCE_OWNER account will be created for {{businessName}} ({{email}}). Temporary credentials will be sent by email.",
+            "description": "This will enable {{businessName}} ({{email}}) as COMMERCE_OWNER. If that email already has an account, the role is added to it and its password is untouched; otherwise an account is created and temporary credentials are emailed.",
             "confirm": "Create account",
             "submitting": "Creating...",
-            "successMessage": "Account created for {{name}} ({{email}}). Credentials have been sent by email.",
-            "error": "Failed to create account. Please try again."
+            "successMessage": "Account created for {{name}} ({{email}}). Credentials were sent by email.",
+            "error": "Failed to create account. Please try again.",
+            "successLinkedMessage": "{{email}} already had an account: the commerce role was added and its password is unchanged. No credentials were sent.",
+            "successNoCredentialsMessage": "Account created for {{name}} ({{email}}), but the credentials email could not be sent. They cannot sign in yet."
         },
         "pagination": {
             "prev": "Previous",

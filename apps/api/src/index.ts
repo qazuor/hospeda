@@ -13,8 +13,11 @@ import { ContentModerationTermModel, getDb, rolePermission } from '@repo/db';
 import { configureLogger, LogFormat, LogLevel, registerCaptureHook } from '@repo/logger';
 import {
     ensureDefaultPromoCodes,
+    getIndexNowService,
+    initializeIndexNowService,
     initializeRevalidationService,
     initializeTranslationService,
+    PlatformSettingsService,
     setPermissionChangeAuditEmitter,
     setUserPermissionsCacheInvalidator
 } from '@repo/service-core';
@@ -26,6 +29,7 @@ import { startCronScheduler } from './cron';
 import { registerAppLogDbSink } from './lib/app-log-sink';
 import { registerAuditLogPersistence } from './lib/audit-log-sink';
 import { createEntityResolver } from './lib/entity-resolver';
+import { isEntityPubliclyVisible } from './lib/indexnow-visibility';
 import { shutdownPostHog } from './lib/posthog';
 import { getRequestContext } from './lib/request-context';
 import { closeSentry, initializeSentry } from './lib/sentry';
@@ -301,6 +305,25 @@ const startServer = async (): Promise<void> => {
 
         // Initialize ISR revalidation service (optional — only if secret is configured)
         if (env.HOSPEDA_REVALIDATION_SECRET) {
+            // HOS-585 G-1: search-engine notification rides the same write hook
+            // as the cache purge but keeps its own gates — production only, and
+            // an operator toggle read at send time. Initialized FIRST so the
+            // revalidation service's observer finds it, though the lookup below
+            // is lazy and does not actually depend on this order.
+            const settingsService = new PlatformSettingsService({ logger: apiLogger });
+            const indexNow = initializeIndexNowService({
+                deployEnv: env.HOSPEDA_DEPLOY_ENV,
+                nodeEnv: env.NODE_ENV,
+                revalidationSecret: env.HOSPEDA_REVALIDATION_SECRET,
+                siteUrl: env.HOSPEDA_SITE_URL ?? 'https://hospeda.com.ar',
+                isEnabled: () => settingsService.isIndexNowEnabled(),
+                // AC-4: the same hook fires on an UNPUBLISH, because purging the
+                // page that just disappeared is the point of a cache purge.
+                // Announcing it would advertise a URL that now 404s.
+                isPubliclyVisible: isEntityPubliclyVisible
+            });
+            apiLogger.info(`IndexNow service initialized (adapter: ${indexNow.getAdapterName()})`);
+
             initializeRevalidationService({
                 nodeEnv: env.NODE_ENV,
                 revalidationSecret: env.HOSPEDA_REVALIDATION_SECRET,
@@ -309,7 +332,8 @@ const startServer = async (): Promise<void> => {
                 // is namespaced by. MUST be the same value the web app carries,
                 // or purges address tags nothing emitted.
                 deployEnv: env.HOSPEDA_DEPLOY_ENV,
-                entityResolver: createEntityResolver()
+                entityResolver: createEntityResolver(),
+                onEntityChange: (event) => getIndexNowService()?.scheduleNotification(event)
             });
             apiLogger.info('ISR revalidation service initialized');
         }

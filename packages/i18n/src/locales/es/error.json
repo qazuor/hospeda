@@ -19,13 +19,13 @@
     },
     "form": {
         "validation-failed": "La validación del formulario falló. Por favor, corrige los errores e intenta nuevamente.",
+        "error-summary-title": "Revisá los siguientes campos",
         "save-failed": "Error al guardar",
         "save-success": "Guardado exitoso",
         "save-success-message": "Los cambios se guardaron correctamente",
         "unexpected-error": "Ocurrió un error inesperado",
-        "validation-failed-fields": "La validación falló para {{count}} campo{{plural}}. Por favor, revisa los campos resaltados.",
-        "validation-failed-field": "La validación falló para 1 campo. Por favor, revisa el campo resaltado.",
-        "validation-failed-fields-plural": "La validación falló para {{count}} campos. Por favor, revisa los campos resaltados.",
+        "validation-failed-fields_one": "La validación falló para {{count}} campo. Por favor, revisa los campos resaltados.",
+        "validation-failed-fields_other": "La validación falló para {{count}} campos. Por favor, revisa los campos resaltados.",
         "save-changes": "Guardar cambios",
         "saving": "Guardando..."
     },

@@ -6,7 +6,43 @@ from code, and for the shared-zone constraint every rule must respect.
 
 Dashboard path: **hospeda.com.ar → Caching → Cache Rules**.
 
-Current state: **2 active rules**.
+Current state: **4 active rules** — the two staging rules below, plus a
+production twin of each, activated on 2026-08-12 once production started
+emitting `Cache-Tag` (see [Production twins](#production-twins) at the end).
+
+---
+
+## What needs a rule, and what does not
+
+Only **HTML** and the **`/_image/` endpoint** need rules. Every other asset is
+already cached by Cloudflare's own default for static file extensions, honoring
+the origin's `Cache-Control` — no rule involved, nothing here to maintain:
+
+| Asset | Cached by | Origin `Cache-Control` | Measured 2026-08-15 (prod) |
+|---|---|---|---|
+| `/_astro/*.js`, `*.css` | CF extension default | `max-age=31536000, immutable` | `HIT` |
+| `/assets/**/*.svg` | CF extension default | `max-age=14400` | `REVALIDATED` |
+| `/apple-touch-icon.png` | CF extension default | `max-age=14400` | `REVALIDATED` |
+| `/i18n/<locale>.<hash>.js` | CF extension default | `max-age=31536000, immutable` | `HIT` — see [its section](#i18nlocalehashjs--outside-every-rule-on-this-page) |
+| **HTML pages** | **rules 1 and 4** | `s-maxage=3600` | `HIT` |
+| **`/_image/?…`** | **rules 2 and 3** | `max-age=31536000, immutable` | `HIT` |
+
+`/_image/` needs a rule precisely *because* it is an image. Astro serves resized
+images from a query string with no file extension, so the extension default
+never matches and every visitor makes the origin re-encode the same photo. That
+is the whole reason rule 2 exists.
+
+None of the extension-default assets can go stale: their filename carries a
+digest of their contents, so a change produces a different URL. **HTML is the
+only thing on this page that can serve outdated content**, which is why it is the
+only thing the `Cache-Tag` purge machinery exists for.
+
+> **Probing.** Use `GET` — every rule here requires it, and `curl -I` sends
+> `HEAD`, which returns `DYNAMIC` and reads like a dead rule (this file warns
+> about it twice more, under `/i18n/` and `/_image/`). Use the **canonical URL**
+> too: `/es/eventos` without its trailing slash answers `301`, correctly
+> uncached, which reads like `BYPASS`. Both mistakes were made on 2026-08-15 and
+> each produced a false "nothing is cached" report.
 
 ---
 
@@ -138,6 +174,11 @@ status-code TTLs, cache deception armor, cache by device type) is left unset.
 Production is behind on the branch that emits `Cache-Tag`; caching HTML there
 would produce objects nothing can purge selectively, which is strictly worse
 than not caching at all. Lift this only after staging is promoted.
+
+> **Resolved 2026-08-12.** The August batch shipped, production now emits
+> `Cache-Tag`, and this rule has a production twin rather than a widened host
+> clause — see [Production twins](#production-twins). Two separate rules, so
+> production can be switched off without touching staging.
 
 **`http.request.method in {"GET" "PURGE"}`** — a `GET`-only expression does not
 match during a purge, so single-file purges report success and evict nothing.
@@ -589,17 +630,43 @@ Two independent reasons it is uncached, both of which this rule addresses:
  and starts_with(http.request.uri.path, "/_image/"))
 ```
 
-Staging-only, deliberately, like every rule in this file — the zone is shared
-and production is not touched without explicit owner approval.
+Scoped to staging. Production is covered by its own twin, rule 3 — see
+[Production twins](#production-twins). The zone is shared, so each host gets a
+separate rule rather than one widened clause.
 
 ### Settings
 
 | Setting | Value | API equivalent |
 |---|---|---|
 | Cache eligibility | Eligible for cache | `"cache": true` |
-| Edge TTL | Use cache-control header if present | `edge_ttl.mode = "respect_origin"` |
+| Edge TTL | Use cache-control header if present, **bypass cache if not** | `edge_ttl.mode = "bypass_by_default"` |
 | Browser TTL | Respect origin TTL | `browser_ttl.mode = "respect_origin"` |
 | Cache key → query string | **Include all** (the default) | do NOT set `ignore_query_strings` |
+
+```json
+"action": "set_cache_settings",
+"action_parameters": {
+  "cache": true,
+  "edge_ttl":    { "mode": "bypass_by_default" },
+  "browser_ttl": { "mode": "respect_origin" }
+}
+```
+
+> **Corrected 2026-08-15 (H-12).** The Edge TTL row read `respect_origin` from
+> the day this section was written; the live rule has always been
+> `bypass_by_default`. The 2026-08-12 pass found the discrepancy and left the row
+> as written on purpose, so the drift stayed visible rather than being quietly
+> papered over, asking for a deliberate correction after re-reading the live
+> rule. That re-read happened on 2026-08-15, against the dashboard, control by
+> control — hence this correction.
+>
+> No behavioural change either way: the origin always sends
+> `cache-control: public, max-age=31536000, immutable` here, so both modes cache
+> identically, and `bypass_by_default` is the safer of the two if it ever stops.
+>
+> Worth noting *which* row drifted. Rule 1 states its settings twice, as a table
+> **and** as a JSON block, and both were correct. This rule stated them once, in
+> prose. The JSON block above was added so this section gets checked the same way.
 
 The cache key MUST keep the query string: `href`, `w`, `h` and `f` ARE the
 image's identity. Ignoring it would serve one transform for every variant — the
@@ -654,11 +721,85 @@ Against the three `srcset` variants the staging home actually emits for the hero
 | `w=800&h=557&f=webp` | 28,952 B | `HIT` | `HIT` |
 
 Three distinct body sizes, each with its own `MISS → HIT` cycle: the cache key
-kept the query string, so every transform is its own entry. Production was
-re-checked in the same run and still answers `DYNAMIC` on `/_image/`, as
-intended — the rule is host-scoped to staging.
+kept the query string, so every transform is its own entry. Production answered
+`DYNAMIC` in that same run, as intended at the time — it had no rule yet.
+
+> **Superseded.** Production got its own `/_image/` rule on 2026-08-12 (rule 3)
+> and answers `HIT`. Re-measured on both hosts 2026-08-15.
 
 One caveat worth knowing: the request issued seconds after deploying the rule
 returned `DYNAMIC` while it was still propagating, then settled into `HIT`. A
 single `DYNAMIC` immediately after a change is propagation, not a broken
 expression — re-probe before concluding anything.
+
+---
+
+## Production twins
+
+Activated **2026-08-12**, after the August batch shipped to `main` and the
+production containers were redeployed. Both are byte-for-byte duplicates of the
+staging rules above with a single edit — `http.host eq "hospeda.com.ar"` — made
+through the dashboard's own **Duplicate rule**, so the 2,419-character catalog
+expression was never retyped.
+
+| Order | Rule | Rule id |
+|---|---|---|
+| 3 | `HOS-369 - prod /_image/ endpoint` | `d248f233545042ed948f69dfa1527bee` |
+| 4 | `HOS-369 W1-2 - prod catalog + subscriber` | `3c106fee17d945b693d5db86857e3d59` |
+
+Ids read from the dashboard 2026-08-15, along with a clause-by-clause check that
+each twin matches its staging original: rule 3's host/method/path, and rule 4's
+`{"GET" "PURGE"}`, empty-query, session-cookie and full 36-path + 24-prefix set.
+Both twins' settings match their originals exactly, `bypass_by_default` included.
+
+### Why they could be lifted now
+
+The staging rules carried the note *"Production is behind on the branch that
+emits `Cache-Tag`; caching HTML there would produce objects nothing can purge
+selectively. Lift this only after staging is promoted."* That precondition was
+verified by measurement rather than assumed, and the check is worth repeating
+before touching these rules again: **Cloudflare strips `Cache-Tag` from the
+response before it reaches the client**, so probing from outside proves nothing.
+Ask the origin directly, from the VPS, bypassing the edge:
+
+```bash
+curl -sSk --resolve hospeda.com.ar:443:127.0.0.1 -o /dev/null -D - \
+  https://hospeda.com.ar/es/alojamientos/ | grep -i cache-tag
+# cache-tag: prod:all,prod:list-accom
+```
+
+Staging answers `preview:all,preview:list-accom` on the same probe. The
+namespaces are disjoint, which is what keeps a production purge from evicting
+staging objects on the shared zone.
+
+### Verified after activation (2026-08-12)
+
+| Check | Result |
+|---|---|
+| Home `/es/`, `/en/`, `/pt/` | `MISS` → `HIT` |
+| Catalog: alojamientos, destinos, eventos, publicaciones, gastronomía, experiencias | `MISS` → `HIT` |
+| Accommodation detail page | `MISS` → `HIT` |
+| Copy-only (`/es/legal/terminos/`, `/es/colaborar/editores/`) | `MISS` → `HIT` |
+| Listing **with** a query filter (`?types=HOTEL`) | `DYNAMIC`, both probes |
+| Request carrying `better-auth.session_token` | `DYNAMIC` |
+| Request carrying `__Secure-better-auth.session_token` | `DYNAMIC` |
+| `/_image/` | `MISS` → `HIT`, `content-type: image/avif` |
+| `/_image/` at `w=800` and `w=1200` | `MISS` each, while `w=480` stayed `HIT` |
+| Effective TTL on `/es/` | `s-maxage=3600`, `age` climbing, **no injected `max-age`** |
+
+That last row is the one to re-check after any edit: an injected
+`max-age=14400` would mean Browser TTL slipped off *Respect origin* and
+returning visitors are holding HTML no purge can reach.
+
+### Documentation drift found while duplicating
+
+The `/_image/` section above documents **Edge TTL = `respect_origin`**. The
+live staging rule is actually **`bypass_by_default`** ("use cache-control if
+present, bypass if not"). The production twin replicates the **live** rule, not
+the documented one — what is deployed and measured wins over what was written
+down. For `/_image/` the two behave identically in practice, because the origin
+always sends `cache-control: public, max-age=31536000, immutable` on that
+endpoint; the difference only appears if the origin ever stops doing so, where
+`bypass_by_default` is the safer of the two. The table above has been left as
+written so the drift stays visible rather than being quietly papered over —
+correct it deliberately, after re-reading the live rule.

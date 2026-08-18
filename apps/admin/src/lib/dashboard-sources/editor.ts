@@ -44,6 +44,7 @@ import {
     DASHBOARD_STALE_TIME_MS,
     registerDataSource
 } from '@/lib/dashboard-sources';
+import { formatCalendarShortDate, formatShortDate } from '@/lib/format-helpers';
 
 // ============================================================================
 // RESPONSE TYPE SHAPES
@@ -93,12 +94,40 @@ interface EventItem {
     readonly name: string;
     readonly status?: string;
     readonly isFeatured?: boolean;
-    readonly date?: { readonly start?: string; readonly end?: string };
+    readonly date?: {
+        readonly start?: string;
+        readonly end?: string;
+        /**
+         * `'MONTH'` means the day-of-month is a storage placeholder, not a real
+         * start — which decides how the date must be rendered. See
+         * {@link formatEventStart}.
+         */
+        readonly precision?: 'EXACT' | 'MONTH';
+    };
     readonly media?: { readonly featuredImage?: { readonly url?: string } | null };
     readonly featuredImage?: string;
     readonly locationId?: string | null;
     readonly organizerId?: string | null;
     readonly description?: string;
+}
+
+/**
+ * Renders an event's start for the dashboard list, or `undefined` when it has none.
+ *
+ * A `MONTH`-precision event has no real start time: the day-of-month is a
+ * storage placeholder and the value is pinned to midnight UTC, so reading it in
+ * the reader's own timezone moves it back a day and, for a 1st-of-the-month
+ * placeholder, back a MONTH — an event in July listed as June. That is 41 of the
+ * 52 real events in production. An `EXACT` event genuinely happened at a time of
+ * day and keeps rendering locally. Same split `formatEventDate.ts` makes on the
+ * public site.
+ */
+function formatEventStart(date: EventItem['date']): string | undefined {
+    if (!date?.start) return undefined;
+
+    return date.precision === 'MONTH'
+        ? formatCalendarShortDate({ date: date.start })
+        : formatShortDate({ date: date.start });
 }
 
 /** Shape of a newsletter campaign item. */
@@ -294,9 +323,7 @@ registerDataSource('editor.events.upcoming', (ctx) => ({
         return sorted.slice(0, 5).map((event) => ({
             id: event.id,
             label: event.name,
-            meta: event.date?.start
-                ? new Date(event.date.start).toLocaleDateString('es-AR')
-                : undefined,
+            meta: formatEventStart(event.date),
             badge: event.isFeatured ? 'destacado' : undefined,
             href: `/catalogo/eventos/${event.id}`
         }));

@@ -35,7 +35,7 @@ const SKELETON_KEYS = ['sk-1', 'sk-2', 'sk-3', 'sk-4', 'sk-5'] as const;
 
 /** Admin social automation settings list page. */
 function SettingsPage() {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
     const [page, setPage] = useState(1);
     const [editItem, setEditItem] = useState<SocialSetting | null>(null);
 
@@ -63,9 +63,7 @@ function SettingsPage() {
                     </h1>
                     {pagination && (
                         <span className="text-muted-foreground text-sm">
-                            {t('social.settings.total' as TranslationKey, {
-                                count: pagination.total
-                            })}
+                            {tPlural('social.settings.total', pagination.total)}
                         </span>
                     )}
                 </div>

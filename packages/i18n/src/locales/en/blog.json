@@ -35,12 +35,13 @@
     },
     "card": {
         "readMore": "Read more",
+        "readFull": "Read full article",
         "readingTime": "min read",
         "trending": "Trending",
         "promoted": "Featured",
         "news": "News",
         "expiresToday": "Expires today",
-        "expiresIn": "Expires in {{count}} days",
+        "expiresIn_other": "Expires in {{count}} days",
         "expiresIn_one": "Expires in {{count}} day",
         "about": "About"
     },

@@ -32,6 +32,7 @@ import {
 import type { OwnerPromotion } from '@/features/owner-promotions/types';
 import { useTranslations } from '@/hooks/use-translations';
 import { requireBillingAccess } from '@/lib/billing-access';
+import { formatCalendarShortDate } from '@/lib/format-helpers';
 
 export const Route = createFileRoute('/_authed/billing/owner-promotions')({
     beforeLoad: ({ context }) => requireBillingAccess(context),
@@ -173,14 +174,18 @@ function BillingOwnerPromotionsPage() {
             header: t('admin-billing.ownerPromotions.columns.validFrom'),
             accessorKey: 'validFrom',
             enableSorting: true,
-            columnType: ColumnType.DATE
+            // Calendar date: PromotionFormDialog writes it from a bare
+            // <input type="date">, which pins it to UTC midnight. ColumnType.DATE
+            // renders in the reader's local timezone, so at UTC-3 it would show
+            // the day before — use the UTC-pinned helper instead.
+            cell: ({ row }) => <span>{formatCalendarShortDate({ date: row.validFrom })}</span>
         },
         {
             id: 'validUntil',
             header: t('admin-billing.ownerPromotions.columns.validUntil'),
             accessorKey: 'validUntil',
             enableSorting: true,
-            columnType: ColumnType.DATE
+            cell: ({ row }) => <span>{formatCalendarShortDate({ date: row.validUntil })}</span>
         },
         {
             id: 'redemptions',

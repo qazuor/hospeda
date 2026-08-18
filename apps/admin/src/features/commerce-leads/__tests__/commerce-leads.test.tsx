@@ -263,7 +263,9 @@ describe('CommerceLeadInbox — provision owner', () => {
                     data: {
                         userId: 'user-uuid-001',
                         email: 'juan@example.com',
-                        name: 'Juan Pérez'
+                        name: 'Juan Pérez',
+                        accountCreated: true,
+                        credentialsSent: true
                     }
                 },
                 status: 200
@@ -304,7 +306,13 @@ describe('CommerceLeadInbox — provision owner', () => {
         const provisionResponse = {
             data: {
                 success: true,
-                data: { userId: 'u-01', email: 'maria@example.com', name: 'María García' }
+                data: {
+                    userId: 'u-01',
+                    email: 'maria@example.com',
+                    name: 'María García',
+                    accountCreated: true,
+                    credentialsSent: true
+                }
             },
             status: 200
         };
@@ -358,7 +366,9 @@ describe('CommerceLeadInbox — approve & provision', () => {
                     data: {
                         lead: { ...MOCK_LEAD_PENDING, status: 'approved' },
                         userId: 'user-uuid-009',
-                        provisioned: true
+                        provisioned: true,
+                        accountCreated: true,
+                        credentialsSent: true
                     }
                 },
                 status: 201
@@ -392,6 +402,101 @@ describe('CommerceLeadInbox — approve & provision', () => {
             );
             expect(mockAddToast).toHaveBeenCalledWith(
                 expect.objectContaining({ variant: 'success' })
+            );
+        });
+    });
+});
+
+// ---------------------------------------------------------------------------
+// Tests: the message matches what actually happened (H-87 / H-150)
+// ---------------------------------------------------------------------------
+
+/**
+ * Approving a lead whose email already had an account told the operator
+ * "cuenta creada, credenciales enviadas". HOS-296 does neither: it resolves the
+ * email to the existing account, grants the commerce role additively and skips
+ * the credential email, correctly, because that account keeps its own password.
+ *
+ * The operator then closed the ticket telling the applicant to look for a mail
+ * that was never sent and never will be.
+ *
+ * These assert the MESSAGE, not `variant: 'success'`. The suite already had two
+ * toast tests and both passed throughout the bug, because asserting the variant
+ * alone cannot see which sentence was shown.
+ */
+describe('CommerceLeadInbox — the success message tells the truth (H-87 / H-150)', () => {
+    const approveWith = async (data: Record<string, unknown>) => {
+        mockedFetchApi
+            .mockResolvedValueOnce(MOCK_PAGE_RESPONSE)
+            .mockResolvedValueOnce({
+                data: {
+                    success: true,
+                    data: {
+                        lead: { ...MOCK_LEAD_PENDING, status: 'approved' },
+                        userId: 'user-uuid-009',
+                        provisioned: true,
+                        ...data
+                    }
+                },
+                status: 201
+            })
+            .mockResolvedValueOnce(MOCK_PAGE_RESPONSE);
+
+        renderInbox();
+
+        await waitFor(() => {
+            expect(screen.getByText('La Parrilla del Sur')).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByText('admin-entities.commerceLeads.actions.approveProvision'));
+
+        await waitFor(() => {
+            expect(
+                screen.getByText('admin-entities.commerceLeads.approveProvision.title')
+            ).toBeInTheDocument();
+        });
+
+        fireEvent.click(screen.getByText('admin-entities.commerceLeads.approveProvision.confirm'));
+    };
+
+    /** The message string the toast was actually given. */
+    const lastToastMessage = (): string => {
+        const call = mockAddToast.mock.calls.at(-1);
+        if (!call) {
+            throw new Error('expected a toast, got none');
+        }
+        return (call[0] as { message: string }).message;
+    };
+
+    it('an email that already had an account: says linked, never "cuenta creada"', async () => {
+        await approveWith({ accountCreated: false, credentialsSent: false });
+
+        await waitFor(() => {
+            expect(lastToastMessage()).toContain(
+                'admin-entities.commerceLeads.approveProvision.successLinkedMessage'
+            );
+        });
+        expect(lastToastMessage()).not.toContain('approveProvision.successMessage');
+    });
+
+    it('a new account with its credentials delivered: says exactly that', async () => {
+        await approveWith({ accountCreated: true, credentialsSent: true });
+
+        await waitFor(() => {
+            expect(lastToastMessage()).toContain(
+                'admin-entities.commerceLeads.approveProvision.successMessage'
+            );
+        });
+    });
+
+    it('a new account whose credential email failed: does not claim it was sent', async () => {
+        // The owner exists and cannot sign in. Reported as success with the
+        // ordinary copy, this reads as a completed job to everyone.
+        await approveWith({ accountCreated: true, credentialsSent: false });
+
+        await waitFor(() => {
+            expect(lastToastMessage()).toContain(
+                'admin-entities.commerceLeads.approveProvision.successNoCredentialsMessage'
             );
         });
     });

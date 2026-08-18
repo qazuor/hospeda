@@ -27,7 +27,7 @@ import type { FC, MouseEvent } from 'react';
 import { useCompareGuard } from '@/hooks/useCompareGuard';
 import { cn } from '@/lib/cn';
 import type { SupportedLocale } from '@/lib/i18n';
-import { createT } from '@/lib/i18n';
+import { createTranslations } from '@/lib/i18n';
 import { addToast } from '@/store/toast-store';
 import styles from './DetailCompareButton.module.css';
 
@@ -76,7 +76,7 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
     locale = 'es',
     className
 }) => {
-    const t = createT(locale);
+    const { t, tPlural } = createTranslations(locale);
     const { isInList, isLoading, maxItems, toggle } = useCompareGuard();
 
     const selected = isInList(accommodationId);
@@ -114,7 +114,9 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
                 message: t('accommodations.comparison.toast.added', 'Agregado a la comparación'),
                 action: {
                     label: t('accommodations.comparison.toast.view', 'Comparar ahora'),
-                    href: comparePageHref
+                    href: comparePageHref,
+                    // HOS-566: the comparison page needs a full load, see ToastAction.reload.
+                    reload: true
                 }
             });
             return;
@@ -147,11 +149,7 @@ export const DetailCompareButton: FC<DetailCompareButtonProps> = ({
         // result.reason === 'limit'
         addToast({
             type: 'warning',
-            message: t(
-                'accommodations.comparison.limit.message',
-                'Tu plan permite comparar hasta {{max}} alojamientos a la vez.',
-                { max: maxItems }
-            )
+            message: tPlural('accommodations.comparison.limit.message', maxItems, { max: maxItems })
         });
     };
 

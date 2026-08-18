@@ -43,16 +43,7 @@ const variantToneClass: Record<string, string> = {
     danger: 'global-announcement--danger'
 };
 
-const dismissAriaLabelByLocale = {
-    en: 'Dismiss announcement',
-    pt: 'Fechar comunicado',
-    es: 'Cerrar anuncio'
-} as const;
-
-const dismissAriaLabel = t(
-    'announcements.dismiss',
-    dismissAriaLabelByLocale[locale as 'es' | 'en' | 'pt'] ?? dismissAriaLabelByLocale.es
-);
+const dismissAriaLabel = t('ui.announcements.dismiss', 'Cerrar anuncio');
 
 ---
 

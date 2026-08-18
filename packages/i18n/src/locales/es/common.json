@@ -10,6 +10,10 @@
     "backToHome": "Volver al inicio",
     "clear": "Limpiar",
     "destinations": "Destinos",
+    "legal": {
+        "lastUpdated": "Última actualización",
+        "toc": "Contenido"
+    },
     "enums": {
         "accommodationType": {
             "apartment": "Apartamento",
@@ -56,7 +60,7 @@
     "apiError": {
         "GENERIC": "Algo salió mal. Intentá de nuevo en un momento.",
         "RATE_LIMIT_EXCEEDED": "Demasiadas solicitudes. Esperá unos segundos y volvé a intentar.",
-        "VALIDATION_ERROR": "Los datos enviados no son válidos. Revisá los campos marcados.",
+        "VALIDATION_ERROR": "Los datos enviados no son válidos.",
         "UNAUTHORIZED": "Necesitás iniciar sesión para realizar esta acción.",
         "FORBIDDEN": "No tenés permiso para realizar esta acción.",
         "NOT_FOUND": "No encontramos lo que buscabas.",
@@ -103,7 +107,10 @@
     "filters": "Filtros",
     "filterChips": {
         "clearLabel": "Limpiar ({{count}})",
-        "clearAriaLabel": "Limpiar {{count}} filtros"
+        "clearAriaLabel_one": "Limpiar {{count}} filtro",
+        "clearAriaLabel_other": "Limpiar {{count}} filtros",
+        "cappedNote_one": "No disponible: ya hay {{count}} filtro activo",
+        "cappedNote_other": "No disponible: ya hay {{count}} filtros activos"
     },
     "goHome": "Volver al inicio",
     "in": "en",
@@ -175,7 +182,8 @@
         "text": "Foto por {{photographer}} en {{provider}}",
         "byline": "Foto por",
         "onProvider": "en {{provider}}",
-        "ariaLabel": "Perfil de {{photographer}} en {{provider}}"
+        "ariaLabel": "Perfil de {{photographer}} en {{provider}}",
+        "ariaLabelNoProvider": "Sitio de {{photographer}}"
     },
     "breadcrumbs": "Ruta de navegación"
 }

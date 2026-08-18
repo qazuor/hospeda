@@ -9,12 +9,27 @@
  * cron). Before the fix the page rendered a one-shot "Verificando estado del
  * pago..." and hung there forever.
  *
- * This island reads the `localSubscriptionId` that `PlanPurchaseButton` stashed
- * in sessionStorage before the redirect and polls
- * `GET /billing/subscriptions/:localId/status` every ~2s. On `active` it swaps
- * to the success state; after a bounded timeout (~90s) it degrades to an
- * explicit, non-alarming fallback pointing at the account page — it never spins
- * forever.
+ * This island watches TWO sources until one of them says the subscription is
+ * live, on the backoff schedule in `lib/billing/checkout-poll-schedule.ts`
+ * (~3 minutes, 22 attempts). On success it swaps to the success state; when the
+ * budget runs out it renders an explicit terminal state with two ways out — it
+ * never spins forever, and it never gives up without having asked.
+ *
+ * - ID-SCOPED — `GET /billing/subscriptions/:localId/status`, using the
+ *   `localSubscriptionId` that `PlanPurchaseButton` stashed in sessionStorage
+ *   before the redirect. Precise, but it depends on a value the browser had to
+ *   carry across a third-party redirect.
+ * - IDENTITY-SCOPED — `GET /users/me/subscription`, scoped by session instead.
+ *
+ * H-78 is why the second source exists. In production a buyer returned from
+ * MercadoPago, the page found no stashed id, and it went STRAIGHT to the
+ * terminal state without issuing a single request — telling someone whose card
+ * had just been charged that things were "taking longer than usual", a claim
+ * nothing had measured. Meanwhile the backend had finished in 27 seconds and
+ * the subscription was live. The stashed id was the page's only source, so its
+ * absence (a different tab, storage disabled, a reload after it was cleared,
+ * or a link completed server-side by the heuristic linker) meant the page had
+ * nothing to ask. Now the absence of the id costs precision, not the answer.
  *
  * HOS-191 Path C ("share link" checkout) adds a linking step before polling
  * starts: `/start-paid` redirects straight to MercadoPago's hosted share link
@@ -41,11 +56,15 @@
 
 import type { JSX } from 'react';
 import { useEffect, useState } from 'react';
-import { billingApi } from '../../lib/api/endpoints-protected';
+import { billingApi, userApi } from '../../lib/api/endpoints-protected';
 import {
     clearPendingCheckoutSubId,
     readPendingCheckoutSubId
 } from '../../lib/billing/checkout-pending';
+import {
+    CHECKOUT_POLL_MAX_ATTEMPTS,
+    nextPollDelayMs
+} from '../../lib/billing/checkout-poll-schedule';
 import type { SupportedLocale } from '../../lib/i18n';
 import { createTranslations } from '../../lib/i18n';
 import styles from './CheckoutStatusPoller.module.css';
@@ -54,23 +73,25 @@ import styles from './CheckoutStatusPoller.module.css';
 // Config
 // ---------------------------------------------------------------------------
 
-/** Delay between status polls. */
-const POLL_INTERVAL_MS = 2000;
-
 /**
- * Maximum number of poll attempts before falling back. 45 attempts × 2s ≈ 90s,
- * comfortably longer than the webhook/polling-cron confirmation window while
- * still bounded so the page never spins forever (R-1).
- */
-const MAX_ATTEMPTS = 45;
-
-/**
- * Subscription statuses that mean the checkout succeeded. `active` is the
- * canonical activated state for a paid preapproval; `trialing` / `comp` are
- * accepted defensively (they resolve on the in-app sentinel path, not here, but
- * matching them costs nothing and future-proofs the poller).
+ * Statuses from the ID-SCOPED source (`GET /billing/subscriptions/:id/status`)
+ * that mean the checkout succeeded. That endpoint returns the raw
+ * `SubscriptionStatusEnum` vocabulary.
  */
 const SUCCESS_STATUSES: ReadonlySet<string> = new Set(['active', 'trialing', 'comp']);
+
+/**
+ * Statuses from the IDENTITY-SCOPED source (`GET /users/me/subscription`) that
+ * mean the checkout succeeded.
+ *
+ * Deliberately a SEPARATE set. That endpoint remaps QZPay's statuses into a
+ * smaller vocabulary of its own before returning them: `trialing` arrives as
+ * `'trial'`, and `comp` arrives as `'active'` with a separate `isComplimentary`
+ * flag. Reusing `SUCCESS_STATUSES` here would compile, read as correct, and
+ * silently never match a card-first trial — which since HOS-171 is the most
+ * common paid outcome there is.
+ */
+const IDENTITY_SUCCESS_STATUSES: ReadonlySet<string> = new Set(['active', 'trial']);
 
 /**
  * HTTP status that `billingApi.linkPreapproval` returns for a hard IDOR error
@@ -79,7 +100,7 @@ const SUCCESS_STATUSES: ReadonlySet<string> = new Set(['active', 'trialing', 'co
  */
 const LINK_PREAPPROVAL_IDOR_STATUS = 409;
 
-type PollerState = 'verifying' | 'success' | 'timeout' | 'linkError';
+type PollerState = 'verifying' | 'success' | 'unresolved' | 'linkError';
 
 // ---------------------------------------------------------------------------
 // Props
@@ -90,6 +111,13 @@ export interface CheckoutStatusPollerProps {
     readonly locale: SupportedLocale;
     /** Locale-aware `/mi-cuenta` URL for the success + fallback CTAs. */
     readonly miCuentaUrl: string;
+    /**
+     * Locale-aware contact URL, offered as a second way out of the terminal
+     * `unresolved` state (H-78). A buyer whose payment never resolved needs a
+     * human: sending them only to the account page, which will show the same
+     * nothing, is not an exit.
+     */
+    readonly supportUrl: string;
     /**
      * The MercadoPago preapproval id read from the `back_url` redirect's
      * `?preapproval_id=` query param (HOS-191 Path C). `null` when the
@@ -106,33 +134,61 @@ export interface CheckoutStatusPollerProps {
 // ---------------------------------------------------------------------------
 
 /**
- * CheckoutStatusPoller — polls the subscription status endpoint until the paid
- * subscription activates (or a timeout is reached), rendering verifying →
- * success / fallback states in place.
+ * CheckoutStatusPoller — watches both status sources until the paid
+ * subscription activates (or the retry budget runs out), rendering
+ * verifying → success / unresolved states in place.
  */
 export function CheckoutStatusPoller({
     locale,
     miCuentaUrl,
+    supportUrl,
     preapprovalId
 }: CheckoutStatusPollerProps): JSX.Element {
     const { t } = createTranslations(locale);
     const [state, setState] = useState<PollerState>('verifying');
 
     useEffect(() => {
+        // May be absent: a different tab, storage disabled, or a reload after a
+        // previous run cleared it. That is NOT a reason to stop — see the
+        // identity-scoped source below.
         const localId = readPendingCheckoutSubId();
-
-        // No pending checkout id (direct navigation, a refresh after the id was
-        // already cleared, or storage unavailable) — there is nothing to poll,
-        // so degrade straight to the non-alarming fallback that points at the
-        // account page rather than spinning.
-        if (!localId) {
-            setState('timeout');
-            return;
-        }
 
         let cancelled = false;
         let attempts = 0;
         let timer: ReturnType<typeof setTimeout> | undefined;
+
+        /**
+         * Ask the id-scoped source. Precise but fragile: it depends on a value
+         * the browser had to carry across a third-party redirect.
+         */
+        const askIdScoped = async (): Promise<boolean> => {
+            if (!localId) {
+                return false;
+            }
+            const result = await billingApi.getSubscriptionStatus({ localId });
+            return result.ok && SUCCESS_STATUSES.has(result.data.status);
+        };
+
+        /**
+         * Ask the identity-scoped source. Scoped by session rather than by a
+         * carried value, so it answers in exactly the cases where the stashed
+         * id does not — including the one H-78 hit in production, where the
+         * subscription was linked server-side by the heuristic linker.
+         *
+         * Domain note: this resolves the ACCOMMODATION subscription (the
+         * endpoint's server-side default). A commerce checkout that also lost
+         * its stashed id therefore stays unresolved rather than resolving
+         * against the wrong domain — the conservative failure, deliberately
+         * chosen over a confident wrong answer.
+         */
+        const askIdentityScoped = async (): Promise<boolean> => {
+            const result = await userApi.getSubscription();
+            return (
+                result.ok &&
+                result.data.subscription !== null &&
+                IDENTITY_SUCCESS_STATUSES.has(result.data.subscription.status)
+            );
+        };
 
         const poll = async (): Promise<void> => {
             if (cancelled) {
@@ -140,29 +196,26 @@ export function CheckoutStatusPoller({
             }
             attempts += 1;
 
-            try {
-                const result = await billingApi.getSubscriptionStatus({ localId });
-                if (cancelled) {
-                    return;
-                }
-                if (result.ok && SUCCESS_STATUSES.has(result.data.status)) {
-                    clearPendingCheckoutSubId();
-                    setState('success');
-                    return;
-                }
-            } catch {
-                // Transient network/API error — keep polling until the timeout.
-            }
+            // Both sources, in parallel, each isolated: a throw from one must
+            // never cancel the other, and a transient network error must never
+            // end the watch. `allSettled` is what guarantees both.
+            const answers = await Promise.allSettled([askIdScoped(), askIdentityScoped()]);
 
             if (cancelled) {
                 return;
             }
-            if (attempts >= MAX_ATTEMPTS) {
+            if (answers.some((a) => a.status === 'fulfilled' && a.value)) {
                 clearPendingCheckoutSubId();
-                setState('timeout');
+                setState('success');
                 return;
             }
-            timer = setTimeout(() => void poll(), POLL_INTERVAL_MS);
+
+            if (attempts >= CHECKOUT_POLL_MAX_ATTEMPTS) {
+                clearPendingCheckoutSubId();
+                setState('unresolved');
+                return;
+            }
+            timer = setTimeout(() => void poll(), nextPollDelayMs({ attempt: attempts }));
         };
 
         // HOS-191 Path C: when the return URL carried a `preapproval_id`, link it
@@ -173,7 +226,10 @@ export function CheckoutStatusPoller({
         // poll: the webhook fallback (F3) may complete an ambiguous link shortly
         // after, and the poll will pick that up once `mp_subscription_id` is set.
         const start = async (): Promise<void> => {
-            if (preapprovalId) {
+            // Linking needs BOTH ids. Without a stashed local id there is
+            // nothing to link the preapproval to, so skip straight to polling —
+            // the server-side linker (F3) covers that case.
+            if (preapprovalId && localId) {
                 try {
                     const linkResult = await billingApi.linkPreapproval({
                         preapprovalId,
@@ -224,12 +280,21 @@ export function CheckoutStatusPoller({
                 showCta: true
             };
         }
-        if (state === 'timeout') {
+        if (state === 'unresolved') {
+            // What this copy may NOT say: "te avisamos por mail". There is no
+            // subscription-activation email in the system — `SUBSCRIPTION_PURCHASE`
+            // is declared in @repo/notifications but never dispatched by any
+            // handler, and a card-first trial charges nothing on day 1, so the
+            // generic payment receipt does not fire either. Promising a message
+            // that never arrives is worse than the silence it papers over.
             return {
-                title: t('billing.checkout.success.timeoutTitle', 'Está tardando más de lo normal'),
+                title: t(
+                    'billing.checkout.success.unresolvedTitle',
+                    'Seguimos confirmando tu pago'
+                ),
                 body: t(
-                    'billing.checkout.success.timeoutSubtitle',
-                    'El pago puede seguir procesándose. Revisá tu cuenta en unos minutos para confirmar tu suscripción.'
+                    'billing.checkout.success.unresolvedSubtitle',
+                    'Tu pago no se perdió. MercadoPago puede tardar unos minutos en confirmarlo y, en cuanto lo haga, tu plan queda activo automáticamente. Podés cerrar esta página: revisá el estado en Mi Cuenta, o escribinos si en un rato seguís sin verlo.'
                 ),
                 showCta: true
             };
@@ -267,7 +332,7 @@ export function CheckoutStatusPoller({
                     className={`${styles.icon} ${
                         state === 'success'
                             ? styles.iconSuccess
-                            : state === 'timeout'
+                            : state === 'unresolved'
                               ? styles.iconTimeout
                               : state === 'linkError'
                                 ? styles.iconError
@@ -336,6 +401,18 @@ export function CheckoutStatusPoller({
                         >
                             {ctaLabel}
                         </a>
+                        {/* H-78: the terminal state must offer a way to reach a
+                            person, not just a link back to a page that will show
+                            the same nothing. Only here — a resolved success needs
+                            no support link. */}
+                        {state === 'unresolved' && (
+                            <a
+                                href={supportUrl}
+                                className={styles.ctaSecondary}
+                            >
+                                {t('billing.checkout.success.unresolvedSupportCta', 'Escribinos')}
+                            </a>
+                        )}
                     </div>
                 )}
             </div>

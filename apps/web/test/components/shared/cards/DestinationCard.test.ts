@@ -221,13 +221,13 @@ describe('DestinationCard.astro', () => {
             expect(src).toContain('createTranslations(locale)');
         });
 
-        it('should use t() for accommodation count singular/plural labels', () => {
-            expect(src).toContain("t('destination.card.accommodation_singular'");
-            expect(src).toContain("t('destination.card.accommodation_plural'");
+        it('should pluralize the accommodation/event count labels via tPlural (HOS plural audit)', () => {
+            expect(src).toContain("tPlural('destinations.card.accommodation'");
+            expect(src).toContain("tPlural('destinations.card.event'");
         });
 
         it('should use t() for CTA label', () => {
-            expect(src).toContain("t('destination.card.cta'");
+            expect(src).toContain("t('destinations.card.cta'");
         });
     });
 

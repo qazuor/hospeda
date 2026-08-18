@@ -6,6 +6,38 @@
  */
 
 /* ---------------------------------------------------------------------------
+ * Step indicator (HOS-456)
+ *
+ * Creating an accommodation is two stages, and nothing on this screen said so.
+ * Hosts looked for the photo upload inside a form that has no such field and
+ * never will. This sits FIRST inside the form, above every other block, so the
+ * "1 of 2" is read before the fields rather than after the submit button.
+ * --------------------------------------------------------------------------- */
+
+.stepIndicator {
+    margin-bottom: var(--space-6, 1.5rem);
+    padding: var(--space-3, 0.75rem) var(--space-4, 1rem);
+    border-left: 3px solid var(--brand-accent);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+    background-color: var(--surface-warm);
+}
+
+.stepIndicatorTitle {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: var(--text-body, 1rem);
+    font-weight: 600;
+    color: var(--core-foreground);
+}
+
+.stepIndicatorNext {
+    margin: var(--space-1, 0.25rem) 0 0;
+    font-family: var(--font-sans);
+    font-size: var(--text-sm, 0.875rem);
+    color: var(--core-muted-foreground);
+}
+
+/* ---------------------------------------------------------------------------
  * Collapsible import section
  * --------------------------------------------------------------------------- */
 

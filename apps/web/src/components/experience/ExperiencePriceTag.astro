@@ -19,8 +19,12 @@ import type { SupportedLocale } from '@/lib/i18n';
 interface Props {
     /** Base price in centavos (integer). Zero when isPriceOnRequest is true. */
     readonly priceFrom: number;
-    /** Billing unit for the price (per_day | per_hour | per_person | per_group). */
-    readonly priceUnit: string;
+    /**
+     * Billing unit for the price (per_day | per_hour | per_person | per_group).
+     * `null` when the experience has no price, so there is nothing to bill per
+     * anything (H-156).
+     */
+    readonly priceUnit: string | null;
     /** When true the UI shows "Consultar precio" instead of the numeric price. */
     readonly isPriceOnRequest: boolean;
     readonly locale: SupportedLocale;
@@ -47,7 +51,12 @@ const formattedPrice = showOnRequest
           maximumFractionDigits: 0
       }).format(priceFrom / 100);
 
-const unitLabel = showOnRequest ? '' : t(`experience.priceUnit.${priceUnit}`, priceUnit);
+// The `priceUnit == null` arm is defence in depth, not a reachable state: the
+// create schemas only allow a null unit when the price is on request, which
+// `showOnRequest` already catches. Without it a stray null would render the raw
+// i18n key `experience.priceUnit.null` on a public page.
+const unitLabel =
+    showOnRequest || priceUnit == null ? '' : t(`experience.priceUnit.${priceUnit}`, priceUnit);
 const fromLabel = showOnRequest ? '' : t('experience.priceFrom', 'Desde');
 const onRequestLabel = t('experience.priceOnRequest', 'Consultar precio');
 ---

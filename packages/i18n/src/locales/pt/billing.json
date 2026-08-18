@@ -52,8 +52,6 @@
             "description": "Escolha um plano para começar a publicar suas acomodações"
         },
         "trial": {
-            "daysRemaining": "Você tem {{count}} dias de teste restantes",
-            "dayRemaining": "Você tem 1 dia de teste restante",
             "noCharge": "Nenhuma cobrança foi realizada",
             "subscribeNow": "Assinar agora",
             "expiredBanner": {
@@ -191,19 +189,28 @@
             "amountDetails": "Valor: {{amount}}",
             "verifyingStatus": "Verificando o status do pagamento...",
             "verifyingSubtitle": "Estamos confirmando seu pagamento. Pode levar alguns instantes.",
-            "timeoutTitle": "Está demorando mais que o normal",
-            "timeoutSubtitle": "Seu pagamento pode ainda estar sendo processado. Verifique sua conta em alguns minutos para confirmar sua assinatura.",
             "cta": "Ir para minha conta",
             "pageTitle": "Pagamento aprovado",
             "promoIgnoredNote": "Seu código não foi aplicado: ele estende um período de teste grátis, e esta assinatura não tem um.",
             "linkErrorTitle": "Não conseguimos vincular seu pagamento",
-            "linkErrorSubtitle": "Houve um problema ao vincular este pagamento à sua conta. Se você já pagou, entre em contato com o suporte com o número da operação do MercadoPago."
+            "linkErrorSubtitle": "Houve um problema ao vincular este pagamento à sua conta. Se você já pagou, entre em contato com o suporte com o número da operação do MercadoPago.",
+            "unresolvedTitle": "Ainda estamos confirmando seu pagamento",
+            "unresolvedSubtitle": "Seu pagamento não foi perdido. O MercadoPago pode levar alguns minutos para confirmá-lo e, assim que isso acontecer, seu plano é ativado automaticamente. Você pode fechar esta página: verifique o status em Minha Conta, ou escreva para nós se daqui a pouco ainda não conseguir vê-lo.",
+            "unresolvedSupportCta": "Fale conosco"
         },
         "pending": {
             "title": "Seu pagamento está sendo processado",
             "body": "Pode levar até 24 horas para confirmar. Vamos te avisar por email quando for aprovado.",
             "cta": "Verificar status",
             "pageTitle": "Pagamento em processamento"
+        },
+        "partnerPending": {
+            "pageTitle": "Pagamento recebido",
+            "title": "Recebemos seu pagamento",
+            "body": "Estamos confirmando a operação com o MercadoPago. Pode levar alguns minutos e, em alguns casos, até 24 horas. Quando o pagamento for aprovado, sua presença no Hospeda é ativada automaticamente: você não precisa fazer mais nada.",
+            "note": "Guarde o comprovante que o MercadoPago enviou. Se algo não ficar claro, fale com a gente e revisamos junto com você.",
+            "homeCta": "Ir para o início",
+            "contactCta": "Fale com a gente"
         },
         "failure": {
             "title": "Não foi possível processar o pagamento",
@@ -225,10 +232,6 @@
             "currentPlan": "Plano atual",
             "currentPlanAriaLabel": "Este é o seu plano atual",
             "changePlan": "Mudar para este plano"
-        },
-        "monthlyEmailNotice": {
-            "title": "Antes de continuar",
-            "text": "Você vai pagar com a conta do MercadoPago associada a {{email}}. Se a sua conta do MercadoPago usa outro e-mail, você não vai conseguir concluir o pagamento mensal."
         },
         "promoApply": {
             "toggle": "Tem um código de desconto?",
@@ -257,43 +260,56 @@
             "errorPlanRestriction": "Este código não é válido para o plano selecionado.",
             "errorNewUsersOnly": "Este código é apenas para novos clientes.",
             "errorMinAmount": "Sua compra não atinge o mínimo exigido para este código."
+        },
+        "trialWarning": {
+            "title": "O período de teste gratuito é concedido pelo Mercado Pago",
+            "body": "O Mercado Pago concede o período de teste apenas uma vez por conta e por plano. Se você já usou um teste deste plano com a mesma conta do Mercado Pago, o Mercado Pago vai cobrar o primeiro período imediatamente em vez de aplicar o teste.",
+            "confirm": "Entendi, continuar",
+            "cancel": "Cancelar"
         }
     },
     "limit": {
         "max_favorites": {
             "title": "Você atingiu o limite de favoritos",
-            "message": "Você já salvou {{currentCount}} de {{maxAllowed}} favoritos no seu plano. Faça um upgrade para salvar mais.",
+            "message_one": "Você já salvou {{currentCount}} de {{maxAllowed}} favorito no seu plano. Faça um upgrade para salvar mais.",
+            "message_other": "Você já salvou {{currentCount}} de {{maxAllowed}} favoritos no seu plano. Faça um upgrade para salvar mais.",
             "cta": "Ver minha assinatura"
         },
         "max_accommodations": {
             "title": "Você atingiu o limite de propriedades",
-            "message": "Você tem {{currentCount}} de {{maxAllowed}} propriedades no seu plano. Faça um upgrade para publicar mais.",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} propriedade no seu plano. Faça um upgrade para publicar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} propriedades no seu plano. Faça um upgrade para publicar mais.",
             "cta": "Ver minha assinatura",
             "atLimitPanel": {
                 "title": "Você atingiu o limite do seu plano",
-                "body": "Você está usando {{currentCount}} de {{maxAllowed}} propriedades. Para publicar outra, faça upgrade do seu plano.",
+                "body_one": "Você está usando {{currentCount}} de {{maxAllowed}} propriedade. Para publicar outra, faça upgrade do seu plano.",
+                "body_other": "Você está usando {{currentCount}} de {{maxAllowed}} propriedades. Para publicar outra, faça upgrade do seu plano.",
                 "primaryCta": "Ver minha assinatura",
                 "secondaryCta": "Ver minhas propriedades"
             }
         },
         "max_photos_per_accommodation": {
             "title": "Você atingiu o limite de fotos",
-            "message": "Você já enviou {{currentCount}} de {{maxAllowed}} fotos permitidas no seu plano. Faça um upgrade para enviar mais.",
+            "message_one": "Você já enviou {{currentCount}} de {{maxAllowed}} foto permitida no seu plano. Faça um upgrade para enviar mais.",
+            "message_other": "Você já enviou {{currentCount}} de {{maxAllowed}} fotos permitidas no seu plano. Faça um upgrade para enviar mais.",
             "cta": "Ver minha assinatura"
         },
         "max_active_promotions": {
             "title": "Você atingiu o limite de promoções",
-            "message": "Você tem {{currentCount}} de {{maxAllowed}} promoções ativas no seu plano. Faça um upgrade para criar mais.",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} promoção ativa no seu plano. Faça um upgrade para criar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} promoções ativas no seu plano. Faça um upgrade para criar mais.",
             "cta": "Ver minha assinatura"
         },
         "max_properties": {
             "title": "Você atingiu o limite de propriedades",
-            "message": "Você tem {{currentCount}} de {{maxAllowed}} propriedades no seu plano. Faça um upgrade para adicionar mais.",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} propriedade no seu plano. Faça um upgrade para adicionar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} propriedades no seu plano. Faça um upgrade para adicionar mais.",
             "cta": "Ver minha assinatura"
         },
         "max_staff_accounts": {
             "title": "Você atingiu o limite de contas de staff",
-            "message": "Você tem {{currentCount}} de {{maxAllowed}} contas de staff no seu plano. Faça um upgrade para adicionar mais.",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} conta de staff no seu plano. Faça um upgrade para adicionar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} contas de staff no seu plano. Faça um upgrade para adicionar mais.",
             "cta": "Ver minha assinatura"
         },
         "generic": {
@@ -422,7 +438,16 @@
         "can_view_recommendations": "Recomendações personalizadas",
         "ai_text_improve": "Melhoria de textos com IA",
         "ai_chat": "Consultas sobre a acomodação com IA",
-        "ai_search": "Busca inteligente"
+        "ai_search": "Busca inteligente",
+        "multi_property_management": "Gestão de múltiplas propriedades",
+        "consolidated_analytics": "Análises consolidadas",
+        "centralized_booking": "Reservas centralizadas",
+        "staff_management": "Gestão de equipe",
+        "can_use_collections": "Coleções de favoritos",
+        "vip_promotions_access": "Acesso a promoções VIP",
+        "ai_support": "Assistente de suporte com IA",
+        "ai_translate": "Tradução de conteúdo com IA",
+        "ai_accommodation_import": "Importação de hospedagens com IA"
     },
     "comparison": {
         "unlimited": "Ilimitado",

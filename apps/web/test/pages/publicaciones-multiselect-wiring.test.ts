@@ -39,8 +39,13 @@ function query(href: string): URLSearchParams {
 
 describe('publicaciones/index.astro — category chips wired to real multi-select (HOS-96 T-012)', () => {
     describe('source wiring', () => {
-        it('imports buildMultiToggleParamHref and buildClearFacetChip', () => {
-            expect(src).toContain(
+        it('imports resolveFacetChipHref (the CAPPED builder, HOS-524) and buildClearFacetChip', () => {
+            // HOS-524: a chip row that calls `buildMultiToggleParamHref`
+            // directly has no depth cap and re-opens the combinatorial link
+            // space this listing published to crawlers.
+            expect(src).toContain("} from '@/lib/filters/facet-chip-depth'");
+            expect(src).toContain('resolveFacetChipHref');
+            expect(src).not.toContain(
                 "import { buildMultiToggleParamHref } from '@/lib/filters/toggle-multi-query-param'"
             );
             expect(src).toContain(
@@ -52,8 +57,10 @@ describe('publicaciones/index.astro — category chips wired to real multi-selec
             expect(src).toContain('XCircleIcon');
         });
 
-        it('builds each category chip href via buildMultiToggleParamHref keyed on the postCategory paramKey (categories)', () => {
-            expect(chipsBlock).toContain('buildMultiToggleParamHref({');
+        it('builds each category chip href via resolveFacetChipHref keyed on the postCategory paramKey (categories)', () => {
+            expect(chipsBlock).toContain('resolveFacetChipHref({');
+            expect(chipsBlock).toContain('activeValues: postCategoryActiveValues');
+            expect(chipsBlock).toContain('capNote: resolveCappedChipNote({');
             expect(chipsBlock).toContain('FACET_CONFIG_BY_ID.postCategory.paramKey');
         });
 
@@ -76,7 +83,9 @@ describe('publicaciones/index.astro — category chips wired to real multi-selec
 
         it('resolves the Clear(N) label/ariaLabel via the shared common.filterChips i18n keys', () => {
             expect(src).toContain("t('common.filterChips.clearLabel')");
-            expect(src).toContain("t('common.filterChips.clearAriaLabel')");
+            // buildClearFacetChip only renders at count >= 2, so `_other` is read
+            // directly (HOS plural audit) — `_one` can never be reached here.
+            expect(src).toContain("t('common.filterChips.clearAriaLabel_other')");
         });
     });
 
@@ -88,8 +97,14 @@ describe('publicaciones/index.astro — category chips wired to real multi-selec
             );
             expect(fetchBlock).toContain('category,');
             expect(fetchBlock).toContain('categories:');
+            // HOS-524 wrapped the value in `canonicalizeFacetValues`, so the
+            // pattern now REQUIRES that wrapper as well as the join: it still
+            // asserts the value comes from the hoisted active-values array and
+            // is a CSV string (never the raw array, which `serializeParams`
+            // would stringify implicitly), and additionally that it is
+            // serialized in the one canonical order every writer shares.
             expect(fetchBlock).toMatch(
-                /categories:\s*postCategoryActiveValues\.length\s*>\s*0\s*\?\s*postCategoryActiveValues\.join\(','\)\s*:\s*undefined/
+                /categories:\s*postCategoryActiveValues\.length\s*>\s*0\s*\?\s*canonicalizeFacetValues\(\{\s*values:\s*postCategoryActiveValues\s*\}\)\.join\(','\)\s*:\s*undefined/
             );
         });
     });

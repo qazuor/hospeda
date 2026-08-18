@@ -30,11 +30,15 @@
 import { CommerceLeadService } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
+import { createCommerceLeadNotificationPort } from '../../../lib/lead-intake-ports';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
 
-const commerceLeadService = new CommerceLeadService({ logger: apiLogger });
+const commerceLeadService = new CommerceLeadService(
+    { logger: apiLogger },
+    createCommerceLeadNotificationPort()
+);
 
 /**
  * Pre-fill-shaped subset of a `CommerceLead` row. Field names are already
@@ -69,7 +73,16 @@ const MyLeadResponseSchema = z.object({
 export async function handleGetMyLead(ctx: Context) {
     const actor = getActorFromContext(ctx);
 
-    const result = await commerceLeadService.getMyLead(actor);
+    // H-155: the caller tells us which vertical's form it is rendering, so a
+    // gastronomy lead can never pre-fill an experience create form (and vice
+    // versa). An absent/unparseable value degrades to "no domain filter", which
+    // is the pre-H-155 behaviour — this endpoint is a convenience and must not
+    // start erroring. The service rejects a MALFORMED domain, so the query is
+    // parsed here rather than forwarded blindly.
+    const rawDomain = ctx.req.query('domain');
+    const domain = rawDomain === 'gastronomy' || rawDomain === 'experience' ? rawDomain : undefined;
+
+    const result = await commerceLeadService.getMyLead(actor, domain ? { domain } : {});
 
     if (result.error) {
         // getMyLead has no gated failure path (no permission check, no
@@ -111,7 +124,7 @@ export const protectedGetMyLeadRoute = createProtectedRoute({
     path: '/leads/mine',
     summary: 'Get my commerce lead (owner self-service pre-fill)',
     description:
-        "Returns the authenticated caller's own most-recent provisioned commerce lead, shaped for the create-form pre-fill. Returns { lead: null } when the caller has no provisioned lead — never an error. Auth-only; no COMMERCE_* permission required.",
+        "Returns the authenticated caller's own most-recent provisioned commerce lead, shaped for the create-form pre-fill. Pass ?domain=gastronomy|experience to restrict the lead to one vertical — a vertical-specific create form MUST do so (H-155). Returns { lead: null } when the caller has no provisioned lead — never an error. Auth-only; no COMMERCE_* permission required.",
     tags: ['Commerce'],
     responseSchema: MyLeadResponseSchema,
     handler: async (ctx: Context) => handleGetMyLead(ctx),

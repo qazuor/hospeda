@@ -15,7 +15,12 @@ import { ACCOMMODATION_FIELD_PREFIX } from './field-ids';
 export interface CapacitySectionProps {
     readonly locale: SupportedLocale;
     readonly data: AccommodationEditData;
-    readonly errors: Readonly<{ maxGuests?: string; bedrooms?: string; bathrooms?: string }>;
+    readonly errors: Readonly<{
+        maxGuests?: string;
+        bedrooms?: string;
+        bathrooms?: string;
+        minNights?: string;
+    }>;
     readonly onFieldChange: (field: keyof AccommodationEditData, value: number | null) => void;
 }
 
@@ -94,6 +99,33 @@ export function CapacitySection({ locale, data, errors, onFieldChange }: Capacit
                             )
                         }
                     />
+                </div>
+
+                <div className={styles.field}>
+                    <TextField
+                        prefix={ACCOMMODATION_FIELD_PREFIX}
+                        name="minNights"
+                        label={t('host.properties.editor.field.minNights', 'Mínimo de noches')}
+                        labelClassName={styles.fieldLabel}
+                        className={styles.fieldInput}
+                        error={errors.minNights}
+                        type="number"
+                        value={data.minNights ?? ''}
+                        min={1}
+                        max={365}
+                        onChange={(e) =>
+                            onFieldChange(
+                                'minNights',
+                                e.target.value === '' ? null : Number(e.target.value)
+                            )
+                        }
+                    />
+                    <p className={styles.fieldHint}>
+                        {t(
+                            'host.properties.editor.field.minNightsHint',
+                            'La cantidad mínima de noches que un huésped debe reservar. Se muestra en la ficha pública.'
+                        )}
+                    </p>
                 </div>
             </div>
         </fieldset>

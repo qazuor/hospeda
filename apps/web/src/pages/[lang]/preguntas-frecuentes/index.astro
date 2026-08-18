@@ -33,7 +33,7 @@ import {
 import { CACHE_TAG_SITE_CONFIG } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 // --- Edge cacheability (HOS-369 W2-2) ---
 // No session, no API call — the content is i18n + code, so it only changes on
@@ -139,8 +139,18 @@ const categories = [
 /**
  * Interpolation params shared by every answer. Only the keys a given answer
  * actually references are substituted, so passing the whole object everywhere
- * is inert for the rest. `trialDays` comes from the billing catalog so the
- * owner-cost answer can never drift from the real trial length again (HOS-331).
+ * is inert for the rest.
+ *
+ * `trialDays` is deliberately the CONSTANT here, not the live plan value H-98
+ * introduced elsewhere. This page is on the 24 h edge cache
+ * (`cacheClass: 'static'`, W2-2) and the deploy purge is its only
+ * invalidation, precisely because its content depends on nothing but the page
+ * source and `@repo/i18n`. A live read would break that contract and buy
+ * nothing — the response is frozen for up to 24 h either way. The constant
+ * ships with a deploy and the deploy purges, so they stay in step.
+ *
+ * Reading the plan properly from here needs a cache tag a plan change purges;
+ * that is tracked on HOS-528 rather than worked around.
  */
 const faqParams = { trialDays: OWNER_TRIAL_DAYS } as const;
 
@@ -153,7 +163,13 @@ const resolvedCategories = categories.map((cat) => ({
 	items: cat.items.map((itemKey) => ({
 		key: itemKey,
 		question: t(`faq.categories.${cat.key}.items.${itemKey}.question`),
-		answer: t(`faq.categories.${cat.key}.items.${itemKey}.answer`, undefined, faqParams)
+		// The owners/cost answer is the only FAQ item whose copy carries a real
+		// count ({{trialDays}}) — pluralized (HOS plural audit); everything
+		// else in this generic loop stays plain t() with the shared faqParams.
+		answer:
+			cat.key === 'owners' && itemKey === 'cost'
+				? tPlural(`faq.categories.${cat.key}.items.${itemKey}.answer`, OWNER_TRIAL_DAYS, faqParams)
+				: t(`faq.categories.${cat.key}.items.${itemKey}.answer`, undefined, faqParams)
 	}))
 }));
 

@@ -35,10 +35,11 @@
  * - Replacing portada is non-destructive (upload → add → setFeatured; backend clears old)
  */
 
-import { AddIcon, LoaderIcon, XCircleIcon } from '@repo/icons';
+import { AddIcon, LoaderIcon } from '@repo/icons';
 import { ENTITY_GALLERY_CAPS, ModerationStatusEnum } from '@repo/schemas';
 import * as React from 'react';
 import { Button } from '@/components/ui/button';
+import { CommerceGalleryGridItem } from '@/features/commerce/components/CommerceGalleryGridItem';
 import { CommerceGalleryPortadaSection } from '@/features/commerce/components/CommerceGalleryPortadaSection';
 import {
     type CommerceMedia,
@@ -134,7 +135,7 @@ export function CommerceGalleryManager({
     entityName,
     isEntityLoading = false
 }: CommerceGalleryManagerProps) {
-    const { t } = useTranslations();
+    const { t, tPlural } = useTranslations();
 
     // ── Data ──────────────────────────────────────────────────────────────────
     const {
@@ -304,6 +305,30 @@ export function CommerceGalleryManager({
         [removeMutation, t, clearErrors]
     );
 
+    // ── Promote a gallery item to portada (HOS-389 §1) ────────────────────────
+
+    /**
+     * Promotes an EXISTING gallery photo to the featured slot.
+     *
+     * Setting a cover is a three-step chain — upload → addMedia → setFeatured —
+     * and when only the last step fails the row lands in the gallery
+     * unfeatured. Without this button the only recovery was uploading the same
+     * file again, which produces a second row and a second billed Cloudinary
+     * asset. The mutation itself was already wired here for the upload flow;
+     * what was missing was any way to reach it for a photo already in the grid.
+     */
+    const handleMakeCover = React.useCallback(
+        async (mediaId: string) => {
+            clearErrors();
+            try {
+                await setFeaturedMutation.mutateAsync({ mediaId });
+            } catch {
+                setSetFeaturedError(t('admin-pages.gallery.errors.setFeaturedFailed'));
+            }
+        },
+        [setFeaturedMutation, t, clearErrors]
+    );
+
     // ── Render ────────────────────────────────────────────────────────────────
 
     return (
@@ -397,10 +422,7 @@ export function CommerceGalleryManager({
                                 role="alert"
                                 className="mb-3 text-amber-700 text-sm"
                             >
-                                {t('admin-pages.gallery.grid.cap').replace(
-                                    '{{count}}',
-                                    String(galleryCap)
-                                )}
+                                {tPlural('admin-pages.gallery.grid.cap', galleryCap)}
                             </p>
                         )}
 
@@ -413,32 +435,22 @@ export function CommerceGalleryManager({
                         ) : (
                             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
                                 {galleryRows.map((item) => (
-                                    <div
+                                    <CommerceGalleryGridItem
                                         key={item.id}
-                                        className="group relative aspect-square"
-                                    >
-                                        <img
-                                            src={item.url}
-                                            alt={item.alt ?? item.caption ?? ''}
-                                            className="h-full w-full rounded-lg border object-cover"
-                                        />
-                                        <button
-                                            type="button"
-                                            onClick={() => handleRemoveGalleryItem(item.id)}
-                                            disabled={anyMutationPending}
-                                            aria-label={t(
-                                                'admin-pages.gallery.grid.actions.remove'
-                                            )}
-                                            className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 shadow transition-opacity focus:opacity-100 disabled:opacity-50 group-hover:opacity-100"
-                                        >
-                                            {removeMutation.isPending &&
-                                            removeMutation.variables?.mediaId === item.id ? (
-                                                <LoaderIcon className="h-3 w-3 animate-spin" />
-                                            ) : (
-                                                <XCircleIcon className="h-3 w-3" />
-                                            )}
-                                        </button>
-                                    </div>
+                                        t={t}
+                                        item={item}
+                                        anyMutationPending={anyMutationPending}
+                                        isPromoting={
+                                            setFeaturedMutation.isPending &&
+                                            setFeaturedMutation.variables?.mediaId === item.id
+                                        }
+                                        isRemoving={
+                                            removeMutation.isPending &&
+                                            removeMutation.variables?.mediaId === item.id
+                                        }
+                                        onMakeCover={() => handleMakeCover(item.id)}
+                                        onRemove={() => handleRemoveGalleryItem(item.id)}
+                                    />
                                 ))}
                             </div>
                         )}

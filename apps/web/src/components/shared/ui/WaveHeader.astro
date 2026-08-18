@@ -79,7 +79,10 @@ const { paddingTop = 'listing', class: className } = Astro.props;
    */
   import {
     DEFAULT_WAVE_HEADER_CONFIG,
+    coalesceScrollSource,
+    computeScrollDelta,
     nextWaveHeaderState,
+    type WaveHeaderScrollSource,
     type WaveHeaderState
   } from './waveHeaderState.ts';
 
@@ -128,11 +131,20 @@ const { paddingTop = 'listing', class: className } = Astro.props;
         bar.inert = slidOut;
       };
 
+      // `evaluate` is shared by scroll and resize, but `source` decides
+      // whether this tick's scrollY change is allowed to move the direction
+      // axis (see `computeScrollDelta`, HOS-84 waveHeaderState.ts — H-47 fix,
+      // smoke agosto 2026): a `resize` tick still re-settles the position
+      // axis, it just never feeds the compact/hidden accumulator. On mobile
+      // the dynamic URL bar fires `resize` on nearly every scroll tick, which
+      // is what makes this distinction load-bearing there and invisible on
+      // desktop, where `resize` essentially never fires mid-scroll.
       let ticking = false;
-      const evaluate = (): void => {
+      let pendingSource: WaveHeaderScrollSource = 'scroll';
+      const evaluate = (source: WaveHeaderScrollSource): void => {
         ticking = false;
         const scrollY = window.scrollY;
-        const delta = scrollY - prevScrollY;
+        const delta = computeScrollDelta({ source, scrollY, prevScrollY });
         prevScrollY = scrollY;
         const result = nextWaveHeaderState({
           scrollY,
@@ -148,20 +160,32 @@ const { paddingTop = 'listing', class: className } = Astro.props;
         apply(result.state);
       };
 
-      const onScroll = (): void => {
-        if (ticking) return;
+      // A frame is claimed by whichever event fires first, so a resize landing
+      // just before a genuine scroll must not swallow it: `coalesceScrollSource`
+      // upgrades the pending frame to `scroll`, otherwise on mobile — where the
+      // URL bar fires `resize` on nearly every scroll tick — the direction axis
+      // would starve and the header would never reach `hidden` (H-47).
+      const scheduleEvaluate = (source: WaveHeaderScrollSource): void => {
+        if (ticking) {
+          pendingSource = coalesceScrollSource({ pending: pendingSource, incoming: source });
+          return;
+        }
         ticking = true;
-        requestAnimationFrame(evaluate);
+        pendingSource = source;
+        requestAnimationFrame(() => evaluate(pendingSource));
       };
 
+      const onScroll = (): void => scheduleEvaluate('scroll');
+      const onResize = (): void => scheduleEvaluate('resize');
+
       window.addEventListener('scroll', onScroll, { passive: true });
-      window.addEventListener('resize', onScroll, { passive: true });
+      window.addEventListener('resize', onResize, { passive: true });
       // Set the initial state (handles navigating in already scrolled down).
-      evaluate();
+      evaluate('scroll');
 
       document.addEventListener('astro:before-swap', () => {
         window.removeEventListener('scroll', onScroll);
-        window.removeEventListener('resize', onScroll);
+        window.removeEventListener('resize', onResize);
         header.dataset.waveInitialized = '';
       }, { once: true });
     }

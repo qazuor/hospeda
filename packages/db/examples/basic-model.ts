@@ -629,8 +629,9 @@ export const productModel = new ProductModel();
  * ============================================================================
  *
  * ```ts
- * // Soft delete (sets deletedAt)
- * await productModel.softDelete({ id: 'product-uuid' });
+ * // Soft delete (sets deletedAt, plus deletedById where the table has it).
+ * // The acting user is required — pass null only for a system-initiated delete.
+ * await productModel.softDelete({ id: 'product-uuid' }, actor.id);
  *
  * // Product is now excluded from queries
  * const notFound = await productModel.findById('product-uuid'); // null

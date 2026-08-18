@@ -248,13 +248,28 @@ function readLocaleJson(locale: Locale, file: string): Record<string, unknown> {
     return JSON.parse(readFileSync(resolve(LOCALES_DIR, locale, file), 'utf8'));
 }
 
-function lookup(source: Record<string, unknown>, path: string): string | undefined {
+function lookupExact(source: Record<string, unknown>, path: string): string | undefined {
     let cursor: unknown = source;
     for (const segment of path.split('.')) {
         if (typeof cursor !== 'object' || cursor === null) return undefined;
         cursor = (cursor as Record<string, unknown>)[segment];
     }
     return typeof cursor === 'string' ? cursor : undefined;
+}
+
+/**
+ * Resolves `path`, falling back to `${path}_other` when the bare leaf is
+ * gone. Several `PROSE_SURFACES` entries (and `faqAnswerPaths()`'s derived
+ * list) name a leaf that the HOS plural audit converted to a CLDR
+ * `_one`/`_other` pair — without this fallback `lookup()` would return
+ * `undefined` and `collectProseCopy()`'s `if (copy)` guard would DROP the
+ * row silently, shrinking this guard's coverage with no failure to notice
+ * it by. `_other` (not `_one`) is deliberate: this file only substring-matches
+ * marketing phrases, not grammar, and `_other` is the form every one of
+ * these prose strings actually had before pluralization.
+ */
+function lookup(source: Record<string, unknown>, path: string): string | undefined {
+    return lookupExact(source, path) ?? lookupExact(source, `${path}_other`);
 }
 
 /** Locales that must carry a description for every active plan. */
@@ -361,11 +376,29 @@ function collectProseCopy(): ReadonlyArray<{
     readonly copy: string;
 }> {
     const rows: Array<{ locale: Locale; surface: string; copy: string }> = [];
+    const unresolved: string[] = [];
     for (const locale of LOCALES) {
         for (const { file, path } of PROSE_SURFACES) {
             const copy = lookup(readLocaleJson(locale, file), path);
-            if (copy) rows.push({ locale, surface: `${file}:${path}`, copy });
+            if (copy) {
+                rows.push({ locale, surface: `${file}:${path}`, copy });
+                continue;
+            }
+            unresolved.push(`${locale}/${file}:${path}`);
         }
+    }
+
+    // A declared surface that resolves to nothing is coverage this guard
+    // silently stops providing. Dropping it kept the suite green while the
+    // pluralization pass renamed leaves out from under PROSE_SURFACES — the
+    // exact failure this file exists to prevent, turned on the file itself.
+    // Fail loudly instead: either the path is stale and should be removed, or
+    // the copy moved and the path should follow it.
+    if (unresolved.length > 0) {
+        throw new Error(
+            'PROSE_SURFACES names copy that no longer exists, so these surfaces ' +
+                `are no longer audited for trial-eligibility claims:\n${unresolved.join('\n')}`
+        );
     }
     return rows;
 }

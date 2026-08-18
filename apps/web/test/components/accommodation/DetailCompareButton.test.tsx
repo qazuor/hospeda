@@ -36,19 +36,23 @@ const cssSrc = readFileSync(
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('../../../src/lib/i18n', () => ({
-    createT:
-        (_locale: string) =>
-        (key: string, fallback?: string, params?: Record<string, unknown>): string => {
-            const text = fallback ?? key;
-            if (!params) return text;
-            return Object.entries(params).reduce(
-                (acc, [paramKey, paramValue]) =>
-                    acc.replaceAll(`{{${paramKey}}}`, String(paramValue)),
-                text
-            );
-        }
-}));
+vi.mock('../../../src/lib/i18n', () => {
+    const interpolate = (text: string, params?: Record<string, unknown>): string => {
+        if (!params) return text;
+        return Object.entries(params).reduce(
+            (acc, [paramKey, paramValue]) => acc.replaceAll(`{{${paramKey}}}`, String(paramValue)),
+            text
+        );
+    };
+    const t = (key: string, fallback?: string, params?: Record<string, unknown>): string =>
+        interpolate(fallback ?? key, params);
+    const tPlural = (key: string, count: number, params?: Record<string, unknown>): string =>
+        interpolate(key, { ...params, count });
+    return {
+        createT: (_locale: string) => t,
+        createTranslations: (_locale: string) => ({ t, tPlural })
+    };
+});
 
 vi.mock('../../../src/lib/cn', () => ({
     cn: (...classes: (string | undefined | false | null)[]) => classes.filter(Boolean).join(' ')

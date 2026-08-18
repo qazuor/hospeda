@@ -4,13 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import type { Payment } from './types';
-import {
-    formatArs,
-    formatDate,
-    getPaymentMethodLabel,
-    getStatusLabel,
-    getStatusVariant
-} from './utils';
+import { formatArsFromCents, formatDate, getStatusLabel, getStatusVariant } from './utils';
 
 /**
  * Props for PaymentsTable
@@ -25,7 +19,7 @@ export interface PaymentsTableProps {
 
 /**
  * Payments table component.
- * Renders the list of payments with status badges, method labels, and action buttons.
+ * Renders the list of payments with status badges and action buttons.
  */
 export function PaymentsTable({
     payments,
@@ -97,9 +91,6 @@ export function PaymentsTable({
                                         {t('admin-billing.payments.columns.date')}
                                     </th>
                                     <th className="px-4 py-3 text-left font-medium">
-                                        {t('admin-billing.payments.columns.method')}
-                                    </th>
-                                    <th className="px-4 py-3 text-left font-medium">
                                         {t('admin-billing.payments.columns.plan')}
                                     </th>
                                     <th className="px-4 py-3 text-right font-medium">
@@ -117,17 +108,23 @@ export function PaymentsTable({
                                             {payment.id.slice(0, 8)}...
                                         </td>
                                         <td className="px-4 py-3">
-                                            <div>
-                                                <div className="font-medium">
-                                                    {payment.userName}
+                                            {payment.user ? (
+                                                <div>
+                                                    <div className="font-medium">
+                                                        {payment.user.displayName}
+                                                    </div>
+                                                    <div className="text-muted-foreground text-xs">
+                                                        {payment.user.email}
+                                                    </div>
                                                 </div>
-                                                <div className="text-muted-foreground text-xs">
-                                                    {payment.userEmail}
-                                                </div>
-                                            </div>
+                                            ) : (
+                                                <span className="text-muted-foreground text-xs italic">
+                                                    {t('admin-billing.payments.unknownUser')}
+                                                </span>
+                                            )}
                                         </td>
                                         <td className="px-4 py-3 text-right font-medium">
-                                            {formatArs(payment.amount, locale)}
+                                            {formatArsFromCents(payment.amountInCents, locale)}
                                         </td>
                                         <td className="px-4 py-3 text-center">
                                             <Badge variant={getStatusVariant(payment.status)}>
@@ -135,12 +132,12 @@ export function PaymentsTable({
                                             </Badge>
                                         </td>
                                         <td className="px-4 py-3 text-muted-foreground text-xs">
-                                            {formatDate(payment.date, locale)}
+                                            {formatDate(payment.createdAt, locale)}
                                         </td>
-                                        <td className="px-4 py-3 text-muted-foreground text-xs">
-                                            {getPaymentMethodLabel(payment.method, t)}
+                                        <td className="px-4 py-3 text-xs">
+                                            {payment.plan?.displayName ??
+                                                t('admin-billing.payments.unknownPlan')}
                                         </td>
-                                        <td className="px-4 py-3 text-xs">{payment.planName}</td>
                                         <td className="px-4 py-3 text-right">
                                             <div className="flex justify-end gap-2">
                                                 <Button
@@ -154,9 +151,9 @@ export function PaymentsTable({
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => onRefund(payment)}
-                                                    disabled={payment.status !== 'completed'}
+                                                    disabled={!payment.isRefundable}
                                                     title={
-                                                        payment.status === 'completed'
+                                                        payment.isRefundable
                                                             ? t(
                                                                   'admin-billing.payments.refundEnabledTitle'
                                                               )

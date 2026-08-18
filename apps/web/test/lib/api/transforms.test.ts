@@ -70,8 +70,14 @@ describe('toAccommodationCardProps', () => {
     });
 
     it('featuredImage.url should be fallback placeholder when no media found', () => {
+        // The expected value here used to be `/images/placeholder-accommodation.svg`,
+        // which 404s — the asset lives under `/assets/images/`. So this test
+        // asserted the broken path and helped keep it alive: a listing with no
+        // photo rendered a broken <img> and the suite called that correct (H-101).
+        // A hardcoded string cannot express "the file exists", which is why
+        // `placeholder-assets.guard.test.ts` checks the disk instead.
         const result = toAccommodationCardProps({ item: {} });
-        expect(result.featuredImage.url).toBe('/images/placeholder-accommodation.svg');
+        expect(result.featuredImage.url).toBe('/assets/images/placeholder-accommodation.svg');
         expect(result.featuredImage.caption).toBeUndefined();
     });
 
@@ -777,10 +783,33 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.media.galleryItems).toEqual([]);
         });
 
-        it('should map location with numeric lat/lng', () => {
+        // HOS-554 (H-113): there is no `location` on the detail props any more.
+        //
+        // The field read `item.location.lat` / `.lng` — a flat shape the API
+        // never sends (the canonical one is `location.coordinates.{lat,long}`)
+        // and which, on a PUBLIC read, is absent regardless: SPEC-097 strips
+        // `coordinates` for anyone who is not the owner, so the payload's
+        // `location` is `{}`. This test passed only because the fixture invented
+        // the flat shape — it asserted that the transform agreed with the
+        // fixture, not with the server. The coordinate a public page may read is
+        // `approximateLocation`.
+        it('does NOT expose a `location` coordinate — the public payload has none', () => {
             const result = toAccommodationDetailPageProps({ item: makeFullItem() });
-            expect(result.location.lat).toBe(-30.75);
-            expect(result.location.lng).toBe(-58.04);
+            expect((result as Record<string, unknown>).location).toBeUndefined();
+        });
+
+        it('maps approximateLocation, the one coordinate a public page may read', () => {
+            const result = toAccommodationDetailPageProps({
+                item: {
+                    ...makeFullItem(),
+                    approximateLocation: { lat: -32.4881, lng: -58.3592, radiusMeters: 150 }
+                }
+            });
+            expect(result.approximateLocation).toEqual({
+                lat: -32.4881,
+                lng: -58.3592,
+                radiusMeters: 150
+            });
         });
 
         it('should map destination nested object', () => {
@@ -883,10 +912,10 @@ describe('toAccommodationDetailPageProps', () => {
             expect(result.media.videos).toEqual([]);
         });
 
-        it('should default location to null lat/lng', () => {
+        it('omits approximateLocation when the item carries no coordinates (HOS-554)', () => {
             const result = toAccommodationDetailPageProps({ item: {} });
-            expect(result.location.lat).toBeNull();
-            expect(result.location.lng).toBeNull();
+            expect(result.approximateLocation).toBeUndefined();
+            expect((result as Record<string, unknown>).location).toBeUndefined();
         });
 
         it('should default destination to empty strings', () => {
@@ -1132,6 +1161,99 @@ describe('SPEC-018 displayWeight ordering', () => {
         });
         expect(result.amenities.map((a) => a.amenityId)).toEqual(['am2', 'am1']);
         expect(result.features.map((f) => f.featureId)).toEqual(['f2', 'f1']);
+    });
+});
+
+// ---------------------------------------------------------------------------
+// toAccommodationDetailPageProps — contactInfo + socialNetworks (H-118)
+// ---------------------------------------------------------------------------
+//
+// The public API projects `contactInfo` down to `mobilePhone`/`personalEmail`/
+// `website` only (AccommodationPublicSchema, HOS-19 keeps `whatsapp` off this
+// payload deliberately — it has its own entitlement-gated channel). This
+// transform maps those three onto `phone`/`email`/`website`, and reads only
+// `facebook`/`instagram` out of the (wider) `socialNetworks` object per the
+// owner's H-118 decision.
+
+describe('toAccommodationDetailPageProps — contactInfo + socialNetworks (H-118)', () => {
+    it('maps mobilePhone/personalEmail/website onto phone/email/website', () => {
+        const result = toAccommodationDetailPageProps({
+            item: {
+                slug: 'casa',
+                name: 'Casa',
+                contactInfo: {
+                    mobilePhone: '+5493431234567',
+                    personalEmail: 'contacto@ejemplo.com',
+                    website: 'https://ejemplo.com'
+                }
+            }
+        });
+        expect(result.contactInfo).toEqual({
+            phone: '+5493431234567',
+            email: 'contacto@ejemplo.com',
+            website: 'https://ejemplo.com'
+        });
+    });
+
+    it('maps only facebook/instagram out of a wider socialNetworks object', () => {
+        const result = toAccommodationDetailPageProps({
+            item: {
+                slug: 'casa',
+                name: 'Casa',
+                socialNetworks: {
+                    facebook: 'https://facebook.com/casa',
+                    instagram: 'https://instagram.com/casa',
+                    twitter: 'https://twitter.com/casa',
+                    linkedIn: 'https://linkedin.com/company/casa',
+                    tiktok: 'https://tiktok.com/@casa',
+                    youtube: 'https://youtube.com/casa'
+                }
+            }
+        });
+        expect(result.socialNetworks).toEqual({
+            facebook: 'https://facebook.com/casa',
+            instagram: 'https://instagram.com/casa'
+        });
+    });
+
+    it('never surfaces contactInfo.whatsapp even if present on the raw payload', () => {
+        // The public schema should never send this, but the transform itself
+        // must not read it either — belt and braces against HOS-19's gate.
+        const result = toAccommodationDetailPageProps({
+            item: {
+                slug: 'casa',
+                name: 'Casa',
+                contactInfo: {
+                    mobilePhone: '+5493431234567',
+                    whatsapp: '+5493439998877'
+                }
+            }
+        });
+        expect(result.contactInfo).toEqual({ phone: '+5493431234567' });
+        expect(result.contactInfo).not.toHaveProperty('whatsapp');
+    });
+
+    it('returns undefined contactInfo when the accommodation has none of the three fields', () => {
+        const result = toAccommodationDetailPageProps({
+            item: { slug: 'casa', name: 'Casa', contactInfo: { whatsapp: '+5493439998877' } }
+        });
+        expect(result.contactInfo).toBeUndefined();
+    });
+
+    it('returns undefined contactInfo when contactInfo is absent entirely', () => {
+        const result = toAccommodationDetailPageProps({ item: { slug: 'casa', name: 'Casa' } });
+        expect(result.contactInfo).toBeUndefined();
+    });
+
+    it('returns undefined socialNetworks when neither facebook nor instagram is set', () => {
+        const result = toAccommodationDetailPageProps({
+            item: {
+                slug: 'casa',
+                name: 'Casa',
+                socialNetworks: { twitter: 'https://twitter.com/casa' }
+            }
+        });
+        expect(result.socialNetworks).toBeUndefined();
     });
 });
 

@@ -879,10 +879,13 @@
         "title": "Payments",
         "description": "Manage and monitor all system payments",
         "statuses": {
-            "completed": "Completed",
             "pending": "Pending",
             "failed": "Failed",
-            "refunded": "Refunded"
+            "refunded": "Refunded",
+            "succeeded": "Succeeded",
+            "processing": "Processing",
+            "canceled": "Canceled",
+            "partiallyRefunded": "Partially refunded"
         },
         "methods": {
             "creditCard": "Credit Card",
@@ -941,7 +944,8 @@
             "transactionIdLabel": "Transaction ID",
             "references": "References",
             "subscriptionLabel": "Subscription",
-            "invoiceLabel": "Invoice"
+            "invoiceLabel": "Invoice",
+            "providerLabel": "Provider"
         },
         "refundDialog": {
             "title": "Refund Payment",
@@ -960,7 +964,9 @@
         "toasts": {
             "refundSuccess": "Refund processed successfully",
             "refundError": "Error processing refund:"
-        }
+        },
+        "unknownUser": "Unknown user",
+        "unknownPlan": "No plan"
     },
     "subscriptions": {
         "title": "Subscriptions",
@@ -972,7 +978,9 @@
             "pastDue": "Past Due",
             "expired": "Expired",
             "paused": "Paused",
-            "comp": "Complimentary"
+            "comp": "Complimentary",
+            "abandoned": "Abandoned",
+            "pendingProvider": "Awaiting provider"
         },
         "promoEffect": {
             "title": "Active promotion",
@@ -1147,6 +1155,16 @@
             "resumed": "Subscription resumed",
             "pauseError": "Error pausing subscription:",
             "resumeError": "Error resuming subscription:"
+        },
+        "unknownUser": "Unknown user",
+        "unknownPlan": "Unknown plan",
+        "allDomains": "All products",
+        "planDomainFilter": "Product",
+        "productDomainLabels": {
+            "accommodation": "Accommodation",
+            "commerce": "Commerce",
+            "partner": "Partner",
+            "unknown": "Other"
         }
     },
     "exchangeRates": {
@@ -1179,7 +1197,8 @@
             "minutes": "{n} min ago",
             "hours": "{n}h ago",
             "oneDay": "1 day ago",
-            "days": "{n} days ago"
+            "days_one": "{{count}} day ago",
+            "days_other": "{{count}} days ago"
         },
         "manualOverrideDialog": {
             "title": "Create Manual Override",
@@ -1261,7 +1280,8 @@
             "error": "Error loading history:",
             "unknownError": "Unknown error",
             "noRecords": "No records found",
-            "showingCount": "Showing {n} records"
+            "showingCount_one": "Showing {{count}} record",
+            "showingCount_other": "Showing {{count}} records"
         }
     },
     "promoCodes": {

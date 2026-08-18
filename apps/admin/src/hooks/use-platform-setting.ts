@@ -160,7 +160,12 @@ export const legacyAdapters = {
                 return {
                     metaTitleTemplate: titleTemplate,
                     metaDescriptionDefault: defaultDescription,
-                    ogImageDefault: defaultOgImage
+                    ogImageDefault: defaultOgImage,
+                    // A value stored in localStorage predates IndexNow entirely,
+                    // so it can only ever migrate as OFF. Never infer `true`
+                    // here: it would turn a legacy browser-local blob into a
+                    // decision to start notifying search engines (HOS-585).
+                    indexNowEnabled: false
                 };
             } catch {
                 return null;

@@ -6,7 +6,10 @@ import { EntitlementKey } from '@repo/billing';
 import {
     AccommodationIdSchema,
     AccommodationProtectedSchema,
+    type AccommodationUpdateHttp,
     AccommodationUpdateHttpSchema,
+    type AccommodationUpdateInput,
+    httpToDomainAccommodationUpdate,
     PermissionEnum
 } from '@repo/schemas';
 import { AccommodationService, ServiceError } from '@repo/service-core';
@@ -53,7 +56,20 @@ export const protectedUpdateAccommodationRoute = createProtectedRoute({
         body: Record<string, unknown>
     ) => {
         const actor = getActorFromContext(ctx);
-        const result = await accommodationService.update(actor, params.id as string, body);
+
+        // Convert the flat HTTP body to domain-shaped input before calling the
+        // service, exactly as the PATCH on this resource does. This route used
+        // to forward the raw body, and `AccommodationUpdateInputSchema` is NOT
+        // `.strict()`, so every flat key the domain does not know — `latitude`,
+        // `basePrice`, `phone`, the socials, `maxGuests`, `media` — was dropped
+        // by Zod and the response was still a 200. Only the handful of fields
+        // that happen to share a name on both sides (`name`, `summary`,
+        // `description`, `type`, `destinationId`, `amenityIds`, `featureIds`)
+        // ever persisted (HOS-573).
+        const domainInput: AccommodationUpdateInput = httpToDomainAccommodationUpdate(
+            body as AccommodationUpdateHttp
+        );
+        const result = await accommodationService.update(actor, params.id as string, domainInput);
 
         if (result.error) {
             throw new ServiceError(result.error.code, result.error.message);

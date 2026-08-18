@@ -4,6 +4,7 @@
  */
 
 export * from './addon.schema.js';
+export * from './admin-billing-view.schema.js';
 export * from './billing-plan.schema.js';
 export * from './billing-query.schema.js';
 export * from './billing-settings.schema.js';

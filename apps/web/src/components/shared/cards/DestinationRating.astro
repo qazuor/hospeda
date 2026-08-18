@@ -35,7 +35,7 @@ const { averageRating, reviewsCount, locale, onDark = false, size = 14 } = Astro
 const { t } = createTranslations(locale);
 
 const fullStars = Math.floor(averageRating);
-const ariaLabel = `${t('destination.card.rating.label', 'Calificación')}: ${averageRating.toFixed(1)} ${t('destination.card.rating.of5', 'de 5')}`;
+const ariaLabel = `${t('destinations.card.rating.label', 'Calificación')}: ${averageRating.toFixed(1)} ${t('destinations.card.rating.of5', 'de 5')}`;
 ---
 
 <div class:list={['dest-rating', onDark && 'dest-rating--on-dark']} aria-label={ariaLabel}>

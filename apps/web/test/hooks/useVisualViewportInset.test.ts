@@ -132,4 +132,81 @@ describe('useVisualViewportInset', () => {
 
         expect(result.current.bottomInset).toBe(0);
     });
+
+    describe('settle safety-net remeasures (HOS-309 / HOS-138)', () => {
+        // jsdom has no real virtual keyboard, so it cannot reproduce the actual
+        // race (a `visualViewport.resize` event dropped or delayed around the
+        // very first IME activation on a fresh page — see the hook's own doc on
+        // `SETTLE_REMEASURE_DELAYS_MS`). What CAN be tested deterministically is
+        // the pure resilience mechanism: if the viewport's height changes WITHOUT
+        // its `resize` listener ever firing (simulating exactly that dropped
+        // event), does the hook still converge on the correct measurement on its
+        // own, without requiring the caller to re-open/re-focus? This is a
+        // guarantee about the hook's own logic, not proof the real-device race is
+        // fixed — that part remains unverified by automated tests, honestly.
+        beforeEach(() => {
+            vi.useFakeTimers();
+        });
+
+        afterEach(() => {
+            vi.useRealTimers();
+        });
+
+        it('converges on the settled height even when the resize event never fires', () => {
+            const { result } = renderHook(() => useVisualViewportInset({ enabled: true }));
+
+            // Precondition: the synchronous first measure ran before the
+            // (simulated) keyboard opened, so it read the full layout height.
+            expect(result.current).toEqual({ height: LAYOUT_HEIGHT, bottomInset: 0 });
+
+            // The keyboard "settles" here, but — reproducing the dropped-event
+            // race — nothing calls the `resize` listener.
+            act(() => {
+                viewport.height = LAYOUT_HEIGHT - 336;
+            });
+            // No listener fired, so the stale measurement is still what the
+            // hook reports — this is the exact bug: nothing corrects it yet.
+            expect(result.current).toEqual({ height: LAYOUT_HEIGHT, bottomInset: 0 });
+
+            // Advance past the first safety-net delay (100ms).
+            act(() => {
+                vi.advanceTimersByTime(100);
+            });
+            expect(result.current).toEqual({ height: 508, bottomInset: 336 });
+        });
+
+        it('schedules exactly the three documented safety-net timers, cleared on cleanup', () => {
+            const setTimeoutSpy = vi.spyOn(window, 'setTimeout');
+            const clearTimeoutSpy = vi.spyOn(window, 'clearTimeout');
+
+            const { unmount } = renderHook(() => useVisualViewportInset({ enabled: true }));
+
+            const scheduledDelays = setTimeoutSpy.mock.calls.map(([, delay]) => delay);
+            expect(scheduledDelays).toEqual([100, 300, 600]);
+
+            unmount();
+            // All three timers registered by this hook must be cleared, not
+            // left to fire after the panel/component is gone.
+            expect(clearTimeoutSpy).toHaveBeenCalledTimes(3);
+        });
+
+        it('does not re-fire once every safety-net delay has already elapsed', () => {
+            const { result } = renderHook(() => useVisualViewportInset({ enabled: true }));
+
+            act(() => {
+                viewport.height = LAYOUT_HEIGHT - 336;
+                vi.advanceTimersByTime(600);
+            });
+            expect(result.current).toEqual({ height: 508, bottomInset: 336 });
+
+            // A later, unrelated change with no event and no more pending
+            // timers must NOT be picked up — the safety net is bounded, not a
+            // permanent poll.
+            act(() => {
+                viewport.height = LAYOUT_HEIGHT;
+                vi.advanceTimersByTime(5000);
+            });
+            expect(result.current).toEqual({ height: 508, bottomInset: 336 });
+        });
+    });
 });

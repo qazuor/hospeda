@@ -201,7 +201,6 @@ export const publicGetAccommodationBySlugRoute = createPublicRoute({
             ? await resolveOwnerEntitlementsForOwnerId(accommodation.ownerId)
             : [];
         const filteredAccommodation = filterAccommodationByEntitlements(
-            ctx,
             accommodation,
             ownerEntitlements
         );

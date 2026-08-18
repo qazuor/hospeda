@@ -20,6 +20,7 @@ import { EntityEditContent } from '@/components/entity-pages/EntityEditContent';
 import { EntityPageBase } from '@/components/entity-pages/EntityPageBase';
 import { FaqManager } from '@/components/faqs/FaqManager';
 import { gastronomyTabs, PageTabs } from '@/components/layout/PageTabs';
+import { RevalidateEntityButton } from '@/components/RevalidateEntityButton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
 import { useGastronomyPage } from '@/features/gastronomy';
 import { useTranslations } from '@/hooks/use-translations';
@@ -46,10 +47,16 @@ function GastronomyEditPage() {
     return (
         <RoutePermissionGuard permissions={[PermissionEnum.COMMERCE_EDIT_ALL]}>
             <div className="space-y-4">
-                <PageTabs
-                    tabs={gastronomyTabs}
-                    basePath={`/gastronomies/${id}`}
-                />
+                <div className="flex items-center justify-between gap-4">
+                    <PageTabs
+                        tabs={gastronomyTabs}
+                        basePath={`/gastronomies/${id}`}
+                    />
+                    <RevalidateEntityButton
+                        entityType="gastronomy"
+                        entityId={id}
+                    />
+                </div>
 
                 <EntityPageBase
                     entityType="gastronomy"

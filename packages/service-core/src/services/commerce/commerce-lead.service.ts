@@ -79,7 +79,25 @@ export interface CommerceOwnerProvisioner {
         actor: Actor,
         input: { lead: CommerceLead },
         ctx?: ServiceContext
-    ) => Promise<ServiceOutput<{ userId: string; email: string; name: string }>>;
+    ) => Promise<
+        ServiceOutput<{
+            userId: string;
+            email: string;
+            name: string;
+            /**
+             * Whether the address already had an account, which was granted the
+             * commerce role instead of a second one being created.
+             *
+             * This port used to declare only `userId`, `email` and `name`, so
+             * the distinction was erased at the TYPE level before any code
+             * could drop it — and the screen went on narrating the case that
+             * had not happened (H-87 / H-150).
+             */
+            alreadyExisted: boolean;
+            /** Whether a credentials email was actually delivered. */
+            credentialsSent: boolean;
+        }>
+    >;
 }
 
 // ---------------------------------------------------------------------------
@@ -127,10 +145,33 @@ export interface ApproveAndProvisionResult {
     /** The provisioned COMMERCE_OWNER user id. */
     readonly userId: string;
     /**
-     * `true` when a new owner account was created during this call;
-     * `false` when the lead was already provisioned (idempotent no-op).
+     * `true` when THIS CALL did the provisioning work; `false` when the lead
+     * was already provisioned (idempotent no-op).
+     *
+     * It does NOT mean an account was created — its previous wording said so
+     * and was wrong, which is exactly the trap it laid: an approval that linked
+     * an existing account returns `true` here, and a UI branching on it to
+     * announce "cuenta creada" chooses wrong (H-87 / H-150). Use
+     * {@link accountCreated} for that question.
      */
     readonly provisioned: boolean;
+    /**
+     * `true` only when a NEW user account was created for the lead's email.
+     *
+     * `false` when the address already had an account and was simply granted
+     * the commerce role (HOS-296 G-4), and `false` for the idempotent no-op,
+     * where this call created nothing at all.
+     */
+    readonly accountCreated: boolean;
+    /**
+     * `true` only when a credentials email was actually delivered.
+     *
+     * `false` when the account already existed — its own password stands and
+     * the generated one would not sign anyone in — and `false` when the send
+     * was attempted and failed. Both cases end with an applicant who has no
+     * credentials to look for, so both must read the same way to the operator.
+     */
+    readonly credentialsSent: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -143,6 +184,20 @@ const listLeadsInputSchema = z.object({
     page: z.coerce.number().min(1).default(1),
     pageSize: z.coerce.number().min(1).max(100).default(20)
 });
+
+/**
+ * Input to `getMyLead`. `domain` is a strict enum rather than the loose
+ * `z.string()` `listLeadsInputSchema` uses: an unrecognised value here must
+ * FAIL, not silently drop the filter, because a dropped filter returns the
+ * wrong vertical's lead — which is the whole failure this filter exists to
+ * prevent (H-155).
+ */
+const getMyLeadInputSchema = z.object({
+    domain: z.enum(['gastronomy', 'experience']).optional()
+});
+
+/** Input to {@link CommerceLeadService.getMyLead}. */
+export type GetMyLeadInput = z.infer<typeof getMyLeadInputSchema>;
 
 const markHandledInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
@@ -244,22 +299,26 @@ export class CommerceLeadService extends BaseService {
                 );
                 const created = lead as CommerceLead;
 
-                // Best-effort notification — never blocks the create
+                // Best-effort notification — never blocks the create. A failure
+                // is left for the backstop cron, which finds the lead through
+                // its null `opsNotifiedAt`.
                 if (this._notifier) {
                     try {
                         await this._notifier.notifyNewLead(created);
                     } catch (err) {
-                        this.logger.warn(
+                        this.logger.error(
                             { err, leadId: created.id },
-                            // TODO(SPEC-239): Wire notification channel for lead alerts
-                            '[commerce-lead] Notification failed (non-blocking)'
+                            '[commerce-lead] ops intake alert failed to send'
                         );
                     }
                 } else {
-                    this.logger.debug(
+                    // WARN, not debug. This branch ran on every commerce lead
+                    // ever submitted, and production does not emit debug — so
+                    // the one trace of the path not taken was invisible, which
+                    // is why nobody noticed the alert had never been wired.
+                    this.logger.warn(
                         { leadId: created.id },
-                        // TODO(SPEC-239): Wire notification channel for lead alerts
-                        '[commerce-lead] No notifier configured; skipping ops notification'
+                        '[commerce-lead] no notifier configured; nobody was told about this lead'
                     );
                 }
 
@@ -289,23 +348,49 @@ export class CommerceLeadService extends BaseService {
      * No permission check beyond `validateActor` — the query is inherently
      * self-scoped, so there is nothing an elevated permission would unlock.
      *
+     * ## Scoping by `domain` (H-155)
+     *
+     * Owner scoping alone is NOT enough. One owner can legitimately hold leads
+     * in both verticals — the product invites exactly that ("+ Nuevo comercio",
+     * gastronomy and experience under one account) — so "the caller's most
+     * recent lead" was pre-filling the EXPERIENCE create form with a
+     * GASTRONOMY lead's business name and destination.
+     *
+     * That is not a cosmetic wrong default. The create form derives the public
+     * slug from `name`, and the editor tells the owner the slug cannot be
+     * changed afterwards, so an owner who does not notice the pre-filled
+     * restaurant name ships their excursion under it permanently. The error
+     * becomes irreversible in the same click that commits it.
+     *
+     * Callers rendering a vertical-specific form MUST pass that vertical as
+     * `domain`. Omitting it keeps the original owner-only behaviour for callers
+     * that genuinely want "any lead of mine".
+     *
      * @param actor - The authenticated actor requesting their own lead.
+     * @param input - Optional filters; `domain` restricts to one vertical.
      * @param ctx - Optional service execution context.
      * @returns `ServiceOutput<CommerceLead | null>` — `null` when the caller
-     *   has no provisioned lead on record.
+     *   has no provisioned lead on record (for the requested domain, when one
+     *   was given).
      */
     public async getMyLead(
         actor: Actor,
+        input: GetMyLeadInput = {},
         ctx?: ServiceContext
     ): Promise<ServiceOutput<CommerceLead | null>> {
         return this.runWithLoggingAndValidation({
             methodName: 'getMyLead',
-            input: { actor },
-            schema: z.object({}),
+            input: { actor, ...input },
+            schema: getMyLeadInputSchema,
             ctx,
-            execute: async (_validated, a, execCtx) => {
+            execute: async (validated, a, execCtx) => {
+                const where: Record<string, unknown> = { provisionedUserId: a.id };
+                if (validated.domain !== undefined) {
+                    where.domain = validated.domain;
+                }
+
                 const result = await this._model.findAll(
-                    { provisionedUserId: a.id },
+                    where,
                     { page: 1, pageSize: 1, sortBy: 'createdAt', sortOrder: 'desc' },
                     undefined,
                     execCtx?.tx
@@ -499,7 +584,12 @@ export class CommerceLeadService extends BaseService {
                     return {
                         lead: existing,
                         userId: existing.provisionedUserId,
-                        provisioned: false
+                        provisioned: false,
+                        // This call created nothing and sent nothing. Whatever
+                        // happened on the original approval is not something
+                        // this response may claim.
+                        accountCreated: false,
+                        credentialsSent: false
                     };
                 }
 
@@ -515,7 +605,7 @@ export class CommerceLeadService extends BaseService {
                         provisionResult.error?.message ?? 'Owner provisioning failed'
                     );
                 }
-                const { userId } = provisionResult.data;
+                const { userId, alreadyExisted, credentialsSent } = provisionResult.data;
 
                 // (3) Mark approved + link the provisioned owner in one update.
                 const updatePayload: CommerceLeadAdminUpdateInput = {
@@ -540,7 +630,13 @@ export class CommerceLeadService extends BaseService {
                     execCtx?.tx
                 )) as CommerceLead;
 
-                return { lead: updated, userId, provisioned: true };
+                return {
+                    lead: updated,
+                    userId,
+                    provisioned: true,
+                    accountCreated: !alreadyExisted,
+                    credentialsSent
+                };
             }
         });
     }

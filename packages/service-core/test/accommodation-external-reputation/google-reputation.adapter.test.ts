@@ -126,11 +126,17 @@ describe('GoogleReputationAdapter', () => {
     });
 
     describe('when Place ID is not resolvable', () => {
-        it('should return all-null result when listing has no externalId and URL has no ChIJ token', async () => {
+        // H-132: this case used to assert `mockFetch).not.toHaveBeenCalled()` for
+        // a URL carrying a place NAME but no `ChIJ` token — i.e. it asserted that
+        // giving up without asking Google was correct. That is the shape of every
+        // real Google Maps URL, so the assertion certified the outage. A URL with
+        // a name is now resolvable via Text Search; only a URL with neither a
+        // token nor a name is genuinely unresolvable.
+        it('should return all-null result when the URL carries neither a ChIJ token nor a place name', async () => {
             const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
             const listing = makeGoogleListing({
                 externalId: null,
-                url: 'https://www.google.com/maps/place/SomePlace'
+                url: 'https://www.google.com/maps'
             });
 
             const result = await adapter.fetch(listing);
@@ -138,6 +144,30 @@ describe('GoogleReputationAdapter', () => {
             expect(mockFetch).not.toHaveBeenCalled();
             expect(result.rating).toBeNull();
             expect(result.snippets).toBeNull();
+            expect(result.failureCode).toBe('unresolvable_url');
+        });
+
+        it('should fall back to Text Search when the URL carries a place name but no ChIJ token', async () => {
+            const adapter = new GoogleReputationAdapter({ googlePlacesApiKey: 'AIza-test' });
+            const listing = makeGoogleListing({
+                externalId: null,
+                url: 'https://www.google.com/maps/place/SomePlace'
+            });
+
+            mockFetch.mockResolvedValueOnce(
+                new Response(JSON.stringify({ places: [{ id: 'ChIJresolved0000000' }] }), {
+                    status: 200
+                })
+            );
+            mockFetch.mockResolvedValueOnce(
+                new Response(JSON.stringify(makePlacesResponse()), { status: 200 })
+            );
+
+            const result = await adapter.fetch(listing);
+
+            expect(mockFetch).toHaveBeenCalledTimes(2);
+            expect(String(mockFetch.mock.calls[0]?.[0])).toContain(':searchText');
+            expect(result.rating).toBe(4.7);
         });
 
         it('should resolve Place ID from listing.externalId when provided', async () => {

@@ -659,14 +659,14 @@ const isThinContent = isThinDestination({
 		<section class="dest-detail__section">
 			<div class="dest-detail__section-header">
 				<h2 class="dest-detail__section-title">
-					{t('destination.detailPage.accommodationsIn', 'Alojamientos en')} {name}
+					{t('destinations.detailPage.accommodationsIn', 'Alojamientos en')} {name}
 				</h2>
 				{accCards.length > 0 && (
 					<a
 						href={buildUrl({ locale, path: `destinos/${slug}/alojamientos` })}
 						class="dest-detail__view-all"
 					>
-						{t('destination.detailPage.viewAll', 'Ver todos')} →
+						{t('destinations.detailPage.viewAll', 'Ver todos')} →
 					</a>
 				)}
 			</div>
@@ -681,11 +681,11 @@ const isThinContent = isThinDestination({
 			) : (
 				<div class="dest-detail__empty-state">
 					<p class="dest-detail__empty-title">
-						{t('destination.detailPage.noAccommodations', 'No hay alojamientos disponibles')}
+						{t('destinations.detailPage.noAccommodations', 'No hay alojamientos disponibles')}
 					</p>
 					<p class="dest-detail__empty-message">
 						{t(
-							'destination.detailPage.noAccommodationsMessage',
+							'destinations.detailPage.noAccommodationsMessage',
 							'Próximamente agregaremos alojamientos en este destino.'
 						)}
 					</p>
@@ -697,14 +697,14 @@ const isThinContent = isThinDestination({
 		<section class="dest-detail__section">
 			<div class="dest-detail__section-header">
 				<h2 class="dest-detail__section-title">
-					{t('destination.detailPage.eventsIn', 'Eventos en')} {name}
+					{t('destinations.detailPage.eventsIn', 'Eventos en')} {name}
 				</h2>
 				{eventCards.length > 0 && (
 					<a
 						href={buildUrl({ locale, path: `destinos/${slug}/eventos` })}
 						class="dest-detail__view-all"
 					>
-						{t('destination.detailPage.viewAll', 'Ver todos')} →
+						{t('destinations.detailPage.viewAll', 'Ver todos')} →
 					</a>
 				)}
 			</div>
@@ -719,11 +719,11 @@ const isThinContent = isThinDestination({
 			) : (
 				<div class="dest-detail__empty-state">
 					<p class="dest-detail__empty-title">
-						{t('destination.detailPage.noEvents', 'No hay eventos próximos')}
+						{t('destinations.detailPage.noEvents', 'No hay eventos próximos')}
 					</p>
 					<p class="dest-detail__empty-message">
 						{t(
-							'destination.detailPage.noEventsMessage',
+							'destinations.detailPage.noEventsMessage',
 							'No hay eventos programados para este destino en este momento.'
 						)}
 					</p>
@@ -742,15 +742,15 @@ const isThinContent = isThinDestination({
 			) : (
 				<>
 					<h2 class="dest-detail__section-title">
-						{t('destination.detail.relatedPosts.title', 'Sobre {{name}}', { name })}
+						{t('destinations.detail.relatedPosts.emptyTitle', 'Sobre {{name}}', { name })}
 					</h2>
 					<div class="dest-detail__empty-state">
 						<p class="dest-detail__empty-title">
-							{t('destination.detail.relatedPosts.empty', 'Todavía no hay notas sobre este destino')}
+							{t('destinations.detail.relatedPosts.empty', 'Todavía no hay notas sobre este destino')}
 						</p>
 						<p class="dest-detail__empty-message">
 							{t(
-								'destination.detail.relatedPosts.emptyMessage',
+								'destinations.detail.relatedPosts.emptyMessage',
 								'Estamos preparando contenido para que conozcas más sobre este destino.'
 							)}
 						</p>

@@ -194,10 +194,23 @@ const FS_EXCLUSIONS: ReadonlySet<string> = new Set([
     'ai/protected/search-chat.prompt.ts',
     // Best-effort conversation persistence helper for search-chat (not a Hono route) — SPEC-212 T-007
     'ai/protected/search-chat.persistence.ts',
+    // Pure stale-carryover guard over the model's extracted entities, consumed by
+    // search-chat.ts (not a Hono route) — HOS-551
+    'ai/protected/search-chat.stale-carryover.ts',
     // Pure AI output schema + prompt builder + RawExtraction mapper for import-from-url (not a Hono route) — SPEC-222 T-020
     'accommodation/protected/import-from-url.ai.ts',
     // Shared MP return/notification URL builders consumed by start-paid.ts + trial.ts (not a Hono route) — HOS-114
-    'billing/checkout-return-urls.ts'
+    'billing/checkout-return-urls.ts',
+    // Shared HTTP→domain converter consumed by event/protected/{patch,update}.ts
+    // (not a Hono route) — HOS-435. Lives beside its two callers so neither can
+    // be edited without the other; the gates it runs behind are the rows for
+    // those two handlers.
+    'event/protected/to-domain-update.ts',
+    // Pure ownership/permission policy consumed by translate.ts (not a Hono
+    // route) — HOS-584. It lives beside its single caller so the accepted
+    // entity-type list and the rule table cannot drift apart; the gate it runs
+    // behind is the row for `ai/protected/translate.ts`.
+    'ai/protected/translate.authorization.ts'
 ]);
 
 /**

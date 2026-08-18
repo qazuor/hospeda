@@ -138,6 +138,29 @@ describe('AC-9 — one email per submission, never one per row', () => {
         // Not even a partner lookup: there is nothing to tell anyone about.
         expect(findByIdMock).not.toHaveBeenCalled();
     });
+
+    /**
+     * Regression — smoke agosto 2026, the outbound half of H-73.
+     *
+     * `mentionedAt` names a DAY: the admin form is a bare date picker, so the
+     * value it writes is pinned to midnight UTC. This port used to format that
+     * with an explicit `timeZone: 'America/Argentina/Buenos_Aires'`, which moves
+     * it to 21:00 the previous day — so the email told the PARTNER we broadcast
+     * them on the 12th when the operator had entered the 13th.
+     *
+     * Every other case in this file uses 15:00Z, which reads as the same day in
+     * both timezones and therefore could never have caught it. Midnight UTC is
+     * what the real form actually produces, and the only value that separates a
+     * correct implementation from the broken one.
+     */
+    it('dates the email on the day the operator entered, not the day before', async () => {
+        const midnightUtc = new Date('2026-08-13T00:00:00.000Z');
+
+        await notify([{ ...FOUR_CHANNEL_BATCH[0], mentionedAt: midnightUtc }], null);
+
+        const payload = sendNotificationMock.mock.calls[0]?.[0];
+        expect(payload.mentionedAtLabel).toBe('13 de agosto de 2026');
+    });
 });
 
 describe('R-2 — a partner with no reachable address degrades silently', () => {

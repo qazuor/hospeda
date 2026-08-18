@@ -99,7 +99,6 @@
         "closeModal": "Close modal",
         "mapMarkers": "Map markers",
         "goToImageOfTotal": "Go to image {current} of {total}",
-        "mapShowingLocations": "Map showing {count} locations",
         "rateStars": "Rate {{count}} star(s)",
         "ratingOutOf": "Rating: {{rating}} out of 5 stars"
     },
@@ -136,7 +135,8 @@
         "searchPlaceholder": "Search {entityType}...",
         "selectItems": "Select items...",
         "selectItem": "Select item...",
-        "selectedCount": "{count} selected",
+        "selectedCount_one": "{{count}} selected",
+        "selectedCount_other": "{{count}} selected",
         "errors": {
             "loadingSelection": "Error loading selection",
             "loadingOptions": "Error loading options",
@@ -146,6 +146,12 @@
             "searchError": "Search failed: {error}",
             "unknownError": "Unknown error"
         }
+    },
+    "searchableSelect": {
+        "placeholder": "Search for an option",
+        "loading": "Searching...",
+        "empty": "No matches found",
+        "featuredLabel": "Featured"
     },
     "pagination": {
         "previous": "Previous",
@@ -186,9 +192,10 @@
         "featured": "Featured",
         "openFilters": "Filters",
         "closeFilters": "Close filters",
-        "activeCount": "{{count}} active filter",
-        "activeCountPlural": "{{count}} active filters",
-        "activeSelections": "{{count}} active selections",
+        "activeCount_one": "{{count}} active filter",
+        "activeCount_other": "{{count}} active filters",
+        "activeSelections_one": "{{count}} active selection",
+        "activeSelections_other": "{{count}} active selections",
         "featuredOption": "Featured",
         "close": "Close",
         "noResults": "No results",
@@ -220,5 +227,12 @@
         "activeFiltersHeading": "Active filters (tap one to remove):",
         "removeFilter": "Remove filter",
         "suggestionsHeading": "Or try:"
+    },
+    "announcements": {
+        "dismiss": "Dismiss announcement"
+    },
+    "listing": {
+        "resultsFound_one": "{{count}} result found",
+        "resultsFound_other": "{{count}} results found"
     }
 }

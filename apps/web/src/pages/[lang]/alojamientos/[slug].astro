@@ -7,6 +7,7 @@
  * @rendering SSR (on-demand)
  */
 
+import { formatCalendarDate } from '@repo/utils';
 import DetailLayout from '@/layouts/DetailLayout.astro';
 import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
 import { CompareBar } from '@/components/shared/compare/CompareBar.client';
@@ -14,9 +15,11 @@ import LodgingBusinessJsonLd from '@/components/seo/LodgingBusinessJsonLd.astro'
 import BreadcrumbJsonLd from '@/components/seo/BreadcrumbJsonLd.astro';
 import FAQPageJsonLd from '@/components/seo/FAQPageJsonLd.astro';
 import { ImageGallery } from '@/components/ImageGallery.client';
+import { formatPhotoCredit } from '@/lib/photo-credit';
 import DetailHeader from '@/components/accommodation/DetailHeader.astro';
 import QuickFacts from '@/components/accommodation/QuickFacts.astro';
 import Description from '@/components/accommodation/Description.astro';
+import AccommodationContactBlock from '@/components/accommodation/AccommodationContactBlock.astro';
 import { renderContent as renderRich } from '@/lib/render-content';
 import { renderPlain } from '@/lib/render-plain';
 import AmenitiesGrid from '@/components/accommodation/AmenitiesGrid.astro';
@@ -48,6 +51,8 @@ import type { NearbyPoi } from '@repo/schemas';
 import { faqSetInLanguage, toAccommodationDetailPageProps, toAccommodationCardProps, toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { translateAmenityName } from '@/lib/catalog-names';
+import { buildLodgingAmenityNames, buildLodgingGeo, buildLodgingTelephone } from '@/lib/seo/lodging-jsonld';
 import { pickLocalizedSeo } from '@/lib/seo';
 import { buildUrl } from '@/lib/urls';
 import { buildEntityCacheTags, CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
@@ -56,7 +61,7 @@ import { applyCacheHeaders } from '@/lib/cache/response-cache';
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 const { slug } = Astro.params;
 
 if (!slug) return new Response(null, { status: 404 });
@@ -71,16 +76,22 @@ const ctxChildrenRaw = Astro.url.searchParams.get('children');
 const ctxAdults = ctxAdultsRaw ? Number(ctxAdultsRaw) : undefined;
 const ctxChildren = ctxChildrenRaw ? Number(ctxChildrenRaw) : undefined;
 
-/** Format ISO `YYYY-MM-DD` to a locale-aware label without TZ shift. */
+/**
+ * Format ISO `YYYY-MM-DD` to a locale-aware label without TZ shift.
+ *
+ * A fourth spelling of the same rule — noon-UTC pin plus an explicit UTC
+ * timezone — that this repo had rediscovered screen by screen. Delegated so it
+ * lives in one place. Falls back to the raw string when the value names no real
+ * day, as before.
+ */
 function fmtIsoDay(iso: string): string {
-	const [y, m, d] = iso.split('-').map(Number);
-	if (!y || !m || !d) return iso;
-	return new Intl.DateTimeFormat(locale === 'en' ? 'en-US' : locale === 'pt' ? 'pt-BR' : 'es-AR', {
-		day: '2-digit',
-		month: 'long',
-		year: 'numeric',
-		timeZone: 'UTC',
-	}).format(new Date(Date.UTC(y, m - 1, d, 12)));
+	return (
+		formatCalendarDate({
+			value: iso,
+			locale: locale === 'en' ? 'en-US' : locale === 'pt' ? 'pt-BR' : 'es-AR',
+			options: { day: '2-digit', month: 'long', year: 'numeric' },
+		}) ?? iso
+	);
 }
 
 const hasCtxDates = Boolean(ctxCheckIn || ctxCheckOut);
@@ -118,17 +129,13 @@ if (hasCtxDates || hasCtxGuests) {
 		const c = ctxChildren && !Number.isNaN(ctxChildren) ? ctxChildren : 0;
 		if (c > 0) {
 			parts.push(
-				t('conversations.form.prefill.guests', 'Somos {adults} adultos y {children} niños.', {
-					adults: a,
-					children: c,
+				t('conversations.form.prefill.guestsTemplate', 'Somos {{adultsPhrase}} y {{childrenPhrase}}.', {
+					adultsPhrase: tPlural('conversations.form.prefill.guestsAdultsCount', a),
+					childrenPhrase: tPlural('conversations.form.prefill.guestsChildrenCount', c),
 				})
 			);
 		} else if (a > 0) {
-			parts.push(
-				t('conversations.form.prefill.guestsAdultsOnly', 'Somos {adults} adultos.', {
-					adults: a,
-				})
-			);
+			parts.push(tPlural('conversations.form.prefill.guestsAdultsOnly', a));
 		}
 	}
 
@@ -346,17 +353,25 @@ const whatsappPlansHref = buildUrl({ locale, path: 'suscriptores/turistas' });
 // Build a unified GalleryImage[] from galleryItems (preferred) or URL-only images list.
 // SPEC-186: pass the FULL gallery — the island owns all capping (count-aware grid
 // shows a bounded preview and a "+N más" overlay for the rest).
+// H-125: prefer the owner's alt text, then the caption, then the listing name.
+// Reading the caption as alt is what made every photo of a listing announce the
+// same string — measured in production, all four photos shared one alt.
+// H-125: the credit is composed HERE, on the server, and handed to the island
+// ready to render — the island is React and cannot reach the shared Astro
+// renderer, and pre-composing keeps the http/https check off the client.
 const galleryImages = (() => {
     const featured = {
-        url: accommodation.featuredImage || '/images/placeholder-accommodation.svg',
-        alt: accommodation.name
+        url: accommodation.featuredImage || '/assets/images/placeholder-accommodation.svg',
+        alt: accommodation.featuredImageAlt ?? accommodation.name,
+        credit: formatPhotoCredit(accommodation.featuredImageAttribution, t)
     };
     const extras =
         accommodation.media.galleryItems.length > 0
             ? accommodation.media.galleryItems.map((item) => ({
                   url: item.url,
-                  alt: item.caption ?? accommodation.name,
-                  caption: item.caption
+                  alt: item.alt ?? item.caption ?? accommodation.name,
+                  caption: item.caption,
+                  credit: formatPhotoCredit(item.attribution, t)
               }))
             : accommodation.media.images.map((url) => ({
                   url,
@@ -415,10 +430,15 @@ const ACCOMMODATION_TYPE_MAP: Readonly<Record<string, string>> = {
 const lodgingAccommodationType =
     ACCOMMODATION_TYPE_MAP[accommodation.type.toUpperCase()] ?? 'LodgingBusiness';
 
-const lodgingGeo =
-    accommodation.location.lat != null && accommodation.location.lng != null
-        ? { latitude: accommodation.location.lat, longitude: accommodation.location.lng }
-        : undefined;
+// HOS-554: `geo` comes from `approximateLocation`, NEVER from the exact pin —
+// see `buildLodgingGeo` for why.
+const lodgingGeo = buildLodgingGeo({
+    approximateLocation: accommodation.approximateLocation
+});
+
+// HOS-585 P-4: the same number `AccommodationContactBlock` already renders as a
+// `tel:` link, so this publishes nothing the page does not.
+const lodgingTelephone = buildLodgingTelephone({ contactInfo: accommodation.contactInfo });
 
 const lodgingAggregateRating =
     accommodation.averageRating > 0
@@ -433,10 +453,13 @@ const lodgingAggregateRating =
 const lodgingNumberOfRooms =
     accommodation.extraInfo?.bedrooms != null ? accommodation.extraInfo.bedrooms : undefined;
 
-const lodgingAmenities =
-    accommodation.amenities.length > 0
-        ? accommodation.amenities.map((a) => a.name)
-        : undefined;
+// HOS-557: publish the LOCALIZED amenity label, not the catalog slug —
+// see `buildLodgingAmenityNames` for why.
+const lodgingAmenities = buildLodgingAmenityNames({
+    amenities: accommodation.amenities,
+    translateAmenityName,
+    t
+});
 
 // --- Breadcrumb JSON-LD (REQ-096-37 / T-068) ---
 const siteOrigin = Astro.site?.href.replace(/\/$/, '') ?? Astro.url.origin;
@@ -481,6 +504,7 @@ const faqSections = accommodation.faqs.map((faq) => ({
         }}
         accommodationType={lodgingAccommodationType}
         geo={lodgingGeo}
+        telephone={lodgingTelephone}
         aggregateRating={lodgingAggregateRating}
         numberOfRooms={lodgingNumberOfRooms}
         amenities={lodgingAmenities}
@@ -530,6 +554,16 @@ const faqSections = accommodation.faqs.map((faq) => ({
         ) : (
             <Description summary={accommodation.summary} descriptionText={safeDescriptionText} />
         )}
+
+        <!-- Contact + social block (H-118: phone/email/website/Facebook/Instagram
+             the host filled in via the editor's contact form, previously captured
+             but never shown on the public page). The existing WhatsApp button
+             (sidebar, OwnerCard) is untouched — this block never carries that number. -->
+        <AccommodationContactBlock
+            contactInfo={accommodation.contactInfo}
+            socialNetworks={accommodation.socialNetworks}
+            locale={locale}
+        />
 
         <FeaturesGrid features={accommodation.features} smokingAllowed={accommodation.extraInfo?.smokingAllowed ?? null} lang={locale} />
         <AmenitiesGrid amenities={accommodation.amenities} lang={locale} />

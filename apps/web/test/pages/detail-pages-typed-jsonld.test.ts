@@ -58,6 +58,29 @@ describe('alojamientos/[slug].astro — typed JSON-LD (SPEC-157 REQ-7)', () => {
         // We detect the removal by checking that schemaType variable is gone.
         expect(alojamientoSrc).not.toContain('schemaType');
     });
+
+    // -----------------------------------------------------------------------
+    // HOS-585 P-4 — the NAP triplet
+    //
+    // What these two assertions prove together: the page derives a telephone
+    // and hands it to the component, and the component writes it into the
+    // emitted object. What they do NOT prove is the rendered output — .astro
+    // cannot be rendered under Vitest, which is why the derivation itself is
+    // unit-tested for real in test/lib/seo/lodging-jsonld.test.ts. Treat this
+    // pair as wiring coverage, not as evidence the page emits a phone.
+    // -----------------------------------------------------------------------
+
+    it('derives the telephone through buildLodgingTelephone and passes it down', () => {
+        expect(alojamientoSrc).toMatch(
+            /const lodgingTelephone = buildLodgingTelephone\(\{\s*contactInfo:/
+        );
+        expect(alojamientoSrc).toMatch(/telephone=\{lodgingTelephone\}/);
+    });
+
+    it('LodgingBusinessJsonLd writes telephone into the structured data', () => {
+        expect(lodgingComponentSrc).toMatch(/readonly telephone\?: string;/);
+        expect(lodgingComponentSrc).toMatch(/structuredData\.telephone = telephone;/);
+    });
 });
 
 // ---------------------------------------------------------------------------

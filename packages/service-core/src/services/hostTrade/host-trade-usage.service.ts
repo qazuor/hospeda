@@ -132,6 +132,17 @@ const hostUsageListInputSchema = z.object({
 const providerUsageListInputSchema = z.object({
     hostTradeId: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     status: z.enum(HostTradeUsageStatusEnum).optional(),
+    /**
+     * Which side opened the row — the provider's INBOX filter (H-06/H-65/H-159).
+     *
+     * Combined with `status: PENDING` it yields exactly the rows waiting on the
+     * provider, since the counterpart is whoever did NOT declare. It is a query
+     * filter and not a client-side split on purpose: a page of pending rows made
+     * up entirely of the provider's own declarations would leave the inbox empty
+     * and the screen would report "nothing waits on you" to someone a host is
+     * waiting on.
+     */
+    declaredBy: z.enum(HostTradeUsageDeclaredByEnum).optional(),
     page: z.number().int().min(1).default(1),
     pageSize: z.number().int().min(1).max(100).default(20)
 });
@@ -929,6 +940,7 @@ export class HostTradeUsageService extends BaseCrudService<
         input: {
             hostTradeId: string;
             status?: HostTradeUsageStatusEnum;
+            declaredBy?: HostTradeUsageDeclaredByEnum;
             page: number;
             pageSize: number;
         },
@@ -949,6 +961,9 @@ export class HostTradeUsageService extends BaseCrudService<
                 };
                 if (validated.status) {
                     where.status = validated.status;
+                }
+                if (validated.declaredBy) {
+                    where.declaredBy = validated.declaredBy;
                 }
 
                 const { items, total } = await this.model.findAll(

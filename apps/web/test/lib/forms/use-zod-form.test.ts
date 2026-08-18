@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import type { TranslationFn } from '@/lib/api-errors';
 import { useZodForm } from '@/lib/forms/use-zod-form';
+import { createT } from '@/lib/i18n';
 
 const ContactLikeSchema = z.object({
     firstName: z.string().min(1, 'zodError.contact.firstName.min'),
@@ -145,7 +146,70 @@ describe('useZodForm', () => {
             });
 
             expect(result.current.fieldErrors.email).toBe('validationError.field.invalidEmail');
+            // No `t`, no `message`, no `fallback` — there is nothing to put in
+            // the banner, not a decision to leave it empty.
             expect(result.current.formError).toBeNull();
+        });
+
+        it('localizes the mapped field errors when `t` is provided (H-29)', () => {
+            const { result } = renderHook(() =>
+                useZodForm({ schema: ContactLikeSchema, t: createT('es') })
+            );
+
+            act(() => {
+                result.current.handleApiError({
+                    code: 'VALIDATION_ERROR',
+                    details: [{ field: 'firstName', messageKey: 'zodError.contact.firstName.min' }]
+                });
+            });
+
+            // The bare key is what production would have rendered next to the
+            // field for any route that populates `details`.
+            expect(result.current.fieldErrors.firstName).toBe('El nombre es obligatorio');
+        });
+
+        it('still sets the banner when per-field errors were mapped, so no form is silent', () => {
+            // Two live forms (HostTradeEditForm, PartnerEditForm) read only
+            // `formError`. Returning early on a mapped error left their submit
+            // looking inert — the web half of H-28.
+            const { result } = renderHook(() =>
+                useZodForm({ schema: ContactLikeSchema, t: createT('es') })
+            );
+
+            act(() => {
+                result.current.handleApiError({
+                    code: 'VALIDATION_ERROR',
+                    details: [{ field: 'email', messageKey: 'validationError.field.invalidEmail' }]
+                });
+            });
+
+            expect(result.current.fieldErrors.email).toBe('Debe ser un email válido');
+            expect(result.current.formError).toBe(
+                'Los datos enviados no son válidos. Revisá los campos marcados.'
+            );
+        });
+
+        it('does not tell the user to review marked fields when nothing got marked (H-108)', () => {
+            // Arrange — the shape every ServiceError-driven 400 has in
+            // production: `details` is stripped whenever HOSPEDA_API_DEBUG_ERRORS
+            // is false, which production requires, so nothing can be mapped.
+            const { result } = renderHook(() =>
+                useZodForm({ schema: ContactLikeSchema, t: createT('es') })
+            );
+
+            // Act — measured live on the editor's `datos` section: a real server
+            // rejection (destinationId must reference a CITY) rendered ONLY
+            // "Los datos enviados no son válidos. Revisá los campos marcados."
+            // while no field on the page was marked at all.
+            act(() => {
+                result.current.handleApiError({ code: 'VALIDATION_ERROR' });
+            });
+
+            // Assert — sending someone to look for a highlight the page never
+            // drew reads as "the error is somewhere else" or "this page broke".
+            expect(result.current.fieldErrors).toEqual({});
+            expect(result.current.formError).toBe('Los datos enviados no son válidos.');
+            expect(result.current.formError).not.toContain('marcados');
         });
 
         it('falls back to a form-level banner when the API sent no per-field details', () => {

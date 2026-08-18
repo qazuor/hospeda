@@ -12,11 +12,11 @@
  * ```
  */
 
+import { formatCalendarDate } from '@repo/utils';
 import { type JSX, useCallback, useEffect, useState } from 'react';
 import { billingApi, ownerPromotionApi } from '@/lib/api/endpoints-protected';
 import { transformOwnerPromotionList } from '@/lib/api/transforms';
 import type { OwnerPromotionData, OwnerPromotionDiscountType } from '@/lib/api/types';
-import { formatDate } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -34,15 +34,21 @@ import styles from './PromotionList.module.css';
 const ENTITLEMENT_CREATE_PROMOTIONS = 'create_promotions';
 
 /**
- * Promotion validity dates (`validFrom` / `validUntil`) are date-only values
- * stored as UTC-midnight `timestamptz`. Forcing `timeZone: 'UTC'` here keeps
- * the rendered calendar day stable across all viewer time zones — without it,
- * an Argentina user (UTC-3) would see the date shift back by one day (BETA-88).
+ * Renders a promotion validity boundary — a calendar day, not an instant.
+ *
+ * `validFrom`/`validUntil` are date-only values stored as UTC-midnight
+ * `timestamptz`, so reading them in the viewer's own timezone shifts the day
+ * back for anyone west of UTC (an Argentina user at UTC-3 — BETA-88).
+ *
+ * This file already pinned `timeZone: 'UTC'` by hand and was correct. Its
+ * tourist-facing twin, `PromotionBanner.astro`, rendered the SAME field on the
+ * SAME entity and did not — right on one screen, wrong on the other, with
+ * nothing connecting them. That is what delegating to the shared helper fixes
+ * (smoke agosto 2026, H-09/H-63/H-73/H-84).
  */
-const DATE_ONLY_OPTIONS: Intl.DateTimeFormatOptions = {
-    dateStyle: 'long',
-    timeZone: 'UTC'
-};
+function formatValidity(value: string | Date | null | undefined, locale: string): string {
+    return formatCalendarDate({ value, locale, options: { dateStyle: 'long' } }) ?? '';
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -353,8 +359,8 @@ export function PromotionList({ locale }: PromotionListProps): JSX.Element {
                             freeNightLabel
                         });
                         const validityText = promo.validUntil
-                            ? `${formatDate({ date: promo.validFrom, locale, options: DATE_ONLY_OPTIONS })} → ${formatDate({ date: promo.validUntil, locale, options: DATE_ONLY_OPTIONS })}`
-                            : `${formatDate({ date: promo.validFrom, locale, options: DATE_ONLY_OPTIONS })} → ${t('host.promotions.fields.noExpiry', 'Sin vencimiento')}`;
+                            ? `${formatValidity(promo.validFrom, locale)} → ${formatValidity(promo.validUntil, locale)}`
+                            : `${formatValidity(promo.validFrom, locale)} → ${t('host.promotions.fields.noExpiry', 'Sin vencimiento')}`;
 
                         return (
                             <li

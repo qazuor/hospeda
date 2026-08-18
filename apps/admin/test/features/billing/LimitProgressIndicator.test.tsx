@@ -23,7 +23,12 @@ vi.mock('@/hooks/use-translations', () => ({
             return `${key}|${Object.entries(vars)
                 .map(([k, v]) => `${k}=${v}`)
                 .join(',')}`;
-        }
+        },
+        // Same echo-the-key approach as `t`, with `count` folded into the vars.
+        tPlural: (key: string, count: number, vars?: Record<string, unknown>) =>
+            `${key}|${Object.entries({ ...vars, count })
+                .map(([k, v]) => `${k}=${v}`)
+                .join(',')}`
     })
 }));
 

@@ -52,8 +52,6 @@
             "description": "Elegí un plan para comenzar a publicar tus alojamientos"
         },
         "trial": {
-            "daysRemaining": "Te quedan {{count}} días de prueba",
-            "dayRemaining": "Te quedan 1 día de prueba",
             "noCharge": "No se realizó ningún cobro",
             "subscribeNow": "Suscribirse ahora",
             "expiredBanner": {
@@ -191,19 +189,28 @@
             "amountDetails": "Monto: {{amount}}",
             "verifyingStatus": "Verificando estado del pago...",
             "verifyingSubtitle": "Estamos confirmando tu pago. Esto puede tardar unos instantes.",
-            "timeoutTitle": "Está tardando más de lo normal",
-            "timeoutSubtitle": "El pago puede seguir procesándose. Revisá tu cuenta en unos minutos para confirmar tu suscripción.",
             "cta": "Ir a mi cuenta",
             "pageTitle": "Pago aprobado",
             "promoIgnoredNote": "Tu código no se aplicó: es para extender una prueba gratis y esta suscripción no tiene una.",
             "linkErrorTitle": "No pudimos vincular tu pago",
-            "linkErrorSubtitle": "Hubo un problema al vincular este pago con tu cuenta. Si ya realizaste el pago, contactá a soporte con el número de operación de MercadoPago."
+            "linkErrorSubtitle": "Hubo un problema al vincular este pago con tu cuenta. Si ya realizaste el pago, contactá a soporte con el número de operación de MercadoPago.",
+            "unresolvedTitle": "Seguimos confirmando tu pago",
+            "unresolvedSubtitle": "Tu pago no se perdió. MercadoPago puede tardar unos minutos en confirmarlo y, en cuanto lo haga, tu plan queda activo automáticamente. Podés cerrar esta página: revisá el estado en Mi Cuenta, o escribinos si en un rato seguís sin verlo.",
+            "unresolvedSupportCta": "Escribinos"
         },
         "pending": {
             "title": "Tu pago está siendo procesado",
             "body": "Puede demorar hasta 24 horas en confirmarse. Te avisaremos por email cuando se acredite.",
             "cta": "Verificar estado",
             "pageTitle": "Pago en proceso"
+        },
+        "partnerPending": {
+            "pageTitle": "Pago recibido",
+            "title": "Recibimos tu pago",
+            "body": "Estamos confirmando la operación con MercadoPago. Puede demorar unos minutos, y en algunos casos hasta 24 horas. Cuando el pago se acredite, tu presencia en Hospeda se activa sola: no tenés que hacer nada más.",
+            "note": "Guardá el comprobante que te envió MercadoPago. Si algo no queda claro, escribinos y lo revisamos con vos.",
+            "homeCta": "Ir al inicio",
+            "contactCta": "Escribinos"
         },
         "failure": {
             "title": "El pago no pudo procesarse",
@@ -225,10 +232,6 @@
             "currentPlan": "Plan actual",
             "currentPlanAriaLabel": "Este es tu plan actual",
             "changePlan": "Cambiar a este plan"
-        },
-        "monthlyEmailNotice": {
-            "title": "Antes de continuar",
-            "text": "Vas a pagar con la cuenta de MercadoPago asociada a {{email}}. Si tu cuenta de MercadoPago usa otro correo, no vas a poder completar el pago mensual."
         },
         "promoApply": {
             "toggle": "¿Tenés un código de descuento?",
@@ -257,43 +260,56 @@
             "errorPlanRestriction": "Este código no es válido para el plan seleccionado.",
             "errorNewUsersOnly": "Este código es solo para clientes nuevos.",
             "errorMinAmount": "Tu compra no alcanza el mínimo requerido para este código."
+        },
+        "trialWarning": {
+            "title": "La prueba gratis la otorga Mercado Pago",
+            "body": "Mercado Pago otorga el período de prueba una sola vez por cuenta y por plan. Si ya usaste una prueba de este plan con la misma cuenta de Mercado Pago, Mercado Pago va a cobrar el primer período al momento en lugar de aplicarte la prueba.",
+            "confirm": "Entendido, continuar",
+            "cancel": "Cancelar"
         }
     },
     "limit": {
         "max_favorites": {
             "title": "Llegaste al límite de favoritos",
-            "message": "Ya guardaste {{currentCount}} de {{maxAllowed}} favoritos en tu plan. Actualizalo para guardar más.",
+            "message_one": "Ya guardaste {{currentCount}} de {{maxAllowed}} favorito en tu plan. Actualizalo para guardar más.",
+            "message_other": "Ya guardaste {{currentCount}} de {{maxAllowed}} favoritos en tu plan. Actualizalo para guardar más.",
             "cta": "Ver mi suscripción"
         },
         "max_accommodations": {
             "title": "Llegaste al límite de propiedades",
-            "message": "Ya tenés {{currentCount}} de {{maxAllowed}} propiedades en tu plan. Actualizalo para publicar más.",
+            "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} propiedad en tu plan. Actualizalo para publicar más.",
+            "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} propiedades en tu plan. Actualizalo para publicar más.",
             "cta": "Ver mi suscripción",
             "atLimitPanel": {
                 "title": "Llegaste al límite de tu plan",
-                "body": "Estás usando {{currentCount}} de {{maxAllowed}} propiedades. Para publicar otra, actualizá tu plan.",
+                "body_one": "Estás usando {{currentCount}} de {{maxAllowed}} propiedad. Para publicar otra, actualizá tu plan.",
+                "body_other": "Estás usando {{currentCount}} de {{maxAllowed}} propiedades. Para publicar otra, actualizá tu plan.",
                 "primaryCta": "Ver mi suscripción",
                 "secondaryCta": "Ver mis propiedades"
             }
         },
         "max_photos_per_accommodation": {
             "title": "Llegaste al límite de fotos",
-            "message": "Ya subiste {{currentCount}} de {{maxAllowed}} fotos permitidas en tu plan. Actualizalo para subir más.",
+            "message_one": "Ya subiste {{currentCount}} de {{maxAllowed}} foto permitida en tu plan. Actualizalo para subir más.",
+            "message_other": "Ya subiste {{currentCount}} de {{maxAllowed}} fotos permitidas en tu plan. Actualizalo para subir más.",
             "cta": "Ver mi suscripción"
         },
         "max_active_promotions": {
             "title": "Llegaste al límite de promociones",
-            "message": "Ya tenés {{currentCount}} de {{maxAllowed}} promociones activas en tu plan. Actualizalo para crear más.",
+            "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} promoción activa en tu plan. Actualizalo para crear más.",
+            "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} promociones activas en tu plan. Actualizalo para crear más.",
             "cta": "Ver mi suscripción"
         },
         "max_properties": {
             "title": "Llegaste al límite de propiedades",
-            "message": "Ya tenés {{currentCount}} de {{maxAllowed}} propiedades en tu plan. Actualizalo para agregar más.",
+            "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} propiedad en tu plan. Actualizalo para agregar más.",
+            "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} propiedades en tu plan. Actualizalo para agregar más.",
             "cta": "Ver mi suscripción"
         },
         "max_staff_accounts": {
             "title": "Llegaste al límite de cuentas de staff",
-            "message": "Ya tenés {{currentCount}} de {{maxAllowed}} cuentas de staff en tu plan. Actualizalo para agregar más.",
+            "message_one": "Ya tenés {{currentCount}} de {{maxAllowed}} cuenta de staff en tu plan. Actualizalo para agregar más.",
+            "message_other": "Ya tenés {{currentCount}} de {{maxAllowed}} cuentas de staff en tu plan. Actualizalo para agregar más.",
             "cta": "Ver mi suscripción"
         },
         "generic": {
@@ -422,7 +438,16 @@
         "can_view_recommendations": "Recomendaciones personalizadas",
         "ai_text_improve": "Mejora de textos con IA",
         "ai_chat": "Consultas sobre el alojamiento con IA",
-        "ai_search": "Búsqueda inteligente"
+        "ai_search": "Búsqueda inteligente",
+        "multi_property_management": "Gestión de múltiples propiedades",
+        "consolidated_analytics": "Analíticas consolidadas",
+        "centralized_booking": "Reservas centralizadas",
+        "staff_management": "Gestión de personal",
+        "can_use_collections": "Colecciones de favoritos",
+        "vip_promotions_access": "Acceso a promociones VIP",
+        "ai_support": "Asistente de soporte con IA",
+        "ai_translate": "Traducción de contenido con IA",
+        "ai_accommodation_import": "Importación de alojamientos con IA"
     },
     "comparison": {
         "unlimited": "Ilimitado",

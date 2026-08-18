@@ -65,6 +65,34 @@ const RESEND_VERIFICATION_LOCKOUT_CONFIG = {
     windowMs: 15 * 60 * 1000 // 15 minutes in ms
 } as const;
 
+/**
+ * Decides whether an auth response is attributable to the person attempting it
+ * (H-56).
+ *
+ * Two categories of response are NOT the user's doing and must never count
+ * toward a lockout:
+ *
+ * - **429** — Better Auth's own rate limit. Already excluded before this fix,
+ *   with a comment saying it must not count as a failed login attempt.
+ * - **5xx** — our outage. A 500 used to fall into the failure branch, so while
+ *   the API or database was down every sign-in attempt burned an attempt against
+ *   the user's own lockout, and the audit trail recorded `invalid_credentials`,
+ *   pointing support at the wrong thing. Whoever retried most was locked out
+ *   hardest once service came back.
+ *
+ * The predicate answers only "was this attempt attributable to the user"; the
+ * caller still decides success versus failure (sign-in additionally inspects the
+ * body, since Better Auth issue #7035 can return an error payload under a 200).
+ *
+ * @param params - Receive-object payload.
+ * @param params.status - HTTP status Better Auth answered with.
+ * @returns `true` when the attempt may be counted, `false` when inconclusive.
+ */
+export const shouldCountAuthAttempt = (params: { status: number }): boolean => {
+    const { status } = params;
+    return status !== 429 && status < 500;
+};
+
 const app = createRouter();
 
 /**
@@ -135,7 +163,16 @@ app.post('/sign-in/email', async (c) => {
 
     // 5. Record result (if email was extracted)
     // Wrapped in try/catch: recording failure must not affect the login response.
-    if (email) {
+    //
+    // H-56: a 5xx is OUR failure and is neither a success nor a failed attempt.
+    // Counting it locked people out of their own accounts during an outage and
+    // filed the reason as `invalid_credentials`, which was never true.
+    if (email && !shouldCountAuthAttempt({ status: response.status })) {
+        apiLogger.warn(
+            { email, status: response.status },
+            'Auth attempt inconclusive (server error) — not counted toward lockout'
+        );
+    } else if (email) {
         try {
             let isLoginSuccess = response.status === 200;
 
@@ -256,7 +293,8 @@ app.post('/request-password-reset', async (c) => {
     // 4. Record every request as an attempt (Better Auth always returns 200
     //    for this endpoint regardless of whether the email exists, to prevent
     //    enumeration). Only count non-429 responses from Better Auth.
-    if (email && response.status !== 429) {
+    // H-56: a 5xx is our outage, not the user's attempt — see shouldCountAuthAttempt.
+    if (email && shouldCountAuthAttempt({ status: response.status })) {
         const lockoutKey = `forgot-password:${email}:${ip}`;
 
         try {
@@ -355,7 +393,8 @@ app.post('/sign-up/email', async (c) => {
 
     // 4. Record every request as an attempt (skip Better Auth's own 429 responses
     //    to avoid double-counting when Better Auth's built-in rate limiter fires).
-    if (email && response.status !== 429) {
+    // H-56: a 5xx is our outage, not the user's attempt — see shouldCountAuthAttempt.
+    if (email && shouldCountAuthAttempt({ status: response.status })) {
         const lockoutKey = `signup:${email}:${ip}`;
 
         try {
@@ -451,7 +490,8 @@ app.post('/send-verification-email', async (c) => {
 
     // 4. Record every request as an attempt (skip Better Auth's own 429 responses
     //    to avoid double-counting when Better Auth's built-in rate limiter fires).
-    if (email && response.status !== 429) {
+    // H-56: a 5xx is our outage, not the user's attempt — see shouldCountAuthAttempt.
+    if (email && shouldCountAuthAttempt({ status: response.status })) {
         const lockoutKey = `resend:${email}:${ip}`;
 
         try {

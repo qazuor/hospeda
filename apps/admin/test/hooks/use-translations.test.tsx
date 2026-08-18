@@ -118,8 +118,10 @@ describe('useTranslations hook', () => {
         it('should handle double curly braces interpolation', () => {
             const { result } = renderHook(() => useTranslations());
 
-            // Test with a key that uses double curly braces
-            const translation = result.current.t('ui.entitySelect.selectedCount', {
+            // Test with a key that uses double curly braces. The base key is
+            // pluralized (`_one`/`_other`, HOS plural audit) — `_other` is the
+            // one this fixed count=3 exercises.
+            const translation = result.current.t('ui.entitySelect.selectedCount_other', {
                 count: 3
             });
 

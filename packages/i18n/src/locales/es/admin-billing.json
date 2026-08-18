@@ -879,10 +879,13 @@
         "title": "Pagos",
         "description": "Gestiona y monitorea todos los pagos del sistema",
         "statuses": {
-            "completed": "Completado",
             "pending": "Pendiente",
             "failed": "Fallido",
-            "refunded": "Reembolsado"
+            "refunded": "Reembolsado",
+            "succeeded": "Exitoso",
+            "processing": "Procesando",
+            "canceled": "Cancelado",
+            "partiallyRefunded": "Reembolsado parcialmente"
         },
         "methods": {
             "creditCard": "Tarjeta de Crédito",
@@ -941,7 +944,8 @@
             "transactionIdLabel": "ID Transacción",
             "references": "Referencias",
             "subscriptionLabel": "Suscripción",
-            "invoiceLabel": "Factura"
+            "invoiceLabel": "Factura",
+            "providerLabel": "Proveedor"
         },
         "refundDialog": {
             "title": "Reembolsar Pago",
@@ -960,7 +964,9 @@
         "toasts": {
             "refundSuccess": "Reembolso procesado correctamente",
             "refundError": "Error al procesar reembolso:"
-        }
+        },
+        "unknownUser": "Usuario no identificado",
+        "unknownPlan": "Sin plan"
     },
     "subscriptions": {
         "title": "Suscripciones",
@@ -972,7 +978,9 @@
             "pastDue": "Pago pendiente",
             "expired": "Expirada",
             "paused": "Pausada",
-            "comp": "Cortesía"
+            "comp": "Cortesía",
+            "abandoned": "Abandonada",
+            "pendingProvider": "Esperando al proveedor"
         },
         "promoEffect": {
             "title": "Promoción activa",
@@ -1147,6 +1155,16 @@
             "resumed": "Suscripción reanudada",
             "pauseError": "Error al pausar suscripción:",
             "resumeError": "Error al reanudar suscripción:"
+        },
+        "unknownUser": "Usuario no identificado",
+        "unknownPlan": "Plan no identificado",
+        "allDomains": "Todos los productos",
+        "planDomainFilter": "Producto",
+        "productDomainLabels": {
+            "accommodation": "Alojamiento",
+            "commerce": "Comercio",
+            "partner": "Partner",
+            "unknown": "Otro"
         }
     },
     "exchangeRates": {
@@ -1179,7 +1197,8 @@
             "minutes": "hace {n} min",
             "hours": "hace {n}h",
             "oneDay": "hace 1 día",
-            "days": "hace {n} días"
+            "days_one": "hace {{count}} día",
+            "days_other": "hace {{count}} días"
         },
         "manualOverrideDialog": {
             "title": "Crear Override Manual",
@@ -1261,7 +1280,8 @@
             "error": "Error al cargar historial:",
             "unknownError": "Error desconocido",
             "noRecords": "No se encontraron registros",
-            "showingCount": "Mostrando {n} registros"
+            "showingCount_one": "Mostrando {{count}} registro",
+            "showingCount_other": "Mostrando {{count}} registros"
         }
     },
     "promoCodes": {

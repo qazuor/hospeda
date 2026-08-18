@@ -86,6 +86,7 @@ interface SidebarPanelProps {
     readonly collapsed: Record<string, boolean>;
     readonly locale: SupportedLocale;
     readonly t: ReturnType<typeof createTranslations>['t'];
+    readonly tPlural: ReturnType<typeof createTranslations>['tPlural'];
     readonly activeCount: number;
     readonly isNavigating: boolean;
     readonly sortOptions?: readonly SortOption[];
@@ -108,6 +109,7 @@ function SidebarPanel({
     collapsed,
     locale,
     t,
+    tPlural,
     activeCount,
     isNavigating,
     sortOptions,
@@ -202,17 +204,7 @@ function SidebarPanel({
                             <span
                                 className={styles.titleBadge}
                                 role="img"
-                                aria-label={
-                                    activeCount === 1
-                                        ? t(
-                                              'ui.filter.activeCount',
-                                              `${activeCount} filtro activo`
-                                          ).replace('{{count}}', String(activeCount))
-                                        : t(
-                                              'ui.filter.activeCountPlural',
-                                              `${activeCount} filtros activos`
-                                          ).replace('{{count}}', String(activeCount))
-                                }
+                                aria-label={tPlural('ui.filter.activeCount', activeCount)}
                             >
                                 {activeCount}
                             </span>
@@ -347,7 +339,7 @@ export function FilterSidebar({
     position = 'left',
     className
 }: FilterSidebarProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const { debouncedNavigate, isPending, clearPending } = useFilterDebounce();
     const isInitialMount = useRef(true);
@@ -456,6 +448,7 @@ export function FilterSidebar({
         collapsed,
         locale,
         t,
+        tPlural,
         activeCount,
         isNavigating: isPending,
         sortOptions,

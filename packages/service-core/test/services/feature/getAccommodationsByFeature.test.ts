@@ -1,5 +1,11 @@
 import type { AccommodationModel, FeatureModel, RAccommodationFeatureModel } from '@repo/db';
-import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode,
+    VisibilityEnum
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { FeatureService } from '../../../src/services/feature/feature.service';
 import {
@@ -8,11 +14,7 @@ import {
 } from '../../factories/accommodationFactory';
 import { createActor } from '../../factories/actorFactory';
 import { FeatureFactoryBuilder } from '../../factories/featureFactory';
-import {
-    expectForbiddenError,
-    expectInternalError,
-    expectValidationError
-} from '../../helpers/assertions';
+import { expectInternalError, expectValidationError } from '../../helpers/assertions';
 import { createLoggerMock, createModelMock } from '../../utils/modelMockFactory';
 
 describe('FeatureService.getAccommodationsByFeature', () => {
@@ -104,7 +106,23 @@ describe('FeatureService.getAccommodationsByFeature', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return FORBIDDEN if actor lacks permission', async () => {
+    /**
+     * H-38. This test used to assert the opposite, and asserting it is what kept
+     * the bug alive: the route is declared with `createPublicListRoute`, no
+     * `requiredPermissions` and `cacheTTL: 300`, yet the service demanded
+     * `ACCOMMODATION_FEATURES_EDIT` — a CATALOG EDITING permission — so
+     * `/public/features/<id>/accommodations` answered 403 to every visitor in
+     * production and the endpoint was simply dead.
+     *
+     * Removing the check exposes nothing new: the query below is already
+     * restricted to `visibility: PUBLIC` + `lifecycleState: ACTIVE` with the
+     * model's soft-delete default, which is the same set anyone can already see
+     * through search. The service's own JSDoc says as much — the prefix sits in
+     * `PUBLIC_CACHE_ENDPOINTS`, the cache key carries no Authorization and the
+     * cache runs BEFORE auth, so the gate was decorative and the RESPONSE is
+     * what has to be anonymous-safe.
+     */
+    it('serves a guest, because the route is public (H-38)', async () => {
         const model = createModelMock();
         service = new FeatureService(
             ctx,
@@ -122,8 +140,35 @@ describe('FeatureService.getAccommodationsByFeature', () => {
             featureId
         });
 
-        expect(result.error).toBeDefined();
-        expect(result.error?.code).toBe(ServiceErrorCode.FORBIDDEN);
+        expect(result.error).toBeUndefined();
+        expect(result.data?.accommodations).toBeDefined();
+    });
+
+    it('still restricts the result to PUBLIC + ACTIVE accommodations', async () => {
+        // The load-bearing half of the change above: the gate goes away, the
+        // predicates that make the payload anonymous-safe do not.
+        const model = createModelMock();
+        service = new FeatureService(
+            ctx,
+            model as unknown as FeatureModel,
+            model as unknown as RAccommodationFeatureModel,
+            model as unknown as AccommodationModel
+        );
+        (model.findOne as Mock).mockResolvedValueOnce(feature);
+        (model.findAll as Mock).mockResolvedValueOnce({
+            items: [{ accommodationId: accommodation.id }]
+        });
+        (model.findAll as Mock).mockResolvedValueOnce({ items: [accommodation] });
+
+        await service.getAccommodationsByFeature(actorNoPerms, { featureId });
+
+        expect(model.findAll).toHaveBeenLastCalledWith(
+            expect.objectContaining({
+                visibility: VisibilityEnum.PUBLIC,
+                lifecycleState: LifecycleStatusEnum.ACTIVE
+            }),
+            expect.anything()
+        );
     });
 
     it('should return validation error for invalid input', async () => {
@@ -176,7 +221,9 @@ describe('FeatureService.getAccommodationsByFeature', () => {
         expect(Array.isArray(result.data?.accommodations)).toBe(true);
     });
 
-    it('should return FORBIDDEN for actor with unrelated permissions', async () => {
+    it('serves an actor holding unrelated permissions (H-38)', async () => {
+        // Same inversion as above: on a public read, which permissions the
+        // caller happens to hold is not the question being asked.
         const model = createModelMock();
         service = new FeatureService(
             ctx,
@@ -191,7 +238,7 @@ describe('FeatureService.getAccommodationsByFeature', () => {
         });
         (model.findAll as Mock).mockResolvedValueOnce({ items: [accommodation] });
         const result = await service.getAccommodationsByFeature(unrelatedActor, { featureId });
-        expectForbiddenError(result);
+        expect(result.error).toBeUndefined();
     });
 
     it('should reject null for required fields', async () => {

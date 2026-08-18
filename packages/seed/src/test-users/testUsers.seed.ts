@@ -1,4 +1,4 @@
-import { ALL_PLANS, getAddonBySlug } from '@repo/billing';
+import { ALL_PLANS, getAddonBySlug, OWNER_TRIAL_DAYS } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     accounts,
@@ -65,9 +65,10 @@ interface TestUserSpec {
      */
     readonly subStatus?: 'active' | 'trialing';
     /**
-     * Trial window in days when `subStatus === 'trialing'`. Defaults to 14
-     * (the HOST trial window per `packages/billing/src/config/plans.config.ts`
-     * `OWNER_TRIAL_DAYS`). Ignored when status is anything else.
+     * Trial window in days when `subStatus === 'trialing'`. Defaults to
+     * `OWNER_TRIAL_DAYS` (the HOST trial window per
+     * `packages/billing/src/constants/billing.constants.ts`, 30 days as of
+     * the 2026-08-15 owner decision). Ignored when status is anything else.
      */
     readonly trialDays?: number;
     /**
@@ -87,8 +88,8 @@ interface TestUserSpec {
  * The 13 test users created by this seed.
  *
  * NOTE: super-admin@local.test and admin@local.test are intentionally
- * excluded — the required seed already creates superadmin@hospeda.com
- * and admin@hospeda.com via admin-user.json / super-admin-user.json.
+ * excluded — the required seed already creates superadmin@hospeda.com.ar
+ * and admin@hospeda.com.ar via admin-user.json / super-admin-user.json.
  * Those accounts are the canonical admin credentials for local dev.
  */
 const TEST_USERS: readonly TestUserSpec[] = [
@@ -139,14 +140,15 @@ const TEST_USERS: readonly TestUserSpec[] = [
         addonSlug: 'extra-photos-20'
     },
     // Trial-state host (SPEC-143 Block 3 — trial lifecycle smoke). status='trialing',
-    // 14-day window starting at seed time. owner-basico is the canonical trial-eligible plan.
+    // OWNER_TRIAL_DAYS-day window starting at seed time. owner-basico is the
+    // canonical trial-eligible plan.
     {
         email: 'host-trial@local.test',
         displayName: 'Host Trial',
         role: RoleEnum.HOST,
         planSlug: 'owner-basico',
         subStatus: 'trialing',
-        trialDays: 14
+        trialDays: OWNER_TRIAL_DAYS
     },
     // Dual-role host (HOS-376 T-013). A HOST who ALSO owns a host_trades
     // listing. Every other host in this matrix is only a host, and no test user
@@ -287,7 +289,7 @@ async function ensureSubscription(
     planId: string,
     db: DrizzleClient,
     subStatus: 'active' | 'trialing' = 'active',
-    trialDays = 14
+    trialDays = OWNER_TRIAL_DAYS
 ): Promise<string> {
     const existing = await db
         .select({ id: billingSubscriptions.id })
@@ -702,7 +704,7 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                     planId,
                     db,
                     spec.subStatus ?? 'active',
-                    spec.trialDays ?? 14
+                    spec.trialDays ?? OWNER_TRIAL_DAYS
                 );
 
                 logger.info(

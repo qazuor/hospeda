@@ -158,9 +158,9 @@ export function DestinationReviewsModal({
             <DialogHeader
                 titleId="dest-reviews-modal-title"
                 onClose={close}
-                closeLabel={t('destination.detail.reviews.modal.close', 'Cerrar')}
+                closeLabel={t('destinations.detail.reviews.modal.close', 'Cerrar')}
             >
-                {t('destination.detail.reviews.modal.title', 'Reseñas del destino')}
+                {t('destinations.detail.reviews.modal.title', 'Reseñas del destino')}
             </DialogHeader>
             <DialogBody>
                 <div className={styles.body}>
@@ -213,7 +213,7 @@ export function DestinationReviewsModal({
                     {!loading && !error && reviews.length === 0 && isOpen && (
                         <p className={styles.empty}>
                             {t(
-                                'destination.detail.reviews.modal.empty',
+                                'destinations.detail.reviews.modal.empty',
                                 'No hay reseñas disponibles.'
                             )}
                         </p>
@@ -226,7 +226,7 @@ export function DestinationReviewsModal({
                         >
                             <Spinner
                                 label={t(
-                                    'destination.detail.reviews.modal.loading',
+                                    'destinations.detail.reviews.modal.loading',
                                     'Cargando reseñas…'
                                 )}
                             />
@@ -249,13 +249,13 @@ export function DestinationReviewsModal({
                         <div className={styles.error}>
                             <p>
                                 {t(
-                                    'destination.detail.reviews.modal.error',
+                                    'destinations.detail.reviews.modal.error',
                                     'No se pudieron cargar las reseñas.'
                                 )}
                             </p>
                             <GradientButton
                                 as="button"
-                                label={t('destination.detail.reviews.modal.retry', 'Reintentar')}
+                                label={t('destinations.detail.reviews.modal.retry', 'Reintentar')}
                                 variant="outline-primary"
                                 size="sm"
                                 onClick={() => fetchReviews(page)}
@@ -269,11 +269,11 @@ export function DestinationReviewsModal({
                             label={
                                 loading
                                     ? t(
-                                          'destination.detail.reviews.modal.loading',
+                                          'destinations.detail.reviews.modal.loading',
                                           'Cargando reseñas…'
                                       )
                                     : t(
-                                          'destination.detail.reviews.modal.loadMore',
+                                          'destinations.detail.reviews.modal.loadMore',
                                           'Cargar más reseñas'
                                       )
                             }

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Textarea } from '@/components/ui/textarea';
 import {
     legacyAdapters,
@@ -25,7 +26,10 @@ const DEFAULT_SETTINGS: SeoDefaultsValue = {
     metaTitleTemplate: '{page} | Hospeda',
     metaDescriptionDefault:
         'Descubre alojamientos, destinos y eventos en la región del Litoral argentino',
-    ogImageDefault: 'https://hospeda.com.ar/og-default.png'
+    ogImageDefault: 'https://hospeda.com.ar/og-default.png',
+    // Off until an operator turns it on. See the schema's JSDoc for why the
+    // safe default is not emitting (HOS-585 AC-13).
+    indexNowEnabled: false
 };
 
 function SeoSettingsPage() {
@@ -50,10 +54,25 @@ function SeoSettingsPage() {
         setSettings(incoming);
     }, [seoQuery.data]);
 
-    const handleChange = (field: keyof SeoDefaultsValue, value: string): void => {
-        setSettings((prev) => ({ ...prev, [field]: value }));
+    /** Clear the stale save/validation feedback after any edit. */
+    const clearFeedback = (): void => {
         if (validationError !== null) setValidationError(null);
         if (seoMutation.isSuccess) seoMutation.reset();
+    };
+
+    const handleChange = (field: keyof SeoDefaultsValue, value: string): void => {
+        setSettings((prev) => ({ ...prev, [field]: value }));
+        clearFeedback();
+    };
+
+    /**
+     * Boolean sibling of {@link handleChange}. Separate rather than widening
+     * that signature to `string | boolean`, so a text input can never silently
+     * write a boolean into a string field or the reverse.
+     */
+    const handleToggle = (field: keyof SeoDefaultsValue, value: boolean): void => {
+        setSettings((prev) => ({ ...prev, [field]: value }));
+        clearFeedback();
     };
 
     const handleSave = (): void => {
@@ -176,6 +195,26 @@ function SeoSettingsPage() {
                             <Badge variant="outline">
                                 {t('admin-pages.systemSettings.seo.robotsConfigured')}
                             </Badge>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <p className="font-medium">
+                                    {t('admin-pages.systemSettings.seo.indexNow')}
+                                </p>
+                                <p className="text-muted-foreground text-sm">
+                                    {t('admin-pages.systemSettings.seo.indexNowDesc')}
+                                </p>
+                            </div>
+                            <Switch
+                                id="indexNowEnabled"
+                                aria-label={t('admin-pages.systemSettings.seo.indexNow')}
+                                checked={settings.indexNowEnabled}
+                                onCheckedChange={(checked) =>
+                                    handleToggle('indexNowEnabled', checked)
+                                }
+                                disabled={isSaving}
+                            />
                         </div>
                     </CardContent>
                 </Card>

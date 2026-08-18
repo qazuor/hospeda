@@ -169,7 +169,8 @@
         "title": "Publicá tu alojamiento y hacelo crecer.",
         "description": "Cargá tu propiedad, mostrala con buenas fotos, creá promociones y mirá cómo rinde con estadísticas claras. Y cuando no tenés ganas de escribir, la IA te importa la ficha desde Airbnb o Booking, te mejora los textos y los traduce a tres idiomas.",
         "banner": {
-            "title": "{{trialDays}} días gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
+            "title_one": "{{trialDays}} día gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
+            "title_other": "{{trialDays}} días gratis en tu primera suscripción. No se cobra nada hasta que termina la prueba.",
             "description": "Empezás a probar todo hoy mismo: elegís tu plan, cargás tu tarjeta y no se cobra nada hasta que termina la prueba de tu primera suscripción. Tus datos quedan guardados aunque decidas esperar."
         },
         "list": {
@@ -394,7 +395,8 @@
     "cta": {
         "tagline": "¿arrancamos?",
         "title": "Sumá tu alojamiento o tu negocio a Hospeda.",
-        "description": "Probá {{trialDays}} días gratis en tu primera suscripción si alquilás, o escribinos para poner tu restaurante, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
+        "description_one": "Probá {{trialDays}} día gratis en tu primera suscripción si alquilás, o escribinos para poner tu restaurante, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
+        "description_other": "Probá {{trialDays}} días gratis en tu primera suscripción si alquilás, o escribinos para poner tu restaurante, experiencia o marca en el mapa turístico del Litoral. Sin compromiso: no se cobra nada hasta que termina la prueba.",
         "button": "Conocer Hospeda"
     },
     "footer": {

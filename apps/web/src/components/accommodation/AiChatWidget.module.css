@@ -40,6 +40,13 @@
         height 0.2s ease;
 }
 
+/* HOS-552 / H-139: `width: 560px` / `height: 700px` are the DESKTOP targets.
+   Below the mobile breakpoint they are moot — `.panel`'s own
+   `max-width: calc(100vw - 48px)` and `max-height` (derived from
+   `--chat-visible-height`) clamp BOTH the collapsed and expanded state down
+   to the same rendered size on a small viewport, which is exactly why the
+   toggle button that sets this class is hidden there (see `.expandButton`
+   below) instead of shipping a control with zero observable effect. */
 .panelExpanded {
     width: 560px;
     height: 700px;
@@ -117,6 +124,21 @@
 .iconButton:focus-visible {
     outline: 2px solid var(--brand-primary, #2563eb);
     outline-offset: 2px;
+}
+
+/* HOS-552 / H-139: the expand/collapse toggle (`.panelExpanded`) has no
+   observable effect below the mobile breakpoint — see the comment on
+   `.panelExpanded` above. Hide the control entirely there rather than ship a
+   dead toggle; a true full-screen mobile mode is a separate product decision.
+   Mirrors AiSearchEntry.module.css's `.maximizeButton` mobile-hide rule
+   (HOS-111 T-005) for the sibling AI search drawer. Pure CSS, no
+   matchMedia/JS, so it stays SSR-safe. The sibling `.closeButton`-role button
+   (also styled via `.iconButton`) is untouched — only this class is added to
+   the expand toggle specifically. */
+@media (max-width: 767px) {
+    .expandButton {
+        display: none;
+    }
 }
 
 .closeButton:hover {

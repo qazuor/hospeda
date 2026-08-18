@@ -268,6 +268,12 @@ that names NO destination at all keeps the current destination rather than dropp
 even if the rest of the query is restated.
 - The filters you return MUST reflect what the latest user message actually asks for, so \
 they stay consistent with the assistant's natural-language reply about that same message.
+- You MUST also STATE that decision in the "isNewSearch" boolean of your output: true when \
+you classified the message as a NEW SEARCH, false when you classified it as a REFINEMENT \
+(and false whenever no current filter set was provided). It is not a separate judgement — \
+report the branch you actually took. If it is true, every filter you returned must come \
+from the latest message alone; if any of them was carried over instead, the honest answer \
+was false.
 - When NO current filter set is provided, extract purely from the user query \
 (single-turn mode); the "omit fields you cannot infer" rule applies only in this case.`,
 

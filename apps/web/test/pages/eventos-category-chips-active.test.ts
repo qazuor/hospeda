@@ -30,9 +30,9 @@ describe('eventos/index.astro — category chip active/aria-current state (HOS-9
         expect(src).toMatch(/readFacetActiveValues\(\{[^}]*searchParams:\s*url\.searchParams/);
     });
 
-    it('builds each chip href via buildMultiToggleParamHref keyed on the categories array param (HOS-96 T-013)', () => {
+    it('builds each chip href via resolveFacetChipHref keyed on the categories array param (HOS-96 T-013, capped by HOS-524)', () => {
         expect(src).toContain('FACET_CONFIG_BY_ID.eventCategory.paramKey');
-        expect(src).toContain('buildMultiToggleParamHref({');
+        expect(src).toContain('resolveFacetChipHref({');
         expect(src).not.toContain("key: 'category',");
     });
 

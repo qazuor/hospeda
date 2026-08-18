@@ -3,7 +3,7 @@ import {
     BaseCommerceMediaSchema,
     CommerceMediaStateSchema
 } from '../../../common/commerce-media.schema.js';
-import { ImageAttributionSchema } from '../../../common/media.schema.js';
+import { ImageAttributionSchema, mediaAssetUrl } from '../../../common/media.schema.js';
 import { ModerationStatusEnumSchema } from '../../../enums/index.js';
 
 /**
@@ -67,7 +67,7 @@ export const ExperienceMediaAddPayloadSchema = z.object({
      * Full public URL of the photo (Cloudinary delivery URL or external CDN).
      * Required — the upload endpoint returns this URL before this call is made.
      */
-    url: z.string().url({ message: 'zodError.common.commerceMedia.url.invalid' }),
+    url: mediaAssetUrl('zodError.common.commerceMedia.url.invalid'),
     /**
      * Cloudinary `public_id` (e.g. `hospeda/dev/abc123`).
      * Optional — historic or external-URL payloads may not carry one.

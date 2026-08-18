@@ -1,10 +1,11 @@
+import type { TranslationKey } from '@repo/i18n';
 import { LoaderIcon } from '@repo/icons';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useTranslations } from '@/hooks/use-translations';
 import type { Subscription } from './types';
-import { formatArs, formatDate, getPlanBySlug, getStatusLabel, getStatusVariant } from './utils';
+import { formatArsFromCents, formatDate, getStatusLabel, getStatusVariant } from './utils';
 
 /**
  * Props for SubscriptionsTable
@@ -20,6 +21,12 @@ export interface SubscriptionsTableProps {
 /**
  * Subscriptions table component.
  * Renders the paginated list of subscriptions with status badges and action buttons.
+ *
+ * Plan and user come straight from the API payload's nested `plan`/`user`
+ * refs — NEVER from `getPlanBySlug(ALL_PLANS)`. `ALL_PLANS` is
+ * accommodation-only (SPEC-239): looking up a commerce/partner subscription's
+ * OWN plan there always misses and used to fall through a ternary chain,
+ * mislabeling every such row "Turista" (HOS-331).
  */
 export function SubscriptionsTable({
     subscriptions,
@@ -99,82 +106,86 @@ export function SubscriptionsTable({
                                 </tr>
                             </thead>
                             <tbody>
-                                {subscriptions.map((subscription: Subscription) => {
-                                    const plan = getPlanBySlug(subscription.planSlug);
-                                    return (
-                                        <tr
-                                            key={subscription.id}
-                                            className="border-b hover:bg-muted/50"
-                                        >
-                                            <td className="px-4 py-3">
+                                {subscriptions.map((subscription: Subscription) => (
+                                    <tr
+                                        key={subscription.id}
+                                        className="border-b hover:bg-muted/50"
+                                    >
+                                        <td className="px-4 py-3">
+                                            {subscription.user ? (
                                                 <div>
                                                     <div className="font-medium">
-                                                        {subscription.userName}
+                                                        {subscription.user.displayName}
                                                     </div>
                                                     <div className="text-muted-foreground text-xs">
-                                                        {subscription.userEmail}
+                                                        {subscription.user.email}
                                                     </div>
                                                 </div>
-                                            </td>
-                                            <td className="px-4 py-3">
+                                            ) : (
+                                                <span className="text-muted-foreground text-xs italic">
+                                                    {t('admin-billing.subscriptions.unknownUser')}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3">
+                                            {subscription.plan ? (
                                                 <div>
-                                                    <div className="font-medium">{plan?.name}</div>
-                                                    <div className="text-muted-foreground text-xs">
-                                                        {plan?.category === 'owner'
-                                                            ? t(
-                                                                  'admin-billing.subscriptions.categoryOwner'
-                                                              )
-                                                            : plan?.category === 'complex'
-                                                              ? t(
-                                                                    'admin-billing.subscriptions.categoryComplex'
-                                                                )
-                                                              : t(
-                                                                    'admin-billing.subscriptions.categoryTourist'
-                                                                )}
+                                                    <div className="font-medium">
+                                                        {subscription.plan.displayName}
                                                     </div>
+                                                    {subscription.plan.productDomain && (
+                                                        <div className="text-muted-foreground text-xs">
+                                                            {t(
+                                                                `admin-billing.subscriptions.productDomainLabels.${subscription.plan.productDomain}` as TranslationKey
+                                                            )}
+                                                        </div>
+                                                    )}
                                                 </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <Badge
-                                                    variant={getStatusVariant(subscription.status)}
+                                            ) : (
+                                                <span className="text-muted-foreground text-xs italic">
+                                                    {t('admin-billing.subscriptions.unknownPlan')}
+                                                </span>
+                                            )}
+                                        </td>
+                                        <td className="px-4 py-3 text-center">
+                                            <Badge variant={getStatusVariant(subscription.status)}>
+                                                {getStatusLabel(subscription.status, t)}
+                                            </Badge>
+                                        </td>
+                                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                                            {formatDate(subscription.createdAt, locale)}
+                                        </td>
+                                        <td className="px-4 py-3 text-muted-foreground text-xs">
+                                            {formatDate(subscription.currentPeriodEnd, locale)}
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            {subscription.recurringAmountInCents === null
+                                                ? '—'
+                                                : formatArsFromCents(
+                                                      subscription.recurringAmountInCents,
+                                                      locale
+                                                  )}
+                                        </td>
+                                        <td className="px-4 py-3 text-right">
+                                            <div className="flex justify-end gap-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => onViewDetails(subscription)}
                                                 >
-                                                    {getStatusLabel(subscription.status, t)}
-                                                </Badge>
-                                            </td>
-                                            <td className="px-4 py-3 text-muted-foreground text-xs">
-                                                {formatDate(subscription.startDate, locale)}
-                                            </td>
-                                            <td className="px-4 py-3 text-muted-foreground text-xs">
-                                                {formatDate(subscription.currentPeriodEnd, locale)}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                {formatArs(subscription.monthlyAmount, locale)}
-                                            </td>
-                                            <td className="px-4 py-3 text-right">
-                                                <div className="flex justify-end gap-2">
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => onViewDetails(subscription)}
-                                                    >
-                                                        {t(
-                                                            'admin-billing.subscriptions.viewButton'
-                                                        )}
-                                                    </Button>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="sm"
-                                                        onClick={() => onCancel(subscription)}
-                                                    >
-                                                        {t(
-                                                            'admin-billing.subscriptions.cancelButton'
-                                                        )}
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
+                                                    {t('admin-billing.subscriptions.viewButton')}
+                                                </Button>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => onCancel(subscription)}
+                                                >
+                                                    {t('admin-billing.subscriptions.cancelButton')}
+                                                </Button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))}
                             </tbody>
                         </table>
                     </div>

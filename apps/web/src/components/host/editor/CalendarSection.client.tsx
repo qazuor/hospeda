@@ -66,6 +66,7 @@ import { CalendarDayCell, sourceFallbackLabel, sourceKeySuffix } from './Calenda
 import { CalendarLegend } from './CalendarLegend.client';
 import styles from './CalendarSection.module.css';
 import { CalendarSyncLauncher } from './CalendarSyncLauncher.client';
+import { OccupancyEventDetailsDialog } from './OccupancyEventDetailsDialog.client';
 import {
     OccupancyEventEditDialog,
     type OccupancyEventEditSave
@@ -172,6 +173,12 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
     const [editingEvent, setEditingEvent] = useState<OccupancyEvent | null>(null);
     const [editSubmitting, setEditSubmitting] = useState(false);
     const [editError, setEditError] = useState<string | null>(null);
+    // --- Sync-event detail dialog: "why is this day blocked?" ---
+    // A sync bar used to be an aria-hidden div whose only affordance was the
+    // native `title` tooltip — hover-only, so unreachable on a phone, and its
+    // label is truncated on a one-day block. After H-131 imported birthdays as
+    // occupancy, "I don't recognise this block" had no answer on mobile.
+    const [viewingEvent, setViewingEvent] = useState<OccupancyEvent | null>(null);
     // Bumped after any mutation to force the viewed month to re-fetch.
     const [reloadKey, setReloadKey] = useState(0);
 
@@ -376,6 +383,27 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
         [occupancyByDate]
     );
     const todayKey = useMemo(() => toDateKey({ date: new Date() }), []);
+    /**
+     * Formats a `YYYY-MM-DD` occupancy key for display.
+     *
+     * Parsed as local noon rather than through `new Date('YYYY-MM-DD')`, which
+     * JS reads as UTC midnight — in Argentina (UTC-3) that renders as the
+     * PREVIOUS day, which on a calendar telling a host why a specific day is
+     * blocked would be the one error nobody would forgive.
+     */
+    const formatOccupancyDateKey = useCallback(
+        (dateKey: string): string => {
+            const [year, month, day] = dateKey.split('-').map(Number);
+            if (!year || !month || !day) return dateKey;
+            return formatDate({
+                date: new Date(year, month - 1, day, 12),
+                locale,
+                options: { day: 'numeric', month: 'long', year: 'numeric' }
+            });
+        },
+        [locale]
+    );
+
     const monthLabel = formatDate({
         date: viewedMonth,
         locale,
@@ -559,10 +587,15 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                                 const insetStart = segment.isStart ? 3 : 0;
                                                 const insetEnd = segment.isEnd ? 3 : 0;
                                                 const label = barLabel({ event: segment.event, t });
-                                                // Only MANUAL events are editable — their bar is a
-                                                // real button that opens the edit dialog; sync bars
-                                                // stay decorative (their occupancy is announced by
-                                                // the disabled day cell's aria-label).
+                                                // EVERY bar is a button. A MANUAL one opens the edit
+                                                // dialog; a sync one opens the read-only detail
+                                                // dialog explaining where the block came from.
+                                                //
+                                                // Sync bars used to be `aria-hidden` divs, on the
+                                                // reasoning that the day cell already announces the
+                                                // occupancy. It announces the FACT but never the
+                                                // REASON, and the reason was the whole problem after
+                                                // H-131 filled hosts' calendars with birthdays.
                                                 const isManualBar =
                                                     sourceKeySuffix(segment.event.source) ===
                                                     'manual';
@@ -571,8 +604,17 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                                     barSourceClass(segment.event.source),
                                                     segment.isStart && styles.barStart,
                                                     segment.isEnd && styles.barEnd,
-                                                    isManualBar && styles.barButton
+                                                    styles.barButton
                                                 );
+                                                const barActionLabel = isManualBar
+                                                    ? t(
+                                                          'host.properties.editor.calendar.editEvent.title',
+                                                          'Editar bloqueo'
+                                                      )
+                                                    : t(
+                                                          'host.properties.editor.calendar.eventDetails.title',
+                                                          'Día bloqueado'
+                                                      );
                                                 const barStyle = {
                                                     left: `calc(${segment.colStart} / 7 * 100% + ${insetStart}px)`,
                                                     width: `calc(${segment.span} / 7 * 100% - ${insetStart + insetEnd}px)`,
@@ -580,17 +622,20 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                                 };
                                                 const key = `${segment.event.source}-${segment.event.startKey}-${segment.lane}-${segment.colStart}`;
 
-                                                return isManualBar ? (
+                                                return (
                                                     <button
                                                         key={key}
                                                         type="button"
                                                         className={barClass}
                                                         style={barStyle}
+                                                        title={label}
                                                         onClick={() =>
-                                                            setEditingEvent(segment.event)
+                                                            isManualBar
+                                                                ? setEditingEvent(segment.event)
+                                                                : setViewingEvent(segment.event)
                                                         }
                                                         // A multi-week event emits one focusable
-                                                        // button per week, all opening the same edit
+                                                        // button per week, all opening the same
                                                         // dialog. Continuation segments get a
                                                         // disambiguated label so AT users don't hear
                                                         // the same name repeated as if they were
@@ -600,14 +645,8 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                                         // reachable via a visible continuation.
                                                         aria-label={
                                                             segment.isStart
-                                                                ? `${t(
-                                                                      'host.properties.editor.calendar.editEvent.title',
-                                                                      'Editar bloqueo'
-                                                                  )}: ${label}`
-                                                                : `${t(
-                                                                      'host.properties.editor.calendar.editEvent.title',
-                                                                      'Editar bloqueo'
-                                                                  )}: ${label} (${t(
+                                                                ? `${barActionLabel}: ${label}`
+                                                                : `${barActionLabel}: ${label} (${t(
                                                                       'host.properties.editor.calendar.editEvent.continues',
                                                                       'continúa'
                                                                   )})`
@@ -619,20 +658,6 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                                                             </span>
                                                         )}
                                                     </button>
-                                                ) : (
-                                                    <div
-                                                        key={key}
-                                                        className={barClass}
-                                                        style={barStyle}
-                                                        title={label}
-                                                        aria-hidden="true"
-                                                    >
-                                                        {segment.showLabel && (
-                                                            <span className={styles.barLabel}>
-                                                                {label}
-                                                            </span>
-                                                        )}
-                                                    </div>
                                                 );
                                             })}
                                             {overflowByColumn.map((count, col) =>
@@ -778,6 +803,26 @@ export function CalendarSection({ locale, accommodationId }: CalendarSectionProp
                 onSave={handleEditSave}
                 onDelete={handleEditDelete}
                 onClose={handleEditClose}
+            />
+
+            <OccupancyEventDetailsDialog
+                isOpen={viewingEvent !== null}
+                t={t}
+                event={
+                    viewingEvent
+                        ? {
+                              startKey: viewingEvent.startKey,
+                              endKey: viewingEvent.endKey,
+                              title: viewingEvent.title,
+                              sourceLabel: t(
+                                  `host.properties.editor.calendar.source.${sourceKeySuffix(viewingEvent.source)}`,
+                                  sourceFallbackLabel(viewingEvent.source)
+                              )
+                          }
+                        : null
+                }
+                formatDateKey={formatOccupancyDateKey}
+                onClose={() => setViewingEvent(null)}
             />
         </div>
     );

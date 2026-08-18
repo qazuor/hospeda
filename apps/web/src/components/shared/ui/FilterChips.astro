@@ -43,6 +43,23 @@
  * landings followable (they are deliberate SEO surface, spec R-8) and makes the
  * nofollow impossible for a call site to forget.
  *
+ * HOS-524 (crawl trap, depth cap): `href` is OPTIONAL. A chip with no href is
+ * one the caller has capped — it would grow the selection past
+ * `FACET_CHIP_MAX_ACTIVE_VALUES` (`@/lib/filters/facet-chip-depth`) and so must
+ * publish no link for a crawler to follow. It renders as a non-interactive,
+ * visually muted `<span aria-disabled="true">` rather than an `<a>` with a dead
+ * href (a link that goes nowhere) or nothing at all (the row's contents would
+ * shift under the user mid-selection). Removing an active value is never
+ * capped, so a capped row is always exitable.
+ *
+ * That capped `<span>` carries no `role`, so its implicit role is `generic` —
+ * and ARIA PROHIBITS naming a `generic` element. An `aria-label` on it is not
+ * merely ignored by some screen readers: the accessible name is never computed,
+ * and axe flags it (`aria-prohibited-attr`, the same family as the
+ * `aria-pressed`-on-`<a>` violation HOS-96 had to remove). The explanation
+ * therefore ships as visually-hidden TEXT inside the chip (`capNote`), which
+ * every screen reader reads and no sighted user sees.
+ *
  * Rendering: Static (no client JavaScript besides the scroll-fade/arrow script).
  */
 import type { ComponentType } from 'react';
@@ -52,8 +69,12 @@ import { shouldNofollowFacetHref } from '@/lib/filters/facet-crawl-policy';
 interface ChipItem {
     /** Visible label rendered inside the chip. */
     readonly label: string;
-    /** Target URL for the chip anchor. */
-    readonly href: string;
+    /**
+     * Target URL for the chip anchor, or `undefined` for a chip the caller has
+     * capped (HOS-524) — see the depth-cap note in this file's header. An
+     * href-less chip renders as a muted, non-interactive `<span>`.
+     */
+    readonly href?: string;
     /**
      * When true, the chip renders in the active/selected state — drives both
      * the `filter-chips__chip--active` class and `aria-current="true"` on the
@@ -80,6 +101,13 @@ interface ChipItem {
      * compatible.
      */
     readonly ariaLabel?: string;
+    /**
+     * Screen-reader-only explanation for a chip the depth cap made inert
+     * (HOS-524), from `resolveCappedChipNote`. Rendered as visually-hidden text
+     * inside the chip — see the ARIA note in this file's header for why it is
+     * NOT an `aria-label`. Ignored on a chip that has an `href`.
+     */
+    readonly capNote?: string;
     /** Optional leading icon component (already resolved by the caller). */
     readonly icon?: ComponentType<IconProps>;
 }
@@ -126,26 +154,41 @@ const {
     <nav class="filter-chips__nav" aria-label={ariaLabel}>
         <div class="filter-chips__fade-wrapper">
             <ul class="filter-chips__list" role="list" data-filter-chips-list>
-                {chips.map(({ label, href, active, icon: Icon, ariaLabel }) => {
+                {chips.map(({ label, href, active, icon: Icon, ariaLabel, capNote }) => {
                     // HOS-369 WA-2: nofollow only the query-param facet views;
                     // path-based landings keep their crawlable link equity.
-                    const rel = shouldNofollowFacetHref({ href }) ? 'nofollow' : undefined;
+                    const rel = href && shouldNofollowFacetHref({ href }) ? 'nofollow' : undefined;
+                    const chipBody = (
+                        <>
+                            {Icon && (
+                                <span class="filter-chips__chip-icon" aria-hidden="true">
+                                    <Icon size={14} weight="regular" />
+                                </span>
+                            )}
+                            <span class="filter-chips__chip-label">{label}</span>
+                        </>
+                    );
                     return (
                         <li class="filter-chips__item">
-                            <a
-                                href={href}
-                                rel={rel}
-                                class:list={['filter-chips__chip', { 'filter-chips__chip--active': active }]}
-                                aria-current={active ? 'true' : undefined}
-                                aria-label={ariaLabel}
-                            >
-                                {Icon && (
-                                    <span class="filter-chips__chip-icon" aria-hidden="true">
-                                        <Icon size={14} weight="regular" />
-                                    </span>
-                                )}
-                                <span class="filter-chips__chip-label">{label}</span>
-                            </a>
+                            {href ? (
+                                <a
+                                    href={href}
+                                    rel={rel}
+                                    class:list={['filter-chips__chip', { 'filter-chips__chip--active': active }]}
+                                    aria-current={active ? 'true' : undefined}
+                                    aria-label={ariaLabel}
+                                >
+                                    {chipBody}
+                                </a>
+                            ) : (
+                                <span
+                                    class="filter-chips__chip filter-chips__chip--capped"
+                                    aria-disabled="true"
+                                >
+                                    {chipBody}
+                                    {capNote && <span class="sr-only">{capNote}</span>}
+                                </span>
+                            )}
                         </li>
                     );
                 })}
@@ -272,6 +315,24 @@ const {
         background-color: var(--brand-accent);
         color: var(--accent-foreground, #fff);
         border-color: var(--brand-accent);
+    }
+
+    /* HOS-524: a capped chip (no href) is inert — it must read as unavailable
+       rather than as a link that silently does nothing. No hover affordance,
+       no pointer cursor. */
+    .filter-chips__chip--capped {
+        opacity: 0.45;
+        cursor: default;
+    }
+
+    /* `.filter-chips__chip:hover` (0,2,0) outranks the modifier class (0,1,0),
+       so the hover state has to be neutralized explicitly or a capped chip
+       still lights up under the pointer as if it were clickable. */
+    .filter-chips__chip--capped:hover {
+        background-color: var(--core-card);
+        color: var(--core-foreground);
+        border-color: var(--border, var(--brand-primary-a25));
+        box-shadow: none;
     }
 
     .filter-chips__chip:focus-visible {

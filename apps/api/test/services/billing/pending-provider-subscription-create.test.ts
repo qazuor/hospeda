@@ -201,6 +201,36 @@ describe('createPendingProviderSubscription', () => {
         expect(updateSetMock).toHaveBeenCalledWith({ productDomain: 'commerce' });
     });
 
+    it('stamps domainMetadata into the subscription metadata (the subscription → entity path)', async () => {
+        // Path C creates one subscription per checkout CLICK while the domain
+        // link row is UPSERTED per ENTITY, so the entity → subscription link is
+        // destroyed by the second click. The only way a reconciler can recover
+        // the orphaned first subscription is the INVERSE path: coordinates
+        // carried on the subscription itself.
+        await createPendingProviderSubscription({
+            ...BASE_INPUT,
+            productDomain: 'commerce',
+            domainMetadata: { commerceEntityType: 'gastronomy', commerceEntityId: 'entity-1' }
+        });
+
+        const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        const metadata = inserted.metadata as Record<string, unknown>;
+        expect(metadata.commerceEntityType).toBe('gastronomy');
+        expect(metadata.commerceEntityId).toBe('entity-1');
+        // The pre-existing traceability fields are not clobbered by the merge.
+        expect(metadata.source).toBe('start-paid-share-link');
+        expect(metadata.mpPreapprovalPlanId).toBe('mp-plan-1');
+    });
+
+    it('leaves metadata free of domain coordinates when none are supplied', async () => {
+        await createPendingProviderSubscription(BASE_INPUT);
+
+        const inserted = insertValuesMock.mock.calls[0]?.[0] as Record<string, unknown>;
+        const metadata = inserted.metadata as Record<string, unknown>;
+        expect(metadata).not.toHaveProperty('commerceEntityId');
+        expect(metadata).not.toHaveProperty('partnerId');
+    });
+
     it('stamps trialGranted=true into metadata when the checkout granted a trial', async () => {
         await createPendingProviderSubscription({ ...BASE_INPUT, trialGranted: true });
 
@@ -254,6 +284,51 @@ describe('createPendingProviderSubscription', () => {
         await expect(createPendingProviderSubscription(BASE_INPUT)).rejects.toThrow(
             'unique constraint violation'
         );
+    });
+
+    // ── Domain link row (commerce / partner) inside the SAME transaction ──────
+
+    it('runs writeDomainLinkRow inside the same transaction, with the new subscription id', async () => {
+        const seen: { tx?: unknown; localSubscriptionId?: string } = {};
+        const result = await createPendingProviderSubscription({
+            ...BASE_INPUT,
+            productDomain: 'commerce',
+            writeDomainLinkRow: async ({ tx, localSubscriptionId }) => {
+                seen.tx = tx;
+                seen.localSubscriptionId = localSubscriptionId;
+            }
+        });
+
+        // The SAME tx object the subscription + correlation rows were written
+        // with — that identity is what makes the domain link row atomic with them.
+        expect(seen.tx).toBe(txStub);
+        // The id is generated inside this helper, so the caller cannot know it
+        // before the call returns: it MUST be handed to the callback.
+        expect(seen.localSubscriptionId).toBe(result.localSubscriptionId);
+    });
+
+    it('aborts the whole attempt when writeDomainLinkRow throws', async () => {
+        await expect(
+            createPendingProviderSubscription({
+                ...BASE_INPUT,
+                writeDomainLinkRow: async () => {
+                    throw new Error('link row upsert failed');
+                }
+            })
+        ).rejects.toThrow('link row upsert failed');
+    });
+
+    it('omits payerEmail from the correlation row when the caller does not know the payer', async () => {
+        // The partner checkout deliberately snapshots NO payer email: its billing
+        // customer carries a synthetic `@partners.hospeda.invalid` address that
+        // could never match a live MercadoPago payer email, and the linker's
+        // payer-email check is a VETO (a confirmed mismatch refuses the link; an
+        // absent snapshot does not).
+        const { payerEmail: _unknownPayer, ...withoutEmail } = BASE_INPUT;
+        await createPendingProviderSubscription(withoutEmail);
+
+        const [correlationArg] = pendingCheckoutCreateMock.mock.calls[0] ?? [];
+        expect(correlationArg).not.toHaveProperty('payerEmail');
     });
 
     // ── HOS-240: trial_extension redemption is DEFERRED — snapshotted, not recorded ──

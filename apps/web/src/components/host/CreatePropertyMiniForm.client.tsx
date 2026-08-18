@@ -49,6 +49,7 @@ import { useZodForm } from '@/lib/forms/use-zod-form';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
+import { rankCitySuggestions } from '@/lib/rank-city-suggestions';
 import { buildUrlWithParams } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './CreatePropertyMiniForm.module.css';
@@ -81,8 +82,13 @@ export type CreatePropertyMiniFormProps = {
      * Free-trial length in days, for the publish callout copy. Passed in from
      * the page rather than read from `@repo/billing` here: client components in
      * this app deliberately do not import the billing package (see
-     * `TestDailyPlanButton.client.tsx`). Interpolated so the number cannot
-     * drift from `OWNER_TRIAL_DAYS` (HOS-331).
+     * `TestDailyPlanButton.client.tsx`). Resolved server-side by the parent
+     * `.astro` page from the live billing plans — the minimum `trialDays`
+     * among active owner plans with `hasTrial`, via
+     * `resolveGenericOwnerTrialDays` — rather than the `OWNER_TRIAL_DAYS`
+     * constant, so this number cannot drift from what checkout actually
+     * grants (H-98, on top of the HOS-331 fix that only stopped the two
+     * marketing pages from disagreeing with EACH OTHER).
      */
     readonly trialDays: number;
 };
@@ -254,7 +260,7 @@ export function CreatePropertyMiniForm({
     canAccessAdminPanel,
     trialDays
 }: CreatePropertyMiniFormProps) {
-    const { t } = createTranslations(locale);
+    const { t, tPlural } = createTranslations(locale);
 
     const nameId = useId();
     const summaryId = useId();
@@ -620,8 +626,7 @@ export function CreatePropertyMiniForm({
                 });
                 return [];
             }
-            const needle = query.trim().toLowerCase();
-            return response.data.items
+            const items = response.data.items
                 .filter(
                     (item: DestinationPublic): item is DestinationPublic & { id: string } =>
                         typeof item.id === 'string'
@@ -632,18 +637,10 @@ export function CreatePropertyMiniForm({
                         label: item.name,
                         featured: Boolean(item.isFeatured)
                     })
-                )
-                .sort((a, b) => {
-                    const an = a.label.toLowerCase();
-                    const bn = b.label.toLowerCase();
-                    const aExact = an === needle;
-                    const bExact = bn === needle;
-                    if (aExact !== bExact) return aExact ? -1 : 1;
-                    const aStarts = an.startsWith(needle);
-                    const bStarts = bn.startsWith(needle);
-                    if (aStarts !== bStarts) return aStarts ? -1 : 1;
-                    return an.localeCompare(bn);
-                });
+                );
+
+            // Ranked accent-blindly, matching how the endpoint searches (H-136).
+            return rankCitySuggestions({ query, items });
         },
         []
     );
@@ -873,6 +870,26 @@ export function CreatePropertyMiniForm({
             }}
             noValidate
         >
+            {/* Step indicator (HOS-456). Creating an accommodation is two
+                stages and nothing said so, which is why hosts hunted for the
+                photo upload inside a form that has no such field. The hero
+                above is read once, before the question exists; this sits with
+                the fields, where the question actually arises. */}
+            <div
+                className={styles.stepIndicator}
+                data-testid="step-indicator"
+            >
+                <p className={styles.stepIndicatorTitle}>
+                    {t('host.miniForm.stepIndicator.title', 'Paso 1 de 2 · Datos básicos')}
+                </p>
+                <p className={styles.stepIndicatorNext}>
+                    {t(
+                        'host.miniForm.stepIndicator.next',
+                        'Después: fotos, precios y el resto de la ficha.'
+                    )}
+                </p>
+            </div>
+
             {/* Import from URL — collapsible section at the top of the form (T-025). */}
             <div
                 className={styles.importSection}
@@ -1690,10 +1707,10 @@ export function CreatePropertyMiniForm({
                                 <div data-testid="extras-amenities">
                                     <span className={styles.extrasAmenityChip}>
                                         ✓{' '}
-                                        {t(
+                                        {tPlural(
                                             'host.miniForm.importedExtras.fields.amenitiesCount',
-                                            `${String(extras.amenityIds.length)} amenidades importadas`
-                                        ).replace('{{count}}', String(extras.amenityIds.length))}
+                                            extras.amenityIds.length
+                                        )}
                                     </span>
                                 </div>
                             ) : null}
@@ -1720,7 +1737,10 @@ export function CreatePropertyMiniForm({
                     <span className="gradient-btn__label">
                         {isSubmitting
                             ? t('host.miniForm.actions.submitting', 'Creando...')
-                            : t('host.miniForm.actions.submit', 'Crear y continuar en el panel')}
+                            : t(
+                                  'host.miniForm.actions.submit',
+                                  'Crear borrador y seguir al paso 2'
+                              )}
                     </span>
                 </button>
             </div>
@@ -1745,11 +1765,9 @@ export function CreatePropertyMiniForm({
                     <p className="form-trial-callout__title">
                         {trialEligible === false
                             ? t('host.pages.nueva.trialCalloutTitleIneligible', 'Armá tu propiedad')
-                            : t(
-                                  'host.pages.nueva.trialCalloutTitle',
-                                  '{{trialDays}} días gratis en tu primera suscripción',
-                                  { trialDays }
-                              )}
+                            : tPlural('host.pages.nueva.trialCalloutTitle', trialDays, {
+                                  trialDays
+                              })}
                     </p>
                     <p className="form-trial-callout__text">
                         {trialEligible === false
@@ -1757,11 +1775,7 @@ export function CreatePropertyMiniForm({
                                   'host.pages.nueva.trialNoteIneligible',
                                   'Podés crear y editar tu borrador ahora. Para publicarlo y salir al aire vas a necesitar un plan de anfitrión activo.'
                               )
-                            : t(
-                                  'host.pages.nueva.trialNote',
-                                  'Podés armar tu propiedad ahora. La prueba gratis de {{trialDays}} días arranca cuando elegís tu plan: cargás tu tarjeta y no se cobra nada hasta que termina. Solo aplica a tu primera suscripción.',
-                                  { trialDays }
-                              )}
+                            : tPlural('host.pages.nueva.trialNote', trialDays, { trialDays })}
                     </p>
                 </div>
             </aside>

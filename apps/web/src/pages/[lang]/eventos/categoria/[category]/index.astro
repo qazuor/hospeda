@@ -47,6 +47,7 @@ import { toEventCardProps } from '@/lib/api/transforms';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
+import { resolveEventCategorySlug, slugForEventCategory } from '@/lib/facet-slugs';
 
 import { CACHE_TAG_COLLECTIONS } from '@repo/cache-tags';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
@@ -55,21 +56,16 @@ const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 const { category: catSlug } = Astro.params;
 
-/** Slug → EventCategoryEnum value (preserved from the retired 301 redirect). */
-const VALID_CATEGORIES: Record<string, string> = {
-	music: 'MUSIC',
-	culture: 'CULTURE',
-	sports: 'SPORTS',
-	gastronomy: 'GASTRONOMY',
-	festival: 'FESTIVAL',
-	nature: 'NATURE',
-	theater: 'THEATER',
-	workshop: 'WORKSHOP',
-	other: 'OTHER'
-};
-
-const catEnum = catSlug ? VALID_CATEGORIES[catSlug] : undefined;
+// Resolved against the canonical Spanish slug map (H-110). The legacy
+// English slug (e.g. `gastronomy`) never reaches this page as a 200 — the
+// middleware 301-redirects it to the Spanish slug before routing gets here.
+const catEnum = resolveEventCategorySlug({ slug: catSlug });
 if (!catEnum) return new Response(null, { status: 404 });
+
+// Re-derived from the enum (not the raw `catSlug` param) so a
+// differently-cased inbound slug (the resolver is case-insensitive) still
+// self-canonicalizes to the exact lowercase Spanish slug.
+const canonicalCatSlug = slugForEventCategory({ category: catEnum });
 
 // --- Edge cacheability (HOS-369 W2-3) ---
 // After the 404 guard, so an unknown category is never marked shareable.
@@ -210,7 +206,7 @@ const sortOptions = [
 	{ value: 'nameDesc', label: t('events.sort.nameDesc', 'Nombre (Z-A)') }
 ] as const;
 
-const baseUrl = buildUrl({ locale, path: `eventos/categoria/${catSlug}` });
+const baseUrl = buildUrl({ locale, path: `eventos/categoria/${canonicalCatSlug}` });
 
 // Self-canonical for paginated pages (mirrors eventos/index.astro). Pages 2+
 // are served at `/{locale}/eventos/categoria/{category}/page/{n}/` via an

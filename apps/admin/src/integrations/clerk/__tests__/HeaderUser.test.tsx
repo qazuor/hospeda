@@ -83,7 +83,21 @@ vi.mock('@/hooks/use-translations', () => ({
                 'admin-common.tour.replay': 'Ver guía',
                 'admin-common.tour.replayPage': 'Ver guía de esta página',
                 // SPEC-301 T-010 — feedback entry point in user menu
-                'admin-nav.topbar.reportProblem': 'Reportar un problema'
+                'admin-nav.topbar.reportProblem': 'Reportar un problema',
+                // H-166 — user menu chrome (trigger aria-label, fallback name,
+                // Profile/Settings entries) moved from hardcoded English literals
+                // to i18n keys.
+                //
+                // These map to the real Spanish copy on purpose. Mapping them
+                // back to 'Profile'/'Settings'/'Sign out' would make the mock
+                // agree with the bug: a literal restored to the component would
+                // render the same English string the mock returns, and every
+                // assertion below would still pass with H-166 reintroduced.
+                'admin-nav.topbar.userMenu': 'Menú de usuario',
+                'admin-nav.topbar.userFallbackName': 'Usuario',
+                'admin-nav.topbar.profile': 'Perfil',
+                'admin-nav.topbar.settings': 'Configuración',
+                'auth-ui.userMenu.signOut': 'Cerrar sesión'
             };
             return map[key] ?? key;
         },
@@ -147,7 +161,7 @@ vi.mock('@repo/icons', () => ({
 
 async function openMenu(): Promise<void> {
     const user = userEvent.setup();
-    const trigger = screen.getByRole('button', { name: /user menu/i });
+    const trigger = screen.getByRole('button', { name: /menú de usuario/i });
     await user.click(trigger);
 }
 
@@ -171,9 +185,9 @@ describe('HeaderUser — tour entry points', () => {
             render(<HeaderUser />);
             await openMenu();
 
-            expect(screen.getByRole('button', { name: /profile/i })).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: /settings/i })).toBeInTheDocument();
-            expect(screen.getByRole('button', { name: /sign out/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /^Perfil$/ })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /^Configuración$/ })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /^Cerrar sesión$/ })).toBeInTheDocument();
             expect(
                 screen.getByRole('button', { name: 'Reportar un problema' })
             ).toBeInTheDocument();
