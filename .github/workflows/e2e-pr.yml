@@ -29,7 +29,18 @@ jobs:
   e2e-p0:
     name: E2E P0 Suite
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    # 25, not 15: `Install Playwright browsers` alone ranges from 4 to 14
+    # minutes because the browser cache never hits — `Cache Playwright browsers`
+    # returns in ~5s on every run, the successful ones included. At a 15 minute
+    # ceiling the budget left for the suite depends on how fast the download
+    # happened to be that day, which is how the staging -> main promotion PR
+    # died twice in a row, at 15m16s and 15m20s, without a single test having
+    # run: every step after the install was `skipped`.
+    #
+    # This raises the ceiling; it does not fix the cause. The real fix is making
+    # the cache hit, after which the step costs seconds and 15 would be ample.
+    # The header's "< 6 minutes" target still describes the suite itself.
+    timeout-minutes: 25
 
     services:
       # NOTE: service container port mappings are evaluated before any steps
