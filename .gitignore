@@ -166,3 +166,13 @@ apps/web-old
 # Regenerated on install (root 'prepare') and via the Turbo '@repo/i18n#build' task.
 # Committing it caused constant merge conflicts — keep it out of git.
 packages/i18n/src/types.ts
+
+# =========================
+# Marketing — generated imagery (~67MB and growing)
+# The prompts live in docs/marketing/prompts/ and ARE versioned; the images
+# they produce are not. Regenerate from the prompt, never commit the output.
+# =========================
+docs/marketing/escenas/
+docs/marketing/capturas/
+docs/marketing/personaje/
+docs/marketing/placas/
