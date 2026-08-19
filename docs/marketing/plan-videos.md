@@ -329,7 +329,7 @@ Es la versión en video de la **14.2** ("Pegá el link y listo") y de la **12.3*
 
 ---
 
-## Los 33 videos
+## Los 37 videos
 
 Están agrupados por a quién le hablan. El **V1** de arriba es el molde completo, con todos los campos desarrollados: los de abajo dan lo específico de cada uno y se apoyan en las reglas generales para lo común (zonas seguras, transiciones, prompts base, subtítulos).
 
@@ -448,13 +448,14 @@ Es el video de ejemplo desarrollado arriba. **Prioridad 1, corto, 22 s.**
 - **Que se vea entera**: si el video corta y salta, sugiere que hay pasos difíciles que no se muestran. El valor está en que se vea todo el recorrido.
 - **CTA**: Empezá en hospeda.com.ar
 
-#### V12 · Treinta días para probarlo
+#### V12 · Probalo gratis
 
 - **Prioridad**: 1 · **Corto**, 20 s · Historia y WhatsApp
 - **Objetivo**: la prueba gratis, sin mentir sobre la tarjeta.
-- **Voz en off**: "Treinta días para probar Hospeda sin que se te cobre nada. Entrás, elegís tu plan, publicás tu alojamiento y recién al día treinta y uno se te cobra."
-- **Texto en pantalla**: **"30 días sin pagar nada"** como elemento principal.
-- **⚠️ Nunca decir "sin tarjeta"**: se pide al registrarse. Lo que no se cobra es el primer mes.
+- **Voz en off**: "Empezá a usar Hospeda gratis, sin que se te cobre nada. Entrás, elegís tu plan, publicás tu alojamiento y antes del primer cobro siempre te avisamos."
+- **Texto en pantalla**: **"Empezá gratis"** como elemento principal.
+- **⚠️ Nunca decir "sin tarjeta"**: se pide al registrarse. Lo que no se cobra es la prueba.
+- **⚠️ Sin cantidad de días** (regla 10 del plan de contenido): el plazo puede cambiar y no va ni en pantalla ni en la voz. Lo que lo reemplaza es el aviso previo al cobro, que existe y sale automático tres días antes y otra vez un día antes.
 - **CTA**: Empezá en hospeda.com.ar
 
 #### V13 · Planes para cada tamaño
@@ -699,6 +700,121 @@ Es el video de ejemplo desarrollado arriba. **Prioridad 1, corto, 22 s.**
 
 ---
 
+## Los 35 de solo-personaje — backlog aprobado
+
+**Videos que se producen enteros con Hailuo**: sin grabación de pantalla, sin captura,
+sin filmación real y sin fotos de terceros. Solo Hospedín, eventualmente con un objeto
+en la mano.
+
+Por qué existen como bloque aparte: hoy **25 grabaciones de pantalla están trabadas**
+esperando una cuenta de anfitrión, y estos 35 no dependen de ninguna. Son la parte de la
+producción que puede avanzar sin desbloquear nada.
+
+**Prioridades**: P1 arranca ya · P2 después · P3 más adelante · P4 cuando haya lugar.
+
+**Marcas**: 📋 sale de una placa del [plan de contenido](plan-contenido-redes.md) ·
+✨ tema nuevo · ✅ objeto ya en `prompts/personaje.md` · ⚠️ objeto que hay que generar ·
+🔒 necesita la experiencia real del dueño antes de escribirse.
+
+---
+
+### P1 — once videos
+
+| # | Título | A quién | Patrón | Objeto | |
+|:-:|---|---|:-:|:-:|:-:|
+| **V38** | Diez pestañas abiertas para planear un finde | turista | C | — | 📋 |
+| **V39** | No somos una app de reservas | todos | I | — | ✨ |
+| **V40** | Empezamos por Entre Ríos, y es a propósito | marca | J | — | ✨ |
+| **V42** | Un mapa que se llena de a poco | turista · anfitrión | D | mapa ✅ | 📋 |
+| **V43** | Si algo no anda, decínoslo | todos | I | — | ✨ |
+| **V44** | Cuatro cosas que asumís mal de Hospeda | turista · anfitrión | C | — | 📋 |
+| **V45** | Tu alojamiento ya existe, solo que nadie lo encuentra | anfitrión | J | — | ✨ |
+| **V46** | Publicás y también viajás como VIP | anfitrión | dos planos en secuencia | — | 📋 |
+| **V47** | Nadie te va a llamar para venderte nada | anfitrión | C | — | ✨ |
+| **V48** | Vos ponés el precio, vos contestás, vos decidís | anfitrión | D | llave ✅ | ✨ |
+| **V50** | Un alojamiento vacío no descansa, pierde | anfitrión | K | — | ✨ |
+
+### P2 — doce videos
+
+| # | Título | A quién | Patrón | Objeto | |
+|:-:|---|---|:-:|:-:|:-:|
+| **V41** | Por qué se llama Hospedín | marca | K | — | ✨ |
+| **V56** | No te pedimos nada para mirar | turista | C | candado ⚠️ | 📋 |
+| **V57** | Tres días, ¿a dónde vas? *(plantilla)* | turista | K · F | — | 📋 |
+| **V58** | Hablá directo con el que te va a recibir | turista | I | — | ✨ |
+| **V59** | El finde largo se planea el martes | turista | J | — | ✨ |
+| **V60** | No hace falta ir lejos | turista | L → C | — | ✨ |
+| **V61** | Guardátelo para cuando lo necesites | turista | D | mochila ✅ | ✨ |
+| **V64** | Cocinás bien y nadie de afuera lo sabe | gastronómico | G | — | ✨ |
+| **V65** | Tu experiencia no es "una actividad más" | prestador | K | — | ✨ |
+| **V66** | El que arregla a las once de la noche | oficio | I | — | ✨ |
+| **V67** | ¿Organizás algo y no está en la agenda? | organizador | C · J | — | 📋 |
+| **V71** | Nadie conoce tu pueblo mejor que vos | comunidad | J | — | ✨ |
+
+### P3 — once videos
+
+| # | Título | A quién | Patrón | Objeto | |
+|:-:|---|---|:-:|:-:|:-:|
+| **V49** | Tus fotos son de hace dos veranos | anfitrión | D | cámara ✅ | 📋 |
+| **V51** | El que contesta primero, alquila | anfitrión | C | — | 📋🔒 |
+| **V52** | Ni regalado ni de cara | anfitrión | J | — | 📋🔒 |
+| **V53** | El primer mate ya está listo | anfitrión | K · G | mate ⚠️ | 📋🔒 |
+| **V54** | Te llegó una mala. Ahora qué | anfitrión | C → I | — | 📋🔒 |
+| **V55** | Qué hacer cuando no entra nadie | anfitrión | E · K | — | 📋🔒 |
+| **V62** | Llueve. No se cancela nada | turista | K | — | ✨ |
+| **V63** | Un alojamiento no te llama una vez sola | oficio | D | llave inglesa ⚠️ | 📋 |
+| **V68** | Acá el asado se hace con leña | comunidad | G | pinzas ⚠️ | 📋 |
+| **V69** | El río cambia todo | comunidad | K | — | ✨ |
+| **V70** | Los que se van en marzo se pierden lo mejor | turista | L → I | — | ✨ |
+
+### P4 — uno
+
+| # | Título | A quién | Patrón | Objeto | |
+|:-:|---|---|:-:|:-:|:-:|
+| **V72** | Tres lugares para… *(plantilla)* | turista | L → C | — | ✨ |
+
+---
+
+### Lo que hay que resolver antes
+
+**Faltan fondos.** Los tres patrones que este bloque más usa son justamente los que
+nunca se habían usado, y tienen **un solo fondo cada uno**:
+
+| Patrón | Videos que lo piden | Fondos hoy | Faltan |
+|---|:-:|:-:|:-:|
+| **K** en contacto con el lugar | 8 | 1 (el 19) | ~4 |
+| **J** apoyado | 6 | 1 (el 18) | ~3 |
+| **I** primer plano | 6 | 2 (17 y 30) | ~2 |
+| **L** plano general | 3 | 1 (el 20) | ~2 |
+
+Sin eso, ocho videos de patrón K transcurren en el mismo lugar. Son **unos once fondos
+nuevos**, y conviene generarlos de una sola vez.
+
+**Faltan cuatro objetos**: mate (V53), candado (V56), llave inglesa (V63) y pinzas de
+asado (V68). El set aprobado en [`prompts/personaje.md`](prompts/personaje.md) tiene
+siete —llave, valija, mochila, notebook, mapa, cámara de fotos y lamparita de idea— y
+los cuatro nuevos obligan a regenerar la lámina de acciones. Conviene una sola pasada
+con los cuatro juntos, no cuatro pasadas.
+
+**Los cinco de la serie 18 esperan.** V51 a V55 salen de la categoría 18 del plan de
+contenido, que abre con una advertencia explícita: los consejos están escritos desde
+afuera del oficio y hay que reemplazarlos por lo que realmente pasó. Escribirlos con el
+texto actual reproduce exactamente el error contra el que esa categoría advierte.
+
+### Lo que quedó afuera
+
+**En evaluación**: *En qué estamos trabajando* (roadmap con la lamparita) — depende de
+qué se anuncie y cómo se maneje.
+
+**Descartados**: *Una palabra por semana* y *Lo que aprendimos este mes*.
+
+**No califican para solo-personaje**, por si vuelven a aparecer: las placas de destino
+específico (necesitan el lugar real, y esa producción ya está reservada para V33) y
+*Un día de un anfitrión* (es un testimonio, y la regla es que un testimonio no se
+inventa jamás).
+
+---
+
 ## Puesta en escena por video
 
 Qué **patrón** de comportamiento y qué **fondo** usa cada video. Los patrones están en
@@ -750,7 +866,7 @@ Los patrones A, C, D y E usan los fondos 1 al 12.
 | V9 · Sin comisión por reserva | **A** | 7 balneario | ✅ prompt escrito |
 | V10 · Todo lo que podés mostrar | **B** | 15 inserto cabaña | recorrido sección por sección |
 | V11 · Publicar es simple | **B** | 15 inserto cabaña | el alta completa tiene que verse entera |
-| V12 · Treinta días para probarlo | **F** | 25 reposera galería | mensaje único sin presión, y la galería es el patio del anfitrión |
+| V12 · Probalo gratis | **F** | 25 reposera galería | mensaje único sin presión, y la galería es el patio del anfitrión |
 | V13 · Planes para cada tamaño | **B** | 22 inserto balneario | comparación de funciones en pantalla |
 | V14 · Sumate ahora | **D** lamparita | 4 costanera | conceptual, sin pantalla que mostrar |
 | V15 · Somos anfitriones, como vos | **G** → **I** | 14 cervecería → 30 primer plano interior | de anfitrión a anfitrión, y el remate en primer plano: el 30 es de interior nocturno, así que la luz empalma con la cervecería |
