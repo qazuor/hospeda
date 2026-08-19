@@ -172,8 +172,8 @@ export const PLATFORM_FORMATS: InsertSocialPlatformFormat[] = [
         requiresMedia: true,
         requiresPublicUrl: false,
         maxCaptionLength: 2200,
-        recommendedRatio: '1:1',
-        recommendedSize: '1080x1080'
+        recommendedRatio: '4:5',
+        recommendedSize: '1080x1350'
     },
     {
         platform: 'INSTAGRAM',
@@ -211,8 +211,8 @@ export const PLATFORM_FORMATS: InsertSocialPlatformFormat[] = [
         requiresMedia: true,
         requiresPublicUrl: false,
         maxCaptionLength: 2200,
-        recommendedRatio: '1:1',
-        recommendedSize: '1080x1080'
+        recommendedRatio: '4:5',
+        recommendedSize: '1080x1350'
     },
     // ---- Facebook (5 rows) ----
     {
