@@ -50,9 +50,8 @@ este video —T1 a T4— se lo reemplaza explícitamente por la **llave inglesa*
 
 **La llave inglesa está entre las poses de `acciones2.png`** — "CON LA LLAVE INGLESA:
 sosteniendo con una mano una llave inglesa de plomero, en actitud de oficio resuelto".
-`acciones2.png` es una lámina nueva, todavía sin generar: el prompt la referencia igual,
-con el marcador `@######ACCIONES2#######`, exactamente como los videos que ya usan
-`acciones.png` referencian sus poses.
+`acciones2.png` se referencia con el marcador `@######ACCIONES2#######`, exactamente
+como los videos que ya usan `acciones.png` referencian sus poses.
 
 **Va en una mano, en alto a la altura del pecho** —el mismo lugar donde el fondo 1 pone el
 celular—, dejando la otra mano libre para gesticular.
@@ -150,9 +149,8 @@ ver la regla 2 del montaje en [`../README.md`](../README.md).
 ## Qué mirar al revisar las tomas
 
 **Que la llave inglesa se vea igual en las cuatro tiradas**: mismo tamaño, mismo color,
-sostenida en el mismo lugar. Al salir de una lámina nueva sin generar todavía, es el
-elemento con más riesgo de derivar entre generaciones — comparar las cuatro tiradas lado
-a lado antes de aprobar.
+sostenida en el mismo lugar. Es el elemento con más riesgo de derivar entre generaciones
+— comparar las cuatro tiradas lado a lado antes de aprobar.
 
 **Que las tres tiradas con diálogo arranquen hablando en el frame 1**, sin respiro ni
 mirada previa.
