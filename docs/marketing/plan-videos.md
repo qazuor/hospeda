@@ -839,12 +839,16 @@ dos videos del mismo bloque no repitan lugar:
 | F reposera | 13 playa · 24 termas · 25 galería |
 | G mesa | 14 cervecería · 26 restaurante · 27 costanera |
 | H selfie | 16 costanera · 28 balneario · 29 carnaval |
-| I primer plano | 17 exterior de día · 30 interior de noche |
-| J apoyado | 18 |
-| K en contacto | 19 |
-| L plano general | 20 |
+| I primer plano | 17 exterior de día · 30 interior de noche · 38 atardecer · 39 palmar |
+| J apoyado | 18 muelle · 31 costanera · 32 poste del muelle · 33 palmar |
+| K en contacto | 19 muelle · 34 orilla · 35 bote · 36 termas · 37 palmar |
+| L plano general | 20 · 40 palmar · 41 río ancho |
 
 Los patrones A, C, D y E usan los fondos 1 al 12.
+
+> **Los fondos 31 al 41 son del bloque de solo-personaje** (V38-V72). Existen porque J,
+> K y L tenían un fondo cada uno y ese bloque los usa 6, 8 y 3 veces: sin ellos, ocho
+> videos de patrón K transcurrirían en el mismo lugar.
 
 ### Marca
 

@@ -1,7 +1,7 @@
 # Fondos de escena — prompts
 
-Los treinta lugares donde puede aparecer Hospedín, en `../escenas/escena1.png` a
-`escena30.png`. Cada fondo ya viene con **Hospedín integrado**: no es una foto sobre la
+Los cuarenta y uno lugares donde puede aparecer Hospedín, en `../escenas/escena1.png` a
+`escena41.png`. Cada fondo ya viene con **Hospedín integrado**: no es una foto sobre la
 que se lo pega después. Eso es lo que hace que se vea plantado en el lugar y no
 recortado encima — cuando el personaje y el ambiente se generan en una sola pasada
 comparten luz, grano y profundidad de campo.
@@ -18,7 +18,7 @@ explícitamente que es el punto de partida y que no se cambia durante la toma.
 
 ---
 
-## Los treinta
+## Los cuarenta y uno
 
 | # | Qué es | Patrón | Pantalla | Prompt |
 |:-:|---|---|---|:-:|
@@ -52,6 +52,17 @@ explícitamente que es el punto de partida y que no se cambia durante la toma.
 | 28 | Selfie en el balneario | H selfie | selfie | ✅ |
 | 29 | Selfie en el carnaval | H selfie | selfie | ✅ |
 | 30 | Primer plano cálido de interior | I primer plano | — | ✅ |
+| 31 | Apoyado en la baranda de la costanera, al atardecer | J apoyado | — | ✅ |
+| 32 | Apoyado contra un poste de un muelle | J apoyado | — | ✅ |
+| 33 | Apoyado contra una palmera del palmar | J apoyado | — | ✅ |
+| 34 | Sentado en la orilla, con los pies en el agua | K en contacto | — | ✅ |
+| 35 | Sentado en la borda de un bote amarrado | K en contacto | — | ✅ |
+| 36 | Sentado al borde de una pileta termal | K en contacto | — | ✅ |
+| 37 | Sentado en un tronco caído del palmar | K en contacto | — | ✅ |
+| 38 | Primer plano en la costanera, al atardecer | I primer plano | — | ✅ |
+| 39 | Primer plano en el palmar, luz filtrada | I primer plano | — | ✅ |
+| 40 | Plano general entre las palmeras del palmar | L plano general | — | ✅ |
+| 41 | Plano general frente al río ancho, al amanecer | L plano general | — | ✅ |
 
 ### Dos cosas que se rompen al animar
 
@@ -2034,6 +2045,683 @@ INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. M
 luz, misma profundidad de campo, sombra de contacto propia en el piso en la dirección
 de la luz, escala coherente con lo que tiene alrededor y un leve rebote del color del
 entorno sobre su superficie. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista aunque el lugar sea creíble.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismo buzo canguro blanco, mismas zapatillas.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 31 a 33 · Apoyado — patrón J
+
+Los tres comparten pose: Hospedín de pie, apoyado de costado contra algo del lugar,
+con el cuerpo ligeramente girado hacia la cámara y la silueta asimétrica. Ninguno lleva
+teléfono: son fondos de solo-personaje.
+
+---
+
+## 31 · Apoyado en la baranda de la costanera, al atardecer — patrón J
+
+```
+Hospedín DE PIE Y APOYADO de costado contra la baranda de madera de una costanera
+sobre el río, al atardecer.
+
+Tiene un antebrazo apoyado sobre la baranda y el cuerpo ligeramente girado hacia la
+cámara, en postura relajada y asimétrica: no está parado firme y de frente. Una pierna
+apenas cruzada delante de la otra. La otra mano relajada al costado del cuerpo. NO
+sostiene ningún celular: en esta imagen no hay teléfono.
+
+Mira a cámara con expresión tranquila y confiada.
+
+Detrás, palmeras de la costanera, el río con el reflejo anaranjado del atardecer y un
+muelle lejano, todo bien desenfocado. Sin carteles legibles.
+
+Cámara a la altura del pecho, plano medio.
+Luz cálida y baja de atardecer, entrando en diagonal, con el cielo en tonos naranjas y
+rosados detrás.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. Todo lo importante —la cabeza, el círculo
+naranja y las manos— tiene que quedar entre los 250 y los 1470 px de alto y lejos del
+borde derecho, dejando además lugar libre para superponer subtítulos, título, logo y
+llamado a la acción. Ante la duda, componer más chico y más al centro.
+
+Sin personas reconocibles. Si hay gente, va lejos, chica y bien desenfocada.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz, misma profundidad de campo, sombra de contacto propia en el piso en la dirección
+de la luz, escala coherente con lo que tiene alrededor y un leve rebote del color del
+entorno sobre su superficie. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista aunque el lugar sea creíble.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismo buzo canguro blanco, mismas zapatillas.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 32 · Apoyado contra un poste de un muelle — patrón J
+
+```
+Hospedín DE PIE Y APOYADO de costado contra un poste de madera de un muelle sobre el
+río, de día.
+
+Tiene un antebrazo apoyado sobre el poste, a la altura del hombro, y el cuerpo
+ligeramente girado hacia la cámara, en postura relajada y asimétrica: no está parado
+firme y de frente. Una pierna apenas cruzada delante de la otra, apoyada sobre las
+tablas del muelle. La otra mano relajada al costado del cuerpo. NO sostiene ningún
+celular: en esta imagen no hay teléfono.
+
+Mira a cámara con expresión tranquila y confiada.
+
+Detrás, las tablas del muelle que se alejan hacia el río, un bote amarrado al costado
+y juncos en la orilla, todo bien desenfocado. Sin carteles legibles.
+
+Cámara a la altura del pecho, plano medio.
+Luz de media mañana, cálida y despejada.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. Todo lo importante —la cabeza, el círculo
+naranja y las manos— tiene que quedar entre los 250 y los 1470 px de alto y lejos del
+borde derecho, dejando además lugar libre para superponer subtítulos, título, logo y
+llamado a la acción. Ante la duda, componer más chico y más al centro.
+
+Sin personas reconocibles. Si hay gente, va lejos, chica y bien desenfocada.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz, misma profundidad de campo, sombra de contacto propia en las tablas en la
+dirección de la luz, escala coherente con lo que tiene alrededor y un leve rebote del
+color del entorno sobre su superficie. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista aunque el lugar sea creíble.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismo buzo canguro blanco, mismas zapatillas.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 33 · Apoyado contra una palmera del palmar — patrón J
+
+```
+Hospedín DE PIE Y APOYADO de costado contra el tronco de una palmera yatay, en un
+palmar del Litoral, de día.
+
+Tiene un antebrazo apoyado sobre el tronco, a la altura del hombro, y el cuerpo
+ligeramente girado hacia la cámara, en postura relajada y asimétrica: no está parado
+firme y de frente. Una pierna apenas cruzada delante de la otra. La otra mano relajada
+al costado del cuerpo. NO sostiene ningún celular: en esta imagen no hay teléfono.
+
+Mira a cámara con expresión tranquila y confiada.
+
+Detrás, más palmeras yatay, pastizal y agua a lo lejos, con cielo azul y nubes, todo
+bien desenfocado. Sin carteles legibles.
+
+Cámara a la altura del pecho, plano medio.
+Luz de media tarde, cálida, entrando en diagonal entre las palmeras.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. Todo lo importante —la cabeza, el círculo
+naranja y las manos— tiene que quedar entre los 250 y los 1470 px de alto y lejos del
+borde derecho, dejando además lugar libre para superponer subtítulos, título, logo y
+llamado a la acción. Ante la duda, componer más chico y más al centro.
+
+Sin personas reconocibles. Si hay gente, va lejos, chica y bien desenfocada.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz, misma profundidad de campo, sombra de contacto propia en el sendero en la
+dirección de la luz, escala coherente con lo que tiene alrededor y un leve rebote del
+color del entorno sobre su superficie. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista aunque el lugar sea creíble.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismo buzo canguro blanco, mismas zapatillas.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 34 a 37 · Interactuando con el lugar — patrón K
+
+Los cuatro comparten requisito: Hospedín viene YA sentado o subido en esa posición, en
+contacto físico con el lugar. Ninguno lleva teléfono: son fondos de solo-personaje.
+
+---
+
+## 34 · Sentado en la orilla, con los pies en el agua — patrón K
+
+```
+Hospedín SENTADO en la orilla arenosa del río, con las piernas estiradas hacia
+adelante y los pies metidos en el agua, de tarde.
+
+Está sentado directamente sobre la arena, apoyado hacia atrás sobre los brazos
+extendidos detrás de él, con el torso girado hacia la cámara. Las piernas cortas
+llegan justo hasta el agua: el agua le cubre las zapatillas hasta el tobillo, con una
+leve espuma alrededor. Postura relajada, de estar disfrutando el lugar.
+
+Mira a cámara con expresión contenta y tranquila. No sostiene celular: en esta imagen
+no hay ningún teléfono.
+
+Detrás, el agua calma del río abriéndose hacia el horizonte, y una línea de árboles
+lejana, todo desenfocado. La arena mojada nítida en primer plano, con el reflejo del
+agua sobre ella.
+
+Hospedín va CENTRADO en el cuadro, ocupando aproximadamente la mitad del alto de la
+imagen. Sin grandes zonas vacías a un costado.
+
+Cámara a la altura de él o apenas por debajo, plano entero, ligeramente de costado.
+Luz de media tarde, cálida y baja.
+
+Las proporciones sentadas siguen siendo las del personaje: cabeza grande, cuerpo
+compacto, piernas cortas y zapatillas ligeramente sobredimensionadas.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. Todo lo importante —la cabeza, el círculo
+naranja y las manos— tiene que quedar entre los 250 y los 1470 px de alto y lejos del
+borde derecho, dejando además lugar libre para superponer subtítulos, título, logo y
+llamado a la acción. Ante la duda, componer más chico y más al centro.
+
+Sin personas reconocibles. Si hay gente, va lejos, chica y bien desenfocada.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz, misma profundidad de campo, sombra de contacto propia en la arena en la dirección
+de la luz, escala coherente con lo que tiene alrededor y un leve rebote del color del
+entorno sobre su superficie. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista aunque el lugar sea creíble.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismo buzo canguro blanco, mismas zapatillas.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 35 · Sentado en la borda de un bote amarrado — patrón K
+
+```
+Hospedín SENTADO sobre la borda de un bote de madera amarrado a un muelle, con las
+piernas cortas colgando hacia adentro de la embarcación, de día.
+
+Está sentado de costado respecto de la cámara pero con el torso girado hacia ella, una
+mano apoyada sobre la borda a su lado y la otra sobre la rodilla. El bote se mece
+apenas, amarrado con una soga al muelle. Postura relajada, de estar disfrutando el
+paseo.
+
+Mira a cámara con expresión contenta y tranquila. No sostiene celular: en esta imagen
+no hay ningún teléfono.
+
+Dentro del bote se ve un remo apoyado. Detrás, el muelle de madera, el agua calma del
+río y juncos en la orilla, todo desenfocado. La borda del bote nítida en primer plano.
+
+Hospedín va CENTRADO en el cuadro, ocupando aproximadamente la mitad del alto de la
+imagen. Sin grandes zonas vacías a un costado.
+
+Cámara a la altura de él o apenas por debajo, plano entero, ligeramente de costado.
+Luz de media mañana, cálida y despejada.
+
+Las proporciones sentadas siguen siendo las del personaje: cabeza grande, cuerpo
+compacto, piernas cortas y zapatillas ligeramente sobredimensionadas.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. Todo lo importante —la cabeza, el círculo
+naranja y las manos— tiene que quedar entre los 250 y los 1470 px de alto y lejos del
+borde derecho, dejando además lugar libre para superponer subtítulos, título, logo y
+llamado a la acción. Ante la duda, componer más chico y más al centro.
+
+Sin personas reconocibles. Si hay gente, va lejos, chica y bien desenfocada.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz, misma profundidad de campo, sombra de contacto propia en la madera de la borda en
+la dirección de la luz, escala coherente con lo que tiene alrededor y un leve rebote
+del color del entorno sobre su superficie. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista aunque el lugar sea creíble.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismo buzo canguro blanco, mismas zapatillas.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 36 · Sentado al borde de una pileta termal — patrón K
+
+```
+Hospedín SENTADO en el borde de una pileta de aguas termales, con las piernas cortas
+metidas en el agua hasta la pantorrilla, de día.
+
+Está sentado sobre el borde de piedra de la pileta, con las manos apoyadas a los
+costados sobre el borde y el torso girado hacia la cámara. Las zapatillas puestas y
+mojadas, sumergidas en el agua turquesa. El agua desprende un vapor suave alrededor de
+sus piernas. Postura relajada, de estar disfrutando el descanso.
+
+Mira a cámara con expresión tranquila y contenta. No sostiene celular: en esta imagen
+no hay ningún teléfono.
+
+Detrás, el resto del complejo termal: más piletas con vapor, sombrillas y palmeras,
+todo bien desenfocado. Sin carteles legibles.
+
+Hospedín va CENTRADO en el cuadro, ocupando aproximadamente la mitad del alto de la
+imagen. Sin grandes zonas vacías a un costado.
+
+Cámara a la altura de él, plano entero, ligeramente de costado.
+Luz de media mañana, cálida y suave, con el vapor iluminado detrás.
+
+Las proporciones sentadas siguen siendo las del personaje: cabeza grande, cuerpo
+compacto, piernas cortas y zapatillas ligeramente sobredimensionadas.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. Todo lo importante —la cabeza, el círculo
+naranja y las manos— tiene que quedar entre los 250 y los 1470 px de alto y lejos del
+borde derecho, dejando además lugar libre para superponer subtítulos, título, logo y
+llamado a la acción. Ante la duda, componer más chico y más al centro.
+
+Sin personas reconocibles. Si hay gente, va lejos, chica y bien desenfocada.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz, misma profundidad de campo, sombra de contacto propia en el borde de piedra en la
+dirección de la luz, escala coherente con lo que tiene alrededor y un leve rebote del
+color del entorno sobre su superficie. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista aunque el lugar sea creíble.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismo buzo canguro blanco, mismas zapatillas.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 37 · Sentado en un tronco caído del palmar — patrón K
+
+```
+Hospedín SENTADO sobre un tronco de palmera caído, en medio de un palmar del Litoral,
+de día.
+
+Está sentado con las piernas cortas colgando sin llegar al piso, las manos apoyadas
+sobre el tronco a los costados del cuerpo y el torso girado hacia la cámara. Postura
+relajada, de estar disfrutando el paseo por el palmar.
+
+Mira a cámara con expresión contenta y tranquila. No sostiene celular: en esta imagen
+no hay ningún teléfono.
+
+Detrás, más palmeras yatay altas, pastizal y agua a lo lejos entre los troncos, todo
+desenfocado. El tronco caído nítido en primer plano, con su corteza texturada.
+
+Hospedín va CENTRADO en el cuadro, ocupando aproximadamente la mitad del alto de la
+imagen. Sin grandes zonas vacías a un costado.
+
+Cámara a la altura de él o apenas por debajo, plano entero, ligeramente de costado.
+Luz de media tarde, cálida, entrando en diagonal entre las palmeras.
+
+Las proporciones sentadas siguen siendo las del personaje: cabeza grande, cuerpo
+compacto, piernas cortas y zapatillas ligeramente sobredimensionadas.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. Todo lo importante —la cabeza, el círculo
+naranja y las manos— tiene que quedar entre los 250 y los 1470 px de alto y lejos del
+borde derecho, dejando además lugar libre para superponer subtítulos, título, logo y
+llamado a la acción. Ante la duda, componer más chico y más al centro.
+
+Sin personas reconocibles. Si hay gente, va lejos, chica y bien desenfocada.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz, misma profundidad de campo, sombra de contacto propia en el tronco en la
+dirección de la luz, escala coherente con lo que tiene alrededor y un leve rebote del
+color del entorno sobre su superficie. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista aunque el lugar sea creíble.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismo buzo canguro blanco, mismas zapatillas.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 38 · Primer plano en la costanera, al atardecer — patrón I
+
+```
+PRIMER PLANO de Hospedín: la cabeza y la parte alta de los hombros, mirando a cámara.
+
+ENCUADRE, IMPORTANTE: la cabeza tiene que quedar COMPLETA y con AIRE LIBRE POR ARRIBA.
+Entre la parte más alta de la cabeza y el borde superior de la imagen tiene que quedar
+un espacio vacío ancho, de al menos un sexto del alto total. La cabeza NO toca el
+borde de arriba y NO queda cortada.
+
+La cabeza ocupa aproximadamente la mitad del alto de la imagen, centrada, con el borde
+inferior del cuadro a la altura del pecho. Se le ven bien los ojos, las cejas y la boca
+— es un plano pensado para que se le lea la expresión y el movimiento de la boca al
+hablar. Expresión amigable y atenta.
+
+Se le ve el arranque del buzo canguro blanco en la parte baja del cuadro, con el logo
+apenas asomando.
+
+EL CÍRCULO NARANJA FLOTANTE tiene que quedar COMPLETO dentro del cuadro, en su
+posición habitual junto a la zona superior de la cabeza, y separado del borde derecho
+de la imagen.
+
+Fondo: la costanera del río al atardecer, con palmeras y el reflejo anaranjado del sol
+sobre el agua, COMPLETAMENTE desenfocado hasta volverse manchas de color cálido. No
+tiene que reconocerse ningún detalle concreto.
+
+Cámara a la altura de sus ojos, de frente, con lente que comprima un poco el fondo.
+Luz cálida y baja de atardecer sobre la cara, entrando de costado, sin sombras duras.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. La cabeza y el círculo naranja tienen que
+quedar entre los 250 y los 1470 px de alto y lejos del borde derecho, dejando además
+lugar libre para superponer subtítulos, título, logo y llamado a la acción. Ante la
+duda, componer más chico y más al centro.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz y misma profundidad de campo. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismos ojos, mismas cejas, misma boca.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 39 · Primer plano en el palmar, luz filtrada — patrón I
+
+```
+PRIMER PLANO de Hospedín: la cabeza y la parte alta de los hombros, mirando a cámara.
+
+ENCUADRE, IMPORTANTE: la cabeza tiene que quedar COMPLETA y con AIRE LIBRE POR ARRIBA.
+Entre la parte más alta de la cabeza y el borde superior de la imagen tiene que quedar
+un espacio vacío ancho, de al menos un sexto del alto total. La cabeza NO toca el
+borde de arriba y NO queda cortada.
+
+La cabeza ocupa aproximadamente la mitad del alto de la imagen, centrada, con el borde
+inferior del cuadro a la altura del pecho. Se le ven bien los ojos, las cejas y la boca
+— es un plano pensado para que se le lea la expresión y el movimiento de la boca al
+hablar. Expresión amigable y atenta.
+
+Se le ve el arranque del buzo canguro blanco en la parte baja del cuadro, con el logo
+apenas asomando.
+
+EL CÍRCULO NARANJA FLOTANTE tiene que quedar COMPLETO dentro del cuadro, en su
+posición habitual junto a la zona superior de la cabeza, y separado del borde derecho
+de la imagen.
+
+Fondo: un palmar del Litoral de día, con troncos de palmeras yatay y luz de sol
+filtrándose entre las hojas, COMPLETAMENTE desenfocado hasta volverse manchas de verde
+y dorado. No tiene que reconocerse ningún detalle concreto.
+
+Cámara a la altura de sus ojos, de frente, con lente que comprima un poco el fondo.
+Luz de media tarde filtrada entre las palmeras, con motas de luz cálida sobre la cara,
+sin sombras duras.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. La cabeza y el círculo naranja tienen que
+quedar entre los 250 y los 1470 px de alto y lejos del borde derecho, dejando además
+lugar libre para superponer subtítulos, título, logo y llamado a la acción. Ante la
+duda, componer más chico y más al centro.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz y misma profundidad de campo. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismos ojos, mismas cejas, misma boca.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 40 · Plano general entre las palmeras del palmar — patrón L
+
+```
+PLANO GENERAL de un palmar denso del Litoral, con Hospedín pequeño dentro del cuadro
+pero CLARAMENTE VISIBLE, rodeado de troncos de palmeras yatay a los dos lados.
+
+El paisaje ocupa la mayor parte: palmeras yatay altas y agrupadas en primer plano a
+ambos costados, formando un pasillo natural entre los troncos, con pastizal en el piso
+y más palmeras y cielo abierto al fondo, entre los troncos.
+
+HOSPEDÍN, IMPORTANTE:
+- Está de pie en el centro del pasillo que forman los troncos, aproximadamente en el
+  CENTRO del cuadro, ni arriba ni abajo del todo.
+- Su alto es aproximadamente un CUARTO del alto total de la imagen. Es chico frente al
+  paisaje, pero se lo distingue sin esfuerzo: la silueta de la cabeza, el círculo
+  naranja, el buzo blanco y las zapatillas se reconocen a simple vista.
+- Queda LEJOS del borde inferior: por debajo de él tiene que haber una franja ancha de
+  pastizal, de al menos un cuarto del alto de la imagen.
+- Está de espaldas parciales, mirando hacia el fondo del pasillo de palmeras, con los
+  brazos apenas separados del cuerpo.
+
+Todo el cuadro NÍTIDO, no desenfocado: acá el fondo es el protagonista y tiene que
+verse, incluidos los troncos cercanos a los costados.
+
+Cámara a la altura de una persona de pie, algo alejada, plano general.
+Luz de media mañana, cálida y despejada, filtrándose entre los troncos.
+
+A esta escala la cara no se lee, y está bien: este fondo no se usa para planos
+hablados. La silueta y los colores tienen que ser inconfundibles aunque la cara no se
+distinga.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. El personaje entero tiene que quedar entre los
+250 y los 1470 px de alto y lejos del borde derecho, dejando además lugar libre para
+superponer subtítulos, título, logo y llamado a la acción. Ante la duda, componer más
+chico y más al centro.
+
+Sin personas reconocibles. Si hay gente, va lejos, chica y bien desenfocada.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz, misma profundidad de campo, sombra de contacto propia en el pastizal en la
+dirección de la luz, escala coherente con las palmeras y un leve rebote del color del
+entorno sobre su superficie. No pegar el personaje encima de una foto.
+
+Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
+No convertirlo en una criatura fotorrealista aunque el lugar sea creíble.
+
+No rediseñar al personaje: misma silueta de cabeza, mismo círculo naranja flotante en
+su posición, mismas proporciones, mismo buzo canguro blanco, mismas zapatillas.
+
+EL LOGO DEL BUZO. Al frente del buzo va el símbolo de Hospeda —la forma redondeada
+azul, verde y turquesa con el punto naranja— y DEBAJO DEL SÍMBOLO la palabra hospeda,
+en minúsculas, en azul oscuro, con tipografía redondeada y limpia, centrada respecto
+del símbolo y claramente legible. El símbolo arriba y la palabra abajo, como una sola
+pieza. La palabra tiene que estar: no la omitas y no la reemplaces por otro texto. Se
+escribe hospeda, sin mayúsculas, sin acento y sin la extensión del dominio.
+```
+
+---
+
+## 41 · Plano general frente al río ancho, al amanecer — patrón L
+
+```
+PLANO GENERAL de la orilla de un río ancho del Litoral al amanecer, con Hospedín
+pequeño dentro del cuadro pero CLARAMENTE VISIBLE.
+
+El paisaje ocupa la mayor parte: el río se extiende ancho hasta el horizonte, con el
+cielo del amanecer en tonos rosados y dorados reflejados sobre el agua calma, una
+franja de arena y pastizal en la orilla, y una línea muy lejana de costa arbolada al
+otro lado.
+
+HOSPEDÍN, IMPORTANTE:
+- Está de pie sobre la orilla, aproximadamente en el CENTRO del cuadro, ni arriba ni
+  abajo del todo.
+- Su alto es aproximadamente un CUARTO del alto total de la imagen. Es chico frente al
+  paisaje, pero se lo distingue sin esfuerzo: la silueta de la cabeza, el círculo
+  naranja, el buzo blanco y las zapatillas se reconocen a simple vista.
+- Queda LEJOS del borde inferior: por debajo de él tiene que haber una franja ancha de
+  arena, de al menos un cuarto del alto de la imagen.
+- Está de espaldas parciales, mirando hacia el río y el amanecer, con los brazos
+  apenas separados del cuerpo.
+
+Todo el cuadro NÍTIDO, no desenfocado: acá el fondo es el protagonista y tiene que
+verse.
+
+Cámara a la altura de una persona de pie, algo alejada, plano general.
+Luz de amanecer, suave y dorada, entrando casi de frente y baja sobre el horizonte.
+
+A esta escala la cara no se lee, y está bien: este fondo no se usa para planos
+hablados. La silueta y los colores tienen que ser inconfundibles aunque la cara no se
+distinga.
+
+FORMATO Y CALIDAD
+
+Imagen vertical en formato 9:16, a la máxima resolución posible: se va a animar
+después y tiene que aguantar acercamientos.
+
+ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
+encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
+de abajo y los 180 px del borde derecho. El personaje entero tiene que quedar entre los
+250 y los 1470 px de alto y lejos del borde derecho, dejando además lugar libre para
+superponer subtítulos, título, logo y llamado a la acción. Ante la duda, componer más
+chico y más al centro.
+
+Sin personas reconocibles. Si hay gente, va lejos, chica y bien desenfocada.
+
+INTEGRACIÓN: el personaje y el ambiente se generan JUNTOS, en una sola pieza. Misma
+luz, misma profundidad de campo, sombra de contacto propia en la arena en la dirección
+de la luz, escala coherente con el paisaje y un leve rebote del color del entorno
+sobre su superficie. No pegar el personaje encima de una foto.
 
 Hospedín sigue siendo un personaje animado 3D con el mismo render de las referencias.
 No convertirlo en una criatura fotorrealista aunque el lugar sea creíble.
