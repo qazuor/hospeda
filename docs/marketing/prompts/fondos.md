@@ -1131,7 +1131,8 @@ Entre la parte más alta de la cabeza y el borde superior de la imagen tiene que
 un espacio vacío ancho, de al menos un sexto del alto total. La cabeza NO toca el borde
 de arriba y NO queda cortada.
 
-La cabeza ocupa aproximadamente la mitad del alto de la imagen, centrada, con el borde
+La cabeza ocupa aproximadamente la mitad del alto de la imagen y va DESPLAZADA A LA
+IZQUIERDA —su centro cae sobre el 42% del ancho, no en el medio—, con el borde
 inferior del cuadro a la altura del pecho. Se le ven bien los ojos, las cejas y la boca
 — es un plano pensado para que se le lea la expresión y el movimiento de la boca al
 hablar. Expresión amigable y atenta.
@@ -1140,8 +1141,15 @@ Se le ve el arranque del buzo canguro blanco en la parte baja del cuadro, con el
 apenas asomando.
 
 EL CÍRCULO NARANJA FLOTANTE tiene que quedar COMPLETO dentro del cuadro, en su
-posición habitual junto a la zona superior de la cabeza, y separado del borde derecho
-de la imagen.
+posición habitual junto a la zona superior de la cabeza, y **su borde derecho no puede
+pasar del 78% del ancho de la imagen**. Medido sobre 1080 px de ancho: el círculo
+termina antes de los 842 px. Es una medida, no una preferencia.
+
+⚠️ ESTE ES EL ERROR QUE YA SE COMETIÓ, EN CUATRO FONDOS DE ESTE PATRÓN. En un primer
+plano la cabeza es grande y empuja el círculo hacia afuera. Por eso la cabeza va
+desplazada a la izquierda: compuesta en el centro, el círculo cae dentro de la franja de
+180 px que la interfaz de Instagram y TikTok tapa. Componer la cabeza a la izquierda NO
+es opcional — es lo que hace que el círculo entre.
 
 Fondo: exterior de día del Litoral, verde y agua, COMPLETAMENTE desenfocado hasta
 volverse manchas de color. No tiene que reconocerse ningún lugar concreto.
@@ -2014,7 +2022,15 @@ Expresión amigable y atenta.
 Se le ve el arranque del buzo canguro blanco en la parte baja del cuadro.
 
 EL CÍRCULO NARANJA FLOTANTE tiene que quedar COMPLETO dentro del cuadro, en su
-posición habitual, y separado del borde derecho de la imagen.
+posición habitual junto a la zona superior de la cabeza, y **su borde derecho no puede
+pasar del 78% del ancho de la imagen**. Medido sobre 1080 px de ancho: el círculo
+termina antes de los 842 px. Es una medida, no una preferencia.
+
+⚠️ ESTE ES EL ERROR QUE YA SE COMETIÓ, EN CUATRO FONDOS DE ESTE PATRÓN. En un primer
+plano la cabeza es grande y empuja el círculo hacia afuera. Por eso la cabeza va
+desplazada a la izquierda: compuesta en el centro, el círculo cae dentro de la franja de
+180 px que la interfaz de Instagram y TikTok tapa. Componer la cabeza a la izquierda NO
+es opcional — es lo que hace que el círculo entre.
 
 Fondo: interior cálido de noche, con luces anaranjadas y madera, COMPLETAMENTE
 desenfocado hasta volverse manchas de color. No tiene que reconocerse ningún lugar
@@ -2031,7 +2047,7 @@ después y tiene que aguantar acercamientos.
 ZONAS SEGURAS. La imagen se publica en Instagram y TikTok, que dibujan su interfaz
 encima. Sobre un cuadro de 1080 x 1920 quedan tapados los 250 px de arriba, los 420 px
 de abajo y los 180 px del borde derecho. Todo lo importante tiene que quedar entre los
-250 y los 1470 px de alto y por dentro de los 900 px de ancho, dejando además lugar
+250 y los 1470 px de alto y por dentro de los 842 px de ancho, dejando además lugar
 libre para superponer subtítulos, título, logo y llamado a la acción.
 
 ⚠️ EL CÍRCULO NARANJA. Va a la derecha de la cabeza, así que si el personaje queda
@@ -2139,8 +2155,14 @@ celular: en esta imagen no hay teléfono.
 
 Mira a cámara con expresión tranquila y confiada.
 
-Detrás, las tablas del muelle que se alejan hacia el río, un bote amarrado al costado
-y juncos en la orilla, todo bien desenfocado. Sin carteles legibles.
+Detrás, las tablas del muelle que se alejan hacia el río, un bote de madera amarrado
+al costado y juncos en la orilla, todo bien desenfocado. Sin carteles legibles.
+
+⚠️ ES EL LITORAL ARGENTINO, NO UN LAGO EUROPEO. El río es ancho y de agua parda, con la
+otra orilla apenas insinuada a lo lejos. La vegetación es subtropical: sauces criollos
+de rama caída, ceibos y monte bajo enmarañado. NO abedules, NO coníferas, NO praderas
+prolijas, NO un bote de remos de club. La luz es la de un mediodía subtropical húmedo,
+no la de un lago templado.
 
 Cámara a la altura del pecho, plano medio.
 Luz de media mañana, cálida y despejada.
@@ -2378,8 +2400,14 @@ sus piernas. Postura relajada, de estar disfrutando el descanso.
 Mira a cámara con expresión tranquila y contenta. No sostiene celular: en esta imagen
 no hay ningún teléfono.
 
-Detrás, el resto del complejo termal: más piletas con vapor, sombrillas y palmeras,
-todo bien desenfocado. Sin carteles legibles.
+Detrás, el resto del complejo termal: más piletas con vapor y reposeras, todo bien
+desenfocado. Sin carteles legibles.
+
+⚠️ SON LAS TERMAS DE ENTRE RÍOS, NO UN OASIS NI UN SPA TROPICAL. El complejo es moderno
+y de líneas rectas: piletas de borde recto en piedra clara u hormigón, césped alrededor
+y arboleda baja de llanura. NO palmeras datileras, NO cascadas de roca artificial, NO
+sombrillas de paja, NO dunas ni vegetación de desierto. El paisaje entrerriano es plano
+y verde.
 
 Hospedín va CENTRADO en el cuadro, ocupando aproximadamente la mitad del alto de la
 imagen. Sin grandes zonas vacías a un costado.
@@ -2495,8 +2523,9 @@ Entre la parte más alta de la cabeza y el borde superior de la imagen tiene que
 un espacio vacío ancho, de al menos un sexto del alto total. La cabeza NO toca el
 borde de arriba y NO queda cortada.
 
-La cabeza ocupa aproximadamente la mitad del alto de la imagen, centrada, con el borde
-inferior del cuadro a la altura del pecho. Se le ven bien los ojos, las cejas y la boca
+La cabeza ocupa aproximadamente la mitad del alto de la imagen y va DESPLAZADA A LA
+IZQUIERDA: su centro cae sobre el 42% del ancho, no en el medio. El borde inferior del
+cuadro queda a la altura del pecho. Se le ven bien los ojos, las cejas y la boca
 — es un plano pensado para que se le lea la expresión y el movimiento de la boca al
 hablar. Expresión amigable y atenta.
 
@@ -2504,8 +2533,15 @@ Se le ve el arranque del buzo canguro blanco en la parte baja del cuadro, con el
 apenas asomando.
 
 EL CÍRCULO NARANJA FLOTANTE tiene que quedar COMPLETO dentro del cuadro, en su
-posición habitual junto a la zona superior de la cabeza, y separado del borde derecho
-de la imagen.
+posición habitual junto a la zona superior de la cabeza, y **su borde derecho no puede
+pasar del 78% del ancho de la imagen**. Medido sobre 1080 px de ancho: el círculo
+termina antes de los 842 px. Es una medida, no una preferencia.
+
+⚠️ ESTE ES EL ERROR QUE YA SE COMETIÓ. En un primer plano la cabeza es grande y empuja
+el círculo hacia afuera. Por eso la cabeza va desplazada a la izquierda: compuesta en el
+centro, el círculo cae dentro de la franja de 180 px que la interfaz de Instagram y
+TikTok tapa. Componer la cabeza a la izquierda NO es opcional — es lo que hace que el
+círculo entre.
 
 Fondo: la costanera del río al atardecer, con palmeras y el reflejo anaranjado del sol
 sobre el agua, COMPLETAMENTE desenfocado hasta volverse manchas de color cálido. No
@@ -2555,8 +2591,9 @@ Entre la parte más alta de la cabeza y el borde superior de la imagen tiene que
 un espacio vacío ancho, de al menos un sexto del alto total. La cabeza NO toca el
 borde de arriba y NO queda cortada.
 
-La cabeza ocupa aproximadamente la mitad del alto de la imagen, centrada, con el borde
-inferior del cuadro a la altura del pecho. Se le ven bien los ojos, las cejas y la boca
+La cabeza ocupa aproximadamente la mitad del alto de la imagen y va DESPLAZADA A LA
+IZQUIERDA: su centro cae sobre el 42% del ancho, no en el medio. El borde inferior del
+cuadro queda a la altura del pecho. Se le ven bien los ojos, las cejas y la boca
 — es un plano pensado para que se le lea la expresión y el movimiento de la boca al
 hablar. Expresión amigable y atenta.
 
@@ -2564,8 +2601,15 @@ Se le ve el arranque del buzo canguro blanco en la parte baja del cuadro, con el
 apenas asomando.
 
 EL CÍRCULO NARANJA FLOTANTE tiene que quedar COMPLETO dentro del cuadro, en su
-posición habitual junto a la zona superior de la cabeza, y separado del borde derecho
-de la imagen.
+posición habitual junto a la zona superior de la cabeza, y **su borde derecho no puede
+pasar del 78% del ancho de la imagen**. Medido sobre 1080 px de ancho: el círculo
+termina antes de los 842 px. Es una medida, no una preferencia.
+
+⚠️ ESTE ES EL ERROR QUE YA SE COMETIÓ. En un primer plano la cabeza es grande y empuja
+el círculo hacia afuera. Por eso la cabeza va desplazada a la izquierda: compuesta en el
+centro, el círculo cae dentro de la franja de 180 px que la interfaz de Instagram y
+TikTok tapa. Componer la cabeza a la izquierda NO es opcional — es lo que hace que el
+círculo entre.
 
 Fondo: un palmar del Litoral de día, con troncos de palmeras yatay y luz de sol
 filtrándose entre las hojas, COMPLETAMENTE desenfocado hasta volverse manchas de verde
@@ -2617,6 +2661,14 @@ ambos costados, formando un pasillo natural entre los troncos, con pastizal en e
 y más palmeras y cielo abierto al fondo, entre los troncos.
 
 HOSPEDÍN, IMPORTANTE:
+DE ESPALDAS A CÁMARA. Hospedín mira hacia el paisaje, no hacia el objetivo: se le ve la
+espalda y la nuca. No es un descuido — a esta escala la boca no se lee y el lip sync se
+desperdicia, así que la cara no aporta nada, mientras que la espalda mirando al lugar
+hace que el espectador mire lo mismo que él. Los dos videos que usan este fondo abren
+sin diálogo, justamente por eso.
+
+El logo del buzo se ve en la ESPALDA, con el símbolo y la palabra hospeda debajo.
+
 - Está de pie en el centro del pasillo que forman los troncos, aproximadamente en el
   CENTRO del cuadro, ni arriba ni abajo del todo.
 - Su alto es aproximadamente un CUARTO del alto total de la imagen. Es chico frente al
@@ -2684,6 +2736,14 @@ franja de arena y pastizal en la orilla, y una línea muy lejana de costa arbola
 otro lado.
 
 HOSPEDÍN, IMPORTANTE:
+DE ESPALDAS A CÁMARA. Hospedín mira hacia el paisaje, no hacia el objetivo: se le ve la
+espalda y la nuca. No es un descuido — a esta escala la boca no se lee y el lip sync se
+desperdicia, así que la cara no aporta nada, mientras que la espalda mirando al lugar
+hace que el espectador mire lo mismo que él. Los dos videos que usan este fondo abren
+sin diálogo, justamente por eso.
+
+El logo del buzo se ve en la ESPALDA, con el símbolo y la palabra hospeda debajo.
+
 - Está de pie sobre la orilla, aproximadamente en el CENTRO del cuadro, ni arriba ni
   abajo del todo.
 - Su alto es aproximadamente un CUARTO del alto total de la imagen. Es chico frente al
