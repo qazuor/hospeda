@@ -67,9 +67,10 @@ plataforma: es un gráfico que se diseña para este video.
 
 ## El montaje — 35 segundos, 3 cortes
 
-Mismo mecanismo que V24: el rectángulo del fondo 22 se mantiene vacío en las dos tiradas
-de Hailuo, y en edición se **entra con un zoom** hacia él para la comparación completa, y
-se **sale con el zoom inverso** para volver a Hospedín.
+Mismo mecanismo que V24: el rectángulo del fondo 22 entra con su fijo puesto en las dos
+tiradas de Hailuo, y en edición se **entra con un zoom** hacia él, donde el fijo se
+reemplaza por el tratamiento de texto completo, y se **sale con el zoom inverso** para
+volver a Hospedín.
 
 | # | Tiempo | Dura | De dónde sale | Plano | Qué pasa | Voz |
 |---|---|:-:|---|---|---|---|

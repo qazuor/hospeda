@@ -52,7 +52,7 @@ un **recorte ampliado**, nunca la pantalla completa en miniatura.
 
 ## Qué grabar
 
-25 grabaciones cubren los 37 videos. Están agrupadas por pantalla y no por video, porque
+26 grabaciones cubren los 37 videos. Están agrupadas por pantalla y no por video, porque
 casi todas se reutilizan.
 
 **Tipos**: `quieta` 2-3 s · `scroll` 10-15 s lento y parejo · `acción` el flujo entero
@@ -62,7 +62,7 @@ más margen, de una sola toma.
 
 | # | Grabar | Tipo | Videos |
 |:-:|---|:-:|---|
-| P1 | Home | scroll | V2 V3 V4 |
+| P1 | Home | scroll | V2 V3 V4 V9 |
 | P2 | Listado de alojamientos | scroll | V2 V8 V30 |
 | P3 | Buscador con filtros aplicados | acción | V30 |
 | P4 | Buscador en lenguaje natural | acción | V30 |
@@ -91,6 +91,19 @@ más margen, de una sola toma.
 | A7 | Checkout con Mercado Pago | acción | V12 V21 |
 | A8 | Planes, **sin que se lean los importes** | quieta | V13 |
 | A9 | Directorio de oficios | scroll | V28 |
+| A10 | **Importar ficha**: pegar el link, esperar, la ficha aparece completa | acción | V1 |
+
+### Lo que NO es grabación de pantalla
+
+Dos videos necesitan **filmación real**, que no entra en este catálogo y hay que
+conseguir aparte:
+
+| Video | Qué hace falta |
+|---|---|
+| **V26** | platos y mesas de los gastronómicos que se sumen |
+| **V27** | actividades reales: kayak, bicicletas, pesca |
+
+No se generan con IA. El detalle está en el `capturas.md` de cada uno.
 
 ### Fuera de la plataforma
 
@@ -98,7 +111,7 @@ más margen, de una sola toma.
 |:-:|---|:-:|---|
 | E1 | Búsqueda en Google que devuelve la ficha | acción | V22 |
 | E2 | Consulta a una IA que menciona un alojamiento | acción | V22 |
-| E3 | Interfaces de Airbnb / Booking / Instagram | scroll | V23 |
+| E3 | Interfaces de Airbnb / Booking / Instagram / Facebook | scroll | V23 |
 
 ---
 
@@ -122,3 +135,77 @@ ni la barra de estado con la hora y la batería.
 
 **Sin precios visibles en A8.** Un importe quemado en el video obliga a rehacerlo cuando
 cambie la lista. Mostrar la comparación de funciones, no los números.
+
+---
+
+## Los fijos — la pantalla nunca sale gris
+
+Los fondos traen el teléfono con la pantalla **gris lisa**, pensada como máscara de
+posición para componer encima. Pero un celular gris que de golpe se enciende con un
+video se lee como un error de edición, y en las tomas donde el teléfono se mueve no hay
+nada que componer: no se puede trackear.
+
+Por eso **todo teléfono que entra en cuadro lleva pantalla desde la tirada**. Hailuo la
+dibuja a partir de un fijo que se le adjunta como referencia, con el marcador
+`@######PANTALLA#######`. Lo probamos en V9 y responde bien.
+
+### El fijo es un frame de la grabación, no un screenshot
+
+Es la misma regla de *"se graba siempre, nunca se captura"*, aplicada al fijo: se
+exporta **el primer frame de la grabación** que esa toma va a mostrar, a 1080 × 2340,
+**ratio 0,4615**.
+
+Un screenshot da 0,5102 —le faltan la barra de estado y la de navegación— y esa
+diferencia del 10% es la que después no deja calzar la grabación dentro del marco que
+Hailuo dibujó. Con el teléfono en movimiento no se nota; con el teléfono quieto y una
+grabación compuesta encima, es exactamente el desfasaje.
+
+> ⚠️ El `capturas/pantalla.png` que ya existe mide **1080 × 2117**: es un screenshot.
+> Hay que reexportarlo como frame de P1 antes de usarlo en una toma con composición.
+
+### Cuando el fijo no sale de una grabación
+
+No todo lo que entra en un teléfono o en un inserto es una grabación de pantalla. **V24**
+abre su recuadro con **fotos propias** de un alojamiento y **V25** con un **tratamiento
+de texto** armado en edición; ninguno de los dos está en el catálogo de 25 y ninguno
+debería estarlo.
+
+La regla no cambia, solo la fuente: **el fijo es el primer frame de lo que ese recuadro
+va a mostrar**, sea una grabación, una foto o una placa. Se guarda igual en `capturas/`
+y se nombra por el video que lo estrena, sin código de grabación:
+
+```
+capturas/v24-foto1.png      la primera foto de la comparación
+capturas/v25-texto.png      el primer estado del tratamiento de texto
+```
+
+El ratio 0,4615 solo aplica cuando el fijo va **dentro del marco de un teléfono**. En un
+inserto rectangular manda la proporción de ese recuadro, que está en el montaje del
+video.
+
+### Cómo se nombran
+
+Un fijo por grabación, con **el mismo código de la grabación** de la que sale:
+
+```
+capturas/p1.png     primer frame de P1 (home)
+capturas/a3.png     primer frame de A3 (calendario)
+capturas/e1.png     primer frame de E1 (búsqueda en Google)
+```
+
+Cuando una toma necesita **otro momento** de la misma grabación —porque el video ya
+mostró el arranque y esta toma entra más adelante— se sufija con qué muestra:
+
+```
+capturas/p5-contacto.png    el botón de contacto dentro de la ficha
+capturas/a2-fotos.png       el paso de carga de fotos
+```
+
+El sufijo describe **qué se ve**, no en qué toma se usa: el mismo fijo lo comparten
+varios videos, igual que las grabaciones.
+
+### Qué necesita cada video
+
+Cada carpeta de video tiene su propio [`capturas.md`](.) con la lista exacta: qué fijo
+va en cada toma, de qué grabación sale y de qué momento. Es lo que hay que tener en la
+mano al sentarse a grabar.
