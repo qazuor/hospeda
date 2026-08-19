@@ -3,8 +3,9 @@
 ```
 prompts/
 ├── fondos.md        los 30 fondos de escena, un prompt cada uno
-├── personaje.md     las 5 láminas de referencia del personaje
+├── personaje.md     las 6 láminas de referencia del personaje
 ├── grabaciones.md   el estándar del teléfono, las 26 grabaciones y los fijos
+├── historias-destacadas.md   las 5 portadas de las burbujas del perfil
 └── vN/              una carpeta por video
     ├── montaje.md   diálogo, hoja de corte y los cortes
     ├── capturas.md  qué grabar con el celular y qué fijos hacen falta

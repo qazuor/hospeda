@@ -1,6 +1,6 @@
 # Láminas del personaje — prompts
 
-Las cinco láminas de referencia de Hospedín, en `../personaje/`. Son la fuente de
+Las seis láminas de referencia de Hospedín, en `../personaje/`. Son la fuente de
 verdad visual del personaje: van adjuntas en cada generación de fondo y de video, junto
 con la biblia completa de [`../personaje-hospedin.md`](../personaje-hospedin.md).
 
@@ -11,6 +11,7 @@ con la biblia completa de [`../personaje-hospedin.md`](../personaje-hospedin.md)
 | `expresiones.png` | Quince expresiones faciales rotuladas |
 | `bocas.png` | Quince formas de boca para sincronización labial |
 | `acciones.png` | Diecinueve poses de cuerpo entero rotuladas |
+| `acciones2.png` | Cuatro poses de cuerpo entero con objeto, rotuladas |
 
 ## Cómo generarlas
 
@@ -345,6 +346,74 @@ bien separadas, sin superponerse. Sin más texto que los nombres debajo de cada 
 
 ---
 
+## 6 · acciones2.png — cuatro poses con objeto
+
+> Lámina aparte de `acciones.png`, no una ampliación. `acciones.png` ya está generada,
+> aprobada y en disco, y la referencian las 165 tomas del corpus: regenerarla arriesga
+> deriva del personaje en todo lo ya escrito. Además, pasar de diecinueve a
+> veintitrés figuras empeora justo el riesgo que la propia lámina 5 advierte sobre el
+> círculo naranja.
+
+```
+Hoja de poses de uso del MISMO personaje de las imágenes anteriores, sobre fondo
+blanco liso.
+
+CUATRO POSES de cuerpo entero, todas del mismo tamaño, a la misma altura y con la
+misma iluminación, ordenadas en una grilla de CUATRO COLUMNAS POR UNA FILA. Debajo de
+cada una, su nombre en letra chica, en mayúsculas y en azul oscuro.
+
+CON EL MATE — sosteniendo con una mano un mate de calabaza con virola y bombilla de
+metal, ofrecido hacia adelante hacia la cámara, en un gesto de convidar
+CON EL CANDADO — sosteniendo en alto un candado simple ABIERTO, con el arco levantado
+y separado del cuerpo del candado, mostrando con claridad que no está cerrado
+CON LA LLAVE INGLESA — sosteniendo con una mano una llave inglesa de plomero, en
+actitud de oficio resuelto
+CON LAS PINZAS — sosteniendo con una mano unas pinzas largas de asado
+
+⚠️ EL MATE ES EL OBJETO MÁS DELICADO DE LOS CUATRO. Es un objeto cultural muy
+reconocible y un modelo lo deforma con facilidad. Pedirlo como un mate de calabaza con
+virola y bombilla de metal, simple y estilizado, del mismo estilo 3D que el personaje.
+LA BOMBILLA VA DENTRO DEL MATE, asomando por arriba de la boca del mate: nunca apoyada
+al costado ni separada de él.
+
+⚠️ EL CANDADO TIENE QUE LEERSE ABIERTO, sin ambigüedad: el arco levantado y fuera del
+cuerpo del candado. Un candado cerrado dice exactamente lo contrario de lo que necesita
+el video que lo pide.
+
+⚠️ LOS CUATRO OBJETOS SON SIMPLES Y ESTILIZADOS, del mismo estilo 3D que el personaje, y
+NUNCA TAPAN NI MODIFICAN AL PERSONAJE: no cubren la cara, no ocultan el logo del buzo y
+no desplazan el círculo naranja.
+
+EL CÍRCULO NARANJA flotante acompaña a la cabeza en las cuatro poses, en su posición
+habitual.
+
+⚠️ EL CÍRCULO NARANJA, EN CADA UNA DE LAS FIGURAS. Es lo primero que se pierde en una
+lámina con muchas figuras chicas: o desaparece en algunas, o se pega a la cabeza, o
+cambia de lado. Tiene que estar en TODAS, siempre FLOTANDO SEPARADO de la cabeza, del
+mismo tamaño relativo y en la misma posición respecto de ella. Ninguna figura de la
+lámina puede quedar sin él.
+
+⚠️ AIRE ALREDEDOR DE CADA FIGURA. Entre una figura y la siguiente, y entre cada figura y
+el borde de la lámina, tiene que quedar espacio libre suficiente para que el círculo
+naranja entre completo sin tocar nada. Preferir figuras más chicas y más separadas antes
+que apretadas.
+
+EL LOGO DEL BUZO se ve en las cuatro poses. Es el símbolo de Hospeda —forma redondeada
+tipo gota, azul con franja verde y turquesa abajo y punto naranja arriba— y DEBAJO DEL
+SÍMBOLO la palabra hospeda, en minúsculas, en azul oscuro, tipografía redondeada,
+centrada y legible. La palabra tiene que estar en las cuatro.
+
+MISMO PERSONAJE que las imágenes anteriores, sin ningún rediseño: misma silueta de
+cabeza, mismas proporciones, mismos colores, mismo buzo, mismas zapatillas.
+
+FORMATO
+Imagen horizontal, máxima resolución posible. Fondo blanco liso. Las cuatro poses del
+mismo tamaño, bien separadas, sin superponerse. Sin más texto que los nombres debajo de
+cada una.
+```
+
+---
+
 ## Cómo verificar cada lámina
 
 **El logo del buzo lleva la palabra `hospeda` debajo del símbolo**, en todas las poses
@@ -352,9 +421,9 @@ de frente. En las de espaldas, `hospeda.com.ar` impreso en la espalda.
 
 **El círculo naranja está en TODAS las figuras**, completo, **flotando separado de la
 cabeza** y en su posición. Contarlas una por una: quince en expresiones, diecinueve en
-acciones. Es el error más frecuente en láminas con muchas figuras chicas — desaparece
-en algunas, se pega a la cabeza o cambia de lado. Si una sola figura sale mal, la
-lámina no sirve como referencia.
+acciones, cuatro en acciones2. Es el error más frecuente en láminas con muchas figuras
+chicas — desaparece en algunas, se pega a la cabeza o cambia de lado. Si una sola
+figura sale mal, la lámina no sirve como referencia.
 
 **Las proporciones no se corrieron**: cabeza aproximadamente la mitad de la altura
 total, brazos y piernas cortos, zapatillas ligeramente grandes.
@@ -371,6 +440,13 @@ lista de lo que el personaje no debe ser.
 **El teléfono de la pose `con el teléfono` tiene el alto 2,17 veces el ancho** y la
 pantalla vacía en gris claro. Los prompts de video piden esa proporción, y cuando texto
 e imagen se contradicen el modelo le hace caso a la imagen.
+
+**En `acciones2.png`, revisar los cuatro objetos uno por uno**: en `con el mate`, la
+bombilla tiene que salir de DENTRO del mate (nunca apoyada al costado) y el mate no
+puede deformarse respecto de un mate de calabaza real; en `con el candado`, el arco
+tiene que verse LEVANTADO y separado del cuerpo del candado — si se lee cerrado, la
+lámina no sirve para el video que la pide; en `con la llave inglesa` y `con las
+pinzas`, que el objeto no tape la cara ni el logo del buzo.
 
 ## Después de generarlas
 
