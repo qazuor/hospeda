@@ -20,7 +20,7 @@
  * primitives themselves are covered by their own suites.
  */
 
-import { DestinationTypeEnum, RoleEnum, RoleGrantReason } from '@repo/schemas';
+import { DestinationTypeEnum, RoleEnum, RoleGrantReason, ServiceErrorCode } from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import type {
@@ -338,7 +338,7 @@ describe('BaseCommerceListingService.createForOwner (HOS-687 §6.1)', () => {
     it('aborts the whole unit of work when the grant fails', async () => {
         const { svc } = makeService();
         mockGrantRole.mockResolvedValue({
-            error: new ServiceError('INTERNAL_ERROR', 'grant exploded')
+            error: new ServiceError(ServiceErrorCode.INTERNAL_ERROR, 'grant exploded')
         });
 
         const result = (await svc.createForOwner(
