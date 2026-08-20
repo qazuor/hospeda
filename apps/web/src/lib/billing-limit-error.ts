@@ -53,7 +53,12 @@ const KNOWN_LIMIT_KEYS = new Set([
     'max_photos_per_accommodation',
     'max_active_promotions',
     'max_properties',
-    'max_staff_accounts'
+    'max_staff_accounts',
+    // HOS-688 — each has a `billing.limit.<key>.*` block in all three locales.
+    // Without the entry the at-limit toast falls back to
+    // `billing.limit.generic.*`, which never names the vertical just hit.
+    'max_gastronomies',
+    'max_experiences'
 ]);
 
 /**

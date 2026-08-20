@@ -288,6 +288,18 @@
                 "secondaryCta": "Ver minhas propriedades"
             }
         },
+        "max_gastronomies": {
+            "title": "Você atingiu o limite de gastronomias",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} gastronomia no seu plano. Faça um upgrade para publicar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} gastronomias no seu plano. Faça um upgrade para publicar mais.",
+            "cta": "Ver minha assinatura"
+        },
+        "max_experiences": {
+            "title": "Você atingiu o limite de experiências",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} experiência no seu plano. Faça um upgrade para publicar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} experiências no seu plano. Faça um upgrade para publicar mais.",
+            "cta": "Ver minha assinatura"
+        },
         "max_photos_per_accommodation": {
             "title": "Você atingiu o limite de fotos",
             "message_one": "Você já enviou {{currentCount}} de {{maxAllowed}} foto permitida no seu plano. Faça um upgrade para enviar mais.",
@@ -543,6 +555,8 @@
         },
         "limitLabel": {
             "max_accommodations": "Hospedagens publicadas",
+            "max_gastronomies": "Gastronomias publicadas",
+            "max_experiences": "Experiências publicadas",
             "max_photos_per_accommodation": "Fotos por hospedagem",
             "max_active_promotions": "Promoções ativas",
             "max_favorites": "Favoritos",

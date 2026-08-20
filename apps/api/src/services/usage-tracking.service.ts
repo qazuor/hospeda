@@ -27,6 +27,8 @@ import {
     AlertSubscriptionService,
     calculateThreshold,
     determineOverallThreshold,
+    ExperienceService,
+    GastronomyService,
     type LimitUsage,
     OwnerPromotionService,
     SearchHistoryService,
@@ -119,6 +121,12 @@ export type UsageKindValue = (typeof UsageKind)[keyof typeof UsageKind];
  */
 const USAGE_KIND_BY_LIMIT_KEY: Readonly<Record<string, UsageKindValue>> = {
     [LimitKey.MAX_ACCOMMODATIONS]: UsageKind.STOCK,
+    // The commerce per-vertical caps are stock, and they are MEASURED: with no
+    // counter each would report `0` for an owner already at their cap — a cap
+    // that always reads empty, which is indistinguishable from a working one
+    // until somebody counts rows (HOS-688).
+    [LimitKey.MAX_GASTRONOMIES]: UsageKind.STOCK,
+    [LimitKey.MAX_EXPERIENCES]: UsageKind.STOCK,
     [LimitKey.MAX_ACTIVE_PROMOTIONS]: UsageKind.STOCK,
     [LimitKey.MAX_FAVORITES]: UsageKind.STOCK,
     [LimitKey.MAX_ACTIVE_ALERTS]: UsageKind.STOCK,
@@ -669,6 +677,27 @@ export class UsageTrackingService {
                 case LimitKey.MAX_ACCOMMODATIONS: {
                     const accommodationService = new AccommodationService({ logger: apiLogger });
                     const result = await accommodationService.count(actor, {
+                        ownerId: userId
+                    } as never);
+                    return result.data?.count || 0;
+                }
+
+                case LimitKey.MAX_GASTRONOMIES: {
+                    // Counted exactly the way MAX_ACCOMMODATIONS is, and for the
+                    // same reason: the cap is per OWNER, so the owner's listing
+                    // count IS the usage. `ownerId` is a declared filter on
+                    // GastronomySearchSchema — a search schema that silently
+                    // dropped it would count every listing on the platform.
+                    const gastronomyService = new GastronomyService({ logger: apiLogger });
+                    const result = await gastronomyService.count(actor, {
+                        ownerId: userId
+                    } as never);
+                    return result.data?.count || 0;
+                }
+
+                case LimitKey.MAX_EXPERIENCES: {
+                    const experienceService = new ExperienceService({ logger: apiLogger });
+                    const result = await experienceService.count(actor, {
                         ownerId: userId
                     } as never);
                     return result.data?.count || 0;

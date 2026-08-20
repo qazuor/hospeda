@@ -376,6 +376,8 @@
             "buyAddon": "Ampliar com um complemento",
             "limits": {
                 "max_accommodations": "Hospedagens publicadas",
+                "max_gastronomies": "Gastronomias publicadas",
+                "max_experiences": "Experiências publicadas",
                 "max_photos_per_accommodation": "Fotos por hospedagem",
                 "max_active_promotions": "Promoções ativas",
                 "max_favorites": "Favoritos salvos",
