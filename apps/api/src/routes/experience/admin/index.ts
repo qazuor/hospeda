@@ -25,6 +25,7 @@ import { adminGetExperienceFaqsRoute } from './getFaqs';
 import { adminGetExperienceMediaRoute } from './getMedia';
 import { adminHardDeleteExperienceRoute } from './hardDelete';
 import { adminListExperiencesRoute } from './list';
+import { adminModerateExperienceRoute } from './moderate';
 import { adminExperienceOptionsRoute } from './options';
 import { adminPatchExperienceRoute } from './patch';
 import { adminRemoveExperienceFaqRoute } from './removeFaq';
@@ -76,6 +77,11 @@ app.route('/', adminRestoreExperienceRoute);
 
 // POST /:id/assign-owner - Set/replace listing owner
 app.route('/', adminAssignExperienceOwnerRoute);
+
+// POST /:id/moderate - Apply the moderation verdict to the LISTING (HOS-686).
+// Distinct from /reviews/:id/moderate above, which moderates reviews ABOUT a
+// listing: different permission, different subject.
+app.route('/', adminModerateExperienceRoute);
 
 // PATCH /:id/faqs/reorder - Reorder FAQs for a listing
 // Registered before /:id/faqs routes to prevent "reorder" matching as a faqId param
