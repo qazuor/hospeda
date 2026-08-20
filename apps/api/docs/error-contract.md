@@ -105,6 +105,55 @@ leak exactly what the matching status is there to hide.
 exist" are no longer distinguishable, so a support report loses that hint. The
 server log keeps it in full.
 
+### Identical means the whole body, not the status (HOS-600)
+
+H-72 fixed the middleware. HOS-600 found the same leak in seven routes that do
+the ownership check themselves, in two shapes — and the second shape is the one
+worth remembering, because it survived a review that compared status codes.
+
+`/protected/users/:id` was the visible shape: **403** for a foreign account,
+**404** for an unknown id, and the 403's message even named the permission the
+caller was missing (*"Only self or users with USER_READ_ALL can view user"*).
+Because `findOne` returns soft-deleted rows, it also disclosed accounts that had
+been DELETED — not just that an id is real, but that it once was.
+
+`/protected/accommodations/:id` was the invisible shape. Both branches answered
+**404 `NOT_FOUND`**. The route hand-wrote `'Accommodation not found'`; the
+service composed `` `${entityName} not found` `` → `'accommodation not found'`.
+One capital letter, and any status-shaped audit passes it. The experience and
+gastronomy twins had copied the same line.
+
+Three rules follow:
+
+1. **The message is composed in one place.** `entityNotFoundError({ entityName })`
+   (`@repo/service-core`, `utils/not-found.ts`) builds both branches — the
+   missing-row 404 inside `getByField`, and the ownership 404 in the route.
+   Never hand-write `'<Entity> not found'` in a route that delegates existence
+   to a service: two spellings of one response IS the defect, not the capital.
+   Entity names shared between a service and its permissions module live in
+   `services/entity-names.ts`, a module that imports nothing — declaring them
+   anywhere else produced a cycle in which the class static initialised to
+   `undefined` and every message became `'undefined not found'`.
+2. **Run the permission check BEFORE the row lookup when that closes the
+   oracle.** `user/protected/getById.ts` now refuses a foreign id without
+   touching the database. Same body, and no timing difference either.
+3. **A refusal names neither the permission nor the id** (rule R5 applied to
+   4xx): `'You may only start a subscription for your own commerce listing.'`
+   and `` `Entity not found: ${entityType} with id ${entityId}` `` were both
+   replaced by a single constant shared by the two branches.
+
+**Test the pair, not the branch.** Two adjacent green assertions —
+"403 when foreign" next to "404 when missing" — is what the bug looked like from
+inside the suite. Compare the two answers as ONE value
+(`expect(foreign).toEqual(missing)`), never with `expect.objectContaining`,
+which is blind to a field only one side carries.
+
+The visibility gates inside `accommodation.permissions.ts` still answer **403**
+for a foreign PRIVATE listing (`'Permission denied to view accommodation'`) and
+for RESTRICTED without VIP (`'VIP access required'`). Those are unresolved: the
+VIP one is arguably a deliberate product signal, so changing them is an owner
+decision rather than a contract fix.
+
 ## What enforces this
 
 - [`test/utils/error-contract.guard.test.ts`](../test/utils/error-contract.guard.test.ts)
@@ -118,6 +167,19 @@ server log keeps it in full.
 - [`test/utils/http-status-to-code.guard.test.ts`](../test/utils/http-status-to-code.guard.test.ts)
   — every status carries its code on both formatters, and no 4xx is
   `INTERNAL_ERROR`.
+- [`test/utils/existence-disclosure.guard.test.ts`](../test/utils/existence-disclosure.guard.test.ts)
+  — HOS-600, for routes that check ownership themselves rather than through the
+  middleware. Two assertions: a branch comparing a row's owner to `actor.id`
+  may not construct a 403, and a route that delegates existence to
+  `service.getById` may not hand-write its own not-found message. Both
+  mutation-tested against the original defects.
+- [`test/routes/existence-disclosure.paired-probe.test.ts`](../test/routes/existence-disclosure.paired-probe.test.ts)
+  — the behavioural half: foreign vs invented id on the users, accommodation,
+  experience and gastronomy protected reads, compared as whole bodies. Note it
+  un-mocks `@repo/service-core` locally: `test/setup.ts` replaces the package
+  globally including `ServiceError` itself, and under that mock every route
+  error becomes a 500 — a paired probe would compare two artefacts of the mock
+  and pass with the bug in place.
 
 ## Known exception
 
