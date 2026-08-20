@@ -106,8 +106,12 @@ function enforceCommerceListingLimit(vertical: CommerceVertical): AppMiddleware 
     return async (c, next) => {
         const actor = getActorFromContext(c);
 
-        if (!actor || !actor.id) {
-            // Not authenticated — the auth middleware owns this answer.
+        if (!actor?.id) {
+            // Not authenticated. `createProtectedRoute` has already rejected a
+            // guest by the time this runs, so this is a defensive no-op rather
+            // than the auth decision — that answer belongs to the auth
+            // middleware, and duplicating it here would give the same request
+            // two different rejections depending on ordering.
             await next();
             return;
         }

@@ -80,11 +80,10 @@ function stubCount(
     service: typeof GastronomyService | typeof ExperienceService,
     count: number
 ): void {
-    vi.spyOn(service.prototype, 'count').mockResolvedValue({
-        data: { count },
-        error: undefined
-        // biome-ignore lint/suspicious/noExplicitAny: BaseCrudService.count's Result generic is not nameable at the call site.
-    } as any);
+    // `as never`: BaseCrudService.count's Result generic is not nameable at the
+    // call site, and the shape asserted here is only the two fields it reads.
+    const result = { data: { count }, error: undefined } as never;
+    vi.spyOn(service.prototype, 'count').mockResolvedValue(result);
 }
 
 /**
@@ -234,11 +233,11 @@ describe('commerce listing cap — end to end (HOS-688 AC-30)', () => {
         // The divergence from `enforceAccommodationLimit`, which calls next() on
         // a count failure. This is the ONLY gate on the create path, so waving
         // the request through would hand out an uncapped listing silently.
-        vi.spyOn(GastronomyService.prototype, 'count').mockResolvedValue({
+        const failingCount = {
             data: undefined,
             error: { code: 'INTERNAL_ERROR', message: 'boom' }
-            // biome-ignore lint/suspicious/noExplicitAny: see stubCount.
-        } as any);
+        } as never;
+        vi.spyOn(GastronomyService.prototype, 'count').mockResolvedValue(failingCount);
 
         const res = await app.request(GASTRONOMY_PATH, {
             method: 'POST',
