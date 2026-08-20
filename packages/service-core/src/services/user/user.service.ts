@@ -66,8 +66,9 @@ import type {
     ServiceOutput
 } from '../../types';
 import { listOptionsSchema, ServiceError } from '../../types';
-import { serviceLogger } from '../../utils';
+import { entityNotFoundError, serviceLogger } from '../../utils';
 import { checkCanFindOptions, hasPermission } from '../../utils/permission';
+import { USER_ENTITY_NAME } from '../entity-names';
 import { grantRole } from '../user-role/user-role.service.js';
 import {
     normalizeCreateInput,
@@ -143,7 +144,7 @@ export class UserService extends BaseCrudService<
     typeof UserUpdateInputSchema,
     typeof UserSearchSchema
 > {
-    static readonly ENTITY_NAME = 'user';
+    static readonly ENTITY_NAME = USER_ENTITY_NAME;
     protected readonly entityName = UserService.ENTITY_NAME;
     protected readonly model: UserModel;
     protected readonly schema = UserSchema;
@@ -515,13 +516,19 @@ export class UserService extends BaseCrudService<
 
     /**
      * Permission: Self or actor with USER_READ_ALL permission can view.
+     *
+     * A caller who may not read this row gets the SAME 404 a caller asking for
+     * an id that does not exist gets — never a 403 (HOS-600). A 403 here
+     * answered "this account is real and is not yours", which turned the
+     * endpoint into an existence oracle for any id obtained elsewhere; because
+     * `findOne` still returns soft-deleted rows, it also disclosed accounts
+     * that had been DELETED. The message is the shared canonical one, and it
+     * deliberately no longer names the permission that would have been needed:
+     * that told an unauthorised caller exactly what to go looking for.
      */
     protected _canView(actor: Actor, entity: User): void {
         if (actor.id !== entity.id && !hasPermission(actor, PermissionEnum.USER_READ_ALL)) {
-            throw new ServiceError(
-                ServiceErrorCode.FORBIDDEN,
-                'Only self or users with USER_READ_ALL can view user'
-            );
+            throw entityNotFoundError({ entityName: this.entityName });
         }
     }
 
