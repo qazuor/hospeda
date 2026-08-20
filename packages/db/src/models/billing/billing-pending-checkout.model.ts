@@ -33,7 +33,7 @@ export class BillingPendingCheckoutModel extends BaseModelImpl<BillingPendingChe
     public entityName = 'billing_pending_checkouts';
 
     protected getTableName(): string {
-        return 'billing_pending_checkouts';
+        return 'billingPendingCheckouts';
     }
 
     /**

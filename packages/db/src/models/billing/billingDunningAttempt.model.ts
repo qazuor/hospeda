@@ -14,7 +14,7 @@ export class BillingDunningAttemptModel extends BaseModelImpl<BillingDunningAtte
     public entityName = 'billing_dunning_attempts';
 
     protected getTableName(): string {
-        return 'billing_dunning_attempts';
+        return 'billingDunningAttempts';
     }
 }
 

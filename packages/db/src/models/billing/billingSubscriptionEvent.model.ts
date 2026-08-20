@@ -18,7 +18,7 @@ export class BillingSubscriptionEventModel extends BaseModelImpl<BillingSubscrip
     public entityName = 'billing_subscription_events';
 
     protected getTableName(): string {
-        return 'billing_subscription_events';
+        return 'billingSubscriptionEvents';
     }
 }
 

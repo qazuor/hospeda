@@ -14,7 +14,7 @@ export class BillingNotificationLogModel extends BaseModelImpl<BillingNotificati
     public entityName = 'billing_notification_log';
 
     protected getTableName(): string {
-        return 'billing_notification_log';
+        return 'billingNotificationLog';
     }
 }
 

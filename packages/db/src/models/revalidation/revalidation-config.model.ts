@@ -18,7 +18,7 @@ export class RevalidationConfigModel extends BaseModelImpl<RevalidationConfigRec
     public entityName = 'revalidation_config';
 
     protected getTableName(): string {
-        return 'revalidation_config';
+        return 'revalidationConfig';
     }
 
     /**
