@@ -26,6 +26,7 @@ export {
     checkCanDeleteCommerce,
     checkCanEditAll,
     checkCanEditOwn,
+    checkCanModerateCommerceListing,
     checkCanModerateReview,
     checkCanViewAll
 } from './commerce.permissions';

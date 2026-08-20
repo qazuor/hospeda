@@ -21,11 +21,13 @@ import { OwnerSelect } from '@/components/selects/OwnerSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
+import { CommerceListingModerationCard } from '@/features/commerce/components/CommerceListingModerationCard';
 import {
     useAssignExperienceOwnerMutation,
     useDeleteExperienceMutation,
     useExperiencePage,
     useExperiencePendingReviewsQuery,
+    useModerateExperienceMutation,
     useModerateExperienceReviewMutation
 } from '@/features/experience';
 import { useTranslations } from '@/hooks/use-translations';
@@ -210,7 +212,9 @@ function ExperienceViewPage() {
     const { t } = useTranslations();
     const entityData = useExperiencePage(id);
 
-    const experience = entityData.entity as { name?: string; ownerId?: string | null } | undefined;
+    const experience = entityData.entity as
+        | { name?: string; ownerId?: string | null; moderationState?: string | null }
+        | undefined;
 
     return (
         <div className="space-y-4">
@@ -231,6 +235,17 @@ function ExperienceViewPage() {
                     onDeleted={() => navigate({ to: '/experiences' })}
                 />
             </div>
+
+            {/* HOS-686 AC-26: the reject action, where an admin can reach it.
+                `POST /:id/moderate` without this control would only be callable
+                by hand. */}
+            <CommerceListingModerationCard
+                entityId={id}
+                entityName={experience?.name ?? id}
+                entityLabelKey="admin-entities.entities.experience.singular"
+                currentValue={experience?.moderationState}
+                useModerateMutation={useModerateExperienceMutation}
+            />
 
             <ExperienceAssignOwner
                 experienceId={id}

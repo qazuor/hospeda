@@ -25,7 +25,9 @@
 
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
+import type { ContentModerationChangeInput } from '@repo/schemas';
 import {
+    ContentModerationChangeInputSchema,
     DestinationTypeEnum,
     PermissionEnum,
     RoleEnum,
@@ -49,6 +51,7 @@ import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction';
 import { grantRole } from '../user-role/user-role.service';
 import { syncCommerceAmenityJunction, syncCommerceFeatureJunction } from './commerce.junction-sync';
+import { checkCanModerateCommerceListing } from './commerce.permissions';
 import type { CommerceListingHookState } from './commerce.types';
 import { scheduleCommerceListingRevalidation } from './commerce-revalidation.js';
 
@@ -278,6 +281,110 @@ export abstract class BaseCommerceListingService<
             amenityIds: amenityRows.items.map((row) => row.amenityId as string),
             featureIds: featureRows.items.map((row) => row.featureId as string)
         };
+    }
+
+    // -----------------------------------------------------------------------
+    // Listing moderation (HOS-686)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Applies the platform's moderation verdict to one commerce listing.
+     *
+     * Lives on the shared base so gastronomy and experience inherit ONE
+     * implementation (HOS-589 G-2) instead of carrying a copy each — the
+     * sharing layer accommodation never had.
+     *
+     * ## Why this exists
+     *
+     * The commerce visibility reconciler already honours
+     * `moderationState === REJECTED` (it flips the listing to `PRIVATE` /
+     * `INACTIVE`), but nothing in the system could WRITE that value: the owner
+     * write schemas strip `moderationState` on purpose, and no commerce service
+     * exposed a moderate action. The branch was live and unreachable. This is
+     * the only writer, and it is the post-publication control that replaces the
+     * pre-publication admin gate.
+     *
+     * ## Why it does NOT go through `this.update()`
+     *
+     * `update()` runs `_canUpdate`, which is `checkCanEditOwnOrAll` —
+     * `COMMERCE_EDIT_ALL`, or the owner holding `COMMERCE_EDIT_OWN`. Routing
+     * the verdict through it would AND the moderation authority with the edit
+     * authority: an account granted `COMMERCE_MODERATION_CHANGE` and nothing
+     * else would be refused, and the new permission would be decorative. A
+     * listing's owner must never be able to clear their own rejection either.
+     * So the write goes through the model, exactly like every other `moderate()`
+     * in the repo.
+     *
+     * ## Why it schedules revalidation explicitly — the divergence that matters
+     *
+     * `AccommodationService.moderate` (`accommodation.service.ts:1979`) writes
+     * through `this.model.update()` too, but stops there. That bypasses
+     * `_afterUpdate`, which is where cache revalidation is scheduled — so
+     * moderating an accommodation does not purge the edge cache today.
+     *
+     * Copied faithfully, that would be fatal here rather than cosmetic:
+     * rejecting would mark the row, the reconciler would flip it to `PRIVATE`,
+     * and Cloudflare would keep serving the rejected listing off its destination
+     * page. Reactive moderation is the entire justification for removing the
+     * pre-publication gate, and it only holds if the takedown reaches the edge.
+     * Hence the explicit `_scheduleListingRevalidation` call below — the one
+     * place in HOS-589 where mirroring accommodation is the wrong instruction.
+     *
+     * The purge is scheduled with the row as it stands immediately AFTER the
+     * verdict, while it is still `ACTIVE` / `PUBLIC`: that is precisely the
+     * public footprint that has to be evicted. Waiting for the reconciler to
+     * flip visibility first would make `isCommerceListingPubliclyVisible` false
+     * and purge nothing.
+     *
+     * Accommodation's own missing purge is a pre-existing bug in another domain
+     * and is deliberately NOT fixed here (HOS-589 NG-3).
+     *
+     * @param input - The actor, the listing id, and the new moderation state.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns The updated listing, or a `ServiceError`.
+     */
+    public async moderate(
+        input: { readonly actor: Actor; readonly id: string } & ContentModerationChangeInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity>> {
+        return this.runWithLoggingAndValidation({
+            methodName: `moderate(id=${input.id})`,
+            input: { actor: input.actor, moderationState: input.moderationState },
+            schema: ContentModerationChangeInputSchema,
+            ctx,
+            execute: async (validated, validatedActor, execCtx) => {
+                checkCanModerateCommerceListing(validatedActor);
+
+                const listing = await this.model.findById(input.id, execCtx?.tx);
+                if (!listing || listing.deletedAt) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} ${input.id} not found`
+                    );
+                }
+
+                const patch = {
+                    moderationState: validated.moderationState,
+                    updatedById: validatedActor.id
+                    // TYPE-WORKAROUND: the generic base cannot narrow a two-key control patch to Partial<TEntity>; both keys exist on every commerce listing table.
+                } as unknown as Partial<TEntity>;
+
+                const updated = await this.model.update({ id: input.id }, patch, execCtx?.tx);
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        `Failed to update ${this.entityName} moderationState`
+                    );
+                }
+
+                // AC-36. Not optional, not best-effort decoration: without this
+                // the rejected listing keeps being served from the edge.
+                await this._scheduleListingRevalidation(updated);
+
+                return updated;
+            }
+        });
     }
 
     // -----------------------------------------------------------------------

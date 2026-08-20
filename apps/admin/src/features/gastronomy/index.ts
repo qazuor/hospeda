@@ -47,6 +47,7 @@ export {
     useDeleteGastronomyMutation,
     useGastronomyPendingReviewsQuery,
     useGastronomyQuery,
+    useModerateGastronomyMutation,
     useModerateGastronomyReviewMutation,
     useRestoreGastronomyMutation,
     useUpdateGastronomyMutation

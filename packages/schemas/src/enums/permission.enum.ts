@@ -947,6 +947,17 @@ export enum PermissionEnum {
     COMMERCE_EDIT_ALL = 'commerce.editAll', // Allows editing any commerce listing regardless of ownership.
     COMMERCE_DELETE = 'commerce.delete', // Allows soft-deleting any commerce listing.
     COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview', // Allows moderating reviews on commerce listings.
+    // HOS-686: the LISTING's own moderation verdict — distinct from
+    // COMMERCE_MODERATE_REVIEW above, which moderates reviews written ABOUT a
+    // listing. Grepping "moderate" under commerce finds the review permission
+    // first, so the two are spelled apart on purpose.
+    //
+    // Spelled `commerce.moderationChange` (camelCase second segment), NOT
+    // `commerce.moderation.change` like its accommodation/event/post
+    // counterparts: the whole `commerce.*` family is camelCase, and a dotted
+    // third segment here would add a fourteenth dual-spelled family to the
+    // baseline frozen by `permission-naming-convention.guard.test.ts`.
+    COMMERCE_MODERATION_CHANGE = 'commerce.moderationChange', // Allows changing the moderation state of a commerce LISTING (gastronomy/experience).
 
     // PARTNER: Partners program (SPEC-271)
     PARTNER_CREATE = 'partner.create', // Allows creating a new partner.

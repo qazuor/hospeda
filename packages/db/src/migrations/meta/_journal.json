@@ -645,6 +645,13 @@
       "when": 1786939387415,
       "tag": "0091_backfill_accommodation_price_currency",
       "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1787244155690,
+      "tag": "0092_military_hemingway",
+      "breakpoints": true
     }
   ]
 }

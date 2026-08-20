@@ -88,6 +88,22 @@ export const useModerateExperienceReviewMutation = () =>
     experienceHooks.useModerateReviewMutation();
 
 /**
+ * Mutation hook to moderate the LISTING itself (HOS-686).
+ *
+ * NOT {@link useModerateExperienceReviewMutation}, which moderates reviews
+ * written *about* a listing. This one writes `moderationState` on the listing —
+ * the verdict the commerce visibility reconciler reads to take a rejected
+ * listing off the public site.
+ *
+ * Shaped as `(id) => mutation` so `InlineStateSelectCell` can drive it.
+ *
+ * @param id - UUID of the experience listing
+ * @returns TanStack Query `UseMutationResult`
+ */
+export const useModerateExperienceMutation = (id: string) =>
+    experienceHooks.useModerateListingMutation(id);
+
+/**
  * Query hook to fetch reviews pending moderation for experience listings.
  *
  * @param params - Optional pagination and filter params
