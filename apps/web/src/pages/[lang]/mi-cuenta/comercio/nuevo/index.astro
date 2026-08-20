@@ -5,14 +5,24 @@
  * create flow (HOS-166 §8 point 2). The owner picks gastronomy or experience,
  * then lands on `[vertical].astro`'s create form.
  *
+ * ## Access (HOS-687)
+ *
+ * A session, and nothing else — same as the form it leads to. This picker
+ * holds no listing data of its own; it is the doorway to `[vertical].astro`.
+ * Leaving its commerce-role gate in place while opening the form's would have
+ * made the form reachable only by typing its URL, which is the "looks fixed,
+ * still closed" outcome HOS-687 exists to avoid. The commerce INDEX and the
+ * editor keep their role gate: those read and write listings that must already
+ * exist.
+ *
  * @route     /[lang]/mi-cuenta/comercio/nuevo/
- * @rendering SSR (prerender = false — authenticated, role-gated)
+ * @rendering SSR (prerender = false — authenticated, any signed-in account)
  */
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
-import { hasCommerceNavAccess } from '@/lib/nav-gating';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildLoginRedirect } from '@/lib/middleware-helpers';
 import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
@@ -20,14 +30,11 @@ export const prerender = false;
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
 
+// HOS-687: session only, and the return URL survives sign-in — see the
+// module docstring.
 const user = Astro.locals.user;
 if (!user) {
-    return Astro.redirect(buildUrl({ locale, path: 'auth/signin' }));
-}
-// HOS-296: gate through the shared `nav-gating` predicate over the role SET,
-// so a COMMERCE_OWNER who is ALSO a HOST keeps commerce access (AC-1).
-if (!hasCommerceNavAccess({ roles: user.roles })) {
-    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+    return Astro.redirect(buildLoginRedirect({ locale, currentUrl: Astro.url.pathname }));
 }
 
 const title = t('commerce.owner.create.pickVertical.title', 'Crear nuevo comercio');
