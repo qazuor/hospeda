@@ -1,14 +1,22 @@
 /**
  * @fileoverview
  * Regression test for HOS-712: `0059-purge-test-and-commerce-example` used to
- * delete `billing_customers` before its RESTRICT children, on the false
- * assumption ("Deleting the customer CASCADEs its subscriptions") that the
- * delete cascaded. It does not — `billing_subscriptions.customer_id`,
+ * delete `billing_customers` before its RESTRICT/NO ACTION children, on the
+ * false assumption ("Deleting the customer CASCADEs its subscriptions") that
+ * the delete cascaded. It does not — `billing_subscriptions.customer_id`,
  * `billing_addon_purchases.customer_id`, `billing_dunning_attempts.customer_id`,
- * and `billing_invoices.customer_id` are all `ON DELETE restrict`. Deleting
- * the customer first aborts the whole seed-migration run the moment a purged
- * customer still has a live row in any of them — exactly what production
- * measured on 2026-08-20 for three gastronomy-owner accounts.
+ * `billing_invoices.customer_id`, and `billing_payments.customer_id` are all
+ * `ON DELETE restrict`; `billing_payments.subscription_id` is `ON DELETE no
+ * action`, which Postgres enforces identically. Deleting the customer (or a
+ * subscription with an unresolved payment still hanging off it) first aborts
+ * the whole seed-migration run the moment a purged customer still has a live
+ * row somewhere in that chain — exactly what production measured on
+ * 2026-08-20: three gastronomy-owner accounts via `billing_subscriptions`,
+ * and `qazuor+r1host@gmail.com` via a real `succeeded` $18,000 ARS
+ * `billing_payments` row hanging off its subscription. Per owner decision
+ * (2026-08-20, HOS-712), that payment row IS purged along with the rest of
+ * the account — the local mirror of the charge is lost, the charge itself
+ * still exists in MercadoPago.
  *
  * A real database rather than a stubbed `ctx.db`, for the same reason as
  * `fkGuard.integration.test.ts` and `staff-email-domain-to-com-ar.integration.test.ts`:
@@ -33,6 +41,7 @@ import {
     billingCustomers,
     billingDunningAttempts,
     billingInvoices,
+    billingPayments,
     billingSubscriptions,
     type DrizzleClient,
     eq,
@@ -62,6 +71,12 @@ loadEnv({ path: path.resolve(__dirname, '../../../../apps/api/.env.local') });
 const PRIMARY_EMAIL = 'gastro-owner-julieta@local.test';
 /** A second purged account, used by the "every RESTRICT child" test. */
 const SECONDARY_EMAIL = 'gastro-owner-rodrigo@local.test';
+/**
+ * The literal purged account production actually found holding a
+ * `billing_payments` row (HOS-712): a real `succeeded` $18,000 ARS payment
+ * hanging off one of its subscriptions.
+ */
+const PAYMENT_EMAIL = 'qazuor+r1host@gmail.com';
 
 const STUB_ACTOR: Actor = {
     id: 'actor-stub-hos712-0059-fk-order',
@@ -130,20 +145,28 @@ async function insertBillingCustomer(tx: DrizzleClient, externalId: string): Pro
     return row.id;
 }
 
-/** Inserts a minimal `billing_subscriptions` row. */
-async function insertBillingSubscription(tx: DrizzleClient, customerId: string): Promise<void> {
+/** Inserts a minimal `billing_subscriptions` row, returning its id. */
+async function insertBillingSubscription(tx: DrizzleClient, customerId: string): Promise<string> {
     const now = new Date();
     const periodEnd = new Date(now);
     periodEnd.setMonth(periodEnd.getMonth() + 1);
-    await tx.insert(billingSubscriptions).values({
-        customerId,
-        planId: 'zzqa-hos712-plan',
-        status: 'active',
-        billingInterval: 'month',
-        currentPeriodStart: now,
-        currentPeriodEnd: periodEnd,
-        livemode: false
-    } as typeof billingSubscriptions.$inferInsert);
+    const inserted = await tx
+        .insert(billingSubscriptions)
+        .values({
+            customerId,
+            planId: 'zzqa-hos712-plan',
+            status: 'active',
+            billingInterval: 'month',
+            currentPeriodStart: now,
+            currentPeriodEnd: periodEnd,
+            livemode: false
+        } as typeof billingSubscriptions.$inferInsert)
+        .returning({ id: billingSubscriptions.id });
+    const row = inserted[0];
+    if (!row) {
+        throw new Error('Insert of test billing subscription returned no row');
+    }
+    return row.id;
 }
 
 /** Inserts a minimal `billing_addon_purchases` row. */
@@ -173,6 +196,27 @@ async function insertBillingInvoice(tx: DrizzleClient, customerId: string): Prom
         total: 1000,
         currency: 'ARS'
     } as typeof billingInvoices.$inferInsert);
+}
+
+/**
+ * Inserts a minimal `billing_payments` row hanging off a subscription —
+ * mirrors the real production row found on `qazuor+r1host@gmail.com`
+ * (HOS-712): a `succeeded` $18,000 ARS charge via MercadoPago.
+ */
+async function insertBillingPayment(
+    tx: DrizzleClient,
+    customerId: string,
+    subscriptionId: string
+): Promise<void> {
+    await tx.insert(billingPayments).values({
+        customerId,
+        subscriptionId,
+        // Centavos, mirroring the real $18,000 ARS production row (HOS-712).
+        amount: 1_800_000,
+        currency: 'ARS',
+        status: 'succeeded',
+        provider: 'mercadopago'
+    } as typeof billingPayments.$inferInsert);
 }
 
 /** True when a `billing_customers` row with this `external_id` still exists. */
@@ -217,6 +261,15 @@ async function invoiceExists(tx: DrizzleClient, customerId: string): Promise<boo
         .select({ id: billingInvoices.id })
         .from(billingInvoices)
         .where(eq(billingInvoices.customerId, customerId));
+    return rows.length > 0;
+}
+
+/** True when any `billing_payments` row still references this customer. */
+async function paymentExists(tx: DrizzleClient, customerId: string): Promise<boolean> {
+    const rows = await tx
+        .select({ id: billingPayments.id })
+        .from(billingPayments)
+        .where(eq(billingPayments.customerId, customerId));
     return rows.length > 0;
 }
 
@@ -294,4 +347,34 @@ describe('HOS-712: 0059-purge-test-and-commerce-example clears RESTRICT billing 
             expect(await invoiceExists(tx, customerId)).toBe(false);
         });
     });
+
+    it(
+        'purges a customer whose billing_payments row hangs off a subscription without ' +
+            'aborting on the no-action FK (the exact shape found on qazuor+r1host@gmail.com ' +
+            'in production, HOS-712)',
+        async () => {
+            await withRollback(async (tx) => {
+                const userId = await insertUser(tx, PAYMENT_EMAIL);
+                const customerId = await insertBillingCustomer(tx, userId);
+                const subscriptionId = await insertBillingSubscription(tx, customerId);
+                await insertBillingPayment(tx, customerId, subscriptionId);
+
+                process.env.NODE_ENV = 'production';
+
+                // Before the payments fix, this line rejects with a Postgres FK
+                // violation on billing_payments_subscription_id_billing_subscriptions_id_fk
+                // (ON DELETE no action, enforced identically to restrict).
+                const result = await migration.up(buildCtx(tx));
+                const counts = result.counts as Record<string, number>;
+
+                expect(counts.billingPaymentsDeleted).toBe(1);
+                expect(counts.billingSubscriptionsDeleted).toBe(1);
+                expect(counts.billingCustomersDeleted).toBe(1);
+
+                expect(await paymentExists(tx, customerId)).toBe(false);
+                expect(await subscriptionExists(tx, customerId)).toBe(false);
+                expect(await customerExists(tx, userId)).toBe(false);
+            });
+        }
+    );
 });
