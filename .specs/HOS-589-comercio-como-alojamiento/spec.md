@@ -585,12 +585,43 @@ never been rendered in. It also leaves `PlanCategory`'s `'complex'` member with
 no data behind it, which is the seam HOS-684 pulls on when it removes
 `max_properties`.
 
-**`metadata.monthlyPriceArs` is removed entirely** — from
-`model-c-field-split.ts`, from the seed baseline, and from existing rows via a
-data-migration. Verified safe: nothing reads it at runtime, because HOS-39
-promoted that value to a typed column. The stale `$5.000` it still carries for
-`commerce-listing` (against the real `$15.000`) is exactly the kind of
-contradiction a dead field accumulates.
+**`metadata.monthlyPriceArs` is removed** — but not where the first draft said,
+and not by touching the file it named.
+
+The read side is safe, and precisely so: `plan.crud.ts:53` documents the mapping
+as `monthlyPriceArs ← monthly billing_prices.unitAmount`. The DTO never reads the
+metadata mirror. HOS-39 promoted the value to a typed column and HOS-73 finished
+the job. The stale `$5.000` it still carries for `commerce-listing` (against the
+real `$15.000`) is exactly the kind of contradiction a dead field accumulates
+once nothing reads it.
+
+The **write** side is where the first draft was wrong:
+
+- **Do not touch `model-c-field-split.ts`.** Its only related entry is
+  `monthlyPriceArs: 'commercial'` at line 136, and that entry classifies the
+  **typed column** `billing_plans.monthly_price_ars` — the live price of every
+  plan — not the mirror. Its own JSDoc says it was "promoted off the
+  `metadata.monthlyPriceArs` jsonb mirror". There is no mirror entry to delete;
+  deleting the one that is there declassifies the real price for the whole
+  catalogue.
+- **Three write sites keep putting it back**, and the first draft named only one
+  of them:
+
+  | Where | Line |
+  | --- | --- |
+  | `PlanService.createPlan` — into `metadata` | `plan.crud.ts:446` |
+  | `PlanService.updatePlan` — into `updatedMeta` | `plan.crud.ts:601-602` |
+  | The seed baseline — into `metadata` | `billingPlans.seed.ts:449` |
+
+  Each of the three writes the value to the typed column and to
+  `billing_prices.unitAmount` on the same call (`:467`/`:480`, `:620-621`/`:636`,
+  `billingPlans.seed.ts:442`). **Only the metadata line is removed from each**;
+  the other two writes are the live ones.
+
+Without all three, the data-migration cleans the rows and the **next admin price
+edit on any plan whatsoever** — not just a commerce plan — writes the mirror
+straight back. That is the difference between a field that is removed and a field
+that is briefly absent.
 
 **`max_properties` removal is tracked separately.** It is not used by any active
 plan, but it is wired through roughly fifteen production files — the `LimitKey`
@@ -891,7 +922,7 @@ a constraint that would resist the new one.
 | `product_domain` value `commerce` → `gastronomy` + `experience` | data + config | seed data-migration; only 3 expired subscriptions carry the old value |
 | Two new plan catalogues (gastronomy, experience), premium tier only | plan config + seed | code declares the tiers; **values are `'commercial'`, so the DB wins** |
 | Two new addons, `limitIncrease: 1`, one per vertical | addon config | mirrors `extra-accommodations-5` |
-| `metadata.monthlyPriceArs` removed | field-split + seed + existing rows | verified unread at runtime |
+| `metadata.monthlyPriceArs` mirror removed | 3 write sites + existing rows | `plan.crud.ts:446`, `:601-602`, `billingPlans.seed.ts:449`. **Not** `model-c-field-split.ts` — its entry governs the typed column (§6.9) |
 | `complex-*` plans removed; `tourist-plus` / `owner-test-daily` deactivated | seed data-migration | see §6.9 |
 | `metadata.hasTrial` → `true` and `metadata.trialDays` → `30` on each vertical's plan (**not** a `trial_days` column) | seed **data** | `packages/seed/src/data-migrations/` — dual-write rule: baseline **and** numbered migration. Copy `0017` / `0051` |
 | `commerce_leads` table retired | structural, **deferred one release** | `packages/db/src/migrations/` |
@@ -1027,6 +1058,10 @@ and keep their current semantics.
   from the caller's side and a fix to one alone would look like a fix to both.
 - **AC-28** — `/suscriptores/planes/comparar/` renders correctly with **zero**
   plans in the `complex` category, which is the state §6.9 leaves it in.
+- **AC-29** — After the cleanup, editing **any** plan's price through the admin
+  panel does not reintroduce `metadata.monthlyPriceArs` on the edited row, and
+  the typed `monthly_price_ars` column plus `billing_prices.unitAmount` still
+  receive the new value. Asserted through `updatePlan`, not by reading the seed.
 
 ## 10. Risks
 
