@@ -292,7 +292,12 @@
     border-top: 1px solid var(--border-a60);
 }
 
-/* Owner CTA link — accent pill button above auth section */
+/*
+ * "Publicar" submenu trigger — accent pill button above auth section
+ * (HOS-691: was an <a> link before this became a three-way dropdown, now a
+ * <button>, so border/cursor/font are reset explicitly for UA button
+ * defaults instead of relying on an anchor's lack of them).
+ */
 .ctaLink {
     display: flex;
     align-items: center;
@@ -304,6 +309,7 @@
     margin-bottom: 0.625rem;
     min-height: 44px;
     padding: 0.5rem 1.25rem;
+    border: none;
     border-radius: var(--radius-pill);
     background-color: var(--brand-accent);
     color: #fff;
@@ -311,6 +317,7 @@
     font-weight: 600;
     font-size: 0.9375rem;
     text-decoration: none;
+    cursor: pointer;
     transition: opacity var(--duration-fast) ease;
 }
 

@@ -23,8 +23,7 @@
  */
 
 import { getImage, Image } from "astro:assets";
-import { EntitlementKey } from "@repo/billing";
-import { BuildingIcon, HamburgerIcon } from "@repo/icons";
+import { HamburgerIcon } from "@repo/icons";
 import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.astro";
 // Side-effect import of the mobile menu's CSS module. ClientRouter has
 // occasionally re-rendered the mobile menu island after a back navigation
@@ -35,16 +34,15 @@ import MobileMenuIsland from "@/components/shared/navigation/MobileMenuIsland.as
 // how the island is hydrated. Kept defensively even though MobileMenuIsland
 // no longer runs as a separate server:defer request (see its file doc).
 import "@/components/shared/navigation/MobileMenu.module.css";
+import { PublishMenu } from "@/components/shared/navigation/PublishMenu.client";
 import { UserMenu } from "@/components/shared/navigation/UserMenu.client";
 import { SettingsDropdown } from "@/components/shared/navigation/SettingsDropdown.client";
 import { LanguageSwitcher } from "@/components/shared/preferences/LanguageSwitcher.client";
 import { ThemeControl } from "@/components/shared/preferences/ThemeControl.client";
-import GradientButton from '@/components/shared/ui/GradientButton.astro';
 import IconButton from '@/components/shared/ui/IconButton.astro';
-import { getAdminUrl, getApiUrl } from "@/lib/env";
+import { getAdminUrl } from "@/lib/env";
 import { createTranslations } from "@/lib/i18n";
 import type { SupportedLocale } from "@/lib/i18n";
-import { webLogger as logger } from "@/lib/logger";
 import { buildUrl } from "@/lib/urls";
 import logoSrc from "@/assets/images/logo.webp";
 
@@ -112,70 +110,20 @@ const initialUserMenuUser = serverUser
 const adminPanelUrl = getAdminUrl();
 
 /**
- * Hide the "Publicar" nav CTA for users who are already HOST (or higher).
- * They already have the host surfaces (admin panel + /mi-cuenta/propiedades/)
- * and can create more listings from there. An existing host who hits the
- * onboarding funnel now creates or resumes a DRAFT (the legacy short-circuit
- * was removed) — which works — but the nav CTA is visually confusing for them.
+ * SSR role-set hint, forwarded to `MobileMenuIsland` below.
  *
- * Checks HOST and all higher privileged roles (ADMIN, CLIENT_MANAGER,
- * SUPER_ADMIN). `MobileMenu.client.tsx`'s CTA only checks HOST because its
- * concern is CTA destination, not CTA visibility. On SSG pages where
- * middleware does not parse the session, `serverUser` is null and the CTA
- * is shown — the correct default for guests.
- *
- * **HOS-217**: a plain `role === 'HOST'` check is not entitlement-aware — a
- * TOURIST who completes host-onboarding reaches `role=HOST` immediately, even
- * before ever subscribing to an owner plan. For that role specifically (not
- * the staff roles below, which bypass billing entirely and are always
- * unlimited), confirm the actor actually holds a real host entitlement
- * (`PUBLISH_ACCOMMODATIONS` or `EDIT_ACCOMMODATION_INFO` — granted either by a
- * real owner plan or by the `owner-basico` draft-defaults fallback for a
- * HOST with no plan yet, see `loadEntitlements` HOS-217) before hiding the
- * CTA. This is an SSR-only server-side fetch to the already-existing
- * `/protected/users/me/entitlements` endpoint (same pattern as
- * `pages/[lang]/publicar/nueva.astro`), gated on holding the HOST hat so the
- * vast majority of page views (guests, tourists, staff) never pay for the
- * extra request. Fails open on any error (falls back to the plain
- * role check) so a transient API issue never regresses an existing host.
+ * **HOS-691**: this used to also gate the "Publicar" CTA's visibility — an
+ * existing HOST (or higher role) hid it entirely, via an SSR fetch to
+ * `/protected/users/me/entitlements`. That hide rule does not carry over to
+ * the three-way chooser (`PublishMenu.client`): a HOST who wants to list a
+ * restaurant is exactly who the gastronomy/experience options exist for,
+ * and a pre-auth dropdown has no per-option "already acquired" state to
+ * react to (see `PUBLISH_CTA_OPTIONS`'s JSDoc). The CTA now renders
+ * unconditionally for every visitor — guest, tourist, HOST, or
+ * COMMERCE_OWNER alike (AC-12) — so the entitlements fetch this block used
+ * to make is gone too.
  */
-// HOS-296: ask whether the actor HOLDS the hat, never whether a scalar role
-// equals it — a user who is both HOST and COMMERCE_OWNER must still be
-// recognised as a host here, which the old `=== 'HOST'` equality dropped.
 const serverUserRoles = serverUser?.roles ?? [];
-let hostHasEntitlement = true;
-if (serverUserRoles.includes('HOST')) {
-    try {
-        const cookieHeader = Astro.request.headers.get('cookie');
-        if (cookieHeader) {
-            const entitlementsResponse = await fetch(
-                `${getApiUrl()}/api/v1/protected/users/me/entitlements`,
-                { headers: { cookie: cookieHeader } }
-            );
-            if (entitlementsResponse.ok) {
-                const json = (await entitlementsResponse.json()) as {
-                    data?: { entitlements?: readonly string[] };
-                };
-                const entitlements = json.data?.entitlements ?? [];
-                hostHasEntitlement =
-                    entitlements.includes(EntitlementKey.PUBLISH_ACCOMMODATIONS) ||
-                    entitlements.includes(EntitlementKey.EDIT_ACCOMMODATION_INFO);
-            } else {
-                logger.warn('Header: entitlements fetch returned non-ok', {
-                    status: entitlementsResponse.status
-                });
-            }
-        }
-    } catch (error) {
-        logger.warn('Header: failed to resolve HOST entitlements — defaulting to role-based CTA visibility', { error });
-    }
-}
-
-const isAlreadyHost =
-    (serverUserRoles.includes('HOST') && hostHasEntitlement) ||
-    serverUserRoles.includes('ADMIN') ||
-    serverUserRoles.includes('CLIENT_MANAGER') ||
-    serverUserRoles.includes('SUPER_ADMIN');
 ---
 
 <header data-header class:list={['header', { 'header--hero': isHero }]} role="banner">
@@ -223,18 +171,12 @@ const isAlreadyHost =
 
         <!-- RIGHT AREA -->
         <div class="header__right">
-            <!-- "Publicar" CTA — hidden for existing hosts (they use /mi-cuenta/propiedades/) -->
-            {!isAlreadyHost && (
-                <GradientButton
-                    href={buildUrl({ locale, path: "/publicar/" })}
-                    label={t("nav.publishCta", "Publicar")}
-                    variant="accent"
-                    size="sm"
-                    class="header__cta"
-                >
-                    <BuildingIcon slot="leading" size={16} weight="regular" />
-                </GradientButton>
-            )}
+            <!-- "Publicar" CTA — three-way dropdown (HOS-691), rendered for every visitor -->
+            <PublishMenu
+                client:idle
+                locale={locale}
+                className="header__cta"
+            />
 
             <!-- Standalone preferences (BP wide ≥1280, guests only) -->
             <div class="header__lang-control">
@@ -591,9 +533,12 @@ const isAlreadyHost =
     /*
      * Very narrow screens (<480px): collapse the "Publicar" CTA to an
      * icon-only button so the hamburger stays inside the viewport. These
-     * rules must be global because `.header__cta` is applied via the
-     * GradientButton component's `class` prop and never receives the
-     * Header's scoped `data-astro-cid`.
+     * rules must be global because `.header__cta` is applied via
+     * `PublishMenu.client.tsx`'s `className` prop and never receives the
+     * Header's scoped `data-astro-cid`. `gradient-btn__*` class names are
+     * the same global convention `GradientButton.astro` used before HOS-691
+     * turned this CTA into a dropdown — kept so this collapse rule set
+     * didn't need to change shape.
      */
     @media (max-width: 479px) {
         .header__cta.btn-gradient {
@@ -607,6 +552,12 @@ const isAlreadyHost =
 
         .btn-gradient.header__cta .gradient-btn__icon--leading {
             margin: 0;
+        }
+
+        /* The dropdown's trailing chevron affordance doesn't fit the
+           icon-only collapsed button — hide it alongside the label. */
+        .btn-gradient.header__cta .gradient-btn__icon--trailing {
+            display: none;
         }
     }
 </style>

@@ -1,0 +1,91 @@
+.wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+/*
+ * Trigger visuals (pill, gradient, sizing) come from the shared
+ * `.btn-gradient` / `.btn-gradient--accent` / `.btn-gradient--sm` global
+ * utility classes (apps/web/src/styles/components.css) —
+ * PublishMenu.client.tsx adds those classes alongside this module's own
+ * `.chevron`. This mirrors GradientButton.astro's class contract exactly
+ * so the CTA looks identical to the pre-HOS-691 single link, including the
+ * icon-only collapse under 480px declared globally in Header.astro.
+ */
+
+.chevron {
+    display: inline-flex;
+    transition: transform 0.2s ease;
+}
+
+.chevronOpen {
+    transform: rotate(180deg);
+}
+
+/*
+ * background-color / border / box-shadow / border-radius / z-index come
+ * from the shared `.overlay-surface` primitive (see apps/web/src/styles/
+ * components.css) — PublishMenu.client.tsx adds that class alongside this
+ * one.
+ */
+.menu {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 220px;
+    overflow: hidden;
+    animation: publish-menu-in 0.15s ease-out;
+}
+
+@keyframes publish-menu-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu {
+        animation: none;
+    }
+}
+
+.menuList {
+    list-style: none;
+    margin: 0;
+    padding: 6px 0;
+}
+
+.menuLink {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 16px;
+    background: transparent;
+    border: none;
+    color: var(--core-foreground);
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    text-align: left;
+    text-decoration: none;
+    cursor: pointer;
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease;
+}
+
+.menuLink:hover,
+.menuLink:focus-visible {
+    background-color: var(--core-foreground-a05);
+    color: var(--brand-primary);
+}
+
+.menuLink:focus-visible {
+    outline: 2px solid var(--brand-primary);
+    outline-offset: -2px;
+}

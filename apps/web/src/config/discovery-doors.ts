@@ -300,3 +300,27 @@ export const ACCOUNT_DISCOVERY_DOORS: readonly DiscoveryDoor[] = [
         ]
     }
 ];
+
+/**
+ * The "listing" discovery door's options — accommodation, gastronomy,
+ * experience — reused by the pre-auth header "Publicar" CTA (HOS-691
+ * AC-38) so the header dropdown and the mobile menu never hardcode the
+ * same three (label, icon, href) tuples in a third and fourth place.
+ *
+ * A pre-auth CTA has no session to check, so it cannot use
+ * `acquiredPermission` / `manageHref` (the "already acquired" state) —
+ * only `id`, `i18nKey`, `icon`, and `href` are relevant here. Consumers
+ * should ignore the other `DiscoveryDoorOption` fields rather than branch
+ * on them.
+ *
+ * Resolved eagerly (module scope) with a fail-fast guard: if the `listing`
+ * door is ever renamed or removed from `ACCOUNT_DISCOVERY_DOORS` above,
+ * this throws at import time instead of silently rendering an empty CTA.
+ */
+const listingDoor = ACCOUNT_DISCOVERY_DOORS.find((door) => door.id === 'listing');
+if (!listingDoor) {
+    throw new Error(
+        'discovery-doors.ts: the "listing" door was not found — PUBLISH_CTA_OPTIONS depends on it'
+    );
+}
+export const PUBLISH_CTA_OPTIONS: readonly DiscoveryDoorOption[] = listingDoor.options;

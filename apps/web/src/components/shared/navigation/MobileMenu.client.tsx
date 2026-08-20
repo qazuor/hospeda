@@ -19,20 +19,24 @@
  * the admin-panel link built by the shared `buildAdminPanelItem`,
  * `@/lib/admin-panel-link`) mirrors UserMenu's session zone too.
  *
- * Auth state (user, permissions, roles) resolves the SAME way UserMenu's
- * does: `useAccountPermissions` (`@/hooks/use-account-permissions`) in
+ * Auth state (user, permissions) resolves the SAME way UserMenu's does:
+ * `useAccountPermissions` (`@/hooks/use-account-permissions`) in
  * SSR-reconciling mode, seeded from `initialUser`/`initialRoles` (the SSR
  * hint from `Astro.locals.user`, forwarded through `MobileMenuIsland.astro`
  * — `null` on pages whose middleware didn't parse the session) and refined
  * client-side from the shared `authMeSnapshot` cache / `/auth/me` fetch.
  * This island no longer runs inside a `server:defer` Server Island (see
  * `MobileMenuIsland.astro`'s file doc for why), so it can never assume a
- * freshly-parsed session — the host-mode CTA (`isHostMode`/`ctaLabel`/
- * `ctaHref`, formerly computed server-side in `MobileMenuIsland.astro`) is
- * now derived here from the resolved `user` plus the resolved `roles` set
- * (HOS-296 — an account holds a SET of hats, never a single `role`).
+ * freshly-parsed session.
  *
- * Tasks: T-074, HOS-311
+ * **HOS-691**: the former host-mode CTA (`isHostMode`/`ctaLabel`/`ctaHref`,
+ * derived from `roles.includes('HOST')`) is gone. The owner CTA is now the
+ * unconditional three-way "Publicar" submenu rendered inside
+ * `MobileMenuAccountSection` (accommodation / gastronomy / experience,
+ * sourced from `PUBLISH_CTA_OPTIONS` — see that file's JSDoc), so this
+ * component no longer needs the resolved `roles` set at all.
+ *
+ * Tasks: T-074, HOS-311, HOS-691
  */
 
 import { CloseIcon } from '@repo/icons';
@@ -51,7 +55,6 @@ import { acquireDialogHistoryEntry } from '@/lib/dialog-history';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { getCuratedAccountNav } from '@/lib/nav-avatar';
-import { buildUrl } from '@/lib/urls';
 import styles from './MobileMenu.module.css';
 import { MobileMenuAccountSection } from './MobileMenuAccountSection.client';
 
@@ -162,58 +165,26 @@ export function MobileMenu({
     const authTexts = AUTH_TEXTS[locale] ?? AUTH_TEXTS.es;
 
     // ------------------------------------------------------------------
-    // Resolve auth state (user, permissions, roles) for the whole auth
-    // section — curated account block, admin-panel session link, AND the
-    // host-mode CTA. SSR-reconciling mode (same as UserMenu.client.tsx):
-    // `initialUser`/`initialRoles` seed first paint, the shared
-    // `authMeSnapshot` cache / `/auth/me` fetch refines it on hydration.
-    // Never a second auth mechanism — see the file JSDoc.
+    // Resolve auth state (user, permissions) for the whole auth section —
+    // curated account block and admin-panel session link. SSR-reconciling
+    // mode (same as UserMenu.client.tsx): `initialUser`/`initialRoles` seed
+    // first paint, the shared `authMeSnapshot` cache / `/auth/me` fetch
+    // refines it on hydration. Never a second auth mechanism — see the file
+    // JSDoc.
+    //
+    // HOS-691: `roles` is no longer read here. The former host-mode CTA
+    // (`roles.includes('HOST')` swapping the owner CTA's label/href) is
+    // replaced by the unconditional three-way "Publicar" submenu inside
+    // `MobileMenuAccountSection` — see that file's JSDoc.
     // ------------------------------------------------------------------
     // `syncAuthenticatedAttribute: false` — UserMenu (client:load, mounted
     // on every page) is the single owner of `<html data-user-authenticated>`;
     // this island must not become a second writer of the same attribute.
-    const { user, permissions, roles } = useAccountPermissions({
+    const { user, permissions } = useAccountPermissions({
         initialUser,
         initialRoles,
         syncAuthenticatedAttribute: false
     });
-
-    // ------------------------------------------------------------------
-    // Owner CTA (SPEC-182 D3, moved from the old server:defer
-    // MobileMenuIsland.astro). A HOST may still be mid-onboarding with only
-    // a DRAFT, but HOLDING the HOST hat is still enough to point the CTA at
-    // the host surfaces. Unauthenticated visitors and tourists keep the
-    // /publicar funnel. `roles`/`user` start at `initialRoles`/`initialUser`
-    // and are refined by the same hook resolution as `permissions` above.
-    //
-    // HOS-296: this asks "does the actor HOLD the HOST hat", not "is the
-    // actor's role HOST" — a commerce owner who is also a host keeps the
-    // host-mode CTA, which the old scalar equality silently dropped.
-    //
-    // HOS-311: the host CTA must NEVER point at the admin panel. HOS-152
-    // deliberately removed `ACCESS_PANEL_ADMIN` from the HOST role after a
-    // security incident (see
-    // `packages/seed/src/data-migrations/0010-remove-panel-admin-from-host-commerce-owner.ts`)
-    // — a HOST self-manages entirely in the web app, so `apps/admin`'s
-    // `authed-guard` bounces them to
-    // `/auth/forbidden?reason=host-missing-permission`. The admin panel stays
-    // reachable ONLY through the session-zone link below, which is gated on
-    // the real `access.panelAdmin` permission by `buildAdminPanelItem`.
-    //
-    // Two CTA states:
-    //  1. A resolved HOST → their properties list ("host mode").
-    //  2. Everyone else (guests, tourists, staff) → the /publicar funnel.
-    //
-    // `user` is part of the gate on state 1 because the props allow a role
-    // hint WITHOUT a resolved user (a stale `initialRoles: ['HOST']` on an
-    // expired session); in that state the menu falls back to the funnel
-    // rather than offer a host surface to someone it cannot identify.
-    // ------------------------------------------------------------------
-    const isHostMode = Boolean(user) && roles.includes('HOST');
-    const ctaLabel = isHostMode ? t('nav.hostModeCta', 'Modo anfitrión') : t('nav.ownerCta');
-    const ctaHref = isHostMode
-        ? buildUrl({ locale, path: '/mi-cuenta/propiedades/' })
-        : buildUrl({ locale, path: '/publicar/' });
 
     // ------------------------------------------------------------------
     // Map the resolved AuthMeUser (id/name/email/avatarUrl) to the shape
@@ -508,14 +479,12 @@ export function MobileMenu({
                 </ul>
             </nav>
 
-            {/* Auth section — CTA link, user row + curated accordion, or guest sign-in */}
+            {/* Auth section — Publicar submenu, user row + curated accordion, or guest sign-in */}
             <MobileMenuAccountSection
                 locale={locale}
                 t={t}
                 isOpen={isOpen}
                 user={accountSectionUser}
-                ctaLabel={ctaLabel}
-                ctaHref={ctaHref}
                 curatedAccountItems={curatedAccountItems}
                 signOutLabel={authTexts.signOut}
                 signingOutLabel={authTexts.signingOut}
