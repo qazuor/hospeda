@@ -119,6 +119,65 @@ export function createAllianceClaimInvitePort(siteUrl: string): AllianceClaimInv
 }
 
 /**
+ * Creates the approval-time variant of {@link AllianceClaimInvitePort}
+ * (HOS-599).
+ *
+ * `createAllianceClaimInvitePort` above is deliberately silent for an address
+ * with no account — that gate exists because `createLead` hands EVERY
+ * anonymous submission to it, including ones from a stranger probing whether
+ * an email has an account (AC-3). This variant is wired ONLY into
+ * `AllianceLeadService.markHandled`, which runs after an admin has already
+ * reviewed and approved one specific, named lead — there is no anonymous
+ * caller left to protect from account-existence timing, so it sends
+ * regardless of whether `users` has a matching row.
+ *
+ * This is the missing half of the HOS-278 §6.4 provider flow: approving a
+ * `service_provider` lead provisions its `host_trades` listing with
+ * `ownerUserId: null` whenever the applicant has no account yet — the
+ * ordinary case (HOS-647) — and without an invitation that fires
+ * unconditionally, that listing never gets an owner. The listing stays
+ * exactly as ownerless as it would with no invite sent at all.
+ *
+ * @param siteUrl - Base URL of the public web app (e.g. `https://hospeda.com.ar`).
+ * @returns An {@link AllianceClaimInvitePort} implementation.
+ */
+export function createAllianceApprovalClaimInvitePort(siteUrl: string): AllianceClaimInvitePort {
+    return {
+        inviteToClaim: async ({ leadId, email, contactName, kind, token, expiresAt }) => {
+            const db = getDb();
+            const [account] = await db
+                .select({ id: users.id, displayName: users.displayName })
+                .from(users)
+                .where(eq(users.email, email))
+                .limit(1);
+
+            await sendNotification({
+                type: NotificationType.ALLIANCE_CLAIM_INVITE,
+                recipientEmail: email,
+                // Same preference as the creation-time port: greet the
+                // account owner's own name when one is already on file, and
+                // fall back to what the applicant typed when there is none to
+                // prefer yet.
+                recipientName: account?.displayName ?? contactName,
+                userId: account?.id ?? null,
+                leadId,
+                programLabel: PROGRAM_LABELS[kind],
+                claimUrl: buildClaimUrl({ siteUrl, leadId, token }),
+                expiresAt: expiresAt.toISOString()
+            });
+
+            // Deliberately logs the lead id ONLY — see the creation-time
+            // port's identical note on why the raw token never reaches a log
+            // line.
+            apiLogger.info(
+                { leadId },
+                '[alliance-claim] approval invitation sent, regardless of account existence'
+            );
+        }
+    };
+}
+
+/**
  * Creates the {@link AllianceDecisionNotifyPort} implementation (HOS-278 AC-6).
  *
  * Writes to the address the APPLICATION carries, not to an account's — an

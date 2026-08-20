@@ -18,17 +18,26 @@ import { AllianceLeadSchema, PermissionEnum } from '@repo/schemas';
 import { AllianceLeadService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
-import { createAllianceDecisionNotifyPort } from '../../../lib/alliance-ports';
+import {
+    createAllianceApprovalClaimInvitePort,
+    createAllianceDecisionNotifyPort
+} from '../../../lib/alliance-ports';
 import { getActorFromContext } from '../../../utils/actor';
+import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { createAdminRoute } from '../../../utils/route-factory';
 
 // The decision notifier is what turns "the admin remembered to write" into a
-// guarantee (HOS-278 AC-6). No claim-invite port here: this route never
-// creates a lead, so it has no invitation to send.
+// guarantee (HOS-278 AC-6). The claim-invite port is HOS-599's fix: approving
+// an unclaimed `service_provider` lead provisions its `host_trades` listing
+// ownerless, and this is the only place that mints a fresh token and actually
+// invites the applicant to claim it — `createAllianceApprovalClaimInvitePort`
+// (unlike its `createLead`-time sibling) sends regardless of whether the
+// address already has an account, since there is no anonymous caller left to
+// protect at this point.
 const allianceLeadService = new AllianceLeadService(
     { logger: apiLogger },
-    null,
+    createAllianceApprovalClaimInvitePort(env.HOSPEDA_SITE_URL),
     createAllianceDecisionNotifyPort()
 );
 
