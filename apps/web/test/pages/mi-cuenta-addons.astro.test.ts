@@ -42,7 +42,11 @@ describe('mi-cuenta/addons/index.astro (HOS-224)', () => {
 
     it('forwards locale, addons, ownedAddonSlugs, and accommodations to the island', () => {
         expect(source).toMatch(/locale={locale}/);
-        expect(source).toMatch(/addons={availableAddons}/);
+        // HOS-689 item 2: the island receives `visibleAddons` (the catalog
+        // filtered per-domain), never the raw `availableAddons` — a
+        // commerce-only owner must not be offered accommodation-only addons
+        // (and vice versa).
+        expect(source).toMatch(/addons={visibleAddons}/);
         expect(source).toMatch(/ownedAddonSlugs={ownedAddonSlugs}/);
         expect(source).toMatch(/accommodations={accommodations}/);
     });
@@ -52,19 +56,33 @@ describe('mi-cuenta/addons/index.astro (HOS-224)', () => {
         expect(source).toContain("Astro.url.searchParams.get('addon')");
     });
 
-    it('gates the purchase panel on an entitlement-granting subscription (HOS-594)', () => {
-        // HOS-224 / HOS-594: the gate routes through the canonical
-        // isEntitlementGrantingStatus predicate (active/trialing/comp) instead
-        // of the old hand-rolled USABLE_SUBSCRIPTION_STATUSES array, which
-        // silently omitted comp. The web SubscriptionStatus type also says
-        // 'trial' while the runtime MP-derived value can be 'trialing', and the
-        // issue's repro is a trialing owner who must not be wrongly blocked —
-        // that one deliberate exception stays outside the predicate.
-        expect(source).toContain("from '@repo/billing'");
-        expect(source).toContain('isEntitlementGrantingStatus');
-        expect(source).toContain("'trial'");
+    it('gates the purchase panel on an entitlement-granting subscription per domain (HOS-224/HOS-594/HOS-689)', () => {
+        // HOS-224 / HOS-594: the "usable subscription" predicate must route
+        // through the canonical isEntitlementGrantingStatus (active/trialing/
+        // comp), never a hand-rolled status list that silently omits comp.
+        // HOS-689 item 2 relocated the predicate (and the 'trial' exception —
+        // see that module's doc) into the pure, unit-tested
+        // `@/lib/billing/addon-domain` helper (`isUsableSubscription`), so it
+        // is exercised directly there (see `addon-domain.test.ts`) rather than
+        // string-matched here — this test only asserts the page actually
+        // delegates to it instead of reimplementing the comparison inline.
+        expect(source).toContain("from '@/lib/billing/addon-domain'");
+        expect(source).toContain('isUsableSubscription');
+        expect(source).toContain('filterAddonsByHeldDomains');
         expect(source).toContain('hasUsableSubscription');
         expect(source).not.toContain('USABLE_SUBSCRIPTION_STATUSES');
+        // No hand-rolled status comparison at this call site either.
+        expect(source).not.toMatch(/subscription\.status\s*===\s*['"]active['"]/);
+    });
+
+    it('resolves the gate per product domain, not one accommodation-only boolean (HOS-689 item 2)', () => {
+        // A commerce-only owner (who is exactly who buys
+        // extra-gastronomies-1/extra-experiences-1) must see those addons
+        // offered — the gate can no longer be a single subscription lookup
+        // scoped to accommodation by default.
+        expect(source).toContain('ProductDomainEnum.GASTRONOMY');
+        expect(source).toContain('ProductDomainEnum.EXPERIENCE');
+        expect(source).toContain('productDomain');
     });
 
     it('forwards the SSR cookie header to the protected API wrappers', () => {

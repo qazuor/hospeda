@@ -15,13 +15,15 @@
 
 export const prerender = false;
 
-import { isEntitlementGrantingStatus } from '@repo/billing';
+import { ProductDomainEnum } from '@repo/schemas';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { AddonsPurchasePanel } from '@/components/account/AddonsPurchasePanel.client';
 import type { AddonCardData } from '@/components/account/AddonsPurchasePanel.client';
 import { billingApi, hostAnalyticsApi, userApi } from '@/lib/api/endpoints-protected';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
+import { filterAddonsByHeldDomains, isUsableSubscription } from '@/lib/billing/addon-domain';
+import type { ProductDomainScope } from '@/lib/api/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -50,16 +52,31 @@ const description = t(
 
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 
+/**
+ * Every domain the addon catalog can be gated by (HOS-689 item 2). Commerce
+ * addons are gated per VERTICAL (`gastronomy`/`experience`), never by the
+ * transitional `'commerce'` umbrella — `resolveAddonProductDomain` never
+ * resolves to it.
+ */
+const ADDON_GATE_DOMAINS: readonly ProductDomainScope[] = [
+    ProductDomainEnum.ACCOMMODATION,
+    ProductDomainEnum.GASTRONOMY,
+    ProductDomainEnum.EXPERIENCE
+];
+
 let availableAddons: AddonCardData[] = [];
 let ownedAddonSlugs: string[] = [];
-let hasUsableSubscription = false;
 let accommodations: { readonly id: string; readonly name: string }[] = [];
 let fetchError = false;
 
-const [addonsResult, ownedResult, subscriptionResult] = await Promise.all([
-    billingApi.listAvailableAddons({ active: true, cookieHeader }),
-    billingApi.getAddons({ cookieHeader }),
-    userApi.getSubscription({ cookieHeader })
+const [[addonsResult, ownedResult], subscriptionResults] = await Promise.all([
+    Promise.all([
+        billingApi.listAvailableAddons({ active: true, cookieHeader }),
+        billingApi.getAddons({ cookieHeader })
+    ]),
+    Promise.all(
+        ADDON_GATE_DOMAINS.map((productDomain) => userApi.getSubscription({ productDomain, cookieHeader }))
+    )
 ]);
 
 if (addonsResult.ok) {
@@ -80,32 +97,29 @@ if (ownedResult.ok) {
     logger.warn('[addons] failed to fetch owned addons', ownedResult.error);
 }
 
-const subscription = subscriptionResult.ok ? subscriptionResult.data.subscription : null;
-// HOS-224: the backend is the real gate (addon purchase requires an
-// entitlement-granting subscription — see `isEntitlementGrantingStatus`,
-// which resolves `active` | `trialing` | `comp`). This page-level check is
-// UX only, so it routes through the same canonical predicate instead of a
-// hand-rolled status list (HOS-594: the hand-rolled `['active', 'trial',
-// 'trialing']` array silently omitted `comp`, blind to the fact that
-// `GET /users/me/subscription` already maps a `comp` subscription to
-// `status: 'active'` — see `QZPAY_STATUS_MAP` in
-// `apps/api/src/routes/user/protected/subscription.ts` — so this predicate
-// covers it too).
-//
-// One deliberate exception stays OUTSIDE the predicate: `'trial'`. The web
-// `SubscriptionStatus` type declares `'trial'`, but the runtime MP-derived
-// value seen on this page can be `'trialing'` (see CheckoutStatusPoller's
-// SUCCESS_STATUSES). The issue's own repro is an owner-pro `trialing` user,
-// who must NOT be wrongly blocked here.
-hasUsableSubscription =
-    subscription !== null &&
-    (isEntitlementGrantingStatus(subscription.status) || subscription.status === 'trial');
+// HOS-689 item 2: the gate is per-domain, not one page-wide boolean scoped
+// to the accommodation subscription. A commerce-only owner (who is exactly
+// who buys `extra-gastronomies-1`) must see that addon offered even with no
+// accommodation subscription at all — see `filterAddonsByHeldDomains` /
+// `resolveAddonProductDomain` in `@/lib/billing/addon-domain`.
+const domainsWithSubscription = new Set<ProductDomainScope>(
+    ADDON_GATE_DOMAINS.filter((_domain, index) => {
+        const result = subscriptionResults[index];
+        return result?.ok ? isUsableSubscription(result.data.subscription) : false;
+    })
+);
+
+const visibleAddons = filterAddonsByHeldDomains({
+    addons: availableAddons,
+    domainsWithSubscription
+});
+const hasUsableSubscription = visibleAddons.length > 0;
 
 // Only needed for per-accommodation addons (visibility-boost-7d/-30d).
 // Best-effort: a tourist without host entitlements will get a non-ok result
 // here, which just means the selector falls back to "necesitás un
 // alojamiento primero" — never a page-level failure.
-const needsAccommodationTarget = availableAddons.some(
+const needsAccommodationTarget = visibleAddons.some(
     (addon) => addon.requiresAccommodationTarget
 );
 if (needsAccommodationTarget) {
@@ -186,7 +200,7 @@ const upgradeUrl = buildUrl({
         <AddonsPurchasePanel
             client:load
             locale={locale}
-            addons={availableAddons}
+            addons={visibleAddons}
             ownedAddonSlugs={ownedAddonSlugs}
             accommodations={accommodations}
         />
