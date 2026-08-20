@@ -2,12 +2,17 @@
  * Static guard: a route cannot answer an ownership failure in a way that
  * confirms the id exists (HOS-600).
  *
- * The August 2026 smoke found this on three endpoints; sweeping the rest of
- * `src/routes/` turned up four more, in two shapes. Seven call sites is the
- * repo's threshold for a guard rather than seven patches, and it is the shape
- * the error contract already enforces elsewhere (`ownership.ts` may not answer
- * 403 — `error-contract.guard.test.ts`). This extends the same rule from the
- * ownership middleware to the routes that check ownership themselves.
+ * The August 2026 smoke found this on three endpoints; sweeping the rest of the
+ * API turned up nine more, across two idioms. Twelve call sites is the repo's
+ * threshold for a guard rather than twelve patches, and it is the shape the
+ * error contract already enforces elsewhere (`ownership.ts` may not answer 403 —
+ * `error-contract.guard.test.ts`). This extends the same rule from the ownership
+ * middleware to the routes that check ownership themselves.
+ *
+ * It covers ONE of the two idioms — `row.ownerId !== actor.id` written inline in
+ * a route. The other idiom lives in `packages/service-core` permission helpers
+ * (`canAccessBookmark`, `checkCanAccessAlert`, ...), which no route-shaped
+ * pattern can see; those are pinned by their own service-level tests.
  *
  * Two assertions, deliberately different in kind:
  *
