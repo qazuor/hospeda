@@ -47,6 +47,7 @@ vi.mock('../../../../src/utils/logger', () => ({
 
 // Import module to trigger route factory registration
 import '../../../../src/routes/billing/public/listPlans';
+import { makePublicPlansCtx } from './public-plans-test-ctx';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -108,7 +109,9 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
     it('should return only active plans from DB', async () => {
         // Arrange
         const call = mockCreateSimpleRoute.mock.calls[0];
-        const handler = (call?.[0] as Record<string, unknown>)?.handler as () => Promise<unknown>;
+        const handler = (call?.[0] as Record<string, unknown>)?.handler as (
+            ctx: unknown
+        ) => Promise<unknown>;
 
         // planService.list called with { active: true } — returns only actives
         mockPlanList.mockResolvedValue({
@@ -120,7 +123,7 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
         });
 
         // Act
-        const result = await handler();
+        const result = await handler(makePublicPlansCtx());
 
         // Assert — T-011: only active plans from DB
         expect(mockPlanList).toHaveBeenCalledWith({ active: true });
@@ -130,7 +133,9 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
     it('should NOT include inactive plans in the result', async () => {
         // Arrange
         const call = mockCreateSimpleRoute.mock.calls[0];
-        const handler = (call?.[0] as Record<string, unknown>)?.handler as () => Promise<unknown>;
+        const handler = (call?.[0] as Record<string, unknown>)?.handler as (
+            ctx: unknown
+        ) => Promise<unknown>;
 
         // Service filters by active=true so inactive never comes back
         mockPlanList.mockResolvedValue({
@@ -142,7 +147,7 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
         });
 
         // Act
-        const result = await handler();
+        const result = await handler(makePublicPlansCtx());
 
         // Assert
         expect(result).not.toContain(expect.objectContaining({ id: INACTIVE_PLAN.id }));
@@ -151,7 +156,9 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
     it('should exclude inactive complex plans (HOS-16: complex vertical hidden)', async () => {
         // Arrange
         const call = mockCreateSimpleRoute.mock.calls[0];
-        const handler = (call?.[0] as Record<string, unknown>)?.handler as () => Promise<unknown>;
+        const handler = (call?.[0] as Record<string, unknown>)?.handler as (
+            ctx: unknown
+        ) => Promise<unknown>;
 
         // The route always requests { active: true }, so an inactive
         // complex-basico row (per HOS-16) would never be in `items` to begin
@@ -166,7 +173,7 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
         });
 
         // Act
-        const result = await handler();
+        const result = await handler(makePublicPlansCtx());
 
         // Assert
         expect(mockPlanList).toHaveBeenCalledWith({ active: true });
@@ -176,7 +183,9 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
     it('should return empty array gracefully when service fails', async () => {
         // Arrange
         const call = mockCreateSimpleRoute.mock.calls[0];
-        const handler = (call?.[0] as Record<string, unknown>)?.handler as () => Promise<unknown>;
+        const handler = (call?.[0] as Record<string, unknown>)?.handler as (
+            ctx: unknown
+        ) => Promise<unknown>;
 
         mockPlanList.mockResolvedValue({
             success: false,
@@ -184,7 +193,7 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
         });
 
         // Act
-        const result = await handler();
+        const result = await handler(makePublicPlansCtx());
 
         // Assert — graceful degradation: empty list, no crash
         expect(result).toEqual([]);
@@ -193,7 +202,9 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
     it('response shape includes all expected fields (backwards-compatible)', async () => {
         // Arrange
         const call = mockCreateSimpleRoute.mock.calls[0];
-        const handler = (call?.[0] as Record<string, unknown>)?.handler as () => Promise<unknown>;
+        const handler = (call?.[0] as Record<string, unknown>)?.handler as (
+            ctx: unknown
+        ) => Promise<unknown>;
 
         mockPlanList.mockResolvedValue({
             success: true,
@@ -204,7 +215,7 @@ describe('T-011: publicListPlansRoute — DB-backed, active only', () => {
         });
 
         // Act
-        const result = (await handler()) as (typeof ACTIVE_PLAN)[];
+        const result = (await handler(makePublicPlansCtx())) as (typeof ACTIVE_PLAN)[];
 
         // Assert — backwards-compatible shape
         const plan = result[0];

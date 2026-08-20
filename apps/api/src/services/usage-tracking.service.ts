@@ -27,12 +27,11 @@ import {
     AlertSubscriptionService,
     calculateThreshold,
     determineOverallThreshold,
-    isAccommodationSubscription,
-    isCommerceSubscription,
     type LimitUsage,
     OwnerPromotionService,
     SearchHistoryService,
     type ServiceResult,
+    subscriptionMatchesDomain,
     type UsageSummary,
     type UsageThreshold,
     UserBookmarkCollectionService,
@@ -178,10 +177,11 @@ function isMeasuredLimit(limitKey: string): boolean {
  * of their accommodation plan — wrong numbers, with no signal that they were
  * wrong.
  *
- * The domain predicates come from `@repo/service-core` and carry the
+ * `subscriptionMatchesDomain` comes from `@repo/service-core` and carries the
  * asymmetry each domain needs: accommodation fails OPEN (a `null`/absent
- * `productDomain` is a legacy row and counts as accommodation), commerce
- * fails CLOSED (only an explicit `'commerce'` matches).
+ * `productDomain` is a legacy row and counts as accommodation), every other
+ * domain fails CLOSED. Since HOS-685 a commerce-scoped read matches any
+ * commerce vertical, while a vertical-scoped read matches only itself.
  *
  * @param input.subscriptions - Rows as returned by `subscriptions.getByCustomerId()`.
  * @param input.productDomain - Domain to scope to; defaults to `'accommodation'`.
@@ -191,11 +191,10 @@ function findActiveSubscriptionForDomain<T extends { status: string }>(input: {
     subscriptions: readonly T[];
     productDomain: ProductDomainScope;
 }): T | undefined {
-    const domainPredicate =
-        input.productDomain === 'commerce' ? isCommerceSubscription : isAccommodationSubscription;
-
     return input.subscriptions.find(
-        (sub) => (sub.status === 'active' || sub.status === 'trialing') && domainPredicate(sub)
+        (sub) =>
+            (sub.status === 'active' || sub.status === 'trialing') &&
+            subscriptionMatchesDomain(sub, input.productDomain)
     );
 }
 
