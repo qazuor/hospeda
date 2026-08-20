@@ -147,9 +147,29 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
         // that exist only in MP raw (status_detail, payment_method_id) stay
         // null — those are used only by failure notification copy, not by
         // any dispatch decision.
+        //
+        // HOS-704 — `transaction_amount_refunded` is NOT one of those benign
+        // omissions. `applyWebhookRefundLifecycle` (payment-logic.ts) reads it
+        // to decide whether a refund is partial or total, and its absence is
+        // read as "total": `refunded_amount` is set to the whole payment, the
+        // subscription is cancelled and entitlements are revoked. Dropping it
+        // meant a customer who was refunded 30% lost their subscription. The
+        // figure was never missing from MercadoPago — it rides on the same
+        // `payments.retrieve` response fetched above; qzpay simply did not map
+        // it until `refundedAmount` was added to QZPayProviderPayment.
+        //
+        // Units: `refundedAmount` is CENTAVOS (qzpay normalizes every money
+        // field to minor units — see the adapter's `Math.round(amount * 100)`),
+        // whereas `data.transaction_amount_refunded` is an MP-RAW-shaped field
+        // and payment-logic.ts converts it with `Math.round(value * 100)`. So
+        // it is divided by 100 here, the same direction subscription-poll.job.ts
+        // already uses when it builds a synthetic payload (`amount / 100`).
         const data: Record<string, unknown> = {
             id: providerPayment.id,
             transaction_amount: providerPayment.amount,
+            ...(typeof providerPayment.refundedAmount === 'number'
+                ? { transaction_amount_refunded: providerPayment.refundedAmount / 100 }
+                : {}),
             currency_id: providerPayment.currency,
             status: providerPayment.status,
             metadata: providerPayment.metadata

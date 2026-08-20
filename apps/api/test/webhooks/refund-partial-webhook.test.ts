@@ -24,25 +24,19 @@
  * lookup, or from anywhere else — only that a 30% refund arrives as a partial
  * amount and never as an implicit full one.
  *
- * ## Arrange seam (read before "fixing" this file)
+ * ## Where the amount comes from
  *
- * The ASSERT half above is stable. The ARRANGE half is not yet: at the time of
- * writing, `QZPayProviderPayment` (@qazuor/qzpay-core 3.0.0) carries only
- * `{ id, status, amount, currency, metadata }` — it has NO refunded-amount field
- * and no raw-provider passthrough, and `@qazuor/qzpay-mercadopago`'s
- * `mapToProviderPayment` never copies `transaction_amount_refunded` off the raw
- * MercadoPago response. So there is currently no seam through which the real
- * handler COULD learn the refunded amount.
- *
- * The stub below anticipates the adapter growing an `amountRefunded` field (in
- * centavos, the unit the adapter already uses for `amount`). If the chosen fix
- * instead reads the amount from a direct MercadoPago REST/SDK lookup, re-point
- * this ARRANGE block at that seam — the expectations must not change.
+ * MercadoPago has always returned the figure as `transaction_amount_refunded`
+ * on the `payments.retrieve` response the handler already fetches — qzpay's
+ * `mapToProviderPayment` simply dropped it. `QZPayProviderPayment.refundedAmount`
+ * (qzpay-mercadopago) now carries it through, which is the seam the stub below
+ * drives.
  *
  * ## Units (money is centavos everywhere in this repo)
  *
- *   MercadoPago REST          : major units — 1000.00 ARS charged, 300.00 refunded
- *   qzpay MP adapter (`amount`): centavos    — 100000
+ *   MercadoPago REST           : major units — 1000.00 ARS charged, 300.00 refunded
+ *   qzpay adapter (`amount`,
+ *   `refundedAmount`)          : centavos    — 100000 and 30000
  *   `data.transaction_amount_refunded`: MAJOR units, per the contract documented
  *       in `payment-logic.ts` ("MP payload: `transaction_amount_refunded` in major
  *       units (e.g. 150.00 ARS) → `Math.round(150.00 * 100)` = 15000 centavos")
@@ -302,9 +296,9 @@ function makeMockContext() {
  * Webhook dependencies whose payment adapter reports a partially refunded
  * payment.
  *
- * `amountRefunded` is the ARRANGE seam described in the file header — the
- * refunded slice in centavos, alongside the `amount` the adapter already
- * returns in centavos.
+ * `refundedAmount` is the field described in the file header — the refunded
+ * slice in centavos, alongside the `amount` the adapter already returns in
+ * centavos.
  */
 function makeDependenciesWithPartialRefund(): unknown {
     return {
@@ -326,7 +320,7 @@ function makeDependenciesWithPartialRefund(): unknown {
                     id: MP_PAYMENT_ID,
                     status: 'refunded',
                     amount: PAYMENT_AMOUNT_CENTAVOS,
-                    amountRefunded: PARTIAL_REFUND_CENTAVOS,
+                    refundedAmount: PARTIAL_REFUND_CENTAVOS,
                     currency: 'ARS',
                     metadata: { customerId: 'cust-1' }
                 })
