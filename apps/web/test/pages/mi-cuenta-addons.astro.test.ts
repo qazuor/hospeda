@@ -52,16 +52,19 @@ describe('mi-cuenta/addons/index.astro (HOS-224)', () => {
         expect(source).toContain("Astro.url.searchParams.get('addon')");
     });
 
-    it('gates the purchase panel on an active or trialing subscription', () => {
-        // HOS-224: the gate accepts active, trial AND trialing — the web
-        // SubscriptionStatus type says 'trial' but the runtime MP-derived value
-        // is 'trialing', and the issue's repro is a trialing owner who must not
-        // be wrongly blocked. Assert the set includes all three.
-        expect(source).toContain("'active'");
+    it('gates the purchase panel on an entitlement-granting subscription (HOS-594)', () => {
+        // HOS-224 / HOS-594: the gate routes through the canonical
+        // isEntitlementGrantingStatus predicate (active/trialing/comp) instead
+        // of the old hand-rolled USABLE_SUBSCRIPTION_STATUSES array, which
+        // silently omitted comp. The web SubscriptionStatus type also says
+        // 'trial' while the runtime MP-derived value can be 'trialing', and the
+        // issue's repro is a trialing owner who must not be wrongly blocked —
+        // that one deliberate exception stays outside the predicate.
+        expect(source).toContain("from '@repo/billing'");
+        expect(source).toContain('isEntitlementGrantingStatus');
         expect(source).toContain("'trial'");
-        expect(source).toContain("'trialing'");
-        expect(source).toContain('USABLE_SUBSCRIPTION_STATUSES');
         expect(source).toContain('hasUsableSubscription');
+        expect(source).not.toContain('USABLE_SUBSCRIPTION_STATUSES');
     });
 
     it('forwards the SSR cookie header to the protected API wrappers', () => {
