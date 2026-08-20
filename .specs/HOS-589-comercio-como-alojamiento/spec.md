@@ -670,6 +670,83 @@ every `LimitKey` has a `billing.limit.<key>.title` and a
 `limits.test.ts` already established. The cross-locale guard then covers `en` and
 `pt` for free.
 
+### 6.13 What happens to the rows that already say `commerce`
+
+Inventoried against production on 2026-08-20, excluding soft-deleted rows.
+
+| Table | Rows carrying `commerce` | Shape |
+| --- | --- | --- |
+| `billing_subscriptions` | **3**, all `expired`, `deleted_at` null | all on plan `86861c88-…`, all created `2026-07-08 03:18:39` within 22 ms |
+| `commerce_listing_subscriptions` | **5**, all `entity_type = 'gastronomy'`, all `expired` | table has **no** `deleted_at` |
+
+The one timestamp is the tell: this is a single seed run, not customers. The
+three `billing_customers.external_id` values resolve to
+`gastro-owner-julieta@local.test`, `gastro-owner-rodrigo@local.test` and
+`gastro-owner-valentina@local.test` — fixtures. **Zero experience rows exist**,
+so the `experience` domain is born empty.
+
+Two facts change the plan:
+
+#### The link table has its own `product_domain`, and the spec did not say so
+
+`commerce_listing_subscriptions.productDomain` is a **separate column** with a
+hardcoded default of `'commerce'`
+(`packages/db/src/schemas/commerce/commerce_listing_subscription.dbschema.ts:35`),
+not a join through the subscription. The checkout stamps the domain in **three**
+places on one purchase — the subscription
+(`subscription-checkout.service.ts:772`), the link row (`:785`) and
+`domainMetadata` (`:778`, which carries entity coordinates and is unaffected).
+Any migration that rewrites one column and not the other leaves the two
+disagreeing, which nothing in the code would notice.
+
+#### These rows are not migrated. They are deleted — by a migration of their own
+
+`0059-purge-test-and-commerce-example.ts:125-127` already hard-deletes exactly
+those three accounts and the gastronomies they own. It has **not run in
+production** (the ledger's newest entry is `0057`, 2026-08-18). But it does not
+reach the billing rows, and it cannot: `billing_customers` has **no foreign key
+to `users`** — the link is `external_id`, a plain uuid — and
+`commerce_listing_subscriptions` has **no foreign key to the listing**, only
+`subscription_id → billing_subscriptions ON DELETE CASCADE`.
+
+So after 0059 runs, all 8 rows survive as orphans pointing at deleted users and
+deleted listings. **Decision: a new numbered migration deletes them**, deleting
+the 3 subscriptions and letting the FK cascade take the 5 link rows.
+
+It is a *new* migration, not an edit to 0059, because the `seed_migrations`
+ledger stores a `checksum` per applied migration
+(`packages/db/src/schemas/seed-migrations/seed_migration.dbschema.ts:25-50`) —
+editing a file that already applied anywhere corrupts that environment's ledger.
+And it must be **order-independent**: 0059 may run before or after it, and the
+deletion is correct either way because it selects the three subscription ids by
+their customers' `external_id`, not by joining a table 0059 may already have
+emptied.
+
+#### The domain rewrite still ships, for the environments that are not production
+
+Staging and local carry rows these three ids do not describe, so the
+`commerce` → `gastronomy` / `experience` rewrite is written normally and is
+simply a no-op on an empty set. Its rule:
+
+- A subscription's new domain is read from **its link row's `entity_type`** —
+  the only place the vertical is recorded. Both columns are rewritten in the same
+  statement pair.
+- A subscription with **no** link row is left at `commerce` and reported, never
+  guessed. Guessing would put an owner on the wrong vertical's cap; leaving it is
+  inert, because the link row *is* the attachment to a listing, so a subscription
+  without one grants nothing to anybody in any domain.
+
+#### The unique index survives untouched
+
+`commerce_listing_subs_entity_uniq` is `UNIQUE(entity_type, entity_id)`. Read it
+precisely: it guarantees one **subscription per listing**, and has never
+forbidden one subscription covering several listings. Production already has one
+doing exactly that — julieta's single subscription covers two gastronomies —
+which is the per-owner shape §6.8 is moving to. The constraint needs no
+migration, and §6.8's phrase "one subscription per listing, guaranteed by
+`UNIQUE(entity_type, entity_id)`" describes the *intent* of the old checkout, not
+a constraint that would resist the new one.
+
 ## 7. Data model / contracts
 
 | Change | Kind | Carril |
@@ -696,6 +773,8 @@ every `LimitKey` has a `billing.limit.<key>.title` and a
 | `billing.limit.*` + `billing.comparison.limitLabel.*` for both new keys, es/en/pt | i18n | plus `KNOWN_LIMIT_KEYS` in `billing-limit-error.ts:50-57` — code, not just JSON |
 | New guard: every `LimitKey` has its i18n entries and its allowlist slot | test | nothing enforces this today (§6.12) |
 | Price / benefits / FAQ blocks on both landings | web | they are hero + lead form today, nothing else |
+| `commerce_listing_subscriptions.product_domain` rewritten alongside the subscription's | seed data-migration | a **second** column the spec previously missed (§6.13) |
+| New migration deleting the 3 orphan commerce subscriptions | seed data-migration | order-independent w.r.t. `0059`; the 5 link rows go by FK cascade |
 
 No new columns. `moderationState`, `visibility`, `lifecycleState` and
 `hasActiveSubscription` already exist on both `gastronomies` and `experiences`
@@ -795,6 +874,9 @@ and keep their current semantics.
   `es`, or is missing from `KNOWN_LIMIT_KEYS` in `billing-limit-error.ts`.
 - **AC-24** — Hitting the gastronomy cap shows the gastronomy at-limit copy, not
   the `billing.limit.generic.*` fallback, in all three locales.
+- **AC-25** — After the migrations run, no row in `billing_subscriptions` or in
+  `commerce_listing_subscriptions` carries `product_domain = 'commerce'`, and the
+  two columns agree on every surviving row.
 
 ## 10. Risks
 
