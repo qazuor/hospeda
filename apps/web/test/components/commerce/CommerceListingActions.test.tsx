@@ -72,7 +72,11 @@ beforeEach(() => {
     mockStartCheckout.mockReset();
     mockStorePending.mockReset();
     Object.defineProperty(window, 'location', {
-        value: { href: '' },
+        // `reload` is included (HOS-689 item 4): the `appliedEffect: 'attached'`
+        // branch calls `window.location.reload()` instead of navigating via
+        // `href` — real jsdom's `location.reload` throws "Not implemented"
+        // unless the mock supplies its own.
+        value: { href: '', reload: vi.fn() },
         writable: true,
         configurable: true
     });
@@ -171,6 +175,56 @@ describe('CommerceListingActions', () => {
             });
         });
 
+        it('shows "Publicar" (no "y pagar") when the owner already holds a vertical subscription (HOS-689 item 4)', () => {
+            render(
+                <CommerceListingActions
+                    listing={buildListing({ completeness: { complete: true, missing: [] } })}
+                    locale="es"
+                    hasVerticalSubscription={true}
+                />
+            );
+
+            expect(screen.getByTestId('commerce-publish-button')).toHaveTextContent('Publicar');
+            expect(screen.getByTestId('commerce-publish-button')).not.toHaveTextContent(
+                'Publicar y pagar'
+            );
+        });
+
+        it('reloads instead of navigating when the backend attaches without a checkout (appliedEffect: attached)', async () => {
+            // HOS-688 §6.8 branch 2: the owner already held a subscription for
+            // this vertical, so the backend attached the listing and published
+            // it synchronously — `checkoutUrl` is only an in-app sentinel, so
+            // following it via `href` would be meaningless. The component must
+            // reload instead.
+            mockStartCheckout.mockResolvedValue({
+                ok: true,
+                data: {
+                    checkoutUrl: 'https://hospeda.test/mi-cuenta/comercio/',
+                    localSubscriptionId: 'sub-2',
+                    expiresAt: '2026-01-01T00:00:00.000Z',
+                    appliedEffect: 'attached'
+                }
+            });
+
+            render(
+                <CommerceListingActions
+                    listing={buildListing({ completeness: { complete: true, missing: [] } })}
+                    locale="es"
+                    hasVerticalSubscription={true}
+                />
+            );
+
+            fireEvent.click(screen.getByTestId('commerce-publish-button'));
+
+            await waitFor(() => {
+                expect(window.location.reload).toHaveBeenCalledOnce();
+            });
+            // No pending-checkout id is stashed, and no navigation happens —
+            // there is nothing for the success/poller flow to resolve.
+            expect(mockStorePending).not.toHaveBeenCalled();
+            expect(window.location.href).toBe('');
+        });
+
         it('replaces the local checklist with the SERVER missing array on a 422 (R-5)', async () => {
             // `missing` is a SIBLING of `code`/`message` on the real API error
             // body (`{success:false, error:{code, message, missing}}`), NOT
@@ -257,15 +311,37 @@ describe('CommerceListingActions', () => {
             );
 
             expect(screen.getByText('Suspendido')).toBeInTheDocument();
-            // HOS-259: `?domain=commerce` scopes the account subscription page
-            // (and the underlying `productDomain` query filter) to the caller's
-            // COMMERCE subscription — a dual-role owner (accommodation host +
-            // commerce owner) would otherwise land on whichever subscription
-            // the default (accommodation) resolves, not necessarily the one
-            // that needs recovering.
+            // HOS-259 / HOS-689: `?domain=<listing.vertical>` scopes the account
+            // subscription page (and the underlying `productDomain` query
+            // filter) to the caller's subscription for THIS listing's
+            // vertical specifically — the transitional `commerce` umbrella
+            // would match either gastronomy or experience ambiguously for an
+            // owner who holds both, exactly the bug HOS-259 fixed for
+            // accommodation vs. commerce in the first place. `buildListing`'s
+            // default vertical is 'gastronomy'.
             expect(screen.getByText('Revisar mi suscripción')).toHaveAttribute(
                 'href',
-                '/es/mi-cuenta/suscripcion/?domain=commerce'
+                '/es/mi-cuenta/suscripcion/?domain=gastronomy'
+            );
+        });
+
+        it("scopes the recover CTA to the experience vertical when that is the listing's vertical", () => {
+            render(
+                <CommerceListingActions
+                    listing={buildListing({
+                        vertical: 'experience',
+                        isPublic: false,
+                        completeness: { complete: true, missing: [] },
+                        subscriptionStatus: SubscriptionStatusEnum.PAST_DUE
+                    })}
+                    locale="es"
+                    hasVerticalSubscription={true}
+                />
+            );
+
+            expect(screen.getByText('Revisar mi suscripción')).toHaveAttribute(
+                'href',
+                '/es/mi-cuenta/suscripcion/?domain=experience'
             );
         });
 

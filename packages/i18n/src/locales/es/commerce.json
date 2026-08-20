@@ -80,6 +80,17 @@
                 "unknown": "Estado no disponible",
                 "draftComplete": "Borrador — listo para publicar",
                 "draftIncomplete": "Borrador — incompleto"
+            },
+            "usage": {
+                "gastronomy": {
+                    "label_one": "{{current}} de {{max}} gastronomía",
+                    "label_other": "{{current}} de {{max}} gastronomías"
+                },
+                "experience": {
+                    "label_one": "{{current}} de {{max}} experiencia",
+                    "label_other": "{{current}} de {{max}} experiencias"
+                },
+                "upgrade": "Ampliar cupo"
             }
         },
         "editor": {
@@ -228,7 +239,9 @@
             "publishing": "Iniciando pago...",
             "incompleteError": "Todavía faltan datos para publicar.",
             "alreadySubscribedError": "Este comercio ya tiene una suscripción activa.",
-            "checkoutError": "No pudimos iniciar el pago. Probá de nuevo."
+            "checkoutError": "No pudimos iniciar el pago. Probá de nuevo.",
+            "publishCtaFree": "Publicar",
+            "publishingFree": "Publicando..."
         },
         "create": {
             "pickVertical": {
