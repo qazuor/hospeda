@@ -23,6 +23,7 @@ import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { USER_BOOKMARK_ENTITY_NAME } from '../entity-names';
 import {
     enrichBookmarksWithEntityInfo,
     type UserBookmarkWithEntityInfo
@@ -46,7 +47,7 @@ export class UserBookmarkService extends BaseCrudService<
     typeof UserBookmarkUpdateInputSchema,
     typeof UserBookmarkSearchSchema
 > {
-    static readonly ENTITY_NAME = 'userBookmark';
+    static readonly ENTITY_NAME = USER_BOOKMARK_ENTITY_NAME;
     protected readonly entityName = UserBookmarkService.ENTITY_NAME;
     protected readonly model: UserBookmarkModel;
 

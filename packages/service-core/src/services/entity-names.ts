@@ -24,3 +24,12 @@ export const USER_ENTITY_NAME = 'user';
 
 /** `AccommodationService.ENTITY_NAME`. */
 export const ACCOMMODATION_ENTITY_NAME = 'accommodation';
+
+/** `UserBookmarkService.ENTITY_NAME`. */
+export const USER_BOOKMARK_ENTITY_NAME = 'userBookmark';
+
+/** `UserBookmarkCollectionService.ENTITY_NAME`. */
+export const USER_BOOKMARK_COLLECTION_ENTITY_NAME = 'userBookmarkCollection';
+
+/** `AlertSubscriptionService.ENTITY_NAME`. */
+export const PRICE_ALERT_ENTITY_NAME = 'priceAlert';

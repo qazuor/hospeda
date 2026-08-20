@@ -2,6 +2,8 @@ import type { UserBookmarkCollection } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
+import { USER_BOOKMARK_COLLECTION_ENTITY_NAME } from '../entity-names';
 
 /**
  * Checks if an actor has the USER_BOOKMARK_COLLECTION_VIEW_ANY permission,
@@ -29,10 +31,9 @@ export const canAccessCollection = (
 ): void => {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Missing actor');
     if (actor.id !== collection.userId && !hasViewAnyPermission(actor)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'FORBIDDEN: Only owner can access collection'
-        );
+        // HOS-600: NOT_FOUND, byte-identical to the answer for an id that
+        // matches nothing — see `canAccessBookmark` for the reasoning.
+        throw entityNotFoundError({ entityName: USER_BOOKMARK_COLLECTION_ENTITY_NAME });
     }
 };
 
