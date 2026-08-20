@@ -790,6 +790,7 @@
 | `DELETE /api/v1/admin/gastronomies/{id}` | `gastronomy/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (COMMERCE_DELETE) |
 | `DELETE /api/v1/admin/gastronomies/{id}/hard` | `gastronomy/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated (COMMERCE_DELETE) |
 | `POST /api/v1/admin/gastronomies/{id}/restore` | `gastronomy/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated (COMMERCE_EDIT_ALL) |
+| `POST /api/v1/admin/gastronomies/{id}/moderate` | `gastronomy/admin/moderate.ts` | none | - | n/a | Admin moderation — PermissionEnum-gated (HOS-686; COMMERCE_MODERATION_CHANGE). Staff bypass entitlements (INV-6), so there is no billing gate |
 | `POST /api/v1/admin/gastronomies/batch` | `gastronomy/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
 | `GET /api/v1/admin/gastronomies/options` | `gastronomy/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated (ACCESS_PANEL_ADMIN) |
 | `GET /api/v1/admin/gastronomies/{id}/faqs` | `gastronomy/admin/getFaqs.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) |
@@ -839,6 +840,7 @@
 | `DELETE /api/v1/admin/experiences/{id}` | `experience/admin/delete.ts` | none | - | n/a | Admin soft-delete; PermissionEnum-gated (COMMERCE_DELETE) (SPEC-240 T-021) |
 | `DELETE /api/v1/admin/experiences/{id}/hard` | `experience/admin/hardDelete.ts` | none | - | n/a | Admin hard-delete; PermissionEnum-gated (COMMERCE_DELETE) (SPEC-240 T-021) |
 | `POST /api/v1/admin/experiences/{id}/restore` | `experience/admin/restore.ts` | none | - | n/a | Admin restore; PermissionEnum-gated (COMMERCE_EDIT_ALL) (SPEC-240 T-021) |
+| `POST /api/v1/admin/experiences/{id}/moderate` | `experience/admin/moderate.ts` | none | - | n/a | Admin moderation — PermissionEnum-gated (HOS-686; COMMERCE_MODERATION_CHANGE). Staff bypass entitlements (INV-6), so there is no billing gate |
 | `POST /api/v1/admin/experiences/batch` | `experience/admin/batch.ts` | none | - | n/a | Admin batch; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
 | `GET /api/v1/admin/experiences/options` | `experience/admin/options.ts` | none | - | n/a | Admin read; PermissionEnum-gated (ACCESS_PANEL_ADMIN) (SPEC-240 T-021) |
 | `GET /api/v1/admin/experiences/{id}/faqs` | `experience/admin/getFaqs.ts` | none | - | n/a | Admin read; PermissionEnum-gated (COMMERCE_VIEW_ALL) (SPEC-240 T-021) |
