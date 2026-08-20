@@ -212,13 +212,50 @@ grantRole({
 })
 ```
 
-The route is a `createProtectedRoute` requiring only an authenticated session —
+The target is a `createProtectedRoute` requiring only an authenticated session —
 **no `COMMERCE_*` permission**, exactly as host onboarding requires no
 `ACCOMMODATION_*` permission. `grantRole` is idempotent, so a second listing is
 a no-op on the role.
 
 `RoleGrantReason` needs a new member for this cause. It is an audit reason, not
 a gate.
+
+#### The route already exists, and it is gated three times over
+
+`apps/api/src/routes/commerce/protected/create.ts` was built by HOS-166. It
+declares two `createProtectedRoute`s — `protectedCreateGastronomyListingRoute`
+(:110) and `protectedCreateExperienceListingRoute` (:179) — over a shared
+handler, which is the correct reading of G-2: one path, two declarations, no
+behavioural branch.
+
+Its own header states the problem (`:36-40`):
+
+> Gated on `COMMERCE_CREATE` at **BOTH** the route (`requiredPermissions`) AND
+> the service (`GastronomyService`/`ExperienceService`'s `_canCreate` →
+> `checkGastronomyCanCreate`/`checkExperienceCanCreate`). `COMMERCE_OWNER` holds
+> this permission as of the HOS-166 PR-A seed grant.
+
+So **the same door is bolted three times**: `requiredPermissions` at :117 and
+:186, the service's `_canCreate`, and the web page's `hasCommerceNavAccess`
+(§6.11). Each of the three independently turns away the signed-in person who has
+no commerce role — which is everyone this spec is for. Opening one leaves the
+other two closed, and the failure looks different at each layer (a redirect, a
+403 from the factory, a 403 from the service), so a partial fix reads as a
+different bug each time.
+
+The work is therefore **not** "build a route". It is: drop `requiredPermissions`
+on both declarations, drop the permission check from `_canCreate`, drop the web
+gate, and add the `grantRole` call inside the create transaction.
+
+**The admin create route is unaffected.** `_canCreate` is shared, but the admin
+route carries its own `requiredPermissions`, so relaxing the service predicate
+does not widen the admin path. Say it here because the alternative — an
+implementer refusing to touch `_canCreate` for fear of opening admin — leaves the
+second bolt in place.
+
+Note also AC-8 is already satisfied today and is a **regression** criterion, not
+a new one: it exists to catch someone replacing the factory's auth with an
+in-handler check while stripping the permission gates.
 
 ### 6.2 Delete the provisioning path
 
@@ -813,7 +850,7 @@ a constraint that would resist the new one.
 | `complex-*` plans removed; `tourist-plus` / `owner-test-daily` deactivated | seed data-migration | see §6.9 |
 | `metadata.hasTrial` → `true` and `metadata.trialDays` → `30` on each vertical's plan (**not** a `trial_days` column) | seed **data** | `packages/seed/src/data-migrations/` — dual-write rule: baseline **and** numbered migration. Copy `0017` / `0051` |
 | `commerce_leads` table retired | structural, **deferred one release** | `packages/db/src/migrations/` |
-| New protected route: create commerce listing | API | `createProtectedRoute` |
+| Existing protected create route loses its `COMMERCE_CREATE` gates | API | `commerce/protected/create.ts:117,186` **and** the services' `_canCreate` — the route is not new (§6.1) |
 | **New admin route: moderate a commerce listing** (§6.7) | API | `createAdminRoute`, one per domain, one shared implementation |
 | Removed admin route: `approve-and-provision` | API | — |
 | Removed public route: `commerce/leads` create | API | — |
@@ -937,6 +974,10 @@ and keep their current semantics.
   two columns agree on every surviving row.
 - **AC-26** — The reject action is invocable from the admin panel's gastronomy and
   experience detail routes, not only from the API.
+- **AC-27** — A signed-in account with **no** commerce permission receives a 2xx
+  from `POST` create-listing for both verticals. Asserted at the route **and**
+  against the service predicate directly, because the two gates fail identically
+  from the caller's side and a fix to one alone would look like a fix to both.
 
 ## 10. Risks
 
