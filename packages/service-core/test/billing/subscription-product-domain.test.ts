@@ -43,8 +43,10 @@ import type { DrizzleClient } from '@repo/db';
 import * as dbModule from '@repo/db';
 import {
     isAccommodationSubscription,
+    isCommerceSubscription,
     isOwnerCategorySubscription,
-    loadSubscriptionDiscountState
+    loadSubscriptionDiscountState,
+    subscriptionMatchesDomain
 } from '../../src/services/billing/subscription/subscription-product-domain.js';
 
 const mockGetDb = dbModule.getDb as ReturnType<typeof vi.fn>;
@@ -261,5 +263,125 @@ describe('isOwnerCategorySubscription (HOS-217)', () => {
         // Assert — the standalone getDb() connection was never touched.
         expect(mockGetDb).not.toHaveBeenCalled();
         expect(selectMock).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe('subscriptionMatchesDomain (HOS-685)', () => {
+    /**
+     * Release A widens the vocabulary and rewrites NO rows, so every assertion
+     * about a `'commerce'` row below is the pre-HOS-685 behaviour restated. If
+     * one of these breaks, the release is not inert and reverting it is no
+     * longer free.
+     */
+    describe('is inert for the rows that exist today', () => {
+        it('still recognises a commerce row as commerce', () => {
+            expect(isCommerceSubscription({ productDomain: 'commerce' })).toBe(true);
+        });
+
+        it('still recognises an accommodation row as accommodation', () => {
+            expect(isAccommodationSubscription({ productDomain: 'accommodation' })).toBe(true);
+        });
+
+        it('still keeps a commerce row out of the accommodation domain', () => {
+            expect(isAccommodationSubscription({ productDomain: 'commerce' })).toBe(false);
+        });
+
+        it('still keeps a partner row out of both domains', () => {
+            expect(isAccommodationSubscription({ productDomain: 'partner' })).toBe(false);
+            expect(isCommerceSubscription({ productDomain: 'partner' })).toBe(false);
+        });
+
+        it('still treats a legacy row with no domain as accommodation, never as commerce', () => {
+            for (const legacy of [{}, { productDomain: null }, { productDomain: undefined }]) {
+                expect(isAccommodationSubscription(legacy)).toBe(true);
+                expect(isCommerceSubscription(legacy)).toBe(false);
+            }
+        });
+
+        it('still answers accommodation-open / commerce-closed for a non-object', () => {
+            for (const value of [null, undefined, 42, 'commerce']) {
+                expect(isAccommodationSubscription(value)).toBe(true);
+                expect(isCommerceSubscription(value)).toBe(false);
+            }
+        });
+
+        it('still rejects a non-string productDomain in every domain', () => {
+            const row = { productDomain: 42 };
+            expect(isAccommodationSubscription(row)).toBe(false);
+            expect(isCommerceSubscription(row)).toBe(false);
+            expect(subscriptionMatchesDomain(row, 'gastronomy')).toBe(false);
+        });
+    });
+
+    describe('the widening', () => {
+        it.each([
+            'gastronomy',
+            'experience'
+        ] as const)('counts a %s row as a commerce subscription', (domain) => {
+            // This is what keeps release B revertible: after the rows are
+            // rewritten, the reconciler must still see them as commerce.
+            expect(isCommerceSubscription({ productDomain: domain })).toBe(true);
+        });
+
+        it.each([
+            'gastronomy',
+            'experience'
+        ] as const)('keeps a %s row OUT of the accommodation domain', (domain) => {
+            // The SPEC-239 isolation invariant. A leak here would hand a
+            // vertical subscription to a host's entitlement engine — the one
+            // failure mode that grants access rather than withholding it.
+            expect(isAccommodationSubscription({ productDomain: domain })).toBe(false);
+        });
+
+        it('matches a vertical only against itself', () => {
+            expect(subscriptionMatchesDomain({ productDomain: 'gastronomy' }, 'gastronomy')).toBe(
+                true
+            );
+            expect(subscriptionMatchesDomain({ productDomain: 'gastronomy' }, 'experience')).toBe(
+                false
+            );
+        });
+
+        it('does NOT let a transitional commerce row satisfy a single vertical', () => {
+            // `'commerce'` is ambiguous between the two verticals. Guessing would
+            // charge an experience against a gastronomy cap, so a vertical-scoped
+            // read fails closed until release B resolves the ambiguity in the data.
+            const legacyCommerceRow = { productDomain: 'commerce' };
+            expect(subscriptionMatchesDomain(legacyCommerceRow, 'gastronomy')).toBe(false);
+            expect(subscriptionMatchesDomain(legacyCommerceRow, 'experience')).toBe(false);
+            expect(subscriptionMatchesDomain(legacyCommerceRow, 'commerce')).toBe(true);
+        });
+
+        it('fails closed on a domain value nobody defined', () => {
+            // The failure mode of an unrecognised value must be a dark listing,
+            // never a granted entitlement.
+            const unknownRow = { productDomain: 'retail' };
+            expect(isAccommodationSubscription(unknownRow)).toBe(false);
+            expect(isCommerceSubscription(unknownRow)).toBe(false);
+        });
+    });
+
+    describe('the two exported predicates are wrappers, not copies', () => {
+        it('agrees with the canonical helper on every domain value', () => {
+            const rows = [
+                {},
+                { productDomain: null },
+                { productDomain: 'accommodation' },
+                { productDomain: 'commerce' },
+                { productDomain: 'gastronomy' },
+                { productDomain: 'experience' },
+                { productDomain: 'partner' },
+                { productDomain: 'retail' }
+            ];
+
+            for (const row of rows) {
+                expect(isAccommodationSubscription(row)).toBe(
+                    subscriptionMatchesDomain(row, 'accommodation')
+                );
+                expect(isCommerceSubscription(row)).toBe(
+                    subscriptionMatchesDomain(row, 'commerce')
+                );
+            }
+        });
     });
 });

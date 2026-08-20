@@ -16,6 +16,7 @@ import { useEffect, useState } from 'react';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import type { AccommodationPhotoUsage, LimitUsage } from '@/lib/api/endpoints-protected';
 import { billingApi } from '@/lib/api/endpoints-protected';
+import type { ProductDomainScope } from '@/lib/api/types';
 import {
     addonSlugForLimit,
     groupLimitsByAudience,
@@ -38,7 +39,7 @@ export interface PlanUsageSectionProps {
      * can hold both an accommodation and a commerce subscription under one
      * billing customer, and each grants a different set of limits.
      */
-    readonly productDomain?: 'accommodation' | 'commerce';
+    readonly productDomain?: ProductDomainScope;
 }
 
 /** `maxAllowed` sentinel meaning "no ceiling". */

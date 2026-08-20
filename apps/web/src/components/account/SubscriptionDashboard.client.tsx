@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import type { InvoiceItem, SubscriptionData } from '@/lib/api/endpoints-protected';
 import { billingApi, userApi } from '@/lib/api/endpoints-protected';
+import type { ProductDomainScope } from '@/lib/api/types';
 import { translateApiError } from '@/lib/api-errors';
 import type { PublicPlanData } from '@/lib/billing/fetch-plans';
 import { getAdminUrl } from '@/lib/env';
@@ -80,7 +81,7 @@ export interface SubscriptionDashboardProps {
      * initial fetch and the silent refresh to the right one. Defaults to
      * `'accommodation'` server-side when omitted (see `userApi.getSubscription`).
      */
-    readonly productDomain?: 'accommodation' | 'commerce';
+    readonly productDomain?: ProductDomainScope;
 }
 
 // ---------------------------------------------------------------------------

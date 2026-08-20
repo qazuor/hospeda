@@ -35,6 +35,7 @@ vi.mock('@repo/db', () => ({
 }));
 
 import '../../../../src/routes/billing/public/listPlans';
+import { makePublicPlansCtx } from './public-plans-test-ctx';
 
 const OWNER_PLAN = {
     id: '11111111-1111-1111-1111-111111111111',
@@ -71,7 +72,9 @@ describe('publicListPlansRoute partner-domain isolation', () => {
 
     it('filters partner plans out of the public plan list', async () => {
         const call = mockCreateSimpleRoute.mock.calls[0];
-        const handler = (call?.[0] as Record<string, unknown>)?.handler as () => Promise<unknown>;
+        const handler = (call?.[0] as Record<string, unknown>)?.handler as (
+            ctx: unknown
+        ) => Promise<unknown>;
 
         mockPlanList.mockResolvedValue({
             success: true,
@@ -83,7 +86,7 @@ describe('publicListPlansRoute partner-domain isolation', () => {
 
         mockSelectWhere.mockResolvedValue([{ name: 'partner-listing' }]);
 
-        const result = await handler();
+        const result = await handler(makePublicPlansCtx());
 
         expect(result).toEqual([OWNER_PLAN]);
     });

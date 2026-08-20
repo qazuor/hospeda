@@ -39,7 +39,7 @@ import type {
 import { MAX_BULK_CHECK_ENTITY_IDS } from '@repo/schemas';
 import type { MediaAttribution } from '../media';
 import { apiClient } from './client';
-import type { ApiResult, PaginatedResponse } from './types';
+import type { ApiResult, PaginatedResponse, ProductDomainScope } from './types';
 
 /**
  * The two commerce verticals that share the granular media endpoint shape
@@ -413,7 +413,7 @@ export const userApi = {
      */
     getSubscription(params?: {
         readonly cookieHeader?: string;
-        readonly productDomain?: 'accommodation' | 'commerce';
+        readonly productDomain?: ProductDomainScope;
     }): Promise<ApiResult<{ readonly subscription: SubscriptionData | null }>> {
         return apiClient.getProtected({
             path: `${PROTECTED}/users/me/subscription`,
@@ -1083,7 +1083,7 @@ export const billingApi = {
      * ```
      */
     getUsage(params?: {
-        readonly productDomain?: 'accommodation' | 'commerce';
+        readonly productDomain?: ProductDomainScope;
         readonly cookieHeader?: string;
     }): Promise<ApiResult<UsageSummary>> {
         return apiClient.getProtected({

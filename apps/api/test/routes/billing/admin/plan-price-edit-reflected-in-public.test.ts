@@ -115,6 +115,7 @@ import '../../../../src/routes/billing/admin/plans';
 
 // Import public plans module — triggers createSimpleRoute call at module load
 import '../../../../src/routes/billing/public/listPlans';
+import { makePublicPlansCtx } from '../public/public-plans-test-ctx';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -218,8 +219,9 @@ describe('T-019: admin price edit is reflected in GET /public/plans', () => {
         // Step 2: the public list endpoint now returns the updated plan (service
         // reads from DB which already has the new price after the write above)
         const publicRouteCall = mockCreateSimpleRoute.mock.calls[0];
-        const publicHandler = (publicRouteCall?.[0] as Record<string, unknown>)
-            ?.handler as () => Promise<unknown>;
+        const publicHandler = (publicRouteCall?.[0] as Record<string, unknown>)?.handler as (
+            ctx: unknown
+        ) => Promise<unknown>;
 
         mockAdminPlanList.mockResolvedValue({
             success: true,
@@ -231,7 +233,7 @@ describe('T-019: admin price edit is reflected in GET /public/plans', () => {
 
         // ─── Act (read) ────────────────────────────────────────────────────────
 
-        const publicResult = (await publicHandler()) as (typeof UPDATED_PLAN)[];
+        const publicResult = (await publicHandler(makePublicPlansCtx())) as (typeof UPDATED_PLAN)[];
 
         // ─── Assert ────────────────────────────────────────────────────────────
 
@@ -278,8 +280,9 @@ describe('T-019: admin price edit is reflected in GET /public/plans', () => {
 
         // ─── Arrange (read) ────────────────────────────────────────────────────
         const publicRouteCall = mockCreateSimpleRoute.mock.calls[0];
-        const publicHandler = (publicRouteCall?.[0] as Record<string, unknown>)
-            ?.handler as () => Promise<unknown>;
+        const publicHandler = (publicRouteCall?.[0] as Record<string, unknown>)?.handler as (
+            ctx: unknown
+        ) => Promise<unknown>;
 
         // Public service returns the same post-update plan (DB is the single
         // source of truth; both read from the same billing_plans/billing_prices rows)
@@ -292,7 +295,9 @@ describe('T-019: admin price edit is reflected in GET /public/plans', () => {
         });
 
         // ─── Act (read) ────────────────────────────────────────────────────────
-        const publicResult = (await publicHandler()) as (typeof ORIGINAL_PLAN)[];
+        const publicResult = (await publicHandler(
+            makePublicPlansCtx()
+        )) as (typeof ORIGINAL_PLAN)[];
 
         // ─── Assert ────────────────────────────────────────────────────────────
         // The public-facing price must exactly match what the admin write confirmed
@@ -306,8 +311,9 @@ describe('T-019: admin price edit is reflected in GET /public/plans', () => {
         // return [] rather than crashing with a 500.
 
         const publicRouteCall = mockCreateSimpleRoute.mock.calls[0];
-        const publicHandler = (publicRouteCall?.[0] as Record<string, unknown>)
-            ?.handler as () => Promise<unknown>;
+        const publicHandler = (publicRouteCall?.[0] as Record<string, unknown>)?.handler as (
+            ctx: unknown
+        ) => Promise<unknown>;
 
         mockAdminPlanList.mockResolvedValue({
             success: false,
@@ -315,7 +321,7 @@ describe('T-019: admin price edit is reflected in GET /public/plans', () => {
         });
 
         // ─── Act ───────────────────────────────────────────────────────────────
-        const result = await publicHandler();
+        const result = await publicHandler(makePublicPlansCtx());
 
         // ─── Assert ────────────────────────────────────────────────────────────
         expect(result).toEqual([]);

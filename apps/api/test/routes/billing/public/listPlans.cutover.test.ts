@@ -49,6 +49,7 @@ vi.mock('../../../../src/utils/logger', () => ({
 // Importing the module triggers module-level evaluation (PlanService instantiation +
 // createSimpleRoute call). Must come AFTER vi.mock declarations.
 import '../../../../src/routes/billing/public/listPlans';
+import { makePublicPlansCtx } from './public-plans-test-ctx';
 
 // ─── Stubs ────────────────────────────────────────────────────────────────────
 
@@ -74,9 +75,9 @@ const STUB_DB_PLAN = {
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
-function getRegisteredHandler(): () => Promise<unknown> {
+function getRegisteredHandler(): (ctx: unknown) => Promise<unknown> {
     const call = mockCreateSimpleRoute.mock.calls[0];
-    return (call?.[0] as Record<string, unknown>)?.handler as () => Promise<unknown>;
+    return (call?.[0] as Record<string, unknown>)?.handler as (ctx: unknown) => Promise<unknown>;
 }
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
@@ -107,7 +108,7 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
             });
 
             const handler = getRegisteredHandler();
-            await handler();
+            await handler(makePublicPlansCtx());
 
             // If any config read had been attempted, the mock would not have
             // captured it and the plan data would be missing or wrong.
@@ -129,7 +130,7 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
 
             // Act
             const handler = getRegisteredHandler();
-            await handler();
+            await handler(makePublicPlansCtx());
 
             // Assert — DB filter applied: active plans only
             expect(mockPlanList).toHaveBeenCalledWith({ active: true });
@@ -147,7 +148,7 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
 
             // Act
             const handler = getRegisteredHandler();
-            const result = await handler();
+            const result = await handler(makePublicPlansCtx());
 
             // Assert
             expect(result).toEqual([STUB_DB_PLAN]);
@@ -171,7 +172,7 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
 
             // Act
             const handler = getRegisteredHandler();
-            const result = (await handler()) as (typeof STUB_DB_PLAN)[];
+            const result = (await handler(makePublicPlansCtx())) as (typeof STUB_DB_PLAN)[];
 
             // Assert
             expect(result).toHaveLength(2);
@@ -194,7 +195,7 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
 
             // Act
             const handler = getRegisteredHandler();
-            const result = await handler();
+            const result = await handler(makePublicPlansCtx());
 
             // Assert — graceful: empty list, no throw
             expect(result).toEqual([]);
@@ -206,7 +207,7 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
 
             // Act
             const handler = getRegisteredHandler();
-            const result = await handler();
+            const result = await handler(makePublicPlansCtx());
 
             // Assert
             expect(result).toEqual([]);
@@ -230,7 +231,7 @@ describe('publicListPlansRoute cutover lock (SPEC-192 T-022)', () => {
 
             // Act
             const handler = getRegisteredHandler();
-            const result = (await handler()) as (typeof STUB_DB_PLAN)[];
+            const result = (await handler(makePublicPlansCtx())) as (typeof STUB_DB_PLAN)[];
             const plan = result[0];
 
             // Assert — all fields from previous ALL_PLANS shape are present

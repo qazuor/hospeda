@@ -9,38 +9,76 @@
  */
 
 import { billingPlans, getDb, ne } from '@repo/db';
-import { ProductDomainEnum } from '@repo/schemas';
+import { ProductDomainEnumSchema, type ProductDomainValue, ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
+import type { Context } from 'hono';
 import { PlanService } from '../../../services/plan.service';
 import { apiLogger } from '../../../utils/logger';
 import { createSimpleRoute } from '../../../utils/route-factory.js';
 import { z } from '../../../utils/zod';
 
+/** The domain served when `?domain=` is absent — i.e. every caller that exists today. */
+const DEFAULT_DOMAIN: ProductDomainValue = 'accommodation';
+
 /**
- * Resolve the set of plan slugs that do NOT belong to the accommodation domain
- * (SPEC-239 T-049 isolation). Any plan whose `productDomain` is not
- * `'accommodation'` (e.g. `'commerce'`) is excluded from the public list.
- * `productDomain` is `notNull()` with a default, so no NULL is ever possible —
- * `ne()` is exactly equivalent to the previous raw `IS DISTINCT FROM`.
+ * Resolve the set of plan slugs that do NOT belong to `domain`
+ * (SPEC-239 T-049 isolation, parameterised by HOS-685).
  *
- * Fail-open: on any DB error the set is empty (no plans excluded) so the public
- * pricing list never breaks because of this isolation filter — at worst a
- * commerce plan would briefly leak, never an accommodation plan disappearing.
+ * Deliberately still an *exclusion* set rather than an inclusion filter: with
+ * `domain = 'accommodation'` this is the pre-HOS-685 query character for
+ * character, so the default response — the only one any caller asks for today —
+ * cannot drift. `productDomain` is `notNull()` with a default
+ * (`0044_adorable_longshot.sql`), so no NULL is ever possible and `ne()` remains
+ * exactly equivalent to the previous raw `IS DISTINCT FROM`.
+ *
+ * Returns `null` when the query itself fails, so the caller can pick a
+ * fail-mode per domain rather than having one imposed here — see the handler.
  */
-async function getNonAccommodationPlanSlugs(): Promise<Set<string>> {
+async function getPlanSlugsOutsideDomain(domain: ProductDomainValue): Promise<Set<string> | null> {
     try {
         const db = getDb();
         const rows = await db
             .select({ name: billingPlans.name })
             .from(billingPlans)
-            .where(ne(billingPlans.productDomain, ProductDomainEnum.ACCOMMODATION));
+            .where(ne(billingPlans.productDomain, domain));
         return new Set(rows.map((r) => r.name));
     } catch (error) {
         apiLogger.warn(
-            { error: error instanceof Error ? error.message : String(error) },
-            'Failed to resolve non-accommodation plan slugs for public list — not excluding any (fail-open)'
+            { error: error instanceof Error ? error.message : String(error), domain },
+            'Failed to resolve out-of-domain plan slugs for public list'
         );
-        return new Set();
+        return null;
     }
+}
+
+/**
+ * Read and validate `?domain=`.
+ *
+ * `createSimpleRoute` declares no `request.query`, so this is validated in the
+ * handler rather than by the factory. The consequence worth knowing: the
+ * parameter does not appear in the generated OpenAPI document. Migrating the
+ * route to a factory that supports query schemas would also drop
+ * `assertConcretePublicSchema`, which is a worse trade for a public response.
+ *
+ * An unrecognised value is a 400, not an empty list: a silent empty catalogue
+ * on a typo is the exact failure mode this whole vocabulary change exists to
+ * stop being possible.
+ */
+function resolveRequestedDomain(ctx: Context): ProductDomainValue {
+    const raw = ctx.req.query('domain');
+    if (raw === undefined || raw === '') {
+        return DEFAULT_DOMAIN;
+    }
+
+    const parsed = ProductDomainEnumSchema.safeParse(raw);
+    if (!parsed.success) {
+        throw new ServiceError(
+            ServiceErrorCode.VALIDATION_ERROR,
+            `Unknown product domain '${raw}'`
+        );
+    }
+
+    return parsed.data;
 }
 
 /**
@@ -106,11 +144,12 @@ export const publicListPlansRoute = createSimpleRoute({
     path: '/',
     summary: 'List billing plans',
     description:
-        'Returns all active billing plans from the database. Includes pricing in ARS and USD, trial information, entitlements, and limits. Only active plans are returned.',
+        'Returns all active billing plans from the database. Includes pricing in ARS and USD, trial information, entitlements, and limits. Only active plans are returned. Optional `?domain=` scopes the list to one product domain (default `accommodation`); a response never mixes domains.',
     tags: ['Plans'],
     responseSchema: PlansListResponseSchema,
-    handler: async () => {
-        apiLogger.debug('Public listing active billing plans from DB');
+    handler: async (ctx: Context) => {
+        const domain = resolveRequestedDomain(ctx);
+        apiLogger.debug({ domain }, 'Public listing active billing plans from DB');
 
         const result = await planService.list({ active: true });
 
@@ -123,10 +162,23 @@ export const publicListPlansRoute = createSimpleRoute({
             return [];
         }
 
-        // SPEC-239 T-049: exclude non-accommodation (e.g. commerce) plans from
-        // the public/accommodation plan list. The commerce plan is a billing
-        // mechanism for commerce listings, not a tourist/owner pricing tier.
-        const excludedSlugs = await getNonAccommodationPlanSlugs();
+        // SPEC-239 T-049 / HOS-685: scope the list to ONE product domain instead
+        // of hardcoding "everything that is not accommodation". The isolation the
+        // exclusion bought is now preserved by construction, and a new vertical
+        // is invisible to accommodation callers without anyone remembering to
+        // extend a deny-list.
+        const excludedSlugs = await getPlanSlugsOutsideDomain(domain);
+
+        if (excludedSlugs === null) {
+            // The domain query failed. Accommodation keeps the pre-HOS-685
+            // fail-open behaviour exactly: serve the unfiltered list rather than
+            // break the public pricing page, accepting that a commerce plan may
+            // briefly leak. Every other domain fails CLOSED — an empty vertical
+            // catalogue is recoverable, a response that mixes domains is the one
+            // outcome AC-22 forbids.
+            return domain === DEFAULT_DOMAIN ? result.data.items : [];
+        }
+
         if (excludedSlugs.size === 0) {
             return result.data.items;
         }

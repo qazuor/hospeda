@@ -3,7 +3,27 @@
  * Maps to the standard response shapes from @repo/schemas.
  */
 
+import type { ProductDomainValue } from '@repo/schemas';
 import type { MediaAttribution } from '../media';
+
+/**
+ * Which product domain's subscription a protected billing read is scoped to
+ * (`?productDomain=`), mirroring the API's `ProductDomainQuerySchema`.
+ *
+ * Derived from {@link ProductDomainValue} so it widens with the vocabulary
+ * instead of restating it. That alias is the *string* form on purpose: every
+ * caller passes a plain literal (`productDomain: 'commerce'`), which TypeScript
+ * would reject against the enum type itself. The import is type-only, so
+ * nothing reaches the client bundle.
+ *
+ * `partner` is excluded to match the API, which answers 400 for it: these
+ * endpoints resolve the caller's own listing subscriptions, and a partner
+ * directory subscription is not one of them.
+ *
+ * `commerce` is the transitional umbrella covering both verticals until
+ * HOS-692 rewrites the rows; `gastronomy` / `experience` scope to one.
+ */
+export type ProductDomainScope = Exclude<ProductDomainValue, 'partner'>;
 
 /** Pagination metadata returned by list endpoints */
 export interface PaginationMeta {
