@@ -72,10 +72,23 @@
  *   3. Reviews authored by the test accounts (the NOT NULL + SET NULL trap).
  *   4. Gastronomies, experiences, partners — CASCADE clears their children.
  *   5. The zzqa accommodations.
- *   6. Billing rows for the test accounts. The link from `billing_customers` to
- *      a user is `external_id`, an application-level string — NOT a database FK
- *      — so nothing cleans it up on its own.
- *   7. The 23 user rows.
+ *   6. The RESTRICT holders on `billing_customers.id`: `billing_subscriptions`,
+ *      `billing_addon_purchases`, `billing_dunning_attempts`, and
+ *      `billing_invoices`. None of these four CASCADE — each one aborts the
+ *      customer delete below (and every seed-migration numbered above it, per
+ *      the runner's stop-at-first-failure contract) the moment a purged
+ *      customer still has a live row there, which is exactly what production
+ *      hits today for three gastronomy-owner accounts (HOS-712).
+ *      `billing_payments` is ALSO `restrict` and is deliberately NOT cleared
+ *      here — those rows are real money (see PRESERVES above) — so if a
+ *      purged customer still holds a payment row, step 7 below still fails.
+ *      That residual case is open and untouched by this fix; see HOS-712.
+ *   7. Billing customers for the test accounts. The link from `billing_customers`
+ *      to a user is `external_id`, an application-level string — NOT a database
+ *      FK — so nothing cleans that link up on its own. (It USED to be assumed
+ *      that deleting the customer cascaded its subscriptions; it does not —
+ *      the FK is `restrict`, which is the whole reason step 6 exists.)
+ *   8. The 23 user rows.
  *
  * Re-running is a per-row no-op: every step deletes by a literal key set, so a
  * second pass simply matches nothing.
@@ -87,7 +100,11 @@ import {
     accommodationOccupancy,
     accommodationReviews,
     accommodations,
+    billingAddonPurchases,
     billingCustomers,
+    billingDunningAttempts,
+    billingInvoices,
+    billingSubscriptions,
     destinationReviews,
     entityComments,
     entityViews,
@@ -357,10 +374,63 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         values: accommodationIds
     });
 
-    // ── Step 7: billing. The customer→user link is `external_id`, an
-    // application-level string and NOT a database FK, so nothing cleans it up
-    // on its own. Deleting the customer CASCADEs its subscriptions.
-    // `billing_payments` is deliberately left alone: those rows are real money.
+    // ── Step 7: the RESTRICT holders on `billing_customers.id`, resolved from
+    // the customers about to be purged below. `billing_customers` has NO
+    // database FK up to `users` — that link is the application-level
+    // `external_id` — but it DOES have several inbound FKs from its own
+    // billing children, and four of them are `ON DELETE restrict`, not
+    // cascade: `billing_subscriptions`, `billing_addon_purchases`,
+    // `billing_dunning_attempts`, and `billing_invoices`. Deleting
+    // `billing_customers` first — as this migration originally did, on the
+    // false assumption that the delete cascaded — aborts the whole
+    // seed-migration run (HOS-25 G-5: no partial runs, first failure stops
+    // everything numbered after it) the moment a purged customer still has a
+    // live row in any of them. Measured against production on 2026-08-20,
+    // three gastronomy-owner accounts hit exactly this (HOS-712). These four
+    // must be cleared before Step 8's `billing_customers` delete.
+    //
+    // `billing_payments` is ALSO `restrict` and is deliberately NOT cleared
+    // here: those rows are real money (see the module docstring's PRESERVES
+    // section). If a purged customer still holds a `billing_payments` row,
+    // Step 8 below still fails on that FK — a known, unresolved edge case
+    // (HOS-712) this fix does not attempt to work around.
+    const billingCustomerRows = await db
+        .select({ id: billingCustomers.id })
+        .from(billingCustomers)
+        .where(inArray(billingCustomers.externalId, testUserIds));
+    const billingCustomerIds = billingCustomerRows.map((row) => row.id);
+
+    const billingSubscriptionsDeleted = await deleteWhereIn({
+        db,
+        table: billingSubscriptions,
+        column: billingSubscriptions.customerId,
+        values: billingCustomerIds
+    });
+    const billingAddonPurchasesDeleted = await deleteWhereIn({
+        db,
+        table: billingAddonPurchases,
+        column: billingAddonPurchases.customerId,
+        values: billingCustomerIds
+    });
+    const billingDunningAttemptsDeleted = await deleteWhereIn({
+        db,
+        table: billingDunningAttempts,
+        column: billingDunningAttempts.customerId,
+        values: billingCustomerIds
+    });
+    const billingInvoicesDeleted = await deleteWhereIn({
+        db,
+        table: billingInvoices,
+        column: billingInvoices.customerId,
+        values: billingCustomerIds
+    });
+
+    // ── Step 8: billing customers for the test accounts. The customer→user
+    // link is `external_id`, an application-level string and NOT a database
+    // FK, so nothing cleans that link up on its own — but the RESTRICT
+    // children cleared in Step 7 DO need to be gone first, or this delete
+    // aborts on the FK. `billing_payments` is deliberately left alone: those
+    // rows are real money.
     const billingCustomersDeleted = await deleteWhereIn({
         db,
         table: billingCustomers,
@@ -368,7 +438,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         values: testUserIds
     });
 
-    // ── Step 8: the accounts themselves ─────────────────────────────────────
+    // ── Step 9: the accounts themselves ─────────────────────────────────────
     const usersDeleted = await deleteWhereIn({
         db,
         table: users,
@@ -384,6 +454,10 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         experiencesDeleted,
         partnersDeleted,
         accommodationsDeleted,
+        billingSubscriptionsDeleted,
+        billingAddonPurchasesDeleted,
+        billingDunningAttemptsDeleted,
+        billingInvoicesDeleted,
         billingCustomersDeleted,
         occupancyDeleted,
         entityViewsDeleted,
