@@ -203,11 +203,16 @@ export function _resetCommerceBaseLimitCache(): void {
  * accommodation loader fails open on — is still capped, because "no
  * subscription" resolves to a number instead of to an absent key.
  *
+ * Exported because the checkout route needs the SAME number the create route
+ * was gated on: it decides whether a second listing joins the owner's existing
+ * subscription or is refused. Two independent readings of "the cap" would let
+ * the two disagree, and the disagreement would look like a working checkout.
+ *
  * @param input.customerId - The caller's billing customer id, when they have one.
  * @param input.vertical - The commerce vertical being gated.
  * @returns The cap to publish into `userLimits`.
  */
-async function resolveVerticalCap(input: {
+export async function resolveCommerceVerticalCap(input: {
     customerId: string | null | undefined;
     vertical: CommerceVertical;
 }): Promise<number> {
@@ -320,7 +325,7 @@ export function commerceVerticalEntitlementMiddleware(
             return;
         }
 
-        const cap = await resolveVerticalCap({
+        const cap = await resolveCommerceVerticalCap({
             customerId: c.get('billingCustomerId'),
             vertical
         });
