@@ -212,3 +212,34 @@ export function checkCanModerateReview(actor: Actor): void {
         );
     }
 }
+
+/**
+ * Verifies the actor may change the moderation state of a commerce LISTING.
+ * Requires `COMMERCE_MODERATION_CHANGE` (HOS-686).
+ *
+ * ## Why this is not {@link checkCanModerateReview}
+ *
+ * `COMMERCE_MODERATE_REVIEW` moderates reviews written *about* a listing. This
+ * one moderates the listing itself — the takedown verdict the commerce
+ * visibility reconciler reads (`moderationState === REJECTED` flips the listing
+ * to `PRIVATE` / `INACTIVE`). Anyone grepping "moderate" under commerce finds
+ * the review check first and can reasonably conclude the listing case is
+ * already covered. It is not: they are two distinct authorities.
+ *
+ * ## Why accommodation's `checkCanModerate` could not be reused
+ *
+ * `accommodation.permissions.ts:313` hardcodes
+ * `ACCOMMODATION_MODERATION_CHANGE` and accepts no permission parameter, so it
+ * is not generic over domains.
+ *
+ * @param actor - The actor performing the action.
+ * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.
+ */
+export function checkCanModerateCommerceListing(actor: Actor): void {
+    if (!hasPermission(actor, PermissionEnum.COMMERCE_MODERATION_CHANGE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to moderate commerce listing'
+        );
+    }
+}
