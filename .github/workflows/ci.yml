@@ -258,6 +258,8 @@ jobs:
       # that npm script would never execute in CI. It is in both on purpose.
       - name: Check soft deletes record their actor (HOS-556 / HOS-559)
         run: pnpm check:soft-delete-actor
+      - name: Check product-domain vocabulary is not narrowed back (HOS-685)
+        run: bash scripts/check-product-domain-vocabulary.sh
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."
