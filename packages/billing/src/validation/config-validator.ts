@@ -26,6 +26,19 @@ export interface BillingConfigValidationResult {
 }
 
 /**
+ * Plan categories allowed to have zero plans in {@link PlanCategory}, i.e. no
+ * "must have exactly one default plan" requirement applies to them.
+ *
+ * `'complex'` (HOS-692, spec §6.9): the 3 `complex-*` plans were removed —
+ * zero live subscriptions, and the multi-property vertical they were for was
+ * never built. This is an explicit, narrow allowlist rather than a blanket
+ * "skip any empty category" rule, so an ACCIDENTALLY empty `owner` or
+ * `tourist` category (e.g. a broken config load) still fails validation
+ * loudly, exactly as it always has.
+ */
+const CATEGORIES_ALLOWED_EMPTY: ReadonlySet<PlanCategory> = new Set(['complex']);
+
+/**
  * Validates all plan configurations.
  * Checks prices, trial days, entitlement references, slugs, defaults, and sort order.
  *
@@ -35,12 +48,19 @@ export interface BillingConfigValidationResult {
 function validatePlans(plans: PlanDefinition[]): string[] {
     const errors: string[] = [];
     const slugsSeen = new Set<string>();
-    const categoryCounts: Record<PlanCategory, { defaultCount: number; sortOrders: Set<number> }> =
-        {
-            owner: { defaultCount: 0, sortOrders: new Set() },
-            complex: { defaultCount: 0, sortOrders: new Set() },
-            tourist: { defaultCount: 0, sortOrders: new Set() }
-        };
+    const categoryCounts: Record<
+        PlanCategory,
+        { planCount: number; defaultCount: number; sortOrders: Set<number> }
+    > = {
+        owner: { planCount: 0, defaultCount: 0, sortOrders: new Set() },
+        // HOS-692 (spec §6.9): the complex-* plans were removed (zero live
+        // subscriptions, vertical never built), so this category is
+        // deliberately empty. `planCount` below is what lets the "must have
+        // exactly one default" check skip a category with no plans instead
+        // of demanding a default plan that no longer exists.
+        complex: { planCount: 0, defaultCount: 0, sortOrders: new Set() },
+        tourist: { planCount: 0, defaultCount: 0, sortOrders: new Set() }
+    };
 
     // All valid entitlement keys
     const validEntitlements = new Set(Object.values(EntitlementKey));
@@ -85,6 +105,7 @@ function validatePlans(plans: PlanDefinition[]): string[] {
 
         // Track category-specific data
         const categoryData = categoryCounts[plan.category];
+        categoryData.planCount++;
         if (plan.isDefault) {
             categoryData.defaultCount++;
         }
@@ -98,8 +119,16 @@ function validatePlans(plans: PlanDefinition[]): string[] {
         categoryData.sortOrders.add(plan.sortOrder);
     }
 
-    // Check that each category has exactly one default plan
+    // Check that each category has exactly one default plan — except a
+    // category on the explicit CATEGORIES_ALLOWED_EMPTY allowlist with ZERO
+    // plans, which has nothing to default and is skipped rather than
+    // flagged. Deliberately an allowlist, not a blanket "planCount === 0"
+    // skip: an accidentally empty `owner`/`tourist` category (e.g. a broken
+    // config load) must still fail loudly, the same as it always has.
     for (const [category, data] of Object.entries(categoryCounts)) {
+        if (data.planCount === 0 && CATEGORIES_ALLOWED_EMPTY.has(category as PlanCategory)) {
+            continue;
+        }
         if (data.defaultCount === 0) {
             errors.push(`Category "${category}": No default plan found`);
         } else if (data.defaultCount > 1) {

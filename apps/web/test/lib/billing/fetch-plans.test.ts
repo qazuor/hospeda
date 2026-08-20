@@ -287,6 +287,31 @@ describe('filterPlansByCategory', () => {
         // Assert
         expect(result).toHaveLength(0);
     });
+
+    // HOS-692 AC-28: `/suscriptores/planes/comparar/` (comparar/index.astro)
+    // merges `filterPlansByCategory(plans, 'owner')` and
+    // `filterPlansByCategory(plans, 'complex')` into one `ownerPlans` array,
+    // then gates the page on `hasPlans = ownerPlans.length > 0`. HOS-692 (spec
+    // §6.9) removed the complex-* plans from the catalogue, so a real API
+    // response after this change carries ZERO plans of category 'complex' —
+    // verified here against the exact merge the page performs, not assumed.
+    it('HOS-692 AC-28: merging owner + complex categories still renders when complex is empty', () => {
+        // Arrange — a post-HOS-692 catalogue: only owner-category plans exist.
+        const plans = [OWNER_ACTIVE] as const;
+
+        // Act — replicate comparar/index.astro's exact computation.
+        const ownerPlans = [
+            ...filterPlansByCategory(plans, 'owner'),
+            ...filterPlansByCategory(plans, 'complex')
+        ].sort((a, b) => a.sortOrder - b.sortOrder);
+        const hasPlans = ownerPlans.length > 0;
+
+        // Assert — the page renders its table (not EmptyState): complex
+        // contributes nothing, but the owner plans alone keep it non-empty.
+        expect(filterPlansByCategory(plans, 'complex')).toEqual([]);
+        expect(ownerPlans).toEqual([OWNER_ACTIVE]);
+        expect(hasPlans).toBe(true);
+    });
 });
 
 /**

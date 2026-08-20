@@ -443,7 +443,9 @@ export async function createPlan(
                 sortOrder: input.sortOrder,
                 trialDays: input.trialDays,
                 hasTrial: input.hasTrial,
-                monthlyPriceArs: input.monthlyPriceArs,
+                // monthlyPriceArs: removed (HOS-692, spec §6.9) — dead metadata
+                // mirror; the DTO reads the price from monthly billing_prices.unitAmount
+                // (see mapDbToPlan's doc comment above), never from here.
                 annualPriceArs: input.annualPriceArs,
                 monthlyPriceUsdRef: input.monthlyPriceUsdRef
             };
@@ -598,8 +600,10 @@ export async function updatePlan(
             if (input.sortOrder !== undefined) updatedMeta.sortOrder = input.sortOrder;
             if (input.trialDays !== undefined) updatedMeta.trialDays = input.trialDays;
             if (input.hasTrial !== undefined) updatedMeta.hasTrial = input.hasTrial;
-            if (input.monthlyPriceArs !== undefined)
-                updatedMeta.monthlyPriceArs = input.monthlyPriceArs;
+            // monthlyPriceArs: removed from the metadata mirror (HOS-692, spec
+            // §6.9) — the typed column write below (planUpdateData.monthlyPriceArs)
+            // and the billing_prices reconciliation further down are the live
+            // writes; this dead mirror is never read by mapDbToPlan.
             if (input.annualPriceArs !== undefined)
                 updatedMeta.annualPriceArs = input.annualPriceArs;
             if (input.monthlyPriceUsdRef !== undefined)

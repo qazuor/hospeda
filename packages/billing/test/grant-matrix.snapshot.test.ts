@@ -126,37 +126,8 @@ const EXPECTED_AI_MATRIX: Readonly<Record<string, PlanAiExpectation>> = {
         // normalizes the owner AI ladder to a uniform x5-per-tier: 50/250/1250).
         limitValues: [1250, 1250, 200, 200]
     },
-    'complex-basico': {
-        grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
-        limitsPresent: [
-            LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
-            LimitKey.MAX_AI_CHAT_PER_MONTH,
-            LimitKey.MAX_AI_SEARCH_PER_MONTH,
-            LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
-        ],
-        limitValues: [30, 30, 200, 200]
-    },
-    'complex-pro': {
-        grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
-        limitsPresent: [
-            LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
-            LimitKey.MAX_AI_CHAT_PER_MONTH,
-            LimitKey.MAX_AI_SEARCH_PER_MONTH,
-            LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
-        ],
-        limitValues: [150, 150, 200, 200]
-    },
-    'complex-premium': {
-        grants: [EntitlementKey.AI_TEXT_IMPROVE, EntitlementKey.AI_CHAT],
-        limitsPresent: [
-            LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
-            LimitKey.MAX_AI_CHAT_PER_MONTH,
-            LimitKey.MAX_AI_SEARCH_PER_MONTH,
-            LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH
-        ],
-        // Phase 0 §6.1: -1 replaced with finite values; SPEC-283 consumer quotas at 200
-        limitValues: [2000, 5000, 200, 200]
-    },
+    // complex-basico/-pro/-premium removed (HOS-692, spec §6.9): zero live
+    // subscriptions, vertical never built — no longer in ALL_PLANS.
     'tourist-free': {
         grants: [],
         limitsPresent: [LimitKey.MAX_AI_SEARCH_PER_MONTH, LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH],
@@ -180,7 +151,8 @@ describe('AI grant-matrix snapshot (SPEC-211 §6.2 — AC-4.3)', () => {
     it('ALL_PLANS covers every slug in the expected matrix', () => {
         const actualSlugs = new Set(ALL_PLANS.map((p) => p.slug));
         const expectedSlugs = Object.keys(EXPECTED_AI_MATRIX);
-        expect(expectedSlugs).toHaveLength(9);
+        // HOS-692 (spec §6.9): complex-* removed from ALL_PLANS — 9 - 3 = 6.
+        expect(expectedSlugs).toHaveLength(6);
         for (const slug of expectedSlugs) {
             expect(actualSlugs.has(slug), `slug "${slug}" missing from ALL_PLANS`).toBe(true);
         }
@@ -345,11 +317,11 @@ describe('AI grant-matrix snapshot (SPEC-211 §6.2 — AC-4.3)', () => {
             }
         });
 
-        it('AI_TEXT_IMPROVE and AI_CHAT are granted by all 6 host/complex plans', () => {
+        it('AI_TEXT_IMPROVE and AI_CHAT are granted by all 3 owner plans (HOS-692: complex removed)', () => {
             const hostPlans = ALL_PLANS.filter(
                 (p) => p.category === 'owner' || p.category === 'complex'
             );
-            expect(hostPlans).toHaveLength(6);
+            expect(hostPlans).toHaveLength(3);
             for (const plan of hostPlans) {
                 expect(
                     plan.entitlements,
