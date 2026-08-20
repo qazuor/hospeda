@@ -15,6 +15,7 @@
 
 export const prerender = false;
 
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import { ProductDomainEnum } from '@repo/schemas';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
@@ -22,7 +23,7 @@ import { AddonsPurchasePanel } from '@/components/account/AddonsPurchasePanel.cl
 import type { AddonCardData } from '@/components/account/AddonsPurchasePanel.client';
 import { billingApi, hostAnalyticsApi, userApi } from '@/lib/api/endpoints-protected';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
-import { filterAddonsByHeldDomains, isUsableSubscription } from '@/lib/billing/addon-domain';
+import { filterAddonsByHeldDomains } from '@/lib/billing/addon-domain';
 import type { ProductDomainScope } from '@/lib/api/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -102,10 +103,24 @@ if (ownedResult.ok) {
 // who buys `extra-gastronomies-1`) must see that addon offered even with no
 // accommodation subscription at all — see `filterAddonsByHeldDomains` /
 // `resolveAddonProductDomain` in `@/lib/billing/addon-domain`.
+//
+// HOS-224: the backend is the real gate (addon purchase requires an
+// entitlement-granting subscription — see `isEntitlementGrantingStatus`,
+// which resolves `active` | `trialing` | `comp`). This page-level check is
+// UX only, so it routes through the same canonical predicate instead of a
+// hand-rolled status list (HOS-594: a hand-rolled `['active', 'trial',
+// 'trialing']` array silently omitted `comp`). One deliberate exception
+// stays OUTSIDE the predicate: `'trial'`. The web `SubscriptionStatus` type
+// declares `'trial'`, but the runtime MP-derived value seen on this page can
+// be `'trialing'` (see CheckoutStatusPoller's SUCCESS_STATUSES).
 const domainsWithSubscription = new Set<ProductDomainScope>(
     ADDON_GATE_DOMAINS.filter((_domain, index) => {
         const result = subscriptionResults[index];
-        return result?.ok ? isUsableSubscription(result.data.subscription) : false;
+        const subscription = result?.ok ? result.data.subscription : null;
+        return (
+            subscription !== null &&
+            (isEntitlementGrantingStatus(subscription.status) || subscription.status === 'trial')
+        );
     })
 );
 

@@ -16,9 +16,8 @@
  * are shown, never how a purchase is submitted.
  */
 
-import { isEntitlementGrantingStatus, productDomainForLimitKey } from '@repo/billing';
+import { productDomainForLimitKey } from '@repo/billing';
 import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
-import type { SubscriptionData } from '@/lib/api/endpoints-protected';
 
 /**
  * Resolves the product domain that gates one addon.
@@ -44,38 +43,15 @@ export function resolveAddonProductDomain(addon: {
 }
 
 /**
- * Whether a subscription is "usable" for the addon-catalog gate — an
- * entitlement-granting status (active/trialing/comp) OR the web-mapped
- * `'trial'` value.
- *
- * Mirrors the predicate `mi-cuenta/addons/index.astro` already applied
- * page-wide before HOS-689 (see that file's HOS-224/HOS-594 history): the
- * backend is the real purchase gate, this is UX only, so it stays aligned
- * with the same canonical `isEntitlementGrantingStatus` rather than a
- * hand-rolled status list. The one deliberate exception outside the
- * predicate is `'trial'`: the web `SubscriptionStatus` type declares it, but
- * the runtime MP-derived value seen here can be `'trialing'` instead (see
- * `CheckoutStatusPoller`'s `SUCCESS_STATUSES`).
- *
- * @param subscription - The domain-scoped subscription, or `null` when the
- *   caller holds none in that domain.
- */
-export function isUsableSubscription(
-    subscription: Pick<SubscriptionData, 'status'> | null
-): boolean {
-    if (!subscription) {
-        return false;
-    }
-    return isEntitlementGrantingStatus(subscription.status) || subscription.status === 'trial';
-}
-
-/**
  * Filters an addon catalog down to the addons the caller may currently
  * purchase, given which product domains they hold a usable subscription in.
  *
  * @param params.addons - The full catalog (`GET /billing/addons/available`).
  * @param params.domainsWithSubscription - Product domains the caller holds a
- *   usable subscription in (see {@link isUsableSubscription}).
+ *   usable subscription in (an entitlement-granting status — see
+ *   `isEntitlementGrantingStatus` from `@repo/billing`, called directly by
+ *   `mi-cuenta/addons/index.astro` per the HOS-594 static guard, which
+ *   requires that call to live in the page's own source).
  * @returns The subset of `addons` whose gating domain is in
  *   `domainsWithSubscription`.
  */

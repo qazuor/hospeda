@@ -3,18 +3,20 @@
  * @description Unit tests for the per-domain addon catalog gate helpers
  * (HOS-689 item 2).
  *
- * Covers the HOS-594 regression directly at the predicate level (a `comp`
- * subscription must be treated as usable) instead of relying on a
- * source-string match, and the domain-resolution/filtering logic that makes
- * a commerce-only owner see gastronomy/experience addons without an
- * accommodation subscription.
+ * The domain-resolution/filtering logic that makes a commerce-only owner see
+ * gastronomy/experience addons without an accommodation subscription. The
+ * HOS-594 "must use the canonical entitlement predicate, never a hand-rolled
+ * status list" regression is covered separately by the static guard
+ * `apps/web/test/pages/addons-status-gate-canonical-predicate.guard.test.ts`
+ * — `isEntitlementGrantingStatus` is called directly in
+ * `mi-cuenta/addons/index.astro` (that guard requires the call to live in
+ * the page's own source), not wrapped in a helper here.
  */
 
 import { ProductDomainEnum } from '@repo/schemas';
 import { describe, expect, it } from 'vitest';
 import {
     filterAddonsByHeldDomains,
-    isUsableSubscription,
     resolveAddonProductDomain
 } from '../../../src/lib/billing/addon-domain';
 
@@ -53,55 +55,6 @@ describe('resolveAddonProductDomain', () => {
 
         // Assert
         expect(result).toBe(ProductDomainEnum.EXPERIENCE);
-    });
-});
-
-// ---------------------------------------------------------------------------
-// isUsableSubscription — HOS-594 regression (comp must count as usable)
-// ---------------------------------------------------------------------------
-
-describe('isUsableSubscription', () => {
-    it('returns false for a null subscription', () => {
-        expect(isUsableSubscription(null)).toBe(false);
-    });
-
-    it('returns true for an active subscription', () => {
-        expect(isUsableSubscription({ status: 'active' })).toBe(true);
-    });
-
-    it('returns true for a trialing subscription', () => {
-        expect(isUsableSubscription({ status: 'trialing' })).toBe(true);
-    });
-
-    it('returns true for a comp subscription (HOS-594 regression)', () => {
-        // A hand-rolled ['active', 'trial', 'trialing'] list silently omits
-        // 'comp' — exactly the bug HOS-594 fixed at the API layer. This
-        // predicate must not repeat it.
-        expect(isUsableSubscription({ status: 'comp' })).toBe(true);
-    });
-
-    it('returns true for the web-mapped "trial" status (deliberate exception)', () => {
-        expect(isUsableSubscription({ status: 'trial' })).toBe(true);
-    });
-
-    it('returns false for a cancelled subscription', () => {
-        expect(isUsableSubscription({ status: 'cancelled' })).toBe(false);
-    });
-
-    it('returns false for an expired subscription', () => {
-        expect(isUsableSubscription({ status: 'expired' })).toBe(false);
-    });
-
-    it('returns false for a past_due subscription', () => {
-        expect(isUsableSubscription({ status: 'past_due' })).toBe(false);
-    });
-
-    it('returns false for a pending subscription', () => {
-        expect(isUsableSubscription({ status: 'pending' })).toBe(false);
-    });
-
-    it('returns false for a paused subscription', () => {
-        expect(isUsableSubscription({ status: 'paused' })).toBe(false);
     });
 });
 

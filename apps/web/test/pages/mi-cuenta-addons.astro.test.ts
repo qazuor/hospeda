@@ -60,14 +60,18 @@ describe('mi-cuenta/addons/index.astro (HOS-224)', () => {
         // HOS-224 / HOS-594: the "usable subscription" predicate must route
         // through the canonical isEntitlementGrantingStatus (active/trialing/
         // comp), never a hand-rolled status list that silently omits comp.
-        // HOS-689 item 2 relocated the predicate (and the 'trial' exception —
-        // see that module's doc) into the pure, unit-tested
-        // `@/lib/billing/addon-domain` helper (`isUsableSubscription`), so it
-        // is exercised directly there (see `addon-domain.test.ts`) rather than
-        // string-matched here — this test only asserts the page actually
-        // delegates to it instead of reimplementing the comparison inline.
+        // This exact requirement is ALSO pinned by the dedicated static guard
+        // `addons-status-gate-canonical-predicate.guard.test.ts`, which
+        // requires the import + call to live in THIS page's own source (not
+        // delegated to a helper) — so this test only re-affirms the same
+        // shape rather than duplicating that guard's stricter regex checks.
+        // HOS-689 item 2 additionally scopes the gate per product domain via
+        // `filterAddonsByHeldDomains` (`@/lib/billing/addon-domain`), so a
+        // commerce-only owner sees gastronomy/experience addons without an
+        // accommodation subscription.
+        expect(source).toContain("from '@repo/billing'");
+        expect(source).toContain('isEntitlementGrantingStatus');
         expect(source).toContain("from '@/lib/billing/addon-domain'");
-        expect(source).toContain('isUsableSubscription');
         expect(source).toContain('filterAddonsByHeldDomains');
         expect(source).toContain('hasUsableSubscription');
         expect(source).not.toContain('USABLE_SUBSCRIPTION_STATUSES');
