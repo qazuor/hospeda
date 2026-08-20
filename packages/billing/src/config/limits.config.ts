@@ -116,5 +116,16 @@ export const LIMIT_METADATA: Record<LimitKey, { name: string; description: strin
         name: 'Favorites collections',
         description:
             'Maximum number of active bookmark collections the user may create. Free plan users have no entitlement and this limit is never evaluated for them.'
+    },
+    // Commerce per-vertical listing caps (HOS-688)
+    [LimitKey.MAX_GASTRONOMIES]: {
+        name: 'Gastronomy listings',
+        description:
+            'Maximum number of gastronomy listings the owner may hold. Counted per OWNER and per VERTICAL, so it says nothing about experiences — those carry their own cap.'
+    },
+    [LimitKey.MAX_EXPERIENCES]: {
+        name: 'Experience listings',
+        description:
+            'Maximum number of experience listings the owner may hold. Counted per OWNER and per VERTICAL, so it says nothing about gastronomies — those carry their own cap.'
     }
 };

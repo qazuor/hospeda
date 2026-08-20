@@ -49,7 +49,28 @@ export enum LimitKey {
      * Free plan has no entitlement so this limit is never evaluated for free users.
      * Plus = 10, VIP = 25 (owner/complex inherit 25 via `TOURIST_VIP_LIMITS`).
      */
-    MAX_COLLECTIONS = 'max_collections'
+    MAX_COLLECTIONS = 'max_collections',
+
+    /**
+     * Maximum number of gastronomy listings an owner may hold (HOS-688).
+     *
+     * Commerce billing is per-OWNER and per-VERTICAL: a gastronomy plan caps
+     * gastronomy listings and says nothing about experiences. A single pooled
+     * commerce cap was considered and rejected — it cannot express "one
+     * restaurant and one excursion", since both slots could be spent on
+     * restaurants.
+     *
+     * Metered by `usage-tracking.service.ts` and enforced by
+     * `enforceGastronomyLimit()` on the owner create route. Raised one listing
+     * at a time by the `extra-gastronomies-1` addon.
+     */
+    MAX_GASTRONOMIES = 'max_gastronomies',
+    /**
+     * Maximum number of experience listings an owner may hold (HOS-688).
+     * The experience-side twin of {@link MAX_GASTRONOMIES} — see its doc for
+     * why the two caps are separate rather than pooled.
+     */
+    MAX_EXPERIENCES = 'max_experiences'
 }
 
 /**

@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import {
     AI_SUPPORT_ADDON,
     ALL_ADDONS,
+    EXTRA_EXPERIENCES_ADDON,
+    EXTRA_GASTRONOMIES_ADDON,
     EXTRA_PHOTOS_ADDON,
     getAddonBySlug,
     VISIBILITY_BOOST_30D_ADDON,
@@ -12,8 +14,10 @@ import { LimitKey } from '../src/types/plan.types.js';
 
 describe('Add-on Configuration', () => {
     describe('ALL_ADDONS', () => {
-        it('should export 6 add-ons', () => {
-            expect(ALL_ADDONS).toHaveLength(6);
+        it('should export 8 add-ons', () => {
+            // 6 accommodation-era add-ons plus the two per-vertical
+            // extra-listing add-ons HOS-688 introduced.
+            expect(ALL_ADDONS).toHaveLength(8);
         });
 
         it('should have one-time add-ons', () => {
@@ -63,6 +67,35 @@ describe('Add-on Configuration', () => {
             // link table (T-002).
             expect(VISIBILITY_BOOST_ADDON.requiresAccommodationTarget).toBe(true);
             expect(VISIBILITY_BOOST_30D_ADDON.requiresAccommodationTarget).toBe(true);
+        });
+    });
+
+    describe('Per-vertical extra-listing add-ons (HOS-688)', () => {
+        it('points each add-on at its OWN vertical cap and nothing else', () => {
+            // A cross-wired `affectsLimitKey` is the failure that raises the
+            // wrong cap: the owner pays for an extra restaurant and receives an
+            // extra excursion, with nothing anywhere reporting an error.
+            expect(EXTRA_GASTRONOMIES_ADDON.affectsLimitKey).toBe(LimitKey.MAX_GASTRONOMIES);
+            expect(EXTRA_EXPERIENCES_ADDON.affectsLimitKey).toBe(LimitKey.MAX_EXPERIENCES);
+        });
+
+        it('raises the cap by exactly one listing', () => {
+            expect(EXTRA_GASTRONOMIES_ADDON.limitIncrease).toBe(1);
+            expect(EXTRA_EXPERIENCES_ADDON.limitIncrease).toBe(1);
+        });
+
+        it('is recurring, grants no entitlement, and is purchasable', () => {
+            for (const addon of [EXTRA_GASTRONOMIES_ADDON, EXTRA_EXPERIENCES_ADDON]) {
+                expect(addon.billingType).toBe('recurring');
+                expect(addon.durationDays).toBeNull();
+                expect(addon.grantsEntitlement).toBeNull();
+                expect(addon.isActive).toBe(true);
+            }
+        });
+
+        it('is resolvable by slug (the usage panel links it by slug)', () => {
+            expect(getAddonBySlug('extra-gastronomies-1')).toBe(EXTRA_GASTRONOMIES_ADDON);
+            expect(getAddonBySlug('extra-experiences-1')).toBe(EXTRA_EXPERIENCES_ADDON);
         });
     });
 
