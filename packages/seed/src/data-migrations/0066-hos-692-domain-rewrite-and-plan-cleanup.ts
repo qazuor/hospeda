@@ -3,13 +3,27 @@
  * Data migration: 0066-hos-692-domain-rewrite-and-plan-cleanup
  *
  * HOS-692 (epic HOS-589), release B. Two independent cleanups, bundled into
- * one file because only three data-migration numbers were reserved for this
- * issue (0065/0066/0067) and both are release-B, non-incident, no-environment-
- * gating work — unlike 0065 (orphan purge, production-only, blocked on
- * HOS-712) and 0067 (the undo, dormant by design). Each part is independent:
- * either can be read/reviewed on its own, and a failure in one rolls back
- * the whole migration atomically (both run inside the runner's single
- * transaction), so there is no partial-apply state to reason about.
+ * one file because both are release-B, non-incident, no-environment-gating
+ * work — unlike 0065 (orphan purge, production-only, blocked on HOS-712).
+ * Each part is independent: either can be read/reviewed on its own, and a
+ * failure in one rolls back the whole migration atomically (both run inside
+ * the runner's single transaction), so there is no partial-apply state to
+ * reason about.
+ *
+ * No undo migration accompanies this one. An owner decision (HOS-692)
+ * retired the originally-written 0067 counterpart: once ledgered, a data
+ * migration never re-runs, so a "dormant, gated by an env var" undo either
+ * fires as a silent no-op forever or has to be reproduced from scratch under
+ * a new number anyway the one time it is actually needed — at which point
+ * its only real value was as a reference implementation, which git history
+ * already preserves (commit 3b1fe52b4) without needing a live file, a
+ * reserved migration number, or a registered env var. If 0066 ever needs
+ * reverting, write a new, freshly-numbered migration then — copy the bound
+ * logic (`created_at < <this migration's applied_at>` on both
+ * `billing_subscriptions.product_domain` and
+ * `commerce_listing_subscriptions.product_domain`, mapping gastronomy/
+ * experience back to `'commerce'`, never writing `NULL`) from that commit
+ * instead of re-deriving it.
  *
  * ## Part 1 — the commerce/gastronomy/experience domain rewrite (§6.13)
  *
