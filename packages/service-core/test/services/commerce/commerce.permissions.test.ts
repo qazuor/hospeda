@@ -61,8 +61,43 @@ describe('checkCanCreateCommerce', () => {
         ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_CREATE', () => {
-        expectForbidden(() => checkCanCreateCommerce(makeActor([]), {}));
+    // HOS-687 / HOS-589 AC-27 — the service-side half of the pair.
+    //
+    // This is the second of the three bolts on the same door (the first is the
+    // route's `requiredPermissions`, the third the web page's role gate). Both
+    // server-side bolts answer identically from the caller's side, so asserting
+    // only through the route would let a half-fix read as a whole one. This
+    // block asserts the PREDICATE directly, with no HTTP in the picture.
+    it('allows a signed-in account holding NO commerce permission at all (AC-27)', () => {
+        expect(() => checkCanCreateCommerce(makeActor([]), {})).not.toThrow();
+    });
+
+    it('allows a plain USER whose only hat is USER (AC-1: the pre-owner case)', () => {
+        const plainUser: Actor = { id: 'actor-plain', roles: [RoleEnum.USER], permissions: [] };
+        expect(() => checkCanCreateCommerce(plainUser, {})).not.toThrow();
+    });
+
+    it('rejects a guest actor with UNAUTHORIZED, not FORBIDDEN', () => {
+        // The guest sentinel carries a REAL uuid, so `!actor.id` is not a usable
+        // authentication test — the predicate has to read the role set.
+        const guest: Actor = {
+            id: '00000000-0000-4000-8000-000000000000',
+            roles: [RoleEnum.GUEST],
+            permissions: []
+        };
+        expect(() => checkCanCreateCommerce(guest, {})).toThrow(ServiceError);
+        try {
+            checkCanCreateCommerce(guest, {});
+            expect.unreachable('guest actor must be rejected');
+        } catch (err) {
+            expect(err).toBeInstanceOf(ServiceError);
+            expect((err as ServiceError).code).toBe(ServiceErrorCode.UNAUTHORIZED);
+        }
+    });
+
+    it('rejects an actor carrying no roles at all', () => {
+        const roleless: Actor = { id: 'actor-roleless', roles: [], permissions: [] };
+        expect(() => checkCanCreateCommerce(roleless, {})).toThrow(ServiceError);
     });
 });
 
