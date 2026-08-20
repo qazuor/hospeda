@@ -1112,3 +1112,39 @@ Related: HOS-296 (multi-role, shipped — the precondition), HOS-166 (commerce
 self-checkout, shipped), HOS-305 (the copy this invalidates), HOS-679 (the
 canonical-helper-drift family §6.4 avoids joining), HOS-597 (the refund bug on
 R-2's critical path), HOS-522 (the MercadoPago per-payer trial).
+
+### This is an epic. Proposed split
+
+Ten design sections in one pull request cannot be reviewed, and §13 requires the
+work to arrive in three releases regardless. The split below is ordered by the
+constraints already established — §12's two hard orders and §13's release
+boundaries — not by convenience. HOS-589 becomes the parent; HOS-590 is issue 5.
+
+| # | Issue | Covers | Blocked by | Release |
+| --- | --- | --- | --- | --- |
+| 1 | Widen the domain vocabulary | `ProductDomainEnum` gains both verticals; `isAccommodationSubscription` / `isCommerceSubscription` accept all three; `/public/plans` gains `?domain=` | — | **A** |
+| 2 | Build `moderate()` for commerce | §6.7 · AC-10, AC-11, AC-26 | — | B |
+| 3 | Grant the role at creation, and unblock the create page | §6.1 + §6.11's blocking gate · AC-1, AC-2, AC-3, AC-8, AC-18 | — | B |
+| 4 | The per-vertical billing model | §6.8 · three limit keys, two catalogues, two addons, the precheck (OQ-3), the parameterised entitlement predicate · AC-13, AC-14, AC-15 | 1 | B |
+| 5 | The free trial (**HOS-590**) | §6.4 · AC-4, AC-5, AC-16 | 4 | B |
+| 6 | The owner's management surface | §6.11's remainder · AC-19, AC-20, AC-21 | 4 | B |
+| 7 | The sales surface and its strings | §6.12 · AC-22, AC-23, AC-24 | 4 | B |
+| 8 | The three-way publish CTA | §6.10 · AC-12 | 3 | B |
+| 9 | Data migrations and plan-catalogue cleanup | §6.9 + §6.13 + the undo migration · AC-25 | 1, 4 | B |
+| 10 | Delete the provisioning path | §6.2 + the lead route + the HOS-305 copy · AC-9 | **2, 3** | B |
+| 11 | Contract | retire `commerce` from the enum, narrow the predicates, drop `commerce_leads` · §6.3, §13 release C | all | **C** |
+
+Issue 10's two blockers are §12's two hard orders, encoded so the board enforces
+them instead of a reader remembering them: the role must be grantable (3) and the
+listing must be rejectable (2) before the approval path is removed. Issues 5, 6, 7
+and 9 are independent of each other and can run in parallel once 4 lands.
+
+Issue 1 is deliberately inert — it changes no row and no answer — which is what
+makes it safe to merge and soak ahead of everything else.
+
+### Smoke gates
+
+HOS-589 carries `status-needs-smoke-staging` and, because issues 4, 5 and 9 touch
+the billing core, `status-needs-smoke-prod`. Neither may be removed, and the
+issue may not be marked Done, until the corresponding sections of the staging and
+prod smoke checklists are signed off.
