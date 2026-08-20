@@ -29,6 +29,7 @@ import {
     EXPERIENCE_PREMIUM_PLAN,
     GASTRONOMY_PREMIUM_PLAN
 } from '../src/config/plans.config.js';
+import { COMMERCE_TRIAL_DAYS } from '../src/constants/billing.constants.js';
 import { LimitKey } from '../src/types/plan.types.js';
 
 describe('per-vertical commerce catalogues (HOS-688)', () => {
@@ -96,6 +97,24 @@ describe('per-vertical commerce catalogues (HOS-688)', () => {
         const slugs = ALL_PLANS.map((p) => p.slug);
         for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
             expect(slugs).not.toContain(plan.slug);
+        }
+    });
+
+    it('grants the sellable tier the same 30-day trial every accommodation plan gets (HOS-590)', () => {
+        expect(GASTRONOMY_PREMIUM_PLAN.hasTrial).toBe(true);
+        expect(GASTRONOMY_PREMIUM_PLAN.trialDays).toBe(COMMERCE_TRIAL_DAYS);
+        expect(EXPERIENCE_PREMIUM_PLAN.hasTrial).toBe(true);
+        expect(EXPERIENCE_PREMIUM_PLAN.trialDays).toBe(COMMERCE_TRIAL_DAYS);
+        expect(COMMERCE_TRIAL_DAYS).toBe(30);
+    });
+
+    it('leaves the two disabled tiers per vertical without a trial (not sellable, nothing to precede)', () => {
+        for (const plan of [...ALL_GASTRONOMY_PLANS, ...ALL_EXPERIENCE_PLANS]) {
+            if (plan.isActive) {
+                continue;
+            }
+            expect(plan.hasTrial).toBe(false);
+            expect(plan.trialDays).toBe(0);
         }
     });
 });
