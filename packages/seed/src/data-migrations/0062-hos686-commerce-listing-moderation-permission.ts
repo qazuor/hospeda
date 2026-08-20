@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0061-hos686-commerce-listing-moderation-permission
+ * Data migration: 0062-hos686-commerce-listing-moderation-permission
  *
  * Companion delta for HOS-686. The seed's `ROLE_PERMISSIONS` constant
  * (`packages/seed/src/required/rolePermissions.seed.ts`) has already been edited
@@ -42,7 +42,7 @@ import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0061-hos686-commerce-listing-moderation-permission',
+    name: '0062-hos686-commerce-listing-moderation-permission',
     group: 'required',
     destructive: false
 } as const satisfies SeedMigrationModule['meta'];

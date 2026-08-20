@@ -1,15 +1,15 @@
 /**
  * @fileoverview
- * Unit tests for the `0061-hos686-commerce-listing-moderation-permission` data
+ * Unit tests for the `0062-hos686-commerce-listing-moderation-permission` data
  * migration, using a mocked insert chain — no real database connection. Same
  * style as `0048-hos376-host-trade-usage-review-permissions.test.ts`.
  *
- * @module test/data-migrations/0061-hos686-commerce-listing-moderation-permission
+ * @module test/data-migrations/0062-hos686-commerce-listing-moderation-permission
  */
 import { PermissionEnum, RoleEnum } from '@repo/schemas';
 import type { Actor } from '@repo/service-core';
 import { describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0061-hos686-commerce-listing-moderation-permission.js';
+import * as migration from '../../src/data-migrations/0062-hos686-commerce-listing-moderation-permission.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 import { ROLE_PERMISSIONS } from '../../src/required/rolePermissions.seed.js';
 
@@ -71,17 +71,17 @@ function buildCtx(insertedRows: unknown[]): {
     return { ctx, readInsertValues };
 }
 
-describe('0061-hos686 commerce listing moderation — meta', () => {
+describe('0062-hos686 commerce listing moderation — meta', () => {
     it('exports the expected required/additive meta shape', () => {
         expect(migration.meta).toEqual({
-            name: '0061-hos686-commerce-listing-moderation-permission',
+            name: '0062-hos686-commerce-listing-moderation-permission',
             group: 'required',
             destructive: false
         });
     });
 });
 
-describe('0061-hos686 commerce listing moderation — exported lists shape', () => {
+describe('0062-hos686 commerce listing moderation — exported lists shape', () => {
     it('grants exactly COMMERCE_MODERATION_CHANGE', () => {
         expect(STAFF_PERMISSIONS).toEqual([PermissionEnum.COMMERCE_MODERATION_CHANGE]);
     });
@@ -103,7 +103,7 @@ describe('0061-hos686 commerce listing moderation — exported lists shape', () 
     });
 });
 
-describe('0061-hos686 commerce listing moderation — no drift against the seed', () => {
+describe('0062-hos686 commerce listing moderation — no drift against the seed', () => {
     it.each([RoleEnum.SUPER_ADMIN, RoleEnum.ADMIN])('seed %s holds the grant', (role) => {
         const perms = ROLE_PERMISSIONS[role] ?? [];
         for (const permission of STAFF_PERMISSIONS) {
@@ -128,7 +128,7 @@ describe('0061-hos686 commerce listing moderation — no drift against the seed'
     });
 });
 
-describe('0061-hos686 commerce listing moderation — up()', () => {
+describe('0062-hos686 commerce listing moderation — up()', () => {
     it('inserts both (role, permission) pairs', async () => {
         const insertedRows = GRANTS.map((g) => ({ ...g }));
         const { ctx, readInsertValues } = buildCtx(insertedRows);
