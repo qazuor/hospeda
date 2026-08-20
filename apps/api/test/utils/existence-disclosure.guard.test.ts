@@ -105,10 +105,16 @@ describe('existence disclosure — static guards', () => {
         // Second instrument check, on the PREDICATE rather than the file list:
         // a regex that silently stops matching (a rename, a refactor to a
         // helper) would also make the guard green while policing nothing.
-        const withOwnership = routeFiles.filter((file) =>
-            OWNERSHIP_COMPARISON.test(stripComments(readFileSync(file, 'utf8')))
+        //
+        // `OWNERSHIP_COMPARISON` carries `/g`, so `.test()` leaves `lastIndex`
+        // parked after a hit and the NEXT call would resume mid-string. Count
+        // through `matchAll`, which manages its own cursor, rather than
+        // remembering to reset one.
+        const withOwnership = routeFiles.filter(
+            (file) =>
+                [...stripComments(readFileSync(file, 'utf8')).matchAll(OWNERSHIP_COMPARISON)]
+                    .length > 0
         );
-        OWNERSHIP_COMPARISON.lastIndex = 0;
 
         expect(withOwnership.length).toBeGreaterThanOrEqual(8);
     });
@@ -118,7 +124,6 @@ describe('existence disclosure — static guards', () => {
 
         for (const file of routeFiles) {
             const code = stripComments(readFileSync(file, 'utf8'));
-            OWNERSHIP_COMPARISON.lastIndex = 0;
             for (const match of code.matchAll(OWNERSHIP_COMPARISON)) {
                 const start = match.index ?? 0;
                 const branch = code.slice(start, start + BRANCH_WINDOW);
