@@ -25,7 +25,7 @@ describe('AuditLogEntryModel', () => {
     describe('getTableName', () => {
         it('returns the correct table name', () => {
             const tableName = (model as unknown as { getTableName: () => string }).getTableName();
-            expect(tableName).toBe('audit_log_entries');
+            expect(tableName).toBe('auditLogEntries');
         });
     });
 
