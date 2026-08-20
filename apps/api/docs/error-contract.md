@@ -107,9 +107,10 @@ server log keeps it in full.
 
 ### Identical means the whole body, not the status (HOS-600)
 
-H-72 fixed the middleware. HOS-600 found the same leak in seven routes that do
-the ownership check themselves, in two shapes — and the second shape is the one
-worth remembering, because it survived a review that compared status codes.
+H-72 fixed the middleware. HOS-600 found the same leak in **twelve** places that
+do the ownership check themselves — five in `src/routes/`, seven in
+`@repo/service-core` permission helpers — in two shapes. The second shape is the
+one worth remembering, because it survived a review that compared status codes.
 
 `/protected/users/:id` was the visible shape: **403** for a foreign account,
 **404** for an unknown id, and the 403's message even named the permission the
@@ -141,6 +142,12 @@ Three rules follow:
    4xx): `'You may only start a subscription for your own commerce listing.'`
    and `` `Entity not found: ${entityType} with id ${entityId}` `` were both
    replaced by a single constant shared by the two branches.
+
+The service-layer half is the one no route-shaped grep finds: `canAccessBookmark`,
+`canAccessCollection`, `checkCanAccessAlert` and two inline checks inside
+`add`/`removeBookmarkFromCollection` all answered 403 for a foreign row without
+ever writing `row.ownerId !== actor.id` in a route file. When sweeping for this
+class, sweep both layers.
 
 **Test the pair, not the branch.** Two adjacent green assertions —
 "403 when foreign" next to "404 when missing" — is what the bug looked like from
