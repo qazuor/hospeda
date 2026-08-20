@@ -32,6 +32,7 @@ export {
     useDeleteExperienceMutation,
     useExperiencePendingReviewsQuery,
     useExperienceQuery,
+    useModerateExperienceMutation,
     useModerateExperienceReviewMutation,
     useRestoreExperienceMutation,
     useUpdateExperienceMutation

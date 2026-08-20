@@ -26,6 +26,7 @@ export type {
     AssignOwnerInput,
     CommerceEntityHooks,
     CommerceEntityHooksConfig,
+    ListingModerationPatch,
     ModerateReviewInput,
     PendingReviewsQueryParams,
     ReviewModerationDecision

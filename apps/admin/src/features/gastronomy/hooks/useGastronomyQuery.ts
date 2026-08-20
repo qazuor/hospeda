@@ -92,6 +92,22 @@ export const useModerateGastronomyReviewMutation = () =>
     gastronomyHooks.useModerateReviewMutation();
 
 /**
+ * Mutation hook to moderate the LISTING itself (HOS-686).
+ *
+ * NOT {@link useModerateGastronomyReviewMutation}, which moderates reviews
+ * written *about* a listing. This one writes `moderationState` on the listing —
+ * the verdict the commerce visibility reconciler reads to take a rejected
+ * listing off the public site.
+ *
+ * Shaped as `(id) => mutation` so `InlineStateSelectCell` can drive it.
+ *
+ * @param id - UUID of the gastronomy listing
+ * @returns TanStack Query `UseMutationResult`
+ */
+export const useModerateGastronomyMutation = (id: string) =>
+    gastronomyHooks.useModerateListingMutation(id);
+
+/**
  * Query hook to fetch reviews pending moderation for gastronomy listings.
  *
  * @param params - Optional pagination and filter params

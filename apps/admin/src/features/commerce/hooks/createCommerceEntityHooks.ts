@@ -19,6 +19,7 @@
  * @module createCommerceEntityHooks
  */
 
+import type { ModerationStatusEnum } from '@repo/schemas';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchApi } from '@/lib/api/client';
 import { createEntityHooks } from '@/lib/factories/createEntityHooks';
@@ -70,6 +71,18 @@ export type ModerateReviewInput = {
     /** Optional reason (required when decision is `'REJECTED'`). */
     readonly reason?: string;
 };
+
+/**
+ * Body of the LISTING moderation endpoint (HOS-686).
+ *
+ * Declared as a type alias, not an interface, on purpose: `InlineStateSelectCell`
+ * is generic over `TPatch extends Record<string, unknown>`, and an interface has
+ * no implicit index signature, so it would not satisfy that bound.
+ *
+ * Note the subject: this moderates the LISTING, whereas {@link ModerateReviewInput}
+ * above moderates a review written about it. Two endpoints, two permissions.
+ */
+export type ListingModerationPatch = { moderationState: ModerationStatusEnum };
 
 /** Query params for pending reviews. */
 export type PendingReviewsQueryParams = {
@@ -196,6 +209,49 @@ export function createCommerceEntityHooks<TData extends { id: string }>(
     }
 
     /**
+     * Mutation hook that applies the moderation verdict to the LISTING itself
+     * (HOS-686).
+     *
+     * Calls `POST ${apiEndpoint}/${id}/moderate` with `{ moderationState }`,
+     * gated server-side by `COMMERCE_MODERATION_CHANGE`.
+     *
+     * ## Not `useModerateReviewMutation`
+     *
+     * That one posts to `${apiEndpoint}/reviews/${reviewId}/moderate` and
+     * decides whether a REVIEW is published. This one decides whether the
+     * listing stays up: `REJECTED` is what the commerce visibility reconciler
+     * reads to flip a listing to `PRIVATE`/`INACTIVE`. Anyone searching
+     * "moderate" under commerce meets the review hook first.
+     *
+     * Shaped as `(id) => mutation` so `InlineStateSelectCell` drives it
+     * unchanged — the cell calls `mutateAsync({ [field]: value })` and the
+     * endpoint body is named after the same column.
+     *
+     * @param id - The listing being moderated.
+     * @returns A TanStack Query `UseMutationResult`.
+     */
+    function useModerateListingMutation(id: string) {
+        const queryClient = useQueryClient();
+
+        return useMutation({
+            mutationFn: async (body: ListingModerationPatch) => {
+                const response = await fetchApi<{ data: TData }>({
+                    path: `${apiEndpoint}/${id}/moderate`,
+                    method: 'POST',
+                    body
+                });
+
+                // Response shape: { success, data: <entity> }
+                return (response.data as { data?: TData }).data as TData;
+            },
+            onSuccess: () => {
+                queryClient.invalidateQueries({ queryKey: queryKeys.detail(id) });
+                queryClient.invalidateQueries({ queryKey: queryKeys.lists() });
+            }
+        });
+    }
+
+    /**
      * Query hook that fetches reviews pending moderation for a commerce entity.
      *
      * Calls `GET ${apiEndpoint}/reviews?status=PENDING&page=…&pageSize=…`.
@@ -249,6 +305,7 @@ export function createCommerceEntityHooks<TData extends { id: string }>(
 
         // Commerce-specific hooks
         useAssignOwnerMutation,
+        useModerateListingMutation,
         useModerateReviewMutation,
         usePendingReviewsQuery,
 
