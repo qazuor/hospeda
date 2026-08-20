@@ -11,6 +11,20 @@
  * gate is expected to fail deeper in the stack (404/422/500) — those are NOT
  * permission-gate errors. This file asserts ONLY the gate: 401/403 without
  * the right permission, not-403/not-404 with it.
+ *
+ * ## HOS-687 — the create routes lost their permission gate
+ *
+ * The two create routes now declare NO `requiredPermissions`: they are how an
+ * account BECOMES a commerce owner, so requiring the owner's own permission
+ * made the role unreachable. What stays enforced here is AUTHENTICATION, and
+ * it stays enforced by the FACTORY (AC-8), never by a check inside the
+ * handler. The start-subscription route below is untouched: it acts on a
+ * listing that must already exist and still requires `COMMERCE_EDIT_OWN`.
+ *
+ * The 2xx half of AC-27 — a create that actually succeeds for a
+ * permission-less account — is asserted in
+ * `test/commerce/owner-create-open-gate.test.ts`, which mocks the service so a
+ * full 201 is reachable without a database.
  */
 import { beforeAll, describe, expect, it } from 'vitest';
 import { initApp } from '../../src/app.js';
@@ -44,18 +58,49 @@ describe('Owner commerce routes — permission gate (HOS-166)', () => {
             'x-mock-actor-permissions': JSON.stringify([])
         };
 
-        it('returns 400/401/403 when unauthenticated', async () => {
-            const res = await app.request(PATH, { method: 'POST', headers: noHeaders });
-            expect([400, 401, 403]).toContain(res.status);
+        // HOS-589 AC-8 — REGRESSION criterion. Anonymous is refused by the route
+        // FACTORY (`createProtectedRoute` → `protectedAuthMiddleware`), which is
+        // why the answer is 401 and arrives before the body is even validated.
+        // It exists to catch someone replacing the factory's auth with an
+        // in-handler check while stripping the permission gates.
+        it('rejects an anonymous caller with 401, from the factory (AC-8)', async () => {
+            const res = await app.request(PATH, {
+                method: 'POST',
+                headers: { ...noHeaders, 'content-type': 'application/json' },
+                // A well-formed body: the refusal must come from authentication,
+                // not from validation happening to fire first.
+                body: JSON.stringify({
+                    name: 'La Parrilla del Puerto',
+                    summary: 'A riverside parrilla with fresh grilled fish and steak.',
+                    description:
+                        'La Parrilla del Puerto has served the waterfront for over a decade.',
+                    type: 'RESTAURANT',
+                    destinationId: '00000000-0000-4000-a000-000000000002'
+                })
+            });
+            expect(res.status).toBe(401);
         });
 
-        it('returns 403 when authenticated but missing COMMERCE_CREATE', async () => {
+        // HOS-589 AC-27 — the ROUTE half of the pair. The service predicate is
+        // asserted separately in
+        // `packages/service-core/test/services/commerce/commerce.permissions.test.ts`,
+        // because both gates answer 403 from the caller's side and fixing one
+        // alone would read exactly like fixing both.
+        it('no longer refuses an account holding NO commerce permission (AC-27)', async () => {
             const res = await app.request(PATH, {
                 method: 'POST',
                 headers: { ...headersNoCommercePerms, 'content-type': 'application/json' },
-                body: JSON.stringify({})
+                body: JSON.stringify({
+                    name: 'La Parrilla del Puerto',
+                    summary: 'A riverside parrilla with fresh grilled fish and steak.',
+                    description:
+                        'La Parrilla del Puerto has served the waterfront for over a decade.',
+                    type: 'RESTAURANT',
+                    destinationId: '00000000-0000-4000-a000-000000000002'
+                })
             });
-            expect(res.status).toBe(403);
+            expect(res.status).not.toBe(401);
+            expect(res.status).not.toBe(403);
         });
 
         it('passes the gate with COMMERCE_CREATE (not 401/403)', async () => {
@@ -86,7 +131,27 @@ describe('Owner commerce routes — permission gate (HOS-166)', () => {
             'x-mock-actor-permissions': JSON.stringify(['commerce.create'])
         };
 
-        it('returns 403 when authenticated but missing COMMERCE_CREATE', async () => {
+        // AC-8 regression, experience vertical.
+        it('rejects an anonymous caller with 401, from the factory (AC-8)', async () => {
+            const res = await app.request(PATH, {
+                method: 'POST',
+                headers: { ...noHeaders, 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    name: 'Kayak tour on the Uruguay river',
+                    summary: 'A guided two-hour kayak tour along the riverside.',
+                    description: 'Explore the Uruguay river coastline by kayak with a local guide.',
+                    type: 'TOUR_GUIDE',
+                    priceFrom: 1500000,
+                    priceUnit: 'per_person',
+                    isPriceOnRequest: false,
+                    destinationId: '00000000-0000-4000-a000-000000000002'
+                })
+            });
+            expect(res.status).toBe(401);
+        });
+
+        // AC-27, route half, experience vertical.
+        it('no longer refuses an account holding NO commerce permission (AC-27)', async () => {
             const res = await app.request(PATH, {
                 method: 'POST',
                 headers: {
@@ -96,9 +161,19 @@ describe('Owner commerce routes — permission gate (HOS-166)', () => {
                     'x-mock-actor-permissions': JSON.stringify([]),
                     'content-type': 'application/json'
                 },
-                body: JSON.stringify({})
+                body: JSON.stringify({
+                    name: 'Kayak tour on the Uruguay river',
+                    summary: 'A guided two-hour kayak tour along the riverside.',
+                    description: 'Explore the Uruguay river coastline by kayak with a local guide.',
+                    type: 'TOUR_GUIDE',
+                    priceFrom: 1500000,
+                    priceUnit: 'per_person',
+                    isPriceOnRequest: false,
+                    destinationId: '00000000-0000-4000-a000-000000000002'
+                })
             });
-            expect(res.status).toBe(403);
+            expect(res.status).not.toBe(401);
+            expect(res.status).not.toBe(403);
         });
 
         it('passes the gate with COMMERCE_CREATE (not 401/403)', async () => {
