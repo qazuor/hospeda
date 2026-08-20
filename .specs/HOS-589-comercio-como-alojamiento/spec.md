@@ -608,9 +608,17 @@ and keep their current semantics.
   still pending?* **Nothing — there are none.** Production holds **3 rows, all
   `approved`**, created between 2026-08-13 and 2026-08-19. Nobody is waiting on
   a decision, so retiring the flow strands no applicant.
-- **OQ-3 — OPEN.** Does commerce need a precheck equivalent to
-  `GET /host-onboarding/precheck` (already have a draft? limit reached?), or
-  does the create route's own server-side enforcement suffice?
+- **OQ-3 — RESOLVED by §6.8 (2026-08-19).** *Does commerce need a precheck?*
+  **Yes, and it is the accommodation one.** The first answer was no — a precheck
+  exists to report remaining quota, and commerce had none. Introducing
+  `MAX_GASTRONOMIES` / `MAX_EXPERIENCES` creates exactly the quota that made the
+  precheck worth building, so the six decisions of `deriveOnboardingDecision`
+  (`apps/api/src/services/onboarding-precheck.ts:18-24`) map straight across,
+  parameterised by vertical.
+  Two properties of the original must survive: it stays **read-only** — the real
+  limit is enforced by middleware on the create route, never by the precheck —
+  and it **fails open** to `create_direct`, so a precheck outage cannot block a
+  legitimate creation.
 - **OQ-4 — RESOLVED (2026-08-19).** *How many trial days?* **30**, matching all
   five accommodation plans. One rule platform-wide; a second number would have
   to be carried through copy, emails and the plans page.
