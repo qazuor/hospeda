@@ -64,8 +64,19 @@ describe('checkGastronomyCanCreate', () => {
         ).not.toThrow();
     });
 
-    it('should forbid actor without COMMERCE_CREATE', () => {
-        expectForbidden(() => checkGastronomyCanCreate(makeActor([]), {}));
+    // HOS-687 / HOS-589 AC-27 (service predicate, gastronomy vertical).
+    it('allows a signed-in account holding NO commerce permission (AC-27)', () => {
+        const plainUser: Actor = { id: 'actor-plain', roles: [RoleEnum.USER], permissions: [] };
+        expect(() => checkGastronomyCanCreate(plainUser, {})).not.toThrow();
+    });
+
+    it('still rejects a guest actor', () => {
+        const guest: Actor = {
+            id: '00000000-0000-4000-8000-000000000000',
+            roles: [RoleEnum.GUEST],
+            permissions: []
+        };
+        expect(() => checkGastronomyCanCreate(guest, {})).toThrow(ServiceError);
     });
 });
 
