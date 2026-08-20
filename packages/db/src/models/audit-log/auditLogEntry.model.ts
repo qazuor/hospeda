@@ -40,7 +40,7 @@ export class AuditLogEntryModel extends BaseModelImpl<AuditLogEntry> {
     public entityName = 'audit_log_entries';
 
     protected getTableName(): string {
-        return 'audit_log_entries';
+        return 'auditLogEntries';
     }
 
     /**

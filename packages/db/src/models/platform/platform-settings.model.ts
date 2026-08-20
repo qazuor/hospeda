@@ -25,7 +25,7 @@ export class PlatformSettingsModel extends BaseModelImpl<PlatformSettingRecord> 
     public entityName = 'platform_settings';
 
     protected getTableName(): string {
-        return 'platform_settings';
+        return 'platformSettings';
     }
 
     /**

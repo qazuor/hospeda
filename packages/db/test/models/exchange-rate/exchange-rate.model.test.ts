@@ -29,7 +29,7 @@ describe('ExchangeRateModel', () => {
     describe('getTableName', () => {
         it('should return correct table name', () => {
             const tableName = (model as unknown as { getTableName: () => string }).getTableName();
-            expect(tableName).toBe('exchange_rates');
+            expect(tableName).toBe('exchangeRates');
         });
     });
 

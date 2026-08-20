@@ -16,12 +16,20 @@
  * - The **commerce example content** those accounts own: gastronomies,
  *   experiences and partners, including the `zzqa-*` rows created during smoke.
  * - The **`zzqa-*` accommodations** left over from smoke runs.
+ * - **`billing_payments` rows owned by the purged accounts.** Owner decision,
+ *   2026-08-20 (HOS-712): one of the 23 — `qazuor+r1host@gmail.com` — holds a
+ *   `succeeded` payment of $18,000 ARS from 2026-08-14, the only `billing_payments`
+ *   row across all 23 accounts. It is deleted along with the rest of that
+ *   account's billing rows. The local mirror of that charge is lost; the charge
+ *   itself still exists in MercadoPago, unaffected by this migration. This was
+ *   deliberately NOT deleted before HOS-712 — the original version of this
+ *   migration left `billing_payments` alone unconditionally and, on the account
+ *   where that collided with a live `billing_subscriptions` row, aborted the
+ *   whole seed-migration run instead of skipping cleanly (see "Deletion order"
+ *   below).
  *
  * PRESERVES (never touched):
  *
- * - `billing_payments` — three real money movements, including a refund and a
- *   partial refund. Deleting them would erase the only local record of cash that
- *   actually moved.
  * - The whole operational history: `app_log_entries`, `cron_runs`,
  *   `revalidation_log`. It is the diagnostic trail, not demo data.
  * - Every curated real entity: the 26 destinations, the 52 real events, the blog
@@ -72,10 +80,29 @@
  *   3. Reviews authored by the test accounts (the NOT NULL + SET NULL trap).
  *   4. Gastronomies, experiences, partners — CASCADE clears their children.
  *   5. The zzqa accommodations.
- *   6. Billing rows for the test accounts. The link from `billing_customers` to
- *      a user is `external_id`, an application-level string — NOT a database FK
- *      — so nothing cleans it up on its own.
- *   7. The 23 user rows.
+ *   6. `billing_payments` for the customers about to be purged, deleted FIRST
+ *      among the billing children — before `billing_subscriptions` — because
+ *      `billing_payments.subscription_id` is `ON DELETE no action`, which
+ *      blocks a subscription delete exactly as hard as `restrict` blocks a
+ *      customer delete. A payment left in place here aborts the very next
+ *      sub-step instead of the customer delete two steps down — same failure,
+ *      one table earlier. This purge of real money is an explicit owner
+ *      decision (2026-08-20, HOS-712) — see the module docstring's
+ *      HARD-DELETES section for what it costs.
+ *   7. The remaining RESTRICT holders on `billing_customers.id`:
+ *      `billing_subscriptions`, `billing_addon_purchases`,
+ *      `billing_dunning_attempts`, and `billing_invoices`. None of these four
+ *      CASCADE — each one aborts the customer delete below (and every
+ *      seed-migration numbered above it, per the runner's
+ *      stop-at-first-failure contract) the moment a purged customer still has
+ *      a live row there, which is exactly what production hits today for
+ *      three gastronomy-owner accounts (HOS-712).
+ *   8. Billing customers for the test accounts. The link from `billing_customers`
+ *      to a user is `external_id`, an application-level string — NOT a database
+ *      FK — so nothing cleans that link up on its own. (It USED to be assumed
+ *      that deleting the customer cascaded its subscriptions; it does not —
+ *      the FK is `restrict`, which is the whole reason steps 6 and 7 exist.)
+ *   9. The 23 user rows.
  *
  * Re-running is a per-row no-op: every step deletes by a literal key set, so a
  * second pass simply matches nothing.
@@ -87,7 +114,12 @@ import {
     accommodationOccupancy,
     accommodationReviews,
     accommodations,
+    billingAddonPurchases,
     billingCustomers,
+    billingDunningAttempts,
+    billingInvoices,
+    billingPayments,
+    billingSubscriptions,
     destinationReviews,
     entityComments,
     entityViews,
@@ -357,10 +389,76 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         values: accommodationIds
     });
 
-    // ── Step 7: billing. The customer→user link is `external_id`, an
-    // application-level string and NOT a database FK, so nothing cleans it up
-    // on its own. Deleting the customer CASCADEs its subscriptions.
-    // `billing_payments` is deliberately left alone: those rows are real money.
+    // ── Step 6/7: the RESTRICT / NO ACTION holders on `billing_customers.id`
+    // (and, for `billing_payments`, on `billing_subscriptions.id` too),
+    // resolved from the customers about to be purged below. `billing_customers`
+    // has NO database FK up to `users` — that link is the application-level
+    // `external_id` — but it DOES have several inbound FKs from its own
+    // billing children, and five of them block a delete somewhere in this
+    // chain: `billing_payments`, `billing_subscriptions`,
+    // `billing_addon_purchases`, `billing_dunning_attempts`, and
+    // `billing_invoices`. Deleting `billing_customers` first — as this
+    // migration originally did, on the false assumption that the delete
+    // cascaded — aborts the whole seed-migration run (HOS-25 G-5: no partial
+    // runs, first failure stops everything numbered after it) the moment a
+    // purged customer still has a live row in any of them. Measured against
+    // production on 2026-08-20, three gastronomy-owner accounts hit this via
+    // `billing_subscriptions` (HOS-712).
+    //
+    // `billing_payments` goes FIRST, ahead of `billing_subscriptions`:
+    // `billing_payments.subscription_id` is `ON DELETE no action`, which
+    // Postgres enforces exactly like `restrict` — a payment still pointing at
+    // a subscription blocks that subscription's delete just as hard as an
+    // unresolved subscription blocks the customer's delete. Also measured
+    // against production on 2026-08-20: `qazuor+r1host@gmail.com` — one of
+    // the 23 purged accounts — holds a `succeeded` $18,000 ARS payment hanging
+    // off one of its subscriptions (HOS-712). Purging it is an explicit owner
+    // decision, not an oversight: see the module docstring's HARD-DELETES
+    // section for what that costs.
+    const billingCustomerRows = await db
+        .select({ id: billingCustomers.id })
+        .from(billingCustomers)
+        .where(inArray(billingCustomers.externalId, testUserIds));
+    const billingCustomerIds = billingCustomerRows.map((row) => row.id);
+
+    const billingPaymentsDeleted = await deleteWhereIn({
+        db,
+        table: billingPayments,
+        column: billingPayments.customerId,
+        values: billingCustomerIds
+    });
+    const billingSubscriptionsDeleted = await deleteWhereIn({
+        db,
+        table: billingSubscriptions,
+        column: billingSubscriptions.customerId,
+        values: billingCustomerIds
+    });
+    const billingAddonPurchasesDeleted = await deleteWhereIn({
+        db,
+        table: billingAddonPurchases,
+        column: billingAddonPurchases.customerId,
+        values: billingCustomerIds
+    });
+    const billingDunningAttemptsDeleted = await deleteWhereIn({
+        db,
+        table: billingDunningAttempts,
+        column: billingDunningAttempts.customerId,
+        values: billingCustomerIds
+    });
+    const billingInvoicesDeleted = await deleteWhereIn({
+        db,
+        table: billingInvoices,
+        column: billingInvoices.customerId,
+        values: billingCustomerIds
+    });
+
+    // ── Step 8: billing customers for the test accounts. The customer→user
+    // link is `external_id`, an application-level string and NOT a database
+    // FK, so nothing cleans that link up on its own — but the RESTRICT/NO
+    // ACTION children cleared in steps 6-7 DO need to be gone first, or this
+    // delete aborts on the FK. `billing_payments` is no longer an exception:
+    // it is purged along with the rest (see steps 6-7's comment and the
+    // module docstring's HARD-DELETES section).
     const billingCustomersDeleted = await deleteWhereIn({
         db,
         table: billingCustomers,
@@ -368,7 +466,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         values: testUserIds
     });
 
-    // ── Step 8: the accounts themselves ─────────────────────────────────────
+    // ── Step 9: the accounts themselves ─────────────────────────────────────
     const usersDeleted = await deleteWhereIn({
         db,
         table: users,
@@ -384,6 +482,11 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         experiencesDeleted,
         partnersDeleted,
         accommodationsDeleted,
+        billingPaymentsDeleted,
+        billingSubscriptionsDeleted,
+        billingAddonPurchasesDeleted,
+        billingDunningAttemptsDeleted,
+        billingInvoicesDeleted,
         billingCustomersDeleted,
         occupancyDeleted,
         entityViewsDeleted,

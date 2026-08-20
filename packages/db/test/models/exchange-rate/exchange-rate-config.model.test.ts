@@ -31,7 +31,7 @@ describe('ExchangeRateConfigModel', () => {
         it('should return correct table name', () => {
             // Access the protected method via type assertion for testing
             const tableName = (model as unknown as { getTableName: () => string }).getTableName();
-            expect(tableName).toBe('exchange_rate_config');
+            expect(tableName).toBe('exchangeRateConfig');
         });
     });
 

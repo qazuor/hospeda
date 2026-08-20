@@ -18,15 +18,17 @@ import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import AccountSectionCard from '@/components/account/AccountSectionCard.astro';
 import { CommerceListingActions } from '@/components/commerce/CommerceListingActions.client';
 import { hasCommerceNavAccess } from '@/lib/nav-gating';
+import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { fetchOwnerCommerceListingsWithState } from '@/lib/commerce/owner-listings';
+import { fetchCommerceUsageByVertical } from '@/lib/commerce/usage-badge';
+import { buildUrl } from '@/lib/urls';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
 
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 const user = Astro.locals.user;
 if (!user) {
@@ -46,7 +48,33 @@ const subtitle = t('commerce.owner.list.subtitle', '');
 const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
 const listings = await fetchOwnerCommerceListingsWithState({ cookieHeader });
 
+// ── HOS-689 item 1: one usage/limit badge PER VERTICAL the owner actually
+// holds a listing in. Two verticals are two INDEPENDENT readings — never a
+// merged number (§6.8 already refused a pooled cap for the same reason). ──
+const verticalsWithListings = [...new Set(listings.map((listing) => listing.vertical))];
+const usageByVertical = await fetchCommerceUsageByVertical({
+    verticals: verticalsWithListings,
+    cookieHeader
+});
+
+// HOS-689 item 4: a resolved (non-null) usage reading for a vertical IS
+// proof the owner already holds a subscription there (see
+// `fetchCommerceVerticalUsage`'s doc) — the signal that decides whether a
+// listing's CTA is "Publicar y pagar" (first listing, real checkout) or a
+// plain "Publicar" (later listings, silently attached, no payment — HOS-688
+// §6.8 branch 2).
+const verticalsWithSubscription = new Set<CommerceVertical>(
+    verticalsWithListings.filter((vertical) => usageByVertical.get(vertical) !== null)
+);
+
 const createUrl = buildUrl({ locale, path: 'mi-cuenta/comercio/nuevo' });
+const addonsUrl = buildUrl({ locale, path: 'mi-cuenta/addons' });
+
+/** Usage badges to render — pre-filtered so the template stays a plain `.map()`. */
+const usageBadges = verticalsWithListings.flatMap((vertical) => {
+    const usage = usageByVertical.get(vertical);
+    return usage && usage.maxAllowed > 0 ? [{ vertical, usage }] : [];
+});
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="comercio">
@@ -59,6 +87,26 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/comercio/nuevo' });
             {t('commerce.owner.list.createCta', '+ Nuevo comercio')}
         </a>
     </div>
+
+    {usageBadges.length > 0 && (
+        <div class="mc-usage-row">
+            {usageBadges.map(({ vertical, usage }) => (
+                <div class={`mc-usage mc-usage--${usage.threshold}`} role="status">
+                    <span class="mc-usage__label">
+                        {tPlural(`commerce.owner.list.usage.${vertical}.label`, usage.maxAllowed, {
+                            current: usage.currentUsage,
+                            max: usage.maxAllowed
+                        })}
+                    </span>
+                    {usage.threshold !== 'ok' && (
+                        <a href={addonsUrl} class="mc-usage__upgrade">
+                            {t('commerce.owner.list.usage.upgrade', 'Ampliar cupo')}
+                        </a>
+                    )}
+                </div>
+            ))}
+        </div>
+    )}
 
     <AccountSectionCard>
         {
@@ -92,6 +140,7 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/comercio/nuevo' });
                                 client:visible
                                 listing={listing}
                                 locale={locale}
+                                hasVerticalSubscription={verticalsWithSubscription.has(listing.vertical)}
                             />
 
                             <a
@@ -214,5 +263,69 @@ const createUrl = buildUrl({ locale, path: 'mi-cuenta/comercio/nuevo' });
 
     .mc-list__edit:hover {
         text-decoration: underline;
+    }
+
+    /* ── HOS-689 item 1: per-vertical usage/limit badges ── */
+    .mc-usage-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-3, 0.75rem);
+        margin-bottom: var(--space-6, 1.5rem);
+    }
+
+    .mc-usage {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-3, 0.75rem);
+        padding: 0.5rem 1rem;
+        border-radius: var(--radius-pill, 9999px);
+        font-family: var(--font-sans);
+        font-size: 0.875rem;
+        font-weight: 500;
+        background-color: var(--surface-warm, oklch(0.96 0.02 60));
+        color: var(--core-foreground);
+        border: 1px solid var(--border);
+    }
+
+    .mc-usage--ok {
+        background-color: oklch(0.95 0.04 145);
+        color: oklch(0.35 0.12 145);
+        border-color: oklch(0.85 0.08 145);
+    }
+
+    .mc-usage--warning {
+        background-color: oklch(0.95 0.05 65);
+        color: oklch(0.4 0.12 65);
+        border-color: oklch(0.85 0.1 65);
+    }
+
+    .mc-usage--critical,
+    .mc-usage--exceeded {
+        background-color: oklch(0.95 0.04 25);
+        color: oklch(0.45 0.15 25);
+        border-color: oklch(0.85 0.1 25);
+    }
+
+    .mc-usage__label {
+        white-space: nowrap;
+    }
+
+    .mc-usage__upgrade {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-pill, 9999px);
+        background-color: var(--brand-primary);
+        color: var(--primary-foreground, #ffffff);
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 150ms ease-out;
+    }
+
+    .mc-usage__upgrade:hover {
+        opacity: 0.88;
     }
 </style>

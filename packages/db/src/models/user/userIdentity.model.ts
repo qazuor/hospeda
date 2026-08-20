@@ -7,7 +7,7 @@ export class UserIdentityModel extends BaseModelImpl<UserAuthIdentity> {
     public entityName = 'user_auth_identities';
 
     protected getTableName(): string {
-        return 'user_auth_identities';
+        return 'userAuthIdentities';
     }
 }
 

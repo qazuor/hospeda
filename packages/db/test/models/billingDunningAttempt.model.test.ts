@@ -27,7 +27,7 @@ describe('BillingDunningAttemptModel', () => {
     describe('getTableName', () => {
         it('should return correct table name', () => {
             const tableName = (model as unknown as { getTableName: () => string }).getTableName();
-            expect(tableName).toBe('billing_dunning_attempts');
+            expect(tableName).toBe('billingDunningAttempts');
         });
     });
 

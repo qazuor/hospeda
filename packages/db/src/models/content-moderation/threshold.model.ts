@@ -16,7 +16,7 @@ export class ContentModerationThresholdModel extends BaseModelImpl<
     public entityName = 'contentModerationThresholds';
 
     protected getTableName(): string {
-        return 'content_moderation_thresholds';
+        return 'contentModerationThresholds';
     }
 
     /**

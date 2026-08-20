@@ -80,6 +80,17 @@
                 "unknown": "Status unavailable",
                 "draftComplete": "Draft — ready to publish",
                 "draftIncomplete": "Draft — incomplete"
+            },
+            "usage": {
+                "gastronomy": {
+                    "label_one": "{{current}} of {{max}} gastronomy listing",
+                    "label_other": "{{current}} of {{max}} gastronomy listings"
+                },
+                "experience": {
+                    "label_one": "{{current}} of {{max}} experience listing",
+                    "label_other": "{{current}} of {{max}} experience listings"
+                },
+                "upgrade": "Add more capacity"
             }
         },
         "editor": {
@@ -228,7 +239,9 @@
             "publishing": "Starting payment...",
             "incompleteError": "Some data is still missing to publish.",
             "alreadySubscribedError": "This business already has an active subscription.",
-            "checkoutError": "We couldn't start the payment. Please try again."
+            "checkoutError": "We couldn't start the payment. Please try again.",
+            "publishCtaFree": "Publish",
+            "publishingFree": "Publishing..."
         },
         "create": {
             "pickVertical": {
