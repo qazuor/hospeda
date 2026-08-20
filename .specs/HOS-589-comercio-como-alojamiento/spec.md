@@ -271,6 +271,36 @@ all five accommodation plans (owner tiers and tourist-vip alike).
 No reconciler change is required: `trialing` is already in `ACTIVE_STATUSES`.
 That branch is presently unreachable for commerce and becomes live.
 
+#### It is three hardcodes, not one — and the first is not cosmetic
+
+`initiateCommerceMonthlySubscription` states "no trial" in three coupled places,
+and changing only the one named above leaves a checkout that says trial and
+charges on day one:
+
+| Where | What it does |
+| --- | --- |
+| `subscription-checkout.service.ts:711` | `trialDays: 0` passed to `resolveCheckoutMpPlanId` |
+| `:767` | `trialGranted: false` passed to `createPendingProviderSubscription` |
+| `:696-698` | the HOS-191 comment asserting commerce is always no-trial |
+
+The first one is load-bearing. `resolveCheckoutMpPlanId`
+(`apps/api/src/services/billing/mp-plan-provisioning.service.ts:451`) resolves
+the MercadoPago **preapproval plan** from `(commercial plan, amount, currency,
+interval, trialDays)`, so the zero does not merely record "no trial" — it selects
+the no-trial MP plan to subscribe against. Passing 30 mints a different
+preapproval plan at MercadoPago. That is the same mechanism §6.8 relies on for
+AC-16, and it is why §13 insists the change lands before anyone can buy.
+
+The accommodation paths are the shape to copy end to end: `resolvePlanTrialConfig`
+→ `resolveCheckoutFreeTrialDays` (`:461`, `:1194`) → `freeTrialDays` handed to
+both the MP plan resolver and the pending subscription (`:560`, `:1272`) →
+`...(freeTrialDays !== undefined && { trialGranted: true as const })` (`:598`,
+`:1304`). Three call sites move together there; three must move together here.
+
+**The partner path is deliberately excluded.** It repeats the identical pair at
+`:912` / `:954` and stays no-trial. A guard written against the string rather
+than against the function would break it.
+
 ### 6.5 The public entry, mirroring `/publicar/`
 
 - `/{lang}/publicar-restaurante/` and `/{lang}/publicar-experiencia/` keep their
@@ -814,8 +844,13 @@ and keep their current semantics.
 - **AC-3** — An account that already holds `HOST` retains it after being granted
   `COMMERCE_OWNER`.
 - **AC-4** — A commerce checkout produces a subscription with the plan's trial
-  days resolved by `resolveCheckoutFreeTrialDays`; a static guard fails if
-  `initiateCommerceMonthlySubscription` reintroduces a literal trial-days value.
+  days resolved by `resolveCheckoutFreeTrialDays`, and the resolved value reaches
+  **all three** consumers: the MercadoPago plan resolver, the pending
+  subscription's `trialGranted`, and the stored trial end. A static guard fails if
+  `initiateCommerceMonthlySubscription` reintroduces a literal at any of them —
+  `trialDays: 0`, `trialGranted: false`, or a numeric trial-days literal — and
+  the guard is scoped to that function so the partner path's identical, deliberate
+  literals do not trip it.
 - **AC-5** — A listing whose subscription is `trialing` and whose data is
   complete is reconciled to `PUBLIC` / `ACTIVE`.
 - **AC-6** — Setting `moderationState = REJECTED` on a published listing
