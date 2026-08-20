@@ -260,6 +260,8 @@ jobs:
         run: pnpm check:soft-delete-actor
       - name: Check product-domain vocabulary is not narrowed back (HOS-685)
         run: bash scripts/check-product-domain-vocabulary.sh
+      - name: Check commerce plan resolution stays single-sited (HOS-688 AC-35)
+        run: bash scripts/check-commerce-plan-resolution.sh
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."

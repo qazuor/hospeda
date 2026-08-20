@@ -50,7 +50,13 @@ const LIMIT_KEY_AUDIENCE: Record<string, UpgradeAudience> = {
     [LimitKey.MAX_PHOTOS_PER_ACCOMMODATION]: 'host',
     [LimitKey.MAX_ACTIVE_PROMOTIONS]: 'host',
     [LimitKey.MAX_PROPERTIES]: 'host',
-    [LimitKey.MAX_STAFF_ACCOUNTS]: 'host'
+    [LimitKey.MAX_STAFF_ACCOUNTS]: 'host',
+    // A commerce owner is a host of a different kind, but the same kind of
+    // upgrade path: they are sent to a subscription/add-on surface, never to a
+    // traveller plan. An absent entry falls back to 'host' anyway — these are
+    // explicit so the fallback is not what is being relied on (HOS-688).
+    [LimitKey.MAX_GASTRONOMIES]: 'host',
+    [LimitKey.MAX_EXPERIENCES]: 'host'
 };
 
 /**

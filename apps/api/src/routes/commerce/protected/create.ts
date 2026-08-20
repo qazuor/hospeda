@@ -82,6 +82,11 @@ import {
 } from '@repo/schemas';
 import { ExperienceService, GastronomyService, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
+import { commerceVerticalEntitlementMiddleware } from '../../../middlewares/commerce-entitlement';
+import {
+    enforceExperienceLimit,
+    enforceGastronomyLimit
+} from '../../../middlewares/commerce-limit-enforcement';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
 import { createProtectedRoute } from '../../../utils/route-factory';
@@ -146,7 +151,24 @@ export const protectedCreateGastronomyListingRoute = createProtectedRoute({
         ctx: Context,
         _params: Record<string, unknown>,
         body: Record<string, unknown>
-    ) => handleCreateGastronomyListing(ctx, body)
+    ) => handleCreateGastronomyListing(ctx, body),
+    options: {
+        // HOS-688 — the cap exists ONLY here. Before this, the route ran no
+        // entitlement middleware and no limit enforcement at all, so seeding
+        // `max_gastronomies: 1` would have done nothing whatsoever.
+        //
+        // The order is load-bearing. The first middleware REPLACES `userLimits`
+        // with the gastronomy domain's limits — the global `entitlementMiddleware`
+        // loaded the accommodation domain's, which never carries this key — and
+        // the second one reads it. Drop the first, or reverse them, and the key
+        // is absent: `getRemainingLimit` answers `-1`, i.e. unlimited, and
+        // nothing anywhere raises.
+        //
+        // Unlike accommodation there is no `requireEntitlement` ahead of the
+        // limit check, because neither commerce vertical grants an entitlement
+        // today (§6.8). See `commerce-limit-enforcement.ts` for that decision.
+        middlewares: [commerceVerticalEntitlementMiddleware('gastronomy'), enforceGastronomyLimit()]
+    }
 });
 
 /**
@@ -220,5 +242,12 @@ export const protectedCreateExperienceListingRoute = createProtectedRoute({
         ctx: Context,
         _params: Record<string, unknown>,
         body: Record<string, unknown>
-    ) => handleCreateExperienceListing(ctx, body)
+    ) => handleCreateExperienceListing(ctx, body),
+    options: {
+        // See the gastronomy route above for why this pair exists and why the
+        // order matters. The two caps are independent by construction: this
+        // route only ever loads and reads `max_experiences`, so an owner sitting
+        // at their gastronomy cap is still allowed an experience (AC-13).
+        middlewares: [commerceVerticalEntitlementMiddleware('experience'), enforceExperienceLimit()]
+    }
 });

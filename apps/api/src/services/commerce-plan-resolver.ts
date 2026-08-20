@@ -1,57 +1,99 @@
 /**
- * Commerce plan slug resolver (HOS-166 D-7, §6.4).
+ * Commerce plan slug resolver (HOS-166 D-7 → HOS-688 §6.8).
  *
- * Commerce billing is binary today: one plan (`commerce-listing`,
- * `product_domain='commerce'`) covers both verticals — there is no plan
- * picker (NG-3). This module is the single, greppable, test-covered seam
- * that resolves that plan's slug, so no route/web/test literal-hardcodes it.
+ * **The single place in the codebase where a commerce vertical becomes a plan
+ * slug.** `scripts/check-commerce-plan-resolution.sh` fails CI on any other
+ * module that reads the configuration or hardcodes a commerce plan slug
+ * (AC-35), because a second resolution site is how the two verticals end up
+ * quietly billed against the same MercadoPago preapproval plan.
  *
- * Currently returns a constant for both verticals, read from
- * `env.HOSPEDA_COMMERCE_PLAN_ID` — exactly the same source and 503-on-unset
- * semantics as `apps/api/src/routes/commerce/admin/start-subscription.ts:163-173`
- * uses inline today. Extracting it here means the day pricing diverges by
- * vertical (a second commerce plan), the branch happens in ONE place instead
- * of being smeared across every checkout call site (§6.4 — "cheap insurance,
- * not speculation").
+ * HOS-166 wrote this module *for this moment*: it already took `entityType` and
+ * ignored it, and its docblock said the day a second commerce plan existed the
+ * branch would happen here and nowhere else. That day is HOS-688.
+ *
+ * ## The mapping comes from the environment, and is validated at BOOT
+ *
+ * `HOSPEDA_COMMERCE_PLAN_SLUGS` carries the whole mapping in ONE value
+ * (`gastronomy:<slug>,experience:<slug>`). One variable rather than two, because
+ * two can be half-set — one vertical sells and the other 503s while the site
+ * looks perfectly fine, which is the failure mode hardest to notice.
+ *
+ * The value is parsed and rejected at startup by `env.ts`'s `.superRefine`, so
+ * an unset or malformed mapping stops the container instead of refusing a
+ * customer mid-checkout. Outside production an unset value falls back to the
+ * shipped catalogue ({@link DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL}) so local
+ * dev and the test suites boot without extra configuration; a value that is SET
+ * but malformed is rejected in every environment.
  *
  * @module services/commerce-plan-resolver
  */
 
-import type { CommerceEntityType } from '@repo/service-core';
+import { DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL } from '@repo/billing';
+import type { CommercePlanSlugMap, CommercePlanVertical } from '../utils/commerce-plan-config';
+import { parseCommercePlanSlugMap } from '../utils/commerce-plan-config';
 import { env } from '../utils/env';
 
 /** Input to {@link resolveCommercePlanSlug}. */
 export interface ResolveCommercePlanSlugInput {
     /**
-     * Which commerce vertical the checkout is for. Currently unused — both
-     * verticals resolve to the same env-configured slug — but kept in the
-     * signature as the forward-compatible seam described in the module
-     * docblock: the day a second commerce plan exists, this parameter is
-     * where the branch goes.
+     * Which commerce vertical the checkout is for. Each vertical is a DISTINCT
+     * MercadoPago preapproval plan, which is what lets an owner who spent their
+     * free trial on gastronomy still receive one when they later add an
+     * experience — MP scopes the trial to `(payer, preapproval_plan)`.
+     *
+     * Typed as the plain string union rather than `CommerceEntityTypeEnum` so
+     * BOTH shapes reach it: a route that parsed the vertical out of a `z.enum`
+     * holds the union, a service holding the enum passes it unchanged (a string
+     * enum member is assignable to its own literal type; the reverse is not).
      */
-    readonly entityType: CommerceEntityType;
+    readonly entityType: CommercePlanVertical;
 }
 
 /**
- * Thrown by {@link resolveCommercePlanSlug} when `HOSPEDA_COMMERCE_PLAN_ID`
- * is unset. Callers map this to HTTP 503 — mirroring
- * `admin/start-subscription.ts:168-172`'s inline handling of the same
- * condition — via `instanceof` rather than duplicating the env check.
+ * Thrown by {@link resolveCommercePlanSlug} when the configuration is unusable.
+ *
+ * In a booted container this is unreachable: the same value is validated by
+ * `env.ts` at startup, so a bad mapping stops the container. It survives as the
+ * floor beneath that guarantee, and callers still map it to a 503 so the
+ * failure is never a 500.
  */
 export class CommercePlanNotConfiguredError extends Error {
-    constructor() {
-        super('Commerce subscriptions are not configured (HOSPEDA_COMMERCE_PLAN_ID unset)');
+    constructor(reason: string) {
+        super(`Commerce subscriptions are not configured (HOSPEDA_COMMERCE_PLAN_SLUGS: ${reason})`);
         this.name = 'CommercePlanNotConfiguredError';
     }
 }
 
 /**
- * Resolves the commerce-listing plan slug for a checkout.
+ * Resolves the effective vertical → plan-slug mapping.
+ *
+ * @returns The configured mapping, or the shipped catalogue defaults when the
+ *   variable is unset (see the module doc for why that is safe).
+ * @throws {CommercePlanNotConfiguredError} When the variable is SET but cannot
+ *   be parsed. A present-but-wrong value is never silently replaced by the
+ *   defaults — that would hide exactly the operator mistake this validates for.
+ */
+function resolveCommercePlanSlugMap(): CommercePlanSlugMap {
+    const raw = env.HOSPEDA_COMMERCE_PLAN_SLUGS;
+
+    if (raw === undefined || raw.trim() === '') {
+        return DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL;
+    }
+
+    const parsed = parseCommercePlanSlugMap(raw);
+    if (!parsed.ok) {
+        throw new CommercePlanNotConfiguredError(parsed.error);
+    }
+    return parsed.map;
+}
+
+/**
+ * Resolves the plan slug a commerce checkout should subscribe against.
  *
  * @param input - {@link ResolveCommercePlanSlugInput}
- * @returns The configured plan slug (`env.HOSPEDA_COMMERCE_PLAN_ID`).
- * @throws {CommercePlanNotConfiguredError} When the env var is unset. Callers
- *   should catch this and respond 503, exactly as the admin route does today.
+ * @returns The plan slug for that vertical.
+ * @throws {CommercePlanNotConfiguredError} When the configured mapping is
+ *   malformed. Callers respond 503.
  *
  * @example
  * ```ts
@@ -66,10 +108,10 @@ export class CommercePlanNotConfiguredError extends Error {
  * }
  * ```
  */
-export function resolveCommercePlanSlug(_input: ResolveCommercePlanSlugInput): string {
-    const planSlug = env.HOSPEDA_COMMERCE_PLAN_ID;
-    if (!planSlug) {
-        throw new CommercePlanNotConfiguredError();
-    }
-    return planSlug;
+export function resolveCommercePlanSlug(input: ResolveCommercePlanSlugInput): string {
+    const map = resolveCommercePlanSlugMap();
+    // The `Record<vertical, slug>` lookup §6.8 sanctions and AC-7 explicitly
+    // permits: one code path reading a different value, not a behavioural
+    // branch by domain.
+    return map[input.entityType];
 }

@@ -190,6 +190,15 @@ describe('needsUpgradePrompt', () => {
     });
 });
 
+describe('audienceForLimit — commerce verticals (HOS-688)', () => {
+    it('should group both commerce caps with the host block', () => {
+        // A commerce owner is a host of a different kind, and is sent to a
+        // subscription/add-on surface rather than a traveller plan.
+        expect(audienceForLimit('max_gastronomies')).toBe('host');
+        expect(audienceForLimit('max_experiences')).toBe('host');
+    });
+});
+
 describe('addonSlugForLimit', () => {
     it('should map the limits that have a purchasable add-on', () => {
         expect(addonSlugForLimit('max_accommodations')).toBe('extra-accommodations-5');
@@ -207,6 +216,22 @@ describe('addonSlugForLimit', () => {
     it('should return undefined for limits with no add-on at all', () => {
         expect(addonSlugForLimit('max_favorites')).toBeUndefined();
         expect(addonSlugForLimit('max_ai_search_per_month')).toBeUndefined();
+    });
+
+    it('should link each commerce vertical to its OWN extra-listing add-on (HOS-688 AC-34)', () => {
+        // Without these entries each add-on exists, is purchasable and grants
+        // the cap increase — and the usage panel never links to it from the
+        // at-cap row, which is the only place anybody would go looking for it.
+        // That is an add-on that exists and that nobody can find.
+        expect(addonSlugForLimit('max_gastronomies')).toBe('extra-gastronomies-1');
+        expect(addonSlugForLimit('max_experiences')).toBe('extra-experiences-1');
+    });
+
+    it('should never cross-link the two verticals add-ons', () => {
+        // A swapped pair would sell the owner an extra excursion when they
+        // asked for an extra restaurant, with every screen looking correct.
+        expect(addonSlugForLimit('max_gastronomies')).not.toBe('extra-experiences-1');
+        expect(addonSlugForLimit('max_experiences')).not.toBe('extra-gastronomies-1');
     });
 });
 

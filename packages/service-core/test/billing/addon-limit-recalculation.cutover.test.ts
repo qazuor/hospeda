@@ -70,10 +70,14 @@ vi.mock('../../src/services/billing/plan/plan.service.js', () => ({
     })
 }));
 
-// Mock @repo/billing — getPlanBySlug no longer used after T-027 cutover
-vi.mock('@repo/billing', () => ({
-    getPlanBySlug: vi.fn()
-}));
+// Mock @repo/billing — getPlanBySlug no longer used after T-027 cutover.
+// Spread the real module so `productDomainForLimitKey` (HOS-688) stays REAL:
+// the service resolves which subscription domain owns a limit key through it,
+// and a stub would make a wrong mapping invisible here.
+vi.mock('@repo/billing', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/billing')>();
+    return { ...actual, getPlanBySlug: vi.fn() };
+});
 
 vi.mock('../../src/services/billing/addon/addon-lifecycle.constants.js', () => ({
     ADDON_RECALC_SOURCE_ID: 'addon-recalc-source'

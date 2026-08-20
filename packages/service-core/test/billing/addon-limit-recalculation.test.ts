@@ -13,10 +13,18 @@ const { execRef, mockPlanGetById, mockPlanGetBySlug, mockCatalogGetBySlug } = vi
 
 // Mock external dependencies before importing the module under test
 // (kept for the 3 passing tests that still reference getPlanBySlug/getAddonBySlug)
-vi.mock('@repo/billing', () => ({
-    getAddonBySlug: vi.fn(),
-    getPlanBySlug: vi.fn()
-}));
+// `importOriginal`, not a bare stub: the recalculation service resolves the
+// subscription's DOMAIN through `productDomainForLimitKey` (HOS-688), and that
+// mapping is precisely what these tests need to exercise rather than replace —
+// a stubbed one would let a wrong mapping pass.
+vi.mock('@repo/billing', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/billing')>();
+    return {
+        ...actual,
+        getAddonBySlug: vi.fn(),
+        getPlanBySlug: vi.fn()
+    };
+});
 
 // SPEC-192 T-027 cutover: recalculation service now uses DB-backed PlanService
 // and AddonCatalogService (internal package imports). Mock them via the paths
@@ -356,5 +364,257 @@ describe('recalculateAddonLimitsForCustomer', () => {
         // Assert — no addons, so removeBySource is called but outcome is still success
         expect(result.outcome).toBe('success');
         expect(result.newMaxValue).toBe(3);
+    });
+});
+
+describe('recalculateAddonLimitsForCustomer — commerce verticals (HOS-688 AC-15)', () => {
+    /**
+     * AC-15 asserted against the code that WRITES the customer-level override,
+     * not the middleware that reads one already written.
+     *
+     * The reading side was green while this side was broken, which is exactly
+     * why the distinction matters: `resolveCommerceVerticalCap` faithfully
+     * reports whatever `billing_customer_limits` holds, so a test that stubs
+     * that row proves the panel renders a number — never that anybody wrote it.
+     *
+     * What was broken: this service resolved the base plan through
+     * `isAccommodationSubscription`. For a commerce-only owner — the normal
+     * case — that matched nothing, the recalculation SKIPPED, and the add-on
+     * they had just paid for raised no cap at all. A charge with nothing
+     * delivered, and not one layer raises.
+     */
+    beforeEach(() => {
+        vi.clearAllMocks();
+        setExecResult([]);
+        mockPlanGetById.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'plan not found by id' }
+        });
+        mockPlanGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'plan not found' }
+        });
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: false,
+            error: { code: 'NOT_FOUND', message: 'addon not found' }
+        });
+    });
+
+    /** One active `extra-gastronomies-1` purchase, as the checkout writes it. */
+    function gastronomyAddonPurchase() {
+        return [
+            {
+                addonSlug: 'extra-gastronomies-1',
+                status: 'active',
+                deletedAt: null,
+                limitAdjustments: [{ limitKey: 'max_gastronomies', increase: 1 }]
+            }
+        ];
+    }
+
+    /** The catalogue + plan stubs a gastronomy recalculation needs. */
+    function stubGastronomyCatalogue(): void {
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                slug: 'extra-gastronomies-1',
+                affectsLimitKey: 'max_gastronomies',
+                limitIncrease: 1
+            }
+        });
+        mockPlanGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                id: 'plan-uuid-gastronomy',
+                slug: 'gastronomy-premium',
+                limits: { max_gastronomies: 1 }
+            }
+        });
+    }
+
+    it('raises the cap for an owner with NO accommodation subscription', async () => {
+        // The case the old predicate skipped outright. The owner holds exactly
+        // one subscription and it is a gastronomy one.
+        const mockSet = vi.fn().mockResolvedValue(undefined);
+        setExecResult(gastronomyAddonPurchase());
+        stubGastronomyCatalogue();
+        const billing = buildMockBilling(
+            [{ status: 'active', planId: 'gastronomy-premium', productDomain: 'gastronomy' }],
+            { setFn: mockSet }
+        );
+
+        const result = await recalculateAddonLimitsForCustomer({
+            customerId: 'cust-commerce-only',
+            limitKey: 'max_gastronomies',
+            billing: billing as never,
+            db: stubDb
+        });
+
+        expect(result.outcome).toBe('success');
+        expect(result.newMaxValue).toBe(2); // base(1) + addon(1)
+        expect(mockSet).toHaveBeenCalledWith(
+            expect.objectContaining({ limitKey: 'max_gastronomies', maxValue: 2 })
+        );
+    });
+
+    it('reads the base off the GASTRONOMY plan when the owner also holds an accommodation one', async () => {
+        // The second failure mode: the accommodation plan resolves, but it does
+        // not declare `max_gastronomies`, so the base came out 0 and the cap
+        // became the add-on's increase alone — 1 instead of 2. The owner pays
+        // for an extra listing and their cap does not move.
+        const mockSet = vi.fn().mockResolvedValue(undefined);
+        setExecResult(gastronomyAddonPurchase());
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                slug: 'extra-gastronomies-1',
+                affectsLimitKey: 'max_gastronomies',
+                limitIncrease: 1
+            }
+        });
+        mockPlanGetBySlug.mockImplementation(async (slug: string) =>
+            slug === 'gastronomy-premium'
+                ? {
+                      success: true,
+                      data: {
+                          id: 'plan-uuid-gastronomy',
+                          slug,
+                          limits: { max_gastronomies: 1 }
+                      }
+                  }
+                : {
+                      success: true,
+                      data: {
+                          id: 'plan-uuid-owner',
+                          slug,
+                          limits: { max_accommodations: 3 }
+                      }
+                  }
+        );
+        const billing = buildMockBilling(
+            [
+                { status: 'active', planId: 'owner-premium', productDomain: 'accommodation' },
+                { status: 'active', planId: 'gastronomy-premium', productDomain: 'gastronomy' }
+            ],
+            { setFn: mockSet }
+        );
+
+        const result = await recalculateAddonLimitsForCustomer({
+            customerId: 'cust-both',
+            limitKey: 'max_gastronomies',
+            billing: billing as never,
+            db: stubDb
+        });
+
+        expect(result.outcome).toBe('success');
+        expect(result.oldMaxValue).toBe(1); // the GASTRONOMY plan's base, not 0
+        expect(result.newMaxValue).toBe(2);
+    });
+
+    it('leaves the other vertical cap untouched (AC-15, second half)', async () => {
+        // A gastronomy add-on must not move `max_experiences`. Resolving
+        // `max_experiences` for this owner finds no experience subscription and
+        // refuses rather than quietly writing something.
+        setExecResult(gastronomyAddonPurchase());
+        stubGastronomyCatalogue();
+        const mockSet = vi.fn().mockResolvedValue(undefined);
+        const billing = buildMockBilling(
+            [{ status: 'active', planId: 'gastronomy-premium', productDomain: 'gastronomy' }],
+            { setFn: mockSet }
+        );
+
+        const result = await recalculateAddonLimitsForCustomer({
+            customerId: 'cust-commerce-only',
+            limitKey: 'max_experiences',
+            billing: billing as never,
+            db: stubDb
+        });
+
+        expect(result.outcome).not.toBe('success');
+        expect(mockSet).not.toHaveBeenCalled();
+    });
+
+    it('does NOT let a gastronomy subscription supply an accommodation base', async () => {
+        // The isolation SPEC-239 built, in the direction this change could have
+        // broken it: widening the predicate to "any subscription" would have
+        // made a commerce plan answer for `max_accommodations`.
+        const mockSet = vi.fn().mockResolvedValue(undefined);
+        setExecResult([
+            {
+                addonSlug: 'extra-accommodations-5',
+                status: 'active',
+                deletedAt: null,
+                limitAdjustments: [{ limitKey: 'max_accommodations', increase: 5 }]
+            }
+        ]);
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                slug: 'extra-accommodations-5',
+                affectsLimitKey: 'max_accommodations',
+                limitIncrease: 5
+            }
+        });
+        const billing = buildMockBilling(
+            [{ status: 'active', planId: 'gastronomy-premium', productDomain: 'gastronomy' }],
+            { setFn: mockSet }
+        );
+
+        const result = await recalculateAddonLimitsForCustomer({
+            customerId: 'cust-commerce-only',
+            limitKey: 'max_accommodations',
+            billing: billing as never,
+            db: stubDb
+        });
+
+        expect(result.outcome).not.toBe('success');
+        expect(mockSet).not.toHaveBeenCalled();
+    });
+
+    it('still resolves accommodation add-ons against the accommodation subscription', async () => {
+        // Non-regression, and non-vacuity for the pair above: every non-commerce
+        // key maps to `'accommodation'`, so this change is a strict no-op there.
+        const mockSet = vi.fn().mockResolvedValue(undefined);
+        setExecResult([
+            {
+                addonSlug: 'extra-accommodations-5',
+                status: 'active',
+                deletedAt: null,
+                limitAdjustments: [{ limitKey: 'max_accommodations', increase: 5 }]
+            }
+        ]);
+        mockCatalogGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                slug: 'extra-accommodations-5',
+                affectsLimitKey: 'max_accommodations',
+                limitIncrease: 5
+            }
+        });
+        mockPlanGetBySlug.mockResolvedValue({
+            success: true,
+            data: {
+                id: 'plan-uuid-owner',
+                slug: 'owner-premium',
+                limits: { max_accommodations: 3 }
+            }
+        });
+        const billing = buildMockBilling(
+            [
+                { status: 'active', planId: 'gastronomy-premium', productDomain: 'gastronomy' },
+                { status: 'active', planId: 'owner-premium', productDomain: 'accommodation' }
+            ],
+            { setFn: mockSet }
+        );
+
+        const result = await recalculateAddonLimitsForCustomer({
+            customerId: 'cust-both',
+            limitKey: 'max_accommodations',
+            billing: billing as never,
+            db: stubDb
+        });
+
+        expect(result.outcome).toBe('success');
+        expect(result.newMaxValue).toBe(8); // base(3) + addon(5)
     });
 });

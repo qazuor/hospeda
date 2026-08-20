@@ -13,6 +13,7 @@ import { createLogger } from '@repo/logger';
  */
 import { config } from 'dotenv';
 import { z } from 'zod';
+import { parseCommercePlanSlugMap } from './commerce-plan-config.js';
 import { ApiEnvBaseSchema } from './env-schema.js';
 
 // ESM-compatible __dirname
@@ -201,6 +202,29 @@ const ApiEnvSchema = ApiEnvBaseSchema.superRefine((data, ctx) => {
                     message: `CORS origin '${origin}' contains localhost, which is not allowed in production`
                 });
             }
+        }
+    }
+    // HOS-688 AC-35: the commerce vertical → plan-slug mapping is validated
+    // HERE, at boot, not at the first checkout. `HOSPEDA_COMMERCE_PLAN_ID` was
+    // registered but never Zod-validated, so a missing or mistyped value
+    // surfaced as a 503 the first time somebody tried to pay — the failure
+    // nobody notices until a customer hits it. Rejecting it at startup turns
+    // that into a container that refuses to start, which somebody notices at once.
+    //
+    // Only a value that is SET is checked. Unset falls back to the shipped
+    // catalogue defaults (`services/commerce-plan-resolver.ts`), so local dev
+    // and the test suites boot without extra configuration. A present-but-
+    // malformed value is rejected in EVERY environment: silently replacing an
+    // operator's typo with the defaults would hide exactly the mistake this
+    // validation exists to surface.
+    if (data.HOSPEDA_COMMERCE_PLAN_SLUGS && data.HOSPEDA_COMMERCE_PLAN_SLUGS.trim() !== '') {
+        const parsed = parseCommercePlanSlugMap(data.HOSPEDA_COMMERCE_PLAN_SLUGS);
+        if (!parsed.ok) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                path: ['HOSPEDA_COMMERCE_PLAN_SLUGS'],
+                message: `HOSPEDA_COMMERCE_PLAN_SLUGS is invalid: ${parsed.error}. Expected 'gastronomy:<plan-slug>,experience:<plan-slug>'`
+            });
         }
     }
     // Conditional: the OpenAI moderation key is required when the OpenAI provider

@@ -559,6 +559,213 @@ export const COMMERCE_LISTING_PLAN: PlanDefinition = {
     limits: []
 };
 
+// ─── PER-VERTICAL COMMERCE PLANS (HOS-688) ─────────────────────
+
+/**
+ * Monthly price of every ENABLED commerce tier, in centavos.
+ *
+ * ARS $15.000 — the exact amount {@link COMMERCE_LISTING_PLAN} charges today
+ * (owner 2026-07-22, HOS-166 OQ-2). HOS-688 turns one subscription-per-LISTING
+ * into one subscription-per-OWNER-per-VERTICAL, and deliberately keeps the
+ * price: nobody paying today sees a change, they simply get one listing for the
+ * same money under a plan that is theirs rather than the listing's.
+ *
+ * Like every price in this file it is a `'commercial'` field — the database
+ * wins, so an operator override through the admin UI stands and moving the
+ * number in production is a data-migration, not a deploy.
+ */
+export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
+
+/**
+ * Builds one tier of a per-vertical commerce catalogue (HOS-688 §6.8).
+ *
+ * Every tier declares EXACTLY ONE limit — its own vertical's listing cap — and
+ * nothing else. That absence is deliberate and is not the same as `-1`: both
+ * resolve to unlimited downstream, but an absent key reads as "this plan does
+ * not meter that", which is what is true here. A gastronomy plan has no opinion
+ * about photos, promotions or AI quotas.
+ *
+ * @param input.slug - Plan slug (`gastronomy-premium`, …).
+ * @param input.name - Buyer-visible display name; becomes MercadoPago's `reason`.
+ * @param input.description - Admin-facing description.
+ * @param input.limitKey - The vertical's cap key.
+ * @param input.maxListings - Value of that cap for this tier.
+ * @param input.sortOrder - Display order within the vertical.
+ * @param input.isActive - Whether the tier is sellable. Only premium is today.
+ * @param input.monthlyPriceArs - Monthly price in centavos; `0` for a tier that
+ *   has not been priced yet, which is also why such a tier ships inactive.
+ * @returns The tier's {@link PlanDefinition}.
+ */
+function commerceVerticalTier(input: {
+    slug: string;
+    name: string;
+    description: string;
+    limitKey: LimitKey;
+    maxListings: number;
+    sortOrder: number;
+    isActive: boolean;
+    monthlyPriceArs: number;
+}): PlanDefinition {
+    return {
+        slug: input.slug,
+        name: input.name,
+        description: input.description,
+        // See COMMERCE_LISTING_PLAN's JSDoc: 'owner' only satisfies the
+        // PlanCategory type. product_domain ('gastronomy' / 'experience') is the
+        // real discriminator, stamped by `seedCommercePlan`.
+        category: 'owner',
+        monthlyPriceArs: input.monthlyPriceArs,
+        annualPriceArs: null,
+        monthlyPriceUsdRef: Math.round(input.monthlyPriceArs / 100000),
+        // The free trial is HOS-590's work (§6.4); until it lands every commerce
+        // tier charges from day one, exactly as `commerce-listing` does.
+        hasTrial: false,
+        trialDays: 0,
+        isDefault: false,
+        sortOrder: input.sortOrder,
+        isActive: input.isActive,
+        // Neither vertical grants any entitlement today (§6.8). Commerce
+        // visibility is driven by the subscription status through
+        // `commerce_listing_subscriptions` + the reconciler, not by the
+        // entitlement engine — so the limit check on the create route runs with
+        // no entitlement gate ahead of it, unlike accommodation's
+        // `requireEntitlement(PUBLISH_ACCOMMODATIONS)` + `enforceAccommodationLimit()`
+        // pair. There is simply nothing to put in the first half of that pattern.
+        entitlements: [],
+        limits: [limit(input.limitKey, input.maxListings)]
+    };
+}
+
+/**
+ * The gastronomy catalogue (HOS-688 §6.8).
+ *
+ * Built for the full three-tier shape so enabling a tier later is a
+ * data-migration rather than a code change, but **only premium is enabled**.
+ * The two disabled tiers carry `monthlyPriceArs: 0` because they have not been
+ * priced — shipping them inactive is the same precedent {@link AI_SUPPORT_ADDON}
+ * set for a definition whose price is still TBD, and `seedCommercePlan` skips
+ * the `billing_prices` row for a tier priced at zero rather than seeding a free
+ * one.
+ *
+ * Deliberately excluded from {@link ALL_PLANS}, exactly like
+ * {@link COMMERCE_LISTING_PLAN}: the accommodation seed loop, the public plan
+ * list and the grant-matrix snapshot tests all operate on `ALL_PLANS` and must
+ * stay accommodation-only.
+ */
+export const GASTRONOMY_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
+    slug: 'gastronomy-basico',
+    name: 'Gastronomía Básico',
+    description: 'Gastronomy listing plan — basic tier (not enabled yet, HOS-688).',
+    limitKey: LimitKey.MAX_GASTRONOMIES,
+    maxListings: 1,
+    sortOrder: 1,
+    isActive: false,
+    monthlyPriceArs: 0
+});
+
+/** Gastronomy professional tier. See {@link GASTRONOMY_BASICO_PLAN}. */
+export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
+    slug: 'gastronomy-pro',
+    name: 'Gastronomía Profesional',
+    description: 'Gastronomy listing plan — professional tier (not enabled yet, HOS-688).',
+    limitKey: LimitKey.MAX_GASTRONOMIES,
+    maxListings: 1,
+    sortOrder: 2,
+    isActive: false,
+    monthlyPriceArs: 0
+});
+
+/**
+ * Gastronomy premium tier — **the only sellable gastronomy plan today**.
+ *
+ * One listing for {@link COMMERCE_VERTICAL_MONTHLY_PRICE_ARS}. The cap is the
+ * entire commercial substance of §6.8, and every layer beneath it resolves an
+ * unknown limit key to *unlimited* without raising anything — so the wiring on
+ * the create route, not this value, is what actually makes it real.
+ */
+export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
+    slug: 'gastronomy-premium',
+    name: 'Gastronomía Premium',
+    description: 'Gastronomy listing plan — one listing per owner (HOS-688).',
+    limitKey: LimitKey.MAX_GASTRONOMIES,
+    maxListings: 1,
+    sortOrder: 3,
+    isActive: true,
+    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS
+});
+
+/** Experience basic tier. See {@link GASTRONOMY_BASICO_PLAN} for the shape. */
+export const EXPERIENCE_BASICO_PLAN: PlanDefinition = commerceVerticalTier({
+    slug: 'experience-basico',
+    name: 'Experiencias Básico',
+    description: 'Experience listing plan — basic tier (not enabled yet, HOS-688).',
+    limitKey: LimitKey.MAX_EXPERIENCES,
+    maxListings: 1,
+    sortOrder: 1,
+    isActive: false,
+    monthlyPriceArs: 0
+});
+
+/** Experience professional tier. See {@link GASTRONOMY_BASICO_PLAN}. */
+export const EXPERIENCE_PRO_PLAN: PlanDefinition = commerceVerticalTier({
+    slug: 'experience-pro',
+    name: 'Experiencias Profesional',
+    description: 'Experience listing plan — professional tier (not enabled yet, HOS-688).',
+    limitKey: LimitKey.MAX_EXPERIENCES,
+    maxListings: 1,
+    sortOrder: 2,
+    isActive: false,
+    monthlyPriceArs: 0
+});
+
+/**
+ * Experience premium tier — **the only sellable experience plan today**.
+ * See {@link GASTRONOMY_PREMIUM_PLAN}.
+ *
+ * A distinct plan from gastronomy's, not a shared one, and that is worth its
+ * own sentence: MercadoPago scopes a free trial to `(payer, preapproval_plan)`,
+ * so an owner who spends their trial on gastronomy still receives one when they
+ * later add an experience. A single pooled commerce plan would have silently
+ * charged them from day one while the page promised a trial.
+ */
+export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
+    slug: 'experience-premium',
+    name: 'Experiencias Premium',
+    description: 'Experience listing plan — one listing per owner (HOS-688).',
+    limitKey: LimitKey.MAX_EXPERIENCES,
+    maxListings: 1,
+    sortOrder: 3,
+    isActive: true,
+    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS
+});
+
+/** Every gastronomy-domain plan the seed maintains, in display order. */
+export const ALL_GASTRONOMY_PLANS: readonly PlanDefinition[] = [
+    GASTRONOMY_BASICO_PLAN,
+    GASTRONOMY_PRO_PLAN,
+    GASTRONOMY_PREMIUM_PLAN
+];
+
+/** Every experience-domain plan the seed maintains, in display order. */
+export const ALL_EXPERIENCE_PLANS: readonly PlanDefinition[] = [
+    EXPERIENCE_BASICO_PLAN,
+    EXPERIENCE_PRO_PLAN,
+    EXPERIENCE_PREMIUM_PLAN
+];
+
+/**
+ * The slug of the sellable plan for each commerce vertical (HOS-688).
+ *
+ * This is the DEFAULT the environment may override, not the resolution itself:
+ * `resolveCommercePlanSlug` in `apps/api` is the single place a vertical is
+ * turned into a plan slug (AC-35), and a CI guard fails on any other module
+ * that does it.
+ */
+export const DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL = {
+    gastronomy: GASTRONOMY_PREMIUM_PLAN.slug,
+    experience: EXPERIENCE_PREMIUM_PLAN.slug
+} as const;
+
 /**
  * Dedicated partner-directory plan (SPEC-271).
  *

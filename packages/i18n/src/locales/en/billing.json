@@ -288,6 +288,18 @@
                 "secondaryCta": "View my properties"
             }
         },
+        "max_gastronomies": {
+            "title": "You've reached your gastronomy limit",
+            "message_one": "You have {{currentCount}} of {{maxAllowed}} gastronomy listing in your plan. Upgrade to publish more.",
+            "message_other": "You have {{currentCount}} of {{maxAllowed}} gastronomy listings in your plan. Upgrade to publish more.",
+            "cta": "View my subscription"
+        },
+        "max_experiences": {
+            "title": "You've reached your experiences limit",
+            "message_one": "You have {{currentCount}} of {{maxAllowed}} experience in your plan. Upgrade to publish more.",
+            "message_other": "You have {{currentCount}} of {{maxAllowed}} experiences in your plan. Upgrade to publish more.",
+            "cta": "View my subscription"
+        },
         "max_photos_per_accommodation": {
             "title": "You've reached your photo limit",
             "message_one": "You've uploaded {{currentCount}} of {{maxAllowed}} photo allowed in your plan. Upgrade to upload more.",
@@ -543,6 +555,8 @@
         },
         "limitLabel": {
             "max_accommodations": "Published accommodations",
+            "max_gastronomies": "Published gastronomy listings",
+            "max_experiences": "Published experiences",
             "max_photos_per_accommodation": "Photos per accommodation",
             "max_active_promotions": "Active promotions",
             "max_favorites": "Favorites",
