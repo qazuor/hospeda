@@ -1015,6 +1015,91 @@ simply a no-op on an empty set. Its rule:
   inert, because the link row *is* the attachment to a listing, so a subscription
   without one grants nothing to anybody in any domain.
 
+#### The compiler will not help with this rename. Nothing is exhaustive on the domain
+
+Verified across the repo: **no `Record<ProductDomainEnum, …>`, no `switch` without
+a `default`, no `satisfies` over the enum.** Adding two members and retiring one
+produces **zero** type errors. Every failure will be a comparison that silently
+stops matching — the opposite of the two new limit keys, where two exhaustive
+`Record`s break the build and tell you exactly where to go.
+
+That makes the inventory below the deliverable, not a footnote. It is ~35
+production files.
+
+**The reads that stop matching** (all fail-closed, so listings go dark rather than
+leak):
+
+- `isCommerceSubscription` (`subscription-product-domain.ts:125`) — the only
+  function in the codebase that decides "this is a commerce subscription", on the
+  exact string. Two callers: `usage-tracking.service.ts:195` and
+  `apps/api/src/routes/user/protected/subscription.ts:233`.
+
+**The `?productDomain=` contract is binary in seven places**, not one. §6.11 named
+only the dashboard; the full set is:
+
+| Where | Line |
+| --- | --- |
+| `apps/api/src/schemas/product-domain-query.schema.ts` | `:31` — `z.enum(['accommodation','commerce'])`, hardcoded, does **not** derive from the enum |
+| `apps/api/src/routes/user/protected/subscription.ts` | `:146` |
+| `apps/web/src/lib/api/endpoints-protected.ts` | `:416`, `:1086` |
+| `apps/web/src/components/account/SubscriptionDashboard.client.tsx` | `:83` |
+| `apps/web/src/components/account/PlanUsageSection.client.tsx` | `:41` |
+| `apps/web/src/components/commerce/CommerceListingActions.client.tsx` | `:186` — passes `domain: 'commerce'` |
+
+**The writes**, beyond the two in the checkout already named:
+
+- `commerce_listing_subscription.dbschema.ts:35` — the column carries
+  `.default('commerce')`. It is `varchar`, not a PG enum, so nothing complains.
+  **Drop the default rather than repoint it**: the value is derivable from
+  `entity_type` on the same row, and a default that silently disagrees with its
+  own row is worse than a required field.
+- `packages/seed/src/example/gastronomies.seed.ts:309` — **raw SQL**:
+  `UPDATE billing_subscriptions SET product_domain = 'commerce'`. Invisible to the
+  compiler and to any symbol-based search.
+- `gastronomies.seed.ts:375`, `commercePlan.seed.ts:78` and `:105`,
+  `commerce-reconcile.service.ts:237` (the recovery path).
+
+**The admin panel** shows the value and filters on it:
+`SubscriptionFilters.tsx:14` holds a hardcoded `['accommodation','commerce','partner']`
+feeding a `<select>`, and `SubscriptionsTable.tsx:139` builds the i18n key
+dynamically — so an unlabelled domain renders as the raw key. Three locale files
+carry `productDomainLabels.commerce` and need the two new labels.
+
+#### A value collision worth deciding on purpose
+
+`CommerceEntityTypeEnum` **already** uses `'gastronomy'` and `'experience'`, as the
+values of `commerce_listing_subscriptions.entity_type`. Giving `ProductDomainEnum`
+the same two strings means two columns holding identical values with different
+meanings — a billing domain and an entity type.
+
+This is accepted, not accidental, and it has an upside: the link row's
+`product_domain` becomes a pure function of its own `entity_type`, which is what
+makes dropping the column default safe. The hazard is querying the wrong column and
+getting plausible results, and it is worst exactly where the compiler is already
+absent — hand-written SQL like `gastronomies.seed.ts:309`. Any raw SQL touching
+either column names it explicitly in a comment.
+
+#### What does *not* break, verified
+
+The billing crons do **not** filter by `product_domain` — zero matches across
+`apps/api/src/cron/jobs/`, including dunning, trial-reconcile,
+finalize-cancelled-subs, subscription-poll and abandoned-pending-subs. All five
+delegate to `reconcileCommerceListingForSubscription`, which resolves through the
+link table. The MercadoPago webhook is likewise domain-agnostic: `subscription-logic.ts:1091`
+calls the reconciler without reading the domain at all.
+
+And the reconciler's primary path **already handles N listings per subscription** —
+it selects every link row for the subscription with no `.limit(1)` and iterates
+with per-entity error isolation (`commerce-reconcile.service.ts:287-293`, `:322-360`).
+The per-owner model of §6.8 does not break it.
+
+Its **recovery** path does degrade, though. `recoverCommerceLinkFromSubscriptionMetadata`
+fires only when a subscription has no link rows at all, and rebuilds from
+`domainMetadata`, which stores a single `{commerceEntityType, commerceEntityId}`
+pair. Today that recovers the one listing; under per-owner it recovers one of N and
+silently leaves the rest unpublished. It is a pre-existing edge case that this spec
+makes routine, so it is named here rather than discovered later.
+
 #### The unique index survives untouched
 
 `commerce_listing_subs_entity_uniq` is `UNIQUE(entity_type, entity_id)`. Read it
@@ -1213,6 +1298,9 @@ and keep their current semantics.
   typecheck, and the alliance lead funnel still works end to end: a new alliance
   lead is created, the ops notification fires, and `lead-intake-backstop` announces
   an unannounced one. The alliance path is the blast radius, not the target.
+- **AC-33** — No production source, **including raw SQL and seed files**, compares
+  or assigns `product_domain = 'commerce'` after the contract release. Asserted by a
+  guard that greps SQL strings too, because no type check covers this rename.
 
 ## 10. Risks
 
