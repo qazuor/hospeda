@@ -13,13 +13,8 @@ import {
     rAccommodationFeature
 } from '@repo/db';
 import type { AmenityProtected, FeatureProtected } from '@repo/schemas';
-import {
-    AccommodationIdSchema,
-    AccommodationProtectedSchema,
-    PermissionEnum,
-    ServiceErrorCode
-} from '@repo/schemas';
-import { AccommodationService, ServiceError } from '@repo/service-core';
+import { AccommodationIdSchema, AccommodationProtectedSchema, PermissionEnum } from '@repo/schemas';
+import { AccommodationService, entityNotFoundError, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { resolveOwnerEntitlementsForOwnerId } from '../../../middlewares/owner-entitlement';
 import { getActorFromContext } from '../../../utils/actor';
@@ -226,9 +221,15 @@ export const protectedGetOwnAccommodationByIdRoute = createProtectedRoute({
 
         // Ownership check: only return if the actor is the owner.
         // ACCOMMODATION_UPDATE_ANY bypasses the ownership check (admin-level perm).
+        // HOS-600: built by the shared helper, never spelled out here. The
+        // literal this replaced was `'Accommodation not found'` while the
+        // missing-row branch above re-throws the service's
+        // `'accommodation not found'` — same 404, same NOT_FOUND code, and the
+        // whole difference between "this listing is real and belongs to
+        // somebody else" and "no such listing" lived in that capital A.
         const hasUpdateAny = actor.permissions?.includes(PermissionEnum.ACCOMMODATION_UPDATE_ANY);
         if (!hasUpdateAny && accommodation?.ownerId !== actor.id) {
-            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+            throw entityNotFoundError({ entityName: AccommodationService.ENTITY_NAME });
         }
 
         if (!accommodation) {

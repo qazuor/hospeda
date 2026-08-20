@@ -7,7 +7,13 @@ import {
 } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
-import { checkGenericPermission, getOwnershipDescriptor, hasPermission } from '../../utils';
+import {
+    checkGenericPermission,
+    entityNotFoundError,
+    getOwnershipDescriptor,
+    hasPermission
+} from '../../utils';
+import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
 
 /**
  * Checks if a given actor is the owner of a resource.
@@ -140,7 +146,7 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
         if (entity.visibility === VisibilityEnum.PUBLIC) {
             throw new ServiceError(ServiceErrorCode.GONE, 'Accommodation is gone');
         }
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
     }
 
     // Draft/inactive/archived accommodations are not visible to the public.
@@ -152,7 +158,7 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
         !isOwner(actor, entity) &&
         !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
     ) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
     }
 
     // SPEC-143 #29: a service-suspended owner's accommodations are hidden from
@@ -165,7 +171,7 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
         !isOwner(actor, entity) &&
         !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
     ) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
     }
 
     // SPEC-167 T-004: plan-restricted accommodations behave identically to
@@ -180,7 +186,7 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
         !isOwner(actor, entity) &&
         !hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)
     ) {
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
     }
 
     if (
@@ -347,7 +353,7 @@ export function checkCanAdminView(actor: Actor, entity: Accommodation): void {
         if (descriptor?.isOwner(actor, entity)) {
             return;
         }
-        throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Accommodation not found');
+        throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
     }
     throw new ServiceError(
         ServiceErrorCode.FORBIDDEN,
