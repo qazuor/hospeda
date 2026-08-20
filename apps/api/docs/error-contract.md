@@ -38,6 +38,7 @@ check answers 403 to someone the server never identified.
 | Malformed param, query or body (non-UUID id included) | **400** | `VALIDATION_ERROR` |
 | Resource does not exist | **404** | `NOT_FOUND` |
 | Resource exists but belongs to somebody else | **404** | `NOT_FOUND` |
+| …except a foreign RESTRICTED accommodation | **403** | `FORBIDDEN` |
 | Well-formed but unprocessable | **422** | `VALIDATION_ERROR` |
 | State conflict | **409** | `ALREADY_EXISTS` |
 | Plan or limit gate | **403** | `ENTITLEMENT_REQUIRED` / `LIMIT_REACHED` |
@@ -183,11 +184,74 @@ inside the suite. Compare the two answers as ONE value
 (`expect(foreign).toEqual(missing)`), never with `expect.objectContaining`,
 which is blind to a field only one side carries.
 
-The visibility gates inside `accommodation.permissions.ts` still answer **403**
-for a foreign PRIVATE listing (`'Permission denied to view accommodation'`) and
-for RESTRICTED without VIP (`'VIP access required'`). Those are unresolved: the
-VIP one is arguably a deliberate product signal, so changing them is an owner
-decision rather than a contract fix.
+### The write paths, and the one exception (HOS-706)
+
+HOS-600 left two families answering 403 for a row that exists and is not yours,
+because closing either was a product call rather than a contract repair. The
+owner settled both. They resolved in **opposite directions**, and that is the
+point worth keeping: the rule is not "403 is always wrong", it is "a refusal may
+not disclose existence unless disclosing it is the product".
+
+#### Resolved to 404 — every write path
+
+`_canUpdate` / `_canSoftDelete` / `_canHardDelete` / `_canRestore` /
+`_canUpdateVisibility` answered 403 for a foreign row across **15 entities** —
+every entity whose table carries an owner column (`ownerId`, `authorId` or
+`userId`): accommodation, accommodationReview, alert, destinationReview,
+entityComment, event, experience, experienceReview, gastronomy, gastronomyReview,
+ownerPromotion, post, tag, userBookmark, userBookmarkCollection. A caller holding
+`*_UPDATE_OWN` learned from that 403 that the id was real.
+
+The fix is one helper, `BaseService._assertWritePermission`, which every write
+path reaches through `_getAndValidateEntity`. It runs the hook and passes a
+failure through `maskForeignRowRefusal` (`@repo/service-core`,
+`utils/foreign-row.ts`). The **authorisation boundary does not move** — the
+caller is refused either way; only the disclosure is gone. Because the missing-row
+404 (`validateEntity`) and the masked 404 (`entityNotFoundError`) compose the
+same `${entityName} not found`, the two answers are byte-identical, not merely
+equal in status.
+
+Three refusals stay **403**, each for a different reason, and the mask is
+deliberately conditional so they do:
+
+1. **A non-FORBIDDEN error.** An `UNAUTHORIZED` belongs to an earlier tier (R2);
+   a plain `Error` is a bug. Neither may be rewritten into a 404.
+2. **A row with no owner column.** A catalog entity (amenity, destination,
+   partner, attraction, ...) has no ownership dimension, so its 403 discloses
+   nothing an admin-tier caller does not already know. Masking it would only make
+   the admin panel lie about why a write failed.
+3. **A refusal aimed at the row's OWNER.** Then the refusal is about the row's
+   STATE, not its existence — `'Cannot edit this accommodation while the owner
+   subscription is paused'`, `'Permission denied to update a published event'`.
+   The owner already knows the row exists; a 404 would replace an actionable
+   reason with a lie. **This is why the mask cannot simply rewrite every 403.**
+
+`updateVisibility` needed its own wiring: it hands `_getAndValidateEntity` a
+NO-OP check (that signature cannot carry the requested visibility) and runs the
+real gate a few lines below, so "everything goes through `_getAndValidateEntity`"
+was true of it while the leak stayed open. That shape is what the second static
+assertion in the guard exists to catch.
+
+#### Kept as 403 — the VIP hook, deliberately
+
+`checkCanView` in `accommodation.permissions.ts` refuses a foreign RESTRICTED
+listing with **403 `'VIP access required'`**, and that is a **standing, deliberate
+exception to the 404 rule** — not an oversight, and not a leftover.
+
+The reasoning is commercial, not technical: a RESTRICTED listing is an upsell
+surface. Telling a visitor *"this exists and it is for VIPs"* is exactly what the
+visibility tier is sold to do, so hiding it behind a 404 would remove the feature
+rather than harden it. The disclosure is the product.
+
+Its sibling — a foreign **PRIVATE** listing — was unified to **404** in the same
+change. That one sold nothing: it only confirmed an id was real. So within one
+function, PRIVATE now answers 404 and RESTRICTED answers 403, and the difference
+is intentional.
+
+**Do not "fix" the VIP 403.** A future sweep for 403-on-foreign-row will find it,
+and it will look exactly like the twelve defects HOS-600 repaired. It is not one.
+Changing it is an owner decision: edit this section first, then the code and the
+test that pins it (`accommodation.permissions.test.ts`, *"keeps the VIP 403"*).
 
 ## What enforces this
 
@@ -208,6 +272,19 @@ decision rather than a contract fix.
   may not construct a 403, and a route that delegates existence to
   `service.getById` may not hand-write its own not-found message. Both
   mutation-tested against the original defects.
+- [`packages/service-core/test/utils/write-path-existence-disclosure.guard.test.ts`](../../../packages/service-core/test/utils/write-path-existence-disclosure.guard.test.ts)
+  — HOS-706, the WRITE half, and a sibling of the guard above rather than a
+  duplicate: the refusal is built in `packages/service-core`, where no pattern
+  over `apps/api/src/routes` can see it. Two assertions: the injected permission
+  check may only be invoked inside `_assertWritePermission` (which must call
+  `maskForeignRowRefusal`), and a file that fetches a row through
+  `_getAndValidateEntity` may not then invoke a write-path hook outside the mask.
+  Neither anchors on the literal `403` — a refusal can be built from a constant —
+  and both carry instrument checks so a rename cannot leave them green while
+  policing nothing. The mask's own decision table is pinned behaviourally by
+  [`packages/service-core/test/utils/foreign-row.test.ts`](../../../packages/service-core/test/utils/foreign-row.test.ts),
+  which a static guard cannot cover: a mask that rewrote every 403 would satisfy
+  the guard and break the owner's refusals.
 - [`test/routes/existence-disclosure.paired-probe.test.ts`](../test/routes/existence-disclosure.paired-probe.test.ts)
   — the behavioural half: foreign vs invented id on the users, accommodation,
   experience and gastronomy protected reads, compared as whole bodies. Note it

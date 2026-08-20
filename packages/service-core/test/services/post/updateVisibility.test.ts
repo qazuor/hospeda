@@ -5,7 +5,7 @@ import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import {
-    expectForbiddenError,
+    expectForeignRowMasked,
     expectInternalError,
     expectNotFoundError,
     expectSuccess
@@ -60,7 +60,9 @@ describe('PostService.updateVisibility', () => {
         );
     });
 
-    it('should return FORBIDDEN if actor cannot update visibility', async () => {
+    // HOS-706 — see `update.test.ts`. `updateVisibility` runs its gate outside
+    // `_getAndValidateEntity`, so it needed its own wiring through the mask.
+    it('refuses a non-author without revealing that the post exists', async () => {
         (modelMock.findById as Mock).mockResolvedValue(post);
         const forbiddenActor = createActor({
             permissions: [],
@@ -72,7 +74,7 @@ describe('PostService.updateVisibility', () => {
             postId,
             VisibilityEnum.PRIVATE
         );
-        expectForbiddenError(result);
+        expectForeignRowMasked(result);
         expect(modelMock.update as Mock).not.toHaveBeenCalled();
     });
 
