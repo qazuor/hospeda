@@ -17,7 +17,7 @@ export class RDestinationAttractionModel extends BaseModelImpl<DestinationAttrac
     ] as const;
 
     protected getTableName(): string {
-        return 'rDestinationAttractions';
+        return 'rDestinationAttraction';
     }
 
     /**
