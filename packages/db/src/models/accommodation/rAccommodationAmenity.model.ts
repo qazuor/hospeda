@@ -14,7 +14,7 @@ export class RAccommodationAmenityModel extends BaseModelImpl<AccommodationAmeni
     protected override readonly validRelationKeys = ['accommodation', 'amenity'] as const;
 
     protected getTableName(): string {
-        return 'rAccommodationAmenities';
+        return 'rAccommodationAmenity';
     }
 
     /**

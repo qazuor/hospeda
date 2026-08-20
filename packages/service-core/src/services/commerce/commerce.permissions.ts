@@ -17,7 +17,7 @@
  * provisioning) for admin-only operations.
  */
 
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
@@ -35,23 +35,50 @@ import { hasPermission } from '../../utils/permission';
 const isOwner = (actor: Actor, entity: { ownerId?: string | null }): boolean =>
     entity.ownerId === actor.id;
 
+/**
+ * Returns `true` when the actor is anonymous — no roles at all, or only the
+ * `GUEST` sentinel.
+ *
+ * An anonymous actor carries a real UUID (the guest sentinel id), so
+ * `!actor.id` is NOT a usable authentication test here — the same trap the
+ * API error contract documents. Mirrors `resolveOwnerUserId` in
+ * `host-trade.service.ts`.
+ *
+ * @param actor - The actor performing the action.
+ */
+const isAnonymousActor = (actor: Actor): boolean =>
+    actor.roles.length === 0 || actor.roles.every((role) => role === RoleEnum.GUEST);
+
 // ---------------------------------------------------------------------------
 // Commerce listing permission checks
 // ---------------------------------------------------------------------------
 
 /**
  * Verifies the actor may create a new commerce listing.
- * Requires `COMMERCE_CREATE`.
+ *
+ * Requires an authenticated account and NOTHING else (HOS-687 / HOS-589 §6.1).
+ *
+ * This deliberately no longer demands `COMMERCE_CREATE`. Creating the listing
+ * is the act that MAKES someone a commerce owner — demanding the owner's own
+ * permission to perform it made the role unreachable for every account that
+ * did not already have it, which is everyone. It is the exact mirror of host
+ * onboarding, where creating the first accommodation draft requires no
+ * `ACCOMMODATION_*` permission and grants `HOST` on the way through.
+ *
+ * The admin create path is unaffected: `apps/api/src/routes/gastronomy/admin/create.ts`
+ * and its experience twin carry their own `requiredPermissions:
+ * [COMMERCE_CREATE]` at the route, so relaxing this shared service predicate
+ * does not widen the admin door.
  *
  * @param actor - The actor performing the action.
  * @param _data - The creation payload (unused here; accepted for signature consistency).
- * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.
+ * @throws {ServiceError} UNAUTHORIZED when the actor is anonymous / a guest.
  */
 export function checkCanCreateCommerce(actor: Actor, _data: unknown): void {
-    if (!hasPermission(actor, PermissionEnum.COMMERCE_CREATE)) {
+    if (isAnonymousActor(actor)) {
         throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Permission denied: Insufficient permissions to create commerce listing'
+            ServiceErrorCode.UNAUTHORIZED,
+            'Authentication required to create a commerce listing'
         );
     }
 }

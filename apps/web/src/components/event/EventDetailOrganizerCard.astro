@@ -13,6 +13,7 @@
 import { sanitizeHtml } from '@/lib/sanitize-html';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import {
     EmailIcon,
     PhoneIcon,
@@ -42,8 +43,21 @@ const safeDescription = organizer.description
 const contact = organizer.contactInfo;
 const social = organizer.socialNetworks;
 
-const hasSocial = social &&
-    (social.facebook || social.instagram || social.twitter || social.youtube || social.linkedin);
+// Every outbound URL below is organizer-authored content published with no
+// scheme check of its own: `z.string().url()` accepts `javascript:` and
+// `data:`, so the allow-list here is the control, not the schema (HOS-592 /
+// F-02). A refused value yields `undefined` and its link is dropped — never
+// rendered raw, never rendered as an `href` pointing at nothing.
+const websiteHref = resolveSafeExternalUrl(contact?.website);
+const facebookHref = resolveSafeExternalUrl(social?.facebook);
+const instagramHref = resolveSafeExternalUrl(social?.instagram);
+const twitterHref = resolveSafeExternalUrl(social?.twitter);
+const youtubeHref = resolveSafeExternalUrl(social?.youtube);
+const linkedinHref = resolveSafeExternalUrl(social?.linkedin);
+
+const hasSocial = Boolean(
+    facebookHref || instagramHref || twitterHref || youtubeHref || linkedinHref
+);
 ---
 
 <aside class="event-organizer-card">
@@ -73,7 +87,7 @@ const hasSocial = social &&
         />
     )}
 
-    {contact && (contact.email || contact.phone || contact.website) && (
+    {contact && (contact.email || contact.phone || websiteHref) && (
         <div class="event-organizer-card__contact">
             {contact.email && (
                 <a
@@ -95,16 +109,16 @@ const hasSocial = social &&
                     <span>{contact.phone}</span>
                 </a>
             )}
-            {contact.website && (
+            {websiteHref && (
                 <a
-                    href={contact.website}
+                    href={websiteHref}
                     class="event-organizer-card__contact-link"
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={t('events.detail.contactWebsite', 'Visitar sitio web del organizador')}
                 >
                     <GlobeIcon size={15} aria-hidden="true" />
-                    <span>{contact.website.replace(/^https?:\/\//, '')}</span>
+                    <span>{websiteHref.replace(/^https?:\/\//, '')}</span>
                 </a>
             )}
         </div>
@@ -112,9 +126,9 @@ const hasSocial = social &&
 
     {hasSocial && (
         <div class="event-organizer-card__social" aria-label={t('events.detail.socialNetworks', 'Redes sociales')}>
-            {social?.facebook && (
+            {facebookHref && (
                 <a
-                    href={social.facebook}
+                    href={facebookHref}
                     class="event-organizer-card__social-link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -123,9 +137,9 @@ const hasSocial = social &&
                     <FacebookIcon size={18} aria-hidden="true" />
                 </a>
             )}
-            {social?.instagram && (
+            {instagramHref && (
                 <a
-                    href={social.instagram}
+                    href={instagramHref}
                     class="event-organizer-card__social-link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -134,9 +148,9 @@ const hasSocial = social &&
                     <InstagramIcon size={18} aria-hidden="true" />
                 </a>
             )}
-            {social?.twitter && (
+            {twitterHref && (
                 <a
-                    href={social.twitter}
+                    href={twitterHref}
                     class="event-organizer-card__social-link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -145,9 +159,9 @@ const hasSocial = social &&
                     <TwitterIcon size={18} aria-hidden="true" />
                 </a>
             )}
-            {social?.youtube && (
+            {youtubeHref && (
                 <a
-                    href={social.youtube}
+                    href={youtubeHref}
                     class="event-organizer-card__social-link"
                     target="_blank"
                     rel="noopener noreferrer"
@@ -156,9 +170,9 @@ const hasSocial = social &&
                     <YoutubeIcon size={18} aria-hidden="true" />
                 </a>
             )}
-            {social?.linkedin && (
+            {linkedinHref && (
                 <a
-                    href={social.linkedin}
+                    href={linkedinHref}
                     class="event-organizer-card__social-link"
                     target="_blank"
                     rel="noopener noreferrer"

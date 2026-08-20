@@ -250,6 +250,15 @@ export const RoleGrantReason = {
     LAST_ACCOMMODATION_ARCHIVED: 'last_accommodation_archived',
     /** A commerce lead was approved and provisioned to this account. */
     COMMERCE_LEAD_APPROVED: 'commerce_lead_approved',
+    /**
+     * The account created its own commerce listing (gastronomy or experience)
+     * through the owner self-service create route (HOS-687 / HOS-589 §6.1).
+     *
+     * The commerce mirror of {@link ACCOMMODATION_CREATED}: creating the
+     * listing IS the act that makes someone a commerce owner, so the hat is
+     * granted inside the same transaction and no admin step exists.
+     */
+    COMMERCE_LISTING_CREATED: 'commerce_listing_created',
     /** Written by database seeds so fixture accounts are distinguishable. */
     SEED: 'seed'
 } as const;

@@ -281,6 +281,14 @@ jobs:
         run: pnpm --filter @repo/i18n check-locales
       - name: Check schema drift (SPEC-178)
         run: bash scripts/check-schema-drift.sh
+      - name: Check DROP COLUMN ships with a release-gap marker (HOS-601)
+        # PR_BODY is passed via env (never inlined into `run:`) — same reason
+        # as the seed dual-write step below: it is untrusted, attacker-
+        # controllable text, only ever searched for a literal substring.
+        env:
+          BASE_SHA: ${{ env.CI_BASELINE_SHA }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: bash scripts/check-drop-column-release-gap.sh
       - name: Check seed dual-write rule (HOS-25 T-024)
         # PR_BODY is passed via env (never inlined into `run:`) — it is
         # untrusted, attacker-controllable text; only ever searched for a

@@ -54,7 +54,23 @@ Comprehensive deployment checklist for the Hospeda monorepo. Covers all three ap
 
 ### Database
 
-- [ ] Database migrations are up to date: `pnpm db:migrate`
+> **Deploy order matters — read this before running a migration against staging/prod.**
+> `hops db-migrate` (the correct VPS command — see below) and the application redeploy are
+> two separate, non-atomic actions. Running the migration first is safe for almost every
+> change, but a **`DROP COLUMN`** migration run before the new app code is live breaks the
+> STILL-RUNNING old container from the instant it applies — Drizzle projects an explicit
+> column list, never `SELECT *`. This is not theoretical: it caused an 8-minute
+> `accommodations` 404 outage on the 2026-08-18 release (HOS-601). If the migration set for
+> this deploy contains a `DROP COLUMN`, it MUST already be paired with a PR that carries a
+> `[drop-column-release-gap: ...]` marker (CI-enforced — see
+> `scripts/check-drop-column-release-gap.sh`); if you find one that isn't, stop and read
+> [`docs/guides/migrations.md`](../guides/migrations.md#deploy-order-drop-column-ships-one-release-after-the-code-stops-using-it)
+> before proceeding.
+
+- [ ] Database migrations are up to date: `hops db-migrate --target=staging|prod` (never
+      `drizzle-kit push`, and never a raw `drizzle-kit migrate` run by hand — `hops
+      db-migrate` takes the pre-migrate backup and runs `db:apply-extras` in the same step)
+- [ ] Rehearsed pending migrations first: `hops db-migrate-test --target=staging|prod`
 - [ ] Migration files are committed and pushed
 - [ ] No pending schema changes: `pnpm db:generate` produces no new files
 - [ ] Database backup is recent (check Neon dashboard or run manual backup)

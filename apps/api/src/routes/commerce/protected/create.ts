@@ -31,13 +31,33 @@
  *   start-subscription route) is what makes it eligible to go public via the
  *   visibility reconciler (HOS-166 D-3, G-3).
  *
- * ## Permission
+ * ## Permission — an authenticated session, and nothing else (HOS-687)
  *
- * Gated on `COMMERCE_CREATE` at BOTH the route (`requiredPermissions`, mirrors
- * the admin create route's defense-in-depth) AND the service
- * (`GastronomyService`/`ExperienceService`'s `_canCreate` →
- * `checkGastronomyCanCreate`/`checkExperienceCanCreate`). `COMMERCE_OWNER`
- * holds this permission as of the HOS-166 PR-A seed grant.
+ * These two routes declare NO `requiredPermissions`. Authentication is still
+ * enforced, by `createProtectedRoute`'s own factory middleware: an anonymous
+ * caller is refused with 401 before this module's handler is ever entered, and
+ * that must stay a factory concern rather than an in-handler check
+ * (HOS-589 AC-8).
+ *
+ * Until HOS-687 the same door was bolted three times — `requiredPermissions:
+ * [COMMERCE_CREATE]` here, `checkCanCreateCommerce` in the service's
+ * `_canCreate`, and `hasCommerceNavAccess` on the web create page. All three
+ * turned away the signed-in person holding no commerce role, which is exactly
+ * everyone this flow exists for: nobody could reach the create call that would
+ * have granted them the role. The three were opened together, because opening
+ * two of three leaves the flow just as broken while looking fixed.
+ *
+ * The ADMIN create routes (`gastronomy/admin/create.ts` and its experience
+ * twin) still carry `requiredPermissions: [COMMERCE_CREATE]`, so relaxing the
+ * shared service predicate did not widen the admin path.
+ *
+ * ## The role grant
+ *
+ * Creating the listing IS what makes the caller a commerce owner:
+ * `createForOwner` grants `COMMERCE_OWNER` inside the same transaction as the
+ * insert (mirror of `AccommodationService.createForOnboarding`). It is
+ * idempotent on `(user_id, role)` and additive, so a second listing changes
+ * nothing and an account that already holds `HOST` keeps it.
  *
  * ## D-4 compliance
  *
@@ -57,7 +77,6 @@ import {
     GastronomyOwnerCreateInputSchema,
     GastronomyProtectedSchema,
     LifecycleStatusEnum,
-    PermissionEnum,
     ServiceErrorCode,
     VisibilityEnum
 } from '@repo/schemas';
@@ -97,7 +116,9 @@ export async function handleCreateGastronomyListing(ctx: Context, body: Record<s
         lifecycleState: LifecycleStatusEnum.DRAFT
     });
 
-    const result = await gastronomyService.create(actor, createInput);
+    // `createForOwner`, not `create`: the role grant and the insert share one
+    // transaction (HOS-687 / HOS-589 §6.1).
+    const result = await gastronomyService.createForOwner(actor, createInput);
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
@@ -117,9 +138,12 @@ export const protectedCreateGastronomyListingRoute = createProtectedRoute({
     path: '/listings/gastronomy',
     summary: 'Create a gastronomy listing (owner self-service)',
     description:
-        'Creates a gastronomy listing owned by the authenticated caller. Starts hidden (PRIVATE/DRAFT) until the owner completes and pays for it. Requires COMMERCE_CREATE.',
+        'Creates a gastronomy listing owned by the authenticated caller and grants them the COMMERCE_OWNER role in the same transaction. Starts hidden (PRIVATE/DRAFT) until the owner completes and pays for it. Requires an authenticated session and no commerce permission.',
     tags: ['Commerce'],
-    requiredPermissions: [PermissionEnum.COMMERCE_CREATE],
+    // No `requiredPermissions` on purpose (HOS-687): this route is how an
+    // account BECOMES a commerce owner, so demanding the owner's permission to
+    // reach it made the role unreachable. Authentication is still enforced by
+    // the factory — see the module docstring.
     requestBody: GastronomyOwnerCreateInputSchema,
     responseSchema: GastronomyProtectedSchema,
     successStatusCode: 201,
@@ -183,7 +207,9 @@ export async function handleCreateExperienceListing(ctx: Context, body: Record<s
 
     const createInput = parsed.data;
 
-    const result = await experienceService.create(actor, createInput);
+    // `createForOwner`, not `create`: the role grant and the insert share one
+    // transaction (HOS-687 / HOS-589 §6.1).
+    const result = await experienceService.createForOwner(actor, createInput);
 
     if (result.error) {
         throw new ServiceError(result.error.code, result.error.message);
@@ -203,9 +229,10 @@ export const protectedCreateExperienceListingRoute = createProtectedRoute({
     path: '/listings/experience',
     summary: 'Create an experience listing (owner self-service)',
     description:
-        'Creates an experience listing owned by the authenticated caller. Starts hidden (PRIVATE/DRAFT) until the owner completes and pays for it. Requires COMMERCE_CREATE.',
+        'Creates an experience listing owned by the authenticated caller and grants them the COMMERCE_OWNER role in the same transaction. Starts hidden (PRIVATE/DRAFT) until the owner completes and pays for it. Requires an authenticated session and no commerce permission.',
     tags: ['Commerce'],
-    requiredPermissions: [PermissionEnum.COMMERCE_CREATE],
+    // No `requiredPermissions` on purpose (HOS-687) — see the gastronomy route
+    // above and the module docstring.
     // H-156: the CHECKED variant carries the cross-field pricing rule
     // (priceUnit required unless the price is on request).
     requestBody: ExperienceOwnerCreateInputCheckedSchema,

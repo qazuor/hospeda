@@ -13,7 +13,7 @@ export class RExperienceAmenityModel extends BaseModelImpl<ExperienceAmenityRela
     protected override readonly validRelationKeys = ['experience', 'amenity'] as const;
 
     protected getTableName(): string {
-        return 'rExperienceAmenities';
+        return 'rExperienceAmenity';
     }
 }
 

@@ -42,6 +42,7 @@ import { toPartnerDetailProps } from '@/lib/api/transforms';
 import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { evaluatePartnerIndexability } from '@/lib/seo/partner-indexable';
 import { buildUrl } from '@/lib/urls';
 
@@ -115,10 +116,26 @@ const metaDescription =
 
 const canonicalPath = buildUrl({ locale, path: `partners/${slug}` });
 
-/** Social links, flattened from the stored map and skipping empty entries. */
+/**
+ * Social links, flattened from the stored map.
+ *
+ * Every URL here is authored by the partner through
+ * `PATCH /api/v1/protected/partners/mine`, which asks for a session and nothing
+ * else. `z.string().url()` accepts `javascript:` and `data:`, and the admin
+ * content review that follows does not re-validate the scheme — so the schema
+ * is NOT what keeps a payload out of these hrefs, `resolveSafeExternalUrl` is.
+ * A value it refuses yields no entry at all, so the link is dropped rather than
+ * rendered raw or rendered pointing at `undefined` (HOS-592 / F-02).
+ */
 const socialLinks = Object.entries(partner.socialNetworks ?? {})
-    .filter(([, url]) => typeof url === 'string' && url.trim().length > 0)
-    .map(([network, url]) => ({ network, url: String(url) }));
+    .map(([network, url]) => ({
+        network,
+        href: resolveSafeExternalUrl(typeof url === 'string' ? url : undefined)
+    }))
+    .filter((link): link is { network: string; href: string } => link.href !== undefined);
+
+/** The partner's own site, same treatment — see `socialLinks` above. */
+const websiteHref = resolveSafeExternalUrl(partner.websiteUrl);
 
 /** Contact rows, same treatment. */
 const contactRows = Object.entries(partner.contactInfo ?? {})
@@ -150,9 +167,9 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
 
         {partner.description && <p class="partner__description">{partner.description}</p>}
 
-        {partner.websiteUrl && (
+        {websiteHref && (
             <p class="partner__website">
-                <a href={partner.websiteUrl} target="_blank" rel="noopener noreferrer">
+                <a href={websiteHref} target="_blank" rel="noopener noreferrer">
                     {t('partners.detail.websiteLabel', 'Sitio web')}
                 </a>
             </p>
@@ -179,7 +196,7 @@ const contactRows = Object.entries(partner.contactInfo ?? {})
                 <ul class="partner__list">
                     {socialLinks.map((link) => (
                         <li class="partner__list-item">
-                            <a href={link.url} target="_blank" rel="noopener noreferrer">
+                            <a href={link.href} target="_blank" rel="noopener noreferrer">
                                 {link.network}
                             </a>
                         </li>
