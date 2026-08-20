@@ -1,3 +1,4 @@
+import { ProductDomainEnum } from '@repo/schemas';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,9 +10,16 @@ import type { SubscriptionStatus } from './types';
  * Not sourced from `ALL_PLANS.category` — that's an accommodation-only
  * static catalog and carries no `productDomain` field at all. `productDomain`
  * comes straight from the admin billing view contract's
- * `AdminSubscriptionViewSearchSchema`.
+ * `AdminSubscriptionViewSearchSchema`, which accepts an open `z.string()` —
+ * so filtering by any of these is already safe at the API layer.
+ *
+ * Derived from {@link ProductDomainEnum} (HOS-692) rather than a restated
+ * literal list, so the dropdown widens automatically with the vocabulary
+ * instead of drifting from it the way the pre-HOS-692 hardcoded
+ * `['accommodation', 'commerce', 'partner']` did — a row could carry
+ * `'gastronomy'`/`'experience'` and have no filter option that matched it.
  */
-const PRODUCT_DOMAINS = ['accommodation', 'commerce', 'partner'] as const;
+const PRODUCT_DOMAINS = Object.values(ProductDomainEnum);
 
 /**
  * Props for SubscriptionFilters

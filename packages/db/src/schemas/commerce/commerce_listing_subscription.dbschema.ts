@@ -29,10 +29,19 @@ export const commerceListingSubscriptions = pgTable(
             .notNull()
             .references(() => billingSubscriptions.id, { onDelete: 'cascade' }),
         /**
-         * Domain discriminator — always 'commerce' for this spec; reserved for
-         * future multi-domain extension without a schema change.
+         * Domain discriminator — the commerce vertical this link row belongs to
+         * (`'gastronomy'` | `'experience'`, or the pre-HOS-685 `'commerce'`
+         * umbrella on rows the HOS-692 rewrite has not reached).
+         *
+         * No default (HOS-692, structural migration 0093 drops the old
+         * `.default('commerce')`): the value is fully derivable from this same
+         * row's `entityType`, and a default that can silently disagree with its
+         * own row is worse than a required field every write site must set
+         * explicitly. Every insert site (`gastronomies.seed.ts`,
+         * `commerce-subscription-attach.service.ts`,
+         * `commerce-reconcile.service.ts`) already stamps it explicitly.
          */
-        productDomain: varchar('product_domain', { length: 50 }).notNull().default('commerce'),
+        productDomain: varchar('product_domain', { length: 50 }).notNull(),
         /**
          * Entity type discriminator. Current values: 'gastronomy' | 'experience'.
          * Stored as varchar so new entity types can be added without an enum migration.

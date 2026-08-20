@@ -1163,6 +1163,8 @@
         "productDomainLabels": {
             "accommodation": "Accommodation",
             "commerce": "Commerce",
+            "gastronomy": "Gastronomy",
+            "experience": "Experience",
             "partner": "Partner",
             "unknown": "Other"
         }
