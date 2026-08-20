@@ -1685,10 +1685,15 @@ export class TrialService {
             // re-create through checkout. Deriving from the canonical set still
             // means a fourth entitlement-granting status added later is picked up
             // here automatically instead of being silently ignored.
+            //
+            // Both sides widen to `string`: QZPay's status union has no
+            // Hospeda-specific `comp` member, so a direct comparison is a
+            // compile error even though the value reaches here at runtime. Same
+            // widening cast `start-paid.ts` uses for the same reason.
             const liveSubscriptions = allSubscriptions.filter(
                 (sub) =>
-                    isEntitlementGrantingStatus(sub.status) &&
-                    sub.status !== SubscriptionStatusEnum.COMP
+                    isEntitlementGrantingStatus(sub.status as string) &&
+                    (sub.status as string) !== SubscriptionStatusEnum.COMP
             );
 
             if (liveSubscriptions.length <= 1) {
