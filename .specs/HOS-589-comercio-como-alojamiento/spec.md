@@ -950,7 +950,98 @@ and keep their current semantics.
   dropped column 500s until the new image serves — measured at 8 minutes of
   404s on the accommodation catalogue (HOS-601).
 
-## 13. Linear
+## 13. Rollback
+
+### There is no rollback mechanism. In either carril
+
+Verified, not assumed:
+
+- A seed data-migration is `{ meta, up }` and nothing else
+  (`packages/seed/src/data-migrations/types.ts:350-360`). There is no `down` in
+  the interface and no revert path in the runner.
+- `seed_migrations` is append-only: `ledger.ts:112-129` exposes a read and an
+  insert, and the schema file states the rows are "inserted once… and never
+  mutated".
+- `packages/db/CLAUDE.md` says it outright for the structural carril:
+  *"Migrations are forward-only - no rollback support."* drizzle-kit generates no
+  down files here, and the two filenames matching `*down*` are `markdown`.
+- `hops db-seed-migrate` has `--status` and `--allow-destructive`. It has no
+  revert flag.
+
+The repository's actual convention is to **author a new forward migration whose
+`up()` undoes the earlier one** — precedent `0024-restore-example-data-nonprod.ts:124`
+("reverts the un-gated 0023 soft-delete") and `0011_restrip…` correcting
+`0008_strip…`.
+
+So a rollback plan here is not "how do we revert". It is: **make the code
+revertible, and write the undo before it is needed.**
+
+### The code revert is the outage, unless it ships in two releases
+
+`isCommerceSubscription` (`subscription-product-domain.ts:120-126`) is fail-closed
+on `productDomain === 'commerce'` **exactly**. If one release both widens the
+vocabulary and rewrites the rows, then reverting that release lands on code whose
+predicate returns `false` for every commerce subscription — the reconciler stops
+seeing them as commerce, and every commerce listing goes dark. The revert would
+cause the incident it was meant to end.
+
+Split it, exactly as §6.3 splits the `commerce_leads` drop and for the same
+reason (F-03 / HOS-601):
+
+| Release | Contains | Revertible to |
+| --- | --- | --- |
+| **A** | Code only: every exact match on `'commerce'` widened to accept `commerce \| gastronomy \| experience`. No row changes. | trivially — it is a no-op while no row carries the new values |
+| **B** | The data rewrite (§6.13) and the rest of this spec. | A, which understands **both** vocabularies |
+| **C** | Retire `commerce` from `ProductDomainEnum`, narrow the predicates back, drop `commerce_leads`. | not revertible past B — ship it only once B has soaked |
+
+`isAccommodationSubscription` must be widened in the same pass. Both predicates
+matter: `listPlans.ts`'s filter, the reconciler and `loadEntitlements` all read
+one of them.
+
+### The undo migration, written up front
+
+Committed alongside the forward one, not improvised during an incident:
+
+- It maps `gastronomy` / `experience` back to `commerce` on **both**
+  `billing_subscriptions.product_domain` and
+  `commerce_listing_subscriptions.product_domain` (§6.13 — two columns, one
+  purchase).
+- It is bounded by `created_at < (select applied_at from seed_migrations where
+  name = '<the forward migration>')`. Every row carrying the new values at the
+  moment B applies is one B created, because those values did not exist before;
+  a row created *after* B is a real sale, and folding it back to `commerce` would
+  put a live owner on the wrong vertical's cap.
+- It **never writes `NULL`**. `isAccommodationSubscription` treats `null` and
+  `undefined` as accommodation (`subscription-product-domain.ts:77-95`), so a
+  nulled column is the one value that leaks a commerce subscription into a host's
+  entitlement set — the exact thing SPEC-239 exists to prevent. Every other
+  unrecognised value fails closed in both domains, which makes the failure mode of
+  a botched rewrite **a dark listing, never a granted entitlement**.
+
+### Three things this plan cannot undo, and what follows
+
+- **MercadoPago preapproval plans.** `resolveCheckoutMpPlanId` provisions a plan
+  per `(commercial plan, amount, interval, trialDays)`, so enabling the trial
+  mints a *new* MP plan and anyone already subscribed stays on the old one. No
+  local migration moves them. **This is why the whole change ships before anyone
+  can buy**: §6.13 counts zero live commerce subscriptions today, and §6.8 already
+  makes the point that it will never be this cheap again.
+- **Role grants.** `grantRole` has no ungrant in this flow, so a reverted release
+  leaves accounts holding `COMMERCE_OWNER`. Harmless — multi-role shipped, and the
+  role by itself publishes nothing — but one-way.
+- **The `commerce_leads` drop.** Deferred to release C by §6.3 and irreversible
+  once applied. It is last for that reason, and nothing else in this spec may be
+  sequenced behind it.
+
+### The rehearsal
+
+Both migrations — forward and undo — run against staging first, which per §6.13
+is the only environment with rows that are not the three seed fixtures. The
+sequence rehearsed is forward → verify AC-25 → undo → verify the rows read
+`commerce` again → forward. `hops db-seed-migrate --target=staging --status`
+before each step; it applies nothing and is the only read-only view of the ledger.
+
+## 14. Linear
 
 Canonical tracking:
 
