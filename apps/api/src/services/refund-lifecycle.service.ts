@@ -24,6 +24,21 @@
  *   skipped. A `payment.full_refund_no_transition` audit event is written and
  *   the cache is cleared (idempotent refunds must not error).
  *
+ * ## Idempotency (CRITICAL — HOS-597)
+ *
+ * The policy above is applied ONCE PER REFUND, not once per caller. Both doors
+ * (admin hook, MP webhook) and every provider re-delivery converge on the same
+ * key via `buildRefundIdempotencyKey` and race on a UNIQUE constraint in
+ * `claimRefundApplication`; the losers return before touching anything.
+ *
+ * Without that claim the effect ran once per delivery — observed in production
+ * as three audit events for one refund. A FULL refund survived it by accident:
+ * its write SETS `refunded_amount` to `payment.amount` instead of adding to it.
+ * The PARTIAL path ACCUMULATES, so a second delivery of the same partial refund
+ * adds the same money twice — and once the accumulated total reaches
+ * `payment.amount` this service takes the cancel+revoke path, cancelling the
+ * subscription of a customer who asked for half their money back.
+ *
  * ## Unit semantics (CRITICAL — money)
  *
  * All amounts in this service are in **centavos** (integer, smallest ARS unit):
@@ -45,6 +60,7 @@ import { checkSubscriptionStatusTransition, withServiceTransaction } from '@repo
 import { eq, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
+import { buildRefundIdempotencyKey, claimRefundApplication } from './refund-idempotency.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -72,6 +88,17 @@ export interface ApplyRefundLifecycleInput {
      * @default 'admin'
      */
     readonly source?: 'admin' | 'webhook' | 'polling';
+    /**
+     * The provider-side refund identifier, when the caller can resolve one
+     * (HOS-597). Both doors read it from the same place — the admin hook off
+     * the refunded `payment.metadata.refundId`, the webhook off that same
+     * field on the local `billing_payments` row — so the two derive an
+     * identical idempotency key for one refund.
+     *
+     * Only load-bearing for PARTIAL refunds: a full refund is keyed on the
+     * payment's terminal state, which needs no provider id.
+     */
+    readonly providerRefundId?: string;
 }
 
 // ─── Implementation ───────────────────────────────────────────────────────────
@@ -126,7 +153,8 @@ export async function applyRefundLifecycle({
     payment,
     refundAmount,
     adminUserId,
-    source = 'admin'
+    source = 'admin',
+    providerRefundId
 }: ApplyRefundLifecycleInput): Promise<void> {
     const { id: paymentId, customerId, subscriptionId } = payment;
 
@@ -137,6 +165,49 @@ export async function applyRefundLifecycle({
             'Refund lifecycle: payment has no linked subscription — no subscription state change'
         );
         return;
+    }
+
+    // ── HOS-597: one application per refund, whatever door it came through ────
+    // Claimed AFTER the no-subscription guard so a refund with no lifecycle
+    // effect never burns a key, and BEFORE every write below so no path can
+    // apply an effect it does not own.
+    const idempotencyKey = buildRefundIdempotencyKey({
+        paymentId,
+        paymentAmount: payment.amount,
+        refundAmount,
+        providerRefundId
+    });
+
+    if (idempotencyKey === null) {
+        // Partial refund with no provider refund id: no stable identity, so a
+        // re-delivery is indistinguishable from a genuine second partial of the
+        // same amount. Applying is the safer of the two errors (see
+        // buildRefundIdempotencyKey), but it is worth seeing in the logs.
+        apiLogger.warn(
+            { paymentId, customerId, subscriptionId, refundAmount, adminUserId, source },
+            'Refund lifecycle: partial refund without a provider refund id — applied without a duplicate guard'
+        );
+    } else {
+        const claim = await claimRefundApplication({
+            key: idempotencyKey,
+            context: { paymentId, customerId, subscriptionId, refundAmount, adminUserId, source }
+        });
+
+        if (!claim.claimed) {
+            apiLogger.info(
+                {
+                    paymentId,
+                    customerId,
+                    subscriptionId,
+                    refundAmount,
+                    adminUserId,
+                    source,
+                    idempotencyKey
+                },
+                'Refund lifecycle: refund already applied by an earlier delivery — skipping (idempotent)'
+            );
+            return;
+        }
     }
 
     const db = getDb();

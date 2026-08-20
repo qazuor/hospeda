@@ -110,6 +110,34 @@ vi.mock('../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: vi.fn()
 }));
 
+/**
+ * HOS-597 — in-memory stand-in for the `billing_idempotency_keys` ledger.
+ *
+ * Only the STORAGE half of the idempotency module is faked. `importOriginal`
+ * keeps the REAL `buildRefundIdempotencyKey`, so these tests exercise the
+ * actual key derivation (that is the part that decides whether two deliveries
+ * of one refund collapse) rather than a stub of it.
+ *
+ * Cleared in `beforeEach` — otherwise a claim taken by one test would make
+ * every later full-refund test skip its effect.
+ */
+const refundLedger = vi.hoisted(() => new Set<string>());
+
+vi.mock('../../src/services/refund-idempotency.service', async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import('../../src/services/refund-idempotency.service')>();
+    return {
+        ...actual,
+        claimRefundApplication: vi.fn(async ({ key }: { key: string }) => {
+            if (refundLedger.has(key)) {
+                return { claimed: false, failOpen: false };
+            }
+            refundLedger.add(key);
+            return { claimed: true, failOpen: false };
+        })
+    };
+});
+
 vi.mock('../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
@@ -338,6 +366,7 @@ function buildAccumulatedFullDbMock(
 describe('applyRefundLifecycle', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        refundLedger.clear();
     });
 
     // ── No subscription linked ──────────────────────────────────────────────
@@ -999,6 +1028,144 @@ describe('applyRefundLifecycle', () => {
             >;
             const meta = eventArg.metadata as Record<string, unknown>;
             expect(meta.source).toBe('admin');
+        });
+    });
+
+    // ── HOS-597: one application per refund, not per delivery ───────────────
+    //
+    // A refund reaches this service through the admin hook AND through every MP
+    // `payment.updated` delivery (the provider retries with a NEW notification
+    // id, so the webhook-event dedup never recognised them as one refund).
+    // Production showed three applications for a single refund. A FULL refund
+    // survived that only because its write SETS `refunded_amount`; the PARTIAL
+    // path ACCUMULATES, so the same duplication returns the money twice and can
+    // tip the total to `payment.amount`, cancelling the subscription.
+
+    describe('HOS-597 — the same refund applies once, whatever door reports it', () => {
+        it('REGRESSION (partial): a re-delivered partial refund does not accumulate a second time', async () => {
+            const payment = buildPayment({ amount: 100_000 });
+
+            // Delivery 1 — admin panel refunds half. Accumulates 0 → 50_000.
+            const first = buildPartialRefundDbMock(50_000);
+            vi.mocked(getDb).mockReturnValue(first.db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment,
+                refundAmount: 50_000,
+                adminUserId: ADMIN_USER_ID,
+                source: 'admin',
+                providerRefundId: 'mp_refund_hos597'
+            });
+
+            expect(first.spies.update).toHaveBeenCalledTimes(1);
+            expect(first.spies.insertValues).toHaveBeenCalledTimes(1);
+
+            // Delivery 2 — the MP webhook reports the SAME refund. The mock is
+            // primed with what the old code produced: a second accumulation to
+            // 100_000, which reaches payment.amount and takes the cancel path.
+            // With the fix nothing here may be touched at all.
+            const second = buildAccumulatedFullDbMock(100_000, 'active');
+            vi.mocked(getDb).mockReturnValue(second.db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment,
+                refundAmount: 50_000,
+                adminUserId: 'webhook',
+                source: 'webhook',
+                providerRefundId: 'mp_refund_hos597'
+            });
+
+            // No second increment → the customer is not refunded twice.
+            expect(second.spies.update).not.toHaveBeenCalled();
+            // No second audit event → the trail says one refund, because there was one.
+            expect(second.spies.insert).not.toHaveBeenCalled();
+            // No cancel+revoke → half a refund does not end the subscription.
+            expect(second.spies.transaction).not.toHaveBeenCalled();
+            expect(clearEntitlementCache).not.toHaveBeenCalled();
+        });
+
+        it('REGRESSION (full): the admin call plus two webhook deliveries produce ONE audit event', async () => {
+            const payment = buildPayment({ amount: 1_500_000 });
+
+            // The admin hook resolves a provider refund id; the webhook may not.
+            // The full-refund key is derived from the payment's terminal state,
+            // so both doors still land on the same key.
+            const admin = buildDbMock('active');
+            vi.mocked(getDb).mockReturnValue(admin.db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment,
+                refundAmount: 1_500_000,
+                adminUserId: ADMIN_USER_ID,
+                source: 'admin',
+                providerRefundId: 'mp_refund_full'
+            });
+
+            expect(admin.spies.insertValues).toHaveBeenCalledTimes(1);
+
+            for (const attempt of [1, 2]) {
+                const replay = buildDbMock('cancelled');
+                vi.mocked(getDb).mockReturnValue(replay.db as unknown as ReturnType<typeof getDb>);
+
+                await applyRefundLifecycle({
+                    payment,
+                    refundAmount: undefined,
+                    adminUserId: 'webhook',
+                    source: 'webhook'
+                });
+
+                expect(replay.spies.update, `webhook delivery ${attempt}`).not.toHaveBeenCalled();
+                expect(replay.spies.insert, `webhook delivery ${attempt}`).not.toHaveBeenCalled();
+                expect(replay.spies.select, `webhook delivery ${attempt}`).not.toHaveBeenCalled();
+            }
+        });
+
+        it('applies a partial refund with no provider refund id, and warns that it is unguarded', async () => {
+            // No stable identity exists for this shape, and silently dropping a
+            // genuine second partial (under-recording money that left the
+            // account) is the worse of the two errors — so it is applied.
+            const { db, spies } = buildPartialRefundDbMock(400);
+            vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+            await applyRefundLifecycle({
+                payment: buildPayment({ amount: 1000 }),
+                refundAmount: 400,
+                adminUserId: ADMIN_USER_ID,
+                source: 'admin'
+            });
+
+            expect(spies.update).toHaveBeenCalledTimes(1);
+            expect(vi.mocked(apiLogger.warn)).toHaveBeenCalledWith(
+                expect.objectContaining({ paymentId: PAYMENT_ID }),
+                expect.stringContaining('without a provider refund id')
+            );
+        });
+
+        it('lets a genuine SECOND partial refund through — distinct provider refund ids', async () => {
+            const payment = buildPayment({ amount: 100_000 });
+
+            const first = buildPartialRefundDbMock(30_000);
+            vi.mocked(getDb).mockReturnValue(first.db as unknown as ReturnType<typeof getDb>);
+            await applyRefundLifecycle({
+                payment,
+                refundAmount: 30_000,
+                adminUserId: ADMIN_USER_ID,
+                source: 'admin',
+                providerRefundId: 'mp_refund_a'
+            });
+
+            const second = buildPartialRefundDbMock(60_000);
+            vi.mocked(getDb).mockReturnValue(second.db as unknown as ReturnType<typeof getDb>);
+            await applyRefundLifecycle({
+                payment,
+                refundAmount: 30_000,
+                adminUserId: ADMIN_USER_ID,
+                source: 'admin',
+                providerRefundId: 'mp_refund_b'
+            });
+
+            expect(second.spies.update).toHaveBeenCalledTimes(1);
+            expect(second.spies.insertValues).toHaveBeenCalledTimes(1);
         });
     });
 });
