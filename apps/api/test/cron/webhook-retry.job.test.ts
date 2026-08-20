@@ -63,7 +63,8 @@ vi.mock('@sentry/node', () => ({
     captureMessage: mockCaptureMessage
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn(),
     createMercadoPagoAdapter: vi.fn()
 }));

@@ -72,7 +72,8 @@ vi.mock('@repo/logger', () => {
 });
 
 // Mock @repo/billing to avoid unbuilt dist issues in e2e config
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     DUNNING_RETRY_INTERVALS: [1, 3, 5, 7] as const,
     DUNNING_GRACE_PERIOD_DAYS: 7,
     OWNER_TRIAL_DAYS: 30,

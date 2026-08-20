@@ -146,7 +146,8 @@ vi.mock('../../src/utils/logger', () => ({
     }
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn().mockReturnValue(null)
 }));
 

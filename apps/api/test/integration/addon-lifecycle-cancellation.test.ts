@@ -107,7 +107,8 @@ vi.mock('drizzle-orm', async (importOriginal) => {
 });
 
 // @repo/billing — getAddonBySlug resolves addon definitions
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn((slug: string) => {
         if (slug === 'extra-photos-20') {
             return {
