@@ -1380,6 +1380,88 @@ migration, and §6.8's phrase "one subscription per listing, guaranteed by
 `UNIQUE(entity_type, entity_id)`" describes the *intent* of the old checkout, not
 a constraint that would resist the new one.
 
+### 6.15 What the new owner actually receives, and what nobody will tell them
+
+#### The billing lifecycle already covers commerce. Verified, not assumed
+
+The expectation going in was that the subscription emails would be
+accommodation-scoped and commerce would go silent. **They are not.** Payment
+success and failure, the dunning retry warning, cancellation, pause and
+reactivation, access-ending-soon, the renewal reminder and plan-change
+confirmation are all domain-agnostic at their call sites — none consults
+`product_domain` or `isAccommodationSubscription`.
+
+That includes the one that matters most here: **`TRIAL_ENDING_REMINDER` already
+covers commerce.** It is sent by `notification-schedule.job.ts`, sourced from
+`TrialService.findTrialsEndingSoon` (`apps/api/src/services/trial.service.ts:1496-1556`),
+which iterates every `trialing` subscription without filtering the domain. The
+moment §6.4 puts a commerce subscription into `trialing`, the warning fires with
+**no code change**. (Note it is not `trial-expiry.ts` that sends it — that cron
+reconciles and deliberately emails nothing, `:69-72`.)
+
+Exactly one billing notification is domain-filtered, and deliberately:
+`PLAN_PRICE_CHANGE_NOTICE`, whose sender restricts itself to accommodation
+subscriptions (`apply-price-increase.service.ts:368`) under an explicit SPEC-239
+isolation comment. That notice exists to satisfy a **legal** obligation on price
+increases (Disposición 954/2025). Once commerce is a recurring subscription that
+can have its price raised, a commerce owner would never be notified. **This spec
+does not fix it** — the price-increase tool is accommodation's, and touching it is
+NG-3 — but it is a compliance gap that starts existing the day commerce becomes a
+real recurring product, and it is named here so it is not discovered by a
+regulator.
+
+#### The one real hole: nobody says hello
+
+Today the only email a commerce owner ever receives at signup is
+`COMMERCE_OWNER_CREDENTIALS`, and it exists solely because an admin created their
+account and had to send them a password. §6.2 deletes it, correctly.
+
+There is no replacement, and there is no precedent to copy: **accommodation has no
+welcome email either.** `createForOnboarding` grants `HOST` inside the transaction
+and sends nothing (`accommodation.service.ts:1461-1474`). So after this spec, a
+person who signs up and lists their restaurant receives **nothing at all** until
+their first payment succeeds.
+
+**Decision: that is accepted, and it is parity.** Adding a welcome email for
+commerce only would create the domain asymmetry G-2 exists to prevent, and adding
+one for both domains is a separate piece of product work with its own copy,
+translations and send-time rules. What this spec owes is that the removal be
+*conscious*: commerce is losing an email it had, which is a regression in
+experience even though it is an improvement in architecture. If the owner wants a
+welcome, it is one decision covering **both** domains, tracked separately.
+
+#### There is no commerce owner to test with
+
+The SPEC-143 billing matrix — the thirteen `@local.test` users that make
+entitlement, limit and plan work testable locally — contains no `COMMERCE_OWNER`
+at all. The only local commerce owners are three `--example` fixtures
+(`gastro-owner-{julieta,rodrigo,valentina}@local.test`), which §6.13's purge
+removes; that purge is prod-gated, so local and staging keep them, but they were
+never part of the canonical matrix and carry no plan/limit intent.
+
+So the local-first workflow the repo mandates for exactly this kind of work —
+entitlement gates, limit enforcement, UI gates — **cannot be run for commerce**.
+Add commerce owners to `testUsers.seed.ts` as part of this spec, not after it: one
+per vertical, plus one already at its cap, since AC-13 and AC-30 are the criteria
+most likely to be waved through without a way to reproduce them. This is seed data
+in a guarded path, so the dual-write rule applies.
+
+#### Three things that are confirmed safe
+
+Checked because each was a plausible blocker, and each is not:
+
+- **`RoleGrantReason` has no exhaustive consumer** — every use is a producer
+  passing one value to `grantRole`. §6.1's new member breaks nothing.
+- **`COMMERCE_OWNER` already carries `COMMERCE_CREATE` and `COMMERCE_EDIT_OWN`**
+  (`rolePermissions.seed.ts:1116-1137`), so §6.1's grant confers the right
+  capabilities with no seed change.
+- **No cache stands between the grant and its effect.** A user's roles are read
+  **uncached, once per authenticated request** (`middlewares/actor.ts:94`, with the
+  comment at `:216-219` recording that a 60-second cache was tried and removed).
+  `role-permissions-cache.ts` caches role → permissions, not user → roles. A role
+  granted inside the create transaction is effective on the very next request, with
+  nothing to invalidate.
+
 ## 7. Data model / contracts
 
 | Change | Kind | Carril |
@@ -1389,6 +1471,7 @@ a constraint that would resist the new one.
 | `product_domain` value `commerce` → `gastronomy` + `experience` | data + config | seed data-migration; only 3 expired subscriptions carry the old value |
 | Two new plan catalogues (gastronomy, experience), premium tier only | plan config + seed | code declares the tiers; **values are `'commercial'`, so the DB wins** |
 | Two new addons, `limitIncrease: 1`, one per vertical | addon config | mirrors `extra-accommodations-5` |
+| Commerce owners added to the SPEC-143 test-user matrix | seed | none exists today; dual-write applies (§6.15) |
 | `metadata.monthlyPriceArs` mirror removed | 3 write sites + existing rows | `plan.crud.ts:446`, `:601-602`, `billingPlans.seed.ts:449`. **Not** `model-c-field-split.ts` — its entry governs the typed column (§6.9) |
 | `complex-*` plans removed; `tourist-plus` / `owner-test-daily` deactivated | seed data-migration | see §6.9 |
 | `metadata.hasTrial` → `true` and `metadata.trialDays` → `30` on each vertical's plan (**not** a `trial_days` column) | seed **data** | `packages/seed/src/data-migrations/` — dual-write rule: baseline **and** numbered migration. Copy `0017` / `0051` |
@@ -1595,6 +1678,13 @@ and keep their current semantics.
 - **AC-39** — The new pricing pages are registered in `static-sitemap-pages.ts` and
   added to the a11y sweep's `INVENTORY`, and the header dropdown passes the sweep in
   light and dark.
+- **AC-40** — A commerce subscription entering `trialing` receives
+  `TRIAL_ENDING_REMINDER` before its first charge, through the existing
+  domain-agnostic sender and with no new code. Asserted because §6.4 makes a
+  previously unreachable path live.
+- **AC-41** — `testUsers.seed.ts` carries commerce owners: one per vertical and one
+  already at its cap. AC-13 and AC-30 are verified against them locally, not only in
+  staging.
 
 ## 10. Risks
 
@@ -1614,6 +1704,12 @@ and keep their current semantics.
 - **R-4 — MercadoPago's 60-character `reason` limit** already broke coupons
   once. Adding a trial to commerce changes what is sent; verify the composed
   string.
+- **R-9 — The legal price-increase notice will not reach commerce owners.**
+  `PLAN_PRICE_CHANGE_NOTICE` is deliberately restricted to accommodation
+  subscriptions (SPEC-239 isolation). Turning commerce into a real recurring product
+  creates an obligation the sender does not cover. Out of scope here (NG-3), named
+  so it is not discovered late.
+
 - **R-8 — Reactive moderation only works if the takedown reaches the edge.**
   The template §6.7 mirrors skips cache revalidation (`this.model.update` instead of
   `this.update`), so a copied implementation would mark a listing rejected and keep
