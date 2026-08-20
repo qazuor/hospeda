@@ -593,6 +593,54 @@ visibility reconciler, the listing services. Those cover both verticals and are
 parameterised by domain; splitting the **billing** domain is not a reason to
 rename working code, and a rename cascade would bury the change that matters.
 
+#### Who picks the plan: the seam already exists, and it reads an env var
+
+§6.8 gives each vertical its own plan but never says who chooses between them.
+The answer is already built, and HOS-166 built it **for this exact moment**:
+`apps/api/src/services/commerce-plan-resolver.ts`. Its docblock says so outright —
+
+> Commerce billing is binary today: one plan covers both verticals — there is no
+> plan picker. […] Extracting it here means the day pricing diverges by vertical
+> (a second commerce plan), the branch happens in ONE place instead of being
+> smeared across every checkout call site.
+
+`resolveCommercePlanSlug({ entityType })` already **takes the vertical** and
+currently ignores it. This is where §6.8's per-vertical resolution goes, and it is
+the canonical example of the `Record<domain, …>` lookup AC-7 explicitly permits:
+one function, one branch, no behavioural fork. Any implementation that resolves the
+plan anywhere else is the drift this file was created to prevent.
+
+**But the slug does not come from the seed. It comes from the environment.**
+`resolveCommercePlanSlug` reads `env.HOSPEDA_COMMERCE_PLAN_ID` and throws
+`CommercePlanNotConfiguredError` → **503** when unset. So seeding two plans is not
+sufficient: without the configuration, commerce checkout is down.
+
+That makes this the first part of the spec with a **deploy-time action**, and it
+drags a chain the first draft has nowhere in it:
+
+| Step | Where |
+| --- | --- |
+| Register the new var(s) | `packages/config/src/env-registry.hospeda.ts` (today's entry is at `:537`) |
+| Regenerate the derived artefacts | `pnpm gen:env-examples` **and** `pnpm gen:env-registry-json` |
+| Move the frozen count | `packages/config/src/__tests__/env-registry.test.ts:261` — `EXPECTED_VAR_COUNT = 277` |
+| Update the example | `apps/api/.env.example:657` currently carries the single commented `HOSPEDA_COMMERCE_PLAN_ID=commerce-listing` |
+| **Set the values in Coolify**, per environment | `hops env-set <kind> KEY VALUE` then `hops redeploy <kind>` |
+
+Note that `HOSPEDA_COMMERCE_PLAN_ID` is **registered but not Zod-validated** in
+`apps/api/src/utils/env.ts` — it appears in the registry and the example file and
+nowhere in the boot schema. The consequence is that a missing or mistyped value is
+not caught at startup; it surfaces as a 503 the first time somebody tries to pay.
+Whatever shape the two-plan configuration takes, validate it at boot so the failure
+is a container that refuses to start rather than a checkout that refuses a customer.
+
+**A shape decision, made here rather than left open:** prefer **one** var holding a
+vertical→slug mapping over two independent vars. Two vars can be half-set — one
+vertical sells and the other 503s, which is the failure mode hardest to notice
+because the site looks fine. One var is either configured or it is not.
+
+This also means HOS-589 needs the `release-env-var-change` label in Linear, which it
+does not carry today.
+
 #### Two new limit keys: two places the compiler stops you, six where it does not
 
 Adding `MAX_GASTRONOMIES` and `MAX_EXPERIENCES` breaks the build in exactly **two**
@@ -1209,6 +1257,8 @@ a constraint that would resist the new one.
 | Two new plans join `ALL_PLANS`' seeding path per domain | plan config | they are excluded twice today, independently (§6.12) |
 | `billing.limit.*` + `billing.comparison.limitLabel.*` for both new keys, es/en/pt | i18n | plus `KNOWN_LIMIT_KEYS` in `billing-limit-error.ts:50-57` — code, not just JSON |
 | New guard: every `LimitKey` has its i18n entries and its allowlist slot | test | nothing enforces this today (§6.12) |
+| Per-vertical plan resolution lands in `resolveCommercePlanSlug` | API | the seam HOS-166 built for this; it already takes `entityType` (§6.8) |
+| Commerce plan configuration becomes vertical-aware **env config** | env | registry + both generators + `EXPECTED_VAR_COUNT` + `.env.example` + **Coolify per environment** (§6.8) |
 | Price / benefits / FAQ blocks on both landings | web | they are hero + lead form today, nothing else |
 | `commerce_listing_subscriptions.product_domain` rewritten alongside the subscription's | seed data-migration | a **second** column the spec previously missed (§6.13) |
 | New migration deleting the 3 orphan commerce subscriptions | seed data-migration | order-independent w.r.t. `0059`; the 5 link rows go by FK cascade |
@@ -1371,6 +1421,10 @@ and keep their current semantics.
 - **AC-34** — With the vertical's addon purchased, the usage panel **links to it**
   from the at-cap row. This is the `ADDON_SLUG_BY_LIMIT_KEY` entry, and it is the
   only thing standing between an addon that exists and an addon anyone can find.
+- **AC-35** — The vertical→plan resolution happens **only** inside
+  `resolveCommercePlanSlug`; a guard fails CI if any other module resolves a commerce
+  plan slug. And the configuration is validated at boot: an unset or unknown slug
+  stops the container, it does not 503 a checkout.
 
 ## 10. Risks
 
@@ -1390,6 +1444,11 @@ and keep their current semantics.
 - **R-4 — MercadoPago's 60-character `reason` limit** already broke coupons
   once. Adding a trial to commerce changes what is sent; verify the composed
   string.
+- **R-7 — Commerce checkout is one unset env var away from 503**, and always has
+  been (`resolveCommercePlanSlug` → `CommercePlanNotConfiguredError`). Splitting the
+  plan per vertical doubles that surface unless the configuration is a single mapping
+  (§6.8). The deploy step is not optional and is not in the code.
+
 - **R-6 — The cap can ship not working, and look fine.** Five layers between the
   seeded `max_gastronomies: 1` and a refused second listing resolve an unknown to
   *unlimited*, none of them raising (§6.8). The failure is not an outage — it is
