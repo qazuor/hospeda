@@ -527,6 +527,47 @@ visibility reconciler, the listing services. Those cover both verticals and are
 parameterised by domain; splitting the **billing** domain is not a reason to
 rename working code, and a rename cascade would bury the change that matters.
 
+#### The cap is the product, and every layer under it resolves unknown to *unlimited*
+
+The `max_gastronomies: 1` above is the entire commercial substance of this
+section: one listing for $15.000. The machinery that would enforce it fails open
+at four separate points, and **not one of them raises an error** — the symptom of
+a mis-wired cap is silent unlimited listings, which is indistinguishable from
+working correctly until someone counts rows.
+
+| # | Layer | Behaviour on "I don't know" |
+| --- | --- | --- |
+| 1 | `apps/api/src/routes/commerce/protected/create.ts` | Runs **no** entitlement middleware and **no** limit enforcement at all — today there is no cap to enforce. Seeding `max_gastronomies: 1` without wiring the middleware does nothing whatsoever. |
+| 2 | `getRemainingLimit` (`middlewares/entitlement.ts:1088-1097`) | `!limits.has(key)` → returns `-1`, *"Limit not defined - treat as unlimited"*. |
+| 3 | `loadEntitlements` (SPEC-239) | Filters to `product_domain = 'accommodation'`, so on a commerce route `userLimits` carries the **accommodation** plan's keys — which never include `MAX_GASTRONOMIES`. Feeds straight into layer 2. Several paths set an **empty** `Map` (`entitlement.ts:704, 737, 870`), which via layer 2 is unlimited for every key. |
+| 4 | `enforceAccommodationLimit` (`middlewares/limit-enforcement.ts:126-136`) | On a count failure it logs and calls `next()` — *"Continue - don't block on count failure"*. |
+
+Layer 2 collides with a choice made earlier in this very section. §6.8 deliberately
+leaves the other limit keys **absent** rather than `-1`, because absent reads as
+"this plan does not meter that". That reasoning is sound and stays — but it means
+the engine cannot distinguish *"this plan does not meter gastronomies"* from
+*"the wrong plan got loaded"*. Both are `-1`.
+
+Add the precheck's deliberate fail-open to `create_direct` (OQ-3) and the cap has
+**five** ways to silently not exist and zero ways to announce it.
+
+Two consequences for the implementation:
+
+- **The wiring is the deliverable, not the seed value.** AC-13 must be asserted
+  against a request that actually traverses the middleware stack, with the
+  commerce plan loaded — not against `checkLimit` in isolation, which passes
+  whatever context the test hands it.
+- **The accommodation stack cannot be copied literally.** Accommodation's create
+  route stacks `requireEntitlement(EntitlementKey.PUBLISH_ACCOMMODATIONS)` and
+  *then* `enforceAccommodationLimit()`, in that order and for a stated reason
+  (SPEC-145 T-004: the entitlement gate runs before the count is consulted).
+  §6.8 states that **neither vertical grants any entitlement today**, so there is
+  nothing to put in the first half of that pattern. Either each vertical's plan
+  gains a publish entitlement of its own — making the shape a true mirror — or the
+  spec states plainly that commerce runs the limit check with no entitlement gate
+  ahead of it, and why that is acceptable. Leaving it unsaid produces a copy of the
+  accommodation stack with a hole where its first gate was.
+
 #### How commerce enters the limit engine without breaking SPEC-239
 
 SPEC-239 isolated commerce from the entitlement engine on purpose:
@@ -1091,6 +1132,13 @@ and keep their current semantics.
   panel does not reintroduce `metadata.monthlyPriceArs` on the edited row, and
   the typed `monthly_price_ars` column plus `billing_prices.unitAmount` still
   receive the new value. Asserted through `updatePlan`, not by reading the seed.
+- **AC-30** — The cap is asserted end-to-end: a real request to the commerce
+  create route, traversing the middleware stack, with the owner's gastronomy plan
+  loaded. A test that calls `checkLimit` with a hand-built context proves nothing,
+  because every layer beneath it resolves an unknown key to unlimited.
+- **AC-31** — An owner with **no accommodation subscription** is still capped on
+  gastronomy. This is the case layer 3 fails open on today, and it is the normal
+  case for a commerce-only owner.
 
 ## 10. Risks
 
@@ -1110,6 +1158,12 @@ and keep their current semantics.
 - **R-4 — MercadoPago's 60-character `reason` limit** already broke coupons
   once. Adding a trial to commerce changes what is sent; verify the composed
   string.
+- **R-6 — The cap can ship not working, and look fine.** Five layers between the
+  seeded `max_gastronomies: 1` and a refused second listing resolve an unknown to
+  *unlimited*, none of them raising (§6.8). The failure is not an outage — it is
+  giving the product away, discovered by counting rows weeks later. This is why
+  AC-30 insists on an end-to-end assertion and why AC-13 alone is insufficient.
+
 - **R-5 — Nobody is watching, and that is not solved here.** §6.7 gives an admin
   the *ability* to reject a listing. Nothing gives them the *signal* that one
   needs rejecting: there is no report path (verified — the search returns
