@@ -311,6 +311,7 @@ import { completeSupersessionPairing } from '../../../src/services/billing/react
 import { applyUpgradeRestorationsOrWarn } from '../../../src/services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../src/services/refund-lifecycle.service';
 import { resolveOwnerUserId } from '../../../src/services/subscription-pause.service';
+import { sendNotification } from '../../../src/utils/notification-helper';
 
 /** Helper to get the mocked confirmPurchase fn from the hoisted AddonService mock */
 function getMockConfirmPurchase(): ReturnType<typeof vi.fn> {
@@ -749,6 +750,31 @@ describe('processPaymentUpdated', () => {
 
         expect(result.success).toBe(true);
         expect(result.addonConfirmed).toBe(true);
+    });
+
+    // HOS-676 regression: a successful addon confirmation used to send its OWN
+    // ADDON_PURCHASE notification here, on top of the one `confirmAddonPurchase`
+    // (`services/addon.checkout.ts`) already sends right after the purchase row
+    // commits. That doubled every ADDON_PURCHASE email production sent — verified
+    // against `billing_notification_log`, where one real purchase logged exactly
+    // two `addon_purchase` rows a few hundred ms apart alongside a single
+    // `payment_success` row. `processPaymentUpdated` must never call
+    // `sendNotification` for a confirmed addon purchase; the send belongs solely
+    // to `confirmAddonPurchase`.
+    it('HOS-676: must NOT send a duplicate ADDON_PURCHASE notification on successful confirmation', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'premium-photos',
+            customerId: 'cust-1'
+        });
+
+        const result = await processPaymentUpdated({
+            data: { metadata: { addonSlug: 'premium-photos', customerId: 'cust-1' } },
+            billing: mockBilling
+        });
+
+        expect(result.addonConfirmed).toBe(true);
+        expect(sendNotification).not.toHaveBeenCalled();
     });
 
     it('should return success with no addon when no addon metadata', async () => {

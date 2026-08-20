@@ -22,10 +22,8 @@ import {
     isNull,
     sql
 } from '@repo/db';
-import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
-    AddonCatalogService,
     calculatePromoCodeEffect,
     checkSubscriptionStatusTransition,
     getPromoCodeById,
@@ -45,7 +43,6 @@ import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service
 import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
 import { resolveOwnerUserId } from '../../../services/subscription-pause.service';
 import { apiLogger } from '../../../utils/logger';
-import { sendNotification } from '../../../utils/notification-helper';
 import { sendPaymentFailureNotifications, sendPaymentSuccessNotification } from './notifications';
 import { completeReactivationSupersession } from './subscription-logic';
 import {
@@ -56,11 +53,6 @@ import {
     extractPlanChangeUpgradeMetadata,
     type PlanChangeUpgradeMetadata
 } from './utils';
-
-// ─── Catalog service (DB-backed addon reads — SPEC-192 T-016) ─────────────────
-// Replaces static `getAddonBySlug` from `@repo/billing` for the addon
-// purchase notification path. Instantiated once at module level.
-const catalogService = new AddonCatalogService();
 
 /** Input for processing a payment.updated event */
 interface ProcessPaymentUpdatedInput {
@@ -1275,61 +1267,28 @@ export async function processPaymentUpdated({
         return { success: false, addonConfirmed: false };
     }
 
+    // HOS-676: the ADDON_PURCHASE notification is NOT sent from here. It is
+    // already sent, exactly once, inside `confirmAddonPurchase()`
+    // (`apps/api/src/services/addon.checkout.ts`) right after the purchase row
+    // commits — the call above (`addonService.confirmPurchase`) reaches that
+    // same function. Sending it a second time from this caller, with a second
+    // independently-fetched `customer`/`addon` lookup, was a pure duplicate:
+    // one successful confirmation produced two ADDON_PURCHASE emails, every
+    // time, with no failure or retry involved (verified against production's
+    // `billing_notification_log`: a single addon purchase logged exactly two
+    // `addon_purchase` rows a few hundred ms apart, alongside a single
+    // `payment_success` row — one trigger, doubled only on this one
+    // notification type; `billing_webhook_events` and `billing_addon_purchases`
+    // both confirm there was only ever one confirmation, not two invocations
+    // racing). Do not re-add a send here; if the confirmation needs to notify
+    // with the actual charged amount (this call had `data.transaction_amount`,
+    // `confirmAddonPurchase` uses the catalog's list price), that belongs
+    // inside `confirmAddonPurchase` itself, not as a second independent send
+    // from the caller.
     apiLogger.info(
         { addonSlug, customerId: addonCustomerId, source },
         'Add-on purchase confirmed successfully'
     );
-
-    // Send addon purchase notification
-    try {
-        const customer = await billing.customers.get(addonCustomerId);
-        // SPEC-192 T-016: resolve addon definition from DB-backed catalog.
-        // Identical fallback: if NOT_FOUND, `addon` is undefined → notification not sent.
-        const addonCatalogResult = await catalogService.getBySlug(addonSlug);
-        const addon = addonCatalogResult.success ? addonCatalogResult.data : undefined;
-
-        if (customer && addon) {
-            const customerName =
-                typeof customer.metadata?.name === 'string'
-                    ? customer.metadata.name
-                    : customer.email;
-            const userId =
-                typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
-
-            sendNotification({
-                type: NotificationType.ADDON_PURCHASE,
-                recipientEmail: customer.email,
-                recipientName: customerName,
-                userId,
-                customerId: customer.id,
-                planName: addon.name,
-                amount: typeof data.transaction_amount === 'number' ? data.transaction_amount : 0,
-                currency: typeof data.currency_id === 'string' ? data.currency_id : 'ARS',
-                nextBillingDate: new Date().toISOString()
-            }).catch((notifError) => {
-                apiLogger.debug(
-                    {
-                        customerId: addonCustomerId,
-                        addonSlug,
-                        error:
-                            notifError instanceof Error ? notifError.message : String(notifError),
-                        source
-                    },
-                    'Addon purchase notification failed (will retry)'
-                );
-            });
-        }
-    } catch (notifError) {
-        apiLogger.debug(
-            {
-                customerId: addonCustomerId,
-                addonSlug,
-                error: notifError instanceof Error ? notifError.message : String(notifError),
-                source
-            },
-            'Failed to prepare addon purchase notification'
-        );
-    }
 
     return { success: true, addonConfirmed: true };
 }
