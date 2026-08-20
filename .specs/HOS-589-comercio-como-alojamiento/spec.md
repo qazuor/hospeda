@@ -575,6 +575,16 @@ Three cleanups the owner called for on 2026-08-19, verified against production:
 subscriptions point at them, and removing the row would leave that history
 referencing a plan that no longer exists.
 
+Removing the three `complex-*` plans empties the `complex` category outright, and
+one page reads it directly: `/suscriptores/planes/comparar/` merges owner **and**
+complex plans into one table (`comparar/index.astro:55`,
+`filterPlansByCategory(fetchResult.plans, 'complex')`). Afterwards that second
+fetch always returns `[]`. The expected outcome is simply a narrower table, but
+it must be **checked, not assumed** — an empty category is a state that page has
+never been rendered in. It also leaves `PlanCategory`'s `'complex'` member with
+no data behind it, which is the seam HOS-684 pulls on when it removes
+`max_properties`.
+
 **`metadata.monthlyPriceArs` is removed entirely** — from
 `model-c-field-split.ts`, from the seed baseline, and from existing rows via a
 data-migration. Verified safe: nothing reads it at runtime, because HOS-39
@@ -1015,6 +1025,8 @@ and keep their current semantics.
   from `POST` create-listing for both verticals. Asserted at the route **and**
   against the service predicate directly, because the two gates fail identically
   from the caller's side and a fix to one alone would look like a fix to both.
+- **AC-28** — `/suscriptores/planes/comparar/` renders correctly with **zero**
+  plans in the `complex` category, which is the state §6.9 leaves it in.
 
 ## 10. Risks
 
@@ -1083,6 +1095,14 @@ and keep their current semantics.
   - §6.7 (the reject action) must land **before or with** the removal of the
     approval gate, never after. Between those two points commerce would have no
     control in either direction.
+  - The vocabulary widening (§13, release A) lands **before** any row carries a
+    new `product_domain` value. Reversing that order makes the code revert the
+    outage.
+- One thing is not an order but an **atomicity** requirement: the three gates on
+  the create path (§6.1's `requiredPermissions` and `_canCreate`, §6.11's page
+  guard) open in **one** change. Opening two of three leaves the flow exactly as
+  broken while looking fixed, and the remaining failure surfaces as a different
+  error at a different layer, which reads as a new bug rather than the same one.
 - The `commerce_leads` drop ships one release **after** the code stops writing
   to it. Drizzle projects an explicit column list, so a live container reading a
   dropped column 500s until the new image serves — measured at 8 minutes of
