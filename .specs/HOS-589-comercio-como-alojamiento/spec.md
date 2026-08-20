@@ -492,6 +492,69 @@ unreachable from the owner's own update payload.
 The route pattern to mirror is `apps/api/src/routes/accommodation/admin/moderate.ts`
 (with `post/admin/moderate.ts` as the second reference).
 
+#### The shared base exists. The permission does not
+
+`GastronomyService` and `ExperienceService` both extend
+`BaseCommerceListingService` (`packages/service-core/src/services/commerce/base-commerce-listing.service.ts:155`),
+which itself extends `BaseCrudService`. So "one implementation both verticals
+inherit" is real: `moderate()` goes on that base class. Accommodation, by contrast,
+extends `BaseCrudService` directly — commerce has a sharing layer accommodation
+never had.
+
+What does **not** exist is the permission. `checkCanModerate`
+(`accommodation.permissions.ts:313-320`) hardcodes
+`PermissionEnum.ACCOMMODATION_MODERATION_CHANGE`; it is not generic and cannot be
+reused. The enum has `ACCOMMODATION_`, `DESTINATION_`, `EVENT_` and `POST_`
+`MODERATION_CHANGE` — and for commerce only `COMMERCE_MODERATE_REVIEW`, which
+moderates **reviews of** a listing, not the listing.
+
+So a new permission is part of this work. Mind the enum's split naming convention
+when adding it: `packages/schemas/test/enums/permission-naming-convention.guard.test.ts`
+freezes the thirteen dotted-vs-camelCase exceptions, and a fourteenth cannot appear
+unnoticed. Seed it onto the moderating roles in `rolePermissions.seed.ts` — which
+means the seed dual-write rule applies.
+
+#### The template to copy has a bug that would void this entire section
+
+`AccommodationService.moderate` (`accommodation.service.ts:1979-2017`) writes through
+**`this.model.update(...)`**, not `this.update(...)`. That bypasses the CRUD
+lifecycle, and with it `_afterUpdate` — which is where cache revalidation is
+scheduled. **Moderating an accommodation does not purge the edge cache today.**
+
+For commerce that is not a cosmetic difference, it is fatal to the design.
+`BaseCommerceListingService._afterUpdate` (`:486-534`) **always** ends by calling
+`_scheduleListingRevalidation(entity)` (`:531`), which purges the listing's
+destination page when the listing is publicly visible. A `moderate()` copied
+faithfully from accommodation would skip it, and the sequence §6.6 promises —
+
+> An admin sets `moderationState = REJECTED`; the next reconcile pass flips the
+> listing to `PRIVATE` / `INACTIVE`
+
+— would flip the database rows while **Cloudflare keeps serving the rejected
+listing**. The whole reactive-moderation argument that justifies removing the
+admin gate rests on being able to take a listing down; a stale edge cache means it
+does not actually come down.
+
+**Therefore: commerce's `moderate()` writes through `this.update()`** (or calls
+`_scheduleListingRevalidation` explicitly), deliberately diverging from the
+accommodation template. This is the one place in this spec where "mirror
+accommodation exactly" is the wrong instruction, and it diverges to be *correct*,
+not different — which is why it is written down rather than left to whoever
+notices.
+
+Accommodation's own missing purge is a pre-existing bug in a different domain.
+It is **not** fixed here (NG-3), but it should be filed.
+
+#### The admin control exists for three entity types, and commerce is not one
+
+The molde is concrete: a `moderationState` widget column of type
+`InlineStateSelectCell`, wired to a moderate mutation —
+`apps/admin/src/features/accommodations/config/accommodations.columns.ts:305-323`,
+repeated for posts (`posts.columns.ts:211`) and events (`events.columns.ts:239`).
+Nothing equivalent exists under `apps/admin/src/features/gastronomy/` or
+`.../experience/`. AC-26 is therefore a real deliverable with a known shape, not a
+vague ask.
+
 **Two things this section still leaves open, named rather than left implicit:**
 
 - **Where the admin clicks it.** A route with no control is reachable only by a
@@ -1240,7 +1303,9 @@ a constraint that would resist the new one.
 | `metadata.hasTrial` → `true` and `metadata.trialDays` → `30` on each vertical's plan (**not** a `trial_days` column) | seed **data** | `packages/seed/src/data-migrations/` — dual-write rule: baseline **and** numbered migration. Copy `0017` / `0051` |
 | `commerce_leads` table retired | structural, **deferred one release** | `packages/db/src/migrations/` |
 | Existing protected create route loses its `COMMERCE_CREATE` gates | API | `commerce/protected/create.ts:117,186` **and** the services' `_canCreate` — the route is not new (§6.1) |
-| **New admin route: moderate a commerce listing** (§6.7) | API | `createAdminRoute`, one per domain, one shared implementation |
+| **New admin route: moderate a commerce listing** (§6.7) | API | `createAdminRoute`, one per domain, one implementation on `BaseCommerceListingService` |
+| **New permission**: a commerce `*_MODERATION_CHANGE` | enum + seed | none exists; `COMMERCE_MODERATE_REVIEW` is for reviews. Mind the naming-convention guard (§6.7) |
+| Admin `moderationState` column for both verticals | admin | molde: `accommodations.columns.ts:305-323` |
 | Removed admin route: `approve-and-provision` | API | — |
 | Removed public route: `commerce/leads` create | API | — |
 | Removed protected route: `commerce/leads/mine` + the form's `prefill` | API + web | `my-lead.ts` (HOS-257) — dies with the table (§6.2) |
@@ -1425,6 +1490,10 @@ and keep their current semantics.
   `resolveCommercePlanSlug`; a guard fails CI if any other module resolves a commerce
   plan slug. And the configuration is validated at boot: an unset or unknown slug
   stops the container, it does not 503 a checkout.
+- **AC-36** — Rejecting a published listing **purges its edge cache**: the
+  destination page stops serving it, not merely the database row. Asserted against
+  the revalidation scheduler, because the accommodation template this mirrors does
+  not do it and a faithful copy would inherit the omission.
 
 ## 10. Risks
 
@@ -1444,6 +1513,13 @@ and keep their current semantics.
 - **R-4 — MercadoPago's 60-character `reason` limit** already broke coupons
   once. Adding a trial to commerce changes what is sent; verify the composed
   string.
+- **R-8 — Reactive moderation only works if the takedown reaches the edge.**
+  The template §6.7 mirrors skips cache revalidation (`this.model.update` instead of
+  `this.update`), so a copied implementation would mark a listing rejected and keep
+  serving it from Cloudflare. Removing the pre-publication gate is defensible only
+  because the post-publication one works; this is the detail that decides whether it
+  does.
+
 - **R-7 — Commerce checkout is one unset env var away from 503**, and always has
   been (`resolveCommercePlanSlug` → `CommercePlanNotConfiguredError`). Splitting the
   plan per vertical doubles that surface unless the configuration is a single mapping
