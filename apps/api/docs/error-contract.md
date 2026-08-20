@@ -82,6 +82,34 @@ thrown. They previously held separate copies of the mapping "kept in sync by
 comment" and drifted twice — HOS-283, then H-105. There is now one table and
 nothing to sync.
 
+#### `error.details` is debug-only, except for two public-contract codes
+
+`error.details` is normally a **debug-only** field: both formatters strip it
+unless `HOSPEDA_API_DEBUG_ERRORS` is on, so the server log keeps the structured
+payload and the client gets only `code` + `message` (R5). `createErrorHandler`
+(the global `app.onError`) has always emitted `details` for every 4xx
+regardless of debug mode, though — a divergence between the two formatters
+that stayed invisible because the limit/entitlement gate tests of the day
+mounted their own hand-rolled `onError` instead of exercising
+`handleRouteError` (HOS-700).
+
+Two codes carry `details` the client is meant to read, so their `details` is
+now emitted by `handleRouteError` too, with `HOSPEDA_API_DEBUG_ERRORS` off:
+
+| `error.code` | `details` shape | Why the client needs it |
+|---|---|---|
+| `LIMIT_REACHED` | `{ limitKey, currentCount, maxAllowed, usagePercent, upgradeAudience, ... }` | `apps/web/src/lib/billing-limit-error.ts` reads `limitKey` to render the limit-specific toast (which limit, and the addon that unlocks it) instead of the generic fallback. |
+| `ENTITLEMENT_REQUIRED` | `{ entitlementKey, ... }` | Same reasoning — the client needs to know which entitlement is missing to route the upgrade. |
+
+This list is deliberately short — a conservative choice over opening `details`
+on every 4xx, made explicitly by the issue owner (see HOS-700's decision
+comment) because widening it changes the public contract of every route that
+passes through `handleRouteError`. Every other code keeps the debug-only
+behavior. Adding a third code here is a contract change: update
+`PUBLIC_DETAILS_ERROR_CODES` in `utils/response-helpers.ts` **and** this table
+in the same PR — do not fall back to "make it match the global handler" for
+every code.
+
 ### R5 — an error body never carries SQL, a stack, or the raw input
 
 The server log keeps all of it. The client gets the code and a message. This is
