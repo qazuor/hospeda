@@ -1,28 +1,163 @@
-import { COMMERCE_LISTING_PLAN } from '@repo/billing';
+import {
+    ALL_EXPERIENCE_PLANS,
+    ALL_GASTRONOMY_PLANS,
+    COMMERCE_LISTING_PLAN,
+    type PlanDefinition
+} from '@repo/billing';
 import { and, billingPlans, billingPrices, type DrizzleClient, eq, getDb } from '@repo/db';
-import { ProductDomainEnum } from '@repo/schemas';
+import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
 
+/** Outcome of seeding one plan row. */
+type EnsureOutcome = { plan: 'created' | 'skipped'; price: 'created' | 'skipped' | 'none' };
+
 /**
- * Commerce-listing plan seed (SPEC-239 T-049).
+ * Seeds one commerce-domain plan row (and its monthly `billing_prices` row).
  *
- * Seeds the single {@link COMMERCE_LISTING_PLAN} row into `billing_plans` (and
- * its monthly `billing_prices` row) with `product_domain = 'commerce'` set
- * directly at insert time, then re-stamps it via a typed `UPDATE` (idempotent
- * no-op) so a re-run always self-heals the domain regardless of how the
- * existing row got there.
+ * `product_domain` is set at insert time AND re-stamped by a typed `UPDATE`
+ * afterwards, so a re-run self-heals the domain regardless of how an existing
+ * row got there — which matters here because HOS-692 rewrites the domain of
+ * every commerce row and the undo migration puts it back.
  *
- * Why a dedicated seed (NOT the `ALL_PLANS` loop in `billingPlans.seed.ts`):
- * The commerce plan is intentionally excluded from `ALL_PLANS` so the
- * accommodation-facing plan list, the grant-matrix snapshot tests, and the
+ * The price row is skipped when `monthlyPriceArs <= 0`. The disabled tiers of
+ * each vertical have not been priced yet (§6.8 enables only premium), and
+ * seeding a zero-amount price would be worse than seeding none: it reads as a
+ * free plan rather than as an unpriced one.
+ *
+ * Idempotent: matches by `name` (the slug), skips the insert on a re-run, and
+ * never overwrites a price an operator has since changed — `monthlyPriceArs` is
+ * a `'commercial'` field, so the database wins.
+ *
+ * @param input.db - Drizzle client.
+ * @param input.plan - The plan definition to seed.
+ * @param input.productDomain - The `billing_plans.product_domain` to stamp.
+ * @param input.isProduction - Drives the `livemode` flag.
+ * @returns What was created and what was skipped.
+ */
+async function ensureCommercePlan(input: {
+    db: DrizzleClient;
+    plan: PlanDefinition;
+    productDomain: ProductDomainValue;
+    isProduction: boolean;
+}): Promise<EnsureOutcome> {
+    const { db, plan, productDomain, isProduction } = input;
+
+    const existing = await db
+        .select({ id: billingPlans.id })
+        .from(billingPlans)
+        .where(eq(billingPlans.name, plan.slug))
+        .limit(1);
+
+    let planId: string;
+    let planStatus: 'created' | 'skipped';
+
+    const existingRow = existing[0];
+    if (existingRow) {
+        planId = existingRow.id;
+        planStatus = 'skipped';
+    } else {
+        const limitsObj: Record<string, number> = {};
+        for (const l of plan.limits) {
+            limitsObj[l.key] = l.value;
+        }
+
+        const inserted = await db
+            .insert(billingPlans)
+            .values({
+                name: plan.slug,
+                description: plan.description,
+                active: plan.isActive,
+                entitlements: plan.entitlements as string[],
+                limits: limitsObj,
+                livemode: isProduction,
+                // HOS-39 T-005 / HOS-73: displayName/monthlyPriceArs/annualPriceArs
+                // are typed top-level columns as of qzpay-drizzle 1.11.0 (still
+                // duplicated in metadata below).
+                displayName: plan.name,
+                monthlyPriceArs: plan.monthlyPriceArs,
+                annualPriceArs: plan.annualPriceArs,
+                productDomain,
+                metadata: {
+                    slug: plan.slug,
+                    displayName: plan.name,
+                    category: plan.category,
+                    isDefault: plan.isDefault,
+                    sortOrder: plan.sortOrder,
+                    trialDays: plan.trialDays,
+                    hasTrial: plan.hasTrial,
+                    monthlyPriceArs: plan.monthlyPriceArs,
+                    annualPriceArs: plan.annualPriceArs,
+                    monthlyPriceUsdRef: plan.monthlyPriceUsdRef
+                }
+            })
+            .returning({ id: billingPlans.id });
+
+        const insertedRow = inserted[0];
+        if (!insertedRow) {
+            throw new Error(`Insert of commerce plan "${plan.slug}" returned no row`);
+        }
+        planId = insertedRow.id;
+        planStatus = 'created';
+    }
+
+    // Re-stamp product_domain (idempotent no-op when already correct).
+    await db.update(billingPlans).set({ productDomain }).where(eq(billingPlans.id, planId));
+
+    if (plan.monthlyPriceArs <= 0) {
+        // Unpriced tier — see the docblock.
+        return { plan: planStatus, price: 'none' };
+    }
+
+    const existingPrice = await db
+        .select({ id: billingPrices.id })
+        .from(billingPrices)
+        .where(
+            and(
+                eq(billingPrices.planId, planId),
+                eq(billingPrices.currency, 'ARS'),
+                eq(billingPrices.billingInterval, 'month'),
+                eq(billingPrices.intervalCount, 1)
+            )
+        )
+        .limit(1);
+
+    if (existingPrice.length > 0) {
+        return { plan: planStatus, price: 'skipped' };
+    }
+
+    await db.insert(billingPrices).values({
+        planId,
+        currency: 'ARS',
+        unitAmount: plan.monthlyPriceArs,
+        billingInterval: 'month',
+        intervalCount: 1,
+        active: true,
+        livemode: isProduction
+    });
+
+    return { plan: planStatus, price: 'created' };
+}
+
+/**
+ * Commerce plan seed (SPEC-239 T-049 → HOS-688 §6.8).
+ *
+ * Seeds three catalogues, each stamped with its own `billing_plans.product_domain`:
+ *
+ * | Catalogue | `product_domain` | Why |
+ * | --- | --- | --- |
+ * | {@link COMMERCE_LISTING_PLAN} | `commerce` | The pre-HOS-688 plan. Live rows in `billing_subscriptions` still point at it, so removing it would strand their plan lookup. Retiring it is a data decision about real rows (HOS-692), not a config edit. |
+ * | {@link ALL_GASTRONOMY_PLANS} | `gastronomy` | HOS-688: one subscription per owner per vertical. |
+ * | {@link ALL_EXPERIENCE_PLANS} | `experience` | Same, experience side. |
+ *
+ * Why a dedicated seed and NOT the `ALL_PLANS` loop in `billingPlans.seed.ts`:
+ * every plan here is deliberately excluded from `ALL_PLANS` so the
+ * accommodation-facing plan list, the grant-matrix snapshot tests and the
  * config-drift checks stay accommodation-only.
  *
- * Idempotent: matches the existing row by `name` (the slug). On a re-run it
- * skips the insert and only re-stamps `product_domain` (a no-op when already
- * `'commerce'`).
+ * Idempotent throughout — see {@link ensureCommercePlan}.
  *
  * @param _context - Seed context (unused; kept for the runner contract).
  */
@@ -32,122 +167,51 @@ export async function seedCommercePlan(_context: SeedContext): Promise<void> {
 
     logger.info('');
     logger.info(`${separator}`);
-    logger.info(`${STATUS_ICONS.Seed}  Seeding ${entityName} (SPEC-239)`);
+    logger.info(`${STATUS_ICONS.Seed}  Seeding ${entityName} (SPEC-239 / HOS-688)`);
     logger.info(`${separator}`);
 
     try {
         const isProduction = process.env.NODE_ENV === 'production';
         const db: DrizzleClient = getDb();
-        const plan = COMMERCE_LISTING_PLAN;
 
-        // ── Ensure the plan row (idempotent by slug) ─────────────────────────
-        const existing = await db
-            .select({ id: billingPlans.id })
-            .from(billingPlans)
-            .where(eq(billingPlans.name, plan.slug))
-            .limit(1);
+        const catalogues: ReadonlyArray<{
+            plans: readonly PlanDefinition[];
+            productDomain: ProductDomainValue;
+        }> = [
+            { plans: [COMMERCE_LISTING_PLAN], productDomain: ProductDomainEnum.COMMERCE },
+            { plans: ALL_GASTRONOMY_PLANS, productDomain: ProductDomainEnum.GASTRONOMY },
+            { plans: ALL_EXPERIENCE_PLANS, productDomain: ProductDomainEnum.EXPERIENCE }
+        ];
 
-        let planId: string;
-        let planStatus: 'created' | 'skipped';
+        let created = 0;
+        let skipped = 0;
 
-        const existingRow = existing[0];
-        if (existingRow) {
-            planId = existingRow.id;
-            planStatus = 'skipped';
-        } else {
-            const limitsObj: Record<string, number> = {};
-            for (const l of plan.limits) {
-                limitsObj[l.key] = l.value;
+        for (const { plans, productDomain } of catalogues) {
+            for (const plan of plans) {
+                const outcome = await ensureCommercePlan({
+                    db,
+                    plan,
+                    productDomain,
+                    isProduction
+                });
+
+                if (outcome.plan === 'created') {
+                    created++;
+                    logger.success({
+                        msg: `${STATUS_ICONS.Success}  Created plan "${plan.name}" (${plan.slug}) with product_domain='${productDomain}' (price: ${outcome.price})`
+                    });
+                } else {
+                    skipped++;
+                    logger.info(
+                        `${STATUS_ICONS.Skip}  Plan "${plan.name}" (${plan.slug}) already exists — re-stamped product_domain='${productDomain}' (price: ${outcome.price})`
+                    );
+                }
             }
-
-            const inserted = await db
-                .insert(billingPlans)
-                .values({
-                    name: plan.slug,
-                    description: plan.description,
-                    active: plan.isActive,
-                    entitlements: plan.entitlements as string[],
-                    limits: limitsObj,
-                    livemode: isProduction,
-                    // HOS-39 T-005 / HOS-73: displayName/monthlyPriceArs/annualPriceArs
-                    // are typed top-level columns as of qzpay-drizzle 1.11.0 (still
-                    // duplicated in metadata below).
-                    displayName: plan.name,
-                    monthlyPriceArs: plan.monthlyPriceArs,
-                    annualPriceArs: plan.annualPriceArs,
-                    productDomain: ProductDomainEnum.COMMERCE,
-                    metadata: {
-                        slug: plan.slug,
-                        displayName: plan.name,
-                        category: plan.category,
-                        isDefault: plan.isDefault,
-                        sortOrder: plan.sortOrder,
-                        trialDays: plan.trialDays,
-                        hasTrial: plan.hasTrial,
-                        monthlyPriceArs: plan.monthlyPriceArs,
-                        annualPriceArs: plan.annualPriceArs,
-                        monthlyPriceUsdRef: plan.monthlyPriceUsdRef
-                    }
-                })
-                .returning({ id: billingPlans.id });
-
-            const insertedRow = inserted[0];
-            if (!insertedRow) {
-                throw new Error(`Insert of commerce plan "${plan.slug}" returned no row`);
-            }
-            planId = insertedRow.id;
-            planStatus = 'created';
-        }
-
-        // ── Re-stamp product_domain='commerce' (idempotent no-op if already set) ──
-        await db
-            .update(billingPlans)
-            .set({ productDomain: ProductDomainEnum.COMMERCE })
-            .where(eq(billingPlans.id, planId));
-
-        if (planStatus === 'created') {
-            logger.success({
-                msg: `${STATUS_ICONS.Success}  Created commerce plan "${plan.name}" (${plan.slug}) with product_domain='commerce'`
-            });
-        } else {
-            logger.info(
-                `${STATUS_ICONS.Skip}  Commerce plan "${plan.name}" (${plan.slug}) already exists — re-stamped product_domain='commerce'`
-            );
-        }
-
-        // ── Ensure the monthly price row (idempotent) ────────────────────────
-        const existingPrice = await db
-            .select({ id: billingPrices.id })
-            .from(billingPrices)
-            .where(
-                and(
-                    eq(billingPrices.planId, planId),
-                    eq(billingPrices.currency, 'ARS'),
-                    eq(billingPrices.billingInterval, 'month'),
-                    eq(billingPrices.intervalCount, 1)
-                )
-            )
-            .limit(1);
-
-        let priceStatus: 'created' | 'skipped';
-        if (existingPrice.length > 0) {
-            priceStatus = 'skipped';
-        } else {
-            await db.insert(billingPrices).values({
-                planId,
-                currency: 'ARS',
-                unitAmount: plan.monthlyPriceArs,
-                billingInterval: 'month',
-                intervalCount: 1,
-                active: true,
-                livemode: isProduction
-            });
-            priceStatus = 'created';
         }
 
         logger.info(`${separator}`);
         logger.info(
-            `${STATUS_ICONS.Info}  Commerce plan: ${planStatus}; monthly price: ${priceStatus}. monthlyPriceArs is CONFIRMED (ARS 15.000/mes, owner 2026-07-22, HOS-166 OQ-2) — it is still a commercial-layer field, so any later admin-UI override stands.`
+            `${STATUS_ICONS.Info}  Commerce plans: ${created} created, ${skipped} skipped. Prices are 'commercial' fields — the seed never overwrites one that already exists, so any admin-UI override stands.`
         );
 
         summaryTracker.trackSuccess(entityName);
