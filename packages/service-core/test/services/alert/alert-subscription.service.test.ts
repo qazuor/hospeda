@@ -212,17 +212,25 @@ describe('AlertSubscriptionService.softDelete', () => {
         expect(modelMock.softDelete).not.toHaveBeenCalled();
     });
 
-    it('returns FORBIDDEN when a non-owner, non-staff actor tries to cancel it', async () => {
+    it('refuses a non-owner, non-staff actor with NOT_FOUND, not FORBIDDEN (HOS-600)', async () => {
         // Arrange
         const { service, modelMock } = makeService();
         const otherActor = createActor({ id: OTHER_USER_ID });
         modelMock.findById.mockResolvedValue(makeAlert());
 
         // Act
-        const result = await service.softDelete(otherActor, ALERT_ID);
+        const foreign = await service.softDelete(otherActor, ALERT_ID);
 
-        // Assert
-        expect(result.error?.code).toBe('FORBIDDEN');
+        // Arrange — the same request against an id that matches nothing.
+        modelMock.findById.mockResolvedValue(null);
+        const missing = await service.softDelete(otherActor, ALERT_ID);
+
+        // Assert — the two answers are one value. The 403 this replaces told a
+        // caller their id named a real alert belonging to someone else, and the
+        // message said as much in words.
+        expect(foreign).toEqual(missing);
+        expect(foreign.error?.code).toBe('NOT_FOUND');
+        expect(foreign.error?.message).not.toMatch(/owner|staff|permission/i);
         expect(modelMock.softDelete).not.toHaveBeenCalled();
     });
 

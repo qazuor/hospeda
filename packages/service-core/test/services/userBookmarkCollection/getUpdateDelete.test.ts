@@ -271,7 +271,7 @@ describe('UserBookmarkCollectionService.getCollectionById', () => {
         expect(result.data?.collection.userId).toBe(OTHER_USER_ID);
     });
 
-    it('returns FORBIDDEN when non-owner actor lacks VIEW_ANY', async () => {
+    it('refuses a non-owner without VIEW_ANY with NOT_FOUND, not FORBIDDEN (HOS-600)', async () => {
         // Arrange
         const nonOwner = createActor({ id: OTHER_USER_ID, permissions: [] });
         asMock(collectionModelMock.findById).mockResolvedValue(makeCollection());
@@ -279,8 +279,9 @@ describe('UserBookmarkCollectionService.getCollectionById', () => {
         // Act
         const result = await service.getCollectionById(nonOwner, { collectionId: COLLECTION_ID });
 
-        // Assert
-        expect(result.error?.code).toBe('FORBIDDEN');
+        // Assert — a 403 here confirmed the collection id was real and
+        // simply somebody else's (HOS-600); the refusal is unchanged.
+        expect(result.error?.code).toBe('NOT_FOUND');
     });
 
     it('returns NOT_FOUND when collection does not exist', async () => {
@@ -394,7 +395,7 @@ describe('UserBookmarkCollectionService.updateCollection', () => {
         expect(result.data?.name).toBe('New Name');
     });
 
-    it('returns FORBIDDEN when actor does not own the collection', async () => {
+    it('refuses a non-owner with NOT_FOUND, not FORBIDDEN (HOS-600)', async () => {
         // Arrange
         const nonOwner = createActor({ id: OTHER_USER_ID, permissions: [] });
         asMock(collectionModelMock.findById).mockResolvedValue(makeCollection());
@@ -405,8 +406,9 @@ describe('UserBookmarkCollectionService.updateCollection', () => {
             input: { name: 'Hacked' }
         });
 
-        // Assert
-        expect(result.error?.code).toBe('FORBIDDEN');
+        // Assert — a 403 here confirmed the collection id was real and
+        // simply somebody else's (HOS-600); the refusal is unchanged.
+        expect(result.error?.code).toBe('NOT_FOUND');
     });
 
     it('returns NOT_FOUND when collection does not exist', async () => {
@@ -542,7 +544,7 @@ describe('UserBookmarkCollectionService.deleteCollection', () => {
         expect(result.data?.nullifiedBookmarks).toBe(0);
     });
 
-    it('returns FORBIDDEN when actor does not own the collection', async () => {
+    it('refuses a non-owner with NOT_FOUND, not FORBIDDEN (HOS-600)', async () => {
         // Arrange
         const nonOwner = createActor({ id: OTHER_USER_ID, permissions: [] });
         asMock(collectionModelMock.findById).mockResolvedValue(makeCollection());
@@ -550,8 +552,9 @@ describe('UserBookmarkCollectionService.deleteCollection', () => {
         // Act
         const result = await service.deleteCollection(nonOwner, COLLECTION_ID);
 
-        // Assert
-        expect(result.error?.code).toBe('FORBIDDEN');
+        // Assert — a 403 here confirmed the collection id was real and
+        // simply somebody else's (HOS-600); the refusal is unchanged.
+        expect(result.error?.code).toBe('NOT_FOUND');
         expect(asMock(collectionModelMock.nullifyCollectionIdOnBookmarks)).not.toHaveBeenCalled();
     });
 
@@ -608,7 +611,7 @@ describe('UserBookmarkCollectionService.addBookmarkToCollection', () => {
         expect(result.error?.code).toBe('NOT_FOUND');
     });
 
-    it('returns FORBIDDEN when actor does not own the collection', async () => {
+    it('refuses a non-owner with NOT_FOUND, not FORBIDDEN (HOS-600)', async () => {
         // Arrange
         const nonOwner = createActor({ id: OTHER_USER_ID, permissions: [] });
         asMock(collectionModelMock.findById).mockResolvedValue(makeCollection());
@@ -619,8 +622,9 @@ describe('UserBookmarkCollectionService.addBookmarkToCollection', () => {
             bookmarkId: BOOKMARK_ID
         });
 
-        // Assert
-        expect(result.error?.code).toBe('FORBIDDEN');
+        // Assert — a 403 here confirmed the collection id was real and
+        // simply somebody else's (HOS-600); the refusal is unchanged.
+        expect(result.error?.code).toBe('NOT_FOUND');
         // bookmark should NOT have been fetched
         expect(asMock(bookmarkModelMock.findById)).not.toHaveBeenCalled();
     });
@@ -641,7 +645,7 @@ describe('UserBookmarkCollectionService.addBookmarkToCollection', () => {
         expect(result.error?.code).toBe('NOT_FOUND');
     });
 
-    it('returns FORBIDDEN when actor does not own the bookmark', async () => {
+    it('refuses a non-owner of the bookmark with NOT_FOUND, not FORBIDDEN (HOS-600)', async () => {
         // Arrange
         const actor = makeOwnerActor();
         asMock(collectionModelMock.findById).mockResolvedValue(makeCollection());
@@ -656,8 +660,9 @@ describe('UserBookmarkCollectionService.addBookmarkToCollection', () => {
             bookmarkId: BOOKMARK_ID
         });
 
-        // Assert
-        expect(result.error?.code).toBe('FORBIDDEN');
+        // Assert — a 403 here confirmed the collection id was real and
+        // simply somebody else's (HOS-600); the refusal is unchanged.
+        expect(result.error?.code).toBe('NOT_FOUND');
     });
 
     it("admin with VIEW_ANY can add any user's bookmark to any collection", async () => {
@@ -724,7 +729,7 @@ describe('UserBookmarkCollectionService.removeBookmarkFromCollection', () => {
         expect(result.error?.code).toBe('NOT_FOUND');
     });
 
-    it('returns FORBIDDEN when actor does not own the bookmark', async () => {
+    it('refuses a non-owner of the bookmark with NOT_FOUND, not FORBIDDEN (HOS-600)', async () => {
         // Arrange
         const nonOwner = createActor({ id: OTHER_USER_ID, permissions: [] });
         asMock(bookmarkModelMock.findById).mockResolvedValue(makeBookmark());
@@ -734,8 +739,9 @@ describe('UserBookmarkCollectionService.removeBookmarkFromCollection', () => {
             bookmarkId: BOOKMARK_ID
         });
 
-        // Assert
-        expect(result.error?.code).toBe('FORBIDDEN');
+        // Assert — a 403 here confirmed the collection id was real and
+        // simply somebody else's (HOS-600); the refusal is unchanged.
+        expect(result.error?.code).toBe('NOT_FOUND');
         // The update DB call should NOT have been made
         expect(asMock(dbChain.set as Mock)).not.toHaveBeenCalled();
     });
