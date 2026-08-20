@@ -751,6 +751,13 @@ interface LocalPaymentRecord {
     readonly customerId: string;
     readonly subscriptionId: string | null;
     readonly amount: number;
+    /**
+     * The payment's persisted JSONB metadata. Read only for `refundId`, the
+     * provider refund identifier qzpay writes when a refund settles — it is
+     * what lets this path derive the SAME HOS-597 idempotency key the admin
+     * hook derived for the same refund.
+     */
+    readonly metadata: unknown;
 }
 
 /**
@@ -806,7 +813,8 @@ async function applyWebhookRefundLifecycle({
                 id: billingPayments.id,
                 customerId: billingPayments.customerId,
                 subscriptionId: billingPayments.subscriptionId,
-                amount: billingPayments.amount
+                amount: billingPayments.amount,
+                metadata: billingPayments.metadata
             })
             .from(billingPayments)
             .where(sql`${billingPayments.providerPaymentIds}->>'mercadopago' = ${mpPaymentId}`)
@@ -870,6 +878,20 @@ async function applyWebhookRefundLifecycle({
     const refundAmountCentavos =
         mpRefundedAmountMajor === null ? undefined : Math.round(mpRefundedAmountMajor * 100);
 
+    // HOS-597: resolve the provider refund id off the local payment's metadata
+    // — the same field the admin hook read when it applied the refund — so a
+    // webhook delivery for an admin-initiated refund derives an identical
+    // idempotency key and skips instead of re-applying. Absent for a refund
+    // issued straight in the MP dashboard; a full refund is keyed on the
+    // payment's terminal state and needs no id, and a partial one falls back to
+    // the unguarded path (see buildRefundIdempotencyKey).
+    const paymentMetadata =
+        payment.metadata !== null && typeof payment.metadata === 'object'
+            ? (payment.metadata as Record<string, unknown>)
+            : {};
+    const providerRefundId =
+        typeof paymentMetadata.refundId === 'string' ? paymentMetadata.refundId : undefined;
+
     try {
         await applyRefundLifecycle({
             payment: {
@@ -893,7 +915,8 @@ async function applyWebhookRefundLifecycle({
             },
             refundAmount: refundAmountCentavos,
             adminUserId: 'webhook',
-            source: 'webhook'
+            source: 'webhook',
+            providerRefundId
         });
     } catch (err) {
         apiLogger.error(

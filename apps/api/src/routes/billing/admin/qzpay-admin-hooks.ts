@@ -800,7 +800,12 @@ const onAfterPaymentRefund: NonNullable<QZPayAdminLifecycleHooks['onAfterPayment
             payment,
             refundAmount: effectiveRefundAmount,
             adminUserId: actor.id,
-            source: 'admin'
+            source: 'admin',
+            // HOS-597: the provider's refund id is the identity the webhook
+            // will resolve for the SAME refund (off this payment's persisted
+            // metadata), so both doors claim one idempotency key and the
+            // effect is applied once.
+            providerRefundId: providerRefund.refundId
         });
     } catch (err) {
         apiLogger.error(
