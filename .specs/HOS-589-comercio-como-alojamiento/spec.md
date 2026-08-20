@@ -578,6 +578,98 @@ so the per-listing CTA appears only when the owner has no subscription for that
 vertical yet. That is the same shape as accommodation, where publishing the
 second property never opens a checkout.
 
+### 6.12 Where the two verticals are sold, and the strings that sell them
+
+Two newly sellable product domains need somewhere to be sold and something to
+say when a cap is hit. Neither exists, and neither appears by itself once the
+plans are seeded.
+
+#### Being a plan is not enough to be shown
+
+The public catalogue hides them twice over, independently:
+
+1. `apps/api/src/routes/billing/public/listPlans.ts:29-44` builds the set of
+   every plan whose `product_domain` is **not** `accommodation` and subtracts it
+   from the response. It is an allow-only-`accommodation` filter, so retiring the
+   `commerce` value and introducing `gastronomy` / `experience` leaves the new
+   plans exactly as invisible as the old one.
+2. `packages/billing/src/config/plans.config.ts:515-560` keeps
+   `COMMERCE_LISTING_PLAN` deliberately **out of `ALL_PLANS`** (SPEC-239's
+   D-ISOLATION), so even the seed-time catalogue never carries it.
+
+**Decision: scope the endpoint by product domain, not by category.**
+`GET /api/v1/public/plans` takes an optional `?domain=` defaulting to
+`accommodation`, and the filter becomes "this domain" instead of "not
+accommodation". Every existing caller and the `pricing` edge-cache class keep
+their current response byte-for-byte, and the isolation SPEC-239 bought is
+preserved by construction rather than by a hardcoded exclusion — the same
+argument §6.8 makes for parameterising `isAccommodationSubscription`.
+
+`PlanCategory` (`'owner' | 'complex' | 'tourist'`, branched on by the web pages
+through `fetch-plans.ts:117-125`) is **not** widened. A category is a tier
+grouping *inside* one audience; the vertical is a different product. Conflating
+them is how `COMMERCE_LISTING_PLAN` ended up declaring `category: 'owner'` purely
+to satisfy a type it does not belong to.
+
+#### One tier means a price block, not a comparison table
+
+`/suscriptores/planes/comparar/` compares tiers. §6.8 enables exactly **one** tier
+per vertical, so the commerce equivalent would be a table with a single column.
+Do not build it.
+
+The price is shown on the landing that already owns the audience —
+`/{lang}/publicar-restaurante/` and `/{lang}/publicar-experiencia/`. Note that
+§6.5's description of those pages is aspirational: today each is a **hero plus
+the lead form** and nothing else. Removing the form per §6.5 therefore leaves a
+hero on an empty page, so the benefits / how-it-works / price / FAQ blocks that
+section assumes are **work in this spec**, not existing content to preserve.
+
+The `/suscriptores/` pricing pair for each vertical arrives when its second and
+third tiers are enabled. That is the same "built for three, ships with one"
+posture §6.8 takes, applied to the sales surface.
+
+#### The strings, in three locales
+
+Two new limit keys need two families of i18n entries, and the two families
+behave differently:
+
+- **`billing.limit.<key>.*`** — the at-limit UI: `title`, `message_one`,
+  `message_other`, `cta`, plus the nested `atLimitPanel.{title, body_one,
+  body_other, primaryCta, secondaryCta}`. Copy the shape of
+  `billing.limit.max_accommodations.*` (`packages/i18n/src/locales/{es,en,pt}/billing.json:278-290`).
+  **This family is gated by code**: `apps/web/src/lib/billing-limit-error.ts:50-57`
+  holds a hand-written `Set<string>` of "keys that have dedicated entries", and a
+  key absent from it falls through to `billing.limit.generic.*` **no matter what
+  the locale files contain**. Both new keys go in that Set. This is the single
+  most likely way the strings ship and are never seen.
+- **`billing.comparison.limitLabel.<key>`** — one flat label per key
+  (`{es,en,pt}/billing.json:544-559`). No allowlist gates it; `getLimitName`
+  (`apps/web/src/lib/billing-i18n.ts:164-169`) concatenates and falls back to
+  `LIMIT_METADATA[key].name`. Note this family currently has **no production call
+  site** — the comparison table uses curated `billing.comparison.row.*` labels
+  instead. Fill it anyway: it is the fallback path's only Spanish, and it costs
+  two lines per locale.
+
+The usage badge needs its own strings too: `host.properties.usage.label` is
+pluralised per vertical, so gastronomy and experience each need theirs (§6.11).
+
+#### Nothing today would catch a missing string
+
+Verified: **no guard ties `LimitKey` to i18n coverage.**
+`packages/billing/test/limits.test.ts:19-84` enforces that `LIMIT_METADATA` is
+exhaustive over `LimitKey`, but it reads a TypeScript record of English strings
+and never opens a locale file. `packages/i18n/test/key-coverage.test.ts` enforces
+es ↔ en ↔ pt parity, which catches a key added to one locale and forgotten in
+the others but is blind to a key missing from all three.
+
+So two limit keys can ship with zero translated strings, silently degrading to
+generic English-shaped copy, and CI stays green. **Add the guard** — assert that
+every `LimitKey` has a `billing.limit.<key>.title` and a
+`billing.comparison.limitLabel.<key>` in `es`, and that
+`KNOWN_LIMIT_KEYS` covers every `LimitKey` — reusing the exhaustiveness pattern
+`limits.test.ts` already established. The cross-locale guard then covers `en` and
+`pt` for free.
+
 ## 7. Data model / contracts
 
 | Change | Kind | Carril |
@@ -599,6 +691,11 @@ second property never opens a checkout.
 | `usage-badge.ts` takes the limit key as an argument | web | today `MAX_ACCOMMODATIONS_LIMIT_KEY` is hardcoded at line 33 |
 | Addon-page eligibility gate becomes per-domain | web | `addons/index.astro:82-90` resolves the accommodation subscription only |
 | Subscription-dashboard domain union becomes three-way | web | `mi-cuenta/suscripcion/index.astro:35` is `'accommodation' \| 'commerce'` |
+| `GET /public/plans` gains `?domain=`, filter stops being allow-only-accommodation | API | `listPlans.ts:29-44`; default preserves today's response |
+| Two new plans join `ALL_PLANS`' seeding path per domain | plan config | they are excluded twice today, independently (§6.12) |
+| `billing.limit.*` + `billing.comparison.limitLabel.*` for both new keys, es/en/pt | i18n | plus `KNOWN_LIMIT_KEYS` in `billing-limit-error.ts:50-57` — code, not just JSON |
+| New guard: every `LimitKey` has its i18n entries and its allowlist slot | test | nothing enforces this today (§6.12) |
+| Price / benefits / FAQ blocks on both landings | web | they are hero + lead form today, nothing else |
 
 No new columns. `moderationState`, `visibility`, `lifecycleState` and
 `hasActiveSubscription` already exist on both `gastronomies` and `experiences`
@@ -690,6 +787,14 @@ and keep their current semantics.
   not the upgrade CTA.
 - **AC-21** — The subscription dashboard resolves `accommodation`, `gastronomy`
   and `experience`, and an owner holding two of them can reach both.
+- **AC-22** — `GET /api/v1/public/plans` with no `domain` parameter returns
+  exactly what it returns today; with `?domain=gastronomy` it returns that
+  vertical's plan and no accommodation plan. No response ever mixes domains.
+- **AC-23** — A guard fails CI if any `LimitKey` lacks a
+  `billing.limit.<key>.title` or a `billing.comparison.limitLabel.<key>` entry in
+  `es`, or is missing from `KNOWN_LIMIT_KEYS` in `billing-limit-error.ts`.
+- **AC-24** — Hitting the gastronomy cap shows the gastronomy at-limit copy, not
+  the `billing.limit.generic.*` fallback, in all three locales.
 
 ## 10. Risks
 
