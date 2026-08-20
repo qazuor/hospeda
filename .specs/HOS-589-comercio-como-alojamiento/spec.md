@@ -195,6 +195,11 @@ of this work.
   existing account no longer costs them anything. This dissolves the original
   blocker recorded on HOS-296.
 - Commerce self-checkout landed (HOS-166, PRs #2456 / #2465 / #2470).
+- **The create route exists** (`apps/api/src/routes/commerce/protected/create.ts`),
+  and so does the whole owner area at `/mi-cuenta/comercio/` (SPEC-249 / HOS-166,
+  documented in `apps/web/docs/commerce-owner-self-service.md`). Neither is built
+  here. What changes in them is §6.1 and §6.11 — and in both cases the change is
+  a **removal**, not a construction.
 
 ## 6. Proposed design
 
@@ -269,6 +274,13 @@ rather than left dormant:
   (`apps/api/src/routes/commerce/admin/approve-and-provision.ts`).
 - The `CommerceOwnerProvisioner` port on `CommerceLeadService`.
 - The admin lead inbox as a **required** step.
+- `GET /api/v1/protected/commerce/leads/mine`
+  (`apps/api/src/routes/commerce/protected/my-lead.ts`, HOS-257) and the
+  `prefill` prop it feeds on `CommerceCreateForm.client.tsx`. It reads the
+  caller's own provisioned `commerce_leads` row to pre-fill the create form —
+  a convenience that becomes meaningless once nobody files a lead, and
+  unreadable once §6.3 drops the table. It is a pre-fill, never a gate, so
+  removing it costs the owner nothing but a few keystrokes they no longer save.
 
 Leaving dead code here is not neutral: an exported provisioning service with no
 callers reads as an active mechanism, which is the exact failure mode recorded
@@ -478,6 +490,29 @@ That removes the HOS-522 collision from this design entirely, rather than
 mitigating it with copy. A single pooled commerce plan would have reintroduced
 it: the second vertical would silently start charging on day one while the page
 promised a trial.
+
+#### The checkout route is keyed by listing, and that is the thing that changes
+
+`POST /api/v1/protected/commerce/listings/:entityType/:entityId/start-subscription`
+(`apps/api/src/routes/commerce/protected/start-subscription.ts`, HOS-166) puts
+the listing **in the path**, because today the listing is what gets subscribed.
+Under the per-owner model the entity in the path stops being the subscription's
+subject and becomes the thing attached to the owner's subscription for that
+vertical.
+
+Its answer therefore forks three ways where today it forks once:
+
+1. The owner has no subscription for this vertical → start one, attach this
+   listing. Today's behaviour.
+2. The owner has one and is **under** the cap → attach the listing and open **no
+   checkout at all**. This is AC-14, and it is the case that does not exist today.
+3. The owner has one and is **at** the cap → refuse, and point at that vertical's
+   extra-listing addon (§6.11).
+
+Case 2 is where a per-listing model quietly survives a rename: leaving the route
+opening a checkout for the second listing would produce a second MercadoPago
+preapproval and the owner would be charged twice for a plan that already covers
+them.
 
 #### Naming stays
 
@@ -854,6 +889,8 @@ a constraint that would resist the new one.
 | **New admin route: moderate a commerce listing** (§6.7) | API | `createAdminRoute`, one per domain, one shared implementation |
 | Removed admin route: `approve-and-provision` | API | — |
 | Removed public route: `commerce/leads` create | API | — |
+| Removed protected route: `commerce/leads/mine` + the form's `prefill` | API + web | `my-lead.ts` (HOS-257) — dies with the table (§6.2) |
+| `start-subscription` gains the under-cap and at-cap answers | API | today it always opens a checkout (§6.8) |
 | Role gate removed from the commerce **create** page (§6.11) | web | `comercio/nuevo/[vertical].astro:46` — blocking; the index and editor keep theirs |
 | `usage-badge.ts` takes the limit key as an argument | web | today `MAX_ACCOMMODATIONS_LIMIT_KEY` is hardcoded at line 33 |
 | Addon-page eligibility gate becomes per-domain | web | `addons/index.astro:82-90` resolves the accommodation subscription only |
