@@ -2448,7 +2448,8 @@ describe('confirmAnnualSubscription — transition guard', () => {
             amount: 100,
             currency: 'ARS',
             billing: mockBillingForGuard,
-            source: 'test'
+            source: 'test',
+            checkoutSessionId: null
         });
 
         // Assert: confirmed and status flipped
@@ -2456,6 +2457,87 @@ describe('confirmAnnualSubscription — transition guard', () => {
         expect(annualDbState.updateCalls).toHaveLength(1);
         const updateVals = annualDbState.updateCalls[0]?.values as Record<string, unknown>;
         expect(updateVals.status).toBe('active');
+    });
+
+    it('HOS-710: closes the polling job for THIS checkout, never a sibling of the same subscription', async () => {
+        // Regression guard. One subscription can hold several active polling
+        // jobs at once — one per in-flight one-time checkout — so closing "the"
+        // job of a subscription would retire an add-on purchase's job while its
+        // payment was still pending. That purchase would then never be
+        // confirmed: MP Preferences have no Webhooks v2 channel, so its polling
+        // job is the only activation path it has.
+        const CHECKOUT_SESSION_ID = 'checkout-session-being-settled';
+        const mockFindByResource = vi
+            .fn()
+            .mockResolvedValue({ id: 'job-for-this-checkout', version: 'v1' });
+        const mockFindBySubscription = vi.fn();
+        const mockUpdate = vi.fn().mockResolvedValue({ id: 'job-for-this-checkout' });
+
+        vi.mocked(mockBillingForGuard.getStorage).mockReturnValue({
+            subscriptionPollingJobs: {
+                findActiveByProviderResourceId: mockFindByResource,
+                findActiveBySubscriptionId: mockFindBySubscription,
+                update: mockUpdate
+            }
+        } as never);
+
+        annualDbState.subRows = [
+            { id: ANNUAL_SUB_ID, customerId: 'cust-guard', status: 'pending_provider' }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        // Act
+        await confirmAnnualSubscription({
+            annualSubscriptionId: ANNUAL_SUB_ID,
+            providerPaymentId: MP_PAYMENT_ID,
+            amount: 100,
+            currency: 'ARS',
+            billing: mockBillingForGuard,
+            source: 'test',
+            checkoutSessionId: CHECKOUT_SESSION_ID
+        });
+
+        // Looked up by the resource this payment settles...
+        expect(mockFindByResource).toHaveBeenCalledWith('mercadopago', CHECKOUT_SESSION_ID);
+        // ...and never by subscription, which cannot tell siblings apart.
+        expect(mockFindBySubscription).not.toHaveBeenCalled();
+        expect(mockUpdate).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'job-for-this-checkout', status: 'succeeded' })
+        );
+    });
+
+    it('HOS-710: skips the polling cleanup entirely when no checkout session id is known', async () => {
+        // Without a session id there is no way to name the right job, and
+        // guessing means closing someone else's. Skipping is correct: the cron
+        // completes the job on its next tick via the idempotency guard.
+        const mockFindByResource = vi.fn();
+        const mockFindBySubscription = vi.fn();
+
+        vi.mocked(mockBillingForGuard.getStorage).mockReturnValue({
+            subscriptionPollingJobs: {
+                findActiveByProviderResourceId: mockFindByResource,
+                findActiveBySubscriptionId: mockFindBySubscription,
+                update: vi.fn()
+            }
+        } as never);
+
+        annualDbState.subRows = [
+            { id: ANNUAL_SUB_ID, customerId: 'cust-guard', status: 'pending_provider' }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        await confirmAnnualSubscription({
+            annualSubscriptionId: ANNUAL_SUB_ID,
+            providerPaymentId: MP_PAYMENT_ID,
+            amount: 100,
+            currency: 'ARS',
+            billing: mockBillingForGuard,
+            source: 'test',
+            checkoutSessionId: null
+        });
+
+        expect(mockFindByResource).not.toHaveBeenCalled();
+        expect(mockFindBySubscription).not.toHaveBeenCalled();
     });
 
     it('guard returns invalid (spy): logs error and skips status write (defense-in-depth)', async () => {
@@ -2484,7 +2566,8 @@ describe('confirmAnnualSubscription — transition guard', () => {
             amount: 100,
             currency: 'ARS',
             billing: mockBillingForGuard,
-            source: 'test'
+            source: 'test',
+            checkoutSessionId: null
         });
 
         // Assert: not confirmed, no DB write, error logged

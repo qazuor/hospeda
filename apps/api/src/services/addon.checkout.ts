@@ -60,6 +60,14 @@ interface ScheduleAddonPollingInput {
  * drops (SPEC-143 Finding #21), so one-time addon payments need a polling
  * fallback — the same reason `initiatePaidAnnualSubscription` schedules one.
  *
+ * Read "fallback" as a name, not a description: for a Preference there is no
+ * Webhooks v2 channel at all, so this job is the ONLY way an approved payment
+ * ever gets confirmed. If it is not enqueued, the money is collected and
+ * nothing is recorded — that was HOS-710. Adding `?source_news=webhooks` to
+ * the preference's notification_url does NOT provide a second path: it only
+ * lets IPN deliveries past the filter and into a v2 signature verifier that
+ * rejects them.
+ *
  * Non-fatal: a failure here is logged as a warning and does not block the
  * checkout response (SPEC-127 FR-5). The checkout session was already
  * created successfully; the webhook remains the primary activation path,
@@ -117,9 +125,17 @@ async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): P
                 'Scheduled addon checkout polling fallback'
             );
         } else {
+            // HOS-710: this used to fire on every add-on purchase after the
+            // first, because the uniqueness was scoped to `subscription_id` and
+            // one abandoned checkout held the only slot for an hour. It is now
+            // scoped to `(provider, provider_resource_id)`, and the session id
+            // is freshly generated per checkout, so reaching this branch means
+            // a genuine duplicate enqueue for the SAME session — a double
+            // submit, not a second purchase. Logged as a warning because it
+            // should now be rare rather than routine.
             apiLogger.warn(
                 { subscriptionId, checkoutSessionId, addonSlug },
-                'Active polling job already exists for subscription — skipping addon enqueue'
+                'Active polling job already exists for this checkout session — skipping duplicate addon enqueue'
             );
         }
     } catch (error) {

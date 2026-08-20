@@ -398,7 +398,13 @@ async function runOneTimePaymentPoll(params: {
                 amount: amountMajor,
                 currency: succeeded.currency,
                 billing,
-                source: 'polling'
+                source: 'polling',
+                // Not consulted on this path — the polling cleanup inside is
+                // skipped when source='polling', because the cron closes its
+                // own job below. Passed anyway because it is exactly the
+                // resource this job polls, so the argument stays truthful if
+                // that guard is ever relaxed.
+                checkoutSessionId: locked.providerResourceId
             });
         } catch (err) {
             // confirmAnnualSubscription swallows its own errors (logged
