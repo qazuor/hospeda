@@ -277,12 +277,16 @@ That branch is presently unreachable for commerce and becomes live.
   URLs and stay **public landings** — hero, benefits, how-it-works, FAQ, pricing
   — with the lead form replaced by an **auth-aware CTA island**, the same
   pattern as `HostLandingCta`.
-- Both CTAs push to **one shared create page** carrying the `domain`. Unlike
-  accommodation, which has a single door, commerce has two landings and one
-  form — justified because `domain` is already plumbed and the two listing
-  shapes share most fields.
-- The create page follows `nueva.astro`: `prerender = false`, its own in-page
-  auth guard via `buildLoginRedirect`, no middleware entry.
+- Both CTAs push to the create page that **already exists** —
+  `apps/web/src/pages/[lang]/mi-cuenta/comercio/nuevo/[vertical].astro`, shipped
+  by HOS-166 — carrying the vertical in the path. Do **not** build a second one.
+  There is also already a vertical chooser at `comercio/nuevo/index.astro`, which
+  the landings bypass because they know their own vertical.
+- That page already follows `nueva.astro` (`prerender = false`, its own in-page
+  auth guard, no middleware entry). It diverges in two ways that this work has to
+  close, both in §6.11: it **gates on already holding the commerce role**, and it
+  redirects an anonymous visitor to `auth/signin` with **no return URL** where
+  accommodation uses `buildLoginRedirect`.
 - Marketing copy should follow the `owners.*` precedent — shared keys, not
   duplicated prose.
 
@@ -484,6 +488,96 @@ Two existing behaviours need rework, not just extra entries:
    (`MobileMenu.client.tsx:216`) builds the same funnel separately — both
    surfaces need the three options or they diverge.
 
+### 6.11 The owner's management surface — it exists, and it blocks this spec
+
+`/mi-cuenta/comercio/` is **not** a gap to fill: HOS-166 built it, and
+`apps/web/docs/commerce-owner-self-service.md` documents it. Four pages exist —
+the listing index (`comercio/index.astro`), the vertical chooser
+(`comercio/nuevo/index.astro`), the create form (`comercio/nuevo/[vertical].astro`)
+and the operational editor (`comercio/[vertical]/[id]/editar.astro`). Writing
+this spec as if the surface had to be built would have produced a duplicate
+create page next to a working one.
+
+What it needs is five specific changes, one of which is blocking.
+
+#### The blocking one: the create page requires the role it is supposed to grant
+
+`comercio/nuevo/[vertical].astro:46` reads:
+
+```ts
+if (!hasCommerceNavAccess({ roles: user.roles })) {
+    return Astro.redirect(buildUrl({ locale, path: 'mi-cuenta' }));
+}
+```
+
+So a signed-in person **without** `COMMERCE_OWNER` is redirected away from the
+only page that would have granted it. §6.1 grants the role inside the create
+transaction; that transaction is unreachable from the web until this guard goes.
+The same shape guards the index and the editor, and there it is correct — those
+pages list and edit listings that must already exist. **Only the create page's
+role gate is removed**; its authentication guard stays, and it stops discarding
+the return URL (`buildLoginRedirect`, as `nueva.astro` does).
+
+This mirrors accommodation exactly: `publicar/nueva.astro` requires a session and
+nothing else, and `/mi-cuenta/propiedades/` requires `hasAccommodationsNavAccess`.
+The door is open; the room behind it is not.
+
+#### A quota badge per vertical, where today there is none
+
+`propiedades/index.astro:230-244` renders "N de M propiedades" from
+`GET /api/v1/protected/billing/usage/{limitKey}`, parsed by
+`apps/web/src/lib/host/usage-badge.ts` (`parseUsageResponse`, lines 97-120),
+with an upgrade CTA once `threshold !== 'ok'`. `comercio/index.astro` has no
+such badge, because until §6.8 there was no cap to report.
+
+The index gains **one badge per vertical the owner actually holds a listing in**,
+each reading its own limit key. Two verticals means two independent readings, not
+one merged number — the same reason §6.8 refused a pooled cap. `usage-badge.ts`
+hardcodes `MAX_ACCOMMODATIONS_LIMIT_KEY` at line 33; it takes the key as an
+argument instead.
+
+#### The addon page locks out the person who needs it
+
+`/mi-cuenta/addons/` (`addons/index.astro:82-90`) refuses to show the catalogue
+unless the caller holds a subscription in `active` / `trial` / `trialing` — and
+that lookup resolves the **accommodation** subscription. A commerce-only owner,
+who is exactly who buys `extra-gastronomies-1`, currently sees the upgrade CTA
+instead of the product. The gate becomes per-domain, resolved from the addon's
+own `affectsLimitKey`, so the vertical's addon is offered to the owner of that
+vertical's subscription.
+
+Purchase mechanics are untouched: `AddonsPurchasePanel.client.tsx` →
+`POST /api/v1/protected/billing/addons/{slug}/purchase` → MercadoPago, exactly as
+`extra-accommodations-5` works today.
+
+#### The subscription dashboard is binary and has to become three-way
+
+`mi-cuenta/suscripcion/index.astro:27-40` already accepts `?domain=commerce` to
+scope the view to a commerce subscription instead of the accommodation one
+(HOS-259) — the multi-subscription idea is built. What is not built is a third
+value: the union is literally `'accommodation' | 'commerce'` at line 35, and the
+heading branches on it. It becomes `accommodation | gastronomy | experience`,
+and an owner holding two or three sees them all rather than one at a time.
+
+#### The nav needs no new group, only a permission mapping
+
+`apps/web/src/config/navigation.ts:281-296` already declares the `comercio`
+group, gated on `PermissionEnum.COMMERCE_EDIT_OWN`. Nothing is added there. What
+must be checked is `PERMISSION_ROLE_MAP` in `apps/web/src/lib/nav-gating.ts:76-119`
+— the SSR approximation of permission-to-role — because a freshly granted
+`COMMERCE_OWNER` renders server-side before the client knows its exact
+permissions. A coverage test already fails on a missing entry (`nav-gating.ts:67-74`),
+so this is checked by CI rather than by hand.
+
+#### One behaviour disappears: "Publicar y pagar" per listing
+
+`CommerceListingActions.client.tsx` today starts a checkout **per listing** — the
+per-listing subscription model §6.8 retires. Afterwards the first listing in a
+vertical starts that vertical's subscription and every later one consumes quota,
+so the per-listing CTA appears only when the owner has no subscription for that
+vertical yet. That is the same shape as accommodation, where publishing the
+second property never opens a checkout.
+
 ## 7. Data model / contracts
 
 | Change | Kind | Carril |
@@ -501,6 +595,10 @@ Two existing behaviours need rework, not just extra entries:
 | **New admin route: moderate a commerce listing** (§6.7) | API | `createAdminRoute`, one per domain, one shared implementation |
 | Removed admin route: `approve-and-provision` | API | — |
 | Removed public route: `commerce/leads` create | API | — |
+| Role gate removed from the commerce **create** page (§6.11) | web | `comercio/nuevo/[vertical].astro:46` — blocking; the index and editor keep theirs |
+| `usage-badge.ts` takes the limit key as an argument | web | today `MAX_ACCOMMODATIONS_LIMIT_KEY` is hardcoded at line 33 |
+| Addon-page eligibility gate becomes per-domain | web | `addons/index.astro:82-90` resolves the accommodation subscription only |
+| Subscription-dashboard domain union becomes three-way | web | `mi-cuenta/suscripcion/index.astro:35` is `'accommodation' \| 'commerce'` |
 
 No new columns. `moderationState`, `visibility`, `lifecycleState` and
 `hasActiveSubscription` already exist on both `gastronomies` and `experiences`
@@ -518,6 +616,11 @@ and keep their current semantics.
 - After creating, the person lands in the editor to complete the listing, then
   checks out. The listing becomes visible when the reconciler observes an
   active-or-trialing subscription **and** a complete listing.
+- The owner manages everything from the `/mi-cuenta/comercio/` area that already
+  exists (§6.11). Its listing index gains a quota reading **per vertical**, and
+  its create page stops demanding the very role that creating grants.
+- An owner who fills a vertical's quota is offered that vertical's extra-listing
+  addon — the other vertical's quota is unaffected and is never shown as spent.
 - The HOS-305 explainer (`apps/web/src/components/gastronomy/CommerceLeadProcess.tsx`,
   a single hardcoded 4-step `PROCESS_STEPS` array shared by both domains)
   currently narrates admin approval in step 2 ("nuestro equipo lo revisa y lo
@@ -575,6 +678,18 @@ and keep their current semantics.
 - **AC-17** — No plan, price or trial value is asserted from the TypeScript
   config alone. Every such assertion reads the database, because those fields
   are classified `'commercial'` and the database wins.
+- **AC-18** — A signed-in account holding **no** commerce role can open
+  `/mi-cuenta/comercio/nuevo/gastronomy` and submit it. An anonymous visitor on
+  the same URL is sent to sign-in with a return URL that lands them back on that
+  same vertical's form, not on `/mi-cuenta`.
+- **AC-19** — The commerce listing index reports the two verticals' quotas
+  **independently**: an owner at their gastronomy cap still reads their
+  experience quota as available. The two numbers are never summed.
+- **AC-20** — An owner holding a gastronomy subscription and **no** accommodation
+  subscription is offered the extra-gastronomies addon on `/mi-cuenta/addons/`,
+  not the upgrade CTA.
+- **AC-21** — The subscription dashboard resolves `accommodation`, `gastronomy`
+  and `experience`, and an owner holding two of them can reach both.
 
 ## 10. Risks
 
