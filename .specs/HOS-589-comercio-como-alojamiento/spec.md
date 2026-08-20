@@ -292,6 +292,50 @@ Leaving dead code here is not neutral: an exported provisioning service with no
 callers reads as an active mechanism, which is the exact failure mode recorded
 as F-57 in the same smoke that produced this spec.
 
+#### The list above is incomplete, and one omission does not compile
+
+Verified by tracing every reference:
+
+- **`apps/api/src/routes/commerce/admin/provision-owner.ts` is a SECOND admin
+  route** that constructs `CommerceOwnerProvisioningService` directly (`:127`) and
+  calls `provisionCommerceOwner` (`:138`). It is a different endpoint from
+  `approve-and-provision` (`POST /leads/:id/provision-owner`), registered at
+  `commerce/admin/index.ts:19-20`, and the admin panel calls **both** from the same
+  component (`CommerceLeadInbox.tsx:238` and `:310`). Deleting the service without
+  this route is a **compile error**, not a leftover.
+- **`CommerceLeadService` is not deleted.** `list-leads.ts` and `mark-handled.ts`
+  survive and still depend on it, so the service and its barrel export stay with a
+  reduced surface: `approveAndProvision` and the `CommerceOwnerProvisioner` port go,
+  the rest remains. §6.2's phrase "the admin lead inbox as a required step" is too
+  loose to implement — the inbox component uses both provisioning mutations inline,
+  so it does not merely lose a step, it stops compiling until refactored.
+- **`apps/api/src/lib/commerce-ports.ts` becomes orphaned in full** —
+  `createCommerceOwnerCreateUserPort` (the only implementation of `CreateUserPort`
+  in the repo) and `createCommerceOwnerCredentialsNotificationPort` — but only once
+  `provision-owner.ts` also goes.
+- **The credentials email is orphaned across six files**: the template
+  (`packages/notifications/src/templates/commerce/commerce-owner-credentials.tsx`),
+  `NotificationType.COMMERCE_OWNER_CREDENTIALS`, its payload type, its entry in
+  `notification-categories.ts`, its subject in `subject-builder.ts`, and its `case`
+  in `notification.service.ts`.
+- **`CommerceCreateForm.client.tsx` imports the `DestinationOption` type from
+  `CommerceLead.client.tsx`** (`:50`) — the surviving self-service form depends on a
+  type exported by the deleted lead component.
+- Two i18n prefixes die: `commerce.lead.*` (web) and `commerceLeads.*` (admin).
+
+**Three things must NOT be swept up**, and all three are name collisions:
+
+| Looks like commerce | Actually is | Where |
+| --- | --- | --- |
+| `approve-and-provision-partner.ts`, `ApproveAndProvisionPartnerInput` | the **alliance** funnel, which NG-4 excludes | `apps/api/src/routes/alliance/admin/` |
+| `AdminLeadReceived` / `NotificationType.ADMIN_LEAD_RECEIVED` | **shared** by both funnels via `announceLeadToOps` | `packages/notifications` |
+| `PartnerTypeEnum.COMMERCE = 'commerce'` | an unrelated enum | `packages/schemas/src/enums/partner-type.enum.ts:7` |
+
+`apps/api/src/lib/lead-intake-ports.ts` is likewise **shared**: `LeadFunnel`,
+`LeadIntakeAlert` and `announceLeadToOps` serve both funnels, and only
+`createCommerceLeadNotificationPort` is commerce's. Deleting the file breaks
+alliances. This is surgery on one function, not a file removal.
+
 ### 6.3 Retire `commerce_leads`
 
 With approval gone, four columns lose their meaning: `status`, `handledAt`,
@@ -306,6 +350,28 @@ the release *after* the code stops using it (F-03 / HOS-601 measured an
 
 Existing rows are administrative records; see OQ-2 for what happens to the
 pending ones.
+
+#### The drop takes a cron with it, and that cron also serves alliances
+
+`apps/api/src/cron/jobs/lead-intake-backstop.job.ts` (H-62 / H-148) queries
+`commerce_leads` **directly** — `findUnannouncedCommerceLeads()` at `:91-113`
+selects from `commerceLeads` filtering on `opsNotifiedAt` and `status` — and the
+handler runs it in the **same `Promise.all` as the alliance equivalent**
+(`:185-190`).
+
+Two consequences, in this order:
+
+1. When the code stops writing leads, the commerce half of the job simply finds
+   nothing. Harmless.
+2. When the table is dropped one release later, the query **throws every four
+   hours** (`20 */4 * * *`) — and because both halves share one `Promise.all`, it
+   takes the **alliance** lead backstop down with it. NG-4 excludes alliances from
+   this spec; this is the one way this spec breaks them anyway.
+
+So the deferred drop of §6.3 has a prerequisite the first draft never named:
+**the commerce half of this cron is removed in the release that stops writing
+leads**, not in the one that drops the table. Between those two releases the job
+must already be alliance-only.
 
 ### 6.4 Route commerce checkout through the canonical trial resolver
 
@@ -978,6 +1044,10 @@ a constraint that would resist the new one.
 | Removed admin route: `approve-and-provision` | API | — |
 | Removed public route: `commerce/leads` create | API | — |
 | Removed protected route: `commerce/leads/mine` + the form's `prefill` | API + web | `my-lead.ts` (HOS-257) — dies with the table (§6.2) |
+| Removed admin route: `commerce/admin/provision-owner.ts` | API | a **second** provisioning route the first draft missed; without it the deletion does not compile (§6.2) |
+| `lead-intake-backstop.job.ts` loses its commerce half | cron | **before** the table drop, or it takes the alliance backstop down with it (§6.3) |
+| `createCommerceLeadNotificationPort` removed from `lead-intake-ports.ts` | API | surgical — the file is shared with alliances |
+| `COMMERCE_OWNER_CREDENTIALS` notification retired across 6 files | notifications | template, type, payload, category, subject, service `case` |
 | `start-subscription` gains the under-cap and at-cap answers | API | today it always opens a checkout (§6.8) |
 | Role gate removed from the commerce **create** page (§6.11) | web | `comercio/nuevo/[vertical].astro:46` — blocking; the index and editor keep theirs |
 | `usage-badge.ts` takes the limit key as an argument | web | today `MAX_ACCOMMODATIONS_LIMIT_KEY` is hardcoded at line 33 |
@@ -1139,6 +1209,10 @@ and keep their current semantics.
 - **AC-31** — An owner with **no accommodation subscription** is still capped on
   gastronomy. This is the case layer 3 fails open on today, and it is the normal
   case for a commerce-only owner.
+- **AC-32** — After the provisioning deletion, `apps/api` and `apps/admin` both
+  typecheck, and the alliance lead funnel still works end to end: a new alliance
+  lead is created, the ops notification fires, and `lead-intake-backstop` announces
+  an unannounced one. The alliance path is the blast radius, not the target.
 
 ## 10. Risks
 
