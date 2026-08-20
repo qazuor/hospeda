@@ -41,6 +41,7 @@ import { ExternalLinkIcon } from '@repo/icons';
 import type { MyPartnerMentionBatch } from '@/lib/api/endpoints-protected';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 
 interface Props {
     /** Active locale for i18n. */
@@ -99,7 +100,17 @@ const dateFormatter = new Intl.DateTimeFormat(locale, {
                             </time>
 
                             <ul class="partner-mentions__channels">
-                                {batch.mentions.map((mention) => (
+                                {batch.mentions.map((mention) => {
+                                    /*
+                                     * The permalink is stored content and
+                                     * `z.string().url()` accepts `javascript:`,
+                                     * so the allow-list is what keeps a payload
+                                     * out of this href (HOS-592 / F-02). A
+                                     * refused value degrades to the same plain
+                                     * text a link-less channel already gets.
+                                     */
+                                    const mentionHref = resolveSafeExternalUrl(mention.url);
+                                    return (
                                     <li class="partner-mentions__channel">
                                         <span class="partner-mentions__channel-name">
                                             {t(
@@ -107,10 +118,10 @@ const dateFormatter = new Intl.DateTimeFormat(locale, {
                                             )}
                                         </span>
 
-                                        {mention.url ? (
+                                        {mentionHref ? (
                                             <a
                                                 class="partner-mentions__link"
-                                                href={mention.url}
+                                                href={mentionHref}
                                                 target="_blank"
                                                 rel="noreferrer noopener"
                                             >
@@ -133,7 +144,8 @@ const dateFormatter = new Intl.DateTimeFormat(locale, {
                                             </span>
                                         )}
                                     </li>
-                                ))}
+                                    );
+                                })}
                             </ul>
                         </li>
                     ))}

@@ -12,6 +12,8 @@
  * concern that would drag `@repo/icons` into a pure module for no gain.
  */
 
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
+
 /**
  * The author's social profiles as the public payload carries them.
  *
@@ -54,11 +56,6 @@ const NETWORKS: readonly { key: AuthorSocialNetworkKey; label: string }[] = [
     { key: 'tiktok', label: 'TikTok' }
 ] as const;
 
-/** Whether a stored value can be used as an `href` as-is. */
-function isLinkable(value: string): boolean {
-    return /^https?:\/\//i.test(value);
-}
-
 /**
  * Resolve the social links an author page may render.
  *
@@ -70,11 +67,14 @@ function isLinkable(value: string): boolean {
  *    default-empty object to work around a missing opt-in.
  * 2. **Only networks actually filled.** Empty and whitespace-only values are
  *    dropped, so an author who left a field blank gets no dead icon (§8).
- * 3. **Only absolute `http(s)` values.** The response uses the LENIENT read
- *    shape, which tolerates what the column really holds — bare handles like
- *    `@carmen`, and `m.facebook.com` variants. A bare handle in an `href`
+ * 3. **Only absolute `http(s)` values**, decided by the repo's one scheme
+ *    allow-list, {@link resolveSafeExternalUrl}. The response uses the LENIENT
+ *    read shape, which tolerates what the column really holds — bare handles
+ *    like `@carmen`, and `m.facebook.com` variants. A bare handle in an `href`
  *    resolves against the current path and ships a broken link, so it is
- *    skipped rather than rendered.
+ *    skipped rather than rendered. This used to be a local `^https?://` regex;
+ *    it is the shared helper now so this file cannot drift away from the one
+ *    place the rule lives (HOS-592 / F-02).
  *
  * @param input - The payload's `socialNetworks`, or `undefined`/`null` when the
  *   author has not opted in.
@@ -98,8 +98,8 @@ export function resolveAuthorSocialLinks({
     const links: AuthorSocialLink[] = [];
 
     for (const { key, label } of NETWORKS) {
-        const url = socialNetworks[key]?.trim() ?? '';
-        if (isLinkable(url)) {
+        const url = resolveSafeExternalUrl(socialNetworks[key]);
+        if (url) {
             links.push({ key, label, url });
         }
     }

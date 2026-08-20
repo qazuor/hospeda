@@ -90,3 +90,34 @@ describe('resolveContactHref — raw phone numbers become tel: links', () => {
         expect(resolveContactHref('+54 (344) 2-56-78-90')).toBe('tel:+543442567890');
     });
 });
+
+// ---------------------------------------------------------------------------
+// Scheme allow-list — HOS-592 / F-02
+// ---------------------------------------------------------------------------
+
+describe('resolveContactHref — a non-linkable scheme never survives as a URL', () => {
+    it.each([
+        'javascript:alert(1)',
+        'JavaScript:alert(1)',
+        '\u0001javascript:alert(1)',
+        'data:text/html,<script>alert(1)</script>',
+        'vbscript:msgbox(1)'
+    ])('degrades %j to an inert tel: value', (contact) => {
+        // `contact` is provider-authored. The URL branch asks the shared
+        // scheme allow-list rather than testing the prefix here, so a value it
+        // refuses falls through to the `tel:` wrapper — which the browser
+        // cannot execute — instead of reaching the href.
+        const href = resolveContactHref(contact);
+
+        expect(href.startsWith('tel:')).toBe(true);
+        expect(href.toLowerCase().startsWith('javascript:')).toBe(false);
+        expect(href.toLowerCase().startsWith('data:')).toBe(false);
+        expect(href.toLowerCase().startsWith('vbscript:')).toBe(false);
+    });
+
+    it('still passes an ordinary https contact through untouched', () => {
+        expect(resolveContactHref('https://example.com/contact')).toBe(
+            'https://example.com/contact'
+        );
+    });
+});

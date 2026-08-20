@@ -102,3 +102,25 @@ describe('resolveAuthorSocialLinks — display order', () => {
         expect(links[0]?.label).toBe('X');
     });
 });
+
+describe('resolveAuthorSocialLinks — scheme allow-list', () => {
+    it.each([
+        'javascript:alert(1)',
+        'JavaScript:alert(1)',
+        '\u0001javascript:alert(1)',
+        'data:text/html,<script>alert(1)</script>',
+        'vbscript:msgbox(1)'
+    ])('drops a stored profile whose scheme is %j', (instagram) => {
+        // HOS-592 / F-02: this used to be a local `^https?://` regex. It is the
+        // shared allow-list now, so this file cannot drift away from the one
+        // place the rule lives — and the leading-control-character variant,
+        // which an HTML parser strips before reading the scheme, is refused too.
+        expect(resolveAuthorSocialLinks({ socialNetworks: { instagram } })).toEqual([]);
+    });
+
+    it('still publishes an ordinary https profile', () => {
+        expect(
+            resolveAuthorSocialLinks({ socialNetworks: { instagram: 'https://instagram.com/c' } })
+        ).toEqual([{ key: 'instagram', label: 'Instagram', url: 'https://instagram.com/c' }]);
+    });
+});

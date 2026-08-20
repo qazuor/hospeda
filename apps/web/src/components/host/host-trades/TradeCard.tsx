@@ -25,6 +25,7 @@ import type { JSX } from 'react';
 import { formatNumber } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { buildUrl } from '@/lib/urls';
 import { resolveTradeStats } from './resolve-trade-stats';
 import styles from './TradeCard.module.css';
@@ -48,19 +49,27 @@ export interface TradeCardProps {
  * Resolves the contact string to a safe href.
  *
  * Rules (applied in order, first match wins):
- * 1. Already has http:// or https:// scheme → pass through.
+ * 1. An `http(s)` URL the scheme allow-list accepts → pass through.
  * 2. tel: value → pass through.
  * 3. Bare wa.me/... or wa.me?... (no scheme) → prepend https://.
  * 4. Anything else (raw phone, digits) → wrap in `tel:` with spaces/dashes stripped.
+ *
+ * Rule 1 asks {@link resolveSafeExternalUrl} rather than testing the string's
+ * prefix itself (HOS-592 / F-02). `contact` is provider-authored, and a local
+ * `startsWith('https://')` is a second copy of the rule that decides which
+ * schemes may be linked — the kind of copy this codebase has already let drift
+ * three times. The `tel:` fallback below is what an unsafe value degrades to,
+ * so nothing here can produce an executable href.
  *
  * Exported for unit testing.
  */
 export function resolveContactHref(contact: string): string {
     const trimmed = contact.trim();
 
-    // Already fully-qualified URL
-    if (trimmed.startsWith('https://') || trimmed.startsWith('http://')) {
-        return trimmed;
+    // Already a fully-qualified URL with a linkable scheme
+    const externalHref = resolveSafeExternalUrl(trimmed);
+    if (externalHref) {
+        return externalHref;
     }
 
     // Already a tel: link
@@ -70,7 +79,10 @@ export function resolveContactHref(contact: string): string {
 
     // Bare wa.me path (e.g. "wa.me/5493442567890" or "wa.me?phone=...")
     if (trimmed.startsWith('wa.me/') || trimmed.startsWith('wa.me?')) {
-        return `https://${trimmed}`;
+        const waHref = resolveSafeExternalUrl(`https://${trimmed}`);
+        if (waHref) {
+            return waHref;
+        }
     }
 
     // Fallback: treat as raw phone number
