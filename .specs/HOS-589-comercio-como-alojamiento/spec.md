@@ -593,6 +593,73 @@ visibility reconciler, the listing services. Those cover both verticals and are
 parameterised by domain; splitting the **billing** domain is not a reason to
 rename working code, and a rename cascade would bury the change that matters.
 
+#### Two new limit keys: two places the compiler stops you, six where it does not
+
+Adding `MAX_GASTRONOMIES` and `MAX_EXPERIENCES` breaks the build in exactly **two**
+places, and both are welcome — they are the only exhaustive `Record<LimitKey, …>`
+in the repo:
+
+- `packages/billing/src/config/limits.config.ts:42` — `LIMIT_METADATA`
+- `apps/api/src/utils/limit-check.ts:52` — `RESOURCE_NAMES` (Spanish names)
+
+The other six consumers are hand-maintained maps that **degrade silently**:
+
+| Where | What silence costs |
+| --- | --- |
+| `apps/web/src/lib/billing/plan-usage-config.ts:64-67` — `ADDON_SLUG_BY_LIMIT_KEY` | **The worst one.** Without an entry, the vertical's extra-listing addon exists, is purchasable and grants the cap increase — but the usage panel never links to it. §6.11 asks "where do they buy the addon"; this is where that question is actually answered. |
+| `apps/web/src/lib/billing-limit-error.ts:50-57` — `KNOWN_LIMIT_KEYS` | at-limit copy falls back to `billing.limit.generic.*` (§6.12) |
+| `apps/api/src/services/usage-tracking.service.ts:121-139` — `USAGE_KIND_BY_LIMIT_KEY` | key reads as `UNBUILT` and the usage panel hides the row |
+| `usage-tracking.service.ts:669-756` — the `switch` in `getCurrentUsage` | falls to `default` and reports usage `0` — a cap that always reads empty |
+| `apps/api/src/middlewares/limit-enforcement.ts:47-54` — `LIMIT_KEY_AUDIENCE` | the 403's `upgradeAudience` falls back to `'host'` |
+| `apps/web/src/lib/billing/plan-usage-config.ts:33-53` — `AUDIENCE_BY_LIMIT_KEY` | same fallback, on the display side |
+
+Two of those six **are** guarded, and the guard is the pattern to copy for §6.12's
+i18n gap: `apps/api/test/services/usage-tracking-measured-keys.guard.test.ts`
+parses the source and requires `USAGE_KIND_BY_LIMIT_KEY` to carry exactly the keys
+of `LimitKey`, and every measured key to have a real counter. It converts a
+`Record<string, …>` into an effectively exhaustive one by test rather than by
+compiler. The other four have nothing.
+
+#### The counting and the enforcement do not exist yet
+
+- `getCurrentUsage` needs a `case` per vertical, counting the owner's listings the
+  way `MAX_ACCOMMODATIONS` does (`usage-tracking.service.ts:671-677`). Both
+  `GastronomySearchSchema` and `ExperienceSearchSchema` **do** declare `ownerId`
+  (`gastronomy.query.schema.ts:84`, `experience.query.schema.ts:82`), so
+  `count(actor, { ownerId })` filters correctly — checked, because a search schema
+  that silently drops the filter would count every listing on the platform.
+- `enforceGastronomyLimit()` / `enforceExperienceLimit()` **do not exist** and must
+  be written from `enforceAccommodationLimit` (`limit-enforcement.ts:108-192`), then
+  wired into the create route's `options.middlewares` — which today has none at all.
+- `docs/billing/endpoint-gate-matrix.md` needs a row per new gate;
+  `apps/api/test/middlewares/endpoint-gate-matrix.guard.test.ts` is a snapshot guard
+  that fails without it.
+- `GET /billing/usage/{limitKey}` needs **no** change: its param schema is
+  `z.nativeEnum(LimitKey)`, so the two keys are accepted the moment the enum grows.
+
+#### The dual-write rule fires, and the frozen counts move down
+
+`addons.config.ts`, `plans.config.ts` **and** `limits.config.ts` are all listed in
+`BILLING_CONFIG_FILES` in `scripts/check-seed-dual-write.sh`, so touching any of
+them without a numbered data-migration in the same PR fails CI. Next free number is
+`0061`. The addon seed itself needs no edit — `billingAddons.seed.ts` iterates
+`ALL_ADDONS` and upserts by name.
+
+Several frozen counts break, and the direction is **down**, not up, because §6.9
+removes three plans while the two new ones are excluded from `ALL_PLANS` by design:
+
+| Assertion | Today | After |
+| --- | --- | --- |
+| `packages/billing/test/plans.test.ts:24` — `ALL_PLANS` | 9 | 6 |
+| `plans.test.ts:34` — `complexPlans` | 3 | **0** |
+| `commerce-plan.test.ts:41` — `ALL_PLANS` | 9 | 6 |
+| `addons.test.ts:16` — `ALL_ADDONS` | 6 | 8 |
+
+`grant-matrix.snapshot.test.ts` additionally fails on any plan in `ALL_PLANS` that
+its per-slug matrix does not list — relevant only if a new plan ever enters
+`ALL_PLANS`, which §6.12 says it must not. `packages/billing/CLAUDE.md`'s
+"LimitKey enum members: 18" becomes 20.
+
 #### The cap is the product, and every layer under it resolves unknown to *unlimited*
 
 The `max_gastronomies: 1` above is the entire commercial substance of this
@@ -1301,6 +1368,9 @@ and keep their current semantics.
 - **AC-33** — No production source, **including raw SQL and seed files**, compares
   or assigns `product_domain = 'commerce'` after the contract release. Asserted by a
   guard that greps SQL strings too, because no type check covers this rename.
+- **AC-34** — With the vertical's addon purchased, the usage panel **links to it**
+  from the at-cap row. This is the `ADDON_SLUG_BY_LIMIT_KEY` entry, and it is the
+  only thing standing between an addon that exists and an addon anyone can find.
 
 ## 10. Risks
 
