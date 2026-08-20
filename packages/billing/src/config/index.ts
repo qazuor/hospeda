@@ -1,4 +1,5 @@
 export * from './addons.config.js';
+export * from './commerce-limits.config.js';
 export * from './entitlements.config.js';
 export * from './limits.config.js';
 export * from './model-c-field-split.js';
