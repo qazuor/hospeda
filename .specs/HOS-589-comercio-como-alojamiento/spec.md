@@ -1898,34 +1898,39 @@ R-2's critical path), HOS-522 (the MercadoPago per-payer trial).
 
 ### This is an epic. Proposed split
 
-Ten design sections in one pull request cannot be reviewed, and §13 requires the
-work to arrive in three releases regardless. The split below is ordered by the
+Fifteen design sections in one pull request cannot be reviewed, and §13 requires
+the work to arrive in three releases regardless. The split below is ordered by the
 constraints already established — §12's two hard orders and §13's release
-boundaries — not by convenience. HOS-589 becomes the parent; HOS-590 is issue 5.
+boundaries — not by convenience. HOS-589 is the parent; HOS-590, which predates
+the split, is issue 5.
 
 | # | Issue | Covers | Blocked by | Release |
 | --- | --- | --- | --- | --- |
-| 1 | Widen the domain vocabulary | `ProductDomainEnum` gains both verticals; `isAccommodationSubscription` / `isCommerceSubscription` accept all three; `/public/plans` gains `?domain=` | — | **A** |
-| 2 | Build `moderate()` for commerce | §6.7 · AC-10, AC-11, AC-26 | — | B |
-| 3 | Grant the role at creation, and unblock the create page | §6.1 + §6.11's blocking gate · AC-1, AC-2, AC-3, AC-8, AC-18 | — | B |
-| 4 | The per-vertical billing model | §6.8 · three limit keys, two catalogues, two addons, the precheck (OQ-3), the parameterised entitlement predicate · AC-13, AC-14, AC-15 | 1 | B |
-| 5 | The free trial (**HOS-590**) | §6.4 · AC-4, AC-5, AC-16 | 4 | B |
-| 6 | The owner's management surface | §6.11's remainder · AC-19, AC-20, AC-21 | 4 | B |
-| 7 | The sales surface and its strings | §6.12 · AC-22, AC-23, AC-24 | 4 | B |
-| 8 | The three-way publish CTA | §6.10 · AC-12 | 3 | B |
-| 9 | Data migrations and plan-catalogue cleanup | §6.9 + §6.13 + the undo migration · AC-25 | 1, 4 | B |
-| 10 | Delete the provisioning path | §6.2 + **both** admin provisioning routes + the lead routes + the cron's commerce half + the credentials notification + the HOS-305 copy · AC-9, AC-32 | **2, 3** | B |
-| 11 | Contract | retire `commerce` from the enum, narrow the predicates, drop `commerce_leads` · §6.3, §13 release C | all | **C** |
+| 1 | **HOS-685** — Widen the domain vocabulary | `ProductDomainEnum` gains both verticals; both predicates accept all three; `/public/plans` gains `?domain=`; the seven binary `?productDomain=` sites | — | **A** |
+| 2 | **HOS-686** — Build `moderate()` for commerce | §6.7 · the new permission, the admin control, and the cache-purge divergence · AC-10, AC-11, AC-26, AC-36 | — | B |
+| 3 | **HOS-687** — Grant the role, open the three locks | §6.1 + §6.11's blocking gate · AC-1, AC-2, AC-3, AC-8, AC-18, AC-27 | — | B |
+| 4 | **HOS-688** — Per-vertical billing | §6.8 · limit keys, catalogues, addons, precheck, the env-var plan resolution · AC-13, AC-14, AC-15, AC-30, AC-31, AC-34, AC-35 | 1 | B |
+| 5 | **HOS-590** — The free trial | §6.4 · the three coupled hardcodes · AC-4, AC-5, AC-16, AC-40 | 4 | B |
+| 6 | **HOS-689** — The owner's management surface | §6.11's remainder · AC-19, AC-20, AC-21 | 4 | B |
+| 7 | **HOS-690** — The sales surface and its strings | §6.12 + §6.14's cache limbo · AC-23, AC-24, AC-37, AC-39 | 4 | B |
+| 8 | **HOS-691** — The three-way publish CTA | §6.10 + §6.14's two dropdowns · AC-12, AC-38 | 3 | B |
+| 9 | **HOS-692** — Data migrations and catalogue cleanup | §6.9 + §6.13 + the undo migration · AC-25, AC-28, AC-29, AC-33 | 1, 4 | B |
+| 10 | **HOS-693** — Delete the provisioning path | §6.2 + §6.3 · both admin routes, the lead routes, the cron's commerce half, the credentials notification · AC-9, AC-32 | **2, 3** | B |
+| 11 | **HOS-695** — Contract | retire `commerce`, narrow the predicates, drop `commerce_leads` · §6.3, §13 release C | all | **C** |
+| 12 | **HOS-694** — Commerce test users | §6.15 · AC-41. Ships in the **same release** as 4, which it cannot otherwise be verified without | 4 | B |
 
-Issue 10's two blockers are §12's two hard orders, encoded so the board enforces
-them instead of a reader remembering them: the role must be grantable (3) and the
-listing must be rejectable (2) before the approval path is removed. Issues 5, 6, 7
-and 9 are independent of each other and can run in parallel once 4 lands.
+All twelve are sub-issues of HOS-589 in Linear, with these blockers recorded as
+relations so the board enforces the order rather than a reader remembering it.
+
+Issue 10's two blockers are §12's two hard orders: the role must be grantable (3)
+and the listing must be rejectable (2) before the approval path is removed.
+Issues 5, 6, 7, 9 and 12 are independent of each other and can run in parallel
+once 4 lands.
 
 Issue 1 is deliberately inert — it changes no row and no answer — which is what
 makes it safe to merge and soak ahead of everything else.
 
-Issue 10 grew after the blast-radius pass and is now the largest of the eleven: it
+Issue 10 grew after the blast-radius pass and is now the largest of the twelve: it
 spans `apps/api`, `apps/admin`, `apps/web`, `packages/notifications` and one cron,
 and its correctness criterion (AC-32) is about **alliances** — the funnel NG-4
 excludes — because that is what a careless deletion breaks. Consider splitting it
