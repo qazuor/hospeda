@@ -384,6 +384,11 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.COMMERCE_EDIT_ALL,
         PermissionEnum.COMMERCE_DELETE,
         PermissionEnum.COMMERCE_MODERATE_REVIEW,
+        // HOS-686: the LISTING's own moderation verdict — the post-publication
+        // control that replaces the removed pre-publication admin gate. Distinct
+        // from COMMERCE_MODERATE_REVIEW above, which only moderates reviews
+        // written about a listing.
+        PermissionEnum.COMMERCE_MODERATION_CHANGE,
 
         // PARTNER: Partner directory billing + admin management (SPEC-271).
         PermissionEnum.PARTNER_VIEW_ALL,
@@ -737,6 +742,11 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.COMMERCE_EDIT_ALL,
         PermissionEnum.COMMERCE_DELETE,
         PermissionEnum.COMMERCE_MODERATE_REVIEW,
+        // HOS-686: the LISTING's own moderation verdict — the post-publication
+        // control that replaces the removed pre-publication admin gate. Distinct
+        // from COMMERCE_MODERATE_REVIEW above, which only moderates reviews
+        // written about a listing.
+        PermissionEnum.COMMERCE_MODERATION_CHANGE,
 
         // PARTNER: Partner directory billing + admin management (SPEC-271).
         PermissionEnum.PARTNER_VIEW_ALL,
