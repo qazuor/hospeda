@@ -1127,6 +1127,97 @@ every `LimitKey` has a `billing.limit.<key>.title` and a
 `limits.test.ts` already established. The cross-locale guard then covers `en` and
 `pt` for free.
 
+### 6.14 The web surface: two dropdowns, one sitemap guard, and a cache limbo
+
+All five line citations in §6.10 were re-verified against the files and are
+correct. What follows is what they do not say.
+
+#### The dropdown is built twice, in two technologies
+
+The header has **two** markup implementations, not the three its breakpoints
+suggest. Wide (≥1280) and narrow (1025-1279) share a single Astro tree resolved
+entirely by `@media` rules; mobile (<1025) is a separate React island,
+`MobileMenu.client.tsx` (567 lines), with its own JSX. So the three-way chooser is
+authored twice — once in Astro/CSS covering two breakpoints, once in React — and
+the mobile side has **no dropdown precedent at all**: it renders a single link
+today (`MobileMenu.client.tsx:212-216`).
+
+Copy `UserMenu.client.tsx` for the interaction: `aria-haspopup="menu"`,
+`aria-expanded`, `role="menu"`, click-outside and `Escape`. Do **not** copy
+`SettingsDropdown.client.tsx`, whose ARIA is weaker (`aria-haspopup="true"`,
+`role="group"`) — it is used in the narrow header today, so it is the one an
+implementer will find first.
+
+#### The three options are already modelled. Do not model them a fourth time
+
+`apps/web/src/config/discovery-doors.ts` already declares exactly the three doors
+with exactly the three hrefs — `accommodation → /publicar/`,
+`gastronomy → /publicar-restaurante/` (`:166`), `experience → /publicar-experiencia/`
+(`:178`) — for the authenticated hub at `/mi-cuenta/publica`. The hrefs and the
+option set are reusable; its `acquiredPermission` / `manageHref` model is not,
+because the header CTA is pre-auth. Reuse the source of truth rather than typing
+the same three URLs into a third and fourth place (header, mobile menu).
+
+#### A page does not exist until the sitemap guard says so
+
+`apps/web/src/lib/seo/static-sitemap-pages.ts` is a hand-maintained list, and a
+guard walks `src/pages/[lang]` and **fails CI** on any parameterless page that is
+in neither `STATIC_SITEMAP_PAGES` nor `NON_SITEMAP_STATIC_PAGES`. Both landings are
+already registered (`:55-56`); the per-vertical pricing surfaces of §6.12 are not,
+because they do not exist yet. Breadcrumbs have no central registry — each page
+passes its own trail. URLs are **not** translated per locale: `buildUrl` just
+prefixes `/{locale}`, so there is no route map to update.
+
+#### Removing the form puts both landings in a cache limbo
+
+Neither landing calls `applyCacheHeaders` today — they are dynamic SSR, because
+they mount `CommerceLead` with `Astro.locals.user`. That is also why both sit in
+`SESSION_OPTIONAL_SEGMENTS` (`apps/web/src/lib/routes.ts:70`, `:81-82`) and inside
+the exemption prefix of `cacheable-pages-are-session-blind.guard.test.ts:99-101`.
+
+Take the form out and the justification for both entries evaporates — but the
+entries remain, and while they remain the pages **cannot become cacheable**. A
+marketing landing that is pure static content and still served dynamic is the worst
+of both outcomes. So removing the form has a second half: drop both paths from
+`SESSION_OPTIONAL_SEGMENTS`, add them to `CACHEABLE_ROUTE_FAMILIES`, and declare a
+`cacheClass` with tags — the middleware is fail-closed and rejects a public
+`Cache-Control` that arrives without them.
+
+Two traps here:
+
+- **The molde does not give you caching.** `suscriptores/propietarios/index.astro`
+  is the marketing-plus-price page §6.12 points at, and its own JSDoc claims
+  "SSR + Cloudflare cache" while the file contains no `applyCacheHeaders` at all.
+  Copy its structure, not its cache story.
+- **`CACHE_TAG_PRICING` is a single global tag** (`packages/cache-tags/src/vocabulary.ts:103`),
+  fired by `plan.service.ts:81` on any plan write. There is no per-vertical
+  granularity and none can be invented cheaply. Every new pricing surface uses that
+  one tag, and accepts being purged when an unrelated plan changes.
+
+#### The tests that assert the current behaviour
+
+Three break by construction, because they assert exactly what this spec removes:
+
+- `apps/web/test/pages/publicar-restaurante-index.test.ts:24-27` — *"mounts the
+  CommerceLead island, not a PlanSelector"*. The spec wants the inverse. Lines 38-56
+  additionally require `currentUser` and `destinationsApi.list` to be forwarded.
+- `apps/web/test/pages/publicar-experiencia-index.test.ts` — same shape.
+- `apps/web/test/layouts/Header.test.ts:79-81` and `:93-98` — assume a single CTA
+  link, not a dropdown trigger.
+
+And `MobileMenu.cta.test.tsx` (411 lines) is built around there being exactly one
+CTA anchor; if the mobile CTA also becomes three options it is a rewrite, not an
+adjustment.
+
+#### The a11y sweep does not visit any page this spec touches
+
+`apps/web/scripts/a11y-sweep/sweep.ts:62-76` holds a hardcoded `INVENTORY` of 13
+URLs. Neither landing is in it, nor `/suscriptores/propietarios/`, and the new
+pricing pages will not be either. The new dropdown *is* covered incidentally —
+the header renders on all 13 — but the rebuilt landings and the pricing surfaces
+need manual entries, and a dropdown is exactly the kind of widget the baseline
+exists to police.
+
 ### 6.13 What happens to the rows that already say `commerce`
 
 Inventoried against production on 2026-08-20, excluding soft-deleted rows.
@@ -1494,6 +1585,16 @@ and keep their current semantics.
   destination page stops serving it, not merely the database row. Asserted against
   the revalidation scheduler, because the accommodation template this mirrors does
   not do it and a faithful copy would inherit the omission.
+- **AC-37** — Both landings are edge-cacheable after the form is removed: absent
+  from `SESSION_OPTIONAL_SEGMENTS`, present in `CACHEABLE_ROUTE_FAMILIES`, and
+  serving a public `Cache-Control` with declared tags. A landing left dynamic is a
+  half-done removal.
+- **AC-38** — The three publish options come from one source
+  (`discovery-doors.ts`), not from three hardcoded lists across the header, the
+  mobile menu and the hub.
+- **AC-39** — The new pricing pages are registered in `static-sitemap-pages.ts` and
+  added to the a11y sweep's `INVENTORY`, and the header dropdown passes the sweep in
+  light and dark.
 
 ## 10. Risks
 
