@@ -14,7 +14,13 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { EntitlementKey, isEntitlementKey, isLimitKey, type LimitKey } from '@repo/billing';
+import {
+    EntitlementKey,
+    isEntitlementGrantingStatus,
+    isEntitlementKey,
+    isLimitKey,
+    type LimitKey
+} from '@repo/billing';
 import { type DrizzleClient, getDb } from '@repo/db';
 import {
     accommodations,
@@ -137,8 +143,7 @@ export class AddonEntitlementService {
             // Treats null/undefined productDomain as 'accommodation' (legacy rows).
             const activeSubscription = subscriptions.find(
                 (sub: { status: string }) =>
-                    (sub.status === 'active' || sub.status === 'trialing') &&
-                    isAccommodationSubscription(sub)
+                    isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
             );
 
             if (!activeSubscription) {
@@ -437,8 +442,7 @@ export class AddonEntitlementService {
             // Treats null/undefined productDomain as 'accommodation' (legacy rows).
             const activeSubscription = subscriptions.find(
                 (sub: { status: string }) =>
-                    (sub.status === 'active' || sub.status === 'trialing') &&
-                    isAccommodationSubscription(sub)
+                    isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
             );
 
             if (!activeSubscription) {
@@ -699,8 +703,7 @@ export class AddonEntitlementService {
                 // Treats null/undefined productDomain as 'accommodation' (legacy rows).
                 const activeSubscription = subscriptions.find(
                     (sub: { status: string }) =>
-                        (sub.status === 'active' || sub.status === 'trialing') &&
-                        isAccommodationSubscription(sub)
+                        isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
                 );
 
                 if (activeSubscription) {

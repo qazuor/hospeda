@@ -9,6 +9,7 @@
 
 import { randomUUID } from 'node:crypto';
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { AccommodationModel } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
@@ -298,8 +299,8 @@ export async function createAddonCheckout(
             };
         }
 
-        const activeSubscription = subscriptions.find(
-            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+        const activeSubscription = subscriptions.find((sub: { status: string }) =>
+            isEntitlementGrantingStatus(sub.status)
         );
 
         if (!activeSubscription) {
@@ -639,8 +640,8 @@ export async function confirmAddonPurchase(
             };
         }
 
-        const activeSubscription = subscriptions.find(
-            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+        const activeSubscription = subscriptions.find((sub: { status: string }) =>
+            isEntitlementGrantingStatus(sub.status)
         );
 
         if (!activeSubscription) {
@@ -706,8 +707,8 @@ export async function confirmAddonPurchase(
         // in the request lifecycle; the subscription could have been cancelled
         // in the window between checkout creation and payment confirmation.
         const currentSubscriptions = await billing.subscriptions.getByCustomerId(input.customerId);
-        const stillActive = currentSubscriptions?.find(
-            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+        const stillActive = currentSubscriptions?.find((sub: { status: string }) =>
+            isEntitlementGrantingStatus(sub.status)
         );
 
         if (!stillActive) {

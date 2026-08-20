@@ -46,11 +46,21 @@ vi.mock('@repo/service-core', () => ({
     isAccommodationSubscription: () => true
 }));
 
-// Plan reads are now DB-backed via PlanService (SPEC-192 T-025 cutover)
-vi.mock('@repo/billing', () => ({
-    // ALL_PLANS intentionally empty — plan reads no longer go through config
-    ALL_PLANS: []
-}));
+// Plan reads are now DB-backed via PlanService (SPEC-192 T-025 cutover).
+// HOS-594: keep every OTHER real export (EntitlementKey, isEntitlementKey,
+// isLimitKey, isEntitlementGrantingStatus, ...) via importOriginal — this
+// mock used to replace the whole module with only ALL_PLANS, so any new
+// @repo/billing import in addon-entitlement.service.ts resolved to
+// `undefined` and threw when called (caught by the service's own try/catch
+// and surfaced as a misleading INTERNAL_ERROR / result.success === false).
+// Only ALL_PLANS is deliberately faked empty; everything else stays real.
+vi.mock('@repo/billing', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/billing')>();
+    return {
+        ...actual,
+        ALL_PLANS: []
+    };
+});
 
 vi.mock('@repo/db', () => ({
     getDb: vi.fn().mockReturnValue({

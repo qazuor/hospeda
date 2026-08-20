@@ -2,7 +2,8 @@
 /**
  * @file mi-cuenta/addons/index.astro
  * @description Add-ons self-service purchase page (HOS-224). Lists the
- * purchasable add-on catalog, gates on an active/trialing subscription, and
+ * purchasable add-on catalog, gates on an entitlement-granting subscription
+ * (active/trialing/comp), and
  * renders a purchase-result banner when MercadoPago redirects back with
  * `?status=success|failure&addon=<slug>` (see
  * `apps/api/src/routes/billing/checkout-return-urls.ts` `buildAddonSuccessUrl`
@@ -14,6 +15,7 @@
 
 export const prerender = false;
 
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import AccountLayout from '@/layouts/AccountLayout.astro';
 import AccountPageHeader from '@/components/account/AccountPageHeader.astro';
 import { AddonsPurchasePanel } from '@/components/account/AddonsPurchasePanel.client';
@@ -79,15 +81,25 @@ if (ownedResult.ok) {
 }
 
 const subscription = subscriptionResult.ok ? subscriptionResult.data.subscription : null;
-// HOS-224: the backend is the real gate (addon purchase requires an `active`
-// OR `trialing` subscription). This page-level check is UX only, so it accepts
-// BOTH `'trial'` and `'trialing'`: the web `SubscriptionStatus` type declares
-// `'trial'`, but the runtime MP-derived value is `'trialing'` (see
-// CheckoutStatusPoller's SUCCESS_STATUSES). The issue's own repro is an
-// owner-pro `trialing` user, who must NOT be wrongly blocked here.
-const USABLE_SUBSCRIPTION_STATUSES: readonly string[] = ['active', 'trial', 'trialing'];
+// HOS-224: the backend is the real gate (addon purchase requires an
+// entitlement-granting subscription — see `isEntitlementGrantingStatus`,
+// which resolves `active` | `trialing` | `comp`). This page-level check is
+// UX only, so it routes through the same canonical predicate instead of a
+// hand-rolled status list (HOS-594: the hand-rolled `['active', 'trial',
+// 'trialing']` array silently omitted `comp`, blind to the fact that
+// `GET /users/me/subscription` already maps a `comp` subscription to
+// `status: 'active'` — see `QZPAY_STATUS_MAP` in
+// `apps/api/src/routes/user/protected/subscription.ts` — so this predicate
+// covers it too).
+//
+// One deliberate exception stays OUTSIDE the predicate: `'trial'`. The web
+// `SubscriptionStatus` type declares `'trial'`, but the runtime MP-derived
+// value seen on this page can be `'trialing'` (see CheckoutStatusPoller's
+// SUCCESS_STATUSES). The issue's own repro is an owner-pro `trialing` user,
+// who must NOT be wrongly blocked here.
 hasUsableSubscription =
-    subscription !== null && USABLE_SUBSCRIPTION_STATUSES.includes(subscription.status);
+    subscription !== null &&
+    (isEntitlementGrantingStatus(subscription.status) || subscription.status === 'trial');
 
 // Only needed for per-accommodation addons (visibility-boost-7d/-30d).
 // Best-effort: a tourist without host entitlements will get a non-ok result

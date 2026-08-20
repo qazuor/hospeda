@@ -60,9 +60,20 @@ vi.mock('@repo/service-core', () => ({
 // ALL_PLANS is NOT used after the fix — mock it with an intentionally empty
 // array so that any remaining ALL_PLANS.find() calls return undefined and the
 // tests would catch a regression if the old code path is still hit.
-vi.mock('@repo/billing', () => ({
-    ALL_PLANS: []
-}));
+//
+// HOS-594: this used to replace the whole module with only { ALL_PLANS: [] },
+// so the isEntitlementGrantingStatus import added to addon-entitlement.service.ts
+// resolved to undefined and threw inside the subscription-status gate (caught
+// by the service's own try/catch and surfaced as result.success === false in
+// every case below). Spread the real module via importOriginal so every other
+// real export stays live; only ALL_PLANS is deliberately faked empty.
+vi.mock('@repo/billing', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/billing')>();
+    return {
+        ...actual,
+        ALL_PLANS: []
+    };
+});
 
 vi.mock('@repo/db', () => ({
     getDb: vi.fn().mockReturnValue({

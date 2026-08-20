@@ -269,6 +269,38 @@ describe('AddonEntitlementService', () => {
             expect(result.error?.code).toBe('NO_ACTIVE_SUBSCRIPTION');
         });
 
+        it('should treat a comp subscription as active (HOS-594)', async () => {
+            // HOS-594: a complimentary (comp) subscription grants full plan
+            // entitlements (SPEC-262). Before the fix, this hand-rolled gate only
+            // recognized 'active'/'trialing' and rejected comp subscribers with
+            // NO_ACTIVE_SUBSCRIPTION, even though the account is fully entitled.
+            const mockSubscription = createMockSubscriptionWithHelpers({
+                id: 'sub_comp',
+                // 'comp' is a Hospeda-only status (SPEC-262) written straight to the
+                // DB row with no MercadoPago preapproval; it is not part of qzpay's
+                // own QZPaySubscriptionStatus union, hence the cast — the same reason
+                // production code (e.g. addon.checkout.ts) widens `sub.status` to
+                // `string` rather than the SDK's narrower type.
+                status: 'comp',
+                planId: 'owner-basico',
+                metadata: {}
+            } as unknown as Parameters<typeof createMockSubscriptionWithHelpers>[0]);
+
+            vi.mocked(mockBilling.subscriptions.getByCustomerId).mockResolvedValue([
+                mockSubscription
+            ]);
+            vi.mocked(mockBilling.subscriptions.update).mockResolvedValue(mockSubscription);
+
+            const result = await service.applyAddonEntitlements({
+                customerId: 'cust_123',
+                addonSlug: 'visibility-boost-7d',
+                purchaseId: 'purchase_comp'
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockBilling.entitlements.grant).toHaveBeenCalledTimes(1);
+        });
+
         it('should call billing.entitlements.grant() for entitlement add-ons with expiresAt', async () => {
             const mockSubscription = createMockSubscriptionWithHelpers({
                 id: 'sub_123',

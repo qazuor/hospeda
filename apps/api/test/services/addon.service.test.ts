@@ -303,7 +303,17 @@ vi.mock('@repo/db/schemas/billing', () => ({
 // Mock @repo/billing — uses MOCK_ADDONS from hoisted block for consistency with
 // the DB-backed catalog mock. The getAddonBySlug function is kept for backward
 // compatibility with any remaining consumers (e.g. addon.checkout.ts).
-vi.mock('@repo/billing', () => {
+//
+// HOS-594: this used to replace the whole module with a fixed object, so the
+// isEntitlementGrantingStatus import added to addon.checkout.ts resolved to
+// undefined and threw when called (surfaced as CHECKOUT_ERROR / wrong error
+// codes below, instead of the real assertions). Spread the real module via
+// importOriginal first so every OTHER real export (isEntitlementGrantingStatus,
+// EntitlementKey, isEntitlementKey, isLimitKey, ...) stays live; only the
+// fields this test deliberately fakes are overridden below.
+vi.mock('@repo/billing', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/billing')>();
+
     const LimitKeyEnum = {
         MAX_ACCOMMODATIONS: 'max_accommodations',
         MAX_PHOTOS_PER_ACCOMMODATION: 'max_photos_per_accommodation',
@@ -314,6 +324,7 @@ vi.mock('@repo/billing', () => {
     } as const;
 
     return {
+        ...actual,
         ALL_ADDONS: MOCK_ADDONS,
         // ALL_PLANS is imported at the top level of addon.checkout.ts (via confirmAddonPurchase).
         // An empty array is sufficient: the code uses optional chaining when accessing plan
