@@ -119,6 +119,12 @@ maintenance cost. The cheapest commerce is commerce with **no branch at all**.
   observable behaviour byte-identical: same badge, same `/public/plans` response
   with no parameter, same entitlement set. Widening a parameter is in scope;
   changing an answer is not.
+  **One accommodation surface does change its answer**, and it is not one of
+  those three: §6.9 removes the three `complex-*` plans, which empties the
+  `complex` category that `/suscriptores/planes/comparar/` reads directly. That
+  page renders a narrower table afterwards (AC-28). It is in scope, it is
+  deliberate, and NG-3 does not cover it — the exemption is for the plan
+  catalogue cleanup, not a fourth act of generalisation.
 - **NG-4** — Touching the alliance-lead flow (`alliance_leads`), which is a
   different funnel with different semantics and deliberately does *not*
   provision on approval.
@@ -993,13 +999,22 @@ and keep their current semantics.
   complete is reconciled to `PUBLIC` / `ACTIVE`.
 - **AC-6** — Setting `moderationState = REJECTED` on a published listing
   reconciles it to `PRIVATE` / `INACTIVE` on the next pass, for both domains.
-- **AC-7** — A static guard fails CI if any `if (domain === 'experience')` (or
-  equivalent conditional **on behaviour**) appears in the provisioning, checkout,
-  or visibility path. It must **not** flag a `Record<domain, …>` lookup, which is
-  how §6.8 resolves the per-vertical plan and limit key — the guard forbids
-  taking a different action per domain, not reading a different value.
-  This is the machine-checkable form of G-2 and is the criterion most likely to
-  erode without one.
+- **AC-7** — A static guard fails CI if a conditional **on behaviour** keyed by
+  the vertical appears in the provisioning, checkout, or visibility path. It must
+  **not** flag a `Record<domain, …>` lookup, which is how §6.8 resolves the
+  per-vertical plan and limit key — the guard forbids taking a different action
+  per domain, not reading a different value. This is the machine-checkable form
+  of G-2 and is the criterion most likely to erode without one.
+  **It must be an AST check, not a `grep` for `if (domain === 'experience')`.**
+  Anchoring on one spelling is this repo's most repeated guard failure, and here
+  there are at least six escapes: `==`, the Yoda order `'experience' === domain`,
+  a `switch`, a ternary, assigning `domain` to an intermediate variable before
+  branching, and branching on `entityType` instead of `domain`. The guard fails
+  when a conditional's test transitively depends on the vertical and the branches
+  differ in what they *do*; a member read keyed by it is allowed.
+  **Verify the guard by mutation**: introduce each of those six forms in turn and
+  confirm the guard fails on each. A guard that has only ever been run against
+  clean code has not been shown to catch anything.
 - **AC-8** — An anonymous request to the create-listing route is rejected by the
   route factory, not by an in-handler check.
 - **AC-9** — `grep` finds no remaining reference to `CommerceOwnerProvisioningService`
@@ -1023,10 +1038,24 @@ and keep their current semantics.
   and leaves the other vertical's cap untouched.
 - **AC-16** — An owner who consumed the free trial on gastronomy still receives
   a trial when they later subscribe to experience, because the two are distinct
-  MercadoPago preapproval plans.
+  MercadoPago preapproval plans. **This splits into two checks that must not be
+  confused for each other.** CI can assert only the mechanism: that the two
+  checkouts resolve two *different* `preapproval_plan_id`s. That is necessary and
+  **not sufficient** — whether MercadoPago actually grants the second trial to the
+  same payer is provider behaviour, and the e2e suite's MP stub cannot show it
+  (the HOS-522 finding came from a positive control in production, not from a
+  test). The second half is a **staging smoke against the real MP sandbox**, filed
+  in the checklist per the standing billing rule. Marking AC-16 done on the ID
+  comparison alone is the failure this wording exists to prevent.
 - **AC-17** — No plan, price or trial value is asserted from the TypeScript
   config alone. Every such assertion reads the database, because those fields
   are classified `'commercial'` and the database wins.
+  **Stated honestly: this one is a review criterion, not a predicate.** Nothing
+  enforces it continuously, so a later PR can reintroduce the practice unnoticed.
+  It is kept because it is the rule that makes the assertions in AC-15, AC-24 and
+  AC-29 meaningful, and it is paired with AC-29, which *is* mechanically checkable
+  and covers the case that actually bit (a value that reappears after a
+  migration). Do not read AC-17 as guarded.
 - **AC-18** — A signed-in account holding **no** commerce role can open
   `/mi-cuenta/comercio/nuevo/gastronomy` and submit it. An anonymous visitor on
   the same URL is sent to sign-in with a return URL that lands them back on that
