@@ -21,8 +21,26 @@ describe('ProductDomainEnum', () => {
             expect(ProductDomainEnum.PARTNER).toBe('partner');
         });
 
-        it('should have exactly 3 values', () => {
-            expect(Object.values(ProductDomainEnum)).toHaveLength(3);
+        it('should define GASTRONOMY', () => {
+            expect(ProductDomainEnum.GASTRONOMY).toBe('gastronomy');
+        });
+
+        it('should define EXPERIENCE', () => {
+            expect(ProductDomainEnum.EXPERIENCE).toBe('experience');
+        });
+
+        // HOS-685 — this count is a frozen baseline, not a formality. Nothing in
+        // the type system reacts to a member appearing or disappearing (no
+        // `Record<ProductDomainEnum, …>`, no exhaustive `switch`, no `satisfies`),
+        // so this assertion is the only thing that fails when the vocabulary
+        // changes without the call sites being reviewed.
+        //
+        // COMMERCE is still a member on purpose: every commerce row in the
+        // database says `'commerce'` today, and the predicates fail closed on the
+        // exact string. It is retired in release C (HOS-695), once no row carries
+        // it — not here.
+        it('should have exactly 5 values', () => {
+            expect(Object.values(ProductDomainEnum)).toHaveLength(5);
         });
     });
 
@@ -41,6 +59,16 @@ describe('ProductDomainEnum', () => {
 
         it('should accept "partner"', () => {
             const result = ProductDomainEnumSchema.safeParse('partner');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept "gastronomy"', () => {
+            const result = ProductDomainEnumSchema.safeParse('gastronomy');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept "experience"', () => {
+            const result = ProductDomainEnumSchema.safeParse('experience');
             expect(result.success).toBe(true);
         });
 
