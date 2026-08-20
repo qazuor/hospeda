@@ -31,7 +31,18 @@ overrides:
   # destructive at MercadoPago and not reversible: `handleUserDeletion` in
   # `billing-customer-sync.ts` removes the stored payment instruments from this
   # version on.
-  "@qazuor/qzpay-core": "3.0.0"
+  #
+  # HOS-710 (2026-08-20): raised to core 3.1.0, which adds
+  # `findActiveByProviderResourceId` to the polling-job storage port and rescopes
+  # the active-job unique index from `subscription_id` to
+  # `(provider, provider_resource_id)`. The old scope allowed one active polling
+  # job per subscription, so the first add-on checkout — even an abandoned one —
+  # held the only slot and every later purchase got no job at all. MP Preferences
+  # deliver no Webhooks v2 event, so that job is the only activation path a
+  # purchase has: two approved payments were collected and never recorded.
+  # Minor, additive. Remember this pin is what actually moves the version — the
+  # per-package `^3.1.0` ranges are inert while an exact pin sits here.
+  "@qazuor/qzpay-core": "3.1.0"
   "@qazuor/qzpay-mercadopago": "2.8.2"
   typescript: "6.0.3"
   "zod@>=4.0.0 <5": "4.3.6"
@@ -218,8 +229,8 @@ allowBuilds:
 forceLegacyDeploy: true
 
 minimumReleaseAgeExclude:
-  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0'
+  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0'
   - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2'
-  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8'
+  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0'
   - '@qazuor/qzpay-hono@1.6.7 || 1.6.8'
   - '@qazuor/qzpay-react@1.1.22 || 1.1.23'
