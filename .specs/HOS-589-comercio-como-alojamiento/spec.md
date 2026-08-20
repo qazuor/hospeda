@@ -111,8 +111,14 @@ maintenance cost. The cheapest commerce is commerce with **no branch at all**.
   listing) or a moderation **queue** / inbox. This spec builds the admin's
   ability to reject a listing, not a system for discovering which ones deserve
   it. That gap is stated plainly in R-5.
-- **NG-3** — Changing how accommodation works. This spec moves commerce toward
-  accommodation, never the reverse.
+- **NG-3** — Changing how accommodation **behaves**. This spec moves commerce
+  toward accommodation, never the reverse. It does, unavoidably, **generalise
+  machinery accommodation currently owns alone** — the usage badge's hardcoded
+  limit key (§6.11), the plans endpoint's allow-only-accommodation filter (§6.12),
+  the two domain predicates (§13). Every one of those keeps accommodation's
+  observable behaviour byte-identical: same badge, same `/public/plans` response
+  with no parameter, same entitlement set. Widening a parameter is in scope;
+  changing an answer is not.
 - **NG-4** — Touching the alliance-lead flow (`alliance_leads`), which is a
   different funnel with different semantics and deliberately does *not*
   provision on approval.
@@ -361,6 +367,23 @@ per domain alongside the existing CRUD routes.
 
 The write schemas stay as they are: `moderationState` remains admin-only and
 unreachable from the owner's own update payload.
+
+The route pattern to mirror is `apps/api/src/routes/accommodation/admin/moderate.ts`
+(with `post/admin/moderate.ts` as the second reference).
+
+**Two things this section still leaves open, named rather than left implicit:**
+
+- **Where the admin clicks it.** A route with no control is reachable only by a
+  hand-crafted request. `apps/admin` already carries full CRUD for both verticals
+  (`src/routes/_authed/gastronomies/` and `_authed/experiences/`: index, detail,
+  edit, new, gallery, seo), so the reject control belongs on the detail route of
+  each. Without it, R-5 is worse than stated — not merely no signal that a listing
+  needs rejecting, but no button once you know.
+- **A naming trap.** `useModerateReviewMutation` already exists on the commerce
+  admin hooks (`apps/admin/src/features/commerce/hooks/createCommerceEntityHooks.ts:171`)
+  and moderates **reviews of** a listing, not the listing. Anyone grepping
+  "moderate" under commerce finds it first and can reasonably conclude the work is
+  already done. It is not related.
 
 ### 6.8 Commerce billing becomes per-owner, mirroring accommodation
 
@@ -912,6 +935,8 @@ and keep their current semantics.
 - **AC-25** — After the migrations run, no row in `billing_subscriptions` or in
   `commerce_listing_subscriptions` carries `product_domain = 'commerce'`, and the
   two columns agree on every surviving row.
+- **AC-26** — The reject action is invocable from the admin panel's gastronomy and
+  experience detail routes, not only from the API.
 
 ## 10. Risks
 
