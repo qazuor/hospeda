@@ -41,6 +41,7 @@ vi.mock('../../src/utils/notification-helper', () => ({
 vi.mock('../../src/utils/logger', () => ({ apiLogger: loggerMock }));
 
 import {
+    createAllianceApprovalClaimInvitePort,
     createAllianceClaimInvitePort,
     createAllianceDecisionNotifyPort
 } from '../../src/lib/alliance-ports';
@@ -169,6 +170,80 @@ describe('createAllianceClaimInvitePort', () => {
             ]);
             expect(logged).not.toContain(RAW_TOKEN);
         });
+    });
+});
+
+// HOS-599 — unlike `createAllianceClaimInvitePort`, this variant is wired only
+// into approval (`markHandled`), where the anonymous-caller timing concern
+// (AC-3) no longer applies, so it must send even when no account exists yet.
+describe('createAllianceApprovalClaimInvitePort', () => {
+    describe('when the address has no account', () => {
+        beforeEach(() => {
+            selectLimitMock.mockResolvedValue([]);
+        });
+
+        it('sends the invite anyway', async () => {
+            const port = createAllianceApprovalClaimInvitePort(SITE_URL);
+
+            await port.inviteToClaim(invite({ kind: 'service_provider' }));
+
+            expect(sendNotificationMock).toHaveBeenCalledOnce();
+            const payload = sendNotificationMock.mock.calls[0]?.[0];
+            expect(payload.type).toBe('alliance_claim_invite');
+            expect(payload.recipientEmail).toBe('juan@example.com');
+        });
+
+        it('falls back to the applicant name and a null userId', async () => {
+            const port = createAllianceApprovalClaimInvitePort(SITE_URL);
+
+            await port.inviteToClaim(invite());
+
+            const payload = sendNotificationMock.mock.calls[0]?.[0];
+            expect(payload.recipientName).toBe('Juan Pérez');
+            expect(payload.userId).toBeNull();
+        });
+
+        it('carries the raw token in the claim URL alongside the lead id', async () => {
+            const port = createAllianceApprovalClaimInvitePort(SITE_URL);
+
+            await port.inviteToClaim(invite());
+
+            const payload = sendNotificationMock.mock.calls[0]?.[0];
+            const url = new URL(payload.claimUrl);
+            expect(url.searchParams.get('claim')).toBe(RAW_TOKEN);
+            expect(url.searchParams.get('lead')).toBe(LEAD_ID);
+        });
+    });
+
+    describe('when the address belongs to an account', () => {
+        beforeEach(() => {
+            selectLimitMock.mockResolvedValue([{ id: 'user-1', displayName: 'Juana Titular' }]);
+        });
+
+        it('still emails the address owner, same as the creation-time port', async () => {
+            const port = createAllianceApprovalClaimInvitePort(SITE_URL);
+
+            await port.inviteToClaim(invite());
+
+            const payload = sendNotificationMock.mock.calls[0]?.[0];
+            expect(payload.recipientName).toBe('Juana Titular');
+            expect(payload.userId).toBe('user-1');
+        });
+    });
+
+    it('NEVER writes the token to the log', async () => {
+        selectLimitMock.mockResolvedValue([]);
+        const port = createAllianceApprovalClaimInvitePort(SITE_URL);
+
+        await port.inviteToClaim(invite());
+
+        const logged = JSON.stringify([
+            ...loggerMock.info.mock.calls,
+            ...loggerMock.debug.mock.calls,
+            ...loggerMock.warn.mock.calls,
+            ...loggerMock.error.mock.calls
+        ]);
+        expect(logged).not.toContain(RAW_TOKEN);
     });
 });
 
