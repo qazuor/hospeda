@@ -180,3 +180,55 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+/* ── Subscription gate banner (HOS-602) ──────────────────────────────────
+ * Rendered inline next to a card when a purchase is rejected for lacking a
+ * usable subscription. Mirrors the page-level gate in
+ * `mi-cuenta/addons/index.astro` (`.addons-page__gate*`), scaled down for a
+ * per-card context.
+ */
+
+.subscriptionGate {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-2, 0.5rem);
+    padding: var(--space-4, 1rem);
+    background-color: var(--surface-warm);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--brand-accent);
+    border-radius: var(--radius-md, 12px);
+}
+
+.subscriptionGateTitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 0.9375rem;
+    color: var(--core-foreground);
+    margin: 0;
+}
+
+.subscriptionGateBody {
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    color: var(--core-muted-foreground);
+    margin: 0;
+}
+
+.subscriptionGateCta {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1, 0.25rem) var(--space-4, 1rem);
+    background-color: var(--brand-primary);
+    color: var(--primary-foreground);
+    border-radius: var(--radius-button);
+    font-family: var(--font-sans);
+    font-size: 0.8125rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: opacity var(--duration-normal, 0.4s) ease;
+}
+
+.subscriptionGateCta:hover {
+    opacity: 0.88;
+}

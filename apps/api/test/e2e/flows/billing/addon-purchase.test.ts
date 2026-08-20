@@ -348,6 +348,18 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
 
         expect(response.status).toBe(422);
         expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+
+        // ASSERT (HOS-602) — the status-derived `error.code` for a 422
+        // collapses every rejection reason into the same generic
+        // VALIDATION_ERROR (see `resolveErrorCodeForStatus`), so the client
+        // can only tell this apart from ADDON_INACTIVE / INVALID_PROMO_CODE /
+        // etc. via `error.reason`, forwarded by `readEntitlementCause` from
+        // the `cause` this route now attaches to the thrown HTTPException.
+        const body = (await response.json()) as {
+            readonly error?: { readonly code?: string; readonly reason?: string };
+        };
+        expect(body.error?.code).toBe('VALIDATION_ERROR');
+        expect(body.error?.reason).toBe('NO_SUBSCRIPTION');
     });
 
     /**
@@ -394,6 +406,15 @@ describe('SPEC-143 T-143-14 — addon one-time purchase', () => {
 
         expect(response.status).toBe(422);
         expect(mpStub.config.getCalls('checkout.create')).toHaveLength(0);
+
+        // ASSERT (HOS-602) — see the sibling NO_SUBSCRIPTION test above for
+        // why `reason`, not `code`, is what actually distinguishes this case
+        // on the wire.
+        const body = (await response.json()) as {
+            readonly error?: { readonly code?: string; readonly reason?: string };
+        };
+        expect(body.error?.code).toBe('VALIDATION_ERROR');
+        expect(body.error?.reason).toBe('NO_ACTIVE_SUBSCRIPTION');
     });
 
     // -----------------------------------------------------------------------
