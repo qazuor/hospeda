@@ -89,14 +89,26 @@ describe('BaseService: softDelete', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
 
-    it('should return forbidden error if actor lacks permission', async () => {
+    it('refuses a non-owner with the SAME answer as an id that does not exist', async () => {
+        // HOS-706 — see `update.test.ts` for the reasoning. Denial is still
+        // asserted (`model.softDelete` is never called); only the disclosure is
+        // gone.
         const nonOwnerActor: Actor = {
             id: 'non-owner',
             roles: [RoleEnum.USER],
             permissions: []
         };
-        const result = await service.softDelete(nonOwnerActor, MOCK_ENTITY_ID);
-        expect(result.error?.code).toBe('FORBIDDEN');
+        const foreign = await service.softDelete(nonOwnerActor, MOCK_ENTITY_ID);
+
+        asMock(modelMock.findById).mockResolvedValue(null);
+        const invented = await service.softDelete(nonOwnerActor, MOCK_ENTITY_ID);
+
+        expect(asMock(modelMock.softDelete)).not.toHaveBeenCalled();
+        expect({ code: foreign.error?.code, message: foreign.error?.message }).toEqual({
+            code: invented.error?.code,
+            message: invented.error?.message
+        });
+        expect(foreign.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
     it('should handle deleting an already deleted entity gracefully', async () => {

@@ -13,6 +13,7 @@ import {
     logError,
     logMethodEnd,
     logMethodStart,
+    maskForeignRowRefusal,
     serviceLogger,
     validateActor,
     validateEntity
@@ -142,8 +143,56 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
     }
 
     /**
+     * Runs a write-path permission hook against an ALREADY-FETCHED row, and
+     * masks a refusal that would confirm the row exists (HOS-706).
+     *
+     * This is the single place the write pipeline evaluates `_canUpdate` /
+     * `_canSoftDelete` / `_canHardDelete` / `_canRestore` / `_canUpdateVisibility`,
+     * so it is also the single place the disclosure can be closed. HOS-600 fixed
+     * the READ paths and left this family open as an owner decision: a caller
+     * holding `*_UPDATE_OWN` learned from a 403 that a foreign id was real, while
+     * an invented id answered 404.
+     *
+     * The boundary does not move — the caller is still refused. See
+     * {@link maskForeignRowRefusal} for the three cases that stay 403, the most
+     * important being a refusal aimed at the row's OWNER (a state rule, not an
+     * existence one).
+     *
+     * @param params - Parameters object.
+     * @param params.actor - The actor performing the write.
+     * @param params.entity - The row fetched before the check.
+     * @param params.entityName - Entity name used to compose the 404.
+     * @param params.check - The permission hook to evaluate.
+     * @throws {ServiceError} The hook's own error, or the canonical NOT_FOUND.
+     */
+    protected async _assertWritePermission<TEntity>({
+        actor,
+        entity,
+        entityName,
+        check
+    }: {
+        readonly actor: Actor;
+        readonly entity: TEntity;
+        readonly entityName: string;
+        readonly check: (actor: Actor, entity: TEntity) => Promise<void> | void;
+    }): Promise<void> {
+        try {
+            await Promise.resolve(check(actor, entity));
+        } catch (error) {
+            throw maskForeignRowRefusal({ error, actor, entity, entityName });
+        }
+    }
+
+    /**
      * Fetches an entity by ID, validates its existence, and checks permissions.
      * Utility for update/delete/restore operations.
+     *
+     * The permission hook runs through {@link _assertWritePermission}, so a
+     * refusal on a row the actor does not own answers the SAME 404 as a row that
+     * does not exist (HOS-706). `validateEntity` composes `${entityName} not
+     * found` and so does `entityNotFoundError`, which is what keeps the two
+     * branches byte-identical rather than merely equal in status.
+     *
      * @param model - ORM model with findById method
      * @param id - Entity ID
      * @param actor - Actor performing the action
@@ -166,7 +215,12 @@ export abstract class BaseService<TNormalizers = Record<string, unknown>> {
         const entityOrNull = await model.findById(id, ctx?.tx);
         // validateEntity throws if not exists, so entity is never null
         const entity = validateEntity(entityOrNull, entityName);
-        await Promise.resolve(permissionCheck(actor, entity));
+        await this._assertWritePermission({
+            actor,
+            entity,
+            entityName,
+            check: permissionCheck
+        });
         return entity;
     }
 

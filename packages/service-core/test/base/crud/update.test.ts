@@ -92,16 +92,32 @@ describe('BaseService: update', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
 
-    it('should return forbidden error if actor is not owner or admin', async () => {
+    it('refuses a non-owner with the SAME answer as an id that does not exist', async () => {
+        // HOS-706. This used to assert FORBIDDEN, which was the leak written
+        // down: the adjacent "not found" test asserted 404, and the difference
+        // between the two told a caller holding `*_UPDATE_OWN` which ids were
+        // real. The refusal itself is unchanged — `model.update` is never
+        // reached — so this still asserts DENIAL, just without the disclosure.
         const nonOwnerActor: Actor = {
             id: 'non-owner',
             roles: [RoleEnum.USER],
             permissions: []
         };
-        const result = await service.update(nonOwnerActor, MOCK_ENTITY_ID, {
+        const foreign = await service.update(nonOwnerActor, MOCK_ENTITY_ID, {
             name: 'Updated Name'
         });
-        expect(result.error?.code).toBe('FORBIDDEN');
+
+        asMock(modelMock.findById).mockResolvedValue(null);
+        const invented = await service.update(nonOwnerActor, MOCK_ENTITY_ID, {
+            name: 'Updated Name'
+        });
+
+        expect(asMock(modelMock.update)).not.toHaveBeenCalled();
+        expect({ code: foreign.error?.code, message: foreign.error?.message }).toEqual({
+            code: invented.error?.code,
+            message: invented.error?.message
+        });
+        expect(foreign.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
     it('should handle empty payload without error', async () => {
