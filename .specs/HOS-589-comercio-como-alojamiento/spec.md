@@ -24,7 +24,9 @@ either domain.**
 
 Moderation becomes reactive: if a published listing should not be there, an
 admin marks it rejected — which the visibility reconciler already honours — and
-refunds if money changed hands.
+refunds if money changed hands. **That reject action does not exist yet for
+commerce and is built here** (§6.7); removing the gate before publication
+without adding the one after it would leave commerce with no control at all.
 
 This spec covers two Linear issues that were decided together because splitting
 them produces two incompatible half-migrations:
@@ -88,15 +90,20 @@ maintenance cost. The cheapest commerce is commerce with **no branch at all**.
   canonical function the accommodation paths use, not a second copy of the rule.
 - **G-4** — The public entry points keep their indexable surface: two landing
   pages that push to sign-in, mirroring `/publicar/`.
-- **G-5** — An admin can take a published listing down, and that action already
-  works through the existing reconciler predicate.
+- **G-5** — An admin can take a published listing down. The reconciler already
+  honours a rejected listing; what does **not** exist is any way to reject one
+  (§6.7), so this goal includes building that.
+- **G-6** — The header's publish CTA offers all three listing types, and stops
+  hiding itself from people who already hold one of them (§6.8).
 
 ## 4. Non-goals
 
 - **NG-1** — Building an automatic refund on rejection. Marking a listing
   rejected and refunding stay two deliberate actions (see R-2).
-- **NG-2** — Building a moderation queue or a report-abuse flow for published
-  commerce listings. Flagged as a real gap in §11, not solved here.
+- **NG-2** — Building a **report-abuse flow** (a way for the public to flag a
+  listing) or a moderation **queue** / inbox. This spec builds the admin's
+  ability to reject a listing, not a system for discovering which ones deserve
+  it. That gap is stated plainly in R-5.
 - **NG-3** — Changing how accommodation works. This spec moves commerce toward
   accommodation, never the reverse.
 - **NG-4** — Touching the alliance-lead flow (`alliance_leads`), which is a
@@ -269,13 +276,66 @@ That branch is presently unreachable for commerce and becomes live.
 
 ### 6.6 Moderation becomes reactive
 
-No new mechanism. An admin sets `moderationState = REJECTED`; the next
-reconcile pass flips the listing to `PRIVATE` / `INACTIVE` through the existing
-line-223 predicate. Refund, if any, is a separate deliberate action.
+An admin sets `moderationState = REJECTED`; the next reconcile pass flips the
+listing to `PRIVATE` / `INACTIVE` through the existing line-223 predicate.
+Refund, if any, is a separate deliberate action.
 
 The predicate stays `!moderationRejected` — it is **not** tightened to
 "approved", because tightening it would reintroduce the admin gate this spec
 removes.
+
+### 6.7 Build `moderate()` for commerce — the reject action does not exist
+
+**This is the part of the plan that has no code today**, and it was found by
+looking rather than assumed:
+
+- There is **no report / flag / denuncia path anywhere in the repository**.
+- `moderate()` exists on `PostService`, `AccommodationService` (line 1979),
+  `EntityCommentService`, `EventService` and every review service. It does
+  **not** exist on the gastronomy or experience listing services.
+- It cannot be done through the generic admin PATCH either: the write schemas
+  strip the field on purpose. `gastronomy.crud.schema.ts:127` lists
+  `visibility`, `moderationState`, `isFeatured` and `ownerId` as
+  **"intentionally excluded"**, and a test freezes it —
+  *"should strip `moderationState` (control field — admin-only)"*.
+
+So the reconciler honours `REJECTED` while **nothing in the system can write
+it**. The branch is live and unreachable — structurally the same defect as
+`trialing` in §6.4, found the same way.
+
+Removing the pre-publication gate without building the post-publication one
+leaves commerce with **no control at all**, so this ships together with the
+rest.
+
+Design: mirror `AccommodationService.moderate` exactly — same
+`ContentModerationChangeInput` shape, same `checkCanModerate(actor)` guard, same
+`ServiceOutput` return — on the shared commerce listing service so gastronomy
+and experience inherit one implementation (G-2). Expose it as one admin route
+per domain alongside the existing CRUD routes.
+
+The write schemas stay as they are: `moderationState` remains admin-only and
+unreachable from the owner's own update payload.
+
+### 6.8 The header CTA becomes a three-way chooser
+
+`apps/web/src/layouts/Header.astro` renders a single "Publicar" CTA (line 226)
+pointing at `/publicar/`. With three listing types it becomes a dropdown
+offering accommodation, gastronomy and experience, each going to its landing.
+
+Two existing behaviours need rework, not just extra entries:
+
+1. **It hides itself from people who already publish.** Line 115:
+   *"Hide the 'Publicar' nav CTA for users who are already HOST (or higher)"*,
+   with the condition reading accommodation entitlements
+   (`PUBLISH_ACCOMMODATIONS` / `EDIT_ACCOMMODATION_INFO`, line 161). Someone who
+   already owns a cabin is exactly the person who might now want to list their
+   restaurant, and today the control disappears for them. The hide rule has to
+   become per-option, or go away.
+2. **It collapses to an icon below 480px** (line 592) and the header has three
+   distinct breakpoint layouts (wide ≥1280 / narrow 1025-1279 / mobile <1025).
+   A dropdown has to survive all three, and the mobile menu
+   (`MobileMenu.client.tsx:216`) builds the same funnel separately — both
+   surfaces need the three options or they diverge.
 
 ## 7. Data model / contracts
 
@@ -285,6 +345,7 @@ removes.
 | `billing_plans.commerce-listing.trial_days` 0 → 30 | seed **data** | `packages/seed/src/data-migrations/` (dual-write rule: baseline **and** numbered migration) |
 | `commerce_leads` table retired | structural, **deferred one release** | `packages/db/src/migrations/` |
 | New protected route: create commerce listing | API | `createProtectedRoute` |
+| **New admin route: moderate a commerce listing** (§6.7) | API | `createAdminRoute`, one per domain, one shared implementation |
 | Removed admin route: `approve-and-provision` | API | — |
 | Removed public route: `commerce/leads` create | API | — |
 
@@ -294,6 +355,10 @@ and keep their current semantics.
 
 ## 8. UX / UI behavior
 
+- The header's publish control offers **three** options — alojamiento,
+  gastronomía, experiencia — instead of a single link, on every breakpoint and
+  in the mobile menu (§6.8). It no longer vanishes for someone who already
+  publishes one of the three.
 - Signed-out visitor on either landing → CTA reads as "publicá tu negocio" and
   goes to sign-in with a return URL.
 - Signed-in visitor → CTA goes straight to the create form.
@@ -331,6 +396,15 @@ and keep their current semantics.
   route factory, not by an in-handler check.
 - **AC-9** — `grep` finds no remaining reference to `CommerceOwnerProvisioningService`
   or `approveAndProvision` in production source.
+- **AC-10** — An admin can reject a published gastronomy listing and a published
+  experience listing through a dedicated route, and a non-admin actor cannot.
+  Both domains resolve to one implementation.
+- **AC-11** — `moderationState` is still stripped from the owner-facing update
+  payload; the existing "should strip `moderationState`" test keeps passing
+  unchanged.
+- **AC-12** — The header publish control renders all three options at every
+  breakpoint and inside the mobile menu, and is present for an account that
+  already holds `HOST` and for one that already holds `COMMERCE_OWNER`.
 
 ## 10. Risks
 
@@ -350,23 +424,33 @@ and keep their current semantics.
 - **R-4 — MercadoPago's 60-character `reason` limit** already broke coupons
   once. Adding a trial to commerce changes what is sent; verify the composed
   string.
-- **R-5 — Nobody is watching.** Today an admin sees every applicant before a
-  listing exists. Afterwards, nothing surfaces a bad listing unless someone
-  reports it. See OQ-1.
+- **R-5 — Nobody is watching, and that is not solved here.** §6.7 gives an admin
+  the *ability* to reject a listing. Nothing gives them the *signal* that one
+  needs rejecting: there is no report path (verified — the search returns
+  nothing) and no queue. Today an admin sees every applicant before a listing
+  exists; afterwards, a bad listing surfaces only if somebody happens to look.
+  Accepting this is part of accepting reactive moderation, and it is the one
+  risk this spec mitigates but does not remove.
 
 ## 11. Open questions
 
-- **OQ-1** — Is there any moderation queue or report path for **published**
-  commerce listings? Not verified. If there is none, R-5 has no mitigation and
-  reactive moderation depends on somebody noticing by accident.
-- **OQ-2** — What happens to the existing `commerce_leads` rows still in
-  `pending`? Options: contact them out-of-band, provision them one last time
-  before the path is deleted, or let them lapse.
-- **OQ-3** — Does commerce need a precheck equivalent to
+- **OQ-1 — RESOLVED (2026-08-19).** *Is there a moderation queue or report path
+  for published commerce listings?* **No, and there is not even a reject
+  action.** Verified: no report/flag path exists anywhere; `moderate()` is
+  implemented for posts, accommodations, comments, events and reviews but not
+  for commerce listings; and the write schemas deliberately strip
+  `moderationState`. Building the reject action moved **into scope** as §6.7.
+  Discovering *which* listing to reject stays out of scope — see R-5.
+- **OQ-2 — RESOLVED (2026-08-19).** *What happens to the `commerce_leads` rows
+  still pending?* **Nothing — there are none.** Production holds **3 rows, all
+  `approved`**, created between 2026-08-13 and 2026-08-19. Nobody is waiting on
+  a decision, so retiring the flow strands no applicant.
+- **OQ-3 — OPEN.** Does commerce need a precheck equivalent to
   `GET /host-onboarding/precheck` (already have a draft? limit reached?), or
   does the create route's own server-side enforcement suffice?
-- **OQ-4** — How many trial days for commerce? Copying accommodation's 30 is
-  the coherent default; a different number is a commercial decision.
+- **OQ-4 — RESOLVED (2026-08-19).** *How many trial days?* **30**, matching all
+  five accommodation plans. One rule platform-wide; a second number would have
+  to be carried through copy, emails and the plans page.
 
 ## 12. Implementation notes
 
@@ -375,9 +459,12 @@ and keep their current semantics.
   wired since `resolveCommerceEntityModel` gained its second case. Fix it in
   this work; a comment that understates coverage is how a future reader
   concludes a domain is unsupported and builds a second path.
-- Order of work matters: §6.1 (grant at creation) must land **before** §6.2
-  (delete provisioning), or there is a window with no way to become a commerce
-  owner at all.
+- Order of work matters twice:
+  - §6.1 (grant at creation) must land **before** §6.2 (delete provisioning), or
+    there is a window with no way to become a commerce owner at all.
+  - §6.7 (the reject action) must land **before or with** the removal of the
+    approval gate, never after. Between those two points commerce would have no
+    control in either direction.
 - The `commerce_leads` drop ships one release **after** the code stops writing
   to it. Drizzle projects an explicit column list, so a live container reading a
   dropped column 500s until the new image serves — measured at 8 minutes of
