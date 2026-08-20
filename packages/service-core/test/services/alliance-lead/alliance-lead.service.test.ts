@@ -5,7 +5,14 @@
  */
 
 import { createHash } from 'node:crypto';
-import { PartnerTypeEnum, PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    HostTradeBenefitTypeEnum,
+    HostTradeCategoryEnum,
+    PartnerTypeEnum,
+    PermissionEnum,
+    RoleEnum,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AllianceLeadService } from '../../../src/services/alliance-lead/alliance-lead.service';
 import type { Actor } from '../../../src/types';
@@ -90,7 +97,7 @@ const mockLead = {
 // Model mock factory
 // ---------------------------------------------------------------------------
 
-function makeLeadModel(lead = mockLead) {
+function makeLeadModel(lead: Record<string, unknown> = mockLead) {
     return {
         create: vi.fn().mockResolvedValue(lead),
         findAll: vi.fn().mockResolvedValue({ items: [lead], total: 1 }),
@@ -141,6 +148,40 @@ function makePartnerModel(
 
 function makeService() {
     return new AllianceLeadService({ logger: undefined });
+}
+
+/**
+ * A `service_provider` lead carrying everything `provisionServiceProviderListing`
+ * needs, for the HOS-599 markHandled claim-invite tests below. Defaults to
+ * `pending` + unclaimed (`applicantUserId: null`) + never provisioned — the
+ * ordinary "first approval" shape.
+ */
+function providerLead(overrides: Record<string, unknown> = {}) {
+    return {
+        ...mockLead,
+        kind: 'service_provider' as const,
+        status: 'pending' as string,
+        businessName: 'Plomería Acme',
+        category: HostTradeCategoryEnum.PLOMERIA,
+        destinationId: '00000000-0000-4000-a000-000000000030',
+        benefitType: HostTradeBenefitTypeEnum.PERCENTAGE,
+        benefitValue: 15,
+        benefitText: 'No acumulable.',
+        ...overrides
+    };
+}
+
+/**
+ * Mock factory for `HostTradeModel` as `provisionServiceProviderListing` uses
+ * it (slug-uniqueness check + insert) — distinct from `makeHostTradeModel`
+ * above, which mocks the `findById`/`update` pair the CLAIM-time owner
+ * backfill uses instead.
+ */
+function makeProvisioningHostTradeModel() {
+    return {
+        findOne: vi.fn().mockResolvedValue(null),
+        create: vi.fn().mockResolvedValue({ id: HOST_TRADE_ID })
+    };
 }
 
 // ---------------------------------------------------------------------------
@@ -1212,6 +1253,196 @@ describe('AllianceLeadService', () => {
             });
 
             expect(result.error?.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        });
+    });
+
+    // HOS-599 regression — the F-52 smoke finding: a `service_provider` lead's
+    // `host_trades` listing is provisioned ownerless at approval, and nothing
+    // in the codebase ever invited the applicant to claim it. `createLead`'s
+    // own claim invite is gated on the address already having an account
+    // (AC-3), which for a fresh provider signup (the ordinary case per
+    // HOS-647) is practically always false — making that call site
+    // functionally dead for this population, even though it IS reachable.
+    // This suite pins the fix: `markHandled` must mint a fresh token and fire
+    // the injected `claimInviter` unconditionally when it approves an
+    // unclaimed `service_provider` lead.
+    describe('markHandled — claim invite on approval (HOS-599)', () => {
+        it('should mint a fresh claim token and invite the applicant when approving a first-time, unclaimed service_provider lead', async () => {
+            const inviteToClaim = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, { inviteToClaim });
+            const model = makeLeadModel(providerLead());
+            model.update.mockResolvedValue({
+                ...providerLead(),
+                status: 'approved',
+                provisionedHostTradeId: HOST_TRADE_ID
+            });
+            (service as any)._model = model;
+            (service as any)._hostTradeModel = makeProvisioningHostTradeModel();
+
+            const result = await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(inviteToClaim).toHaveBeenCalledOnce();
+            const invited = inviteToClaim.mock.calls[0]?.[0];
+            expect(invited).toMatchObject({
+                leadId: LEAD_ID,
+                email: 'juan@example.com',
+                contactName: 'Juan Pérez',
+                kind: 'service_provider'
+            });
+            expect(typeof invited.token).toBe('string');
+            expect(invited.token.length).toBeGreaterThan(0);
+            expect(invited.expiresAt.getTime()).toBeGreaterThan(Date.now());
+        });
+
+        it('should persist a digest of the SAME token handed to the invite port, never the raw value', async () => {
+            const inviteToClaim = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, { inviteToClaim });
+            const model = makeLeadModel(providerLead());
+            model.update.mockResolvedValue({
+                ...providerLead(),
+                status: 'approved',
+                provisionedHostTradeId: HOST_TRADE_ID
+            });
+            (service as any)._model = model;
+            (service as any)._hostTradeModel = makeProvisioningHostTradeModel();
+
+            await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            const rawToken = inviteToClaim.mock.calls[0]?.[0].token as string;
+            const persisted = model.update.mock.calls[0]?.[1] as Record<string, unknown>;
+            expect(persisted.claimToken).not.toBe(rawToken);
+            expect(persisted.claimToken).toBe(
+                createHash('sha256').update(rawToken, 'utf8').digest('hex')
+            );
+            expect(persisted.claimExpiresAt).toBeInstanceOf(Date);
+        });
+
+        it('should re-invite when re-approving an idempotent, already-provisioned lead that is STILL unclaimed', async () => {
+            const inviteToClaim = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, { inviteToClaim });
+            const alreadyProvisioned = providerLead({
+                status: 'approved',
+                provisionedHostTradeId: HOST_TRADE_ID
+            });
+            const model = makeLeadModel(alreadyProvisioned);
+            model.update.mockResolvedValue({ ...alreadyProvisioned, status: 'approved' });
+            (service as any)._model = model;
+            // No host-trade model call is expected on the skip path — a bare
+            // object with no methods would fail loudly if provisioning were
+            // (incorrectly) attempted again.
+            (service as any)._hostTradeModel = {};
+
+            const result = await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(inviteToClaim).toHaveBeenCalledOnce();
+        });
+
+        it('should NOT invite when the lead is already claimed (applicantUserId set)', async () => {
+            const inviteToClaim = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, { inviteToClaim });
+            const claimed = providerLead({
+                applicantUserId: ACTOR_ID,
+                provisionedHostTradeId: HOST_TRADE_ID
+            });
+            const model = makeLeadModel(claimed);
+            model.update.mockResolvedValue({ ...claimed, status: 'approved' });
+            (service as any)._model = model;
+            (service as any)._hostTradeModel = {};
+
+            await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(inviteToClaim).not.toHaveBeenCalled();
+        });
+
+        it('should NOT invite for a non-service_provider kind (e.g. partner)', async () => {
+            const inviteToClaim = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, { inviteToClaim });
+            (service as any)._model = makeLeadModel();
+
+            await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(inviteToClaim).not.toHaveBeenCalled();
+        });
+
+        it('should NOT invite on rejection', async () => {
+            const inviteToClaim = vi.fn().mockResolvedValue(undefined);
+            const service = new AllianceLeadService({ logger: undefined }, { inviteToClaim });
+            const model = makeLeadModel(providerLead());
+            model.update.mockResolvedValue({ ...providerLead(), status: 'rejected' });
+            (service as any)._model = model;
+            (service as any)._hostTradeModel = {};
+
+            await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'rejected' }
+            });
+
+            expect(inviteToClaim).not.toHaveBeenCalled();
+        });
+
+        it('should still persist the approval when the claim invitation fails to send', async () => {
+            const inviteToClaim = vi.fn().mockRejectedValue(new Error('SMTP down'));
+            const service = new AllianceLeadService({ logger: undefined }, { inviteToClaim });
+            const alreadyProvisioned = providerLead({
+                status: 'approved',
+                provisionedHostTradeId: HOST_TRADE_ID
+            });
+            const model = makeLeadModel(alreadyProvisioned);
+            model.update.mockResolvedValue({ ...alreadyProvisioned, status: 'approved' });
+            (service as any)._model = model;
+            (service as any)._hostTradeModel = {};
+
+            const result = await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(result.error).toBeUndefined();
+            expect(model.update).toHaveBeenCalled();
+        });
+
+        it('should work with no claim-invite port injected at all', async () => {
+            const service = makeService();
+            const alreadyProvisioned = providerLead({
+                status: 'approved',
+                provisionedHostTradeId: HOST_TRADE_ID
+            });
+            const model = makeLeadModel(alreadyProvisioned);
+            model.update.mockResolvedValue({ ...alreadyProvisioned, status: 'approved' });
+            (service as any)._model = model;
+            (service as any)._hostTradeModel = {};
+
+            const result = await service.markHandled({
+                actor: adminActor,
+                id: LEAD_ID,
+                input: { status: 'approved' }
+            });
+
+            expect(result.error).toBeUndefined();
         });
     });
 });
