@@ -80,6 +80,17 @@
                 "unknown": "Status indisponível",
                 "draftComplete": "Rascunho — pronto para publicar",
                 "draftIncomplete": "Rascunho — incompleto"
+            },
+            "usage": {
+                "gastronomy": {
+                    "label_one": "{{current}} de {{max}} gastronomia",
+                    "label_other": "{{current}} de {{max}} gastronomias"
+                },
+                "experience": {
+                    "label_one": "{{current}} de {{max}} experiência",
+                    "label_other": "{{current}} de {{max}} experiências"
+                },
+                "upgrade": "Ampliar cota"
             }
         },
         "editor": {
@@ -228,7 +239,9 @@
             "publishing": "Iniciando pagamento...",
             "incompleteError": "Ainda faltam dados para publicar.",
             "alreadySubscribedError": "Este comércio já tem uma assinatura ativa.",
-            "checkoutError": "Não conseguimos iniciar o pagamento. Tente novamente."
+            "checkoutError": "Não conseguimos iniciar o pagamento. Tente novamente.",
+            "publishCtaFree": "Publicar",
+            "publishingFree": "Publicando..."
         },
         "create": {
             "pickVertical": {
