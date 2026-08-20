@@ -534,22 +534,22 @@ export const HOSPEDA_ENV_VARS = [
             'Texto libre, 1-11 caracteres ASCII en mayúsculas (letras, dígitos, espacios). MP rechaza valores más largos o con minúsculas / no-ASCII. Por defecto "HOSPEDA"; sobrescribilo solo si el feedback de homologación de MP lo pide.'
     },
     {
-        name: 'HOSPEDA_COMMERCE_PLAN_ID',
+        name: 'HOSPEDA_COMMERCE_PLAN_SLUGS',
         description:
-            'Slug of the billing plan used to provision a commerce-listing subscription (SPEC-239 T-049). Resolved by slug against billing_plans.name via the same machinery as the accommodation start-paid flow.',
+            'Commerce vertical to billing-plan-slug mapping, as `gastronomy:<slug>,experience:<slug>` (HOS-688). ONE variable rather than one per vertical: two variables can be left half-set, which leaves one vertical selling and the other answering 503 while the site looks perfectly healthy. Validated at boot, so a malformed value stops the container instead of refusing a customer mid-checkout.',
         descriptionEs:
-            'Slug del plan de facturación usado para provisionar una suscripción de listing de comercio (SPEC-239 T-049). Se resuelve por slug contra billing_plans.name con la misma maquinaria que el flujo accommodation start-paid.',
+            'Mapeo de vertical de comercio a slug de plan, con la forma `gastronomy:<slug>,experience:<slug>` (HOS-688). UNA sola variable en vez de una por vertical: dos se pueden quedar a medio setear, y ahí un vertical vende y el otro tira 503 mientras el sitio se ve perfecto. Se valida en el arranque, así que un valor mal formado frena el contenedor en lugar de rechazar un checkout.',
         type: 'string',
         required: false,
         secret: false,
         defaultValue: '',
-        exampleValue: 'commerce-listing',
+        exampleValue: 'gastronomy:gastronomy-premium,experience:experience-premium',
         apps: ['api'],
         category: 'billing',
         howToObtain:
-            'The slug (billing_plans.name) of the commerce plan seeded by the billing-plans seed. Defaults to the seeded commerce slug. The commerce admin start-subscription route 404s when unset or unknown.',
+            'The two slugs (billing_plans.name) of the per-vertical commerce plans seeded by seedCommercePlan. Leave unset to use the shipped catalogue defaults; set it only to point at differently-named plans. A value that is set but malformed is rejected at startup.',
         howToObtainEs:
-            'El slug (billing_plans.name) del plan de comercio sembrado por el seed de billing-plans. Por defecto el slug de comercio sembrado. La ruta admin commerce start-subscription devuelve 404 cuando está vacío o es desconocido.'
+            'Los dos slugs (billing_plans.name) de los planes de comercio por vertical que siembra seedCommercePlan. Dejala sin setear para usar los valores por defecto del catálogo; seteala solo para apuntar a planes con otro nombre. Un valor seteado pero mal formado se rechaza en el arranque.'
     },
 
     // -------------------------------------------------------------------------
