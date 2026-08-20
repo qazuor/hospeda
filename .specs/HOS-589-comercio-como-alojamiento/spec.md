@@ -83,10 +83,14 @@ maintenance cost. The cheapest commerce is commerce with **no branch at all**.
 - **G-1** — A signed-in person can create a gastronomy or experience listing
   with no admin involvement, and the `COMMERCE_OWNER` role is granted as an
   effect of that creation.
-- **G-2** — Gastronomy and experience follow **byte-identical** logic. No
-  `if (domain === …)` is introduced anywhere in the provisioning, checkout,
-  or publish path.
-- **G-3** — `commerce-listing` carries a free trial resolved by the **same**
+- **G-2** — Gastronomy and experience follow **one code path**. They differ only
+  in the data that path reads — which plan, which limit key, which domain — never
+  in what it does. No `if (domain === …)` is introduced anywhere in the
+  provisioning, checkout, or publish path.
+  *(Stated as behaviour rather than "identical code" on purpose: §6.8 gives each
+  vertical its own plan and cap, so a lookup by domain is expected and correct.
+  AC-7 draws the line.)*
+- **G-3** — Each vertical's plan carries a free trial resolved by the **same**
   canonical function the accommodation paths use, not a second copy of the rule.
 - **G-4** — The public entry points keep their indexable surface: two landing
   pages that push to sign-in, mirroring `/publicar/`.
@@ -538,7 +542,10 @@ and keep their current semantics.
 - **AC-6** — Setting `moderationState = REJECTED` on a published listing
   reconciles it to `PRIVATE` / `INACTIVE` on the next pass, for both domains.
 - **AC-7** — A static guard fails CI if any `if (domain === 'experience')` (or
-  equivalent branch) appears in the provisioning, checkout, or visibility path.
+  equivalent conditional **on behaviour**) appears in the provisioning, checkout,
+  or visibility path. It must **not** flag a `Record<domain, …>` lookup, which is
+  how §6.8 resolves the per-vertical plan and limit key — the guard forbids
+  taking a different action per domain, not reading a different value.
   This is the machine-checkable form of G-2 and is the criterion most likely to
   erode without one.
 - **AC-8** — An anonymous request to the create-listing route is rejected by the
