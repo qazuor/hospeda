@@ -79,8 +79,18 @@ describe('checkExperienceCanCreate', () => {
         expect(() => checkExperienceCanCreate(staffActor, {})).not.toThrow();
     });
 
-    it('should throw FORBIDDEN for actor without COMMERCE_CREATE', () => {
-        expect(() => checkExperienceCanCreate(noPermActor, {})).toThrow(ServiceError);
+    // HOS-687 / HOS-589 AC-27 (service predicate, experience vertical).
+    it('allows a signed-in account holding NO commerce permission (AC-27)', () => {
+        expect(() => checkExperienceCanCreate(noPermActor, {})).not.toThrow();
+    });
+
+    it('still rejects a guest actor', () => {
+        const guest: Actor = {
+            id: '00000000-0000-4000-8000-000000000000',
+            roles: [RoleEnum.GUEST],
+            permissions: []
+        };
+        expect(() => checkExperienceCanCreate(guest, {})).toThrow(ServiceError);
     });
 });
 

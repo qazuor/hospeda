@@ -38,11 +38,12 @@ import {
 
 /**
  * Checks if the actor may create a new gastronomy listing.
- * Delegates to {@link checkCanCreateCommerce} (`COMMERCE_CREATE`).
+ * Delegates to {@link checkCanCreateCommerce} — an authenticated account and
+ * nothing more (HOS-687 / HOS-589 §6.1).
  *
  * @param actor - The actor performing the action.
  * @param data - Create payload (unused; accepted for signature parity).
- * @throws {ServiceError} FORBIDDEN when the actor lacks `COMMERCE_CREATE`.
+ * @throws {ServiceError} UNAUTHORIZED when the actor is anonymous / a guest.
  */
 export function checkGastronomyCanCreate(actor: Actor, data: unknown): void {
     checkCanCreateCommerce(actor, data);

@@ -9,17 +9,32 @@ creates the listing and provisions the owner account (SPEC-239 + the
 "Approve & provision" admin action, SPEC-249 Part D); the owner then keeps the
 operational content fresh through this area.
 
+> **Since HOS-687 an admin is no longer part of the entrance.** Any signed-in
+> account can open the create path and submit it; the create call grants
+> `COMMERCE_OWNER` inside the same transaction as the listing insert. The
+> "admin sells, provisions, owner maintains" framing above still describes the
+> legacy lead funnel, which HOS-589 removes in a later step.
+
 ## Routes
 
-| Route | Purpose |
-| --- | --- |
-| `/[lang]/mi-cuenta/comercio/` | List the owner's own listings (both verticals), with a per-listing "Editar" link. |
-| `/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/` | Operational editor for one listing. `vertical` is `gastronomy` or `experience`. |
+| Route | Purpose | Requires |
+| --- | --- | --- |
+| `/[lang]/mi-cuenta/comercio/` | List the owner's own listings (both verticals), with a per-listing "Editar" link. | `COMMERCE_OWNER` |
+| `/[lang]/mi-cuenta/comercio/nuevo/` | Vertical picker (gastronomy or experience). | A session |
+| `/[lang]/mi-cuenta/comercio/nuevo/[vertical]/` | Create form. Submitting it is what makes the caller a commerce owner (HOS-687). | A session |
+| `/[lang]/mi-cuenta/comercio/[vertical]/[id]/editar/` | Operational editor for one listing. `vertical` is `gastronomy` or `experience`. | `COMMERCE_OWNER` |
 
-Both pages are SSR (`prerender = false`) and owner-scoped. The listing list is
-fetched by fanning out to the two protected `GET /{vertical}/mine` endpoints
-(`fetchOwnerCommerceListings`); the editor seeds from the protected
-`GET /{vertical}/{id}` detail (`fetchOwnerListingDetail`).
+All four pages are SSR (`prerender = false`). The index and the editor are
+owner-scoped and role-gated, because they read and write listings that must
+already exist; the two create pages require a session only, because requiring
+the commerce role to reach the page that GRANTS the commerce role made the role
+unreachable. An anonymous visitor to any of them is sent to sign-in with a
+return URL that brings them back to the page they asked for.
+
+The listing list is fetched by fanning out to the two protected
+`GET /{vertical}/mine` endpoints (`fetchOwnerCommerceListings`); the editor
+seeds from the protected `GET /{vertical}/{id}` detail
+(`fetchOwnerListingDetail`).
 
 ## What the owner CAN edit (operational fields)
 
