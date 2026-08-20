@@ -1,24 +1,25 @@
 /**
  * @file MobileMenu.cta.test.tsx
- * @description RTL tests for the mobile menu's owner/host-mode CTA
- * (SPEC-182 D3). Migrated from the old source-level
- * `MobileMenuIsland.test.ts` (which asserted on `MobileMenuIsland.astro`'s
- * source) as part of moving this logic into `MobileMenu.client.tsx` — the
- * CTA now depends on the client-resolved role SET, since `MobileMenuIsland`
- * no longer runs as a `server:defer` island with a guaranteed-fresh session.
+ * @description RTL tests for the mobile menu's "Publicar" submenu
+ * (HOS-691) — a three-way chooser (accommodation / gastronomy /
+ * experience), replacing the single owner CTA link this file used to test
+ * (SPEC-182 D3 / HOS-311's host-mode-CTA swap between the `/publicar`
+ * funnel and a "Modo anfitrión" shortcut).
  *
- * HOS-311: the host CTA no longer points at the admin panel (HOS-152 removed
- * `access.panelAdmin` from the HOST role, so that destination 403s) — it stays
- * inside the web app, on the host's own properties list.
+ * HOS-691 AC-12: the submenu renders unconditionally — for a guest, an
+ * authenticated non-host, an existing HOST, AND an existing COMMERCE_OWNER
+ * alike. There is no more per-role hiding or per-role destination swapping
+ * to test here; that is the whole point of the rewrite (see the issue's
+ * "Tests that break" section).
  *
- * HOS-296: an account holds a SET of hats, so the SSR hint is `initialRoles`
- * (an array) and the gate is `roles.includes('HOST')` — never a scalar `role`.
+ * HOS-691 AC-38: the three options (labels + hrefs) come from
+ * `PUBLISH_CTA_OPTIONS` (`@/config/discovery-doors`) — the same source the
+ * desktop header's `PublishMenu.client.tsx` uses.
  */
 
-import { act, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MobileMenu } from '../../../../src/components/shared/navigation/MobileMenu.client';
-import { AUTH_ME_CACHE_KEY } from '../../../../src/lib/auth-cache';
 import type { SupportedLocale } from '../../../../src/lib/i18n';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
@@ -81,8 +82,6 @@ vi.mock('../../../../src/lib/env', () => ({
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
 const DEFAULT_PROPS = {
-    // Typed as the full union (not `as const`) so a test can render another
-    // locale and assert the CTA labels are really translated (HOS-311).
     locale: 'es' as SupportedLocale,
     navItems: [{ label: 'Inicio', href: '/es/' }],
     currentPath: '/es/',
@@ -108,13 +107,15 @@ function openMenu() {
     });
 }
 
-/** Locale-prefixed destinations the CTA can legitimately point at (HOS-311). */
-const PROPERTIES_HREF = '/es/mi-cuenta/propiedades/';
-const PUBLICAR_HREF = '/es/publicar/';
+function openPublishSubmenu() {
+    const trigger = screen.getByRole('button', { name: /publicar/i });
+    fireEvent.click(trigger);
+    return trigger;
+}
 
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
-describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
+describe('MobileMenu — "Publicar" submenu (HOS-691)', () => {
     beforeEach(() => {
         sessionStorage.clear();
         global.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
@@ -125,78 +126,147 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
         sessionStorage.clear();
     });
 
-    it('shows the /publicar owner CTA for a guest (no role)', () => {
+    it('renders the closed "Publicar" trigger for a guest', () => {
         renderMenu();
         openMenu();
 
-        const cta = screen.getByRole('link', { name: /publica tu alojamiento/i });
-        expect(cta).toHaveAttribute('href', '/es/publicar/');
+        const trigger = screen.getByRole('button', { name: /publicar/i });
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+        expect(trigger).toHaveAttribute('aria-haspopup', 'menu');
     });
 
-    it('shows the /publicar owner CTA for an authenticated non-host role', () => {
+    it('opens a role="menu" panel with exactly three options for a guest (AC-38)', () => {
+        renderMenu();
+        openMenu();
+        openPublishSubmenu();
+
+        expect(screen.getByRole('menu', { name: /publicar/i })).toBeInTheDocument();
+        const items = screen.getAllByRole('menuitem');
+        expect(items).toHaveLength(3);
+    });
+
+    it('links each option to its discovery-doors.ts href, locale-prefixed (AC-38)', () => {
+        renderMenu();
+        openMenu();
+        openPublishSubmenu();
+
+        expect(screen.getByRole('menuitem', { name: /alojamiento/i })).toHaveAttribute(
+            'href',
+            '/es/publicar/'
+        );
+        expect(screen.getByRole('menuitem', { name: /gastronomía/i })).toHaveAttribute(
+            'href',
+            '/es/publicar-restaurante/'
+        );
+        expect(screen.getByRole('menuitem', { name: /experiencias/i })).toHaveAttribute(
+            'href',
+            '/es/publicar-experiencia/'
+        );
+    });
+
+    it('renders the submenu for an authenticated non-host role', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Tourist', email: 'tourist@example.com' },
             initialRoles: ['USER']
         });
         openMenu();
 
-        const cta = screen.getByRole('link', { name: /publica tu alojamiento/i });
-        expect(cta).toHaveAttribute('href', '/es/publicar/');
+        expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument();
     });
 
-    it('switches to the host-mode CTA (own properties, NOT the admin panel) when initialRoles includes HOST', () => {
-        // HOS-311: this used to assert `href === 'https://admin.test'`. A HOST
-        // has no `access.panelAdmin` (HOS-152), so the admin panel answers with
-        // /auth/forbidden?reason=host-missing-permission — the CTA now stays in
-        // the web app.
+    it('renders the submenu for an existing HOST (HOS-691 AC-12 — the old hide/swap rule is gone)', () => {
         renderMenu({
             initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
             initialRoles: ['USER', 'HOST']
         });
         openMenu();
+        openPublishSubmenu();
 
-        const cta = screen.getByRole('link', { name: /modo anfitrión/i });
-        expect(cta).toHaveAttribute('href', PROPERTIES_HREF);
-        expect(
-            screen.queryByRole('link', { name: /publica tu alojamiento/i })
-        ).not.toBeInTheDocument();
+        expect(screen.getAllByRole('menuitem')).toHaveLength(3);
+        // No more "Modo anfitrión" shortcut — that behavior was removed with
+        // the host-mode CTA swap.
+        expect(screen.queryByRole('link', { name: /modo anfitrión/i })).not.toBeInTheDocument();
     });
 
-    it('keeps the host-mode CTA when adminPanelUrl is not configured (the CTA no longer depends on it)', () => {
-        // HOS-311: this used to assert the /publicar fallback, because the old
-        // host CTA needed an admin URL to point at. The destination is now an
-        // internal route, so the env var is irrelevant to it.
+    it('renders the submenu for an existing COMMERCE_OWNER (HOS-691 AC-12)', () => {
         renderMenu({
-            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
-            initialRoles: ['USER', 'HOST'],
-            adminPanelUrl: undefined
+            initialUser: { id: 'u1', name: 'Commerce Owner', email: 'owner@example.com' },
+            initialRoles: ['USER', 'COMMERCE_OWNER']
         });
         openMenu();
+        openPublishSubmenu();
 
-        const cta = screen.getByRole('link', { name: /modo anfitrión/i });
-        expect(cta).toHaveAttribute('href', PROPERTIES_HREF);
+        expect(screen.getAllByRole('menuitem')).toHaveLength(3);
     });
 
-    it('renders on first paint from the SSR hints, before the client cache/fetch resolves (fetch never resolves in this test)', () => {
-        // No cache seeded and fetch never resolves — this asserts the SSR
-        // hints alone (initialUser + initialRoles) are enough to render the
-        // correct CTA synchronously, matching the old server:defer first-paint
-        // guarantee on pages whose middleware DID parse the session.
+    it('renders the submenu for a user who is BOTH HOST and COMMERCE_OWNER', () => {
         renderMenu({
-            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
-            initialRoles: ['USER', 'HOST']
+            initialUser: { id: 'u1', name: 'Host Merchant', email: 'both@example.com' },
+            initialRoles: ['USER', 'COMMERCE_OWNER', 'HOST']
         });
         openMenu();
+        openPublishSubmenu();
 
-        expect(screen.getByRole('link', { name: /modo anfitrión/i })).toBeInTheDocument();
+        expect(screen.getAllByRole('menuitem')).toHaveLength(3);
     });
 
-    it('upgrades the CTA to host-mode once auth resolves role=HOST (SSR hint was a guest default)', async () => {
-        // SSR hint says guest (e.g. a public page whose middleware didn't
-        // parse the session), and — since it contradicts an authenticated
-        // cache — the hook refetches for real rather than trusting a stale
-        // cache (see the hook's SSR-reconciliation contract). The fetch
-        // resolves the true state: an authenticated HOST.
+    it('clicking an option closes the submenu AND the whole overlay (same `onLinkClick` navigation path every other menu link uses)', () => {
+        const { container } = renderMenu();
+        openMenu();
+        const trigger = openPublishSubmenu();
+
+        fireEvent.click(screen.getByRole('menuitem', { name: /alojamiento/i }));
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+        // Query the overlay by its stable role attribute directly — once
+        // closed it is `aria-hidden="true"`, and RTL's accessible-name
+        // computation for a hidden subtree is unreliable to assert on.
+        const overlay = container.querySelector('[role="dialog"]');
+        expect(overlay).toHaveAttribute('aria-hidden', 'true');
+    });
+
+    it('closes the submenu when clicking outside it (still inside the overlay)', () => {
+        renderMenu();
+        openMenu();
+        const trigger = openPublishSubmenu();
+
+        // `es` real translations resolve the nav's aria-label to
+        // "Navegación principal".
+        fireEvent.mouseDown(screen.getByRole('navigation', { name: /navegación principal/i }));
+
+        expect(trigger).toHaveAttribute('aria-expanded', 'false');
+    });
+
+    it('translates the trigger and option labels in en', () => {
+        renderMenu({ locale: 'en' });
+        openMenu();
+        const trigger = screen.getByRole('button', { name: /^publish$/i });
+        fireEvent.click(trigger);
+
+        expect(screen.getByRole('menuitem', { name: /accommodation/i })).toHaveAttribute(
+            'href',
+            '/en/publicar/'
+        );
+    });
+
+    it('collapses the submenu when the overlay itself closes', () => {
+        renderMenu();
+        openMenu();
+        const trigger = openPublishSubmenu();
+        expect(trigger).toHaveAttribute('aria-expanded', 'true');
+
+        // Close the whole overlay (second toggle event).
+        openMenu();
+        // Re-open to inspect the submenu's collapsed state without a stale
+        // reference to the (possibly unmounted) trigger from before.
+        openMenu();
+        expect(screen.getByRole('button', { name: /publicar/i })).toHaveAttribute(
+            'aria-expanded',
+            'false'
+        );
+    });
+
+    it('upgrades from the SSR guest hint once auth resolves a HOST — submenu stays present throughout', async () => {
         global.fetch = vi.fn().mockResolvedValue({
             ok: true,
             json: async () => ({
@@ -216,195 +286,10 @@ describe('MobileMenu — owner/host-mode CTA (SPEC-182 D3)', () => {
         renderMenu({ initialUser: null, initialRoles: [] });
         openMenu();
 
-        expect(screen.getByRole('link', { name: /publica tu alojamiento/i })).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument();
 
         await waitFor(() => {
-            expect(screen.getByRole('link', { name: /modo anfitrión/i })).toBeInTheDocument();
+            expect(screen.getByRole('button', { name: /publicar/i })).toBeInTheDocument();
         });
-    });
-
-    it('demotes the CTA back to /publicar once the client cache resolves a mismatched, non-host reconciliation', async () => {
-        // SSR hint (from a session-parsed page) said HOST, but the cache
-        // disagrees on auth state entirely (session ended between SSR and
-        // hydration) — reconciliation must win, not the stale SSR hint.
-        sessionStorage.setItem(
-            AUTH_ME_CACHE_KEY,
-            JSON.stringify({
-                isAuthenticated: false,
-                user: null,
-                permissions: [],
-                roles: [],
-                cachedAt: Date.now()
-            })
-        );
-        global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: async () => ({ data: { actor: null, isAuthenticated: false } })
-        }) as unknown as typeof fetch;
-
-        renderMenu({
-            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
-            initialRoles: ['USER', 'HOST']
-        });
-        openMenu();
-
-        await waitFor(() => {
-            expect(
-                screen.getByRole('link', { name: /publica tu alojamiento/i })
-            ).toBeInTheDocument();
-        });
-        expect(screen.queryByRole('link', { name: /modo anfitrión/i })).not.toBeInTheDocument();
-    });
-
-    it('keeps host mode for a HOST who ALSO holds COMMERCE_OWNER (HOS-296 AC-1)', () => {
-        // Under the old scalar `role` this account could only carry one hat, so
-        // a merchant-and-host lost the host CTA entirely. The gate is now
-        // `roles.includes('HOST')`, which is order- and cardinality-agnostic.
-        renderMenu({
-            initialUser: { id: 'u1', name: 'Host Merchant', email: 'both@example.com' },
-            initialRoles: ['USER', 'COMMERCE_OWNER', 'HOST']
-        });
-        openMenu();
-
-        expect(screen.getByRole('link', { name: /modo anfitrión/i })).toHaveAttribute(
-            'href',
-            PROPERTIES_HREF
-        );
-    });
-
-    it('does not treat ADMIN as host-mode (mobile CTA only checks HOST — visibility, not destination, is Header.astro’s concern)', () => {
-        renderMenu({
-            initialUser: { id: 'u1', name: 'Admin User', email: 'admin@example.com' },
-            initialRoles: ['USER', 'ADMIN']
-        });
-        openMenu();
-
-        const cta = screen.getByRole('link', { name: /publica tu alojamiento/i });
-        expect(cta).toHaveAttribute('href', '/es/publicar/');
-    });
-
-    it('CTA link includes the BuildingIcon leading icon via aria-hidden', () => {
-        renderMenu();
-        openMenu();
-
-        const cta = screen.getByRole('link', { name: /publica tu alojamiento/i });
-        // fireEvent not needed — just confirm the icon markup renders (icon
-        // component itself is not mocked here, so this asserts an <svg> exists).
-        expect(cta.querySelector('svg')).not.toBeNull();
-    });
-});
-
-describe('MobileMenu — host CTA never reaches the admin panel (HOS-311)', () => {
-    beforeEach(() => {
-        sessionStorage.clear();
-        global.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
-    });
-
-    afterEach(() => {
-        vi.restoreAllMocks();
-        sessionStorage.clear();
-    });
-
-    it('sends a HOST to their properties list', () => {
-        renderMenu({
-            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
-            initialRoles: ['USER', 'HOST']
-        });
-        openMenu();
-
-        expect(screen.getByRole('link', { name: /modo anfitrión/i })).toHaveAttribute(
-            'href',
-            PROPERTIES_HREF
-        );
-    });
-
-    // The props allow a role hint WITHOUT a resolved user (a stale
-    // `initialRoles: ['HOST']` left over from an expired session on a page
-    // whose middleware parsed nothing). The menu must fall back to the funnel
-    // rather than offer a host surface to an actor it cannot identify.
-    it('falls back to the /publicar funnel when the role hint says HOST but no user is resolved', async () => {
-        // /auth/me never settles, so `user` stays at the (null) SSR seed while
-        // `roles` keeps the stale HOST hint.
-        global.fetch = vi.fn(() => new Promise(() => {})) as unknown as typeof fetch;
-
-        renderMenu({ initialUser: null, initialRoles: ['USER', 'HOST'] });
-        openMenu();
-
-        await waitFor(() => {
-            expect(screen.getByRole('link', { name: /publica tu alojamiento/i })).toHaveAttribute(
-                'href',
-                PUBLICAR_HREF
-            );
-        });
-        expect(screen.queryByRole('link', { name: /modo anfitrión/i })).not.toBeInTheDocument();
-    });
-
-    it('keeps the /publicar funnel for everyone who is not a HOST', () => {
-        renderMenu({
-            initialUser: { id: 'u1', name: 'Tourist', email: 'tourist@example.com' },
-            initialRoles: ['USER']
-        });
-        openMenu();
-
-        expect(screen.getByRole('link', { name: /publica tu alojamiento/i })).toHaveAttribute(
-            'href',
-            PUBLICAR_HREF
-        );
-    });
-
-    it('renders NO link pointing at the admin panel for a HOST', async () => {
-        // The actual defect: clicking the host CTA landed on
-        // /auth/forbidden?reason=host-missing-permission. Pin the
-        // destination directly — no anchor anywhere in the menu may target
-        // the admin URL (the session-zone admin link is permission-gated
-        // and a HOST has no `access.panelAdmin`, so it must stay absent).
-        global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: async () => ({
-                data: {
-                    actor: {
-                        id: 'u1',
-                        name: 'Host User',
-                        email: 'host@example.com',
-                        roles: ['USER', 'HOST'],
-                        permissions: ['accommodation.create', 'accommodation.update.own']
-                    },
-                    isAuthenticated: true
-                }
-            })
-        }) as unknown as typeof fetch;
-
-        const { container } = renderMenu({
-            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
-            initialRoles: ['USER', 'HOST']
-        });
-        openMenu();
-
-        await waitFor(() => {
-            expect(screen.getByRole('link', { name: /modo anfitrión/i })).toBeInTheDocument();
-        });
-
-        const adminLinks = Array.from(container.querySelectorAll('a')).filter((anchor) =>
-            (anchor.getAttribute('href') ?? '').startsWith('https://admin.test')
-        );
-        expect(adminLinks).toEqual([]);
-    });
-
-    it('translates the host CTA instead of falling back to Spanish in en (nav.hostModeCta must exist)', () => {
-        // `t('nav.hostModeCta', 'Modo anfitrión')` silently rendered the
-        // Spanish fallback in EVERY locale because the key was never added to
-        // the catalogue. Assert the real EN string.
-        renderMenu({
-            locale: 'en',
-            initialUser: { id: 'u1', name: 'Host User', email: 'host@example.com' },
-            initialRoles: ['USER', 'HOST']
-        });
-        openMenu();
-
-        expect(screen.getByRole('link', { name: /^host mode$/i })).toHaveAttribute(
-            'href',
-            '/en/mi-cuenta/propiedades/'
-        );
-        expect(screen.queryByRole('link', { name: /modo anfitrión/i })).not.toBeInTheDocument();
     });
 });
