@@ -37,16 +37,40 @@ describe('SPEC-253 COMMERCE permissions', () => {
         it('should have COMMERCE_MODERATE_REVIEW', () => {
             expect(PermissionEnum.COMMERCE_MODERATE_REVIEW).toBe('commerce.moderateReview');
         });
+
+        it('should have COMMERCE_MODERATION_CHANGE (HOS-686)', () => {
+            expect(PermissionEnum.COMMERCE_MODERATION_CHANGE).toBe('commerce.moderationChange');
+        });
     });
 
-    it('should have exactly 6 COMMERCE entries (COMMERCE_EDIT_OWN + 5 admin)', () => {
+    it('should have exactly 7 COMMERCE entries (COMMERCE_EDIT_OWN + 6 admin)', () => {
         // Arrange
         const commercePerms = Object.values(PermissionEnum).filter((v) =>
             v.startsWith('commerce.')
         );
-        // Assert: 1 owner (COMMERCE_EDIT_OWN) + 5 admin-level = 6 total
-        // (was 15 in SPEC-239: 10 per-section + 5 admin; collapsed in SPEC-253 D2=b)
-        expect(commercePerms).toHaveLength(6);
+        // Assert: 1 owner (COMMERCE_EDIT_OWN) + 6 admin-level = 7 total
+        // (was 15 in SPEC-239: 10 per-section + 5 admin; collapsed to 6 in
+        // SPEC-253 D2=b; COMMERCE_MODERATION_CHANGE added in HOS-686)
+        expect(commercePerms).toHaveLength(7);
+    });
+
+    describe('HOS-686 listing moderation is NOT review moderation', () => {
+        it('the two are distinct enum values', () => {
+            // The naming trap named in HOS-589 §6.7: grepping "moderate" under
+            // commerce finds the REVIEW permission first, and concluding the
+            // listing case is already covered is the reasonable — and wrong —
+            // reading.
+            expect(PermissionEnum.COMMERCE_MODERATION_CHANGE).not.toBe(
+                PermissionEnum.COMMERCE_MODERATE_REVIEW
+            );
+        });
+
+        it('is spelled camelCase like the rest of the commerce family, not dotted', () => {
+            // `commerce.moderation.change` (the accommodation/event/post
+            // spelling) would add a 14th dual-spelled family to the baseline
+            // frozen by `permission-naming-convention.guard.test.ts`.
+            expect(PermissionEnum.COMMERCE_MODERATION_CHANGE.split('.')).toHaveLength(2);
+        });
     });
 
     it('should NOT contain any of the removed per-section COMMERCE_*_EDIT_OWN perms', () => {
