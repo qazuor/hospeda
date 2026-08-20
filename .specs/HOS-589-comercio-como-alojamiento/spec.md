@@ -58,7 +58,7 @@ business: they are there to mint an account.
 
 ### 2.2 The trial exists for accommodation and not for commerce
 
-`commerce-listing` is the only sellable plan with `trial_days = 0`; the five
+`commerce-listing` carries `metadata.trialDays = 0` while the five active
 accommodation plans all have 30. That is not a config oversight — the commerce
 checkout hardcodes it:
 
@@ -94,7 +94,10 @@ maintenance cost. The cheapest commerce is commerce with **no branch at all**.
   honours a rejected listing; what does **not** exist is any way to reject one
   (§6.7), so this goal includes building that.
 - **G-6** — The header's publish CTA offers all three listing types, and stops
-  hiding itself from people who already hold one of them (§6.8).
+  hiding itself from people who already hold one of them (§6.10).
+- **G-7** — A commerce subscription belongs to the **owner**, not to the
+  listing, and each vertical carries its own cap — the accommodation shape,
+  applied to gastronomy and experience (§6.8).
 
 ## 4. Non-goals
 
@@ -252,9 +255,14 @@ months), `resolveSafeExternalUrl` (which produced the partner XSS). That family
 is tracked as HOS-679. Adding a second place where trial days are decided would
 enrol this work in it.
 
-The plan's `trial_days` moves to 30 in `billing_plans`. Per the standing rule,
-**the database wins for commercial fields** — the `.ts` constant alone moves
-nothing — so this needs a seed data-migration, not just a baseline edit.
+**There is no `trial_days` column.** The value lives in
+`billing_plans.metadata` as **two** fields — `metadata.trialDays` and
+`metadata.hasTrial` — and both are classified `'commercial'`, so the database
+wins and a `.ts` edit alone moves nothing. Migrations `0017` and `0051` already
+did exactly this for the tourist plans and are the pattern to copy.
+
+Each vertical's enabled plan gets `hasTrial: true` and `trialDays: 30`, matching
+all five accommodation plans (owner tiers and tourist-vip alike).
 
 No reconciler change is required: `trialing` is already in `ACTIVE_STATUSES`.
 That branch is presently unreachable for commerce and becomes live.
@@ -316,7 +324,142 @@ per domain alongside the existing CRUD routes.
 The write schemas stay as they are: `moderationState` remains admin-only and
 unreachable from the owner's own update payload.
 
-### 6.8 The header CTA becomes a three-way chooser
+### 6.8 Commerce billing becomes per-owner, mirroring accommodation
+
+Decided 2026-08-19, after measuring that **production holds zero live commerce
+subscriptions** — 3 rows in `billing_subscriptions` and 5 in the link table, all
+`expired`, none for experiences. The data-migration cost is zero, and it will
+never be this cheap again: once commerce ships self-service with a trial, the
+same change means cancelling and recreating MercadoPago preapprovals for people
+who are already paying.
+
+**Today the two models are opposites.** Accommodation: one subscription per
+**owner**, covering N listings up to `max_accommodations` (1 / 3 / 10).
+Commerce: one subscription per **listing**, guaranteed by
+`UNIQUE(entity_type, entity_id)`, with no cap of any kind. Two restaurants are
+two independent MercadoPago subscriptions.
+
+Commerce moves to the accommodation shape:
+
+- **One subscription per owner, per vertical.**
+  `commerce_listing_subscriptions` keeps its unique constraint, but its meaning
+  changes: it maps each listing to its vertical's subscription for that owner,
+  instead of standing in for a subscription of its own.
+- **Three product domains, not two.** `product_domain` today holds
+  `accommodation` / `commerce` / `partner`. The `commerce` value is retired and
+  replaced by **`gastronomy`** and **`experience`**, so each vertical is
+  independently subscribable and independently capped. An owner can hold an
+  accommodation plan, a gastronomy plan and an experience plan at once, and each
+  counts its own listings.
+- **Three limit keys**: the existing `MAX_ACCOMMODATIONS`, plus new
+  `MAX_GASTRONOMIES` and `MAX_EXPERIENCES`. A single pooled cap was considered
+  and rejected: it cannot express *"one restaurant and one excursion"* — someone
+  would be free to spend both slots on restaurants.
+- **Extra listings are bought as an addon**, one per vertical, mirroring
+  `extra-accommodations-5` (`packages/billing/src/config/addons.config.ts:59-73`):
+  recurring, `limitIncrease: 1`, with `affectsLimitKey` pointing at that
+  vertical's key. An `AddonDefinition` carries exactly one `affectsLimitKey`, so
+  two definitions is the shape the existing model already implies.
+
+#### Three keys is data, not a behavioural branch
+
+G-2 forbids branching **behaviour** by domain — `if (domain === 'experience')
+{ require approval }`. Resolving which limit key to check through a
+`Record<domain, LimitKey>` lookup is not that: it is one code path reading a
+different value. AC-7's guard must be written to catch the former without
+outlawing the latter, or it will block the correct implementation.
+
+#### What the split buys, beyond expressiveness
+
+Each vertical becomes a **distinct MercadoPago preapproval plan**. Since MP's
+free trial is scoped to `(payer, preapproval_plan)`, an owner who used their 30
+days on gastronomy still receives 30 days when they later add an experience —
+they are buying a different plan, not the same one twice.
+
+That removes the HOS-522 collision from this design entirely, rather than
+mitigating it with copy. A single pooled commerce plan would have reintroduced
+it: the second vertical would silently start charging on day one while the page
+promised a trial.
+
+#### Naming stays
+
+The shared machinery keeps its `commerce_*` names — the link table, the
+visibility reconciler, the listing services. Those cover both verticals and are
+parameterised by domain; splitting the **billing** domain is not a reason to
+rename working code, and a rename cascade would bury the change that matters.
+
+#### How commerce enters the limit engine without breaking SPEC-239
+
+SPEC-239 isolated commerce from the entitlement engine on purpose:
+`loadEntitlements` filters through the named predicate
+`isAccommodationSubscription`, so a commerce subscription cannot pollute a
+host's accommodation entitlements.
+
+**Parameterise that predicate by domain rather than removing it.** A commerce
+route loads the commerce subscription's limits into the same context keys; an
+accommodation route keeps loading accommodation's. The two sets are never merged,
+so the isolation is preserved by construction — the guarantee gets stronger, not
+weaker, because the domain becomes explicit at the call site instead of implicit
+in one hardcoded predicate.
+
+That the isolation is a *named predicate* rather than a condition scattered
+across queries is what makes this affordable.
+
+#### What ships now, and what is only prepared
+
+Each vertical's catalogue is built for the full three-tier shape — basic /
+professional / premium, each with its own entitlements and limits, exactly like
+accommodation. **Only the premium tier of each is enabled**, and it declares
+**one limit and nothing else**: `max_gastronomies: 1` for the gastronomy plan,
+`max_experiences: 1` for the experience plan. Everything else is included
+without a ceiling.
+
+The enabled tier keeps the current `$15.000`, so **nobody paying today sees a
+change**: one listing for the same money. What changes is that the plan is now
+the owner's rather than the listing's, which is what makes a cap meaningful at
+all.
+
+Note the deliberate choice: the other limit keys are **not declared at all**
+rather than declared as `-1`. Both produce unlimited, but an absent key reads as
+"this plan does not meter that", which is what is true here.
+
+Growth path, needing no code change: when more tiers are enabled, premium's cap
+rises and the basic tier keeps 1. The cap is a `'commercial'` field — the
+database wins — so it moves by data-migration. Adding entitlements to the tiers
+is a later, separate decision; neither vertical grants any today.
+
+### 6.9 Plan catalogue cleanup
+
+Three cleanups the owner called for on 2026-08-19, verified against production:
+
+| Plan | Live subscriptions | Action |
+| --- | --- | --- |
+| `complex-basico` / `complex-pro` / `complex-premium` | **0** | Remove outright |
+| `tourist-plus` | 2, both `cancelled` | **Deactivate + soft-delete only** |
+| `owner-test-daily` | 1, `cancelled` | **Deactivate + soft-delete only** |
+
+`tourist-plus` and `owner-test-daily` are **not** hard-deleted: historical
+subscriptions point at them, and removing the row would leave that history
+referencing a plan that no longer exists.
+
+**`metadata.monthlyPriceArs` is removed entirely** — from
+`model-c-field-split.ts`, from the seed baseline, and from existing rows via a
+data-migration. Verified safe: nothing reads it at runtime, because HOS-39
+promoted that value to a typed column. The stale `$5.000` it still carries for
+`commerce-listing` (against the real `$15.000`) is exactly the kind of
+contradiction a dead field accumulates.
+
+**`max_properties` removal is tracked separately.** It is not used by any active
+plan, but it is wired through roughly fifteen production files — the `LimitKey`
+enum, `limits.config.ts`, the three complex plans, the `extra-properties-5`
+addon, an enforcement middleware that self-describes as a placeholder,
+`usage-tracking.service.ts`, the exhaustive `Record<LimitKey, string>` in
+`limit-check.ts`, an admin dashboard label, two web modules, six i18n keys, and
+two guard tests. That is a refactor, not a cleanup, and it has no dependency on
+commerce; bundling it here would bury the change that matters under a mechanical
+sweep.
+
+### 6.10 The header CTA becomes a three-way chooser
 
 `apps/web/src/layouts/Header.astro` renders a single "Publicar" CTA (line 226)
 pointing at `/publicar/`. With three listing types it becomes a dropdown
@@ -342,7 +485,13 @@ Two existing behaviours need rework, not just extra entries:
 | Change | Kind | Carril |
 | --- | --- | --- |
 | `RoleGrantReason` gains a commerce-listing-created member | enum | schemas |
-| `billing_plans.commerce-listing.trial_days` 0 → 30 | seed **data** | `packages/seed/src/data-migrations/` (dual-write rule: baseline **and** numbered migration) |
+| `LimitKey` gains `MAX_GASTRONOMIES` and `MAX_EXPERIENCES` | enum — **capability, code wins** | billing config. `RESOURCE_NAMES` in `limit-check.ts` is an exhaustive `Record<LimitKey, string>`, so the compiler demands their Spanish names |
+| `product_domain` value `commerce` → `gastronomy` + `experience` | data + config | seed data-migration; only 3 expired subscriptions carry the old value |
+| Two new plan catalogues (gastronomy, experience), premium tier only | plan config + seed | code declares the tiers; **values are `'commercial'`, so the DB wins** |
+| Two new addons, `limitIncrease: 1`, one per vertical | addon config | mirrors `extra-accommodations-5` |
+| `metadata.monthlyPriceArs` removed | field-split + seed + existing rows | verified unread at runtime |
+| `complex-*` plans removed; `tourist-plus` / `owner-test-daily` deactivated | seed data-migration | see §6.9 |
+| `metadata.hasTrial` → `true` and `metadata.trialDays` → `30` on each vertical's plan (**not** a `trial_days` column) | seed **data** | `packages/seed/src/data-migrations/` — dual-write rule: baseline **and** numbered migration. Copy `0017` / `0051` |
 | `commerce_leads` table retired | structural, **deferred one release** | `packages/db/src/migrations/` |
 | New protected route: create commerce listing | API | `createProtectedRoute` |
 | **New admin route: moderate a commerce listing** (§6.7) | API | `createAdminRoute`, one per domain, one shared implementation |
@@ -357,7 +506,7 @@ and keep their current semantics.
 
 - The header's publish control offers **three** options — alojamiento,
   gastronomía, experiencia — instead of a single link, on every breakpoint and
-  in the mobile menu (§6.8). It no longer vanishes for someone who already
+  in the mobile menu (§6.10). It no longer vanishes for someone who already
   publishes one of the three.
 - Signed-out visitor on either landing → CTA reads as "publicá tu negocio" and
   goes to sign-in with a return URL.
@@ -405,6 +554,20 @@ and keep their current semantics.
 - **AC-12** — The header publish control renders all three options at every
   breakpoint and inside the mobile menu, and is present for an account that
   already holds `HOST` and for one that already holds `COMMERCE_OWNER`.
+- **AC-13** — An owner at their gastronomy cap is refused a second gastronomy
+  listing, **and is still allowed an experience listing** — proving the two caps
+  count independently rather than sharing one pool.
+- **AC-14** — Creating a second listing in a vertical the owner is already
+  subscribed to does **not** start a second subscription; it counts against the
+  existing one's cap.
+- **AC-15** — Buying the vertical's extra-listing addon raises that cap by one
+  and leaves the other vertical's cap untouched.
+- **AC-16** — An owner who consumed the free trial on gastronomy still receives
+  a trial when they later subscribe to experience, because the two are distinct
+  MercadoPago preapproval plans.
+- **AC-17** — No plan, price or trial value is asserted from the TypeScript
+  config alone. Every such assertion reads the database, because those fields
+  are classified `'commercial'` and the database wins.
 
 ## 10. Risks
 
