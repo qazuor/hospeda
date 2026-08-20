@@ -1,4 +1,5 @@
 import {
+    COMMERCE_TRIAL_DAYS,
     COMPLEX_TRIAL_DAYS,
     OWNER_TRIAL_DAYS,
     TOURIST_TRIAL_DAYS
@@ -594,6 +595,11 @@ export const COMMERCE_VERTICAL_MONTHLY_PRICE_ARS = 1500000;
  * @param input.isActive - Whether the tier is sellable. Only premium is today.
  * @param input.monthlyPriceArs - Monthly price in centavos; `0` for a tier that
  *   has not been priced yet, which is also why such a tier ships inactive.
+ * @param input.hasTrial - Whether the tier grants a free trial (HOS-590).
+ *   Defaults to `false` — the two disabled tiers per vertical have no price
+ *   and are not sellable, so a trial has nothing to precede.
+ * @param input.trialDays - Trial length in days when `hasTrial` is `true`.
+ *   Defaults to `0`.
  * @returns The tier's {@link PlanDefinition}.
  */
 function commerceVerticalTier(input: {
@@ -605,6 +611,8 @@ function commerceVerticalTier(input: {
     sortOrder: number;
     isActive: boolean;
     monthlyPriceArs: number;
+    hasTrial?: boolean;
+    trialDays?: number;
 }): PlanDefinition {
     return {
         slug: input.slug,
@@ -617,10 +625,11 @@ function commerceVerticalTier(input: {
         monthlyPriceArs: input.monthlyPriceArs,
         annualPriceArs: null,
         monthlyPriceUsdRef: Math.round(input.monthlyPriceArs / 100000),
-        // The free trial is HOS-590's work (§6.4); until it lands every commerce
-        // tier charges from day one, exactly as `commerce-listing` does.
-        hasTrial: false,
-        trialDays: 0,
+        // HOS-590: the enabled (premium) tier of each vertical now declares the
+        // same 30-day trial every accommodation plan does; the two disabled
+        // tiers keep the prior no-trial defaults since they are not sellable.
+        hasTrial: input.hasTrial ?? false,
+        trialDays: input.trialDays ?? 0,
         isDefault: false,
         sortOrder: input.sortOrder,
         isActive: input.isActive,
@@ -682,6 +691,11 @@ export const GASTRONOMY_PRO_PLAN: PlanDefinition = commerceVerticalTier({
  * entire commercial substance of §6.8, and every layer beneath it resolves an
  * unknown limit key to *unlimited* without raising anything — so the wiring on
  * the create route, not this value, is what actually makes it real.
+ *
+ * HOS-590: carries the same 30-day trial as every accommodation plan
+ * ({@link COMMERCE_TRIAL_DAYS}) — checkout resolves it through
+ * `resolveCheckoutFreeTrialDays`, the same canonical resolver the
+ * accommodation paths use.
  */
 export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     slug: 'gastronomy-premium',
@@ -691,7 +705,9 @@ export const GASTRONOMY_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     maxListings: 1,
     sortOrder: 3,
     isActive: true,
-    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS
+    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
+    hasTrial: true,
+    trialDays: COMMERCE_TRIAL_DAYS
 });
 
 /** Experience basic tier. See {@link GASTRONOMY_BASICO_PLAN} for the shape. */
@@ -736,7 +752,9 @@ export const EXPERIENCE_PREMIUM_PLAN: PlanDefinition = commerceVerticalTier({
     maxListings: 1,
     sortOrder: 3,
     isActive: true,
-    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS
+    monthlyPriceArs: COMMERCE_VERTICAL_MONTHLY_PRICE_ARS,
+    hasTrial: true,
+    trialDays: COMMERCE_TRIAL_DAYS
 });
 
 /** Every gastronomy-domain plan the seed maintains, in display order. */

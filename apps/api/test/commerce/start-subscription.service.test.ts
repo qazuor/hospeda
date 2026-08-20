@@ -135,7 +135,18 @@ const ENTITY_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
 const PLAN_DISPLAY_NAME = 'Comercios';
 const PLAN_SLUG = 'commerce-listing';
 
-function createBillingMock() {
+/**
+ * @param input.planMetadata - Override the plan's `metadata` (HOS-590: drives
+ *   `resolvePlanTrialConfig`). Defaults to no trial declared, matching the
+ *   legacy `commerce-listing` plan's real metadata shape.
+ * @param input.priorSubscriptions - Rows `hasAnyPriorSubscription` sees via
+ *   `billing.subscriptions.getByCustomerId` (HOS-590: only queried when the
+ *   plan declares a trial). Defaults to none.
+ */
+function createBillingMock(input?: {
+    planMetadata?: Record<string, unknown>;
+    priorSubscriptions?: ReadonlyArray<{ id: string; status: string }>;
+}) {
     const create = vi.fn().mockResolvedValue({
         id: LOCAL_SUB_ID,
         status: 'incomplete',
@@ -150,7 +161,7 @@ function createBillingMock() {
                     {
                         id: PLAN_ID,
                         name: PLAN_SLUG,
-                        metadata: { displayName: PLAN_DISPLAY_NAME },
+                        metadata: input?.planMetadata ?? { displayName: PLAN_DISPLAY_NAME },
                         prices: [
                             {
                                 id: PRICE_ID,
@@ -173,7 +184,10 @@ function createBillingMock() {
                 livemode: false
             })
         },
-        subscriptions: { create },
+        subscriptions: {
+            create,
+            getByCustomerId: vi.fn().mockResolvedValue(input?.priorSubscriptions ?? [])
+        },
         getStorage: vi.fn(() => ({ subscriptionPollingJobs: undefined }))
     };
     // TYPE-WORKAROUND: the test stub implements only the subset of QZPayBilling
@@ -313,6 +327,65 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
         expect(planArg?.trialDays).toBe(0);
         expect(planArg?.billingInterval).toBe('monthly');
         expect(planArg?.backUrl).toBe(URLS.paymentMethodReturnUrl);
+    });
+
+    // ── HOS-590: commerce now routes through the canonical trial resolver ──
+    describe('HOS-590 — routed through the canonical trial resolver', () => {
+        it('grants the plan-declared trial when the plan carries one and the customer is eligible', async () => {
+            const { billing } = createBillingMock({
+                planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: true, trialDays: 30 },
+                priorSubscriptions: []
+            });
+
+            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+
+            // Load-bearing (not cosmetic): `resolveCheckoutMpPlanId` resolves the
+            // MP preapproval PLAN from this value, so a wrong number here mints
+            // the WRONG MercadoPago plan — the same mechanism AC-16 depends on.
+            const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
+            expect(planArg?.trialDays).toBe(30);
+
+            const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
+                string,
+                unknown
+            >;
+            expect(subArg.trialGranted).toBe(true);
+        });
+
+        it('grants NO trial when the plan declares one but the customer already consumed it (one trial per customer, for life)', async () => {
+            const { billing } = createBillingMock({
+                planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: true, trialDays: 30 },
+                priorSubscriptions: [{ id: 'prior-sub-1', status: 'active' }]
+            });
+
+            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+
+            const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
+            expect(planArg?.trialDays).toBe(0);
+
+            const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
+                string,
+                unknown
+            >;
+            expect(subArg.trialGranted).toBe(false);
+        });
+
+        it('grants no trial when the plan declares none, exactly as before HOS-590 (the partner path stays this way permanently)', async () => {
+            const { billing } = createBillingMock({
+                planMetadata: { displayName: PLAN_DISPLAY_NAME, hasTrial: false, trialDays: 0 }
+            });
+
+            await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
+
+            const planArg = vi.mocked(resolveCheckoutMpPlanId).mock.calls[0]?.[0];
+            expect(planArg?.trialDays).toBe(0);
+
+            const subArg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<
+                string,
+                unknown
+            >;
+            expect(subArg.trialGranted).toBe(false);
+        });
     });
 
     it('throws PLAN_NOT_FOUND when the plan slug is unknown', async () => {

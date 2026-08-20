@@ -653,8 +653,11 @@ export interface InitiateCommerceMonthlySubscriptionResult {
  * reachable.
  *
  * Flow:
- *   1. resolve/provision the no-trial MP `preapproval_plan` for this commercial
- *      plan variant (`resolveCheckoutMpPlanId`);
+ *   1. resolve the trial length through the SAME canonical resolver the
+ *      accommodation paths use (HOS-590: `resolvePlanTrialConfig` ->
+ *      `resolveCheckoutFreeTrialDays`), then resolve/provision the matching MP
+ *      `preapproval_plan` for this commercial plan variant + trial-day variant
+ *      (`resolveCheckoutMpPlanId`);
  *   2. materialize a `pending_provider` `billing_subscriptions` row stamped
  *      `product_domain = 'commerce'` (D3) plus its `billing_pending_checkouts`
  *      correlation row, and — in the SAME transaction — upsert the
@@ -693,13 +696,45 @@ export async function initiateCommerceMonthlySubscription(
         );
     }
 
-    // HOS-191: commerce listings are always no-trial (trialDays: 0); subscribe
-    // against the no-trial MP preapproval_plan for uniform plan-based checkout.
+    // HOS-590: commerce now routes through the SAME canonical trial resolver
+    // the accommodation paths use (`resolvePlanTrialConfig` ->
+    // `resolveCheckoutFreeTrialDays`) instead of hardcoding `trialDays: 0`
+    // (the HOS-191 shortcut this replaces). Commerce plans carry no promo
+    // codes (see the docblock above), so `extraTrialDays` is always
+    // `undefined` — the plan's declared `hasTrial`/`trialDays`
+    // (`billing_plans.metadata`, see migration `0064`) is the only input
+    // besides the ops kill-switch and the one-trial-per-customer-for-life
+    // check.
+    const { hasTrial: planHasTrial, trialDays: planTrialDays } = resolvePlanTrialConfig(
+        plan.metadata
+    );
+
+    // Only queried when the plan actually declares a trial, mirroring the
+    // accommodation path — the answer cannot change the outcome otherwise.
+    const hasPriorSubscription =
+        planHasTrial && planTrialDays > 0
+            ? await hasAnyPriorSubscription({ billing, customerId })
+            : true;
+
+    const { freeTrialDays } = resolveCheckoutFreeTrialDays({
+        planHasTrial,
+        planTrialDays,
+        trialDaysOverride: env.HOSPEDA_TRIAL_DAYS_OVERRIDE,
+        extraTrialDays: undefined,
+        hasPriorSubscription
+    });
+
     // `planName` is the buyer-visible display name — it becomes the MP plan's
     // `reason`, i.e. what the buyer reads on MercadoPago's hosted page. With the
     // `billing.subscriptions.create` call gone, this is now the ONLY reason MP
     // ever sees for a commerce checkout (qzpay's `buildCreateBody` used to build
     // a second one from the raw plan SLUG).
+    //
+    // `trialDays` here is not cosmetic: `resolveCheckoutMpPlanId` resolves the
+    // MercadoPago preapproval PLAN from `(plan, amount, currency, interval,
+    // trialDays)`, so passing the resolved `freeTrialDays` mints (or reuses) a
+    // DIFFERENT MP preapproval plan than the no-trial one — the same mechanism
+    // §6.8 of the spec relies on.
     const providerPriceId = await resolveCheckoutMpPlanId({
         commercialPlanId: plan.id,
         // E2E test-control scope only (HOS-191 resilience specs) — inert in prod.
@@ -708,7 +743,7 @@ export async function initiateCommerceMonthlySubscription(
         amountCentavos: monthlyPrice.unitAmount,
         currency: monthlyPrice.currency,
         billingInterval: 'monthly',
-        trialDays: 0,
+        trialDays: freeTrialDays ?? 0,
         // Same URL later used as the preapproval's back_url once the real
         // preapproval exists (F2); MP also requires it on preapproval_plan
         // creation (qzpay-mercadopago 2.5.0).
@@ -764,7 +799,10 @@ export async function initiateCommerceMonthlySubscription(
         // snapshot is a real identity signal for the webhook linker — unlike the
         // partner flow below.
         payerEmail: customer.email,
-        trialGranted: false,
+        // HOS-590: mirrors `freeTrialDays !== undefined` on the accommodation
+        // paths (`:559`, `:1303`) — the third of the three hardcodes that had
+        // to move together, or this would promise a trial and charge day one.
+        trialGranted: freeTrialDays !== undefined,
         // D3: stamped inside the helper's transaction. ADR-035 / SPEC-239 —
         // `loadEntitlements()` filters to `product_domain = 'accommodation'`, so
         // this is what keeps a commerce subscription from granting its owner the
