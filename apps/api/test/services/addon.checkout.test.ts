@@ -694,6 +694,28 @@ describe('confirmAddonPurchase', () => {
             expect(mockDbTransaction).toHaveBeenCalledOnce();
         });
 
+        it('should accept comp subscriptions as valid for purchase (HOS-594)', async () => {
+            // Arrange — HOS-594: a complimentary (comp) subscription grants full plan
+            // entitlements (SPEC-262) but was previously rejected here because the
+            // hand-rolled gate only checked for 'active' or 'trialing'. This is the
+            // exact regression the fix targets: before the fix, this call returned
+            // NO_ACTIVE_SUBSCRIPTION even though the customer's plan is fully active.
+            mockBilling = createMockBilling([
+                { id: 'sub_comp', status: 'comp', planId: 'plan_basico' }
+            ]);
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockDbTransaction).toHaveBeenCalledOnce();
+        });
+
         // SPEC-127 T-001 regression: dual-resolve planId (UUID vs slug)
         it('should record limitAdjustments with plan baseline when planId is a UUID (not a slug)', async () => {
             // Arrange
@@ -1006,6 +1028,38 @@ describe('confirmAddonPurchase', () => {
             expect(result.success).toBe(true);
             expect(mockDbTransaction).toHaveBeenCalledOnce();
         });
+
+        it('should succeed when re-check shows a comp subscription (HOS-594)', async () => {
+            // Arrange: initial check active, re-check comp — comp is entitlement-granting
+            const billingWithCompRecheck = {
+                subscriptions: {
+                    getByCustomerId: vi
+                        .fn()
+                        .mockResolvedValueOnce([
+                            { id: 'sub_001', status: 'active', planId: 'plan_basico' }
+                        ])
+                        .mockResolvedValueOnce([
+                            { id: 'sub_001', status: 'comp', planId: 'plan_basico' }
+                        ])
+                },
+                plans: {
+                    get: vi.fn().mockResolvedValue({ id: 'plan_basico' })
+                }
+            } as unknown as import('@qazuor/qzpay-core').QZPayBilling;
+
+            mockDbInsertReturning.mockResolvedValue([{ id: 'purchase_comp_ok' }]);
+
+            // Act
+            const result = await confirmAddonPurchase(
+                billingWithCompRecheck,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            // Assert: comp counts as a valid entitlement-granting subscription
+            expect(result.success).toBe(true);
+            expect(mockDbTransaction).toHaveBeenCalledOnce();
+        });
     });
 });
 
@@ -1175,6 +1229,45 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
         expect(mockBillingCheckoutCreate).toHaveBeenCalledOnce();
         return getCheckoutCreateArg();
     }
+
+    describe('subscription eligibility gate (HOS-594)', () => {
+        // HOS-594: this is the exact call site that produced the production
+        // repro — a customer clicks "Buy" and createAddonCheckout rejects them
+        // with NO_ACTIVE_SUBSCRIPTION even though their (complimentary) plan is
+        // fully active, because the gate only recognized 'active'/'trialing'.
+        it('should allow checkout creation for a comp (complimentary) subscription', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'comp-user@example.com',
+                    metadata: { name: 'Comp User' }
+                },
+                subscription: { id: 'sub_comp', status: 'comp', planId: 'plan_basico' }
+            });
+
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            expect(result.success).toBe(true);
+            expect(mockBillingCheckoutCreate).toHaveBeenCalledOnce();
+        });
+
+        it('should still reject checkout creation for a canceled subscription', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'canceled-user@example.com',
+                    metadata: { name: 'Canceled User' }
+                },
+                subscription: { id: 'sub_canceled', status: 'canceled', planId: 'plan_basico' }
+            });
+
+            const result = await createAddonCheckout(billing, defaultInput);
+
+            expect(result.success).toBe(false);
+            expect(result.error?.code).toBe('NO_ACTIVE_SUBSCRIPTION');
+            expect(mockBillingCheckoutCreate).not.toHaveBeenCalled();
+        });
+    });
 
     describe('payer fields (customerEmail / customerName)', () => {
         // The adapter owns payer.first_name / payer.last_name splitting internally.
