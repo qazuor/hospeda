@@ -33,6 +33,7 @@ import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import type { MediaEntityType } from '../admin/permissions';
+import { mediaEntityNotFoundResponse } from '../entity-not-found';
 
 type ProtectedMediaEntityType = Extract<
     MediaEntityType,
@@ -333,14 +334,7 @@ export const protectedDeleteEntityRoute = createProtectedRoute({
         const entityResult = await service.getById(actor, parsed.entityId);
 
         if (entityResult.error || !entityResult.data) {
-            return createErrorResponse(
-                {
-                    code: 'ENTITY_NOT_FOUND',
-                    message: `Entity not found: ${parsed.entityType} with id ${parsed.entityId}`
-                },
-                ctx,
-                404
-            );
+            return mediaEntityNotFoundResponse({ ctx });
         }
 
         const entity = entityResult.data as { ownerId?: string | null };
@@ -359,11 +353,12 @@ export const protectedDeleteEntityRoute = createProtectedRoute({
                     },
                     'Refusing media delete: actor does not own entity'
                 );
-                return createErrorResponse(
-                    { code: 'FORBIDDEN', message: 'You do not own this entity' },
-                    ctx,
-                    403
-                );
+                // HOS-600: the SAME 404 the missing-entity branch answers. The
+                // 403 this replaces confirmed the id was real to a caller who
+                // had no right to know, which is exactly what the contract's
+                // "a foreign resource answers 404" rule forbids. The log above
+                // keeps the distinction; the client does not get it.
+                return mediaEntityNotFoundResponse({ ctx });
             }
         }
 

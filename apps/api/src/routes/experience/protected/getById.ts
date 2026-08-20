@@ -5,8 +5,8 @@
  * NOT_FOUND so that owner-private fields (contactInfo, ownerId,
  * lifecycleState, richDescription, audit dates) are never leaked.
  */
-import { ExperienceProtectedSchema, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
-import { ExperienceService, ServiceError } from '@repo/service-core';
+import { ExperienceProtectedSchema, PermissionEnum } from '@repo/schemas';
+import { ExperienceService, entityNotFoundError, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getActorFromContext } from '../../../utils/actor';
@@ -48,9 +48,14 @@ export const protectedGetExperienceByIdRoute = createProtectedRoute({
 
         // Ownership gate: only the owner or a staff actor with COMMERCE_VIEW_ALL
         // may read owner-private fields through the protected tier.
+        // HOS-600: composed by the shared helper so this branch is byte-identical
+        // to the missing-row 404 the service raises above. The literal it replaces
+        // (`'Experience not found'`) differed from the service's
+        // `'experience not found'` by one capital letter, which was enough to tell
+        // a caller that the id they were holding is real.
         const hasViewAll = actor.permissions?.includes(PermissionEnum.COMMERCE_VIEW_ALL);
         if (!hasViewAll && entity?.ownerId !== actor.id) {
-            throw new ServiceError(ServiceErrorCode.NOT_FOUND, 'Experience not found');
+            throw entityNotFoundError({ entityName: ExperienceService.ENTITY_NAME });
         }
 
         if (!entity) {

@@ -51,13 +51,17 @@ describe('userBookmark.permissions', () => {
         expect(() => canAccessBookmark(owner, bookmark)).not.toThrow();
     });
 
-    it('canAccessBookmark throws for non-owner', () => {
+    it('canAccessBookmark refuses a non-owner with NOT_FOUND, not FORBIDDEN (HOS-600)', () => {
+        // A 403 confirmed the bookmark was real and simply somebody else's,
+        // which is the disclosure the contract's "a foreign resource answers
+        // 404" rule exists to deny. The refusal itself is unchanged.
         expect(() => canAccessBookmark(other, bookmark)).toThrowError(ServiceError);
         try {
             canAccessBookmark(other, bookmark);
         } catch (e) {
             expect(e).toBeInstanceOf(ServiceError);
-            expect((e as ServiceError).code).toBe(ServiceErrorCode.FORBIDDEN);
+            expect((e as ServiceError).code).toBe(ServiceErrorCode.NOT_FOUND);
+            expect((e as ServiceError).message).not.toMatch(/owner|permission/i);
         }
     });
 

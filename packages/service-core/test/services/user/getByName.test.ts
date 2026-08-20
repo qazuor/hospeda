@@ -11,12 +11,7 @@ import { UserService } from '../../../src/services/user/user.service';
 import { createActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
-import {
-    expectForbiddenError,
-    expectInternalError,
-    expectNotFoundError,
-    expectSuccess
-} from '../../helpers/assertions';
+import { expectInternalError, expectNotFoundError, expectSuccess } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
@@ -75,14 +70,26 @@ describe('UserService.getByName', () => {
         expect(result.data?.displayName).toBe(name);
     });
 
-    it('should return FORBIDDEN if actor is not self or super admin', async () => {
-        // Arrange
+    it('answers a foreign account exactly as it answers a lookup that matches nothing (HOS-600)', async () => {
+        // The pair used to be two separate assertions, FORBIDDEN next to
+        // NOT_FOUND, and both passed while the lookup was an existence oracle.
+        // Compared side by side as one value, the difference is unmissable.
+
+        // Arrange — the row exists and belongs to somebody else.
         const entity = getUser({ id: userId, displayName: name });
         asMock(userModelMock.findOne).mockResolvedValue(entity);
         // Act
-        const result = await service.getByName(otherUser, name);
-        // Assert
-        expectForbiddenError(result);
+        const foreign = await service.getByName(otherUser, name);
+
+        // Arrange — nothing matches.
+        asMock(userModelMock.findOne).mockResolvedValue(null);
+        // Act
+        const missing = await service.getByName(superAdmin, name);
+
+        // Assert — whole-result equality, never `objectContaining`.
+        expect(foreign).toEqual(missing);
+        expectNotFoundError(foreign);
+        expect(foreign.error?.message).not.toMatch(/USER_READ_ALL|permission/i);
     });
 
     it('should return NOT_FOUND if user does not exist', async () => {

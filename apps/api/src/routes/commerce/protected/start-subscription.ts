@@ -21,9 +21,16 @@
  * the permission to `COMMERCE_EDIT_OWN` on an admin-shaped route would let any
  * `COMMERCE_OWNER` pay for ANY listing. This route loads the raw listing via
  * the `@repo/db` model directly (not `GastronomyService.getById`, whose
- * public/protected view-tier gating would 404 a non-owner on a still-DRAFT
- * listing instead of the 403 AC-2 requires) and explicitly asserts
- * `actor.id === listing.ownerId` before doing anything else.
+ * public/protected view-tier gating varies by the listing's lifecycle and
+ * visibility) and explicitly asserts `actor.id === listing.ownerId` before
+ * doing anything else.
+ *
+ * Since HOS-600 that refusal is a **404, not the 403 AC-2 originally
+ * specified**, and it is byte-identical to the answer for a listing that does
+ * not exist. The 403 confirmed the id was real to somebody with no right to
+ * know it, which the error contract's "a foreign resource answers 404" rule
+ * exists to prevent; the security boundary itself is unchanged — a non-owner
+ * still cannot start a checkout.
  *
  * ## Completeness gate (G-3, AC-5)
  *
@@ -121,8 +128,9 @@ const LIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due']);
  * ownership (`ownerId`) + the fields `resolveListingCompleteness` needs
  * ({@link CommerceListingCompletenessListing}). Read directly via the
  * `@repo/db` model (not through `GastronomyService.getById`'s view-tier
- * gating) so a non-owner gets a uniform 403 regardless of the listing's
- * current lifecycle/visibility (AC-2).
+ * gating) so a non-owner gets a uniform answer regardless of the listing's
+ * current lifecycle/visibility (AC-2) — since HOS-600 that answer is the same
+ * 404 a non-existent listing gets, not a 403.
  *
  * `media` is the ONE completeness field this row cannot supply: HOS-372 dropped
  * the `media` JSONB column, so it is loaded separately via
@@ -132,6 +140,18 @@ const LIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due']);
 interface RawCommerceListingRow extends CommerceListingCompletenessListing {
     readonly id: string;
 }
+
+/**
+ * The single 404 this route answers when the caller may not start a
+ * subscription for the listing they named — because it does not exist, or
+ * because it is somebody else's (HOS-600). Built in one place so the two
+ * branches cannot drift into two distinguishable bodies, and carrying neither
+ * the entity type nor the id (error-contract rule R5).
+ *
+ * @returns The `HTTPException` to throw.
+ */
+const commerceListingNotFound = (): HTTPException =>
+    new HTTPException(404, { message: 'commerce listing not found' });
 
 /**
  * Loads the raw commerce entity row for the given `entityType`/`entityId`.
@@ -147,9 +167,7 @@ async function loadRawListing(
     const model = entityType === 'gastronomy' ? gastronomyModel : experienceModel;
     const entity = await model.findById(entityId);
     if (!entity) {
-        throw new HTTPException(404, {
-            message: `Commerce listing not found: ${entityType}/${entityId}`
-        });
+        throw commerceListingNotFound();
     }
     // TYPE-WORKAROUND: model.findById returns the full Gastronomy/Experience
     // entity type; we only read the RawCommerceListingRow subset (id/ownerId) for
@@ -177,11 +195,16 @@ export async function handleCommerceStartSubscription(
     const actor = getActorFromContext(ctx);
 
     // ── Ownership check (AC-2) — the entire security boundary. ─────────────
+    //
+    // HOS-600: a listing that is not the caller's answers the SAME 404 as one
+    // that does not exist. The 403 this replaces said "that id is real, it just
+    // is not yours", which let anyone holding an id confirm a live listing —
+    // the disclosure the error contract's 404-for-foreign-rows rule exists to
+    // close. The old 404 also echoed `${entityType}/${entityId}` back, against
+    // rule R5; both branches now share one body that carries neither.
     const listing = await loadRawListing(entityType, entityId);
     if (listing.ownerId !== actor.id) {
-        throw new HTTPException(403, {
-            message: 'You may only start a subscription for your own commerce listing.'
-        });
+        throw commerceListingNotFound();
     }
 
     // ── Plan slug (D-7) — resolved before touching billing so an unset

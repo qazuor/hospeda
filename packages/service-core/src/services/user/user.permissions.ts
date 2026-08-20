@@ -2,23 +2,28 @@ import type { User } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
+import { USER_ENTITY_NAME } from '../entity-names';
 
 /**
  * Checks if the actor can view the target user.
  * Allowed if: self-check OR actor has USER_READ_ALL permission.
  * SUPER_ADMIN always passes because they have all permissions assigned.
+ *
+ * A caller who may not read this row gets NOT_FOUND, identical to the answer
+ * for an id that does not exist (HOS-600) — see `UserService._canView` for why,
+ * and `utils/not-found.ts` for the single place the message is composed.
+ *
  * @param actor - The acting user (may be undefined)
  * @param target - The user being viewed
- * @throws ServiceError (FORBIDDEN) if not allowed
+ * @throws ServiceError (FORBIDDEN) when there is no actor at all
+ * @throws ServiceError (NOT_FOUND) when the actor may not read this user
  */
 export const canViewUser = (actor: Actor | undefined, target: User): void => {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Missing actor');
     if (actor.id !== target.id && !hasPermission(actor, PermissionEnum.USER_READ_ALL)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'FORBIDDEN: Only self or users with USER_READ_ALL can view user'
-        );
+        throw entityNotFoundError({ entityName: USER_ENTITY_NAME });
     }
 };
 

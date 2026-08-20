@@ -47,6 +47,7 @@ import { apiLogger } from '../../../utils/logger';
 import { createErrorResponse } from '../../../utils/response-helpers';
 import { createProtectedRoute } from '../../../utils/route-factory';
 import { type MediaEntityType, validateEntityMediaPermission } from '../admin/permissions';
+import { mediaEntityNotFoundResponse } from '../entity-not-found';
 import { resolveVisibleGalleryCount } from '../gallery-count';
 
 /** Reusable Zod validator for actor.id UUID format. */
@@ -235,15 +236,7 @@ export const protectedUploadEntityRoute = createProtectedRoute({
 
         const entityResult = await service.getById(actor, entityId);
         if (entityResult.error || !entityResult.data) {
-            return createErrorResponse(
-                {
-                    code: 'ENTITY_NOT_FOUND',
-                    message: `Entity not found: ${entityType} with id ${entityId}`,
-                    details: { entityType, entityId }
-                },
-                ctx,
-                404
-            );
+            return mediaEntityNotFoundResponse({ ctx });
         }
 
         // Ownership check.
@@ -257,15 +250,15 @@ export const protectedUploadEntityRoute = createProtectedRoute({
         // everyone — the author included — for `post`, `event` and `destination`.
         // Those fall through to the shared media permission policy, which
         // resolves them by authorship or by the entity's update permission.
+        //
+        // HOS-600: refusing here answers the SAME 404 as "no such entity"
+        // above. A 403 told the caller their id was real — the exact
+        // confirmation the contract's 404-for-foreign-rows rule exists to deny.
         const entity = entityResult.data as { ownerId?: string | null; authorId?: string | null };
 
         if (entity.ownerId !== undefined && entity.ownerId !== null) {
             if (entity.ownerId !== actor.id) {
-                return createErrorResponse(
-                    { code: 'FORBIDDEN', message: 'You do not own this entity' },
-                    ctx,
-                    403
-                );
+                return mediaEntityNotFoundResponse({ ctx });
             }
         } else {
             const permissionCheck = validateEntityMediaPermission({
@@ -275,11 +268,7 @@ export const protectedUploadEntityRoute = createProtectedRoute({
             });
 
             if (!permissionCheck.allowed) {
-                return createErrorResponse(
-                    { code: 'FORBIDDEN', message: 'You do not own this entity' },
-                    ctx,
-                    403
-                );
+                return mediaEntityNotFoundResponse({ ctx });
             }
         }
 

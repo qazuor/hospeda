@@ -322,30 +322,50 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
 
     // ── AC-2: ownership check ────────────────────────────────────────────
 
-    it('returns 403 when the caller does not own the listing (AC-2)', async () => {
-        mockGastronomyFindById.mockResolvedValue(makeCompleteGastronomyRow(OTHER_USER_ID));
-        const ctx = createMockContext({ actorId: OWNER_ID });
-
-        await expect(
-            handleCommerceStartSubscription(ctx as never, {
+    /**
+     * Runs the handler and captures whatever it refuses with, as a plain
+     * comparable value. Anything other than a rejection is a failure the
+     * caller's assertion will surface.
+     */
+    async function captureRefusal(): Promise<{ status: number; message: string }> {
+        try {
+            await handleCommerceStartSubscription(ctx0 as never, {
                 entityType: CommerceEntityTypeEnum.GASTRONOMY,
                 entityId: ENTITY_ID
-            })
-        ).rejects.toMatchObject({ status: 403 });
+            });
+        } catch (error) {
+            const httpError = error as { status?: number; message?: string };
+            return { status: httpError.status ?? 0, message: httpError.message ?? '' };
+        }
+        throw new Error('expected the handler to refuse, but it returned');
+    }
+
+    let ctx0: ReturnType<typeof createMockContext>;
+
+    it('answers a foreign listing exactly as it answers a non-existent one (AC-2, HOS-600)', async () => {
+        // AC-2 originally specified 403 here. HOS-600 changed it to 404: the 403
+        // told a caller holding an id that the id was real and simply not
+        // theirs, which is the disclosure the error contract's
+        // "a foreign resource answers 404" rule exists to prevent. The security
+        // boundary is unchanged — checkout is still refused.
+        ctx0 = createMockContext({ actorId: OWNER_ID });
+
+        mockGastronomyFindById.mockResolvedValue(makeCompleteGastronomyRow(OTHER_USER_ID));
+        const foreign = await captureRefusal();
+
+        mockGastronomyFindById.mockResolvedValue(null);
+        const missing = await captureRefusal();
+
+        // Whole-value equality, not `toMatchObject`: the two refusals used to
+        // differ in status AND in message, and the message half is the kind a
+        // status-shaped assertion cannot see.
+        expect(foreign).toEqual(missing);
+        expect(foreign.status).toBe(404);
+        // Rule R5 — the refusal echoes neither the entity type nor the id.
+        expect(foreign.message).not.toContain(ENTITY_ID);
+        expect(foreign.message).not.toContain('gastronomy');
 
         expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
-    });
-
-    it('returns 404 when the listing does not exist', async () => {
-        mockGastronomyFindById.mockResolvedValue(null);
-        const ctx = createMockContext();
-
-        await expect(
-            handleCommerceStartSubscription(ctx as never, {
-                entityType: CommerceEntityTypeEnum.GASTRONOMY,
-                entityId: ENTITY_ID
-            })
-        ).rejects.toMatchObject({ status: 404 });
     });
 
     it('proceeds when actor.id === listing.ownerId', async () => {

@@ -168,20 +168,49 @@ describe('DELETE /api/v1/protected/media/delete-entity — integration (SPEC-208
         expect(body.data.wasPresent).toBe(false);
     });
 
-    // ── CRITICAL AUTHZ: 403 on foreign publicId ──────────────────────────────
+    // ── CRITICAL AUTHZ: foreign publicId ─────────────────────────────────────
 
-    it('returns 403 FORBIDDEN when actor does not own the entity (foreign publicId)', async () => {
-        // OTHER_USER_ID tries to delete an asset belonging to OWNER_ID
-        const actor = buildOtherActor();
-        const res = await app.request(DELETE_URL(VALID_PUBLIC_ID), {
+    it('answers a foreign publicId exactly as it answers a missing entity (HOS-600)', async () => {
+        // This used to assert 403 FORBIDDEN, with the 404 ENTITY_NOT_FOUND case
+        // as a separate green test a few lines down. Both passed, and together
+        // they were an existence oracle: anyone holding a publicId learned from
+        // the status whether the entity behind it was real. The refusal itself
+        // is unchanged — the delete still does not happen.
+
+        // Foreign: the entity stub returns ownerId = OWNER_ID, actor is OTHER.
+        const foreignRes = await app.request(DELETE_URL(VALID_PUBLIC_ID), {
             method: 'DELETE',
-            headers: authHeaders(actor)
+            headers: authHeaders(buildOtherActor())
         });
+        const foreign = { status: foreignRes.status, body: await foreignRes.json() };
 
-        // The entity stub returns ownerId = OWNER_ID; actor.id = OTHER_USER_ID → 403
-        expect(res.status).toBe(403);
-        const body = (await res.json()) as { error: { code: string } };
-        expect(body.error.code).toBe('FORBIDDEN');
+        // Missing: the owner asks for an entity that is not there.
+        vi.spyOn(AccommodationService.prototype, 'getById').mockResolvedValueOnce({
+            data: null,
+            error: { code: 'NOT_FOUND', message: 'accommodation not found' }
+        } as never);
+        const missingRes = await app.request(DELETE_URL(VALID_PUBLIC_ID), {
+            method: 'DELETE',
+            headers: authHeaders(buildOwnerActor())
+        });
+        const missing = { status: missingRes.status, body: await missingRes.json() };
+
+        // Whole-body equality apart from the per-request metadata block, which
+        // varies by timestamp on every call by design.
+        const stripMetadata = (probe: { status: number; body: unknown }) => {
+            const { metadata, ...rest } = probe.body as Record<string, unknown>;
+            return {
+                status: probe.status,
+                body: rest,
+                metadataKeys: Object.keys(metadata as object).sort()
+            };
+        };
+        expect(stripMetadata(foreign)).toEqual(stripMetadata(missing));
+        expect(foreign.status).toBe(404);
+        expect((foreign.body as { error: { code: string } }).error.code).toBe('ENTITY_NOT_FOUND');
+        // R5: the refusal echoes neither the entity type nor the id.
+        const message = (foreign.body as { error: { message: string } }).error.message;
+        expect(message).not.toContain('accommodation');
         expect(mockDelete).not.toHaveBeenCalled();
     });
 
@@ -198,25 +227,6 @@ describe('DELETE /api/v1/protected/media/delete-entity — integration (SPEC-208
         const body = (await res.json()) as { success: boolean };
         expect(body.success).toBe(true);
         expect(mockDelete).toHaveBeenCalledOnce();
-    });
-
-    // ── Entity not found ──────────────────────────────────────────────────────
-
-    it('returns 404 when entity does not exist', async () => {
-        vi.spyOn(AccommodationService.prototype, 'getById').mockResolvedValueOnce({
-            data: null,
-            error: { code: 'NOT_FOUND', message: 'Not found' }
-        } as never);
-
-        const actor = buildOwnerActor();
-        const res = await app.request(DELETE_URL(VALID_PUBLIC_ID), {
-            method: 'DELETE',
-            headers: authHeaders(actor)
-        });
-
-        expect(res.status).toBe(404);
-        const body = (await res.json()) as { error: { code: string } };
-        expect(body.error.code).toBe('ENTITY_NOT_FOUND');
     });
 
     // ── Validation guards ─────────────────────────────────────────────────────

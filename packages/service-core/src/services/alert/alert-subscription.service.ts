@@ -11,6 +11,7 @@ import { z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
 import type { Actor, ListOptions, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { PRICE_ALERT_ENTITY_NAME } from '../entity-names';
 import {
     checkCanAccessAlert,
     checkCanCreate,
@@ -88,7 +89,7 @@ export class AlertSubscriptionService extends BaseCrudService<
     typeof PriceAlertUpdateInputSchema,
     typeof AlertSubscriptionSearchSchema
 > {
-    static readonly ENTITY_NAME = 'priceAlert';
+    static readonly ENTITY_NAME = PRICE_ALERT_ENTITY_NAME;
     protected readonly entityName = AlertSubscriptionService.ENTITY_NAME;
     protected readonly model: TouristPriceAlertModel;
 

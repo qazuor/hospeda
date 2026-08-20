@@ -2,7 +2,9 @@ import type { PriceAlert } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
 import { hasPermission } from '../../utils/permission';
+import { PRICE_ALERT_ENTITY_NAME } from '../entity-names';
 
 /**
  * Checks whether an actor is "authenticated" for the narrow purposes of this
@@ -58,10 +60,10 @@ export function checkCanAccessAlert(actor: Actor, entity: PriceAlert): void {
     if (actor.id === entity.userId || hasPermission(actor, PermissionEnum.ACCOMMODATION_VIEW_ALL)) {
         return;
     }
-    throw new ServiceError(
-        ServiceErrorCode.FORBIDDEN,
-        'Permission denied: only the subscription owner or staff may access this price alert'
-    );
+    // HOS-600: NOT_FOUND, byte-identical to the answer for an id that matches
+    // nothing. A 403 here confirmed the alert existed to somebody who had no
+    // right to know, and the message said so in words.
+    throw entityNotFoundError({ entityName: PRICE_ALERT_ENTITY_NAME });
 }
 
 /**

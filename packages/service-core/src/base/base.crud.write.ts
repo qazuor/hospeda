@@ -9,7 +9,7 @@ import {
     type ServiceInput,
     type ServiceOutput
 } from '../types';
-import { validateEntity } from '../utils';
+import { entityNotFoundError, validateEntity } from '../utils';
 import { BaseCrudRead } from './base.crud.read';
 
 /**
@@ -216,10 +216,7 @@ export abstract class BaseCrudWrite<
                 if (!updatedEntity) {
                     const entityExists = await this.model.findById(updateId, execCtx?.tx);
                     if (!entityExists) {
-                        throw new ServiceError(
-                            ServiceErrorCode.NOT_FOUND,
-                            `${this.entityName} not found`
-                        );
+                        throw entityNotFoundError({ entityName: this.entityName });
                     }
                     if (filteredPayloadKeys.length === 0) {
                         throw new ServiceError(
@@ -441,10 +438,7 @@ export abstract class BaseCrudWrite<
                     execCtx
                 );
                 if (!entity) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `${this.entityName} not found`
-                    );
+                    throw entityNotFoundError({ entityName: this.entityName });
                 }
                 validateEntity(entity, this.entityName);
 
