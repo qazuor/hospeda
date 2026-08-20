@@ -357,6 +357,30 @@ export const createPaginatedResponse = (
 };
 
 /**
+ * `ServiceErrorCode`s whose `details` is part of the PUBLIC error contract,
+ * not a debug-only field (HOS-700).
+ *
+ * `handleRouteError` otherwise strips `error.details` unless
+ * `HOSPEDA_API_DEBUG_ERRORS` is on — but for these two codes the client
+ * genuinely needs the structured payload to render the right copy:
+ * `LIMIT_REACHED` carries `limitKey` (which limit was hit, e.g.
+ * `max_accommodations`) and `ENTITLEMENT_REQUIRED` carries the entitlement
+ * key gating the action. Without it, `apps/web/src/lib/billing-limit-error.ts`
+ * cannot distinguish one limit from another and falls back to the generic
+ * "you hit a limit" copy for every limit, including in production.
+ *
+ * This list is deliberately short and was chosen by the issue owner over
+ * opening `details` for every 4xx (see HOS-700's decision comment) — adding a
+ * code here changes the public API contract, so update
+ * `apps/api/docs/error-contract.md` in the same change and do not generalize
+ * this to "all 4xx" without going back to the owner.
+ */
+const PUBLIC_DETAILS_ERROR_CODES: ReadonlySet<ServiceErrorCode> = new Set([
+    ServiceErrorCode.LIMIT_REACHED,
+    ServiceErrorCode.ENTITLEMENT_REQUIRED
+]);
+
+/**
  * Helper function to handle errors in route handlers
  * Provides consistent error handling across all endpoints
  */
@@ -469,7 +493,10 @@ export const handleRouteError = (error: unknown, c: Context) => {
             {
                 code: error.code,
                 message: error.message,
-                details: env.HOSPEDA_API_DEBUG_ERRORS ? error.details : undefined,
+                details:
+                    env.HOSPEDA_API_DEBUG_ERRORS || PUBLIC_DETAILS_ERROR_CODES.has(error.code)
+                        ? error.details
+                        : undefined,
                 reason: error.reason
             },
             c,
