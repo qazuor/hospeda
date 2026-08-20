@@ -1448,6 +1448,9 @@ and keep their current semantics.
   - The vocabulary widening (§13, release A) lands **before** any row carries a
     new `product_domain` value. Reversing that order makes the code revert the
     outage.
+  - The commerce half of `lead-intake-backstop.job.ts` is removed in the release
+    that **stops writing** leads, not the one that drops the table (§6.3). Deferring
+    it to the drop takes the alliance lead backstop down with it, every four hours.
 - One thing is not an order but an **atomicity** requirement: the three gates on
   the create path (§6.1's `requiredPermissions` and `_canCreate`, §6.11's page
   guard) open in **one** change. Opening two of three leaves the flow exactly as
@@ -1579,7 +1582,7 @@ boundaries — not by convenience. HOS-589 becomes the parent; HOS-590 is issue 
 | 7 | The sales surface and its strings | §6.12 · AC-22, AC-23, AC-24 | 4 | B |
 | 8 | The three-way publish CTA | §6.10 · AC-12 | 3 | B |
 | 9 | Data migrations and plan-catalogue cleanup | §6.9 + §6.13 + the undo migration · AC-25 | 1, 4 | B |
-| 10 | Delete the provisioning path | §6.2 + the lead route + the HOS-305 copy · AC-9 | **2, 3** | B |
+| 10 | Delete the provisioning path | §6.2 + **both** admin provisioning routes + the lead routes + the cron's commerce half + the credentials notification + the HOS-305 copy · AC-9, AC-32 | **2, 3** | B |
 | 11 | Contract | retire `commerce` from the enum, narrow the predicates, drop `commerce_leads` · §6.3, §13 release C | all | **C** |
 
 Issue 10's two blockers are §12's two hard orders, encoded so the board enforces
@@ -1589,6 +1592,12 @@ and 9 are independent of each other and can run in parallel once 4 lands.
 
 Issue 1 is deliberately inert — it changes no row and no answer — which is what
 makes it safe to merge and soak ahead of everything else.
+
+Issue 10 grew after the blast-radius pass and is now the largest of the eleven: it
+spans `apps/api`, `apps/admin`, `apps/web`, `packages/notifications` and one cron,
+and its correctness criterion (AC-32) is about **alliances** — the funnel NG-4
+excludes — because that is what a careless deletion breaks. Consider splitting it
+again at implementation time; do not merge it partially.
 
 ### Smoke gates
 
