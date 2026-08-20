@@ -25,7 +25,13 @@
 
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
-import { DestinationTypeEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import {
+    DestinationTypeEnum,
+    PermissionEnum,
+    RoleEnum,
+    RoleGrantReason,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ZodObject, ZodRawShape, z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -40,6 +46,8 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
+import { withServiceTransaction } from '../../utils/transaction';
+import { grantRole } from '../user-role/user-role.service';
 import { syncCommerceAmenityJunction, syncCommerceFeatureJunction } from './commerce.junction-sync';
 import type { CommerceListingHookState } from './commerce.types';
 import { scheduleCommerceListingRevalidation } from './commerce-revalidation.js';
@@ -270,6 +278,103 @@ export abstract class BaseCommerceListingService<
             amenityIds: amenityRows.items.map((row) => row.amenityId as string),
             featureIds: featureRows.items.map((row) => row.featureId as string)
         };
+    }
+
+    // -----------------------------------------------------------------------
+    // Owner self-service create — the listing IS the role grant
+    // -----------------------------------------------------------------------
+
+    /**
+     * Creates a commerce listing on behalf of its own owner and grants that
+     * owner the `COMMERCE_OWNER` hat in the SAME transaction
+     * (HOS-687 / HOS-589 §6.1).
+     *
+     * The exact mirror of `AccommodationService.createForOnboarding`: creating
+     * the listing is what makes somebody a commerce owner, so there is no
+     * admin approval, no provisioning step, and no pre-existing commerce
+     * permission required to get here.
+     *
+     * Two properties matter and are easy to lose:
+     *
+     * 1. **Atomicity** — the row insert, the junction sync (`_afterCreate`)
+     *    and the role grant share one transaction. A grant that outlives a
+     *    rolled-back listing would hand out a hat for a listing that does not
+     *    exist; a listing without the grant leaves the owner locked out of the
+     *    surface that manages it.
+     * 2. **Idempotence** — `grantRole` rides the `(user_id, role)` primary key,
+     *    so the owner's SECOND listing is a silent no-op on the role rather
+     *    than an error or a duplicate row, and any other hat they already wear
+     *    (e.g. `HOST`) is untouched: granting is additive, never a replace.
+     *
+     * This is deliberately NOT `_afterCreate`. That hook also runs on the ADMIN
+     * create path, where the actor is a staff member creating a listing for
+     * somebody else — granting there would hand `COMMERCE_OWNER` to the admin.
+     *
+     * @param actor - The authenticated account creating (and owning) the listing.
+     * @param data - Create payload, already carrying `ownerId = actor.id`.
+     * @param ctx - Optional caller context; when it carries a `tx`, this method
+     *   enlists in it instead of opening its own boundary.
+     * @returns `ServiceOutput<TEntity>` — the created listing, or the error.
+     */
+    public async createForOwner(
+        actor: Actor,
+        data: z.infer<TCreateSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity>> {
+        const run = async (txCtx: ServiceContext): Promise<TEntity> => {
+            const created = await this.create(actor, data, txCtx);
+            // `create()` re-throws inside a transaction for every failure it
+            // raises itself, but its input-validation branch still returns the
+            // envelope — so the error has to be checked here as well, or a
+            // rejected payload would silently reach `grantRole`.
+            if (created.error) {
+                throw created.error;
+            }
+            if (!created.data) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to create ${this.entityName}. The operation returned no result.`
+                );
+            }
+
+            const granted = await grantRole({
+                userId: actor.id,
+                role: RoleEnum.COMMERCE_OWNER,
+                grantedBy: null,
+                reason: RoleGrantReason.COMMERCE_LISTING_CREATED,
+                ctx: txCtx
+            });
+            if (granted.error) {
+                throw granted.error;
+            }
+
+            return created.data;
+        };
+
+        try {
+            const entity = ctx?.tx
+                ? await run(ctx)
+                : await withServiceTransaction(run, undefined, { timeoutMs: 10_000 });
+            return { data: entity };
+        } catch (error) {
+            const serviceError =
+                error instanceof ServiceError
+                    ? error
+                    : new ServiceError(
+                          ServiceErrorCode.INTERNAL_ERROR,
+                          `Failed to create ${this.entityName} for its owner: ${
+                              error instanceof Error ? error.message : String(error)
+                          }`,
+                          error
+                      );
+            // Inside a caller-owned transaction the error MUST propagate,
+            // otherwise the caller commits a partially-applied unit of work.
+            // Same rule as `BaseService.runWithLoggingAndValidation`.
+            if (ctx?.tx) {
+                throw serviceError;
+            }
+            return { error: serviceError };
+        }
     }
 
     // -----------------------------------------------------------------------
