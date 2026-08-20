@@ -14,6 +14,7 @@ import {
     ServiceError,
     type ServiceOutput
 } from '../types';
+import { entityNotFoundError } from '../utils/not-found';
 import { BaseCrudHooks } from './base.crud.hooks';
 
 /**
@@ -153,10 +154,7 @@ export abstract class BaseCrudRead<
                     : await this.model.findOne(typedWhere, execCtx?.tx);
 
                 if (!entity) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `${this.entityName} not found`
-                    );
+                    throw entityNotFoundError({ entityName: this.entityName });
                 }
 
                 await this._canView(validatedActor, entity as TEntity);

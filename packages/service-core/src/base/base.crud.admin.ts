@@ -9,7 +9,7 @@ import {
     type ServiceInput,
     type ServiceOutput
 } from '../types';
-import { normalizeAdminInfo } from '../utils';
+import { entityNotFoundError, normalizeAdminInfo } from '../utils';
 import { BaseCrudWrite } from './base.crud.write';
 
 /**
@@ -58,10 +58,7 @@ export abstract class BaseCrudAdmin<
             execute: async ({ id }, actor, execCtx) => {
                 const entity = await this.model.findById(id, execCtx?.tx);
                 if (!entity) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `${this.entityName} not found`
-                    );
+                    throw entityNotFoundError({ entityName: this.entityName });
                 }
                 await this._canAdminGetInfo(actor, entity);
                 return { adminInfo: (entity as Record<string, unknown>).adminInfo };
@@ -94,10 +91,7 @@ export abstract class BaseCrudAdmin<
             execute: async ({ id, adminInfo }, actor, execCtx) => {
                 const entity = await this.model.findById(id, execCtx?.tx);
                 if (!entity) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `${this.entityName} not found`
-                    );
+                    throw entityNotFoundError({ entityName: this.entityName });
                 }
                 await this._canAdminSetInfo(actor, entity);
                 const normalized = normalizeAdminInfo(adminInfo);
