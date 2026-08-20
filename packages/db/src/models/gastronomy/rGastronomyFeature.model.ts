@@ -13,7 +13,7 @@ export class RGastronomyFeatureModel extends BaseModelImpl<GastronomyFeatureRela
     protected override readonly validRelationKeys = ['gastronomy', 'feature'] as const;
 
     protected getTableName(): string {
-        return 'rGastronomyFeatures';
+        return 'rGastronomyFeature';
     }
 }
 
