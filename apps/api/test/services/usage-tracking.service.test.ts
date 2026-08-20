@@ -781,7 +781,7 @@ describe('UsageTrackingService', () => {
             // Act
             const result = await service.getUsageSummary(mockCustomerId);
 
-            // Assert — the six account-wide stocks plus the seven AI meters.
+            // Assert — the eight account-wide stocks plus the seven AI meters.
             expect(result.success).toBe(true);
             const measured = result
                 .data!.limits.filter((l) => l.isMeasured)
@@ -796,6 +796,8 @@ describe('UsageTrackingService', () => {
                     LimitKey.MAX_ACTIVE_ALERTS,
                     LimitKey.MAX_COLLECTIONS,
                     LimitKey.MAX_SEARCH_HISTORY_ENTRIES,
+                    LimitKey.MAX_GASTRONOMIES,
+                    LimitKey.MAX_EXPERIENCES,
                     LimitKey.MAX_AI_TEXT_IMPROVE_PER_MONTH,
                     LimitKey.MAX_AI_CHAT_PER_MONTH,
                     LimitKey.MAX_AI_CHAT_CONSUMER_PER_MONTH,
