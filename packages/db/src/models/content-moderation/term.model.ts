@@ -16,7 +16,7 @@ export class ContentModerationTermModel extends BaseModelImpl<
     public entityName = 'contentModerationTerms';
 
     protected getTableName(): string {
-        return 'content_moderation_terms';
+        return 'contentModerationTerms';
     }
 
     /**

@@ -25,7 +25,7 @@ describe('AppLogEntryModel', () => {
     describe('getTableName', () => {
         it('should return the correct table name', () => {
             const tableName = (model as unknown as { getTableName: () => string }).getTableName();
-            expect(tableName).toBe('app_log_entries');
+            expect(tableName).toBe('appLogEntries');
         });
     });
 

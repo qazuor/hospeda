@@ -15,7 +15,7 @@ export class ExchangeRateModel extends BaseModelImpl<ExchangeRate> {
     public entityName = 'exchange_rates';
 
     protected getTableName(): string {
-        return 'exchange_rates';
+        return 'exchangeRates';
     }
 
     /**

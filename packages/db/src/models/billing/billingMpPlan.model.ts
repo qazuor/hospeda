@@ -14,7 +14,7 @@ export class BillingMpPlanModel extends BaseModelImpl<BillingMpPlan> {
     public entityName = 'billing_mp_plans';
 
     protected getTableName(): string {
-        return 'billing_mp_plans';
+        return 'billingMpPlans';
     }
 }
 

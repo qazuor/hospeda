@@ -13,7 +13,7 @@ export class BillingAddonPurchaseModel extends BaseModelImpl<BillingAddonPurchas
     public entityName = 'billing_addon_purchases';
 
     protected getTableName(): string {
-        return 'billing_addon_purchases';
+        return 'billingAddonPurchases';
     }
 }
 
