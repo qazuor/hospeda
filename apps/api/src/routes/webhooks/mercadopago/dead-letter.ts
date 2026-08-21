@@ -248,12 +248,28 @@ export async function enqueueWebhookForRetry({
 /**
  * Column list shared by the enqueue path's `RETURNING` clause.
  *
- * Exported so `utils.ts` cannot drift from {@link FailedWebhookEventRow}.
+ * Exported so `utils.ts` cannot drift from {@link FailedWebhookEventRow}: one
+ * definition, used by the only query that produces that row.
+ *
+ * A FUNCTION, deliberately, not a `const` object. As a const it would
+ * dereference `billingWebhookEvents.*` at **module evaluation time**, and since
+ * `utils.ts` imports this module, every test that loads `utils.ts` would pay
+ * that dereference on import. Roughly 190 files under `apps/api/test` mock
+ * `@repo/db` with a whole-module factory that does not declare
+ * `billingWebhookEvents`, so for those the table is `undefined` and the property
+ * access throws during collection — a failure with nothing to do with the test.
+ * Deferring it to call time keeps the single definition and removes the import
+ * side effect. (Live instance of HOS-716; the bulk migration to partial mocks is
+ * a separate effort — do not start it here.)
+ *
+ * @returns The Drizzle column map for the failed-event `RETURNING` clause.
  */
-export const FAILED_WEBHOOK_EVENT_RETURNING = {
-    providerEventId: billingWebhookEvents.providerEventId,
-    provider: billingWebhookEvents.provider,
-    type: billingWebhookEvents.type,
-    payload: billingWebhookEvents.payload,
-    livemode: billingWebhookEvents.livemode
-} as const;
+export function failedWebhookEventReturning() {
+    return {
+        providerEventId: billingWebhookEvents.providerEventId,
+        provider: billingWebhookEvents.provider,
+        type: billingWebhookEvents.type,
+        payload: billingWebhookEvents.payload,
+        livemode: billingWebhookEvents.livemode
+    } as const;
+}

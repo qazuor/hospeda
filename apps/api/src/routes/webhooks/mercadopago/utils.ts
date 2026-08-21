@@ -12,7 +12,7 @@ import { and, billingWebhookEvents, eq, getDb, or, sql } from '@repo/db';
 import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { apiLogger } from '../../../utils/logger';
-import { enqueueWebhookForRetry, FAILED_WEBHOOK_EVENT_RETURNING } from './dead-letter';
+import { enqueueWebhookForRetry, failedWebhookEventReturning } from './dead-letter';
 import type { AddonMetadata, PaymentInfo } from './types';
 
 /**
@@ -295,7 +295,7 @@ async function updateFailedEvent({
                 eq(billingWebhookEvents.status, 'pending')
             )
         )
-        .returning(FAILED_WEBHOOK_EVENT_RETURNING);
+        .returning(failedWebhookEventReturning());
 
     return updated?.[0];
 }
