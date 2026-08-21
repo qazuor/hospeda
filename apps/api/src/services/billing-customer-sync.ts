@@ -14,6 +14,7 @@ import { billingAddonPurchases, billingSubscriptions, withTransaction } from '@r
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger';
+import { describeProviderSyncError, isDuplicateKeyError } from './billing-customer-sync.errors.js';
 
 /**
  * Cache entry for customer lookups
@@ -130,6 +131,29 @@ export class BillingCustomerSyncService {
 
                 this.cacheCustomer(userId, newCustomer.id);
 
+                // HOS-596: `providerCustomerIds` is deliberately NOT inspected
+                // here to decide whether the provider leg succeeded, because it
+                // cannot answer that question. qzpay-core's success path writes
+                // the link with `storage.customers.update(id, {
+                // providerCustomerIds })`, and `@qazuor/qzpay-drizzle`'s
+                // `mapCoreCustomerUpdateToDrizzle` has no branch for that field
+                // — it maps `mpCustomerId`/`stripeCustomerId` only. So the update
+                // reduces to `{}`, `mp_customer_id` stays NULL, and the customer
+                // comes back with an EMPTY map on success exactly as it does on
+                // failure. A warning keyed on that would fire on every signup.
+                //
+                // The provider failure IS visible, at the moment it happens:
+                // both facades are constructed with `qzpayLogger`, so qzpay's own
+                // `logger.error('Provider sync failed during customer creation')`
+                // carries the MercadoPago message and
+                // `QZPayErrorCode.PROVIDER_CREATE_CUSTOMER_FAILED` into
+                // `apiLogger`, followed by its `logger.warn('Continuing customer
+                // creation without provider sync')`.
+                //
+                // The row is usable either way: since HOS-171 the checkout is a
+                // MercadoPago preapproval that collects the payer on MP's own
+                // page, so nothing in Hospeda's paid paths reads a local provider
+                // customer id.
                 apiLogger.info(
                     {
                         userId,
@@ -137,7 +161,6 @@ export class BillingCustomerSyncService {
                     },
                     'Billing customer created successfully'
                 );
-
                 return newCustomer.id;
             } catch (createError) {
                 // Handle race condition: another concurrent request may have
@@ -161,11 +184,19 @@ export class BillingCustomerSyncService {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
+            // HOS-596: every call site passes `throwOnError: false` (or relies on
+            // its default), so this log is the ONLY trace a failure leaves — the
+            // route just sees `null` and answers "No billing account found".
+            // `error.message` alone was not enough to diagnose the production
+            // incident: on a provider failure the actionable part (which
+            // provider, which operation, and MercadoPago's own error text and
+            // code) lives on the QZPayProviderSyncError's fields and `cause`.
             apiLogger.error(
                 {
                     userId,
                     emailDomain: email.split('@')[1],
-                    error: errorMessage
+                    error: errorMessage,
+                    ...describeProviderSyncError(error)
                 },
                 'Failed to ensure billing customer exists'
             );
@@ -460,28 +491,4 @@ export class BillingCustomerSyncService {
             entries
         };
     }
-}
-
-/**
- * Check if an error is a PostgreSQL unique constraint violation.
- *
- * PostgreSQL error code 23505 indicates a unique_violation. This is used
- * to detect race conditions where two concurrent requests both try to
- * create a customer for the same user.
- *
- * @param error - The error to check
- * @returns true if the error is a duplicate key / unique constraint violation
- */
-function isDuplicateKeyError(error: unknown): boolean {
-    if (error instanceof Error) {
-        const pgError = error as Error & { code?: string };
-        // PostgreSQL unique_violation error code
-        if (pgError.code === '23505') {
-            return true;
-        }
-        // Fallback: check error message for common duplicate key patterns
-        const message = error.message.toLowerCase();
-        return message.includes('duplicate key') || message.includes('unique constraint');
-    }
-    return false;
 }

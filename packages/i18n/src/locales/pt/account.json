@@ -1040,6 +1040,12 @@
                 "ai-support-monthly": "Para adicionar suporte com IA"
             }
         },
+        "featuredOffer": {
+            "title": "Destaque esta hospedagem",
+            "body": "Um impulso de visibilidade faz esta hospedagem aparecer em destaque nas listagens e nos resultados de busca enquanto durar o complemento.",
+            "scope": "Atenção: o impulso vale somente para esta ficha. Se você tem mais de uma hospedagem, cada uma precisa do seu próprio complemento.",
+            "linkSr": "para esta hospedagem"
+        },
         "billingType": {
             "one_time": "Pagamento único",
             "recurring": "Mensal"
@@ -1093,6 +1099,14 @@
             "ai-support-monthly": {
                 "name": "Suporte com IA (mensal)",
                 "description": "Desbloqueia ferramentas de suporte com IA para anfitriões, incluindo sugestões de resposta inteligentes e tratamento automático de perguntas frequentes de hóspedes. Renova mensalmente."
+            },
+            "extra-gastronomies-1": {
+                "name": "Gastronomia extra (+1)",
+                "description": "Adiciona 1 gastronomia adicional ao seu plano. Renova mensalmente."
+            },
+            "extra-experiences-1": {
+                "name": "Experiência extra (+1)",
+                "description": "Adiciona 1 experiência adicional ao seu plano. Renova mensalmente."
             }
         }
     },

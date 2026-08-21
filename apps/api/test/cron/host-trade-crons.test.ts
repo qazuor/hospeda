@@ -27,16 +27,20 @@ const { mockExpire, mockListRemindable, mockMarkReminded, mockNotifyReminder, mo
         mockReconcile: vi.fn()
     }));
 
-vi.mock('@repo/service-core', () => ({
-    HostTradeUsageService: vi.fn().mockImplementation(function () {
-        return {
-            expireOverdueUsages: mockExpire,
-            listRemindableUsages: mockListRemindable,
-            markReminderSent: mockMarkReminded
-        };
-    }),
-    reconcileAllHostTradeAggregates: mockReconcile
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        HostTradeUsageService: vi.fn().mockImplementation(function () {
+            return {
+                expireOverdueUsages: mockExpire,
+                listRemindableUsages: mockListRemindable,
+                markReminderSent: mockMarkReminded
+            };
+        }),
+        reconcileAllHostTradeAggregates: mockReconcile
+    };
+});
 
 vi.mock('../../src/lib/host-trade-notifications.js', () => ({
     notifyUsageReminder: mockNotifyReminder

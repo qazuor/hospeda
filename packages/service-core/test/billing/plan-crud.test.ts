@@ -32,6 +32,10 @@ const { mockInsertPlanAuditLog, mockDiffPlanFields } = vi.hoisted(() => ({
     mockDiffPlanFields: vi.fn().mockReturnValue({ added: {}, removed: {}, changed: {} })
 }));
 
+const { mockInArray } = vi.hoisted(() => ({
+    mockInArray: vi.fn((col: unknown, vals: unknown) => ({ _inArray: { col, vals } }))
+}));
+
 // ─── Module mocks ──────────────────────────────────────────────────────────
 
 vi.mock('@repo/db', () => ({
@@ -83,7 +87,7 @@ vi.mock('@repo/db', () => ({
     eq: vi.fn((col: unknown, val: unknown) => ({ _eq: { col, val } })),
     isNull: vi.fn((col: unknown) => ({ _isNull: col })),
     isNotNull: vi.fn((col: unknown) => ({ _isNotNull: col })),
-    inArray: vi.fn((col: unknown, vals: unknown) => ({ _inArray: { col, vals } })),
+    inArray: mockInArray,
     count: vi.fn(() => ({ _count: true })),
     sql: Object.assign(
         vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
@@ -491,6 +495,35 @@ describe('plan.crud', () => {
             expect(result.success).toBe(true);
             if (!result.success) return;
             expect(result.data.items[0]?.activeSubscriptionCount).toBe(5);
+        });
+
+        it('should filter the subscription-count query by the canonical ENTITLEMENT_GRANTING_STATUSES set, including comp (HOS-736)', async () => {
+            // Arrange
+            const planRow = makePlanRow();
+            const priceRow = makePriceRow();
+            const db = buildMockDb([
+                [{ value: 1 }],
+                [planRow],
+                [priceRow],
+                [{ planId: 'plan-uuid-1', value: 3 }]
+            ]);
+            mockGetDb.mockReturnValue(db);
+
+            // Act
+            const result = await listPlans({});
+
+            // Assert
+            expect(result.success).toBe(true);
+            // The subscriber-count query must derive its status filter from the
+            // canonical ENTITLEMENT_GRANTING_STATUSES constant (which includes
+            // 'comp'), never a hand-rolled ['active', 'trialing'] literal —
+            // regression test for HOS-736 (comp subscribers were undercounted
+            // in the admin plans list "subscriber count" column).
+            const statusFilterCall = mockInArray.mock.calls.find(([col]) => col === 'status');
+            expect(statusFilterCall).toBeDefined();
+            expect(statusFilterCall?.[1]).toEqual(
+                expect.arrayContaining(['active', 'trialing', 'comp'])
+            );
         });
 
         it('should return INTERNAL_ERROR when db throws', async () => {

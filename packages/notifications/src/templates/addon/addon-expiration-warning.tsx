@@ -1,9 +1,10 @@
 import { Section, Text } from '@react-email/components';
+import type { AddonLinkLocale } from '../../types/notification.types.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
-import { formatDate } from '../utils/index.js';
+import { buildAddonManagementUrl, formatDate } from '../utils/index.js';
 
 /**
  * Props for AddonExpirationWarning email template
@@ -15,6 +16,13 @@ export interface AddonExpirationWarningProps {
     baseUrl: string;
     daysRemaining?: number;
     expirationDate?: string;
+    /**
+     * Add-on catalog slug. When present, the CTA button deep-links to the
+     * add-ons management page focused on this add-on (HOS-722).
+     */
+    addonSlug?: string;
+    /** Recipient's preferred locale for the CTA link. Falls back to `'es'` (HOS-722). */
+    locale?: AddonLinkLocale;
 }
 
 /**
@@ -28,12 +36,15 @@ export function AddonExpirationWarning({
     addonName,
     baseUrl,
     daysRemaining,
-    expirationDate
+    expirationDate,
+    addonSlug,
+    locale
 }: AddonExpirationWarningProps) {
     const formattedExpirationDate = expirationDate
         ? formatDate({ dateString: expirationDate })
         : undefined;
     const daysText = daysRemaining === 1 ? '1 día' : `${daysRemaining} días`;
+    const renewUrl = buildAddonManagementUrl({ baseUrl, locale, addonSlug });
 
     return (
         <EmailLayout
@@ -74,7 +85,7 @@ export function AddonExpirationWarning({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Renovar ahora</Button>
+                <Button href={renewUrl}>Renovar ahora</Button>
             </Section>
 
             <Text style={styles.footerNote}>

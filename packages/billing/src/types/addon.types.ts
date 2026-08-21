@@ -10,6 +10,18 @@ export type AddonBillingType = 'one_time' | 'recurring';
  * Complete add-on definition
  */
 export interface AddonDefinition {
+    /**
+     * Primary key of the backing `billing_addons` row (UUID).
+     *
+     * Present only when the definition was mapped from the database. The static
+     * `addons.config.ts` catalog has no row identity, so it is optional — every
+     * consumer that keys off `slug` is unaffected.
+     *
+     * HOS-595: `billing_addon_purchases.addon_id` is a FK to this column and was
+     * left NULL on every purchase because the row mapper silently dropped the
+     * primary key it already had in hand.
+     */
+    id?: string;
     /** Unique addon identifier (slug) */
     slug: string;
     /** Display name */

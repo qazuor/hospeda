@@ -139,8 +139,96 @@ describe('BILLING_EVENT_TYPES', () => {
             expect(value).toBe('USER_UNCANCELED');
         });
 
-        it('the total number of event types is 25', () => {
-            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(25);
+        it('the total number of event types is 44', () => {
+            // 25 (this test's original baseline) + 5 (HOS-657 refund/admin-cancel/
+            // preapproval-expiry writers: PAYMENT_PARTIAL_REFUND,
+            // PAYMENT_FULL_REFUND, PAYMENT_FULL_REFUND_NO_TRANSITION,
+            // ADMIN_SUBSCRIPTION_CANCELLED, SUBSCRIPTION_EXPIRED_WITHOUT_PREAPPROVAL)
+            // + 14 (HOS-657 remaining writers: ADMIN_PLAN_CHANGED,
+            // ADMIN_TRIAL_EXTENDED, ADMIN_SUBSCRIPTION_PAUSED,
+            // ADMIN_SUBSCRIPTION_RESUMED, HOST_SUBSCRIPTION_PAUSED,
+            // HOST_SUBSCRIPTION_RESUMED, WEBHOOK_SUBSCRIPTION_ACTIVATED,
+            // WEBHOOK_SUBSCRIPTION_TRIALING, WEBHOOK_SUBSCRIPTION_PAUSED,
+            // WEBHOOK_SUBSCRIPTION_CANCELLED, WEBHOOK_SUBSCRIPTION_EXPIRED,
+            // WEBHOOK_SUBSCRIPTION_PAST_DUE, WEBHOOK_SUBSCRIPTION_STATUS_OTHER,
+            // REACTIVATION_SUPERSESSION_COMPLETED) = 44.
+            expect(Object.keys(BILLING_EVENT_TYPES)).toHaveLength(44);
+        });
+    });
+
+    describe('HOS-657 new event types — stable contract values', () => {
+        it('ADMIN_PLAN_CHANGED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.ADMIN_PLAN_CHANGED).toBe('ADMIN_PLAN_CHANGED');
+        });
+
+        it('ADMIN_TRIAL_EXTENDED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.ADMIN_TRIAL_EXTENDED).toBe('ADMIN_TRIAL_EXTENDED');
+        });
+
+        it('ADMIN_SUBSCRIPTION_PAUSED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_PAUSED).toBe('ADMIN_SUBSCRIPTION_PAUSED');
+        });
+
+        it('ADMIN_SUBSCRIPTION_RESUMED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_RESUMED).toBe(
+                'ADMIN_SUBSCRIPTION_RESUMED'
+            );
+        });
+
+        it('HOST_SUBSCRIPTION_PAUSED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_PAUSED).toBe('HOST_SUBSCRIPTION_PAUSED');
+        });
+
+        it('HOST_SUBSCRIPTION_RESUMED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_RESUMED).toBe('HOST_SUBSCRIPTION_RESUMED');
+        });
+
+        it('WEBHOOK_SUBSCRIPTION_ACTIVATED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_ACTIVATED).toBe(
+                'WEBHOOK_SUBSCRIPTION_ACTIVATED'
+            );
+        });
+
+        it('WEBHOOK_SUBSCRIPTION_TRIALING has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_TRIALING).toBe(
+                'WEBHOOK_SUBSCRIPTION_TRIALING'
+            );
+        });
+
+        it('WEBHOOK_SUBSCRIPTION_PAUSED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_PAUSED).toBe(
+                'WEBHOOK_SUBSCRIPTION_PAUSED'
+            );
+        });
+
+        it('WEBHOOK_SUBSCRIPTION_CANCELLED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_CANCELLED).toBe(
+                'WEBHOOK_SUBSCRIPTION_CANCELLED'
+            );
+        });
+
+        it('WEBHOOK_SUBSCRIPTION_EXPIRED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_EXPIRED).toBe(
+                'WEBHOOK_SUBSCRIPTION_EXPIRED'
+            );
+        });
+
+        it('WEBHOOK_SUBSCRIPTION_PAST_DUE has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_PAST_DUE).toBe(
+                'WEBHOOK_SUBSCRIPTION_PAST_DUE'
+            );
+        });
+
+        it('WEBHOOK_SUBSCRIPTION_STATUS_OTHER has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_STATUS_OTHER).toBe(
+                'WEBHOOK_SUBSCRIPTION_STATUS_OTHER'
+            );
+        });
+
+        it('REACTIVATION_SUPERSESSION_COMPLETED has the expected string value', () => {
+            expect(BILLING_EVENT_TYPES.REACTIVATION_SUPERSESSION_COMPLETED).toBe(
+                'REACTIVATION_SUPERSESSION_COMPLETED'
+            );
         });
     });
 

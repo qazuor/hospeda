@@ -1663,9 +1663,9 @@
                 "required": "The address is required"
             },
             "apartment": {
-                "max": "El apartment no puede superar los {{max}} caracteres",
-                "min": "El apartment debe tener al menos {{min}} caracteres",
-                "required": "El apartment es obligatorio"
+                "max": "The apartment cannot exceed {{max}} characters",
+                "min": "The apartment must be at least {{min}} characters",
+                "required": "The apartment is required"
             },
             "city": {
                 "max": "La ciudad no puede superar los {{max}} caracteres",
@@ -1688,24 +1688,24 @@
                 "required": "El país es obligatorio"
             },
             "department": {
-                "max": "El department no puede superar los {{max}} caracteres",
-                "min": "El department debe tener al menos {{min}} caracteres",
-                "required": "El department es obligatorio"
+                "max": "The department cannot exceed {{max}} characters",
+                "min": "The department must be at least {{min}} characters",
+                "required": "The department is required"
             },
             "floor": {
-                "max": "El floor no puede superar los {{max}} caracteres",
-                "min": "El floor debe tener al menos {{min}} caracteres",
-                "required": "El floor es obligatorio"
+                "max": "The floor cannot exceed {{max}} characters",
+                "min": "The floor must be at least {{min}} characters",
+                "required": "The floor is required"
             },
             "neighborhood": {
-                "max": "El neighborhood no puede superar los {{max}} caracteres",
-                "min": "El neighborhood debe tener al menos {{min}} caracteres",
-                "required": "El neighborhood es obligatorio"
+                "max": "The neighborhood cannot exceed {{max}} characters",
+                "min": "The neighborhood must be at least {{min}} characters",
+                "required": "The neighborhood is required"
             },
             "number": {
-                "max": "El number no puede superar los {{max}} caracteres",
-                "min": "El number debe tener al menos {{min}} caracteres",
-                "required": "El number es obligatorio"
+                "max": "The number cannot exceed {{max}} characters",
+                "min": "The number must be at least {{min}} characters",
+                "required": "The number is required"
             },
             "postalCode": {
                 "max": "The postal code cannot exceed {{max}} characters",
@@ -1722,9 +1722,9 @@
                 "required": "El estado/provincia es obligatorio"
             },
             "street": {
-                "max": "El street no puede superar los {{max}} caracteres",
-                "min": "El street debe tener al menos {{min}} caracteres",
-                "required": "El street es obligatorio"
+                "max": "The street cannot exceed {{max}} characters",
+                "min": "The street must be at least {{min}} characters",
+                "required": "The street is required"
             },
             "zipCode": {
                 "max": "El código postal no puede superar los {{max}} caracteres",
@@ -2510,6 +2510,7 @@
                 "beforeStart": "La fecha de fin no puede ser anterior a la de inicio",
                 "invalid": "El fin no es válido"
             },
+            "required": "La fecha del evento es obligatoria",
             "start": {
                 "invalid": "El inicio no es válido"
             }

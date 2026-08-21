@@ -81,10 +81,14 @@ const statuses = resolveEditorSectionStatuses({
 	/>
 
 	{/*
-	 * HOS-318 D-10: the featured toggle gets no nav item and no hub row. It
-	 * returns null for every owner without a live FEATURED_LISTING entitlement,
-	 * so a row would dead-end for the majority. Rendered here at the foot, where
-	 * its absence leaves no hole.
+	 * HOS-318 D-10: the featured toggle gets no nav item and no hub row.
+	 * Rendered here at the foot, where it costs the hub nothing.
+	 *
+	 * HOS-728 changed what it renders, not where: an owner WITHOUT the
+	 * entitlement now sees the two visibility add-ons offered here instead of
+	 * nothing — this is the only surface in the product that names what
+	 * featuring a listing is. It still renders nothing while the entitlement
+	 * check is in flight, so the foot of the page never jumps.
 	 */}
 	<div class="editor-hub-page__extra">
 		<FeaturedToggleSection locale={locale} accommodationId={accommodationId} client:visible />

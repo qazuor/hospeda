@@ -42,15 +42,12 @@ const splitLastWord = (full: string): { main: string; accent: string } => {
 	return { main: words.join(' '), accent };
 };
 
-const heroHeading = splitLastWord(t('about.hero.title', 'Conectamos viajeros con el Litoral'));
-const regionHeading = splitLastWord(t('about.region.title', 'Concepción del Uruguay'));
-const ctaHeading = splitLastWord(t('about.cta.title', 'Descubrí el Litoral'));
+const heroHeading = splitLastWord(t('about.hero.title'));
+const regionHeading = splitLastWord(t('about.region.title'));
+const ctaHeading = splitLastWord(t('about.cta.title'));
 
-const aboutTitle = t('about.title', 'Quiénes somos');
-const aboutDescription = t(
-	'about.description',
-	'Conocé la historia y misión de Hospeda, tu portal de turismo en el Litoral Entrerriano.'
-);
+const aboutTitle = t('about.title');
+const aboutDescription = t('about.description');
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://hospeda.com.ar').href;
 const inLanguageMap: Record<SupportedLocale, string> = {
 	es: 'es-AR',
@@ -94,7 +91,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			<span class="about-hero__dot about-hero__dot--2"></span>
 		</div>
 		<div class="about-hero__container" data-reveal="up">
-			<p class="about-hero__tagline">{t('about.hero.tagline', 'Nuestra historia')}</p>
+			<p class="about-hero__tagline">{t('about.hero.tagline')}</p>
 			<h1 class="about-hero__title">
 				{heroHeading.main && <>{heroHeading.main}{' '}</>}
 				<span class="about-hero__title-accent">
@@ -116,7 +113,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 				</span>
 			</h1>
 			<p class="about-hero__subtitle">
-				{t('about.hero.subtitle', 'Hospeda nació con la misión de hacer visible la riqueza turística de Concepción del Uruguay y el Litoral Entrerriano.')}
+				{t('about.hero.subtitle')}
 			</p>
 		</div>
 	</section>
@@ -139,10 +136,10 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			/>
 		</svg>
 		<div class="about-mission__container">
-			<p class="about-mission__tagline" data-reveal="up">{t('about.mission.tagline', 'Nuestra misión')}</p>
-			<h2 class="about-mission__title" data-reveal="up">{t('about.mission.title', '¿Qué hacemos?')}</h2>
+			<p class="about-mission__tagline" data-reveal="up">{t('about.mission.tagline')}</p>
+			<h2 class="about-mission__title" data-reveal="up">{t('about.mission.title')}</h2>
 			<p class="about-mission__text" data-reveal="up">
-				{t('about.mission.text', 'Facilitamos la conexión entre propietarios de alojamientos turísticos y viajeros que buscan experiencias auténticas en el litoral entrerriano, Argentina. Sin comisiones ocultas y con herramientas simples para gestionar tu alojamiento.')}
+				{t('about.mission.text')}
 			</p>
 		</div>
 	</section>
@@ -158,8 +155,8 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			<span class="about-values__dot about-values__dot--3"></span>
 		</div>
 		<div class="about-values__container">
-			<p class="about-values__tagline" data-reveal="up">{t('about.values.tagline', 'Lo que nos define')}</p>
-			<h2 class="about-values__title" data-reveal="up">{t('about.values.title', 'Nuestros valores')}</h2>
+			<p class="about-values__tagline" data-reveal="up">{t('about.values.tagline')}</p>
+			<h2 class="about-values__title" data-reveal="up">{t('about.values.title')}</h2>
 			<div class="about-values__grid">
 				<svg
 					class="about-values__connector"
@@ -177,13 +174,13 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 					/>
 				</svg>
 				{[
-					{ titleKey: 'about.values.transparency.title', titleFb: 'Transparencia', descKey: 'about.values.transparency.desc', descFb: 'Sin comisiones ocultas ni costos sorpresa. Precios claros desde el primer momento.' },
-					{ titleKey: 'about.values.simplicity.title', titleFb: 'Simplicidad', descKey: 'about.values.simplicity.desc', descFb: 'Herramientas fáciles de usar tanto para viajeros como para propietarios.' },
-					{ titleKey: 'about.values.community.title', titleFb: 'Comunidad', descKey: 'about.values.community.desc', descFb: 'Creemos en el turismo como motor de desarrollo local y regional.' },
+					{ titleKey: 'about.values.transparency.title', descKey: 'about.values.transparency.desc' },
+					{ titleKey: 'about.values.simplicity.title', descKey: 'about.values.simplicity.desc' },
+					{ titleKey: 'about.values.community.title', descKey: 'about.values.community.desc' },
 				].map((value, i) => (
 					<div class="about-values__card" data-reveal="up" data-stagger-index={Math.min(i, 6)} data-stagger-step="100">
-						<h3 class="about-values__card-title">{t(value.titleKey, value.titleFb)}</h3>
-						<p class="about-values__card-desc">{t(value.descKey, value.descFb)}</p>
+						<h3 class="about-values__card-title">{t(value.titleKey)}</h3>
+						<p class="about-values__card-desc">{t(value.descKey)}</p>
 					</div>
 				))}
 			</div>
@@ -216,7 +213,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			<span class="about-region__bubble about-region__bubble--3"></span>
 		</div>
 		<div class="about-region__container" data-reveal="up">
-			<p class="about-region__tagline">{t('about.region.tagline', 'Nuestro hogar')}</p>
+			<p class="about-region__tagline">{t('about.region.tagline')}</p>
 			<h2 class="about-region__title">
 				{regionHeading.main && <>{regionHeading.main}{' '}</>}
 				<span class="about-region__title-accent">
@@ -238,7 +235,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 				</span>
 			</h2>
 			<p class="about-region__text">
-				{t('about.region.text', 'Ubicada a orillas del río Uruguay, Concepción del Uruguay es una ciudad con historia, naturaleza y gastronomía. Capital histórica de Entre Ríos, ofrece playas, termas, carnavales y una rica vida cultural.')}
+				{t('about.region.text')}
 			</p>
 		</div>
 	</section>
@@ -267,7 +264,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			</span>
 		</div>
 		<div class="about-cta__container" data-reveal="up">
-			<p class="about-cta__tagline">{t('about.cta.tagline', '¿Listo para explorar?')}</p>
+			<p class="about-cta__tagline">{t('about.cta.tagline')}</p>
 			<h2 class="about-cta__title">
 				{ctaHeading.main && <>{ctaHeading.main}{' '}</>}
 				<span class="about-cta__title-accent">
@@ -290,7 +287,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			</h2>
 			<GradientButton
 				href={buildUrl({ locale, path: 'alojamientos' })}
-				label={t('about.cta.button', 'Ver alojamientos')}
+				label={t('about.cta.button')}
 				variant="accent"
 				icon="true"
 			/>

@@ -136,8 +136,7 @@ describe('Billing Email Templates', () => {
             amount: 15000,
             currency: 'ARS',
             baseUrl: 'https://hospeda.com.ar',
-            failureReason: 'Fondos insuficientes',
-            retryDate: '2024-12-25'
+            failureReason: 'Fondos insuficientes'
         };
 
         it('should render without errors', () => {
@@ -169,18 +168,13 @@ describe('Billing Email Templates', () => {
             expect(html).toContain('Motivo');
         });
 
-        it('should handle missing optional retry date gracefully', () => {
-            // Arrange
-            const propsWithoutRetryDate: PaymentFailureProps = {
-                ...validProps,
-                retryDate: undefined
-            };
-
-            // Act
-            const render = () => renderToStaticMarkup(PaymentFailure(propsWithoutRetryDate));
+        it('should not promise a specific retry date (HOS-746: MercadoPago owns the retry schedule)', () => {
+            // Arrange & Act
+            const html = renderToStaticMarkup(PaymentFailure(validProps));
 
             // Assert
-            expect(render).not.toThrow();
+            expect(html).not.toContain('Próximo intento');
+            expect(html).toContain('Vamos a reintentar el cobro automáticamente');
         });
 
         it('should handle missing optional failure reason gracefully', () => {

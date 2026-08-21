@@ -256,14 +256,23 @@ export const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
  * and the recovered provider status so the delivery is still traceable.
  *
  * **Retryable** — anything else: a real provider outage, a timeout, a DB
- * hiccup, or an error this handler cannot positively classify. Behaviour is
- * unchanged from before HOS-707 — log at `error`, capture in Sentry, mark the
- * stored event `failed`, and return `undefined`. Returning `undefined` does NOT
- * make the response 200: the `@qazuor/qzpay-hono` router's `onError` falls
- * through to its own default, `response.error(message, 500)`, and MercadoPago
- * retries on its documented backoff schedule. `SubscriptionNotResolvedError`
- * (HOS-276 — a settled charge with no resolvable local subscription) lands here
- * by design: it carries no provider status, so it stays retryable.
+ * hiccup, or an error this handler cannot positively classify. Log at `error`,
+ * capture in Sentry, mark the stored event `failed`, and return `undefined`.
+ * Returning `undefined` does NOT make the response 200: the
+ * `@qazuor/qzpay-hono` router's `onError` falls through to its own default,
+ * `response.error(message, 500)`, and MercadoPago retries on its documented
+ * backoff schedule. `SubscriptionNotResolvedError` (HOS-276 — a settled charge
+ * with no resolvable local subscription) lands here by design: it carries no
+ * provider status, so it stays retryable.
+ *
+ * Marking the event `failed` is ALSO what enqueues it for local recovery:
+ * {@link markEventFailedByProviderId} bumps `billing_webhook_events.attempts`
+ * and writes the row into `billing_webhook_dead_letter`, which the hourly
+ * `webhook-retry` cron drains on an exponential backoff (HOS-717). Until then
+ * that queue had no producer at all, so the sentence this paragraph replaces —
+ * which claimed this path "feeds the dead-letter queue on repeated failure" —
+ * was false, and recovery in fact depended entirely on MercadoPago choosing to
+ * redeliver. It no longer does.
  *
  * @param error - The error that occurred during processing
  * @param c - Hono context

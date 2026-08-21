@@ -714,7 +714,10 @@
             "CAMPING": "Camping",
             "ROOM": "Quarto",
             "MOTEL": "Motel",
-            "RESORT": "Resort"
+            "RESORT": "Resort",
+            "APART_HOTEL": "Apart Hotel",
+            "ESTANCIA": "Estância",
+            "BED_AND_BREAKFAST": "Bed & Breakfast"
         },
         "stepIndicator": {
             "title": "Passo 1 de 2 · Dados básicos",
@@ -864,7 +867,8 @@
             "properties": "Propriedades",
             "promotions": "Promoções",
             "messages": "Mensagens",
-            "subscription": "Assinatura"
+            "subscription": "Assinatura",
+            "addons": "Complementos"
         }
     },
     "pages": {

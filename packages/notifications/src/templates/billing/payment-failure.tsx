@@ -3,7 +3,7 @@ import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
-import { formatCurrency, formatDate } from '../utils/index.js';
+import { formatCurrency } from '../utils/index.js';
 
 /**
  * Props for PaymentFailure email template
@@ -15,7 +15,6 @@ export interface PaymentFailureProps {
     /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
     baseUrl: string;
     failureReason?: string;
-    retryDate?: string;
 }
 
 /**
@@ -29,11 +28,9 @@ export function PaymentFailure({
     amount,
     currency,
     baseUrl,
-    failureReason,
-    retryDate
+    failureReason
 }: PaymentFailureProps) {
     const formattedAmount = formatCurrency({ amount, currency });
-    const formattedRetryDate = retryDate ? formatDate({ dateString: retryDate }) : undefined;
 
     return (
         <EmailLayout previewText="Error al procesar tu pago">
@@ -56,17 +53,11 @@ export function PaymentFailure({
                         value={failureReason}
                     />
                 )}
-                {formattedRetryDate && (
-                    <InfoRow
-                        label="Próximo intento"
-                        value={formattedRetryDate}
-                    />
-                )}
             </Section>
 
             <Text style={styles.paragraph}>
-                Para evitar la interrupción de tu servicio, te recomendamos actualizar tu método de
-                pago lo antes posible.
+                Vamos a reintentar el cobro automáticamente. Para evitar la interrupción de tu
+                servicio, te recomendamos actualizar tu método de pago lo antes posible.
             </Text>
 
             <Section style={styles.buttonContainer}>

@@ -17,7 +17,10 @@
  * through `t()` and rendering the actual markup.
  */
 
+import { LimitKey } from '@repo/billing';
 import type { HostOnboardingPrecheckDecision } from '@/lib/api/endpoints-protected';
+import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
+import type { SupportedLocale } from '@/lib/i18n';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -80,6 +83,15 @@ export interface ResolvePrecheckPanelContentParams {
     /** Any decision except `create_direct` (that one renders the form directly). */
     readonly decision: HostOnboardingPrecheckDecision;
     /**
+     * Active locale — used ONLY to build the add-on offer's URL (HOS-727).
+     *
+     * The add-on link is not passed in as a URL on purpose: the caller must not
+     * get to decide WHICH add-on this panel points at. The cap being hit here is
+     * always `max_accommodations`, so the panel resolves the offer from that
+     * limit and shows nothing at all if the limit stops being sellable.
+     */
+    readonly locale: SupportedLocale;
+    /**
      * Edit URL for the actor's single DRAFT (`drafts[0]`). Required for
      * `resume_or_create` / `resume_delete_or_upgrade` (draftCount === 1);
      * unused otherwise.
@@ -111,6 +123,7 @@ export interface ResolvePrecheckPanelContentParams {
  * ```ts
  * const content = resolvePrecheckPanelContent({
  *   decision: 'resume_or_create',
+ *   locale: 'es',
  *   editUrl: '/es/mi-cuenta/propiedades/acc-1/editar/',
  *   createUrl: '/es/publicar/nueva/?create=1',
  *   accountPropertiesUrl: '/es/mi-cuenta/propiedades/',
@@ -121,7 +134,40 @@ export interface ResolvePrecheckPanelContentParams {
 export function resolvePrecheckPanelContent(
     params: ResolvePrecheckPanelContentParams
 ): PrecheckPanelContent {
-    const { decision, editUrl, createUrl, accountPropertiesUrl, subscriptionUrl } = params;
+    const { decision, locale, editUrl, createUrl, accountPropertiesUrl, subscriptionUrl } = params;
+
+    // HOS-727. Every "you are at your cap" branch below is the same cap
+    // (`max_accommodations`), and it is the highest purchase-intent moment in
+    // the product: the host is stopped mid-publish. Offering only the plan
+    // upgrade there sends them down the slowest, most expensive route when a
+    // one-off add-on unblocks them immediately.
+    //
+    // Resolved FROM THE LIMIT, never hardcoded: if `extra-accommodations-5`
+    // ever stops being purchasable, `addonOffer` becomes `null` and the CTA
+    // disappears instead of linking to a card that is not on the page.
+    const addonOffer = resolveLimitAddonOffer({
+        locale,
+        limitKey: LimitKey.MAX_ACCOMMODATIONS
+    });
+
+    const addonAction: PrecheckPanelLinkAction | null =
+        addonOffer === null
+            ? null
+            : {
+                  kind: 'link',
+                  variant: 'primary',
+                  href: addonOffer.href,
+                  labelKey: 'account.subscription.usage.buyAddon',
+                  labelFallback: 'Ampliar con un complemento'
+              };
+
+    /**
+     * The same offer demoted to a text link, for the branches whose primary CTA
+     * is already the FREE unblock (resume or delete a draft). Paying should
+     * never outrank the option that costs nothing.
+     */
+    const secondaryAddonActions: readonly PrecheckPanelAction[] =
+        addonAction === null ? [] : [{ ...addonAction, variant: 'secondary' }];
 
     switch (decision) {
         case 'upgrade_only':
@@ -134,9 +180,15 @@ export function resolvePrecheckPanelContent(
                 showQuota: true,
                 bodyPluralBasis: 'maxAllowed',
                 actions: [
+                    // HOS-727: when there is an add-on for this cap it leads —
+                    // it is the action that actually unblocks the publish the
+                    // host came here to finish. The plan upgrade stays offered,
+                    // one step down. With no add-on the array degrades to
+                    // exactly the pre-HOS-727 pair, plan upgrade first.
+                    ...(addonAction === null ? [] : [addonAction]),
                     {
                         kind: 'link',
-                        variant: 'primary',
+                        variant: addonAction === null ? 'primary' : 'secondary',
                         href: subscriptionUrl,
                         labelKey: 'billing.limit.max_accommodations.atLimitPanel.primaryCta',
                         labelFallback: 'Ver mi suscripción'
@@ -203,6 +255,9 @@ export function resolvePrecheckPanelContent(
                         confirmTextFallback:
                             '¿Borrar este borrador? Vas a poder crear una propiedad nueva.'
                     },
+                    // HOS-727: same cap, same offer — but behind the free
+                    // unblock, which is why it is the secondary variant here.
+                    ...secondaryAddonActions,
                     {
                         kind: 'link',
                         variant: 'secondary',
@@ -256,6 +311,8 @@ export function resolvePrecheckPanelContent(
                         labelKey: 'host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.pickCta',
                         labelFallback: 'Editar un borrador existente'
                     },
+                    // HOS-727: same cap, same offer — behind the free unblock.
+                    ...secondaryAddonActions,
                     {
                         kind: 'link',
                         variant: 'secondary',

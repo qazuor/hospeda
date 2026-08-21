@@ -74,6 +74,50 @@ describe('ToastViewport', () => {
         expect(screen.getByRole('link', { name: 'View benefits' })).toBeInTheDocument();
     });
 
+    /**
+     * HOS-723 — the primary action must READ first, not just look primary.
+     *
+     * `.actions` is a plain `display: flex` row with no `row-reverse`, so DOM
+     * order IS visual order here (and tab order). Before HOS-723 the secondary
+     * rendered first, which put the recommended CTA second from the left. That
+     * is invisible to any assertion that only checks both links exist — which
+     * is exactly what the test above does, and why it stayed green through the
+     * wrong order.
+     *
+     * Asserted on the RENDERED DOM via `compareDocumentPosition`, never on the
+     * component source: a source check cannot tell a declared order from a
+     * rendered one.
+     */
+    it('renders the primary action BEFORE the secondary one', () => {
+        render(<ToastViewport />);
+        act(() => {
+            addToast({
+                type: 'error',
+                message: 'Ordered CTAs',
+                action: { label: 'Buy add-on', href: '/es/mi-cuenta/addons/' },
+                secondaryAction: { label: 'Upgrade plan', href: '/es/mi-cuenta/suscripcion/' }
+            });
+        });
+
+        const primary = screen.getByRole('link', { name: 'Buy add-on' });
+        const secondary = screen.getByRole('link', { name: 'Upgrade plan' });
+
+        // Both live in the same actions row...
+        expect(primary.parentElement).toBe(secondary.parentElement);
+        // ...and the secondary FOLLOWS the primary in document order.
+        expect(
+            primary.compareDocumentPosition(secondary) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+        // Sanity: the row is not reversed by CSS, so document order is what the
+        // reader sees. A `row-reverse` here would silently invert the result.
+        expect(getComputedStyle(primary.parentElement as HTMLElement).flexDirection).not.toBe(
+            'row-reverse'
+        );
+        // And the two slots really are styled differently, so "primary" is a
+        // visual fact and not only a position.
+        expect(primary.className).not.toBe(secondary.className);
+    });
+
     it('dismisses the toast (with exit animation) when close is clicked', () => {
         render(<ToastViewport />);
         act(() => {

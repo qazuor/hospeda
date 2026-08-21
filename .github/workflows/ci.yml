@@ -264,6 +264,8 @@ jobs:
         run: bash scripts/check-product-domain-raw-sql.sh
       - name: Check commerce plan resolution stays single-sited (HOS-688 AC-35)
         run: bash scripts/check-commerce-plan-resolution.sh
+      - name: Check locale resolution has a single source of truth (HOS-605 / HOS-609 / HOS-617)
+        run: pnpm check:locale-resolution-single-source
       - name: Check for disabled tests (.only/.skip)
         run: |
           echo "Checking for .only() test isolation..."

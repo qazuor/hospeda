@@ -100,7 +100,7 @@ export const validateAdminEnv = (): AdminEnv => {
             VITE_TURNSTILE_SITE_KEY: import.meta.env.VITE_TURNSTILE_SITE_KEY,
             VITE_POSTHOG_KEY: import.meta.env.VITE_POSTHOG_KEY,
             VITE_POSTHOG_HOST: import.meta.env.VITE_POSTHOG_HOST,
-            VITE_SUPPORTED_LOCALES: import.meta.env.VITE_SUPPORTED_LOCALES || 'es,en',
+            VITE_SUPPORTED_LOCALES: import.meta.env.VITE_SUPPORTED_LOCALES || 'es,en,pt',
             VITE_DEFAULT_LOCALE: import.meta.env.VITE_DEFAULT_LOCALE || 'es',
             VITE_DEBUG_LAZY_SECTIONS: import.meta.env.VITE_DEBUG_LAZY_SECTIONS,
             VITE_DEBUG_ACTOR_ID: import.meta.env.VITE_DEBUG_ACTOR_ID,

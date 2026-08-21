@@ -46,8 +46,7 @@ Payment success/failure notifications are automatically sent when MercadoPago we
   planName: string,               // Subscription plan name
   amount: number,                 // Payment amount
   currency: string,               // Payment currency
-  failureReason: string,          // Reason for failure (status_detail or status)
-  retryDate: string              // ISO date string (3 days from failure)
+  failureReason: string          // Reason for failure (status_detail or status)
 }
 ```
 
@@ -72,8 +71,7 @@ Payment success/failure notifications are automatically sent when MercadoPago we
     amount: number,
     currency: string,
     failureReason: string,
-    planName?: string,
-    retryDate: string
+    planName?: string
   },
   severity: "warning"
 }
@@ -127,14 +125,13 @@ If `ADMIN_NOTIFICATION_EMAILS` is not set, admin notifications are skipped silen
 
 ### Retry Logic
 
-Payment failures include a retry date calculated as:
-
-```ts
-const retryDate = new Date();
-retryDate.setDate(retryDate.getDate() + 3); // 3 days from failure
-```
-
-This gives users time to update their payment method before automatic retry.
+Payment failure notifications do NOT include a retry date. Hospeda's own dunning
+loop has been disabled since HOS-191 (2026-07-18): MercadoPago is the sole
+authority over the retry schedule, running its own internal *recycling* cadence
+(up to ~10 days) that Hospeda cannot query. Promising a concrete date in the
+email would be a fabricated value — see HOS-746. The email tells the customer a
+retry will happen without committing to when, and recommends updating the
+payment method to avoid a service interruption.
 
 ## Data Flow
 
