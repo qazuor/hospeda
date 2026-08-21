@@ -51,6 +51,12 @@ interface ScheduleAddonPollingInput {
     readonly addonSlug: string;
     readonly orderId: string;
     readonly userId: string;
+    /**
+     * Target accommodation for a `requiresAccommodationTarget` add-on
+     * (SPEC-309 OQ-3), validated by `createAddonCheckout` before the session
+     * was created. `undefined` for every owner-wide add-on.
+     */
+    readonly accommodationId?: string | undefined;
 }
 
 /**
@@ -79,8 +85,16 @@ interface ScheduleAddonPollingInput {
  * - The checkout session id is empty (defensive guard).
  */
 async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): Promise<void> {
-    const { billing, subscriptionId, checkoutSessionId, customerId, addonSlug, orderId, userId } =
-        input;
+    const {
+        billing,
+        subscriptionId,
+        checkoutSessionId,
+        customerId,
+        addonSlug,
+        orderId,
+        userId,
+        accommodationId
+    } = input;
 
     if (!env.HOSPEDA_BILLING_POLLING_ENABLED) {
         return;
@@ -110,7 +124,19 @@ async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): P
                 addonSlug,
                 customerId,
                 userId,
-                orderId
+                orderId,
+                // HOS-675: the job metadata is the RELIABLE carrier of the target
+                // accommodation, not the MP payment metadata. MercadoPago
+                // normalizes preference metadata keys, so the polling job's
+                // synthetic payload already sources `addonSlug`/`customerId`
+                // from here rather than from the payment; the accommodation key
+                // has to travel the same way or it never reaches
+                // `confirmAddonPurchase`. This matters more than it looks: for a
+                // Preference there is no Webhooks v2 channel at all (see the
+                // HOS-710 note above), so polling is usually the ONLY path that
+                // ever confirms the purchase — the staging repro of HOS-675 was
+                // confirmed with `source: 'polling'`.
+                ...(accommodationId === undefined ? {} : { accommodationId })
             }
         });
         if (job) {
@@ -531,7 +557,10 @@ export async function createAddonCheckout(
             customerId: input.customerId,
             addonSlug: addon.slug,
             orderId,
-            userId: input.userId
+            userId: input.userId,
+            // HOS-675: only meaningful for target-required addons; every other
+            // addon leaves it undefined and the key is omitted from job metadata.
+            accommodationId: input.accommodationId
         });
 
         // NOTE: Promo code usage (incrementUsage + recordUsage) is intentionally
@@ -606,6 +635,67 @@ export async function createAddonCheckout(
                 message: 'Failed to create checkout session for add-on purchase'
             }
         };
+    }
+}
+
+/**
+ * Metadata key flipped on a `billing_addon_purchases` row whose target-required
+ * add-on confirmed without an accommodationId (HOS-675).
+ *
+ * Exported so the operator query, the regression test, and any future
+ * reconciliation job all name the same key instead of re-typing the string.
+ */
+export const FEATURED_GRANT_LINK_MISSING_KEY = 'featuredGrantLinkMissing' as const;
+
+/**
+ * Flag a confirmed purchase whose `featured_listing_addon_grants` link could not
+ * be written, so the defect survives as queryable row state instead of only as a
+ * log line.
+ *
+ * Merges the marker into the existing `metadata` jsonb rather than replacing it,
+ * so the context stored at confirmation time is preserved.
+ *
+ * Deliberately best-effort: it runs after the purchase row is already committed
+ * and after the payment was collected, so a failure here must never surface as a
+ * failed confirmation (HOS-714 — a payment that cannot be applied is recorded and
+ * alerted, never discarded). A failure to write the marker is itself logged.
+ *
+ * @param params - Purchase to flag, plus customer/add-on context for logging
+ */
+async function markFeaturedGrantLinkMissing(params: {
+    readonly purchaseId: string;
+    readonly customerId: string;
+    readonly addonSlug: string;
+}): Promise<void> {
+    const { purchaseId, customerId, addonSlug } = params;
+
+    try {
+        const { getDb, eq } = await import('@repo/db');
+        const { sql: markerSql } = await import('drizzle-orm');
+        const { billingAddonPurchases: bap } = await import('@repo/db/schemas/billing');
+
+        const marker = JSON.stringify({
+            [FEATURED_GRANT_LINK_MISSING_KEY]: true,
+            featuredGrantLinkMissingAt: new Date().toISOString()
+        });
+
+        await getDb()
+            .update(bap)
+            .set({
+                metadata: markerSql`COALESCE(${bap.metadata}, '{}'::jsonb) || ${marker}::jsonb`,
+                updatedAt: new Date()
+            })
+            .where(eq(bap.id, purchaseId));
+    } catch (markerError) {
+        apiLogger.error(
+            {
+                purchaseId,
+                customerId,
+                addonSlug,
+                error: markerError instanceof Error ? markerError.message : String(markerError)
+            },
+            'Failed to flag purchase as featuredGrantLinkMissing; the missing grant link is now only visible in logs and Sentry'
+        );
     }
 }
 
@@ -891,13 +981,42 @@ export async function confirmAddonPurchase(
                     );
                 }
             } else {
-                // Should not happen if T-006 validated correctly at checkout time,
-                // but MercadoPago webhooks are async and can race. Manual
-                // reconciliation is out of scope here (SPEC-309 T-007) — this is
-                // logged for follow-up investigation only.
+                // HOS-675: this branch used to be the one that ALWAYS ran. It was
+                // written as a "should not happen" race guard, but no production
+                // caller of confirmAddonPurchase forwarded `metadata` at all, so
+                // every visibility-boost purchase landed here and the grant table
+                // stayed empty for months — invisible because a log line plus a
+                // Sentry event is the kind of signal nobody queries.
+                //
+                // The confirmation itself must still succeed: the payment is
+                // already collected and the purchase row is already committed, so
+                // throwing here would discard money we took (HOS-714 decided a
+                // payment that cannot be applied is RECORDED and ALERTED, never
+                // discarded). What was missing is the record. Persist a marker on
+                // the purchase row so a broken purchase is enumerable with one
+                // query instead of only greppable in logs:
+                //
+                //   SELECT id, customer_id, addon_slug, purchased_at
+                //   FROM   billing_addon_purchases
+                //   WHERE  metadata->>'featuredGrantLinkMissing' = 'true'
+                //     AND  deleted_at IS NULL;
+                //
+                // That is also what makes the reconciliation SPEC-309 T-007
+                // deferred actually possible: the rows can now be found.
+                await markFeaturedGrantLinkMissing({
+                    purchaseId,
+                    customerId: input.customerId,
+                    addonSlug: input.addonSlug
+                });
+
                 apiLogger.error(
-                    { customerId: input.customerId, addonSlug: input.addonSlug, purchaseId },
-                    'Target-required addon confirmed without an accommodationId in metadata; featured_listing_addon_grants row NOT written'
+                    {
+                        customerId: input.customerId,
+                        addonSlug: input.addonSlug,
+                        purchaseId,
+                        metadataKeys: input.metadata ? Object.keys(input.metadata) : []
+                    },
+                    'Target-required addon confirmed without an accommodationId in metadata; featured_listing_addon_grants row NOT written and purchase flagged featuredGrantLinkMissing'
                 );
                 captureBillingError(
                     new Error('Missing accommodationId at addon purchase confirmation'),

@@ -1251,7 +1251,11 @@ export async function processPaymentUpdated({
         return { success: true, addonConfirmed: false };
     }
 
-    const { addonSlug, customerId: addonCustomerId } = addonInfo;
+    const {
+        addonSlug,
+        customerId: addonCustomerId,
+        accommodationId: addonAccommodationId
+    } = addonInfo;
 
     // ── Idempotency check: skip if this paymentId was already processed ───────
     const paymentId =
@@ -1298,9 +1302,21 @@ export async function processPaymentUpdated({
     );
 
     const addonService = new AddonService(billing);
+    // HOS-675: forward the target accommodation captured at checkout. This call
+    // omitted `metadata` entirely, so `confirmAddonPurchase` always read
+    // `input.metadata?.accommodationId` as undefined and took its "should not
+    // happen" branch on EVERY visibility-boost purchase — the
+    // `featured_listing_addon_grants` table stayed empty in production.
+    // Only the accommodation key is forwarded: the promo/discount keys that
+    // `confirmAddonPurchase` also reads are written to MP under snake_case
+    // names it does not look up, so forwarding them here would silently change
+    // promo-redemption behaviour, which is a separate defect (see PR notes).
     const result = await addonService.confirmPurchase({
         customerId: addonCustomerId,
-        addonSlug
+        addonSlug,
+        ...(addonAccommodationId === undefined
+            ? {}
+            : { metadata: { accommodationId: addonAccommodationId } })
     });
 
     if (!result.success) {

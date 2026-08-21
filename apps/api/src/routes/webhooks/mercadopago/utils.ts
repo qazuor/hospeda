@@ -265,8 +265,20 @@ export function getWebhookDependencies(): {
 /**
  * Check if payment metadata contains add-on purchase information.
  *
+ * HOS-675: also carries `accommodationId` when present. `createAddonCheckout`
+ * writes the target accommodation into the checkout metadata under BOTH
+ * `accommodation_id` and `accommodationId`, because MercadoPago normalizes
+ * metadata keys to snake_case on the payment object while the polling
+ * fallback's synthetic payload keeps the camelCase form. Reading both here is
+ * what makes the key survive whichever of the two confirmation paths fires.
+ *
+ * Dropping it (as this function did until HOS-675) is silent: the add-on still
+ * confirms, but `confirmAddonPurchase` finds no accommodationId and skips the
+ * `featured_listing_addon_grants` write, so the purchase is never tied to the
+ * listing it was bought for.
+ *
  * @param metadata - Payment metadata object
- * @returns Add-on slug and customer ID if found, null otherwise
+ * @returns Add-on slug, customer ID, and optional target accommodation if found, null otherwise
  */
 export function extractAddonMetadata(metadata: unknown): AddonMetadata | null {
     if (!metadata || typeof metadata !== 'object') {
@@ -281,9 +293,17 @@ export function extractAddonMetadata(metadata: unknown): AddonMetadata | null {
         meta.addonSlug.length > 0 &&
         meta.customerId.length > 0
     ) {
+        const accommodationId =
+            typeof meta.accommodationId === 'string' && meta.accommodationId.length > 0
+                ? meta.accommodationId
+                : typeof meta.accommodation_id === 'string' && meta.accommodation_id.length > 0
+                  ? meta.accommodation_id
+                  : undefined;
+
         return {
             addonSlug: meta.addonSlug,
-            customerId: meta.customerId
+            customerId: meta.customerId,
+            ...(accommodationId === undefined ? {} : { accommodationId })
         };
     }
 

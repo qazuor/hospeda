@@ -844,6 +844,59 @@ describe('processPaymentUpdated', () => {
         expect((result as unknown as Record<string, unknown>).addonAlreadyActive).toBe(true);
     });
 
+    // ── HOS-675: accommodationId must reach confirmPurchase ────────────────
+    // This call site passed only { customerId, addonSlug }, so
+    // confirmAddonPurchase always read input.metadata?.accommodationId as
+    // undefined and took its "should not happen" branch on EVERY
+    // visibility-boost purchase — featured_listing_addon_grants stayed empty.
+    it('forwards accommodationId into confirmPurchase metadata (HOS-675)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1',
+            accommodationId: 'accom_target_1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                metadata: {
+                    addonSlug: 'visibility-boost-7d',
+                    customerId: 'cust-1',
+                    accommodationId: 'accom_target_1'
+                }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            metadata: { accommodationId: 'accom_target_1' }
+        });
+    });
+
+    it('omits the metadata key entirely for an owner-wide addon (HOS-675)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'extra-photos-20',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: { metadata: { addonSlug: 'extra-photos-20', customerId: 'cust-1' } },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'extra-photos-20'
+        });
+    });
+
     it('should use source label in log messages', async () => {
         const { apiLogger } = await import('../../../src/utils/logger');
         vi.mocked(extractPaymentInfo).mockReturnValue({
