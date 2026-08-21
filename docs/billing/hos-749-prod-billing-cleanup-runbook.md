@@ -17,6 +17,19 @@ now with no local row to explain the charge. MercadoPago comes first, always.
   (`~/.local/bin/hops`).
 - A fresh Postgres backup: `hops --target=prod db-backup-now`. Verify it
   finished before continuing — this is the rollback.
+- **Confirmed 2026-08-21: production has NO unique constraint on
+  `billing_customers.external_id`** — only the plain, non-unique
+  `idx_customers_external_id`. HOS-596's
+  `UNIQUE (external_id, livemode) WHERE deleted_at IS NULL` is still only on
+  `staging`. Two consequences, both favourable:
+  1. A soft-deleted customer row cannot block a fresh signup today under ANY
+     circumstance, so the HOS-202 failure mode ("the user can never re-subscribe")
+     is out of reach here.
+  2. When HOS-596 is eventually promoted, its index will apply cleanly: a check
+     for duplicate LIVE `(external_id, livemode)` pairs returns **zero rows**
+     (the 13 duplicates that exist are all already soft-deleted by the F-47 bug).
+     Running this cleanup first only reduces the live set further, so the two
+     changes do not conflict in either order.
 - Note that `packages/seed/src/data-migrations/0058`, `0059`, `0065` and `0066`
   are **still pending in production** (the ledger's last applied entry as of
   2026-08-21 is `0057-staff-email-domain-to-com-ar`). They run *before* `0067`
