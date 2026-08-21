@@ -248,7 +248,7 @@ flag driven by **two independent sources** (SPEC-309 OQ-3):
 
 For entitlement gates, limit enforcement, route permission models, UI gates, and form persistence — work that has zero dependency on real MercadoPago — prefer **local-first** over staging redeploys.
 
-`pnpm db:fresh-dev` creates 13 dev-only test users covering every role × plan combination (2 staff + 3 tourist tiers + 3 host tiers + 1 trial host + 1 host with addon + 3 complex tiers). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1). To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`. These users are seeded **ready to use** (no profile/welcome-tour/what's-new/password-change friction — SPEC-264); to ready a manually-created user, run `pnpm db:seed:ready-user <email>`.
+`pnpm db:fresh-dev` creates 18 dev-only test users covering every role × plan combination (2 staff + 3 tourist tiers + 3 host tiers + 1 trial host + 1 host with addon + 1 dual-role host/provider + 4 commerce-owner fixtures, HOS-694 + 3 complex tiers). Login with `<slug>@local.test` / `Password123!`. Full matrix in [`packages/seed/CLAUDE.md`](packages/seed/CLAUDE.md#test-users-for-billing-spec-143-block-1). To re-seed only the test users (after a db wipe): `pnpm db:seed:test-users`. These users are seeded **ready to use** (no profile/welcome-tour/what's-new/password-change friction — SPEC-264); to ready a manually-created user, run `pnpm db:seed:ready-user <email>`.
 
 Staging is still required for: MercadoPago checkout (`/start-paid`, polling fallback, webhook signature verification), Cloudflare cache revalidation, and cron behavior in production-like timing. Everything else goes local.
 
