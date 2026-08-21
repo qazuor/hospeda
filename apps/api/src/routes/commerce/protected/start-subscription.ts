@@ -289,7 +289,16 @@ export async function handleCommerceStartSubscription(
     // at all.
     let billingCustomerId = ctx.get('billingCustomerId');
     if (!billingCustomerId && actor.email) {
-        const syncService = new BillingCustomerSyncService(billing, { throwOnError: false });
+        // HOS-596: customer creation runs on the tolerant facade so a
+        // MercadoPago hiccup cannot delete the row it just wrote and turn this
+        // commerce checkout into a 422. `billing` (strict) stays in charge of the
+        // subscription/checkout legs below.
+        const syncService = new BillingCustomerSyncService(
+            getQZPayBilling({ forCustomerSync: true }),
+            {
+                throwOnError: false
+            }
+        );
         billingCustomerId = await syncService.ensureCustomerExists({
             userId: actor.id,
             email: actor.email,

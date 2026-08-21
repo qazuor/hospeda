@@ -130,10 +130,42 @@ export class BillingCustomerSyncService {
 
                 this.cacheCustomer(userId, newCustomer.id);
 
+                // HOS-596: under the customer-sync facade
+                // (`providerSyncErrorStrategy: 'log'`, see
+                // `getQZPayBilling({ forCustomerSync: true })`) a MercadoPago failure no
+                // longer destroys the local row — qzpay keeps it and returns it
+                // with an EMPTY `providerCustomerIds` map. That is the only
+                // in-band signal that the provider leg did not happen, so it is
+                // raised here explicitly instead of being inferred later from a
+                // checkout that mysteriously fails.
+                //
+                // qzpay already logged the provider-side cause (MercadoPago
+                // message + `QZPayErrorCode.PROVIDER_CREATE_CUSTOMER_FAILED`)
+                // through `qzpayLogger` → apiLogger; this line is what ties that
+                // provider error to the Hospeda user it belongs to, and what
+                // makes the degraded state greppable per account. The row is
+                // usable: the provider id is reconciled on the next successful
+                // `syncCustomerData` / checkout.
+                const providerIds = Object.keys(newCustomer.providerCustomerIds ?? {});
+
+                if (providerIds.length === 0) {
+                    apiLogger.warn(
+                        {
+                            userId,
+                            customerId: newCustomer.id,
+                            emailDomain: email.split('@')[1]
+                        },
+                        'Billing customer created WITHOUT a provider link — the payment provider rejected the customer create; the local row was kept and needs reconciliation (HOS-596)'
+                    );
+
+                    return newCustomer.id;
+                }
+
                 apiLogger.info(
                     {
                         userId,
-                        customerId: newCustomer.id
+                        customerId: newCustomer.id,
+                        providers: providerIds
                     },
                     'Billing customer created successfully'
                 );
@@ -161,11 +193,19 @@ export class BillingCustomerSyncService {
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : String(error);
 
+            // HOS-596: every call site passes `throwOnError: false` (or relies on
+            // its default), so this log is the ONLY trace a failure leaves — the
+            // route just sees `null` and answers "No billing account found".
+            // `error.message` alone was not enough to diagnose the production
+            // incident: on a provider failure the actionable part (which
+            // provider, which operation, and MercadoPago's own error text and
+            // code) lives on the QZPayProviderSyncError's fields and `cause`.
             apiLogger.error(
                 {
                     userId,
                     emailDomain: email.split('@')[1],
-                    error: errorMessage
+                    error: errorMessage,
+                    ...describeProviderSyncError(error)
                 },
                 'Failed to ensure billing customer exists'
             );
@@ -472,6 +512,53 @@ export class BillingCustomerSyncService {
  * @param error - The error to check
  * @returns true if the error is a duplicate key / unique constraint violation
  */
+/**
+ * Extract the diagnosable fields of a `QZPayProviderSyncError` for structured
+ * logging (HOS-596).
+ *
+ * A provider sync failure carries three things `error.message` does not: which
+ * provider failed, which operation it was performing, and the provider's own
+ * error (`cause`) — for MercadoPago that `cause` message is where the API error
+ * code (e.g. `101 — customer already exists`) actually appears. Logging only the
+ * wrapper message is what left the production incident undiagnosable for a month.
+ *
+ * Matched structurally (`provider` + `operation` string fields) rather than with
+ * `instanceof`, so a differing qzpay-core instance across the dependency graph
+ * cannot silently degrade the log back to a bare message.
+ *
+ * @param error - The caught error, of unknown shape
+ * @returns Extra log fields, or an empty object when the error is not a provider
+ *   sync error
+ */
+function describeProviderSyncError(error: unknown): {
+    provider?: string;
+    providerOperation?: string;
+    providerError?: string;
+} {
+    if (!(error instanceof Error)) {
+        return {};
+    }
+
+    const candidate = error as Error & {
+        provider?: unknown;
+        operation?: unknown;
+        cause?: unknown;
+    };
+
+    if (typeof candidate.provider !== 'string' || typeof candidate.operation !== 'string') {
+        return {};
+    }
+
+    const cause = candidate.cause;
+    const providerError = cause instanceof Error ? cause.message : undefined;
+
+    return {
+        provider: candidate.provider,
+        providerOperation: candidate.operation,
+        ...(providerError === undefined ? {} : { providerError })
+    };
+}
+
 function isDuplicateKeyError(error: unknown): boolean {
     if (error instanceof Error) {
         const pgError = error as Error & { code?: string };
