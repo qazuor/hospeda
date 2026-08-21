@@ -164,6 +164,12 @@
                 "OUTDOOR_ADVENTURE": "Outdoor Adventure",
                 "OTHER": "Other"
             },
+            "priceRangeOption": {
+                "BUDGET": "Budget",
+                "MID": "Moderate",
+                "HIGH": "Upscale",
+                "PREMIUM": "Premium"
+            },
             "priceUnitOption": {
                 "per_day": "Per day",
                 "per_hour": "Per hour",
