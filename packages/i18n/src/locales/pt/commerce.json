@@ -164,6 +164,12 @@
                 "OUTDOOR_ADVENTURE": "Aventura ao ar livre",
                 "OTHER": "Outro"
             },
+            "priceRangeOption": {
+                "BUDGET": "Econômico",
+                "MID": "Moderado",
+                "HIGH": "Elevado",
+                "PREMIUM": "Premium"
+            },
             "priceUnitOption": {
                 "per_day": "Por dia",
                 "per_hour": "Por hora",

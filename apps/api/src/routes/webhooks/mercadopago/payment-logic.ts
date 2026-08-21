@@ -1360,16 +1360,43 @@ export async function processPaymentUpdated({
     // happen" branch on EVERY visibility-boost purchase — the
     // `featured_listing_addon_grants` table stayed empty in production.
     //
+    // HOS-595: forward the provider payment id and the amount actually charged.
+    // Neither was passed before, with two consequences: `confirmAddonPurchase`
+    // wrote `payment_id: null` on every purchase row (which also made the
+    // idempotency SELECT above dead code, since it matches on that column), and
+    // it had nothing to book in `billing_payments` — so an add-on charge left no
+    // ledger entry at all, unlike every subscription flow in this same file.
+    //
     // HOS-721: the same call now forwards the promo/discount keys too. HOS-675
     // deliberately left them out because the checkout writes them under the
     // snake_case names MercadoPago requires while `confirmAddonPurchase` looks
     // up camelCase ones — forwarding the raw bag would have changed nothing.
     // `normalizeAddonCheckoutMetadata` is that translation, done exactly once,
     // here at the border: everything downstream reads canonical camelCase only.
+    // It supersedes the accommodation-only forward, which is now one key of the
+    // canonical payload rather than the only one that survives.
     const addonMetadata = normalizeAddonCheckoutMetadata({ metadata: data.metadata });
     const result = await addonService.confirmPurchase({
         customerId: addonCustomerId,
         addonSlug,
+        ...(paymentId === null ? {} : { paymentId }),
+        // The charged amount is forwarded ONLY for an approved payment, which is
+        // what makes the ledger row conditional on the money having actually
+        // moved: `confirmAddonPurchase` books a `succeeded` row when — and only
+        // when — it receives an amount. Unlike the annual and plan-upgrade
+        // dispatches above, this branch has never gated itself on
+        // MP_APPROVED_STATUSES, so without this gate a rejected charge would be
+        // written to the ledger as collected.
+        ...(paymentInfo !== null && MP_APPROVED_STATUSES.has(paymentInfo.status)
+            ? {
+                  // `paymentInfo.amount` is in MAJOR units (extractPaymentInfo
+                  // reads MP's `transaction_amount`); billing_payments stores
+                  // integer centavos, the same conversion the sibling
+                  // `billing.payments.record()` calls above perform.
+                  amountInCents: Math.round(paymentInfo.amount * 100),
+                  currency: paymentInfo.currency
+              }
+            : {}),
         ...(Object.keys(addonMetadata).length === 0 ? {} : { metadata: addonMetadata })
     });
 

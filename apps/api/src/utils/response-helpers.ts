@@ -13,6 +13,7 @@ import { readEntitlementCause } from './entitlement-cause';
 import { env } from './env';
 import { resolveErrorCodeForStatus } from './http-error-codes';
 import { apiLogger } from './logger';
+import { RefinedBodyValidationError } from './refined-body';
 
 /**
  * Interface for pagination metadata
@@ -386,6 +387,36 @@ const PUBLIC_DETAILS_ERROR_CODES: ReadonlySet<ServiceErrorCode> = new Set([
  */
 export const handleRouteError = (error: unknown, c: Context) => {
     apiLogger.error({ message: 'Route error', error });
+
+    // HOS-607: a cross-field refinement rejection (re-applied manually via
+    // `parseRefinedBody` because the route factory drops `.refine()` when it
+    // rebuilds the OpenAPI request schema — see utils/refined-body.ts) carries
+    // the full `transformZodError` payload. Render it in the SAME rich shape
+    // (`details`/`summary`/`userFriendlyMessage`) the OpenAPI request
+    // validator's `defaultHook` (utils/create-app.ts) already uses for an
+    // ordinary field-level rejection on the same route, instead of flattening
+    // it to the generic `{code, message}` envelope below. Checked BEFORE the
+    // `ServiceError` branch since this class extends it.
+    if (error instanceof RefinedBodyValidationError) {
+        const { validation } = error;
+        return c.json(
+            {
+                success: false,
+                error: {
+                    code: validation.code,
+                    messageKey: validation.messageKey,
+                    details: validation.details,
+                    summary: validation.summary,
+                    userFriendlyMessage: validation.userFriendlyMessage
+                },
+                metadata: {
+                    timestamp: new Date().toISOString(),
+                    requestId: c.get('requestId') || 'unknown'
+                }
+            },
+            400
+        );
+    }
 
     // Check for ServiceError first (most specific)
     if (error instanceof ServiceError) {

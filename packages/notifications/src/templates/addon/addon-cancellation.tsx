@@ -1,9 +1,10 @@
 import { Section, Text } from '@react-email/components';
+import type { AddonLinkLocale } from '../../types/notification.types.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
-import { formatDate } from '../utils/index.js';
+import { buildAddonManagementUrl, formatDate } from '../utils/index.js';
 
 /**
  * Props for AddonCancellation email template
@@ -15,6 +16,13 @@ export interface AddonCancellationProps {
     canceledAt: string;
     /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
     baseUrl: string;
+    /**
+     * Add-on catalog slug. When present, the CTA button deep-links to the
+     * add-ons management page focused on this add-on (HOS-722).
+     */
+    addonSlug?: string;
+    /** Recipient's preferred locale for the CTA link. Falls back to `'es'` (HOS-722). */
+    locale?: AddonLinkLocale;
 }
 
 /**
@@ -28,9 +36,12 @@ export function AddonCancellation({
     recipientName,
     addonName,
     canceledAt,
-    baseUrl
+    baseUrl,
+    addonSlug,
+    locale
 }: AddonCancellationProps) {
     const formattedCanceledAt = formatDate({ dateString: canceledAt });
+    const manageUrl = buildAddonManagementUrl({ baseUrl, locale, addonSlug });
 
     return (
         <EmailLayout
@@ -63,7 +74,7 @@ export function AddonCancellation({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Ir a mi cuenta</Button>
+                <Button href={manageUrl}>Ir a mi cuenta</Button>
             </Section>
 
             <Text style={styles.footerNote}>

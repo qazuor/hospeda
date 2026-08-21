@@ -6,12 +6,24 @@
  *
  * Features:
  * - Finds unresolved events in billing_webhook_dead_letter (resolved_at IS NULL)
+ *   whose exponential backoff has elapsed (see `webhookRetryDueCondition`)
  * - Re-attempts webhook processing via webhook handler
- * - Updates status on success (sets resolved_at timestamp)
+ * - Updates status on success (sets resolved_at timestamp) and closes the
+ *   originating billing_webhook_events row
  * - Increments attempts count on failure
- * - Marks as permanently failed after 5 attempts with admin alert
+ * - Marks as permanently failed after `WEBHOOK_RETRY_MAX_ATTEMPTS` attempts,
+ *   with an admin alert on both stdout and Sentry
  * - Processes in batches of 50 to avoid timeouts
  * - Uses pg_try_advisory_lock to prevent concurrent execution across instances
+ *
+ * ## The queue this drains was empty until HOS-717
+ *
+ * No production code wrote `billing_webhook_dead_letter` — the only writer was
+ * an integration test that no CI job runs — so this job ran hourly against a
+ * permanently empty table and reported success. The missing write now lives in
+ * `routes/webhooks/mercadopago/dead-letter.ts`, and the retry policy
+ * (`WEBHOOK_RETRY_MAX_ATTEMPTS` + the backoff schedule) is defined there so the
+ * producer and this consumer cannot disagree about it.
  *
  * @module cron/jobs/webhook-retry
  */
@@ -27,12 +39,17 @@ import {
     getDb,
     isNull,
     lt,
+    or,
     sql,
     withTransaction
 } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { qzpayLogger } from '../../lib/qzpay-logger.js';
 import { getQZPayBilling } from '../../middlewares/billing.js';
+import {
+    WEBHOOK_RETRY_MAX_ATTEMPTS,
+    webhookRetryDueCondition
+} from '../../routes/webhooks/mercadopago/dead-letter.js';
 import { processDisputeEvent } from '../../routes/webhooks/mercadopago/dispute-logic.js';
 import { processPaymentUpdated } from '../../routes/webhooks/mercadopago/payment-logic.js';
 import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
@@ -47,9 +64,13 @@ import { fetchAuthorizedPaymentDetails } from '../../utils/mp-authorized-payment
 import type { CronJobDefinition } from '../types.js';
 
 /**
- * Maximum number of retry attempts before marking as permanently failed
+ * Maximum number of retry attempts before marking as permanently failed.
+ *
+ * Re-exported from the recovery-queue policy module rather than redeclared, so
+ * the producer that fills the queue and this consumer that drains it can never
+ * disagree about when to give up.
  */
-const MAX_RETRY_ATTEMPTS = 5;
+const MAX_RETRY_ATTEMPTS = WEBHOOK_RETRY_MAX_ATTEMPTS;
 
 /**
  * Maximum number of events to process per cron run
@@ -547,12 +568,26 @@ async function retryWebhookEvent(event: {
 /**
  * Mark webhook event as resolved
  *
- * Updates the dead letter record to indicate successful processing.
+ * Updates the dead letter record to indicate successful processing, and closes
+ * the originating `billing_webhook_events` row in the same transaction.
  *
- * @param db - Database instance
+ * Closing both is not cosmetic. The event row was left `failed` by
+ * `markEventFailedByProviderId` when the live delivery broke; if recovery
+ * succeeds and only the queue entry is resolved, the admin webhook listing keeps
+ * reporting a permanent failure for an event that was in fact processed — the
+ * same "the signal is decoupled from the effect" defect HOS-717 exists to
+ * remove. The UPDATE is scoped to `pending`/`failed` so it can never overwrite a
+ * row some other path already marked `processed`.
+ *
+ * @param db - Database instance (the cron's transaction client)
  * @param eventId - Dead letter event ID
+ * @param providerEventId - Provider event ID of the originating webhook event
  */
-async function markAsResolved(db: DrizzleClient, eventId: string): Promise<void> {
+async function markAsResolved(
+    db: DrizzleClient,
+    eventId: string,
+    providerEventId: string
+): Promise<void> {
     await db
         .update(billingWebhookDeadLetter)
         .set({
@@ -560,7 +595,24 @@ async function markAsResolved(db: DrizzleClient, eventId: string): Promise<void>
         })
         .where(eq(billingWebhookDeadLetter.id, eventId));
 
-    apiLogger.info({ eventId }, 'Marked webhook event as resolved');
+    await db
+        .update(billingWebhookEvents)
+        .set({
+            status: 'processed',
+            processedAt: new Date(),
+            error: null
+        })
+        .where(
+            and(
+                eq(billingWebhookEvents.providerEventId, providerEventId),
+                or(
+                    eq(billingWebhookEvents.status, 'pending'),
+                    eq(billingWebhookEvents.status, 'failed')
+                )
+            )
+        );
+
+    apiLogger.info({ eventId, providerEventId }, 'Marked webhook event as resolved');
 }
 
 /**
@@ -568,6 +620,14 @@ async function markAsResolved(db: DrizzleClient, eventId: string): Promise<void>
  *
  * Updates the attempts counter and optionally marks as permanently failed
  * if max attempts have been reached.
+ *
+ * Giving up is deliberate, not a shortcut: an event that has failed
+ * `MAX_RETRY_ATTEMPTS` times across an ~15h exponential backoff is not going to
+ * start working, and leaving it in the queue would turn the queue into the
+ * zombie-retry loop HOS-707 removed on the provider side. The row is stamped
+ * `resolved_at` (so it is never picked up again) but keeps its payload and a
+ * give-up reason in `error`, so it stays an audit record and remains visible
+ * through the admin dead-letter listing.
  *
  * @param db - Database instance
  * @param eventId - Dead letter event ID
@@ -597,6 +657,22 @@ async function incrementAttempts(
                 attempts: newAttempts
             },
             `🚨 ADMIN ALERT: Webhook event permanently failed after ${MAX_RETRY_ATTEMPTS} attempts`
+        );
+
+        // Abandoning a billing webhook is the one outcome of this job that
+        // needs a human. Emitting only to stdout would leave the give-up
+        // invisible to the alert pipeline — the same reason the
+        // unrecognized-event-type branch below reports to Sentry.
+        Sentry.captureMessage(
+            `DEAD-LETTER: webhook event permanently failed after ${MAX_RETRY_ATTEMPTS} recovery attempts`,
+            {
+                level: 'error',
+                tags: {
+                    module: 'cron',
+                    job_name: 'webhook-retry',
+                    dead_letter_id: eventId
+                }
+            }
         );
     } else {
         await db
@@ -667,15 +743,22 @@ export const webhookRetryJob: CronJobDefinition = {
                     startedAt: startedAt.toISOString()
                 });
 
-                // Query unresolved events from dead letter queue
-                // Unresolved = resolved_at IS NULL
+                // Query unresolved events from dead letter queue.
+                // Unresolved = resolved_at IS NULL, budget left, backoff elapsed.
+                //
+                // The backoff gate is what makes this job a retry SCHEDULE rather
+                // than "five tries in the next five hours". Without it a failure
+                // caused by a provider outage burns its whole attempt budget
+                // inside the outage window and is permanently abandoned before the
+                // provider is back.
                 const unresolvedEvents = await tx
                     .select()
                     .from(billingWebhookDeadLetter)
                     .where(
                         and(
                             isNull(billingWebhookDeadLetter.resolvedAt),
-                            lt(billingWebhookDeadLetter.attempts, MAX_RETRY_ATTEMPTS)
+                            lt(billingWebhookDeadLetter.attempts, MAX_RETRY_ATTEMPTS),
+                            webhookRetryDueCondition()
                         )
                     )
                     .limit(BATCH_SIZE);
@@ -746,7 +829,7 @@ export const webhookRetryJob: CronJobDefinition = {
 
                         if (success) {
                             // Mark as resolved
-                            await markAsResolved(tx, event.id);
+                            await markAsResolved(tx, event.id, event.providerEventId);
                             resolved++;
                         } else {
                             // Increment attempts

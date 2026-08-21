@@ -228,29 +228,59 @@ export const retryDeadLetterRoute = createAdminRoute({
                 });
             }
 
-            // Atomically insert the new webhook event and mark the dead letter entry as resolved.
-            // Both writes must succeed together: inserting the event without resolving the dead
-            // letter entry would allow duplicate retries; resolving without inserting would
+            // Atomically re-open the webhook event and mark the dead letter entry as resolved.
+            // Both writes must succeed together: re-opening the event without resolving the dead
+            // letter entry would allow duplicate retries; resolving without re-opening would
             // silently discard the retry request.
+            //
+            // HOS-717: re-open, not blind INSERT. `billing_webhook_events.provider_event_id`
+            // carries a UNIQUE index (`idx_webhook_events_provider_id`), and every dead-letter
+            // entry is by construction derived from an event row that already exists — so an
+            // INSERT here always raises SQLSTATE 23505 and this route always answered 500.
+            // Nobody had hit it because the queue this route reads was permanently empty
+            // (that is the bug HOS-717 fixes); filling the queue makes the path reachable.
+            // The INSERT is kept as the fallback for the one case it is correct: an entry whose
+            // original event row was purged.
             const newEvent = await withServiceTransaction(
                 async (ctx) => {
                     // biome-ignore lint/style/noNonNullAssertion: tx is always defined inside withServiceTransaction
                     const tx = ctx.tx!;
 
-                    const newEventResult = await tx
-                        .insert(billingWebhookEvents)
-                        .values({
-                            providerEventId: deadLetterEntry.providerEventId,
-                            provider: deadLetterEntry.provider,
-                            type: deadLetterEntry.type,
+                    const reopened = await tx
+                        .update(billingWebhookEvents)
+                        .set({
                             status: 'pending',
                             payload: deadLetterEntry.payload,
-                            attempts: 0,
-                            livemode: deadLetterEntry.livemode
+                            error: null,
+                            processedAt: null
                         })
+                        .where(
+                            eq(
+                                billingWebhookEvents.providerEventId,
+                                deadLetterEntry.providerEventId
+                            )
+                        )
                         .returning({
                             id: billingWebhookEvents.id
                         });
+
+                    const newEventResult =
+                        reopened.length > 0
+                            ? reopened
+                            : await tx
+                                  .insert(billingWebhookEvents)
+                                  .values({
+                                      providerEventId: deadLetterEntry.providerEventId,
+                                      provider: deadLetterEntry.provider,
+                                      type: deadLetterEntry.type,
+                                      status: 'pending',
+                                      payload: deadLetterEntry.payload,
+                                      attempts: 0,
+                                      livemode: deadLetterEntry.livemode
+                                  })
+                                  .returning({
+                                      id: billingWebhookEvents.id
+                                  });
 
                     const inserted = newEventResult[0];
                     if (!inserted) {

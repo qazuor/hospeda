@@ -74,7 +74,7 @@ export function PriceSection({
                             key={tier}
                             value={tier}
                         >
-                            {tier}
+                            {t(`commerce.owner.editor.priceRangeOption.${tier}`, tier)}
                         </option>
                     ))}
                 </TextField>

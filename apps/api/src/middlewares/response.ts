@@ -18,6 +18,7 @@ import { readEntitlementCause } from '../utils/entitlement-cause';
 import { env, getResponseConfig } from '../utils/env';
 import { resolveErrorCodeForStatus } from '../utils/http-error-codes';
 import { apiLogger } from '../utils/logger';
+import { RefinedBodyValidationError } from '../utils/refined-body';
 
 /**
  * Centralized mapping from ServiceErrorCode to HTTP status codes
@@ -372,6 +373,34 @@ export const createErrorHandler = () => {
 
         if (!responseConfig.formatEnabled) {
             throw error; // Let Hono handle it
+        }
+
+        // HOS-607: kept in sync with the identical branch in `handleRouteError`
+        // (utils/response-helpers.ts) per the R4 twin-formatter rule
+        // (docs/error-contract.md) — this error only reaches THIS handler if a
+        // future caller of `parseRefinedBody` lets it bubble past the route
+        // factory's own try/catch instead of through `handleRouteError`.
+        if (error instanceof RefinedBodyValidationError) {
+            const { validation } = error;
+            const headers = addResponseHeaders(c);
+            return c.json(
+                {
+                    success: false,
+                    error: {
+                        code: validation.code,
+                        messageKey: validation.messageKey,
+                        details: validation.details,
+                        summary: validation.summary,
+                        userFriendlyMessage: validation.userFriendlyMessage
+                    },
+                    metadata: {
+                        timestamp: new Date().toISOString(),
+                        requestId: c.get('requestId') || 'unknown'
+                    }
+                },
+                400,
+                headers
+            );
         }
 
         let errorCode: ServiceErrorCode;
