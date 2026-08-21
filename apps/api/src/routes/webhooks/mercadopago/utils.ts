@@ -8,10 +8,11 @@
  */
 
 import { createMercadoPagoAdapter } from '@repo/billing';
-import { and, billingWebhookEvents, eq, getDb, or } from '@repo/db';
+import { and, billingWebhookEvents, eq, getDb, or, sql } from '@repo/db';
 import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import { apiLogger } from '../../../utils/logger';
+import { enqueueWebhookForRetry, FAILED_WEBHOOK_EVENT_RETURNING } from './dead-letter';
 import type { AddonMetadata, PaymentInfo } from './types';
 
 /**
@@ -183,11 +184,36 @@ export async function markEventProcessedByProviderId({
 }
 
 /**
- * Mark webhook event as failed by provider event ID.
+ * Mark webhook event as failed by provider event ID, and queue it for recovery.
  *
  * Replaces the in-memory Map approach with a direct DB query by providerEventId.
  * This is serverless-safe since it does not rely on process-level state.
  * Only updates events in 'pending' status.
+ *
+ * ## This is the recovery queue's only entry point (HOS-717)
+ *
+ * Every retryable failure path already funnels through this function —
+ * `handleWebhookError`'s retryable branch, `payment-handler`, and
+ * `subscription-payment-handler`. Putting the `billing_webhook_dead_letter`
+ * write here rather than at each of those call sites means there is exactly one
+ * place that can forget it, not four. Terminal failures never arrive: HOS-707
+ * routes those to {@link markEventProcessedByProviderId} instead, so a delivery
+ * that can never succeed is never queued for a retry that can never succeed.
+ *
+ * ## `attempts` is incremented here, in the same UPDATE
+ *
+ * `billing_webhook_events.attempts` had no writer at all before HOS-717 — the
+ * admin listing read a column that was inert by construction, which is why the
+ * `attempts = 0` observed during the HOS-707 incident read as data drift. It is
+ * bumped inside the status UPDATE (`attempts + 1`, not read-modify-write) so
+ * concurrent redeliveries of the same event cannot lose a count. It measures
+ * INBOUND delivery failures; the separate counter on
+ * `billing_webhook_dead_letter` measures recovery attempts and is owned by the
+ * retry cron.
+ *
+ * The status guard (`status = 'pending'`) is what keeps both side effects
+ * exactly-once per delivery: a repeated call for an already-failed event matches
+ * no row, so nothing is counted twice and nothing is re-queued.
  *
  * @param params - Object containing the provider event ID and error message
  * @param params.providerEventId - MercadoPago event ID
@@ -200,24 +226,10 @@ export async function markEventFailedByProviderId({
     readonly providerEventId: string;
     readonly errorMessage: string;
 }): Promise<void> {
-    try {
-        // getDb() is used directly: single-row UPDATE by providerEventId with no
-        // multi-table atomicity requirement. No BillingWebhookEventService exists
-        // in @repo/service-core to abstract this operation.
-        const db = getDb();
+    let failedEvent: Awaited<ReturnType<typeof updateFailedEvent>>;
 
-        await db
-            .update(billingWebhookEvents)
-            .set({
-                status: 'failed',
-                error: errorMessage
-            })
-            .where(
-                and(
-                    eq(billingWebhookEvents.providerEventId, providerEventId),
-                    eq(billingWebhookEvents.status, 'pending')
-                )
-            );
+    try {
+        failedEvent = await updateFailedEvent({ providerEventId, errorMessage });
 
         apiLogger.debug(
             { providerEventId, errorMessage },
@@ -233,6 +245,59 @@ export async function markEventFailedByProviderId({
             'Failed to mark webhook event as failed by provider ID'
         );
     }
+
+    if (!failedEvent) {
+        // No row moved from 'pending' to 'failed': either the event was never
+        // persisted, or a previous call already failed it and queued it. Either
+        // way there is nothing new to recover.
+        return;
+    }
+
+    await enqueueWebhookForRetry({ event: failedEvent, errorMessage });
+}
+
+/**
+ * Flip a pending webhook event to `failed`, bumping its attempt counter.
+ *
+ * Split out so {@link markEventFailedByProviderId} can keep the DB failure and
+ * the queue write on separate error paths: a queue write must still be
+ * attempted only when the status change actually happened.
+ *
+ * @returns The updated row (reduced to the columns the recovery queue needs),
+ *   or `undefined` when no pending row matched.
+ */
+async function updateFailedEvent({
+    providerEventId,
+    errorMessage
+}: {
+    readonly providerEventId: string;
+    readonly errorMessage: string;
+}) {
+    // getDb() is used directly: single-row UPDATE by providerEventId with no
+    // multi-table atomicity requirement. No BillingWebhookEventService exists
+    // in @repo/service-core to abstract this operation.
+    const db = getDb();
+
+    const updated = await db
+        .update(billingWebhookEvents)
+        .set({
+            status: 'failed',
+            error: errorMessage,
+            // COALESCE because the column is nullable (`DEFAULT 0`, but rows
+            // written before that default, or by any adapter that omits it,
+            // can hold NULL — and NULL + 1 is NULL, which would leave the
+            // counter permanently stuck).
+            attempts: sql`coalesce(${billingWebhookEvents.attempts}, 0) + 1`
+        })
+        .where(
+            and(
+                eq(billingWebhookEvents.providerEventId, providerEventId),
+                eq(billingWebhookEvents.status, 'pending')
+            )
+        )
+        .returning(FAILED_WEBHOOK_EVENT_RETURNING);
+
+    return updated?.[0];
 }
 
 /**
