@@ -668,6 +668,95 @@ describe('subscription-poll cron job', () => {
             expect(terminalUpdate).toBeDefined();
         });
 
+        // ── HOS-675: accommodationId must survive the synthetic payload ────
+        // The whitelist that builds syntheticMetadata dropped this key, so a
+        // visibility-boost purchase confirmed through polling reached
+        // confirmAddonPurchase with no target and the
+        // featured_listing_addon_grants row was never written. Sourced from the
+        // JOB row because MP normalizes preference metadata keys, which is why
+        // addonSlug/customerId already fall back to jobMeta here too.
+        it('carries accommodationId from job metadata into the synthetic payload (HOS-675)', async () => {
+            const job = buildJob({
+                id: 'addon-job-boost',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_boost_uuid',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'visibility-boost-7d',
+                    customerId: 'cust_aaa',
+                    userId: 'user_bbb',
+                    orderId: 'addon_visibility-boost-7d_cs_boost_uuid',
+                    accommodationId: 'accom_target_1'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_pay_boost',
+                    status: 'succeeded',
+                    amount: 300000,
+                    currency: 'ARS',
+                    // The MP payment payload deliberately does NOT carry the key:
+                    // the job row is the reliable carrier.
+                    metadata: {
+                        addonSlug: 'visibility-boost-7d',
+                        customerId: 'cust_aaa',
+                        type: 'addon_purchase'
+                    }
+                }
+            ]);
+
+            await subscriptionPollJob.handler(buildContext());
+
+            expect(mockProcessPaymentUpdated).toHaveBeenCalledTimes(1);
+            const [callArg] = mockProcessPaymentUpdated.mock.calls[0] as [
+                { data: Record<string, unknown> }
+            ];
+            const meta = callArg.data.metadata as Record<string, unknown>;
+            expect(meta.accommodationId).toBe('accom_target_1');
+        });
+
+        it('prefers the payment snake_case accommodation_id over the job value (HOS-675)', async () => {
+            const job = buildJob({
+                id: 'addon-job-boost-2',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_boost_uuid_2',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'visibility-boost-7d',
+                    customerId: 'cust_aaa',
+                    userId: 'user_bbb',
+                    orderId: 'addon_visibility-boost-7d_cs_boost_uuid_2',
+                    accommodationId: 'accom_from_job'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_pay_boost_2',
+                    status: 'succeeded',
+                    amount: 300000,
+                    currency: 'ARS',
+                    metadata: {
+                        addonSlug: 'visibility-boost-7d',
+                        customerId: 'cust_aaa',
+                        type: 'addon_purchase',
+                        accommodation_id: 'accom_from_payment'
+                    }
+                }
+            ]);
+
+            await subscriptionPollJob.handler(buildContext());
+
+            const [callArg] = mockProcessPaymentUpdated.mock.calls[0] as [
+                { data: Record<string, unknown> }
+            ];
+            const meta = callArg.data.metadata as Record<string, unknown>;
+            expect(meta.accommodationId).toBe('accom_from_payment');
+        });
+
         it('annual job (no addon discriminator) + succeeded payment → confirmAnnualSubscription called, NOT processPaymentUpdated', async () => {
             const job = buildJob({
                 id: 'annual-job-6',

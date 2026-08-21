@@ -323,6 +323,15 @@ async function runOneTimePaymentPoll(params: {
             //   order_id     — external_reference fallback used by logging
             //   orderId      — camelCase alias forwarded for traceability
             //   type         — dispatch discriminator (must equal 'addon_purchase')
+            //   accommodationId — HOS-675: target accommodation for a
+            //                  requiresAccommodationTarget addon. Consumed by
+            //                  extractAddonMetadata → confirmAddonPurchase to
+            //                  write the featured_listing_addon_grants row.
+            //                  Omitting it from this whitelist was silent: the
+            //                  purchase confirmed and the link row was never
+            //                  written. Both key spellings are read because MP
+            //                  normalizes preference metadata keys to
+            //                  snake_case on the payment object.
             const syntheticMetadata: Record<string, unknown> = {
                 addonSlug: paymentMeta.addonSlug ?? jobMeta.addonSlug,
                 customerId: paymentMeta.customerId ?? jobMeta.customerId,
@@ -333,6 +342,11 @@ async function runOneTimePaymentPoll(params: {
                     jobMeta.order_id ??
                     jobMeta.orderId,
                 orderId: paymentMeta.orderId ?? jobMeta.orderId,
+                accommodationId:
+                    paymentMeta.accommodationId ??
+                    paymentMeta.accommodation_id ??
+                    jobMeta.accommodationId ??
+                    jobMeta.accommodation_id,
                 type: paymentMeta.type ?? jobMeta.type
             };
 

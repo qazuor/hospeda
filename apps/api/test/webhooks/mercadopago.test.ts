@@ -302,6 +302,63 @@ describe('MercadoPago Webhook Handler', () => {
             const result = extractAddonMetadata(metadata);
             expect(result).toBeNull();
         });
+
+        // ── HOS-675: the target accommodation must survive extraction ───────
+        // Dropping it here is what left `featured_listing_addon_grants` empty
+        // in production: the add-on still confirmed, but confirmAddonPurchase
+        // found no accommodationId and skipped the link-row write.
+        it('carries accommodationId through in camelCase (HOS-675)', () => {
+            const result = extractAddonMetadata({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust_123',
+                accommodationId: 'accom_abc'
+            });
+
+            expect(result).toEqual({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust_123',
+                accommodationId: 'accom_abc'
+            });
+        });
+
+        it('carries accommodationId through in snake_case (HOS-675)', () => {
+            // MercadoPago normalizes preference metadata keys to snake_case on
+            // the payment object, so the snake spelling is the one a real MP
+            // payment payload arrives with.
+            const result = extractAddonMetadata({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust_123',
+                accommodation_id: 'accom_snake'
+            });
+
+            expect(result).toEqual({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust_123',
+                accommodationId: 'accom_snake'
+            });
+        });
+
+        it('omits accommodationId entirely for an owner-wide addon (HOS-675)', () => {
+            const result = extractAddonMetadata({
+                addonSlug: 'extra-photos-20',
+                customerId: 'cust_123'
+            });
+
+            expect(result).not.toBeNull();
+            expect(result).not.toHaveProperty('accommodationId');
+        });
+
+        it('ignores an empty accommodationId instead of forwarding "" (HOS-675)', () => {
+            const result = extractAddonMetadata({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust_123',
+                accommodationId: '',
+                accommodation_id: ''
+            });
+
+            expect(result).not.toBeNull();
+            expect(result).not.toHaveProperty('accommodationId');
+        });
     });
 
     describe('extractAddonFromReference', () => {

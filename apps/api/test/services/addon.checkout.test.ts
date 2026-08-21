@@ -122,15 +122,26 @@ vi.mock('@repo/db/client', () => ({
 // confirmAddonPurchase). mockDbUpdateWhere backs the pre-existing
 // needsEntitlementSync flag write (also a plain getDb() call, unrelated to
 // T-007) so that path keeps resolving instead of hitting the real DB client.
-const { mockGrantInsertValues, mockFeaturedGrantsTable, mockDbUpdateWhere } = vi.hoisted(() => ({
-    mockGrantInsertValues: vi.fn().mockResolvedValue(undefined),
-    mockFeaturedGrantsTable: {
-        id: 'id',
-        purchaseId: 'purchase_id',
-        accommodationId: 'accommodation_id'
-    },
-    mockDbUpdateWhere: vi.fn().mockResolvedValue(undefined)
-}));
+// HOS-675: `mockDbUpdateSet` is hoisted (rather than created inline inside the
+// getDb() factory) so tests can assert on the columns written by the
+// featuredGrantLinkMissing marker update, not just that an update happened.
+const { mockGrantInsertValues, mockFeaturedGrantsTable, mockDbUpdateSet } = vi.hoisted(() => {
+    // Terminal link in the update chain: `.set()` returns `{ where }` and the
+    // source awaits `.where(...)`. Only `mockDbUpdateSet` is exposed, since the
+    // assertions are about the columns written, not the predicate.
+    const mockDbUpdateWhere = vi.fn().mockResolvedValue(undefined);
+    return {
+        mockGrantInsertValues: vi.fn().mockResolvedValue(undefined),
+        mockFeaturedGrantsTable: {
+            id: 'id',
+            purchaseId: 'purchase_id',
+            accommodationId: 'accommodation_id'
+        },
+        mockDbUpdateSet: vi.fn((_values: Record<string, unknown>) => ({
+            where: mockDbUpdateWhere
+        }))
+    };
+});
 
 // Mock @repo/db/schemas/billing - dynamic import used inside confirmAddonPurchase
 vi.mock('@repo/db/schemas/billing', () => ({
@@ -160,7 +171,7 @@ vi.mock('@repo/db', async (importOriginal) => {
         // and the pre-existing needsEntitlementSync update.
         getDb: vi.fn(() => ({
             insert: vi.fn(() => ({ values: mockGrantInsertValues })),
-            update: vi.fn(() => ({ set: vi.fn(() => ({ where: mockDbUpdateWhere })) }))
+            update: vi.fn(() => ({ set: mockDbUpdateSet }))
         }))
     };
 });
@@ -895,6 +906,66 @@ describe('confirmAddonPurchase', () => {
             expect(result.success).toBe(true);
             expect(mockGrantInsertValues).not.toHaveBeenCalled();
             expect(vi.mocked(captureBillingError)).toHaveBeenCalledOnce();
+        });
+
+        // ── HOS-675: the silent branch must leave durable, queryable state ──
+        // A log line plus a Sentry event is a signal nobody queries — which is
+        // exactly why this branch ran on every visibility-boost purchase for
+        // months without being noticed. The confirmation itself must still
+        // succeed (the payment is already collected; HOS-714 decided such a
+        // payment is RECORDED and ALERTED, never discarded), so the record goes
+        // onto the purchase row instead.
+        it('flags the purchase row featuredGrantLinkMissing when accommodationId is absent (HOS-675)', async () => {
+            const expectedPurchaseId = 'purchase_unlinked_uuid';
+            mockDbInsertReturning.mockResolvedValue([{ id: expectedPurchaseId }]);
+
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                addonSlug: 'visibility-boost-7d'
+                // no metadata.accommodationId
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockDbUpdateSet).toHaveBeenCalledOnce();
+
+            const markerSet = mockDbUpdateSet.mock.calls[0]?.[0] as {
+                metadata?: { queryChunks?: unknown[] };
+                updatedAt?: unknown;
+            };
+
+            expect(markerSet?.updatedAt).toBeInstanceOf(Date);
+            // The marker merges into the existing jsonb rather than replacing it,
+            // so the written value is a drizzle SQL expression whose bound params
+            // carry the marker payload.
+            const boundParams = (markerSet?.metadata?.queryChunks ?? []).flatMap((chunk) => {
+                if (typeof chunk === 'string') {
+                    return [chunk];
+                }
+                const value = (chunk as { value?: unknown })?.value;
+                if (typeof value === 'string') {
+                    return [value];
+                }
+                return Array.isArray(value)
+                    ? value.filter((item): item is string => typeof item === 'string')
+                    : [];
+            });
+
+            expect(boundParams.join(' ')).toContain('featuredGrantLinkMissing');
+            expect(boundParams.join(' ')).toContain('featuredGrantLinkMissingAt');
+        });
+
+        it('does NOT flag the purchase row when the grant link was written (HOS-675)', async () => {
+            mockDbInsertReturning.mockResolvedValue([{ id: 'purchase_linked_uuid' }]);
+
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                addonSlug: 'visibility-boost-7d',
+                metadata: { accommodationId: 'accom_own' }
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockGrantInsertValues).toHaveBeenCalledOnce();
+            expect(mockDbUpdateSet).not.toHaveBeenCalled();
         });
 
         it('soft-fails when the grant insert itself throws: purchase still confirms, error logged', async () => {
@@ -1849,6 +1920,57 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                 accommodation_id: 'accom_own',
                 accommodationId: 'accom_own'
             });
+        });
+
+        // ── HOS-675: the polling job is the carrier that actually matters ───
+        // For an MP Preference there is no Webhooks v2 channel, so the polling
+        // fallback is usually the ONLY path that ever confirms the purchase
+        // (see the HOS-710 note in scheduleAddonCheckoutPolling). The polling
+        // job builds its synthetic payment metadata from the JOB row, so an
+        // accommodationId that is only in the MP checkout metadata never
+        // reaches confirmAddonPurchase.
+        it('carries accommodationId into the polling job metadata (HOS-675)', async () => {
+            mockAccommodationFindById.mockResolvedValue({
+                id: 'accom_own',
+                ownerId: 'user_xyz',
+                deletedAt: null
+            });
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'visibility-boost-7d',
+                userId: 'user_xyz',
+                accommodationId: 'accom_own'
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockPollingJobsCreate).toHaveBeenCalledOnce();
+            const jobArg = mockPollingJobsCreate.mock.calls[0]?.[0] as {
+                metadata: Record<string, unknown>;
+            };
+            expect(jobArg.metadata).toMatchObject({
+                type: 'addon_purchase',
+                addonSlug: 'visibility-boost-7d',
+                accommodationId: 'accom_own'
+            });
+        });
+
+        it('omits accommodationId from polling job metadata for an owner-wide addon (HOS-675)', async () => {
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'extra-photos-20',
+                userId: 'user_xyz'
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockPollingJobsCreate).toHaveBeenCalledOnce();
+            const jobArg = mockPollingJobsCreate.mock.calls[0]?.[0] as {
+                metadata: Record<string, unknown>;
+            };
+            expect(jobArg.metadata).not.toHaveProperty('accommodationId');
         });
 
         it('ignores accommodationId and never looks up ownership for an unrelated addon', async () => {
