@@ -302,12 +302,12 @@ applyCacheHeaders({
 const filterGroups = [
     {
         id: 'q',
-        label: t('blog.filters.search', 'Buscar'),
+        label: t('blog.filters.search'),
         type: 'search' as const
     },
     {
         id: 'isFeatured',
-        label: t('blog.filters.featured', 'Solo destacadas'),
+        label: t('blog.filters.featured'),
         type: 'toggle' as const
     },
     {
@@ -321,7 +321,7 @@ const filterGroups = [
         // singular `category` param is still accepted on READ elsewhere
         // (backward compat, US-10) — only the sidebar's own group id changes.
         id: 'categories',
-        label: t('blog.filters.category', 'Categoría'),
+        label: t('blog.filters.category'),
         type: 'checkbox' as const,
         options: [
             { value: 'CULTURE',      label: t('blog.categories.culture',      'Cultura') },
@@ -346,10 +346,10 @@ const filterGroups = [
     },
     {
         id: 'date',
-        label: t('blog.filters.publishedDate', 'Fecha de publicación'),
+        label: t('blog.filters.publishedDate'),
         type: 'date-range' as const,
-        checkInPlaceholder: t('blog.filters.publishedFrom', 'Desde'),
-        checkOutPlaceholder: t('blog.filters.publishedTo', 'Hasta'),
+        checkInPlaceholder: t('blog.filters.publishedFrom'),
+        checkOutPlaceholder: t('blog.filters.publishedTo'),
         fromParam: 'publishedAfter',
         toParam: 'publishedBefore',
         mode: 'bounds' as const,
@@ -357,7 +357,7 @@ const filterGroups = [
     },
     {
         id: 'destinationId',
-        label: t('blog.filters.location', 'Destino'),
+        label: t('blog.filters.location'),
         type: 'select-search' as const,
         options: destinations.map((d) => ({ value: d.id, label: d.name, featured: Boolean(d.isFeatured) })),
         maxVisible: 8,
@@ -366,12 +366,12 @@ const filterGroups = [
 ] as const;
 
 const sortOptions = [
-    { value: 'newest',    label: t('blog.sort.newest',    'Recién publicadas') },
-    { value: 'oldest',    label: t('blog.sort.oldest',    'Más antiguas') },
-    { value: 'mostSaved', label: t('blog.sort.mostSaved', 'Más guardadas') },
-    { value: 'featured',  label: t('blog.sort.featured',  'Destacadas primero') },
-    { value: 'titleAsc',  label: t('blog.sort.titleAsc',  'Título (A-Z)') },
-    { value: 'titleDesc', label: t('blog.sort.titleDesc', 'Título (Z-A)') }
+    { value: 'newest',    label: t('blog.sort.newest') },
+    { value: 'oldest',    label: t('blog.sort.oldest') },
+    { value: 'mostSaved', label: t('blog.sort.mostSaved') },
+    { value: 'featured',  label: t('blog.sort.featured') },
+    { value: 'titleAsc',  label: t('blog.sort.titleAsc') },
+    { value: 'titleDesc', label: t('blog.sort.titleDesc') }
 ] as const;
 
 /**
@@ -512,7 +512,7 @@ const postCategoryClearChip = buildClearFacetChip({
         slot="head-extra"
         rel="alternate"
         type="application/rss+xml"
-        title={t('blog.rss.title', 'Publicaciones RSS')}
+        title={t('blog.rss.title')}
         href={buildUrl({ locale, path: 'publicaciones/rss.xml' })}
     />
 
@@ -533,7 +533,7 @@ const postCategoryClearChip = buildClearFacetChip({
     <ListingPageHeader
         slot="page-header"
         locale={locale}
-        tagline={t('blog.tagline', 'Descubrí historias')}
+        tagline={t('blog.tagline')}
         title={t('blog.title', 'Publicaciones')}
     />
 
@@ -549,7 +549,7 @@ const postCategoryClearChip = buildClearFacetChip({
 
     <FilterChips
         chips={postCategoryClearChip ? [...postCategoryChips, postCategoryClearChip] : postCategoryChips}
-        ariaLabel={t('blog.categoryChips.ariaLabel', 'Filtrar por categoría de publicación')}
+        ariaLabel={t('blog.categoryChips.ariaLabel')}
         showScrollButtons
         prevLabel={t('common.prev', 'Anterior')}
         nextLabel={t('common.next', 'Siguiente')}
