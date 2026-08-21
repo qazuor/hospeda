@@ -293,6 +293,41 @@ test that pins it (`accommodation.permissions.test.ts`, *"keeps the VIP 403"*).
   error becomes a 500 — a paired probe would compare two artefacts of the mock
   and pass with the bug in place.
 
+## Webhook ingress answers a provider, not a client (HOS-707)
+
+`POST /api/v1/webhooks/mercadopago` is the one surface where the table above
+does not apply, because the caller is MercadoPago and the status is not a
+report — it is an **instruction**. MercadoPago retries on 5xx and stops on 2xx,
+so the status decides whether the same delivery comes back.
+
+Three situations, two answers:
+
+| Situation | Answer | Why |
+|---|---|---|
+| The referenced object does not exist at the provider | **200** `{received:true, ignored:'provider-resource-missing'}` | No retry can ever succeed. MercadoPago's dashboard test button sends the fictitious id `123456`; before HOS-707 that answered 500 and bounced forever. |
+| The object exists but belongs to another collector | **200**, same body | MercadoPago scopes by collector and answers **404**, not 403, so at the wire this is the row above. |
+| The provider genuinely failed — 429, 5xx, timeout, socket error | **500** | The retry is what we want. |
+| Anything unclassified | **500** | Fail-safe: an error we cannot positively identify keeps the pre-HOS-707 behaviour, so a misclassification can never swallow a real failure. |
+
+Two rules specific to this surface:
+
+- **Never a 4xx.** A 4xx says "change the request". The delivery was well-formed
+  and correctly signed; MercadoPago has nothing to change. The only honest
+  answers are "received, nothing to do" (200) and "I failed, send it again"
+  (5xx). This matches what the router already does for a legacy-IPN duplicate
+  (`200 {received:true, dropped:'legacy-ipn-duplicate'}`) and for an
+  already-processed event.
+- **A terminal condition is not an error.** The stored `billing_webhook_events`
+  row is marked `processed`, not `failed`, and nothing goes to Sentry — the same
+  correction HOS-682 made on the outbound side, where a 404 or a business-rule
+  refusal was being logged as a program fault.
+
+The classifier is
+[`src/routes/webhooks/mercadopago/error-classification.ts`](../src/routes/webhooks/mercadopago/error-classification.ts);
+the statuses are asserted end-to-end through the real `@qazuor/qzpay-hono`
+router in
+[`test/webhooks/webhook-error-disposition.test.ts`](../test/webhooks/webhook-error-disposition.test.ts).
+
 ## Known exception
 
 The `@qazuor/qzpay-hono` admin tier under `/api/v1/admin/billing/*` builds its
