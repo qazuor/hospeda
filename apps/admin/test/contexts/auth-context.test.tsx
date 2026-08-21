@@ -123,7 +123,10 @@ describe('AuthProvider — Sentry user context wiring', () => {
             displayName: 'Jane Doe',
             email: 'jane.doe@example.com',
             avatar: null,
-            emailVerified: true
+            emailVerified: true,
+            // Sentry-wiring test only — no assertion here touches locale
+            // resolution, so no account preference needs to be asserted.
+            languageWeb: null
         });
 
         await waitFor(() => {
@@ -155,7 +158,10 @@ describe('AuthProvider — Sentry user context wiring', () => {
             displayName: 'Jane Doe',
             email: 'jane.doe@example.com',
             avatar: null,
-            emailVerified: true
+            emailVerified: true,
+            // Sentry-wiring test only — no assertion here touches locale
+            // resolution, so no account preference needs to be asserted.
+            languageWeb: null
         });
 
         await waitFor(() => {
