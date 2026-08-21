@@ -49,6 +49,22 @@ import { apiLogger } from '../../src/utils/logger';
 const MP_FAILURE_MESSAGE = 'MercadoPago 400: customer already exists (code 101)';
 
 /**
+ * The customer-update fields `mapCoreCustomerUpdateToDrizzle` actually persists.
+ * `providerCustomerIds` is deliberately absent — that omission is the real
+ * behaviour this fixture exists to reproduce.
+ */
+const MAPPED_UPDATE_FIELDS = [
+    'email',
+    'name',
+    'phone',
+    'metadata',
+    'mpCustomerId',
+    'stripeCustomerId',
+    'segment',
+    'tier'
+] as const;
+
+/**
  * Minimal in-memory `billing_customers` store with the exact soft-delete
  * semantics the Drizzle adapter has: `delete` sets `deletedAt`, and every read
  * filters deleted rows out — which is precisely why a rolled-back row reads as
@@ -57,9 +73,16 @@ const MP_FAILURE_MESSAGE = 'MercadoPago 400: customer already exists (code 101)'
 function createCustomerStorage() {
     const rows = new Map<string, QZPayCustomer>();
     const deleteSpy = vi.fn();
+    let nextCreateError: Error | null = null;
+    let hideNextLookupOnce = false;
 
     const customers = {
         create: async (input: Record<string, unknown>): Promise<QZPayCustomer> => {
+            if (nextCreateError !== null) {
+                const error = nextCreateError;
+                nextCreateError = null;
+                throw error;
+            }
             const row = {
                 id: `cus_${rows.size + 1}`,
                 externalId: String(input.externalId),
@@ -80,10 +103,27 @@ function createCustomerStorage() {
             const row = rows.get(id);
             return row && row.deletedAt === null ? row : null;
         },
-        findByExternalId: async (externalId: string): Promise<QZPayCustomer | null> =>
-            [...rows.values()].find(
-                (row) => row.externalId === externalId && row.deletedAt === null
-            ) ?? null,
+        findByExternalId: async (externalId: string): Promise<QZPayCustomer | null> => {
+            if (hideNextLookupOnce) {
+                hideNextLookupOnce = false;
+                return null;
+            }
+            return (
+                [...rows.values()].find(
+                    (row) => row.externalId === externalId && row.deletedAt === null
+                ) ?? null
+            );
+        },
+        // Mirrors `@qazuor/qzpay-drizzle`'s real update path, NOT the shape a
+        // naive `{...row, ...input}` would give. `mapCoreCustomerUpdateToDrizzle`
+        // maps `email`, `name`, `phone`, `metadata`, `mpCustomerId`,
+        // `stripeCustomerId` and friends — it has NO branch for
+        // `providerCustomerIds`, so qzpay-core's success-path write of that field
+        // is silently dropped, and `mapDrizzleCustomerToCore` rebuilds the map
+        // from the `mp_customer_id` / `stripe_customer_id` COLUMNS.
+        //
+        // Copying the assumption instead (spreading the input verbatim) is what
+        // would let a test certify a provider link that production never stores.
         update: async (
             id: string,
             input: Record<string, unknown>
@@ -92,9 +132,26 @@ function createCustomerStorage() {
             if (!row || row.deletedAt !== null) {
                 return null;
             }
-            const next = { ...row, ...input } as QZPayCustomer;
-            rows.set(id, next);
-            return next;
+
+            const mapped: Record<string, unknown> = {};
+            for (const field of MAPPED_UPDATE_FIELDS) {
+                if (input[field] !== undefined) {
+                    mapped[field] = input[field];
+                }
+            }
+
+            const next = { ...row, ...mapped } as QZPayCustomer & {
+                mpCustomerId?: string | null;
+            };
+            // Rebuild the core-facing map from the columns, like the real mapper.
+            const providerCustomerIds: Record<string, string> = {};
+            if (next.mpCustomerId) {
+                providerCustomerIds.mercadopago = next.mpCustomerId;
+            }
+            const stored = { ...next, providerCustomerIds } as QZPayCustomer;
+
+            rows.set(id, stored);
+            return stored;
         },
         delete: async (id: string): Promise<void> => {
             deleteSpy(id);
@@ -108,10 +165,68 @@ function createCustomerStorage() {
 
     return {
         deleteSpy,
+        /** Make the NEXT create reject, to simulate losing a concurrent insert. */
+        failNextCreateWith: (error: Error) => {
+            nextCreateError = error;
+        },
+        /** Make the NEXT external-id lookup miss, to force the create path. */
+        hideNextLookup: () => {
+            hideNextLookupOnce = true;
+        },
         /** Rows a caller would actually see: soft-deleted ones are invisible. */
         liveRows: () => [...rows.values()].filter((row) => row.deletedAt === null),
         storage: { customers } as unknown as QZPayStorageAdapter
     };
+}
+
+/**
+ * A logger with the QZPayLogger shape whose calls can be asserted. Passing one
+ * is not cosmetic: without it qzpay-core builds `createDefaultLogger`, which
+ * writes to `console.*` and never reaches `@repo/logger`.
+ *
+ * @returns A fresh spy logger
+ */
+function silentLogger() {
+    return {
+        debug: vi.fn(),
+        info: vi.fn(),
+        warn: vi.fn(),
+        error: vi.fn()
+    };
+}
+
+/** A payment adapter whose customer creation succeeds and returns a provider id. */
+function createSucceedingPaymentAdapter(): QZPayPaymentAdapter {
+    return {
+        provider: 'mercadopago',
+        customers: {
+            create: vi.fn().mockResolvedValue('mp_cus_ok')
+        }
+    } as unknown as QZPayPaymentAdapter;
+}
+
+/**
+ * Build the error shape a unique-violation ACTUALLY has in this stack.
+ *
+ * Drizzle 0.45.2 rethrows every query failure as
+ * `new DrizzleQueryError(query, params, cause)`, whose message is
+ * `Failed query: …` (no "duplicate key" text) and which carries no `code` of its
+ * own. Only the wrapped pg `DatabaseError` has `code: '23505'`.
+ *
+ * @returns A wrapper error mirroring the production shape
+ */
+function wrappedUniqueViolation(): Error {
+    const pgError = Object.assign(
+        new Error(
+            'duplicate key value violates unique constraint "billing_customers_external_id_livemode_uniq"'
+        ),
+        { code: '23505' }
+    );
+
+    return Object.assign(
+        new Error('Failed query: insert into "billing_customers" ...\nparams: ...'),
+        { cause: pgError }
+    );
 }
 
 /** A payment adapter whose customer creation always fails, like MP did in prod. */
@@ -137,12 +252,7 @@ function buildBilling(strategy: 'throw' | 'log') {
         defaultCurrency: 'ARS',
         livemode: false,
         providerSyncErrorStrategy: strategy,
-        logger: {
-            debug: vi.fn(),
-            info: vi.fn(),
-            warn: vi.fn(),
-            error: vi.fn()
-        }
+        logger: silentLogger()
     }) as QZPayBilling;
 
     return { billing, store };
@@ -236,31 +346,106 @@ describe('HOS-596 — billing customer survives a provider failure', () => {
             expect(store.liveRows()).toHaveLength(1);
         });
 
-        it('warns that the customer has no provider link instead of failing mute', async () => {
-            // Arrange
-            const { billing } = buildBilling('log');
+        it('does not warn about a missing provider link on a successful create', async () => {
+            // Arrange — a provider that SUCCEEDS, so nothing is degraded.
+            const store = createCustomerStorage();
+            const billing = createQZPayBilling({
+                storage: store.storage,
+                paymentAdapter: createSucceedingPaymentAdapter(),
+                defaultCurrency: 'ARS',
+                livemode: false,
+                providerSyncErrorStrategy: 'log',
+                logger: silentLogger()
+            }) as QZPayBilling;
             const service = new BillingCustomerSyncService(billing, { throwOnError: false });
 
             // Act
             const customerId = await service.ensureCustomerExists(INPUT);
 
-            // Assert — a degraded customer must be greppable per account, not
-            // inferred later from a checkout that mysteriously fails.
-            expect(apiLogger.warn).toHaveBeenCalledTimes(1);
+            // Assert — the row exists and NOTHING warns. This is the case that
+            // catches a signal keyed on `providerCustomerIds`: the real Drizzle
+            // mapper drops that field, so a successful create also comes back
+            // with an empty map, and a warning keyed on it would fire on every
+            // single signup until it drowned the failure it was meant to expose.
+            expect(customerId).not.toBeNull();
+            expect(store.liveRows()).toHaveLength(1);
+            expect(apiLogger.warn).not.toHaveBeenCalled();
 
-            const [payload, message] = vi.mocked(apiLogger.warn).mock.calls[0] as [
-                Record<string, unknown>,
-                string
-            ];
+            const infoMessages = vi
+                .mocked(apiLogger.info)
+                .mock.calls.map(([, message]) => String(message));
+            expect(infoMessages).toContain('Billing customer created successfully');
+        });
 
-            expect(payload.userId).toBe(INPUT.userId);
-            expect(payload.customerId).toBe(customerId);
-            expect(message).toContain('HOS-596');
-            expect(message).toContain('WITHOUT a provider link');
+        it('routes the provider failure through the injected logger, not console', async () => {
+            // Arrange
+            const logger = silentLogger();
+            const store = createCustomerStorage();
+            const billing = createQZPayBilling({
+                storage: store.storage,
+                paymentAdapter: createFailingPaymentAdapter(),
+                defaultCurrency: 'ARS',
+                livemode: false,
+                providerSyncErrorStrategy: 'log',
+                logger
+            }) as QZPayBilling;
+            const service = new BillingCustomerSyncService(billing, { throwOnError: false });
 
-            // And the success log must NOT have fired for a half-created customer.
-            const infoMessages = vi.mocked(apiLogger.info).mock.calls.map(([, msg]) => String(msg));
-            expect(infoMessages).not.toContain('Billing customer created successfully');
+            // Act
+            await service.ensureCustomerExists(INPUT);
+
+            // Assert — this is the whole "stop being mute" guarantee under 'log'.
+            // Production wires `qzpayLogger` here, which forwards into apiLogger;
+            // without an explicit logger qzpay-core falls back to console.*.
+            const errorCalls = vi.mocked(logger.error).mock.calls;
+            const syncFailure = errorCalls.find(
+                ([message]) => message === 'Provider sync failed during customer creation'
+            );
+
+            expect(syncFailure).toBeDefined();
+
+            const meta = syncFailure?.[1] as Record<string, unknown>;
+            expect(meta.provider).toBe('mercadopago');
+            expect(meta.operation).toBe('create_customer');
+            expect(meta.error).toBe(MP_FAILURE_MESSAGE);
+        });
+    });
+
+    describe('race recovery once the partial UNIQUE index exists', () => {
+        it('re-fetches the winner when the insert loses with a wrapped 23505', async () => {
+            // Arrange — the loser of the race sees the SAME error shape production
+            // raises: a DrizzleQueryError whose message never says "duplicate key"
+            // and whose `code` is undefined, wrapping the pg DatabaseError.
+            const store = createCustomerStorage();
+            const winner = await store.storage.customers.create({
+                externalId: INPUT.userId,
+                email: INPUT.email,
+                name: INPUT.name
+            } as never);
+
+            store.failNextCreateWith(wrappedUniqueViolation());
+
+            const billing = createQZPayBilling({
+                storage: store.storage,
+                paymentAdapter: createFailingPaymentAdapter(),
+                defaultCurrency: 'ARS',
+                livemode: false,
+                providerSyncErrorStrategy: 'log',
+                logger: silentLogger()
+            }) as QZPayBilling;
+
+            // A service whose cache is cold and whose first lookup misses, so it
+            // takes the create path and loses the race.
+            const service = new BillingCustomerSyncService(billing, { throwOnError: false });
+            store.hideNextLookup();
+
+            // Act
+            const resolved = await service.ensureCustomerExists(INPUT);
+
+            // Assert — without unwrapping the cause chain this returns null, and
+            // the caller answers "No billing account found" (400): the exact
+            // symptom HOS-596 exists to remove, reintroduced by its own index.
+            expect(resolved).toBe(winner.id);
         });
     });
 

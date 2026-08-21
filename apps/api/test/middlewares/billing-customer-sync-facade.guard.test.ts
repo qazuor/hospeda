@@ -42,11 +42,14 @@ const STRICT_CALL = 'getQZPayBilling()';
 const CONSTRUCTION = 'new BillingCustomerSyncService(';
 
 /**
- * Number of construction sites known at the time this guard was written. The
- * assertion is `>=`, not `===`: a new call site is allowed, but a scan that
- * silently finds nothing (wrong root, renamed class) must never read as a pass.
+ * Number of construction sites known at the time this guard was written: two in
+ * `lib/auth.ts` plus one each in `middlewares/billing-customer.ts`,
+ * `routes/billing/start-paid.ts`, `routes/commerce/protected/start-subscription.ts`
+ * and `routes/host-onboarding/protected/start.ts`. The assertion is `>=`, not
+ * `===`: a new call site is allowed, but a scan that silently finds nothing
+ * (wrong root, renamed class) must never read as a pass.
  */
-const MIN_CONSTRUCTION_SITES = 5;
+const MIN_CONSTRUCTION_SITES = 6;
 
 /**
  * Recursively collect every TypeScript source file under a directory.
@@ -126,6 +129,10 @@ interface ConstructionSite {
     readonly file: string;
     readonly relativeFile: string;
     readonly argument: string;
+    /** Offset of the construction inside the comment-stripped source. */
+    readonly offset: number;
+    /** The comment-stripped source of the file, so resolution sees one text. */
+    readonly source: string;
 }
 
 /**
@@ -146,7 +153,9 @@ function findConstructionSites(): ConstructionSite[] {
             sites.push({
                 file,
                 relativeFile: relative(SRC_ROOT, file),
-                argument: readFirstArgument(source, openParen)
+                argument: readFirstArgument(source, openParen),
+                offset: index,
+                source
             });
 
             index = source.indexOf(CONSTRUCTION, index + CONSTRUCTION.length);
@@ -157,9 +166,37 @@ function findConstructionSites(): ConstructionSite[] {
 }
 
 /**
+ * Resolve which expression a local identifier holds AT a given construction
+ * site: the nearest declaration of that name BEFORE the construction.
+ *
+ * Resolving by first global match instead would be an escape hatch, and a
+ * verified one — `lib/auth.ts` declares `customerSyncBilling` twice (the signup
+ * hook and the profile-update hook). A first-match lookup reads the signup one
+ * for both, so switching only the SECOND to the strict facade left this guard
+ * green while shipping the exact regression it exists to stop.
+ *
+ * @param site - The construction site whose argument is being resolved
+ * @param identifier - The local name used as the first constructor argument
+ * @returns The assigned expression, or `null` when no declaration precedes the site
+ */
+function resolveIdentifierAtSite(site: ConstructionSite, identifier: string): string | null {
+    const declaration = new RegExp(`\\b(?:const|let|var)\\s+${identifier}\\s*=\\s*([^;]+);`, 'g');
+
+    let assigned: string | null = null;
+    let match = declaration.exec(site.source);
+
+    while (match !== null && match.index < site.offset) {
+        assigned = (match[1] ?? '').replace(/\s+/g, ' ').trim();
+        match = declaration.exec(site.source);
+    }
+
+    return assigned;
+}
+
+/**
  * Decide whether a construction site's first argument resolves to the tolerant
- * facade — either inline, or through a local constant assigned from it and never
- * reassigned from the strict resolver.
+ * facade — either inline, or through the local declaration actually in scope at
+ * that site.
  *
  * @param site - The construction site to evaluate
  * @returns `null` when the site is compliant, otherwise the reason it is not
@@ -180,15 +217,11 @@ function describeViolation(site: ConstructionSite): string | null {
         return `argument \`${site.argument}\` is neither \`${TOLERANT_CALL}\` nor a local identifier`;
     }
 
-    const source = stripComments(readFileSync(site.file, 'utf-8')).replace(/\s+/g, ' ');
-    const assignment = new RegExp(`\\b(?:const|let|var) ${expression} = ([^;]+);`);
-    const match = assignment.exec(source);
+    const assigned = resolveIdentifierAtSite(site, expression);
 
-    if (match === null) {
-        return `\`${expression}\` has no single-statement assignment this guard can verify`;
+    if (assigned === null) {
+        return `\`${expression}\` has no declaration preceding this construction`;
     }
-
-    const assigned = match[1]?.trim() ?? '';
 
     if (assigned === STRICT_CALL) {
         return `\`${expression}\` is assigned from the STRICT \`${STRICT_CALL}\``;
@@ -199,6 +232,63 @@ function describeViolation(site: ConstructionSite): string | null {
     }
 
     return null;
+}
+
+/** A direct `<receiver>.customers.create(` call found in the source. */
+interface CustomerCreateSite {
+    readonly relativeFile: string;
+    readonly receiver: string;
+}
+
+/**
+ * Every place in `apps/api/src` allowed to create a billing customer, with the
+ * receiver expression it must use.
+ *
+ * This is an exhaustive allowlist rather than a pattern, because "a third file
+ * started creating billing customers" is a decision, not a refactor: whoever
+ * adds one has to state which facade it uses and whether it recovers from the
+ * 23505 the partial UNIQUE index now raises. `send-link.ts` was exactly that
+ * case — it created partner customers on the strict facade, outside the sync
+ * service and outside this guard's original reach.
+ */
+const ALLOWED_CUSTOMER_CREATE_SITES: readonly CustomerCreateSite[] = [
+    // The sync service, whose facade is pinned by the construction-site check above.
+    { relativeFile: 'services/billing-customer-sync.ts', receiver: 'this.billing' },
+    // Partner admin send-link, which resolves the tolerant facade inline.
+    { relativeFile: 'routes/partners/admin/send-link.ts', receiver: 'customerSyncBilling' }
+];
+
+/**
+ * Find every direct `.customers.create(` call in the API source, together with
+ * the receiver expression it is invoked on.
+ *
+ * @returns One entry per call site
+ */
+function findCustomerCreateSites(): CustomerCreateSite[] {
+    const marker = '.customers.create(';
+    const sites: CustomerCreateSite[] = [];
+
+    for (const file of collectSourceFiles(SRC_ROOT)) {
+        const source = stripComments(readFileSync(file, 'utf-8'));
+        let index = source.indexOf(marker);
+
+        while (index !== -1) {
+            // Walk left over the receiver expression (identifier chars and dots).
+            let start = index;
+            while (start > 0 && /[\w$.]/.test(source[start - 1] ?? '')) {
+                start--;
+            }
+
+            sites.push({
+                relativeFile: relative(SRC_ROOT, file),
+                receiver: source.slice(start, index).trim()
+            });
+
+            index = source.indexOf(marker, index + marker.length);
+        }
+    }
+
+    return sites;
 }
 
 describe('HOS-596 guard — billing customer sync uses the tolerant QZPay facade', () => {
@@ -267,5 +357,21 @@ describe('HOS-596 guard — billing customer sync uses the tolerant QZPay facade
             violations,
             `BillingCustomerSyncService must be constructed with \`${TOLERANT_CALL}\` — the strict facade rolls the customer row back on a MercadoPago failure (HOS-596).\n${violations.join('\n')}`
         ).toEqual([]);
+    });
+
+    it('creates billing customers only at known, facade-reviewed call sites', () => {
+        // Arrange
+        const expected = ALLOWED_CUSTOMER_CREATE_SITES.map(
+            (site) => `${site.relativeFile} :: ${site.receiver}`
+        ).sort();
+
+        // Act
+        const actual = findCustomerCreateSites()
+            .map((site) => `${site.relativeFile} :: ${site.receiver}`)
+            .sort();
+
+        // Assert — a new create site must be reviewed for which facade it uses
+        // and whether it recovers from the 23505 the partial UNIQUE index raises.
+        expect(actual).toEqual(expected);
     });
 });
