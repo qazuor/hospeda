@@ -140,7 +140,16 @@ export const handleStartPaidSubscription = async (
     let billingCustomerId = c.get('billingCustomerId');
 
     if (!billingCustomerId && actor.email) {
-        const syncService = new BillingCustomerSyncService(billing, { throwOnError: false });
+        // HOS-596: customer creation runs on the tolerant facade so a
+        // MercadoPago hiccup cannot delete the row it just wrote and turn this
+        // checkout into "No billing account found" (400). `billing` (strict)
+        // stays in charge of the subscription/checkout legs below.
+        const syncService = new BillingCustomerSyncService(
+            getQZPayBilling({ forCustomerSync: true }),
+            {
+                throwOnError: false
+            }
+        );
         billingCustomerId = await syncService.ensureCustomerExists({
             userId: actor.id,
             email: actor.email,
@@ -204,10 +213,13 @@ export const handleStartPaidSubscription = async (
         // cron to flip the soft-cancelled sub to 'cancelled'.
         // SPEC-239 isolation: filter to accommodation-domain subs — a soft-cancelled
         // commerce sub must never block an accommodation checkout.
+        // HOS-702: "still live" is the canonical entitlement-granting set, the same
+        // one the guard 20 lines above already uses — a hand-rolled
+        // active/trialing pair here would have disagreed with it on `comp`.
         const hasSoftCancelledSub = existingSubscriptions.some(
             (sub) =>
                 isAccommodationSubscription(sub) &&
-                (sub.status === 'active' || sub.status === 'trialing') &&
+                isEntitlementGrantingStatus(sub.status as string) &&
                 sub.cancelAtPeriodEnd === true
         );
         if (hasSoftCancelledSub) {

@@ -11,7 +11,7 @@
 
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
 import { AnalyticsEvents } from '@repo/analytics';
-import { createMercadoPagoAdapter } from '@repo/billing';
+import { asMajor, createMercadoPagoAdapter, type Major, toCentavos } from '@repo/billing';
 import {
     and,
     billingAddonPurchases,
@@ -22,10 +22,8 @@ import {
     isNull,
     sql
 } from '@repo/db';
-import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
-    AddonCatalogService,
     calculatePromoCodeEffect,
     checkSubscriptionStatusTransition,
     getPromoCodeById,
@@ -38,14 +36,15 @@ import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { AddonService } from '../../../services/addon.service';
+import { normalizeAddonCheckoutMetadata } from '../../../services/addon-checkout-metadata';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
+import { recordOrphanPayment } from '../../../services/billing/orphan-payment-queue.service';
 import { resolvePlanChangeReason } from '../../../services/billing/plan-change-reason';
 import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
 import { clearPendingScheduledPlanChange } from '../../../services/subscription-downgrade.service';
 import { resolveOwnerUserId } from '../../../services/subscription-pause.service';
 import { apiLogger } from '../../../utils/logger';
-import { sendNotification } from '../../../utils/notification-helper';
 import { sendPaymentFailureNotifications, sendPaymentSuccessNotification } from './notifications';
 import { completeReactivationSupersession } from './subscription-logic';
 import {
@@ -56,11 +55,6 @@ import {
     extractPlanChangeUpgradeMetadata,
     type PlanChangeUpgradeMetadata
 } from './utils';
-
-// ─── Catalog service (DB-backed addon reads — SPEC-192 T-016) ─────────────────
-// Replaces static `getAddonBySlug` from `@repo/billing` for the addon
-// purchase notification path. Instantiated once at module level.
-const catalogService = new AddonCatalogService();
 
 /** Input for processing a payment.updated event */
 interface ProcessPaymentUpdatedInput {
@@ -112,12 +106,44 @@ const MP_APPROVED_STATUSES = new Set(['approved', 'accredited']);
 export async function confirmAnnualSubscription(input: {
     readonly annualSubscriptionId: string;
     readonly providerPaymentId: string;
-    readonly amount: number;
+    /**
+     * The charged amount in MAJOR units (ARS pesos), as MP reports it.
+     *
+     * HOS-720 — `Major` rather than `number` because this function converts it
+     * back to centavos internally for `billing_payments.amount`. Both of its
+     * callers start from a qzpay adapter response in CENTAVOS, and one of them
+     * (the live webhook handler) shipped that value undivided in HOS-713.
+     */
+    readonly amount: Major;
     readonly currency: string;
     readonly billing: QZPayBilling;
     readonly source: string;
+    /**
+     * Checkout-session id this payment settles — the value stored as the
+     * polling job's `providerResourceId` (and as MP's `external_reference`).
+     *
+     * HOS-710: required so the polling cleanup below closes the job for THIS
+     * checkout rather than "whichever job this subscription happens to have".
+     * A subscription can now hold several active jobs at once, one per
+     * in-flight one-time checkout, so a subscription-scoped lookup could
+     * retire an add-on purchase's job while its payment was still pending —
+     * and MP Preferences have no Webhooks v2 channel, so that job is the only
+     * activation path the purchase has.
+     *
+     * `null` only when the caller genuinely has no session id; the cleanup is
+     * then skipped rather than guessing.
+     */
+    readonly checkoutSessionId: string | null;
 }): Promise<{ confirmed: boolean }> {
-    const { annualSubscriptionId, providerPaymentId, amount, currency, billing, source } = input;
+    const {
+        annualSubscriptionId,
+        providerPaymentId,
+        amount,
+        currency,
+        billing,
+        source,
+        checkoutSessionId
+    } = input;
 
     const db = getDb();
     // Full-row select (not a column projection): HOS-123 T-013 needs
@@ -138,10 +164,20 @@ export async function confirmAnnualSubscription(input: {
 
     const sub = rows[0];
     if (!sub) {
-        apiLogger.warn(
-            { annualSubscriptionId, providerPaymentId, source },
-            'Annual subscription confirmation: local subscription not found — payment ignored'
-        );
+        // HOS-714: the charge cleared and there is nothing to apply it to. Do
+        // NOT drop it — queue it for manual resolution and raise an incident.
+        // `recordOrphanPayment` owns the `error` + `capture: true` alert; it
+        // never throws, so the webhook disposition below is unchanged.
+        await recordOrphanPayment({
+            providerPaymentId,
+            flow: 'annual-upfront',
+            reason: 'subscription-not-found',
+            amountMajor: amount,
+            currency,
+            subscriptionId: annualSubscriptionId,
+            source,
+            metadata: { annualSubscriptionId, checkoutSessionId }
+        });
         return { confirmed: false };
     }
 
@@ -154,15 +190,24 @@ export async function confirmAnnualSubscription(input: {
     }
 
     if (sub.status !== SubscriptionStatusEnum.PENDING_PROVIDER) {
-        apiLogger.warn(
-            {
+        // HOS-714: money moved, the activation cannot run. Queue + alert
+        // instead of the old `warn` + silent drop.
+        await recordOrphanPayment({
+            providerPaymentId,
+            flow: 'annual-upfront',
+            reason: 'subscription-status-not-applicable',
+            amountMajor: amount,
+            currency,
+            subscriptionId: sub.id,
+            customerId: sub.customerId,
+            observedStatus: sub.status,
+            source,
+            metadata: {
                 annualSubscriptionId,
-                providerPaymentId,
-                source,
-                currentStatus: sub.status
-            },
-            'Annual subscription confirmation: subscription is not pending_provider — payment ignored'
-        );
+                checkoutSessionId,
+                expectedStatus: SubscriptionStatusEnum.PENDING_PROVIDER
+            }
+        });
         return { confirmed: false };
     }
 
@@ -176,7 +221,10 @@ export async function confirmAnnualSubscription(input: {
         .limit(1);
 
     if (existingPayment.length === 0) {
-        const amountInCentavos = Math.round(amount * 100);
+        // HOS-720: `billing_payments.amount` is CENTAVOS, `amount` is MAJOR.
+        // `toCentavos` is the only crossing; a hand-written `* 100` would yield a
+        // plain `number` that no longer satisfies the branded parameter above.
+        const amountInCentavos = toCentavos(amount);
         try {
             await billing.payments.record({
                 id: crypto.randomUUID(),
@@ -332,18 +380,27 @@ export async function confirmAnnualSubscription(input: {
         );
     }
 
-    // SPEC-143 Finding #21 fallback cleanup. Mark any active polling job
-    // for this annual subscription as `succeeded` so the cron stops
-    // searching MP for a sub whose status the webhook just resolved.
-    // Idempotent — even if this fails, the next poll attempt would see
-    // the sub already `active` and would no-op via the confirmAnnualSubscription
-    // idempotency guard. Skipped when source='polling' because in that
-    // case the cron itself is updating the job.
-    if (source !== 'polling') {
+    // SPEC-143 Finding #21 fallback cleanup. Mark the polling job for THIS
+    // CHECKOUT as `succeeded` so the cron stops searching MP for a sub whose
+    // status the webhook just resolved. Idempotent — even if this fails, the
+    // next poll attempt would see the sub already `active` and would no-op via
+    // the confirmAnnualSubscription idempotency guard. Skipped when
+    // source='polling' because in that case the cron itself is updating the job.
+    //
+    // HOS-710: looked up by checkout-session id, NOT by subscription id, and
+    // skipped entirely when the caller has no session id. One subscription can
+    // now hold several active jobs at once — one per in-flight one-time
+    // checkout — so a subscription-scoped lookup could close an add-on
+    // purchase's job while its payment was still pending, leaving that
+    // purchase with no activation path at all.
+    if (source !== 'polling' && checkoutSessionId) {
         try {
             const pollingStorage = billing.getStorage().subscriptionPollingJobs;
             if (pollingStorage) {
-                const activeJob = await pollingStorage.findActiveBySubscriptionId(sub.id);
+                const activeJob = await pollingStorage.findActiveByProviderResourceId(
+                    'mercadopago',
+                    checkoutSessionId
+                );
                 if (activeJob) {
                     await pollingStorage.update({
                         id: activeJob.id,
@@ -448,7 +505,12 @@ async function resolveDiscountAwareUpgradeAmount(
 async function confirmPlanUpgrade(input: {
     readonly metadata: PlanChangeUpgradeMetadata;
     readonly providerPaymentId: string;
-    readonly amount: number;
+    /**
+     * The charged prorated delta in MAJOR units (ARS pesos), as MP reports it.
+     * Converted to centavos internally for the `billing_payments` row — see the
+     * note on {@link confirmAnnualSubscription}'s `amount` (HOS-720).
+     */
+    readonly amount: Major;
     readonly currency: string;
     readonly billing: QZPayBilling;
     readonly source: string;
@@ -461,10 +523,18 @@ async function confirmPlanUpgrade(input: {
 
     const sub = await billing.subscriptions.get(planChangeUpgradeId);
     if (!sub) {
-        apiLogger.warn(
-            { planChangeUpgradeId, providerPaymentId, source },
-            'Plan upgrade confirmation: local subscription not found — payment ignored'
-        );
+        // HOS-714: the customer paid the prorated delta and the subscription
+        // it names does not exist. Queue + alert; never drop.
+        await recordOrphanPayment({
+            providerPaymentId,
+            flow: 'plan-change-upgrade',
+            reason: 'subscription-not-found',
+            amountMajor: amount,
+            currency,
+            subscriptionId: planChangeUpgradeId,
+            source,
+            metadata: { planChangeUpgradeId, oldPlanId, newPlanId, newPriceId }
+        });
         return { confirmed: false };
     }
 
@@ -476,16 +546,38 @@ async function confirmPlanUpgrade(input: {
         return { confirmed: false };
     }
 
+    // NOTE FOR THE NEXT STATUS-PREDICATE SWEEP (HOS-702 → HOS-714): do NOT
+    // migrate this comparison to the canonical `isEntitlementGrantingStatus`
+    // helper. Excluding `comp` here is CORRECT, not an oversight: twelve lines
+    // below this guard we call `billing.subscriptions.changePlan()`, which
+    // mutates a MercadoPago preapproval — and a `comp` subscription has no
+    // preapproval at all (`mp_subscription_id = NULL` by design). Adding `comp`
+    // would be the opposite bug, the same one already fixed in pause, cancel
+    // and re-pricing. The verified reasoning is on HOS-714.
     if (sub.status !== 'active' && sub.status !== 'trialing') {
-        apiLogger.warn(
-            {
+        // HOS-714: the prorated delta was already charged. The plan change
+        // cannot be committed from this status, but the money is real —
+        // queue it for manual resolution and raise an incident instead of
+        // the old `warn` + silent drop.
+        await recordOrphanPayment({
+            providerPaymentId,
+            flow: 'plan-change-upgrade',
+            reason: 'subscription-status-not-applicable',
+            amountMajor: amount,
+            currency,
+            subscriptionId: planChangeUpgradeId,
+            customerId: sub.customerId,
+            observedStatus: sub.status,
+            source,
+            metadata: {
                 planChangeUpgradeId,
-                providerPaymentId,
-                source,
-                currentStatus: sub.status
-            },
-            'Plan upgrade confirmation: subscription is not active/trialing — payment ignored'
-        );
+                oldPlanId,
+                newPlanId,
+                newPriceId,
+                targetTransactionAmountMajor,
+                acceptedStatuses: ['active', 'trialing']
+            }
+        });
         return { confirmed: false };
     }
 
@@ -671,7 +763,10 @@ async function confirmPlanUpgrade(input: {
         .limit(1);
 
     if (existingPayment.length === 0) {
-        const amountInCentavos = Math.round(amount * 100);
+        // HOS-720: `billing_payments.amount` is CENTAVOS, `amount` is MAJOR.
+        // `toCentavos` is the only crossing; a hand-written `* 100` would yield a
+        // plain `number` that no longer satisfies the branded parameter above.
+        const amountInCentavos = toCentavos(amount);
         try {
             await billing.payments.record({
                 id: crypto.randomUUID(),
@@ -751,6 +846,13 @@ interface LocalPaymentRecord {
     readonly customerId: string;
     readonly subscriptionId: string | null;
     readonly amount: number;
+    /**
+     * The payment's persisted JSONB metadata. Read only for `refundId`, the
+     * provider refund identifier qzpay writes when a refund settles — it is
+     * what lets this path derive the SAME HOS-597 idempotency key the admin
+     * hook derived for the same refund.
+     */
+    readonly metadata: unknown;
 }
 
 /**
@@ -806,7 +908,8 @@ async function applyWebhookRefundLifecycle({
                 id: billingPayments.id,
                 customerId: billingPayments.customerId,
                 subscriptionId: billingPayments.subscriptionId,
-                amount: billingPayments.amount
+                amount: billingPayments.amount,
+                metadata: billingPayments.metadata
             })
             .from(billingPayments)
             .where(sql`${billingPayments.providerPaymentIds}->>'mercadopago' = ${mpPaymentId}`)
@@ -865,10 +968,24 @@ async function applyWebhookRefundLifecycle({
     // If absent or non-numeric → undefined → applyRefundLifecycle treats as full refund.
     const mpRefundedAmountMajor =
         typeof data.transaction_amount_refunded === 'number'
-            ? data.transaction_amount_refunded
+            ? asMajor(data.transaction_amount_refunded)
             : null;
     const refundAmountCentavos =
-        mpRefundedAmountMajor === null ? undefined : Math.round(mpRefundedAmountMajor * 100);
+        mpRefundedAmountMajor === null ? undefined : toCentavos(mpRefundedAmountMajor);
+
+    // HOS-597: resolve the provider refund id off the local payment's metadata
+    // — the same field the admin hook read when it applied the refund — so a
+    // webhook delivery for an admin-initiated refund derives an identical
+    // idempotency key and skips instead of re-applying. Absent for a refund
+    // issued straight in the MP dashboard; a full refund is keyed on the
+    // payment's terminal state and needs no id, and a partial one falls back to
+    // the unguarded path (see buildRefundIdempotencyKey).
+    const paymentMetadata =
+        payment.metadata !== null && typeof payment.metadata === 'object'
+            ? (payment.metadata as Record<string, unknown>)
+            : {};
+    const providerRefundId =
+        typeof paymentMetadata.refundId === 'string' ? paymentMetadata.refundId : undefined;
 
     try {
         await applyRefundLifecycle({
@@ -893,7 +1010,8 @@ async function applyWebhookRefundLifecycle({
             },
             refundAmount: refundAmountCentavos,
             adminUserId: 'webhook',
-            source: 'webhook'
+            source: 'webhook',
+            providerRefundId
         });
     } catch (err) {
         apiLogger.error(
@@ -925,6 +1043,51 @@ async function resolveAnalyticsDistinctId(customerId: string): Promise<string> {
 }
 
 /**
+ * Resolve the billing customer id from a raw payment/webhook metadata bag,
+ * accepting either the canonical camelCase spelling or the MercadoPago
+ * snake_case wire spelling.
+ *
+ * ## Why this exists (HOS-744)
+ *
+ * This is the gate for payment status notification dispatch (success AND
+ * failure, below): if it does not resolve, no notification is sent. It
+ * used to read `metadata.customerId` only, which never resolves for a real
+ * webhook, because MercadoPago snake-cases preference metadata keys when it
+ * copies them onto the payment object it echoes back on `payment.updated` —
+ * a preference written with `customerId` round-trips as `customer_id`. The
+ * gate was permanently closed: no payment success or failure notification
+ * was ever dispatched.
+ *
+ * ## Why this is a local helper, not `normalizeAddonCheckoutMetadata`
+ *
+ * HOS-721 established the convention this follows — camelCase is canonical,
+ * snake_case is a wire format, translate once at the border instead of
+ * having every reader defend both spellings — via `normalizeAddonCheckoutMetadata`
+ * (`services/addon-checkout-metadata.ts`). That module's `AddonCheckoutMetadata`
+ * payload deliberately EXCLUDES `customerId`: its own docs call it (together
+ * with `addonSlug`) the add-on *dispatch discriminator*, resolved separately
+ * by `extractAddonMetadata` before the add-on payload is ever read. This gate
+ * is not add-on-specific — it fires for every payment, add-on or not — so
+ * widening that module would blur a boundary it was written to keep. This is
+ * its own, narrower border: one key, one call site.
+ *
+ * @param metadata - The raw metadata bag from the payment payload, before
+ *   any spelling normalization.
+ * @returns The customer id, or `null` when absent under either spelling.
+ */
+function resolvePaymentCustomerId(metadata: Record<string, unknown> | undefined): string | null {
+    if (!metadata) {
+        return null;
+    }
+    const camel = metadata.customerId;
+    if (typeof camel === 'string' && camel.length > 0) {
+        return camel;
+    }
+    const snake = metadata.customer_id;
+    return typeof snake === 'string' && snake.length > 0 ? snake : null;
+}
+
+/**
  * Process a payment.updated event's business logic.
  *
  * Dispatches payment success/failure notifications and confirms add-on
@@ -941,7 +1104,7 @@ export async function processPaymentUpdated({
 }: ProcessPaymentUpdatedInput): Promise<ProcessPaymentUpdatedResult> {
     const paymentInfo = extractPaymentInfo(data);
     const metadata = data.metadata as Record<string, unknown> | undefined;
-    const customerId = typeof metadata?.customerId === 'string' ? metadata.customerId : null;
+    const customerId = resolvePaymentCustomerId(metadata);
 
     // Dispatch payment status notifications
     if (paymentInfo && customerId) {
@@ -1090,7 +1253,12 @@ export async function processPaymentUpdated({
                     amount: paymentInfo.amount,
                     currency: paymentInfo.currency,
                     billing,
-                    source
+                    source,
+                    // MP echoes back the checkout-session id qzpay set as the
+                    // preference's external_reference, which is the same value
+                    // the polling job stored as its providerResourceId.
+                    checkoutSessionId:
+                        typeof data.external_reference === 'string' ? data.external_reference : null
                 });
                 return {
                     success: true,
@@ -1198,6 +1366,11 @@ export async function processPaymentUpdated({
         return { success: true, addonConfirmed: false };
     }
 
+    // `extractAddonMetadata` is the dispatch discriminator: its job is to decide
+    // that this payment IS an add-on purchase and to name which one. The payload
+    // that travels with the purchase (accommodation, promo code, discount) is
+    // read separately, from the raw metadata, by `normalizeAddonCheckoutMetadata`
+    // below — one reader, one spelling convention (HOS-721).
     const { addonSlug, customerId: addonCustomerId } = addonInfo;
 
     // ── Idempotency check: skip if this paymentId was already processed ───────
@@ -1245,9 +1418,51 @@ export async function processPaymentUpdated({
     );
 
     const addonService = new AddonService(billing);
+    // HOS-675: forward the target accommodation captured at checkout. This call
+    // omitted `metadata` entirely, so `confirmAddonPurchase` always read
+    // `input.metadata?.accommodationId` as undefined and took its "should not
+    // happen" branch on EVERY visibility-boost purchase — the
+    // `featured_listing_addon_grants` table stayed empty in production.
+    //
+    // HOS-595: forward the provider payment id and the amount actually charged.
+    // Neither was passed before, with two consequences: `confirmAddonPurchase`
+    // wrote `payment_id: null` on every purchase row (which also made the
+    // idempotency SELECT above dead code, since it matches on that column), and
+    // it had nothing to book in `billing_payments` — so an add-on charge left no
+    // ledger entry at all, unlike every subscription flow in this same file.
+    //
+    // HOS-721: the same call now forwards the promo/discount keys too. HOS-675
+    // deliberately left them out because the checkout writes them under the
+    // snake_case names MercadoPago requires while `confirmAddonPurchase` looks
+    // up camelCase ones — forwarding the raw bag would have changed nothing.
+    // `normalizeAddonCheckoutMetadata` is that translation, done exactly once,
+    // here at the border: everything downstream reads canonical camelCase only.
+    // It supersedes the accommodation-only forward, which is now one key of the
+    // canonical payload rather than the only one that survives.
+    const addonMetadata = normalizeAddonCheckoutMetadata({ metadata: data.metadata });
     const result = await addonService.confirmPurchase({
         customerId: addonCustomerId,
-        addonSlug
+        addonSlug,
+        ...(paymentId === null ? {} : { paymentId }),
+        // The charged amount is forwarded ONLY for an approved payment, which is
+        // what makes the ledger row conditional on the money having actually
+        // moved: `confirmAddonPurchase` books a `succeeded` row when — and only
+        // when — it receives an amount. Unlike the annual and plan-upgrade
+        // dispatches above, this branch has never gated itself on
+        // MP_APPROVED_STATUSES, so without this gate a rejected charge would be
+        // written to the ledger as collected.
+        ...(paymentInfo !== null && MP_APPROVED_STATUSES.has(paymentInfo.status)
+            ? {
+                  // `paymentInfo.amount` is typed `Major` (extractPaymentInfo
+                  // reads MP's `transaction_amount`); billing_payments stores
+                  // integer centavos, the same crossing the sibling
+                  // `billing.payments.record()` calls above perform — and since
+                  // HOS-720 the same named function performs it everywhere.
+                  amountInCents: toCentavos(paymentInfo.amount),
+                  currency: paymentInfo.currency
+              }
+            : {}),
+        ...(Object.keys(addonMetadata).length === 0 ? {} : { metadata: addonMetadata })
     });
 
     if (!result.success) {
@@ -1275,61 +1490,28 @@ export async function processPaymentUpdated({
         return { success: false, addonConfirmed: false };
     }
 
+    // HOS-676: the ADDON_PURCHASE notification is NOT sent from here. It is
+    // already sent, exactly once, inside `confirmAddonPurchase()`
+    // (`apps/api/src/services/addon.checkout.ts`) right after the purchase row
+    // commits — the call above (`addonService.confirmPurchase`) reaches that
+    // same function. Sending it a second time from this caller, with a second
+    // independently-fetched `customer`/`addon` lookup, was a pure duplicate:
+    // one successful confirmation produced two ADDON_PURCHASE emails, every
+    // time, with no failure or retry involved (verified against production's
+    // `billing_notification_log`: a single addon purchase logged exactly two
+    // `addon_purchase` rows a few hundred ms apart, alongside a single
+    // `payment_success` row — one trigger, doubled only on this one
+    // notification type; `billing_webhook_events` and `billing_addon_purchases`
+    // both confirm there was only ever one confirmation, not two invocations
+    // racing). Do not re-add a send here; if the confirmation needs to notify
+    // with the actual charged amount (this call had `data.transaction_amount`,
+    // `confirmAddonPurchase` uses the catalog's list price), that belongs
+    // inside `confirmAddonPurchase` itself, not as a second independent send
+    // from the caller.
     apiLogger.info(
         { addonSlug, customerId: addonCustomerId, source },
         'Add-on purchase confirmed successfully'
     );
-
-    // Send addon purchase notification
-    try {
-        const customer = await billing.customers.get(addonCustomerId);
-        // SPEC-192 T-016: resolve addon definition from DB-backed catalog.
-        // Identical fallback: if NOT_FOUND, `addon` is undefined → notification not sent.
-        const addonCatalogResult = await catalogService.getBySlug(addonSlug);
-        const addon = addonCatalogResult.success ? addonCatalogResult.data : undefined;
-
-        if (customer && addon) {
-            const customerName =
-                typeof customer.metadata?.name === 'string'
-                    ? customer.metadata.name
-                    : customer.email;
-            const userId =
-                typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
-
-            sendNotification({
-                type: NotificationType.ADDON_PURCHASE,
-                recipientEmail: customer.email,
-                recipientName: customerName,
-                userId,
-                customerId: customer.id,
-                planName: addon.name,
-                amount: typeof data.transaction_amount === 'number' ? data.transaction_amount : 0,
-                currency: typeof data.currency_id === 'string' ? data.currency_id : 'ARS',
-                nextBillingDate: new Date().toISOString()
-            }).catch((notifError) => {
-                apiLogger.debug(
-                    {
-                        customerId: addonCustomerId,
-                        addonSlug,
-                        error:
-                            notifError instanceof Error ? notifError.message : String(notifError),
-                        source
-                    },
-                    'Addon purchase notification failed (will retry)'
-                );
-            });
-        }
-    } catch (notifError) {
-        apiLogger.debug(
-            {
-                customerId: addonCustomerId,
-                addonSlug,
-                error: notifError instanceof Error ? notifError.message : String(notifError),
-                source
-            },
-            'Failed to prepare addon purchase notification'
-        );
-    }
 
     return { success: true, addonConfirmed: true };
 }

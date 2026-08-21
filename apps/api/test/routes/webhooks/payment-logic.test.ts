@@ -196,6 +196,20 @@ vi.mock('../../../src/services/addon-plan-change.service', () => ({
     handlePlanChangeAddonRecalculation: vi.fn().mockResolvedValue(undefined)
 }));
 
+// HOS-714: the orphan-payment queue. Mocked so the discard-branch tests can
+// assert WHAT the confirmation flows hand to the queue without needing a live
+// table. The service's own persistence + alerting is covered by
+// `test/services/billing/orphan-payment-queue.service.test.ts`.
+const { mockRecordOrphanPayment } = vi.hoisted(() => ({
+    mockRecordOrphanPayment: vi
+        .fn()
+        .mockResolvedValue({ queued: true, alreadyQueued: false, failed: false })
+}));
+
+vi.mock('../../../src/services/billing/orphan-payment-queue.service', () => ({
+    recordOrphanPayment: mockRecordOrphanPayment
+}));
+
 vi.mock('../../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: vi.fn()
 }));
@@ -217,7 +231,8 @@ vi.mock('../../../src/services/addon.service', () => {
     return { AddonService: MockAddonService };
 });
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn().mockReturnValue({ name: 'Test Addon', slug: 'test-addon' }),
     // HOS-123 T-013: confirmAnnualSubscription constructs a fresh MP adapter
     // (mirroring reactivation-supersession-reconcile.job.ts / webhook-retry.job.ts's
@@ -284,6 +299,7 @@ vi.mock('../../../src/services/plan-upgrade-restoration.service', () => ({
 }));
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { asMajor } from '@repo/billing';
 import { PromoEffectKindEnum } from '@repo/schemas';
 import * as serviceCore from '@repo/service-core';
 import {
@@ -311,6 +327,7 @@ import { completeSupersessionPairing } from '../../../src/services/billing/react
 import { applyUpgradeRestorationsOrWarn } from '../../../src/services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../src/services/refund-lifecycle.service';
 import { resolveOwnerUserId } from '../../../src/services/subscription-pause.service';
+import { sendNotification } from '../../../src/utils/notification-helper';
 
 /** Helper to get the mocked confirmPurchase fn from the hoisted AddonService mock */
 function getMockConfirmPurchase(): ReturnType<typeof vi.fn> {
@@ -358,11 +375,18 @@ describe('processPaymentUpdated', () => {
         });
         // HOS-123 T-013: restore default after clearAllMocks wipes it.
         vi.mocked(completeSupersessionPairing).mockResolvedValue('completed');
+        // HOS-714: same — clearAllMocks wipes the queue stub's resolved value,
+        // and an undefined result would make the awaited call throw downstream.
+        mockRecordOrphanPayment.mockResolvedValue({
+            queued: true,
+            alreadyQueued: false,
+            failed: false
+        });
     });
 
     it('should send success notification for approved payment', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1000,
+            amount: asMajor(1000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -384,11 +408,65 @@ describe('processPaymentUpdated', () => {
         expect(result.success).toBe(true);
     });
 
+    // ── HOS-744: the notification dispatch gate must resolve MercadoPago's
+    // real wire format ──────────────────────────────────────────────────────
+    //
+    // Every other test in this file builds `data.metadata` in camelCase,
+    // which is the shape our OWN code writes at checkout time — never the
+    // shape a real `payment.updated` webhook delivers. MercadoPago
+    // snake-cases preference metadata keys when it copies them onto the
+    // payment object it echoes back, so `customerId` never survives the
+    // round-trip: only `customer_id` does. A test built in camelCase is
+    // structurally blind to that — it would pass even if the gate only ever
+    // read `metadata.customerId`, which is exactly the bug that shipped.
+    it('should send success notification for approved payment with snake_case metadata (real MP wire format)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(1000),
+            currency: 'ARS',
+            status: 'approved',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+
+        const result = await processPaymentUpdated({
+            data: { metadata: { customer_id: 'cust-1' } },
+            billing: mockBilling
+        });
+
+        expect(sendPaymentSuccessNotification).toHaveBeenCalledWith(
+            'cust-1',
+            1000,
+            'ARS',
+            'credit_card',
+            mockBilling
+        );
+        expect(result.success).toBe(true);
+    });
+
+    it('should NOT dispatch any payment notification when customerId is absent under either spelling', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(1000),
+            currency: 'ARS',
+            status: 'approved',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+
+        const result = await processPaymentUpdated({
+            data: { metadata: { someOtherKey: 'irrelevant' } },
+            billing: mockBilling
+        });
+
+        expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
+        expect(sendPaymentFailureNotifications).not.toHaveBeenCalled();
+        expect(result.success).toBe(true);
+    });
+
     // ── PostHog subscription_payment_succeeded (this task) ─────────────────
     describe('PostHog subscription_payment_succeeded capture', () => {
         it('captures subscription_payment_succeeded on an approved payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -422,7 +500,7 @@ describe('processPaymentUpdated', () => {
 
         it('marks the payer active on the person profile via $set', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -445,7 +523,7 @@ describe('processPaymentUpdated', () => {
         it('falls back to customerId as distinctId when the customer maps to no user', async () => {
             vi.mocked(resolveOwnerUserId).mockResolvedValueOnce(null);
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -469,7 +547,7 @@ describe('processPaymentUpdated', () => {
         it('never throws out of the webhook when resolveOwnerUserId rejects (falls back to customerId)', async () => {
             vi.mocked(resolveOwnerUserId).mockRejectedValueOnce(new Error('DB connection lost'));
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'rejected',
                 statusDetail: 'cc_rejected_other_reason',
@@ -494,7 +572,7 @@ describe('processPaymentUpdated', () => {
 
         it('does NOT capture subscription_payment_succeeded for a rejected payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'rejected',
                 statusDetail: 'cc_rejected_other_reason',
@@ -513,7 +591,7 @@ describe('processPaymentUpdated', () => {
 
         it('does not throw and processing still succeeds when the PostHog client throws', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -546,7 +624,7 @@ describe('processPaymentUpdated', () => {
     describe('PostHog payment_failed capture', () => {
         it('captures payment_failed with failureReason on a rejected payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'rejected',
                 statusDetail: 'cc_rejected_insufficient_amount',
@@ -578,7 +656,7 @@ describe('processPaymentUpdated', () => {
         it('falls back to customerId as distinctId when the customer maps to no user', async () => {
             vi.mocked(resolveOwnerUserId).mockResolvedValueOnce(null);
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'rejected',
                 statusDetail: 'cc_rejected_other_reason',
@@ -601,7 +679,7 @@ describe('processPaymentUpdated', () => {
         it('never throws out of the webhook when resolveOwnerUserId rejects (falls back to customerId)', async () => {
             vi.mocked(resolveOwnerUserId).mockRejectedValueOnce(new Error('DB connection lost'));
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'rejected',
                 statusDetail: 'cc_rejected_other_reason',
@@ -626,7 +704,7 @@ describe('processPaymentUpdated', () => {
 
         it('falls back to status as failureReason when statusDetail is absent', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'cancelled',
                 statusDetail: null,
@@ -648,7 +726,7 @@ describe('processPaymentUpdated', () => {
 
         it('does NOT capture payment_failed for an approved payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -667,7 +745,7 @@ describe('processPaymentUpdated', () => {
 
         it('does not throw and processing still succeeds when the PostHog client throws', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'refunded',
                 statusDetail: 'refunded',
@@ -689,7 +767,7 @@ describe('processPaymentUpdated', () => {
 
     it('should send failure notification for rejected payment', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 500,
+            amount: asMajor(500),
             currency: 'ARS',
             status: 'rejected',
             statusDetail: 'cc_rejected_other_reason',
@@ -713,7 +791,7 @@ describe('processPaymentUpdated', () => {
 
     it('should send failure notification for cancelled payment', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 750,
+            amount: asMajor(750),
             currency: 'ARS',
             status: 'cancelled',
             statusDetail: null,
@@ -735,6 +813,33 @@ describe('processPaymentUpdated', () => {
         expect(result.success).toBe(true);
     });
 
+    // HOS-744: mirrors the snake_case coverage above for the failure branch —
+    // see the comment near the success-path snake_case test for why the
+    // camelCase-only tests above are structurally blind to this bug class.
+    it('should send failure notification for rejected payment with snake_case metadata (real MP wire format)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(500),
+            currency: 'ARS',
+            status: 'rejected',
+            statusDetail: 'cc_rejected_other_reason',
+            paymentMethod: 'credit_card'
+        });
+
+        const result = await processPaymentUpdated({
+            data: { metadata: { customer_id: 'cust-1' } },
+            billing: mockBilling
+        });
+
+        expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+            'cust-1',
+            500,
+            'ARS',
+            'cc_rejected_other_reason',
+            mockBilling
+        );
+        expect(result.success).toBe(true);
+    });
+
     it('should confirm addon purchase when addon metadata present', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue(null);
         vi.mocked(extractAddonMetadata).mockReturnValue({
@@ -749,6 +854,31 @@ describe('processPaymentUpdated', () => {
 
         expect(result.success).toBe(true);
         expect(result.addonConfirmed).toBe(true);
+    });
+
+    // HOS-676 regression: a successful addon confirmation used to send its OWN
+    // ADDON_PURCHASE notification here, on top of the one `confirmAddonPurchase`
+    // (`services/addon.checkout.ts`) already sends right after the purchase row
+    // commits. That doubled every ADDON_PURCHASE email production sent — verified
+    // against `billing_notification_log`, where one real purchase logged exactly
+    // two `addon_purchase` rows a few hundred ms apart alongside a single
+    // `payment_success` row. `processPaymentUpdated` must never call
+    // `sendNotification` for a confirmed addon purchase; the send belongs solely
+    // to `confirmAddonPurchase`.
+    it('HOS-676: must NOT send a duplicate ADDON_PURCHASE notification on successful confirmation', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'premium-photos',
+            customerId: 'cust-1'
+        });
+
+        const result = await processPaymentUpdated({
+            data: { metadata: { addonSlug: 'premium-photos', customerId: 'cust-1' } },
+            billing: mockBilling
+        });
+
+        expect(result.addonConfirmed).toBe(true);
+        expect(sendNotification).not.toHaveBeenCalled();
     });
 
     it('should return success with no addon when no addon metadata', async () => {
@@ -817,10 +947,305 @@ describe('processPaymentUpdated', () => {
         expect((result as unknown as Record<string, unknown>).addonAlreadyActive).toBe(true);
     });
 
+    // ── HOS-675: accommodationId must reach confirmPurchase ────────────────
+    // This call site passed only { customerId, addonSlug }, so
+    // confirmAddonPurchase always read input.metadata?.accommodationId as
+    // undefined and took its "should not happen" branch on EVERY
+    // visibility-boost purchase — featured_listing_addon_grants stayed empty.
+    it('forwards accommodationId into confirmPurchase metadata (HOS-675)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1',
+            accommodationId: 'accom_target_1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                metadata: {
+                    addonSlug: 'visibility-boost-7d',
+                    customerId: 'cust-1',
+                    accommodationId: 'accom_target_1'
+                }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            metadata: { accommodationId: 'accom_target_1' }
+        });
+    });
+
+    it('omits the metadata key entirely for an owner-wide addon (HOS-675)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'extra-photos-20',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: { metadata: { addonSlug: 'extra-photos-20', customerId: 'cust-1' } },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'extra-photos-20'
+        });
+    });
+
+    // ── HOS-595: the charge itself must reach confirmPurchase ─────────────
+    // This call site passed only { customerId, addonSlug }, so
+    // confirmAddonPurchase wrote `payment_id: null` on every purchase row (which
+    // also made this function's own idempotency SELECT — it matches on that
+    // column — permanently dead code), and had no amount to book in
+    // `billing_payments`. A real $5.000 add-on charge (MP payment 174625958196)
+    // left no ledger entry at all: unreconcilable and unrefundable.
+    it('forwards the provider payment id and the settled amount into confirmPurchase (HOS-595)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            // MP reports transaction_amount in MAJOR units.
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status: 'approved',
+            statusDetail: null,
+            paymentMethod: 'account_money'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                id: '174625958196',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        // Exact-shape assertion on purpose: `expect.objectContaining` cannot tell
+        // a forwarded field from a missing one, which is precisely the defect.
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            paymentId: '174625958196',
+            // major units → integer centavos, the same conversion the sibling
+            // billing.payments.record() calls in this file perform.
+            amountInCents: 500_000,
+            currency: 'ARS'
+        });
+    });
+
+    it('withholds the settled amount when the charge was not approved (HOS-595)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status: 'rejected',
+            statusDetail: 'cc_rejected_insufficient_amount',
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                id: '999999999',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        // The payment id still travels (it is the idempotency key), but no amount
+        // does — `confirmAddonPurchase` books a `succeeded` ledger row only when
+        // it receives one, so a rejected charge can never be booked as collected.
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            paymentId: '999999999'
+        });
+    });
+    // ── HOS-721: promo metadata must survive the provider round-trip ───────
+    //
+    // These cases deliberately do NOT hand `processPaymentUpdated` the shape
+    // the code wants. They hand it the shape the PROVIDER produces. The
+    // pre-existing unit tests for `confirmAddonPurchase` passed `metadata`
+    // explicitly, in camelCase, so they were structurally blind to the fact
+    // that the only thing which ever reaches production is a snake_cased
+    // MercadoPago payment object — `createAddonCheckout` writes the promo keys
+    // as `promo_code_id` / `promo_code` / `discount_amount` and the
+    // confirmation looked up `promoCodeId` / `promoCode` / `discountAmount`.
+    // Every add-on bought with a coupon was charged at the discounted price and
+    // the coupon's `used_count` never moved.
+    //
+    // The assertion is on the CALLER's argument, from the production entry
+    // point, precisely so that a regression in the key mapping cannot hide
+    // behind a hand-built input.
+    it('translates a real MercadoPago snake_case payment payload into canonical promo metadata (HOS-721)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'extra-photos-20',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                // Verbatim shape of the metadata MercadoPago copies onto the
+                // payment object from the preference created by
+                // `createAddonCheckout` — every key snake_cased by the provider.
+                metadata: {
+                    addon_slug: 'extra-photos-20',
+                    customer_id: 'cust-1',
+                    user_id: 'user-9',
+                    type: 'addon_purchase',
+                    order_id: 'addon_extra-photos-20_cs_uuid',
+                    promo_code: 'SAVE10',
+                    promo_code_id: 'promo-uuid-1',
+                    discount_amount: 1500,
+                    original_price: 5000
+                }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'extra-photos-20',
+            metadata: {
+                promoCodeId: 'promo-uuid-1',
+                promoCode: 'SAVE10',
+                discountAmount: 1500
+            }
+        });
+    });
+
+    it('reads the polling fallback camelCase payload to the same canonical shape (HOS-721)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'extra-photos-20',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                // The polling job's synthetic payload is built from the job row,
+                // which MercadoPago never touches, so it keeps camelCase. For an
+                // MP Preference this is usually the ONLY path that confirms.
+                metadata: {
+                    addonSlug: 'extra-photos-20',
+                    customerId: 'cust-1',
+                    type: 'addon_purchase',
+                    promoCodeId: 'promo-uuid-1',
+                    promoCode: 'SAVE10',
+                    discountAmount: 1500
+                }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'extra-photos-20',
+            metadata: {
+                promoCodeId: 'promo-uuid-1',
+                promoCode: 'SAVE10',
+                discountAmount: 1500
+            }
+        });
+    });
+
+    it('carries the accommodation and the promo together from one snake_case payload (HOS-721)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                metadata: {
+                    addon_slug: 'visibility-boost-7d',
+                    customer_id: 'cust-1',
+                    type: 'addon_purchase',
+                    accommodation_id: 'accom_target_1',
+                    promo_code: 'BOOST5',
+                    promo_code_id: 'promo-uuid-2',
+                    // MercadoPago stringifies some metadata values on the round
+                    // trip; a discount written as a number can come back quoted.
+                    discount_amount: '750'
+                }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            metadata: {
+                accommodationId: 'accom_target_1',
+                promoCodeId: 'promo-uuid-2',
+                promoCode: 'BOOST5',
+                discountAmount: 750
+            }
+        });
+    });
+
+    it('never turns a null promo key into a metadata property (HOS-721)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'extra-photos-20',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                // `createAddonCheckout` writes `null` (not `undefined`) for the
+                // keys that do not apply; none of them may become a metadata
+                // property, or `confirmAddonPurchase` would see a promo that
+                // does not exist.
+                metadata: {
+                    addon_slug: 'extra-photos-20',
+                    customer_id: 'cust-1',
+                    type: 'addon_purchase',
+                    promo_code: null,
+                    promo_code_id: null,
+                    discount_amount: 0,
+                    accommodation_id: null
+                }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'extra-photos-20',
+            metadata: { discountAmount: 0 }
+        });
+    });
+
     it('should use source label in log messages', async () => {
         const { apiLogger } = await import('../../../src/utils/logger');
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1000,
+            amount: asMajor(1000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -849,7 +1274,7 @@ describe('processPaymentUpdated', () => {
 
         function approvedAnnualPayment() {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 350_000,
+                amount: asMajor(350_000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -973,7 +1398,7 @@ describe('processPaymentUpdated', () => {
 
         it('does NOT activate when MP status is not approved/accredited', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 350_000,
+                amount: asMajor(350_000),
                 currency: 'ARS',
                 status: 'in_process',
                 statusDetail: null,
@@ -994,7 +1419,7 @@ describe('processPaymentUpdated', () => {
             expect(annualDbState.updateCalls).toHaveLength(0);
         });
 
-        it('logs warn and skips when the local sub is in an unexpected status', async () => {
+        it('HOS-714: queues the payment instead of discarding it when the local sub is in an unexpected status', async () => {
             approvedAnnualPayment();
             annualDbState.subRows = [
                 { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'cancelled' }
@@ -1011,9 +1436,24 @@ describe('processPaymentUpdated', () => {
             expect(result.annualSubscriptionConfirmed).toBe(false);
             expect(mockBilling.payments.record).not.toHaveBeenCalled();
             expect(annualDbState.updateCalls).toHaveLength(0);
+            // The charge cleared and could not be applied — it must land on the
+            // queue with the status that blocked it, not vanish behind a warn.
+            expect(mockRecordOrphanPayment).toHaveBeenCalledTimes(1);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    providerPaymentId: MP_PAYMENT_ID,
+                    flow: 'annual-upfront',
+                    reason: 'subscription-status-not-applicable',
+                    amountMajor: 350_000,
+                    currency: 'ARS',
+                    subscriptionId: ANNUAL_SUB_ID,
+                    customerId: 'cust-1',
+                    observedStatus: 'cancelled'
+                })
+            );
         });
 
-        it('logs warn and skips when the local sub is not found', async () => {
+        it('HOS-714: queues the payment instead of discarding it when the local sub is not found', async () => {
             approvedAnnualPayment();
             annualDbState.subRows = []; // missing
 
@@ -1027,11 +1467,40 @@ describe('processPaymentUpdated', () => {
 
             expect(result.annualSubscriptionConfirmed).toBe(false);
             expect(mockBilling.payments.record).not.toHaveBeenCalled();
+            expect(mockRecordOrphanPayment).toHaveBeenCalledTimes(1);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    providerPaymentId: MP_PAYMENT_ID,
+                    flow: 'annual-upfront',
+                    reason: 'subscription-not-found',
+                    amountMajor: 350_000,
+                    currency: 'ARS'
+                })
+            );
+        });
+
+        it('HOS-714: an idempotent re-delivery of an ALREADY-ACTIVE annual sub is not an orphan', async () => {
+            // Arrange — the "already active" branch is a successful retry, not a
+            // lost payment. Queueing it would flood the queue with non-incidents.
+            approvedAnnualPayment();
+            annualDbState.subRows = [{ id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'active' }];
+
+            // Act
+            await processPaymentUpdated({
+                data: {
+                    id: MP_PAYMENT_ID,
+                    metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                },
+                billing: mockBilling
+            });
+
+            // Assert
+            expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
         });
 
         it('accepts `accredited` MP status (alongside `approved`)', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 350_000,
+                amount: asMajor(350_000),
                 currency: 'ARS',
                 status: 'accredited',
                 statusDetail: null,
@@ -1284,7 +1753,7 @@ describe('processPaymentUpdated', () => {
 
         function approvedUpgradePayment() {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1_000, // major units; delta is ~1k ARS for the upgrade
+                amount: asMajor(1_000), // major units; delta is ~1k ARS for the upgrade
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -1507,7 +1976,7 @@ describe('processPaymentUpdated', () => {
             expect(billing.payments.record).not.toHaveBeenCalled();
         });
 
-        it('skips when sub is not active/trialing', async () => {
+        it('HOS-714: queues the prorated delta instead of discarding it when sub is not active/trialing', async () => {
             approvedUpgradePayment();
             const billing = makeUpgradeBilling({
                 sub: {
@@ -1526,9 +1995,57 @@ describe('processPaymentUpdated', () => {
 
             expect(result.planUpgradeConfirmed).toBe(false);
             expect(billing.subscriptions.changePlan).not.toHaveBeenCalled();
+            // This is the branch HOS-714 was filed on: the customer already paid
+            // the delta. It goes on the queue with the blocking status attached.
+            expect(mockRecordOrphanPayment).toHaveBeenCalledTimes(1);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    providerPaymentId: MP_PAYMENT_ID,
+                    flow: 'plan-change-upgrade',
+                    reason: 'subscription-status-not-applicable',
+                    amountMajor: 1_000,
+                    currency: 'ARS',
+                    subscriptionId: UPGRADE_SUB_ID,
+                    customerId: 'cust-1',
+                    observedStatus: 'canceled'
+                })
+            );
         });
 
-        it('skips when sub is not found', async () => {
+        it('HOS-714: a past_due subscription — the realistic case — queues rather than dropping the delta', async () => {
+            // Arrange — a recurring charge fails while a plan change is in
+            // flight, so the subscription is in dunning grace when the upgrade
+            // delta clears. Before HOS-714 this was money taken and nothing given.
+            approvedUpgradePayment();
+            const billing = makeUpgradeBilling({
+                sub: {
+                    id: UPGRADE_SUB_ID,
+                    customerId: 'cust-1',
+                    planId: OLD_PLAN_ID,
+                    status: 'past_due',
+                    providerSubscriptionIds: { mercadopago: 'mp-pre-123' }
+                }
+            });
+
+            // Act
+            const result = await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            // Assert
+            expect(result.planUpgradeConfirmed).toBe(false);
+            expect(billing.subscriptions.changePlan).not.toHaveBeenCalled();
+            expect(mockRecordOrphanPayment).toHaveBeenCalledTimes(1);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    reason: 'subscription-status-not-applicable',
+                    observedStatus: 'past_due'
+                })
+            );
+        });
+
+        it('HOS-714: queues the prorated delta instead of discarding it when sub is not found', async () => {
             approvedUpgradePayment();
             const billing = makeUpgradeBilling({ sub: null });
 
@@ -1538,11 +2055,61 @@ describe('processPaymentUpdated', () => {
             });
 
             expect(result.planUpgradeConfirmed).toBe(false);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledTimes(1);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    providerPaymentId: MP_PAYMENT_ID,
+                    flow: 'plan-change-upgrade',
+                    reason: 'subscription-not-found',
+                    amountMajor: 1_000,
+                    currency: 'ARS',
+                    subscriptionId: UPGRADE_SUB_ID
+                })
+            );
+        });
+
+        it('HOS-714: a successful upgrade never touches the orphan queue', async () => {
+            // Arrange
+            approvedUpgradePayment();
+            const billing = makeUpgradeBilling();
+
+            // Act
+            const result = await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            // Assert
+            expect(result.planUpgradeConfirmed).toBe(true);
+            expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
+        });
+
+        it('HOS-714: an idempotent re-delivery (already on the target plan) is not an orphan', async () => {
+            // Arrange
+            approvedUpgradePayment();
+            const billing = makeUpgradeBilling({
+                sub: {
+                    id: UPGRADE_SUB_ID,
+                    customerId: 'cust-1',
+                    planId: NEW_PLAN_ID, // already upgraded
+                    status: 'active',
+                    providerSubscriptionIds: { mercadopago: 'mp-pre-123' }
+                }
+            });
+
+            // Act
+            await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            // Assert
+            expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
         });
 
         it('does not commit when MP status is not approved/accredited', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1_000,
+                amount: asMajor(1_000),
                 currency: 'ARS',
                 status: 'in_process',
                 statusDetail: null,
@@ -1711,7 +2278,7 @@ describe('processPaymentUpdated', () => {
                 targetTransactionAmountMajor: 2000
             });
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -2026,7 +2593,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
         vi.clearAllMocks();
         resetAnnualDbState();
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1500,
+            amount: asMajor(1500),
             currency: 'ARS',
             status: 'refunded',
             statusDetail: null,
@@ -2168,7 +2735,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
 
     it('does NOT call applyRefundLifecycle for a cancelled (non-refunded) payment', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1500,
+            amount: asMajor(1500),
             currency: 'ARS',
             status: 'cancelled',
             statusDetail: null,
@@ -2187,7 +2754,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
 
     it('does NOT call applyRefundLifecycle for a rejected payment', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1500,
+            amount: asMajor(1500),
             currency: 'ARS',
             status: 'rejected',
             statusDetail: 'cc_rejected_other_reason',
@@ -2419,10 +2986,11 @@ describe('confirmAnnualSubscription — transition guard', () => {
         const result = await confirmAnnualSubscription({
             annualSubscriptionId: ANNUAL_SUB_ID,
             providerPaymentId: MP_PAYMENT_ID,
-            amount: 100,
+            amount: asMajor(100),
             currency: 'ARS',
             billing: mockBillingForGuard,
-            source: 'test'
+            source: 'test',
+            checkoutSessionId: null
         });
 
         // Assert: confirmed and status flipped
@@ -2430,6 +2998,87 @@ describe('confirmAnnualSubscription — transition guard', () => {
         expect(annualDbState.updateCalls).toHaveLength(1);
         const updateVals = annualDbState.updateCalls[0]?.values as Record<string, unknown>;
         expect(updateVals.status).toBe('active');
+    });
+
+    it('HOS-710: closes the polling job for THIS checkout, never a sibling of the same subscription', async () => {
+        // Regression guard. One subscription can hold several active polling
+        // jobs at once — one per in-flight one-time checkout — so closing "the"
+        // job of a subscription would retire an add-on purchase's job while its
+        // payment was still pending. That purchase would then never be
+        // confirmed: MP Preferences have no Webhooks v2 channel, so its polling
+        // job is the only activation path it has.
+        const CHECKOUT_SESSION_ID = 'checkout-session-being-settled';
+        const mockFindByResource = vi
+            .fn()
+            .mockResolvedValue({ id: 'job-for-this-checkout', version: 'v1' });
+        const mockFindBySubscription = vi.fn();
+        const mockUpdate = vi.fn().mockResolvedValue({ id: 'job-for-this-checkout' });
+
+        vi.mocked(mockBillingForGuard.getStorage).mockReturnValue({
+            subscriptionPollingJobs: {
+                findActiveByProviderResourceId: mockFindByResource,
+                findActiveBySubscriptionId: mockFindBySubscription,
+                update: mockUpdate
+            }
+        } as never);
+
+        annualDbState.subRows = [
+            { id: ANNUAL_SUB_ID, customerId: 'cust-guard', status: 'pending_provider' }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        // Act
+        await confirmAnnualSubscription({
+            annualSubscriptionId: ANNUAL_SUB_ID,
+            providerPaymentId: MP_PAYMENT_ID,
+            amount: asMajor(100),
+            currency: 'ARS',
+            billing: mockBillingForGuard,
+            source: 'test',
+            checkoutSessionId: CHECKOUT_SESSION_ID
+        });
+
+        // Looked up by the resource this payment settles...
+        expect(mockFindByResource).toHaveBeenCalledWith('mercadopago', CHECKOUT_SESSION_ID);
+        // ...and never by subscription, which cannot tell siblings apart.
+        expect(mockFindBySubscription).not.toHaveBeenCalled();
+        expect(mockUpdate).toHaveBeenCalledWith(
+            expect.objectContaining({ id: 'job-for-this-checkout', status: 'succeeded' })
+        );
+    });
+
+    it('HOS-710: skips the polling cleanup entirely when no checkout session id is known', async () => {
+        // Without a session id there is no way to name the right job, and
+        // guessing means closing someone else's. Skipping is correct: the cron
+        // completes the job on its next tick via the idempotency guard.
+        const mockFindByResource = vi.fn();
+        const mockFindBySubscription = vi.fn();
+
+        vi.mocked(mockBillingForGuard.getStorage).mockReturnValue({
+            subscriptionPollingJobs: {
+                findActiveByProviderResourceId: mockFindByResource,
+                findActiveBySubscriptionId: mockFindBySubscription,
+                update: vi.fn()
+            }
+        } as never);
+
+        annualDbState.subRows = [
+            { id: ANNUAL_SUB_ID, customerId: 'cust-guard', status: 'pending_provider' }
+        ];
+        annualDbState.paymentDedupeRows = [];
+
+        await confirmAnnualSubscription({
+            annualSubscriptionId: ANNUAL_SUB_ID,
+            providerPaymentId: MP_PAYMENT_ID,
+            amount: asMajor(100),
+            currency: 'ARS',
+            billing: mockBillingForGuard,
+            source: 'test',
+            checkoutSessionId: null
+        });
+
+        expect(mockFindByResource).not.toHaveBeenCalled();
+        expect(mockFindBySubscription).not.toHaveBeenCalled();
     });
 
     it('guard returns invalid (spy): logs error and skips status write (defense-in-depth)', async () => {
@@ -2455,10 +3104,11 @@ describe('confirmAnnualSubscription — transition guard', () => {
         const result = await confirmAnnualSubscription({
             annualSubscriptionId: ANNUAL_SUB_ID,
             providerPaymentId: MP_PAYMENT_ID,
-            amount: 100,
+            amount: asMajor(100),
             currency: 'ARS',
             billing: mockBillingForGuard,
-            source: 'test'
+            source: 'test',
+            checkoutSessionId: null
         });
 
         // Assert: not confirmed, no DB write, error logged

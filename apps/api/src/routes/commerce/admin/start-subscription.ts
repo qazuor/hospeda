@@ -28,6 +28,10 @@ import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
 import {
+    CommercePlanNotConfiguredError,
+    resolveCommercePlanSlug
+} from '../../../services/commerce-plan-resolver';
+import {
     initiateCommerceMonthlySubscription,
     SubscriptionCheckoutError
 } from '../../../services/subscription-checkout.service';
@@ -166,13 +170,18 @@ export const adminStartCommerceSubscriptionRoute = createAdminRoute({
         const entityType = params.entityType as CommerceEntityType;
         const entityId = params.entityId as string;
 
-        // Resolve the commerce plan slug from env (D1).
-        const planSlug = env.HOSPEDA_COMMERCE_PLAN_ID;
-        if (!planSlug) {
-            throw new HTTPException(503, {
-                message:
-                    'Commerce subscriptions are not configured (HOSPEDA_COMMERCE_PLAN_ID unset)'
-            });
+        // Resolve the commerce plan slug through the ONE resolver (HOS-688
+        // AC-35). This route used to read the env var inline, which is exactly
+        // the second resolution site that would have gone on billing both
+        // verticals against a single plan after §6.8 split them.
+        let planSlug: string;
+        try {
+            planSlug = resolveCommercePlanSlug({ entityType });
+        } catch (error) {
+            if (error instanceof CommercePlanNotConfiguredError) {
+                throw new HTTPException(503, { message: error.message });
+            }
+            throw error;
         }
 
         const billing = getQZPayBilling();

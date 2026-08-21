@@ -20,8 +20,10 @@ import { LimitKey } from '../src/types/plan.types.js';
 
 describe('Plan Configuration', () => {
     describe('ALL_PLANS', () => {
-        it('should export 9 plans', () => {
-            expect(ALL_PLANS).toHaveLength(9);
+        // HOS-692 (spec §6.9): the 3 complex-* plans were removed from
+        // ALL_PLANS (zero live subscriptions, vertical never built) — 9 - 3 = 6.
+        it('should export 6 plans', () => {
+            expect(ALL_PLANS).toHaveLength(6);
         });
 
         it('should have 3 owner plans', () => {
@@ -29,9 +31,9 @@ describe('Plan Configuration', () => {
             expect(ownerPlans).toHaveLength(3);
         });
 
-        it('should have 3 complex plans', () => {
+        it('should have zero complex plans (HOS-692: removed, spec §6.9)', () => {
             const complexPlans = ALL_PLANS.filter((p) => p.category === 'complex');
-            expect(complexPlans).toHaveLength(3);
+            expect(complexPlans).toHaveLength(0);
         });
 
         it('should have 3 tourist plans', () => {
@@ -43,7 +45,7 @@ describe('Plan Configuration', () => {
     describe('PLANS_BY_CATEGORY', () => {
         it('should group plans correctly', () => {
             expect(PLANS_BY_CATEGORY.owner).toHaveLength(3);
-            expect(PLANS_BY_CATEGORY.complex).toHaveLength(3);
+            expect(PLANS_BY_CATEGORY.complex).toHaveLength(0);
             expect(PLANS_BY_CATEGORY.tourist).toHaveLength(3);
         });
     });
@@ -68,10 +70,10 @@ describe('Plan Configuration', () => {
             expect(plan.isDefault).toBe(true);
         });
 
-        it('should return complex-basico as default for complex category', () => {
-            const plan = getDefaultPlan('complex');
-            expect(plan.slug).toBe('complex-basico');
-            expect(plan.isDefault).toBe(true);
+        it('throws for the complex category (HOS-692: no plan left in ALL_PLANS, spec §6.9)', () => {
+            expect(() => getDefaultPlan('complex')).toThrow(
+                'No default plan found for category: complex'
+            );
         });
 
         it('should return tourist-free as default for tourist category', () => {

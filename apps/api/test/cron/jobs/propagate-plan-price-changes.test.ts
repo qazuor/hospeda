@@ -99,11 +99,15 @@ vi.mock('@repo/db', () => {
     };
 });
 
-vi.mock('@repo/service-core', () => ({
-    loadSubscriptionDiscountState: mockLoadDiscountState,
-    getPromoCodeById: mockGetPromoCodeById,
-    calculatePromoCodeEffect: mockCalculateEffect
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        loadSubscriptionDiscountState: mockLoadDiscountState,
+        getPromoCodeById: mockGetPromoCodeById,
+        calculatePromoCodeEffect: mockCalculateEffect
+    };
+});
 
 vi.mock('../../../src/middlewares/billing.js', () => ({ getQZPayBilling: vi.fn() }));
 vi.mock('@sentry/node', () => ({ captureException: mockCaptureException }));

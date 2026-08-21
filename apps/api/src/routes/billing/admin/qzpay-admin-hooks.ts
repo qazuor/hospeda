@@ -333,6 +333,7 @@ const onAfterSubscriptionCancel: NonNullable<
     // admin actor that triggered the cancellation.
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_CANCELLED,
         previousStatus: typeof previousStatus === 'string' ? previousStatus : null,
         newStatus: SubscriptionStatusEnum.CANCELLED,
         triggerSource: 'admin-cancel',
@@ -637,6 +638,7 @@ const onAfterSubscriptionChangePlan: NonNullable<
     // Step 2: Audit-log the plan transition (unchanged).
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        eventType: BILLING_EVENT_TYPES.ADMIN_PLAN_CHANGED,
         triggerSource: 'admin-change-plan',
         metadata: {
             adminUserId: actor.id,
@@ -671,6 +673,7 @@ const onAfterSubscriptionTrialExtended: NonNullable<
 
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        eventType: BILLING_EVENT_TYPES.ADMIN_TRIAL_EXTENDED,
         triggerSource: 'admin-extend-trial',
         metadata: {
             adminUserId: actor.id,
@@ -800,7 +803,12 @@ const onAfterPaymentRefund: NonNullable<QZPayAdminLifecycleHooks['onAfterPayment
             payment,
             refundAmount: effectiveRefundAmount,
             adminUserId: actor.id,
-            source: 'admin'
+            source: 'admin',
+            // HOS-597: the provider's refund id is the identity the webhook
+            // will resolve for the SAME refund (off this payment's persisted
+            // metadata), so both doors claim one idempotency key and the
+            // effect is applied once.
+            providerRefundId: providerRefund.refundId
         });
     } catch (err) {
         apiLogger.error(
@@ -901,6 +909,7 @@ const onAfterSubscriptionPause: NonNullable<
 
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_PAUSED,
         newStatus: SubscriptionStatusEnum.PAUSED,
         triggerSource: 'admin-pause',
         metadata: {
@@ -968,6 +977,7 @@ const onAfterSubscriptionResume: NonNullable<
 
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_RESUMED,
         newStatus: SubscriptionStatusEnum.ACTIVE,
         triggerSource: 'admin-resume',
         metadata: {

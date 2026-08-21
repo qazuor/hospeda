@@ -17,7 +17,7 @@
  * provisioning) for admin-only operations.
  */
 
-import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import { PermissionEnum, RoleEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
@@ -35,23 +35,50 @@ import { hasPermission } from '../../utils/permission';
 const isOwner = (actor: Actor, entity: { ownerId?: string | null }): boolean =>
     entity.ownerId === actor.id;
 
+/**
+ * Returns `true` when the actor is anonymous — no roles at all, or only the
+ * `GUEST` sentinel.
+ *
+ * An anonymous actor carries a real UUID (the guest sentinel id), so
+ * `!actor.id` is NOT a usable authentication test here — the same trap the
+ * API error contract documents. Mirrors `resolveOwnerUserId` in
+ * `host-trade.service.ts`.
+ *
+ * @param actor - The actor performing the action.
+ */
+const isAnonymousActor = (actor: Actor): boolean =>
+    actor.roles.length === 0 || actor.roles.every((role) => role === RoleEnum.GUEST);
+
 // ---------------------------------------------------------------------------
 // Commerce listing permission checks
 // ---------------------------------------------------------------------------
 
 /**
  * Verifies the actor may create a new commerce listing.
- * Requires `COMMERCE_CREATE`.
+ *
+ * Requires an authenticated account and NOTHING else (HOS-687 / HOS-589 §6.1).
+ *
+ * This deliberately no longer demands `COMMERCE_CREATE`. Creating the listing
+ * is the act that MAKES someone a commerce owner — demanding the owner's own
+ * permission to perform it made the role unreachable for every account that
+ * did not already have it, which is everyone. It is the exact mirror of host
+ * onboarding, where creating the first accommodation draft requires no
+ * `ACCOMMODATION_*` permission and grants `HOST` on the way through.
+ *
+ * The admin create path is unaffected: `apps/api/src/routes/gastronomy/admin/create.ts`
+ * and its experience twin carry their own `requiredPermissions:
+ * [COMMERCE_CREATE]` at the route, so relaxing this shared service predicate
+ * does not widen the admin door.
  *
  * @param actor - The actor performing the action.
  * @param _data - The creation payload (unused here; accepted for signature consistency).
- * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.
+ * @throws {ServiceError} UNAUTHORIZED when the actor is anonymous / a guest.
  */
 export function checkCanCreateCommerce(actor: Actor, _data: unknown): void {
-    if (!hasPermission(actor, PermissionEnum.COMMERCE_CREATE)) {
+    if (isAnonymousActor(actor)) {
         throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'Permission denied: Insufficient permissions to create commerce listing'
+            ServiceErrorCode.UNAUTHORIZED,
+            'Authentication required to create a commerce listing'
         );
     }
 }
@@ -209,6 +236,37 @@ export function checkCanModerateReview(actor: Actor): void {
         throw new ServiceError(
             ServiceErrorCode.FORBIDDEN,
             'Permission denied: Insufficient permissions to moderate commerce reviews'
+        );
+    }
+}
+
+/**
+ * Verifies the actor may change the moderation state of a commerce LISTING.
+ * Requires `COMMERCE_MODERATION_CHANGE` (HOS-686).
+ *
+ * ## Why this is not {@link checkCanModerateReview}
+ *
+ * `COMMERCE_MODERATE_REVIEW` moderates reviews written *about* a listing. This
+ * one moderates the listing itself — the takedown verdict the commerce
+ * visibility reconciler reads (`moderationState === REJECTED` flips the listing
+ * to `PRIVATE` / `INACTIVE`). Anyone grepping "moderate" under commerce finds
+ * the review check first and can reasonably conclude the listing case is
+ * already covered. It is not: they are two distinct authorities.
+ *
+ * ## Why accommodation's `checkCanModerate` could not be reused
+ *
+ * `accommodation.permissions.ts:313` hardcodes
+ * `ACCOMMODATION_MODERATION_CHANGE` and accepts no permission parameter, so it
+ * is not generic over domains.
+ *
+ * @param actor - The actor performing the action.
+ * @throws {ServiceError} FORBIDDEN when the actor lacks the required permission.
+ */
+export function checkCanModerateCommerceListing(actor: Actor): void {
+    if (!hasPermission(actor, PermissionEnum.COMMERCE_MODERATION_CHANGE)) {
+        throw new ServiceError(
+            ServiceErrorCode.FORBIDDEN,
+            'Permission denied: Insufficient permissions to moderate commerce listing'
         );
     }
 }

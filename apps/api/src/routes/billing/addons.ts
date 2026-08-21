@@ -199,7 +199,10 @@ export const purchaseAddonRoute = createProtectedRoute({
             userId: actor.id,
             accommodationId: body.accommodationId as string | undefined,
             successUrl: buildAddonSuccessUrl(locale, params.slug as string),
-            cancelUrl: buildAddonCancelUrl(locale, params.slug as string)
+            cancelUrl: buildAddonCancelUrl(locale, params.slug as string),
+            // HOS-606: same locale used for the return URLs also translates
+            // the checkout line item's title/description sent to MercadoPago.
+            locale
         });
 
         if (!result.success) {
@@ -221,7 +224,19 @@ export const purchaseAddonRoute = createProtectedRoute({
             };
             const status = statusMap[result.error?.code ?? ''] ?? 500;
             throw new HTTPException(status as 400 | 403 | 404 | 409 | 422 | 500 | 503, {
-                message: result.error?.message ?? 'Unknown error'
+                message: result.error?.message ?? 'Unknown error',
+                // HOS-602: the status-derived `error.code` the client receives
+                // for a 422 collapses NO_SUBSCRIPTION / NO_ACTIVE_SUBSCRIPTION /
+                // ADDON_INACTIVE / INVALID_PROMO_CODE into the same generic
+                // VALIDATION_ERROR (see `resolveErrorCodeForStatus`), which then
+                // wins the `translateApiError` priority chain over the specific
+                // English `message` above and shows misleading copy ("Los datos
+                // enviados no son válidos.") instead of the real rejection
+                // reason. `readEntitlementCause` (utils/entitlement-cause.ts)
+                // already forwards a whitelisted `cause.code` as `error.reason`
+                // on the wire — the same mechanism `trialMiddleware` uses for its
+                // 402s — so attach the service's real code here too.
+                cause: result.error?.code ? { code: result.error.code } : undefined
             });
         }
 

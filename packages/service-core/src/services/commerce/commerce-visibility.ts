@@ -26,6 +26,7 @@
  * @module commerce-visibility
  */
 
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { and, commerceListingSubscriptions, eq, getDb, inArray } from '@repo/db';
 import type { ILogger } from '@repo/logger';
@@ -42,9 +43,6 @@ import { ServiceError } from '../../types';
 // Types
 // ---------------------------------------------------------------------------
 
-/** Subscription status values that indicate an active / valid subscription. */
-const ACTIVE_STATUSES = new Set(['active', 'trialing'] as const);
-
 /**
  * Inputs for {@link reconcileCommerceListingVisibility}.
  */
@@ -60,8 +58,8 @@ export interface ReconcileCommerceListingVisibilityInput {
      * Current subscription status from `commerce_listing_subscriptions.status`
      * (mirroring `billing_subscriptions.status`).
      *
-     * `active` / `trialing` → visible + ACTIVE lifecycle.
-     * All other values → hidden + PRIVATE lifecycle.
+     * An entitlement-granting status (see `isEntitlementGrantingStatus`) →
+     * visible + ACTIVE lifecycle. All other values → hidden + PRIVATE lifecycle.
      */
     readonly subscriptionStatus: string;
     /** Optional Drizzle transaction client to enlist this write. */
@@ -196,7 +194,11 @@ export async function reconcileCommerceListingVisibility(
 ): Promise<ReconcileCommerceListingVisibilityResult> {
     const { entityType, entityId, subscriptionStatus, tx } = input;
 
-    const subscriptionActive = ACTIVE_STATUSES.has(subscriptionStatus as 'active' | 'trialing');
+    // HOS-702: the canonical entitlement-granting set, not a local
+    // `new Set(['active', 'trialing'])`. That hand-rolled set excluded `comp`,
+    // so a complimentary commerce subscription reconciled its listing straight
+    // to hidden + PRIVATE — the same defect class as HOS-238/239/594.
+    const subscriptionActive = isEntitlementGrantingStatus(subscriptionStatus);
 
     // Fetch the entity.
     const entity = await model.findById(entityId, tx);

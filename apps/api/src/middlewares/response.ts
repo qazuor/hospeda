@@ -1,5 +1,4 @@
 import { ServiceErrorCode } from '@repo/schemas';
-import type { ErrorLogLevel } from '@repo/service-core';
 import { resolveErrorLogLevel, ServiceError } from '@repo/service-core';
 /**
  * Response formatting middleware
@@ -17,7 +16,9 @@ import type {
 import { readEntitlementCause } from '../utils/entitlement-cause';
 import { env, getResponseConfig } from '../utils/env';
 import { resolveErrorCodeForStatus } from '../utils/http-error-codes';
+import { resolveHttpStatusLogLevel } from '../utils/http-status-log-level';
 import { apiLogger } from '../utils/logger';
+import { RefinedBodyValidationError } from '../utils/refined-body';
 
 /**
  * Centralized mapping from ServiceErrorCode to HTTP status codes
@@ -42,6 +43,8 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.PROVIDER_TIMEOUT]: 504,
     [ServiceErrorCode.PLAN_DISABLED]: 410,
     [ServiceErrorCode.GONE]: 410,
+    // Change-password: current-password mismatch (HOS-612)
+    [ServiceErrorCode.PASSWORD_INCORRECT]: 400,
     // Host-trade benefit usage + reviews (HOS-376 §7.5)
     [ServiceErrorCode.HOST_NOT_FOUND]: 404,
     [ServiceErrorCode.USAGE_PENDING_EXISTS]: 409,
@@ -304,38 +307,6 @@ function isDbPoolExhausted(error: Error): boolean {
 }
 
 /**
- * Maps a raw HTTP status code to the log level its errors should be emitted at.
- *
- * Companion to {@link resolveErrorLogLevel} (`@repo/service-core`) for errors
- * that do NOT carry a `ServiceErrorCode` — namely Hono's `HTTPException`,
- * thrown directly by middleware (e.g. the auth guard's 401 on a guest hitting
- * a protected route, or its 403 on a permission/admin-access denial). Mirrors
- * the same EXPECTED-outcome intent as `resolveErrorLogLevel` (HOS-109 / OQ-1):
- * a guest 401 and a missing-resource 404 are routine
- * browsing outcomes → `info`; a 403 permission denial is a probing signal
- * worth slightly more visibility → `warn`; everything else stays `error`.
- *
- * @param status - The HTTP status code carried by the `HTTPException`.
- * @returns The log level to emit at; defaults to `error`.
- */
-const resolveHttpStatusLogLevel = (status: number): ErrorLogLevel => {
-    switch (status) {
-        case 401:
-        case 404:
-            return 'info';
-        case 402:
-        // An entitlement gate is a business outcome, not a fault: logging it at
-        // `error` with a stack trace floods the ERROR stream with every blocked
-        // write of every lapsed host, and the middleware already emits its own
-        // `warn` for the same event (HOS-283).
-        case 403:
-            return 'warn';
-        default:
-            return 'error';
-    }
-};
-
-/**
  * Creates an error handler for Hono app.onError()
  * This is the preferred way to handle errors in Hono
  *
@@ -372,6 +343,34 @@ export const createErrorHandler = () => {
 
         if (!responseConfig.formatEnabled) {
             throw error; // Let Hono handle it
+        }
+
+        // HOS-607: kept in sync with the identical branch in `handleRouteError`
+        // (utils/response-helpers.ts) per the R4 twin-formatter rule
+        // (docs/error-contract.md) — this error only reaches THIS handler if a
+        // future caller of `parseRefinedBody` lets it bubble past the route
+        // factory's own try/catch instead of through `handleRouteError`.
+        if (error instanceof RefinedBodyValidationError) {
+            const { validation } = error;
+            const headers = addResponseHeaders(c);
+            return c.json(
+                {
+                    success: false,
+                    error: {
+                        code: validation.code,
+                        messageKey: validation.messageKey,
+                        details: validation.details,
+                        summary: validation.summary,
+                        userFriendlyMessage: validation.userFriendlyMessage
+                    },
+                    metadata: {
+                        timestamp: new Date().toISOString(),
+                        requestId: c.get('requestId') || 'unknown'
+                    }
+                },
+                400,
+                headers
+            );
         }
 
         let errorCode: ServiceErrorCode;

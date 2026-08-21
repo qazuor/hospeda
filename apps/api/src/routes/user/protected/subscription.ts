@@ -5,11 +5,15 @@
  */
 import type { QZPaySubscriptionWithHelpers } from '@qazuor/qzpay-core';
 import { isEntitlementGrantingStatus, PAYMENT_GRACE_PERIOD_DAYS } from '@repo/billing';
-import { isAccommodationSubscription, isCommerceSubscription } from '@repo/service-core';
+import { ProductDomainEnum } from '@repo/schemas';
+import { subscriptionMatchesDomain } from '@repo/service-core';
 import type { Context } from 'hono';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
-import { ProductDomainQuerySchema } from '../../../schemas/product-domain-query.schema';
+import {
+    ProductDomainQuerySchema,
+    type ProductDomainScope
+} from '../../../schemas/product-domain-query.schema';
 import { PlanService } from '../../../services/plan.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { apiLogger } from '../../../utils/logger';
@@ -143,8 +147,12 @@ export const userSubscriptionRoute = createProtectedRoute({
     responseSchema: SubscriptionResponseSchema,
     handler: async (ctx: Context, _params, _body, query) => {
         const actor = getActorFromContext(ctx);
-        const { productDomain } = (query || {}) as { productDomain?: 'accommodation' | 'commerce' };
-        const resolvedProductDomain = productDomain ?? 'accommodation';
+        // Typed from the shared schema rather than restated inline: widening the
+        // schema alone would leave a narrower cast here silently rejecting the
+        // vertical it was just taught to accept (HOS-685).
+        const { productDomain } = (query || {}) as { productDomain?: ProductDomainScope };
+        const resolvedProductDomain: ProductDomainScope =
+            productDomain ?? ProductDomainEnum.ACCOMMODATION;
 
         // Check if billing is enabled
         const billingEnabled = ctx.get('billingEnabled');
@@ -229,16 +237,16 @@ export const userSubscriptionRoute = createProtectedRoute({
         // subscriptions under the same billing customer; without this filter
         // `.find()` returned whichever came first, which could surface the
         // accommodation subscription to a caller that needed the commerce one.
-        const domainPredicate =
-            resolvedProductDomain === 'commerce'
-                ? isCommerceSubscription
-                : isAccommodationSubscription;
+        // HOS-685: one canonical predicate resolves every domain, instead of a
+        // binary branch that would answer `accommodation` for a vertical it does
+        // not recognise — the failure mode that hands a host's plan to a
+        // commerce-scoped caller.
         const activeSubscription = subscriptions.find(
             (sub) =>
                 (isEntitlementGrantingStatus(sub.status) ||
                     sub.status === 'past_due' ||
                     sub.status === 'paused') &&
-                domainPredicate(sub)
+                subscriptionMatchesDomain(sub, resolvedProductDomain)
         );
 
         if (!activeSubscription) {

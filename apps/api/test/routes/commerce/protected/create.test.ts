@@ -61,19 +61,32 @@ vi.mock('@repo/db', () => ({
     }
 }));
 
-const { mockGastronomyCreate, mockExperienceCreate } = vi.hoisted(() => ({
-    mockGastronomyCreate: vi.fn(),
-    mockExperienceCreate: vi.fn()
+const {
+    mockGastronomyCreateForOwner,
+    mockExperienceCreateForOwner,
+    mockGastronomyPlainCreate,
+    mockExperiencePlainCreate
+} = vi.hoisted(() => ({
+    mockGastronomyCreateForOwner: vi.fn(),
+    mockExperienceCreateForOwner: vi.fn(),
+    mockGastronomyPlainCreate: vi.fn(),
+    mockExperiencePlainCreate: vi.fn()
 }));
 vi.mock('@repo/service-core', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@repo/service-core')>();
     return {
         ...actual,
         GastronomyService: class MockGastronomyService {
-            create = mockGastronomyCreate;
+            // HOS-687: the owner path MUST go through `createForOwner` (which
+            // grants COMMERCE_OWNER in the create transaction). The plain
+            // `create` is kept as a spy so a regression back to it fails loudly
+            // here instead of shipping a silent "listing without an owner role".
+            createForOwner = mockGastronomyCreateForOwner;
+            create = mockGastronomyPlainCreate;
         },
         ExperienceService: class MockExperienceService {
-            create = mockExperienceCreate;
+            createForOwner = mockExperienceCreateForOwner;
+            create = mockExperiencePlainCreate;
         }
     };
 });
@@ -131,7 +144,7 @@ const VALID_GASTRONOMY_BODY = {
 describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockGastronomyCreate.mockResolvedValue({
+        mockGastronomyCreateForOwner.mockResolvedValue({
             data: { id: 'listing-1', ...VALID_GASTRONOMY_BODY }
         });
     });
@@ -144,8 +157,8 @@ describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
             ownerId: OTHER_USER_ID
         });
 
-        expect(mockGastronomyCreate).toHaveBeenCalledTimes(1);
-        const [, createInput] = mockGastronomyCreate.mock.calls[0] as [
+        expect(mockGastronomyCreateForOwner).toHaveBeenCalledTimes(1);
+        const [, createInput] = mockGastronomyCreateForOwner.mock.calls[0] as [
             unknown,
             Record<string, unknown>
         ];
@@ -161,7 +174,7 @@ describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
             lifecycleState: 'ACTIVE'
         });
 
-        const [, createInput] = mockGastronomyCreate.mock.calls[0] as [
+        const [, createInput] = mockGastronomyCreateForOwner.mock.calls[0] as [
             unknown,
             Record<string, unknown>
         ];
@@ -184,7 +197,7 @@ describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
 
         await handleCreateGastronomyListing(ctx as never, validatedBody);
 
-        const [, createInput] = mockGastronomyCreate.mock.calls[0] as [
+        const [, createInput] = mockGastronomyCreateForOwner.mock.calls[0] as [
             unknown,
             Record<string, unknown>
         ];
@@ -196,7 +209,7 @@ describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
 
         await handleCreateGastronomyListing(ctx as never, VALID_GASTRONOMY_BODY);
 
-        const [actorArg, createInput] = mockGastronomyCreate.mock.calls[0] as [
+        const [actorArg, createInput] = mockGastronomyCreateForOwner.mock.calls[0] as [
             { id: string },
             Record<string, unknown>
         ];
@@ -206,8 +219,20 @@ describe('handleCreateGastronomyListing (HOS-166 §7.2, D-3)', () => {
         expect(createInput.type).toBe(GastronomyTypeEnum.PARRILLA);
     });
 
+    it('routes the owner create through createForOwner, never the plain create (HOS-687)', async () => {
+        const ctx = createMockContext();
+
+        await handleCreateGastronomyListing(ctx as never, VALID_GASTRONOMY_BODY);
+
+        expect(mockGastronomyCreateForOwner).toHaveBeenCalledTimes(1);
+        // `create` alone would insert the listing and grant nothing — the owner
+        // would end up locked out of the surface that manages what they just
+        // created.
+        expect(mockGastronomyPlainCreate).not.toHaveBeenCalled();
+    });
+
     it('surfaces a service-layer error (e.g. FORBIDDEN) as a ServiceError', async () => {
-        mockGastronomyCreate.mockResolvedValue({
+        mockGastronomyCreateForOwner.mockResolvedValue({
             error: { code: 'FORBIDDEN', message: 'Permission denied' }
         });
         const ctx = createMockContext();
@@ -233,7 +258,7 @@ const VALID_EXPERIENCE_BODY = {
 describe('handleCreateExperienceListing (HOS-166 §7.2, D-3)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockExperienceCreate.mockResolvedValue({
+        mockExperienceCreateForOwner.mockResolvedValue({
             data: { id: 'listing-2', ...VALID_EXPERIENCE_BODY }
         });
     });
@@ -246,7 +271,7 @@ describe('handleCreateExperienceListing (HOS-166 §7.2, D-3)', () => {
             ownerId: OTHER_USER_ID
         });
 
-        const [, createInput] = mockExperienceCreate.mock.calls[0] as [
+        const [, createInput] = mockExperienceCreateForOwner.mock.calls[0] as [
             unknown,
             Record<string, unknown>
         ];
@@ -258,12 +283,21 @@ describe('handleCreateExperienceListing (HOS-166 §7.2, D-3)', () => {
 
         await handleCreateExperienceListing(ctx as never, VALID_EXPERIENCE_BODY);
 
-        const [, createInput] = mockExperienceCreate.mock.calls[0] as [
+        const [, createInput] = mockExperienceCreateForOwner.mock.calls[0] as [
             unknown,
             Record<string, unknown>
         ];
         expect(createInput.visibility).toBe(VisibilityEnum.PRIVATE);
         expect(createInput.lifecycleState).toBe(LifecycleStatusEnum.DRAFT);
+    });
+
+    it('routes the owner create through createForOwner, never the plain create (HOS-687)', async () => {
+        const ctx = createMockContext();
+
+        await handleCreateExperienceListing(ctx as never, VALID_EXPERIENCE_BODY);
+
+        expect(mockExperienceCreateForOwner).toHaveBeenCalledTimes(1);
+        expect(mockExperiencePlainCreate).not.toHaveBeenCalled();
     });
 
     it('drops hasActiveSubscription end-to-end through the real request pipeline', async () => {
@@ -278,7 +312,7 @@ describe('handleCreateExperienceListing (HOS-166 §7.2, D-3)', () => {
 
         await handleCreateExperienceListing(ctx as never, validatedBody);
 
-        const [, createInput] = mockExperienceCreate.mock.calls[0] as [
+        const [, createInput] = mockExperienceCreateForOwner.mock.calls[0] as [
             unknown,
             Record<string, unknown>
         ];

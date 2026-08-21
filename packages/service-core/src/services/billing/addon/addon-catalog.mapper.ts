@@ -171,6 +171,10 @@ export function mapRowToAddonDefinition(row: QZPayBillingAddon): AddonDefinition
     const sortOrder = typeof metadata.sortOrder === 'number' ? metadata.sortOrder : 0;
 
     return {
+        // HOS-595: the row's primary key used to be dropped here, which is why
+        // `billing_addon_purchases.addon_id` (a FK to it) was NULL on every
+        // purchase — the confirmation path had no id to write.
+        id: row.id,
         slug,
         name: row.name,
         description: row.description ?? '',

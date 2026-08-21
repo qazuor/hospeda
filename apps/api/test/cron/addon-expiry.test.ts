@@ -108,7 +108,27 @@ const mockDbGrantLinkWhere = vi.fn();
 const mockDbAccommodationOwnerWhere = vi.fn();
 const mockDbUpdateReturning = vi.fn();
 
+// ---------------------------------------------------------------------------
+// Mock: UserModel.findById, consumed by resolveRecipientLocale() (HOS-722) to
+// resolve the recipient's users.settings.languageWeb for the addon CTA link.
+// Uses vi.hoisted (matching mockAddonCatalogGetBySlug / mockApplyAddonEntitlements
+// above) rather than relying on the plain-const mock-prefix inference, since a
+// double-nested reference (vi.fn().mockImplementation(() => ({ findById }))) hit
+// a TDZ error under that inference.
+// Defaults to null (user not found) in beforeEach so every pre-existing test
+// exercises the 'es' fallback without needing per-test setup; dedicated tests
+// below assert both fallback paths explicitly plus the non-fallback case.
+// ---------------------------------------------------------------------------
+const { mockUserFindById } = vi.hoisted(() => ({
+    mockUserFindById: vi.fn()
+}));
+
 vi.mock('@repo/db', () => ({
+    UserModel: vi.fn().mockImplementation(function () {
+        return {
+            findById: mockUserFindById
+        };
+    }),
     getDb: vi.fn(() => ({
         select: mockDbSelect,
         update: mockDbUpdate,
@@ -229,7 +249,17 @@ vi.mock('../../src/services/addon-lifecycle.service', () => ({
 // `adjustment.entitlementKey === EntitlementKey.FEATURED_LISTING`, so without
 // this the comparison target is `undefined` and every FEATURED_LISTING
 // adjustment silently fails to match (soft-failed by the surrounding try/catch).
-vi.mock('@repo/billing', () => ({
+//
+// HOS-702: this is a PARTIAL mock (spread of the real module) rather than a
+// two-key object literal. The job's split-state reconciler now calls
+// `isEntitlementGrantingStatus`, and a whole-module stub left that export
+// `undefined` — the call threw, the surrounding try/catch swallowed it, and the
+// phase silently reconciled nothing while every assertion still ran. Stubbing
+// the predicate with a hand-written copy would recreate the exact duplication
+// HOS-702 removed, so the REAL predicate is used and only the two members that
+// genuinely need controlling are overridden.
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn(),
     EntitlementKey: { FEATURED_LISTING: 'featured_listing' }
 }));
@@ -311,6 +341,11 @@ describe('Add-on Expiry Cron Job', () => {
             };
             return callback(txStub as never);
         });
+
+        // HOS-722: default resolveRecipientLocale() to the 'user not found' path
+        // (findById resolves null -> locale falls back to 'es'). Tests that care
+        // about locale resolution override this per-case below.
+        mockUserFindById.mockResolvedValue(null);
 
         // Set up default DB chain for wasNotificationSent: returns empty (no prior notification)
         mockDbLimit.mockResolvedValue([]);
@@ -2054,6 +2089,210 @@ describe('Add-on Expiry Cron Job', () => {
                     customerId: 'cust-expired',
                     addonName: 'Extra Listings',
                     expirationDate: expiredAddon.expiresAt.toISOString()
+                })
+            );
+        });
+
+        it('resolves the recipient locale from users.settings.languageWeb (HOS-722)', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const expiredAddon = {
+                id: 'purchase-expired-locale-en',
+                customerId: 'cust-expired-locale-en',
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            };
+
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: [expiredAddon]
+                }),
+                expireAddon: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: {
+                        purchaseId: expiredAddon.id,
+                        customerId: expiredAddon.customerId,
+                        addonSlug: expiredAddon.addonSlug,
+                        expiredAt: expiredAddon.expiresAt
+                    }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
+            mockAddonCatalogGetBySlug.mockResolvedValue({
+                success: true,
+                data: { slug: 'extra-listings', name: 'Extra Listings' }
+            });
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'expired-en@example.com',
+                name: 'Expired Customer EN',
+                userId: 'user-expired-en'
+            });
+            // The linked user exists and has an explicit non-default locale preference.
+            mockUserFindById.mockResolvedValue({
+                id: 'user-expired-en',
+                settings: { languageWeb: 'en' }
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockUserFindById).toHaveBeenCalledWith('user-expired-en');
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.ADDON_EXPIRED,
+                    customerId: 'cust-expired-locale-en',
+                    addonSlug: 'extra-listings',
+                    locale: 'en'
+                })
+            );
+        });
+
+        it('falls back to es when the linked user has no languageWeb preference (HOS-722)', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const expiredAddon = {
+                id: 'purchase-expired-locale-no-pref',
+                customerId: 'cust-expired-locale-no-pref',
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            };
+
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: [expiredAddon]
+                }),
+                expireAddon: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: {
+                        purchaseId: expiredAddon.id,
+                        customerId: expiredAddon.customerId,
+                        addonSlug: expiredAddon.addonSlug,
+                        expiredAt: expiredAddon.expiresAt
+                    }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
+            mockAddonCatalogGetBySlug.mockResolvedValue({
+                success: true,
+                data: { slug: 'extra-listings', name: 'Extra Listings' }
+            });
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'expired-no-pref@example.com',
+                name: 'Expired Customer No Pref',
+                userId: 'user-expired-no-pref'
+            });
+            // The linked user exists but never set a web language preference.
+            mockUserFindById.mockResolvedValue({
+                id: 'user-expired-no-pref',
+                settings: {}
+            });
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.ADDON_EXPIRED,
+                    customerId: 'cust-expired-locale-no-pref',
+                    locale: 'es'
+                })
+            );
+        });
+
+        it('falls back to es when the linked user is not found (HOS-722)', async () => {
+            // Arrange
+            const ctx = createMockContext();
+            const expiredAddon = {
+                id: 'purchase-expired-locale-no-user',
+                customerId: 'cust-expired-locale-no-user',
+                addonSlug: 'extra-listings',
+                expiresAt: new Date('2024-06-15T00:00:00Z'),
+                subscriptionId: null,
+                purchasedAt: new Date('2024-01-01T00:00:00Z'),
+                limitAdjustments: [],
+                entitlementAdjustments: []
+            };
+
+            const mockService = {
+                findExpiredAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: [expiredAddon]
+                }),
+                expireAddon: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: {
+                        purchaseId: expiredAddon.id,
+                        customerId: expiredAddon.customerId,
+                        addonSlug: expiredAddon.addonSlug,
+                        expiredAt: expiredAddon.expiresAt
+                    }
+                }),
+                findExpiringAddons: vi.fn().mockResolvedValue({
+                    success: true,
+                    data: []
+                })
+            };
+
+            vi.mocked(AddonExpirationService).mockImplementation(function () {
+                return mockService as never;
+            });
+            vi.mocked(sendNotification).mockResolvedValue(undefined);
+            vi.mocked(getQZPayBilling).mockReturnValue({ api: 'mock-billing' } as never);
+            mockAddonCatalogGetBySlug.mockResolvedValue({
+                success: true,
+                data: { slug: 'extra-listings', name: 'Extra Listings' }
+            });
+            vi.mocked(lookupCustomerDetails).mockResolvedValue({
+                email: 'expired-no-user@example.com',
+                name: 'Expired Customer No User',
+                userId: 'user-expired-missing'
+            });
+            // billing_customers.external_id resolved to a userId that no longer
+            // has a users row (e.g. deleted account) — findById resolves null.
+            mockUserFindById.mockResolvedValue(null);
+
+            // Act
+            const result = await addonExpiryJob.handler(ctx);
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(sendNotification).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    type: NotificationType.ADDON_EXPIRED,
+                    customerId: 'cust-expired-locale-no-user',
+                    locale: 'es'
                 })
             );
         });

@@ -167,6 +167,13 @@ export class BillingSettingsService {
      * internally to keep the upsert and audit log atomic.
      *
      * @param patch - Partial settings to update
+     * @param livemode - Whether this write belongs to live (production) or
+     *   sandbox data. There is no safe default here — the caller MUST derive
+     *   this from `env.HOSPEDA_MERCADO_PAGO_SANDBOX` (same single source of
+     *   truth as `middlewares/billing.ts` and the mercadopago webhook
+     *   event-handler), never hardcode it. A global admin setting is still
+     *   environment-scoped: a change made from staging IS staging data
+     *   (HOS-719 decision).
      * @param actorId - ID of user performing the update (optional)
      * @param ctx - Optional query context. When `ctx.tx` is provided, all DB
      *   operations use that transaction so the call participates in the caller's
@@ -175,6 +182,7 @@ export class BillingSettingsService {
      */
     async updateSettings(
         patch: Partial<BillingSettings>,
+        livemode: boolean,
         actorId?: string,
         ctx?: QueryContext
     ): Promise<BillingSettings> {
@@ -217,7 +225,7 @@ export class BillingSettingsService {
                 actorType: actorId ? 'admin' : 'system',
                 changes: updatedSettings as unknown,
                 previousValues: currentSettings as unknown,
-                livemode: true,
+                livemode,
                 ipAddress: null,
                 userAgent: null
             });
@@ -235,13 +243,22 @@ export class BillingSettingsService {
      * When `ctx.tx` is provided the reset participates in the caller's
      * transaction boundary. Otherwise a new transaction is opened internally.
      *
+     * @param livemode - Whether this write belongs to live (production) or
+     *   sandbox data. There is no safe default here — the caller MUST derive
+     *   this from `env.HOSPEDA_MERCADO_PAGO_SANDBOX` (same single source of
+     *   truth as `middlewares/billing.ts` and the mercadopago webhook
+     *   event-handler), never hardcode it (HOS-719 decision).
      * @param actorId - ID of user performing the reset (optional)
      * @param ctx - Optional query context. When `ctx.tx` is provided, all DB
      *   operations use that transaction so the call participates in the caller's
      *   atomic boundary.
      * @returns Default billing settings
      */
-    async resetSettings(actorId?: string, ctx?: QueryContext): Promise<BillingSettings> {
+    async resetSettings(
+        livemode: boolean,
+        actorId?: string,
+        ctx?: QueryContext
+    ): Promise<BillingSettings> {
         await withTransaction(async (db: DrizzleClient) => {
             // Upsert defaults into billing_settings
             await db
@@ -272,7 +289,7 @@ export class BillingSettingsService {
                 actorType: actorId ? 'admin' : 'system',
                 changes: DEFAULT_SETTINGS as unknown,
                 previousValues: null,
-                livemode: true,
+                livemode,
                 ipAddress: null,
                 userAgent: null
             });

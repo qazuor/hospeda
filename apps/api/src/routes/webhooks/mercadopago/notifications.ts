@@ -7,6 +7,7 @@
  * @module routes/webhooks/mercadopago/notifications
  */
 
+import type { Major } from '@repo/billing';
 import { NotificationType } from '@repo/notifications';
 import type { getQZPayBilling } from '../../../middlewares/billing';
 import { resolvePlanDisplayName } from '../../../services/billing/plan-change-reason';
@@ -22,14 +23,18 @@ import { sanitizeErrorForNotification } from './utils';
  * Failures are logged at debug level and do not propagate.
  *
  * @param customerId - Billing customer ID
- * @param amount - Payment amount
+ * @param amount - Payment amount in MAJOR units (ARS pesos) — the unit the
+ *   customer-facing email renders verbatim. HOS-720 put that in the type:
+ *   `billing_payments` stores CENTAVOS, and HOS-713 reached this exact
+ *   parameter with an unconverted centavo figure, mailing a real $150.00
+ *   charge as $15.000,00.
  * @param currency - Payment currency code
  * @param paymentMethod - Payment method used, if available
  * @param billing - QZPay billing instance
  */
 export async function sendPaymentSuccessNotification(
     customerId: string,
-    amount: number,
+    amount: Major,
     currency: string,
     paymentMethod: string | null,
     billing: ReturnType<typeof getQZPayBilling>
@@ -170,14 +175,15 @@ export async function sendTrialNotGrantedAdminAlert(params: {
  * Failures are logged at debug level and do not propagate.
  *
  * @param customerId - Billing customer ID
- * @param amount - Payment amount
+ * @param amount - Payment amount in MAJOR units (ARS pesos) — see the note on
+ *   {@link sendPaymentSuccessNotification}'s `amount` (HOS-720).
  * @param currency - Payment currency code
  * @param failureReason - Raw failure reason string (will be sanitized before sending)
  * @param billing - QZPay billing instance
  */
 export async function sendPaymentFailureNotifications(
     customerId: string,
-    amount: number,
+    amount: Major,
     currency: string,
     failureReason: string,
     billing: ReturnType<typeof getQZPayBilling>
@@ -193,9 +199,6 @@ export async function sendPaymentFailureNotifications(
             apiLogger.warn({ customerId }, 'Customer not found for payment failure notification');
             return;
         }
-
-        const retryDate = new Date();
-        retryDate.setDate(retryDate.getDate() + 3);
 
         const customerName =
             typeof customer.metadata?.name === 'string' ? customer.metadata.name : customer.email;
@@ -221,8 +224,7 @@ export async function sendPaymentFailureNotifications(
             planName,
             amount,
             currency,
-            failureReason: sanitizedUserReason,
-            retryDate: retryDate.toISOString()
+            failureReason: sanitizedUserReason
         }).catch((error) => {
             apiLogger.debug(
                 {
@@ -256,8 +258,7 @@ export async function sendPaymentFailureNotifications(
                         amount,
                         currency,
                         failureReason: sanitizedAdminReason,
-                        planName,
-                        retryDate: retryDate.toISOString()
+                        planName
                     },
                     severity: 'warning'
                 }).catch((error) => {

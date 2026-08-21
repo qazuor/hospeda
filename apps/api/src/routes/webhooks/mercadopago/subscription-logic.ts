@@ -20,6 +20,8 @@ import {
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
+    BILLING_EVENT_TYPES,
+    type BillingEventType,
     checkSubscriptionStatusTransition,
     deriveTrialingStatus,
     normalizeStoredSubscriptionStatus,
@@ -73,6 +75,43 @@ const PAYMENT_RETRY_MAX_ATTEMPTS = 3;
 function maskId(id: string): string {
     if (id.length <= 4) return '****';
     return `***...${id.slice(-4)}`;
+}
+
+/**
+ * Resolves the `billing_subscription_events.event_type` to write for the
+ * generic MercadoPago status mapper's audit insert (HOS-657).
+ *
+ * `mappedStatus` (the Step 5c-derived destination status) is the input, not
+ * `previousStatus` or `triggerSource` — `triggerSource` already records WHO
+ * drove the write (webhook, `subscription-poll`, `webhook-retry`), so
+ * `eventType` here records WHAT the provider reported, one value per
+ * destination status. Only the six statuses `QZPAY_TO_HOSPEDA_STATUS` and
+ * `deriveTrialingStatus` can currently produce ever reach this function; the
+ * `default` branch is a defensive fallback for a future status this mapper
+ * doesn't yet enumerate, never expected to actually fire.
+ *
+ * @param mappedStatus - The destination status this webhook run resolved to.
+ * @returns The `BillingEventType` to persist on the audit row.
+ */
+function resolveWebhookSubscriptionEventType(
+    mappedStatus: SubscriptionStatusEnum
+): BillingEventType {
+    switch (mappedStatus) {
+        case SubscriptionStatusEnum.ACTIVE:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_ACTIVATED;
+        case SubscriptionStatusEnum.TRIALING:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_TRIALING;
+        case SubscriptionStatusEnum.PAUSED:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_PAUSED;
+        case SubscriptionStatusEnum.CANCELLED:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_CANCELLED;
+        case SubscriptionStatusEnum.EXPIRED:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_EXPIRED;
+        case SubscriptionStatusEnum.PAST_DUE:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_PAST_DUE;
+        default:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_STATUS_OTHER;
+    }
 }
 
 import {
@@ -1019,6 +1058,7 @@ export async function processSubscriptionUpdated({
 
             await tx.insert(billingSubscriptionEvents).values({
                 subscriptionId: localSubscription.id,
+                eventType: resolveWebhookSubscriptionEventType(mappedStatus),
                 previousStatus,
                 newStatus: mappedStatus,
                 triggerSource: source ?? 'webhook',
@@ -1113,18 +1153,28 @@ export async function processSubscriptionUpdated({
 
     // Step 8a: SPEC-143 Finding #17 fallback cleanup.
     //
-    // Mark any active polling job for this subscription as `succeeded` so
-    // the cron stops querying MP for a sub whose status the webhook just
-    // resolved. This is purely a cleanup — even if it fails, the next poll
-    // would see the local sub is already in a terminal state and complete
-    // the job normally (idempotent path). Skipped when source='polling'
-    // because in that case the cron itself is updating the job.
+    // Mark the polling job for THIS PREAPPROVAL as `succeeded` so the cron
+    // stops querying MP for a sub whose status the webhook just resolved.
+    // This is purely a cleanup — even if it fails, the next poll would see
+    // the local sub is already in a terminal state and complete the job
+    // normally (idempotent path). Skipped when source='polling' because in
+    // that case the cron itself is updating the job.
+    //
+    // HOS-710: looked up by preapproval id, NOT by subscription id. One
+    // subscription can now hold several active polling jobs at once — one
+    // per in-flight one-time checkout (e.g. an add-on purchase awaiting
+    // payment). A subscription-scoped lookup would hand us whichever job
+    // came first and close it, so a routine preapproval event could retire
+    // an add-on purchase's job while its payment was still pending. That
+    // purchase would then never be confirmed: MP Preferences have no
+    // Webhooks v2 channel, so its polling job is the only path it has.
     if (source !== 'polling') {
         try {
             const pollingStorage = billing.getStorage().subscriptionPollingJobs;
             if (pollingStorage) {
-                const activeJob = await pollingStorage.findActiveBySubscriptionId(
-                    localSubscription.id
+                const activeJob = await pollingStorage.findActiveByProviderResourceId(
+                    'mercadopago',
+                    mpPreapprovalId
                 );
                 if (activeJob) {
                     await pollingStorage.update({

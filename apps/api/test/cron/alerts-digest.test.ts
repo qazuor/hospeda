@@ -47,18 +47,22 @@ const {
     }
 }));
 
-vi.mock('@repo/service-core', () => ({
-    PriceDropEvaluatorService: vi.fn().mockImplementation(function () {
-        return {
-            evaluatePriceDrops: mockEvaluatePriceDrops
-        };
-    }),
-    PromoOfferEvaluatorService: vi.fn().mockImplementation(function () {
-        return {
-            evaluatePromoOffers: mockEvaluatePromoOffers
-        };
-    })
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        PriceDropEvaluatorService: vi.fn().mockImplementation(function () {
+            return {
+                evaluatePriceDrops: mockEvaluatePriceDrops
+            };
+        }),
+        PromoOfferEvaluatorService: vi.fn().mockImplementation(function () {
+            return {
+                evaluatePromoOffers: mockEvaluatePromoOffers
+            };
+        })
+    };
+});
 
 vi.mock('@repo/db', () => ({
     UserModel: vi.fn().mockImplementation(function () {

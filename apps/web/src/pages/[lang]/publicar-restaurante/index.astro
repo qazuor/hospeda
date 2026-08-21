@@ -1,28 +1,41 @@
 ---
 /**
  * @file publicar-restaurante/index.astro
- * @description Public "Publicá tu restaurante" lead form page (SPEC-239 T-056).
+ * @description Public gastronomy vertical landing (HOS-690).
  *
- * A prospective merchant submits their interest via a lead form that posts to
- * the public commerce-lead endpoint. The platform team reviews leads and
- * provisions owners from the admin (SPEC-239 T-047/T-057) — there is NO plan
- * selection or checkout on this public page. Copy is intentionally generic so
- * SPEC-240 (other commerce domains) can reuse the same flow.
+ * Rebuilt from "hero + CommerceLead lead form" into a full marketing page:
+ * hero, benefits, how-it-works, price, FAQ. §6.5/§6.12 of the HOS-589 spec
+ * describe this shape; before HOS-690 the page was only a hero over the lead
+ * form, so every section below the hero is new content, not a preserved
+ * block.
+ *
+ * The lead form (`CommerceLead`) that used to live here is NOT deleted — it
+ * still backs the commerce onboarding create-listing flow and
+ * `CommerceCreateForm.client.tsx` still imports its `DestinationOption` type.
+ * Retiring the component/route itself is HOS-693's job.
  *
  * @route     /[lang]/publicar-restaurante/
- * @rendering SSR (on-demand, no prerender)
+ * @rendering SSR (on-demand, no prerender); edge-cacheable via the `pricing`
+ *   cache class, tagged `CACHE_TAG_PRICING` (HOS-690 AC-37) — see
+ *   `apps/web/src/lib/cache/response-cache.ts`. Neither the price nor the
+ *   copy on this page depends on the visitor, so it no longer parses the
+ *   session (removed from `SESSION_OPTIONAL_SEGMENTS`, added to
+ *   `CACHEABLE_ROUTE_FAMILIES`).
  */
 
+import { CACHE_TAG_PRICING } from '@repo/cache-tags';
+import { CheckIcon, MapIcon, SettingsIcon, ShieldIcon } from '@repo/icons';
+import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
+import JsonLd from '@/components/seo/JsonLd.astro';
+import SEOHead from '@/components/seo/SEOHead.astro';
+import GradientButton from '@/components/shared/ui/GradientButton.astro';
+import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { applyCacheHeaders } from '@/lib/cache/response-cache';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { getIntlLocale } from '@/lib/pricing-plans';
+import { buildUrl } from '@/lib/urls';
 import BaseLayout from '@/layouts/BaseLayout.astro';
-import SEOHead from '@/components/seo/SEOHead.astro';
-import Breadcrumbs from '@/components/shared/navigation/Breadcrumbs.astro';
-import { destinationsApi } from '@/lib/api/endpoints';
-import {
-    CommerceLead,
-    type DestinationOption
-} from '@/components/gastronomy/CommerceLead.client';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const { t } = createTranslations(locale);
@@ -32,28 +45,111 @@ const subtitle = t('commerce.lead.subtitle');
 
 const canonicalUrl = new URL(Astro.url.pathname, Astro.site).href;
 
-// --- Auth (HOS-295) ---
-// The page stays public — an anonymous visitor is the primary case. When there
-// IS a session, hand the visitor down to the island so it can pre-fill the
-// contact fields; islands cannot read `Astro.locals` themselves. This is only
-// populated because `publicar-restaurante` is listed in
-// `SESSION_OPTIONAL_SEGMENTS` (see `@/lib/routes`).
-// Only the two fields the form seeds — island props are serialized into the
-// rendered HTML, so the user id has no business being here.
-const currentUser = Astro.locals.user
-    ? {
-          name: Astro.locals.user.name ?? null,
-          email: Astro.locals.user.email ?? null
-      }
+// Cache at the edge (HOS-690 AC-37). This landing's HTML is now identical for
+// every visitor — only a plan price edit or a deploy changes it — so it moved
+// off `SESSION_OPTIONAL_SEGMENTS` and onto the `pricing` cache class, tagged
+// so a plan write purges it (see `PlanService.triggerPricingRevalidation`).
+// Goes through `applyCacheHeaders` rather than setting `Cache-Control`
+// directly: a tag that fails to namespace would otherwise ship a cacheable
+// response nothing could purge (HOS-426).
+applyCacheHeaders({
+    locals: Astro.locals,
+    headers: Astro.response.headers,
+    cacheable: true,
+    cacheClass: 'pricing',
+    tags: [CACHE_TAG_PRICING]
+});
+
+// The gastronomy vertical's single sellable tier (HOS-688 §6.8), scoped by
+// `?domain=gastronomy` on the public plans endpoint (HOS-685). `category`
+// on this plan is `'owner'` only to satisfy `PlanCategory`'s type — the real
+// discriminator is `product_domain`, already applied server-side by the
+// `domain` query param, so no further category filtering narrows the result
+// beyond `isActive`.
+const plansResult = await fetchPublicPlans({ domain: 'gastronomy' });
+const gastronomyPlan = plansResult.ok
+    ? (filterPlansByCategory(plansResult.plans, 'owner')[0] ?? null)
     : null;
 
-const destinationsResult = await destinationsApi.list({
-    destinationType: 'CITY',
-    pageSize: 100
-});
-const destinations: ReadonlyArray<DestinationOption> = destinationsResult.ok
-    ? destinationsResult.data.items.map((item) => ({ id: item.id, name: item.name }))
-    : [];
+const intlLocale = getIntlLocale(locale);
+
+/** Format ARS cents to a locale-aware currency string (mirrors PricingCardsGrid). */
+function formatPriceArs(cents: number): string {
+    const pesos = cents / 100;
+    try {
+        return new Intl.NumberFormat(intlLocale, {
+            style: 'currency',
+            currency: 'ARS',
+            maximumFractionDigits: 0,
+            minimumFractionDigits: 0
+        }).format(pesos);
+    } catch {
+        return `$${pesos.toLocaleString('es-AR')}`;
+    }
+}
+
+const benefits = [
+    {
+        Icon: MapIcon,
+        titleKey: 'commerce.landing.gastronomy.benefits.item1.title',
+        descKey: 'commerce.landing.gastronomy.benefits.item1.desc'
+    },
+    {
+        Icon: SettingsIcon,
+        titleKey: 'commerce.landing.gastronomy.benefits.item2.title',
+        descKey: 'commerce.landing.gastronomy.benefits.item2.desc'
+    },
+    {
+        Icon: ShieldIcon,
+        titleKey: 'commerce.landing.gastronomy.benefits.item3.title',
+        descKey: 'commerce.landing.gastronomy.benefits.item3.desc'
+    }
+] as const;
+
+const steps = [
+    {
+        num: '01',
+        titleKey: 'commerce.landing.gastronomy.howItWorks.step1.title',
+        descKey: 'commerce.landing.gastronomy.howItWorks.step1.desc'
+    },
+    {
+        num: '02',
+        titleKey: 'commerce.landing.gastronomy.howItWorks.step2.title',
+        descKey: 'commerce.landing.gastronomy.howItWorks.step2.desc'
+    },
+    {
+        num: '03',
+        titleKey: 'commerce.landing.gastronomy.howItWorks.step3.title',
+        descKey: 'commerce.landing.gastronomy.howItWorks.step3.desc'
+    }
+] as const;
+
+const priceFeatureKeys = [
+    'commerce.landing.gastronomy.price.feature1',
+    'commerce.landing.gastronomy.price.feature2',
+    'commerce.landing.gastronomy.price.feature3'
+] as const;
+
+const faqs = [
+    { qKey: 'commerce.landing.gastronomy.faq.q1', aKey: 'commerce.landing.gastronomy.faq.a1' },
+    { qKey: 'commerce.landing.gastronomy.faq.q2', aKey: 'commerce.landing.gastronomy.faq.a2' },
+    { qKey: 'commerce.landing.gastronomy.faq.q3', aKey: 'commerce.landing.gastronomy.faq.a3' }
+] as const;
+
+const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: faqs.map((faq) => ({
+        '@type': 'Question',
+        name: t(faq.qKey),
+        acceptedAnswer: {
+            '@type': 'Answer',
+            text: t(faq.aKey)
+        }
+    }))
+};
+
+const signupUrl = buildUrl({ locale, path: 'auth/signup' });
 ---
 
 <BaseLayout locale={locale} title={title} description={subtitle}>
@@ -65,6 +161,7 @@ const destinations: ReadonlyArray<DestinationOption> = destinationsResult.ok
         canonical={canonicalUrl}
         noindex={false}
     />
+    <JsonLd slot="head" data={faqJsonLd} />
 
     <Breadcrumbs locale={locale} items={[{ label: title }]} />
 
@@ -73,18 +170,139 @@ const destinations: ReadonlyArray<DestinationOption> = destinationsResult.ok
             <div class="pub-rest__header" data-reveal="up">
                 <h1 class="pub-rest__title">{title}</h1>
                 <p class="pub-rest__subtitle">{subtitle}</p>
+                <GradientButton
+                    href={signupUrl}
+                    label={t('commerce.landing.gastronomy.price.cta', 'Empezar ahora')}
+                    variant="primary"
+                    icon="true"
+                />
             </div>
         </div>
     </section>
 
-    <section class="pub-rest__form section section--warm">
-        <div class="pub-rest__form-container section__container">
-            <CommerceLead
-                client:load
-                locale={locale}
-                destinations={destinations}
-                currentUser={currentUser}
-            />
+    <section class="pub-rest__benefits section section--warm">
+        <div class="pub-rest__container section__container">
+            <p class="pub-rest__tagline" data-reveal="up">
+                {t('commerce.landing.gastronomy.benefits.tagline')}
+            </p>
+            <h2 class="pub-rest__section-title" data-reveal="up">
+                {t('commerce.landing.gastronomy.benefits.title')}
+            </h2>
+            <div class="pub-rest__benefits-grid">
+                {
+                    benefits.map((b, i) => (
+                        <div
+                            class="pub-rest__benefit-card"
+                            data-reveal="up"
+                            data-stagger-index={Math.min(i, 6)}
+                            data-stagger-step="100"
+                        >
+                            <div class="pub-rest__benefit-icon" aria-hidden="true">
+                                <b.Icon size={28} weight="regular" />
+                            </div>
+                            <h3 class="pub-rest__benefit-title">{t(b.titleKey)}</h3>
+                            <p class="pub-rest__benefit-desc">{t(b.descKey)}</p>
+                        </div>
+                    ))
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="pub-rest__steps section">
+        <div class="pub-rest__container section__container">
+            <p class="pub-rest__tagline" data-reveal="up">
+                {t('commerce.landing.gastronomy.howItWorks.tagline')}
+            </p>
+            <h2 class="pub-rest__section-title" data-reveal="up">
+                {t('commerce.landing.gastronomy.howItWorks.title')}
+            </h2>
+            <div class="pub-rest__steps-grid">
+                {
+                    steps.map((s, i) => (
+                        <div
+                            class="pub-rest__step"
+                            data-reveal="up"
+                            data-stagger-index={Math.min(i, 6)}
+                            data-stagger-step="100"
+                        >
+                            <span class="pub-rest__step-num">{s.num}</span>
+                            <h3 class="pub-rest__step-title">{t(s.titleKey)}</h3>
+                            <p class="pub-rest__step-desc">{t(s.descKey)}</p>
+                        </div>
+                    ))
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="pub-rest__price section section--warm">
+        <div class="pub-rest__container section__container">
+            <p class="pub-rest__tagline" data-reveal="up">
+                {t('commerce.landing.gastronomy.price.tagline')}
+            </p>
+            <h2 class="pub-rest__section-title" data-reveal="up">
+                {t('commerce.landing.gastronomy.price.title')}
+            </h2>
+            <div class="pub-rest__price-card" data-reveal="up">
+                {
+                    gastronomyPlan ? (
+                        <Fragment>
+                            <p class="pub-rest__price-amount">
+                                {formatPriceArs(gastronomyPlan.monthlyPriceArs)}
+                                <span class="pub-rest__price-suffix">
+                                    {t('commerce.landing.gastronomy.price.priceSuffix')}
+                                </span>
+                            </p>
+                            {gastronomyPlan.hasTrial && (
+                                <p class="pub-rest__price-trial">
+                                    {t('commerce.landing.gastronomy.price.trial')}
+                                </p>
+                            )}
+                            <ul class="pub-rest__price-features">
+                                {priceFeatureKeys.map((key) => (
+                                    <li class="pub-rest__price-feature">
+                                        <CheckIcon size={18} weight="bold" aria-hidden="true" />
+                                        {t(key)}
+                                    </li>
+                                ))}
+                            </ul>
+                            <GradientButton
+                                href={signupUrl}
+                                label={t('commerce.landing.gastronomy.price.cta')}
+                                variant="accent"
+                                shape="rounded"
+                                icon="true"
+                            />
+                        </Fragment>
+                    ) : (
+                        <p class="pub-rest__price-unavailable">
+                            {t('commerce.landing.gastronomy.price.unavailable')}
+                        </p>
+                    )
+                }
+            </div>
+        </div>
+    </section>
+
+    <section class="pub-rest__faq section">
+        <div class="pub-rest__container section__container">
+            <p class="pub-rest__tagline" data-reveal="up">
+                {t('commerce.landing.gastronomy.faq.tagline')}
+            </p>
+            <h2 class="pub-rest__section-title" data-reveal="up">
+                {t('commerce.landing.gastronomy.faq.title')}
+            </h2>
+            <div class="pub-rest__faq-list" data-reveal="up">
+                {
+                    faqs.map((faq) => (
+                        <details class="pub-rest__faq-item">
+                            <summary class="pub-rest__faq-question">{t(faq.qKey)}</summary>
+                            <p class="pub-rest__faq-answer">{t(faq.aKey)}</p>
+                        </details>
+                    ))
+                }
+            </div>
         </div>
     </section>
 </BaseLayout>
@@ -103,6 +321,10 @@ const destinations: ReadonlyArray<DestinationOption> = destinationsResult.ok
         text-align: center;
         max-width: 700px;
         margin-inline: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: var(--space-5, 1.25rem);
     }
     .pub-rest__title {
         font-family: var(--font-heading);
@@ -119,12 +341,191 @@ const destinations: ReadonlyArray<DestinationOption> = destinationsResult.ok
         margin: 0;
         line-height: 1.6;
     }
-    .pub-rest__form {
-        padding-block: var(--space-section, 120px);
+
+    .pub-rest__section-title,
+    .pub-rest__tagline {
+        text-align: center;
     }
-    .pub-rest__form-container {
-        max-width: 720px;
+
+    .pub-rest__tagline {
+        font-family: var(--font-decorative);
+        font-weight: 700;
+        font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+        /* HOS-690 a11y fix: --brand-accent (#f07900) on --surface-warm (#e0f1ff)
+           measures 2.44:1, below the 3:1 AA large-text minimum (a11y sweep,
+           color-contrast, serious). --core-foreground is the design system's
+           always-AA-safe text token on any light surface. */
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2);
+    }
+
+    .pub-rest__section-title {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(1.75rem, 4vw, 2.5rem);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-8);
+    }
+
+    /* Benefits */
+    .pub-rest__benefits-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-card-gap);
+        text-align: left;
+    }
+    .pub-rest__benefit-card {
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        padding: var(--space-6);
+        box-shadow: var(--shadow-card);
+    }
+    .pub-rest__benefit-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 56px;
+        height: 56px;
+        border-radius: var(--radius-md);
+        background-color: var(--brand-primary-a10);
+        color: var(--brand-primary);
+        margin-bottom: var(--space-4);
+    }
+    .pub-rest__benefit-title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: var(--text-lg);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2);
+    }
+    .pub-rest__benefit-desc {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Steps */
+    .pub-rest__steps-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: var(--space-card-gap);
+        text-align: center;
+    }
+    .pub-rest__step-num {
+        font-family: var(--font-heading);
+        font-size: clamp(2rem, 4vw, 3rem);
+        font-weight: 700;
+        color: var(--brand-primary-a20);
+        display: block;
+        margin-bottom: var(--space-3);
+    }
+    .pub-rest__step-title {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: var(--text-lg);
+        color: var(--core-foreground);
+        margin: 0 0 var(--space-2);
+    }
+    .pub-rest__step-desc {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        margin: 0;
+    }
+
+    /* Price */
+    .pub-rest__price-card {
+        max-width: 420px;
         margin-inline: auto;
-        padding-inline: var(--space-5, 1.25rem);
+        text-align: center;
+        background-color: var(--core-card);
+        border-radius: var(--radius-card);
+        padding: var(--space-8);
+        box-shadow: var(--shadow-card);
+    }
+    .pub-rest__price-amount {
+        font-family: var(--font-heading);
+        font-weight: 700;
+        font-size: clamp(2rem, 5vw, 2.75rem);
+        color: var(--core-foreground);
+        margin: 0;
+    }
+    .pub-rest__price-suffix {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        font-weight: 400;
+    }
+    .pub-rest__price-trial {
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+        color: var(--brand-accent);
+        margin: var(--space-2) 0 var(--space-4);
+    }
+    .pub-rest__price-features {
+        list-style: none;
+        margin: 0 0 var(--space-6);
+        padding: 0;
+        text-align: left;
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    .pub-rest__price-feature {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        color: var(--core-foreground);
+        font-family: var(--font-sans);
+        font-size: var(--text-body-sm);
+    }
+    .pub-rest__price-feature :global(svg) {
+        color: var(--brand-primary);
+        flex-shrink: 0;
+    }
+    .pub-rest__price-unavailable {
+        color: var(--core-muted-foreground);
+        font-family: var(--font-sans);
+    }
+
+    /* FAQ */
+    .pub-rest__faq-list {
+        max-width: 700px;
+        margin: 0 auto;
+        text-align: left;
+    }
+    .pub-rest__faq-item {
+        border-bottom: 1px solid var(--border);
+        padding: var(--space-4) 0;
+    }
+    .pub-rest__faq-question {
+        font-family: var(--font-heading);
+        font-weight: 600;
+        font-size: var(--text-body-lg);
+        color: var(--core-foreground);
+        cursor: pointer;
+        list-style: none;
+        padding: var(--space-2) 0;
+    }
+    .pub-rest__faq-question::-webkit-details-marker {
+        display: none;
+    }
+    .pub-rest__faq-answer {
+        font-family: var(--font-sans);
+        font-size: var(--text-body);
+        color: var(--core-muted-foreground);
+        line-height: 1.6;
+        padding: var(--space-2) 0 var(--space-4);
+        margin: 0;
+    }
+
+    @media (max-width: 768px) {
+        .pub-rest__benefits-grid,
+        .pub-rest__steps-grid {
+            grid-template-columns: 1fr;
+        }
     }
 </style>

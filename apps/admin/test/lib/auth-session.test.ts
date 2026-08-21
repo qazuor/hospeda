@@ -150,6 +150,72 @@ describe('resolveAuthSession (BETA-71 parallel fetch)', () => {
         expect(result.isAuthenticated).toBe(true);
         expect(result.passwordChangeRequired).toBe(true);
     });
+
+    // ─── HOS-609: languageWeb extraction from the session's settings field ───
+    it('extracts languageWeb when settings arrives as a plain object', async () => {
+        server.use(
+            http.get(SESSION_URL, () =>
+                HttpResponse.json({ user: { id: 'u6', settings: { languageWeb: 'pt' } } })
+            ),
+            http.get(ME_URL, () => HttpResponse.json({ success: true, data: { actor: {} } }))
+        );
+
+        const result = await resolveAuthSession({ apiUrl: API, cookieHeader: 'session=valid' });
+
+        expect(result.languageWeb).toBe('pt');
+    });
+
+    it('extracts languageWeb when settings arrives as a JSON string', async () => {
+        server.use(
+            http.get(SESSION_URL, () =>
+                HttpResponse.json({
+                    user: { id: 'u7', settings: JSON.stringify({ languageWeb: 'en' }) }
+                })
+            ),
+            http.get(ME_URL, () => HttpResponse.json({ success: true, data: { actor: {} } }))
+        );
+
+        const result = await resolveAuthSession({ apiUrl: API, cookieHeader: 'session=valid' });
+
+        expect(result.languageWeb).toBe('en');
+    });
+
+    it('returns languageWeb=null when settings has no languageWeb', async () => {
+        server.use(
+            http.get(SESSION_URL, () =>
+                HttpResponse.json({ user: { id: 'u8', settings: { themeWeb: 'dark' } } })
+            ),
+            http.get(ME_URL, () => HttpResponse.json({ success: true, data: { actor: {} } }))
+        );
+
+        const result = await resolveAuthSession({ apiUrl: API, cookieHeader: 'session=valid' });
+
+        expect(result.languageWeb).toBeNull();
+    });
+
+    it('returns languageWeb=null when settings is missing entirely', async () => {
+        server.use(
+            http.get(SESSION_URL, () => HttpResponse.json({ user: { id: 'u9' } })),
+            http.get(ME_URL, () => HttpResponse.json({ success: true, data: { actor: {} } }))
+        );
+
+        const result = await resolveAuthSession({ apiUrl: API, cookieHeader: 'session=valid' });
+
+        expect(result.languageWeb).toBeNull();
+    });
+
+    it('returns languageWeb=null when settings is malformed JSON', async () => {
+        server.use(
+            http.get(SESSION_URL, () =>
+                HttpResponse.json({ user: { id: 'u10', settings: '{not-json' } })
+            ),
+            http.get(ME_URL, () => HttpResponse.json({ success: true, data: { actor: {} } }))
+        );
+
+        const result = await resolveAuthSession({ apiUrl: API, cookieHeader: 'session=valid' });
+
+        expect(result.languageWeb).toBeNull();
+    });
 });
 
 describe('fetchAuthSession (HOS-33 T-004 — getWebRequest() -> getRequest() rename)', () => {

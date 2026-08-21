@@ -22,6 +22,7 @@
  * @module services/billing/subscription-domain-metadata
  */
 
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import { billingSubscriptions, eq, getDb } from '@repo/db';
 
 /**
@@ -38,26 +39,26 @@ export interface SubscriptionDomainMetadata {
 }
 
 /**
- * Subscription statuses that mean "this subscription is being paid for", i.e.
- * the only ones allowed to claim a domain link row.
+ * Whether a billing status means the subscription currently entitles its
+ * listing to be public, i.e. the only ones allowed to claim a domain link row.
  *
- * Mirrors `ACTIVE_STATUSES` in `@repo/service-core`'s `commerce-visibility.ts`
- * — the set that decides whether a listing may be PUBLIC. Recovery is scoped to
- * exactly these because the dangerous inverse is a NON-publishing status
- * (`cancelled` on the abandoned first click, reaped by
- * `abandoned-pending-subs`) stealing the row back from the subscription the
- * buyer actually paid, and unpublishing a paid listing.
- */
-const PUBLISHING_STATUSES: ReadonlySet<string> = new Set(['active', 'trialing']);
-
-/**
- * Whether a billing status means the subscription is currently being paid for.
+ * Delegates to the canonical `isEntitlementGrantingStatus` (`@repo/billing`),
+ * the same predicate `commerce-visibility.ts` uses to decide whether a listing
+ * may be PUBLIC. Recovery is scoped to exactly these because the dangerous
+ * inverse is a NON-publishing status (`cancelled` on the abandoned first click,
+ * reaped by `abandoned-pending-subs`) stealing the row back from the
+ * subscription the buyer actually paid, and unpublishing a paid listing.
+ *
+ * HOS-702: this used to be a hand-rolled `new Set(['active', 'trialing'])`,
+ * which excluded `comp` — a complimentary commerce/partner subscription could
+ * never claim its own link row, so the listing it paid nothing for (by design)
+ * also stayed unpublished.
  *
  * @param status - A `billing_subscriptions.status` value.
- * @returns `true` for `active` / `trialing`, `false` for everything else.
+ * @returns `true` for the entitlement-granting statuses, `false` otherwise.
  */
 export function isPublishingSubscriptionStatus(status: string): boolean {
-    return PUBLISHING_STATUSES.has(status);
+    return isEntitlementGrantingStatus(status);
 }
 
 /**

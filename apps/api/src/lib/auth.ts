@@ -825,8 +825,11 @@ function buildAuth() {
                         // publish. Role promotion to HOST already happened in
                         // the onboarding draft flow.
                         try {
-                            const billing = getQZPayBilling();
-                            const syncService = new BillingCustomerSyncService(billing);
+                            // HOS-596: the customer-sync facade, never the strict
+                            // one — a MercadoPago failure must not roll back the
+                            // local billing_customers row.
+                            const customerSyncBilling = getQZPayBilling({ forCustomerSync: true });
+                            const syncService = new BillingCustomerSyncService(customerSyncBilling);
                             await syncService.ensureCustomerExists({
                                 userId: user.id,
                                 email: user.email,
@@ -955,8 +958,11 @@ function buildAuth() {
                     after: async (user) => {
                         // Sync billing customer data when user is updated
                         try {
-                            const billing = getQZPayBilling();
-                            const syncService = new BillingCustomerSyncService(billing);
+                            // HOS-596: the customer-sync facade, never the strict
+                            // one — a MercadoPago failure must not roll back the
+                            // local billing_customers row.
+                            const customerSyncBilling = getQZPayBilling({ forCustomerSync: true });
+                            const syncService = new BillingCustomerSyncService(customerSyncBilling);
                             await syncService.syncCustomerData({
                                 userId: user.id,
                                 email: user.email,

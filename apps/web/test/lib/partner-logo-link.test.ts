@@ -97,6 +97,29 @@ describe('resolvePartnerLogoLink', () => {
         expect(link.rel).toBe('sponsored nofollow noopener');
     });
 
+    it.each([
+        'javascript:alert(1)',
+        'JavaScript:alert(1)',
+        '\u0001javascript:alert(1)',
+        'data:text/html,<script>alert(1)</script>',
+        'vbscript:msgbox(1)'
+    ])('gives a partner NO link when the stored website is %j', (websiteUrl) => {
+        // HOS-592 / F-02. `websiteUrl` is written through
+        // `PATCH /protected/partners/mine` (session only) and validated with
+        // `z.string().url()`, which accepts every one of these. The carousel
+        // renders its track twice, so a raw value would have shipped the same
+        // executable link twice on the home page.
+        const link = resolvePartnerLogoLink({
+            partner: { ...silver, url: websiteUrl },
+            locale: 'es'
+        });
+
+        // No link at all — never the raw value, and never an href of undefined.
+        expect(link.href).toBeUndefined();
+        expect(link.rel).toBeUndefined();
+        expect(link.target).toBeUndefined();
+    });
+
     it('builds the internal href for the active locale', () => {
         // Arrange / Act
         const link = resolvePartnerLogoLink({ partner: gold, locale: 'en' });

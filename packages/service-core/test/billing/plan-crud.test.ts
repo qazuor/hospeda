@@ -32,6 +32,10 @@ const { mockInsertPlanAuditLog, mockDiffPlanFields } = vi.hoisted(() => ({
     mockDiffPlanFields: vi.fn().mockReturnValue({ added: {}, removed: {}, changed: {} })
 }));
 
+const { mockInArray } = vi.hoisted(() => ({
+    mockInArray: vi.fn((col: unknown, vals: unknown) => ({ _inArray: { col, vals } }))
+}));
+
 // ─── Module mocks ──────────────────────────────────────────────────────────
 
 vi.mock('@repo/db', () => ({
@@ -83,7 +87,7 @@ vi.mock('@repo/db', () => ({
     eq: vi.fn((col: unknown, val: unknown) => ({ _eq: { col, val } })),
     isNull: vi.fn((col: unknown) => ({ _isNull: col })),
     isNotNull: vi.fn((col: unknown) => ({ _isNotNull: col })),
-    inArray: vi.fn((col: unknown, vals: unknown) => ({ _inArray: { col, vals } })),
+    inArray: mockInArray,
     count: vi.fn(() => ({ _count: true })),
     sql: Object.assign(
         vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
@@ -493,6 +497,35 @@ describe('plan.crud', () => {
             expect(result.data.items[0]?.activeSubscriptionCount).toBe(5);
         });
 
+        it('should filter the subscription-count query by the canonical ENTITLEMENT_GRANTING_STATUSES set, including comp (HOS-736)', async () => {
+            // Arrange
+            const planRow = makePlanRow();
+            const priceRow = makePriceRow();
+            const db = buildMockDb([
+                [{ value: 1 }],
+                [planRow],
+                [priceRow],
+                [{ planId: 'plan-uuid-1', value: 3 }]
+            ]);
+            mockGetDb.mockReturnValue(db);
+
+            // Act
+            const result = await listPlans({});
+
+            // Assert
+            expect(result.success).toBe(true);
+            // The subscriber-count query must derive its status filter from the
+            // canonical ENTITLEMENT_GRANTING_STATUSES constant (which includes
+            // 'comp'), never a hand-rolled ['active', 'trialing'] literal —
+            // regression test for HOS-736 (comp subscribers were undercounted
+            // in the admin plans list "subscriber count" column).
+            const statusFilterCall = mockInArray.mock.calls.find(([col]) => col === 'status');
+            expect(statusFilterCall).toBeDefined();
+            expect(statusFilterCall?.[1]).toEqual(
+                expect.arrayContaining(['active', 'trialing', 'comp'])
+            );
+        });
+
         it('should return INTERNAL_ERROR when db throws', async () => {
             // Arrange
             mockGetDb.mockReturnValue({
@@ -746,6 +779,33 @@ describe('plan.crud', () => {
             );
         });
 
+        it('HOS-692 AC-29: does NOT write monthlyPriceArs into the metadata mirror', async () => {
+            // Arrange
+            const planRow = makePlanRow();
+            const priceRow = makePriceRow();
+            let insertedDb: ReturnType<typeof buildMockDb> | undefined;
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                insertedDb = buildMockDb([[]], [[planRow], [priceRow]]);
+                return fn(insertedDb);
+            });
+
+            // Act
+            await createPlan(baseInput);
+
+            // Assert — objectContaining alone can't prove ABSENCE of a key, so
+            // assert directly on the metadata object's own keys.
+            const insertChain = insertedDb?.insert.mock.results[0]?.value;
+            const insertedValues = insertChain?.values.mock.calls[0]?.[0] as {
+                metadata: Record<string, unknown>;
+            };
+            expect(insertedValues.metadata).not.toHaveProperty('monthlyPriceArs');
+            // The typed column write (asserted above) is still live — this
+            // proves the mirror removal did NOT also silently drop the price.
+            expect(insertedValues.metadata).toHaveProperty('annualPriceArs');
+        });
+
         it('should return ALREADY_EXISTS when slug is duplicate', async () => {
             // Arrange
             mockWithTransaction.mockImplementation(async function (
@@ -958,6 +1018,64 @@ describe('plan.crud', () => {
                     monthlyPriceArs: 700000,
                     annualPriceArs: 7000000
                 })
+            );
+        });
+
+        it('HOS-692 AC-29: editing monthlyPriceArs does NOT reintroduce the metadata mirror', async () => {
+            // Arrange — a plan row already past the HOS-692 cleanup: its
+            // metadata carries no monthlyPriceArs key, matching what
+            // 0066-hos-692-domain-rewrite-and-plan-cleanup leaves behind.
+            const { monthlyPriceArs: _omit, ...metadataWithoutMirror } = {
+                displayName: 'Básico',
+                category: 'owner',
+                isDefault: false,
+                sortOrder: 1,
+                trialDays: 0,
+                hasTrial: false,
+                monthlyPriceArs: 500000,
+                annualPriceArs: null,
+                monthlyPriceUsdRef: 5
+            };
+            const existingPlan = makePlanRow({ metadata: metadataWithoutMirror });
+            const updatedPlan = makePlanRow({ metadata: metadataWithoutMirror });
+            const existingMonthlyPrice = makePriceRow({ id: 'price-monthly-1' });
+            const priceRow = makePriceRow();
+            let updatedDb: ReturnType<typeof buildMockDb> | undefined;
+
+            mockWithTransaction.mockImplementation(async function (
+                fn: (db: unknown) => Promise<unknown>
+            ) {
+                updatedDb = buildMockDb(
+                    [
+                        [existingPlan], // getPlanByIdInternal
+                        [existingMonthlyPrice], // monthly price lookup
+                        [priceRow] // final price fetch
+                    ],
+                    [],
+                    [[updatedPlan], []] // plan update / monthly price update
+                );
+                return fn(updatedDb);
+            });
+
+            // Act — edit the price via updatePlan, exactly like the admin panel would.
+            await updatePlan('plan-uuid-1', { monthlyPriceArs: 900000 });
+
+            // Assert — the metadata written back must still lack the mirror key
+            // (objectContaining can't prove absence, so assert on the object's
+            // own keys), while the typed column still receives the new value.
+            const planUpdateChain = updatedDb?.update.mock.results[0]?.value;
+            const updatePayload = planUpdateChain?.set.mock.calls[0]?.[0] as {
+                metadata: Record<string, unknown>;
+                monthlyPriceArs?: number;
+            };
+            expect(updatePayload.metadata).not.toHaveProperty('monthlyPriceArs');
+            expect(updatePayload.monthlyPriceArs).toBe(900000);
+
+            // And billing_prices.unitAmount (the second update() call) also
+            // receives the new value — the other live write AC-29 requires.
+            const priceUpdateChain = updatedDb?.update.mock.results[1]?.value;
+            expect(priceUpdateChain?.set).toHaveBeenCalledWith(
+                expect.objectContaining({ unitAmount: 900000 })
             );
         });
 

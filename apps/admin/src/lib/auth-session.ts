@@ -32,6 +32,14 @@ export interface AuthState {
     readonly email: string | null;
     readonly avatar: string | null;
     readonly emailVerified: boolean;
+    /**
+     * The account's saved web-locale preference (`user.settings.languageWeb`),
+     * read off the Better Auth session's `settings` additionalField (HOS-609).
+     * `null` for a guest, an account with no stored preference, or an
+     * unparseable `settings` value — callers treat `null` as "no signal" and
+     * fall through to the next precedence step.
+     */
+    readonly languageWeb: string | null;
 }
 
 /**
@@ -54,8 +62,41 @@ const UNAUTHENTICATED_STATE: AuthState = {
     displayName: null,
     email: null,
     avatar: null,
-    emailVerified: false
+    emailVerified: false,
+    languageWeb: null
 } as const;
+
+/**
+ * Extracts `languageWeb` out of the Better Auth session's `settings`
+ * additionalField (HOS-609). The field is mapped as a plain column on the
+ * `users` table, but nothing here assumes a fixed wire shape: it may arrive
+ * already parsed (a plain object, over an in-process call) or as a JSON
+ * string (a stringified column value serialized across the HTTP hop this
+ * function makes to `/api/auth/get-session`). Either is handled; anything
+ * else — absent, malformed JSON, non-string `languageWeb` — resolves to
+ * `null`, treated by every caller as "no account preference".
+ *
+ * @param rawSettings - The session user's raw `settings` value, of unknown shape.
+ * @returns The saved web-locale preference, or `null`.
+ */
+function extractLanguageWeb(rawSettings: unknown): string | null {
+    let settings: unknown = rawSettings;
+
+    if (typeof settings === 'string') {
+        try {
+            settings = JSON.parse(settings);
+        } catch {
+            return null;
+        }
+    }
+
+    if (!settings || typeof settings !== 'object') {
+        return null;
+    }
+
+    const languageWeb = (settings as Record<string, unknown>).languageWeb;
+    return typeof languageWeb === 'string' ? languageWeb : null;
+}
 
 /**
  * Resolve the admin auth state by talking to the API, given an already-known
@@ -104,6 +145,7 @@ export async function resolveAuthSession({
                 email?: string;
                 image?: string;
                 emailVerified?: boolean;
+                settings?: unknown;
             };
         };
 
@@ -150,7 +192,8 @@ export async function resolveAuthSession({
             displayName: sessionData.user.name || null,
             email: sessionData.user.email || null,
             avatar: sessionData.user.image || null,
-            emailVerified: sessionData.user.emailVerified ?? false
+            emailVerified: sessionData.user.emailVerified ?? false,
+            languageWeb: extractLanguageWeb(sessionData.user.settings)
         };
     } catch {
         return UNAUTHENTICATED_STATE;

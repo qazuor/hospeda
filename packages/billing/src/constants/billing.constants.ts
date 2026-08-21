@@ -34,6 +34,21 @@ export const COMPLEX_TRIAL_DAYS = 14;
 export const TOURIST_TRIAL_DAYS = 30;
 
 /**
+ * Trial period for the sellable per-vertical commerce plans (gastronomy-premium
+ * / experience-premium, HOS-688).
+ *
+ * Owner decision (HOS-590, 2026-08-19): commerce gets the SAME 30 days as every
+ * accommodation-side tier (`OWNER_TRIAL_DAYS` / `TOURIST_TRIAL_DAYS`) — OQ-4 was
+ * resolved in favor of one number platform-wide rather than carrying a second
+ * one through copy, emails, and the plans page. Kept as its own literal rather
+ * than aliased to `OWNER_TRIAL_DAYS`, for the same reason `TOURIST_TRIAL_DAYS`
+ * is: the three tiers are independent commercial decisions that happen to
+ * agree today, and an alias would let a future change to one silently move
+ * the others.
+ */
+export const COMMERCE_TRIAL_DAYS = 30;
+
+/**
  * Reference constant for the initial-payment grace window, in days.
  *
  * IMPORTANT: This constant is NOT the value enforced at runtime. qzpay-core's

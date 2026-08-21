@@ -25,13 +25,21 @@ vi.mock('@qazuor/qzpay-hono', () => ({
     createWebhookRouter: vi.fn().mockReturnValue({})
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: vi.fn(),
     getAddonBySlug: vi.fn()
 }));
 
 // Mock @repo/db with minimal stubs -- only needed because some modules
 // import table schemas at load time. No query chain mocking needed.
+// WHOLE-module mock: any @repo/db export the code under test reaches for and
+// that is missing here is `undefined`, and calling it throws mid-chain. Because
+// the webhook helpers swallow their own DB errors, such a throw is INVISIBLE —
+// this mock previously omitted `and`, so `markEventFailedByProviderId` threw on
+// every run of the test below while the test stayed green (the `.set()` call it
+// asserted happens before the `.where(and(...))` that blew up). Keep the
+// operator list complete.
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(),
     billingWebhookEvents: {
@@ -43,9 +51,30 @@ vi.mock('@repo/db', () => ({
         payload: 'payload',
         error: 'error',
         processedAt: 'processedAt',
+        attempts: 'attempts',
+        livemode: 'livemode',
         createdAt: 'createdAt'
     },
-    eq: vi.fn((field: unknown, value: unknown) => ({ field, value }))
+    billingWebhookDeadLetter: {
+        id: 'id',
+        providerEventId: 'providerEventId',
+        provider: 'provider',
+        type: 'type',
+        payload: 'payload',
+        error: 'error',
+        attempts: 'attempts',
+        resolvedAt: 'resolvedAt',
+        livemode: 'livemode',
+        createdAt: 'createdAt'
+    },
+    eq: vi.fn((field: unknown, value: unknown) => ({ field, value })),
+    and: vi.fn((...conditions: unknown[]) => ({ __and: conditions })),
+    or: vi.fn((...conditions: unknown[]) => ({ __or: conditions })),
+    isNull: vi.fn((field: unknown) => ({ __isNull: field })),
+    sql: vi.fn(
+        (strings: TemplateStringsArray, ...values: unknown[]) =>
+            ({ __sql: strings.join('?'), values }) as unknown
+    )
 }));
 
 vi.mock('@repo/notifications', () => ({
@@ -301,6 +330,63 @@ describe('MercadoPago Webhook Handler', () => {
             const result = extractAddonMetadata(metadata);
             expect(result).toBeNull();
         });
+
+        // ── HOS-675: the target accommodation must survive extraction ───────
+        // Dropping it here is what left `featured_listing_addon_grants` empty
+        // in production: the add-on still confirmed, but confirmAddonPurchase
+        // found no accommodationId and skipped the link-row write.
+        it('carries accommodationId through in camelCase (HOS-675)', () => {
+            const result = extractAddonMetadata({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust_123',
+                accommodationId: 'accom_abc'
+            });
+
+            expect(result).toEqual({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust_123',
+                accommodationId: 'accom_abc'
+            });
+        });
+
+        it('carries accommodationId through in snake_case (HOS-675)', () => {
+            // MercadoPago normalizes preference metadata keys to snake_case on
+            // the payment object, so the snake spelling is the one a real MP
+            // payment payload arrives with.
+            const result = extractAddonMetadata({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust_123',
+                accommodation_id: 'accom_snake'
+            });
+
+            expect(result).toEqual({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust_123',
+                accommodationId: 'accom_snake'
+            });
+        });
+
+        it('omits accommodationId entirely for an owner-wide addon (HOS-675)', () => {
+            const result = extractAddonMetadata({
+                addonSlug: 'extra-photos-20',
+                customerId: 'cust_123'
+            });
+
+            expect(result).not.toBeNull();
+            expect(result).not.toHaveProperty('accommodationId');
+        });
+
+        it('ignores an empty accommodationId instead of forwarding "" (HOS-675)', () => {
+            const result = extractAddonMetadata({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust_123',
+                accommodationId: '',
+                accommodation_id: ''
+            });
+
+            expect(result).not.toBeNull();
+            expect(result).not.toHaveProperty('accommodationId');
+        });
     });
 
     describe('extractAddonFromReference', () => {
@@ -492,7 +578,13 @@ describe('MercadoPago Webhook Handler', () => {
                 type: 'payment.created',
                 providerEventId: 'evt_123',
                 status: 'pending',
-                payload: event
+                payload: event,
+                // HOS-708: livemode = !env.HOSPEDA_MERCADO_PAGO_SANDBOX. This
+                // suite's mocked env Proxy returns `undefined` for any unset
+                // key, so `!undefined` is `true` here — dedicated coverage for
+                // the sandbox=true (livemode=false) case lives in
+                // test/routes/webhooks/webhook-event-livemode.test.ts.
+                livemode: true
             });
             expect(result).toBeUndefined();
         });
@@ -650,7 +742,7 @@ describe('MercadoPago Webhook Handler', () => {
                     payments: {
                         retrieve: vi.fn().mockResolvedValue({
                             id: '987',
-                            amount: 99.99,
+                            amount: 9999, // centavos (= $99.99) — the adapter emits integer minor units
                             currency: 'ARS',
                             status: 'approved',
                             metadata: { customerId: 'cust_123' }
@@ -707,7 +799,7 @@ describe('MercadoPago Webhook Handler', () => {
                     payments: {
                         retrieve: vi.fn().mockResolvedValue({
                             id: '987',
-                            amount: 99.99,
+                            amount: 9999, // centavos (= $99.99) — the adapter emits integer minor units
                             currency: 'ARS',
                             status: 'rejected',
                             statusDetail: 'cc_rejected_insufficient_amount',
@@ -770,7 +862,10 @@ describe('MercadoPago Webhook Handler', () => {
                     payments: {
                         retrieve: vi.fn().mockResolvedValue({
                             id: '987',
-                            amount: 0,
+                            // The adapter reports amounts in CENTAVOS; the
+                            // handler divides by 100 to build the major-units
+                            // `transaction_amount` the webhook payload carries.
+                            amount: 5000,
                             currency: 'ARS',
                             status: 'approved',
                             metadata: {
@@ -796,9 +891,18 @@ describe('MercadoPago Webhook Handler', () => {
 
             await handlePaymentUpdated(context, event);
 
+            // HOS-595: `paymentId` + the settled amount travel with the
+            // confirmation. Without them the purchase row got `payment_id: NULL`
+            // and no `billing_payments` entry was ever written for the charge.
             expect(mockConfirmPurchase).toHaveBeenCalledWith({
                 customerId: 'cust_123',
-                addonSlug: 'premium-photos'
+                addonSlug: 'premium-photos',
+                paymentId: '987',
+                // 5000 centavos in → 50 major units on the payload → 5000
+                // centavos back out. The round-trip is what makes the ledger
+                // amount match the provider's.
+                amountInCents: 5000,
+                currency: 'ARS'
             });
         });
 
@@ -879,8 +983,12 @@ describe('MercadoPago Webhook Handler', () => {
             const event = createMockEvent({ id: 'evt_fail', type: 'payment.created', data: {} });
             await handleWebhookEvent(context, event);
 
-            // Now set up DB mock for the error handler's markEventFailedByProviderId call
-            const mockWhere = vi.fn().mockResolvedValue(undefined);
+            // Now set up DB mock for the error handler's markEventFailedByProviderId call.
+            // HOS-717: the UPDATE ends in `.returning(...)` — the returned row is what
+            // feeds the recovery queue. An empty result means "no pending row matched",
+            // which keeps this test scoped to the status write.
+            const mockStatusReturning = vi.fn().mockResolvedValue([]);
+            const mockWhere = vi.fn().mockReturnValue({ returning: mockStatusReturning });
             const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
             const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
 
@@ -893,10 +1001,12 @@ describe('MercadoPago Webhook Handler', () => {
             await handleWebhookError(error, context);
 
             expect(mockUpdate).toHaveBeenCalled();
-            expect(mockSet).toHaveBeenCalledWith({
-                status: 'failed',
-                error: 'Processing failed'
-            });
+            const [statusUpdate] = mockSet.mock.calls[0] as [Record<string, unknown>];
+            expect(statusUpdate.status).toBe('failed');
+            expect(statusUpdate.error).toBe('Processing failed');
+            // HOS-717: the attempt counter is bumped in the SAME update. Before it,
+            // `billing_webhook_events.attempts` had no writer anywhere in the repo.
+            expect(statusUpdate).toHaveProperty('attempts');
         });
 
         it('should clean up internal event tracking after error handling', async () => {

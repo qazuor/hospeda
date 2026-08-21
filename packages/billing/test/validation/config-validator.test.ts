@@ -608,14 +608,16 @@ describe('Integration Tests', () => {
     it('should have valid plan configurations', () => {
         expect(ALL_PLANS.length).toBeGreaterThan(0);
 
-        // Check each category has at least one plan
+        // Check each category has at least one plan — except 'complex', which
+        // HOS-692 (spec §6.9) deliberately emptied (zero live subscriptions,
+        // vertical never built).
         const categories = new Set(ALL_PLANS.map((p) => p.category));
         expect(categories.has('owner')).toBe(true);
-        expect(categories.has('complex')).toBe(true);
+        expect(categories.has('complex')).toBe(false);
         expect(categories.has('tourist')).toBe(true);
 
-        // Check each category has exactly one default
-        for (const category of ['owner', 'complex', 'tourist']) {
+        // Check each non-empty category has exactly one default
+        for (const category of ['owner', 'tourist']) {
             const defaults = ALL_PLANS.filter((p) => p.category === category && p.isDefault);
             expect(defaults.length).toBe(1);
         }

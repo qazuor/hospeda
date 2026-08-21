@@ -19,11 +19,13 @@ import { OwnerSelect } from '@/components/selects/OwnerSelect';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui-wrapped';
+import { CommerceListingModerationCard } from '@/features/commerce/components/CommerceListingModerationCard';
 import {
     useAssignGastronomyOwnerMutation,
     useDeleteGastronomyMutation,
     useGastronomyPage,
     useGastronomyPendingReviewsQuery,
+    useModerateGastronomyMutation,
     useModerateGastronomyReviewMutation
 } from '@/features/gastronomy';
 import { useTranslations } from '@/hooks/use-translations';
@@ -218,7 +220,9 @@ function GastronomyViewPage() {
     const { t } = useTranslations();
     const entityData = useGastronomyPage(id);
 
-    const gastronomy = entityData.entity as { name?: string; ownerId?: string | null } | undefined;
+    const gastronomy = entityData.entity as
+        | { name?: string; ownerId?: string | null; moderationState?: string | null }
+        | undefined;
 
     return (
         <div className="space-y-4">
@@ -243,6 +247,17 @@ function GastronomyViewPage() {
                         onDeleted={() => navigate({ to: '/gastronomies' })}
                     />
                 </div>
+
+                {/* HOS-686 AC-26: the reject action, where an admin can reach
+                    it. `POST /:id/moderate` without this control would only be
+                    callable by hand. */}
+                <CommerceListingModerationCard
+                    entityId={id}
+                    entityName={gastronomy?.name ?? id}
+                    entityLabelKey="admin-entities.entities.gastronomy.singular"
+                    currentValue={gastronomy?.moderationState}
+                    useModerateMutation={useModerateGastronomyMutation}
+                />
 
                 <GastronomyAssignOwner
                     gastronomyId={id}

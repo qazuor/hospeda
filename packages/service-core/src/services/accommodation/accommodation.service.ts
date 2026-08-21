@@ -132,6 +132,7 @@ import { hasPermission } from '../../utils/permission';
 import { withServiceTransaction } from '../../utils/transaction.js';
 import { ConversationService } from '../conversation/conversation.service.js';
 import { DestinationService } from '../destination/destination.service';
+import { ACCOMMODATION_ENTITY_NAME } from '../entity-names';
 import { deleteMediaAssetOrThrow } from '../media/delete-media-asset';
 import { PointOfInterestService } from '../point-of-interest/point-of-interest.service';
 import { getUserRoles, grantRole } from '../user-role/user-role.service.js';
@@ -218,7 +219,7 @@ export class AccommodationService extends BaseCrudService<
     typeof AccommodationUpdateInputSchema,
     typeof AccommodationSearchSchema
 > {
-    static readonly ENTITY_NAME = 'accommodation';
+    static readonly ENTITY_NAME = ACCOMMODATION_ENTITY_NAME;
 
     // HOS-296 G-6: `PRIVILEGED_ROLES` (`{HOST, ADMIN, CLIENT_MANAGER,
     // SUPER_ADMIN}`) used to live here as the write guard for the HOST

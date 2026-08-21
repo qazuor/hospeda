@@ -65,13 +65,17 @@ vi.mock('@repo/db', () => ({
     }))
 }));
 
-vi.mock('@repo/service-core', () => ({
-    resolveOwnerPlanGrantsFeatured: mockResolveOwnerPlanGrantsFeatured,
-    getOwnerAccommodationIdsWithActiveFeaturedAddon:
-        mockGetOwnerAccommodationIdsWithActiveFeaturedAddon,
-    syncFeaturedByEntitlementForOwner: mockSyncFeaturedByEntitlementForOwner,
-    syncFeaturedByEntitlementForAccommodation: mockSyncFeaturedByEntitlementForAccommodation
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        resolveOwnerPlanGrantsFeatured: mockResolveOwnerPlanGrantsFeatured,
+        getOwnerAccommodationIdsWithActiveFeaturedAddon:
+            mockGetOwnerAccommodationIdsWithActiveFeaturedAddon,
+        syncFeaturedByEntitlementForOwner: mockSyncFeaturedByEntitlementForOwner,
+        syncFeaturedByEntitlementForAccommodation: mockSyncFeaturedByEntitlementForAccommodation
+    };
+});
 
 // ---------------------------------------------------------------------------
 // Import after mocks

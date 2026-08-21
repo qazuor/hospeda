@@ -1,10 +1,56 @@
 {
+    "title": "Publique seu alojamento",
+    "description": "Publique sua propriedade no Hospeda e alcance milhares de viajantes do Litoral entrerriano.",
     "page": {
         "title": "Para Proprietarios - Publique seu Alojamento",
         "description": "Publique seu alojamento no Hospeda e alcance milhares de viajantes no Litoral argentino. Gestao profissional, estatisticas e ferramentas para proprietarios.",
         "breadcrumb": "Para Proprietarios"
     },
+    "hero": {
+        "title": "Publique seu alojamento e alcance milhares de viajantes",
+        "tagline": "Para proprietários",
+        "desc": "O Hospeda conecta sua propriedade com viajantes que buscam experiências autênticas no Litoral entrerriano. Sem comissões ocultas e com ferramentas simples para gerenciá-la.",
+        "cta": "Começar agora"
+    },
+    "benefits": {
+        "tagline": "Por que o Hospeda?",
+        "title": "Benefícios para proprietários",
+        "1": {
+            "title": "Visibilidade regional",
+            "desc": "Alcance milhares de viajantes que buscam hospedagem na costa do rio Uruguai e no Litoral entrerriano."
+        },
+        "2": {
+            "title": "Gestão simples",
+            "desc": "Publique, edite e gerencie suas propriedades em um só lugar. Painel de controle intuitivo e fácil de usar."
+        },
+        "3": {
+            "title": "Sem comissões ocultas",
+            "desc": "Planos transparentes com preços fixos. Você sabe exatamente quanto paga, sem surpresas em cada reserva."
+        }
+    },
+    "steps": {
+        "tagline": "É bem simples",
+        "title": "Como funciona?",
+        "1": {
+            "title": "Cadastre-se",
+            "desc": "Crie sua conta de proprietário em menos de 2 minutos. Você só precisa de um e-mail."
+        },
+        "2": {
+            "title": "Publique",
+            "desc": "Carregue fotos, descrição, serviços e preços do seu alojamento."
+        },
+        "3": {
+            "title": "Receba consultas",
+            "desc": "Os viajantes entram em contato diretamente. Você gerencia as reservas."
+        },
+        "4": {
+            "title": "Cresça",
+            "desc": "Acesse estatísticas, destaque sua publicação e alcance mais viajantes."
+        }
+    },
     "faq": {
+        "tagline": "Tire suas dúvidas",
+        "title": "Perguntas frequentes",
         "1": {
             "q": "Quanto custa publicar minha hospedagem?",
             "a_one": "Publicar exige um plano de anfitrião. Se for sua primeira assinatura, todos incluem {{trialDays}} dia de teste grátis. Não cobramos comissão por reserva: a assinatura é o único custo.",
@@ -22,5 +68,11 @@
             "q": "Que tipos de hospedagem posso publicar?",
             "a": "Casas de campo, chalés, apartamentos, hotéis, apart hotéis, campings e mais."
         }
+    },
+    "cta": {
+        "tagline": "Pronto para começar?",
+        "title": "Publique seu alojamento hoje",
+        "desc": "Junte-se às centenas de proprietários que já confiam no Hospeda para mostrar seus alojamentos ao mundo.",
+        "button": "Começar agora"
     }
 }

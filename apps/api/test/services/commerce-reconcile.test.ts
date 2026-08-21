@@ -208,10 +208,39 @@ describe('reconcileCommerceListingForSubscription — double-click orphan', () =
         expect(state.inserts[0]?.values.subscriptionId).toBe(SUB_A);
         expect(state.inserts[0]?.values.entityType).toBe(ENTITY_TYPE);
         expect(state.inserts[0]?.values.entityId).toBe(ENTITY_ID);
-        expect(state.inserts[0]?.values.productDomain).toBe(ProductDomainEnum.COMMERCE);
+        expect(state.inserts[0]?.values.productDomain).toBe(ProductDomainEnum.GASTRONOMY);
         expect(state.conflicts).toHaveLength(1);
         expect(state.conflicts[0]?.set.subscriptionId).toBe(SUB_A);
         expect(state.conflicts[0]?.set.status).toBe(SubscriptionStatusEnum.ACTIVE);
+    });
+
+    it('derives productDomain from the recovered entityType — experience gets EXPERIENCE, not the gastronomy value the other case asserts', async () => {
+        // Arrange — same double-click shape, but the recovered link row's
+        // entityType is 'experience' this time. A test that only ever checks
+        // 'gastronomy' can't tell "derives from entityType" apart from "now
+        // hardcodes gastronomy instead of commerce" — this is the case that
+        // tells them apart.
+        state.linkRows = [];
+        state.holderRows = [
+            { subscriptionId: SUB_B, status: SubscriptionStatusEnum.PENDING_PROVIDER }
+        ];
+        state.subscriptionRows = [
+            {
+                metadata: { commerceEntityType: 'experience', commerceEntityId: ENTITY_ID }
+            }
+        ];
+
+        // Act
+        await reconcileCommerceListingForSubscription({
+            subscriptionId: SUB_A,
+            subscriptionStatus: SubscriptionStatusEnum.ACTIVE,
+            source: 'mp-webhook'
+        });
+
+        // Assert
+        expect(state.inserts).toHaveLength(1);
+        expect(state.inserts[0]?.values.entityType).toBe('experience');
+        expect(state.inserts[0]?.values.productDomain).toBe(ProductDomainEnum.EXPERIENCE);
     });
 
     it('recovers a trialing subscription too, not only an active one', async () => {

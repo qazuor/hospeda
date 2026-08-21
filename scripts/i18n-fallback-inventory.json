@@ -1,0 +1,915 @@
+{
+    "$comment": "FROZEN. See scripts/check-i18n-key-coverage.ts. This list may only SHRINK: each entry is one apps/web call site that passes a hardcoded Spanish fallback for a key that exists in no locale, so that literal is served under /en and /pt too. Draining it is HOS-616. Never add an entry to silence a new violation — add the key to the three locale files instead.",
+    "frozenAt": "2026-08-21",
+    "issue": "HOS-619",
+    "entries": [
+        {
+            "file": "apps/web/src/components/account/AccountSectionCards.astro",
+            "key": "account.pages.dashboard.sectionsLabel"
+        },
+        {
+            "file": "apps/web/src/components/account/CollectionPickers.tsx",
+            "key": "account.favorites.collections.fields.colorNone"
+        },
+        {
+            "file": "apps/web/src/components/account/CollectionPickers.tsx",
+            "key": "account.favorites.collections.fields.iconNone"
+        },
+        {
+            "file": "apps/web/src/components/account/CollectionPickers.tsx",
+            "key": "account.favorites.collections.fields.iconNoneLabel"
+        },
+        {
+            "file": "apps/web/src/components/account/CreateEditCollectionModal.client.tsx",
+            "key": "account.favorites.collections.fields.color"
+        },
+        {
+            "file": "apps/web/src/components/account/CreateEditCollectionModal.client.tsx",
+            "key": "account.favorites.collections.fields.description"
+        },
+        {
+            "file": "apps/web/src/components/account/CreateEditCollectionModal.client.tsx",
+            "key": "account.favorites.collections.fields.descriptionHint"
+        },
+        {
+            "file": "apps/web/src/components/account/CreateEditCollectionModal.client.tsx",
+            "key": "account.favorites.collections.fields.icon"
+        },
+        {
+            "file": "apps/web/src/components/account/CreateEditCollectionModal.client.tsx",
+            "key": "account.favorites.collections.fields.name"
+        },
+        {
+            "file": "apps/web/src/components/account/CreateEditCollectionModal.client.tsx",
+            "key": "common.form.cancel"
+        },
+        {
+            "file": "apps/web/src/components/account/CreateEditCollectionModal.client.tsx",
+            "key": "common.form.charCounter"
+        },
+        {
+            "file": "apps/web/src/components/account/CreateEditCollectionModal.client.tsx",
+            "key": "common.form.create"
+        },
+        {
+            "file": "apps/web/src/components/account/CreateEditCollectionModal.client.tsx",
+            "key": "common.form.save"
+        },
+        {
+            "file": "apps/web/src/components/account/CreateEditCollectionModal.client.tsx",
+            "key": "common.modal.close"
+        },
+        {
+            "file": "apps/web/src/components/account/DowngradePreviewPanel.client.tsx",
+            "key": "common.back"
+        },
+        {
+            "file": "apps/web/src/components/account/PlanChangeFlow.client.tsx",
+            "key": "common.close"
+        },
+        {
+            "file": "apps/web/src/components/account/PlanPicker.client.tsx",
+            "key": "common.close"
+        },
+        {
+            "file": "apps/web/src/components/account/PreferenceToggles.client.tsx",
+            "key": "account.preferences.errors.saveFailed"
+        },
+        {
+            "file": "apps/web/src/components/account/PreferenceToggles.client.tsx",
+            "key": "account.preferences.language.description"
+        },
+        {
+            "file": "apps/web/src/components/account/PreferenceToggles.client.tsx",
+            "key": "account.preferences.newsletter.description"
+        },
+        {
+            "file": "apps/web/src/components/account/PreferenceToggles.client.tsx",
+            "key": "account.preferences.notifications.email.description"
+        },
+        {
+            "file": "apps/web/src/components/account/PreferenceToggles.client.tsx",
+            "key": "account.preferences.notifications.push.description"
+        },
+        {
+            "file": "apps/web/src/components/account/PreferenceToggles.client.tsx",
+            "key": "account.preferences.notifications.sms.description"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileCompletionAvatarPicker.tsx",
+            "key": "account.profileCompletion.avatar.errors.fileTooLarge"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileCompletionAvatarPicker.tsx",
+            "key": "account.profileCompletion.avatar.errors.invalidType"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileCompletionAvatarPicker.tsx",
+            "key": "account.profileCompletion.avatar.errors.unexpectedResponse"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileCompletionAvatarPicker.tsx",
+            "key": "account.profileCompletion.avatar.errors.uploadFailed"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileCompletionAvatarPicker.tsx",
+            "key": "account.profileCompletion.avatar.uploading"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileCompletionBasicFields.tsx",
+            "key": "account.profileCompletion.fields.birthDateOpenPicker"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditAvatarSection.tsx",
+            "key": "account.avatar.changeButton"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditAvatarSection.tsx",
+            "key": "account.avatar.fileInputLabel"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditAvatarSection.tsx",
+            "key": "account.avatar.uploading"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditExtrasSection.tsx",
+            "key": "account.editProfile.fields.occupation"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditExtrasSection.tsx",
+            "key": "account.editProfile.fields.website"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditExtrasSection.tsx",
+            "key": "account.pages.editProfile.extrasSection"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditForm.client.tsx",
+            "key": "validation.formHasErrors"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditLocationSection.tsx",
+            "key": "account.editProfile.fields.addressLine1"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditLocationSection.tsx",
+            "key": "account.editProfile.fields.city"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditLocationSection.tsx",
+            "key": "account.editProfile.fields.country"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditLocationSection.tsx",
+            "key": "account.editProfile.fields.postalCode"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditLocationSection.tsx",
+            "key": "account.editProfile.fields.province"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditLocationSection.tsx",
+            "key": "account.pages.editProfile.locationSection"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditPersonalSection.tsx",
+            "key": "account.editProfile.fields.birthDate"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditPersonalSection.tsx",
+            "key": "account.editProfile.fields.birthDateHint"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditPersonalSection.tsx",
+            "key": "account.editProfile.fields.phoneHint"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditSocialSection.tsx",
+            "key": "account.editProfile.fields.facebook"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditSocialSection.tsx",
+            "key": "account.editProfile.fields.instagram"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditSocialSection.tsx",
+            "key": "account.editProfile.fields.linkedin"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditSocialSection.tsx",
+            "key": "account.editProfile.fields.twitter"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditSocialSection.tsx",
+            "key": "account.editProfile.fields.youtube"
+        },
+        {
+            "file": "apps/web/src/components/account/ProfileEditSocialSection.tsx",
+            "key": "account.pages.editProfile.socialSection"
+        },
+        {
+            "file": "apps/web/src/components/account/RestartTour.client.tsx",
+            "key": "account.nav.repeatTour"
+        },
+        {
+            "file": "apps/web/src/components/account/RestartTour.client.tsx",
+            "key": "account.nav.repeatTourDesc"
+        },
+        {
+            "file": "apps/web/src/components/account/SearchHistoryList.client.tsx",
+            "key": "common.deleting"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.errors.passwordMax"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.errors.passwordsMismatch"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.hidePassword"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.passwordStrength.medium"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.passwordStrength.strong"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.passwordStrength.weak"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.rules.digit"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.rules.length"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.rules.lower"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.rules.special"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.rules.upper"
+        },
+        {
+            "file": "apps/web/src/components/account/SetPassword.client.tsx",
+            "key": "account.setPassword.showPassword"
+        },
+        {
+            "file": "apps/web/src/components/account/SubscriptionDashboard.client.tsx",
+            "key": "common.close"
+        },
+        {
+            "file": "apps/web/src/components/account/UserFavoritesList.client.tsx",
+            "key": "account.favorites.errors.saveFailed"
+        },
+        {
+            "file": "apps/web/src/components/account/WhatsNewModal.client.tsx",
+            "key": "common.close"
+        },
+        {
+            "file": "apps/web/src/components/account/WhatsNewPanel.client.tsx",
+            "key": "common.back"
+        },
+        {
+            "file": "apps/web/src/components/account/WhatsNewPanel.client.tsx",
+            "key": "common.close"
+        },
+        {
+            "file": "apps/web/src/components/ai-search/AiSearchEntry.client.tsx",
+            "key": "aiSearch.chat.maximize"
+        },
+        {
+            "file": "apps/web/src/components/ai-search/AiSearchEntry.client.tsx",
+            "key": "aiSearch.chat.restore"
+        },
+        {
+            "file": "apps/web/src/components/ai-search/NearbyDestinationsIndicator.tsx",
+            "key": "aiSearch.nearbyDestinations.label"
+        },
+        {
+            "file": "apps/web/src/components/ai-search/SearchChatPanel.client.tsx",
+            "key": "aiSearch.chat.placeholderHasResults"
+        },
+        {
+            "file": "apps/web/src/components/ai-search/SearchChatPanel.client.tsx",
+            "key": "aiSearch.chat.placeholderNoResults"
+        },
+        {
+            "file": "apps/web/src/components/auth/ChangePasswordForm.client.tsx",
+            "key": "commerce.changePassword.currentRequired"
+        },
+        {
+            "file": "apps/web/src/components/auth/ChangePasswordForm.client.tsx",
+            "key": "commerce.changePassword.hidePassword"
+        },
+        {
+            "file": "apps/web/src/components/auth/ChangePasswordForm.client.tsx",
+            "key": "commerce.changePassword.showPassword"
+        },
+        {
+            "file": "apps/web/src/components/auth/ChangePasswordForm.client.tsx",
+            "key": "commerce.changePassword.strength.medium"
+        },
+        {
+            "file": "apps/web/src/components/auth/ChangePasswordForm.client.tsx",
+            "key": "commerce.changePassword.strength.strong"
+        },
+        {
+            "file": "apps/web/src/components/auth/ChangePasswordForm.client.tsx",
+            "key": "commerce.changePassword.strength.weak"
+        },
+        {
+            "file": "apps/web/src/components/auth/ChangePasswordForm.client.tsx",
+            "key": "commerce.changePassword.strengthLabel"
+        },
+        {
+            "file": "apps/web/src/components/auth/SignIn.client.tsx",
+            "key": "auth-ui.loading"
+        },
+        {
+            "file": "apps/web/src/components/auth/SignUp.client.tsx",
+            "key": "auth-ui.loading"
+        },
+        {
+            "file": "apps/web/src/components/commerce/editor/MediaSection.client.tsx",
+            "key": "commerce.owner.editor.media.featuredFailed"
+        },
+        {
+            "file": "apps/web/src/components/commerce/editor/MediaSection.client.tsx",
+            "key": "commerce.owner.editor.media.persistFailed"
+        },
+        {
+            "file": "apps/web/src/components/commerce/editor/MediaSection.client.tsx",
+            "key": "commerce.owner.editor.media.removeFailed"
+        },
+        {
+            "file": "apps/web/src/components/event/EventDetailLocationCard.astro",
+            "key": "maps.ariaLabelEvent"
+        },
+        {
+            "file": "apps/web/src/components/experience/ExperienceReviews.client.tsx",
+            "key": "common.anonymous"
+        },
+        {
+            "file": "apps/web/src/components/gastronomy/OpeningHoursSection.astro",
+            "key": "gastronomy.detail.openingHours.friday"
+        },
+        {
+            "file": "apps/web/src/components/gastronomy/OpeningHoursSection.astro",
+            "key": "gastronomy.detail.openingHours.monday"
+        },
+        {
+            "file": "apps/web/src/components/gastronomy/OpeningHoursSection.astro",
+            "key": "gastronomy.detail.openingHours.saturday"
+        },
+        {
+            "file": "apps/web/src/components/gastronomy/OpeningHoursSection.astro",
+            "key": "gastronomy.detail.openingHours.sunday"
+        },
+        {
+            "file": "apps/web/src/components/gastronomy/OpeningHoursSection.astro",
+            "key": "gastronomy.detail.openingHours.thursday"
+        },
+        {
+            "file": "apps/web/src/components/gastronomy/OpeningHoursSection.astro",
+            "key": "gastronomy.detail.openingHours.tuesday"
+        },
+        {
+            "file": "apps/web/src/components/gastronomy/OpeningHoursSection.astro",
+            "key": "gastronomy.detail.openingHours.wednesday"
+        },
+        {
+            "file": "apps/web/src/components/host/CreatePropertyMiniForm.client.tsx",
+            "key": "host.form.sections.ubicacion.cityPicker.contactMessage"
+        },
+        {
+            "file": "apps/web/src/components/host/CreatePropertyMiniForm.client.tsx",
+            "key": "host.form.sections.ubicacion.cityPicker.contactSubject"
+        },
+        {
+            "file": "apps/web/src/components/host/CreatePropertyMiniForm.client.tsx",
+            "key": "host.form.sections.ubicacion.cityPicker.empty"
+        },
+        {
+            "file": "apps/web/src/components/host/CreatePropertyMiniForm.client.tsx",
+            "key": "host.form.sections.ubicacion.cityPicker.label"
+        },
+        {
+            "file": "apps/web/src/components/host/CreatePropertyMiniForm.client.tsx",
+            "key": "host.form.sections.ubicacion.cityPicker.loading"
+        },
+        {
+            "file": "apps/web/src/components/host/CreatePropertyMiniForm.client.tsx",
+            "key": "host.form.sections.ubicacion.cityPicker.notFoundLink"
+        },
+        {
+            "file": "apps/web/src/components/host/CreatePropertyMiniForm.client.tsx",
+            "key": "host.form.sections.ubicacion.cityPicker.placeholder"
+        },
+        {
+            "file": "apps/web/src/components/host/ExternalReputationSection.client.tsx",
+            "key": "external-reputation.errors.invalidUrl"
+        },
+        {
+            "file": "apps/web/src/components/host/ExternalReputationSection.client.tsx",
+            "key": "external-reputation.errors.masterToggleFailed"
+        },
+        {
+            "file": "apps/web/src/components/host/PublishPrecheckPanel.astro",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteConfirm"
+        },
+        {
+            "file": "apps/web/src/components/host/PublishPrecheckPanel.astro",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteCta"
+        },
+        {
+            "file": "apps/web/src/components/newsletter/NewsletterResendButton.client.tsx",
+            "key": "newsletter.confirmYourEmail.resendCooldown"
+        },
+        {
+            "file": "apps/web/src/components/newsletter/NewsletterResendButton.client.tsx",
+            "key": "newsletter.confirmYourEmail.resendCta"
+        },
+        {
+            "file": "apps/web/src/components/newsletter/NewsletterResendButton.client.tsx",
+            "key": "newsletter.confirmYourEmail.resendError"
+        },
+        {
+            "file": "apps/web/src/components/newsletter/NewsletterResendButton.client.tsx",
+            "key": "newsletter.confirmYourEmail.resendSending"
+        },
+        {
+            "file": "apps/web/src/components/newsletter/NewsletterResendButton.client.tsx",
+            "key": "newsletter.confirmYourEmail.resendSentMessage"
+        },
+        {
+            "file": "apps/web/src/components/sections/AboutUsSection.astro",
+            "key": "home.about.cta"
+        },
+        {
+            "file": "apps/web/src/components/sections/CtaOwnersSection.astro",
+            "key": "home.ownerCta.ctaButton"
+        },
+        {
+            "file": "apps/web/src/components/sections/DestinationsIsland.client.tsx",
+            "key": "home.featuredDestinations.viewAll"
+        },
+        {
+            "file": "apps/web/src/components/sections/FeaturedAccommodationsSection.astro",
+            "key": "home.featuredAccommodations.typesLabel"
+        },
+        {
+            "file": "apps/web/src/components/sections/SearchBar.client.tsx",
+            "key": "home.searchBar.closePanel"
+        },
+        {
+            "file": "apps/web/src/components/sections/SearchBar.client.tsx",
+            "key": "home.searchBar.destinationSearchLabel"
+        },
+        {
+            "file": "apps/web/src/components/sections/SearchBar.client.tsx",
+            "key": "home.searchBar.destinationSearchPlaceholder"
+        },
+        {
+            "file": "apps/web/src/components/sections/SearchBar.client.tsx",
+            "key": "home.searchBar.featuredDestinationLabel"
+        },
+        {
+            "file": "apps/web/src/components/sections/SearchBar.client.tsx",
+            "key": "home.searchBar.noDestinationsMatch"
+        },
+        {
+            "file": "apps/web/src/components/sections/SearchBar.client.tsx",
+            "key": "home.searchBar.noTypesMatch"
+        },
+        {
+            "file": "apps/web/src/components/sections/SearchBar.client.tsx",
+            "key": "home.searchBar.typeSearchLabel"
+        },
+        {
+            "file": "apps/web/src/components/sections/SearchBar.client.tsx",
+            "key": "home.searchBar.typeSearchPlaceholder"
+        },
+        {
+            "file": "apps/web/src/components/shared/favorite/CollectionPickerPopover.tsx",
+            "key": "account.favorites.collections.assignFailed"
+        },
+        {
+            "file": "apps/web/src/components/shared/favorite/CollectionPickerPopover.tsx",
+            "key": "account.favorites.collections.assignPrompt"
+        },
+        {
+            "file": "apps/web/src/components/shared/favorite/CollectionPickerPopover.tsx",
+            "key": "account.favorites.collections.assignSuccess"
+        },
+        {
+            "file": "apps/web/src/components/shared/favorite/CollectionPickerPopover.tsx",
+            "key": "account.favorites.toast.view"
+        },
+        {
+            "file": "apps/web/src/components/shared/favorite/FavoriteButton.client.tsx",
+            "key": "account.favorites.toast.view"
+        },
+        {
+            "file": "apps/web/src/components/shared/feedback/ErrorBanner.astro",
+            "key": "ui.errorBanner.message"
+        },
+        {
+            "file": "apps/web/src/components/shared/feedback/ErrorBanner.astro",
+            "key": "ui.errorBanner.messageWithEntity"
+        },
+        {
+            "file": "apps/web/src/components/shared/feedback/ErrorBanner.astro",
+            "key": "ui.errorBanner.report"
+        },
+        {
+            "file": "apps/web/src/components/shared/feedback/ErrorBanner.astro",
+            "key": "ui.errorBanner.retry"
+        },
+        {
+            "file": "apps/web/src/components/shared/feedback/ErrorBanner.astro",
+            "key": "ui.errorBanner.subtitle"
+        },
+        {
+            "file": "apps/web/src/components/shared/navigation/MobileMenu.client.tsx",
+            "key": "nav.language"
+        },
+        {
+            "file": "apps/web/src/components/shared/navigation/MobileMenu.client.tsx",
+            "key": "nav.theme"
+        },
+        {
+            "file": "apps/web/src/components/shared/navigation/MobileMenuAccountSection.client.tsx",
+            "key": "nav.signIn"
+        },
+        {
+            "file": "apps/web/src/layouts/AccountLayout.astro",
+            "key": "account.description"
+        },
+        {
+            "file": "apps/web/src/layouts/AccountLayout.astro",
+            "key": "account.menu"
+        },
+        {
+            "file": "apps/web/src/layouts/AccountLayout.astro",
+            "key": "account.title"
+        },
+        {
+            "file": "apps/web/src/layouts/AuthLayout.astro",
+            "key": "footer.allRightsReserved"
+        },
+        {
+            "file": "apps/web/src/layouts/ErrorLayout.astro",
+            "key": "footer.allRightsReserved"
+        },
+        {
+            "file": "apps/web/src/lib/forms/use-zod-form.ts",
+            "key": "validation.formHasErrors"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.pickCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.title"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.upgradeCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftOrCreate.body"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftOrCreate.createCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftOrCreate.pickCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftOrCreate.title"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteConfirm"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.resumeCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.title"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.upgradeCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeOrCreate.body"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeOrCreate.createCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeOrCreate.resumeCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeOrCreate.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/alojamientos/caracteristicas/[slug]/index.astro",
+            "key": "accommodations.byFeature.tagline"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/alojamientos/caracteristicas/[slug]/index.astro",
+            "key": "accommodations.features"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/alojamientos/comodidades/[slug]/index.astro",
+            "key": "accommodations.amenities"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/alojamientos/comodidades/[slug]/index.astro",
+            "key": "accommodations.byAmenity.tagline"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/alojamientos/mapa.astro",
+            "key": "maps.loadingTitle"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/alojamientos/mapa.astro",
+            "key": "maps.region"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/auth/verify-email-sent.astro",
+            "key": "auth-ui.pages.verifyEmailSent.body"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/auth/verify-email-sent.astro",
+            "key": "auth-ui.pages.verifyEmailSent.description"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/auth/verify-email-sent.astro",
+            "key": "auth-ui.pages.verifyEmailSent.heading"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/auth/verify-email-sent.astro",
+            "key": "auth-ui.pages.verifyEmailSent.signInLink"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/auth/verify-email-sent.astro",
+            "key": "auth-ui.pages.verifyEmailSent.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/autores/[slug]/index.astro",
+            "key": "blog.byAuthor.viewAll"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/gastronomia/[slug].astro",
+            "key": "common.anonymous"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/gastronomia/[slug].astro",
+            "key": "gastronomy.detail.reviews.more"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section1.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section1.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section2.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section2.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section3.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section3.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section4.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section4.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section5.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section5.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section6.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section6.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section7.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section7.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section8.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section8.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section1.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section1.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section10.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section10.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section2.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section2.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section3.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section3.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section4.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section4.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section5.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section5.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section6.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section6.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section7.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section7.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section8.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section8.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section9.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section9.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/mi-cuenta/favoritos/colecciones/[id].astro",
+            "key": "account.favorites.errors.saveFailed"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/mi-cuenta/propiedades/[id]/editar/index.astro",
+            "key": "host.properties.editor.pageDescription"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro",
+            "key": "host.properties.empty.fetchError"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/mi-cuenta/propiedades/index.astro",
+            "key": "host.properties.error.retry"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/newsletter/confirma-tu-email.astro",
+            "key": "newsletter.confirmYourEmail.cancelLink"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/newsletter/confirma-tu-email.astro",
+            "key": "newsletter.confirmYourEmail.descriptionGeneric"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/newsletter/confirma-tu-email.astro",
+            "key": "newsletter.confirmYourEmail.descriptionWithEmail"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/newsletter/confirma-tu-email.astro",
+            "key": "newsletter.confirmYourEmail.spamNote"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/newsletter/confirma-tu-email.astro",
+            "key": "newsletter.confirmYourEmail.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/publicaciones/[slug].astro",
+            "key": "blog.detail.tags.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/publicaciones/categoria/[category]/index.astro",
+            "key": "blog.byCategory.tagline"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/publicaciones/etiqueta/[tag]/index.astro",
+            "key": "blog.byTag.description"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/publicaciones/etiqueta/[tag]/index.astro",
+            "key": "blog.byTag.tagline"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/suscriptores/planes/comparar/index.astro",
+            "key": "pricing.owner.cta.description"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/suscriptores/planes/comparar/index.astro",
+            "key": "pricing.owner.cta.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/suscriptores/turistas/comparar/index.astro",
+            "key": "pricing.tourist.cta.description"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/suscriptores/turistas/comparar/index.astro",
+            "key": "pricing.tourist.cta.title"
+        }
+    ]
+}

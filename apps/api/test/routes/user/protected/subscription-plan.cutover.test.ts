@@ -118,20 +118,28 @@ vi.mock('@repo/service-core', () => ({
         }
     },
     RoleEnum: { HOST: 'host', USER: 'user' },
-    // HOS-259: subscription.ts now domain-scopes the resolved subscription via
-    // these predicates. Mirror the real fail-open (accommodation) / fail-closed
-    // (commerce) semantics so the default-accommodation path resolves as before.
-    isAccommodationSubscription: (sub: unknown): boolean => {
+    // HOS-259 / HOS-685: subscription.ts domain-scopes the resolved subscription
+    // through ONE canonical predicate. Mirror its real semantics — accommodation
+    // fails open on a legacy row, every other domain fails closed, and a
+    // commerce-scoped read matches any commerce vertical — so the
+    // default-accommodation path resolves exactly as it does in production.
+    subscriptionMatchesDomain: (sub: unknown, domain: string): boolean => {
+        const wantsAccommodation = domain === 'accommodation';
         if (typeof sub !== 'object' || sub === null) {
+            return wantsAccommodation;
+        }
+        const value = (sub as { productDomain?: unknown }).productDomain;
+        if (value === null || value === undefined) {
+            return wantsAccommodation;
+        }
+        if (typeof value !== 'string') {
             return false;
         }
-        const domain = (sub as { productDomain?: unknown }).productDomain;
-        return domain === null || domain === undefined || domain === 'accommodation';
-    },
-    isCommerceSubscription: (sub: unknown): boolean =>
-        typeof sub === 'object' &&
-        sub !== null &&
-        (sub as { productDomain?: unknown }).productDomain === 'commerce'
+        if (domain === 'commerce') {
+            return ['commerce', 'gastronomy', 'experience'].includes(value);
+        }
+        return value === domain;
+    }
 }));
 
 // ─── Mock logger + actor ──────────────────────────────────────────────────────

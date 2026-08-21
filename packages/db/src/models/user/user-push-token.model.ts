@@ -29,7 +29,7 @@ export class UserPushTokenModel extends BaseModelImpl<UserPushTokenRecord> {
     public entityName = 'user_push_tokens';
 
     protected getTableName(): string {
-        return 'user_push_tokens';
+        return 'userPushTokens';
     }
 
     /**

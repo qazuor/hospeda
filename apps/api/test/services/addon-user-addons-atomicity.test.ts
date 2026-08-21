@@ -16,7 +16,8 @@ import { afterEach, beforeEach, describe, expect, it, type MockInstance, vi } fr
 
 // ─── Module mocks — must be declared before imports ───────────────────────────
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn()
 }));
 

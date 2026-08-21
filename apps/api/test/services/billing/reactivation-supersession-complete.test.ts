@@ -26,6 +26,7 @@
  */
 
 import { SubscriptionStatusEnum } from '@repo/schemas';
+import { BILLING_EVENT_TYPES } from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { getPostHogClient } from '../../../src/lib/posthog.js';
@@ -217,6 +218,7 @@ describe('completeSupersessionPairing', () => {
             expect(db.insertValues).toHaveBeenCalledWith(
                 expect.objectContaining({
                     subscriptionId: NEW_SUBSCRIPTION.id,
+                    eventType: BILLING_EVENT_TYPES.REACTIVATION_SUPERSESSION_COMPLETED,
                     previousStatus: SubscriptionStatusEnum.TRIALING,
                     newStatus: SubscriptionStatusEnum.ACTIVE,
                     triggerSource: 'trial-reactivation',
@@ -286,6 +288,7 @@ describe('completeSupersessionPairing', () => {
             expect(mockGet).not.toHaveBeenCalled();
             expect(db.insertValues).toHaveBeenCalledWith(
                 expect.objectContaining({
+                    eventType: BILLING_EVENT_TYPES.REACTIVATION_SUPERSESSION_COMPLETED,
                     previousStatus: SubscriptionStatusEnum.CANCELLED,
                     triggerSource: 'subscription-reactivation',
                     metadata: expect.objectContaining({ reactivatedFromCanceled: 'true' })

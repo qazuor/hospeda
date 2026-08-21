@@ -66,6 +66,12 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'account.alerts',
     'account.alliances',
     'account.avatar',
+    // HOS-691 — `PUBLISH_CTA_OPTIONS`' option titles (`account.doors.publish.
+    // options.<id>.title`) are resolved by both `PublishMenu.client.tsx` (the
+    // desktop header dropdown) and `MobileMenuAccountSection.client.tsx` (the
+    // mobile "Publicar" submenu), reusing the same keys the `/mi-cuenta/publica`
+    // hub already named — see `discovery-doors.ts`.
+    'account.doors',
     'account.editProfile',
     'account.exclusiveDeals',
     'account.favorites',
@@ -218,11 +224,10 @@ export const CLIENT_I18N_KEY_PREFIXES = [
     'maps.showSurroundings',
     'nav.closeMenu',
     'nav.goHome',
-    'nav.hostModeCta',
     'nav.language',
     'nav.mainNavigation',
     'nav.mobileMenu',
-    'nav.ownerCta',
+    'nav.publishCta',
     'nav.signIn',
     'nav.theme',
     'newsletter.confirmYourEmail',

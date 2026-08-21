@@ -25,6 +25,11 @@
             "plural": "Alojamientos",
             "description": "Gestiona hoteles, cabañas, departamentos y otros alojamientos"
         },
+        "contentModerationTerm": {
+            "singular": "Término de moderación",
+            "plural": "Términos de moderación",
+            "description": "Gestiona términos y dominios bloqueados para la moderación de contenido"
+        },
         "destination": {
             "singular": "Destino",
             "plural": "Destinos",
@@ -121,6 +126,11 @@
             "singular": "Experiencia",
             "plural": "Experiencias",
             "description": "Gestiona actividades turísticas, excursiones y alquileres de equipos"
+        },
+        "partner": {
+            "singular": "Partner",
+            "plural": "Partners",
+            "description": "Gestiona partners y patrocinadores institucionales"
         }
     },
     "experience": {
@@ -204,6 +214,7 @@
         "type": "Tipo",
         "category": "Categoría",
         "status": "Estado",
+        "lifecycleState": "Estado de ciclo de vida",
         "visibility": "Visibilidad",
         "moderation": "Moderación",
         "featured": "Destacado",
@@ -917,77 +928,6 @@
             "capacity": {
                 "label": "Rango de precios"
             }
-        }
-    },
-    "commerceLeads": {
-        "page": {
-            "title": "Leads de comercios",
-            "empty": "No hay leads para mostrar.",
-            "loadError": "Error al cargar los leads. Intentá de nuevo."
-        },
-        "filter": {
-            "label": "Estado:",
-            "all": "Todos"
-        },
-        "status": {
-            "pending": "Pendiente",
-            "reviewing": "En revisión",
-            "approved": "Aprobado",
-            "rejected": "Rechazado"
-        },
-        "columns": {
-            "businessName": "Negocio",
-            "contactName": "Contacto",
-            "email": "Email",
-            "domain": "Dominio",
-            "status": "Estado",
-            "createdAt": "Fecha",
-            "actions": "Acciones"
-        },
-        "actions": {
-            "handle": "Resolver",
-            "provision": "Crear cuenta",
-            "approveProvision": "Aprobar y crear cuenta"
-        },
-        "approveProvision": {
-            "title": "Aprobar y crear cuenta de propietario",
-            "description": "Se aprobará el lead de {{businessName}} y {{email}} quedará habilitado como COMMERCE_OWNER. Si ese email ya tiene cuenta, se le suma el permiso y conserva su contraseña; si no, se crea la cuenta y se le envían credenciales temporales por email.",
-            "noteLabel": "Nota (opcional)",
-            "notePlaceholder": "Comentario interno para el equipo...",
-            "confirm": "Aprobar y crear cuenta",
-            "submitting": "Procesando...",
-            "successMessage": "Lead aprobado y cuenta creada para {{email}}. Las credenciales fueron enviadas por email.",
-            "alreadyProvisionedMessage": "El lead ya tenía una cuenta provisionada.",
-            "error": "Error al aprobar y crear la cuenta. Intentá de nuevo.",
-            "successLinkedMessage": "Lead aprobado. {{email}} ya tenía cuenta: se le sumó el permiso de comercio y conserva su contraseña. No se enviaron credenciales.",
-            "successNoCredentialsMessage": "Lead aprobado y cuenta creada para {{email}}, pero el email con las credenciales no se pudo enviar. Todavía no puede entrar."
-        },
-        "handle": {
-            "title": "Resolver lead",
-            "decisionLabel": "Decisión",
-            "approve": "Aprobar",
-            "reject": "Rechazar",
-            "noteLabel": "Nota (opcional)",
-            "notePlaceholder": "Comentario interno para el equipo...",
-            "submit": "Confirmar",
-            "submitting": "Guardando...",
-            "successApproved": "Lead aprobado exitosamente.",
-            "successRejected": "Lead rechazado."
-        },
-        "provision": {
-            "title": "Crear cuenta de propietario",
-            "description": "Se habilitará a {{businessName}} ({{email}}) como COMMERCE_OWNER. Si ese email ya tiene cuenta, se le suma el permiso y conserva su contraseña; si no, se crea la cuenta y se le envían credenciales temporales por email.",
-            "confirm": "Crear cuenta",
-            "submitting": "Creando...",
-            "successMessage": "Cuenta creada para {{name}} ({{email}}). Las credenciales fueron enviadas por email.",
-            "error": "Error al crear la cuenta. Intentá de nuevo.",
-            "successLinkedMessage": "{{email}} ya tenía cuenta: se le sumó el permiso de comercio y conserva su contraseña. No se enviaron credenciales.",
-            "successNoCredentialsMessage": "Cuenta creada para {{name}} ({{email}}), pero el email con las credenciales no se pudo enviar. Todavía no puede entrar."
-        },
-        "pagination": {
-            "prev": "Anterior",
-            "next": "Siguiente",
-            "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
         }
     },
     "allianceLeads": {

@@ -120,8 +120,11 @@ export const protectedHostOnboardingStartRoute = createProtectedRoute({
         // it is absent, we skip the sync rather than crash.
         if (actor.email) {
             try {
-                const billing = getQZPayBilling();
-                const syncService = new BillingCustomerSyncService(billing ?? null, {
+                // HOS-596: the customer-sync facade, never the strict one — a
+                // MercadoPago failure must not roll back the local
+                // billing_customers row this flow just created.
+                const customerSyncBilling = getQZPayBilling({ forCustomerSync: true });
+                const syncService = new BillingCustomerSyncService(customerSyncBilling ?? null, {
                     throwOnError: false
                 });
                 const customerId = await syncService.ensureCustomerExists({

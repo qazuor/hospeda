@@ -37,22 +37,45 @@ const { mockGetBySlug, mockGetAddonBySlug } = vi.hoisted(() => ({
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(function () {
-        return {
-            getBySlug: mockGetBySlug,
-            list: vi.fn()
-        };
-    })
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockGetBySlug,
+                list: vi.fn()
+            };
+        })
+    };
+});
 
 // getAddonBySlug must NOT be called after cutover
-vi.mock('@repo/billing', () => ({
+// HOS-702: PARTIAL mock (spread of the real module). The cron now calls
+// `isEntitlementGrantingStatus`; a whole-module stub left that export
+// `undefined`, so the call threw into the surrounding try/catch and the phase
+// silently did nothing while every assertion still ran.
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: mockGetAddonBySlug
 }));
 
 // withTransaction mock: runs callback with a minimal fake tx
 vi.mock('@repo/db', () => ({
+    // HOS-722: resolveRecipientLocale() (addon-expiry.job.ts) instantiates
+    // UserModel at module scope and calls findById() when a notification is
+    // about to be sent. This file's default lookupCustomerDetails resolves
+    // null, so most tests never reach it; the two tests below that DO give a
+    // real customerDetails.userId only assert on catalog cutover behavior
+    // (mockGetBySlug/mockGetAddonBySlug), not on locale, so a fixed
+    // 'user not found -> es fallback' stub is sufficient here. The locale
+    // resolution itself (languageWeb present / absent / user missing) is
+    // covered by the dedicated tests in addon-expiry.test.ts.
+    UserModel: vi.fn().mockImplementation(function () {
+        return {
+            findById: vi.fn().mockResolvedValue(null)
+        };
+    }),
     and: vi.fn((...args: unknown[]) => ({ _and: args })),
     eq: vi.fn((a: unknown, b: unknown) => ({ _eq: [a, b] })),
     isNull: vi.fn((a: unknown) => ({ _isNull: a })),

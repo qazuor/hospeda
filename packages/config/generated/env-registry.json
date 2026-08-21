@@ -493,20 +493,20 @@
       "howToObtainEs": "Texto libre, 1-11 caracteres ASCII en mayúsculas (letras, dígitos, espacios). MP rechaza valores más largos o con minúsculas / no-ASCII. Por defecto \"HOSPEDA\"; sobrescribilo solo si el feedback de homologación de MP lo pide."
     },
     {
-      "name": "HOSPEDA_COMMERCE_PLAN_ID",
-      "description": "Slug of the billing plan used to provision a commerce-listing subscription (SPEC-239 T-049). Resolved by slug against billing_plans.name via the same machinery as the accommodation start-paid flow.",
-      "descriptionEs": "Slug del plan de facturación usado para provisionar una suscripción de listing de comercio (SPEC-239 T-049). Se resuelve por slug contra billing_plans.name con la misma maquinaria que el flujo accommodation start-paid.",
+      "name": "HOSPEDA_COMMERCE_PLAN_SLUGS",
+      "description": "Commerce vertical to billing-plan-slug mapping, as `gastronomy:<slug>,experience:<slug>` (HOS-688). ONE variable rather than one per vertical: two variables can be left half-set, which leaves one vertical selling and the other answering 503 while the site looks perfectly healthy. Validated at boot, so a malformed value stops the container instead of refusing a customer mid-checkout.",
+      "descriptionEs": "Mapeo de vertical de comercio a slug de plan, con la forma `gastronomy:<slug>,experience:<slug>` (HOS-688). UNA sola variable en vez de una por vertical: dos se pueden quedar a medio setear, y ahí un vertical vende y el otro tira 503 mientras el sitio se ve perfecto. Se valida en el arranque, así que un valor mal formado frena el contenedor en lugar de rechazar un checkout.",
       "type": "string",
       "required": false,
       "secret": false,
       "defaultValue": "",
-      "exampleValue": "commerce-listing",
+      "exampleValue": "gastronomy:gastronomy-premium,experience:experience-premium",
       "apps": [
         "api"
       ],
       "category": "billing",
-      "howToObtain": "The slug (billing_plans.name) of the commerce plan seeded by the billing-plans seed. Defaults to the seeded commerce slug. The commerce admin start-subscription route 404s when unset or unknown.",
-      "howToObtainEs": "El slug (billing_plans.name) del plan de comercio sembrado por el seed de billing-plans. Por defecto el slug de comercio sembrado. La ruta admin commerce start-subscription devuelve 404 cuando está vacío o es desconocido."
+      "howToObtain": "The two slugs (billing_plans.name) of the per-vertical commerce plans seeded by seedCommercePlan. Leave unset to use the shipped catalogue defaults; set it only to point at differently-named plans. A value that is set but malformed is rejected at startup.",
+      "howToObtainEs": "Los dos slugs (billing_plans.name) de los planes de comercio por vertical que siembra seedCommercePlan. Dejala sin setear para usar los valores por defecto del catálogo; seteala solo para apuntar a planes con otro nombre. Un valor seteado pero mal formado se rechaza en el arranque."
     },
     {
       "name": "HOSPEDA_AI_VAULT_MASTER_KEY",
@@ -2437,14 +2437,14 @@
       "type": "string",
       "required": false,
       "secret": false,
-      "defaultValue": "Content-Type,Authorization,X-Requested-With,X-Forwarded-For,X-Real-IP,X-Request-ID",
-      "exampleValue": "Content-Type,Authorization,X-Requested-With,X-Forwarded-For,X-Real-IP,X-Request-ID",
+      "defaultValue": "Content-Type,Authorization,X-Requested-With,X-Idempotency-Key,X-Client-Locale,X-Forwarded-For,X-Real-IP,X-Request-ID",
+      "exampleValue": "Content-Type,Authorization,X-Requested-With,X-Idempotency-Key,X-Client-Locale,X-Forwarded-For,X-Real-IP,X-Request-ID",
       "apps": [
         "api"
       ],
       "category": "api-config",
-      "howToObtain": "Headers the browser may send. Default covers Content-Type/Authorization/X-Requested-With + the IP/request-id headers the API actually reads. Add more if you introduce new x-* request headers (e.g. x-actor-id for impersonation).",
-      "howToObtainEs": "Headers que el navegador puede mandar. El default cubre Content-Type/Authorization/X-Requested-With + los headers de IP/request-id que la API realmente lee. Agregá más si incorporás nuevos headers x-* en el request (ej: x-actor-id para impersonar)."
+      "howToObtain": "Headers the browser may send. Default covers Content-Type/Authorization/X-Requested-With + the IP/request-id headers the API actually reads. X-Idempotency-Key and X-Client-Locale are enforced in code (getCorsConfig REQUIRED_HEADERS) even if an override here omits them — a non-simple header missing from this list silently fails the browser preflight for every cross-origin mutation, not just the one that reads it, so this example lists them explicitly rather than relying on the code-side safety net alone. Add more if you introduce new x-* request headers (e.g. x-actor-id for impersonation).",
+      "howToObtainEs": "Headers que el navegador puede mandar. El default cubre Content-Type/Authorization/X-Requested-With + los headers de IP/request-id que la API realmente lee. X-Idempotency-Key y X-Client-Locale se fuerzan en código (getCorsConfig REQUIRED_HEADERS) aunque un override acá los omita — un header no-simple ausente de esta lista hace fallar el preflight del navegador para TODA mutación cross-origin, no sólo la que lo lee, así que este ejemplo los lista explícitamente en vez de depender sólo de la red de seguridad del código. Agregá más si incorporás nuevos headers x-* en el request (ej: x-actor-id para impersonar)."
     },
     {
       "name": "API_CORS_EXPOSE_HEADERS",
@@ -4172,8 +4172,8 @@
       "type": "string",
       "required": false,
       "secret": false,
-      "defaultValue": "es,en",
-      "exampleValue": "es,en",
+      "defaultValue": "es,en,pt",
+      "exampleValue": "es,en,pt",
       "apps": [
         "admin"
       ],

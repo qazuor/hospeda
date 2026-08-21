@@ -515,12 +515,20 @@ export const ApiEnvBaseSchema = z.object({
         .default('HOSPEDA'),
 
     /**
-     * Slug of the billing plan used to provision a commerce-listing subscription
-     * (SPEC-239 T-049). Resolved by slug against `billing_plans.name` via the
-     * same `resolvePlanBySlug` machinery the accommodation start-paid flow uses.
-     * Optional: the commerce start-subscription route 404s when unset or unknown.
+     * Commerce vertical → billing-plan-slug mapping (HOS-688), in the form
+     * `gastronomy:<slug>,experience:<slug>`.
+     *
+     * ONE variable rather than one per vertical: two variables can be left
+     * half-set, and then one vertical sells while the other answers 503 with the
+     * site looking perfectly healthy.
+     *
+     * The SHAPE is validated in `env.ts`'s `.superRefine`, not here, because
+     * this file is import-pure (zod only) and the parser lives in
+     * `utils/commerce-plan-config.ts`. A malformed value fails startup — AC-35's
+     * "an unset or unknown slug stops the container, it does not 503 a
+     * checkout". Unset falls back to the shipped catalogue defaults.
      */
-    HOSPEDA_COMMERCE_PLAN_ID: z.string().optional(),
+    HOSPEDA_COMMERCE_PLAN_SLUGS: z.string().optional(),
 
     /**
      * Extra trusted origins (CSV of full URLs). Applied to BOTH the

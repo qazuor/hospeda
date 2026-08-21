@@ -13,8 +13,19 @@
  * @module routes/billing/checkout-return-urls
  */
 
+import { resolveDisplayLocale } from '@repo/i18n';
 import type { Context } from 'hono';
 import { env } from '../../utils/env.js';
+
+/**
+ * Request header the web app sends on every browser-initiated call so the
+ * API knows which locale the visitor was ACTUALLY on when they triggered the
+ * action (HOS-605) — the closest equivalent to "an explicit locale in the
+ * URL" a server-to-server call has. Set centrally by `apps/web`'s API client
+ * (`src/lib/api/client.ts`) from `window.location.pathname`'s locale segment;
+ * never sent by SSR-to-API calls (no `window` there).
+ */
+const CLIENT_LOCALE_HEADER = 'x-client-locale';
 
 /**
  * Supported locale values for the user-facing return URLs.
@@ -30,29 +41,45 @@ export type ReturnUrlLocale = (typeof SUPPORTED_RETURN_URL_LOCALES)[number];
 export const DEFAULT_RETURN_URL_LOCALE: ReturnUrlLocale = 'es';
 
 /**
- * Resolves the locale to embed in MP return URLs from the authenticated user's
- * web language preference (`user.settings.languageWeb`).
+ * Resolves the locale to embed in MP return URLs, applying the single
+ * product-wide precedence rule (HOS-605 / HOS-609 / HOS-617):
  *
- * Falls back to `'es'` when:
- * - There is no authenticated user on the context.
- * - The user has no `settings.languageWeb` value.
- * - The stored value is not one of the three supported locales.
+ * 1. The `x-client-locale` header — the locale segment of the web page the
+ *    visitor was ACTUALLY on when they triggered the purchase/checkout
+ *    action. This is what fixes HOS-605: a Spanish-browsing visitor whose
+ *    saved profile preference is `en` must return to `/es/`, not `/en/`.
+ * 2. The authenticated user's web language preference
+ *    (`user.settings.languageWeb`) — unchanged from before this fix, now
+ *    just demoted a step.
+ * 3. The `Accept-Language` request header.
+ * 4. `DEFAULT_RETURN_URL_LOCALE` (`'es'`).
  *
- * @param c - Hono context carrying the Better Auth session user.
+ * `c.req` is read defensively (`c.req?.header`) so unit tests that stub a
+ * minimal `Context` (`{ get: vi.fn() }`, no `req`) keep working unchanged —
+ * a real Hono `Context` always has `req`.
+ *
+ * @param c - Hono context carrying the Better Auth session user and the
+ *   inbound request headers.
  * @returns A supported locale string for use in URL path prefixes.
  */
 export function resolveReturnUrlLocale(c: Context): ReturnUrlLocale {
     const user = c.get('user') as { settings?: Record<string, unknown> } | null | undefined;
-    const rawLocale = user?.settings?.languageWeb;
+    const rawAccountLocale = user?.settings?.languageWeb;
+    const accountLocale = typeof rawAccountLocale === 'string' ? rawAccountLocale : null;
 
-    if (
-        typeof rawLocale === 'string' &&
-        (SUPPORTED_RETURN_URL_LOCALES as readonly string[]).includes(rawLocale)
-    ) {
-        return rawLocale as ReturnUrlLocale;
-    }
+    const req = c.req as { header?: (name: string) => string | undefined } | undefined;
+    const urlLocale = req?.header?.(CLIENT_LOCALE_HEADER) ?? null;
+    const acceptLanguageHeader = req?.header?.('accept-language') ?? null;
 
-    return DEFAULT_RETURN_URL_LOCALE;
+    const { locale } = resolveDisplayLocale({
+        urlLocale,
+        accountLocale,
+        acceptLanguageHeader,
+        supportedLocales: SUPPORTED_RETURN_URL_LOCALES,
+        defaultLocale: DEFAULT_RETURN_URL_LOCALE
+    });
+
+    return locale as ReturnUrlLocale;
 }
 
 /**

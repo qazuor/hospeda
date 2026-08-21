@@ -64,7 +64,11 @@ import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
 import { AnalyticsEvents } from '@repo/analytics';
 import { billingSubscriptionEvents, billingSubscriptions, type getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { normalizeStoredSubscriptionStatus, resolveIntendedInterval } from '@repo/service-core';
+import {
+    BILLING_EVENT_TYPES,
+    normalizeStoredSubscriptionStatus,
+    resolveIntendedInterval
+} from '@repo/service-core';
 import * as Sentry from '@sentry/node';
 import { and, eq, sql } from 'drizzle-orm';
 import { captureServerAnalyticsEvent } from '../../lib/posthog.js';
@@ -379,6 +383,7 @@ export async function completeSupersessionPairing(
             .insert(billingSubscriptionEvents)
             .values({
                 subscriptionId: newSubscription.id,
+                eventType: BILLING_EVENT_TYPES.REACTIVATION_SUPERSESSION_COMPLETED,
                 previousStatus: normalizedSupersededStatus,
                 newStatus: SubscriptionStatusEnum.ACTIVE,
                 triggerSource,

@@ -6,13 +6,18 @@
  * alongside (and is deliberately separate from) `admin/index.ts` — the admin
  * commerce routes stay on `/api/v1/admin/commerce` as a staff escape hatch
  * (HOS-166 NG-7).
+ *
+ * `GET /leads/mine` (HOS-257 pre-fill read) was removed by HOS-693 §6.2
+ * along with the admin provisioning path that was its only writer of
+ * `commerce_leads.provisionedUserId` — the field this endpoint scoped by.
+ * `CommerceLeadService.getMyLead` itself is untouched (HOS-693's own scope
+ * note: "the rest remains").
  */
 import { createRouter } from '../../../utils/create-app';
 import {
     protectedCreateExperienceListingRoute,
     protectedCreateGastronomyListingRoute
 } from './create';
-import { protectedGetMyLeadRoute } from './my-lead';
 import { startCommerceSubscriptionRouter } from './start-subscription';
 
 const router = createRouter();
@@ -23,14 +28,11 @@ router.route('/', protectedCreateGastronomyListingRoute);
 router.route('/', protectedCreateExperienceListingRoute);
 // POST /listings/:entityType/:entityId/start-subscription — owner checkout (§6.3)
 router.route('/', startCommerceSubscriptionRouter);
-// GET /leads/mine — owner self-service pre-fill read (HOS-257)
-router.route('/', protectedGetMyLeadRoute);
 
 /**
  * Protected commerce routes:
  * - POST /listings/gastronomy
  * - POST /listings/experience
  * - POST /listings/:entityType/:entityId/start-subscription
- * - GET /leads/mine
  */
 export const protectedCommerceRoutes = router;

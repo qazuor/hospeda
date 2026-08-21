@@ -11,6 +11,7 @@ import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import * as serviceCore from '@repo/service-core';
 import {
+    BILLING_EVENT_TYPES,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
@@ -847,6 +848,14 @@ describe('processSubscriptionUpdated', () => {
         expect(dbMock.transaction).toHaveBeenCalled();
         expect(dbMock.tx.update).toHaveBeenCalled();
         expect(dbMock.tx.insert).toHaveBeenCalled();
+
+        const txInsertChain = dbMock.tx.insert({});
+        expect(txInsertChain.values).toHaveBeenCalledWith(
+            expect.objectContaining({
+                eventType: BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_CANCELLED,
+                newStatus: SubscriptionStatusEnum.CANCELLED
+            })
+        );
     });
 
     // TC-08: Status change to PAUSED - DB update, event log, and correct result
@@ -879,6 +888,14 @@ describe('processSubscriptionUpdated', () => {
         expect(dbMock.transaction).toHaveBeenCalled();
         expect(dbMock.tx.update).toHaveBeenCalled();
         expect(dbMock.tx.insert).toHaveBeenCalled();
+
+        const txInsertChain = dbMock.tx.insert({});
+        expect(txInsertChain.values).toHaveBeenCalledWith(
+            expect.objectContaining({
+                eventType: BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_PAUSED,
+                newStatus: SubscriptionStatusEnum.PAUSED
+            })
+        );
     });
 
     // TC-09: Status change to ACTIVE (reactivation from paused) - resets cancelAtPeriodEnd
@@ -964,6 +981,7 @@ describe('processSubscriptionUpdated', () => {
         const txInsertChain = dbMock.tx.insert({});
         expect(txInsertChain.values).toHaveBeenCalledWith(
             expect.objectContaining({
+                eventType: BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_ACTIVATED,
                 previousStatus: SubscriptionStatusEnum.PENDING_PROVIDER,
                 newStatus: SubscriptionStatusEnum.ACTIVE
             })
@@ -1659,6 +1677,14 @@ describe('processSubscriptionUpdated', () => {
             // DB update should be called to persist the failure count
             // (the transaction update + the metadata update after step 8c)
             expect(dbMock.update).toHaveBeenCalled();
+
+            const txInsertChain = dbMock.tx.insert({});
+            expect(txInsertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_PAST_DUE,
+                    newStatus: SubscriptionStatusEnum.PAST_DUE
+                })
+            );
         });
 
         it('should NOT dispatch PAYMENT_RETRY_WARNING on first failure (count=1)', async () => {
@@ -1887,6 +1913,14 @@ describe('processSubscriptionUpdated', () => {
             expect(result.statusChanged).toBe(true);
             expect(result.newStatus).toBe(SubscriptionStatusEnum.TRIALING);
             expect(dbMock.tx.update).toHaveBeenCalled();
+
+            const txInsertChain = dbMock.tx.insert({});
+            expect(txInsertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_TRIALING,
+                    newStatus: SubscriptionStatusEnum.TRIALING
+                })
+            );
         });
 
         // AC-3: a null trial window means an ordinary paid subscription.
@@ -2814,6 +2848,14 @@ describe('processSubscriptionUpdated', () => {
                 ownerId: 'user-001',
                 active: false
             });
+
+            const txInsertChain = dbMock.tx.insert({});
+            expect(txInsertChain.values).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    eventType: BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_EXPIRED,
+                    newStatus: SubscriptionStatusEnum.EXPIRED
+                })
+            );
         });
 
         it('revokes featuredByEntitlement on transition to PAUSED', async () => {

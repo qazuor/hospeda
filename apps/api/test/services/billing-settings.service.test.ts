@@ -238,7 +238,7 @@ describe('BillingSettingsService', () => {
             mockLimit.mockResolvedValue([]);
 
             // Act
-            const result = await service.updateSettings(patch);
+            const result = await service.updateSettings(patch, false);
 
             // Assert
             expect(result).toEqual({
@@ -253,7 +253,7 @@ describe('BillingSettingsService', () => {
             mockLimit.mockResolvedValue([]);
 
             // Act
-            await service.updateSettings(patch);
+            await service.updateSettings(patch, false);
 
             // Assert - first insert is into billingSettings
             expect(insertCalls.length).toBeGreaterThanOrEqual(2);
@@ -271,7 +271,7 @@ describe('BillingSettingsService', () => {
             mockLimit.mockResolvedValue([]);
 
             // Act
-            await service.updateSettings(patch);
+            await service.updateSettings(patch, false);
 
             // Assert - second insert is into billingAuditLogs
             expect(insertCalls.length).toBe(2);
@@ -284,7 +284,7 @@ describe('BillingSettingsService', () => {
                     actorId: null,
                     actorType: 'system',
                     previousValues: DEFAULT_SETTINGS,
-                    livemode: true
+                    livemode: false
                 })
             );
         });
@@ -296,7 +296,7 @@ describe('BillingSettingsService', () => {
             mockLimit.mockResolvedValue([]);
 
             // Act
-            await service.updateSettings(patch, actorId);
+            await service.updateSettings(patch, false, actorId);
 
             // Assert - audit log has actorId
             expect(insertCalls[1]?.values).toEqual(
@@ -307,13 +307,32 @@ describe('BillingSettingsService', () => {
             );
         });
 
+        // HOS-719: livemode on the billing_audit_logs insert must be exactly
+        // what the caller passes in — never a hardcoded value regardless of
+        // the caller's choice.
+        it('writes the caller-provided livemode onto the audit log entry (HOS-719)', async () => {
+            // Arrange
+            const patch = { ownerTrialDays: 21 };
+            mockLimit.mockResolvedValue([]);
+
+            // Act — production mode (livemode: true)
+            await service.updateSettings(patch, true);
+
+            // Assert
+            expect(insertCalls[1]?.values).toEqual(
+                expect.objectContaining({
+                    livemode: true
+                })
+            );
+        });
+
         it('should throw on validation failure - ownerTrialDays zero', async () => {
             // Arrange
             const patch = { ownerTrialDays: 0 };
             mockLimit.mockResolvedValue([]);
 
             // Act & Assert
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'Validation failed: ownerTrialDays must be between 1 and 90'
             );
             expect(mockInsert).not.toHaveBeenCalled();
@@ -325,7 +344,7 @@ describe('BillingSettingsService', () => {
             mockLimit.mockResolvedValue([]);
 
             // Act & Assert
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'Validation failed: currency must be a 3-letter ISO 4217 code'
             );
             expect(mockInsert).not.toHaveBeenCalled();
@@ -341,8 +360,12 @@ describe('BillingSettingsService', () => {
             mockLimit.mockResolvedValue([]);
 
             // Act & Assert
-            await expect(service.updateSettings(patch)).rejects.toThrow('Validation failed:');
-            const error = (await service.updateSettings(patch).catch((e: unknown) => e)) as Error;
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
+                'Validation failed:'
+            );
+            const error = (await service
+                .updateSettings(patch, false)
+                .catch((e: unknown) => e)) as Error;
             expect(error.message).toContain('ownerTrialDays must be between 1 and 90');
             expect(error.message).toContain('complexTrialDays must be between 1 and 90');
             expect(error.message).toContain('taxRate must be between 0 and 100');
@@ -355,13 +378,13 @@ describe('BillingSettingsService', () => {
             mockOnConflictDoUpdate.mockRejectedValue(new Error('Insert failed'));
 
             // Act & Assert
-            await expect(service.updateSettings(patch)).rejects.toThrow('Insert failed');
+            await expect(service.updateSettings(patch, false)).rejects.toThrow('Insert failed');
         });
 
         it('should validate ownerTrialDays minimum boundary', async () => {
             const patch = { ownerTrialDays: 0 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'ownerTrialDays must be between 1 and 90'
             );
         });
@@ -369,7 +392,7 @@ describe('BillingSettingsService', () => {
         it('should validate ownerTrialDays maximum boundary', async () => {
             const patch = { ownerTrialDays: 91 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'ownerTrialDays must be between 1 and 90'
             );
         });
@@ -377,7 +400,7 @@ describe('BillingSettingsService', () => {
         it('should validate complexTrialDays minimum boundary', async () => {
             const patch = { complexTrialDays: 0 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'complexTrialDays must be between 1 and 90'
             );
         });
@@ -385,7 +408,7 @@ describe('BillingSettingsService', () => {
         it('should validate complexTrialDays maximum boundary', async () => {
             const patch = { complexTrialDays: 91 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'complexTrialDays must be between 1 and 90'
             );
         });
@@ -393,7 +416,7 @@ describe('BillingSettingsService', () => {
         it('should validate gracePeriodDays minimum boundary', async () => {
             const patch = { gracePeriodDays: -1 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'gracePeriodDays must be between 0 and 30'
             );
         });
@@ -401,7 +424,7 @@ describe('BillingSettingsService', () => {
         it('should validate gracePeriodDays maximum boundary', async () => {
             const patch = { gracePeriodDays: 31 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'gracePeriodDays must be between 0 and 30'
             );
         });
@@ -409,7 +432,7 @@ describe('BillingSettingsService', () => {
         it('should validate currency is 3 letters', async () => {
             const patch = { currency: 'US' };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'currency must be a 3-letter ISO 4217 code'
             );
         });
@@ -417,7 +440,7 @@ describe('BillingSettingsService', () => {
         it('should validate taxRate minimum boundary', async () => {
             const patch = { taxRate: -1 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'taxRate must be between 0 and 100'
             );
         });
@@ -425,7 +448,7 @@ describe('BillingSettingsService', () => {
         it('should validate taxRate maximum boundary', async () => {
             const patch = { taxRate: 101 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'taxRate must be between 0 and 100'
             );
         });
@@ -433,7 +456,7 @@ describe('BillingSettingsService', () => {
         it('should validate maxPaymentRetries minimum boundary', async () => {
             const patch = { maxPaymentRetries: -1 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'maxPaymentRetries must be between 0 and 10'
             );
         });
@@ -441,7 +464,7 @@ describe('BillingSettingsService', () => {
         it('should validate maxPaymentRetries maximum boundary', async () => {
             const patch = { maxPaymentRetries: 11 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'maxPaymentRetries must be between 0 and 10'
             );
         });
@@ -449,7 +472,7 @@ describe('BillingSettingsService', () => {
         it('should validate retryIntervalHours minimum boundary', async () => {
             const patch = { retryIntervalHours: 0 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'retryIntervalHours must be between 1 and 168'
             );
         });
@@ -457,7 +480,7 @@ describe('BillingSettingsService', () => {
         it('should validate retryIntervalHours maximum boundary', async () => {
             const patch = { retryIntervalHours: 169 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'retryIntervalHours must be between 1 and 168'
             );
         });
@@ -465,7 +488,7 @@ describe('BillingSettingsService', () => {
         it('should validate trialExpiryReminderDays minimum boundary', async () => {
             const patch = { trialExpiryReminderDays: 0 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'trialExpiryReminderDays must be between 1 and 30'
             );
         });
@@ -473,7 +496,7 @@ describe('BillingSettingsService', () => {
         it('should validate trialExpiryReminderDays maximum boundary', async () => {
             const patch = { trialExpiryReminderDays: 31 };
             mockLimit.mockResolvedValue([]);
-            await expect(service.updateSettings(patch)).rejects.toThrow(
+            await expect(service.updateSettings(patch, false)).rejects.toThrow(
                 'trialExpiryReminderDays must be between 1 and 30'
             );
         });
@@ -482,7 +505,7 @@ describe('BillingSettingsService', () => {
     describe('resetSettings', () => {
         it('should return default settings', async () => {
             // Act
-            const result = await service.resetSettings();
+            const result = await service.resetSettings(false);
 
             // Assert
             expect(result).toEqual(DEFAULT_SETTINGS);
@@ -490,7 +513,7 @@ describe('BillingSettingsService', () => {
 
         it('should upsert defaults into billing_settings table', async () => {
             // Act
-            await service.resetSettings();
+            await service.resetSettings(false);
 
             // Assert - first insert is into billingSettings
             expect(insertCalls.length).toBe(2);
@@ -504,7 +527,7 @@ describe('BillingSettingsService', () => {
 
         it('should insert reset audit log entry', async () => {
             // Act
-            await service.resetSettings();
+            await service.resetSettings(false);
 
             // Assert - second insert is into billingAuditLogs
             expect(insertCalls[1]?.table).toBe(billingAuditLogs);
@@ -517,7 +540,7 @@ describe('BillingSettingsService', () => {
                     actorType: 'system',
                     changes: DEFAULT_SETTINGS,
                     previousValues: null,
-                    livemode: true,
+                    livemode: false,
                     ipAddress: null,
                     userAgent: null
                 })
@@ -529,7 +552,7 @@ describe('BillingSettingsService', () => {
             const actorId = 'admin_456';
 
             // Act
-            await service.resetSettings(actorId);
+            await service.resetSettings(false, actorId);
 
             // Assert
             expect(insertCalls[1]?.values).toEqual(
@@ -545,7 +568,7 @@ describe('BillingSettingsService', () => {
             mockOnConflictDoUpdate.mockRejectedValue(new Error('Insert failed'));
 
             // Act & Assert
-            await expect(service.resetSettings()).rejects.toThrow('Insert failed');
+            await expect(service.resetSettings(false)).rejects.toThrow('Insert failed');
         });
     });
 
@@ -564,7 +587,7 @@ describe('BillingSettingsService', () => {
             mockLimit.mockResolvedValue([]);
 
             // Act
-            const result = await service.updateSettings(patch);
+            const result = await service.updateSettings(patch, false);
 
             // Assert
             expect(result.ownerTrialDays).toBe(1);
@@ -585,7 +608,7 @@ describe('BillingSettingsService', () => {
             mockLimit.mockResolvedValue([]);
 
             // Act
-            const result = await service.updateSettings(patch);
+            const result = await service.updateSettings(patch, false);
 
             // Assert
             expect(result.ownerTrialDays).toBe(90);
@@ -610,7 +633,7 @@ describe('BillingSettingsService', () => {
             const patch = { ownerTrialDays: 45 };
 
             // Act
-            const result = await service.updateSettings(patch);
+            const result = await service.updateSettings(patch, false);
 
             // Assert
             expect(result.ownerTrialDays).toBe(45);

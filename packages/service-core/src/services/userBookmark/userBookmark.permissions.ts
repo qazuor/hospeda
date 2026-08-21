@@ -2,6 +2,8 @@ import type { UserBookmark } from '@repo/schemas';
 import { PermissionEnum, ServiceErrorCode } from '@repo/schemas';
 import type { Actor } from '../../types';
 import { ServiceError } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
+import { USER_BOOKMARK_ENTITY_NAME } from '../entity-names';
 
 /**
  * Checks if an actor has the USER_BOOKMARK_VIEW_ANY permission,
@@ -25,10 +27,11 @@ function hasViewAnyPermission(actor: Actor): boolean {
 export const canAccessBookmark = (actor: Actor | undefined, bookmark: UserBookmark): void => {
     if (!actor) throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'FORBIDDEN: Missing actor');
     if (actor.id !== bookmark.userId && !hasViewAnyPermission(actor)) {
-        throw new ServiceError(
-            ServiceErrorCode.FORBIDDEN,
-            'FORBIDDEN: Only owner can access bookmark'
-        );
+        // HOS-600: NOT_FOUND, byte-identical to the answer for an id that
+        // matches nothing. A 403 here confirmed the bookmark was real and
+        // simply somebody else's, which the error contract's
+        // "a foreign resource answers 404" rule exists to deny.
+        throw entityNotFoundError({ entityName: USER_BOOKMARK_ENTITY_NAME });
     }
 };
 

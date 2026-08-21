@@ -11,10 +11,12 @@
 
 import type { QZPayProviderPayment } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
+import { asCentavos, toMajor } from '@repo/billing';
 import { captureBillingError } from '../../../lib/sentry';
 import { apiLogger } from '../../../utils/logger';
 import { cleanupRequestProviderEventId } from './event-handler';
 import { processPaymentUpdated } from './payment-logic';
+import type { SyntheticMpPaymentPayload } from './types';
 import {
     getWebhookDependencies,
     markEventFailedByProviderId,
@@ -141,15 +143,49 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
 
         // Map the QZPayProviderPayment shape (qzpay's normalized type) to the
         // MP-raw-ish shape that the existing extractors (extractPaymentInfo,
-        // extractAnnualSubscriptionMetadata, …) consume. The mapping is
-        // straightforward: amount → transaction_amount and currency →
-        // currency_id; status and metadata pass through unchanged. Fields
+        // extractAnnualSubscriptionMetadata, …) consume. Every MONEY field
+        // crosses a unit boundary here (see below); currency, status and
+        // metadata pass through unchanged. Fields
         // that exist only in MP raw (status_detail, payment_method_id) stay
         // null — those are used only by failure notification copy, not by
         // any dispatch decision.
-        const data: Record<string, unknown> = {
+        //
+        // Units: every money field qzpay hands back is CENTAVOS (it normalizes
+        // to minor units — see the adapter's `Math.round(amount * 100)`),
+        // whereas every `data.*` field below is MP-RAW-shaped and therefore
+        // MAJOR units. HOS-720 put that flip in the type instead of in this
+        // comment: `asCentavos` states what qzpay gave us, `toMajor` performs
+        // the crossing, and `extractPaymentInfo`/`applyWebhookRefundLifecycle`
+        // downstream now demand `Major`, so forwarding an unconverted centavo
+        // figure no longer compiles.
+        //
+        // HOS-704 — `transaction_amount_refunded` is not an optional nicety.
+        // `applyWebhookRefundLifecycle` (payment-logic.ts) reads it to decide
+        // whether a refund is partial or total, and its absence is read as
+        // "total": `refunded_amount` is set to the whole payment, the
+        // subscription is cancelled and entitlements are revoked. Dropping it
+        // meant a customer who was refunded 30% lost their subscription. The
+        // figure was never missing from MercadoPago — it rides on the same
+        // `payments.retrieve` response fetched above; qzpay simply did not map
+        // it until `refundedAmount` was added to QZPayProviderPayment.
+        //
+        // HOS-713 — the sibling `amount` field was the SAME mistake in the
+        // other direction: it was forwarded to `transaction_amount` undivided,
+        // and payment-logic.ts converted it back with `Math.round(x * 100)`
+        // before writing `billing_payments.amount` and before handing it to
+        // `sendNotification`, inflating a real $150.00 charge to $15.000,00 —
+        // 100× — in the ledger AND in the payment email the customer receives.
+        // Both bugs were a unit crossed by hand; neither is expressible now.
+        const data: SyntheticMpPaymentPayload = {
             id: providerPayment.id,
-            transaction_amount: providerPayment.amount,
+            transaction_amount: toMajor(asCentavos(providerPayment.amount)),
+            ...(typeof providerPayment.refundedAmount === 'number'
+                ? {
+                      transaction_amount_refunded: toMajor(
+                          asCentavos(providerPayment.refundedAmount)
+                      )
+                  }
+                : {}),
             currency_id: providerPayment.currency,
             status: providerPayment.status,
             metadata: providerPayment.metadata

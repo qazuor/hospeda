@@ -962,6 +962,13 @@ export class AllianceLeadService extends BaseService {
      * {@link provisionServiceProviderListing} for why those degrade rather than
      * fail).
      *
+     * Approving an unclaimed `service_provider` lead ALSO mints a fresh claim
+     * token and, when a {@link AllianceClaimInvitePort} is injected, sends the
+     * invite unconditionally — regardless of whether the address already has
+     * an account (HOS-599). Without this, the listing above is provisioned
+     * ownerless and stays that way forever: nothing else ever invites the
+     * applicant to redeem the token `createLead` silently withheld from them.
+     *
      * @param params - `{ actor, id, input }`.
      * @param ctx - Optional service execution context.
      * @returns `ServiceOutput<AllianceLead>` wrapping the updated lead.
@@ -993,6 +1000,55 @@ export class AllianceLeadService extends BaseService {
                     );
                 }
 
+                // A boundary is opened ONLY when a listing is actually coming.
+                // Rejections, and approvals of the other three programs, are a
+                // single UPDATE — wrapping those would make a method that needs
+                // no database connection demand one, which is precisely what
+                // broke every mocked unit test of this method when it did.
+                const willProvision =
+                    validated.status === 'approved' &&
+                    resolveProvisionPlan(existing).kind === 'provision';
+
+                // HOS-599: a `service_provider` approval provisions its
+                // `host_trades` listing with `ownerUserId: null` whenever the
+                // lead arrived anonymously — which is the ordinary case, per
+                // HOS-647. The listing then stays ownerless until the
+                // applicant redeems a claim token via `claimLead`, so approval
+                // is also the moment a fresh invite must go out.
+                //
+                // Unlike `createLead`'s claim invite — gated on the address
+                // already having an account, because AC-3 forbids leaking
+                // account existence to an anonymous, unauthenticated caller —
+                // this fires UNCONDITIONALLY. There is nothing left to protect:
+                // an admin already reviewed and approved this specific lead, so
+                // sending regardless of account existence discloses nothing a
+                // stranger could probe for.
+                //
+                // Also covers the retry case: re-approving an idempotent,
+                // already-provisioned lead that is STILL unclaimed re-issues
+                // the invite — exactly the recovery path this fix needed for
+                // every lead whose first attempt silently never sent one.
+                const needsClaimInvite =
+                    validated.status === 'approved' &&
+                    existing.kind === 'service_provider' &&
+                    existing.applicantUserId === null &&
+                    (willProvision || existing.provisionedHostTradeId !== null);
+
+                // The RAW token minted by `createLead` never survives past its
+                // own closure — only its digest reaches the row — so there is
+                // no original token to resend here. A fresh one is minted
+                // instead. This supersedes any still-valid token from the
+                // original submission, which is the correct outcome: the email
+                // about to go out is the current, authoritative one.
+                const freshClaim = needsClaimInvite
+                    ? {
+                          token: generateClaimToken(),
+                          expiresAt: new Date(
+                              Date.now() + CLAIM_TOKEN_TTL_DAYS * 24 * 60 * 60 * 1000
+                          )
+                      }
+                    : null;
+
                 // Provisioning and the status change must land together. A lead
                 // marked `approved` with no listing is the inconsistent state
                 // this whole slice exists to remove, and an orphan listing whose
@@ -1018,7 +1074,13 @@ export class AllianceLeadService extends BaseService {
                               })
                             : null;
 
-                    const updatePayload: Partial<AllianceLead> = {
+                    // TYPE-WORKAROUND: `claimToken` is deliberately absent from
+                    // the `AllianceLead` entity schema — it doubles as the
+                    // admin list response allowlist, and a single-use secret has
+                    // no business being serialized there — but it IS a real
+                    // column on the DB row, same gap `createLead` casts around.
+                    const updatePayload: Partial<AllianceLead> &
+                        Partial<Pick<SelectAllianceLead, 'claimToken'>> = {
                         status: validated.status,
                         updatedById: a.id,
                         ...(validated.adminNote === undefined
@@ -1026,6 +1088,12 @@ export class AllianceLeadService extends BaseService {
                             : { adminNote: validated.adminNote }),
                         ...(provisioning?.provisioned
                             ? { provisionedHostTradeId: provisioning.hostTradeId }
+                            : {}),
+                        ...(freshClaim
+                            ? {
+                                  claimToken: digestClaimToken(freshClaim.token),
+                                  claimExpiresAt: freshClaim.expiresAt
+                              }
                             : {})
                     };
 
@@ -1048,15 +1116,6 @@ export class AllianceLeadService extends BaseService {
 
                     return row as SelectAllianceLead;
                 };
-
-                // A boundary is opened ONLY when a listing is actually coming.
-                // Rejections, and approvals of the other three programs, are a
-                // single UPDATE — wrapping those would make a method that needs
-                // no database connection demand one, which is precisely what
-                // broke every mocked unit test of this method when it did.
-                const willProvision =
-                    validated.status === 'approved' &&
-                    resolveProvisionPlan(existing).kind === 'provision';
 
                 const updated = execCtx?.tx
                     ? await applyDecision(execCtx)
@@ -1089,6 +1148,32 @@ export class AllianceLeadService extends BaseService {
                                     error: error instanceof Error ? error.message : String(error)
                                 },
                                 '[alliance-lead] decision notification failed to send'
+                            );
+                        });
+                }
+
+                if (freshClaim !== null && this._claimInviter !== null) {
+                    // Same fire-and-forget reasoning as the decision notifier
+                    // above and as `createLead`'s own invite: a slow mail
+                    // transport must not hold the admin's approval request
+                    // open, and a delivery failure must not surface as a
+                    // failed approval the admin would then retry.
+                    void this._claimInviter
+                        .inviteToClaim({
+                            leadId: lead.id,
+                            email: lead.email,
+                            contactName: lead.contactName,
+                            kind: lead.kind,
+                            token: freshClaim.token,
+                            expiresAt: freshClaim.expiresAt
+                        })
+                        .catch((error: unknown) => {
+                            this.logger.error(
+                                {
+                                    leadId: lead.id,
+                                    error: error instanceof Error ? error.message : String(error)
+                                },
+                                '[alliance-lead] claim invitation failed to send at approval'
                             );
                         });
                 }

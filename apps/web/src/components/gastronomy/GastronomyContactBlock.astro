@@ -12,6 +12,7 @@
 import type { GastronomySocialNetworks } from '@/data/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 
 interface Props {
     readonly socialNetworks: GastronomySocialNetworks | null;
@@ -22,12 +23,18 @@ interface Props {
 const { socialNetworks, menuUrl, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
+// Both the menu link and the social profiles are authored by the commerce
+// owner in `/mi-cuenta/comercio`, and `z.string().url()` accepts `javascript:`
+// — so this allow-list, not the schema, is what keeps a payload out of the
+// hrefs below (HOS-592 / F-02). A refused value drops its link entirely.
+const menuHref = resolveSafeExternalUrl(menuUrl);
+
 /** Only render if at least one piece of contact info is present. */
 const hasSocial =
     socialNetworks &&
-    Object.values(socialNetworks).some((v) => Boolean(v));
+    Object.values(socialNetworks).some((v) => Boolean(resolveSafeExternalUrl(v)));
 
-if (!hasSocial && !menuUrl) {
+if (!hasSocial && !menuHref) {
     // Nothing to render — exit early
     return;
 }
@@ -53,10 +60,10 @@ const socialLabel = t('gastronomy.detail.social', 'Redes sociales');
 ---
 
 <section class="gastro-contact">
-    {menuUrl && (
+    {menuHref && (
         <div class="gastro-contact__menu">
             <a
-                href={menuUrl}
+                href={menuHref}
                 class="gastro-contact__menu-btn"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -71,12 +78,12 @@ const socialLabel = t('gastronomy.detail.social', 'Redes sociales');
             <h3 class="gastro-contact__social-title">{socialLabel}</h3>
             <ul class="gastro-contact__social-list">
                 {SOCIAL_LINKS.map(({ key, label, icon }) => {
-                    const url = socialNetworks?.[key];
-                    if (!url) return null;
+                    const href = resolveSafeExternalUrl(socialNetworks?.[key]);
+                    if (!href) return null;
                     return (
                         <li class="gastro-contact__social-item">
                             <a
-                                href={url}
+                                href={href}
                                 class="gastro-contact__social-link"
                                 target="_blank"
                                 rel="noopener noreferrer"

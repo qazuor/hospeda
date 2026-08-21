@@ -56,7 +56,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
 // Its presence here is a behavioral regression guard — if the source ever reverts
 // to importing from @repo/billing, this mock will intercept the call and the
 // `not.toHaveBeenCalled()` assertions below will fail.
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: mockGetAddonBySlug
 }));
 

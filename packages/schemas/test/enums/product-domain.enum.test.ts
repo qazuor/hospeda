@@ -13,16 +13,33 @@ describe('ProductDomainEnum', () => {
             expect(ProductDomainEnum.ACCOMMODATION).toBe('accommodation');
         });
 
-        it('should define COMMERCE', () => {
-            expect(ProductDomainEnum.COMMERCE).toBe('commerce');
-        });
-
         it('should define PARTNER', () => {
             expect(ProductDomainEnum.PARTNER).toBe('partner');
         });
 
-        it('should have exactly 3 values', () => {
-            expect(Object.values(ProductDomainEnum)).toHaveLength(3);
+        it('should define GASTRONOMY', () => {
+            expect(ProductDomainEnum.GASTRONOMY).toBe('gastronomy');
+        });
+
+        it('should define EXPERIENCE', () => {
+            expect(ProductDomainEnum.EXPERIENCE).toBe('experience');
+        });
+
+        // HOS-685 — this count is a frozen baseline, not a formality. Nothing in
+        // the type system reacts to a member appearing or disappearing (no
+        // `Record<ProductDomainEnum, …>`, no exhaustive `switch`, no `satisfies`),
+        // so this assertion is the only thing that fails when the vocabulary
+        // changes without the call sites being reviewed.
+        //
+        // HOS-695 (release C) retired COMMERCE, dropping the count from 5 to 4 —
+        // the last of the three releases (A widened it, B rewrote every row off
+        // it, C removes the member itself).
+        it('should have exactly 4 values', () => {
+            expect(Object.values(ProductDomainEnum)).toHaveLength(4);
+        });
+
+        it('should NOT define COMMERCE (HOS-695 — retired)', () => {
+            expect(ProductDomainEnum).not.toHaveProperty('COMMERCE');
         });
     });
 
@@ -34,13 +51,23 @@ describe('ProductDomainEnum', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should accept "commerce"', () => {
+        it('should reject the retired "commerce" value (HOS-695)', () => {
             const result = ProductDomainEnumSchema.safeParse('commerce');
-            expect(result.success).toBe(true);
+            expect(result.success).toBe(false);
         });
 
         it('should accept "partner"', () => {
             const result = ProductDomainEnumSchema.safeParse('partner');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept "gastronomy"', () => {
+            const result = ProductDomainEnumSchema.safeParse('gastronomy');
+            expect(result.success).toBe(true);
+        });
+
+        it('should accept "experience"', () => {
+            const result = ProductDomainEnumSchema.safeParse('experience');
             expect(result.success).toBe(true);
         });
 

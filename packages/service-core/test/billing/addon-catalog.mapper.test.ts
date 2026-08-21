@@ -92,6 +92,16 @@ describe('mapRowToAddonDefinition', () => {
             );
         });
 
+        // HOS-595: the row's primary key was dropped by this mapper, so
+        // `confirmAddonPurchase` had no id to write into
+        // `billing_addon_purchases.addon_id` (a FK to `billing_addons`) and every
+        // purchase row in production was left unjoinable to its catalog entry.
+        it('should map id from the billing_addons primary key', () => {
+            const row = buildRowFromAddon(ALL_ADDONS[0]!);
+            const def = mapRowToAddonDefinition(row);
+            expect(def.id).toBe('uuid-visibility-boost-7d');
+        });
+
         it('should map slug from metadata.slug', () => {
             const row = buildRowFromAddon(ALL_ADDONS[0]!);
             const def = mapRowToAddonDefinition(row);

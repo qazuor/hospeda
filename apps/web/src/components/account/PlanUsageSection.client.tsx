@@ -16,8 +16,9 @@ import { useEffect, useState } from 'react';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import type { AccommodationPhotoUsage, LimitUsage } from '@/lib/api/endpoints-protected';
 import { billingApi } from '@/lib/api/endpoints-protected';
+import type { ProductDomainScope } from '@/lib/api/types';
+import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import {
-    addonSlugForLimit,
     groupLimitsByAudience,
     needsUpgradePrompt,
     type UsageAudience
@@ -38,7 +39,7 @@ export interface PlanUsageSectionProps {
      * can hold both an accommodation and a commerce subscription under one
      * billing customer, and each grants a different set of limits.
      */
-    readonly productDomain?: 'accommodation' | 'commerce';
+    readonly productDomain?: ProductDomainScope;
 }
 
 /** `maxAllowed` sentinel meaning "no ceiling". */
@@ -144,17 +145,25 @@ function UpgradeActions({
     readonly roles: readonly string[];
 }) {
     const { t } = createTranslations(locale);
-    const addonSlug = addonSlugForLimit(limit.limitKey);
-
     const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ roles }) });
-    const addonsHref = `${buildUrl({ locale, path: 'mi-cuenta/addons' })}#addon-${addonSlug}`;
+    // HOS-723: was composing `addonSlugForLimit` + `buildAddonFocusUrl` here,
+    // the third copy of that pair in the app. It now goes through the single
+    // resolver, so a change to the limit -> add-on rule reaches this row, the
+    // publish precheck and the limit toast at once instead of one of the three.
+    //
+    // Behaviour is unchanged: `null` for the limits with nothing to sell (so
+    // the link is omitted, never a bare add-ons-page link), and otherwise the
+    // same focus URL — `?focus=<slug>` plus the pre-existing `#addon-<slug>`
+    // fragment, so the page both scrolls to the card and surfaces it at the
+    // top under a heading naming this limit (HOS-729).
+    const addonOffer = resolveLimitAddonOffer({ locale, limitKey: limit.limitKey });
 
     return (
         <p className={styles.actions}>
-            {addonSlug && (
+            {addonOffer !== null && (
                 <a
                     className={styles.actionLink}
-                    href={addonsHref}
+                    href={addonOffer.href}
                 >
                     {t('account.subscription.usage.buyAddon', 'Ampliar con un complemento')}
                 </a>

@@ -87,10 +87,18 @@ describe('PartnerMentionsSection — AC-3 copy contract', () => {
 });
 
 describe('PartnerMentionsSection — the linkless channel', () => {
-    it('declares a non-anchor branch for a mention with no url', () => {
+    it('declares a non-anchor branch for a mention with no usable url', () => {
         // Source-level: proves the branch EXISTS, not that a null url reaches
         // it. The rendered-DOM proof is the admin twin's test.
-        expect(SOURCE).toContain('mention.url ?');
+        //
+        // The branch is driven by the SANITIZED href, not by the raw field
+        // (HOS-592): a stored `javascript:` permalink has to land in the same
+        // plain-text branch a link-less channel already gets, so the condition
+        // and the `href` must read the same resolved binding.
+        expect(SOURCE).toContain('resolveSafeExternalUrl(mention.url)');
+        expect(SOURCE).toContain('mentionHref ?');
+        expect(SOURCE).toContain('href={mentionHref}');
+        expect(SOURCE).not.toContain('href={mention.url}');
         expect(SOURCE).toContain('partner-mentions__no-link');
         expect(SOURCE).toContain("t('account.partnerMentions.noPublicationLink')");
     });

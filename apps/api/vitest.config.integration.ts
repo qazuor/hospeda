@@ -8,11 +8,19 @@ import { configDefaults, defineConfig } from 'vitest/config';
  * Run with: `pnpm test:integration`.
  *
  * Scope is deliberately narrow: `test/integration/ai/**`, minus the flaky
- * `vault-roundtrip.test.ts` (see the `exclude` below). The other ~250 files
- * under `test/integration/**` already run as part of `test:e2e` (see
- * `vitest.config.e2e.ts`, whose `include` also matches `test/integration/**`);
- * widening this config's scope to duplicate that is a follow-up, not part of
- * HOS-247.
+ * `vault-roundtrip.test.ts` (see the `exclude` below).
+ *
+ * CORRECTION (HOS-715, 2026-08-21): this comment used to claim the other
+ * ~243 files under `test/integration/**` (everything outside `ai/**`)
+ * "already run as part of `test:e2e`" because `vitest.config.e2e.ts`'s
+ * `include` also matches `test/integration/**`. That claim was FALSE in CI:
+ * no workflow ever invokes `vitest.config.e2e.ts` against that glob — the
+ * job named "E2E P0 Suite" runs the separate `hospeda-e2e` Playwright
+ * package, not this Vitest config. Those ~243 files went unexecuted by any
+ * CI job for ~6.5 months (since commit `1cfc7e8b6`, 2026-02-03, excluded them
+ * from `vitest.config.ts`) and are independently broken (HOS-715: config
+ * orphaning + stale mocks), not merely "duplicated elsewhere." Reviving them
+ * is tracked as follow-up work, not covered by this file.
  *
  * Every file in this scope still exercises a real PostgreSQL database via the
  * `testDb` lifecycle hooks — `translate.test.ts` additionally `vi.mock`s

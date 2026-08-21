@@ -449,7 +449,10 @@ async function ensurePlan(
                 sortOrder: plan.sortOrder,
                 trialDays: plan.trialDays,
                 hasTrial: plan.hasTrial,
-                monthlyPriceArs: plan.monthlyPriceArs,
+                // monthlyPriceArs: removed (HOS-692, spec §6.9) — dead metadata
+                // mirror; matches plan.crud.ts's createPlan/updatePlan, which
+                // stopped writing it in the same PR. The typed column write
+                // above (monthlyPriceArs: plan.monthlyPriceArs) is the live one.
                 annualPriceArs: plan.annualPriceArs,
                 monthlyPriceUsdRef: plan.monthlyPriceUsdRef
             }

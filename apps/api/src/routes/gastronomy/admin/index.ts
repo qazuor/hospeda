@@ -25,6 +25,7 @@ import { adminGetGastronomyFaqsRoute } from './getFaqs';
 import { adminGetGastronomyMediaRoute } from './getMedia';
 import { adminHardDeleteGastronomyRoute } from './hardDelete';
 import { adminListGastronomiesRoute } from './list';
+import { adminModerateGastronomyRoute } from './moderate';
 import { adminGastronomyOptionsRoute } from './options';
 import { adminPatchGastronomyRoute } from './patch';
 import { adminRemoveGastronomyFaqRoute } from './removeFaq';
@@ -76,6 +77,11 @@ app.route('/', adminRestoreGastronomyRoute);
 
 // POST /:id/assign-owner - Set/replace listing owner
 app.route('/', adminAssignGastronomyOwnerRoute);
+
+// POST /:id/moderate - Apply the moderation verdict to the LISTING (HOS-686).
+// Distinct from /reviews/:id/moderate above, which moderates reviews ABOUT a
+// listing: different permission, different subject.
+app.route('/', adminModerateGastronomyRoute);
 
 // PATCH /:id/faqs/reorder - Reorder FAQs for a listing
 // Registered before /:id/faqs routes to prevent "reorder" matching as a faqId param

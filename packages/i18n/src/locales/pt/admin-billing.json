@@ -1163,6 +1163,8 @@
         "productDomainLabels": {
             "accommodation": "Hospedagem",
             "commerce": "Comércio",
+            "gastronomy": "Gastronomia",
+            "experience": "Experiência",
             "partner": "Parceiro",
             "unknown": "Outro"
         }

@@ -1,4 +1,9 @@
-import { ALL_PLANS, getAddonBySlug, OWNER_TRIAL_DAYS } from '@repo/billing';
+import {
+    ALL_PLANS,
+    DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL,
+    getAddonBySlug,
+    OWNER_TRIAL_DAYS
+} from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     accounts,
@@ -12,13 +17,21 @@ import {
     sql,
     UserModel
 } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    ProductDomainEnum,
+    type ProductDomainValue,
+    RoleEnum,
+    RoleGrantReason,
+    VisibilityEnum
+} from '@repo/schemas';
 import { ADDON_RECALC_SOURCE_ID, getUserRoles, grantRole, revokeRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import { STATUS_ICONS } from '../utils/icons.js';
 import { logger } from '../utils/logger.js';
 import type { SeedContext } from '../utils/seedContext.js';
 import { summaryTracker } from '../utils/summaryTracker.js';
+import { ensureGastronomyAtCapListing } from './commerceListing.js';
 import { ensureHostAccommodation } from './hostAccommodation.js';
 import { ensureHostPromotion } from './hostPromotion.js';
 import {
@@ -48,7 +61,7 @@ const ENTITY_NAME = 'Test Users';
 /**
  * Spec for one test user in the matrix.
  */
-interface TestUserSpec {
+export interface TestUserSpec {
     readonly email: string;
     readonly displayName: string;
     readonly role: (typeof RoleEnum)[keyof typeof RoleEnum];
@@ -82,17 +95,42 @@ interface TestUserSpec {
      * SQL-direct cache-bust workaround. Requires `planSlug`.
      */
     readonly addonSlug?: string;
+    /**
+     * Additional roles to grant alongside `role`, so a single test user can
+     * hold more than one hat at once (HOS-296 multi-role). Used for the
+     * HOST + COMMERCE_OWNER dual-role fixture (HOS-694 AC-3 / AC-12).
+     */
+    readonly extraRoles?: readonly (typeof RoleEnum)[keyof typeof RoleEnum][];
+    /**
+     * `billing_subscriptions.product_domain` to stamp on this user's
+     * subscription (HOS-694). Required for a commerce-vertical subscription
+     * (`'gastronomy'` / `'experience'`) — `subscriptionMatchesDomain` reads
+     * this column exactly for those two domains, so an unstamped row (which
+     * defaults to `'accommodation'`) would be invisible to the commerce
+     * entitlement loader. Omitted for every accommodation/tourist/complex
+     * plan, where the column's `'accommodation'` default is already correct.
+     */
+    readonly subscriptionProductDomain?: ProductDomainValue;
+    /**
+     * When true, seeds exactly one gastronomy listing owned by this user so
+     * their subscription starts AT its `MAX_GASTRONOMIES` cap (HOS-694
+     * AC-13 / AC-30). Requires `planSlug` to resolve to a gastronomy-vertical
+     * plan.
+     */
+    readonly ownsGastronomyAtCap?: boolean;
 }
 
 /**
- * The 13 test users created by this seed.
+ * The 18 test users created by this seed (14 pre-existing — 13 from SPEC-143
+ * Block 1 plus `host-provider@local.test` added later by HOS-376 T-013 — plus
+ * 4 commerce-owner fixtures added by HOS-694).
  *
  * NOTE: super-admin@local.test and admin@local.test are intentionally
  * excluded — the required seed already creates superadmin@hospeda.com.ar
  * and admin@hospeda.com.ar via admin-user.json / super-admin-user.json.
  * Those accounts are the canonical admin credentials for local dev.
  */
-const TEST_USERS: readonly TestUserSpec[] = [
+export const TEST_USERS: readonly TestUserSpec[] = [
     // Staff (no billing)
     { email: 'editor@local.test', displayName: 'Editor Local', role: RoleEnum.EDITOR },
     { email: 'sponsor@local.test', displayName: 'Sponsor Local', role: RoleEnum.SPONSOR },
@@ -161,6 +199,51 @@ const TEST_USERS: readonly TestUserSpec[] = [
         displayName: 'Host Provider',
         role: RoleEnum.HOST,
         planSlug: 'owner-basico'
+    },
+    // Commerce owner tier (COMMERCE_OWNER role, HOS-694). The SPEC-143
+    // matrix had no commerce owner at all until now: HOS-688 introduced
+    // per-vertical billing (MAX_GASTRONOMIES / MAX_EXPERIENCES) with nothing
+    // local to verify it against. `subscriptionProductDomain` stamps
+    // `billing_subscriptions.product_domain` so `subscriptionMatchesDomain`
+    // resolves each user's cap from the right vertical plan.
+    {
+        email: 'commerce-gastronomy@local.test',
+        displayName: 'Comercio Gastronomía',
+        role: RoleEnum.COMMERCE_OWNER,
+        planSlug: DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy,
+        subscriptionProductDomain: ProductDomainEnum.GASTRONOMY
+    },
+    {
+        email: 'commerce-experience@local.test',
+        displayName: 'Comercio Experiencia',
+        role: RoleEnum.COMMERCE_OWNER,
+        planSlug: DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.experience,
+        subscriptionProductDomain: ProductDomainEnum.EXPERIENCE
+    },
+    // Owns exactly one gastronomy listing, at MAX_GASTRONOMIES=1 — the state
+    // AC-13 and AC-30 need to exercise and that nobody could reproduce
+    // locally before this (HOS-694).
+    {
+        email: 'commerce-gastronomy-at-cap@local.test',
+        displayName: 'Comercio Gastronomía Al Tope',
+        role: RoleEnum.COMMERCE_OWNER,
+        planSlug: DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy,
+        subscriptionProductDomain: ProductDomainEnum.GASTRONOMY,
+        ownsGastronomyAtCap: true
+    },
+    // Dual-role fixture (HOS-296 multi-role, HOS-694). AC-3 asserts a HOST
+    // retains the role after being granted COMMERCE_OWNER; AC-12 asserts the
+    // header's three-option publish control renders for an account already
+    // holding either role. HOS-30's accommodation fixture still applies
+    // (triggered by `role === HOST`); COMMERCE_OWNER is granted directly,
+    // with no backing listing, since role possession alone is what the nav
+    // gate and the header control read.
+    {
+        email: 'host-commerce@local.test',
+        displayName: 'Host y Comercio',
+        role: RoleEnum.HOST,
+        planSlug: 'owner-basico',
+        extraRoles: [RoleEnum.COMMERCE_OWNER]
     },
     // Complex / CLIENT_MANAGER tier
     {
@@ -283,13 +366,22 @@ async function ensureBillingCustomer(
  * one-time seeded shape is treated as authoritative; tests that want to
  * exercise a transition (active → canceled, trialing → expired) should
  * UPDATE the existing row instead of relying on the seed to swap status.
+ *
+ * @param productDomain - Stamped on `billing_subscriptions.product_domain`
+ *   (HOS-694) when provided. Omitted for accommodation/tourist/complex plans,
+ *   where the column's `'accommodation'` default is already correct; REQUIRED
+ *   for a commerce-vertical subscription (`'gastronomy'` / `'experience'`) —
+ *   `subscriptionMatchesDomain` reads this column exactly for those two
+ *   domains, so an unstamped row would be invisible to the commerce
+ *   entitlement loader.
  */
 async function ensureSubscription(
     customerId: string,
     planId: string,
     db: DrizzleClient,
     subStatus: 'active' | 'trialing' = 'active',
-    trialDays = OWNER_TRIAL_DAYS
+    trialDays = OWNER_TRIAL_DAYS,
+    productDomain?: ProductDomainValue
 ): Promise<string> {
     const existing = await db
         .select({ id: billingSubscriptions.id })
@@ -332,6 +424,7 @@ async function ensureSubscription(
             livemode: false,
             currentPeriodStart: now,
             currentPeriodEnd: periodEnd,
+            ...(productDomain ? { productDomain } : {}),
             ...(isTrialing ? { trialStart, trialEnd } : {})
         })
         .returning({ id: billingSubscriptions.id });
@@ -483,8 +576,8 @@ async function ensureAddonPurchase(
 }
 
 /**
- * Brings a test user's set of hats to exactly `{ USER, declaredRole }`
- * (HOS-296).
+ * Brings a test user's set of hats to exactly
+ * `{ USER, declaredRole, ...extraRoles }` (HOS-296).
  *
  * The seed used to heal drift with a single `update(users, { role })`. That
  * write no longer exists, and "restore the declared shape" is now a SET
@@ -499,22 +592,30 @@ async function ensureAddonPurchase(
  * layered on top. Keeping it also guarantees the extras-revoke below can never
  * hit `revokeRole`'s last-role guard.
  *
+ * `extraRoles` (HOS-694) lets a single fixture declare more than one
+ * non-USER hat at once — used by `host-commerce@local.test` (HOST +
+ * COMMERCE_OWNER) to exercise HOS-296's multi-role invariant end-to-end
+ * without needing a second `role` field on `TestUserSpec`.
+ *
  * Grants run BEFORE revokes for the same reason.
  *
  * @param params.userId - The seeded user's id.
  * @param params.email - Used only for log output.
- * @param params.declaredRole - The role this fixture declares in `TEST_USERS`.
+ * @param params.declaredRole - The primary role this fixture declares in `TEST_USERS`.
+ * @param params.extraRoles - Additional roles to grant alongside `declaredRole`.
  */
 async function syncTestUserRoles(params: {
     userId: string;
     email: string;
     declaredRole: (typeof RoleEnum)[keyof typeof RoleEnum];
+    extraRoles?: readonly (typeof RoleEnum)[keyof typeof RoleEnum][];
 }): Promise<void> {
-    const { userId, email, declaredRole } = params;
+    const { userId, email, declaredRole, extraRoles = [] } = params;
 
     const desired = new Set<(typeof RoleEnum)[keyof typeof RoleEnum]>([
         RoleEnum.USER,
-        declaredRole
+        declaredRole,
+        ...extraRoles
     ]);
 
     for (const role of desired) {
@@ -550,7 +651,9 @@ async function syncTestUserRoles(params: {
 }
 
 /**
- * Seeds 13 test users for SPEC-143 Block 1 local entitlement testing.
+ * Seeds 18 test users for local entitlement testing (14 pre-existing + 4
+ * commerce-owner fixtures from HOS-694 — see the `TEST_USERS` docstring for
+ * the pre-existing count's own history).
  *
  * Each user receives:
  * - A `users` row with the correct role and lifecycle/visibility defaults.
@@ -573,6 +676,11 @@ async function syncTestUserRoles(params: {
  *   "Mis promociones" list/CRUD flows have data to exercise locally. See
  *   {@link ensureHostPromotion}. Idempotent: skipped entirely if the user
  *   already owns a promotion.
+ * - (For the one fixture with `ownsGastronomyAtCap`, HOS-694) Exactly one
+ *   gastronomy listing they own, so their `gastronomy-premium` subscription
+ *   (`MAX_GASTRONOMIES: 1`) starts AT its cap — the state AC-13 / AC-30 need
+ *   to exercise. See {@link ensureGastronomyAtCapListing}. Idempotent:
+ *   skipped entirely if the user already owns a gastronomy listing.
  *
  * Idempotent: users that already exist (matched by email) are skipped entirely.
  * If a user exists but is missing their account row or billing rows, those gaps
@@ -581,7 +689,8 @@ async function syncTestUserRoles(params: {
  * Tables touched: users, account, billing_customers, billing_subscriptions,
  * billing_addon_purchases, billing_customer_limits, accommodations,
  * accommodation_media, r_accommodation_amenity, r_accommodation_feature,
- * accommodation_faqs, owner_promotions (HOST users only).
+ * accommodation_faqs, owner_promotions (HOST users only), gastronomies (the
+ * at-cap commerce fixture only).
  *
  * @param _context - Seed context (unused; kept for the runExampleSeeds contract)
  *
@@ -651,7 +760,12 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
             }
 
             // ── Sync the declared role SET (HOS-296) ─────────────────────────
-            await syncTestUserRoles({ userId, email: spec.email, declaredRole: spec.role });
+            await syncTestUserRoles({
+                userId,
+                email: spec.email,
+                declaredRole: spec.role,
+                extraRoles: spec.extraRoles
+            });
 
             // ── Mark user ready (SPEC-264) ───────────────────────────────────
             // Writes the domain state that onboarding gates read so the user is
@@ -704,7 +818,8 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                     planId,
                     db,
                     spec.subStatus ?? 'active',
-                    spec.trialDays ?? OWNER_TRIAL_DAYS
+                    spec.trialDays ?? OWNER_TRIAL_DAYS,
+                    spec.subscriptionProductDomain
                 );
 
                 logger.info(
@@ -722,6 +837,17 @@ export async function seedTestUsers(_context: SeedContext): Promise<void> {
                     );
                     logger.info(
                         `${STATUS_ICONS.Info}    Addon ensured for ${spec.email} (addon: ${spec.addonSlug})`
+                    );
+                }
+
+                // ── Ensure the at-cap gastronomy listing (HOS-694) ────────────
+                // Idempotent: skips if the user already owns one. Puts this
+                // owner's gastronomy-premium subscription AT its
+                // MAX_GASTRONOMIES=1 cap, the state AC-13 / AC-30 need.
+                if (spec.ownsGastronomyAtCap) {
+                    await ensureGastronomyAtCapListing({ userId, spec });
+                    logger.info(
+                        `${STATUS_ICONS.Info}    At-cap gastronomy listing ensured for ${spec.email}`
                     );
                 }
             } else {

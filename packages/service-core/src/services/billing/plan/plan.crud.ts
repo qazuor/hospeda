@@ -11,6 +11,7 @@
  * @module services/billing/plan/plan.crud
  */
 
+import { ENTITLEMENT_GRANTING_STATUSES } from '@repo/billing';
 import {
     and,
     asc,
@@ -21,6 +22,7 @@ import {
     type DrizzleClient,
     eq,
     getDb,
+    inArray,
     isNull,
     type QueryContext,
     type QZPayBillingPlan,
@@ -103,8 +105,9 @@ export function mapDbToPlan(
  *
  * Each returned item is an {@link AdminBillingPlanResponse}: the base plan DTO
  * plus `isDeleted` and `activeSubscriptionCount`. The subscription count is the
- * number of subscriptions referencing the plan whose status is `active` or
- * `trialing` and that are not soft-deleted, resolved with a SINGLE grouped
+ * number of subscriptions referencing the plan whose status is one of
+ * {@link ENTITLEMENT_GRANTING_STATUSES} (`active`, `trialing`, or `comp` —
+ * HOS-736) and that are not soft-deleted, resolved with a SINGLE grouped
  * query over all listed plan ids.
  *
  * @param filters - Filter and pagination options
@@ -204,9 +207,11 @@ export async function listPlans(filters: ListPlansFilters = {}, ctx?: QueryConte
             pricesByPlanId.set(price.planId, existing);
         }
 
-        // Count live subscribers (status active/trialing, not soft-deleted) for
-        // all listed plans in a SINGLE grouped query, mirroring the prices fetch
-        // above. The plan UUID is stored as a varchar in billing_subscriptions.
+        // Count live subscribers (entitlement-granting statuses, not soft-deleted)
+        // for all listed plans in a SINGLE grouped query, mirroring the prices
+        // fetch above. The plan UUID is stored as a varchar in billing_subscriptions.
+        // Derived from ENTITLEMENT_GRANTING_STATUSES (never hardcode the expanded
+        // list here) so `comp` subscribers are counted — see HOS-736.
         const subscriptionCountRows = await db
             .select({
                 planId: billingSubscriptions.planId,
@@ -219,7 +224,7 @@ export async function listPlans(filters: ListPlansFilters = {}, ctx?: QueryConte
                         planIds.map((id) => sql`${id}`),
                         sql`, `
                     )}]::text[])`,
-                    sql`${billingSubscriptions.status} IN ('active', 'trialing')`,
+                    inArray(billingSubscriptions.status, [...ENTITLEMENT_GRANTING_STATUSES]),
                     isNull(billingSubscriptions.deletedAt)
                 )
             )
@@ -443,7 +448,9 @@ export async function createPlan(
                 sortOrder: input.sortOrder,
                 trialDays: input.trialDays,
                 hasTrial: input.hasTrial,
-                monthlyPriceArs: input.monthlyPriceArs,
+                // monthlyPriceArs: removed (HOS-692, spec §6.9) — dead metadata
+                // mirror; the DTO reads the price from monthly billing_prices.unitAmount
+                // (see mapDbToPlan's doc comment above), never from here.
                 annualPriceArs: input.annualPriceArs,
                 monthlyPriceUsdRef: input.monthlyPriceUsdRef
             };
@@ -598,8 +605,10 @@ export async function updatePlan(
             if (input.sortOrder !== undefined) updatedMeta.sortOrder = input.sortOrder;
             if (input.trialDays !== undefined) updatedMeta.trialDays = input.trialDays;
             if (input.hasTrial !== undefined) updatedMeta.hasTrial = input.hasTrial;
-            if (input.monthlyPriceArs !== undefined)
-                updatedMeta.monthlyPriceArs = input.monthlyPriceArs;
+            // monthlyPriceArs: removed from the metadata mirror (HOS-692, spec
+            // §6.9) — the typed column write below (planUpdateData.monthlyPriceArs)
+            // and the billing_prices reconciliation further down are the live
+            // writes; this dead mirror is never read by mapDbToPlan.
             if (input.annualPriceArs !== undefined)
                 updatedMeta.annualPriceArs = input.annualPriceArs;
             if (input.monthlyPriceUsdRef !== undefined)

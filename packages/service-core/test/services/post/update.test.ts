@@ -54,7 +54,10 @@ describe('PostService.update', () => {
         expect(modelMock.update).toHaveBeenCalled();
     });
 
-    it('should return FORBIDDEN if actor lacks permission', async () => {
+    // HOS-706: this asserted FORBIDDEN, next to a NOT_FOUND test for a missing
+    // id — the pair was the disclosure. The denial is untouched (`update` is
+    // never called); only what the refusal reveals changed.
+    it('refuses a non-author without revealing that the post exists', async () => {
         (modelMock.findById as Mock).mockResolvedValue(post);
         (modelMock.update as Mock).mockResolvedValue({ ...post, ...updateInput });
         // The actor is NOT the author of the post and has no permissions
@@ -64,7 +67,7 @@ describe('PostService.update', () => {
             roles: [RoleEnum.USER]
         });
         const result = await service.update(forbiddenActor, post.id, updateInput);
-        assertions.expectForbiddenError(result);
+        assertions.expectForeignRowMasked(result);
         expect(modelMock.findById).toHaveBeenCalledWith(post.id, undefined);
         expect(modelMock.update).not.toHaveBeenCalled();
     });

@@ -919,6 +919,7 @@ export enum PermissionEnum {
     BILLING_SETTINGS_WRITE = 'billing.settings.write', // Allows editing Comercial → Configuración billing.
     BILLING_VIEW_OWN = 'billing.view.own', // Allows HOST to view their own billing data (subscription, invoices, payments, usage) via /protected/billing/*.
     SUBSCRIPTION_VIEW_OWN = 'subscription.view.own', // Allows HOST to view their own subscription details — complements BILLING_VIEW_OWN for the Mi facturación landing.
+    BILLING_ADDON_PURCHASE = 'billing.addon.purchase', // Allows a paying tier (HOST, COMMERCE_OWNER) to reach the self-service add-on catalog and buy from it (HOS-726). Deliberately NOT granted to plain USER: the add-on page gates per product domain on an entitlement-granting subscription, so a tourist only ever reaches its empty state. Distinct from BILLING_MANAGE, which is the admin-tier gate for activating/expiring add-ons on someone else's behalf.
     USER_UPDATE_SELF = 'user.update.self', // Umbrella gate for the Mi cuenta area (Perfil, Preferencias, Notificaciones, Seguridad, Etiquetas). Distinct from USER_UPDATE_ANY (admin-on-other) and USER_UPDATE_PROFILE (legacy alias kept for back-compat).
     AI_SETTINGS_MANAGE = 'ai.settings.manage', // Allows managing AI provider credentials, settings, prompts, and usage reports (Plataforma → IA). SUPER_ADMIN-only (SPEC-173).
     FEATURE_FLAG_MANAGE = 'platform.featureFlag.manage', // Allows managing feature flags (create, edit, toggle kill-switch, view audit). SUPER_ADMIN-only (SPEC-276).
@@ -947,6 +948,17 @@ export enum PermissionEnum {
     COMMERCE_EDIT_ALL = 'commerce.editAll', // Allows editing any commerce listing regardless of ownership.
     COMMERCE_DELETE = 'commerce.delete', // Allows soft-deleting any commerce listing.
     COMMERCE_MODERATE_REVIEW = 'commerce.moderateReview', // Allows moderating reviews on commerce listings.
+    // HOS-686: the LISTING's own moderation verdict — distinct from
+    // COMMERCE_MODERATE_REVIEW above, which moderates reviews written ABOUT a
+    // listing. Grepping "moderate" under commerce finds the review permission
+    // first, so the two are spelled apart on purpose.
+    //
+    // Spelled `commerce.moderationChange` (camelCase second segment), NOT
+    // `commerce.moderation.change` like its accommodation/event/post
+    // counterparts: the whole `commerce.*` family is camelCase, and a dotted
+    // third segment here would add a fourteenth dual-spelled family to the
+    // baseline frozen by `permission-naming-convention.guard.test.ts`.
+    COMMERCE_MODERATION_CHANGE = 'commerce.moderationChange', // Allows changing the moderation state of a commerce LISTING (gastronomy/experience).
 
     // PARTNER: Partners program (SPEC-271)
     PARTNER_CREATE = 'partner.create', // Allows creating a new partner.

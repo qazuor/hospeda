@@ -368,7 +368,7 @@ describe('UserBookmarkService.updateBookmark', () => {
     // Owner check
     // -----------------------------------------------------------------------
 
-    it('returns FORBIDDEN when actor does not own the bookmark and lacks VIEW_ANY', async () => {
+    it('refuses a non-owner without VIEW_ANY with NOT_FOUND, not FORBIDDEN (HOS-600)', async () => {
         // Arrange
         const nonOwner = createActor({
             id: OTHER_USER_ID,
@@ -382,8 +382,8 @@ describe('UserBookmarkService.updateBookmark', () => {
             input: { name: 'Hack' }
         });
 
-        // Assert
-        expectForbiddenError(result);
+        // Assert — the 403 this replaces confirmed the bookmark id was real.
+        expectNotFoundError(result);
         expect(asMock(modelMock.update)).not.toHaveBeenCalled();
     });
 

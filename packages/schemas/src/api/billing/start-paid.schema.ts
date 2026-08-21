@@ -90,6 +90,14 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      * - `'discount'` — a discount was applied (the monthly preapproval amount was
      *   lowered, or the annual line-item was reduced). A normal MP redirect to
      *   `checkoutUrl` still follows; the marker is informational.
+     * - `'attached'` — HOS-688 §6.8, commerce only. The owner ALREADY holds a
+     *   live subscription for this vertical and is under its listing cap, so the
+     *   listing was attached to that subscription and **no checkout was opened**.
+     *   Like `'comp'`, `checkoutUrl` is an in-app sentinel rather than a payment
+     *   page. This is the case that does not exist under per-listing billing, and
+     *   the one where a rename would quietly survive: opening a checkout here
+     *   creates a SECOND MercadoPago preapproval and charges the owner twice for
+     *   a plan that already covers them.
      * There is no `'trial'` variant. Card-first (HOS-171) deleted the no-card
      * trial that used to be granted INSTEAD of a paid checkout: a trial is now
      * `free_trial` on the very preapproval a paid checkout creates, so it is a
@@ -102,7 +110,7 @@ export const StartPaidSubscriptionResponseSchema = z.object({
      * that nothing persists, so no old value can be in flight to fail parsing.
      */
     appliedEffect: z
-        .enum(['comp', 'discount'], {
+        .enum(['comp', 'discount', 'attached'], {
             message: 'zodError.billing.startPaid.appliedEffect.invalid'
         })
         .optional(),

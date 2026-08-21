@@ -288,6 +288,18 @@
                 "secondaryCta": "Ver minhas propriedades"
             }
         },
+        "max_gastronomies": {
+            "title": "Você atingiu o limite de gastronomias",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} gastronomia no seu plano. Faça um upgrade para publicar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} gastronomias no seu plano. Faça um upgrade para publicar mais.",
+            "cta": "Ver minha assinatura"
+        },
+        "max_experiences": {
+            "title": "Você atingiu o limite de experiências",
+            "message_one": "Você tem {{currentCount}} de {{maxAllowed}} experiência no seu plano. Faça um upgrade para publicar mais.",
+            "message_other": "Você tem {{currentCount}} de {{maxAllowed}} experiências no seu plano. Faça um upgrade para publicar mais.",
+            "cta": "Ver minha assinatura"
+        },
         "max_photos_per_accommodation": {
             "title": "Você atingiu o limite de fotos",
             "message_one": "Você já enviou {{currentCount}} de {{maxAllowed}} foto permitida no seu plano. Faça um upgrade para enviar mais.",
@@ -312,6 +324,25 @@
             "message_other": "Você tem {{currentCount}} de {{maxAllowed}} contas de staff no seu plano. Faça um upgrade para adicionar mais.",
             "cta": "Ver minha assinatura"
         },
+        "max_active_alerts": { "title": "Você atingiu o limite de alertas de preço" },
+        "max_compare_items": { "title": "Você atingiu o limite de itens para comparar" },
+        "max_ai_text_improve_per_month": {
+            "title": "Você atingiu o limite de melhorias de texto com IA"
+        },
+        "max_ai_chat_per_month": { "title": "Você atingiu o limite de conversas no chat de IA" },
+        "max_ai_chat_consumer_per_month": {
+            "title": "Você atingiu o limite de conversas com o assistente de IA"
+        },
+        "max_ai_search_per_month": { "title": "Você atingiu o limite de buscas com IA" },
+        "max_ai_support_per_month": {
+            "title": "Você atingiu o limite de atendimentos de suporte com IA"
+        },
+        "max_ai_translate_per_month": { "title": "Você atingiu o limite de traduções com IA" },
+        "max_ai_accommodation_import_per_month": {
+            "title": "Você atingiu o limite de importações de hospedagem com IA"
+        },
+        "max_search_history_entries": { "title": "Você atingiu o limite de histórico de buscas" },
+        "max_collections": { "title": "Você atingiu o limite de coleções de favoritos" },
         "generic": {
             "title": "Limite do plano atingido",
             "message": "Você atingiu o limite do seu plano. Faça um upgrade para continuar.",
@@ -543,6 +574,8 @@
         },
         "limitLabel": {
             "max_accommodations": "Hospedagens publicadas",
+            "max_gastronomies": "Gastronomias publicadas",
+            "max_experiences": "Experiências publicadas",
             "max_photos_per_accommodation": "Fotos por hospedagem",
             "max_active_promotions": "Promoções ativas",
             "max_favorites": "Favoritos",
@@ -552,10 +585,13 @@
             "max_compare_items": "Comparações simultâneas",
             "max_ai_text_improve_per_month": "Melhorias de texto com IA por mês",
             "max_ai_chat_per_month": "Consultas com IA por mês",
+            "max_ai_chat_consumer_per_month": "Consultas ao assistente de IA por mês",
             "max_ai_search_per_month": "Buscas com IA por mês",
             "max_ai_support_per_month": "Consultas ao suporte com IA por mês",
             "max_ai_translate_per_month": "Traduções com IA por mês",
-            "max_ai_accommodation_import_per_month": "Importações com IA por mês"
+            "max_ai_accommodation_import_per_month": "Importações com IA por mês",
+            "max_search_history_entries": "Entradas do histórico de buscas",
+            "max_collections": "Coleções de favoritos"
         }
     }
 }

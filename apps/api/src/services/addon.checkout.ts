@@ -8,7 +8,8 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { QZPayBilling } from '@qazuor/qzpay-core';
+import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { AccommodationModel } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
@@ -29,6 +30,7 @@ import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
+import { resolveAddonCheckoutDescription, resolveAddonCheckoutName } from './addon-checkout-locale';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { PromoCodeService } from './promo-code.service';
 
@@ -50,6 +52,22 @@ interface ScheduleAddonPollingInput {
     readonly addonSlug: string;
     readonly orderId: string;
     readonly userId: string;
+    /**
+     * Target accommodation for a `requiresAccommodationTarget` add-on
+     * (SPEC-309 OQ-3), validated by `createAddonCheckout` before the session
+     * was created. `undefined` for every owner-wide add-on.
+     */
+    readonly accommodationId?: string | undefined;
+    /**
+     * Promo code redeemed at checkout (HOS-721). `undefined` when the purchase
+     * carries no discount. Travels for the same reason `accommodationId` does:
+     * the polling job row — not the MP payment — is the reliable carrier.
+     */
+    readonly promoCodeId?: string | undefined;
+    /** Human-facing promo code as typed by the customer (HOS-721). */
+    readonly promoCode?: string | undefined;
+    /** Discount applied at checkout in centavos (HOS-721). */
+    readonly discountAmount?: number | undefined;
 }
 
 /**
@@ -58,6 +76,14 @@ interface ScheduleAddonPollingInput {
  * MP Preferences only deliver legacy IPN webhooks that the marker filter
  * drops (SPEC-143 Finding #21), so one-time addon payments need a polling
  * fallback — the same reason `initiatePaidAnnualSubscription` schedules one.
+ *
+ * Read "fallback" as a name, not a description: for a Preference there is no
+ * Webhooks v2 channel at all, so this job is the ONLY way an approved payment
+ * ever gets confirmed. If it is not enqueued, the money is collected and
+ * nothing is recorded — that was HOS-710. Adding `?source_news=webhooks` to
+ * the preference's notification_url does NOT provide a second path: it only
+ * lets IPN deliveries past the filter and into a v2 signature verifier that
+ * rejects them.
  *
  * Non-fatal: a failure here is logged as a warning and does not block the
  * checkout response (SPEC-127 FR-5). The checkout session was already
@@ -70,8 +96,19 @@ interface ScheduleAddonPollingInput {
  * - The checkout session id is empty (defensive guard).
  */
 async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): Promise<void> {
-    const { billing, subscriptionId, checkoutSessionId, customerId, addonSlug, orderId, userId } =
-        input;
+    const {
+        billing,
+        subscriptionId,
+        checkoutSessionId,
+        customerId,
+        addonSlug,
+        orderId,
+        userId,
+        accommodationId,
+        promoCodeId,
+        promoCode,
+        discountAmount
+    } = input;
 
     if (!env.HOSPEDA_BILLING_POLLING_ENABLED) {
         return;
@@ -101,7 +138,26 @@ async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): P
                 addonSlug,
                 customerId,
                 userId,
-                orderId
+                orderId,
+                // HOS-675: the job metadata is the RELIABLE carrier of the target
+                // accommodation, not the MP payment metadata. MercadoPago
+                // normalizes preference metadata keys, so the polling job's
+                // synthetic payload already sources `addonSlug`/`customerId`
+                // from here rather than from the payment; the accommodation key
+                // has to travel the same way or it never reaches
+                // `confirmAddonPurchase`. This matters more than it looks: for a
+                // Preference there is no Webhooks v2 channel at all (see the
+                // HOS-710 note above), so polling is usually the ONLY path that
+                // ever confirms the purchase — the staging repro of HOS-675 was
+                // confirmed with `source: 'polling'`.
+                ...(accommodationId === undefined ? {} : { accommodationId }),
+                // HOS-721: the promo keys ride the same carrier, for the same
+                // reason. They are written in canonical camelCase here because
+                // this row is ours — MercadoPago never touches it, so the
+                // snake_case wire spelling has no business in it.
+                ...(promoCodeId === undefined ? {} : { promoCodeId }),
+                ...(promoCode === undefined ? {} : { promoCode }),
+                ...(discountAmount === undefined ? {} : { discountAmount })
             }
         });
         if (job) {
@@ -116,9 +172,17 @@ async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): P
                 'Scheduled addon checkout polling fallback'
             );
         } else {
+            // HOS-710: this used to fire on every add-on purchase after the
+            // first, because the uniqueness was scoped to `subscription_id` and
+            // one abandoned checkout held the only slot for an hour. It is now
+            // scoped to `(provider, provider_resource_id)`, and the session id
+            // is freshly generated per checkout, so reaching this branch means
+            // a genuine duplicate enqueue for the SAME session — a double
+            // submit, not a second purchase. Logged as a warning because it
+            // should now be rare rather than routine.
             apiLogger.warn(
                 { subscriptionId, checkoutSessionId, addonSlug },
-                'Active polling job already exists for subscription — skipping addon enqueue'
+                'Active polling job already exists for this checkout session — skipping duplicate addon enqueue'
             );
         }
     } catch (error) {
@@ -298,8 +362,8 @@ export async function createAddonCheckout(
             };
         }
 
-        const activeSubscription = subscriptions.find(
-            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+        const activeSubscription = subscriptions.find((sub: { status: string }) =>
+            isEntitlementGrantingStatus(sub.status)
         );
 
         if (!activeSubscription) {
@@ -411,8 +475,22 @@ export async function createAddonCheckout(
                     unitAmount: finalPrice,
                     currency: 'ARS',
                     quantity: 1,
-                    title: addon.name,
-                    description: addon.description,
+                    // HOS-606: send the buyer's own copy, not the raw English
+                    // config literal — the web app already resolves these by
+                    // slug (see addon-checkout-locale.ts module doc) and never
+                    // shows `addon.name`/`addon.description` verbatim, so a
+                    // Spanish-site buyer saw the checkout item in English on
+                    // MercadoPago's own payment screen.
+                    title: resolveAddonCheckoutName({
+                        locale: input.locale,
+                        slug: addon.slug,
+                        fallback: addon.name
+                    }),
+                    description: resolveAddonCheckoutDescription({
+                        locale: input.locale,
+                        slug: addon.slug,
+                        fallback: addon.description
+                    }),
                     /**
                      * 'services' is the canonical MP category_id for digital SaaS.
                      * Now passed via qzpay's `categoryId` field — the adapter maps it
@@ -514,7 +592,15 @@ export async function createAddonCheckout(
             customerId: input.customerId,
             addonSlug: addon.slug,
             orderId,
-            userId: input.userId
+            userId: input.userId,
+            // HOS-675: only meaningful for target-required addons; every other
+            // addon leaves it undefined and the key is omitted from job metadata.
+            accommodationId: input.accommodationId,
+            // HOS-721: undefined for an undiscounted purchase, in which case
+            // every promo key is omitted from the job metadata.
+            promoCodeId,
+            promoCode: input.promoCode,
+            discountAmount: discountAmount > 0 ? discountAmount : undefined
         });
 
         // NOTE: Promo code usage (incrementUsage + recordUsage) is intentionally
@@ -593,6 +679,204 @@ export async function createAddonCheckout(
 }
 
 /**
+ * Metadata key flipped on a `billing_addon_purchases` row whose target-required
+ * add-on confirmed without an accommodationId (HOS-675).
+ *
+ * Exported so the operator query, the regression test, and any future
+ * reconciliation job all name the same key instead of re-typing the string.
+ */
+export const FEATURED_GRANT_LINK_MISSING_KEY = 'featuredGrantLinkMissing' as const;
+
+/**
+ * Flag a confirmed purchase whose `featured_listing_addon_grants` link could not
+ * be written, so the defect survives as queryable row state instead of only as a
+ * log line.
+ *
+ * Merges the marker into the existing `metadata` jsonb rather than replacing it,
+ * so the context stored at confirmation time is preserved.
+ *
+ * Deliberately best-effort: it runs after the purchase row is already committed
+ * and after the payment was collected, so a failure here must never surface as a
+ * failed confirmation (HOS-714 — a payment that cannot be applied is recorded and
+ * alerted, never discarded). A failure to write the marker is itself logged.
+ *
+ * @param params - Purchase to flag, plus customer/add-on context for logging
+ */
+async function markFeaturedGrantLinkMissing(params: {
+    readonly purchaseId: string;
+    readonly customerId: string;
+    readonly addonSlug: string;
+}): Promise<void> {
+    const { purchaseId, customerId, addonSlug } = params;
+
+    try {
+        const { getDb, eq } = await import('@repo/db');
+        const { sql: markerSql } = await import('drizzle-orm');
+        const { billingAddonPurchases: bap } = await import('@repo/db/schemas/billing');
+
+        const marker = JSON.stringify({
+            [FEATURED_GRANT_LINK_MISSING_KEY]: true,
+            featuredGrantLinkMissingAt: new Date().toISOString()
+        });
+
+        await getDb()
+            .update(bap)
+            .set({
+                metadata: markerSql`COALESCE(${bap.metadata}, '{}'::jsonb) || ${marker}::jsonb`,
+                updatedAt: new Date()
+            })
+            .where(eq(bap.id, purchaseId));
+    } catch (markerError) {
+        apiLogger.error(
+            {
+                purchaseId,
+                customerId,
+                addonSlug,
+                error: markerError instanceof Error ? markerError.message : String(markerError)
+            },
+            'Failed to flag purchase as featuredGrantLinkMissing; the missing grant link is now only visible in logs and Sentry'
+        );
+    }
+}
+
+/**
+ * Provider key under which MercadoPago payment ids live inside the
+ * `billing_payments.provider_payment_ids` jsonb map.
+ *
+ * Exported so the dedupe query, the sibling subscription flows and the
+ * regression test all name the same key instead of re-typing the string.
+ */
+export const ADDON_PAYMENT_PROVIDER_KEY = 'mercadopago' as const;
+
+/**
+ * Value written to `billing_payments.metadata.flow` for an add-on charge, so
+ * the ledger can tell an add-on purchase apart from a subscription charge
+ * (`annual-upfront`, `plan-upgrade-delta`, recurring) with one query.
+ */
+export const ADDON_PAYMENT_FLOW = 'addon-purchase' as const;
+
+/**
+ * Write the `billing_payments` row for a confirmed add-on charge (HOS-595).
+ *
+ * The add-on path used to be the only money-collecting flow in the codebase
+ * with no ledger entry at all: `billing_addon_purchases` recorded WHAT was
+ * bought, and nothing recorded THAT it was paid. A charge with no
+ * `provider_payment_ids` cannot be reconciled against the provider's
+ * settlement, cannot be refunded through `refund-lifecycle.service.ts` (which
+ * looks the payment up by its provider id), and is invisible to every revenue
+ * report that reads this table.
+ *
+ * This is deliberately NOT a second implementation: it calls the same
+ * `billing.payments.record()` facade the subscription flows call
+ * (`payment-logic.ts` annual + plan-upgrade delta,
+ * `subscription-payment-handler.ts` recurring, `webhook-retry.job.ts`
+ * dead-letter), and reuses their dedupe shape — a lookup on
+ * `provider_payment_ids->>'mercadopago'` — so a provider redelivery of the same
+ * charge does not double-insert.
+ *
+ * Best-effort by design: it runs after the purchase row is already committed
+ * and after the money was collected, so a failure here must never turn a
+ * successful confirmation into a failed one (HOS-714 — a payment that cannot be
+ * applied is recorded and alerted, never discarded). A failure is logged at
+ * `error` and reported to Sentry.
+ *
+ * @param params - Billing facade plus the charge to book
+ */
+async function recordAddonPayment(params: {
+    readonly billing: QZPayBilling;
+    readonly customerId: string;
+    readonly subscriptionId: string;
+    readonly purchaseId: string;
+    readonly addonSlug: string;
+    readonly providerPaymentId: string;
+    readonly amountInCents: number;
+    readonly currency: string;
+}): Promise<void> {
+    const {
+        billing,
+        customerId,
+        subscriptionId,
+        purchaseId,
+        addonSlug,
+        providerPaymentId,
+        amountInCents,
+        currency
+    } = params;
+
+    try {
+        const { getDb, billingPayments } = await import('@repo/db');
+        const { sql: paymentSql } = await import('drizzle-orm');
+
+        const existing = await getDb()
+            .select({ id: billingPayments.id })
+            .from(billingPayments)
+            .where(
+                paymentSql`${billingPayments.providerPaymentIds}->>${ADDON_PAYMENT_PROVIDER_KEY} = ${providerPaymentId}`
+            )
+            .limit(1);
+
+        if (existing.length > 0) {
+            apiLogger.debug(
+                { customerId, addonSlug, purchaseId, providerPaymentId },
+                'Add-on payment already recorded in billing_payments — skipping record'
+            );
+            return;
+        }
+
+        const recorded = await billing.payments.record({
+            id: randomUUID(),
+            customerId,
+            subscriptionId,
+            amount: amountInCents,
+            currency: currency as QZPayCurrency,
+            status: 'succeeded' as QZPayPaymentStatus,
+            provider: ADDON_PAYMENT_PROVIDER_KEY,
+            providerPaymentId,
+            metadata: {
+                flow: ADDON_PAYMENT_FLOW,
+                addonSlug,
+                purchaseId
+            }
+        });
+
+        apiLogger.info(
+            {
+                customerId,
+                addonSlug,
+                purchaseId,
+                providerPaymentId,
+                billingPaymentId: recorded.id,
+                amountInCents,
+                currency
+            },
+            'Add-on payment recorded in billing_payments'
+        );
+    } catch (recordError) {
+        apiLogger.error(
+            {
+                customerId,
+                addonSlug,
+                purchaseId,
+                providerPaymentId,
+                amountInCents,
+                currency,
+                error: recordError instanceof Error ? recordError.message : String(recordError)
+            },
+            'Failed to record billing_payments row for add-on purchase — money collected without a ledger entry; reconcile manually'
+        );
+        captureBillingError(
+            recordError instanceof Error ? recordError : new Error(String(recordError)),
+            {
+                addonIds: [addonSlug],
+                transactionId: purchaseId,
+                operation: 'addon_payment_record'
+            },
+            'error'
+        );
+    }
+}
+
+/**
  * Confirm an add-on purchase after payment webhook.
  *
  * Inserts a record into `billing_addon_purchases`, computes limit and
@@ -639,8 +923,8 @@ export async function confirmAddonPurchase(
             };
         }
 
-        const activeSubscription = subscriptions.find(
-            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+        const activeSubscription = subscriptions.find((sub: { status: string }) =>
+            isEntitlementGrantingStatus(sub.status)
         );
 
         if (!activeSubscription) {
@@ -706,8 +990,8 @@ export async function confirmAddonPurchase(
         // in the request lifecycle; the subscription could have been cancelled
         // in the window between checkout creation and payment confirmation.
         const currentSubscriptions = await billing.subscriptions.getByCustomerId(input.customerId);
-        const stillActive = currentSubscriptions?.find(
-            (sub: { status: string }) => sub.status === 'active' || sub.status === 'trialing'
+        const stillActive = currentSubscriptions?.find((sub: { status: string }) =>
+            isEntitlementGrantingStatus(sub.status)
         );
 
         if (!stillActive) {
@@ -759,6 +1043,12 @@ export async function confirmAddonPurchase(
                         customerId: input.customerId,
                         subscriptionId: input.subscriptionId || activeSubscription.id,
                         addonSlug: input.addonSlug,
+                        // HOS-595: `addon_id` is a FK to `billing_addons` and was
+                        // never written, so no purchase could be joined back to the
+                        // catalog row it was bought from. The id comes from the same
+                        // catalog lookup at the top of this function — the row mapper
+                        // simply used to drop it.
+                        addonId: addon.id ?? null,
                         status: 'active',
                         purchasedAt: now,
                         expiresAt,
@@ -828,6 +1118,41 @@ export async function confirmAddonPurchase(
             'Inserted add-on purchase into billing_addon_purchases table'
         );
 
+        // HOS-595: book the charge in `billing_payments` immediately after the
+        // purchase row commits, and BEFORE entitlements are applied — the money
+        // is already collected at this point, so the ledger entry must not be
+        // conditional on anything that runs later succeeding.
+        //
+        // Both inputs are required and neither is defaulted: a ledger row needs
+        // the provider id to be reconcilable or refundable at all, and a row
+        // carrying the catalog list price instead of the charged amount would be
+        // a plausible-looking lie the moment a promo code is involved. The caller
+        // supplies the amount only for an APPROVED payment, so a rejected charge
+        // never lands here as `succeeded`.
+        if (input.paymentId && input.amountInCents !== undefined) {
+            await recordAddonPayment({
+                billing,
+                customerId: input.customerId,
+                subscriptionId: input.subscriptionId || activeSubscription.id,
+                purchaseId,
+                addonSlug: input.addonSlug,
+                providerPaymentId: input.paymentId,
+                amountInCents: input.amountInCents,
+                currency: input.currency ?? 'ARS'
+            });
+        } else {
+            apiLogger.error(
+                {
+                    customerId: input.customerId,
+                    addonSlug: input.addonSlug,
+                    purchaseId,
+                    hasPaymentId: Boolean(input.paymentId),
+                    hasAmount: input.amountInCents !== undefined
+                },
+                'Add-on purchase confirmed without a settled provider charge; no billing_payments row written — the charge cannot be reconciled or refunded'
+            );
+        }
+
         // SPEC-309 T-007: link the purchase to its target accommodation. T-006
         // validated and carried the accommodationId through checkout.create's
         // metadata; read it back here from the confirmation payload. Soft-fail —
@@ -874,13 +1199,42 @@ export async function confirmAddonPurchase(
                     );
                 }
             } else {
-                // Should not happen if T-006 validated correctly at checkout time,
-                // but MercadoPago webhooks are async and can race. Manual
-                // reconciliation is out of scope here (SPEC-309 T-007) — this is
-                // logged for follow-up investigation only.
+                // HOS-675: this branch used to be the one that ALWAYS ran. It was
+                // written as a "should not happen" race guard, but no production
+                // caller of confirmAddonPurchase forwarded `metadata` at all, so
+                // every visibility-boost purchase landed here and the grant table
+                // stayed empty for months — invisible because a log line plus a
+                // Sentry event is the kind of signal nobody queries.
+                //
+                // The confirmation itself must still succeed: the payment is
+                // already collected and the purchase row is already committed, so
+                // throwing here would discard money we took (HOS-714 decided a
+                // payment that cannot be applied is RECORDED and ALERTED, never
+                // discarded). What was missing is the record. Persist a marker on
+                // the purchase row so a broken purchase is enumerable with one
+                // query instead of only greppable in logs:
+                //
+                //   SELECT id, customer_id, addon_slug, purchased_at
+                //   FROM   billing_addon_purchases
+                //   WHERE  metadata->>'featuredGrantLinkMissing' = 'true'
+                //     AND  deleted_at IS NULL;
+                //
+                // That is also what makes the reconciliation SPEC-309 T-007
+                // deferred actually possible: the rows can now be found.
+                await markFeaturedGrantLinkMissing({
+                    purchaseId,
+                    customerId: input.customerId,
+                    addonSlug: input.addonSlug
+                });
+
                 apiLogger.error(
-                    { customerId: input.customerId, addonSlug: input.addonSlug, purchaseId },
-                    'Target-required addon confirmed without an accommodationId in metadata; featured_listing_addon_grants row NOT written'
+                    {
+                        customerId: input.customerId,
+                        addonSlug: input.addonSlug,
+                        purchaseId,
+                        metadataKeys: input.metadata ? Object.keys(input.metadata) : []
+                    },
+                    'Target-required addon confirmed without an accommodationId in metadata; featured_listing_addon_grants row NOT written and purchase flagged featuredGrantLinkMissing'
                 );
                 captureBillingError(
                     new Error('Missing accommodationId at addon purchase confirmation'),
@@ -943,6 +1297,15 @@ export async function confirmAddonPurchase(
         // Record promo code usage now that payment is confirmed (GAP-043-049).
         // Doing this here (not at checkout creation) prevents inflating usage
         // counts for abandoned checkouts.
+        //
+        // HOS-721: these reads are camelCase-only ON PURPOSE. camelCase is the
+        // canonical convention; the MercadoPago snake_case wire spelling
+        // (`promo_code_id`, `promo_code`, `discount_amount`) is translated away
+        // exactly once, by `normalizeAddonCheckoutMetadata` at the webhook
+        // border, before this function is ever called. Do NOT "harden" this
+        // spot by also reading the snake_case names — a second dual read here
+        // is precisely how the two ends drifted apart and how the redemption
+        // silently never ran in production.
         const confirmedPromoCodeId =
             typeof input.metadata?.promoCodeId === 'string'
                 ? input.metadata.promoCodeId
@@ -952,7 +1315,10 @@ export async function confirmAddonPurchase(
         const confirmedDiscountAmount =
             typeof input.metadata?.discountAmount === 'number' ? input.metadata.discountAmount : 0;
 
-        if (confirmedPromoCodeId && confirmedPromoCode) {
+        // HOS-721: gated on the promo code ID alone. `promoCode` is the
+        // human-facing string and is used for logging only, so requiring it too
+        // made a purely cosmetic key able to suppress the redemption.
+        if (confirmedPromoCodeId) {
             const promoService = new PromoCodeService();
             const redeemResult = await promoService.redeemAndRecord({
                 promoCodeId: confirmedPromoCodeId,

@@ -230,11 +230,19 @@ async function recoverCommerceLinkFromSubscriptionMetadata(input: {
         return [];
     }
 
+    // HOS-692: the recovered link row's own `entityType` is the vertical —
+    // stamp `productDomain` from it instead of the pre-HOS-685 hardcoded
+    // 'commerce', matching the ternary `commerce-subscription-attach.service.ts`
+    // already uses for the same two-value collision (CommerceEntityTypeEnum
+    // and ProductDomainEnum share 'gastronomy'/'experience' on purpose).
+    const productDomain =
+        entityType === 'gastronomy' ? ProductDomainEnum.GASTRONOMY : ProductDomainEnum.EXPERIENCE;
+
     await db
         .insert(commerceListingSubscriptions)
         .values({
             subscriptionId,
-            productDomain: ProductDomainEnum.COMMERCE,
+            productDomain,
             entityType,
             entityId,
             status: subscriptionStatus

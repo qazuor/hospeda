@@ -3,9 +3,16 @@
  *
  * Exports all public APIs from the commerce service layer:
  * - `BaseCommerceListingService` — abstract base for entity services
- * - `CommerceLeadService` — lead submission, listing, and handling
- * - `CommerceOwnerProvisioningService` — COMMERCE_OWNER user creation
  * - Permission helpers, junction-sync utilities, visibility reconciler, and types
+ *
+ * HOS-693 §6.2 removed the admin owner-provisioning service that used to be
+ * exported here (COMMERCE_OWNER user creation from an approved lead) —
+ * owners now grant themselves the role by creating their own listing
+ * (HOS-687). HOS-695 (release C) removed `CommerceLeadService` itself: the
+ * lead-intake funnel accepts no new submissions (its public form and admin
+ * provisioning flow were already gone), and its admin list/mark-handled
+ * surface only ever served three smoke-test fixtures. `commerce_leads` was
+ * dropped in the same release.
  */
 
 export {
@@ -26,6 +33,7 @@ export {
     checkCanDeleteCommerce,
     checkCanEditAll,
     checkCanEditOwn,
+    checkCanModerateCommerceListing,
     checkCanModerateReview,
     checkCanViewAll
 } from './commerce.permissions';
@@ -36,23 +44,9 @@ export type { CommerceEntityType, CommerceListingHookState } from './commerce.ty
 // app needs to call it without pulling in service-core's DB dependency.
 // Import it directly from `@repo/schemas` instead of re-exporting it here.
 export {
-    CommerceLeadService,
-    type LeadNotificationPort,
-    type ListLeadsInput,
-    type MarkLeadHandledInput
-} from './commerce-lead.service';
-export {
     type ComposeCommerceMediaInput,
     composeCommerceMedia
 } from './commerce-media-compose';
-export {
-    CommerceOwnerProvisioningService,
-    type CreateUserPort,
-    type CreateUserPortResult,
-    type ProvisionCommerceOwnerInput,
-    type ProvisionCommerceOwnerResult,
-    type ProvisioningNotificationPort
-} from './commerce-owner-provisioning.service';
 export {
     type CommerceEntityModel,
     getCommerceListingSubscriptionStatus,

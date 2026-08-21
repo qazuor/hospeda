@@ -69,15 +69,49 @@ describe('Header.astro — navigation', () => {
     });
 });
 
-// ─── "Publicar" CTA ───────────────────────────────────────────────────────────
+// ─── "Publicar" CTA (HOS-691: three-way dropdown) ──────────────────────────────
 
 describe('Header.astro — Publicar CTA', () => {
-    it('includes a Publicar CTA button', () => {
-        expect(src).toContain('nav.publishCta');
+    it('mounts the PublishMenu island (three-way dropdown, HOS-691)', () => {
+        expect(src).toContain(
+            'import { PublishMenu } from "@/components/shared/navigation/PublishMenu.client";'
+        );
+        expect(src).toContain('<PublishMenu');
     });
 
-    it('links CTA to /publicar/', () => {
-        expect(src).toContain('buildUrl({ locale, path: "/publicar/" })');
+    it('does not build a single /publicar/ CTA link inline anymore', () => {
+        // HOS-691: the header used to render a static GradientButton pointing
+        // at /publicar/ directly. The three destinations now live in
+        // PublishMenu.client.tsx (sourced from PUBLISH_CTA_OPTIONS), not here.
+        // Checks the actual import/tag usage rather than the bare word
+        // "GradientButton", which this test file's own JSDoc-style comments
+        // (and Header.astro's own explanatory comments) may legitimately
+        // mention for historical context.
+        expect(src).not.toContain('buildUrl({ locale, path: "/publicar/" })');
+        expect(src).not.toContain("from '@/components/shared/ui/GradientButton.astro'");
+        expect(src).not.toContain('<GradientButton');
+    });
+
+    it('does NOT gate the CTA behind an isAlreadyHost / entitlements check (AC-12)', () => {
+        // The old header hid the CTA entirely for an existing HOST via an SSR
+        // entitlements fetch. HOS-691 AC-12 requires the control to be
+        // present for a HOST (and a COMMERCE_OWNER) account, so that check —
+        // and the SSR fetch backing it — must be gone. Checks the actual
+        // declaration/fetch-call shape rather than a bare substring, which
+        // this file's own explanatory comments may legitimately mention.
+        expect(src).not.toMatch(/const\s+isAlreadyHost/);
+        expect(src).not.toContain('EntitlementKey.PUBLISH_ACCOMMODATIONS');
+        expect(src).not.toContain('from "@repo/billing"');
+    });
+
+    it('renders PublishMenu with client:idle, locale, and the header__cta class', () => {
+        const islandTag = src.slice(
+            src.indexOf('<PublishMenu'),
+            src.indexOf('/>', src.indexOf('<PublishMenu')) + 2
+        );
+        expect(islandTag).toContain('client:idle');
+        expect(islandTag).toContain('locale={locale}');
+        expect(islandTag).toContain('className="header__cta"');
     });
 
     it('does NOT hide the CTA under 1200px (REQ-096-16: Publicar visible at all widths)', () => {

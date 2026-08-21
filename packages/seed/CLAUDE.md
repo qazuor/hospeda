@@ -98,7 +98,7 @@ Full guard-path list, exemption rationale, and the run order
 
 ## Test Users for Billing (SPEC-143 Block 1)
 
-A separate `--test-users` seed group creates 13 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.
+A separate `--test-users` seed group creates 18 dev-only test users with **real login credentials** + billing state, so entitlement gates and limit enforcement can be exercised locally without redeploying to staging for every smoke iteration.
 
 The group is **intentionally not part of `--required` or `--example`** — that way `pnpm db:seed` (production-shaped: `--reset --required --example`) never creates these accounts. Only the local-dev shortcut `pnpm db:fresh-dev` chains `pnpm db:seed:test-users` after the main seed completes.
 
@@ -115,6 +115,10 @@ The group is **intentionally not part of `--required` or `--example`** — that 
 | `host-pro-plus-addon@local.test` | HOST | `owner-pro` + `extra-photos-20` addon | MAX_PHOTOS=50 (30 base + 20 addon). SPEC-143 #32 |
 | `host-trial@local.test` | HOST | `owner-basico` (status=`trialing`, 30d) | Block 3 trial-lifecycle smoke (2.1.a/2.1.b/2.1.c) |
 | `host-provider@local.test` | HOST | `owner-basico` | **Dual role**: also owns the `plomeria-litoral` host_trades listing. HOS-376 AC-16/AC-17 |
+| `commerce-gastronomy@local.test` | COMMERCE_OWNER | `gastronomy-premium` | MAX_GASTRONOMIES=1, cupo disponible (0 listings owned). HOS-694 |
+| `commerce-experience@local.test` | COMMERCE_OWNER | `experience-premium` | MAX_EXPERIENCES=1, cupo disponible (0 listings owned). HOS-694 |
+| `commerce-gastronomy-at-cap@local.test` | COMMERCE_OWNER | `gastronomy-premium` | MAX_GASTRONOMIES=1, **already at cap** (owns 1 gastronomy listing). HOS-694 AC-13/AC-30 |
+| `host-commerce@local.test` | HOST | `owner-basico` | **Dual role**: also holds COMMERCE_OWNER directly (no backing listing). HOS-694 AC-3/AC-12 |
 | `complex-basico@local.test` | CLIENT_MANAGER | `complex-basico` | basic complex |
 | `complex-pro@local.test` | CLIENT_MANAGER | `complex-pro` | mid complex |
 | `complex-premium@local.test` | CLIENT_MANAGER | `complex-premium` | top complex |
@@ -130,6 +134,37 @@ never enters the dual-write-guarded baseline. That module **refuses to steal a
 listing already owned by someone else** — on an environment where a real
 provider claimed it through the HOS-278 alliance flow, the seed logs a warning
 and leaves the row alone instead of locking that person out of their own ficha.
+
+### Commerce owner fixtures (HOS-694)
+
+Before HOS-694 the matrix had **no `COMMERCE_OWNER` at all**, so HOS-688's
+per-vertical billing (`MAX_GASTRONOMIES` / `MAX_EXPERIENCES`) had nothing local
+to verify it against — AC-13 and AC-30 could only be checked on staging. Four
+fixtures close that gap:
+
+- `commerce-gastronomy@local.test` / `commerce-experience@local.test` — one
+  owner per vertical, subscribed and **under** their cap (0 listings owned).
+  `subscriptionProductDomain` stamps `billing_subscriptions.product_domain`
+  with the exact vertical (`'gastronomy'` / `'experience'`, not the legacy
+  `'commerce'` umbrella) — `subscriptionMatchesDomain` requires an exact match
+  for those two domains, so an unstamped subscription (defaulting to
+  `'accommodation'`) would be invisible to the commerce entitlement loader.
+- `commerce-gastronomy-at-cap@local.test` — subscribed AND already owning one
+  gastronomy listing, so it sits exactly `AT` its `MAX_GASTRONOMIES: 1` cap.
+  The listing is seeded via `GastronomyService.create()` (mirrors
+  `hostAccommodation.ts`'s pattern), `PRIVATE`/`DRAFT` like a real owner-create
+  request. See [`src/test-users/commerceListing.ts`](src/test-users/commerceListing.ts).
+- `host-commerce@local.test` — dual-role fixture (HOS-296 multi-role): `HOST`
+  is the declared `role` (so the HOS-30 accommodation fixture still applies)
+  and `COMMERCE_OWNER` is granted as an `extraRole`, with **no backing
+  listing** — role possession alone is what the web nav gate
+  (`ROLES_WITH_COMMERCE_NAV`) and the header's three-option publish control
+  read, so a listing isn't needed to exercise AC-3 / AC-12 locally.
+
+`TestUserSpec.extraRoles` (a new, optional field) is what makes the dual-role
+fixture possible without splitting `TEST_USERS` into a second array —
+`syncTestUserRoles` folds `declaredRole` and every `extraRoles` entry into one
+target role SET, same mechanism HOS-296 already uses to heal role drift.
 
 All users share password `Password123!` and have `emailVerified=true`. Super admin and admin already exist via the required seed (`admin-user.json` / `super-admin-user.json` with `admin@hospeda.com` / `superadmin@hospeda.com`).
 
@@ -172,7 +207,7 @@ Source: [`src/test-users/`](src/test-users/) (orchestrator + seed function). Des
 
 ### Ready out of the box — no onboarding friction (SPEC-264)
 
-The 13 test users are seeded **ready to use immediately**: no "complete your profile" redirect, no admin welcome tour, no what's-new modal, no forced password change. This is done by writing the **real domain state** the onboarding gates already read — there is **no dev-only bypass code in `apps/*`**; all gates are data-driven DB columns.
+All test users (including the HOS-694 commerce-owner fixtures) are seeded **ready to use immediately**: no "complete your profile" redirect, no admin welcome tour, no what's-new modal, no forced password change. This is done by writing the **real domain state** the onboarding gates already read — there is **no dev-only bypass code in `apps/*`**; all gates are data-driven DB columns.
 
 The canonical helper is [`src/test-users/markUserReady.ts`](src/test-users/markUserReady.ts) (`markUserReady({ email, model })`). It is the single source of truth for "what makes a user ready" and sets:
 

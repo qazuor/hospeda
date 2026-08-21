@@ -762,26 +762,28 @@ describe('isSetPasswordRoute', () => {
 });
 
 describe('isSessionOptionalRoute', () => {
-    // HOS-295 regression: the commerce lead pages ("Sumá tu negocio") mount an
-    // island that pre-fills the signed-in visitor's name and email. That data
-    // reaches the island as a prop read from `Astro.locals.user`, which the
-    // middleware only populates for protected, auth and session-optional
-    // routes. Before this fix neither segment was listed, so `locals.user` was
-    // null on both pages even with a live session and the prefill silently
-    // never happened.
-    it('returns true for the commerce lead pages', () => {
-        expect(isSessionOptionalRoute({ path: '/es/publicar-restaurante/' })).toBe(true);
-        expect(isSessionOptionalRoute({ path: '/es/publicar-experiencia/' })).toBe(true);
+    // HOS-690: the commerce vertical landings ("Publicá tu restaurante" /
+    // "Publicá tu experiencia") lost the CommerceLead form — the page now
+    // sells the vertical with its own static benefits/price/FAQ content
+    // instead of a lead form — so neither reads `Astro.locals.user` any more.
+    // They moved OFF this list and onto `CACHEABLE_ROUTE_FAMILIES` in
+    // `test/lib/cacheable-routes-parse-no-session.guard.test.ts`. Previously
+    // (HOS-295) both were listed here because the CommerceLead island needed
+    // the signed-in visitor's name/email prop, which only the middleware
+    // populating `Astro.locals.user` on a session-optional route could supply.
+    it('returns false for the former commerce lead pages (now cacheable)', () => {
+        expect(isSessionOptionalRoute({ path: '/es/publicar-restaurante/' })).toBe(false);
+        expect(isSessionOptionalRoute({ path: '/es/publicar-experiencia/' })).toBe(false);
     });
 
-    it('returns true for the commerce lead pages across locales', () => {
-        expect(isSessionOptionalRoute({ path: '/en/publicar-restaurante/' })).toBe(true);
-        expect(isSessionOptionalRoute({ path: '/pt/publicar-experiencia/' })).toBe(true);
+    it('returns false for the former commerce lead pages across locales', () => {
+        expect(isSessionOptionalRoute({ path: '/en/publicar-restaurante/' })).toBe(false);
+        expect(isSessionOptionalRoute({ path: '/pt/publicar-experiencia/' })).toBe(false);
     });
 
-    it('does not treat `publicar` as a prefix match for the lead pages', () => {
+    it('does not treat `publicar` as a prefix match for other publicar-* segments', () => {
         // The check is an exact segment comparison, so `publicar` alone must
-        // never stand in for `publicar-restaurante`. Both have to be listed.
+        // never stand in for a different `publicar-*` segment.
         expect(isSessionOptionalRoute({ path: '/es/publicar/' })).toBe(true);
         expect(isSessionOptionalRoute({ path: '/es/publicar-otra-cosa/' })).toBe(false);
     });

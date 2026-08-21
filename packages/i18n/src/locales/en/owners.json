@@ -1,10 +1,56 @@
 {
+    "title": "List your property",
+    "description": "List your property on Hospeda and reach thousands of travelers in the Entre Ríos Litoral.",
     "page": {
         "title": "For Property Owners - List Your Property",
         "description": "List your property on Hospeda and reach thousands of travelers in the Argentine Litoral. Professional management, statistics and tools for owners.",
         "breadcrumb": "For Property Owners"
     },
+    "hero": {
+        "title": "List your property and reach thousands of travelers",
+        "tagline": "For property owners",
+        "desc": "Hospeda connects your property with travelers looking for authentic experiences in the Entre Ríos Litoral. No hidden fees, with simple tools to manage it.",
+        "cta": "Get started"
+    },
+    "benefits": {
+        "tagline": "Why Hospeda?",
+        "title": "Benefits for property owners",
+        "1": {
+            "title": "Regional visibility",
+            "desc": "Reach thousands of travelers looking for accommodation on the Uruguay River coast and the Entre Ríos Litoral."
+        },
+        "2": {
+            "title": "Simple management",
+            "desc": "Publish, edit, and manage your properties from a single place. An intuitive, easy-to-use dashboard."
+        },
+        "3": {
+            "title": "No hidden fees",
+            "desc": "Transparent plans with fixed prices. You know exactly what you pay, with no surprises on any booking."
+        }
+    },
+    "steps": {
+        "tagline": "It's that easy",
+        "title": "How does it work?",
+        "1": {
+            "title": "Sign up",
+            "desc": "Create your owner account in under 2 minutes. All you need is an email."
+        },
+        "2": {
+            "title": "List it",
+            "desc": "Upload photos, description, amenities, and prices for your property."
+        },
+        "3": {
+            "title": "Get inquiries",
+            "desc": "Travelers contact you directly. You handle the bookings."
+        },
+        "4": {
+            "title": "Grow",
+            "desc": "Access statistics, feature your listing, and reach more travelers."
+        }
+    },
     "faq": {
+        "tagline": "Answer your questions",
+        "title": "Frequently asked questions",
         "1": {
             "q": "How much does it cost to list my property?",
             "a_one": "Listing requires a host plan. If it is your first subscription, every plan includes a {{trialDays}}-day free trial. We charge no booking commission: the subscription is the only cost.",
@@ -22,5 +68,11 @@
             "q": "What kinds of accommodation can I list?",
             "a": "Country houses, cabins, apartments, hotels, apart hotels, campsites, and more."
         }
+    },
+    "cta": {
+        "tagline": "Ready to get started?",
+        "title": "List your property today",
+        "desc": "Join the hundreds of property owners who already trust Hospeda to showcase their properties to the world.",
+        "button": "Get started"
     }
 }

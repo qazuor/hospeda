@@ -28,15 +28,15 @@ vi.mock('../../../../src/utils/logger', () => ({
     apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
-// resolveCommercePlanSlug reads HOSPEDA_COMMERCE_PLAN_ID from this module —
+// resolveCommercePlanSlug reads HOSPEDA_COMMERCE_PLAN_SLUGS from this module —
 // mocked (not the resolver itself) so the REAL resolver logic runs, mirroring
 // commerce-plan-resolver.test.ts's own convention.
 const mockEnv = vi.hoisted<{
-    HOSPEDA_COMMERCE_PLAN_ID?: string;
+    HOSPEDA_COMMERCE_PLAN_SLUGS?: string;
     HOSPEDA_SITE_URL: string;
     HOSPEDA_API_URL: string;
 }>(() => ({
-    HOSPEDA_COMMERCE_PLAN_ID: 'commerce-listing',
+    HOSPEDA_COMMERCE_PLAN_SLUGS: undefined,
     HOSPEDA_SITE_URL: 'https://hospeda.test',
     HOSPEDA_API_URL: 'https://api.hospeda.test'
 }));
@@ -106,6 +106,30 @@ vi.mock('@repo/db', () => ({
 const { mockGetQZPayBilling } = vi.hoisted(() => ({ mockGetQZPayBilling: vi.fn() }));
 vi.mock('../../../../src/middlewares/billing', () => ({
     getQZPayBilling: mockGetQZPayBilling
+}));
+
+// HOS-688: the per-owner fork's three collaborators. Mocked at the module
+// boundary because their own DB writes are covered by
+// `test/services/commerce-subscription-attach.test.ts`; what this file asserts
+// is WHICH BRANCH the route takes, which is the part AC-14 is about.
+const {
+    mockFindOwnerVerticalSubscription,
+    mockCountAttachedListings,
+    mockAttachListingToSubscription,
+    mockResolveCommerceVerticalCap
+} = vi.hoisted(() => ({
+    mockFindOwnerVerticalSubscription: vi.fn(),
+    mockCountAttachedListings: vi.fn(),
+    mockAttachListingToSubscription: vi.fn(),
+    mockResolveCommerceVerticalCap: vi.fn()
+}));
+vi.mock('../../../../src/services/commerce-subscription-attach.service', () => ({
+    findOwnerVerticalSubscription: mockFindOwnerVerticalSubscription,
+    countAttachedListings: mockCountAttachedListings,
+    attachListingToSubscription: mockAttachListingToSubscription
+}));
+vi.mock('../../../../src/middlewares/commerce-entitlement', () => ({
+    resolveCommerceVerticalCap: mockResolveCommerceVerticalCap
 }));
 
 const { mockGetCommerceListingSubscriptionStatus } = vi.hoisted(() => ({
@@ -263,15 +287,27 @@ vi.mock('../../../../src/utils/actor', () => ({
     getActorFromContext: (ctx: { get: (key: string) => unknown }) => ctx.get('actor')
 }));
 
+/**
+ * HOS-688: the per-owner fork reads the caller's subscriptions before deciding
+ * whether to open a checkout, so every case needs this facade present. An empty
+ * list is "the owner has no subscription for this vertical" — branch 1, today's
+ * behaviour, which is what the pre-existing cases below assert.
+ */
 const DEFAULT_BILLING = {
     plans: { list: vi.fn() },
-    subscriptions: { create: vi.fn() }
+    subscriptions: { create: vi.fn(), getByCustomerId: vi.fn().mockResolvedValue([]) }
 };
 
 describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
     beforeEach(() => {
         vi.clearAllMocks();
-        mockEnv.HOSPEDA_COMMERCE_PLAN_ID = 'commerce-listing';
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = undefined;
+        DEFAULT_BILLING.subscriptions.getByCustomerId.mockResolvedValue([]);
+        // Branch 1 by default: the owner holds no subscription for this
+        // vertical, which is the behaviour every pre-HOS-688 case asserts.
+        mockFindOwnerVerticalSubscription.mockResolvedValue(null);
+        mockCountAttachedListings.mockResolvedValue(0);
+        mockResolveCommerceVerticalCap.mockResolvedValue(1);
         mockGetQZPayBilling.mockReturnValue(DEFAULT_BILLING);
         mockGetCommerceListingSubscriptionStatus.mockResolvedValue(null);
         mockGastronomyFindById.mockResolvedValue(makeCompleteGastronomyRow(OWNER_ID));
@@ -286,30 +322,50 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
 
     // ── AC-2: ownership check ────────────────────────────────────────────
 
-    it('returns 403 when the caller does not own the listing (AC-2)', async () => {
-        mockGastronomyFindById.mockResolvedValue(makeCompleteGastronomyRow(OTHER_USER_ID));
-        const ctx = createMockContext({ actorId: OWNER_ID });
-
-        await expect(
-            handleCommerceStartSubscription(ctx as never, {
+    /**
+     * Runs the handler and captures whatever it refuses with, as a plain
+     * comparable value. Anything other than a rejection is a failure the
+     * caller's assertion will surface.
+     */
+    async function captureRefusal(): Promise<{ status: number; message: string }> {
+        try {
+            await handleCommerceStartSubscription(ctx0 as never, {
                 entityType: CommerceEntityTypeEnum.GASTRONOMY,
                 entityId: ENTITY_ID
-            })
-        ).rejects.toMatchObject({ status: 403 });
+            });
+        } catch (error) {
+            const httpError = error as { status?: number; message?: string };
+            return { status: httpError.status ?? 0, message: httpError.message ?? '' };
+        }
+        throw new Error('expected the handler to refuse, but it returned');
+    }
+
+    let ctx0: ReturnType<typeof createMockContext>;
+
+    it('answers a foreign listing exactly as it answers a non-existent one (AC-2, HOS-600)', async () => {
+        // AC-2 originally specified 403 here. HOS-600 changed it to 404: the 403
+        // told a caller holding an id that the id was real and simply not
+        // theirs, which is the disclosure the error contract's
+        // "a foreign resource answers 404" rule exists to prevent. The security
+        // boundary is unchanged — checkout is still refused.
+        ctx0 = createMockContext({ actorId: OWNER_ID });
+
+        mockGastronomyFindById.mockResolvedValue(makeCompleteGastronomyRow(OTHER_USER_ID));
+        const foreign = await captureRefusal();
+
+        mockGastronomyFindById.mockResolvedValue(null);
+        const missing = await captureRefusal();
+
+        // Whole-value equality, not `toMatchObject`: the two refusals used to
+        // differ in status AND in message, and the message half is the kind a
+        // status-shaped assertion cannot see.
+        expect(foreign).toEqual(missing);
+        expect(foreign.status).toBe(404);
+        // Rule R5 — the refusal echoes neither the entity type nor the id.
+        expect(foreign.message).not.toContain(ENTITY_ID);
+        expect(foreign.message).not.toContain('gastronomy');
 
         expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
-    });
-
-    it('returns 404 when the listing does not exist', async () => {
-        mockGastronomyFindById.mockResolvedValue(null);
-        const ctx = createMockContext();
-
-        await expect(
-            handleCommerceStartSubscription(ctx as never, {
-                entityType: CommerceEntityTypeEnum.GASTRONOMY,
-                entityId: ENTITY_ID
-            })
-        ).rejects.toMatchObject({ status: 404 });
     });
 
     it('proceeds when actor.id === listing.ownerId', async () => {
@@ -506,8 +562,11 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
 
     // ── D-7: plan slug / billing configuration ───────────────────────────
 
-    it('returns 503 when HOSPEDA_COMMERCE_PLAN_ID is unset', async () => {
-        mockEnv.HOSPEDA_COMMERCE_PLAN_ID = undefined;
+    it('returns 503 when HOSPEDA_COMMERCE_PLAN_SLUGS is set but malformed', async () => {
+        // HOS-688: "unset" no longer 503s — it falls back to the shipped
+        // catalogue, and production is covered by the boot validation instead.
+        // A value that is SET but wrong still refuses, in every environment.
+        mockEnv.HOSPEDA_COMMERCE_PLAN_SLUGS = 'gastronomy=oops';
         const ctx = createMockContext();
 
         await expect(
@@ -576,7 +635,7 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledWith(
             expect.objectContaining({
                 customerId: CUSTOMER_ID,
-                planSlug: 'commerce-listing',
+                planSlug: 'gastronomy-premium',
                 entityType: CommerceEntityTypeEnum.GASTRONOMY,
                 entityId: ENTITY_ID
             })
@@ -599,5 +658,87 @@ describe('handleCommerceStartSubscription (HOS-166 §6.3)', () => {
         expect(result).not.toBeInstanceOf(Response);
         expect(mockGastronomyFindById).not.toHaveBeenCalled();
         expect(mockExperienceFindById).toHaveBeenCalledWith(ENTITY_ID);
+    });
+    // ── HOS-688 §6.8 AC-14: the per-owner fork ───────────────────────────
+    //
+    // Under per-LISTING billing this route had one answer. It now forks three
+    // ways, and the middle branch is the one that did not exist before — and
+    // the one where a per-listing model quietly survives a rename, because
+    // opening a checkout there creates a SECOND MercadoPago preapproval and
+    // charges the owner twice for a plan that already covers them. Both
+    // requests answer 201 with a valid URL, so the API shows nothing.
+
+    it('does NOT open a checkout when the owner already has this vertical subscription (AC-14)', async () => {
+        mockFindOwnerVerticalSubscription.mockResolvedValue({ id: 'sub-1', status: 'active' });
+        mockCountAttachedListings.mockResolvedValue(0);
+        mockResolveCommerceVerticalCap.mockResolvedValue(2);
+        const ctx = createMockContext();
+
+        const result = await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        // The assertion that matters: no second preapproval was created.
+        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+        expect(mockAttachListingToSubscription).toHaveBeenCalledWith(
+            expect.objectContaining({
+                subscription: { id: 'sub-1', status: 'active' },
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                entityId: ENTITY_ID
+            })
+        );
+        expect(result).toMatchObject({
+            appliedEffect: 'attached',
+            localSubscriptionId: 'sub-1'
+        });
+    });
+
+    it('refuses with LIMIT_REACHED when the owner is at their cap (AC-14 branch 3)', async () => {
+        mockFindOwnerVerticalSubscription.mockResolvedValue({ id: 'sub-1', status: 'active' });
+        mockCountAttachedListings.mockResolvedValue(1);
+        mockResolveCommerceVerticalCap.mockResolvedValue(1);
+        const ctx = createMockContext();
+
+        await expect(
+            handleCommerceStartSubscription(ctx as never, {
+                entityType: CommerceEntityTypeEnum.GASTRONOMY,
+                entityId: ENTITY_ID
+            })
+        ).rejects.toMatchObject({ code: 'LIMIT_REACHED' });
+
+        expect(mockInitiateCommerceMonthlySubscription).not.toHaveBeenCalled();
+        expect(mockAttachListingToSubscription).not.toHaveBeenCalled();
+    });
+
+    it('still opens a checkout when the owner has NO subscription for this vertical (AC-14 branch 1)', async () => {
+        // Non-vacuity for the pair above: the fork has to be able to reach the
+        // checkout, or "no second preapproval" would be trivially true.
+        mockFindOwnerVerticalSubscription.mockResolvedValue(null);
+        const ctx = createMockContext();
+
+        await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.GASTRONOMY,
+            entityId: ENTITY_ID
+        });
+
+        expect(mockInitiateCommerceMonthlySubscription).toHaveBeenCalledTimes(1);
+        expect(mockAttachListingToSubscription).not.toHaveBeenCalled();
+    });
+
+    it('scopes the subscription lookup to the listing OWN vertical', async () => {
+        mockFindOwnerVerticalSubscription.mockResolvedValue(null);
+        const ctx = createMockContext();
+
+        await handleCommerceStartSubscription(ctx as never, {
+            entityType: CommerceEntityTypeEnum.EXPERIENCE,
+            entityId: ENTITY_ID
+        });
+
+        // A gastronomy subscription must never satisfy an experience checkout:
+        // that is what keeps the two caps, and the two MP trials, independent.
+        expect(mockFindOwnerVerticalSubscription).toHaveBeenCalledWith(
+            expect.objectContaining({ vertical: CommerceEntityTypeEnum.EXPERIENCE })
+        );
     });
 });

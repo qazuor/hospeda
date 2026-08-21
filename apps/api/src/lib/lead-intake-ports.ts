@@ -4,24 +4,31 @@
  *
  * ## What was wrong
  *
- * The platform has five public acquisition forms — one for commerce and four
- * for "aliados" — and none of them told anybody when a submission arrived.
- * Commerce had the hook written (`LeadNotificationPort.notifyNewLead`) and it
- * was never injected at any of its five construction sites, so the `else`
- * branch ran every time and logged at `debug`, which production does not emit.
- * Alliance did not model the idea at all: its two ports write to the APPLICANT
- * (claim an account, here is the verdict), never to the platform.
+ * The platform used to have five public acquisition forms — one for commerce
+ * and four for "aliados" — and none of them told anybody when a submission
+ * arrived. Commerce had the hook written (`LeadNotificationPort.notifyNewLead`)
+ * and it was never injected at any of its five construction sites, so the
+ * `else` branch ran every time and logged at `debug`, which production does
+ * not emit. Alliance did not model the idea at all: its two ports write to the
+ * APPLICANT (claim an account, here is the verdict), never to the platform.
  *
  * The result was a funnel with no doorbell. Discovery depended entirely on an
  * operator deciding, unprompted, to open the admin and look — and the failure
  * mode of that is invisible from the outside: no error, no bounce, no
  * complaint. Nobody knows they did not find out.
  *
- * ## Why both funnels share this module
+ * ## Commerce is gone (HOS-695, release C)
  *
- * What ops reads is the same in both cases, so a single notification type
- * serves both. Splitting it would mean two templates and two subjects drifting
- * apart for the same email.
+ * The commerce lead-intake funnel accepted no new submissions well before this
+ * — HOS-693 retired its public form and admin provisioning flow, HOS-690
+ * unmounted the form from the landing pages — and its admin review surface
+ * only ever served three smoke-test fixtures with nothing worth preserving.
+ * HOS-695 removed that surface and the `commerce_leads` table itself, and this
+ * module's commerce branch went with it. `alliance` is the only funnel left;
+ * this module is kept (not inlined into the alliance service) because a
+ * future funnel would want the exact same ops-alert plumbing, and the
+ * `announceLeadToOps` / `stampOpsNotified` shape stays funnel-agnostic on
+ * purpose.
  *
  * ## Why `opsNotifiedAt` is stamped here
  *
@@ -33,19 +40,26 @@
  * @module lib/lead-intake-ports
  */
 
-import { allianceLeads, commerceLeads, getDb } from '@repo/db';
+import { allianceLeads, getDb } from '@repo/db';
 import { NotificationType } from '@repo/notifications';
 import type { AllianceLeadKind } from '@repo/schemas';
-import type { AllianceLeadIntakeNotifyPort, LeadNotificationPort } from '@repo/service-core';
+import type { AllianceLeadIntakeNotifyPort } from '@repo/service-core';
 import { eq } from 'drizzle-orm';
 import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 import { trySendNotification } from '../utils/notification-helper';
 
-/** Which acquisition funnel a lead came through. */
-export type LeadFunnel = 'commerce' | 'alliance';
+/**
+ * Which acquisition funnel a lead came through.
+ *
+ * A one-member union rather than a plain `'alliance'` literal type on the
+ * fields below: kept as a named, extensible type so a future second funnel
+ * (this module's whole reason for being funnel-agnostic) widens it in one
+ * place instead of every call site.
+ */
+export type LeadFunnel = 'alliance';
 
-/** Everything the ops alert needs, normalised across the two funnels. */
+/** Everything the ops alert needs, normalised across funnels. */
 export interface LeadIntakeAlert {
     /** Which funnel it arrived through. */
     readonly funnel: LeadFunnel;
@@ -81,28 +95,13 @@ const ALLIANCE_PROGRAM_LABELS: Record<AllianceLeadKind, string> = {
     service_provider: 'Proveedor'
 };
 
-/**
- * Human-readable labels for commerce domains.
- *
- * NOT a total record, deliberately: `commerce_leads.domain` is a varchar
- * precisely so a new vertical needs no migration, so an unknown value is an
- * expected state rather than a bug. It degrades to the raw domain, which is
- * still readable, instead of failing to send.
- */
-const COMMERCE_DOMAIN_LABELS: Readonly<Record<string, string>> = {
-    gastronomy: 'Gastronomía',
-    experience: 'Experiencia'
-};
-
 /** Where each funnel's queue lives in the admin. */
 const ADMIN_QUEUE_PATHS: Record<LeadFunnel, string> = {
-    commerce: '/platform/commerce-leads',
     alliance: '/platform/alliance-leads'
 };
 
 /** How the funnel is named to a human reading the alert. */
 const FUNNEL_LABELS: Record<LeadFunnel, string> = {
-    commerce: 'Comercios',
     alliance: 'Aliados'
 };
 
@@ -147,16 +146,12 @@ async function stampOpsNotified(params: {
     readonly notifiedAt: Date;
 }): Promise<void> {
     const db = getDb();
-    const { funnel, leadId, notifiedAt } = params;
+    const { leadId, notifiedAt } = params;
 
-    if (funnel === 'commerce') {
-        await db
-            .update(commerceLeads)
-            .set({ opsNotifiedAt: notifiedAt })
-            .where(eq(commerceLeads.id, leadId));
-        return;
-    }
-
+    // `params.funnel` is currently always 'alliance' (the only LeadFunnel
+    // member) — kept as a parameter, not inlined away, so a second funnel
+    // only needs a branch here rather than a signature change everywhere
+    // this is called from.
     await db
         .update(allianceLeads)
         .set({ opsNotifiedAt: notifiedAt })
@@ -248,31 +243,6 @@ export async function announceLeadToOps(params: { readonly alert: LeadIntakeAler
     );
 
     return { delivered: true };
-}
-
-/**
- * Creates the commerce funnel's {@link LeadNotificationPort} implementation.
- *
- * @returns A port that alerts ops about a newly submitted commerce lead.
- */
-export function createCommerceLeadNotificationPort(): LeadNotificationPort {
-    return {
-        notifyNewLead: async (lead) => {
-            await announceLeadToOps({
-                alert: {
-                    funnel: 'commerce',
-                    leadId: lead.id,
-                    programLabel: COMMERCE_DOMAIN_LABELS[lead.domain] ?? lead.domain,
-                    contactName: lead.contactName,
-                    contactEmail: lead.email,
-                    contactPhone: lead.phone,
-                    businessName: lead.businessName,
-                    message: lead.message,
-                    createdAt: lead.createdAt ?? new Date()
-                }
-            });
-        }
-    };
 }
 
 /**

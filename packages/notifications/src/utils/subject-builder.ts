@@ -60,10 +60,6 @@ const SUBJECT_PATTERNS: Record<NotificationType, string> = {
     [NotificationType.PLAN_BEING_RETIRED]:
         'Important: {planName} is being retired — your access continues until {accessUntil}',
 
-    // Commerce owner credentials (SPEC-239 T-050)
-    [NotificationType.COMMERCE_OWNER_CREDENTIALS]:
-        'Tus credenciales de acceso a Hospeda — activá tu cuenta',
-
     // Alliance claim invitation (HOS-278 §6.2)
     [NotificationType.ALLIANCE_CLAIM_INVITE]:
         '¿Postulaste a {programLabel} en Hospeda? Confirmanos que fuiste vos',

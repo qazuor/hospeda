@@ -376,6 +376,8 @@
             "buyAddon": "Extend it with an add-on",
             "limits": {
                 "max_accommodations": "Published accommodations",
+                "max_gastronomies": "Published gastronomy listings",
+                "max_experiences": "Published experiences",
                 "max_photos_per_accommodation": "Photos per accommodation",
                 "max_active_promotions": "Active promotions",
                 "max_favorites": "Saved favourites",
@@ -727,6 +729,14 @@
                 "redirecting": "Redirecting to payment...",
                 "previewError": "Could not get the change preview. Please try again.",
                 "changeError": "Could not change the plan. Please try again."
+            },
+            "titleGastronomy": "Gastronomy subscription",
+            "titleExperience": "Experience subscription",
+            "domainSwitcher": {
+                "label": "Choose which subscription to view",
+                "accommodation": "Accommodation",
+                "gastronomy": "Gastronomy",
+                "experience": "Experiences"
             }
         },
         "whatsNew": {
@@ -1018,6 +1028,24 @@
             "perAccommodation": "Per accommodation",
             "account": "Account-wide"
         },
+        "focus": {
+            "others": "Other add-ons",
+            "headings": {
+                "fallback": "The add-on you were looking for",
+                "extra-photos-20": "To add more photos",
+                "extra-accommodations-5": "To list more accommodations",
+                "extra-properties-5": "To add more properties",
+                "visibility-boost-7d": "To feature your accommodation",
+                "visibility-boost-30d": "To feature your accommodation",
+                "ai-support-monthly": "To add AI support"
+            }
+        },
+        "featuredOffer": {
+            "title": "Feature this accommodation",
+            "body": "A visibility boost makes this accommodation appear featured in listings and search results for as long as the add-on lasts.",
+            "scope": "Heads up: the boost applies to this listing only. If you have more than one accommodation, each one needs its own add-on.",
+            "linkSr": "for this accommodation"
+        },
         "billingType": {
             "one_time": "One-time",
             "recurring": "Monthly"
@@ -1071,6 +1099,14 @@
             "ai-support-monthly": {
                 "name": "AI Support (monthly)",
                 "description": "Unlocks AI-powered support tools for hosts, including smart reply suggestions and automated guest FAQ handling. Renews monthly."
+            },
+            "extra-gastronomies-1": {
+                "name": "Extra Gastronomy Listing (+1)",
+                "description": "Adds 1 additional gastronomy listing to your plan. Renews monthly."
+            },
+            "extra-experiences-1": {
+                "name": "Extra Experience Listing (+1)",
+                "description": "Adds 1 additional experience listing to your plan. Renews monthly."
             }
         }
     },

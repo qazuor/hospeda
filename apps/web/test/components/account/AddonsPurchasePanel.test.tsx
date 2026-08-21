@@ -299,6 +299,114 @@ describe('AddonsPurchasePanel', () => {
         expect(window.location.href).toBe('');
     });
 
+    it('shows the subscription-gate banner (not a toast) when purchase fails with reason NO_ACTIVE_SUBSCRIPTION (HOS-602)', async () => {
+        // ARRANGE — this mirrors the real wire shape after the HOS-602 API
+        // fix: a 422 whose status-derived `code` collapses to the generic
+        // VALIDATION_ERROR, but whose `reason` still carries the specific
+        // service error code via `entitlement-cause.ts`.
+        mockPurchaseAddon.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 422,
+                code: 'VALIDATION_ERROR',
+                reason: 'NO_ACTIVE_SUBSCRIPTION',
+                message: 'You must have an active subscription to purchase add-ons'
+            }
+        });
+        const user = userEvent.setup();
+        render(
+            <AddonsPurchasePanel
+                locale="es"
+                addons={[ACCOUNT_ADDON]}
+                ownedAddonSlugs={[]}
+                accommodations={[]}
+            />
+        );
+
+        await user.click(screen.getByTestId(`addon-buy-button-${ACCOUNT_ADDON.slug}`));
+
+        const banner = await screen.findByTestId(`addon-subscription-gate-${ACCOUNT_ADDON.slug}`);
+        expect(banner).toHaveTextContent('Necesitás una suscripción activa');
+        expect(banner).toHaveTextContent(
+            'Los complementos están disponibles para cuentas con una suscripción activa o en período de prueba.'
+        );
+        const cta = screen.getByRole('link', { name: 'Ver planes' });
+        expect(cta).toHaveAttribute('href', expect.stringContaining('/es/'));
+
+        // The generic toast path must NOT fire for this specific rejection —
+        // the reason is now visible next to the card instead.
+        expect(mockAddToast).not.toHaveBeenCalled();
+        expect(window.location.href).toBe('');
+    });
+
+    it('shows the subscription-gate banner when purchase fails with reason NO_SUBSCRIPTION (HOS-602)', async () => {
+        mockPurchaseAddon.mockResolvedValue({
+            ok: false,
+            error: {
+                status: 422,
+                code: 'VALIDATION_ERROR',
+                reason: 'NO_SUBSCRIPTION',
+                message: 'You must have an active subscription to purchase add-ons'
+            }
+        });
+        const user = userEvent.setup();
+        render(
+            <AddonsPurchasePanel
+                locale="es"
+                addons={[ACCOUNT_ADDON]}
+                ownedAddonSlugs={[]}
+                accommodations={[]}
+            />
+        );
+
+        await user.click(screen.getByTestId(`addon-buy-button-${ACCOUNT_ADDON.slug}`));
+
+        expect(
+            await screen.findByTestId(`addon-subscription-gate-${ACCOUNT_ADDON.slug}`)
+        ).toBeInTheDocument();
+        expect(mockAddToast).not.toHaveBeenCalled();
+    });
+
+    it('clears a stale subscription-gate banner on a fresh purchase attempt (HOS-602)', async () => {
+        mockPurchaseAddon
+            .mockResolvedValueOnce({
+                ok: false,
+                error: {
+                    status: 422,
+                    code: 'VALIDATION_ERROR',
+                    reason: 'NO_ACTIVE_SUBSCRIPTION',
+                    message: 'You must have an active subscription to purchase add-ons'
+                }
+            })
+            .mockResolvedValueOnce({
+                ok: true,
+                data: { checkoutUrl: 'https://mp.example/checkout/retry' }
+            });
+        const user = userEvent.setup();
+        render(
+            <AddonsPurchasePanel
+                locale="es"
+                addons={[ACCOUNT_ADDON]}
+                ownedAddonSlugs={[]}
+                accommodations={[]}
+            />
+        );
+
+        await user.click(screen.getByTestId(`addon-buy-button-${ACCOUNT_ADDON.slug}`));
+        expect(
+            await screen.findByTestId(`addon-subscription-gate-${ACCOUNT_ADDON.slug}`)
+        ).toBeInTheDocument();
+
+        // Simulates the user having upgraded in another tab, then retrying.
+        await user.click(screen.getByTestId(`addon-buy-button-${ACCOUNT_ADDON.slug}`));
+
+        await waitFor(() => {
+            expect(
+                screen.queryByTestId(`addon-subscription-gate-${ACCOUNT_ADDON.slug}`)
+            ).not.toBeInTheDocument();
+        });
+    });
+
     it('renders the localized addon name/description from i18n, not the raw definition string (BETA-198)', () => {
         render(
             <AddonsPurchasePanel

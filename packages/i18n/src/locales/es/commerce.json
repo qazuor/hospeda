@@ -18,9 +18,9 @@
         "process": {
             "title": "Cómo sigue después de enviarlo",
             "step1": "Enviás el formulario con los datos de tu negocio.",
-            "step2": "Nuestro equipo lo revisa y lo aprueba. Suele tardar entre 24 y 48 horas hábiles.",
-            "step3": "Te avisamos por correo cuando esté listo, con los pasos para entrar.",
-            "step4": "Completás la publicación y contratás el plan."
+            "step2": "Nuestro equipo revisa tu solicitud y te contacta para coordinar los próximos pasos. Suele tardar entre 24 y 48 horas hábiles.",
+            "step3": "Te escribimos por correo para coordinar cómo sumar tu negocio a la plataforma.",
+            "step4": "Creás tu cuenta, completás la publicación y contratás el plan."
         },
         "submit": "Enviar solicitud",
         "submitting": "Enviando...",
@@ -80,6 +80,17 @@
                 "unknown": "Estado no disponible",
                 "draftComplete": "Borrador — listo para publicar",
                 "draftIncomplete": "Borrador — incompleto"
+            },
+            "usage": {
+                "gastronomy": {
+                    "label_one": "{{current}} de {{max}} gastronomía",
+                    "label_other": "{{current}} de {{max}} gastronomías"
+                },
+                "experience": {
+                    "label_one": "{{current}} de {{max}} experiencia",
+                    "label_other": "{{current}} de {{max}} experiencias"
+                },
+                "upgrade": "Ampliar cupo"
             }
         },
         "editor": {
@@ -152,6 +163,12 @@
                 "WINE_TASTING": "Degustación de vinos",
                 "OUTDOOR_ADVENTURE": "Aventura al aire libre",
                 "OTHER": "Otro"
+            },
+            "priceRangeOption": {
+                "BUDGET": "Económico",
+                "MID": "Moderado",
+                "HIGH": "Elevado",
+                "PREMIUM": "Premium"
             },
             "priceUnitOption": {
                 "per_day": "Por día",
@@ -228,7 +245,9 @@
             "publishing": "Iniciando pago...",
             "incompleteError": "Todavía faltan datos para publicar.",
             "alreadySubscribedError": "Este comercio ya tiene una suscripción activa.",
-            "checkoutError": "No pudimos iniciar el pago. Probá de nuevo."
+            "checkoutError": "No pudimos iniciar el pago. Probá de nuevo.",
+            "publishCtaFree": "Publicar",
+            "publishingFree": "Publicando..."
         },
         "create": {
             "pickVertical": {
@@ -254,6 +273,112 @@
             "submit": "Crear comercio",
             "submitting": "Creando...",
             "error": "No pudimos crear el comercio. Probá de nuevo."
+        }
+    },
+    "landing": {
+        "gastronomy": {
+            "benefits": {
+                "tagline": "¿Por qué Hospeda?",
+                "title": "Beneficios para tu restaurante",
+                "item1": {
+                    "title": "Visibilidad en la región",
+                    "desc": "Aparecé donde miles de viajeros buscan dónde comer en Concepción del Uruguay y el litoral entrerriano."
+                },
+                "item2": {
+                    "title": "Publicá en minutos",
+                    "desc": "Cargá fotos, menú y horarios desde un panel simple. Editá cuando quieras."
+                },
+                "item3": {
+                    "title": "Precio fijo, sin comisiones",
+                    "desc": "Pagás un monto mensual fijo. Ninguna reserva ni consulta te cobra comisión aparte."
+                }
+            },
+            "howItWorks": {
+                "tagline": "Es así de fácil",
+                "title": "¿Cómo funciona?",
+                "step1": { "title": "Registrate", "desc": "Creá tu cuenta en menos de 2 minutos." },
+                "step2": {
+                    "title": "Publicá tu local",
+                    "desc": "Cargá fotos, menú, horarios y ubicación."
+                },
+                "step3": {
+                    "title": "Te encuentran",
+                    "desc": "Los comensales te descubren buscando gastronomía en la zona."
+                }
+            },
+            "price": {
+                "tagline": "Un solo plan, simple",
+                "title": "Gastronomía Premium",
+                "priceSuffix": "/mes",
+                "trial": "30 días de prueba gratis",
+                "feature1": "1 ficha de gastronomía publicada",
+                "feature2": "Presencia en el catálogo de Hospeda",
+                "feature3": "Sin comisión por reserva ni consulta",
+                "cta": "Empezar ahora",
+                "unavailable": "No pudimos cargar el precio en este momento. Volvé a intentar más tarde."
+            },
+            "faq": {
+                "tagline": "Resolvé tus dudas",
+                "title": "Preguntas frecuentes",
+                "q1": "¿Cuánto cuesta publicar mi restaurante en Hospeda?",
+                "a1": "Un pago fijo mensual, con 30 días de prueba gratis. Sin comisión por reserva ni consulta.",
+                "q2": "¿Hay algún compromiso de permanencia?",
+                "a2": "No. Podés cancelar tu suscripción cuando quieras desde tu cuenta.",
+                "q3": "¿Cuántas fichas puedo publicar?",
+                "a3": "El plan incluye una ficha de gastronomía por cuenta."
+            }
+        },
+        "experience": {
+            "benefits": {
+                "tagline": "¿Por qué Hospeda?",
+                "title": "Beneficios para tu experiencia",
+                "item1": {
+                    "title": "Visibilidad en la región",
+                    "desc": "Aparecé donde miles de viajeros buscan experiencias en Concepción del Uruguay y el litoral entrerriano."
+                },
+                "item2": {
+                    "title": "Publicá en minutos",
+                    "desc": "Cargá fotos, descripción y horarios desde un panel simple. Editá cuando quieras."
+                },
+                "item3": {
+                    "title": "Precio fijo, sin comisiones",
+                    "desc": "Pagás un monto mensual fijo. Ninguna reserva ni consulta te cobra comisión aparte."
+                }
+            },
+            "howItWorks": {
+                "tagline": "Es así de fácil",
+                "title": "¿Cómo funciona?",
+                "step1": { "title": "Registrate", "desc": "Creá tu cuenta en menos de 2 minutos." },
+                "step2": {
+                    "title": "Publicá tu experiencia",
+                    "desc": "Cargá fotos, descripción, horarios y ubicación."
+                },
+                "step3": {
+                    "title": "Te encuentran",
+                    "desc": "Los viajeros te descubren buscando experiencias en la zona."
+                }
+            },
+            "price": {
+                "tagline": "Un solo plan, simple",
+                "title": "Experiencias Premium",
+                "priceSuffix": "/mes",
+                "trial": "30 días de prueba gratis",
+                "feature1": "1 ficha de experiencia publicada",
+                "feature2": "Presencia en el catálogo de Hospeda",
+                "feature3": "Sin comisión por reserva ni consulta",
+                "cta": "Empezar ahora",
+                "unavailable": "No pudimos cargar el precio en este momento. Volvé a intentar más tarde."
+            },
+            "faq": {
+                "tagline": "Resolvé tus dudas",
+                "title": "Preguntas frecuentes",
+                "q1": "¿Cuánto cuesta publicar mi experiencia en Hospeda?",
+                "a1": "Un pago fijo mensual, con 30 días de prueba gratis. Sin comisión por reserva ni consulta.",
+                "q2": "¿Hay algún compromiso de permanencia?",
+                "a2": "No. Podés cancelar tu suscripción cuando quieras desde tu cuenta.",
+                "q3": "¿Cuántas fichas puedo publicar?",
+                "a3": "El plan incluye una ficha de experiencia por cuenta."
+            }
         }
     }
 }

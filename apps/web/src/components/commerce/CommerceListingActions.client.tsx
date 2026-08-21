@@ -38,6 +38,22 @@ export interface CommerceListingActionsProps {
     readonly listing: CommerceOwnerListingSummaryWithState;
     /** Active locale for translations and URL construction. */
     readonly locale: SupportedLocale;
+    /**
+     * Whether the owner already holds a subscription for THIS listing's
+     * vertical (HOS-689 item 4), resolved server-side from the per-vertical
+     * usage reading (`fetchCommerceUsageByVertical` — a resolved reading IS
+     * proof of an existing subscription, since the usage endpoint 404s
+     * otherwise).
+     *
+     * Drives which draft-complete CTA renders: `false` (no subscription yet)
+     * keeps the real "Publicar y pagar" checkout (HOS-688 §6.8 branch 1);
+     * `true` switches to a plain "Publicar" CTA that still calls
+     * `startOwnerListingCheckout`, but the backend silently attaches the
+     * listing to the existing subscription and opens no payment (branch 2)
+     * — the same shape as accommodation, where publishing the second
+     * property never opens a checkout.
+     */
+    readonly hasVerticalSubscription: boolean;
 }
 
 /** Public detail path segment per vertical (mirrors the `[slug].astro` routes). */
@@ -52,7 +68,8 @@ const PUBLIC_PATH_BY_VERTICAL: Record<CommerceOwnerListingSummaryWithState['vert
  */
 export function CommerceListingActions({
     listing,
-    locale
+    locale,
+    hasVerticalSubscription
 }: CommerceListingActionsProps): JSX.Element {
     const { t } = createTranslations(locale);
     const [isCheckoutStarting, setIsCheckoutStarting] = useState(false);
@@ -88,6 +105,18 @@ export function CommerceListingActions({
             });
 
             if (result.ok) {
+                if (result.data.appliedEffect === 'attached') {
+                    // HOS-688 §6.8 branch 2: the owner already held a
+                    // subscription for this vertical, so the listing was
+                    // attached to it and published synchronously
+                    // server-side — no MercadoPago checkout was opened, and
+                    // `checkoutUrl` is only an in-app sentinel. Reload so the
+                    // index re-fetches `isPublic` and this card renders as
+                    // `published`, instead of following a link that leads
+                    // nowhere meaningful.
+                    window.location.reload();
+                    return;
+                }
                 storePendingCheckoutSubId(result.data.localSubscriptionId);
                 window.location.href = result.data.checkoutUrl;
                 return;
@@ -173,17 +202,18 @@ export function CommerceListingActions({
         // re-triggering `startOwnerListingCheckout`, which the backend now
         // 409s for `past_due` (a second checkout would try to open a SECOND
         // MercadoPago preapproval instead of recovering the existing one).
-        // HOS-259: `?domain=commerce` tells the subscription page (and, via
-        // it, `GET /users/me/subscription?productDomain=commerce`) to resolve
-        // the caller's COMMERCE subscription specifically — an owner who
-        // holds BOTH an accommodation host plan and a commerce listing
-        // subscription would otherwise land on whichever one the endpoint's
-        // default (`accommodation`) resolves, not necessarily the one that
-        // actually needs recovering.
+        // HOS-259 / HOS-689: `?domain=<vertical>` tells the subscription page
+        // (and, via it, `GET /users/me/subscription?productDomain=<vertical>`)
+        // to resolve the caller's subscription for THIS listing's vertical
+        // specifically. Scoping to the listing's own vertical (rather than
+        // the transitional `commerce` umbrella) matters for an owner who
+        // holds subscriptions in BOTH gastronomy and experience: `commerce`
+        // would match either one ambiguously, exactly the bug HOS-259 fixed
+        // for accommodation vs. commerce in the first place.
         const subscriptionHref = buildUrlWithParams({
             locale,
             path: 'mi-cuenta/suscripcion',
-            params: { domain: 'commerce' }
+            params: { domain: listing.vertical }
         });
         return (
             <div className={styles.actions}>
@@ -221,6 +251,17 @@ export function CommerceListingActions({
     const missing = state.kind === 'draft-incomplete' ? state.missing : [];
     const canPublish = state.kind === 'draft-complete';
 
+    // HOS-689 item 4: "Publicar y pagar" only when this WOULD open a real
+    // MercadoPago checkout — once the owner already holds a subscription for
+    // this vertical, publishing a later listing is free (it just consumes
+    // quota), so the CTA drops the "y pagar" framing entirely.
+    const publishCtaLabel = hasVerticalSubscription
+        ? t('commerce.owner.checklist.publishCtaFree', 'Publicar')
+        : t('commerce.owner.checklist.publishCta', 'Publicar y pagar');
+    const publishingLabel = hasVerticalSubscription
+        ? t('commerce.owner.checklist.publishingFree', 'Publicando...')
+        : t('commerce.owner.checklist.publishing', 'Iniciando pago...');
+
     return (
         <div className={styles.actions}>
             <span className={`${styles.badge} ${styles.badgeDraft}`}>
@@ -253,9 +294,7 @@ export function CommerceListingActions({
                 onClick={() => void handlePublishAndPay()}
                 data-testid="commerce-publish-button"
             >
-                {isCheckoutStarting
-                    ? t('commerce.owner.checklist.publishing', 'Iniciando pago...')
-                    : t('commerce.owner.checklist.publishCta', 'Publicar y pagar')}
+                {isCheckoutStarting ? publishingLabel : publishCtaLabel}
             </button>
 
             {checkoutError && (

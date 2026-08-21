@@ -18,9 +18,9 @@
         "process": {
             "title": "What happens after you submit",
             "step1": "You submit the form with your business details.",
-            "step2": "Our team reviews and approves it. This usually takes 24 to 48 business hours.",
-            "step3": "We email you once it is ready, with the steps to get in.",
-            "step4": "You complete the listing and choose your plan."
+            "step2": "Our team reviews your request and reaches out to coordinate next steps. This usually takes 24 to 48 business hours.",
+            "step3": "We email you to coordinate adding your business to the platform.",
+            "step4": "You create your account, complete the listing, and choose your plan."
         },
         "submit": "Submit request",
         "submitting": "Submitting...",
@@ -80,6 +80,17 @@
                 "unknown": "Status unavailable",
                 "draftComplete": "Draft — ready to publish",
                 "draftIncomplete": "Draft — incomplete"
+            },
+            "usage": {
+                "gastronomy": {
+                    "label_one": "{{current}} of {{max}} gastronomy listing",
+                    "label_other": "{{current}} of {{max}} gastronomy listings"
+                },
+                "experience": {
+                    "label_one": "{{current}} of {{max}} experience listing",
+                    "label_other": "{{current}} of {{max}} experience listings"
+                },
+                "upgrade": "Add more capacity"
             }
         },
         "editor": {
@@ -152,6 +163,12 @@
                 "WINE_TASTING": "Wine Tasting",
                 "OUTDOOR_ADVENTURE": "Outdoor Adventure",
                 "OTHER": "Other"
+            },
+            "priceRangeOption": {
+                "BUDGET": "Budget",
+                "MID": "Moderate",
+                "HIGH": "Upscale",
+                "PREMIUM": "Premium"
             },
             "priceUnitOption": {
                 "per_day": "Per day",
@@ -228,7 +245,9 @@
             "publishing": "Starting payment...",
             "incompleteError": "Some data is still missing to publish.",
             "alreadySubscribedError": "This business already has an active subscription.",
-            "checkoutError": "We couldn't start the payment. Please try again."
+            "checkoutError": "We couldn't start the payment. Please try again.",
+            "publishCtaFree": "Publish",
+            "publishingFree": "Publishing..."
         },
         "create": {
             "pickVertical": {
@@ -254,6 +273,112 @@
             "submit": "Create business",
             "submitting": "Creating...",
             "error": "We couldn't create the business. Please try again."
+        }
+    },
+    "landing": {
+        "gastronomy": {
+            "benefits": {
+                "tagline": "Why Hospeda?",
+                "title": "Benefits for your restaurant",
+                "item1": {
+                    "title": "Regional visibility",
+                    "desc": "Show up where thousands of travelers search for places to eat in Concepción del Uruguay and the Litoral region."
+                },
+                "item2": {
+                    "title": "Publish in minutes",
+                    "desc": "Upload photos, menu and hours from a simple dashboard. Edit anytime."
+                },
+                "item3": {
+                    "title": "Flat price, no commissions",
+                    "desc": "Pay one fixed monthly amount. No booking or inquiry is charged a separate commission."
+                }
+            },
+            "howItWorks": {
+                "tagline": "It's that easy",
+                "title": "How does it work?",
+                "step1": { "title": "Sign up", "desc": "Create your account in under 2 minutes." },
+                "step2": {
+                    "title": "Publish your venue",
+                    "desc": "Add photos, menu, hours and location."
+                },
+                "step3": {
+                    "title": "Get discovered",
+                    "desc": "Diners find you while searching for gastronomy in the area."
+                }
+            },
+            "price": {
+                "tagline": "One simple plan",
+                "title": "Gastronomy Premium",
+                "priceSuffix": "/month",
+                "trial": "30-day free trial",
+                "feature1": "1 published gastronomy listing",
+                "feature2": "Presence in the Hospeda catalog",
+                "feature3": "No commission on bookings or inquiries",
+                "cta": "Get started",
+                "unavailable": "We couldn't load the price right now. Please try again later."
+            },
+            "faq": {
+                "tagline": "Have questions?",
+                "title": "Frequently asked questions",
+                "q1": "How much does it cost to list my restaurant on Hospeda?",
+                "a1": "One fixed monthly payment, with a 30-day free trial. No commission on bookings or inquiries.",
+                "q2": "Is there a minimum commitment?",
+                "a2": "No. You can cancel your subscription anytime from your account.",
+                "q3": "How many listings can I publish?",
+                "a3": "The plan includes one gastronomy listing per account."
+            }
+        },
+        "experience": {
+            "benefits": {
+                "tagline": "Why Hospeda?",
+                "title": "Benefits for your experience",
+                "item1": {
+                    "title": "Regional visibility",
+                    "desc": "Show up where thousands of travelers search for experiences in Concepción del Uruguay and the Litoral region."
+                },
+                "item2": {
+                    "title": "Publish in minutes",
+                    "desc": "Upload photos, description and hours from a simple dashboard. Edit anytime."
+                },
+                "item3": {
+                    "title": "Flat price, no commissions",
+                    "desc": "Pay one fixed monthly amount. No booking or inquiry is charged a separate commission."
+                }
+            },
+            "howItWorks": {
+                "tagline": "It's that easy",
+                "title": "How does it work?",
+                "step1": { "title": "Sign up", "desc": "Create your account in under 2 minutes." },
+                "step2": {
+                    "title": "Publish your experience",
+                    "desc": "Add photos, description, hours and location."
+                },
+                "step3": {
+                    "title": "Get discovered",
+                    "desc": "Travelers find you while searching for experiences in the area."
+                }
+            },
+            "price": {
+                "tagline": "One simple plan",
+                "title": "Experience Premium",
+                "priceSuffix": "/month",
+                "trial": "30-day free trial",
+                "feature1": "1 published experience listing",
+                "feature2": "Presence in the Hospeda catalog",
+                "feature3": "No commission on bookings or inquiries",
+                "cta": "Get started",
+                "unavailable": "We couldn't load the price right now. Please try again later."
+            },
+            "faq": {
+                "tagline": "Have questions?",
+                "title": "Frequently asked questions",
+                "q1": "How much does it cost to list my experience on Hospeda?",
+                "a1": "One fixed monthly payment, with a 30-day free trial. No commission on bookings or inquiries.",
+                "q2": "Is there a minimum commitment?",
+                "a2": "No. You can cancel your subscription anytime from your account.",
+                "q3": "How many listings can I publish?",
+                "a3": "The plan includes one experience listing per account."
+            }
         }
     }
 }

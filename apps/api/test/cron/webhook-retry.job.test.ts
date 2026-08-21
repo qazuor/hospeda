@@ -42,14 +42,31 @@ const {
     };
 });
 
+// NOTE: this is a WHOLE-module mock, so anything the job imports from @repo/db
+// and that is missing here arrives as `undefined` and throws only when called —
+// surfacing as an unrelated `errors: 1` instead of an import failure. Add the
+// key here whenever the job (or anything it imports) reaches for a new export.
 vi.mock('@repo/db', () => ({
     getDb: mockGetDb,
     withTransaction: mockWithTransactionWebhook,
-    billingWebhookEvents: { providerEventId: 'providerEventId', status: 'status' },
-    billingWebhookDeadLetter: { id: 'id', resolvedAt: 'resolvedAt', attempts: 'attempts' },
+    billingWebhookEvents: {
+        providerEventId: 'providerEventId',
+        status: 'status',
+        processedAt: 'processedAt',
+        error: 'error'
+    },
+    billingWebhookDeadLetter: {
+        id: 'id',
+        resolvedAt: 'resolvedAt',
+        attempts: 'attempts',
+        createdAt: 'createdAt'
+    },
     eq: vi.fn((_col: unknown, _val: unknown) => ({ __eq: true })),
     isNull: vi.fn((_col: unknown) => ({ __isNull: true })),
     and: vi.fn((...conditions: unknown[]) => ({ __and: true, conditions })),
+    // HOS-717: markAsResolved now also closes the originating
+    // billing_webhook_events row, scoping the UPDATE with or(pending, failed).
+    or: vi.fn((...conditions: unknown[]) => ({ __or: true, conditions })),
     lt: vi.fn((_col: unknown, _val: unknown) => ({ __lt: true })),
     // sql is required for pg_try_advisory_xact_lock (concurrency guard added in GAP-009)
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({
@@ -63,7 +80,8 @@ vi.mock('@sentry/node', () => ({
     captureMessage: mockCaptureMessage
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn(),
     createMercadoPagoAdapter: vi.fn()
 }));
@@ -135,7 +153,7 @@ vi.mock('../../src/utils/env', () => ({
 // Imports (vi.mock calls above are hoisted by Vitest, so these are safe)
 // ---------------------------------------------------------------------------
 
-import { createMercadoPagoAdapter, getAddonBySlug } from '@repo/billing';
+import { asMajor, createMercadoPagoAdapter, getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { webhookRetryJob } from '../../src/cron/jobs/webhook-retry.job';
@@ -306,7 +324,7 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             billing as unknown as ReturnType<typeof getQZPayBilling>
         );
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1500,
+            amount: asMajor(1500),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -1279,7 +1297,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
         );
 
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 2000,
+            amount: asMajor(2000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -1348,7 +1366,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
         );
 
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 500,
+            amount: asMajor(500),
             currency: 'ARS',
             status: 'rejected',
             statusDetail: 'cc_rejected_insufficient_amount',

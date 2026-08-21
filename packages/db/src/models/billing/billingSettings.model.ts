@@ -14,7 +14,7 @@ export class BillingSettingsModel extends BaseModelImpl<BillingSettingsRow> {
     public entityName = 'billing_settings';
 
     protected getTableName(): string {
-        return 'billing_settings';
+        return 'billingSettings';
     }
 }
 

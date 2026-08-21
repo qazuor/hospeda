@@ -8,6 +8,7 @@
 
 import { renderContent } from '@/lib/render-content';
 import { renderPlain } from '@/lib/render-plain';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
 import type { ExperienceDetailData, ExperienceOpeningHoursEntry } from '@/data/types';
@@ -79,12 +80,18 @@ const openingHours =
                 { key: 'youtube', label: 'YouTube', icon: '▶️' },
                 { key: 'tiktok', label: 'TikTok', icon: '🎵' }
             ].map(({ key, label, icon }) => {
-                const url = experience.socialNetworks?.[key as keyof typeof experience.socialNetworks];
-                if (!url) return null;
+                // Owner-authored content: `z.string().url()` accepts
+                // `javascript:`, so this allow-list — not the schema — is what
+                // keeps a payload out of the href (HOS-592 / F-02). A refused
+                // value renders no row at all.
+                const href = resolveSafeExternalUrl(
+                    experience.socialNetworks?.[key as keyof typeof experience.socialNetworks]
+                );
+                if (!href) return null;
                 return (
                     <li class="exp-info__social-item">
                         <a
-                            href={url}
+                            href={href}
                             class="exp-info__social-link"
                             target="_blank"
                             rel="noopener noreferrer"

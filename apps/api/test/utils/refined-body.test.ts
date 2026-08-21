@@ -25,7 +25,7 @@
 import { CreateBillingPlanSchema, CreateSocialDraftSchema, ServiceErrorCode } from '@repo/schemas';
 import { ServiceError } from '@repo/service-core/types';
 import { describe, expect, it } from 'vitest';
-import { parseRefinedBody } from '../../src/utils/refined-body';
+import { parseRefinedBody, RefinedBodyValidationError } from '../../src/utils/refined-body';
 
 /** A plan body that satisfies every field-level rule. */
 const validPlan = {
@@ -82,6 +82,47 @@ describe('parseRefinedBody', () => {
             expect(
                 parseRefinedBody({ schema: CreateBillingPlanSchema, body: validPlan }).hasTrial
             ).toBe(false);
+        });
+
+        it('HOS-607: throws a RefinedBodyValidationError carrying the rich transformZodError shape, not a raw i18n key', () => {
+            // Regression for HOS-607 — the smoke found this rejection replying a
+            // flat `{code, message}` body whose `message` was the LITERAL,
+            // untranslated Zod key (`zodError.billing.plan.create.trialDays.
+            // requiredWhenTrial`), while an ordinary field-level rejection on
+            // the same endpoint replies the rich `{details, summary,
+            // userFriendlyMessage}` shape. `parseRefinedBody` must now throw a
+            // `RefinedBodyValidationError` carrying that same rich shape so
+            // `handleRouteError` can render it identically (see
+            // response-helpers.test.ts for the rendered-response assertion).
+            try {
+                parseRefinedBody({
+                    schema: CreateBillingPlanSchema,
+                    body: { ...validPlan, hasTrial: true, trialDays: 0 }
+                });
+                throw new Error('expected parseRefinedBody to throw');
+            } catch (error) {
+                expect(error).toBeInstanceOf(RefinedBodyValidationError);
+                const refinedError = error as RefinedBodyValidationError;
+
+                // Still a ServiceError(VALIDATION_ERROR) — every existing
+                // `instanceof ServiceError` / `.code` check upstream must keep
+                // working unchanged.
+                expect(refinedError).toBeInstanceOf(ServiceError);
+                expect(refinedError.code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+
+                const { validation } = refinedError;
+                expect(validation.code).toBe('VALIDATION_ERROR');
+                expect(validation.details).toHaveLength(1);
+                expect(validation.details[0]?.field).toBe('trialDays');
+                // The raw zodError key belongs in `messageKey` (for the client
+                // to resolve via i18n) — never surfaced anywhere as a literal,
+                // untranslated `message` string.
+                expect(validation.details[0]?.messageKey).toBe(
+                    'zodError.billing.plan.create.trialDays.requiredWhenTrial'
+                );
+                expect(validation.summary.totalErrors).toBe(1);
+                expect(typeof validation.userFriendlyMessage).toBe('string');
+            }
         });
 
         it('confirms the refinement is what rejects it, not a field-level rule', () => {

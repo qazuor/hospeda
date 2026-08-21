@@ -180,6 +180,114 @@ run the reset SQL manually, you must apply `001-extensions.sql` yourself first.
 
 ---
 
+## Deploy order: `DROP COLUMN` ships one release after the code stops using it
+
+**This is the rule that matters most in this whole guide, because it is the one that bites
+silently.** Every other mistake in [Common mistakes](#common-mistakes) fails loudly — CI
+blocks it, or `migrate` errors out. This one does not: the migration succeeds, the app
+deploy succeeds, and the outage lives entirely in the gap between the two.
+
+### The mechanism
+
+`hops db-migrate` and the application deploy (a manual Coolify redeploy per app — see the
+root [`CLAUDE.md`](../../CLAUDE.md#key-commands) "Deploy" section) are **two separate
+actions, run in sequence, with no atomicity between them**. Whichever one runs first, there
+is a window — seconds to several minutes — where the OLD container is still serving traffic
+against the NEW schema (or vice versa).
+
+For every migration EXCEPT a column drop, that window is harmless: an added column an old
+container doesn't know about is just ignored; an added table nobody queries yet is inert.
+A **dropped column is different**, because Drizzle projects an **explicit column list** —
+never `SELECT *`. The moment the column is physically gone from the table, every read the
+still-running old container issues for that table fails, because it is still asking for a
+column that used to be there.
+
+### Measured, not theoretical (HOS-601)
+
+Migration `0090` dropped `accommodations.schedule` in the same release that stopped reading
+it. The running (old) API code still declared the column in its Drizzle schema. From the
+instant the migration applied until the new container fully replaced the old one:
+
+- The API's accommodation-detail endpoint started returning `500` **9 seconds** after the
+  migration ran (`select ... "accommodations"."schedule"` failing against a column that no
+  longer existed).
+- The public web page served **404**, not `5xx` — worse for SEO than a `5xx`, since a 404
+  reads to a crawler as "deindex this" rather than "retry later".
+- Total window: **8 minutes 10 seconds**, dominated by the redeploy itself (~5m12s for
+  Coolify's old/new container swap, during which responses alternated between healthy and
+  broken) plus manual runbook steps that happened to fall in between.
+- The table this happened to is `accommodations` — the content that carries the site's SEO.
+
+See the HOS-601 Linear issue for the full timeline. The column itself turned out to also be
+non-obviously non-empty in production (104 rows carried real seed-created JSON) — a related
+but separate finding (HOS-620) about verifying a column is safe to drop **against the data**,
+not just against the code. That is orthogonal to this rule: even a genuinely empty,
+zero-reader column breaks the OLD running code if it disappears while that code is still
+live, because the break is about the *projection*, not the *content*.
+
+### The rule, and how it interacts with the three carriles
+
+This repo has three migration carriles (structural / extras / seed-data — see
+[Two carriles, one rule](#two-carriles-one-rule) above and
+[`packages/db/CLAUDE.md`](../../packages/db/CLAUDE.md)). **This rule is about the
+structural carril specifically** — extras (triggers, matviews, CHECK constraints) and
+seed-data migrations do not change what columns the running application code projects, so
+they do not have this failure mode. Only `packages/db/src/migrations/*.sql` statements that
+remove something the currently-deployed code still reads can cause it — in practice, that
+means `DROP COLUMN` (and, by the same logic, `DROP TABLE`).
+
+**Split a column removal into two releases, never one:**
+
+1. **Release N** — stop reading/writing the column in application code
+   (`packages/service-core`, `apps/*`). Do **not** touch the Drizzle TS schema yet, so
+   `db:generate` produces no migration. Deploy this release and confirm it is live.
+2. **Release N+1** (a *later* deploy, after Release N has actually reached the target
+   environment — not just merged to `staging`) — remove the column from the Drizzle TS
+   schema, run `db:generate`, review the generated `DROP COLUMN` migration, and deploy it.
+   By construction, no running code asks for the column anymore, so the drop is a no-op as
+   far as the application is concerned.
+
+This is the same **expand/contract** pattern already used elsewhere in this repo for a
+whole-table retirement — see HOS-589 §6.3 (`commerce_leads`), which drops the table only in
+the release *after* the one that stops writing to it, precisely citing this rule. Use that
+section as a worked example of sequencing a drop across releases, including the one
+non-obvious prerequisite it surfaced (a background cron reading the doomed table has to stop
+touching it in Release N too, not just the write path).
+
+### Rehearse the migration, but that is not this check
+
+`hops db-migrate-test` (rehearses pending migrations against a scratch clone of the target
+database before applying them for real) verifies the migration **applies cleanly** — syntax,
+constraints, data conversions. It says nothing about whether the *timing* is safe, because it
+never runs the application against the scratch clone. Run it before every migration
+regardless (`hops db-migrate-test --target=staging`), but it is not a substitute for the
+release-split above.
+
+### CI enforcement
+
+`scripts/check-drop-column-release-gap.sh` (wired into the `Guards` CI job) fails a PR that
+adds a `DROP COLUMN` migration unless the PR description names, per dropped column, a
+citation proving the code that used it already shipped in an earlier release:
+
+```
+[drop-column-release-gap: accommodations.schedule]: code removed in HOS-598, live since the 2026-08-10 deploy
+```
+
+The guard cannot verify the underlying fact by itself — whether a given commit has actually
+reached a live environment is deploy history, not something `git diff` can see, and this
+repo's own workflow deliberately separates "merged to `staging`" from "promoted to `main`"
+as a human-gated step (see [Branch Workflow](../../CLAUDE.md#branch-workflow-since-2026-05-12)).
+A source-code grep for "is this column still referenced anywhere" was considered and
+rejected: column names collide with common identifiers (`name`, `status`, `role`) across
+unrelated tables, which would make such a check false-positive constantly, and HOS-620 (the
+companion finding on this very migration) is a live example of "verified against the code"
+asserting something that did not hold against the data — the same blind spot a regex-only
+check would inherit. The marker instead forces the human judgment call to be **stated and
+reviewable** in the PR description, the same trust boundary this repo already accepts for
+[`[skip-seed-migration]`](../../packages/seed/CLAUDE.md#the-dual-write-rule-mandatory).
+
+---
+
 ## Seeding after migrate
 
 Seeding is separate from migrations:
@@ -219,6 +327,7 @@ HOSPEDA_TEST_URL="postgresql://user:pass@localhost:5432/hospeda_migration_test" 
 | Put a trigger in `migrations/` instead of `extras/` | Trigger not re-applied after reset | Move to `extras/`, make it idempotent |
 | Ran `push` against a VPS | Journal desynced, rollback impossible | Restore from the `pg_dump` backup |
 | Forgot `db:apply-extras` after `migrate` | Triggers/matview missing | Run `pnpm db:apply-extras` |
+| `DROP COLUMN` in the same release as the code that stops using it | Old container 404s/500s until redeploy finishes (measured: 8m10s, HOS-601) | Split into two releases — see [Deploy order](#deploy-order-drop-column-ships-one-release-after-the-code-stops-using-it) |
 
 ---
 

@@ -68,7 +68,8 @@ vi.mock('@repo/schemas', async (importOriginal) => {
         ...actual,
         SubscriptionStatusEnum: {
             CANCELLED: 'cancelled',
-            ACTIVE: 'active'
+            ACTIVE: 'active',
+            PAUSED: 'paused'
         }
     };
 });
@@ -97,7 +98,12 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             };
         }),
         BILLING_EVENT_TYPES: {
-            ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING'
+            ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING',
+            ADMIN_SUBSCRIPTION_CANCELLED: 'ADMIN_SUBSCRIPTION_CANCELLED',
+            ADMIN_PLAN_CHANGED: 'ADMIN_PLAN_CHANGED',
+            ADMIN_TRIAL_EXTENDED: 'ADMIN_TRIAL_EXTENDED',
+            ADMIN_SUBSCRIPTION_PAUSED: 'ADMIN_SUBSCRIPTION_PAUSED',
+            ADMIN_SUBSCRIPTION_RESUMED: 'ADMIN_SUBSCRIPTION_RESUMED'
         },
         // SPEC-309 T-023: shared resolver + sync for the featuredByEntitlement
         // flag, called from the downgrade/upgrade branches of
@@ -108,7 +114,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn().mockReturnValue({
         slug: 'visibility-boost-7d',
         grantsEntitlement: 'featured_listing',
@@ -180,6 +187,7 @@ vi.mock('../../../../../src/utils/logger', () => ({
 
 import { getDb } from '@repo/db';
 import {
+    BILLING_EVENT_TYPES,
     resolveOwnerPlanGrantsFeatured,
     syncFeaturedByEntitlementForOwner
 } from '@repo/service-core';
@@ -592,6 +600,7 @@ describe('adminBillingHooks.onAfterSubscriptionCancel', () => {
         >;
         expect(eventArg).toMatchObject({
             subscriptionId: SUBSCRIPTION_ID,
+            eventType: 'ADMIN_SUBSCRIPTION_CANCELLED',
             newStatus: 'cancelled',
             triggerSource: 'admin-cancel',
             metadata: { adminUserId: ADMIN_USER_ID, immediate: true }
@@ -671,6 +680,7 @@ describe('adminBillingHooks.onAfterSubscriptionChangePlan', () => {
         >;
         expect(eventArg).toMatchObject({
             subscriptionId: SUBSCRIPTION_ID,
+            eventType: BILLING_EVENT_TYPES.ADMIN_PLAN_CHANGED,
             triggerSource: 'admin-change-plan',
             metadata: {
                 adminUserId: ADMIN_USER_ID,
@@ -1203,6 +1213,7 @@ describe('adminBillingHooks.onAfterSubscriptionTrialExtended', () => {
         >;
         expect(eventArg).toMatchObject({
             subscriptionId: SUBSCRIPTION_ID,
+            eventType: BILLING_EVENT_TYPES.ADMIN_TRIAL_EXTENDED,
             triggerSource: 'admin-extend-trial',
             metadata: {
                 adminUserId: ADMIN_USER_ID,
@@ -1239,6 +1250,87 @@ describe('adminBillingHooks.onAfterSubscriptionTrialExtended', () => {
         });
 
         expect(clearEntitlementCache).not.toHaveBeenCalled();
+    });
+});
+
+// ---------------------------------------------------------------------------
+// onAfterSubscriptionPause / onAfterSubscriptionResume (HOS-657)
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds a hook ctx stub that also satisfies `readSuspendServiceFlag`'s
+ * `ctx.req.json()` read (used only by the pause hook).
+ */
+function buildContextWithBody(body: Record<string, unknown> = {}) {
+    return {
+        req: { json: vi.fn().mockResolvedValue(body) }
+    } as unknown as Parameters<
+        NonNullable<typeof adminBillingHooks.onAfterSubscriptionPause>
+    >[0]['ctx'];
+}
+
+describe('adminBillingHooks.onAfterSubscriptionPause', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('inserts an audit event with eventType ADMIN_SUBSCRIPTION_PAUSED', async () => {
+        const { db, spies } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+
+        await adminBillingHooks.onAfterSubscriptionPause!({
+            subscription: buildSubscription({ status: 'paused' }),
+            ctx: buildContextWithBody({ suspendService: true })
+        });
+
+        expect(spies.insert).toHaveBeenCalledTimes(1);
+        const eventArg = vi.mocked(spies.insertValues).mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        expect(eventArg).toMatchObject({
+            subscriptionId: SUBSCRIPTION_ID,
+            eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_PAUSED,
+            newStatus: 'paused',
+            triggerSource: 'admin-pause',
+            metadata: {
+                adminUserId: ADMIN_USER_ID,
+                suspendService: true
+            }
+        });
+    });
+});
+
+describe('adminBillingHooks.onAfterSubscriptionResume', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('inserts an audit event with eventType ADMIN_SUBSCRIPTION_RESUMED', async () => {
+        const { db, spies } = buildDbMock();
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+        vi.mocked(resolveOwnerUserId).mockResolvedValue('owner-user-001');
+
+        await adminBillingHooks.onAfterSubscriptionResume!({
+            subscription: buildSubscription({ status: 'active' }),
+            ctx: buildContext()
+        });
+
+        expect(spies.insert).toHaveBeenCalledTimes(1);
+        const eventArg = vi.mocked(spies.insertValues).mock.calls[0]?.[0] as Record<
+            string,
+            unknown
+        >;
+        expect(eventArg).toMatchObject({
+            subscriptionId: SUBSCRIPTION_ID,
+            eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_RESUMED,
+            newStatus: 'active',
+            triggerSource: 'admin-resume',
+            metadata: {
+                adminUserId: ADMIN_USER_ID
+            }
+        });
     });
 });
 

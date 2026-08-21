@@ -21,9 +21,16 @@
  * the permission to `COMMERCE_EDIT_OWN` on an admin-shaped route would let any
  * `COMMERCE_OWNER` pay for ANY listing. This route loads the raw listing via
  * the `@repo/db` model directly (not `GastronomyService.getById`, whose
- * public/protected view-tier gating would 404 a non-owner on a still-DRAFT
- * listing instead of the 403 AC-2 requires) and explicitly asserts
- * `actor.id === listing.ownerId` before doing anything else.
+ * public/protected view-tier gating varies by the listing's lifecycle and
+ * visibility) and explicitly asserts `actor.id === listing.ownerId` before
+ * doing anything else.
+ *
+ * Since HOS-600 that refusal is a **404, not the 403 AC-2 originally
+ * specified**, and it is byte-identical to the answer for a listing that does
+ * not exist. The 403 confirmed the id was real to somebody with no right to
+ * know it, which the error contract's "a foreign resource answers 404" rule
+ * exists to prevent; the security boundary itself is unchanged — a non-owner
+ * still cannot start a checkout.
  *
  * ## Completeness gate (G-3, AC-5)
  *
@@ -37,6 +44,11 @@
  *
  * @module routes/commerce/protected/start-subscription
  */
+import {
+    type CommerceVertical,
+    ENTITLEMENT_GRANTING_STATUSES,
+    LIMIT_KEY_BY_COMMERCE_VERTICAL
+} from '@repo/billing';
 import { experienceModel, gastronomyModel } from '@repo/db';
 import type {
     CommerceEntityType,
@@ -46,15 +58,18 @@ import type {
 import {
     PermissionEnum,
     resolveListingCompleteness,
+    ServiceErrorCode,
     StartPaidSubscriptionResponseSchema
 } from '@repo/schemas';
-import { getCommerceListingSubscriptionStatus } from '@repo/service-core';
+import { getCommerceListingSubscriptionStatus, ServiceError } from '@repo/service-core';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { protectedAuthMiddleware } from '../../../middlewares/authorization';
 import { getQZPayBilling } from '../../../middlewares/billing';
+import { resolveCommerceVerticalCap } from '../../../middlewares/commerce-entitlement';
 import { idempotencyKeyMiddleware } from '../../../middlewares/idempotency-key';
+import { buildLimitReachedDetails } from '../../../middlewares/limit-enforcement';
 import { mapSubscriptionCheckoutErrorToHttp } from '../../../services/billing/subscription-checkout-error-http';
 import { BillingCustomerSyncService } from '../../../services/billing-customer-sync';
 import { loadCommerceListingMedia } from '../../../services/commerce-listing-media';
@@ -63,11 +78,17 @@ import {
     resolveCommercePlanSlug
 } from '../../../services/commerce-plan-resolver';
 import {
+    attachListingToSubscription,
+    countAttachedListings,
+    findOwnerVerticalSubscription
+} from '../../../services/commerce-subscription-attach.service';
+import {
     initiateCommerceMonthlySubscription,
     SubscriptionCheckoutError
 } from '../../../services/subscription-checkout.service';
 import { getActorFromContext } from '../../../utils/actor';
 import { createRouter } from '../../../utils/create-app';
+import { calculateUsagePercent } from '../../../utils/limit-check';
 import { apiLogger } from '../../../utils/logger';
 import { createCRUDRoute } from '../../../utils/route-factory';
 import {
@@ -103,16 +124,22 @@ const StartSubscriptionParamsSchema = {
  * cancel/reactivate — is the correct path back to `active`). Deliberately
  * excludes `cancelled`, `expired`, `abandoned`, and `paused` — those ARE
  * terminal/inactive enough that a fresh checkout is the correct next step.
+ *
+ * HOS-702: built as the canonical `ENTITLEMENT_GRANTING_STATUSES` PLUS
+ * `past_due`, never as a hand-rolled list. The hand-rolled version omitted
+ * `comp`, so an owner whose listing already carried a complimentary
+ * subscription could start a second, real, CHARGED checkout for it.
  */
-const LIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due']);
+const LIVE_SUBSCRIPTION_STATUSES = new Set<string>([...ENTITLEMENT_GRANTING_STATUSES, 'past_due']);
 
 /**
  * Subset of the raw `gastronomies`/`experiences` row this route reads —
  * ownership (`ownerId`) + the fields `resolveListingCompleteness` needs
  * ({@link CommerceListingCompletenessListing}). Read directly via the
  * `@repo/db` model (not through `GastronomyService.getById`'s view-tier
- * gating) so a non-owner gets a uniform 403 regardless of the listing's
- * current lifecycle/visibility (AC-2).
+ * gating) so a non-owner gets a uniform answer regardless of the listing's
+ * current lifecycle/visibility (AC-2) — since HOS-600 that answer is the same
+ * 404 a non-existent listing gets, not a 403.
  *
  * `media` is the ONE completeness field this row cannot supply: HOS-372 dropped
  * the `media` JSONB column, so it is loaded separately via
@@ -122,6 +149,18 @@ const LIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due']);
 interface RawCommerceListingRow extends CommerceListingCompletenessListing {
     readonly id: string;
 }
+
+/**
+ * The single 404 this route answers when the caller may not start a
+ * subscription for the listing they named — because it does not exist, or
+ * because it is somebody else's (HOS-600). Built in one place so the two
+ * branches cannot drift into two distinguishable bodies, and carrying neither
+ * the entity type nor the id (error-contract rule R5).
+ *
+ * @returns The `HTTPException` to throw.
+ */
+const commerceListingNotFound = (): HTTPException =>
+    new HTTPException(404, { message: 'commerce listing not found' });
 
 /**
  * Loads the raw commerce entity row for the given `entityType`/`entityId`.
@@ -137,9 +176,7 @@ async function loadRawListing(
     const model = entityType === 'gastronomy' ? gastronomyModel : experienceModel;
     const entity = await model.findById(entityId);
     if (!entity) {
-        throw new HTTPException(404, {
-            message: `Commerce listing not found: ${entityType}/${entityId}`
-        });
+        throw commerceListingNotFound();
     }
     // TYPE-WORKAROUND: model.findById returns the full Gastronomy/Experience
     // entity type; we only read the RawCommerceListingRow subset (id/ownerId) for
@@ -167,11 +204,16 @@ export async function handleCommerceStartSubscription(
     const actor = getActorFromContext(ctx);
 
     // ── Ownership check (AC-2) — the entire security boundary. ─────────────
+    //
+    // HOS-600: a listing that is not the caller's answers the SAME 404 as one
+    // that does not exist. The 403 this replaces said "that id is real, it just
+    // is not yours", which let anyone holding an id confirm a live listing —
+    // the disclosure the error contract's 404-for-foreign-rows rule exists to
+    // close. The old 404 also echoed `${entityType}/${entityId}` back, against
+    // rule R5; both branches now share one body that carries neither.
     const listing = await loadRawListing(entityType, entityId);
     if (listing.ownerId !== actor.id) {
-        throw new HTTPException(403, {
-            message: 'You may only start a subscription for your own commerce listing.'
-        });
+        throw commerceListingNotFound();
     }
 
     // ── Plan slug (D-7) — resolved before touching billing so an unset
@@ -240,9 +282,23 @@ export async function handleCommerceStartSubscription(
     // ── Resolve the CALLER's billing customer — never the listing owner via
     // a separate lookup, since ownership was already asserted above,
     // actor.id === listing.ownerId, so "the caller" IS "the owner". ────────
+    //
+    // Moved AHEAD of the per-owner fork below (HOS-688): under per-owner
+    // billing the customer is what identifies the subscription this listing may
+    // join, so it has to be resolved before deciding whether to open a checkout
+    // at all.
     let billingCustomerId = ctx.get('billingCustomerId');
     if (!billingCustomerId && actor.email) {
-        const syncService = new BillingCustomerSyncService(billing, { throwOnError: false });
+        // HOS-596: customer creation runs on the tolerant facade so a
+        // MercadoPago hiccup cannot delete the row it just wrote and turn this
+        // commerce checkout into a 422. `billing` (strict) stays in charge of the
+        // subscription/checkout legs below.
+        const syncService = new BillingCustomerSyncService(
+            getQZPayBilling({ forCustomerSync: true }),
+            {
+                throwOnError: false
+            }
+        );
         billingCustomerId = await syncService.ensureCustomerExists({
             userId: actor.id,
             email: actor.email,
@@ -261,6 +317,75 @@ export async function handleCommerceStartSubscription(
 
     const locale = resolveReturnUrlLocale(ctx);
 
+    // ── The per-owner fork (HOS-688 §6.8, AC-14) ─────────────────────────────
+    //
+    // Under per-LISTING billing this route had one answer: open a checkout. Now
+    // the listing in the path is no longer the subscription's subject — it is
+    // the thing being attached to the OWNER's subscription for this vertical —
+    // and the answer forks three ways.
+    //
+    // The middle branch is the one that did not exist before, and the one where
+    // a per-listing model quietly survives a rename: opening a checkout for a
+    // second listing the owner's plan already covers creates a SECOND
+    // MercadoPago preapproval and charges them twice. Both requests would answer
+    // 201 with a valid URL, so nothing about it is visible from the API.
+    const ownerSubscription = await findOwnerVerticalSubscription({
+        billing,
+        customerId: billingCustomerId,
+        vertical: entityType as CommerceVertical
+    });
+
+    if (ownerSubscription) {
+        const [attached, cap] = await Promise.all([
+            countAttachedListings({ subscriptionId: ownerSubscription.id }),
+            resolveCommerceVerticalCap({
+                customerId: billingCustomerId,
+                vertical: entityType as CommerceVertical
+            })
+        ]);
+
+        if (attached >= cap) {
+            // Branch 3. Mostly unreachable while the create route holds the same
+            // cap — the owner could not have created the listing — but reachable
+            // when the cap DROPS after creation (an extra-listing add-on lapses).
+            // Same LIMIT_REACHED shape as the create route, so the web side
+            // resolves the vertical's at-limit copy and its add-on link without
+            // special-casing this endpoint.
+            apiLogger.warn(
+                { entityType, entityId, ownerId: actor.id, attached, cap },
+                'Commerce checkout refused: the owner is at their listing cap for this vertical'
+            );
+            throw new ServiceError(
+                ServiceErrorCode.LIMIT_REACHED,
+                `Ya estás usando ${attached} de ${cap} publicaciones de tu plan. Ampliá tu plan con un complemento para publicar otra.`,
+                buildLimitReachedDetails({
+                    limitKey: LIMIT_KEY_BY_COMMERCE_VERTICAL[entityType as CommerceVertical],
+                    currentCount: attached,
+                    maxAllowed: cap,
+                    usagePercent: calculateUsagePercent(attached, cap)
+                })
+            );
+        }
+
+        // Branch 2 — attach, and open no checkout at all.
+        await attachListingToSubscription({
+            subscription: ownerSubscription,
+            entityType: entityType as CommerceVertical,
+            entityId
+        });
+
+        return {
+            // An in-app sentinel, exactly as the `comp` branch of the
+            // accommodation checkout does: there is no payment page to send the
+            // owner to, because there is no new charge.
+            checkoutUrl: buildPaymentMethodReturnUrl(locale),
+            localSubscriptionId: ownerSubscription.id,
+            expiresAt: new Date().toISOString(),
+            appliedEffect: 'attached' as const
+        };
+    }
+
+    // Branch 1 — no subscription for this vertical yet. Today's behaviour.
     try {
         const result = await initiateCommerceMonthlySubscription({
             customerId: billingCustomerId,

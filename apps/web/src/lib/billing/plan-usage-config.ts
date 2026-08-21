@@ -42,6 +42,11 @@ const AUDIENCE_BY_LIMIT_KEY: Readonly<Record<string, UsageAudience>> = {
     max_ai_translate_per_month: 'host',
     max_ai_accommodation_import_per_month: 'host',
     max_ai_support_per_month: 'host',
+    // A commerce owner is a host of a different kind, but the same upgrade path
+    // (HOS-688). An absent entry falls back to 'host' anyway — these are
+    // explicit so the fallback is not what is being relied on.
+    max_gastronomies: 'host',
+    max_experiences: 'host',
     // ── Traveler ──────────────────────────────────────────────────────────
     max_favorites: 'traveler',
     max_collections: 'traveler',
@@ -63,7 +68,14 @@ const AUDIENCE_BY_LIMIT_KEY: Readonly<Record<string, UsageAudience>> = {
  */
 const ADDON_SLUG_BY_LIMIT_KEY: Readonly<Record<string, string>> = {
     max_accommodations: 'extra-accommodations-5',
-    max_photos_per_accommodation: 'extra-photos-20'
+    max_photos_per_accommodation: 'extra-photos-20',
+    // HOS-688 AC-34. Without these two lines each vertical's extra-listing
+    // add-on exists, is purchasable and grants the cap increase — and the usage
+    // panel never links to it from the at-cap row, which is the only place
+    // anybody would go looking for it. This is the entry that turns an add-on
+    // that exists into an add-on anyone can find.
+    max_gastronomies: 'extra-gastronomies-1',
+    max_experiences: 'extra-experiences-1'
 };
 
 /**

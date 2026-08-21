@@ -11,12 +11,7 @@ import { UserService } from '../../../src/services/user/user.service';
 import { createActor } from '../../factories/actorFactory';
 import { createUser } from '../../factories/userFactory';
 import { getMockId } from '../../factories/utilsFactory';
-import {
-    expectForbiddenError,
-    expectInternalError,
-    expectNotFoundError,
-    expectSuccess
-} from '../../helpers/assertions';
+import { expectInternalError, expectNotFoundError, expectSuccess } from '../../helpers/assertions';
 import { createServiceTestInstance } from '../../helpers/serviceTestFactory';
 import { createLoggerMock, createTypedModelMock } from '../../utils/modelMockFactory';
 
@@ -77,23 +72,34 @@ describe('UserService.getById', () => {
         expect(result.data?.id).toBe(inputId);
     });
 
-    it('should return FORBIDDEN if actor is not self or super admin', async () => {
-        // Arrange
-        const entity = getUser({ id: inputId });
-        asMock(userModelMock.findOne).mockResolvedValue(entity);
-        // Act
-        const result = await service.getById(otherUser, inputId);
-        // Assert
-        expectForbiddenError(result);
-    });
+    it('answers a foreign account exactly as it answers an id that does not exist (HOS-600)', async () => {
+        // These two used to be separate assertions — "FORBIDDEN if not self"
+        // sitting next to "NOT_FOUND if the user does not exist" — and both
+        // passed while the endpoint was an existence oracle: a caller holding
+        // any id learned from the status alone whether it named a real account.
+        // Because `findOne` still returns soft-deleted rows, the 403 disclosed
+        // DELETED accounts too. Asserting the two side by side, as one value,
+        // is what makes the leak visible.
 
-    it('should return NOT_FOUND if user does not exist', async () => {
-        // Arrange
+        // Arrange — the row exists and belongs to somebody else.
+        asMock(userModelMock.findOne).mockResolvedValue(getUser({ id: inputId }));
+        // Act
+        const foreign = await service.getById(otherUser, inputId);
+
+        // Arrange — nothing at that id.
         asMock(userModelMock.findOne).mockResolvedValue(null);
         // Act
-        const result = await service.getById(superAdmin, inputId);
-        // Assert
-        expectNotFoundError(result);
+        const missing = await service.getById(superAdmin, inputId);
+
+        // Assert — whole-result equality, not `objectContaining`: a field one
+        // side carries and the other does not is exactly the difference this
+        // has to catch.
+        expect(foreign).toEqual(missing);
+        expectNotFoundError(foreign);
+        expectNotFoundError(missing);
+        // ...and the refusal no longer hands the caller the name of the
+        // permission they would need.
+        expect(foreign.error?.message).not.toMatch(/USER_READ_ALL|permission/i);
     });
 
     it('should return INTERNAL_ERROR if model throws', async () => {

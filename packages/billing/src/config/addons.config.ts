@@ -111,6 +111,65 @@ export const AI_SUPPORT_ADDON: AddonDefinition = {
     sortOrder: 6
 };
 
+/**
+ * Extra-listing add-ons, one per commerce vertical (HOS-688 §6.8).
+ *
+ * Calqued on {@link EXTRA_ACCOMMODATIONS_ADDON}: recurring, no entitlement, an
+ * `affectsLimitKey` pointing at the vertical's own cap. Two definitions rather
+ * than one pooled add-on because an `AddonDefinition` carries exactly one
+ * `affectsLimitKey` — the model already implies the split, and a shared add-on
+ * could not express "raise my gastronomy cap and leave my experience cap
+ * alone".
+ *
+ * `limitIncrease: 1`, not 5: a commerce plan sells ONE listing, so one listing
+ * is the unit an owner buys more of.
+ *
+ * **Price** mirrors the vertical plan's own ARS $15.000 — a second listing
+ * costs what the first one does. That is DERIVED from the plan price rather
+ * than separately decided, and like every price in this package it is a
+ * `'commercial'` field: the database wins, so an admin-UI override stands
+ * without a deploy.
+ *
+ * Each add-on must also appear in `ADDON_SLUG_BY_LIMIT_KEY`
+ * (`apps/web/src/lib/billing/plan-usage-config.ts`), or it is purchasable and
+ * grants the cap increase while never being linked from the at-cap row anyone
+ * would buy it from.
+ */
+export const EXTRA_GASTRONOMIES_ADDON: AddonDefinition = {
+    slug: 'extra-gastronomies-1',
+    name: 'Extra Gastronomy Listing (+1)',
+    description: 'Adds 1 additional gastronomy listing to your plan. Renews monthly.',
+    billingType: 'recurring',
+    priceArs: 1500000, // ARS $15,000/month — same as the gastronomy plan itself
+    annualPriceArs: 15000000, // ARS $150,000/year (ten months, the rule every plan here follows)
+    durationDays: null,
+    affectsLimitKey: LimitKey.MAX_GASTRONOMIES,
+    limitIncrease: 1,
+    grantsEntitlement: null,
+    // 'owner' for the same reason the commerce plans use it: PlanCategory has no
+    // commerce member and product_domain is the real discriminator.
+    targetCategories: ['owner'],
+    isActive: true,
+    sortOrder: 7
+};
+
+/** Experience-side twin of {@link EXTRA_GASTRONOMIES_ADDON}. */
+export const EXTRA_EXPERIENCES_ADDON: AddonDefinition = {
+    slug: 'extra-experiences-1',
+    name: 'Extra Experience Listing (+1)',
+    description: 'Adds 1 additional experience listing to your plan. Renews monthly.',
+    billingType: 'recurring',
+    priceArs: 1500000, // ARS $15,000/month — same as the experience plan itself
+    annualPriceArs: 15000000, // ARS $150,000/year (ten months, the rule every plan here follows)
+    durationDays: null,
+    affectsLimitKey: LimitKey.MAX_EXPERIENCES,
+    limitIncrease: 1,
+    grantsEntitlement: null,
+    targetCategories: ['owner'],
+    isActive: true,
+    sortOrder: 8
+};
+
 // ─── ALL ADD-ONS ───────────────────────────────────────────────
 
 /** All available add-ons in the system */
@@ -120,7 +179,9 @@ export const ALL_ADDONS: AddonDefinition[] = [
     EXTRA_PHOTOS_ADDON,
     EXTRA_ACCOMMODATIONS_ADDON,
     EXTRA_PROPERTIES_ADDON,
-    AI_SUPPORT_ADDON
+    AI_SUPPORT_ADDON,
+    EXTRA_GASTRONOMIES_ADDON,
+    EXTRA_EXPERIENCES_ADDON
 ];
 
 /**

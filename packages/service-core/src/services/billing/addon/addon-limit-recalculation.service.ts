@@ -14,10 +14,11 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { isEntitlementGrantingStatus, productDomainForLimitKey } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { sql, withTransaction } from '@repo/db';
 import { PlanService } from '../plan/plan.service.js';
-import { isAccommodationSubscription } from '../subscription/subscription-product-domain.js';
+import { subscriptionMatchesDomain } from '../subscription/subscription-product-domain.js';
 import { AddonCatalogService } from './addon-catalog.service.js';
 import { ADDON_RECALC_SOURCE_ID } from './addon-lifecycle.constants.js';
 
@@ -119,7 +120,10 @@ async function resolvePlanLimitsByIdOrSlug(
  *    customer from `billing_addon_purchases`.
  * 2. Filter to purchases whose addon definition (`getAddonBySlug`) has
  *    `affectsLimitKey === limitKey`.
- * 3. Get the active subscription via `billing.subscriptions.getByCustomerId`.
+ * 3. Get the active subscription via `billing.subscriptions.getByCustomerId`,
+ *    scoped to the domain that OWNS this limit key (HOS-688) — commerce caps
+ *    resolve against the owner's gastronomy/experience subscription, every
+ *    other key against their accommodation one.
  * 4. Resolve the base plan limit via `PlanService` (DB-backed, SPEC-192 T-027).
  *    Dual-resolve: `getById(planId)` (UUID planIds) then `getBySlug(planId)` fallback.
  *    The DB `limits` field is `Record<string, number>` (key → value map).
@@ -138,6 +142,10 @@ async function resolvePlanLimitsByIdOrSlug(
  * - This function does NOT modify `billing_addon_purchases` rows.
  * - If the plan is not found in the DB (both UUID and slug lookups fail), the
  *   function returns `outcome: 'failed'` rather than silently falling back to 0.
+ * - Resolving the subscription against the WRONG domain does not fail loudly —
+ *   it skips, or it reads a base of 0 off a plan that does not declare the key.
+ *   Either way the customer paid for an add-on that granted nothing, which is
+ *   why step 3 derives the domain from the limit key instead of assuming one.
  *
  * @param input - Customer ID, limit key, billing client, and DB instance.
  * @returns A {@link RecalculationResult} describing what happened.
@@ -249,12 +257,34 @@ export async function recalculateAddonLimitsForCustomer(
                 return skippedResult;
             }
 
-            // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
-            // Treats null/undefined productDomain as 'accommodation' (legacy rows).
+            // The base plan comes from the subscription that OWNS this limit key,
+            // which is not always the accommodation one (HOS-688).
+            //
+            // This used to be hardcoded to `isAccommodationSubscription`, and for
+            // a per-vertical commerce cap that is wrong in the way that costs
+            // money: a commerce-only owner has no accommodation subscription at
+            // all, so the `find` returned nothing and the whole recalculation
+            // SKIPPED — the add-on they just paid for raised no cap. An owner who
+            // also happened to hold an accommodation plan fared no better: that
+            // plan does not declare `max_gastronomies`, so the base resolved to 0
+            // and the cap came out at the add-on's increase alone. Both outcomes
+            // are a charge with nothing delivered, and neither raises anything.
+            //
+            // `productDomainForLimitKey` is the single mapping from limit key to
+            // owning domain, and `subscriptionMatchesDomain` is the single place
+            // a subscription's `productDomain` is compared against a value
+            // (HOS-685). Every other key answers `'accommodation'`, so this is a
+            // strict no-op for the accommodation add-ons.
+            //
+            // HOS-702: liveness is the canonical `isEntitlementGrantingStatus`.
+            // The hand-rolled active/trialing pair dropped `comp`, which landed a
+            // complimentary subscriber in the same "skipped, cap raised by
+            // nothing" outcome described above.
+            const domain = productDomainForLimitKey(limitKey);
             const activeSubscription = subscriptions.find(
                 (sub: { status: string }) =>
-                    (sub.status === 'active' || sub.status === 'trialing') &&
-                    isAccommodationSubscription(sub)
+                    isEntitlementGrantingStatus(sub.status) &&
+                    subscriptionMatchesDomain(sub, domain)
             );
 
             if (!activeSubscription) {
@@ -266,7 +296,7 @@ export async function recalculateAddonLimitsForCustomer(
                         newMaxValue: 0,
                         addonCount: 0,
                         outcome: 'failed',
-                        reason: 'Customer has no active or trialing subscription'
+                        reason: `Customer has no active or trialing ${domain} subscription`
                     }
                 };
                 return skippedResult;

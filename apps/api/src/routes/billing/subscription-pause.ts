@@ -28,6 +28,7 @@
 
 import { billingSubscriptionEvents, getDb } from '@repo/db';
 import { SubscriptionPauseResumeResponseSchema, SubscriptionStatusEnum } from '@repo/schemas';
+import { BILLING_EVENT_TYPES } from '@repo/service-core';
 import { HTTPException } from 'hono/http-exception';
 import { getActorFromContext } from '../../middlewares/actor';
 import { getQZPayBilling } from '../../middlewares/billing';
@@ -127,6 +128,7 @@ export const handleSelfServePause = async (c: Parameters<SimpleRouteInterface['h
     // 3. Audit + entitlement cache invalidation.
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: target.id,
+        eventType: BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_PAUSED,
         newStatus: SubscriptionStatusEnum.PAUSED,
         triggerSource: 'host-pause',
         metadata: { userId: actor.id, accommodationsUpdated }
@@ -196,6 +198,7 @@ export const handleSelfServeResume = async (c: Parameters<SimpleRouteInterface['
     // 3. Audit + entitlement cache invalidation.
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: target.id,
+        eventType: BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_RESUMED,
         newStatus: SubscriptionStatusEnum.ACTIVE,
         triggerSource: 'host-resume',
         metadata: { userId: actor.id, accommodationsUpdated }

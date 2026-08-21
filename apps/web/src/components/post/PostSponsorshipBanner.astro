@@ -8,6 +8,7 @@
 
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 
 interface SponsorshipData {
 	/** Optional custom message from the sponsor. */
@@ -29,6 +30,13 @@ const { sponsorship, locale } = Astro.props;
 const { t } = createTranslations(locale);
 
 const label = t('blog.detail.sponsoredContent', 'Contenido patrocinado');
+
+// The sponsor's URL is stored content, and `z.string().url()` accepts
+// `javascript:` — so the scheme allow-list, not the schema, is what keeps a
+// payload out of this href (HOS-592 / F-02). A value it refuses drops the CTA
+// entirely: the disclosure above still renders, which is the part that legally
+// matters, and no link is shipped pointing at nothing.
+const websiteHref = resolveSafeExternalUrl(sponsorship.websiteUrl);
 ---
 
 <aside class="post-sponsorship" aria-label={label}>
@@ -52,14 +60,14 @@ const label = t('blog.detail.sponsoredContent', 'Contenido patrocinado');
 		<p class="post-sponsorship__message">{sponsorship.message}</p>
 	)}
 
-	{sponsorship.websiteUrl && (
+	{websiteHref && (
 		<a
-			href={sponsorship.websiteUrl}
+			href={websiteHref}
 			class="post-sponsorship__cta"
 			target="_blank"
 			rel="sponsored noopener noreferrer"
 		>
-			{sponsorship.sponsorName ?? sponsorship.websiteUrl} →
+			{sponsorship.sponsorName ?? websiteHref} →
 		</a>
 	)}
 </aside>

@@ -18,9 +18,9 @@
         "process": {
             "title": "Como segue depois de enviar",
             "step1": "Você envia o formulário com os dados do seu negócio.",
-            "step2": "Nossa equipe revisa e aprova. Costuma levar de 24 a 48 horas úteis.",
-            "step3": "Avisamos por e-mail quando estiver pronto, com os passos para entrar.",
-            "step4": "Você completa a publicação e contrata o plano."
+            "step2": "Nossa equipe revisa sua solicitação e entra em contato para combinar os próximos passos. Costuma levar de 24 a 48 horas úteis.",
+            "step3": "Escrevemos por e-mail para combinar como incluir seu negócio na plataforma.",
+            "step4": "Você cria sua conta, completa a publicação e contrata o plano."
         },
         "submit": "Enviar solicitação",
         "submitting": "Enviando...",
@@ -80,6 +80,17 @@
                 "unknown": "Status indisponível",
                 "draftComplete": "Rascunho — pronto para publicar",
                 "draftIncomplete": "Rascunho — incompleto"
+            },
+            "usage": {
+                "gastronomy": {
+                    "label_one": "{{current}} de {{max}} gastronomia",
+                    "label_other": "{{current}} de {{max}} gastronomias"
+                },
+                "experience": {
+                    "label_one": "{{current}} de {{max}} experiência",
+                    "label_other": "{{current}} de {{max}} experiências"
+                },
+                "upgrade": "Ampliar cota"
             }
         },
         "editor": {
@@ -152,6 +163,12 @@
                 "WINE_TASTING": "Degustação de vinhos",
                 "OUTDOOR_ADVENTURE": "Aventura ao ar livre",
                 "OTHER": "Outro"
+            },
+            "priceRangeOption": {
+                "BUDGET": "Econômico",
+                "MID": "Moderado",
+                "HIGH": "Elevado",
+                "PREMIUM": "Premium"
             },
             "priceUnitOption": {
                 "per_day": "Por dia",
@@ -228,7 +245,9 @@
             "publishing": "Iniciando pagamento...",
             "incompleteError": "Ainda faltam dados para publicar.",
             "alreadySubscribedError": "Este comércio já tem uma assinatura ativa.",
-            "checkoutError": "Não conseguimos iniciar o pagamento. Tente novamente."
+            "checkoutError": "Não conseguimos iniciar o pagamento. Tente novamente.",
+            "publishCtaFree": "Publicar",
+            "publishingFree": "Publicando..."
         },
         "create": {
             "pickVertical": {
@@ -254,6 +273,118 @@
             "submit": "Criar comércio",
             "submitting": "Criando...",
             "error": "Não conseguimos criar o comércio. Tente novamente."
+        }
+    },
+    "landing": {
+        "gastronomy": {
+            "benefits": {
+                "tagline": "Por que Hospeda?",
+                "title": "Benefícios para seu restaurante",
+                "item1": {
+                    "title": "Visibilidade regional",
+                    "desc": "Apareça onde milhares de viajantes procuram onde comer em Concepción del Uruguay e no litoral entrerriano."
+                },
+                "item2": {
+                    "title": "Publique em minutos",
+                    "desc": "Carregue fotos, cardápio e horários em um painel simples. Edite quando quiser."
+                },
+                "item3": {
+                    "title": "Preço fixo, sem comissões",
+                    "desc": "Você paga um valor mensal fixo. Nenhuma reserva ou consulta gera comissão extra."
+                }
+            },
+            "howItWorks": {
+                "tagline": "É bem simples",
+                "title": "Como funciona?",
+                "step1": {
+                    "title": "Cadastre-se",
+                    "desc": "Crie sua conta em menos de 2 minutos."
+                },
+                "step2": {
+                    "title": "Publique seu local",
+                    "desc": "Adicione fotos, cardápio, horários e localização."
+                },
+                "step3": {
+                    "title": "Seja encontrado",
+                    "desc": "Os clientes te encontram buscando gastronomia na região."
+                }
+            },
+            "price": {
+                "tagline": "Um único plano, simples",
+                "title": "Gastronomia Premium",
+                "priceSuffix": "/mês",
+                "trial": "30 dias de teste grátis",
+                "feature1": "1 ficha de gastronomia publicada",
+                "feature2": "Presença no catálogo do Hospeda",
+                "feature3": "Sem comissão por reserva ou consulta",
+                "cta": "Começar agora",
+                "unavailable": "Não conseguimos carregar o preço agora. Tente novamente mais tarde."
+            },
+            "faq": {
+                "tagline": "Tire suas dúvidas",
+                "title": "Perguntas frequentes",
+                "q1": "Quanto custa publicar meu restaurante no Hospeda?",
+                "a1": "Um pagamento mensal fixo, com 30 dias de teste grátis. Sem comissão por reserva ou consulta.",
+                "q2": "Existe algum compromisso de permanência?",
+                "a2": "Não. Você pode cancelar sua assinatura quando quiser pela sua conta.",
+                "q3": "Quantas fichas posso publicar?",
+                "a3": "O plano inclui uma ficha de gastronomia por conta."
+            }
+        },
+        "experience": {
+            "benefits": {
+                "tagline": "Por que Hospeda?",
+                "title": "Benefícios para sua experiência",
+                "item1": {
+                    "title": "Visibilidade regional",
+                    "desc": "Apareça onde milhares de viajantes procuram experiências em Concepción del Uruguay e no litoral entrerriano."
+                },
+                "item2": {
+                    "title": "Publique em minutos",
+                    "desc": "Carregue fotos, descrição e horários em um painel simples. Edite quando quiser."
+                },
+                "item3": {
+                    "title": "Preço fixo, sem comissões",
+                    "desc": "Você paga um valor mensal fixo. Nenhuma reserva ou consulta gera comissão extra."
+                }
+            },
+            "howItWorks": {
+                "tagline": "É bem simples",
+                "title": "Como funciona?",
+                "step1": {
+                    "title": "Cadastre-se",
+                    "desc": "Crie sua conta em menos de 2 minutos."
+                },
+                "step2": {
+                    "title": "Publique sua experiência",
+                    "desc": "Adicione fotos, descrição, horários e localização."
+                },
+                "step3": {
+                    "title": "Seja encontrado",
+                    "desc": "Os viajantes te encontram buscando experiências na região."
+                }
+            },
+            "price": {
+                "tagline": "Um único plano, simples",
+                "title": "Experiências Premium",
+                "priceSuffix": "/mês",
+                "trial": "30 dias de teste grátis",
+                "feature1": "1 ficha de experiência publicada",
+                "feature2": "Presença no catálogo do Hospeda",
+                "feature3": "Sem comissão por reserva ou consulta",
+                "cta": "Começar agora",
+                "unavailable": "Não conseguimos carregar o preço agora. Tente novamente mais tarde."
+            },
+            "faq": {
+                "tagline": "Tire suas dúvidas",
+                "title": "Perguntas frequentes",
+                "q1": "Quanto custa publicar minha experiência no Hospeda?",
+                "a1": "Um pagamento mensal fixo, com 30 dias de teste grátis. Sem comissão por reserva ou consulta.",
+                "q2": "Existe algum compromisso de permanência?",
+                "a2": "Não. Você pode cancelar sua assinatura quando quiser pela sua conta.",
+                "q3": "Quantas fichas posso publicar?",
+                "a3": "O plano inclui uma ficha de experiência por conta."
+            }
         }
     }
 }

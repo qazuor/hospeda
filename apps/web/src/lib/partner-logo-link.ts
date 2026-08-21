@@ -10,6 +10,7 @@
 
 import type { PartnerData } from '@/data/types';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import { buildUrl } from '@/lib/urls';
 
 /** The tier that owns a page at `/partners/<slug>/`. */
@@ -44,16 +45,25 @@ export interface PartnerLogoLink {
  *   no `target`: adding either would tell search engines not to follow a link
  *   to our own page, and would eject the visitor into a new tab to reach a page
  *   on this same site.
- * - **anything else** with a website -> that website, `sponsored nofollow
+ * - **anything else** with a website whose scheme survives
+ *   {@link resolveSafeExternalUrl} -> that website, `sponsored nofollow
  *   noopener` in a new tab.
  * - **neither** -> no link. The carousel renders the logo in a plain element,
  *   which is what it already did for partners with no website. This is the
  *   common case for a freshly provisioned partner, whose `websiteUrl` starts
  *   null (spec R-1), so it is a normal state and not an error.
  *
- * Fails closed on both sides: a gold partner missing its slug gets NO link
- * rather than a link to `/partners//`, and an unrecognised tier is treated as
- * non-gold rather than as gold.
+ * Fails closed on three sides: a gold partner missing its slug gets NO link
+ * rather than a link to `/partners//`, an unrecognised tier is treated as
+ * non-gold rather than as gold, and a website whose scheme is not http(s) gets
+ * NO link rather than an `href` the browser would execute.
+ *
+ * That last one is not theoretical (HOS-592 / F-02): `websiteUrl` is written by
+ * the partner through `PATCH /api/v1/protected/partners/mine` — session only,
+ * no partner permission — validated with `z.string().url()`, which accepts
+ * `javascript:`. The admin content review that follows never re-checks the
+ * scheme. Since the carousel renders its track twice, an unsafe value would
+ * have shipped the same executable link twice on the home page.
  *
  * @param partner - The carousel item.
  * @param locale - Active locale, for the internal href.
@@ -70,8 +80,9 @@ export function resolvePartnerLogoLink({
         return { href: buildUrl({ locale, path: `partners/${partner.slug}` }) };
     }
 
-    if (partner.url) {
-        return { href: partner.url, rel: EXTERNAL_REL, target: '_blank' };
+    const websiteHref = resolveSafeExternalUrl(partner.url);
+    if (websiteHref) {
+        return { href: websiteHref, rel: EXTERNAL_REL, target: '_blank' };
     }
 
     return {};

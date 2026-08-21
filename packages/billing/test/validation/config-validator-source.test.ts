@@ -176,17 +176,21 @@ describe('validateBillingConfig (source coverage)', () => {
             expect(result.errors).toHaveLength(0);
         });
 
-        it('should report missing defaults for all categories when config is empty', () => {
+        it('should report missing defaults for non-empty-allowed categories when config is empty', () => {
             // Arrange
             setMockConfig({});
 
             // Act
             const result = validateBillingConfig();
 
-            // Assert - all 3 categories report missing default
+            // Assert — owner/tourist still fail loudly on zero plans (a broken
+            // config load), but 'complex' is on the explicit
+            // CATEGORIES_ALLOWED_EMPTY allowlist (HOS-692, spec §6.9: the
+            // complex-* plans were removed and the category is deliberately
+            // empty in real config too), so it is never flagged.
             expect(result.valid).toBe(false);
             expect(result.errors).toContain('Category "owner": No default plan found');
-            expect(result.errors).toContain('Category "complex": No default plan found');
+            expect(result.errors).not.toContain('Category "complex": No default plan found');
             expect(result.errors).toContain('Category "tourist": No default plan found');
         });
     });
@@ -429,7 +433,7 @@ describe('validateBillingConfig (source coverage)', () => {
             expect(result.errors).toContain('Category "owner": Multiple default plans found (2)');
         });
 
-        it('should report missing default for categories without plans', () => {
+        it('does NOT report a missing default for the allowlisted empty "complex" category, but STILL does for an accidentally-empty one (HOS-692)', () => {
             // Arrange - only owner plans, no complex/tourist
             setMockConfig({
                 plans: [
@@ -441,8 +445,13 @@ describe('validateBillingConfig (source coverage)', () => {
             const result = validateBillingConfig();
 
             // Assert
-            // The source checks ALL categories even if there are no plans for them
-            expect(result.errors).toContain('Category "complex": No default plan found');
+            // 'complex' is on the explicit CATEGORIES_ALLOWED_EMPTY allowlist
+            // (HOS-692, spec §6.9: the complex-* plans were removed and the
+            // category is deliberately empty in real config too) — never
+            // flagged. 'tourist' is NOT on that allowlist, so a config that
+            // accidentally has zero tourist plans must still fail loudly,
+            // exactly as before this change.
+            expect(result.errors).not.toContain('Category "complex": No default plan found');
             expect(result.errors).toContain('Category "tourist": No default plan found');
         });
     });

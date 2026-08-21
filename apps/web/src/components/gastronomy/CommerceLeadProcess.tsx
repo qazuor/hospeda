@@ -8,12 +8,14 @@
  * repeats it so the applicant is not left with a bare "thanks" and no idea
  * whether anything else is required of them.
  *
- * Step 3 is worded so it is true both today and after HOS-296 ships. Today the
- * approved lead always provisions a NEW account
- * (`apps/api/src/lib/commerce-ports.ts` calls `signUpEmail` with no lookup);
- * once HOS-296 lands it will link to an existing one instead. Neither is
- * promised here — "we email you with the steps to get in" holds either way.
- * Do not add a linking claim until the code does it.
+ * Steps 2 through 4 were rewritten for HOS-693: the admin approve-and-provision
+ * flow this copy used to describe (review → approve → auto-created account,
+ * emailed to the applicant) was retired along with `commerce/admin/
+ * approve-and-provision.ts` and `commerce/admin/provision-owner.ts`. There is
+ * no automated approval and no account provisioned on the applicant's behalf
+ * anymore — ops reviews the lead and reaches out, and the applicant signs
+ * themselves up. One copy for both domains, not branched: neither funnel gets
+ * a different (and equally soon-to-be-stale) promise.
  *
  * Plain sub-components, not islands: they render inside `CommerceLead.client`.
  * Extracted to a sibling file to keep that component under the project's
@@ -29,13 +31,16 @@ const PROCESS_STEPS: ReadonlyArray<readonly [string, string]> = [
     ['commerce.lead.process.step1', 'Enviás el formulario con los datos de tu negocio.'],
     [
         'commerce.lead.process.step2',
-        'Nuestro equipo lo revisa y lo aprueba. Suele tardar entre 24 y 48 horas hábiles.'
+        'Nuestro equipo revisa tu solicitud y te contacta para coordinar los próximos pasos. Suele tardar entre 24 y 48 horas hábiles.'
     ],
     [
         'commerce.lead.process.step3',
-        'Te avisamos por correo cuando esté listo, con los pasos para entrar.'
+        'Te escribimos por correo para coordinar cómo sumar tu negocio a la plataforma.'
     ],
-    ['commerce.lead.process.step4', 'Completás la publicación y contratás el plan.']
+    [
+        'commerce.lead.process.step4',
+        'Creás tu cuenta, completás la publicación y contratás el plan.'
+    ]
 ] as const;
 
 /**

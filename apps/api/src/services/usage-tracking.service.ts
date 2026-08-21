@@ -16,7 +16,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getMonthlyCallCount } from '@repo/ai-core';
-import { isLimitKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
+import { isEntitlementGrantingStatus, isLimitKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { accommodationMediaModel, accommodationModel, getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
@@ -27,12 +27,13 @@ import {
     AlertSubscriptionService,
     calculateThreshold,
     determineOverallThreshold,
-    isAccommodationSubscription,
-    isCommerceSubscription,
+    ExperienceService,
+    GastronomyService,
     type LimitUsage,
     OwnerPromotionService,
     SearchHistoryService,
     type ServiceResult,
+    subscriptionMatchesDomain,
     type UsageSummary,
     type UsageThreshold,
     UserBookmarkCollectionService,
@@ -120,6 +121,12 @@ export type UsageKindValue = (typeof UsageKind)[keyof typeof UsageKind];
  */
 const USAGE_KIND_BY_LIMIT_KEY: Readonly<Record<string, UsageKindValue>> = {
     [LimitKey.MAX_ACCOMMODATIONS]: UsageKind.STOCK,
+    // The commerce per-vertical caps are stock, and they are MEASURED: with no
+    // counter each would report `0` for an owner already at their cap — a cap
+    // that always reads empty, which is indistinguishable from a working one
+    // until somebody counts rows (HOS-688).
+    [LimitKey.MAX_GASTRONOMIES]: UsageKind.STOCK,
+    [LimitKey.MAX_EXPERIENCES]: UsageKind.STOCK,
     [LimitKey.MAX_ACTIVE_PROMOTIONS]: UsageKind.STOCK,
     [LimitKey.MAX_FAVORITES]: UsageKind.STOCK,
     [LimitKey.MAX_ACTIVE_ALERTS]: UsageKind.STOCK,
@@ -178,10 +185,11 @@ function isMeasuredLimit(limitKey: string): boolean {
  * of their accommodation plan — wrong numbers, with no signal that they were
  * wrong.
  *
- * The domain predicates come from `@repo/service-core` and carry the
+ * `subscriptionMatchesDomain` comes from `@repo/service-core` and carries the
  * asymmetry each domain needs: accommodation fails OPEN (a `null`/absent
- * `productDomain` is a legacy row and counts as accommodation), commerce
- * fails CLOSED (only an explicit `'commerce'` matches).
+ * `productDomain` is a legacy row and counts as accommodation), every other
+ * domain fails CLOSED. Since HOS-685 a commerce-scoped read matches any
+ * commerce vertical, while a vertical-scoped read matches only itself.
  *
  * @param input.subscriptions - Rows as returned by `subscriptions.getByCustomerId()`.
  * @param input.productDomain - Domain to scope to; defaults to `'accommodation'`.
@@ -191,11 +199,14 @@ function findActiveSubscriptionForDomain<T extends { status: string }>(input: {
     subscriptions: readonly T[];
     productDomain: ProductDomainScope;
 }): T | undefined {
-    const domainPredicate =
-        input.productDomain === 'commerce' ? isCommerceSubscription : isAccommodationSubscription;
-
+    // HOS-702: liveness is `isEntitlementGrantingStatus`, never a hand-rolled
+    // active/trialing pair. This function resolves the subscription whose PLAN
+    // supplies the limits, so dropping `comp` here reported a complimentary
+    // subscriber's every limit against no plan at all.
     return input.subscriptions.find(
-        (sub) => (sub.status === 'active' || sub.status === 'trialing') && domainPredicate(sub)
+        (sub) =>
+            isEntitlementGrantingStatus(sub.status) &&
+            subscriptionMatchesDomain(sub, input.productDomain)
     );
 }
 
@@ -670,6 +681,27 @@ export class UsageTrackingService {
                 case LimitKey.MAX_ACCOMMODATIONS: {
                     const accommodationService = new AccommodationService({ logger: apiLogger });
                     const result = await accommodationService.count(actor, {
+                        ownerId: userId
+                    } as never);
+                    return result.data?.count || 0;
+                }
+
+                case LimitKey.MAX_GASTRONOMIES: {
+                    // Counted exactly the way MAX_ACCOMMODATIONS is, and for the
+                    // same reason: the cap is per OWNER, so the owner's listing
+                    // count IS the usage. `ownerId` is a declared filter on
+                    // GastronomySearchSchema — a search schema that silently
+                    // dropped it would count every listing on the platform.
+                    const gastronomyService = new GastronomyService({ logger: apiLogger });
+                    const result = await gastronomyService.count(actor, {
+                        ownerId: userId
+                    } as never);
+                    return result.data?.count || 0;
+                }
+
+                case LimitKey.MAX_EXPERIENCES: {
+                    const experienceService = new ExperienceService({ logger: apiLogger });
+                    const result = await experienceService.count(actor, {
                         ownerId: userId
                     } as never);
                     return result.data?.count || 0;

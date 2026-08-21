@@ -12,8 +12,14 @@ import { SubscriptionDashboard } from '@/components/account/SubscriptionDashboar
 import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
-import { buildUrl } from '@/lib/urls';
+import { buildUrl, buildUrlWithParams } from '@/lib/urls';
 import { fetchPublicPlans, filterPlansByCategory } from '@/lib/billing/fetch-plans';
+import { userApi } from '@/lib/api/endpoints-protected';
+import {
+	resolveActiveSubscriptionDomain,
+	SUBSCRIPTION_DASHBOARD_DOMAINS,
+	type SubscriptionDashboardDomain
+} from '@/lib/billing/subscription-domain';
 
 const locale = Astro.locals.locale as SupportedLocale;
 const user = Astro.locals.user;
@@ -25,19 +31,62 @@ if (!user) {
 const { t } = createTranslations(locale);
 
 /**
- * HOS-259: `?domain=commerce` scopes the dashboard to the caller's commerce
- * subscription instead of the default accommodation one — used by the
- * commerce SUSPENDED recover CTA (`CommerceListingActions.client.tsx`) for
- * an owner who holds both kinds of subscription under one billing customer.
- * Any other/absent value falls back to the default accommodation view.
+ * HOS-259 / HOS-689: `?domain=<domain>` scopes the dashboard to one of the
+ * owner's (up to three) independent subscriptions — accommodation,
+ * gastronomy, experience (HOS-688 retired the old binary
+ * `'accommodation' | 'commerce'` union: commerce billing is per-VERTICAL
+ * now, so `'commerce'` is no longer a real subscription scope). Used by the
+ * commerce SUSPENDED recover CTA (`CommerceListingActions.client.tsx`,
+ * `?domain=<listing.vertical>`) for an owner who holds several subscriptions
+ * under one billing customer.
+ *
+ * Server-side pre-check: which domains does the caller actually hold a
+ * subscription in? Drives two things — the default domain when no/invalid
+ * `?domain=` is given (HOS-689 AC-21: a commerce-only owner must land on
+ * THEIR subscription, not an accommodation "no subscription" empty state),
+ * and the domain switcher rendered below when the owner holds more than one.
  */
-const rawDomain = Astro.url.searchParams.get('domain');
-const productDomain: 'accommodation' | 'commerce' = rawDomain === 'commerce' ? 'commerce' : 'accommodation';
+const cookieHeader = Astro.request.headers.get('cookie') ?? undefined;
+const domainSubscriptionResults = await Promise.all(
+	SUBSCRIPTION_DASHBOARD_DOMAINS.map((domain) =>
+		userApi.getSubscription({ productDomain: domain, cookieHeader })
+	)
+);
+const heldDomains: SubscriptionDashboardDomain[] = SUBSCRIPTION_DASHBOARD_DOMAINS.filter(
+	(_domain, index) => {
+		const result = domainSubscriptionResults[index];
+		return result?.ok && result.data.subscription !== null;
+	}
+);
 
-const title =
-	productDomain === 'commerce'
-		? t('account.pages.subscription.titleCommerce', 'Suscripción de comercio')
-		: t('account.pages.subscription.title', 'Suscripción');
+const rawDomain = Astro.url.searchParams.get('domain');
+const productDomain = resolveActiveSubscriptionDomain({ rawDomain, heldDomains });
+
+const TITLE_KEY_BY_DOMAIN: Record<SubscriptionDashboardDomain, { key: string; fallback: string }> = {
+	accommodation: { key: 'account.pages.subscription.title', fallback: 'Suscripción' },
+	gastronomy: {
+		key: 'account.pages.subscription.titleGastronomy',
+		fallback: 'Suscripción de gastronomía'
+	},
+	experience: {
+		key: 'account.pages.subscription.titleExperience',
+		fallback: 'Suscripción de experiencias'
+	}
+};
+const title = t(TITLE_KEY_BY_DOMAIN[productDomain].key, TITLE_KEY_BY_DOMAIN[productDomain].fallback);
+
+const DOMAIN_SWITCHER_LABEL_KEY: Record<SubscriptionDashboardDomain, { key: string; fallback: string }> = {
+	accommodation: { key: 'account.pages.subscription.domainSwitcher.accommodation', fallback: 'Alojamiento' },
+	gastronomy: { key: 'account.pages.subscription.domainSwitcher.gastronomy', fallback: 'Gastronomía' },
+	experience: { key: 'account.pages.subscription.domainSwitcher.experience', fallback: 'Experiencias' }
+};
+
+/** Link to this page scoped to one domain — accommodation omits `?domain=` (its historical default). */
+function buildDomainUrl(domain: SubscriptionDashboardDomain): string {
+	return domain === 'accommodation'
+		? buildUrl({ locale, path: 'mi-cuenta/suscripcion' })
+		: buildUrlWithParams({ locale, path: 'mi-cuenta/suscripcion', params: { domain } });
+}
 
 /**
  * Minimal user shape forwarded to the island (no sensitive fields).
@@ -71,6 +120,26 @@ const availablePlans = plansResult.ok ? filterPlansByCategory(plansResult.plans,
 <AccountLayout locale={locale} title={title} activeSection="suscripcion">
 	<AccountPageHeader title={title} />
 
+	{heldDomains.length > 1 && (
+		<nav
+			class="sub-page__switcher"
+			aria-label={t('account.pages.subscription.domainSwitcher.label', 'Elegí qué suscripción ver')}
+		>
+			{heldDomains.map((domain) => (
+				<a
+					href={buildDomainUrl(domain)}
+					class:list={[
+						'sub-page__switcher-link',
+						domain === productDomain && 'sub-page__switcher-link--active'
+					]}
+					aria-current={domain === productDomain ? 'page' : undefined}
+				>
+					{t(DOMAIN_SWITCHER_LABEL_KEY[domain].key, DOMAIN_SWITCHER_LABEL_KEY[domain].fallback)}
+				</a>
+			))}
+		</nav>
+	)}
+
 	<SubscriptionDashboard
 		locale={locale}
 		user={islandUser}
@@ -79,3 +148,37 @@ const availablePlans = plansResult.ok ? filterPlansByCategory(plansResult.plans,
 		client:load
 	/>
 </AccountLayout>
+
+<style>
+	.sub-page__switcher {
+		display: flex;
+		flex-wrap: wrap;
+		gap: var(--space-2, 0.5rem);
+		margin-bottom: var(--space-6, 1.5rem);
+	}
+
+	.sub-page__switcher-link {
+		display: inline-flex;
+		align-items: center;
+		padding: 0.5rem 1rem;
+		border-radius: var(--radius-pill, 9999px);
+		background-color: var(--surface-warm, oklch(0.96 0.02 60));
+		color: var(--core-muted-foreground);
+		border: 1px solid var(--border);
+		font-family: var(--font-sans);
+		font-weight: 600;
+		font-size: 0.875rem;
+		text-decoration: none;
+		transition: opacity 150ms ease-out;
+	}
+
+	.sub-page__switcher-link:hover {
+		opacity: 0.85;
+	}
+
+	.sub-page__switcher-link--active {
+		background-color: var(--brand-primary);
+		color: var(--primary-foreground, #ffffff);
+		border-color: var(--brand-primary);
+	}
+</style>

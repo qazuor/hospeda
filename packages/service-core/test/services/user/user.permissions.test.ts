@@ -88,25 +88,33 @@ describe('user permission helpers', () => {
         it('allows admin with USER_READ_ALL viewing other', () => {
             expect(() => canViewUser(adminWithReadAll, self)).not.toThrow();
         });
-        it('forbids admin without USER_READ_ALL viewing other', () => {
+        it('refuses admin without USER_READ_ALL with NOT_FOUND, not FORBIDDEN (HOS-600)', () => {
+            // A 403 here said "that account is real, it just is not yours",
+            // which turned any id into a confirmable one. The refusal is
+            // unchanged; only what it discloses is.
             try {
                 canViewUser(adminNoPerm, self);
                 throw new Error('Should have thrown');
             } catch (err: unknown) {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+                    expect(err.message).not.toMatch(/USER_READ_ALL|permission/i);
                 }
             }
         });
-        it('forbids guest viewing other', () => {
+        it('refuses guest with NOT_FOUND, not FORBIDDEN (HOS-600)', () => {
+            // A 403 here said "that account is real, it just is not yours",
+            // which turned any id into a confirmable one. The refusal is
+            // unchanged; only what it discloses is.
             try {
                 canViewUser(guestOther, self);
                 throw new Error('Should have thrown');
             } catch (err: unknown) {
                 expect(err).toBeInstanceOf(ServiceError);
                 if (err instanceof ServiceError) {
-                    expect(err.code).toBe(ServiceErrorCode.FORBIDDEN);
+                    expect(err.code).toBe(ServiceErrorCode.NOT_FOUND);
+                    expect(err.message).not.toMatch(/USER_READ_ALL|permission/i);
                 }
             }
         });

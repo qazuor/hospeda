@@ -27,6 +27,7 @@ import { ExternalLinkIcon, StarIcon } from '@repo/icons';
 import { ExternalReviews } from './ExternalReviews.client';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import {
     hasAggregate,
     hasValidSnippets,
@@ -99,7 +100,16 @@ const showReviewsBlock = googleItemWithSnippets != null || googleItemTtlExpired 
 
     {/* ── Block 1: Score chips row ── */}
     <div class={styles.chips}>
-        {items.map((item) => (
+        {items.map((item) => {
+            /*
+             * The deep link arrives from an outside platform through the API
+             * and is stored, never re-validated for scheme — so it goes through
+             * the allow-list like every other third-party URL the site links to
+             * (HOS-592 / F-02). A refused value drops the link and leaves the
+             * chip's score intact.
+             */
+            const deepLinkHref = resolveSafeExternalUrl(item.deepLink);
+            return (
             <div class={styles.chip}>
                 {/* AC-4.5: platform name as chip heading labels the source */}
                 <span class={styles.chipPlatformName}>{platformLabel(item.platform)}</span>
@@ -124,9 +134,9 @@ const showReviewsBlock = googleItemWithSnippets != null || googleItemTtlExpired 
                 )}
 
                 {/* Deep link at the bottom of the chip */}
-                {item.deepLink && (
+                {deepLinkHref && (
                     <a
-                        href={item.deepLink}
+                        href={deepLinkHref}
                         target="_blank"
                         rel="noopener noreferrer"
                         class={styles.chipDeepLink}
@@ -140,7 +150,8 @@ const showReviewsBlock = googleItemWithSnippets != null || googleItemTtlExpired 
                     </a>
                 )}
             </div>
-        ))}
+            );
+        })}
     </div>
 
     {/* ── Block 2: Featured reviews (Google snippets) ── */}

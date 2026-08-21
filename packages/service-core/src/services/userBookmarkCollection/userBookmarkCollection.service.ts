@@ -23,7 +23,9 @@ import { BaseCrudService } from '../../base/base.crud.service';
 import type { CrudNormalizersFromSchemas } from '../../base/base.crud.types';
 import type { Actor, ServiceConfig, ServiceContext, ServiceOutput } from '../../types';
 import { ServiceError } from '../../types';
+import { entityNotFoundError } from '../../utils/not-found';
 import { withServiceTransaction } from '../../utils/transaction';
+import { USER_BOOKMARK_COLLECTION_ENTITY_NAME, USER_BOOKMARK_ENTITY_NAME } from '../entity-names';
 import {
     enrichBookmarksWithEntityInfo,
     type UserBookmarkWithEntityInfo
@@ -69,7 +71,7 @@ export class UserBookmarkCollectionService extends BaseCrudService<
     typeof UserBookmarkCollectionUpdateInputSchema,
     typeof UserBookmarkCollectionSearchSchema
 > {
-    static readonly ENTITY_NAME = 'userBookmarkCollection';
+    static readonly ENTITY_NAME = USER_BOOKMARK_COLLECTION_ENTITY_NAME;
     protected readonly entityName = UserBookmarkCollectionService.ENTITY_NAME;
     protected readonly model: UserBookmarkCollectionModel;
 
@@ -960,16 +962,14 @@ export class UserBookmarkCollectionService extends BaseCrudService<
                 const bookmarkModel = new UserBookmarkModel();
                 const bookmark = await bookmarkModel.findById(validated.bookmarkId, execCtx?.tx);
                 if (!bookmark) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `userBookmark not found: ${validated.bookmarkId}`
-                    );
+                    throw entityNotFoundError({ entityName: USER_BOOKMARK_ENTITY_NAME });
                 }
                 if (bookmark.userId !== validActor.id && !hasViewAnyPermission(validActor)) {
-                    throw new ServiceError(
-                        ServiceErrorCode.FORBIDDEN,
-                        'FORBIDDEN: Only owner can modify bookmarks'
-                    );
+                    // HOS-600: the SAME 404 the missing-bookmark branch above
+                    // answers. A 403 told the caller their bookmark id was real
+                    // and simply somebody else's; the old 404 also echoed the
+                    // id back, against error-contract rule R5.
+                    throw entityNotFoundError({ entityName: USER_BOOKMARK_ENTITY_NAME });
                 }
 
                 // 3. Update collectionId via direct Drizzle query (collectionId is a
@@ -1032,16 +1032,14 @@ export class UserBookmarkCollectionService extends BaseCrudService<
                 const bookmarkModel = new UserBookmarkModel();
                 const bookmark = await bookmarkModel.findById(validated.bookmarkId, execCtx?.tx);
                 if (!bookmark) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `userBookmark not found: ${validated.bookmarkId}`
-                    );
+                    throw entityNotFoundError({ entityName: USER_BOOKMARK_ENTITY_NAME });
                 }
                 if (bookmark.userId !== validActor.id && !hasViewAnyPermission(validActor)) {
-                    throw new ServiceError(
-                        ServiceErrorCode.FORBIDDEN,
-                        'FORBIDDEN: Only owner can modify bookmarks'
-                    );
+                    // HOS-600: the SAME 404 the missing-bookmark branch above
+                    // answers. A 403 told the caller their bookmark id was real
+                    // and simply somebody else's; the old 404 also echoed the
+                    // id back, against error-contract rule R5.
+                    throw entityNotFoundError({ entityName: USER_BOOKMARK_ENTITY_NAME });
                 }
 
                 // 2. Set collectionId = NULL via direct Drizzle query (collectionId is a

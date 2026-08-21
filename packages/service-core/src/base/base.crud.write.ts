@@ -9,7 +9,7 @@ import {
     type ServiceInput,
     type ServiceOutput
 } from '../types';
-import { validateEntity } from '../utils';
+import { entityNotFoundError, validateEntity } from '../utils';
 import { BaseCrudRead } from './base.crud.read';
 
 /**
@@ -216,10 +216,7 @@ export abstract class BaseCrudWrite<
                 if (!updatedEntity) {
                     const entityExists = await this.model.findById(updateId, execCtx?.tx);
                     if (!entityExists) {
-                        throw new ServiceError(
-                            ServiceErrorCode.NOT_FOUND,
-                            `${this.entityName} not found`
-                        );
+                        throw entityNotFoundError({ entityName: this.entityName });
                     }
                     if (filteredPayloadKeys.length === 0) {
                         throw new ServiceError(
@@ -441,14 +438,22 @@ export abstract class BaseCrudWrite<
                     execCtx
                 );
                 if (!entity) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `${this.entityName} not found`
-                    );
+                    throw entityNotFoundError({ entityName: this.entityName });
                 }
                 validateEntity(entity, this.entityName);
 
-                await this._canUpdateVisibility(validActor, entity, validData.visibility);
+                // HOS-706: `_getAndValidateEntity` above is passed a NO-OP check
+                // (the real one needs the requested visibility, which that
+                // signature cannot carry), so this hook is the one write-path
+                // permission gate that would otherwise run outside the mask and
+                // keep answering 403 for a foreign row.
+                await this._assertWritePermission({
+                    actor: validActor,
+                    entity,
+                    entityName: this.entityName,
+                    check: (maskedActor, maskedEntity) =>
+                        this._canUpdateVisibility(maskedActor, maskedEntity, validData.visibility)
+                });
 
                 let processedVisibility: VisibilityEnum;
                 try {

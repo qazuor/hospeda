@@ -25,7 +25,15 @@
 
 import type { DrizzleClient } from '@repo/db';
 import { DestinationModel } from '@repo/db';
-import { DestinationTypeEnum, PermissionEnum, ServiceErrorCode } from '@repo/schemas';
+import type { ContentModerationChangeInput } from '@repo/schemas';
+import {
+    ContentModerationChangeInputSchema,
+    DestinationTypeEnum,
+    PermissionEnum,
+    RoleEnum,
+    RoleGrantReason,
+    ServiceErrorCode
+} from '@repo/schemas';
 import { createUniqueSlug } from '@repo/utils';
 import type { ZodObject, ZodRawShape, z } from 'zod';
 import { BaseCrudService } from '../../base/base.crud.service';
@@ -40,7 +48,10 @@ import type {
 } from '../../types';
 import { ServiceError } from '../../types';
 import { hasPermission } from '../../utils/permission';
+import { withServiceTransaction } from '../../utils/transaction';
+import { grantRole } from '../user-role/user-role.service';
 import { syncCommerceAmenityJunction, syncCommerceFeatureJunction } from './commerce.junction-sync';
+import { checkCanModerateCommerceListing } from './commerce.permissions';
 import type { CommerceListingHookState } from './commerce.types';
 import { scheduleCommerceListingRevalidation } from './commerce-revalidation.js';
 
@@ -270,6 +281,207 @@ export abstract class BaseCommerceListingService<
             amenityIds: amenityRows.items.map((row) => row.amenityId as string),
             featureIds: featureRows.items.map((row) => row.featureId as string)
         };
+    }
+
+    // -----------------------------------------------------------------------
+    // Listing moderation (HOS-686)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Applies the platform's moderation verdict to one commerce listing.
+     *
+     * Lives on the shared base so gastronomy and experience inherit ONE
+     * implementation (HOS-589 G-2) instead of carrying a copy each — the
+     * sharing layer accommodation never had.
+     *
+     * ## Why this exists
+     *
+     * The commerce visibility reconciler already honours
+     * `moderationState === REJECTED` (it flips the listing to `PRIVATE` /
+     * `INACTIVE`), but nothing in the system could WRITE that value: the owner
+     * write schemas strip `moderationState` on purpose, and no commerce service
+     * exposed a moderate action. The branch was live and unreachable. This is
+     * the only writer, and it is the post-publication control that replaces the
+     * pre-publication admin gate.
+     *
+     * ## Why it does NOT go through `this.update()`
+     *
+     * `update()` runs `_canUpdate`, which is `checkCanEditOwnOrAll` —
+     * `COMMERCE_EDIT_ALL`, or the owner holding `COMMERCE_EDIT_OWN`. Routing
+     * the verdict through it would AND the moderation authority with the edit
+     * authority: an account granted `COMMERCE_MODERATION_CHANGE` and nothing
+     * else would be refused, and the new permission would be decorative. A
+     * listing's owner must never be able to clear their own rejection either.
+     * So the write goes through the model, exactly like every other `moderate()`
+     * in the repo.
+     *
+     * ## Why it schedules revalidation explicitly — the divergence that matters
+     *
+     * `AccommodationService.moderate` (`accommodation.service.ts:1979`) writes
+     * through `this.model.update()` too, but stops there. That bypasses
+     * `_afterUpdate`, which is where cache revalidation is scheduled — so
+     * moderating an accommodation does not purge the edge cache today.
+     *
+     * Copied faithfully, that would be fatal here rather than cosmetic:
+     * rejecting would mark the row, the reconciler would flip it to `PRIVATE`,
+     * and Cloudflare would keep serving the rejected listing off its destination
+     * page. Reactive moderation is the entire justification for removing the
+     * pre-publication gate, and it only holds if the takedown reaches the edge.
+     * Hence the explicit `_scheduleListingRevalidation` call below — the one
+     * place in HOS-589 where mirroring accommodation is the wrong instruction.
+     *
+     * The purge is scheduled with the row as it stands immediately AFTER the
+     * verdict, while it is still `ACTIVE` / `PUBLIC`: that is precisely the
+     * public footprint that has to be evicted. Waiting for the reconciler to
+     * flip visibility first would make `isCommerceListingPubliclyVisible` false
+     * and purge nothing.
+     *
+     * Accommodation's own missing purge is a pre-existing bug in another domain
+     * and is deliberately NOT fixed here (HOS-589 NG-3).
+     *
+     * @param input - The actor, the listing id, and the new moderation state.
+     * @param ctx - Optional service context for transaction propagation.
+     * @returns The updated listing, or a `ServiceError`.
+     */
+    public async moderate(
+        input: { readonly actor: Actor; readonly id: string } & ContentModerationChangeInput,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity>> {
+        return this.runWithLoggingAndValidation({
+            methodName: `moderate(id=${input.id})`,
+            input: { actor: input.actor, moderationState: input.moderationState },
+            schema: ContentModerationChangeInputSchema,
+            ctx,
+            execute: async (validated, validatedActor, execCtx) => {
+                checkCanModerateCommerceListing(validatedActor);
+
+                const listing = await this.model.findById(input.id, execCtx?.tx);
+                if (!listing || listing.deletedAt) {
+                    throw new ServiceError(
+                        ServiceErrorCode.NOT_FOUND,
+                        `${this.entityName} ${input.id} not found`
+                    );
+                }
+
+                const patch = {
+                    moderationState: validated.moderationState,
+                    updatedById: validatedActor.id
+                    // TYPE-WORKAROUND: the generic base cannot narrow a two-key control patch to Partial<TEntity>; both keys exist on every commerce listing table.
+                } as unknown as Partial<TEntity>;
+
+                const updated = await this.model.update({ id: input.id }, patch, execCtx?.tx);
+
+                if (!updated) {
+                    throw new ServiceError(
+                        ServiceErrorCode.INTERNAL_ERROR,
+                        `Failed to update ${this.entityName} moderationState`
+                    );
+                }
+
+                // AC-36. Not optional, not best-effort decoration: without this
+                // the rejected listing keeps being served from the edge.
+                await this._scheduleListingRevalidation(updated);
+
+                return updated;
+            }
+        });
+    }
+
+    // -----------------------------------------------------------------------
+    // Owner self-service create — the listing IS the role grant
+    // -----------------------------------------------------------------------
+
+    /**
+     * Creates a commerce listing on behalf of its own owner and grants that
+     * owner the `COMMERCE_OWNER` hat in the SAME transaction
+     * (HOS-687 / HOS-589 §6.1).
+     *
+     * The exact mirror of `AccommodationService.createForOnboarding`: creating
+     * the listing is what makes somebody a commerce owner, so there is no
+     * admin approval, no provisioning step, and no pre-existing commerce
+     * permission required to get here.
+     *
+     * Two properties matter and are easy to lose:
+     *
+     * 1. **Atomicity** — the row insert, the junction sync (`_afterCreate`)
+     *    and the role grant share one transaction. A grant that outlives a
+     *    rolled-back listing would hand out a hat for a listing that does not
+     *    exist; a listing without the grant leaves the owner locked out of the
+     *    surface that manages it.
+     * 2. **Idempotence** — `grantRole` rides the `(user_id, role)` primary key,
+     *    so the owner's SECOND listing is a silent no-op on the role rather
+     *    than an error or a duplicate row, and any other hat they already wear
+     *    (e.g. `HOST`) is untouched: granting is additive, never a replace.
+     *
+     * This is deliberately NOT `_afterCreate`. That hook also runs on the ADMIN
+     * create path, where the actor is a staff member creating a listing for
+     * somebody else — granting there would hand `COMMERCE_OWNER` to the admin.
+     *
+     * @param actor - The authenticated account creating (and owning) the listing.
+     * @param data - Create payload, already carrying `ownerId = actor.id`.
+     * @param ctx - Optional caller context; when it carries a `tx`, this method
+     *   enlists in it instead of opening its own boundary.
+     * @returns `ServiceOutput<TEntity>` — the created listing, or the error.
+     */
+    public async createForOwner(
+        actor: Actor,
+        data: z.infer<TCreateSchema>,
+        ctx?: ServiceContext
+    ): Promise<ServiceOutput<TEntity>> {
+        const run = async (txCtx: ServiceContext): Promise<TEntity> => {
+            const created = await this.create(actor, data, txCtx);
+            // `create()` re-throws inside a transaction for every failure it
+            // raises itself, but its input-validation branch still returns the
+            // envelope — so the error has to be checked here as well, or a
+            // rejected payload would silently reach `grantRole`.
+            if (created.error) {
+                throw created.error;
+            }
+            if (!created.data) {
+                throw new ServiceError(
+                    ServiceErrorCode.INTERNAL_ERROR,
+                    `Failed to create ${this.entityName}. The operation returned no result.`
+                );
+            }
+
+            const granted = await grantRole({
+                userId: actor.id,
+                role: RoleEnum.COMMERCE_OWNER,
+                grantedBy: null,
+                reason: RoleGrantReason.COMMERCE_LISTING_CREATED,
+                ctx: txCtx
+            });
+            if (granted.error) {
+                throw granted.error;
+            }
+
+            return created.data;
+        };
+
+        try {
+            const entity = ctx?.tx
+                ? await run(ctx)
+                : await withServiceTransaction(run, undefined, { timeoutMs: 10_000 });
+            return { data: entity };
+        } catch (error) {
+            const serviceError =
+                error instanceof ServiceError
+                    ? error
+                    : new ServiceError(
+                          ServiceErrorCode.INTERNAL_ERROR,
+                          `Failed to create ${this.entityName} for its owner: ${
+                              error instanceof Error ? error.message : String(error)
+                          }`,
+                          error
+                      );
+            // Inside a caller-owned transaction the error MUST propagate,
+            // otherwise the caller commits a partially-applied unit of work.
+            // Same rule as `BaseService.runWithLoggingAndValidation`.
+            if (ctx?.tx) {
+                throw serviceError;
+            }
+            return { error: serviceError };
+        }
     }
 
     // -----------------------------------------------------------------------

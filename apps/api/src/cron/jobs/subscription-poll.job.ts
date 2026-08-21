@@ -17,7 +17,7 @@
 
 import type { QZPaySubscriptionPollingJob, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
-import { createMercadoPagoAdapter } from '@repo/billing';
+import { asCentavos, createMercadoPagoAdapter, toMajor } from '@repo/billing';
 import {
     and,
     billingSubscriptions,
@@ -42,6 +42,7 @@ import {
     processPaymentUpdated
 } from '../../routes/webhooks/mercadopago/payment-logic.js';
 import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
+import type { SyntheticMpPaymentPayload } from '../../routes/webhooks/mercadopago/types.js';
 import { env } from '../../utils/env.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
@@ -323,6 +324,15 @@ async function runOneTimePaymentPoll(params: {
             //   order_id     — external_reference fallback used by logging
             //   orderId      — camelCase alias forwarded for traceability
             //   type         — dispatch discriminator (must equal 'addon_purchase')
+            //   accommodationId — HOS-675: target accommodation for a
+            //                  requiresAccommodationTarget addon. Consumed by
+            //                  extractAddonMetadata → confirmAddonPurchase to
+            //                  write the featured_listing_addon_grants row.
+            //                  Omitting it from this whitelist was silent: the
+            //                  purchase confirmed and the link row was never
+            //                  written. Both key spellings are read because MP
+            //                  normalizes preference metadata keys to
+            //                  snake_case on the payment object.
             const syntheticMetadata: Record<string, unknown> = {
                 addonSlug: paymentMeta.addonSlug ?? jobMeta.addonSlug,
                 customerId: paymentMeta.customerId ?? jobMeta.customerId,
@@ -333,15 +343,47 @@ async function runOneTimePaymentPoll(params: {
                     jobMeta.order_id ??
                     jobMeta.orderId,
                 orderId: paymentMeta.orderId ?? jobMeta.orderId,
+                accommodationId:
+                    paymentMeta.accommodationId ??
+                    paymentMeta.accommodation_id ??
+                    jobMeta.accommodationId ??
+                    jobMeta.accommodation_id,
+                // HOS-721: promoCodeId/promoCode/discountAmount — the promo
+                // redemption `confirmAddonPurchase` records once the payment is
+                // confirmed. Omitting them from this whitelist was silent in
+                // exactly the way accommodationId was: the add-on activated, the
+                // customer paid the discounted price, and the code's used_count
+                // never moved — so a capped code never reached its cap.
+                // Forwarded raw (both spellings sourced); the single
+                // normalization to canonical camelCase happens downstream in
+                // payment-logic via normalizeAddonCheckoutMetadata.
+                promoCodeId:
+                    paymentMeta.promoCodeId ??
+                    paymentMeta.promo_code_id ??
+                    jobMeta.promoCodeId ??
+                    jobMeta.promo_code_id,
+                promoCode:
+                    paymentMeta.promoCode ??
+                    paymentMeta.promo_code ??
+                    jobMeta.promoCode ??
+                    jobMeta.promo_code,
+                discountAmount:
+                    paymentMeta.discountAmount ??
+                    paymentMeta.discount_amount ??
+                    jobMeta.discountAmount ??
+                    jobMeta.discount_amount,
                 type: paymentMeta.type ?? jobMeta.type
             };
 
-            const syntheticPayload: Record<string, unknown> = {
+            const syntheticPayload: SyntheticMpPaymentPayload = {
                 id: succeeded.id,
                 status: 'approved',
-                // extractPaymentInfo reads transaction_amount as MAJOR units.
-                // The adapter returns amount in cents, so divide by 100.
-                transaction_amount: succeeded.amount / 100,
+                // HOS-720: the adapter returns CENTAVOS and `extractPaymentInfo`
+                // reads `transaction_amount` as MAJOR units. `asCentavos` states
+                // the incoming unit, `toMajor` crosses it — the compiler now
+                // rejects the undivided forward that HOS-713 shipped on the
+                // identical field in the live webhook handler.
+                transaction_amount: toMajor(asCentavos(succeeded.amount)),
                 currency_id: succeeded.currency,
                 metadata: syntheticMetadata,
                 external_reference: locked.providerResourceId
@@ -384,9 +426,10 @@ async function runOneTimePaymentPoll(params: {
         //
         // amount comes from the adapter in cents (smallest currency unit);
         // confirmAnnualSubscription expects MAJOR units (it converts back
-        // to cents internally when recording the payment row). Mirror the
-        // webhook handler convention.
-        const amountMajor = succeeded.amount / 100;
+        // to cents internally when recording the payment row). Since HOS-720
+        // that expectation is its parameter TYPE (`Major`), so this crossing
+        // cannot be skipped rather than merely being documented here.
+        const amountMajor = toMajor(asCentavos(succeeded.amount));
         const annualSubscriptionId =
             typeof succeeded.metadata?.annualSubscriptionId === 'string'
                 ? succeeded.metadata.annualSubscriptionId
@@ -398,7 +441,13 @@ async function runOneTimePaymentPoll(params: {
                 amount: amountMajor,
                 currency: succeeded.currency,
                 billing,
-                source: 'polling'
+                source: 'polling',
+                // Not consulted on this path — the polling cleanup inside is
+                // skipped when source='polling', because the cron closes its
+                // own job below. Passed anyway because it is exactly the
+                // resource this job polls, so the argument stays truthful if
+                // that guard is ever relaxed.
+                checkoutSessionId: locked.providerResourceId
             });
         } catch (err) {
             // confirmAnnualSubscription swallows its own errors (logged

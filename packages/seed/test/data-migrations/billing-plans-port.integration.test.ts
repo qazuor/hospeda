@@ -171,34 +171,43 @@ async function setLimitKey(
     `);
 }
 
-/** Sets `active` to an arbitrary boolean, simulating an operator edit made via the admin UI. */
-async function setActive(tx: DrizzleClient, name: string, active: boolean): Promise<void> {
-    await tx.execute(sql`
-        UPDATE billing_plans SET active = ${active} WHERE name = ${name}
-    `);
+/**
+ * Inserts a minimal, valid `billing_plans` row for a name that does not
+ * exist on this database — used by the 0003 describe block below, since
+ * HOS-692 hard-deletes the 3 complex-* rows everywhere and a fresh seed no
+ * longer creates them (removed from ALL_PLANS). Scoped to the caller's
+ * ALWAYS-ROLLED-BACK transaction, so this never persists.
+ */
+async function insertTempPlan(tx: DrizzleClient, name: string, active: boolean): Promise<void> {
+    await tx.insert(billingPlans).values({
+        name,
+        displayName: name,
+        monthlyPriceArs: 100_000,
+        active
+    });
 }
 
-const ALL_NINE_ACCOMMODATION_PLANS = [
+// HOS-692 (spec §6.9) hard-deletes complex-basico/-pro/-premium and a fresh
+// seed no longer creates them at all (removed from ALL_PLANS) — these lists
+// shrink from 9/8 to 6/5. 0001/0002/0003 stay untouched (frozen historical
+// migrations, correctly hardcoding their own name lists including the
+// complex-* slugs); 0003's own describe block below inserts temporary
+// complex-plan rows to keep exercising its real deactivation logic.
+const ALL_SIX_ACCOMMODATION_PLANS = [
     'tourist-free',
     'tourist-plus',
     'tourist-vip',
     'owner-basico',
     'owner-pro',
-    'owner-premium',
-    'complex-basico',
-    'complex-pro',
-    'complex-premium'
+    'owner-premium'
 ] as const;
 
-const ALL_EIGHT_ENTITLED_PLANS = [
+const ALL_FIVE_ENTITLED_PLANS = [
     'tourist-plus',
     'tourist-vip',
     'owner-basico',
     'owner-pro',
-    'owner-premium',
-    'complex-basico',
-    'complex-pro',
-    'complex-premium'
+    'owner-premium'
 ] as const;
 
 let pool: Pool;
@@ -223,7 +232,7 @@ afterAll(async () => {
 describe('0001-billing-plans-ai-consumer-search-limits', () => {
     it('adds both limit keys with the documented per-plan values when missing', async () => {
         await withRollback(async (tx) => {
-            for (const name of ALL_NINE_ACCOMMODATION_PLANS) {
+            for (const name of ALL_SIX_ACCOMMODATION_PLANS) {
                 await stripLimitKeys(tx, name, [
                     'max_ai_search_per_month',
                     'max_ai_chat_consumer_per_month'
@@ -233,8 +242,8 @@ describe('0001-billing-plans-ai-consumer-search-limits', () => {
             const ctx = await buildMigrationContext({ db: tx, actor: STUB_ACTOR });
             const result = await aiConsumerSearchLimits.up(ctx);
 
-            expect(result.counts?.searchLimitRowsUpdated).toBe(9);
-            expect(result.counts?.chatLimitRowsUpdated).toBe(9);
+            expect(result.counts?.searchLimitRowsUpdated).toBe(6);
+            expect(result.counts?.chatLimitRowsUpdated).toBe(6);
 
             const touristFree = await readPlan(tx, 'tourist-free');
             expect(touristFree.limits.max_ai_search_per_month).toBe(10);
@@ -244,14 +253,13 @@ describe('0001-billing-plans-ai-consumer-search-limits', () => {
             expect(touristPlus.limits.max_ai_search_per_month).toBe(50);
             expect(touristPlus.limits.max_ai_chat_consumer_per_month).toBe(50);
 
+            // HOS-692: complex-basico/-pro/-premium removed from the list —
+            // they no longer exist as billing_plans rows on any environment.
             for (const name of [
                 'tourist-vip',
                 'owner-basico',
                 'owner-pro',
-                'owner-premium',
-                'complex-basico',
-                'complex-pro',
-                'complex-premium'
+                'owner-premium'
             ] as const) {
                 const plan = await readPlan(tx, name);
                 expect(plan.limits.max_ai_search_per_month).toBe(200);
@@ -302,7 +310,7 @@ describe('0001-billing-plans-ai-consumer-search-limits', () => {
 describe('0002-billing-plans-collections-limit', () => {
     it('appends can_use_collections and sets max_collections with the documented per-plan values when missing', async () => {
         await withRollback(async (tx) => {
-            for (const name of ALL_EIGHT_ENTITLED_PLANS) {
+            for (const name of ALL_FIVE_ENTITLED_PLANS) {
                 await stripEntitlement(tx, name, 'can_use_collections');
                 await stripLimitKeys(tx, name, ['max_collections']);
             }
@@ -310,21 +318,20 @@ describe('0002-billing-plans-collections-limit', () => {
             const ctx = await buildMigrationContext({ db: tx, actor: STUB_ACTOR });
             const result = await collectionsLimit.up(ctx);
 
-            expect(result.counts?.entitlementRowsUpdated).toBe(8);
-            expect(result.counts?.limitRowsUpdated).toBe(8);
+            expect(result.counts?.entitlementRowsUpdated).toBe(5);
+            expect(result.counts?.limitRowsUpdated).toBe(5);
 
             const touristPlus = await readPlan(tx, 'tourist-plus');
             expect(touristPlus.entitlements).toContain('can_use_collections');
             expect(touristPlus.limits.max_collections).toBe(10);
 
+            // HOS-692: complex-basico/-pro/-premium removed from the list —
+            // they no longer exist as billing_plans rows on any environment.
             for (const name of [
                 'tourist-vip',
                 'owner-basico',
                 'owner-pro',
-                'owner-premium',
-                'complex-basico',
-                'complex-pro',
-                'complex-premium'
+                'owner-premium'
             ] as const) {
                 const plan = await readPlan(tx, name);
                 expect(plan.entitlements).toContain('can_use_collections');
@@ -375,10 +382,17 @@ describe('0002-billing-plans-collections-limit', () => {
 describe('0003-hos16-deactivate-complex-plans', () => {
     const COMPLEX_PLANS = ['complex-basico', 'complex-pro', 'complex-premium'] as const;
 
+    // HOS-692 (spec §6.9) hard-deletes these 3 rows on every environment and a
+    // fresh seed no longer creates them (removed from ALL_PLANS). 0003 is a
+    // frozen historical migration whose own up() still hardcodes these names
+    // and does not care whether today's catalogue includes them — its logic
+    // is exercised here against TEMPORARY rows this test inserts itself,
+    // isolated inside the always-rolled-back transaction, so real coverage
+    // of the deactivation behavior survives the plan's removal.
     it('deactivates all 3 complex plans when currently active', async () => {
         await withRollback(async (tx) => {
             for (const name of COMPLEX_PLANS) {
-                await setActive(tx, name, true);
+                await insertTempPlan(tx, name, true);
             }
 
             const ctx = await buildMigrationContext({ db: tx, actor: STUB_ACTOR });
@@ -395,6 +409,10 @@ describe('0003-hos16-deactivate-complex-plans', () => {
 
     it('is idempotent: running up() again once all 3 are inactive updates zero rows', async () => {
         await withRollback(async (tx) => {
+            for (const name of COMPLEX_PLANS) {
+                await insertTempPlan(tx, name, true);
+            }
+
             const ctx = await buildMigrationContext({ db: tx, actor: STUB_ACTOR });
 
             await deactivateComplexPlans.up(ctx);

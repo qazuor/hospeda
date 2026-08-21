@@ -13,6 +13,7 @@ import { GoogleIcon, StarIcon } from '@repo/icons';
 import type { ExternalReviewSnippet } from '@repo/schemas';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { resolveSafeExternalUrl } from '@/lib/safe-external-url';
 import styles from './ExternalReviews.module.css';
 
 /** Maximum snippets rendered per spec (AC snippet limit). */
@@ -74,72 +75,82 @@ export function ExternalReviews({ snippets, locale }: Props) {
                 className={styles.list}
                 aria-label="Google Reviews"
             >
-                {visible.map((snippet) => (
-                    <li
-                        key={`${snippet.author}:${(snippet.text ?? '').slice(0, 32)}`}
-                        className={styles.card}
-                    >
-                        <div className={styles.cardHeader}>
-                            {/* Author avatar / photo */}
-                            {snippet.profilePhoto ? (
-                                <img
-                                    src={snippet.profilePhoto}
-                                    alt={snippet.author}
-                                    className={styles.avatar}
-                                    width={36}
-                                    height={36}
-                                    loading="lazy"
-                                />
-                            ) : (
-                                <span
-                                    className={styles.avatarFallback}
-                                    aria-hidden="true"
-                                >
-                                    {snippet.author.slice(0, 1).toUpperCase()}
-                                </span>
-                            )}
-
-                            <div className={styles.meta}>
-                                {/* Author name — link to profile when available */}
-                                {snippet.authorUrl ? (
-                                    <a
-                                        href={snippet.authorUrl}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className={styles.authorLink}
-                                    >
-                                        {snippet.author}
-                                    </a>
+                {visible.map((snippet) => {
+                    /*
+                     * The author's profile URL comes from an outside platform
+                     * through the API and is stored without a scheme check, so
+                     * it goes through the allow-list like every other
+                     * third-party URL the site links to (HOS-592 / F-02). A
+                     * refused value renders the plain name instead.
+                     */
+                    const authorHref = resolveSafeExternalUrl(snippet.authorUrl);
+                    return (
+                        <li
+                            key={`${snippet.author}:${(snippet.text ?? '').slice(0, 32)}`}
+                            className={styles.card}
+                        >
+                            <div className={styles.cardHeader}>
+                                {/* Author avatar / photo */}
+                                {snippet.profilePhoto ? (
+                                    <img
+                                        src={snippet.profilePhoto}
+                                        alt={snippet.author}
+                                        className={styles.avatar}
+                                        width={36}
+                                        height={36}
+                                        loading="lazy"
+                                    />
                                 ) : (
-                                    <span className={styles.author}>{snippet.author}</span>
+                                    <span
+                                        className={styles.avatarFallback}
+                                        aria-hidden="true"
+                                    >
+                                        {snippet.author.slice(0, 1).toUpperCase()}
+                                    </span>
                                 )}
 
-                                {/* Relative time (e.g. "hace 2 semanas") */}
-                                {snippet.relativeTime && (
-                                    <time
-                                        className={styles.relativeTime}
-                                        dateTime={snippet.timeIso ?? undefined}
-                                    >
-                                        {snippet.relativeTime}
-                                    </time>
-                                )}
+                                <div className={styles.meta}>
+                                    {/* Author name — link to profile when available */}
+                                    {authorHref ? (
+                                        <a
+                                            href={authorHref}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className={styles.authorLink}
+                                        >
+                                            {snippet.author}
+                                        </a>
+                                    ) : (
+                                        <span className={styles.author}>{snippet.author}</span>
+                                    )}
+
+                                    {/* Relative time (e.g. "hace 2 semanas") */}
+                                    {snippet.relativeTime && (
+                                        <time
+                                            className={styles.relativeTime}
+                                            dateTime={snippet.timeIso ?? undefined}
+                                        >
+                                            {snippet.relativeTime}
+                                        </time>
+                                    )}
+                                </div>
+
+                                {/* Star rating */}
+                                {snippet.rating != null && <StarRating rating={snippet.rating} />}
                             </div>
 
-                            {/* Star rating */}
-                            {snippet.rating != null && <StarRating rating={snippet.rating} />}
-                        </div>
+                            {/* Review text */}
+                            <p className={styles.text}>{snippet.text}</p>
 
-                        {/* Review text */}
-                        <p className={styles.text}>{snippet.text}</p>
-
-                        {/* AC-4.5: source label */}
-                        <span className={styles.sourceLabel}>
-                            {t('external-reputation.snippets.on', 'en {{platform}}', {
-                                platform: t('external-reputation.platform.google', 'Google')
-                            })}
-                        </span>
-                    </li>
-                ))}
+                            {/* AC-4.5: source label */}
+                            <span className={styles.sourceLabel}>
+                                {t('external-reputation.snippets.on', 'en {{platform}}', {
+                                    platform: t('external-reputation.platform.google', 'Google')
+                                })}
+                            </span>
+                        </li>
+                    );
+                })}
             </ul>
 
             {/* Google Places ToS: "Powered by Google" attribution */}

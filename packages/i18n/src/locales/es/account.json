@@ -376,6 +376,8 @@
             "buyAddon": "Ampliar con un complemento",
             "limits": {
                 "max_accommodations": "Alojamientos publicados",
+                "max_gastronomies": "Gastronomías publicadas",
+                "max_experiences": "Experiencias publicadas",
                 "max_photos_per_accommodation": "Fotos por alojamiento",
                 "max_active_promotions": "Promociones activas",
                 "max_favorites": "Favoritos guardados",
@@ -727,6 +729,14 @@
                 "redirecting": "Redirigiendo al pago...",
                 "previewError": "No se pudo obtener la vista previa del cambio. Intentá de nuevo.",
                 "changeError": "No se pudo cambiar el plan. Intentá de nuevo."
+            },
+            "titleGastronomy": "Suscripción de gastronomía",
+            "titleExperience": "Suscripción de experiencias",
+            "domainSwitcher": {
+                "label": "Elegí qué suscripción ver",
+                "accommodation": "Alojamiento",
+                "gastronomy": "Gastronomía",
+                "experience": "Experiencias"
             }
         },
         "whatsNew": {
@@ -994,6 +1004,24 @@
             "perAccommodation": "Por alojamiento",
             "account": "De cuenta"
         },
+        "focus": {
+            "others": "Otros complementos",
+            "headings": {
+                "fallback": "El complemento que estabas buscando",
+                "extra-photos-20": "Para ampliar tus fotos",
+                "extra-accommodations-5": "Para publicar más alojamientos",
+                "extra-properties-5": "Para sumar más propiedades",
+                "visibility-boost-7d": "Para destacar tu alojamiento",
+                "visibility-boost-30d": "Para destacar tu alojamiento",
+                "ai-support-monthly": "Para sumar soporte con IA"
+            }
+        },
+        "featuredOffer": {
+            "title": "Destacá este alojamiento",
+            "body": "Un impulso de visibilidad hace que este alojamiento aparezca destacado en los listados y en los resultados de búsqueda mientras dure el complemento.",
+            "scope": "Ojo: el impulso se aplica solo a esta ficha. Si tenés más de un alojamiento, cada uno necesita su propio complemento.",
+            "linkSr": "para este alojamiento"
+        },
         "billingType": {
             "one_time": "Pago único",
             "recurring": "Mensual"
@@ -1047,6 +1075,14 @@
             "ai-support-monthly": {
                 "name": "Soporte con IA (mensual)",
                 "description": "Desbloquea herramientas de soporte con IA para anfitriones, incluidas sugerencias de respuesta inteligentes y gestión automática de preguntas frecuentes de huéspedes. Se renueva mensualmente."
+            },
+            "extra-gastronomies-1": {
+                "name": "Gastronomía extra (+1)",
+                "description": "Agrega 1 gastronomía adicional a tu plan. Se renueva mensualmente."
+            },
+            "extra-experiences-1": {
+                "name": "Experiencia extra (+1)",
+                "description": "Agrega 1 experiencia adicional a tu plan. Se renueva mensualmente."
             }
         }
     },

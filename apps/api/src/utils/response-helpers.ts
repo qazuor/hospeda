@@ -5,6 +5,8 @@
 
 import { DbError } from '@repo/db/utils';
 import { ServiceErrorCode } from '@repo/schemas';
+import type { ErrorLogLevel } from '@repo/service-core';
+import { resolveErrorLogLevel } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -12,7 +14,9 @@ import type { ZodIssue, ZodTypeAny } from 'zod';
 import { readEntitlementCause } from './entitlement-cause';
 import { env } from './env';
 import { resolveErrorCodeForStatus } from './http-error-codes';
+import { resolveHttpStatusLogLevel } from './http-status-log-level';
 import { apiLogger } from './logger';
+import { RefinedBodyValidationError } from './refined-body';
 
 /**
  * Interface for pagination metadata
@@ -357,11 +361,110 @@ export const createPaginatedResponse = (
 };
 
 /**
+ * `ServiceErrorCode`s whose `details` is part of the PUBLIC error contract,
+ * not a debug-only field (HOS-700).
+ *
+ * `handleRouteError` otherwise strips `error.details` unless
+ * `HOSPEDA_API_DEBUG_ERRORS` is on — but for these two codes the client
+ * genuinely needs the structured payload to render the right copy:
+ * `LIMIT_REACHED` carries `limitKey` (which limit was hit, e.g.
+ * `max_accommodations`) and `ENTITLEMENT_REQUIRED` carries the entitlement
+ * key gating the action. Without it, `apps/web/src/lib/billing-limit-error.ts`
+ * cannot distinguish one limit from another and falls back to the generic
+ * "you hit a limit" copy for every limit, including in production.
+ *
+ * This list is deliberately short and was chosen by the issue owner over
+ * opening `details` for every 4xx (see HOS-700's decision comment) — adding a
+ * code here changes the public API contract, so update
+ * `apps/api/docs/error-contract.md` in the same change and do not generalize
+ * this to "all 4xx" without going back to the owner.
+ */
+const PUBLIC_DETAILS_ERROR_CODES: ReadonlySet<ServiceErrorCode> = new Set([
+    ServiceErrorCode.LIMIT_REACHED,
+    ServiceErrorCode.ENTITLEMENT_REQUIRED
+]);
+
+/**
+ * Logs a route error at the level appropriate to its severity (HOS-622).
+ *
+ * A 404/410-shaped `ServiceError`, or a raw 401/403 `HTTPException`, is a
+ * CORRECT response — not an application fault. Logging every one of them as
+ * `error` with a full stack trace trains whoever reads the logs (the
+ * project's own staging/prod smoke method is "watch api logs after every
+ * action" — see CLAUDE.md) to ignore ERROR-level noise, and floods Sentry
+ * with non-actionable events. Only `error`-level entries carry the full
+ * error object (and therefore its stack); `info`/`warn` get a compact
+ * projection instead, with no stack.
+ *
+ * This function does NOT decide which levels those are — it applies whatever
+ * `resolveErrorLogLevel` / `resolveHttpStatusLogLevel` return, and both
+ * default to `error` for anything they do not explicitly list. Notably a 422
+ * business-rule rejection is NOT downgraded today (see the pinning test in
+ * `response-helpers.handle-route-error.test.ts`); widening that is a
+ * contract change, not a tweak to this helper.
+ *
+ * @param level - The resolved log level.
+ * @param error - The original error. Logged in full only when `level` is `error`.
+ * @param compact - `code`/`status` to log instead of the full object when
+ *   `level` is not `error`.
+ */
+const logRouteError = (
+    level: ErrorLogLevel,
+    error: unknown,
+    compact: { code?: string; status: number }
+): void => {
+    if (level === 'error') {
+        apiLogger.error({ message: 'Route error', error });
+        return;
+    }
+    apiLogger[level]({ message: 'Route error', ...compact });
+};
+
+/**
  * Helper function to handle errors in route handlers
  * Provides consistent error handling across all endpoints
  */
 export const handleRouteError = (error: unknown, c: Context) => {
-    apiLogger.error({ message: 'Route error', error });
+    // HOS-607: a cross-field refinement rejection (re-applied manually via
+    // `parseRefinedBody` because the route factory drops `.refine()` when it
+    // rebuilds the OpenAPI request schema — see utils/refined-body.ts) carries
+    // the full `transformZodError` payload. Render it in the SAME rich shape
+    // (`details`/`summary`/`userFriendlyMessage`) the OpenAPI request
+    // validator's `defaultHook` (utils/create-app.ts) already uses for an
+    // ordinary field-level rejection on the same route, instead of flattening
+    // it to the generic `{code, message}` envelope below. Checked BEFORE the
+    // `ServiceError` branch since this class extends it.
+    if (error instanceof RefinedBodyValidationError) {
+        const { validation } = error;
+        // This branch returns before the per-type levelling below, so it logs
+        // for itself. It deliberately keeps the `error` level this path had
+        // before HOS-622: 400 is not among the statuses either resolver
+        // downgrades, so routing it through them would produce the same level
+        // anyway — and quietly widening the downgrade to 400 while resolving a
+        // merge conflict is exactly the kind of scope creep this change is
+        // trying to stop. Revisit it together with the 422 question.
+        logRouteError(resolveHttpStatusLogLevel(400), error, {
+            code: validation.code,
+            status: 400
+        });
+        return c.json(
+            {
+                success: false,
+                error: {
+                    code: validation.code,
+                    messageKey: validation.messageKey,
+                    details: validation.details,
+                    summary: validation.summary,
+                    userFriendlyMessage: validation.userFriendlyMessage
+                },
+                metadata: {
+                    timestamp: new Date().toISOString(),
+                    requestId: c.get('requestId') || 'unknown'
+                }
+            },
+            400
+        );
+    }
 
     // Check for ServiceError first (most specific)
     if (error instanceof ServiceError) {
@@ -423,6 +526,10 @@ export const handleRouteError = (error: unknown, c: Context) => {
             case ServiceErrorCode.GONE:
                 statusCode = 410;
                 break;
+            // Change-password: current-password mismatch (HOS-612)
+            case ServiceErrorCode.PASSWORD_INCORRECT:
+                statusCode = 400;
+                break;
             // Host-trade benefit usage + reviews (HOS-376 §7.5)
             case ServiceErrorCode.HOST_NOT_FOUND:
                 statusCode = 404;
@@ -445,6 +552,14 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 statusCode = 500;
                 break;
         }
+
+        // HOS-622: level the log the same way `createErrorHandler`
+        // (middlewares/response.ts) does for the same `ServiceError.code` —
+        // an expected outcome (NOT_FOUND, GONE, ...) never logs at `error`.
+        logRouteError(resolveErrorLogLevel(error.code), error, {
+            code: error.code,
+            status: statusCode
+        });
 
         // Emit Retry-After for rate-limited provider responses (SPEC-149 Part B).
         // Mirrors the same logic in `createErrorHandler` (middlewares/response.ts).
@@ -469,7 +584,10 @@ export const handleRouteError = (error: unknown, c: Context) => {
             {
                 code: error.code,
                 message: error.message,
-                details: env.HOSPEDA_API_DEBUG_ERRORS ? error.details : undefined,
+                details:
+                    env.HOSPEDA_API_DEBUG_ERRORS || PUBLIC_DETAILS_ERROR_CODES.has(error.code)
+                        ? error.details
+                        : undefined,
                 reason: error.reason
             },
             c,
@@ -482,6 +600,11 @@ export const handleRouteError = (error: unknown, c: Context) => {
     if (error instanceof HTTPException) {
         const statusCode = error.status;
         const message = error.message;
+
+        // HOS-622: level the log the same way `createErrorHandler`
+        // (middlewares/response.ts) does for the same HTTP status — a raw
+        // 401/403/404 `HTTPException` never logs at `error`.
+        logRouteError(resolveHttpStatusLogLevel(statusCode), error, { status: statusCode });
 
         // Map HTTP status to error code through the SHARED table in
         // `utils/http-error-codes.ts`, which `createErrorHandler`
@@ -513,6 +636,11 @@ export const handleRouteError = (error: unknown, c: Context) => {
             statusCode
         );
     }
+
+    // Everything below is a genuine fault, not an EXPECTED client-facing
+    // outcome (DbError, an untyped `Error`, or a non-Error thrown value):
+    // fail-safe default stays `error` with the full object/stack (HOS-622).
+    apiLogger.error({ message: 'Route error', error });
 
     // Check for DbError (database errors from models)
     if (error instanceof DbError) {
@@ -567,6 +695,8 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.PROVIDER_TIMEOUT]: 504,
                 [ServiceErrorCode.PLAN_DISABLED]: 410,
                 [ServiceErrorCode.GONE]: 410,
+                // Change-password: current-password mismatch (HOS-612)
+                [ServiceErrorCode.PASSWORD_INCORRECT]: 400,
                 // These three were missing, so a legacy `"CODE: message"` error
                 // carrying them fell through `?? 500` — an entitlement or limit
                 // refusal reaching the client as a server fault, which reads as

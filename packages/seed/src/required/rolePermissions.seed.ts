@@ -360,6 +360,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
+        PermissionEnum.BILLING_ADDON_PURCHASE, // HOS-726 — staff see every gated nav entry.
 
         // AI (SPEC-173): credential vault + settings management — SUPER_ADMIN-only.
         PermissionEnum.AI_SETTINGS_MANAGE,
@@ -384,6 +385,11 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.COMMERCE_EDIT_ALL,
         PermissionEnum.COMMERCE_DELETE,
         PermissionEnum.COMMERCE_MODERATE_REVIEW,
+        // HOS-686: the LISTING's own moderation verdict — the post-publication
+        // control that replaces the removed pre-publication admin gate. Distinct
+        // from COMMERCE_MODERATE_REVIEW above, which only moderates reviews
+        // written about a listing.
+        PermissionEnum.COMMERCE_MODERATION_CHANGE,
 
         // PARTNER: Partner directory billing + admin management (SPEC-271).
         PermissionEnum.PARTNER_VIEW_ALL,
@@ -716,6 +722,7 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
+        PermissionEnum.BILLING_ADDON_PURCHASE, // HOS-726 — staff see every gated nav entry.
 
         // MODERATION: Content auto-moderation management (SPEC-195)
         PermissionEnum.MODERATION_TERM_VIEW,
@@ -737,6 +744,11 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.COMMERCE_EDIT_ALL,
         PermissionEnum.COMMERCE_DELETE,
         PermissionEnum.COMMERCE_MODERATE_REVIEW,
+        // HOS-686: the LISTING's own moderation verdict — the post-publication
+        // control that replaces the removed pre-publication admin gate. Distinct
+        // from COMMERCE_MODERATE_REVIEW above, which only moderates reviews
+        // written about a listing.
+        PermissionEnum.COMMERCE_MODERATION_CHANGE,
 
         // PARTNER: Partner directory billing + admin management (SPEC-271).
         PermissionEnum.PARTNER_VIEW_ALL,
@@ -1100,6 +1112,8 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.SUBSCRIPTION_VIEW_OWN,
         PermissionEnum.USER_UPDATE_SELF,
+        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons) and buys from it.
+        PermissionEnum.BILLING_ADDON_PURCHASE,
 
         // HOST_TRADE: read-only access to the admin-curated host trades directory (SPEC-241).
         PermissionEnum.HOST_TRADE_VIEW,
@@ -1170,7 +1184,13 @@ export const ROLE_PERMISSIONS: Record<RoleEnum, PermissionEnum[]> = {
         // BILLING: Own subscription and billing view (mirrors HOST)
         PermissionEnum.BILLING_VIEW_OWN,
         PermissionEnum.SUBSCRIPTION_VIEW_OWN,
-        PermissionEnum.USER_UPDATE_SELF
+        PermissionEnum.USER_UPDATE_SELF,
+
+        // HOS-726: reaches the self-service add-on catalog (/mi-cuenta/addons)
+        // and buys from it. This is the grant the whole permission exists for:
+        // a commerce owner buys `extra-gastronomies-1`, and ACCOMMODATION_CREATE
+        // (the closest pre-existing gate) leaves them out.
+        PermissionEnum.BILLING_ADDON_PURCHASE
     ],
 
     [RoleEnum.USER]: [

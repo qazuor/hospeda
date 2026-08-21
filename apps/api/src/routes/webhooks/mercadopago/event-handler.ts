@@ -11,8 +11,10 @@
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import { billingWebhookEvents, eq, getDb } from '@repo/db';
 import { captureWebhookError } from '../../../lib/sentry';
+import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
-import { markEventFailedByProviderId } from './utils';
+import { classifyWebhookError } from './error-classification';
+import { markEventFailedByProviderId, markEventProcessedByProviderId } from './utils';
 
 /**
  * Maps requestId to providerEventId for error handling within the same request.
@@ -80,7 +82,16 @@ export const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
                     type: event.type,
                     providerEventId,
                     status: 'pending',
-                    payload: event
+                    payload: event,
+                    // This INSERT bypasses the QZPay storage adapter (see the
+                    // comment above), so it must derive livemode itself instead
+                    // of inheriting the adapter's computation. Same single
+                    // source of truth as middlewares/billing.ts: sandbox mode
+                    // means every persisted row is non-live. Omitting this
+                    // silently falls back to the column's `DEFAULT true`
+                    // (packages/db/src/migrations/0000_baseline.sql), which
+                    // mislabels every sandbox event as production (HOS-708).
+                    livemode: !env.HOSPEDA_MERCADO_PAGO_SANDBOX
                 })
                 .returning();
 
@@ -233,34 +244,86 @@ export const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
 /**
  * Error handler for webhook processing failures.
  *
- * Logs the error, marks the persisted webhook event `failed` (our own
- * bookkeeping — for retry/dead-letter accounting, not MercadoPago's), and
- * captures it in Sentry for monitoring. Returning `undefined` here does NOT
- * make the response 200 OK: the `@qazuor/qzpay-hono@1.6.1` router's `onError`
- * falls through to its own default when the handler returns `undefined`,
- * which is `response.error(message, 500)`. MercadoPago therefore WILL retry
- * the delivery on this path (its documented retry/backoff schedule for
- * non-2xx responses) — that retry-until-success behavior is intentional and
- * is what feeds the dead-letter queue on repeated failure, not a
- * "swallow-and-ack" 200.
+ * Splits the failure into the two answers MercadoPago can act on, using
+ * {@link classifyWebhookError} (HOS-707):
+ *
+ * **Terminal** — the delivery references something the provider says does not
+ * exist (or is not ours; MP answers 404 for both). No retry can ever succeed,
+ * so we return an explicit `200` and MercadoPago stops. The stored event is
+ * marked `processed` rather than `failed`, and nothing is sent to Sentry: this
+ * is not a fault of ours, and recording it as one is the same "the log lies
+ * about its own severity" defect as HOS-682. Logged at `warn` with the reason
+ * and the recovered provider status so the delivery is still traceable.
+ *
+ * **Retryable** — anything else: a real provider outage, a timeout, a DB
+ * hiccup, or an error this handler cannot positively classify. Log at `error`,
+ * capture in Sentry, mark the stored event `failed`, and return `undefined`.
+ * Returning `undefined` does NOT make the response 200: the
+ * `@qazuor/qzpay-hono` router's `onError` falls through to its own default,
+ * `response.error(message, 500)`, and MercadoPago retries on its documented
+ * backoff schedule. `SubscriptionNotResolvedError` (HOS-276 — a settled charge
+ * with no resolvable local subscription) lands here by design: it carries no
+ * provider status, so it stays retryable.
+ *
+ * Marking the event `failed` is ALSO what enqueues it for local recovery:
+ * {@link markEventFailedByProviderId} bumps `billing_webhook_events.attempts`
+ * and writes the row into `billing_webhook_dead_letter`, which the hourly
+ * `webhook-retry` cron drains on an exponential backoff (HOS-717). Until then
+ * that queue had no producer at all, so the sentence this paragraph replaces —
+ * which claimed this path "feeds the dead-letter queue on repeated failure" —
+ * was false, and recovery in fact depended entirely on MercadoPago choosing to
+ * redeliver. It no longer does.
  *
  * @param error - The error that occurred during processing
  * @param c - Hono context
+ * @returns A `200` acknowledgement for terminal conditions, `undefined` to let
+ *   the router answer 500 for retryable ones.
  */
 export const handleWebhookError = async (
     error: Error,
     c: Parameters<QZPayWebhookHandler>[0]
-): Promise<undefined> => {
+): Promise<Response | undefined> => {
     const requestId = String(c.get('requestId'));
 
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? error.stack : undefined;
 
+    const classification = classifyWebhookError(error);
+    const providerEventId = requestProviderEventIds.get(requestId);
+
+    if (classification.disposition === 'terminal') {
+        apiLogger.warn(
+            {
+                error: errorMessage,
+                requestId,
+                reason: classification.reason,
+                providerStatus: classification.providerStatus,
+                providerCode: classification.providerCode
+            },
+            'MercadoPago webhook: nothing to process for this delivery — acknowledging so the provider stops retrying'
+        );
+
+        if (providerEventId) {
+            await markEventProcessedByProviderId({ providerEventId });
+            requestProviderEventIds.delete(requestId);
+        }
+
+        // 200, not 4xx: the delivery itself was well-formed and correctly
+        // signed — MercadoPago did nothing wrong and has nothing to fix. A 4xx
+        // would say "change the request"; there is no request to change. This
+        // mirrors the router's `legacy-ipn-duplicate` drop and the
+        // already-processed duplicate ack above.
+        return c.json({ received: true, ignored: classification.reason }, 200);
+    }
+
     apiLogger.error(
         {
             error: errorMessage,
             stack: errorStack,
-            requestId
+            requestId,
+            reason: classification.reason,
+            providerStatus: classification.providerStatus,
+            providerCode: classification.providerCode
         },
         'MercadoPago webhook: Processing failed'
     );
@@ -270,8 +333,6 @@ export const handleWebhookError = async (
         eventType: 'unknown',
         retryCount: 0
     });
-
-    const providerEventId = requestProviderEventIds.get(requestId);
 
     if (providerEventId) {
         await markEventFailedByProviderId({

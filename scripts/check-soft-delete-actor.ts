@@ -86,6 +86,28 @@ export const EXEMPT_TABLES: readonly ExemptTable[] = [
         external: true,
         reason: 'qzpay-owned billing table; no deleted_by_id column'
     },
+    // `billingCustomers` and `billingPayments` sit here for the same reason as
+    // the three entries above, not as an exception granted to any one change.
+    // The billing tables reach this repo through
+    // `packages/db/src/billing/schemas.ts`, which is a bare
+    // `export * from '@qazuor/qzpay-drizzle'` — so their shape is the
+    // provider's, not ours. `deletedBy` appears in NONE of the 20 files of
+    // qzpay's Drizzle schema, and neither column exists in the live production
+    // tables either; there is simply no deleter to record, and these tables do
+    // not go through `BaseModelImpl.softDelete`. They were absent until now
+    // only because nothing had ever soft-deleted them: `git blame` shows all
+    // six original entries landed together in c01f2f1a9 (the commit that
+    // introduced this guard) and none has ever been removed since.
+    {
+        table: 'billingCustomers',
+        external: true,
+        reason: 'qzpay-owned billing table; no deleted_by_id column'
+    },
+    {
+        table: 'billingPayments',
+        external: true,
+        reason: 'qzpay-owned billing table; no deleted_by_id column'
+    },
     {
         table: 'billingAddonPurchases',
         external: false,

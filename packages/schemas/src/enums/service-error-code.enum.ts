@@ -72,6 +72,17 @@ export enum ServiceErrorCode {
      */
     GONE = 'GONE',
 
+    /**
+     * The current-password field on a change-password request does not match
+     * the account's stored credential. Maps to HTTP 400.
+     *
+     * A domain code rather than a reuse of VALIDATION_ERROR because the client
+     * (`ChangePasswordForm.client.tsx`) branches on this exact code to attach
+     * the error to the `currentPassword` field with a localized message,
+     * instead of painting the server's raw English text (HOS-612).
+     */
+    PASSWORD_INCORRECT = 'PASSWORD_INCORRECT',
+
     // -----------------------------------------------------------------------
     // Host-trade benefit usage + reviews (HOS-376 §7.5)
     //

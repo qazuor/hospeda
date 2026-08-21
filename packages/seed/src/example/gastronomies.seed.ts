@@ -1,3 +1,4 @@
+import { DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     accounts,
@@ -14,7 +15,13 @@ import {
     sql,
     users
 } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    ProductDomainEnum,
+    RoleEnum,
+    RoleGrantReason,
+    VisibilityEnum
+} from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
@@ -303,10 +310,16 @@ async function ensureCommerceSubscription(
         );
     }
 
-    // Stamp product_domain='commerce' on the subscription (extras-carril column,
-    // not in the qzpay-drizzle TS schema). Same pattern as the commerce checkout flow.
+    // HOS-692: this fixture is always a gastronomy listing (see
+    // `ensureListingSubscriptionLink` below, which hardcodes
+    // entityType: 'gastronomy' for the same reason) — stamp the typed
+    // vertical directly instead of the pre-HOS-685 'commerce' umbrella, or a
+    // fresh seed run would keep recreating rows Bloque B's rewrite has to
+    // clean up again. Raw SQL because `product_domain` is an extras-carril
+    // column, not in the qzpay-drizzle TS schema — this is exactly the site
+    // AC-33's guard exists to catch, so it names the column explicitly.
     await db.execute(
-        sql`UPDATE billing_subscriptions SET product_domain = 'commerce' WHERE id = ${insertedRow.id}`
+        sql`UPDATE billing_subscriptions SET product_domain = ${ProductDomainEnum.GASTRONOMY} WHERE id = ${insertedRow.id}`
     );
 
     return insertedRow.id;
@@ -372,7 +385,9 @@ async function ensureListingSubscriptionLink(
         .insert(commerceListingSubscriptions)
         .values({
             subscriptionId,
-            productDomain: 'commerce',
+            // HOS-692: matches entityType below — this fixture is always a
+            // gastronomy listing, never the pre-HOS-685 'commerce' umbrella.
+            productDomain: ProductDomainEnum.GASTRONOMY,
             entityType: 'gastronomy',
             entityId,
             status: 'active'
@@ -447,17 +462,22 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
     let successCount = 0;
     let errorCount = 0;
 
-    // ── Step 1: Resolve the commerce plan id ────────────────────────────────
+    // ── Step 1: Resolve the gastronomy-vertical commerce plan id ────────────
+    // HOS-695 (release C): the pre-HOS-688 'commerce-listing' plan is retired
+    // and no longer seeded — resolve the per-vertical slug from the catalogue
+    // default map instead (the same slug `seedCommercePlan` stamps with
+    // `product_domain = 'gastronomy'`).
+    const gastronomyPlanSlug = DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy;
     const commercePlanRows = await db
         .select({ id: billingPlans.id })
         .from(billingPlans)
-        .where(eq(billingPlans.name, 'commerce-listing'))
+        .where(eq(billingPlans.name, gastronomyPlanSlug))
         .limit(1);
 
     const commercePlanRow = commercePlanRows[0];
     if (!commercePlanRow) {
         throw new Error(
-            'Commerce plan "commerce-listing" not found in billing_plans. ' +
+            `Gastronomy plan "${gastronomyPlanSlug}" not found in billing_plans. ` +
                 'Run the required seed (seedCommercePlan) before seedGastronomies.'
         );
     }
