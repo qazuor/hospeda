@@ -70,13 +70,55 @@ As of 2026-08-21 the account holds 67 preapprovals: 63 `cancelled`, 3 `pending`,
 | id | status | amount | next charge | local row |
 | --- | --- | ---: | --- | --- |
 | `275b27a37f6f4e94bc1ab7543c6bd092` | **authorized** | $15.000 ARS | **2026-09-19** | `fa6abdd1-…` (local status says `cancelled`) |
-| `93afd75ca62148589cd9a5313189c298` | pending | $15 | — | none |
-| `a69b37ab95c54ce6a7fce7eb8f8c18ea` | pending | $15 | — | none |
-| `5bcfe7b37ea94419934814bd2865c2af` | pending | $30 | — | none |
+| `93afd75ca62148589cd9a5313189c298` | pending | $15/**day** | — | none |
+| `a69b37ab95c54ce6a7fce7eb8f8c18ea` | pending | $15/**day** | — | none |
+| `5bcfe7b37ea94419934814bd2865c2af` | pending | $30/month | — | none |
 
-Only the `authorized` one can actually charge a card. The three `pending` ones
-were never authorized by a payer (no card attached) — cancel them for hygiene,
-not urgency.
+### Who they belong to (resolved 2026-08-21, read-only)
+
+**The `authorized` one is the owner's own card.** `GET /v1/payments/173628776369`
+returns `payer.email = qazuor@gmail.com`, `payer.id = 5860436`
+(`GET /users/5860436` → nickname `QAZUOR`), cardholder **Leandro Asrilevich**,
+CUIT 20274258447, Visa ****9371. Nobody else needs to be notified.
+
+Note the cross-reference trap: the LOCAL row `fa6abdd1-…` belongs to billing
+customer `727d0a5d` = **`superadmin@hospeda.com`**, while the real MP payer is
+`qazuor@gmail.com` — the owner operating as superadmin during the 19/08 ZZQA
+smoke. Identifying the payer from the local customer email gives the wrong
+answer.
+
+**It has already charged once.** The full `GET /preapproval/{id}` reports
+`summarized.charged_quantity = 1`, `charged_amount = 15000`,
+`last_charged_date = 2026-08-19T04:24:37-04:00`, `card_id 9630614559`, `visa`.
+That charge **was refunded** (the MP payment is `refunded`; the local row carries
+`refunded_amount = 1500000`), so no money is currently out. What remains
+outstanding is the **next** debit on **2026-09-19**, which would be new money off
+a real card.
+
+**The three `pending` ones share `payer_id 1505978827`, which resolves to
+`user_type: "guest"`** — an MP placeholder for a preapproval created
+programmatically that no payer ever opened. No card, `summarized` entirely null,
+no local row. They cannot activate on their own: a `pending` preapproval only
+becomes `authorized` when a human opens its `init_point` and authorises with a
+card. **But that `init_point` is still live on all three**, and two of them bill
+**$15 per day**. The probability is low, not zero — cancelling takes it to zero,
+which is why they are in this step rather than filed as harmless residue.
+
+### How the divergence happened — and why it will recur
+
+The local row reached `cancelled` through the **admin full-refund** path, which
+writes `billing_subscriptions.status = 'cancelled'` directly and **never contacts
+MercadoPago**. `apps/api/src/services/refund-lifecycle.service.ts:453-479` does
+the local write; its import list (lines 11-18) contains no MercadoPago adapter
+and no qzpay billing instance — only a `QZPayPayment` *type*. There is no
+provider call to fail.
+
+By contrast `apps/api/src/services/subscription-cancel.service.ts:271` **does**
+pause the MP preapproval. So the user-facing cancel door notifies the provider
+and the admin refund door does not. **Until that asymmetry is fixed, every full
+refund issued from the admin panel leaves a live preapproval behind** — with a
+real customer that is somebody else's card. Tracked as FU-2 in the HOS-749
+report; it is not fixed by this cleanup.
 
 Cancel each through the MercadoPago dashboard, or with an authenticated
 `PUT /preapproval/{id}` carrying `{"status":"cancelled"}`. Run it **from inside
@@ -157,6 +199,19 @@ WHERE s.deleted_at IS NULL
 (`5cf22a13-…` / `qazuor@gmail.com`) and Romina's comp (`9da44403-…`) unless the
 open decision below says otherwise. Any other row here is a live entitlement
 that should not exist.
+
+> **Known caveat — the account dashboard will still show a plan for one purged
+> account.** `apps/api/src/routes/user/protected/stats.ts:129-133` and `:146-156`
+> read `billing_customers` and `billing_subscriptions` **without filtering
+> `deleted_at`**, so `GET /users/me/stats` keeps reporting a soft-deleted
+> subscription whose status is in `ENTITLEMENT_GRANTING_STATUSES`. Today that
+> affects two accounts (`turistatest@hospeda.com.ar` shows `tourist-plus`/"Plus"
+> and `ownertest@hospeda.com.ar` shows `owner-basico`/"Basic", both with a period
+> ending in **2126**). After this cleanup the purged smoke comp
+> (`qazuor+smoke2@gmail.com`) becomes a third. It is a **display** divergence
+> only — entitlements are correctly revoked, because `loadEntitlements` goes
+> through qzpay, which does filter. Tracked as FU-1; do not treat it as a failed
+> cleanup.
 
 ### 4.2 The owner's grant is intact and reachable
 
