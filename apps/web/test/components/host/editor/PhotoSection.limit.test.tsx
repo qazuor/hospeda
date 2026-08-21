@@ -5,17 +5,21 @@
  *
  * ## Why this file exists next to `PhotoSection.test.tsx`
  *
- * That suite mocks `@/store/toast-store` and `@/lib/i18n` as WHOLE modules, so
- * a toast asserted there is a call object, never a rendered element, and every
- * string is a hand-rolled fallback. Both would hide exactly the regressions
- * this change is about: a CTA landing in the wrong slot, a URL that lost its
- * `?focus=`, or copy that silently degraded to the generic fallback.
+ * That suite mocks `@/store/toast-store` away entirely and substitutes
+ * `createTranslations` with a hand-rolled fallback map, so a toast asserted
+ * there is a call object, never a rendered element, and every string is written
+ * by the test itself. Both would hide exactly the regressions this change is
+ * about: a CTA landing in the wrong slot, a URL that lost its `?focus=`, or
+ * copy that silently degraded to the generic fallback.
  *
  * So here the toast store, the toast renderer, and the translator are all REAL,
  * and `ToastViewport` is mounted alongside the section — the assertions read the
  * DOM the host would actually see. Only the network edges are mocked.
  */
 
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+import { ServiceErrorCode } from '@repo/schemas';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PhotoSectionProps } from '@/components/host/editor/PhotoSection.client';
@@ -120,18 +124,48 @@ describe('HOS-724 — photo upload refused by the plan cap', () => {
         mockAddMedia.mockReturnValue(makeLimitReached());
         await uploadOneGalleryPhoto();
 
-        const { tPlural } = createTranslations('es');
-        const expected = tPlural('billing.limit.max_photos_per_accommodation.message', 15, {
-            currentCount: 15,
-            maxAllowed: 15
-        });
+        const { t } = createTranslations('es');
+        const expected = t('billing.limit.max_photos_per_accommodation.title');
+
+        // Sanity: the key really is in the locale file. Without this the
+        // assertion below could pass with both sides resolving to the same
+        // "[MISSING: ...]" placeholder.
         expect(expected).not.toContain('MISSING');
+        expect(expected).not.toBe('Límite del plan alcanzado'); // the generic title
 
         // Rendered, in the DOM — not merely dispatched to the store.
         await waitFor(() => {
             expect(screen.getAllByText(expected).length).toBeGreaterThan(0);
         });
+        // The API's own Spanish sentence must not be what the host reads.
         expect(screen.queryByText(/Actualiza tu plan\.$/)).not.toBeInTheDocument();
+    });
+
+    it('resolves the same photo-specific title in en and pt', () => {
+        for (const locale of ['en', 'pt'] as const) {
+            const title = createTranslations(locale).t(
+                'billing.limit.max_photos_per_accommodation.title'
+            );
+            expect(title).not.toContain('MISSING');
+            expect(title).not.toBe(createTranslations(locale).t('billing.limit.generic.title'));
+        }
+    });
+
+    it("pins the hook's 'LIMIT_REACHED' literal against the enum it stands for", () => {
+        // The island cannot import `@repo/billing` (its barrel pulls
+        // `@repo/logger`, which reads the process environment at module scope
+        // and kills hydration), so `use-photo-section.ts` matches the code as a
+        // string. A test runs in node and CAN import the enum — so the literal
+        // is checked against its source here rather than left to drift.
+        const source = readFileSync(
+            resolve(__dirname, '../../../../src/components/host/editor/use-photo-section.ts'),
+            'utf8'
+        );
+
+        expect(ServiceErrorCode.LIMIT_REACHED).toBe('LIMIT_REACHED');
+        expect(source).toContain(`error.code === '${ServiceErrorCode.LIMIT_REACHED}'`);
+        // ...and the status it is paired with, which is the other half.
+        expect(source).toContain('error.status === 403');
     });
 
     it('offers the add-on in the PRIMARY slot and the plan in the SECONDARY slot', async () => {
