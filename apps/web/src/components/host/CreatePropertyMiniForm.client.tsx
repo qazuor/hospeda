@@ -778,7 +778,11 @@ export function CreatePropertyMiniForm({
                     addToast({
                         type: 'error',
                         message: limitPayload.message,
-                        action: limitPayload.action
+                        action: limitPayload.action,
+                        // HOS-723: `max_accommodations` IS raised by an add-on
+                        // (`extra-accommodations-5`), so this is the surface where
+                        // omitting it left a host with only the expensive way out.
+                        secondaryAction: limitPayload.addonAction
                     });
                     return;
                 }

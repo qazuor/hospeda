@@ -7,8 +7,16 @@
  * usagePercent, upgradeAudience: 'tourist' | 'host' }` on every LIMIT_REACHED
  * 403. This module maps that payload to an i18n-keyed title/message/action
  * triple that toast consumers can render directly.
+ *
+ * HOS-723 — a cap has up to TWO ways out, and this helper used to know only
+ * one. Four of the nineteen limits are raised by an add-on that is on sale
+ * today; for those, "upgrade your plan" is not the cheapest answer and often
+ * not the answer at all. The add-on offer is resolved here, from the same
+ * table the plan-usage panel uses, so both surfaces make the same offer.
  */
 
+import { buildAddonFocusUrl } from '@/lib/billing/addon-focus';
+import { addonSlugForLimit } from '@/lib/billing/plan-usage-config';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createT } from '@/lib/i18n';
 import { buildUrl } from '@/lib/urls';
@@ -33,14 +41,34 @@ export interface LimitReachedErrorBody {
     };
 }
 
-/** Resolved toast payload. `action` is always present (upgrade CTA). */
+/** One call to action on a limit toast. Mirrors `ToastAction`'s link shape. */
+export interface LimitReachedToastAction {
+    readonly label: string;
+    readonly href: string;
+}
+
+/**
+ * Resolved toast payload.
+ *
+ * `action` (the plan upgrade) is ALWAYS present — every limit is raised by a
+ * bigger plan, so there is always at least one way out.
+ *
+ * `addonAction` is present only for the limits an add-on actually raises
+ * (today 4 of 19 — see `addonSlugForLimit`). It is deliberately absent, not a
+ * generic link to the add-ons page, for the other 15: sending someone to shop
+ * for an add-on that does not exist is a false promise, and worse than making
+ * no offer at all.
+ *
+ * Consumers pass it as the toast's `secondaryAction`, which `ToastViewport`
+ * renders BEFORE the primary one — so the cheap, immediate fix reads first and
+ * the plan upgrade stays the prominent CTA, matching the order the plan-usage
+ * panel already uses.
+ */
 export interface LimitReachedToastPayload {
     readonly title: string;
     readonly message: string;
-    readonly action: {
-        readonly label: string;
-        readonly href: string;
-    };
+    readonly action: LimitReachedToastAction;
+    readonly addonAction?: LimitReachedToastAction;
 }
 
 /**
@@ -93,12 +121,18 @@ export const KNOWN_LIMIT_KEYS = new Set([
  *
  * @param params.errorBody - Parsed JSON body from a 403 LIMIT_REACHED response.
  * @param params.locale - Active UI locale for building URLs and translating strings.
- * @returns A localized `{ title, message, action }` payload ready for `addToast`.
+ * @returns A localized payload ready for `addToast` — `action` is the plan
+ * upgrade, `addonAction` the add-on offer when one raises this limit.
  *
  * @example
  * ```ts
  * const payload = buildLimitReachedPayload({ errorBody: body, locale });
- * addToast({ type: 'error', message: payload.title, action: payload.action });
+ * addToast({
+ *   type: 'error',
+ *   message: payload.title,
+ *   action: payload.action,
+ *   secondaryAction: payload.addonAction
+ * });
  * ```
  */
 export function buildLimitReachedPayload({
@@ -123,13 +157,19 @@ export function buildLimitReachedPayload({
  *
  * @param params.details - The `details` field from `ApiError` (cast-safe, guarded internally).
  * @param params.locale - Active UI locale.
- * @returns A localized `{ title, message, action }` payload ready for `addToast`.
+ * @returns A localized payload ready for `addToast` — `action` is the plan
+ * upgrade, `addonAction` the add-on offer when one raises this limit.
  *
  * @example
  * ```ts
  * if (!result.ok && result.error.status === 403 && result.error.code === 'LIMIT_REACHED') {
  *   const payload = buildLimitReachedPayloadFromDetails({ details: result.error.details, locale });
- *   addToast({ type: 'error', message: payload.message, action: payload.action });
+ *   addToast({
+ *     type: 'error',
+ *     message: payload.message,
+ *     action: payload.action,
+ *     secondaryAction: payload.addonAction
+ *   });
  * }
  * ```
  */
@@ -187,12 +227,34 @@ function buildFromDetails({
 
     const upgradeHref = buildUrl({ locale, path: 'mi-cuenta/suscripcion' });
 
+    // Resolved from the RAW key, not the `KNOWN_LIMIT_KEYS`-normalised one
+    // above: that allowlist governs whether specific COPY exists, which is a
+    // different question from whether an add-on is on sale. Reading it here
+    // would make dropping a key from the copy allowlist silently withdraw a
+    // purchasable offer.
+    const addonSlug = details?.limitKey ? addonSlugForLimit(details.limitKey) : undefined;
+
+    const addonAction: LimitReachedToastAction | undefined = addonSlug
+        ? {
+              // Reuses the plan-usage panel's own label so the two surfaces
+              // name the same escape hatch identically.
+              label: t('account.subscription.usage.buyAddon', 'Ampliar con un complemento'),
+              // HOS-729's builder, never a hand-built URL: it carries both the
+              // `?focus=<slug>` param (which reorders and highlights the card)
+              // and the `#addon-<slug>` fragment (native scroll), so the user
+              // lands on the add-on that solves THIS limit rather than on a
+              // catalog they have to search.
+              href: buildAddonFocusUrl({ locale, slug: addonSlug })
+          }
+        : undefined;
+
     return {
         title,
         message,
         action: {
             label: ctaLabel,
             href: upgradeHref
-        }
+        },
+        ...(addonAction ? { addonAction } : {})
     };
 }

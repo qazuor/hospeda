@@ -303,7 +303,12 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     addToast({
                         type: 'error',
                         message: limitPayload.message,
-                        action: limitPayload.action
+                        action: limitPayload.action,
+                        // HOS-723: the add-on offer, when one raises this limit.
+                        // `max_favorites` has none today, so this is `undefined`
+                        // here — wired anyway so the day an add-on exists the
+                        // offer appears without touching this call site.
+                        secondaryAction: limitPayload.addonAction
                     });
                 } else {
                     // Any other API error — rollback and show generic toast.
