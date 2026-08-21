@@ -503,16 +503,30 @@ describe('addons nav item (HOS-726)', () => {
         expect(typeof addons?.icon).toBe('function');
     });
 
-    it('gates the item on ACCOMMODATION_CREATE, which PERMISSION_ROLE_MAP resolves to HOST/ADMIN/SUPER_ADMIN', () => {
+    it('gates the item on BILLING_ADDON_PURCHASE, which PERMISSION_ROLE_MAP resolves to both paying tiers plus staff', () => {
         const cuenta = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'cuenta');
         const addons = cuenta?.items.find((item) => item.id === 'addons');
-        expect(addons?.requiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
-        // The SSR approximation must not silently resolve to "nobody".
-        const roles = PERMISSION_ROLE_MAP[PermissionEnum.ACCOMMODATION_CREATE];
+        expect(addons?.requiredPermission).toBe(PermissionEnum.BILLING_ADDON_PURCHASE);
+        // The SSR approximation must not silently resolve to "nobody": a missing
+        // map entry makes isVisibleByRoles return false for EVERY role, admin
+        // included, and reads exactly like a deliberate hide.
+        const roles = PERMISSION_ROLE_MAP[PermissionEnum.BILLING_ADDON_PURCHASE];
         expect(roles).toBeDefined();
         expect([...(roles ?? [])].sort()).toEqual(
-            [RoleEnum.ADMIN, RoleEnum.HOST, RoleEnum.SUPER_ADMIN].sort()
+            [RoleEnum.ADMIN, RoleEnum.COMMERCE_OWNER, RoleEnum.HOST, RoleEnum.SUPER_ADMIN].sort()
         );
+        expect(roles?.has(RoleEnum.USER)).toBe(false);
+    });
+
+    it('does NOT gate the item on ACCOMMODATION_CREATE — that would exclude the commerce owner', () => {
+        // The regression this whole permission exists to prevent. Asserted
+        // separately from the positive check above so a future edit that swaps
+        // the gate back cannot pass by coincidence of role-set overlap.
+        const cuenta = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'cuenta');
+        const addons = cuenta?.items.find((item) => item.id === 'addons');
+        expect(addons?.requiredPermission).not.toBe(PermissionEnum.ACCOMMODATION_CREATE);
+        expect(addons?.requiredPermission).not.toBe(PermissionEnum.SUBSCRIPTION_VIEW_OWN);
+        expect(addons?.requiredPermission).not.toBe(PermissionEnum.BILLING_VIEW_OWN);
     });
 
     it('hides the item from a plain tourist USER role (SSR) — the page would only show them an empty state', () => {
@@ -537,11 +551,16 @@ describe('addons nav item (HOS-726)', () => {
         );
     });
 
-    it('keeps the item visible for the MIXED host+tourist role set, and hidden for the mixed tourist+commerce one', () => {
-        // The mixed cases are the ones a single-role test cannot reach:
-        // visibility is a union over the held roles, so holding USER alongside
-        // HOST must ADD nothing and REMOVE nothing, while USER alongside
-        // COMMERCE_OWNER must still not open the item.
+    it('shows the item to a COMMERCE_OWNER role (SSR) — the case ACCOMMODATION_CREATE could not reach', () => {
+        expect(
+            cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.COMMERCE_OWNER]))
+        ).toContain('addons');
+    });
+
+    it('keeps the item visible for the MIXED role sets, since visibility is a union over held roles', () => {
+        // The mixed cases are the ones a single-role test cannot reach: holding
+        // USER alongside a paying tier must ADD nothing and REMOVE nothing.
+        // Accumulating hats can only ever add nav (HOS-296).
         expect(
             cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.HOST]))
         ).toContain('addons');
@@ -549,6 +568,12 @@ describe('addons nav item (HOS-726)', () => {
             cuentaItemIds((node) =>
                 isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.COMMERCE_OWNER])
             )
+        ).toContain('addons');
+        // ...and a mix of two roles that BOTH lack it stays hidden, which is the
+        // combination that proves the union is really being evaluated rather
+        // than the predicate defaulting open.
+        expect(
+            cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.EDITOR]))
         ).not.toContain('addons');
     });
 
@@ -558,7 +583,7 @@ describe('addons nav item (HOS-726)', () => {
         );
     });
 
-    it('hides the item on client surfaces with no permissions, and shows it with ACCOMMODATION_CREATE (exact)', () => {
+    it('hides the item on client surfaces without the exact permission, and shows it with BILLING_ADDON_PURCHASE', () => {
         expect(cuentaItemIds((node) => isVisibleByPermissions(node, []))).not.toContain('addons');
         expect(
             cuentaItemIds((node) =>
@@ -568,6 +593,11 @@ describe('addons nav item (HOS-726)', () => {
         expect(
             cuentaItemIds((node) =>
                 isVisibleByPermissions(node, [PermissionEnum.ACCOMMODATION_CREATE])
+            )
+        ).not.toContain('addons');
+        expect(
+            cuentaItemIds((node) =>
+                isVisibleByPermissions(node, [PermissionEnum.BILLING_ADDON_PURCHASE])
             )
         ).toContain('addons');
     });
