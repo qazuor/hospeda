@@ -63,36 +63,40 @@ vi.mock('../../src/utils/logger.js', () => ({
 }));
 
 // Mock service layer: these classes encapsulate all data fetching and storage.
-vi.mock('@repo/service-core', () => ({
-    DolarApiClient: vi.fn().mockImplementation(function () {
-        return {
-            fetchAll: vi.fn().mockResolvedValue({
-                rates: [],
-                errors: []
-            })
-        };
-    }),
-    ExchangeRateApiClient: vi.fn().mockImplementation(function () {
-        return {
-            fetchLatestRates: vi.fn().mockResolvedValue({
-                rates: [],
-                errors: []
-            })
-        };
-    }),
-    ExchangeRateFetcher: vi.fn().mockImplementation(function () {
-        return {
-            fetchAndStore: vi.fn().mockResolvedValue({
-                stored: 0,
-                errors: [],
-                fromManualOverride: 0,
-                fromDolarApi: 0,
-                fromExchangeRateApi: 0,
-                fromDbFallback: 0
-            })
-        };
-    })
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        DolarApiClient: vi.fn().mockImplementation(function () {
+            return {
+                fetchAll: vi.fn().mockResolvedValue({
+                    rates: [],
+                    errors: []
+                })
+            };
+        }),
+        ExchangeRateApiClient: vi.fn().mockImplementation(function () {
+            return {
+                fetchLatestRates: vi.fn().mockResolvedValue({
+                    rates: [],
+                    errors: []
+                })
+            };
+        }),
+        ExchangeRateFetcher: vi.fn().mockImplementation(function () {
+            return {
+                fetchAndStore: vi.fn().mockResolvedValue({
+                    stored: 0,
+                    errors: [],
+                    fromManualOverride: 0,
+                    fromDolarApi: 0,
+                    fromExchangeRateApi: 0,
+                    fromDbFallback: 0
+                })
+            };
+        })
+    };
+});
 
 describe('Exchange Rate Fetch Cron Job', () => {
     let mockLogger: {

@@ -39,15 +39,19 @@ vi.mock('../../src/utils/logger.js', () => ({
     apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }
 }));
 
-vi.mock('@repo/service-core', () => ({
-    OpenMeteoClient: vi.fn(),
-    WeatherFetcher: vi.fn().mockImplementation(function () {
-        return {
-            fetchAll: mockFetchAll,
-            persist: mockPersist
-        };
-    })
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        OpenMeteoClient: vi.fn(),
+        WeatherFetcher: vi.fn().mockImplementation(function () {
+            return {
+                fetchAll: mockFetchAll,
+                persist: mockPersist
+            };
+        })
+    };
+});
 
 describe('Destination Weather Fetch Cron Job', () => {
     let mockLogger: { info: Mock; warn: Mock; error: Mock; debug: Mock };

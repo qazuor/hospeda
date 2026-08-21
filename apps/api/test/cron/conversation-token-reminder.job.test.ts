@@ -68,14 +68,18 @@ const {
     };
 });
 
-vi.mock('@repo/service-core', () => ({
-    AccessTokenService: vi.fn().mockImplementation(function () {
-        return {
-            findDueReminders: mockFindDueReminders,
-            markReminderSent: mockMarkReminderSent
-        };
-    })
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        AccessTokenService: vi.fn().mockImplementation(function () {
+            return {
+                findDueReminders: mockFindDueReminders,
+                markReminderSent: mockMarkReminderSent
+            };
+        })
+    };
+});
 
 vi.mock('@repo/email', () => ({
     createEmailClient: vi.fn().mockReturnValue({}),

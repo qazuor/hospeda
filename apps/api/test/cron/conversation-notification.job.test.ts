@@ -88,14 +88,18 @@ const {
     };
 });
 
-vi.mock('@repo/service-core', () => ({
-    NotificationScheduleService: vi.fn().mockImplementation(function () {
-        return {
-            findDue: mockFindDue,
-            advanceSchedule: mockAdvanceSchedule
-        };
-    })
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        NotificationScheduleService: vi.fn().mockImplementation(function () {
+            return {
+                findDue: mockFindDue,
+                advanceSchedule: mockAdvanceSchedule
+            };
+        })
+    };
+});
 
 vi.mock('@repo/email', () => ({
     createEmailClient: vi.fn().mockReturnValue({}),

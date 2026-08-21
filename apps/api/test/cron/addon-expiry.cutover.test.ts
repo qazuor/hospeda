@@ -37,14 +37,18 @@ const { mockGetBySlug, mockGetAddonBySlug } = vi.hoisted(() => ({
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('@repo/service-core', () => ({
-    AddonCatalogService: vi.fn().mockImplementation(function () {
-        return {
-            getBySlug: mockGetBySlug,
-            list: vi.fn()
-        };
-    })
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        AddonCatalogService: vi.fn().mockImplementation(function () {
+            return {
+                getBySlug: mockGetBySlug,
+                list: vi.fn()
+            };
+        })
+    };
+});
 
 // getAddonBySlug must NOT be called after cutover
 // HOS-702: PARTIAL mock (spread of the real module). The cron now calls
