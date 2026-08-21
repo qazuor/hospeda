@@ -33,7 +33,7 @@ export const commerceListingSubscriptions = pgTable(
          * (`'gastronomy'` | `'experience'`, or the pre-HOS-685 `'commerce'`
          * umbrella on rows the HOS-692 rewrite has not reached).
          *
-         * No default (HOS-692, structural migration 0093 drops the old
+         * No default (HOS-692, structural migration 0094 drops the old
          * `.default('commerce')`): the value is fully derivable from this same
          * row's `entityType`, and a default that can silently disagree with its
          * own row is worse than a required field every write site must set

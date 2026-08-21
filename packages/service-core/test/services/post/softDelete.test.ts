@@ -5,7 +5,7 @@ import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import {
-    expectForbiddenError,
+    expectForeignRowMasked,
     expectInternalError,
     expectNotFoundError,
     expectSuccess
@@ -49,7 +49,9 @@ describe('PostService.softDelete', () => {
         );
     });
 
-    it('should return FORBIDDEN if actor cannot delete the post', async () => {
+    // HOS-706 — see `update.test.ts`. `softDelete` is never called, so the
+    // denial is still asserted; only the disclosure is gone.
+    it('refuses a non-author without revealing that the post exists', async () => {
         (modelMock.findById as Mock).mockResolvedValue(post);
         const forbiddenActor = createActor({
             permissions: [],
@@ -57,7 +59,7 @@ describe('PostService.softDelete', () => {
             roles: [RoleEnum.USER]
         });
         const result = await service.softDelete(forbiddenActor, postId);
-        expectForbiddenError(result);
+        expectForeignRowMasked(result);
         expect(modelMock.softDelete as Mock).not.toHaveBeenCalled();
     });
 

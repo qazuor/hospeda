@@ -4,7 +4,10 @@
  * The 402 gates (`trialMiddleware`, `pastDueGraceMiddleware`) attach an internal
  * object to `HTTPException.cause` — it carries the whole `trialStatus`, among
  * other things — so the wire response must be built from a whitelist rather than
- * by forwarding the cause.
+ * by forwarding the cause. The addon purchase 422 (routes/billing/addons.ts,
+ * HOS-602) reuses the same mechanism to forward its service error `code` as
+ * `error.reason`, since a 422's status-derived `error.code` collapses several
+ * distinct rejection reasons into one generic value.
  *
  * This lives in `utils/` rather than next to either formatter because BOTH of
  * them need it: `createErrorHandler` (middlewares/response.ts, `app.onError`)
@@ -29,7 +32,13 @@ const ENTITLEMENT_CAUSE_REASONS: ReadonlySet<string> = new Set([
     // in its own JSDoc example). Whitelisted so the day it is mounted the copy
     // already resolves, but treat these two as dormant, not live.
     'NO_ACTIVE_SUBSCRIPTION',
-    'NO_BILLING_ACCOUNT'
+    'NO_BILLING_ACCOUNT',
+    // addon purchase route (routes/billing/addons.ts, HOS-602) — the
+    // customer has zero subscription rows at all, distinct from having one
+    // that just isn't active/trialing (NO_ACTIVE_SUBSCRIPTION above). Both
+    // resolve to the same client-side "you need an active subscription"
+    // gate copy, so they share the whitelist here.
+    'NO_SUBSCRIPTION'
 ]);
 
 /** The client-safe projection of an entitlement cause. */

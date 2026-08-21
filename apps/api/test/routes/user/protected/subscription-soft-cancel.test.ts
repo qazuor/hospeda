@@ -45,7 +45,8 @@ vi.mock('../../../../src/services/plan.service', () => ({
     })
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     PAYMENT_GRACE_PERIOD_DAYS: 7,
     getDefaultEntitlements: vi.fn(() => ({ entitlements: [], limits: [] })),
     getUnlimitedEntitlements: vi.fn(() => ({ entitlements: [], limits: [] })),

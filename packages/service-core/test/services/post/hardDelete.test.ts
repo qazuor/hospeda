@@ -5,7 +5,7 @@ import { PostService } from '../../../src/services/post/post.service';
 import { createActor } from '../../factories/actorFactory';
 import { createMockPost } from '../../factories/postFactory';
 import {
-    expectForbiddenError,
+    expectForeignRowMasked,
     expectInternalError,
     expectNotFoundError,
     expectSuccess
@@ -45,7 +45,9 @@ describe('PostService.hardDelete', () => {
         expect(modelMock.hardDelete as Mock).toHaveBeenCalledWith({ id: postId }, undefined);
     });
 
-    it('should return FORBIDDEN if actor cannot hard delete the post', async () => {
+    // HOS-706 — see `update.test.ts`. `hardDelete` is never called, so the
+    // denial is still asserted; only the disclosure is gone.
+    it('refuses a non-author without revealing that the post exists', async () => {
         (modelMock.findById as Mock).mockResolvedValue(post);
         const forbiddenActor = createActor({
             permissions: [],
@@ -53,7 +55,7 @@ describe('PostService.hardDelete', () => {
             roles: [RoleEnum.USER]
         });
         const result = await service.hardDelete(forbiddenActor, postId);
-        expectForbiddenError(result);
+        expectForeignRowMasked(result);
         expect(modelMock.hardDelete as Mock).not.toHaveBeenCalled();
     });
 

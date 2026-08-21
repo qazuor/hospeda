@@ -14,7 +14,7 @@
  */
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
-import { productDomainForLimitKey } from '@repo/billing';
+import { isEntitlementGrantingStatus, productDomainForLimitKey } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { sql, withTransaction } from '@repo/db';
 import { PlanService } from '../plan/plan.service.js';
@@ -275,10 +275,15 @@ export async function recalculateAddonLimitsForCustomer(
             // a subscription's `productDomain` is compared against a value
             // (HOS-685). Every other key answers `'accommodation'`, so this is a
             // strict no-op for the accommodation add-ons.
+            //
+            // HOS-702: liveness is the canonical `isEntitlementGrantingStatus`.
+            // The hand-rolled active/trialing pair dropped `comp`, which landed a
+            // complimentary subscriber in the same "skipped, cap raised by
+            // nothing" outcome described above.
             const domain = productDomainForLimitKey(limitKey);
             const activeSubscription = subscriptions.find(
                 (sub: { status: string }) =>
-                    (sub.status === 'active' || sub.status === 'trialing') &&
+                    isEntitlementGrantingStatus(sub.status) &&
                     subscriptionMatchesDomain(sub, domain)
             );
 

@@ -19,7 +19,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 // Module mocks
 // ---------------------------------------------------------------------------
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: vi.fn()
 }));
 

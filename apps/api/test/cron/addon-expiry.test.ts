@@ -229,7 +229,17 @@ vi.mock('../../src/services/addon-lifecycle.service', () => ({
 // `adjustment.entitlementKey === EntitlementKey.FEATURED_LISTING`, so without
 // this the comparison target is `undefined` and every FEATURED_LISTING
 // adjustment silently fails to match (soft-failed by the surrounding try/catch).
-vi.mock('@repo/billing', () => ({
+//
+// HOS-702: this is a PARTIAL mock (spread of the real module) rather than a
+// two-key object literal. The job's split-state reconciler now calls
+// `isEntitlementGrantingStatus`, and a whole-module stub left that export
+// `undefined` — the call threw, the surrounding try/catch swallowed it, and the
+// phase silently reconciled nothing while every assertion still ran. Stubbing
+// the predicate with a hand-written copy would recreate the exact duplication
+// HOS-702 removed, so the REAL predicate is used and only the two members that
+// genuinely need controlling are overridden.
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn(),
     EntitlementKey: { FEATURED_LISTING: 'featured_listing' }
 }));

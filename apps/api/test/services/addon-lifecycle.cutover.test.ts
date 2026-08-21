@@ -58,7 +58,8 @@ vi.mock('@repo/service-core', () => ({
 }));
 
 // getAddonBySlug should NOT be called after cutover — spy with assertion
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: mockGetAddonBySlug
 }));
 

@@ -149,7 +149,8 @@ vi.mock('@repo/db', () => ({
 }));
 
 // Service layer mock: billing config constants
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     DUNNING_RETRY_INTERVALS: [1, 3, 5, 7],
     DUNNING_GRACE_PERIOD_DAYS: 7
 }));

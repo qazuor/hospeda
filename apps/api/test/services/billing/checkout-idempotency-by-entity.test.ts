@@ -255,7 +255,8 @@ vi.mock('../../../src/utils/env', () => ({
     env: { HOSPEDA_BILLING_POLLING_ENABLED: false }
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     resolveFreeTrialExtensionPromo: vi.fn(() => null),
     applyTestControl: vi.fn(async (_op: string, _args: unknown, realCall: () => Promise<unknown>) =>
         realCall()

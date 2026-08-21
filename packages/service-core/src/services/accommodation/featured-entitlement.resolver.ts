@@ -26,7 +26,7 @@
  * @module services/accommodation/featured-entitlement-resolver
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { ENTITLEMENT_GRANTING_STATUSES, EntitlementKey } from '@repo/billing';
 import {
     accommodations,
     and,
@@ -46,10 +46,15 @@ import { isAccommodationSubscription } from '../billing/subscription/subscriptio
 
 /**
  * Subscription statuses that keep a plan's entitlements reachable.
- * Mirrors `featured-by-entitlement-reconcile.job.ts`'s `active | trialing | comp`
- * set (SPEC-309 OQ resolution / G-5: `comp` counts, `paused` does not).
+ *
+ * HOS-702: aliased to the canonical `ENTITLEMENT_GRANTING_STATUSES`
+ * (`@repo/billing`) rather than re-declared. The hand-rolled literal it
+ * replaces happened to hold the CORRECT three values (SPEC-309 OQ / G-5:
+ * `comp` counts, `paused` does not) — but nothing kept it correct, and a
+ * duplicate of the entitlement set that nobody can drift-check is precisely
+ * how HOS-238/239/594 each shipped.
  */
-const ACTIVE_PLAN_SUBSCRIPTION_STATUSES = ['active', 'trialing', 'comp'] as const;
+const ACTIVE_PLAN_SUBSCRIPTION_STATUSES = ENTITLEMENT_GRANTING_STATUSES;
 
 // ---------------------------------------------------------------------------
 // resolveOwnerPlanGrantsFeatured

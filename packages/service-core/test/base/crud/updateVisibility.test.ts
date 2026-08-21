@@ -72,14 +72,32 @@ describe('BaseService: updateVisibility', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
-    it('should return a forbidden error if actor lacks permission', async () => {
+    it('refuses a non-owner with the SAME answer as an id that does not exist', async () => {
+        // HOS-706. `updateVisibility` is the one write path whose real gate runs
+        // OUTSIDE `_getAndValidateEntity` (that signature cannot carry the
+        // requested visibility), so it needed its own wiring through the mask —
+        // and this is the test that would have stayed green without it. Denial
+        // is still asserted: `model.update` is never reached.
         const nonAdminActor: Actor = { id: 'non-admin', roles: [RoleEnum.USER], permissions: [] };
-        const result = await service.updateVisibility(
+        const foreign = await service.updateVisibility(
             nonAdminActor,
             MOCK_ENTITY_ID,
             VisibilityEnum.PRIVATE
         );
-        expect(result.error?.code).toBe('FORBIDDEN');
+
+        asMock(modelMock.findById).mockResolvedValue(null);
+        const invented = await service.updateVisibility(
+            nonAdminActor,
+            MOCK_ENTITY_ID,
+            VisibilityEnum.PRIVATE
+        );
+
+        expect(asMock(modelMock.update)).not.toHaveBeenCalled();
+        expect({ code: foreign.error?.code, message: foreign.error?.message }).toEqual({
+            code: invented.error?.code,
+            message: invented.error?.message
+        });
+        expect(foreign.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
     it('should return an internal error if database update fails', async () => {

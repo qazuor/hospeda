@@ -44,7 +44,11 @@
  *
  * @module routes/commerce/protected/start-subscription
  */
-import { type CommerceVertical, LIMIT_KEY_BY_COMMERCE_VERTICAL } from '@repo/billing';
+import {
+    type CommerceVertical,
+    ENTITLEMENT_GRANTING_STATUSES,
+    LIMIT_KEY_BY_COMMERCE_VERTICAL
+} from '@repo/billing';
 import { experienceModel, gastronomyModel } from '@repo/db';
 import type {
     CommerceEntityType,
@@ -120,8 +124,13 @@ const StartSubscriptionParamsSchema = {
  * cancel/reactivate — is the correct path back to `active`). Deliberately
  * excludes `cancelled`, `expired`, `abandoned`, and `paused` — those ARE
  * terminal/inactive enough that a fresh checkout is the correct next step.
+ *
+ * HOS-702: built as the canonical `ENTITLEMENT_GRANTING_STATUSES` PLUS
+ * `past_due`, never as a hand-rolled list. The hand-rolled version omitted
+ * `comp`, so an owner whose listing already carried a complimentary
+ * subscription could start a second, real, CHARGED checkout for it.
  */
-const LIVE_SUBSCRIPTION_STATUSES = new Set(['active', 'trialing', 'past_due']);
+const LIVE_SUBSCRIPTION_STATUSES = new Set<string>([...ENTITLEMENT_GRANTING_STATUSES, 'past_due']);
 
 /**
  * Subset of the raw `gastronomies`/`experiences` row this route reads —

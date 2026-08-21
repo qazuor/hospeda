@@ -1,5 +1,5 @@
 {
-  "id": "6bd5184e-7871-4937-968b-0b6170fb57b5",
+  "id": "6bc9c456-d48c-4dee-8b86-c0dd2ee72b46",
   "prevId": "3a78fc58-8c04-4243-9b2b-06dd566731b7",
   "version": "7",
   "dialect": "postgresql",
@@ -7070,7 +7070,8 @@
           "name": "product_domain",
           "type": "varchar(50)",
           "primaryKey": false,
-          "notNull": true
+          "notNull": true,
+          "default": "'commerce'"
         },
         "entity_type": {
           "name": "entity_type",
@@ -30404,11 +30405,17 @@
           "method": "btree",
           "with": {}
         },
-        "idx_polling_jobs_one_active_per_sub": {
-          "name": "idx_polling_jobs_one_active_per_sub",
+        "idx_polling_jobs_one_active_per_resource": {
+          "name": "idx_polling_jobs_one_active_per_resource",
           "columns": [
             {
-              "expression": "subscription_id",
+              "expression": "provider",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "provider_resource_id",
               "isExpression": false,
               "asc": true,
               "nulls": "last"

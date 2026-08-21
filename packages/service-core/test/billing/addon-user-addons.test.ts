@@ -44,7 +44,11 @@ vi.mock('drizzle-orm', () => ({
     isNull: vi.fn((col: unknown) => ({ col, isNull: true }))
 }));
 
-vi.mock('@repo/billing', () => ({
+// HOS-702: PARTIAL mock (spread of the real module). `parseMetadataAddons`
+// now calls `isEntitlementGrantingStatus`; a whole-module stub left that export
+// `undefined` and the metadata path would blow up rather than be exercised.
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn((_slug: string) => null)
 }));
 

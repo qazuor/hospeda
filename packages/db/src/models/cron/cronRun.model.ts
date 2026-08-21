@@ -20,7 +20,7 @@ export class CronRunModel extends BaseModelImpl<CronRun> {
     public entityName = 'cron_runs';
 
     protected getTableName(): string {
-        return 'cron_runs';
+        return 'cronRuns';
     }
 
     /**

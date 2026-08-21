@@ -27,7 +27,7 @@ describe('BillingAddonPurchaseModel', () => {
     describe('getTableName', () => {
         it('should return correct table name', () => {
             const tableName = (model as unknown as { getTableName: () => string }).getTableName();
-            expect(tableName).toBe('billing_addon_purchases');
+            expect(tableName).toBe('billingAddonPurchases');
         });
     });
 

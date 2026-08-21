@@ -1,6 +1,7 @@
 /**
- * Static guard: every relation/junction model's `getTableName()` must return
- * the SAME identifier as the Drizzle table it was constructed with (HOS-598).
+ * Static guard: EVERY model's `getTableName()` must return the SAME
+ * identifier as the Drizzle table it was constructed with (HOS-598, widened
+ * by HOS-701).
  *
  * ## Why this exists
  *
@@ -19,10 +20,25 @@
  * `'rAccommodationFeatures'` while the schema module exports the table as
  * the singular `rAccommodationFeature`, so
  * `GET /api/v1/public/features/accommodation/{id}` 500'd unconditionally.
- * `RAccommodationAmenityModel` carried the exact same defect. Both are fixed
- * alongside this guard; see
+ * `RAccommodationAmenityModel` and five other relation/junction models
+ * carried the exact same defect and were fixed alongside it; see
  * `packages/db/test/integration/r-accommodation-feature-amenity.model.integration.test.ts`
  * for the DB-backed regression test proving the fix against a real schema.
+ *
+ * HOS-701 found the SAME shape of bug on 18 more, non-relation models
+ * (billing, audit-log, exchange-rate, content-moderation,
+ * revalidation-config, platform-settings, cron, user-identity/push-tokens,
+ * app-log) — `getTableName()` returning the snake_case SQL table name
+ * instead of the camelCase schema-barrel export identifier. None of the 18
+ * were reachable through `findAllWithRelations`/`findOneWithRelations` at
+ * the time (verified by reading every call site: the services that extend
+ * `BaseCrudService` for these models all override `getDefaultListRelations()`
+ * to return `undefined`, and no route passes an explicit `relations` option),
+ * so the bug was latent rather than live — but the exact same landmine
+ * HOS-598 hit. All 18 were fixed in the same change that widened this guard
+ * from relation/junction models only to every model in the package, so the
+ * class of bug cannot reappear unnoticed regardless of which model it lands
+ * on next.
  *
  * ## Why a static text scan instead of instantiating each model
  *
@@ -35,23 +51,13 @@
  *
  * ## Scope
  *
- * Scoped to relation/junction models — the class of bug HOS-598 describes
- * ("algún otro modelo de tabla de relación") — identified by the repo's own
- * naming convention: a model class named `R<PascalCase>Model` extending
- * `BaseModelImpl`. There are 13 today; all pass after the HOS-598 fix with
- * zero exceptions needed.
- *
- * A broader, PRE-EXISTING mismatch of the same shape (`getTableName()`
- * returning a snake_case SQL table name instead of the camelCase export
- * identifier) exists on ~18 NON-relation models (billing, audit-log,
- * exchange-rate, content-moderation, revalidation-config, platform-settings,
- * cron, user-identity/push-tokens, app-log). That is a real latent bug but a
- * different, larger-blast-radius fix outside HOS-598's scope (relation
- * tables specifically) — tracked as a separate follow-up rather than folded
- * in here. Do NOT widen this guard's file glob to "every model with
- * getTableName()" without first fixing (or deliberately, visibly
- * allowlisting with a tracked issue) those 18 — an unscoped widening would
- * turn this guard red on unrelated pre-existing debt.
+ * Every concrete model class in `packages/db/src/models/**` that extends
+ * `BaseModelImpl` — identified by the repo's own naming convention: a class
+ * named `<PascalCase>Model`. `getTableName()` is `abstract` on
+ * `BaseModelImpl`, so every concrete subclass is required to override it;
+ * there is no legitimate way for a model file to exist without one. 108
+ * models exist at the time this guard was widened; all pass with zero
+ * exceptions needed.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -76,12 +82,12 @@ function collectModelFiles(dir: string): string[] {
 }
 
 /**
- * A relation/junction model file: exports a class named `R<PascalCase>Model`
+ * Any concrete model class: exports a class named `<PascalCase>Model`
  * extending `BaseModelImpl` — the repo's established naming convention for
- * junction-table models (e.g. `RAccommodationFeatureModel`,
- * `RDestinationAttractionModel`, `RUserPermissionModel`).
+ * every model, relation/junction or otherwise (e.g. `AccommodationModel`,
+ * `RAccommodationFeatureModel`, `BillingSettingsModel`).
  */
-const RELATION_MODEL_CLASS_PATTERN = /export class (R[A-Z]\w*Model) extends BaseModelImpl/;
+const MODEL_CLASS_PATTERN = /export class (\w+Model) extends BaseModelImpl/;
 
 /** Extracts the identifier assigned to `protected table = <identifier>;`. */
 const TABLE_FIELD_PATTERN = /protected(?: override)? table\s*=\s*([A-Za-z0-9_]+)\s*;/;
@@ -91,10 +97,10 @@ const GET_TABLE_NAME_PATTERN = /getTableName\(\):\s*string\s*\{\s*return\s*'([^'
 
 const modelFiles = collectModelFiles(MODELS_ROOT);
 
-const relationModels = modelFiles
+const allModels = modelFiles
     .map((filePath) => {
         const source = readFileSync(filePath, 'utf-8');
-        const classMatch = source.match(RELATION_MODEL_CLASS_PATTERN);
+        const classMatch = source.match(MODEL_CLASS_PATTERN);
         if (!classMatch) return null;
         return { filePath, className: classMatch[1], source };
     })
@@ -102,17 +108,18 @@ const relationModels = modelFiles
         Boolean(entry)
     );
 
-describe('Relation model getTableName() registration guard (HOS-598)', () => {
-    it('finds relation models to check — a guard with nothing to check is not a guard', () => {
-        // Sanity check on the discovery mechanism itself: if this drops to zero,
-        // the glob/regex broke silently and every other assertion below would
-        // vacuously pass. 13 relation models exist at the time this guard was
-        // written; assert a stable floor rather than an exact count so adding a
-        // 14th doesn't require touching this file.
-        expect(relationModels.length).toBeGreaterThanOrEqual(13);
+describe('Model getTableName() registration guard (HOS-598, widened by HOS-701)', () => {
+    it('finds models to check — a guard with nothing to check is not a guard', () => {
+        // Sanity check on the discovery mechanism itself: if this drops far
+        // below the current count, the glob/regex broke silently and every
+        // other assertion below would vacuously pass. 108 models exist at
+        // the time this guard was written; assert a stable floor rather
+        // than an exact count so adding a new model doesn't require
+        // touching this file.
+        expect(allModels.length).toBeGreaterThanOrEqual(100);
     });
 
-    it.each(relationModels)('$className: getTableName() matches the assigned table identifier', ({
+    it.each(allModels)('$className: getTableName() matches the assigned table identifier', ({
         filePath,
         className,
         source

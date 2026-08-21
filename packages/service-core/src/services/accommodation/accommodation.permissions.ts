@@ -199,6 +199,12 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
         return;
     }
 
+    // The ONE deliberate exception to "a foreign resource answers 404" (HOS-706,
+    // owner decision). A RESTRICTED listing is a commercial hook: telling the
+    // visitor "this exists and it is for VIPs" is the product. Every other
+    // refusal in this function answers 404 precisely so this one reads as a
+    // choice rather than an oversight — do NOT unify it. It is documented as an
+    // exception in `apps/api/docs/error-contract.md`; change it there first.
     if (entity.visibility === 'RESTRICTED') {
         if (
             actor.entitlements?.has('vip_visibility_access') ||
@@ -210,7 +216,11 @@ export function checkCanView(actor: Actor, entity: Accommodation): void {
         throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'VIP access required');
     }
 
-    throw new ServiceError(ServiceErrorCode.FORBIDDEN, 'Permission denied to view accommodation');
+    // Everything that reaches here is a foreign PRIVATE listing (HOS-706). It
+    // used to answer `403 'Permission denied to view accommodation'`, which sold
+    // nothing and confirmed the id was real — the deleted/non-active/suspended/
+    // plan-restricted branches above already answer 404 for exactly that reason.
+    throw entityNotFoundError({ entityName: ACCOMMODATION_ENTITY_NAME });
 }
 
 /**

@@ -10,7 +10,8 @@
  * (`addon.checkout.ts`, also fixed by HOS-594), but this page-level check
  * still hid the purchase UI from a comp subscriber whenever the backend
  * happened not to normalize their status first. Mirrors the API-side guard
- * (`apps/api/test/services/addon-status-gate-canonical-predicate.guard.test.ts`)
+ * (`apps/api/test/services/billing-status-gate-canonical-predicate.guard.test.ts`,
+ * renamed and widened to the whole billing zone by HOS-702)
  * — same anti-pattern, same fix, different app.
  *
  * The anti-pattern check is deliberately NOT anchored on `.includes(` — a
