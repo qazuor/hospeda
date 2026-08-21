@@ -1093,6 +1093,14 @@
             "ai-support-monthly": {
                 "name": "AI Support (monthly)",
                 "description": "Unlocks AI-powered support tools for hosts, including smart reply suggestions and automated guest FAQ handling. Renews monthly."
+            },
+            "extra-gastronomies-1": {
+                "name": "Extra Gastronomy Listing (+1)",
+                "description": "Adds 1 additional gastronomy listing to your plan. Renews monthly."
+            },
+            "extra-experiences-1": {
+                "name": "Extra Experience Listing (+1)",
+                "description": "Adds 1 additional experience listing to your plan. Renews monthly."
             }
         }
     },
