@@ -778,11 +778,12 @@ export function CreatePropertyMiniForm({
                     addToast({
                         type: 'error',
                         message: limitPayload.message,
+                        // HOS-723: forwarded verbatim — the helper, not this call
+                        // site, decides which CTA leads. `max_accommodations` IS
+                        // raised by an add-on (`extra-accommodations-5`), so here
+                        // `action` is that add-on and `secondaryAction` the plan.
                         action: limitPayload.action,
-                        // HOS-723: `max_accommodations` IS raised by an add-on
-                        // (`extra-accommodations-5`), so this is the surface where
-                        // omitting it left a host with only the expensive way out.
-                        secondaryAction: limitPayload.addonAction
+                        secondaryAction: limitPayload.secondaryAction
                     });
                     return;
                 }

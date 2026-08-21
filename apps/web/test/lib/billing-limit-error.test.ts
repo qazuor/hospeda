@@ -85,8 +85,19 @@ describe('HOS-690 AC-24 — gastronomy/experience limits render their own copy',
 });
 
 /**
- * HOS-723 — the at-limit toast offers the add-on that raises THIS limit, and
- * only when one exists.
+ * HOS-723 — the at-limit toast leads with the add-on that raises THIS limit,
+ * and offers one only when it exists.
+ *
+ * ## What "primary" means here, and why it is asserted directly
+ *
+ * The payload's two fields map onto the toast's `action` / `secondaryAction`,
+ * and `action` IS the primary slot — it gets the filled pill and, since
+ * HOS-723, renders first. So "the add-on is primary" is not a styling opinion
+ * to eyeball: it is the assertion `payload.action.href` points at the add-on
+ * while `payload.secondaryAction.href` points at the subscription page. Both
+ * halves are needed. Asserting only that the add-on appears somewhere passed
+ * just as well when it sat in the secondary slot, which is the exact state this
+ * change moved away from.
  *
  * ## Why these assertions and not easier ones
  *
@@ -103,6 +114,9 @@ describe('HOS-690 AC-24 — gastronomy/experience limits render their own copy',
  * failure rather than as an `undefined` that silently satisfies a loose
  * assertion.
  */
+
+/** Where the plan upgrade always points, whichever slot it occupies. */
+const PLAN_HREF_ES = '/es/mi-cuenta/suscripcion/';
 
 /** The four limits an add-on raises today, with the slug each must offer. */
 const ADDON_LIMIT_EXPECTATIONS = [
@@ -136,20 +150,18 @@ function detailsFor(limitKey: string) {
     };
 }
 
-describe('HOS-723 — the at-limit CTA offers the add-on that raises that limit', () => {
+describe('HOS-723 — the at-limit CTA leads with the add-on that raises that limit', () => {
     for (const { limitKey, slug } of ADDON_LIMIT_EXPECTATIONS) {
-        it(`offers ${slug} when ${limitKey} is reached`, () => {
+        it(`makes ${slug} the PRIMARY action when ${limitKey} is reached`, () => {
             const payload = buildLimitReachedPayloadFromDetails({
                 details: detailsFor(limitKey),
                 locale: 'es'
             });
 
-            expect(payload.addonAction).toBeDefined();
-            // Full href: the focus query param AND the fragment, both of which
-            // decide whether the user lands on the right card or on a catalog.
-            expect(payload.addonAction?.href).toBe(
-                `/es/mi-cuenta/addons/?focus=${slug}#addon-${slug}`
-            );
+            // The add-on occupies the primary slot. Full href: the focus query
+            // param AND the fragment, both of which decide whether the user
+            // lands on the right card or on a catalog they have to search.
+            expect(payload.action.href).toBe(`/es/mi-cuenta/addons/?focus=${slug}#addon-${slug}`);
 
             // The label is real translated copy, not the hardcoded fallback.
             const expectedLabel = createT('es')(
@@ -157,47 +169,55 @@ describe('HOS-723 — the at-limit CTA offers the add-on that raises that limit'
                 '__MISSING__'
             );
             expect(expectedLabel).not.toBe('__MISSING__');
-            expect(payload.addonAction?.label).toBe(expectedLabel);
+            expect(payload.action.label).toBe(expectedLabel);
 
-            // The plan upgrade is NOT replaced — both ways out are offered.
-            expect(payload.action.href).toBe('/es/mi-cuenta/suscripcion/');
-            expect(payload.action.label.length).toBeGreaterThan(0);
+            // The plan upgrade is DEMOTED, not dropped — still reachable, one
+            // step down. Without this half the inversion could silently become
+            // "replace the plan with the add-on".
+            expect(payload.secondaryAction).toBeDefined();
+            expect(payload.secondaryAction?.href).toBe(PLAN_HREF_ES);
+            expect(payload.secondaryAction?.label.length).toBeGreaterThan(0);
+
+            // And the two are genuinely different destinations, so a helper that
+            // returned the same action twice could not pass.
+            expect(payload.action.href).not.toBe(payload.secondaryAction?.href);
         });
     }
 
     for (const limitKey of NO_ADDON_LIMIT_KEYS) {
-        it(`offers NO add-on for ${limitKey}, which no add-on raises`, () => {
+        it(`keeps the plan PRIMARY and only for ${limitKey}, which no add-on raises`, () => {
             const payload = buildLimitReachedPayloadFromDetails({
                 details: detailsFor(limitKey),
                 locale: 'es'
             });
 
+            // The plan keeps the primary slot, exactly as before HOS-723.
+            expect(payload.action.href).toBe(PLAN_HREF_ES);
             // A false promise is worse than no offer: there is no add-on card
             // for this limit, so pointing at the add-ons page sends the user
             // hunting for something that does not exist.
-            expect(payload.addonAction).toBeUndefined();
-            // The plan upgrade still stands — the toast is never a dead end.
-            expect(payload.action.href).toBe('/es/mi-cuenta/suscripcion/');
+            expect(payload.secondaryAction).toBeUndefined();
         });
     }
 
-    it('offers no add-on for an unknown limit key', () => {
+    it('keeps the plan primary and only, for an unknown limit key', () => {
         const payload = buildLimitReachedPayloadFromDetails({
             details: detailsFor('max_definitely_not_a_real_key'),
             locale: 'es'
         });
 
-        expect(payload.addonAction).toBeUndefined();
+        expect(payload.action.href).toBe(PLAN_HREF_ES);
+        expect(payload.secondaryAction).toBeUndefined();
     });
 
-    it('offers no add-on when the error body carries no details at all', () => {
+    it('keeps the plan primary and only, when the error body carries no details', () => {
         const payload = buildLimitReachedPayloadFromDetails({
             details: undefined,
             locale: 'es'
         });
 
-        expect(payload.addonAction).toBeUndefined();
-        expect(payload.action.href).toBe('/es/mi-cuenta/suscripcion/');
+        expect(payload.action.href).toBe(PLAN_HREF_ES);
+        expect(payload.secondaryAction).toBeUndefined();
     });
 
     it('builds the add-on link inside the active locale, not a hardcoded /es/', () => {
@@ -206,23 +226,38 @@ describe('HOS-723 — the at-limit CTA offers the add-on that raises that limit'
             locale: 'en'
         });
 
-        expect(payload.addonAction?.href).toBe(
+        expect(payload.action.href).toBe(
             '/en/mi-cuenta/addons/?focus=extra-accommodations-5#addon-extra-accommodations-5'
         );
+        expect(payload.secondaryAction?.href).toBe('/en/mi-cuenta/suscripcion/');
     });
 
-    it('exactly these four limits carry an add-on offer, and no others', () => {
-        const offered = [...KNOWN_LIMIT_KEYS].filter(
-            (limitKey) =>
-                buildLimitReachedPayloadFromDetails({
-                    details: detailsFor(limitKey as string),
-                    locale: 'es'
-                }).addonAction !== undefined
+    it('the plan upgrade is reachable for EVERY known limit, in one slot or the other', () => {
+        for (const limitKey of KNOWN_LIMIT_KEYS) {
+            const payload = buildLimitReachedPayloadFromDetails({
+                details: detailsFor(limitKey as string),
+                locale: 'es'
+            });
+
+            const planHrefs = [payload.action.href, payload.secondaryAction?.href];
+
+            // Invariant 1 of the payload contract: a limit toast is never a
+            // dead end. Demoting the plan must never become dropping it.
+            expect(planHrefs).toContain(PLAN_HREF_ES);
+        }
+    });
+
+    it('exactly these four limits lead with an add-on, and no others', () => {
+        const addonLed = [...KNOWN_LIMIT_KEYS].filter((limitKey) =>
+            buildLimitReachedPayloadFromDetails({
+                details: detailsFor(limitKey as string),
+                locale: 'es'
+            }).action.href.includes('/mi-cuenta/addons/')
         );
 
         // Frozen on purpose: a fifth purchasable add-on is a product decision
         // that must be made here deliberately, not inherited from a table edit.
-        expect(offered.sort()).toEqual(
+        expect(addonLed.sort()).toEqual(
             ADDON_LIMIT_EXPECTATIONS.map((entry) => entry.limitKey as string).sort()
         );
     });
