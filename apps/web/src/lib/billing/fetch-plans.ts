@@ -19,6 +19,7 @@
  */
 
 import type { PlanCategory } from '@repo/billing';
+import type { ProductDomainValue } from '@repo/schemas';
 import { getApiUrl } from '@/lib/env';
 
 /**
@@ -66,14 +67,26 @@ export type FetchPlansResult =
  * `/suscriptores/turistas/`) so that price changes made via the admin panel
  * are reflected without a site redeploy (SPEC-168 D3).
  *
+ * @param params.domain - The product domain to scope the response to
+ *   (HOS-685 widened `GET /api/v1/public/plans` to accept `?domain=`).
+ *   Omitted entirely when absent, which the endpoint defaults to
+ *   `'accommodation'` — the byte-for-byte behaviour every existing caller
+ *   still gets. Pass `'gastronomy'` / `'experience'` to fetch a commerce
+ *   vertical's plan instead (HOS-690).
+ *
  * The function never throws; network or parse errors are returned as
  * `{ ok: false, error }` so callers can degrade gracefully (empty state).
  *
  * @returns A result object with `ok: true, plans` on success, or
  *   `ok: false, error` when the API is unreachable or returns a non-OK status.
  */
-export async function fetchPublicPlans(): Promise<FetchPlansResult> {
-    const url = `${getApiUrl()}/api/v1/public/plans`;
+export async function fetchPublicPlans(
+    params: { readonly domain?: ProductDomainValue } = {}
+): Promise<FetchPlansResult> {
+    const { domain } = params;
+    const url = domain
+        ? `${getApiUrl()}/api/v1/public/plans?domain=${encodeURIComponent(domain)}`
+        : `${getApiUrl()}/api/v1/public/plans`;
     try {
         const response = await fetch(url, {
             headers: { Accept: 'application/json' }

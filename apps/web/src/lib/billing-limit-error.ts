@@ -46,8 +46,12 @@ export interface LimitReachedToastPayload {
 /**
  * Known limit keys that have dedicated i18n entries.
  * Any other key falls back to `billing.limit.generic.*`.
+ *
+ * Exported (HOS-690 AC-23) so the exhaustiveness guard
+ * (`test/lib/billing-limit-key-i18n-coverage.guard.test.ts`) can assert every
+ * `LimitKey` is a member, instead of re-deriving the set from source text.
  */
-const KNOWN_LIMIT_KEYS = new Set([
+export const KNOWN_LIMIT_KEYS = new Set([
     'max_favorites',
     'max_accommodations',
     'max_photos_per_accommodation',
@@ -58,7 +62,30 @@ const KNOWN_LIMIT_KEYS = new Set([
     // Without the entry the at-limit toast falls back to
     // `billing.limit.generic.*`, which never names the vertical just hit.
     'max_gastronomies',
-    'max_experiences'
+    'max_experiences',
+    // HOS-690 AC-23 — closing the gap the exhaustiveness guard found: these 11
+    // keys had NO `billing.limit.<key>.*` entry at all in any locale and were
+    // silently absent from this Set. None currently reaches this helper (no
+    // call site in `apps/web/src` passes one of these limitKeys to
+    // `buildLimitReachedPayload*` today — only max_accommodations and
+    // max_favorites do), so this closes a latent gap rather than changing live
+    // behaviour. Each locale only got a `.title` entry, deliberately NOT the
+    // full `message_one`/`message_other`/`cta` shape `max_favorites` etc.
+    // have — `buildFromDetails` falls back to its own generic string per field
+    // independently, so a title-only entry is a safe, honest partial: whoever
+    // wires one of these limits into an at-limit UI still owes it a message
+    // and a CTA.
+    'max_active_alerts',
+    'max_compare_items',
+    'max_ai_text_improve_per_month',
+    'max_ai_chat_per_month',
+    'max_ai_chat_consumer_per_month',
+    'max_ai_search_per_month',
+    'max_ai_support_per_month',
+    'max_ai_translate_per_month',
+    'max_ai_accommodation_import_per_month',
+    'max_search_history_entries',
+    'max_collections'
 ]);
 
 /**

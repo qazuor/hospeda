@@ -324,6 +324,25 @@
             "message_other": "Você tem {{currentCount}} de {{maxAllowed}} contas de staff no seu plano. Faça um upgrade para adicionar mais.",
             "cta": "Ver minha assinatura"
         },
+        "max_active_alerts": { "title": "Você atingiu o limite de alertas de preço" },
+        "max_compare_items": { "title": "Você atingiu o limite de itens para comparar" },
+        "max_ai_text_improve_per_month": {
+            "title": "Você atingiu o limite de melhorias de texto com IA"
+        },
+        "max_ai_chat_per_month": { "title": "Você atingiu o limite de conversas no chat de IA" },
+        "max_ai_chat_consumer_per_month": {
+            "title": "Você atingiu o limite de conversas com o assistente de IA"
+        },
+        "max_ai_search_per_month": { "title": "Você atingiu o limite de buscas com IA" },
+        "max_ai_support_per_month": {
+            "title": "Você atingiu o limite de atendimentos de suporte com IA"
+        },
+        "max_ai_translate_per_month": { "title": "Você atingiu o limite de traduções com IA" },
+        "max_ai_accommodation_import_per_month": {
+            "title": "Você atingiu o limite de importações de hospedagem com IA"
+        },
+        "max_search_history_entries": { "title": "Você atingiu o limite de histórico de buscas" },
+        "max_collections": { "title": "Você atingiu o limite de coleções de favoritos" },
         "generic": {
             "title": "Limite do plano atingido",
             "message": "Você atingiu o limite do seu plano. Faça um upgrade para continuar.",
@@ -566,10 +585,13 @@
             "max_compare_items": "Comparações simultâneas",
             "max_ai_text_improve_per_month": "Melhorias de texto com IA por mês",
             "max_ai_chat_per_month": "Consultas com IA por mês",
+            "max_ai_chat_consumer_per_month": "Consultas ao assistente de IA por mês",
             "max_ai_search_per_month": "Buscas com IA por mês",
             "max_ai_support_per_month": "Consultas ao suporte com IA por mês",
             "max_ai_translate_per_month": "Traduções com IA por mês",
-            "max_ai_accommodation_import_per_month": "Importações com IA por mês"
+            "max_ai_accommodation_import_per_month": "Importações com IA por mês",
+            "max_search_history_entries": "Entradas do histórico de buscas",
+            "max_collections": "Coleções de favoritos"
         }
     }
 }

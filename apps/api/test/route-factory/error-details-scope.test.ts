@@ -91,6 +91,49 @@ describe('HOS-700 — handleRouteError public-details scope (real route-factory,
         expect(body.error.details?.limitKey).toBe(LimitKey.MAX_ACCOMMODATIONS);
     });
 
+    it('LIMIT_REACHED: details.limitKey reaches the client for a non-accommodation key (HOS-690 AC-24)', async () => {
+        // Arrange — the mechanism `handleRouteError` uses is keyed on
+        // `error.code === LIMIT_REACHED`, not on which limit was hit. This
+        // proves that generality directly for the gastronomy vertical cap
+        // (HOS-690 AC-24), rather than trusting it by inference from the
+        // MAX_ACCOMMODATIONS case above.
+        const details = buildLimitReachedDetails({
+            limitKey: LimitKey.MAX_GASTRONOMIES,
+            currentCount: 1,
+            maxAllowed: 1,
+            usagePercent: 100
+        });
+
+        const app = createSimpleRoute({
+            method: 'get',
+            path: '/hos-690-limit-reached-gastronomy',
+            summary: 'HOS-690 test route',
+            description: 'HOS-690 test route',
+            tags: ['Test'],
+            responseSchema: TestResponseSchema,
+            handler: () => {
+                throw new ServiceError(
+                    ServiceErrorCode.LIMIT_REACHED,
+                    'Gastronomy listing limit reached',
+                    details
+                );
+            },
+            options: FACTORY_OPTS
+        });
+
+        // Act — real HTTP request through the real route factory, same as the
+        // MAX_ACCOMMODATIONS case: no custom onError registered here.
+        const res = await app.request('/hos-690-limit-reached-gastronomy');
+
+        // Assert
+        expect(res.status).toBe(403);
+        const body = (await res.json()) as {
+            error: { code: string; details?: { limitKey?: string } };
+        };
+        expect(body.error.code).toBe(ServiceErrorCode.LIMIT_REACHED);
+        expect(body.error.details?.limitKey).toBe(LimitKey.MAX_GASTRONOMIES);
+    });
+
     it('ENTITLEMENT_REQUIRED: details reaches the client with HOSPEDA_API_DEBUG_ERRORS off', async () => {
         const app = createSimpleRoute({
             method: 'get',
