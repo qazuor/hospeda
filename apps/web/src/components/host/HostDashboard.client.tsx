@@ -11,7 +11,7 @@
  * ```
  */
 
-import { BuildingIcon, ChatIcon, CreditCardIcon, MegaphoneIcon } from '@repo/icons';
+import { BuildingIcon, ChatIcon, CreditCardIcon, MegaphoneIcon, PackageIcon } from '@repo/icons';
 import { type JSX, useCallback, useEffect, useState } from 'react';
 import { hostDashboardApi } from '@/lib/api/endpoints-protected';
 import { transformHostDashboard } from '@/lib/api/transforms';
@@ -71,6 +71,17 @@ const QUICK_ACTIONS: ReadonlyArray<QuickAction> = [
         labelKey: 'host.dashboard.quickActions.subscription',
         href: 'mi-cuenta/suscripcion',
         icon: CreditCardIcon
+    },
+    {
+        // HOS-726. Deliberately a flat link to the whole catalog, with no
+        // `?addon=` focus: this shortcut exists so a host who is NOT up
+        // against a limit still discovers the catalog. Focusing it would
+        // recreate the "you only find add-ons once you are in trouble"
+        // problem this entry is here to fix.
+        key: 'addons',
+        labelKey: 'host.dashboard.quickActions.addons',
+        href: 'mi-cuenta/addons',
+        icon: PackageIcon
     }
 ];
 
