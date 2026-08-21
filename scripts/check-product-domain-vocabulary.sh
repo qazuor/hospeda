@@ -2,7 +2,12 @@
 # check-product-domain-vocabulary.sh
 #
 # HOS-685 — the product-domain vocabulary gains `gastronomy` and `experience`,
-# and NOTHING in the type system defends the widening.
+# and NOTHING in the type system defends the widening. TIGHTENED by HOS-695
+# (release C): the transitional `commerce` value this guard used to tolerate
+# — as long as a line also named `gastronomy` — is now retired from
+# `ProductDomainEnum` entirely, so there is no longer ANY legitimate reason
+# for a `productDomain`-named symbol to be compared against a hardcoded
+# `'commerce'` literal, enumeration or not.
 #
 # Verified when the issue was written, and re-verified here: there is no
 # `Record<ProductDomainEnum, …>`, no `switch` over the enum without a `default`,
@@ -13,15 +18,12 @@
 # This guard is that missing check.
 #
 # WHAT IT PROVES
-#   A line of production TypeScript that names a `productDomain` symbol AND
-#   carries a quoted `commerce` literal must also name `gastronomy`. Rationale:
-#   a `commerce` branch that never mentions the two verticals IS, by
-#   construction, the pre-HOS-685 binary contract — either a
-#   `'accommodation' | 'commerce'` union, a `z.enum(['accommodation',
-#   'commerce'])`, or a `=== 'commerce'` dispatch. The correct shapes all pass
-#   without an exception: they either enumerate the verticals explicitly or
-#   stop hardcoding literals altogether and derive from `ProductDomainEnum` /
-#   `ProductDomainScope`.
+#   A line of production TypeScript that names a `productDomain` symbol never
+#   carries a quoted `commerce` literal, full stop — not even alongside an
+#   explicit `gastronomy` enumeration. `ProductDomainEnum.COMMERCE` references
+#   fail the TypeScript build directly (the member does not exist); this catches
+#   the raw-string escape hatch a compiler cannot: `productDomain === 'commerce'`,
+#   a `'commerce'` entry in a hand-rolled literal union or `z.enum([...])`, etc.
 #
 #   The anchor is the `productDomain` symbol, NOT the domain literals. Anchoring
 #   on `'accommodation'` was measured and rejected: that literal appears in ~239
@@ -33,13 +35,15 @@
 #   - `.astro` is out of scope. The one domain-aware page,
 #     `mi-cuenta/suscripcion/index.astro`, becomes three-way in HOS-689 (AC-21);
 #     widening its type here without its copy would be half a change.
-#   - `apps/admin`'s hand-written `PRODUCT_DOMAINS` array and its
-#     `productDomainLabels` i18n keys are out of scope — they are inert until a
-#     row carries a new value, and belong to HOS-692.
+#   - `apps/admin`'s `PRODUCT_DOMAINS` array derives from
+#     `Object.values(ProductDomainEnum)` rather than a literal list, so it is
+#     out of scope here on purpose — it auto-narrows with the enum and needs no
+#     guard of its own.
 #   - It says nothing about snake_case `product_domain` in raw SQL or seed
 #     files — that is a separate guard, `check-product-domain-raw-sql.sh`
-#     (HOS-692 AC-33), which scans `packages/seed/src` and friends for the
-#     same binary contract expressed as a raw string instead of a symbol.
+#     (HOS-692 / HOS-695 AC-33), which scans the full living-source tree for
+#     the same hardcoded-'commerce' pattern expressed as a raw string instead
+#     of a TypeScript symbol.
 #   - It says nothing about database rows. Release A changes none.
 #
 # There is deliberately NO ignore comment. An exception would mean the
@@ -66,7 +70,6 @@ for dir in $SCAN_DIRS; do
         | grep -vE '^[^:]+:[0-9]+:[[:space:]]*(//|\*|/\*)' \
         | grep -v '\.test\.' \
         | grep -v '\.spec\.' \
-        | grep -v 'gastronomy' \
         || true)
     if [ -n "$FOUND" ]; then
         MATCHES="${MATCHES}${FOUND}"$'\n'
@@ -76,20 +79,18 @@ done
 MATCHES=$(echo "$MATCHES" | sed '/^$/d')
 
 if [ -n "$MATCHES" ]; then
-    echo "ERROR: product-domain vocabulary narrowed back to the binary contract."
+    echo "ERROR: product-domain vocabulary still hardcodes the retired 'commerce' value."
     echo ""
     echo "$MATCHES"
     echo ""
     echo "  Each line above names a productDomain symbol against a hardcoded"
-    echo "  'commerce' literal and never mentions the verticals, which is the"
-    echo "  pre-HOS-685 binary contract."
+    echo "  'commerce' literal. HOS-695 retired the value entirely — there is no"
+    echo "  longer a transitional carve-out for enumerating it alongside"
+    echo "  gastronomy/experience."
     echo ""
     echo "  Fix by deriving from the vocabulary instead of restating it:"
     echo "    - types/schemas -> ProductDomainEnum / ProductDomainScope"
-    echo "    - dispatch      -> subscriptionMatchesDomain(sub, domain)"
-    echo ""
-    echo "  Adding 'gastronomy' and 'experience' to the literal list also passes,"
-    echo "  when an explicit enumeration is genuinely what the site needs."
+    echo "    - dispatch      -> subscriptionMatchesDomain(sub, domain) / isCommerceSubscription(sub)"
     exit 1
 fi
 
