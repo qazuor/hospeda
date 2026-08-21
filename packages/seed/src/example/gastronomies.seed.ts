@@ -14,7 +14,13 @@ import {
     sql,
     users
 } from '@repo/db';
-import { LifecycleStatusEnum, RoleEnum, RoleGrantReason, VisibilityEnum } from '@repo/schemas';
+import {
+    LifecycleStatusEnum,
+    ProductDomainEnum,
+    RoleEnum,
+    RoleGrantReason,
+    VisibilityEnum
+} from '@repo/schemas';
 import { grantRole } from '@repo/service-core';
 import { hash } from 'bcryptjs';
 import exampleManifest from '../manifest-example.json';
@@ -303,10 +309,16 @@ async function ensureCommerceSubscription(
         );
     }
 
-    // Stamp product_domain='commerce' on the subscription (extras-carril column,
-    // not in the qzpay-drizzle TS schema). Same pattern as the commerce checkout flow.
+    // HOS-692: this fixture is always a gastronomy listing (see
+    // `ensureListingSubscriptionLink` below, which hardcodes
+    // entityType: 'gastronomy' for the same reason) — stamp the typed
+    // vertical directly instead of the pre-HOS-685 'commerce' umbrella, or a
+    // fresh seed run would keep recreating rows Bloque B's rewrite has to
+    // clean up again. Raw SQL because `product_domain` is an extras-carril
+    // column, not in the qzpay-drizzle TS schema — this is exactly the site
+    // AC-33's guard exists to catch, so it names the column explicitly.
     await db.execute(
-        sql`UPDATE billing_subscriptions SET product_domain = 'commerce' WHERE id = ${insertedRow.id}`
+        sql`UPDATE billing_subscriptions SET product_domain = ${ProductDomainEnum.GASTRONOMY} WHERE id = ${insertedRow.id}`
     );
 
     return insertedRow.id;
@@ -372,7 +384,9 @@ async function ensureListingSubscriptionLink(
         .insert(commerceListingSubscriptions)
         .values({
             subscriptionId,
-            productDomain: 'commerce',
+            // HOS-692: matches entityType below — this fixture is always a
+            // gastronomy listing, never the pre-HOS-685 'commerce' umbrella.
+            productDomain: ProductDomainEnum.GASTRONOMY,
             entityType: 'gastronomy',
             entityId,
             status: 'active'

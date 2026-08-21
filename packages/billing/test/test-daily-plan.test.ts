@@ -55,7 +55,8 @@ describe('TEST_DAILY_PLAN (billing-interval-override)', () => {
     it('is EXCLUDED from ALL_PLANS (isolated via the env flag gate, not the plan list)', () => {
         const slugs = ALL_PLANS.map((p) => p.slug);
         expect(slugs).not.toContain(TEST_DAILY_PLAN.slug);
-        // Sanity: ALL_PLANS still has exactly the 9 accommodation-tier plans.
-        expect(ALL_PLANS).toHaveLength(9);
+        // Sanity: ALL_PLANS still has exactly the accommodation-tier plans
+        // (HOS-692, spec §6.9: complex-* removed — 9 - 3 = 6).
+        expect(ALL_PLANS).toHaveLength(6);
     });
 });

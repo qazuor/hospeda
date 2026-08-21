@@ -7,7 +7,15 @@
  * actor whose plan lacks the entitlement.
  */
 
-import { EntitlementKey, getPlanBySlug, LimitKey } from '@repo/billing';
+import {
+    COMPLEX_BASICO_PLAN,
+    COMPLEX_PREMIUM_PLAN,
+    COMPLEX_PRO_PLAN,
+    EntitlementKey,
+    getPlanBySlug,
+    LimitKey,
+    type PlanDefinition
+} from '@repo/billing';
 import type { Context } from 'hono';
 import { describe, expect, it, vi } from 'vitest';
 import { gateAlerts, gateFavorites } from '../../src/middlewares/tourist-entitlements';
@@ -59,20 +67,33 @@ describe('SPEC-216 — owner plan passes a tourist gate', () => {
     });
 
     it('every owner/complex plan resolves SAVE_FAVORITES through the gate', async () => {
-        const slugs = [
-            'owner-basico',
-            'owner-pro',
-            'owner-premium',
-            'complex-basico',
-            'complex-pro',
-            'complex-premium'
+        // HOS-692 (spec §6.9): complex-* plans were removed from ALL_PLANS, so
+        // getPlanBySlug('complex-basico') now returns undefined — but their
+        // PlanDefinition constants stay exported specifically so scenarios
+        // like this (herencia de entitlements) keep exercising the real
+        // shape instead of silently degrading to an empty-entitlement pass.
+        // See packages/billing/test/owner-inherits-tourist.test.ts for the
+        // sibling config-level check using the same constants.
+        const ownerSlugs = ['owner-basico', 'owner-pro', 'owner-premium'];
+        const complexPlans: PlanDefinition[] = [
+            COMPLEX_BASICO_PLAN,
+            COMPLEX_PRO_PLAN,
+            COMPLEX_PREMIUM_PLAN
         ];
-        for (const slug of slugs) {
+
+        for (const slug of ownerSlugs) {
             const plan = getPlanBySlug(slug);
             const c = contextWithEntitlements(new Set(plan?.entitlements));
             const next = vi.fn(async () => {});
             await gateFavorites()(c, next);
             expect(next, `${slug} should pass gateFavorites`).toHaveBeenCalledOnce();
+        }
+
+        for (const plan of complexPlans) {
+            const c = contextWithEntitlements(new Set(plan.entitlements));
+            const next = vi.fn(async () => {});
+            await gateFavorites()(c, next);
+            expect(next, `${plan.slug} should pass gateFavorites`).toHaveBeenCalledOnce();
         }
     });
 

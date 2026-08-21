@@ -1,0 +1,1 @@
+ALTER TABLE "commerce_listing_subscriptions" ALTER COLUMN "product_domain" DROP DEFAULT;

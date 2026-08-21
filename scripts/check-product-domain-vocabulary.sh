@@ -37,7 +37,9 @@
 #     `productDomainLabels` i18n keys are out of scope — they are inert until a
 #     row carries a new value, and belong to HOS-692.
 #   - It says nothing about snake_case `product_domain` in raw SQL or seed
-#     files. That is AC-33's guard, and it belongs to release C (HOS-695).
+#     files — that is a separate guard, `check-product-domain-raw-sql.sh`
+#     (HOS-692 AC-33), which scans `packages/seed/src` and friends for the
+#     same binary contract expressed as a raw string instead of a symbol.
 #   - It says nothing about database rows. Release A changes none.
 #
 # There is deliberately NO ignore comment. An exception would mean the

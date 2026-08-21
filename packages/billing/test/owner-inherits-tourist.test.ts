@@ -6,14 +6,27 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { PLANS_BY_CATEGORY, TOURIST_VIP_PLAN } from '../src/config/plans.config.js';
+import {
+    COMPLEX_BASICO_PLAN,
+    COMPLEX_PREMIUM_PLAN,
+    COMPLEX_PRO_PLAN,
+    PLANS_BY_CATEGORY,
+    TOURIST_VIP_PLAN
+} from '../src/config/plans.config.js';
 import { EntitlementKey } from '../src/types/entitlement.types.js';
 import { LimitKey } from '../src/types/plan.types.js';
 
 const VIP_ENTITLEMENTS = new Set(TOURIST_VIP_PLAN.entitlements);
 const VIP_LIMIT_KEYS = new Set(TOURIST_VIP_PLAN.limits.map((l) => l.key));
 
-const INHERITING_PLANS = [...PLANS_BY_CATEGORY.owner, ...PLANS_BY_CATEGORY.complex];
+// HOS-692 (spec §6.9): complex-* plans were removed from ALL_PLANS /
+// PLANS_BY_CATEGORY.complex (zero live subscriptions, vertical never
+// built), but their PlanDefinition constants stay exported — this test's
+// scope is 'every owner/complex plan shape inherits VIP', which still
+// applies to the un-sold complex definitions, so it sources them directly
+// instead of via the now-empty PLANS_BY_CATEGORY.complex.
+const COMPLEX_PLANS = [COMPLEX_BASICO_PLAN, COMPLEX_PRO_PLAN, COMPLEX_PREMIUM_PLAN];
+const INHERITING_PLANS = [...PLANS_BY_CATEGORY.owner, ...COMPLEX_PLANS];
 
 describe('SPEC-216 — owner/complex plans inherit the tourist-VIP tier', () => {
     it('there are 6 inheriting plans (3 owner + 3 complex)', () => {
@@ -55,7 +68,7 @@ describe('SPEC-216 — owner/complex plans inherit the tourist-VIP tier', () => 
         expect(ownerBasico?.entitlements).toContain(EntitlementKey.PUBLISH_ACCOMMODATIONS);
         expect(ownerBasico?.entitlements).toContain(EntitlementKey.RESPOND_REVIEWS);
 
-        const complexPremium = PLANS_BY_CATEGORY.complex.find((p) => p.slug === 'complex-premium');
+        const complexPremium = COMPLEX_PLANS.find((p) => p.slug === 'complex-premium');
         expect(complexPremium?.entitlements).toContain(EntitlementKey.MULTI_PROPERTY_MANAGEMENT);
         expect(complexPremium?.entitlements).toContain(EntitlementKey.STAFF_MANAGEMENT);
         expect(complexPremium?.entitlements).toContain(EntitlementKey.CUSTOM_BRANDING);
@@ -71,7 +84,7 @@ describe('SPEC-216 — owner/complex plans inherit the tourist-VIP tier', () => 
         const maxFavorites = ownerBasico?.limits.find((l) => l.key === LimitKey.MAX_FAVORITES);
         expect(maxFavorites?.value).toBe(-1);
 
-        const complexPremium = PLANS_BY_CATEGORY.complex.find((p) => p.slug === 'complex-premium');
+        const complexPremium = COMPLEX_PLANS.find((p) => p.slug === 'complex-premium');
         const maxProperties = complexPremium?.limits.find((l) => l.key === LimitKey.MAX_PROPERTIES);
         expect(maxProperties?.value).toBe(-1);
     });

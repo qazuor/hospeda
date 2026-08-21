@@ -4,13 +4,27 @@
  * `getChangePlanOptions` returning `[]` has two distinct causes, and the dialog
  * has to say which one it is:
  *
- *  - every sibling plan in the category is switched off (`complex-*` today), or
+ *  - every sibling plan in the category is switched off, or the subscription's
+ *    domain doesn't match ('noDestinationPlans' — `currentPlan` IS resolvable,
+ *    there is just nothing to switch to), or
  *  - the subscription's own plan is not in `ALL_PLANS` at all
- *    (`commerce-listing`, `partner-listing`, `owner-test-daily` are excluded on
- *    purpose), so there is nothing to compute a change against.
+ *    ('planNotInCatalog' — `commerce-listing`, `partner-listing`,
+ *    `owner-test-daily` are excluded on purpose, and HOS-692 removed
+ *    `complex-*` outright), so there is nothing to compute a change against.
  *
  * Both used to render an empty `<select>` and a dead Confirm button with no
  * explanation, which reads as a broken dialog.
+ *
+ * HOS-692 (spec §6.9) hard-deleted the 3 `complex-*` plans — they no longer
+ * exist as `ALL_PLANS` entries at all, so a subscription slugged
+ * `complex-basico` now falls into the SECOND case (`planNotInCatalog`), not
+ * the first. The first case ('noDestinationPlans', `currentPlan` resolvable
+ * but zero active siblings) has no reachable real-plan scenario left in
+ * today's catalogue — every remaining category (owner, tourist) always has
+ * at least one other active sibling — so it is exercised via the
+ * `productDomain` mismatch guard in `getChangePlanOptions` instead (a real,
+ * not mocked, code path): a plan slug that resolves in `ALL_PLANS` but whose
+ * subscription carries a non-accommodation `productDomain`.
  *
  * `test/setup.tsx` mocks `useTranslations` to return the key verbatim, so the
  * assertions below match on translation keys rather than copy.
@@ -70,10 +84,32 @@ function renderDialog(planSlug: string, priceInCents: number | null = 1500000) {
 }
 
 describe('ChangePlanDialog — empty states (HOS-331)', () => {
-    it('explains that the category has no active destinations for a retired plan', () => {
-        // All three complex tiers are isActive: false, so a complex
-        // subscription has nowhere to move.
+    it('says the plan is off-catalog for complex-basico (HOS-692: removed from ALL_PLANS, not just deactivated)', () => {
+        // HOS-692 hard-deleted all three complex-* plans (zero live
+        // subscriptions at the time). getPlanBySlug('complex-basico') now
+        // returns undefined, same as any other off-catalog slug — this is a
+        // stronger, more accurate classification than "no active siblings"
+        // would be, since the plan is not merely inactive, it no longer
+        // exists.
         renderDialog('complex-basico');
+        expect(screen.getByText(KEY_NOT_IN_CATALOG)).toBeInTheDocument();
+        expect(screen.queryByText(KEY_NO_DESTINATIONS)).not.toBeInTheDocument();
+    });
+
+    it('explains that the category has no active destinations when the subscription domain does not match (real code path, not mocked)', () => {
+        // getChangePlanOptions's productDomain guard returns [] whenever the
+        // subscription's productDomain isn't 'accommodation', even though
+        // the plan slug itself resolves fine — so currentPlan IS defined,
+        // exercising the 'noDestinationPlans' branch through the same real,
+        // unmocked getChangePlanOptions/getPlanBySlug the component calls.
+        render(
+            <ChangePlanDialog
+                subscription={makeSubscription('owner-basico', 'commerce')}
+                isOpen={true}
+                onClose={vi.fn()}
+                onConfirm={vi.fn()}
+            />
+        );
         expect(screen.getByText(KEY_NO_DESTINATIONS)).toBeInTheDocument();
         expect(screen.queryByText(KEY_NOT_IN_CATALOG)).not.toBeInTheDocument();
     });

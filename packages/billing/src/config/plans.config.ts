@@ -1000,23 +1000,32 @@ export const TEST_DAILY_PLAN: PlanDefinition = {
 
 // ─── ALL PLANS ─────────────────────────────────────────────────
 
-/** All available plans in the system */
+/**
+ * All available plans in the system.
+ *
+ * The 3 `complex-*` plans were removed (HOS-692, spec §6.9) — zero live
+ * subscriptions, and the multi-property vertical they were for is not
+ * implemented. Their `PlanDefinition` constants stay exported above (still
+ * referenced by `packages/billing/test/plans.test.ts` and by nothing else in
+ * production) so this file remains the single source for their shape if the
+ * vertical is ever built, but they no longer seed a row or appear in any
+ * public listing. This deliberately leaves the `complex` category of
+ * {@link PLANS_BY_CATEGORY} empty — see `0066-hos-692-domain-rewrite-and-plan-cleanup`
+ * for the data-migration that removes the already-seeded rows.
+ */
 export const ALL_PLANS: PlanDefinition[] = [
     OWNER_BASICO_PLAN,
     OWNER_PRO_PLAN,
     OWNER_PREMIUM_PLAN,
-    COMPLEX_BASICO_PLAN,
-    COMPLEX_PRO_PLAN,
-    COMPLEX_PREMIUM_PLAN,
     TOURIST_FREE_PLAN,
     TOURIST_PLUS_PLAN,
     TOURIST_VIP_PLAN
 ];
 
-/** Plans grouped by category */
+/** Plans grouped by category. `complex` is deliberately empty — see {@link ALL_PLANS}. */
 export const PLANS_BY_CATEGORY = {
     owner: [OWNER_BASICO_PLAN, OWNER_PRO_PLAN, OWNER_PREMIUM_PLAN],
-    complex: [COMPLEX_BASICO_PLAN, COMPLEX_PRO_PLAN, COMPLEX_PREMIUM_PLAN],
+    complex: [] as const,
     tourist: [TOURIST_FREE_PLAN, TOURIST_PLUS_PLAN, TOURIST_VIP_PLAN]
 } as const;
 
