@@ -150,7 +150,41 @@ export const BILLING_EVENT_TYPES = {
      * tracks the per-subscription migration side-effect so individual sub
      * histories remain auditable without inspecting admin-level event rows.
      */
-    PLAN_DISABLED_MIGRATION: 'PLAN_DISABLED_MIGRATION'
+    PLAN_DISABLED_MIGRATION: 'PLAN_DISABLED_MIGRATION',
+    /**
+     * Fired when a partial refund is recorded on a payment and the
+     * subscription is kept active (HOS-657). The accumulated refunded
+     * amount has not yet reached the payment total, so no status
+     * transition happens — see {@link BILLING_EVENT_TYPES.PAYMENT_FULL_REFUND}
+     * for what fires once the accumulation reaches the full amount.
+     */
+    PAYMENT_PARTIAL_REFUND: 'PAYMENT_PARTIAL_REFUND',
+    /**
+     * Fired when a full refund (direct, or an accumulation of partials that
+     * reached the payment total) successfully transitions the subscription
+     * to `cancelled` (HOS-657).
+     */
+    PAYMENT_FULL_REFUND: 'PAYMENT_FULL_REFUND',
+    /**
+     * Fired when a full refund is recorded on `billing_payments` but the
+     * subscription is already in a terminal state and cannot transition
+     * (HOS-657). The refund itself is still persisted (HOS-235); this event
+     * makes that fact auditable even though no status change accompanies it.
+     */
+    PAYMENT_FULL_REFUND_NO_TRANSITION: 'PAYMENT_FULL_REFUND_NO_TRANSITION',
+    /**
+     * Fired when an admin cancels a subscription via the admin panel
+     * (HOS-657). Mirrors {@link BILLING_EVENT_TYPES.USER_CANCELED} for the
+     * admin-initiated path.
+     */
+    ADMIN_SUBSCRIPTION_CANCELLED: 'ADMIN_SUBSCRIPTION_CANCELLED',
+    /**
+     * Fired by the `preapproval-less-expiry` cron (H-21) when it expires a
+     * subscription that has no MercadoPago preapproval and whose period has
+     * elapsed (HOS-657). Such rows are invisible to every other reconciler,
+     * so this is the only writer that ever produces this event.
+     */
+    SUBSCRIPTION_EXPIRED_WITHOUT_PREAPPROVAL: 'SUBSCRIPTION_EXPIRED_WITHOUT_PREAPPROVAL'
 } as const;
 
 /**
