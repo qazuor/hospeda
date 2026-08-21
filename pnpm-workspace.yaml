@@ -9,20 +9,55 @@ publicHoistPattern:
   - "*react*"
 
 overrides:
-  # HOS-232: unify qzpay-core / -mercadopago to the single latest version across
-  # the workspace. qzpay-hono/-drizzle transitively pin older core versions
+  # ---------------------------------------------------------------------------
+  # NO qzpay override lives here any more (removed 2026-08-21). Read this before
+  # adding one back, and before bumping any single qzpay package on its own.
+  #
+  # WHY IT IS GONE. The five qzpay siblings (-core, -mercadopago, -drizzle,
+  # -hono, -react) do not depend on core through a RANGE — every sibling release
+  # pins core to an EXACT version, and each core release is shipped with a
+  # matching republish of all five:
+  #
+  #     hono@1.6.8 -> core 3.0.0      hono@1.6.9 -> core 3.1.0
+  #     react@1.1.23 -> core 3.0.0    react@1.1.24 -> core 3.1.0
+  #     drizzle@1.12.0 -> core 3.1.0  mercadopago@2.9.0 -> core 3.1.0
+  #
+  # So when all five sit on the same release wave they already demand the same
+  # exact core and converge on their own — verified: dropping the override moved
+  # zero `version:` lines in pnpm-lock.yaml, only the `specifier:` fields the
+  # override had been rewriting. The override was doing nothing except hiding
+  # whether that convergence was real.
+  #
+  # WHAT IT WAS HIDING. Because the pin is exact, a sibling left behind on an
+  # older wave does not fail to resolve — it silently RECEIVES the forced core
+  # and typechecks against an interface it does not implement. Measured on
+  # 2026-08-20: drizzle@1.11.8 asked for core 3.0.0, got 3.1.0, and core 3.1.0
+  # declares `findActiveByProviderResourceId`, which that drizzle has no
+  # implementation for. It compiled purely because nothing called it yet.
+  #
+  # WHAT WOULD BREAK THIS. Bumping ONE qzpay package (or letting Dependabot do
+  # it) puts two exact core demands in the tree and splits `QZPayBilling` into
+  # two type identities again — the original HOS-232 failure. The five move
+  # together, as one changeset, or not at all. Re-adding an override would only
+  # re-hide the split: fix the lagging sibling instead.
+  #
+  # ---------------------------------------------------------------------------
+  # HISTORY — the versions this convergence must never fall below. Each entry is
+  # a real production incident; a downgrade re-opens it.
+  #
+  # HOS-232: unify qzpay-core / -mercadopago to a single version across the
+  # workspace. qzpay-hono/-drizzle transitively pinned older core versions
   # (1.12.0 / 1.16.0), and having two `QZPayBilling`/`QZPayEventMap` type
   # identities in play makes a 1.17.0 billing instance unassignable to a 1.12.0
-  # parameter (the `subscription.uncanceled` event is only in 1.17.0). Forcing a
-  # single version resolves the fragmentation; the bumps are additive minors.
+  # parameter (the `subscription.uncanceled` event is only in 1.17.0). This is
+  # the constraint the whole scheme exists to satisfy.
   #
   # H-146 (2026-08-15): raised to core 2.0.0. Until 1.17.0, `billing.payments.refund()`
   # wrote status:'refunded' to storage WITHOUT ever calling the provider adapter, so a
   # local row claimed money went back while nothing left the MercadoPago account (two
   # production rows, 1.800.000 + 1.500.000 centavos). 2.0.0 calls the provider first and
   # mirrors its verdict. Major because refund can now throw where it always resolved.
-  # This override is what actually moves the version: the per-package `^2.0.0` ranges
-  # alone are inert while an exact pin sits here.
+  # FLOOR: core >= 2.0.0.
   #
   # Raised to core 3.0.0 the same day: `customers.update()` and `customers.delete()`
   # were also storage-only while `adapter.customers.update/delete` sat unused, so the
@@ -30,7 +65,7 @@ overrides:
   # saved cards. 3.0.0 mirrors both to the provider. Major because `delete()` is now
   # destructive at MercadoPago and not reversible: `handleUserDeletion` in
   # `billing-customer-sync.ts` removes the stored payment instruments from this
-  # version on.
+  # version on. FLOOR: core >= 3.0.0.
   #
   # HOS-704 (2026-08-20): raised to core 3.1.0 / mercadopago 2.9.0. The mapped
   # `QZPayProviderPayment` carried no refunded amount, so a MercadoPago payment
@@ -39,12 +74,12 @@ overrides:
   # cancelling the subscription of a customer who got part of their money back.
   # 2.9.0 maps MP's `transaction_amount_refunded` onto a new optional
   # `refundedAmount` (minor units, like `amount`); 3.1.0 is the core interface
-  # that declares it. Additive minors on both. As the H-146 note above says, THIS
-  # override is what actually moves the version — the per-package `^3.1.0` /
-  # `^2.9.0` ranges in apps/api and packages/billing are inert on their own.
+  # that declares it. Additive minors on both.
+  # FLOOR: core >= 3.1.0, mercadopago >= 2.9.0. Dropping below either one makes a
+  # partial refund cancel the customer's subscription again.
   #
   # HOS-710 (2026-08-20): the same core 3.1.0 carries a second, independent fix,
-  # so this pin is now load-bearing for two reasons and neither may be reverted
+  # so that floor is load-bearing for two reasons and neither may be reverted
   # alone. 3.1.0 also adds `findActiveByProviderResourceId` to the polling-job
   # storage port and rescopes the active-job unique index from `subscription_id`
   # to `(provider, provider_resource_id)`. The old scope allowed one active
@@ -52,9 +87,12 @@ overrides:
   # abandoned one — held the only slot and every later purchase got no job at
   # all. MP Preferences deliver no Webhooks v2 event, so that job is the only
   # activation path a purchase has: two approved payments were collected and
-  # never recorded. Ships with migration 0093 on our side.
-  "@qazuor/qzpay-core": "3.1.0"
-  "@qazuor/qzpay-mercadopago": "2.9.0"
+  # never recorded. Ships with migration 0093 on our side. FLOOR: core >= 3.1.0.
+  #
+  # Current wave (2026-08-21): core 3.1.0 · mercadopago 2.9.0 · drizzle 1.12.0 ·
+  # hono 1.6.9 · react 1.1.24. Declared as `^` ranges in apps/api, apps/admin,
+  # packages/billing, packages/db and packages/service-core.
+  # ---------------------------------------------------------------------------
   typescript: "6.0.3"
   "zod@>=4.0.0 <5": "4.3.6"
   ws: ">=8.21.0"
@@ -243,5 +281,5 @@ minimumReleaseAgeExclude:
   - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0'
   - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0'
   - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0'
-  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8'
-  - '@qazuor/qzpay-react@1.1.22 || 1.1.23'
+  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9'
+  - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24'

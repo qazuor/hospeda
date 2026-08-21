@@ -5,8 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 overrides:
-  '@qazuor/qzpay-core': 3.1.0
-  '@qazuor/qzpay-mercadopago': 2.9.0
   typescript: 6.0.3
   zod@>=4.0.0 <5: 4.3.6
   ws: '>=8.21.0'
@@ -172,11 +170,11 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@qazuor/qzpay-core':
-        specifier: 3.1.0
+        specifier: ^3.1.0
         version: 3.1.0
       '@qazuor/qzpay-react':
-        specifier: ^1.1.23
-        version: 1.1.23(react@19.2.7)
+        specifier: ^1.1.24
+        version: 1.1.24(react@19.2.7)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -449,13 +447,13 @@ importers:
         specifier: ^89.0.0
         version: 89.0.0(graphql@16.14.2)
       '@qazuor/qzpay-core':
-        specifier: 3.1.0
+        specifier: ^3.1.0
         version: 3.1.0
       '@qazuor/qzpay-hono':
-        specifier: ^1.6.8
-        version: 1.6.8(hono@4.13.0)(zod@4.3.6)
+        specifier: ^1.6.9
+        version: 1.6.9(hono@4.13.0)(zod@4.3.6)
       '@qazuor/qzpay-mercadopago':
-        specifier: 2.9.0
+        specifier: ^2.9.0
         version: 2.9.0(mercadopago@2.12.0)
       '@react-email/components':
         specifier: ^1.0.12
@@ -1102,10 +1100,10 @@ importers:
   packages/billing:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: 3.1.0
+        specifier: ^3.1.0
         version: 3.1.0
       '@qazuor/qzpay-mercadopago':
-        specifier: 2.9.0
+        specifier: ^2.9.0
         version: 2.9.0(mercadopago@2.12.0)
       '@repo/config':
         specifier: workspace:*
@@ -1216,7 +1214,7 @@ importers:
   packages/db:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: 3.1.0
+        specifier: ^3.1.0
         version: 3.1.0
       '@qazuor/qzpay-drizzle':
         specifier: ^1.12.0
@@ -1797,7 +1795,7 @@ importers:
         version: 4.3.6
     devDependencies:
       '@qazuor/qzpay-core':
-        specifier: 3.1.0
+        specifier: ^3.1.0
         version: 3.1.0
       '@repo/typescript-config':
         specifier: workspace:*
@@ -4042,8 +4040,8 @@ packages:
       postgres: '>=3.4.0'
       zod: 4.3.6
 
-  '@qazuor/qzpay-hono@1.6.8':
-    resolution: {integrity: sha512-8T8a3hEOvUQiSJX8dLMvmySdE7xlkDMhXNCRY2abUTd00KklS7hg/+0Gs1DQubSbpWyvLNDUlXq1+REhqLppiA==}
+  '@qazuor/qzpay-hono@1.6.9':
+    resolution: {integrity: sha512-azXsj/1o8GC72XJQ9CZyqaskLcm3ktJDxvDVsG1JVoY3FkH8eKAZYU3FwiSyYUvJdIvDysABcw3jW7o7UP8uEg==}
     engines: {node: '>=22'}
     peerDependencies:
       hono: '>=4.0.0'
@@ -4055,8 +4053,8 @@ packages:
     peerDependencies:
       mercadopago: '>=2.0.0'
 
-  '@qazuor/qzpay-react@1.1.23':
-    resolution: {integrity: sha512-ZwxtCay2SXJWdosmCEfbmrklcKQJbAAlnioo9baimPxifEu4tivZtbbjZn8j33ViUswo7pkTjRNLj1wC5JPPoQ==}
+  '@qazuor/qzpay-react@1.1.24':
+    resolution: {integrity: sha512-44HbkdrVTIFvXhjF4oA7bb9m66T/XUe5Cj5eVUkZ9KvT7vAlIOErMKIfDFT/5NTDSk9/DS5E3rNqRZ+Q2q1JFQ==}
     engines: {node: '>=22'}
     peerDependencies:
       react: 19.2.7
@@ -15000,7 +14998,7 @@ snapshots:
       postgres: 3.4.8
       zod: 4.3.6
 
-  '@qazuor/qzpay-hono@1.6.8(hono@4.13.0)(zod@4.3.6)':
+  '@qazuor/qzpay-hono@1.6.9(hono@4.13.0)(zod@4.3.6)':
     dependencies:
       '@hono/zod-validator': 0.7.6(hono@4.13.0)(zod@4.3.6)
       '@qazuor/qzpay-core': 3.1.0
@@ -15012,7 +15010,7 @@ snapshots:
       '@qazuor/qzpay-core': 3.1.0
       mercadopago: 2.12.0
 
-  '@qazuor/qzpay-react@1.1.23(react@19.2.7)':
+  '@qazuor/qzpay-react@1.1.24(react@19.2.7)':
     dependencies:
       '@qazuor/qzpay-core': 3.1.0
       react: 19.2.7
