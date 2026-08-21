@@ -87,7 +87,6 @@
  * a clean no-op.
  */
 import { billingSubscriptions, eq } from '@repo/db';
-import { ProductDomainEnum } from '@repo/schemas';
 import { logger } from '../utils/logger.js';
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
@@ -124,10 +123,17 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     // Self-contained: identifies rows by billing_subscriptions' OWN
     // product_domain column. Never joins users or billing_customers — see
     // "Order independence" above.
+    // Literal 'commerce' string, not `ProductDomainEnum.COMMERCE`: HOS-695
+    // (release C) removed that member from the live vocabulary. This is a
+    // historical, already-numbered migration record of what it purged AT THE
+    // TIME it ran, when 'commerce' was still a real value — see
+    // `scripts/check-product-domain-raw-sql.sh`'s header for why files under
+    // `data-migrations/` are exempt from the "no living source may hardcode
+    // 'commerce'" guard.
     const candidates = await db
         .select({ id: billingSubscriptions.id })
         .from(billingSubscriptions)
-        .where(eq(billingSubscriptions.productDomain, ProductDomainEnum.COMMERCE));
+        .where(eq(billingSubscriptions.productDomain, 'commerce'));
 
     if (candidates.length === 0) {
         // Nothing to do — a clean re-run (this migration only runs once per

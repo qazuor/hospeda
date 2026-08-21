@@ -220,10 +220,14 @@ async function rewriteCommerceDomain(
 
     const verticalBySubscription = await resolveSubscriptionVerticals(db);
 
+    // Literal 'commerce' string, not `ProductDomainEnum.COMMERCE`: HOS-695
+    // (release C) removed that member from the live vocabulary. Historical,
+    // already-numbered migration record of the value as it was when this ran
+    // — see `scripts/check-product-domain-raw-sql.sh`'s header.
     const commerceSubs = await db
         .select({ id: billingSubscriptions.id })
         .from(billingSubscriptions)
-        .where(eq(billingSubscriptions.productDomain, ProductDomainEnum.COMMERCE));
+        .where(eq(billingSubscriptions.productDomain, 'commerce'));
 
     let subscriptionsRewritten = 0;
     let linkRowsRewritten = 0;
@@ -272,7 +276,9 @@ async function rewriteCommerceDomain(
             .where(
                 and(
                     eq(commerceListingSubscriptions.subscriptionId, sub.id),
-                    eq(commerceListingSubscriptions.productDomain, ProductDomainEnum.COMMERCE)
+                    // Literal 'commerce', not `ProductDomainEnum.COMMERCE` — see the
+                    // comment on the `commerceSubs` query above.
+                    eq(commerceListingSubscriptions.productDomain, 'commerce')
                 )
             )
             .returning({ id: commerceListingSubscriptions.id });
