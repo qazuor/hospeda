@@ -33,7 +33,24 @@ const mockDbUpdateWhere = vi.fn();
 const mockDbUpdateSet = vi.fn();
 const mockDbUpdate = vi.fn();
 
+// HOS-722: resolveRecipientLocale() (addon-expiry.job.ts) instantiates
+// UserModel at module scope. This phase never sends notifications, so a
+// fixed 'user not found' stub is enough — locale resolution itself is
+// covered by the dedicated tests in addon-expiry.test.ts. Uses vi.hoisted
+// (not a plain mock-prefixed const, unlike mockDbSelect/mockDbUpdate above)
+// because the plain-const form hit a TDZ error here — the double-nested
+// reference (vi.fn().mockImplementation(() => ({ findById }))) apparently
+// isn't recognized by Vitest's mock-prefix hoisting inference.
+const { mockUserFindById } = vi.hoisted(() => ({
+    mockUserFindById: vi.fn().mockResolvedValue(null)
+}));
+
 vi.mock('@repo/db', () => ({
+    UserModel: vi.fn().mockImplementation(function () {
+        return {
+            findById: mockUserFindById
+        };
+    }),
     getDb: vi.fn(() => ({
         select: mockDbSelect,
         update: mockDbUpdate,
