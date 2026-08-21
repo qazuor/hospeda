@@ -864,7 +864,8 @@
             "properties": "Propiedades",
             "promotions": "Promociones",
             "messages": "Mensajes",
-            "subscription": "Suscripción"
+            "subscription": "Suscripción",
+            "addons": "Complementos"
         }
     },
     "pages": {
