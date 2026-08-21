@@ -4,17 +4,21 @@
  * - Unit coverage for `resolveAddonCheckoutName` / `resolveAddonCheckoutDescription`:
  *   translation hit, locale switching, default-locale fallback, and the
  *   no-translation-exists fallback to the raw config string.
- * - A guard over the REAL `@repo/billing` addon catalog (`ALL_ADDONS`) asserting
- *   every addon has a translated name in all three locales, and that every
- *   translated name stays within MercadoPago's known 60-character field budget
- *   (the same limit that already broke promo-code checkout once — see
- *   engram `project_mp_reason_60_chars_breaks_discount_checkout` — so a
- *   longer Spanish/Portuguese translation cannot silently regress it again).
+ * - A guard over the REAL `@repo/billing` addon catalog (`ALL_ADDONS`) asserting,
+ *   for every addon and every locale: (1) `account.addons.catalog.<slug>.name`
+ *   actually EXISTS in `@repo/i18n`'s translation table (not merely that
+ *   `resolveAddonCheckoutName` returns *something* — that would also pass via
+ *   the English fallback, which is exactly the HOS-606 regression re-entering
+ *   unnoticed), and (2) the resolved name stays within MercadoPago's known
+ *   60-character field budget (the same limit that already broke promo-code
+ *   checkout once — see engram `project_mp_reason_60_chars_breaks_discount_checkout`
+ *   — so a longer Spanish/Portuguese translation cannot silently regress it again).
  *
  * @module test/services/addon-checkout-locale.test
  */
 
 import { ALL_ADDONS } from '@repo/billing';
+import { trans } from '@repo/i18n';
 import { describe, expect, it } from 'vitest';
 import {
     resolveAddonCheckoutDescription,
@@ -96,17 +100,13 @@ describe('resolveAddonCheckoutDescription', () => {
 });
 
 // ---------------------------------------------------------------------------
-// HOS-606 guard: whatever `resolveAddonCheckoutName` sends to MercadoPago for
-// a REAL addon (translated or, absent a translation, the raw config
-// fallback) must respect MercadoPago's checkout field budget.
-//
-// This intentionally does NOT assert that every addon in `ALL_ADDONS` HAS a
-// translation — that is a content-completeness question for whoever owns
-// each addon's copy, not a code defect in this resolver (which degrades
-// safely to the English fallback either way). Asserting it here would fail
-// this PR's CI for content gaps opened by unrelated work after this fix
-// shipped. See the six addons this fix was verified against directly in
-// `resolveAddonCheckoutName`/`resolveAddonCheckoutDescription` above.
+// HOS-606 guard: for every REAL addon and every locale, the translation key
+// must actually exist (not just "resolveAddonCheckoutName returned a
+// string" — that also holds for the English fallback, which is the bug
+// itself, silently un-caught), AND the resolved name must respect
+// MercadoPago's checkout field budget. Both assertions are load-bearing:
+// dropping the first would let an untranslated addon pass this guard via its
+// own English fallback, exactly how HOS-606 shipped unnoticed the first time.
 // ---------------------------------------------------------------------------
 
 /**
@@ -119,12 +119,20 @@ describe('resolveAddonCheckoutDescription', () => {
  */
 const MP_CHECKOUT_TITLE_CHAR_BUDGET = 60;
 
-describe('HOS-606 guard — every real addon name stays within the MP char budget in all locales', () => {
+describe('HOS-606 guard — every real addon has a translated name in every locale, within the MP char budget', () => {
     const locales = ['es', 'en', 'pt'] as const;
 
     for (const addon of ALL_ADDONS) {
         for (const locale of locales) {
-            it(`${addon.slug} (${locale}): resolved name stays <= ${MP_CHECKOUT_TITLE_CHAR_BUDGET} chars`, () => {
+            it(`${addon.slug} (${locale}): has a real translation key, and its resolved name stays <= ${MP_CHECKOUT_TITLE_CHAR_BUDGET} chars`, () => {
+                // Check the RAW translation table directly, not the resolved
+                // value — resolveAddonCheckoutName degrading to the English
+                // fallback would still return a defined, non-empty string,
+                // so only a direct lookup against `trans` can tell "has a
+                // translation" apart from "silently fell back".
+                const rawKey = `account.addons.catalog.${addon.slug}.name`;
+                expect(trans[locale]?.[rawKey]).toBeDefined();
+
                 const name = resolveAddonCheckoutName({
                     locale,
                     slug: addon.slug,

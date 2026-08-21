@@ -1057,6 +1057,14 @@
             "ai-support-monthly": {
                 "name": "Soporte con IA (mensual)",
                 "description": "Desbloquea herramientas de soporte con IA para anfitriones, incluidas sugerencias de respuesta inteligentes y gestión automática de preguntas frecuentes de huéspedes. Se renueva mensualmente."
+            },
+            "extra-gastronomies-1": {
+                "name": "Gastronomía extra (+1)",
+                "description": "Agrega 1 gastronomía adicional a tu plan. Se renueva mensualmente."
+            },
+            "extra-experiences-1": {
+                "name": "Experiencia extra (+1)",
+                "description": "Agrega 1 experiencia adicional a tu plan. Se renueva mensualmente."
             }
         }
     },
