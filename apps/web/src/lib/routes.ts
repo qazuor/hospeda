@@ -59,27 +59,17 @@ export const AUTH_SEGMENTS = ['auth'] as const;
 export const SESSION_OPTIONAL_SEGMENTS = [
     'feedback',
     'guest',
-    'publicar',
-    // Commerce lead forms — "Sumá tu negocio" (HOS-295).
-    //
-    // Both pages mount the CommerceLead island, which pre-fills the visitor's
-    // name and email when they are signed in. An island cannot read
-    // `Astro.locals`, so the page frontmatter has to hand the user down as a
-    // prop — and the frontmatter only has one if the middleware resolved the
-    // session here. The match is on the exact segment, so the pre-existing
-    // `publicar` entry does NOT cover `publicar-restaurante`; both need listing.
-    //
-    // These stay OUT of `PROFILE_COMPLETION_REQUIRED_SESSION_OPTIONAL_SEGMENTS`
-    // on purpose — see the note on that constant.
-    //
-    // Consequence to keep in mind: both pages now render user-dependent HTML
-    // (the visitor's name and email are baked into the SSR response). Neither
-    // sets `Cache-Control`, so Cloudflare serves them DYNAMIC today and nothing
-    // is shared. If a path-based Cache Rule is ever added for `/publicar-*`
-    // (HOS-128), it MUST bypass on the auth cookie, or one visitor's prefilled
-    // form gets served to the next.
-    'publicar-restaurante',
-    'publicar-experiencia'
+    'publicar'
+    // `publicar-restaurante` and `publicar-experiencia` (the commerce lead
+    // landings, HOS-295) used to be listed here because both mounted the
+    // CommerceLead island, which pre-filled the visitor's name/email from
+    // `Astro.locals.user`. HOS-690 removed that form from both landings — the
+    // price is now sold with the page's own static content instead — so
+    // neither page reads the session any more. They moved to
+    // `CACHEABLE_ROUTE_FAMILIES` in
+    // `test/lib/cacheable-routes-parse-no-session.guard.test.ts` instead of
+    // staying here: a marketing landing that reads no session has no reason
+    // to stay off the edge cache.
 ] as const;
 
 /**
