@@ -1094,6 +1094,24 @@ function resolvePaymentCustomerId(metadata: Record<string, unknown> | undefined)
  * purchases when applicable. This function is context-free and can be
  * called from both the live webhook handler and the dead letter retry job.
  *
+ * ## Invariant: no dispatch applies effects for a charge that has not cleared
+ *
+ * Three mutually exclusive dispatches live below — annual subscription
+ * activation, plan-change upgrade commit, and add-on confirmation — and each
+ * one applies an effect the payer only earns by paying. Every one of them is
+ * gated on `paymentInfo !== null && MP_APPROVED_STATUSES.has(paymentInfo.status)`
+ * before it does anything. The add-on branch was the exception until HOS-742
+ * and granted the add-on on a `rejected` / `pending` / `in_process` event; a new
+ * branch added here must carry the same gate. `apps/api/test/routes/webhooks/`
+ * `payment-logic.test.ts` asserts it per branch, each paired with an approved
+ * positive control so a passing "not called" cannot come from broken wiring.
+ *
+ * A non-approved payment is ACKNOWLEDGED (`success: true`), not failed: the
+ * payer's failure notification already fired earlier in this same function, and
+ * returning `false` would push a permanently-rejected charge into the
+ * dead-letter retry loop. MercadoPago re-delivers the same payment id once it
+ * clears, and that re-delivery is what applies the effect.
+ *
  * @param input - Payment event data and billing instance
  * @returns Result indicating success and whether an addon was confirmed
  */
@@ -1373,6 +1391,57 @@ export async function processPaymentUpdated({
     // below — one reader, one spelling convention (HOS-721).
     const { addonSlug, customerId: addonCustomerId } = addonInfo;
 
+    // ── HOS-742: approval gate ────────────────────────────────────────────────
+    //
+    // The third and last dispatch of this function, and the only one that never
+    // asked whether the money moved. The annual branch and the plan-change
+    // branch above both open with `paymentInfo && MP_APPROVED_STATUSES.has(...)`;
+    // this one went straight to `confirmPurchase`, so a `rejected` / `pending` /
+    // `in_process` payment.updated granted the add-on — limits raised,
+    // entitlement written, ADDON_PURCHASE email sent — to someone who had not
+    // paid. HOS-595 withheld the AMOUNT for a non-approved charge, which kept the
+    // ledger honest but left the grant untouched.
+    //
+    // It also repairs the retry path, which HOS-595 turned from dead code into a
+    // trapdoor. Since that change `paymentId` is forwarded unconditionally, so an
+    // ungated non-approved delivery wrote `billing_addon_purchases.payment_id = X`
+    // with no amount — no `billing_payments` row, just an error log in
+    // `confirmAddonPurchase`. MercadoPago then re-delivers the SAME payment X as
+    // `approved`, the idempotency SELECT below finds that row, and the handler
+    // returns early: the ledger entry was never written and never could be.
+    // Nothing may be written for a charge that has not cleared, so that the
+    // approved re-delivery still finds the path open.
+    //
+    // Fail closed on `paymentInfo === null` for the same reason the two branches
+    // above do: `extractPaymentInfo` returns null when the payload carries no
+    // numeric `transaction_amount` or no string `status`, i.e. when the outcome
+    // is unknowable — and an unknowable outcome is not an approval. Neither
+    // real caller can produce it: `payment-handler.ts` and the polling job both
+    // build the payload from a provider response that always carries both.
+    //
+    // Nothing else is owed to a non-approved add-on charge here. The failure
+    // notification for the payer already fired earlier in this same function,
+    // before any dispatch; the polling fallback (`subscription-poll.job.ts`)
+    // never reaches this code for a failed payment, since it only calls
+    // `processPaymentUpdated` once the job resolves as `succeeded`; and there is
+    // no pending-add-on record to advance — an add-on purchase row is created at
+    // confirmation, not at checkout. So this returns `success: true`: the event
+    // was handled correctly and must be acknowledged, never retried into the
+    // dead-letter queue.
+    if (paymentInfo === null || !MP_APPROVED_STATUSES.has(paymentInfo.status)) {
+        apiLogger.info(
+            {
+                addonSlug,
+                customerId: addonCustomerId,
+                paymentId: data.id,
+                paymentStatus: paymentInfo?.status ?? null,
+                source
+            },
+            'Add-on payment has not cleared — purchase NOT confirmed; awaiting an approved re-delivery of this payment'
+        );
+        return { success: true, addonConfirmed: false };
+    }
+
     // ── Idempotency check: skip if this paymentId was already processed ───────
     const paymentId =
         typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
@@ -1444,24 +1513,21 @@ export async function processPaymentUpdated({
         customerId: addonCustomerId,
         addonSlug,
         ...(paymentId === null ? {} : { paymentId }),
-        // The charged amount is forwarded ONLY for an approved payment, which is
-        // what makes the ledger row conditional on the money having actually
-        // moved: `confirmAddonPurchase` books a `succeeded` row when — and only
-        // when — it receives an amount. Unlike the annual and plan-upgrade
-        // dispatches above, this branch has never gated itself on
-        // MP_APPROVED_STATUSES, so without this gate a rejected charge would be
-        // written to the ledger as collected.
-        ...(paymentInfo !== null && MP_APPROVED_STATUSES.has(paymentInfo.status)
-            ? {
-                  // `paymentInfo.amount` is typed `Major` (extractPaymentInfo
-                  // reads MP's `transaction_amount`); billing_payments stores
-                  // integer centavos, the same crossing the sibling
-                  // `billing.payments.record()` calls above perform — and since
-                  // HOS-720 the same named function performs it everywhere.
-                  amountInCents: toCentavos(paymentInfo.amount),
-                  currency: paymentInfo.currency
-              }
-            : {}),
+        // The charged amount is unconditional here, and that is the point:
+        // HOS-595 made it conditional on `MP_APPROVED_STATUSES` because this was
+        // the only place the approval was consulted at all. HOS-742's gate above
+        // now guarantees an approved `paymentInfo`, so a `succeeded` ledger row
+        // is exactly what `confirmAddonPurchase` should book — and the amount is
+        // never absent for a purchase that gets confirmed, which is what made
+        // that service's "confirmed without a settled charge" error branch fire.
+        //
+        // `paymentInfo.amount` is typed `Major` (extractPaymentInfo reads MP's
+        // `transaction_amount`); billing_payments stores integer centavos, the
+        // same crossing the sibling `billing.payments.record()` calls above
+        // perform — and since HOS-720 the same named function performs it
+        // everywhere.
+        amountInCents: toCentavos(paymentInfo.amount),
+        currency: paymentInfo.currency,
         ...(Object.keys(addonMetadata).length === 0 ? {} : { metadata: addonMetadata })
     });
 

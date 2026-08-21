@@ -336,6 +336,25 @@ function getMockConfirmPurchase(): ReturnType<typeof vi.fn> {
     >;
 }
 
+/**
+ * Arrange an APPROVED add-on charge.
+ *
+ * HOS-742: the add-on dispatch runs only for a cleared payment, so every add-on
+ * case here has to hand `processPaymentUpdated` one. These cases used to pass
+ * `extractPaymentInfo` → `null` and still observe a confirmation, which is the
+ * bug HOS-742 fixed rather than a shape worth preserving. 5.000 ARS major →
+ * 500_000 centavos, the figure the `confirmPurchase` assertions expect.
+ */
+function approvedAddonPayment(): void {
+    vi.mocked(extractPaymentInfo).mockReturnValue({
+        amount: asMajor(5000),
+        currency: 'ARS',
+        status: 'approved',
+        statusDetail: null,
+        paymentMethod: 'credit_card'
+    });
+}
+
 const mockBilling = {
     customers: {
         get: vi.fn().mockResolvedValue({
@@ -841,7 +860,7 @@ describe('processPaymentUpdated', () => {
     });
 
     it('should confirm addon purchase when addon metadata present', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        approvedAddonPayment();
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'premium-photos',
             customerId: 'cust-1'
@@ -866,7 +885,7 @@ describe('processPaymentUpdated', () => {
     // `sendNotification` for a confirmed addon purchase; the send belongs solely
     // to `confirmAddonPurchase`.
     it('HOS-676: must NOT send a duplicate ADDON_PURCHASE notification on successful confirmation', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        approvedAddonPayment();
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'premium-photos',
             customerId: 'cust-1'
@@ -895,7 +914,7 @@ describe('processPaymentUpdated', () => {
     });
 
     it('should return failure when addon confirmation fails (generic error)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        approvedAddonPayment();
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'premium-photos',
             customerId: 'cust-1'
@@ -922,7 +941,7 @@ describe('processPaymentUpdated', () => {
     // exists. processPaymentUpdated must signal this as a semantic success so
     // the polling job can go terminal instead of error-backoff spinning.
     it('ADDON_ALREADY_ACTIVE: returns success=true + addonAlreadyActive=true (SPEC-194 T-013)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        approvedAddonPayment();
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'premium-photos',
             customerId: 'cust-1'
@@ -953,7 +972,7 @@ describe('processPaymentUpdated', () => {
     // undefined and took its "should not happen" branch on EVERY
     // visibility-boost purchase — featured_listing_addon_grants stayed empty.
     it('forwards accommodationId into confirmPurchase metadata (HOS-675)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        approvedAddonPayment();
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'visibility-boost-7d',
             customerId: 'cust-1',
@@ -976,12 +995,14 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'visibility-boost-7d',
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: { accommodationId: 'accom_target_1' }
         });
     });
 
     it('omits the metadata key entirely for an owner-wide addon (HOS-675)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        approvedAddonPayment();
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'extra-photos-20',
             customerId: 'cust-1'
@@ -996,7 +1017,9 @@ describe('processPaymentUpdated', () => {
 
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
-            addonSlug: 'extra-photos-20'
+            addonSlug: 'extra-photos-20',
+            amountInCents: 500_000,
+            currency: 'ARS'
         });
     });
 
@@ -1044,7 +1067,20 @@ describe('processPaymentUpdated', () => {
         });
     });
 
-    it('withholds the settled amount when the charge was not approved (HOS-595)', async () => {
+    // ── HOS-742: a charge that never cleared must not activate the add-on ──
+    //
+    // This test asserted the OPPOSITE until HOS-742. It was written for HOS-595,
+    // whose scope was the settled amount, and it froze as intended behaviour the
+    // fact that `confirmPurchase` was called at all for a `rejected` charge — the
+    // add-on branch was the only one of the three dispatches in `payment-logic.ts`
+    // that never gated on `MP_APPROVED_STATUSES`, so a rejected / pending /
+    // in_process payment activated the add-on and the payer kept it without ever
+    // having paid. Withholding the amount capped the damage at the ledger; it did
+    // not stop the grant.
+    //
+    // The non-approved case is still covered — only the assertion flipped, from
+    // "called without an amount" to "not called at all".
+    it('does NOT confirm the add-on when the charge was rejected (HOS-742)', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(5000),
             currency: 'ARS',
@@ -1057,9 +1093,7 @@ describe('processPaymentUpdated', () => {
             customerId: 'cust-1'
         });
 
-        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
-
-        await processPaymentUpdated({
+        const result = await processPaymentUpdated({
             data: {
                 id: '999999999',
                 metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
@@ -1067,14 +1101,191 @@ describe('processPaymentUpdated', () => {
             billing: mockBilling
         });
 
-        // The payment id still travels (it is the idempotency key), but no amount
-        // does — `confirmAddonPurchase` books a `succeeded` ledger row only when
-        // it receives one, so a rejected charge can never be booked as collected.
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        expect(result).toEqual({ success: true, addonConfirmed: false });
+    });
+
+    // Every non-approved status MercadoPago can report on a payment.updated
+    // event, not just `rejected`: `pending` and `in_process` are the ones a real
+    // payer hits (offline ticket, card under review), and they are exactly the
+    // states MP later RE-DELIVERS as `approved`. Confirming on the first
+    // delivery is what makes the second one unable to do anything.
+    for (const status of ['pending', 'in_process', 'authorized', 'cancelled'] as const) {
+        it(`does NOT confirm the add-on for a '${status}' charge (HOS-742)`, async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(5000),
+                currency: 'ARS',
+                status,
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+            vi.mocked(extractAddonMetadata).mockReturnValue({
+                addonSlug: 'visibility-boost-7d',
+                customerId: 'cust-1'
+            });
+
+            const result = await processPaymentUpdated({
+                data: {
+                    id: '999999999',
+                    metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+                },
+                billing: mockBilling
+            });
+
+            expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+            expect(result).toEqual({ success: true, addonConfirmed: false });
+        });
+    }
+
+    // Fail closed, exactly like the annual and plan-change branches: both read
+    // `paymentInfo &&` before their own status check. `extractPaymentInfo`
+    // returns null when the payload carries no numeric `transaction_amount` or
+    // no string `status` — i.e. when the charge's outcome is UNKNOWABLE. An
+    // unknowable outcome is not an approval.
+    it('does NOT confirm the add-on when the payment status cannot be read (HOS-742)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '999999999',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        expect(result).toEqual({ success: true, addonConfirmed: false });
+    });
+
+    // ── POSITIVE CONTROL ──────────────────────────────────────────────────
+    //
+    // The assertions above are `not.toHaveBeenCalled()`, which any number of
+    // unrelated breakages would satisfy — a broken `AddonService` mock, an
+    // earlier `return` in the function, a metadata extractor that stopped
+    // matching. This case is byte-for-byte the same wiring with ONE field
+    // changed, `status: 'approved'`, and it must observe the confirmation. Under
+    // the pre-HOS-742 code the `rejected` variant produced this SAME call minus
+    // `amountInCents`/`currency` — which is precisely what the old assertion
+    // froze — so the pair distinguishes "gated" from "broken".
+    it('POSITIVE CONTROL: the identical payload with status approved DOES confirm (HOS-742)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status: 'approved',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '999999999',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        // Exact-shape assertion (not objectContaining): a missing key is the bug
+        // class this file keeps catching, and objectContaining is blind to it.
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'visibility-boost-7d',
+            amountInCents: 500_000,
+            currency: 'ARS',
             paymentId: '999999999'
         });
+        expect(result).toEqual({ success: true, addonConfirmed: true });
+    });
+
+    // ── The other half of HOS-742: the approved RE-DELIVERY must still work ──
+    //
+    // HOS-595 started forwarding `paymentId` unconditionally, so an ungated
+    // non-approved delivery wrote `billing_addon_purchases.payment_id = X` with
+    // no amount — no `billing_payments` row, only an error log. When MP then
+    // re-delivered the SAME payment X as `approved`, the idempotency SELECT
+    // found that row and returned early, so the ledger entry was never written
+    // and never could be. The gate is what makes the re-delivery reachable: the
+    // first delivery now writes nothing at all.
+    it('lets the approved re-delivery of the same payment book the charge (HOS-742)', async () => {
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+        const data = {
+            id: '174625958196',
+            metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+        };
+
+        // 1st delivery: MP says in_process. Nothing is written, so no purchase
+        // row can carry this paymentId.
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status: 'in_process',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        await processPaymentUpdated({ data, billing: mockBilling });
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+
+        // 2nd delivery: the same payment id, now approved. The idempotency
+        // SELECT (annualDbState.subRows, empty) finds nothing precisely because
+        // the first delivery confirmed nothing — so the charge is booked.
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status: 'approved',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        const result = await processPaymentUpdated({ data, billing: mockBilling });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledTimes(1);
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            amountInCents: 500_000,
+            currency: 'ARS',
+            paymentId: '174625958196'
+        });
+        expect(result).toEqual({ success: true, addonConfirmed: true });
+    });
+
+    // Why the above matters: once ANY purchase row carries the paymentId, the
+    // idempotency check short-circuits an approved delivery of that same
+    // payment — permanently. This test pins that trapdoor so it stays visible.
+    it('an existing purchase row for this paymentId short-circuits even an approved charge (HOS-742)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status: 'approved',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+        // The idempotency SELECT is the first `getDb().select()` of this path.
+        annualDbState.subRows = [{ id: 'existing-purchase-uuid', customerId: 'cust-1' }];
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '174625958196',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        expect(result).toEqual({ success: true, addonConfirmed: false });
     });
     // ── HOS-721: promo metadata must survive the provider round-trip ───────
     //
@@ -1093,7 +1304,7 @@ describe('processPaymentUpdated', () => {
     // point, precisely so that a regression in the key mapping cannot hide
     // behind a hand-built input.
     it('translates a real MercadoPago snake_case payment payload into canonical promo metadata (HOS-721)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        approvedAddonPayment();
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'extra-photos-20',
             customerId: 'cust-1'
@@ -1124,6 +1335,8 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'extra-photos-20',
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: {
                 promoCodeId: 'promo-uuid-1',
                 promoCode: 'SAVE10',
@@ -1133,7 +1346,7 @@ describe('processPaymentUpdated', () => {
     });
 
     it('reads the polling fallback camelCase payload to the same canonical shape (HOS-721)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        approvedAddonPayment();
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'extra-photos-20',
             customerId: 'cust-1'
@@ -1161,6 +1374,8 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'extra-photos-20',
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: {
                 promoCodeId: 'promo-uuid-1',
                 promoCode: 'SAVE10',
@@ -1170,7 +1385,7 @@ describe('processPaymentUpdated', () => {
     });
 
     it('carries the accommodation and the promo together from one snake_case payload (HOS-721)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        approvedAddonPayment();
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'visibility-boost-7d',
             customerId: 'cust-1'
@@ -1198,6 +1413,8 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'visibility-boost-7d',
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: {
                 accommodationId: 'accom_target_1',
                 promoCodeId: 'promo-uuid-2',
@@ -1208,7 +1425,7 @@ describe('processPaymentUpdated', () => {
     });
 
     it('never turns a null promo key into a metadata property (HOS-721)', async () => {
-        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        approvedAddonPayment();
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'extra-photos-20',
             customerId: 'cust-1'
@@ -1238,6 +1455,8 @@ describe('processPaymentUpdated', () => {
         expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
             customerId: 'cust-1',
             addonSlug: 'extra-photos-20',
+            amountInCents: 500_000,
+            currency: 'ARS',
             metadata: { discountAmount: 0 }
         });
     });
@@ -2526,6 +2745,7 @@ describe('processPaymentUpdated', () => {
 
         it('payment WITH addon metadata goes through normal confirm path without any fallback warn', async () => {
             const { apiLogger } = await import('../../../src/utils/logger');
+            approvedAddonPayment();
             vi.mocked(extractAddonMetadata).mockReturnValue({
                 addonSlug: 'visibility-boost-7d',
                 customerId: 'cust-1'
