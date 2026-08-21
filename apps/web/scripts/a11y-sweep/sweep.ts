@@ -74,6 +74,12 @@ const INVENTORY: ReadonlyArray<{ url: string; name: string }> = [
     { url: '/es/preguntas-frecuentes/', name: 'FAQ' },
     { url: '/es/contacto/', name: 'Contact' },
     { url: '/es/suscriptores/planes/', name: 'Pricing' },
+    // HOS-690: the two commerce vertical landings now carry benefits/price/FAQ
+    // content (rebuilt from hero+lead-form), and the new dropdown they sit
+    // behind in the header is exactly the kind of widget this baseline exists
+    // to police.
+    { url: '/es/publicar-restaurante/', name: 'Publish Restaurant Landing' },
+    { url: '/es/publicar-experiencia/', name: 'Publish Experience Landing' },
     { url: '/en/', name: 'Home EN' },
     { url: '/pt/', name: 'Home PT' }
 ];
