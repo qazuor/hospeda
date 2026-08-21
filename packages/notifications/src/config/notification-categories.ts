@@ -68,9 +68,6 @@ export const NOTIFICATION_CATEGORY_MAP: Record<NotificationType, NotificationCat
     // Plan retirement notification (SPEC-148) — TRANSACTIONAL: admin-triggered, always sent
     [NotificationType.PLAN_BEING_RETIRED]: NotificationCategory.TRANSACTIONAL,
 
-    // Commerce owner credentials (SPEC-239 T-050) — TRANSACTIONAL: required for first login
-    [NotificationType.COMMERCE_OWNER_CREDENTIALS]: NotificationCategory.TRANSACTIONAL,
-
     // Alliance claim invitation (HOS-278 §6.2) — TRANSACTIONAL: a
     // security-relevant confirmation about the recipient's OWN account, and the
     // only channel the claim token is ever delivered through. Opting out would

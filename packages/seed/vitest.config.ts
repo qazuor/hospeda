@@ -42,7 +42,15 @@ export default defineConfig({
                 // integration tests under `test/integration/`.
                 'src/example/**/*.seed.ts',
                 'src/required/**/*.seed.ts',
-                'src/test-users/**/*.seed.ts',
+                // HOS-613: the whole `test-users` and POI-catalog trees, not
+                // just their `*.seed.ts` entry points. The surrounding
+                // builders (hostAccommodation, hostTradeOwnership,
+                // markUserReady, the POI category/relation tables) are the
+                // same kind of code as the seed script that calls them —
+                // Drizzle orchestration against a live database, verified by
+                // `pnpm db:seed` and the integration carril, not unit-testable.
+                'src/test-users/**',
+                'src/pointOfInterestCatalog/**',
                 // DB-dependent utilities that cannot run without a live
                 // PostgreSQL connection. They're exercised through the
                 // seed integration suite (`pnpm db:seed`).
@@ -66,7 +74,15 @@ export default defineConfig({
                 'src/data-migrations/ledger.ts',
                 'src/data-migrations/baselineStamp.ts',
                 'src/data-migrations/helpers/**',
-                'src/data-migrations/000*.ts'
+                // HOS-613: this used to read `000*.ts`, which only matched
+                // 0001-0009. Every migration from 0010 on kept counting
+                // against unit coverage even though it is the same kind of
+                // one-shot, DB-dependent script the rule above describes —
+                // the glob was short, the intent was always all of them.
+                // That single character is what kept `packages/seed` under
+                // its threshold, failing the coverage gate on every
+                // `staging → main` promotion since May 2026.
+                'src/data-migrations/0*.ts'
             ]
         }
     }

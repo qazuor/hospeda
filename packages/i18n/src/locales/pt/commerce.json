@@ -18,9 +18,9 @@
         "process": {
             "title": "Como segue depois de enviar",
             "step1": "Você envia o formulário com os dados do seu negócio.",
-            "step2": "Nossa equipe revisa e aprova. Costuma levar de 24 a 48 horas úteis.",
-            "step3": "Avisamos por e-mail quando estiver pronto, com os passos para entrar.",
-            "step4": "Você completa a publicação e contrata o plano."
+            "step2": "Nossa equipe revisa sua solicitação e entra em contato para combinar os próximos passos. Costuma levar de 24 a 48 horas úteis.",
+            "step3": "Escrevemos por e-mail para combinar como incluir seu negócio na plataforma.",
+            "step4": "Você cria sua conta, completa a publicação e contrata o plano."
         },
         "submit": "Enviar solicitação",
         "submitting": "Enviando...",

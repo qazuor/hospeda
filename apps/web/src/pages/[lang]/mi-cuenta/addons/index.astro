@@ -9,6 +9,9 @@
  * `apps/api/src/routes/billing/checkout-return-urls.ts` `buildAddonSuccessUrl`
  * / `buildAddonCancelUrl`).
  *
+ * Also accepts `?focus=<slug>` (HOS-729), which reorders and highlights one
+ * card without hiding any other — see `@/lib/billing/addon-focus`.
+ *
  * @route /{lang}/mi-cuenta/addons/
  * @rendering SSR (prerender = false — requires authenticated user)
  */
@@ -24,6 +27,7 @@ import type { AddonCardData } from '@/components/account/AddonsPurchasePanel.cli
 import { billingApi, hostAnalyticsApi, userApi } from '@/lib/api/endpoints-protected';
 import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import { filterAddonsByHeldDomains } from '@/lib/billing/addon-domain';
+import { ADDON_FOCUS_PARAM } from '@/lib/billing/addon-focus';
 import type { ProductDomainScope } from '@/lib/api/types';
 import { createTranslations } from '@/lib/i18n';
 import type { SupportedLocale } from '@/lib/i18n';
@@ -150,6 +154,12 @@ if (needsAccommodationTarget) {
 
 const statusParam = Astro.url.searchParams.get('status');
 const addonSlugParam = Astro.url.searchParams.get('addon');
+
+// HOS-729: `?focus=<slug>` puts one add-on at the top, highlighted, without
+// hiding the rest. Read here (the page is SSR anyway) so the island needs no
+// client-side location parsing. Deliberately a DIFFERENT parameter from
+// `addon` above, which is MercadoPago's return slug and only feeds the banner.
+const focusSlugParam = Astro.url.searchParams.get(ADDON_FOCUS_PARAM);
 const resultAddonName =
     availableAddons.find((addon) => addon.slug === addonSlugParam)?.name ?? addonSlugParam ?? '';
 
@@ -218,6 +228,7 @@ const upgradeUrl = buildUrl({
             addons={visibleAddons}
             ownedAddonSlugs={ownedAddonSlugs}
             accommodations={accommodations}
+            focusSlug={focusSlugParam}
         />
     )}
 </AccountLayout>

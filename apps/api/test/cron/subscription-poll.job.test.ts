@@ -96,11 +96,15 @@ vi.mock('@repo/db', () => ({
 const mockResolveFullPlanPrice = vi.fn().mockResolvedValue(null);
 const mockGetPromoCodeById = vi.fn().mockResolvedValue({ success: false });
 const mockCalculatePromoCodeEffect = vi.fn().mockReturnValue({ type: 'noop' });
-vi.mock('@repo/service-core', () => ({
-    resolveFullPlanPriceCentavos: (...args: unknown[]) => mockResolveFullPlanPrice(...args),
-    getPromoCodeById: (...args: unknown[]) => mockGetPromoCodeById(...args),
-    calculatePromoCodeEffect: (...args: unknown[]) => mockCalculatePromoCodeEffect(...args)
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        resolveFullPlanPriceCentavos: (...args: unknown[]) => mockResolveFullPlanPrice(...args),
+        getPromoCodeById: (...args: unknown[]) => mockGetPromoCodeById(...args),
+        calculatePromoCodeEffect: (...args: unknown[]) => mockCalculatePromoCodeEffect(...args)
+    };
+});
 
 // @sentry/node is used by reconcileActiveDiscountAmounts to capture MP mutation failures.
 vi.mock('@sentry/node', () => ({

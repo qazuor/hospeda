@@ -39,7 +39,7 @@ import {
     requirePriceUnitUnlessOnRequest
 } from '@repo/schemas';
 import { type FormEvent, type JSX, useState } from 'react';
-import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
+import type { DestinationOption } from '@/components/commerce/destination-option';
 import { FieldError, fieldErrorId } from '@/components/ui/FieldError';
 import type { CommerceVertical } from '@/lib/commerce/owner-listings';
 import { createOwnerListing } from '@/lib/commerce/owner-listings';

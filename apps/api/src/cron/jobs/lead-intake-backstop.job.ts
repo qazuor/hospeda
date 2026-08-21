@@ -37,10 +37,20 @@
  * already did. Its `ops_notified_at` stays null, which is the honest record: we
  * never did alert on it.
  *
+ * ## Why this job is alliance-only now (HOS-693)
+ *
+ * This job originally backstopped both the commerce and the alliance intake
+ * funnels. Commerce lead intake was retired (its public form and admin
+ * provisioning flow are gone), so this job was narrowed to alliance leads only
+ * — leaving the commerce query in place would eventually throw once
+ * `commerce_leads` itself is dropped, and it shared a `Promise.all` with the
+ * alliance query, so that throw would have taken the alliance backstop down
+ * with it.
+ *
  * @module cron/jobs/lead-intake-backstop
  */
 
-import { allianceLeads, commerceLeads, getDb } from '@repo/db';
+import { allianceLeads, getDb } from '@repo/db';
 import { and, asc, inArray, isNull } from 'drizzle-orm';
 import { announceLeadToOps, type LeadIntakeAlert } from '../../lib/lead-intake-ports.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
@@ -48,14 +58,16 @@ import type { CronJobDefinition, CronJobResult } from '../types.js';
 /**
  * Lead statuses that still need a human.
  *
- * Shared by both funnels: `commerce_leads.status` and `alliance_leads.status`
- * use the same workflow vocabulary by construction (see the schema comment on
- * `alliance_leads.status`, which mirrors `commerce_leads.status`).
+ * `alliance_leads.status` uses the same workflow vocabulary the commerce
+ * funnel's backstop used to check — see the schema comment on
+ * `alliance_leads.status`, which mirrors `commerce_leads.status` even though
+ * this job no longer queries the latter (HOS-693: commerce lead intake was
+ * retired, so this job now covers alliance leads only).
  */
 const UNRESOLVED_STATUSES = ['pending', 'reviewing'] as const;
 
 /**
- * Ceiling per tick, per funnel.
+ * Ceiling per tick.
  *
  * Bounded because the first production run has a backlog to work through — the
  * column starts null for every lead that predates it — and an unbounded first
@@ -70,44 +82,6 @@ const ALLIANCE_PROGRAM_LABELS: Readonly<Record<string, string>> = {
     editor: 'Editor',
     service_provider: 'Proveedor'
 };
-
-/** Human labels for commerce domains, mirroring the intake port. */
-const COMMERCE_DOMAIN_LABELS: Readonly<Record<string, string>> = {
-    gastronomy: 'Gastronomía',
-    experience: 'Experiencia'
-};
-
-/**
- * Finds commerce leads still waiting on a human that nobody was told about.
- *
- * @returns Normalised alerts, oldest first.
- */
-async function findUnannouncedCommerceLeads(): Promise<readonly LeadIntakeAlert[]> {
-    const db = getDb();
-    const rows = await db
-        .select()
-        .from(commerceLeads)
-        .where(
-            and(
-                isNull(commerceLeads.opsNotifiedAt),
-                inArray(commerceLeads.status, [...UNRESOLVED_STATUSES])
-            )
-        )
-        .orderBy(asc(commerceLeads.createdAt))
-        .limit(BATCH_LIMIT);
-
-    return rows.map((row) => ({
-        funnel: 'commerce' as const,
-        leadId: row.id,
-        programLabel: COMMERCE_DOMAIN_LABELS[row.domain] ?? row.domain,
-        contactName: row.contactName,
-        contactEmail: row.email,
-        contactPhone: row.phone,
-        businessName: row.businessName,
-        message: row.message,
-        createdAt: row.createdAt
-    }));
-}
 
 /**
  * Finds alliance leads still waiting on a human that nobody was told about.
@@ -166,12 +140,9 @@ export const leadIntakeBackstopJob: CronJobDefinition = {
         });
 
         try {
-            const [commerce, alliance] = await Promise.all([
-                findUnannouncedCommerceLeads(),
-                findUnannouncedAllianceLeads()
-            ]);
+            const alliance = await findUnannouncedAllianceLeads();
 
-            const pending = [...commerce, ...alliance];
+            const pending = alliance;
 
             if (pending.length === 0) {
                 return {
@@ -180,12 +151,11 @@ export const leadIntakeBackstopJob: CronJobDefinition = {
                     processed: 0,
                     errors: 0,
                     durationMs: Date.now() - startMs,
-                    details: { commerce: 0, alliance: 0 }
+                    details: { alliance: 0 }
                 };
             }
 
             logger.warn('lead-intake-backstop: found leads nobody was told about', {
-                commerce: commerce.length,
                 alliance: alliance.length,
                 oldest: pending[0]?.createdAt.toISOString()
             });
@@ -198,7 +168,6 @@ export const leadIntakeBackstopJob: CronJobDefinition = {
                     errors: 0,
                     durationMs: Date.now() - startMs,
                     details: {
-                        commerce: commerce.length,
                         alliance: alliance.length,
                         dryRun: true
                     }
@@ -227,7 +196,6 @@ export const leadIntakeBackstopJob: CronJobDefinition = {
                 errors: failed,
                 durationMs: Date.now() - startMs,
                 details: {
-                    commerce: commerce.length,
                     alliance: alliance.length,
                     announced,
                     failed
