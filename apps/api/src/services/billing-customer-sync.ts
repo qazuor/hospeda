@@ -14,6 +14,7 @@ import { billingAddonPurchases, billingSubscriptions, withTransaction } from '@r
 import { and, eq, isNull } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement.js';
 import { apiLogger } from '../utils/logger';
+import { describeProviderSyncError, isDuplicateKeyError } from './billing-customer-sync.errors.js';
 
 /**
  * Cache entry for customer lookups
@@ -130,46 +131,36 @@ export class BillingCustomerSyncService {
 
                 this.cacheCustomer(userId, newCustomer.id);
 
-                // HOS-596: under the customer-sync facade
-                // (`providerSyncErrorStrategy: 'log'`, see
-                // `getQZPayBilling({ forCustomerSync: true })`) a MercadoPago failure no
-                // longer destroys the local row — qzpay keeps it and returns it
-                // with an EMPTY `providerCustomerIds` map. That is the only
-                // in-band signal that the provider leg did not happen, so it is
-                // raised here explicitly instead of being inferred later from a
-                // checkout that mysteriously fails.
+                // HOS-596: `providerCustomerIds` is deliberately NOT inspected
+                // here to decide whether the provider leg succeeded, because it
+                // cannot answer that question. qzpay-core's success path writes
+                // the link with `storage.customers.update(id, {
+                // providerCustomerIds })`, and `@qazuor/qzpay-drizzle`'s
+                // `mapCoreCustomerUpdateToDrizzle` has no branch for that field
+                // — it maps `mpCustomerId`/`stripeCustomerId` only. So the update
+                // reduces to `{}`, `mp_customer_id` stays NULL, and the customer
+                // comes back with an EMPTY map on success exactly as it does on
+                // failure. A warning keyed on that would fire on every signup.
                 //
-                // qzpay already logged the provider-side cause (MercadoPago
-                // message + `QZPayErrorCode.PROVIDER_CREATE_CUSTOMER_FAILED`)
-                // through `qzpayLogger` → apiLogger; this line is what ties that
-                // provider error to the Hospeda user it belongs to, and what
-                // makes the degraded state greppable per account. The row is
-                // usable: the provider id is reconciled on the next successful
-                // `syncCustomerData` / checkout.
-                const providerIds = Object.keys(newCustomer.providerCustomerIds ?? {});
-
-                if (providerIds.length === 0) {
-                    apiLogger.warn(
-                        {
-                            userId,
-                            customerId: newCustomer.id,
-                            emailDomain: email.split('@')[1]
-                        },
-                        'Billing customer created WITHOUT a provider link — the payment provider rejected the customer create; the local row was kept and needs reconciliation (HOS-596)'
-                    );
-
-                    return newCustomer.id;
-                }
-
+                // The provider failure IS visible, at the moment it happens:
+                // both facades are constructed with `qzpayLogger`, so qzpay's own
+                // `logger.error('Provider sync failed during customer creation')`
+                // carries the MercadoPago message and
+                // `QZPayErrorCode.PROVIDER_CREATE_CUSTOMER_FAILED` into
+                // `apiLogger`, followed by its `logger.warn('Continuing customer
+                // creation without provider sync')`.
+                //
+                // The row is usable either way: since HOS-171 the checkout is a
+                // MercadoPago preapproval that collects the payer on MP's own
+                // page, so nothing in Hospeda's paid paths reads a local provider
+                // customer id.
                 apiLogger.info(
                     {
                         userId,
-                        customerId: newCustomer.id,
-                        providers: providerIds
+                        customerId: newCustomer.id
                     },
                     'Billing customer created successfully'
                 );
-
                 return newCustomer.id;
             } catch (createError) {
                 // Handle race condition: another concurrent request may have
@@ -500,75 +491,4 @@ export class BillingCustomerSyncService {
             entries
         };
     }
-}
-
-/**
- * Check if an error is a PostgreSQL unique constraint violation.
- *
- * PostgreSQL error code 23505 indicates a unique_violation. This is used
- * to detect race conditions where two concurrent requests both try to
- * create a customer for the same user.
- *
- * @param error - The error to check
- * @returns true if the error is a duplicate key / unique constraint violation
- */
-/**
- * Extract the diagnosable fields of a `QZPayProviderSyncError` for structured
- * logging (HOS-596).
- *
- * A provider sync failure carries three things `error.message` does not: which
- * provider failed, which operation it was performing, and the provider's own
- * error (`cause`) — for MercadoPago that `cause` message is where the API error
- * code (e.g. `101 — customer already exists`) actually appears. Logging only the
- * wrapper message is what left the production incident undiagnosable for a month.
- *
- * Matched structurally (`provider` + `operation` string fields) rather than with
- * `instanceof`, so a differing qzpay-core instance across the dependency graph
- * cannot silently degrade the log back to a bare message.
- *
- * @param error - The caught error, of unknown shape
- * @returns Extra log fields, or an empty object when the error is not a provider
- *   sync error
- */
-function describeProviderSyncError(error: unknown): {
-    provider?: string;
-    providerOperation?: string;
-    providerError?: string;
-} {
-    if (!(error instanceof Error)) {
-        return {};
-    }
-
-    const candidate = error as Error & {
-        provider?: unknown;
-        operation?: unknown;
-        cause?: unknown;
-    };
-
-    if (typeof candidate.provider !== 'string' || typeof candidate.operation !== 'string') {
-        return {};
-    }
-
-    const cause = candidate.cause;
-    const providerError = cause instanceof Error ? cause.message : undefined;
-
-    return {
-        provider: candidate.provider,
-        providerOperation: candidate.operation,
-        ...(providerError === undefined ? {} : { providerError })
-    };
-}
-
-function isDuplicateKeyError(error: unknown): boolean {
-    if (error instanceof Error) {
-        const pgError = error as Error & { code?: string };
-        // PostgreSQL unique_violation error code
-        if (pgError.code === '23505') {
-            return true;
-        }
-        // Fallback: check error message for common duplicate key patterns
-        const message = error.message.toLowerCase();
-        return message.includes('duplicate key') || message.includes('unique constraint');
-    }
-    return false;
 }
