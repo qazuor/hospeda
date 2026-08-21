@@ -285,16 +285,44 @@ vi.mock('../../src/utils/env', () => ({
     }
 }));
 
-// PromoCodeService is constructed inside createAddonCheckout. Stub it so the
-// happy path skips real DB lookups.
+// PromoCodeService is constructed inside createAddonCheckout AND inside
+// confirmAddonPurchase. Stub it so the happy path skips real DB lookups.
+//
+// HOS-721: `redeemAndRecord` is the authoritative redemption — it takes the
+// row lock, re-validates `maxUses`/`maxPerCustomer` under it, increments
+// `used_count` and inserts the usage row. Hoisted so the confirmation tests can
+// assert on it and drive its usage-cap outcomes.
+const { mockPromoValidate, mockPromoGetByCode, mockPromoRedeemAndRecord } = vi.hoisted(() => ({
+    mockPromoValidate: vi.fn(),
+    mockPromoGetByCode: vi.fn(),
+    mockPromoRedeemAndRecord: vi.fn()
+}));
+
 vi.mock('../../src/services/promo-code.service', () => ({
     PromoCodeService: vi.fn().mockImplementation(function () {
         return {
-            validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 0 }),
-            getByCode: vi.fn().mockResolvedValue({ success: true, data: { id: 'promo_uuid' } })
+            validate: mockPromoValidate,
+            getByCode: mockPromoGetByCode,
+            redeemAndRecord: mockPromoRedeemAndRecord
         };
     })
 }));
+
+/**
+ * Reset the PromoCodeService stubs to the "no promo involved" happy path.
+ * Individual tests override whichever one they exercise.
+ */
+function applyDefaultPromoCodeServiceStubs(): void {
+    mockPromoValidate.mockResolvedValue({ valid: true, discountAmount: 0 });
+    mockPromoGetByCode.mockResolvedValue({ success: true, data: { id: 'promo_uuid' } });
+    mockPromoRedeemAndRecord.mockResolvedValue({
+        success: true,
+        data: {
+            promoCode: { id: 'promo_uuid', usedCount: 1, maxUses: null },
+            usageRecord: { id: 'usage_uuid' }
+        }
+    });
+}
 
 // SPEC-127 T-001 / T-003: PlanService + AddonCatalogService mocks.
 // Both are instantiated at module level in addon.checkout.ts and must be mocked
@@ -388,6 +416,7 @@ describe('confirmAddonPurchase', () => {
         vi.clearAllMocks();
         mockBilling = createMockBilling(activeSubscriptions);
         mockEntitlementService = createMockEntitlementService();
+        applyDefaultPromoCodeServiceStubs();
 
         // Default AddonCatalogService mock: returns known addon definitions by slug.
         // Tests that need a different addon or a NOT_FOUND override individually.
@@ -1349,6 +1378,132 @@ describe('confirmAddonPurchase', () => {
             expect(mockDbTransaction).toHaveBeenCalledOnce();
         });
     });
+
+    // =========================================================================
+    // HOS-721 — promo redemption after payment confirmation
+    //
+    // The redemption is deliberately deferred to this point (not checkout) so an
+    // abandoned checkout cannot inflate a code's `used_count`. That made the
+    // defect invisible from the other side too: nothing at checkout time is
+    // wrong, and the only observable symptom is a counter that never moves.
+    // =========================================================================
+
+    describe('promo code redemption (HOS-721)', () => {
+        it('records the redemption exactly once when the confirmation carries a promo', async () => {
+            // Arrange
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                metadata: {
+                    promoCodeId: 'promo_uuid_1',
+                    promoCode: 'SAVE10',
+                    discountAmount: 1500
+                }
+            });
+
+            // Assert — one redemption, carrying the discount that was actually
+            // granted. A second call here would double-count the code.
+            expect(result.success).toBe(true);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledTimes(1);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledWith({
+                promoCodeId: 'promo_uuid_1',
+                customerId: 'cust_abc',
+                discountAmount: 1500,
+                currency: 'ARS'
+            });
+        });
+
+        it('records the redemption when only the promo code ID survives', async () => {
+            // `promoCode` is the human-facing string and is used for logging
+            // only. Requiring it too let a cosmetic key suppress the redemption.
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                metadata: { promoCodeId: 'promo_uuid_1', discountAmount: 1500 }
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not redeem anything for an undiscounted purchase', async () => {
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            expect(result.success).toBe(true);
+            expect(mockPromoRedeemAndRecord).not.toHaveBeenCalled();
+        });
+
+        // ── Usage caps ────────────────────────────────────────────────────
+        // The cap itself is enforced inside `redeemAndRecordUsage`, under the
+        // promo row's `SELECT ... FOR UPDATE`. What this confirmation path owes
+        // the counter is narrower and is what these two cases pin: it must call
+        // the redemption exactly once per confirmed purchase, and it must honour
+        // the verdict that comes back — including a refusal.
+
+        it('consumes the last remaining use of a capped code exactly once', async () => {
+            // Arrange: a code with maxUses = 5 sitting at 4 used. The redemption
+            // takes it to its cap.
+            mockPromoRedeemAndRecord.mockResolvedValueOnce({
+                success: true,
+                data: {
+                    promoCode: { id: 'promo_last_use', usedCount: 5, maxUses: 5 },
+                    usageRecord: { id: 'usage_final' }
+                }
+            });
+
+            // Act
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                metadata: {
+                    promoCodeId: 'promo_last_use',
+                    promoCode: 'LASTONE',
+                    discountAmount: 2000
+                }
+            });
+
+            // Assert: the purchase confirms and the counter advanced once — not
+            // zero times (the HOS-721 defect) and not twice.
+            expect(result.success).toBe(true);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledTimes(1);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledWith({
+                promoCodeId: 'promo_last_use',
+                customerId: 'cust_abc',
+                discountAmount: 2000,
+                currency: 'ARS'
+            });
+        });
+
+        it('confirms the purchase anyway when the code is already at its cap', async () => {
+            // Arrange: the code hit its cap between checkout and confirmation.
+            // The customer has already been charged, so refusing the purchase
+            // here would take their money and give them nothing.
+            mockPromoRedeemAndRecord.mockResolvedValueOnce({
+                success: false,
+                error: {
+                    code: 'USAGE_LIMIT_REACHED',
+                    message: 'Promo code has reached its maximum number of uses'
+                }
+            });
+
+            // Act
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                metadata: {
+                    promoCodeId: 'promo_exhausted',
+                    promoCode: 'TOOLATE',
+                    discountAmount: 2000
+                }
+            });
+
+            // Assert: non-fatal — the add-on is granted, the counter is left
+            // exactly where the cap put it, and the miss is logged for review.
+            expect(result.success).toBe(true);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledTimes(1);
+            expect(mockEntitlementService.applyAddonEntitlements).toHaveBeenCalledOnce();
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -1399,6 +1554,7 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        applyDefaultPromoCodeServiceStubs();
         // Re-set default after clearAllMocks wipes implementations.
         mockBillingCheckoutCreate.mockResolvedValue({
             id: 'session_test_123',
@@ -2316,6 +2472,56 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             expect(jobArg.metadata).not.toHaveProperty('accommodationId');
         });
 
+        // ── HOS-721: the promo keys ride the same carrier ──────────────────
+        // The polling job's synthetic payment metadata is built from this row.
+        // Leaving the promo keys out of it meant the path that actually
+        // confirms most add-on purchases could never record a redemption, no
+        // matter how the webhook path was fixed.
+        it('carries the promo keys into the polling job metadata (HOS-721)', async () => {
+            mockPromoValidate.mockResolvedValue({ valid: true, discountAmount: 1500 });
+            mockPromoGetByCode.mockResolvedValue({
+                success: true,
+                data: { id: 'promo_uuid_1' }
+            });
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'extra-photos-20',
+                userId: 'user_xyz',
+                promoCode: 'SAVE10'
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockPollingJobsCreate).toHaveBeenCalledOnce();
+            const jobArg = mockPollingJobsCreate.mock.calls[0]?.[0] as {
+                metadata: Record<string, unknown>;
+            };
+            expect(jobArg.metadata).toMatchObject({
+                promoCodeId: 'promo_uuid_1',
+                promoCode: 'SAVE10',
+                discountAmount: 1500
+            });
+        });
+
+        it('omits the promo keys from polling job metadata for an undiscounted purchase (HOS-721)', async () => {
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'extra-photos-20',
+                userId: 'user_xyz'
+            });
+
+            expect(result.success).toBe(true);
+            const jobArg = mockPollingJobsCreate.mock.calls[0]?.[0] as {
+                metadata: Record<string, unknown>;
+            };
+            expect(jobArg.metadata).not.toHaveProperty('promoCodeId');
+            expect(jobArg.metadata).not.toHaveProperty('promoCode');
+            expect(jobArg.metadata).not.toHaveProperty('discountAmount');
+        });
+
         it('ignores accommodationId and never looks up ownership for an unrelated addon', async () => {
             const billing = createBillingForCheckout({ customer });
 
@@ -2386,6 +2592,7 @@ describe('createAddonCheckout — provider error wiring (SPEC-149 T-005)', () =>
 
     beforeEach(async () => {
         vi.clearAllMocks();
+        applyDefaultPromoCodeServiceStubs();
 
         // Re-set checkout create mock after clearAllMocks
         mockBillingCheckoutCreate.mockResolvedValue({
@@ -2649,6 +2856,8 @@ describe('createAddonCheckout — no server-side retry (SPEC-149 descope pin)', 
 
     beforeEach(async () => {
         vi.clearAllMocks();
+
+        applyDefaultPromoCodeServiceStubs();
 
         // Re-set checkout create mock (happy path by default; individual tests override)
         mockBillingCheckoutCreate.mockResolvedValue({

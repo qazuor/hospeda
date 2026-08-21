@@ -105,22 +105,35 @@ export const getCorsConfig = () => {
             _safe.get('API_CORS_ALLOW_METHODS', 'GET,POST,PUT,DELETE,PATCH,OPTIONS')
         ),
         allowHeaders: (() => {
-            // X-Idempotency-Key is required by `idempotencyKeyMiddleware`
-            // (SPEC-143 T-143-60) on /billing/subscriptions/start-paid,
-            // /billing/addons/:slug/purchase, /billing/addons/:id/cancel.
-            // Browser preflight rejects the request when this header is not
-            // in the allowlist. We defensively enforce it even when an env
-            // override omits it, to prevent a misconfigured deploy from
-            // silently breaking all billing mutations in the browser.
+            // Headers a browser mutation MUST be able to send cross-origin, or
+            // the preflight silently cancels the request before it ever
+            // reaches the API (no server-side log, no client error beyond a
+            // generic network failure — the classic "the click did nothing"
+            // symptom). We defensively enforce all of them even when an env
+            // override omits one, to prevent a misconfigured deploy from
+            // silently breaking browser mutations. Each entry's own reason:
+            //
+            // - X-Idempotency-Key: required by `idempotencyKeyMiddleware`
+            //   (SPEC-143 T-143-60) on /billing/subscriptions/start-paid,
+            //   /billing/addons/:slug/purchase, /billing/addons/:id/cancel.
+            // - X-Client-Locale: sent by apps/web's API client on every
+            //   browser-initiated request (HOS-605) so `resolveReturnUrlLocale`
+            //   knows the visitor's actual page locale. Missing it from this
+            //   list doesn't just degrade locale resolution — since it is a
+            //   NON-simple header, ANY absent entry here fails the whole
+            //   preflight for EVERY mutating cross-origin request, not just
+            //   the ones that read it (verified against the E2E commerce
+            //   editor suite, which broke entirely until this was added).
             const parsed = parseCommaSeparated(
                 _safe.get(
                     'API_CORS_ALLOW_HEADERS',
-                    'Content-Type,Authorization,X-Requested-With,X-Idempotency-Key'
+                    'Content-Type,Authorization,X-Requested-With,X-Idempotency-Key,X-Client-Locale'
                 )
             );
-            const REQUIRED = 'X-Idempotency-Key';
-            const alreadyPresent = parsed.some((h) => h.toLowerCase() === REQUIRED.toLowerCase());
-            return alreadyPresent ? parsed : [...parsed, REQUIRED];
+            const REQUIRED_HEADERS = ['X-Idempotency-Key', 'X-Client-Locale'];
+            const lowerParsed = new Set(parsed.map((h) => h.toLowerCase()));
+            const missing = REQUIRED_HEADERS.filter((h) => !lowerParsed.has(h.toLowerCase()));
+            return [...parsed, ...missing];
         })(),
         exposeHeaders: parseCommaSeparated(
             _safe.get('API_CORS_EXPOSE_HEADERS', 'Content-Length,X-Request-ID')

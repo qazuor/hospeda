@@ -43,6 +43,7 @@ import {
 } from '@repo/ai-core';
 import type { AiProviderId } from '@repo/schemas';
 import { createTestApp } from '../../src/utils/create-app';
+import { apiLogger } from '../../src/utils/logger';
 import {
     createProtectedStreamingRoute,
     createStreamingRoute
@@ -268,6 +269,74 @@ describe('createStreamingRoute', () => {
 
             const errorData = JSON.parse(errorFrames[0]!.data!) as { code: string };
             expect(errorData.code).toBe('MODERATION_BLOCKED');
+        });
+    });
+
+    describe('server-side record of a cut after the response was committed (HOS-668)', () => {
+        // These cuts happen once the response is already a 200 with headers
+        // flushed, so nothing downstream can report them: the access log shows
+        // a 200 and the user sees a failure. Before HOS-668 this branch logged
+        // NOTHING, which is what made the reported AI failures impossible to
+        // diagnose — there was no server-side trace that anything went wrong.
+
+        it('logs a recognised AI rejection at warn, not error', async () => {
+            // Arrange
+            vi.mocked(apiLogger.warn).mockClear();
+            vi.mocked(apiLogger.error).mockClear();
+            const moderationErr = new AiModerationBlockedError({
+                feature: FAKE_FEATURE,
+                direction: 'output',
+                categories: { hate: true }
+            });
+            const app = createStreamingRoute({
+                path: '/',
+                summary: 'test',
+                description: 'test',
+                tags: ['Test'],
+                streamHandler: async () => ({
+                    stream: makeThrowingIterable(['tok1'], moderationErr),
+                    meta: Promise.resolve({ usage: {} })
+                })
+            });
+
+            // Act
+            await parseSseFrames(await app.request('/', { method: 'POST' }));
+
+            // Assert: a deliberate rejection is recorded, but not as a fault.
+            expect(apiLogger.warn).toHaveBeenCalledTimes(1);
+            expect(vi.mocked(apiLogger.warn).mock.calls[0]?.[0]).toMatchObject({
+                code: 'MODERATION_BLOCKED'
+            });
+            expect(apiLogger.error).not.toHaveBeenCalled();
+        });
+
+        it('logs an unrecognised failure at error, with the original error', async () => {
+            // Arrange
+            vi.mocked(apiLogger.warn).mockClear();
+            vi.mocked(apiLogger.error).mockClear();
+            const boom = new Error('upstream socket died');
+            const app = createStreamingRoute({
+                path: '/',
+                summary: 'test',
+                description: 'test',
+                tags: ['Test'],
+                streamHandler: async () => ({
+                    stream: makeThrowingIterable(['tok1'], boom),
+                    meta: Promise.resolve({ usage: {} })
+                })
+            });
+
+            // Act
+            await parseSseFrames(await app.request('/', { method: 'POST' }));
+
+            // Assert: anything we cannot classify stays a fault, and carries the
+            // error itself so the stack survives.
+            expect(apiLogger.error).toHaveBeenCalledTimes(1);
+            expect(vi.mocked(apiLogger.error).mock.calls[0]?.[0]).toMatchObject({
+                code: 'INTERNAL_ERROR',
+                error: boom
+            });
+            expect(apiLogger.warn).not.toHaveBeenCalled();
         });
     });
 

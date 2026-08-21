@@ -58,6 +58,7 @@ vi.mock('@repo/db', () => ({
     },
     billingSubscriptionEvents: {
         subscriptionId: 'subscription_id',
+        eventType: 'event_type',
         previousStatus: 'previous_status',
         newStatus: 'new_status',
         triggerSource: 'trigger_source',
@@ -147,6 +148,7 @@ vi.mock('../../src/utils/logger', () => ({
 // ---------------------------------------------------------------------------
 
 import { getDb } from '@repo/db';
+import { BILLING_EVENT_TYPES } from '@repo/service-core';
 import { clearEntitlementCache } from '../../src/middlewares/entitlement';
 import { applyRefundLifecycle } from '../../src/services/refund-lifecycle.service';
 import { apiLogger } from '../../src/utils/logger';
@@ -444,6 +446,7 @@ describe('applyRefundLifecycle', () => {
             >;
             expect(eventArg).toMatchObject({
                 subscriptionId: SUBSCRIPTION_ID,
+                eventType: BILLING_EVENT_TYPES.PAYMENT_PARTIAL_REFUND,
                 triggerSource: 'partial-refund',
                 metadata: expect.objectContaining({
                     action: 'payment.partial_refund',
@@ -554,6 +557,7 @@ describe('applyRefundLifecycle', () => {
                 unknown
             >;
             expect(eventArg).toMatchObject({
+                eventType: BILLING_EVENT_TYPES.PAYMENT_FULL_REFUND,
                 triggerSource: 'admin-refund',
                 metadata: expect.objectContaining({
                     action: 'payment.full_refund',
@@ -652,6 +656,7 @@ describe('applyRefundLifecycle', () => {
             >;
             expect(eventArg).toMatchObject({
                 subscriptionId: SUBSCRIPTION_ID,
+                eventType: BILLING_EVENT_TYPES.PAYMENT_FULL_REFUND,
                 previousStatus: 'active',
                 newStatus: 'cancelled',
                 triggerSource: 'admin-refund',
@@ -777,6 +782,7 @@ describe('applyRefundLifecycle', () => {
                 string,
                 unknown
             >;
+            expect(eventArg?.eventType).toBe(BILLING_EVENT_TYPES.PAYMENT_FULL_REFUND_NO_TRANSITION);
             expect((eventArg?.metadata as Record<string, unknown>)?.action).toBe(
                 'payment.full_refund_no_transition'
             );

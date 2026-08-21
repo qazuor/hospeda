@@ -183,3 +183,59 @@ describe('HostDashboard', () => {
         expect(noPlan).toBeInTheDocument();
     });
 });
+
+describe('HostDashboard quick actions (HOS-726)', () => {
+    it('renders five quick-action links, the fifth being the add-ons catalog', async () => {
+        mockHostDashboardGet.mockResolvedValue({
+            ok: true,
+            data: mockDashboardApiResponse
+        });
+
+        render(<HostDashboard locale="es" />);
+
+        // Wait for the ready render before touching the DOM — the loading
+        // skeleton has no links at all, so asserting too early passes for the
+        // wrong reason.
+        const addonsLink = await screen.findByRole('link', { name: /complementos/i });
+        expect(addonsLink).toHaveAttribute('href', '/es/mi-cuenta/addons/');
+
+        // Assert on the RENDERED list, not on the config: a declarative array
+        // that never reaches the DOM is exactly the failure this guards.
+        const quickActionList = addonsLink.closest('ul');
+        expect(quickActionList).not.toBeNull();
+        const hrefs = Array.from(quickActionList?.querySelectorAll('a') ?? []).map((anchor) =>
+            anchor.getAttribute('href')
+        );
+        expect(hrefs).toEqual([
+            '/es/mi-cuenta/propiedades/',
+            '/es/mi-cuenta/promociones/',
+            '/es/mi-cuenta/consultas/',
+            '/es/mi-cuenta/suscripcion/',
+            '/es/mi-cuenta/addons/'
+        ]);
+    });
+
+    it('links the add-ons shortcut to the whole catalog, with no ?addon= focus', async () => {
+        mockHostDashboardGet.mockResolvedValue({
+            ok: true,
+            data: mockDashboardApiResponse
+        });
+
+        render(<HostDashboard locale="es" />);
+
+        const addonsLink = await screen.findByRole('link', { name: /complementos/i });
+        expect(addonsLink.getAttribute('href')).not.toContain('?');
+    });
+
+    it('localizes the add-ons shortcut label per locale', async () => {
+        mockHostDashboardGet.mockResolvedValue({
+            ok: true,
+            data: mockDashboardApiResponse
+        });
+
+        render(<HostDashboard locale="en" />);
+
+        const addonsLink = await screen.findByRole('link', { name: /add-ons/i });
+        expect(addonsLink).toHaveAttribute('href', '/en/mi-cuenta/addons/');
+    });
+});

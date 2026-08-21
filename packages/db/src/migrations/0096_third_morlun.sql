@@ -1,0 +1,1 @@
+ALTER TYPE "public"."permission_enum" ADD VALUE 'billing.addon.purchase' BEFORE 'user.update.self';

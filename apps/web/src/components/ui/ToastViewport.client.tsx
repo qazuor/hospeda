@@ -271,19 +271,27 @@ function ToastItem({ toast, closeLabel }: ToastItemProps) {
                 <p className={styles.message}>{toast.message}</p>
 
                 {(toast.action || toast.secondaryAction) && (
+                    // HOS-723: the PRIMARY action renders first, so reading
+                    // order, visual order (`.actions` is a plain `flex` row with
+                    // no `row-reverse`) and tab order all agree with the styling
+                    // about which CTA leads. It used to render second: with the
+                    // filled pill on the right and the quiet one on the left, the
+                    // recommended option was the second thing the eye reached —
+                    // which defeats the point on a limit toast, where the whole
+                    // fix is that the cheap way out gets noticed at all.
                     <div className={styles.actions}>
-                        {toast.secondaryAction && (
-                            <ToastActionLink
-                                action={toast.secondaryAction}
-                                onAfterClick={dismiss}
-                                variant="secondary"
-                            />
-                        )}
                         {toast.action && (
                             <ToastActionLink
                                 action={toast.action}
                                 onAfterClick={dismiss}
                                 variant="primary"
+                            />
+                        )}
+                        {toast.secondaryAction && (
+                            <ToastActionLink
+                                action={toast.secondaryAction}
+                                onAfterClick={dismiss}
+                                variant="secondary"
                             />
                         )}
                     </div>

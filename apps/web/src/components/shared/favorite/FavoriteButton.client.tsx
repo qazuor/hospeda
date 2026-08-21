@@ -303,7 +303,13 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     addToast({
                         type: 'error',
                         message: limitPayload.message,
-                        action: limitPayload.action
+                        // HOS-723: forwarded verbatim — the helper decides which
+                        // CTA leads. No add-on raises `max_favorites` today, so
+                        // `action` is the plan upgrade and `secondaryAction` is
+                        // `undefined`; wired anyway so the day one exists the
+                        // offer appears without touching this call site.
+                        action: limitPayload.action,
+                        secondaryAction: limitPayload.secondaryAction
                     });
                 } else {
                     // Any other API error — rollback and show generic toast.

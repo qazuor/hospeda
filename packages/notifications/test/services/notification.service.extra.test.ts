@@ -126,8 +126,7 @@ describe('NotificationService — extended coverage', () => {
                 amount: 5000,
                 currency: 'ARS',
                 planName: 'Standard',
-                failureReason: 'Fondos insuficientes',
-                retryDate: '2026-07-01'
+                failureReason: 'Fondos insuficientes'
             };
 
             // Act
