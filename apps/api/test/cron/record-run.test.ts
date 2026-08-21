@@ -5,11 +5,15 @@ const { mockRecordRun } = vi.hoisted(() => ({ mockRecordRun: vi.fn() }));
 const { mockCaptureException } = vi.hoisted(() => ({ mockCaptureException: vi.fn() }));
 
 // Intercept `new CronRunService(...)` created at module load in record-run.ts.
-vi.mock('@repo/service-core', () => ({
-    CronRunService: vi.fn(function () {
-        return { recordRun: mockRecordRun };
-    })
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        CronRunService: vi.fn(function () {
+            return { recordRun: mockRecordRun };
+        })
+    };
+});
 
 vi.mock('@sentry/node', () => ({ captureException: mockCaptureException }));
 
