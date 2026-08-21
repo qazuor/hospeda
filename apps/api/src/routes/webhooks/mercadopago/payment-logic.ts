@@ -36,6 +36,7 @@ import { captureServerAnalyticsEvent } from '../../../lib/posthog';
 import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { AddonService } from '../../../services/addon.service';
+import { normalizeAddonCheckoutMetadata } from '../../../services/addon-checkout-metadata';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
 import { recordOrphanPayment } from '../../../services/billing/orphan-payment-queue.service';
 import { resolvePlanChangeReason } from '../../../services/billing/plan-change-reason';
@@ -1301,11 +1302,12 @@ export async function processPaymentUpdated({
         return { success: true, addonConfirmed: false };
     }
 
-    const {
-        addonSlug,
-        customerId: addonCustomerId,
-        accommodationId: addonAccommodationId
-    } = addonInfo;
+    // `extractAddonMetadata` is the dispatch discriminator: its job is to decide
+    // that this payment IS an add-on purchase and to name which one. The payload
+    // that travels with the purchase (accommodation, promo code, discount) is
+    // read separately, from the raw metadata, by `normalizeAddonCheckoutMetadata`
+    // below — one reader, one spelling convention (HOS-721).
+    const { addonSlug, customerId: addonCustomerId } = addonInfo;
 
     // ── Idempotency check: skip if this paymentId was already processed ───────
     const paymentId =
@@ -1357,16 +1359,18 @@ export async function processPaymentUpdated({
     // `input.metadata?.accommodationId` as undefined and took its "should not
     // happen" branch on EVERY visibility-boost purchase — the
     // `featured_listing_addon_grants` table stayed empty in production.
-    // Only the accommodation key is forwarded: the promo/discount keys that
-    // `confirmAddonPurchase` also reads are written to MP under snake_case
-    // names it does not look up, so forwarding them here would silently change
-    // promo-redemption behaviour, which is a separate defect (see PR notes).
+    //
+    // HOS-721: the same call now forwards the promo/discount keys too. HOS-675
+    // deliberately left them out because the checkout writes them under the
+    // snake_case names MercadoPago requires while `confirmAddonPurchase` looks
+    // up camelCase ones — forwarding the raw bag would have changed nothing.
+    // `normalizeAddonCheckoutMetadata` is that translation, done exactly once,
+    // here at the border: everything downstream reads canonical camelCase only.
+    const addonMetadata = normalizeAddonCheckoutMetadata({ metadata: data.metadata });
     const result = await addonService.confirmPurchase({
         customerId: addonCustomerId,
         addonSlug,
-        ...(addonAccommodationId === undefined
-            ? {}
-            : { metadata: { accommodationId: addonAccommodationId } })
+        ...(Object.keys(addonMetadata).length === 0 ? {} : { metadata: addonMetadata })
     });
 
     if (!result.success) {
