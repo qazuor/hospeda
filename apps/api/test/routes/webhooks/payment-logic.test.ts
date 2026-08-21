@@ -196,6 +196,20 @@ vi.mock('../../../src/services/addon-plan-change.service', () => ({
     handlePlanChangeAddonRecalculation: vi.fn().mockResolvedValue(undefined)
 }));
 
+// HOS-714: the orphan-payment queue. Mocked so the discard-branch tests can
+// assert WHAT the confirmation flows hand to the queue without needing a live
+// table. The service's own persistence + alerting is covered by
+// `test/services/billing/orphan-payment-queue.service.test.ts`.
+const { mockRecordOrphanPayment } = vi.hoisted(() => ({
+    mockRecordOrphanPayment: vi
+        .fn()
+        .mockResolvedValue({ queued: true, alreadyQueued: false, failed: false })
+}));
+
+vi.mock('../../../src/services/billing/orphan-payment-queue.service', () => ({
+    recordOrphanPayment: mockRecordOrphanPayment
+}));
+
 vi.mock('../../../src/middlewares/entitlement', () => ({
     clearEntitlementCache: vi.fn()
 }));
@@ -360,6 +374,13 @@ describe('processPaymentUpdated', () => {
         });
         // HOS-123 T-013: restore default after clearAllMocks wipes it.
         vi.mocked(completeSupersessionPairing).mockResolvedValue('completed');
+        // HOS-714: same — clearAllMocks wipes the queue stub's resolved value,
+        // and an undefined result would make the awaited call throw downstream.
+        mockRecordOrphanPayment.mockResolvedValue({
+            queued: true,
+            alreadyQueued: false,
+            failed: false
+        });
     });
 
     it('should send success notification for approved payment', async () => {
@@ -1074,7 +1095,7 @@ describe('processPaymentUpdated', () => {
             expect(annualDbState.updateCalls).toHaveLength(0);
         });
 
-        it('logs warn and skips when the local sub is in an unexpected status', async () => {
+        it('HOS-714: queues the payment instead of discarding it when the local sub is in an unexpected status', async () => {
             approvedAnnualPayment();
             annualDbState.subRows = [
                 { id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'cancelled' }
@@ -1091,9 +1112,24 @@ describe('processPaymentUpdated', () => {
             expect(result.annualSubscriptionConfirmed).toBe(false);
             expect(mockBilling.payments.record).not.toHaveBeenCalled();
             expect(annualDbState.updateCalls).toHaveLength(0);
+            // The charge cleared and could not be applied — it must land on the
+            // queue with the status that blocked it, not vanish behind a warn.
+            expect(mockRecordOrphanPayment).toHaveBeenCalledTimes(1);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    providerPaymentId: MP_PAYMENT_ID,
+                    flow: 'annual-upfront',
+                    reason: 'subscription-status-not-applicable',
+                    amountMajor: 350_000,
+                    currency: 'ARS',
+                    subscriptionId: ANNUAL_SUB_ID,
+                    customerId: 'cust-1',
+                    observedStatus: 'cancelled'
+                })
+            );
         });
 
-        it('logs warn and skips when the local sub is not found', async () => {
+        it('HOS-714: queues the payment instead of discarding it when the local sub is not found', async () => {
             approvedAnnualPayment();
             annualDbState.subRows = []; // missing
 
@@ -1107,6 +1143,35 @@ describe('processPaymentUpdated', () => {
 
             expect(result.annualSubscriptionConfirmed).toBe(false);
             expect(mockBilling.payments.record).not.toHaveBeenCalled();
+            expect(mockRecordOrphanPayment).toHaveBeenCalledTimes(1);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    providerPaymentId: MP_PAYMENT_ID,
+                    flow: 'annual-upfront',
+                    reason: 'subscription-not-found',
+                    amountMajor: 350_000,
+                    currency: 'ARS'
+                })
+            );
+        });
+
+        it('HOS-714: an idempotent re-delivery of an ALREADY-ACTIVE annual sub is not an orphan', async () => {
+            // Arrange — the "already active" branch is a successful retry, not a
+            // lost payment. Queueing it would flood the queue with non-incidents.
+            approvedAnnualPayment();
+            annualDbState.subRows = [{ id: ANNUAL_SUB_ID, customerId: 'cust-1', status: 'active' }];
+
+            // Act
+            await processPaymentUpdated({
+                data: {
+                    id: MP_PAYMENT_ID,
+                    metadata: { annualSubscriptionId: ANNUAL_SUB_ID }
+                },
+                billing: mockBilling
+            });
+
+            // Assert
+            expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
         });
 
         it('accepts `accredited` MP status (alongside `approved`)', async () => {
@@ -1587,7 +1652,7 @@ describe('processPaymentUpdated', () => {
             expect(billing.payments.record).not.toHaveBeenCalled();
         });
 
-        it('skips when sub is not active/trialing', async () => {
+        it('HOS-714: queues the prorated delta instead of discarding it when sub is not active/trialing', async () => {
             approvedUpgradePayment();
             const billing = makeUpgradeBilling({
                 sub: {
@@ -1606,9 +1671,57 @@ describe('processPaymentUpdated', () => {
 
             expect(result.planUpgradeConfirmed).toBe(false);
             expect(billing.subscriptions.changePlan).not.toHaveBeenCalled();
+            // This is the branch HOS-714 was filed on: the customer already paid
+            // the delta. It goes on the queue with the blocking status attached.
+            expect(mockRecordOrphanPayment).toHaveBeenCalledTimes(1);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    providerPaymentId: MP_PAYMENT_ID,
+                    flow: 'plan-change-upgrade',
+                    reason: 'subscription-status-not-applicable',
+                    amountMajor: 1_000,
+                    currency: 'ARS',
+                    subscriptionId: UPGRADE_SUB_ID,
+                    customerId: 'cust-1',
+                    observedStatus: 'canceled'
+                })
+            );
         });
 
-        it('skips when sub is not found', async () => {
+        it('HOS-714: a past_due subscription — the realistic case — queues rather than dropping the delta', async () => {
+            // Arrange — a recurring charge fails while a plan change is in
+            // flight, so the subscription is in dunning grace when the upgrade
+            // delta clears. Before HOS-714 this was money taken and nothing given.
+            approvedUpgradePayment();
+            const billing = makeUpgradeBilling({
+                sub: {
+                    id: UPGRADE_SUB_ID,
+                    customerId: 'cust-1',
+                    planId: OLD_PLAN_ID,
+                    status: 'past_due',
+                    providerSubscriptionIds: { mercadopago: 'mp-pre-123' }
+                }
+            });
+
+            // Act
+            const result = await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            // Assert
+            expect(result.planUpgradeConfirmed).toBe(false);
+            expect(billing.subscriptions.changePlan).not.toHaveBeenCalled();
+            expect(mockRecordOrphanPayment).toHaveBeenCalledTimes(1);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    reason: 'subscription-status-not-applicable',
+                    observedStatus: 'past_due'
+                })
+            );
+        });
+
+        it('HOS-714: queues the prorated delta instead of discarding it when sub is not found', async () => {
             approvedUpgradePayment();
             const billing = makeUpgradeBilling({ sub: null });
 
@@ -1618,6 +1731,56 @@ describe('processPaymentUpdated', () => {
             });
 
             expect(result.planUpgradeConfirmed).toBe(false);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledTimes(1);
+            expect(mockRecordOrphanPayment).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    providerPaymentId: MP_PAYMENT_ID,
+                    flow: 'plan-change-upgrade',
+                    reason: 'subscription-not-found',
+                    amountMajor: 1_000,
+                    currency: 'ARS',
+                    subscriptionId: UPGRADE_SUB_ID
+                })
+            );
+        });
+
+        it('HOS-714: a successful upgrade never touches the orphan queue', async () => {
+            // Arrange
+            approvedUpgradePayment();
+            const billing = makeUpgradeBilling();
+
+            // Act
+            const result = await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            // Assert
+            expect(result.planUpgradeConfirmed).toBe(true);
+            expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
+        });
+
+        it('HOS-714: an idempotent re-delivery (already on the target plan) is not an orphan', async () => {
+            // Arrange
+            approvedUpgradePayment();
+            const billing = makeUpgradeBilling({
+                sub: {
+                    id: UPGRADE_SUB_ID,
+                    customerId: 'cust-1',
+                    planId: NEW_PLAN_ID, // already upgraded
+                    status: 'active',
+                    providerSubscriptionIds: { mercadopago: 'mp-pre-123' }
+                }
+            });
+
+            // Act
+            await processPaymentUpdated({
+                data: { id: MP_PAYMENT_ID, metadata: { planChangeUpgradeId: UPGRADE_SUB_ID } },
+                billing
+            });
+
+            // Assert
+            expect(mockRecordOrphanPayment).not.toHaveBeenCalled();
         });
 
         it('does not commit when MP status is not approved/accredited', async () => {
