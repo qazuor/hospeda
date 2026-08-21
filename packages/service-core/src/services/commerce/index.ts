@@ -6,9 +6,10 @@
  * - `CommerceLeadService` — lead submission, listing, and handling
  * - Permission helpers, junction-sync utilities, visibility reconciler, and types
  *
- * `CommerceOwnerProvisioningService` (COMMERCE_OWNER user creation from an
- * approved lead) was removed by HOS-693 §6.2 — owners now grant themselves
- * the role by creating their own listing (HOS-687).
+ * HOS-693 §6.2 removed the admin owner-provisioning service that used to be
+ * exported here (COMMERCE_OWNER user creation from an approved lead) —
+ * owners now grant themselves the role by creating their own listing
+ * (HOS-687).
  */
 
 export {

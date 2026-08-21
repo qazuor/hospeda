@@ -9,10 +9,10 @@
  * update → review moderation → rating recompute against a REAL ephemeral
  * PostgreSQL database.
  *
- * The former T-2 case (lead → admin-provisioned COMMERCE_OWNER via
- * `CommerceOwnerProvisioningService`) was removed by HOS-693 §6.2 along with
- * the service itself — owners now grant themselves the role by creating
- * their own listing (HOS-687).
+ * The former T-2 case (lead → admin-provisioned COMMERCE_OWNER via the
+ * dedicated owner-provisioning service) was removed by HOS-693 §6.2 along
+ * with that service itself — owners now grant themselves the role by
+ * creating their own listing (HOS-687).
  *
  * ## Why real-DB
  *

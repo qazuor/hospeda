@@ -6,11 +6,11 @@
  * A "commerce lead" is a pre-onboarding application submitted via the public
  * "Sumar mi negocio" (Add my business) form.  It records the applicant's
  * contact info and business details for admin review and marketing capture.
- * HOS-693 §6.2 removed the admin-provisioning step this used to feed
- * (`approveAndProvision`) — owners now create their own listing directly,
- * which is what grants the COMMERCE_OWNER role (HOS-687). This service's
- * remaining surface (`createLead`, `listLeads`, `markHandled`, `getMyLead`)
- * is unchanged.
+ * HOS-693 §6.2 removed the admin-provisioning method this used to feed
+ * (approve a lead AND create its owner account in one action) — owners now
+ * create their own listing directly, which is what grants the COMMERCE_OWNER
+ * role (HOS-687). This service's remaining surface (`createLead`,
+ * `listLeads`, `markHandled`, `getMyLead`) is unchanged.
  *
  * ## Design decisions
  * - Extends `BaseService` (not `BaseCrudService`) because the lead lifecycle
