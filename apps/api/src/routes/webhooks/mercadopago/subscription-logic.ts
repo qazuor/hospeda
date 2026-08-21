@@ -1113,18 +1113,28 @@ export async function processSubscriptionUpdated({
 
     // Step 8a: SPEC-143 Finding #17 fallback cleanup.
     //
-    // Mark any active polling job for this subscription as `succeeded` so
-    // the cron stops querying MP for a sub whose status the webhook just
-    // resolved. This is purely a cleanup — even if it fails, the next poll
-    // would see the local sub is already in a terminal state and complete
-    // the job normally (idempotent path). Skipped when source='polling'
-    // because in that case the cron itself is updating the job.
+    // Mark the polling job for THIS PREAPPROVAL as `succeeded` so the cron
+    // stops querying MP for a sub whose status the webhook just resolved.
+    // This is purely a cleanup — even if it fails, the next poll would see
+    // the local sub is already in a terminal state and complete the job
+    // normally (idempotent path). Skipped when source='polling' because in
+    // that case the cron itself is updating the job.
+    //
+    // HOS-710: looked up by preapproval id, NOT by subscription id. One
+    // subscription can now hold several active polling jobs at once — one
+    // per in-flight one-time checkout (e.g. an add-on purchase awaiting
+    // payment). A subscription-scoped lookup would hand us whichever job
+    // came first and close it, so a routine preapproval event could retire
+    // an add-on purchase's job while its payment was still pending. That
+    // purchase would then never be confirmed: MP Preferences have no
+    // Webhooks v2 channel, so its polling job is the only path it has.
     if (source !== 'polling') {
         try {
             const pollingStorage = billing.getStorage().subscriptionPollingJobs;
             if (pollingStorage) {
-                const activeJob = await pollingStorage.findActiveBySubscriptionId(
-                    localSubscription.id
+                const activeJob = await pollingStorage.findActiveByProviderResourceId(
+                    'mercadopago',
+                    mpPreapprovalId
                 );
                 if (activeJob) {
                     await pollingStorage.update({

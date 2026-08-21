@@ -42,6 +42,17 @@ overrides:
   # that declares it. Additive minors on both. As the H-146 note above says, THIS
   # override is what actually moves the version — the per-package `^3.1.0` /
   # `^2.9.0` ranges in apps/api and packages/billing are inert on their own.
+  #
+  # HOS-710 (2026-08-20): the same core 3.1.0 carries a second, independent fix,
+  # so this pin is now load-bearing for two reasons and neither may be reverted
+  # alone. 3.1.0 also adds `findActiveByProviderResourceId` to the polling-job
+  # storage port and rescopes the active-job unique index from `subscription_id`
+  # to `(provider, provider_resource_id)`. The old scope allowed one active
+  # polling job per SUBSCRIPTION, so the first add-on checkout — even an
+  # abandoned one — held the only slot and every later purchase got no job at
+  # all. MP Preferences deliver no Webhooks v2 event, so that job is the only
+  # activation path a purchase has: two approved payments were collected and
+  # never recorded. Ships with migration 0093 on our side.
   "@qazuor/qzpay-core": "3.1.0"
   "@qazuor/qzpay-mercadopago": "2.9.0"
   typescript: "6.0.3"
@@ -231,6 +242,6 @@ forceLegacyDeploy: true
 minimumReleaseAgeExclude:
   - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0'
   - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0'
-  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8'
+  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0'
   - '@qazuor/qzpay-hono@1.6.7 || 1.6.8'
   - '@qazuor/qzpay-react@1.1.22 || 1.1.23'

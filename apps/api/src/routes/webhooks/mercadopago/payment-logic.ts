@@ -108,8 +108,32 @@ export async function confirmAnnualSubscription(input: {
     readonly currency: string;
     readonly billing: QZPayBilling;
     readonly source: string;
+    /**
+     * Checkout-session id this payment settles — the value stored as the
+     * polling job's `providerResourceId` (and as MP's `external_reference`).
+     *
+     * HOS-710: required so the polling cleanup below closes the job for THIS
+     * checkout rather than "whichever job this subscription happens to have".
+     * A subscription can now hold several active jobs at once, one per
+     * in-flight one-time checkout, so a subscription-scoped lookup could
+     * retire an add-on purchase's job while its payment was still pending —
+     * and MP Preferences have no Webhooks v2 channel, so that job is the only
+     * activation path the purchase has.
+     *
+     * `null` only when the caller genuinely has no session id; the cleanup is
+     * then skipped rather than guessing.
+     */
+    readonly checkoutSessionId: string | null;
 }): Promise<{ confirmed: boolean }> {
-    const { annualSubscriptionId, providerPaymentId, amount, currency, billing, source } = input;
+    const {
+        annualSubscriptionId,
+        providerPaymentId,
+        amount,
+        currency,
+        billing,
+        source,
+        checkoutSessionId
+    } = input;
 
     const db = getDb();
     // Full-row select (not a column projection): HOS-123 T-013 needs
@@ -324,18 +348,27 @@ export async function confirmAnnualSubscription(input: {
         );
     }
 
-    // SPEC-143 Finding #21 fallback cleanup. Mark any active polling job
-    // for this annual subscription as `succeeded` so the cron stops
-    // searching MP for a sub whose status the webhook just resolved.
-    // Idempotent — even if this fails, the next poll attempt would see
-    // the sub already `active` and would no-op via the confirmAnnualSubscription
-    // idempotency guard. Skipped when source='polling' because in that
-    // case the cron itself is updating the job.
-    if (source !== 'polling') {
+    // SPEC-143 Finding #21 fallback cleanup. Mark the polling job for THIS
+    // CHECKOUT as `succeeded` so the cron stops searching MP for a sub whose
+    // status the webhook just resolved. Idempotent — even if this fails, the
+    // next poll attempt would see the sub already `active` and would no-op via
+    // the confirmAnnualSubscription idempotency guard. Skipped when
+    // source='polling' because in that case the cron itself is updating the job.
+    //
+    // HOS-710: looked up by checkout-session id, NOT by subscription id, and
+    // skipped entirely when the caller has no session id. One subscription can
+    // now hold several active jobs at once — one per in-flight one-time
+    // checkout — so a subscription-scoped lookup could close an add-on
+    // purchase's job while its payment was still pending, leaving that
+    // purchase with no activation path at all.
+    if (source !== 'polling' && checkoutSessionId) {
         try {
             const pollingStorage = billing.getStorage().subscriptionPollingJobs;
             if (pollingStorage) {
-                const activeJob = await pollingStorage.findActiveBySubscriptionId(sub.id);
+                const activeJob = await pollingStorage.findActiveByProviderResourceId(
+                    'mercadopago',
+                    checkoutSessionId
+                );
                 if (activeJob) {
                     await pollingStorage.update({
                         id: activeJob.id,
@@ -1105,7 +1138,12 @@ export async function processPaymentUpdated({
                     amount: paymentInfo.amount,
                     currency: paymentInfo.currency,
                     billing,
-                    source
+                    source,
+                    // MP echoes back the checkout-session id qzpay set as the
+                    // preference's external_reference, which is the same value
+                    // the polling job stored as its providerResourceId.
+                    checkoutSessionId:
+                        typeof data.external_reference === 'string' ? data.external_reference : null
                 });
                 return {
                     success: true,
