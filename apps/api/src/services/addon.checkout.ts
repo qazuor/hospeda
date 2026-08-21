@@ -8,7 +8,7 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import type { QZPayBilling } from '@qazuor/qzpay-core';
+import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
 import { isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { AccommodationModel } from '@repo/db';
@@ -700,6 +700,143 @@ async function markFeaturedGrantLinkMissing(params: {
 }
 
 /**
+ * Provider key under which MercadoPago payment ids live inside the
+ * `billing_payments.provider_payment_ids` jsonb map.
+ *
+ * Exported so the dedupe query, the sibling subscription flows and the
+ * regression test all name the same key instead of re-typing the string.
+ */
+export const ADDON_PAYMENT_PROVIDER_KEY = 'mercadopago' as const;
+
+/**
+ * Value written to `billing_payments.metadata.flow` for an add-on charge, so
+ * the ledger can tell an add-on purchase apart from a subscription charge
+ * (`annual-upfront`, `plan-upgrade-delta`, recurring) with one query.
+ */
+export const ADDON_PAYMENT_FLOW = 'addon-purchase' as const;
+
+/**
+ * Write the `billing_payments` row for a confirmed add-on charge (HOS-595).
+ *
+ * The add-on path used to be the only money-collecting flow in the codebase
+ * with no ledger entry at all: `billing_addon_purchases` recorded WHAT was
+ * bought, and nothing recorded THAT it was paid. A charge with no
+ * `provider_payment_ids` cannot be reconciled against the provider's
+ * settlement, cannot be refunded through `refund-lifecycle.service.ts` (which
+ * looks the payment up by its provider id), and is invisible to every revenue
+ * report that reads this table.
+ *
+ * This is deliberately NOT a second implementation: it calls the same
+ * `billing.payments.record()` facade the subscription flows call
+ * (`payment-logic.ts` annual + plan-upgrade delta,
+ * `subscription-payment-handler.ts` recurring, `webhook-retry.job.ts`
+ * dead-letter), and reuses their dedupe shape — a lookup on
+ * `provider_payment_ids->>'mercadopago'` — so a provider redelivery of the same
+ * charge does not double-insert.
+ *
+ * Best-effort by design: it runs after the purchase row is already committed
+ * and after the money was collected, so a failure here must never turn a
+ * successful confirmation into a failed one (HOS-714 — a payment that cannot be
+ * applied is recorded and alerted, never discarded). A failure is logged at
+ * `error` and reported to Sentry.
+ *
+ * @param params - Billing facade plus the charge to book
+ */
+async function recordAddonPayment(params: {
+    readonly billing: QZPayBilling;
+    readonly customerId: string;
+    readonly subscriptionId: string;
+    readonly purchaseId: string;
+    readonly addonSlug: string;
+    readonly providerPaymentId: string;
+    readonly amountInCents: number;
+    readonly currency: string;
+}): Promise<void> {
+    const {
+        billing,
+        customerId,
+        subscriptionId,
+        purchaseId,
+        addonSlug,
+        providerPaymentId,
+        amountInCents,
+        currency
+    } = params;
+
+    try {
+        const { getDb, billingPayments } = await import('@repo/db');
+        const { sql: paymentSql } = await import('drizzle-orm');
+
+        const existing = await getDb()
+            .select({ id: billingPayments.id })
+            .from(billingPayments)
+            .where(
+                paymentSql`${billingPayments.providerPaymentIds}->>${ADDON_PAYMENT_PROVIDER_KEY} = ${providerPaymentId}`
+            )
+            .limit(1);
+
+        if (existing.length > 0) {
+            apiLogger.debug(
+                { customerId, addonSlug, purchaseId, providerPaymentId },
+                'Add-on payment already recorded in billing_payments — skipping record'
+            );
+            return;
+        }
+
+        const recorded = await billing.payments.record({
+            id: randomUUID(),
+            customerId,
+            subscriptionId,
+            amount: amountInCents,
+            currency: currency as QZPayCurrency,
+            status: 'succeeded' as QZPayPaymentStatus,
+            provider: ADDON_PAYMENT_PROVIDER_KEY,
+            providerPaymentId,
+            metadata: {
+                flow: ADDON_PAYMENT_FLOW,
+                addonSlug,
+                purchaseId
+            }
+        });
+
+        apiLogger.info(
+            {
+                customerId,
+                addonSlug,
+                purchaseId,
+                providerPaymentId,
+                billingPaymentId: recorded.id,
+                amountInCents,
+                currency
+            },
+            'Add-on payment recorded in billing_payments'
+        );
+    } catch (recordError) {
+        apiLogger.error(
+            {
+                customerId,
+                addonSlug,
+                purchaseId,
+                providerPaymentId,
+                amountInCents,
+                currency,
+                error: recordError instanceof Error ? recordError.message : String(recordError)
+            },
+            'Failed to record billing_payments row for add-on purchase — money collected without a ledger entry; reconcile manually'
+        );
+        captureBillingError(
+            recordError instanceof Error ? recordError : new Error(String(recordError)),
+            {
+                addonIds: [addonSlug],
+                transactionId: purchaseId,
+                operation: 'addon_payment_record'
+            },
+            'error'
+        );
+    }
+}
+
+/**
  * Confirm an add-on purchase after payment webhook.
  *
  * Inserts a record into `billing_addon_purchases`, computes limit and
@@ -866,6 +1003,12 @@ export async function confirmAddonPurchase(
                         customerId: input.customerId,
                         subscriptionId: input.subscriptionId || activeSubscription.id,
                         addonSlug: input.addonSlug,
+                        // HOS-595: `addon_id` is a FK to `billing_addons` and was
+                        // never written, so no purchase could be joined back to the
+                        // catalog row it was bought from. The id comes from the same
+                        // catalog lookup at the top of this function — the row mapper
+                        // simply used to drop it.
+                        addonId: addon.id ?? null,
                         status: 'active',
                         purchasedAt: now,
                         expiresAt,
@@ -934,6 +1077,41 @@ export async function confirmAddonPurchase(
             },
             'Inserted add-on purchase into billing_addon_purchases table'
         );
+
+        // HOS-595: book the charge in `billing_payments` immediately after the
+        // purchase row commits, and BEFORE entitlements are applied — the money
+        // is already collected at this point, so the ledger entry must not be
+        // conditional on anything that runs later succeeding.
+        //
+        // Both inputs are required and neither is defaulted: a ledger row needs
+        // the provider id to be reconcilable or refundable at all, and a row
+        // carrying the catalog list price instead of the charged amount would be
+        // a plausible-looking lie the moment a promo code is involved. The caller
+        // supplies the amount only for an APPROVED payment, so a rejected charge
+        // never lands here as `succeeded`.
+        if (input.paymentId && input.amountInCents !== undefined) {
+            await recordAddonPayment({
+                billing,
+                customerId: input.customerId,
+                subscriptionId: input.subscriptionId || activeSubscription.id,
+                purchaseId,
+                addonSlug: input.addonSlug,
+                providerPaymentId: input.paymentId,
+                amountInCents: input.amountInCents,
+                currency: input.currency ?? 'ARS'
+            });
+        } else {
+            apiLogger.error(
+                {
+                    customerId: input.customerId,
+                    addonSlug: input.addonSlug,
+                    purchaseId,
+                    hasPaymentId: Boolean(input.paymentId),
+                    hasAmount: input.amountInCents !== undefined
+                },
+                'Add-on purchase confirmed without a settled provider charge; no billing_payments row written — the charge cannot be reconciled or refunded'
+            );
+        }
 
         // SPEC-309 T-007: link the purchase to its target accommodation. T-006
         // validated and carried the accommodationId through checkout.create's

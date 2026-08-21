@@ -1361,9 +1361,33 @@ export async function processPaymentUpdated({
     // `confirmAddonPurchase` also reads are written to MP under snake_case
     // names it does not look up, so forwarding them here would silently change
     // promo-redemption behaviour, which is a separate defect (see PR notes).
+    // HOS-595: forward the provider payment id and the amount actually charged.
+    // Neither was passed before, with two consequences: `confirmAddonPurchase`
+    // wrote `payment_id: null` on every purchase row (which also made the
+    // idempotency SELECT above dead code, since it matches on that column), and
+    // it had nothing to book in `billing_payments` — so an add-on charge left no
+    // ledger entry at all, unlike every subscription flow in this same file.
     const result = await addonService.confirmPurchase({
         customerId: addonCustomerId,
         addonSlug,
+        ...(paymentId === null ? {} : { paymentId }),
+        // The charged amount is forwarded ONLY for an approved payment, which is
+        // what makes the ledger row conditional on the money having actually
+        // moved: `confirmAddonPurchase` books a `succeeded` row when — and only
+        // when — it receives an amount. Unlike the annual and plan-upgrade
+        // dispatches above, this branch has never gated itself on
+        // MP_APPROVED_STATUSES, so without this gate a rejected charge would be
+        // written to the ledger as collected.
+        ...(paymentInfo !== null && MP_APPROVED_STATUSES.has(paymentInfo.status)
+            ? {
+                  // `paymentInfo.amount` is in MAJOR units (extractPaymentInfo
+                  // reads MP's `transaction_amount`); billing_payments stores
+                  // integer centavos, the same conversion the sibling
+                  // `billing.payments.record()` calls above perform.
+                  amountInCents: Math.round(paymentInfo.amount * 100),
+                  currency: paymentInfo.currency
+              }
+            : {}),
         ...(addonAccommodationId === undefined
             ? {}
             : { metadata: { accommodationId: addonAccommodationId } })
