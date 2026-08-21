@@ -37,6 +37,7 @@ import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { clearEntitlementCache } from '../../../middlewares/entitlement';
 import { AddonService } from '../../../services/addon.service';
 import { handlePlanChangeAddonRecalculation } from '../../../services/addon-plan-change.service';
+import { recordOrphanPayment } from '../../../services/billing/orphan-payment-queue.service';
 import { resolvePlanChangeReason } from '../../../services/billing/plan-change-reason';
 import { applyUpgradeRestorationsOrWarn } from '../../../services/plan-upgrade-restoration.service';
 import { applyRefundLifecycle } from '../../../services/refund-lifecycle.service';
@@ -154,10 +155,20 @@ export async function confirmAnnualSubscription(input: {
 
     const sub = rows[0];
     if (!sub) {
-        apiLogger.warn(
-            { annualSubscriptionId, providerPaymentId, source },
-            'Annual subscription confirmation: local subscription not found — payment ignored'
-        );
+        // HOS-714: the charge cleared and there is nothing to apply it to. Do
+        // NOT drop it — queue it for manual resolution and raise an incident.
+        // `recordOrphanPayment` owns the `error` + `capture: true` alert; it
+        // never throws, so the webhook disposition below is unchanged.
+        await recordOrphanPayment({
+            providerPaymentId,
+            flow: 'annual-upfront',
+            reason: 'subscription-not-found',
+            amountMajor: amount,
+            currency,
+            subscriptionId: annualSubscriptionId,
+            source,
+            metadata: { annualSubscriptionId, checkoutSessionId }
+        });
         return { confirmed: false };
     }
 
@@ -170,15 +181,24 @@ export async function confirmAnnualSubscription(input: {
     }
 
     if (sub.status !== SubscriptionStatusEnum.PENDING_PROVIDER) {
-        apiLogger.warn(
-            {
+        // HOS-714: money moved, the activation cannot run. Queue + alert
+        // instead of the old `warn` + silent drop.
+        await recordOrphanPayment({
+            providerPaymentId,
+            flow: 'annual-upfront',
+            reason: 'subscription-status-not-applicable',
+            amountMajor: amount,
+            currency,
+            subscriptionId: sub.id,
+            customerId: sub.customerId,
+            observedStatus: sub.status,
+            source,
+            metadata: {
                 annualSubscriptionId,
-                providerPaymentId,
-                source,
-                currentStatus: sub.status
-            },
-            'Annual subscription confirmation: subscription is not pending_provider — payment ignored'
-        );
+                checkoutSessionId,
+                expectedStatus: SubscriptionStatusEnum.PENDING_PROVIDER
+            }
+        });
         return { confirmed: false };
     }
 
@@ -486,10 +506,18 @@ async function confirmPlanUpgrade(input: {
 
     const sub = await billing.subscriptions.get(planChangeUpgradeId);
     if (!sub) {
-        apiLogger.warn(
-            { planChangeUpgradeId, providerPaymentId, source },
-            'Plan upgrade confirmation: local subscription not found — payment ignored'
-        );
+        // HOS-714: the customer paid the prorated delta and the subscription
+        // it names does not exist. Queue + alert; never drop.
+        await recordOrphanPayment({
+            providerPaymentId,
+            flow: 'plan-change-upgrade',
+            reason: 'subscription-not-found',
+            amountMajor: amount,
+            currency,
+            subscriptionId: planChangeUpgradeId,
+            source,
+            metadata: { planChangeUpgradeId, oldPlanId, newPlanId, newPriceId }
+        });
         return { confirmed: false };
     }
 
@@ -501,16 +529,38 @@ async function confirmPlanUpgrade(input: {
         return { confirmed: false };
     }
 
+    // NOTE FOR THE NEXT STATUS-PREDICATE SWEEP (HOS-702 → HOS-714): do NOT
+    // migrate this comparison to the canonical `isEntitlementGrantingStatus`
+    // helper. Excluding `comp` here is CORRECT, not an oversight: twelve lines
+    // below this guard we call `billing.subscriptions.changePlan()`, which
+    // mutates a MercadoPago preapproval — and a `comp` subscription has no
+    // preapproval at all (`mp_subscription_id = NULL` by design). Adding `comp`
+    // would be the opposite bug, the same one already fixed in pause, cancel
+    // and re-pricing. The verified reasoning is on HOS-714.
     if (sub.status !== 'active' && sub.status !== 'trialing') {
-        apiLogger.warn(
-            {
+        // HOS-714: the prorated delta was already charged. The plan change
+        // cannot be committed from this status, but the money is real —
+        // queue it for manual resolution and raise an incident instead of
+        // the old `warn` + silent drop.
+        await recordOrphanPayment({
+            providerPaymentId,
+            flow: 'plan-change-upgrade',
+            reason: 'subscription-status-not-applicable',
+            amountMajor: amount,
+            currency,
+            subscriptionId: planChangeUpgradeId,
+            customerId: sub.customerId,
+            observedStatus: sub.status,
+            source,
+            metadata: {
                 planChangeUpgradeId,
-                providerPaymentId,
-                source,
-                currentStatus: sub.status
-            },
-            'Plan upgrade confirmation: subscription is not active/trialing — payment ignored'
-        );
+                oldPlanId,
+                newPlanId,
+                newPriceId,
+                targetTransactionAmountMajor,
+                acceptedStatuses: ['active', 'trialing']
+            }
+        });
         return { confirmed: false };
     }
 
