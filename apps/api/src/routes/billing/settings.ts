@@ -18,6 +18,7 @@ import { getActorFromContext } from '../../middlewares/actor';
 import { getBillingSettingsService } from '../../services/billing-settings.service';
 import { AuditEventType, auditLog } from '../../utils/audit-logger';
 import { createRouter } from '../../utils/create-app';
+import { env } from '../../utils/env';
 import { apiLogger } from '../../utils/logger';
 import { createAdminRoute } from '../../utils/route-factory';
 
@@ -106,9 +107,14 @@ export const updateBillingSettingsRoute = createAdminRoute({
         const actorId = actor?.id || undefined;
 
         const settingsService = getBillingSettingsService();
+        // Same single source of truth as middlewares/billing.ts and the
+        // mercadopago webhook event-handler: sandbox mode means every
+        // persisted row is non-live, even for a global admin setting — a
+        // change made from staging is staging data (HOS-719).
+        const livemode = !env.HOSPEDA_MERCADO_PAGO_SANDBOX;
 
         try {
-            const updatedSettings = await settingsService.updateSettings(body, actorId);
+            const updatedSettings = await settingsService.updateSettings(body, livemode, actorId);
 
             apiLogger.info(
                 {
@@ -171,9 +177,12 @@ export const resetBillingSettingsRoute = createAdminRoute({
         const actorId = actor?.id || undefined;
 
         const settingsService = getBillingSettingsService();
+        // Same single source of truth as middlewares/billing.ts and the
+        // mercadopago webhook event-handler (HOS-719).
+        const livemode = !env.HOSPEDA_MERCADO_PAGO_SANDBOX;
 
         try {
-            const defaultSettings = await settingsService.resetSettings(actorId);
+            const defaultSettings = await settingsService.resetSettings(livemode, actorId);
 
             apiLogger.info(
                 {

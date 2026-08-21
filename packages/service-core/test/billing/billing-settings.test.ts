@@ -163,7 +163,7 @@ describe('BillingSettingsService', () => {
             });
 
             // Act
-            const result = await service.updateSettings({ taxRate: 10 });
+            const result = await service.updateSettings({ taxRate: 10 }, false);
 
             // Assert
             expect(result.taxRate).toBe(10);
@@ -193,7 +193,7 @@ describe('BillingSettingsService', () => {
                 return fn({ insert: vi.fn().mockReturnValue({ values: valuesSpy }) });
             });
 
-            await service.updateSettings({ taxRate: 10 });
+            await service.updateSettings({ taxRate: 10 }, false);
 
             const auditInsert = valuesSpy.mock.calls
                 .map((c) => c[0] as { entityType?: string; entityId?: string })
@@ -218,7 +218,50 @@ describe('BillingSettingsService', () => {
             });
 
             // Act / Assert — taxRate 200 is out of range (0–100)
-            await expect(service.updateSettings({ taxRate: 200 })).rejects.toThrow('Validation');
+            await expect(service.updateSettings({ taxRate: 200 }, false)).rejects.toThrow(
+                'Validation'
+            );
+        });
+
+        // HOS-719: `livemode` on the billing_audit_logs insert must be the value
+        // the caller explicitly derives from the sandbox env var — never a
+        // hardcoded `true`. Before this fix the audit trail always mislabeled
+        // sandbox-originated settings changes as production data.
+        it('writes the audit log with the caller-provided livemode (HOS-719)', async () => {
+            mockGetDb.mockReturnValue({
+                select: vi.fn().mockReturnValue({
+                    from: vi.fn().mockReturnValue({
+                        where: vi.fn().mockReturnValue({
+                            limit: vi.fn().mockResolvedValue([])
+                        })
+                    })
+                })
+            });
+            const valuesSpy = vi.fn().mockReturnValue({
+                onConflictDoUpdate: vi.fn().mockResolvedValue([])
+            });
+            mockWithTransaction.mockImplementation(async function (
+                fn: (tx: unknown) => Promise<unknown>
+            ) {
+                return fn({ insert: vi.fn().mockReturnValue({ values: valuesSpy }) });
+            });
+
+            // Act — sandbox mode (livemode: false)
+            await service.updateSettings({ taxRate: 10 }, false);
+
+            const sandboxAuditInsert = valuesSpy.mock.calls
+                .map((c) => c[0] as { entityType?: string; livemode?: boolean })
+                .find((v) => v?.entityType === 'settings');
+            expect(sandboxAuditInsert?.livemode).toBe(false);
+
+            // Act — production mode (livemode: true)
+            await service.updateSettings({ taxRate: 10 }, true);
+
+            const liveAuditInsert = valuesSpy.mock.calls
+                .map((c) => c[0] as { entityType?: string; livemode?: boolean })
+                .filter((v) => v?.entityType === 'settings')
+                .at(-1);
+            expect(liveAuditInsert?.livemode).toBe(true);
         });
     });
 
@@ -243,7 +286,7 @@ describe('BillingSettingsService', () => {
             });
 
             // Act
-            const result = await service.resetSettings('admin-1');
+            const result = await service.resetSettings(false, 'admin-1');
 
             // Assert
             expect(result).toEqual(DEFAULT);
@@ -344,7 +387,7 @@ describe('BillingSettingsService', () => {
                 });
 
                 // Act
-                const result = await service.updateSettings({ taxRate: 10 }, undefined, ctx);
+                const result = await service.updateSettings({ taxRate: 10 }, false, undefined, ctx);
 
                 // Assert — getDb() was NOT called; ctx.tx drove the read
                 expect(mockGetDb).not.toHaveBeenCalled();
@@ -377,7 +420,7 @@ describe('BillingSettingsService', () => {
                 });
 
                 // Act
-                await service.updateSettings({ taxRate: 5 });
+                await service.updateSettings({ taxRate: 5 }, false);
 
                 // Assert
                 expect(mockGetDb).toHaveBeenCalled();
@@ -402,7 +445,7 @@ describe('BillingSettingsService', () => {
                 const ctx = { tx: {} as unknown as DrizzleClient };
 
                 // Act — should not throw
-                const result = await service.resetSettings('admin-1', ctx);
+                const result = await service.resetSettings(false, 'admin-1', ctx);
 
                 // Assert — still returns defaults; transaction still runs
                 expect(result).toEqual(DEFAULT);
