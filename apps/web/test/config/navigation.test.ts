@@ -483,3 +483,99 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         expect(editorial?.items.map((item) => item.id)).toEqual(['myEvents']);
     });
 });
+
+describe('addons nav item (HOS-726)', () => {
+    /** Item ids the `cuenta` group actually yields for a given visibility predicate. */
+    function cuentaItemIds(
+        visibility: (node: { readonly requiredPermission?: PermissionEnum }) => boolean,
+        surface: 'sidebar' | 'mobile' | 'avatar' = 'sidebar'
+    ): readonly string[] {
+        const { groups } = getNavForSurface({ surface, visibility });
+        return findGroup(groups, 'cuenta')?.items.map((item) => item.id) ?? [];
+    }
+
+    it('declares the item inside the cuenta group, pointing at /mi-cuenta/addons with an icon component', () => {
+        const cuenta = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'cuenta');
+        const addons = cuenta?.items.find((item) => item.id === 'addons');
+        expect(addons).toBeDefined();
+        expect(addons?.href).toBe('mi-cuenta/addons');
+        expect(addons?.i18nKey).toBe('account.pages.addons.title');
+        expect(typeof addons?.icon).toBe('function');
+    });
+
+    it('gates the item on ACCOMMODATION_CREATE, which PERMISSION_ROLE_MAP resolves to HOST/ADMIN/SUPER_ADMIN', () => {
+        const cuenta = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'cuenta');
+        const addons = cuenta?.items.find((item) => item.id === 'addons');
+        expect(addons?.requiredPermission).toBe(PermissionEnum.ACCOMMODATION_CREATE);
+        // The SSR approximation must not silently resolve to "nobody".
+        const roles = PERMISSION_ROLE_MAP[PermissionEnum.ACCOMMODATION_CREATE];
+        expect(roles).toBeDefined();
+        expect([...(roles ?? [])].sort()).toEqual(
+            [RoleEnum.ADMIN, RoleEnum.HOST, RoleEnum.SUPER_ADMIN].sort()
+        );
+    });
+
+    it('hides the item from a plain tourist USER role (SSR) — the page would only show them an empty state', () => {
+        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.USER]))).not.toContain(
+            'addons'
+        );
+    });
+
+    it('hides the item from an unauthenticated visitor (SSR, roles = null)', () => {
+        expect(cuentaItemIds((node) => isVisibleByRoles(node, null))).not.toContain('addons');
+    });
+
+    it('shows the item to a HOST role (SSR)', () => {
+        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.HOST]))).toContain(
+            'addons'
+        );
+    });
+
+    it('shows the item to an ADMIN role (SSR)', () => {
+        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.ADMIN]))).toContain(
+            'addons'
+        );
+    });
+
+    it('keeps the item visible for the MIXED host+tourist role set, and hidden for the mixed tourist+commerce one', () => {
+        // The mixed cases are the ones a single-role test cannot reach:
+        // visibility is a union over the held roles, so holding USER alongside
+        // HOST must ADD nothing and REMOVE nothing, while USER alongside
+        // COMMERCE_OWNER must still not open the item.
+        expect(
+            cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.HOST]))
+        ).toContain('addons');
+        expect(
+            cuentaItemIds((node) =>
+                isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.COMMERCE_OWNER])
+            )
+        ).not.toContain('addons');
+    });
+
+    it('hides the item from an EDITOR role — an editor is not a host (SSR)', () => {
+        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.EDITOR]))).not.toContain(
+            'addons'
+        );
+    });
+
+    it('hides the item on client surfaces with no permissions, and shows it with ACCOMMODATION_CREATE (exact)', () => {
+        expect(cuentaItemIds((node) => isVisibleByPermissions(node, []))).not.toContain('addons');
+        expect(
+            cuentaItemIds((node) =>
+                isVisibleByPermissions(node, [PermissionEnum.SUBSCRIPTION_VIEW_OWN])
+            )
+        ).not.toContain('addons');
+        expect(
+            cuentaItemIds((node) =>
+                isVisibleByPermissions(node, [PermissionEnum.ACCOMMODATION_CREATE])
+            )
+        ).toContain('addons');
+    });
+
+    it('renders on the sidebar and mobile surfaces, and stays off the curated avatar dropdown', () => {
+        const allow = () => true;
+        expect(cuentaItemIds(allow, 'sidebar')).toContain('addons');
+        expect(cuentaItemIds(allow, 'mobile')).toContain('addons');
+        expect(cuentaItemIds(allow, 'avatar')).not.toContain('addons');
+    });
+});
