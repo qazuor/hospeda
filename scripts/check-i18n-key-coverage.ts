@@ -24,7 +24,8 @@
  * ---------------------------------------------------------------------------
  *
  * Check 1 — every literal translation key referenced in source resolves.
- *   Covers `t('ns.rest')` and `'ns.rest' as TranslationKey`. A key whose first
+ *   Covers `t('ns.rest')`, `'ns.rest' as TranslationKey`, and a key literal
+ *   sitting in a `…Key:` property that reaches `t()` through a variable. A key whose first
  *   segment is a real locale namespace must exist in the reference locale.
  *   There is NO allowlist for this check: a key that does not resolve renders
  *   as `[MISSING: key]` in the admin and as the raw dotted key on the public
@@ -220,6 +221,65 @@ export const CALL_PATTERN = /\bt\(\s*(['"])([A-Za-z0-9_@-]+(?:\.[A-Za-z0-9_@-]+)
 /** `tPlural('ns.rest', count, …)` — the second argument is a count, not a fallback. */
 export const PLURAL_CALL_PATTERN = /\btPlural\(\s*(['"])([A-Za-z0-9_@-]+(?:\.[A-Za-z0-9_@-]+)+)\1/g;
 
+/**
+ * `titleKey: 'ns.rest'` — a key handed to `t()` through a variable.
+ *
+ * `t(item.titleKey, item.titleFb)` over an array of `{ titleKey, titleFb }`
+ * objects is the same defect as a literal call, but the call site names no key
+ * at all, so CALL_PATTERN cannot see it. The keys themselves ARE literals, one
+ * property earlier. Forty such sites lived in the six public pages HOS-616
+ * drained, and every one of them was invisible to a scan anchored on `t(`.
+ */
+export const KEY_PROP_PATTERN =
+    /\b([A-Za-z]*[Kk]ey)\s*:\s*(['"])([A-Za-z0-9_@-]+(?:\.[A-Za-z0-9_@-]+)+)\2/g;
+
+/**
+ * Property names whose dotted value is a DATA path, not a translation key.
+ *
+ * A denylist rather than an allowlist on purpose: a new `…Key` property that
+ * does carry translations is then covered the day it appears, whereas an
+ * allowlist would silently skip it. The cost is the opposite failure — a new
+ * data-path property produces noise — but that failure is loud and one line to
+ * fix, which is the direction a guard should err in.
+ *
+ * `accessorKey` is TanStack Table's row path: `accessorKey: 'destination.name'`
+ * reads a field off the row and collides with the `destination` namespace.
+ */
+const DATA_PATH_PROPERTIES = new Set([
+    'accessorKey',
+    'sortKey',
+    'filterKey',
+    'queryKey',
+    'cacheKey',
+    'dataKey',
+    'rowKey',
+    'groupKey',
+    'storageKey',
+    'key'
+]);
+
+/** A sibling `…Fb` / `…Fallback` property marks the pair form. */
+const SIBLING_FALLBACK = /\b[A-Za-z]*(Fb|Fallback)\s*:/;
+
+/** How far past a key property to look for its sibling fallback. */
+const SIBLING_WINDOW = 400;
+
+/**
+ * Decides whether a key property is paired with a hardcoded fallback property.
+ *
+ * Looks ahead only as far as the enclosing object literal appears to run, so a
+ * fallback belonging to the NEXT object is not credited to this one.
+ *
+ * @param source - The comment-blanked file contents.
+ * @param index - Offset of the key property match.
+ * @returns True when a sibling fallback property follows inside the same object.
+ */
+export function hasSiblingFallback({ source, index }: { source: string; index: number }): boolean {
+    const rest = source.slice(index, index + SIBLING_WINDOW);
+    const close = rest.indexOf('}');
+    return SIBLING_FALLBACK.test(close === -1 ? rest : rest.slice(0, close));
+}
+
 /** `'ns.rest' as TranslationKey` — the cast that switches typing off. */
 export const CAST_PATTERN =
     /(['"])([A-Za-z0-9_@-]+(?:\.[A-Za-z0-9_@-]+)+)\1\s+as\s+TranslationKey/g;
@@ -275,6 +335,10 @@ export function extractReferences({
     }
     for (const m of source.matchAll(CAST_PATTERN)) {
         push(m[2] as string, m.index, false);
+    }
+    for (const m of source.matchAll(KEY_PROP_PATTERN)) {
+        if (DATA_PATH_PROPERTIES.has(m[1] as string)) continue;
+        push(m[3] as string, m.index, hasSiblingFallback({ source, index: m.index }));
     }
     return found;
 }

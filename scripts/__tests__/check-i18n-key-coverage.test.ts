@@ -14,6 +14,7 @@ import {
     blankComments,
     collectEntityKeys,
     extractReferences,
+    hasSiblingFallback,
     prune,
     readReferenceLocale,
     resolvesToATranslation,
@@ -355,5 +356,64 @@ describe('collectEntityKeys', () => {
         });
         expect(run(root)).toBe(0);
         expect(collectEntityKeys([join(root, 'apps/admin/src/a.ts')]).size).toBe(0);
+    });
+});
+
+describe('keys handed to t() through a variable (HOS-616 pair shape)', () => {
+    it('catches a key property with no sibling fallback', () => {
+        const root = makeRepo({
+            locales: { nav: { signIn: 'Entrar' } },
+            sources: { 'apps/web/src/A.tsx': "const a = { labelKey: 'nav.signOut' };" }
+        });
+        expect(run(root)).toBe(1);
+    });
+
+    it('routes a key property WITH a sibling fallback to the inventory instead', () => {
+        const root = makeRepo({
+            locales: { nav: { signIn: 'Entrar' } },
+            sources: {
+                'apps/web/src/A.tsx': "const a = { titleKey: 'nav.signOut', titleFb: 'Salir' };"
+            },
+            inventory: [{ file: 'apps/web/src/A.tsx', key: 'nav.signOut' }]
+        });
+        expect(run(root)).toBe(0);
+    });
+
+    it('ignores accessorKey, which is a row path and not a translation key', () => {
+        const root = makeRepo({
+            locales: { nav: { signIn: 'Entrar' } },
+            sources: { 'apps/web/src/A.tsx': "const c = { accessorKey: 'nav.signOut' };" }
+        });
+        expect(run(root)).toBe(0);
+    });
+
+    it('ignores the bare `key` property, too generic to read as a translation key', () => {
+        const root = makeRepo({
+            locales: { nav: { signIn: 'Entrar' } },
+            sources: { 'apps/web/src/A.tsx': "const c = { key: 'nav.signOut' };" }
+        });
+        expect(run(root)).toBe(0);
+    });
+});
+
+describe('hasSiblingFallback', () => {
+    it('sees a fallback declared beside the key', () => {
+        const source = "{ titleKey: 'a.b', titleFb: 'Hola' }";
+        expect(hasSiblingFallback({ source, index: source.indexOf('titleKey') })).toBe(true);
+    });
+
+    it('accepts the longer Fallback spelling', () => {
+        const source = "{ titleKey: 'a.b', titleFallback: 'Hola' }";
+        expect(hasSiblingFallback({ source, index: source.indexOf('titleKey') })).toBe(true);
+    });
+
+    it('does not credit a fallback that belongs to the NEXT object', () => {
+        const source = "{ titleKey: 'a.b' }, { titleKey: 'c.d', titleFb: 'Hola' }";
+        expect(hasSiblingFallback({ source, index: source.indexOf('titleKey') })).toBe(false);
+    });
+
+    it('reports none when the object declares no fallback at all', () => {
+        const source = "{ titleKey: 'a.b', to: '/x' }";
+        expect(hasSiblingFallback({ source, index: source.indexOf('titleKey') })).toBe(false);
     });
 });
