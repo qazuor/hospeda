@@ -5,7 +5,20 @@
         "emptyState": "No gastronomic establishments found with the selected filters.",
         "errorBanner": "Could not load the gastronomy listings. Please try again later.",
         "results_one": "{{count}} establishment found",
-        "results_other": "{{count}} establishments found"
+        "results_other": "{{count}} establishments found",
+        "search": "Text search",
+        "searchPlaceholder": "Search by name or description...",
+        "destination": "Destination",
+        "type": "Establishment type",
+        "priceRange": "Price range",
+        "featured": "Featured only",
+        "minRating": "Minimum rating",
+        "sort": {
+            "featured": "Featured first",
+            "ratingDesc": "Top rated",
+            "newest": "Recently added",
+            "nameAsc": "Name (A-Z)"
+        }
     },
     "card": {
         "priceRange": {

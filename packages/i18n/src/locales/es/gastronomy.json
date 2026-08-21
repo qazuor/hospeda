@@ -5,7 +5,20 @@
         "emptyState": "No se encontraron establecimientos gastronómicos con los filtros seleccionados.",
         "errorBanner": "No se pudo cargar el listado de gastronomía. Intentá de nuevo más tarde.",
         "results_one": "{{count}} establecimiento encontrado",
-        "results_other": "{{count}} establecimientos encontrados"
+        "results_other": "{{count}} establecimientos encontrados",
+        "search": "Búsqueda por texto",
+        "searchPlaceholder": "Buscar por nombre o descripción...",
+        "destination": "Destino",
+        "type": "Tipo de establecimiento",
+        "priceRange": "Rango de precio",
+        "featured": "Solo destacados",
+        "minRating": "Calificación mínima",
+        "sort": {
+            "featured": "Destacados primero",
+            "ratingDesc": "Mejor valorados",
+            "newest": "Recién agregados",
+            "nameAsc": "Nombre (A-Z)"
+        }
     },
     "card": {
         "priceRange": {
