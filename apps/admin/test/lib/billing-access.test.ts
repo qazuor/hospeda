@@ -53,7 +53,8 @@ const makeContext = (permissions: string[]): AuthState => ({
     displayName: 'Test User',
     email: 'test@example.com',
     avatar: null,
-    emailVerified: true
+    emailVerified: true,
+    languageWeb: null
 });
 
 // Typed spy reference resolved at runtime (after mocks are set up).

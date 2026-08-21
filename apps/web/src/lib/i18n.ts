@@ -9,7 +9,7 @@
  */
 
 import type { Namespace } from '@repo/i18n/web';
-import { namespaces, pluralize, trans } from '@repo/i18n/web';
+import { matchAcceptLanguage, namespaces, pluralize, trans } from '@repo/i18n/web';
 
 /**
  * Array of supported locales for the application.
@@ -86,34 +86,21 @@ export function isValidLocale(locale: string): locale is SupportedLocale {
  * Parses the Accept-Language HTTP header and returns the first matching supported locale.
  * Falls back to the default locale if no match is found.
  *
+ * Thin wrapper over `@repo/i18n`'s `matchAcceptLanguage` — the ONE canonical
+ * Accept-Language parser in the platform (HOS-617). Kept as its own export,
+ * with this exact signature, so existing/future callers in this app are
+ * unaffected by where the underlying parsing logic lives.
+ *
  * @param header - The Accept-Language header value (or null).
  * @returns The matched supported locale or the default locale.
  */
 export function parseAcceptLanguage(header: string | null): SupportedLocale {
-    if (!header) {
-        return DEFAULT_LOCALE;
-    }
-
-    const languages = header
-        .split(',')
-        .map((lang) => {
-            const [code] = lang.trim().split(';');
-            if (!code) {
-                return null;
-            }
-            const primaryCodeParts = code.split('-');
-            const primaryCode = primaryCodeParts[0]?.toLowerCase();
-            return primaryCode || null;
-        })
-        .filter((code): code is string => Boolean(code));
-
-    for (const lang of languages) {
-        if (isValidLocale(lang)) {
-            return lang;
-        }
-    }
-
-    return DEFAULT_LOCALE;
+    const { locale } = matchAcceptLanguage({
+        header,
+        supportedLocales: SUPPORTED_LOCALES,
+        defaultLocale: DEFAULT_LOCALE
+    });
+    return locale as SupportedLocale;
 }
 
 /** Client-only memo of the last-resolved locale dictionary. */

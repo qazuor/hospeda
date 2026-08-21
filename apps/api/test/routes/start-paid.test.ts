@@ -305,19 +305,35 @@ interface ContextOptions {
     billingCustomerId?: string | null;
     /** Optional user with settings for locale resolution (T-025). */
     user?: { settings?: Record<string, unknown> } | null;
+    /**
+     * Optional inbound request headers for locale resolution
+     * (HOS-605 — `x-client-locale` / `accept-language`).
+     */
+    headers?: Record<string, string>;
 }
 
 function createMockContext(opts: ContextOptions = {}) {
-    const { billingEnabled = true, billingCustomerId = OWNER_CUSTOMER_ID, user = null } = opts;
+    const {
+        billingEnabled = true,
+        billingCustomerId = OWNER_CUSTOMER_ID,
+        user = null,
+        headers = {}
+    } = opts;
 
     const store = new Map<string, unknown>([
         ['billingEnabled', billingEnabled],
         ['billingCustomerId', billingCustomerId],
         ['user', user]
     ]);
+    const lowerHeaders = new Map(
+        Object.entries(headers).map(([key, value]) => [key.toLowerCase(), value])
+    );
 
     return {
-        get: vi.fn((key: string) => store.get(key))
+        get: vi.fn((key: string) => store.get(key)),
+        req: {
+            header: vi.fn((name: string) => lowerHeaders.get(name.toLowerCase()))
+        }
     };
 }
 
@@ -980,6 +996,48 @@ describe('resolveReturnUrlLocale (_internals)', () => {
         expect(_internals.SUPPORTED_RETURN_URL_LOCALES).toContain('es');
         expect(_internals.SUPPORTED_RETURN_URL_LOCALES).toContain('en');
         expect(_internals.SUPPORTED_RETURN_URL_LOCALES).toContain('pt');
+    });
+
+    // ─── HOS-605 regression: the URL of origin wins over the profile ───────
+    it('HOS-605: returns "es" when x-client-locale is "es" even though the profile says "en"', () => {
+        const ctx = createMockContext({
+            user: { settings: { languageWeb: 'en' } },
+            headers: { 'x-client-locale': 'es' }
+        });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('es');
+    });
+
+    it('HOS-605: x-client-locale wins over Accept-Language too', () => {
+        const ctx = createMockContext({
+            headers: { 'x-client-locale': 'es', 'accept-language': 'en-US,en;q=0.9' }
+        });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('es');
+    });
+
+    it('falls back to the account preference when x-client-locale is absent', () => {
+        const ctx = createMockContext({
+            user: { settings: { languageWeb: 'pt' } },
+            headers: { 'accept-language': 'en-US' }
+        });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('pt');
+    });
+
+    it('falls back to Accept-Language when there is no client locale header or account preference', () => {
+        const ctx = createMockContext({ headers: { 'accept-language': 'pt-BR,pt;q=0.9' } });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('pt');
+    });
+
+    it('an unsupported x-client-locale falls through to the account preference', () => {
+        const ctx = createMockContext({
+            user: { settings: { languageWeb: 'en' } },
+            headers: { 'x-client-locale': 'fr' }
+        });
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('en');
+    });
+
+    it('tolerates a Context with no req at all (legacy test doubles)', () => {
+        const ctx = { get: vi.fn(() => null) };
+        expect(_internals.resolveReturnUrlLocale(ctx as never)).toBe('es');
     });
 });
 

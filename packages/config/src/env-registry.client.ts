@@ -590,8 +590,8 @@ export const CLIENT_ADMIN_ENV_VARS = [
         type: 'string',
         required: false,
         secret: false,
-        defaultValue: 'es,en',
-        exampleValue: 'es,en',
+        defaultValue: 'es,en,pt',
+        exampleValue: 'es,en,pt',
         apps: ['admin'],
         category: 'client-admin',
         howToObtain:

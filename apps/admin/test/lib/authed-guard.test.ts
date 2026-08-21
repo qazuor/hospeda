@@ -25,6 +25,7 @@ const baseAuthState = (overrides: Partial<AuthState>): AuthState => ({
     email: 'lola@example.com',
     avatar: null,
     emailVerified: true,
+    languageWeb: null,
     ...overrides
 });
 

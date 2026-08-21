@@ -206,9 +206,9 @@ describe('AdminEnvSchema', () => {
             expect(result.NODE_ENV).toBe('development');
         });
 
-        it('should default VITE_SUPPORTED_LOCALES to "es,en"', () => {
+        it('should default VITE_SUPPORTED_LOCALES to "es,en,pt" (HOS-617)', () => {
             const result = AdminEnvSchema.parse(createValidEnv());
-            expect(result.VITE_SUPPORTED_LOCALES).toBe('es,en');
+            expect(result.VITE_SUPPORTED_LOCALES).toBe('es,en,pt');
         });
 
         it('should default VITE_DEFAULT_LOCALE to "es"', () => {
