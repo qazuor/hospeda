@@ -438,8 +438,7 @@ describe('Notification Preferences Integration Tests', () => {
                 customerId: 'cus_payment_fail',
                 amount: 5000,
                 currency: 'ARS',
-                failureReason: 'Insufficient funds',
-                retryDate: '2026-02-05'
+                failureReason: 'Insufficient funds'
             };
 
             // Act

@@ -81,7 +81,6 @@ interface PaymentNotificationPayload extends BaseNotificationPayload {
   currency: string;
   planName: string;
   failureReason?: string;  // Only for PAYMENT_FAILURE
-  retryDate?: string;      // Only for PAYMENT_FAILURE
   paymentMethod?: string;
 }
 ```

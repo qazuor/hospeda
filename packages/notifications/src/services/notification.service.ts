@@ -376,8 +376,7 @@ export class NotificationService {
                     amount: p.amount,
                     currency: p.currency,
                     baseUrl: this.deps.siteUrl,
-                    failureReason: p.failureReason,
-                    retryDate: p.retryDate
+                    failureReason: p.failureReason
                 });
             }
 
