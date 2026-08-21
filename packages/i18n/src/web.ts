@@ -44,6 +44,16 @@ export {
     resolveDefaultCurrency,
     toBcp47Locale
 } from './formatting';
+export type {
+    LocaleResolutionSource,
+    MatchAcceptLanguageArgs,
+    MatchAcceptLanguageResult,
+    ResolveDisplayLocaleArgs,
+    ResolveDisplayLocaleResult
+} from './locale-resolution';
+// Single product-wide locale-precedence resolver (HOS-605 / HOS-609 / HOS-617).
+// Depends only on config.shared (no admin dependency) — safe for the web bundle.
+export { matchAcceptLanguage, resolveDisplayLocale } from './locale-resolution';
 // Pluralization (no admin dependency — safe to share)
 export { pluralize } from './pluralization';
 // Validation message resolver (no admin dependency)

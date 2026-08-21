@@ -199,7 +199,10 @@ export const purchaseAddonRoute = createProtectedRoute({
             userId: actor.id,
             accommodationId: body.accommodationId as string | undefined,
             successUrl: buildAddonSuccessUrl(locale, params.slug as string),
-            cancelUrl: buildAddonCancelUrl(locale, params.slug as string)
+            cancelUrl: buildAddonCancelUrl(locale, params.slug as string),
+            // HOS-606: same locale used for the return URLs also translates
+            // the checkout line item's title/description sent to MercadoPago.
+            locale
         });
 
         if (!result.success) {

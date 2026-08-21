@@ -61,27 +61,50 @@ vi.mock('../../src/utils/route-factory', () => ({
     createSimpleRoute: vi.fn((config: { handler: unknown }) => config.handler)
 }));
 
+// `insertValues`/`insert` are hoisted so both the mock factory (hoisted above
+// imports by vitest) and the test bodies below can reference the same spies —
+// this is what lets tests assert on the actual `eventType` persisted, instead
+// of only on the handler's return value (see `feedback_api_global_db_mock_makes_query_tests_vacuous`).
+const { insertValues, insertSpy } = vi.hoisted(() => ({
+    insertValues: vi.fn().mockResolvedValue(undefined),
+    insertSpy: vi.fn()
+}));
+
 vi.mock('@repo/db', () => ({
     getDb: vi.fn().mockReturnValue({
-        insert: vi.fn().mockReturnValue({
-            values: vi.fn().mockResolvedValue(undefined)
-        })
+        insert: insertSpy.mockReturnValue({ values: insertValues })
     }),
     billingSubscriptionEvents: { _: 'billingSubscriptionEvents' }
 }));
 
-vi.mock('@repo/schemas', () => ({
-    SubscriptionStatusEnum: {
-        PAUSED: 'paused',
-        ACTIVE: 'active'
-    },
-    SubscriptionPauseResumeResponseSchema: {}
-}));
+vi.mock('@repo/schemas', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/schemas')>();
+    return {
+        ...actual,
+        SubscriptionStatusEnum: {
+            PAUSED: 'paused',
+            ACTIVE: 'active'
+        },
+        SubscriptionPauseResumeResponseSchema: {}
+    };
+});
+
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        BILLING_EVENT_TYPES: {
+            HOST_SUBSCRIPTION_PAUSED: 'HOST_SUBSCRIPTION_PAUSED',
+            HOST_SUBSCRIPTION_RESUMED: 'HOST_SUBSCRIPTION_RESUMED'
+        }
+    };
+});
 
 // ---------------------------------------------------------------------------
 // Imports (after mocks)
 // ---------------------------------------------------------------------------
 
+import { BILLING_EVENT_TYPES } from '@repo/service-core';
 import { getQZPayBilling } from '../../src/middlewares/billing';
 import {
     handleSelfServePause,
@@ -160,6 +183,15 @@ describe('handleSelfServePause', () => {
         expect(result.success).toBe(true);
         expect(result.subscriptionId).toBe('sub-monthly-1');
         expect(result.status).toBe('paused');
+
+        // HOS-657: the audit row must carry an eventType, not just newStatus.
+        expect(insertSpy).toHaveBeenCalledTimes(1);
+        const eventArg = insertValues.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(eventArg).toMatchObject({
+            subscriptionId: 'sub-monthly-1',
+            eventType: BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_PAUSED,
+            triggerSource: 'host-pause'
+        });
     });
 
     it('pauses a monthly trialing subscription successfully', async () => {
@@ -396,6 +428,15 @@ describe('handleSelfServeResume', () => {
         expect(result.success).toBe(true);
         expect(result.subscriptionId).toBe('sub-paused-1');
         expect(billing.subscriptions.resume).toHaveBeenCalledWith('sub-paused-1');
+
+        // HOS-657: the audit row must carry an eventType, not just newStatus.
+        expect(insertSpy).toHaveBeenCalledTimes(1);
+        const eventArg = insertValues.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(eventArg).toMatchObject({
+            subscriptionId: 'sub-paused-1',
+            eventType: BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_RESUMED,
+            triggerSource: 'host-resume'
+        });
     });
 
     // ── THE regression guard: a soft-cancelled paused sub must NOT be resumable ──

@@ -11,6 +11,7 @@
  * @module services/billing-metrics
  */
 
+import { ENTITLEMENT_GRANTING_STATUSES } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { getDb, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
@@ -455,13 +456,30 @@ export class BillingMetricsService {
         try {
             const db = tx ?? getDb();
 
+            // Derived from ENTITLEMENT_GRANTING_STATUSES (never hardcode the
+            // expanded list here) so `comp` subscribers are counted — see
+            // HOS-736. `comp` is bucketed into `active_count`: it has no
+            // separate column in `PlanBreakdown`, and folding it into "active"
+            // mirrors the existing precedent in the account-management view
+            // (`subscription.ts`), which also maps `comp` -> `active`.
+            const liveStatuses = sql.join(
+                ENTITLEMENT_GRANTING_STATUSES.map((status) => sql`${status}`),
+                sql`, `
+            );
+            const activeLikeStatuses = sql.join(
+                ENTITLEMENT_GRANTING_STATUSES.filter((status) => status !== 'trialing').map(
+                    (status) => sql`${status}`
+                ),
+                sql`, `
+            );
+
             const result = await db.execute(sql`
                 SELECT
                     plan_id,
-                    COUNT(*) FILTER (WHERE status = 'active') as active_count,
+                    COUNT(*) FILTER (WHERE status IN (${activeLikeStatuses})) as active_count,
                     COUNT(*) FILTER (WHERE status = 'trialing') as trialing_count
                 FROM billing_subscriptions
-                WHERE status IN ('active', 'trialing')
+                WHERE status IN (${liveStatuses})
                 AND livemode = ${livemode}
                 AND deleted_at IS NULL
                 GROUP BY plan_id

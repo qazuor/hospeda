@@ -72,7 +72,61 @@
         "description": "Discover the benefits of using Hospeda for tourists and accommodation owners in the Argentine Litoral region"
     },
     "hero": {
-        "description": "Hospeda connects travelers with authentic accommodations and supports property owners with professional tools. Discover the benefits of being part of our community."
+        "description": "Hospeda connects travelers with authentic accommodations and supports property owners with professional tools. Discover the benefits of being part of our community.",
+        "tagline": "Why Hospeda",
+        "titleMain": "What we offer our",
+        "titleAccent": "community",
+        "subtitle": "Discover the benefits of using Hospeda as a traveler or as a property owner in the Entre Ríos Litoral."
+    },
+    "tourist": {
+        "title": "Benefits for tourists",
+        "tagline": "For travelers",
+        "cta": "Explore accommodations",
+        "1": {
+            "title": "A wide range of options",
+            "desc": "From riverside cabins to downtown hotels. Find the perfect place to stay for your trip."
+        },
+        "2": {
+            "title": "Transparent prices",
+            "desc": "No hidden fees or surprises. You know exactly what you'll pay before you book."
+        },
+        "3": {
+            "title": "Verified reviews",
+            "desc": "Real opinions from travelers who have actually stayed. Choose with confidence."
+        },
+        "4": {
+            "title": "Local information",
+            "desc": "Destinations, events, and travel guides to plan your getaway to the Litoral."
+        },
+        "5": {
+            "title": "Direct contact",
+            "desc": "Direct communication with the property owner. No middlemen, no delays."
+        }
+    },
+    "owner": {
+        "title": "Benefits for property owners",
+        "tagline": "For property owners",
+        "cta": "List your property",
+        "1": {
+            "title": "Regional visibility",
+            "desc": "Reach thousands of travelers looking for accommodation on the Uruguay River coast."
+        },
+        "2": {
+            "title": "Simple management",
+            "desc": "An intuitive dashboard to manage your property, photos, and prices."
+        },
+        "3": {
+            "title": "No hidden fees",
+            "desc": "Transparent plans with fixed prices. You know exactly what you pay."
+        },
+        "4": {
+            "title": "Detailed statistics",
+            "desc": "Access metrics on visits, inquiries, and your listing's performance."
+        },
+        "5": {
+            "title": "Real support, not a bot",
+            "desc": "A support team available by WhatsApp, email, and phone during office hours to help with any question."
+        }
     },
     "tourists": {
         "heading": "Benefits for Tourists",

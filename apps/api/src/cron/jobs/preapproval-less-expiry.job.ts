@@ -69,7 +69,11 @@ import {
     isNull
 } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { checkSubscriptionStatusTransition, withServiceTransaction } from '@repo/service-core';
+import {
+    BILLING_EVENT_TYPES,
+    checkSubscriptionStatusTransition,
+    withServiceTransaction
+} from '@repo/service-core';
 import { lt } from 'drizzle-orm';
 import { clearEntitlementCache } from '../../middlewares/entitlement.js';
 import { reconcileCommerceListingForSubscription } from '../../services/commerce-reconcile.service.js';
@@ -247,6 +251,7 @@ export const preapprovalLessExpiryJob: CronJobDefinition = {
 
                         await tx.insert(billingSubscriptionEvents).values({
                             subscriptionId: row.id,
+                            eventType: BILLING_EVENT_TYPES.SUBSCRIPTION_EXPIRED_WITHOUT_PREAPPROVAL,
                             previousStatus: row.status,
                             newStatus: SubscriptionStatusEnum.EXPIRED,
                             triggerSource: 'preapproval-less-expiry',

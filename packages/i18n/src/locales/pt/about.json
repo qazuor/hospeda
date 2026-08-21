@@ -3,7 +3,10 @@
     "description": "Conheca nossa historia, missao e a equipe por tras da Hospeda. Conectamos viajantes com acomodacoes unicas desde 2020.",
     "hero": {
         "heading": "Quem Somos",
-        "subheading": "Conectamos viajantes com experiencias de hospedagem unicas desde 2020"
+        "subheading": "Conectamos viajantes com experiencias de hospedagem unicas desde 2020",
+        "title": "Conectamos viajantes com o Litoral",
+        "tagline": "Nossa história",
+        "subtitle": "A Hospeda nasceu com a missão de dar visibilidade à riqueza turística de Concepción del Uruguay e do Litoral entrerriano."
     },
     "story": {
         "title": "Nossa Historia",
@@ -12,6 +15,8 @@
     },
     "mission": {
         "title": "Missao e Visao",
+        "tagline": "Nossa missão",
+        "text": "Facilitamos a conexão entre proprietários de hospedagens turísticas e viajantes que buscam experiências autênticas no Litoral entrerriano, Argentina. Sem comissões ocultas e com ferramentas simples para gerenciar sua hospedagem.",
         "mission": {
             "title": "Nossa Missao",
             "content": "Facilitar conexoes autenticas entre viajantes e anfitrioes, criando experiencias de hospedagem unicas que enriquecem a vida de ambos os lados."
@@ -23,6 +28,7 @@
     },
     "values": {
         "title": "Nossos Valores",
+        "tagline": "O que nos define",
         "authenticity": {
             "title": "Autenticidade",
             "description": "Promovemos experiencias genuinas e conexoes reais entre viajantes e comunidades locais."
@@ -35,10 +41,29 @@
             "title": "Inovacao",
             "description": "Usamos tecnologia de ponta para melhorar continuamente a experiencia dos nossos usuarios."
         },
+        "transparency": {
+            "title": "Transparência",
+            "desc": "Sem comissões ocultas nem custos surpresa. Preços claros desde o primeiro momento."
+        },
+        "simplicity": {
+            "title": "Simplicidade",
+            "desc": "Ferramentas fáceis de usar tanto para viajantes quanto para proprietários."
+        },
         "community": {
             "title": "Comunidade",
-            "description": "Construimos uma comunidade global de viajantes e anfitrioes unidos pela paixao de explorar e compartilhar."
+            "description": "Construimos uma comunidade global de viajantes e anfitrioes unidos pela paixao de explorar e compartilhar.",
+            "desc": "Acreditamos no turismo como motor de desenvolvimento local e regional."
         }
+    },
+    "region": {
+        "title": "Concepción del Uruguay",
+        "tagline": "Nosso lar",
+        "text": "Situada às margens do rio Uruguai, Concepción del Uruguay é uma cidade com história, natureza e gastronomia. Capital histórica de Entre Ríos, oferece praias, termas, carnavais e uma rica vida cultural."
+    },
+    "cta": {
+        "title": "Descubra o Litoral",
+        "tagline": "Pronto para explorar?",
+        "button": "Ver alojamentos"
     },
     "team": {
         "title": "Nossa Equipe",

@@ -103,3 +103,73 @@ describe('apiClient request timeout', () => {
         }
     });
 });
+
+// ---------------------------------------------------------------------------
+// HOS-605: X-Client-Locale header
+// ---------------------------------------------------------------------------
+
+describe('apiClient X-Client-Locale header (HOS-605)', () => {
+    const originalPathname = window.location.pathname;
+
+    function setPathname(pathname: string) {
+        window.history.replaceState({}, '', pathname);
+    }
+
+    beforeEach(() => {
+        vi.resetModules();
+    });
+
+    afterEach(() => {
+        setPathname(originalPathname);
+    });
+
+    /** Mock `fetch` that resolves immediately and records the request init. */
+    function mockOkFetch() {
+        const fetchMock = vi.fn((_url: string, _init?: RequestInit) => {
+            return Promise.resolve({
+                ok: true,
+                json: async () => ({ success: true, data: { done: true } })
+            } as Response);
+        });
+        return fetchMock;
+    }
+
+    it('sends X-Client-Locale from the current path on a browser-initiated request', async () => {
+        setPathname('/es/mi-cuenta/addons/');
+        const { apiClient } = await import('@/lib/api/client');
+        const fetchMock = mockOkFetch();
+        global.fetch = fetchMock;
+
+        await apiClient.postProtected({ path: '/api/v1/protected/billing/addons/x/purchase' });
+
+        const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+        const headers = init.headers as Record<string, string>;
+        expect(headers['X-Client-Locale']).toBe('es');
+    });
+
+    it('reflects a different locale segment (en)', async () => {
+        setPathname('/en/mi-cuenta/addons/');
+        const { apiClient } = await import('@/lib/api/client');
+        const fetchMock = mockOkFetch();
+        global.fetch = fetchMock;
+
+        await apiClient.postProtected({ path: '/api/v1/protected/billing/addons/x/purchase' });
+
+        const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+        const headers = init.headers as Record<string, string>;
+        expect(headers['X-Client-Locale']).toBe('en');
+    });
+
+    it('omits the header when the path has no valid locale segment', async () => {
+        setPathname('/some-non-locale-path/');
+        const { apiClient } = await import('@/lib/api/client');
+        const fetchMock = mockOkFetch();
+        global.fetch = fetchMock;
+
+        await apiClient.postProtected({ path: '/api/v1/protected/billing/addons/x/purchase' });
+
+        const init = fetchMock.mock.calls[0]?.[1] as RequestInit;
+        const headers = init.headers as Record<string, string>;
+        expect(headers['X-Client-Locale']).toBeUndefined();
+    });
+});

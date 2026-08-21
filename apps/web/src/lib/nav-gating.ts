@@ -115,6 +115,27 @@ export const PERMISSION_ROLE_MAP: Partial<Record<PermissionEnum, ReadonlySet<Rol
         RoleEnum.EDITOR,
         RoleEnum.ADMIN,
         RoleEnum.SUPER_ADMIN
+    ]),
+    // The only entry here whose permission was created FOR the nav rather than
+    // borrowed from an existing domain (HOS-726). The add-on catalog gates per
+    // product domain — accommodation, gastronomy or experience — so its audience
+    // is the union of the host and commerce tiers, and `requiredPermission` holds
+    // exactly one permission with no OR. `ACCOMMODATION_CREATE` would have left
+    // out the COMMERCE_OWNER who buys `extra-gastronomies-1`; the two
+    // billing-shaped permissions that read like a fit (`SUBSCRIPTION_VIEW_OWN`,
+    // `BILLING_VIEW_OWN`) are granted to plain `USER` by the seed, which would
+    // have shown the catalog to every tourist.
+    //
+    // HOST, COMMERCE_OWNER, ADMIN, SUPER_ADMIN — verified against
+    // `packages/seed/src/required/rolePermissions.seed.ts`, which is also where
+    // the grant is written (baseline) alongside the
+    // `0067-hos-726-addon-purchase-permission` data-migration for live
+    // environments.
+    [PermissionEnum.BILLING_ADDON_PURCHASE]: new Set<RoleEnum>([
+        RoleEnum.HOST,
+        RoleEnum.COMMERCE_OWNER,
+        RoleEnum.ADMIN,
+        RoleEnum.SUPER_ADMIN
     ])
 };
 

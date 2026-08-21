@@ -191,7 +191,7 @@ export const AdminEnvSchema = z.object({
     // Locale Configuration
     VITE_SUPPORTED_LOCALES: z
         .string()
-        .default('es,en')
+        .default('es,en,pt')
         .describe('Comma-separated list of supported locales'),
     VITE_DEFAULT_LOCALE: z.string().default('es').describe('Default locale for the admin app'),
 

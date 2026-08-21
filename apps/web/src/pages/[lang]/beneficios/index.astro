@@ -51,19 +51,19 @@ applyCacheHeaders({
 });
 
 const touristBenefits = [
-	{ Icon: BuildingsIcon, titleKey: 'benefits.tourist.1.title', titleFb: 'Variedad de opciones', descKey: 'benefits.tourist.1.desc', descFb: 'Desde cabañas junto al río hasta hoteles en el centro. Encontrá el alojamiento perfecto para tu viaje.' },
-	{ Icon: PriceIcon, titleKey: 'benefits.tourist.2.title', titleFb: 'Precios transparentes', descKey: 'benefits.tourist.2.desc', descFb: 'Sin costos ocultos ni sorpresas. Sabés exactamente cuánto pagás antes de reservar.' },
-	{ Icon: StarIcon, titleKey: 'benefits.tourist.3.title', titleFb: 'Reseñas verificadas', descKey: 'benefits.tourist.3.desc', descFb: 'Opiniones reales de viajeros que ya se hospedaron. Elegí con confianza.' },
-	{ Icon: MapIcon, titleKey: 'benefits.tourist.4.title', titleFb: 'Información local', descKey: 'benefits.tourist.4.desc', descFb: 'Destinos, eventos y guías de viaje para planificar tu escapada al Litoral.' },
-	{ Icon: ChatIcon, titleKey: 'benefits.tourist.5.title', titleFb: 'Contacto directo', descKey: 'benefits.tourist.5.desc', descFb: 'Comunicación directa con el propietario. Sin intermediarios ni demoras.' },
+	{ Icon: BuildingsIcon, titleKey: 'benefits.tourist.1.title', descKey: 'benefits.tourist.1.desc' },
+	{ Icon: PriceIcon, titleKey: 'benefits.tourist.2.title', descKey: 'benefits.tourist.2.desc' },
+	{ Icon: StarIcon, titleKey: 'benefits.tourist.3.title', descKey: 'benefits.tourist.3.desc' },
+	{ Icon: MapIcon, titleKey: 'benefits.tourist.4.title', descKey: 'benefits.tourist.4.desc' },
+	{ Icon: ChatIcon, titleKey: 'benefits.tourist.5.title', descKey: 'benefits.tourist.5.desc' },
 ] as const;
 
 const ownerBenefits = [
-	{ Icon: EyeIcon, titleKey: 'benefits.owner.1.title', titleFb: 'Visibilidad regional', descKey: 'benefits.owner.1.desc', descFb: 'Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay.' },
-	{ Icon: SettingsIcon, titleKey: 'benefits.owner.2.title', titleFb: 'Gestión simple', descKey: 'benefits.owner.2.desc', descFb: 'Panel de control intuitivo para gestionar tu propiedad, fotos y precios.' },
-	{ Icon: ReceiptIcon, titleKey: 'benefits.owner.3.title', titleFb: 'Sin comisiones ocultas', descKey: 'benefits.owner.3.desc', descFb: 'Planes transparentes con precios fijos. Sabés exactamente cuánto pagás.' },
-	{ Icon: StatisticsIcon, titleKey: 'benefits.owner.4.title', titleFb: 'Estadísticas detalladas', descKey: 'benefits.owner.4.desc', descFb: 'Accedé a métricas de visitas, consultas y rendimiento de tu publicación.' },
-	{ Icon: PhoneIcon, titleKey: 'benefits.owner.5.title', titleFb: 'Soporte real, no un bot', descKey: 'benefits.owner.5.desc', descFb: 'Equipo de soporte por WhatsApp, mail y teléfono en horario de oficina para ayudarte con cualquier consulta.' },
+	{ Icon: EyeIcon, titleKey: 'benefits.owner.1.title', descKey: 'benefits.owner.1.desc' },
+	{ Icon: SettingsIcon, titleKey: 'benefits.owner.2.title', descKey: 'benefits.owner.2.desc' },
+	{ Icon: ReceiptIcon, titleKey: 'benefits.owner.3.title', descKey: 'benefits.owner.3.desc' },
+	{ Icon: StatisticsIcon, titleKey: 'benefits.owner.4.title', descKey: 'benefits.owner.4.desc' },
+	{ Icon: PhoneIcon, titleKey: 'benefits.owner.5.title', descKey: 'benefits.owner.5.desc' },
 ] as const;
 
 // Split titles to underline the last word with a handwritten accent.
@@ -73,8 +73,8 @@ const splitLastWord = (full: string): { main: string; accent: string } => {
 	return { main: words.join(' '), accent };
 };
 
-const touristHeading = splitLastWord(t('benefits.tourist.title', 'Beneficios para turistas'));
-const ownerHeading = splitLastWord(t('benefits.owner.title', 'Beneficios para propietarios'));
+const touristHeading = splitLastWord(t('benefits.tourist.title'));
+const ownerHeading = splitLastWord(t('benefits.owner.title'));
 
 const benefitsTitle = t('benefits.title', 'Beneficios');
 const benefitsDescription = t(
@@ -103,13 +103,10 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 	/>
 
 	<MarketingHero
-		tagline={t('benefits.hero.tagline', 'Por qué Hospeda')}
-		titleMain={t('benefits.hero.titleMain', 'Lo que ofrecemos a nuestra')}
-		titleAccent={t('benefits.hero.titleAccent', 'comunidad')}
-		subtitle={t(
-			'benefits.hero.subtitle',
-			'Descubrí los beneficios de usar Hospeda como viajero o como propietario del Litoral entrerriano.'
-		)}
+		tagline={t('benefits.hero.tagline')}
+		titleMain={t('benefits.hero.titleMain')}
+		titleAccent={t('benefits.hero.titleAccent')}
+		subtitle={t('benefits.hero.subtitle')}
 	>
 		<Fragment slot="icon-1"><FavoriteIcon size="md" weight="duotone" /></Fragment>
 		<Fragment slot="icon-2"><HomeIcon size="md" weight="duotone" /></Fragment>
@@ -143,7 +140,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			<span class="benefits-section__dot benefits-section__dot--t4"></span>
 		</div>
 		<div class="benefits-section__container">
-			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.tourist.tagline', 'Para viajeros')}</p>
+			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.tourist.tagline')}</p>
 			<h2 class="benefits-section__title" data-reveal="up">
 				{touristHeading.main && <>{touristHeading.main}{' '}</>}
 				<span class="benefits-section__title-accent benefits-section__title-accent--tourist">
@@ -172,8 +169,8 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 							<span class="benefits-card__icon benefits-card__icon--tourist" aria-hidden="true">
 								<Icon size="lg" weight="duotone" />
 							</span>
-							<h3 class="benefits-card__title">{t(b.titleKey, b.titleFb)}</h3>
-							<p class="benefits-card__desc">{t(b.descKey, b.descFb)}</p>
+							<h3 class="benefits-card__title">{t(b.titleKey)}</h3>
+							<p class="benefits-card__desc">{t(b.descKey)}</p>
 						</div>
 					);
 				})}
@@ -181,7 +178,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			<div class="benefits-section__cta" data-reveal="up">
 				<GradientButton
 					href={buildUrl({ locale, path: 'alojamientos' })}
-					label={t('benefits.tourist.cta', 'Explorar alojamientos')}
+					label={t('benefits.tourist.cta')}
 					variant="primary"
 				/>
 			</div>
@@ -215,7 +212,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			<span class="benefits-section__dot benefits-section__dot--o4"></span>
 		</div>
 		<div class="benefits-section__container">
-			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.owner.tagline', 'Para propietarios')}</p>
+			<p class="benefits-section__tagline" data-reveal="up">{t('benefits.owner.tagline')}</p>
 			<h2 class="benefits-section__title" data-reveal="up">
 				{ownerHeading.main && <>{ownerHeading.main}{' '}</>}
 				<span class="benefits-section__title-accent benefits-section__title-accent--owner">
@@ -244,8 +241,8 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 							<span class="benefits-card__icon benefits-card__icon--owner" aria-hidden="true">
 								<Icon size="lg" weight="duotone" />
 							</span>
-							<h3 class="benefits-card__title">{t(b.titleKey, b.titleFb)}</h3>
-							<p class="benefits-card__desc">{t(b.descKey, b.descFb)}</p>
+							<h3 class="benefits-card__title">{t(b.titleKey)}</h3>
+							<p class="benefits-card__desc">{t(b.descKey)}</p>
 						</div>
 					);
 				})}
@@ -253,7 +250,7 @@ const inLanguageMap: Record<SupportedLocale, string> = {
 			<div class="benefits-section__cta" data-reveal="up">
 				<GradientButton
 					href={buildUrl({ locale, path: 'suscriptores/propietarios' })}
-					label={t('benefits.owner.cta', 'Publicá tu alojamiento')}
+					label={t('benefits.owner.cta')}
 					variant="accent"
 				/>
 			</div>

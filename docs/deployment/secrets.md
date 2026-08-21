@@ -215,7 +215,7 @@ Set in the Vercel project for the admin app under **Settings → Environment Var
 | `VITE_MAX_PAGE_SIZE` | `100` | Maximum rows per page | Prod |
 | `VITE_ENABLE_LOGGING` | `false` | Enable client-side console logging | Prod |
 | `VITE_LOG_LEVEL` | `INFO` | Client-side log level | Prod |
-| `VITE_SUPPORTED_LOCALES` | `es,en` | Supported locale codes | Prod |
+| `VITE_SUPPORTED_LOCALES` | `es,en,pt` | Supported locale codes | Prod |
 | `VITE_DEFAULT_LOCALE` | `es` | Default locale | Prod |
 
 ---

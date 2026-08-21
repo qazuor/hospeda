@@ -347,12 +347,62 @@ function faqAnswerPaths(): ReadonlyArray<{ readonly file: string; readonly path:
     return out;
 }
 
+/**
+ * Every string leaf under a locale namespace file, as `{file, path}` pairs.
+ *
+ * Derived from `es` — the reference locale `check-locales` enforces, so every
+ * path returned here is guaranteed to also resolve in `en`/`pt` (that script
+ * hard-fails CI on an `es` key missing from either, independent of this file).
+ *
+ * HOS-616 is what this function exists for: it moves marketing prose OUT of
+ * inline fallbacks (this file's companion, `inline-fallback-veracity.test.ts`,
+ * covers those) and INTO these locale files — which only `plan-copy-veracity`
+ * can see. An enumerated `{file, path}` list, the shape `PROSE_SURFACES` used
+ * for `owners.json`/`benefits.json` before this function existed, misses every
+ * key a future HOS-616 batch adds unless someone remembers to list it by
+ * hand — the exact class of bug this guard exists to catch, turned on itself
+ * (see `benefits.owner.5.title`, moved into `benefits.json` by the same PR
+ * that added this sweep, and invisible to the old enumerated list). Sweeping
+ * the whole namespace instead means new prose in these files is audited the
+ * moment it lands, with no per-key bookkeeping.
+ */
+function namespaceLeafPaths(
+    file: string
+): ReadonlyArray<{ readonly file: string; readonly path: string }> {
+    const out: Array<{ file: string; path: string }> = [];
+    const walk = (value: unknown, prefix: string): void => {
+        if (typeof value === 'string') {
+            out.push({ file, path: prefix });
+            return;
+        }
+        if (typeof value !== 'object' || value === null) return;
+        for (const [key, v] of Object.entries(value as Record<string, unknown>)) {
+            walk(v, prefix ? `${prefix}.${key}` : key);
+        }
+    };
+    walk(readLocaleJson('es', file), '');
+    return out;
+}
+
+/**
+ * Namespaces HOS-616 is actively draining inline fallbacks into. Swept whole
+ * via `namespaceLeafPaths` rather than enumerated by path — see that
+ * function's comment. Extend this list as later HOS-616 batches touch more
+ * namespaces (`gastronomy.json` and `blog.json` are here even though this
+ * round moved no PHANTOM/BACKED-claim-shaped copy into them, so the next
+ * batch that does is covered without a second PR to this file).
+ */
+const HOS_616_DRAINED_NAMESPACES = [
+    'benefits.json',
+    'owners.json',
+    'about.json',
+    'blog.json',
+    'gastronomy.json'
+] as const;
+
 const PROSE_SURFACES: ReadonlyArray<{ readonly file: string; readonly path: string }> = [
     ...faqAnswerPaths(),
-    { file: 'owners.json', path: 'page.description' },
-    { file: 'owners.json', path: 'faq.1.a' },
-    { file: 'owners.json', path: 'faq.2.a' },
-    { file: 'owners.json', path: 'faq.3.a' },
+    ...HOS_616_DRAINED_NAMESPACES.flatMap((file) => namespaceLeafPaths(file)),
     { file: 'host.json', path: 'landing.trialCallout' },
     { file: 'host.json', path: 'pages.nueva.trialNote' },
     { file: 'features.json', path: 'anfitriones.banner.title' },
@@ -361,11 +411,6 @@ const PROSE_SURFACES: ReadonlyArray<{ readonly file: string; readonly path: stri
     // that removed "sin poner la tarjeta" one line above it.
     { file: 'features.json', path: 'anfitriones.banner.description' },
     { file: 'features.json', path: 'cta.description' },
-    // The meta description of /beneficios — it feeds `<meta name="description">`
-    // AND the AboutPage JSON-LD, so it is what Google shows in the snippet. It
-    // promised "soporte 24/7" while /contacto published office hours and the
-    // owners FAQ said "en horario de oficina".
-    { file: 'benefits.json', path: 'description' },
     { file: 'host.json', path: 'pages.nueva.trialCalloutTitle' },
     { file: 'host.json', path: 'properties.card.publishSubscriptionRequiredMessage' }
 ];

@@ -201,6 +201,64 @@ describe('translateApiError', () => {
             // Assert — must never show the raw English string
             expect(message).not.toBe('Invalid email or password');
         });
+
+        // ─── HOS-604: deleted-account sign-in error ────────────────────────
+
+        it('translates ACCOUNT_DELETED to Spanish', () => {
+            // Arrange
+            const error = {
+                code: 'ACCOUNT_DELETED',
+                message: 'This account has been deleted.'
+            };
+
+            // Act
+            const message = translateApiError({ error, locale: 'es' });
+
+            // Assert
+            expect(message).toBe('Esta cuenta fue eliminada y ya no está disponible.');
+        });
+
+        it('translates ACCOUNT_DELETED to English', () => {
+            // Arrange
+            const error = {
+                code: 'ACCOUNT_DELETED',
+                message: 'This account has been deleted.'
+            };
+
+            // Act
+            const message = translateApiError({ error, locale: 'en' });
+
+            // Assert
+            expect(message).toBe('This account has been deleted and is no longer available.');
+        });
+
+        it('translates ACCOUNT_DELETED to Portuguese', () => {
+            // Arrange
+            const error = {
+                code: 'ACCOUNT_DELETED',
+                message: 'This account has been deleted.'
+            };
+
+            // Act
+            const message = translateApiError({ error, locale: 'pt' });
+
+            // Assert
+            expect(message).toBe('Esta conta foi excluída e não está mais disponível.');
+        });
+
+        it('does not leak the raw English "This account has been deleted." message in es locale (HOS-604)', () => {
+            // Arrange — the exact server message quoted in HOS-604's production repro
+            const error = {
+                code: 'ACCOUNT_DELETED',
+                message: 'This account has been deleted.'
+            };
+
+            // Act
+            const message = translateApiError({ error, locale: 'es' });
+
+            // Assert — must never show the raw English string on a Spanish screen
+            expect(message).not.toBe('This account has been deleted.');
+        });
     });
 
     // ─── Extended: locale-only path (no `t` supplied) ─────────────────────

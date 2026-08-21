@@ -1,9 +1,10 @@
 import { Section, Text } from '@react-email/components';
+import type { AddonLinkLocale } from '../../types/notification.types.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
-import { formatDate } from '../utils/index.js';
+import { buildAddonManagementUrl, formatDate } from '../utils/index.js';
 
 /**
  * Props for AddonExpired email template
@@ -14,6 +15,13 @@ export interface AddonExpiredProps {
     /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
     baseUrl: string;
     expirationDate?: string;
+    /**
+     * Add-on catalog slug. When present, the CTA button deep-links to the
+     * add-ons management page focused on this add-on (HOS-722).
+     */
+    addonSlug?: string;
+    /** Recipient's preferred locale for the CTA link. Falls back to `'es'` (HOS-722). */
+    locale?: AddonLinkLocale;
 }
 
 /**
@@ -26,11 +34,14 @@ export function AddonExpired({
     recipientName,
     addonName,
     baseUrl,
-    expirationDate
+    expirationDate,
+    addonSlug,
+    locale
 }: AddonExpiredProps) {
     const formattedExpirationDate = expirationDate
         ? formatDate({ dateString: expirationDate })
         : undefined;
+    const repurchaseUrl = buildAddonManagementUrl({ baseUrl, locale, addonSlug });
 
     return (
         <EmailLayout previewText={`Tu complemento ${addonName} ha vencido`}>
@@ -62,7 +73,7 @@ export function AddonExpired({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Comprar de nuevo</Button>
+                <Button href={repurchaseUrl}>Comprar de nuevo</Button>
             </Section>
 
             <Text style={styles.footerNote}>

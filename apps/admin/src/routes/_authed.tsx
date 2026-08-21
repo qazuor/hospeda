@@ -1,3 +1,4 @@
+import { resolveDisplayLocale } from '@repo/i18n';
 import { createFileRoute, Link, Outlet, redirect } from '@tanstack/react-router';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { AuthProvider } from '@/contexts/auth-context';
@@ -6,7 +7,7 @@ import { useTranslations } from '@/hooks/use-translations';
 import type { AuthState } from '@/lib/auth-session';
 import { fetchAuthSession } from '@/lib/auth-session';
 import { decideAuthedGuard } from '@/lib/authed-guard';
-import { fetchPreferredLocale } from '@/lib/locale';
+import { fetchPreferredLocale, getSupportedLocales } from '@/lib/locale';
 import { adminLogger } from '@/utils/logger';
 
 /**
@@ -59,14 +60,25 @@ function AuthedNotFoundComponent() {
  */
 export const Route = createFileRoute('/_authed')({
     beforeLoad: async ({ location }) => {
-        // Resolve the session and the preferred locale in parallel: the locale
-        // is a pure Accept-Language read with no dependency on the auth state,
-        // so the two server functions need not run sequentially. Keeps
-        // `decideAuthedGuard` a pure function with no I/O. (BETA-71.)
-        const [authState, { locale: preferredLocale }] = await Promise.all([
+        // Resolve the session and the Accept-Language header in parallel: the
+        // header read has no dependency on the auth state, so the two server
+        // functions need not run sequentially (BETA-71). The two results are
+        // then combined synchronously via the single product-wide locale
+        // precedence rule (HOS-609 / HOS-617): the account's saved
+        // `languageWeb` preference wins over `Accept-Language`, which wins
+        // over the default. The admin has no locale segment of its own URLs,
+        // so there is no step-1 (explicit URL) signal to pass here.
+        const [authState, { header: acceptLanguageHeader }] = await Promise.all([
             fetchAuthSession(),
             fetchPreferredLocale()
         ]);
+
+        const { locale: preferredLocale } = resolveDisplayLocale({
+            accountLocale: authState.languageWeb,
+            acceptLanguageHeader,
+            supportedLocales: getSupportedLocales(),
+            defaultLocale: env.VITE_DEFAULT_LOCALE
+        });
 
         const decision = decideAuthedGuard({
             authState,

@@ -212,3 +212,74 @@ describe('createPaginatedResponse with responseSchema', () => {
         expect(apiLogger.error).toHaveBeenCalled();
     });
 });
+
+describe('handleRouteError — RefinedBodyValidationError (HOS-607)', () => {
+    beforeEach(() => {
+        vi.clearAllMocks();
+    });
+
+    it('renders the rich {details, summary, userFriendlyMessage} shape, never a raw i18n key as message', async () => {
+        // Regression for HOS-607: the smoke found the SAME admin create-plan
+        // endpoint answering two different 400 shapes a second apart — a rich
+        // one for an ordinary field-level rejection, and a flat
+        // `{code, message}` one (message = the literal untranslated
+        // `zodError.*` key) for the cross-field `trialDays` refinement.
+        const { handleRouteError } = await import('../../src/utils/response-helpers');
+        const { RefinedBodyValidationError } = await import('../../src/utils/refined-body');
+        const { transformZodError } = await import('../../src/utils/zod-error-transformer');
+        const { CreateBillingPlanSchema } = await import('@repo/schemas');
+
+        const validPlan = {
+            slug: 'guard-probe-plan',
+            name: 'Guard probe',
+            description: 'A plan used only by this test.',
+            category: 'owner' as const,
+            monthlyPriceArs: 100000,
+            annualPriceArs: null,
+            monthlyPriceUsdRef: 100,
+            hasTrial: true,
+            trialDays: 0,
+            isDefault: false,
+            sortOrder: 1,
+            entitlements: [],
+            limits: {},
+            isActive: true
+        };
+        const parsed = CreateBillingPlanSchema.safeParse(validPlan);
+        if (parsed.success) {
+            throw new Error('expected CreateBillingPlanSchema to reject this body');
+        }
+        const error = new RefinedBodyValidationError(transformZodError(parsed.error));
+
+        const { ctx, calls } = createMockContext();
+        handleRouteError(error, ctx);
+
+        expect(calls).toHaveLength(1);
+        expect(calls[0]?.status).toBe(400);
+        const body = calls[0]?.body as {
+            success: boolean;
+            error: {
+                code: string;
+                message?: string;
+                messageKey: string;
+                details: Array<{ field: string; messageKey: string }>;
+                summary: { totalErrors: number };
+                userFriendlyMessage: string;
+            };
+        };
+
+        expect(body.success).toBe(false);
+        expect(body.error.code).toBe('VALIDATION_ERROR');
+        // No flat `message` field carrying a raw key — the exact bug HOS-607
+        // reported (`zodError.billing.plan.create.trialDays.requiredWhenTrial`
+        // shown verbatim as `error.message`).
+        expect(body.error.message).toBeUndefined();
+        expect(Array.isArray(body.error.details)).toBe(true);
+        expect(body.error.details[0]?.field).toBe('trialDays');
+        expect(body.error.details[0]?.messageKey).toBe(
+            'zodError.billing.plan.create.trialDays.requiredWhenTrial'
+        );
+        expect(body.error.summary.totalErrors).toBe(1);
+        expect(typeof body.error.userFriendlyMessage).toBe('string');
+    });
+});

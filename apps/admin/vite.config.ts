@@ -198,7 +198,7 @@ export default defineConfig({
                             process.env.VITE_DEBUG_ACTOR_ID || ''
                         ),
                         'import.meta.env.VITE_SUPPORTED_LOCALES': JSON.stringify(
-                            process.env.VITE_SUPPORTED_LOCALES || 'es,en'
+                            process.env.VITE_SUPPORTED_LOCALES || 'es,en,pt'
                         ),
                         'import.meta.env.VITE_DEFAULT_LOCALE': JSON.stringify(
                             process.env.VITE_DEFAULT_LOCALE || 'es'
