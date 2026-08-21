@@ -25,6 +25,11 @@
             "plural": "Accommodations",
             "description": "Manage hotels, cabins, apartments and other accommodations"
         },
+        "contentModerationTerm": {
+            "singular": "Moderation term",
+            "plural": "Moderation terms",
+            "description": "Manage blocked words and domains for content moderation"
+        },
         "destination": {
             "singular": "Destination",
             "plural": "Destinations",

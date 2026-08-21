@@ -34,6 +34,7 @@
  * @module services/billing/orphan-payment-queue
  */
 
+import { type Major, toCentavos } from '@repo/billing';
 import { billingOrphanPayments, getDb } from '@repo/db';
 import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
@@ -71,8 +72,15 @@ export interface RecordOrphanPaymentInput {
     readonly flow: OrphanPaymentFlow;
     /** Why it could not apply the payment. */
     readonly reason: OrphanPaymentReason;
-    /** Charged amount in MAJOR units (pesos), as the webhook payload reports it. */
-    readonly amountMajor: number;
+    /**
+     * Charged amount in MAJOR units (pesos), as the webhook payload reports it.
+     *
+     * HOS-720 — `Major` rather than `number`, because this service converts it
+     * to centavos for the queue row. Every caller is a confirmation flow whose
+     * own `amount` originates in a qzpay adapter response measured in CENTAVOS,
+     * which is precisely the crossing HOS-713 got wrong one hop upstream.
+     */
+    readonly amountMajor: Major;
     /** ISO-4217 currency of the charge. */
     readonly currency: string;
     /** Local subscription id the payment named. `null` when unknown. */
@@ -137,9 +145,10 @@ export function buildOrphanPaymentRow(input: RecordOrphanPaymentInput): {
         subscriptionId: input.subscriptionId ?? null,
         customerId: input.customerId ?? null,
         // Money is stored as integer centavos per repo policy; the webhook
-        // payload reports major units, the same conversion every sibling
-        // `billing.payments.record()` call in these flows performs.
-        amount: Math.round(input.amountMajor * 100),
+        // payload reports major units. `toCentavos` is the one named crossing
+        // (HOS-720), the same one every sibling `billing.payments.record()`
+        // call in these flows now performs.
+        amount: toCentavos(input.amountMajor),
         currency: input.currency,
         observedStatus: input.observedStatus ?? null,
         source: input.source,

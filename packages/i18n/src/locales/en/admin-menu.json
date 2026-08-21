@@ -46,7 +46,11 @@
         "tags": "Tags",
         "seo": "SEO",
         "portalSettings": "Portal Settings",
-        "revalidation": "ISR Revalidation"
+        "revalidation": "ISR Revalidation",
+        "postTags": "Post Tags",
+        "systemTags": "System Tags",
+        "internalTags": "Internal Tags",
+        "userTagModeration": "User Tag Moderation"
     },
     "billing": {
         "title": "Billing",

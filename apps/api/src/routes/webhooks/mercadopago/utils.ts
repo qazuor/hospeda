@@ -7,7 +7,7 @@
  * @module routes/webhooks/mercadopago/utils
  */
 
-import { createMercadoPagoAdapter } from '@repo/billing';
+import { asMajor, createMercadoPagoAdapter } from '@repo/billing';
 import { and, billingWebhookEvents, eq, getDb, or, sql } from '@repo/db';
 import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { getQZPayBilling } from '../../../middlewares/billing';
@@ -490,11 +490,23 @@ export function extractAddonFromReference(externalReference: unknown): string | 
 /**
  * Extract payment information from event data.
  *
+ * This is the canonical consumer that DEFINES the unit of an MP-raw-shaped
+ * payload: `transaction_amount` is read as MAJOR units (ARS pesos), which is
+ * what MercadoPago's REST API actually sends. HOS-720 moved that fact out of a
+ * comment and into the return type — `PaymentInfo.amount` is {@link Major}, so
+ * a producer that builds a synthetic payload out of a qzpay adapter response
+ * (CENTAVOS) can no longer forward it undivided the way HOS-713 did.
+ *
+ * `asMajor` here is the one sanctioned parse-boundary assertion: `data` is
+ * `Record<string, unknown>`, so the unit cannot be proven, only declared — and
+ * this is the single place in the pipeline where it is declared.
+ *
  * @param data - Payment event data
  * @returns Payment details or null if required fields are missing
  */
 export function extractPaymentInfo(data: Record<string, unknown>): PaymentInfo | null {
-    const amount = typeof data.transaction_amount === 'number' ? data.transaction_amount : null;
+    const amount =
+        typeof data.transaction_amount === 'number' ? asMajor(data.transaction_amount) : null;
     const currency = typeof data.currency_id === 'string' ? data.currency_id : 'ARS';
     const status = typeof data.status === 'string' ? data.status : null;
     const statusDetail = typeof data.status_detail === 'string' ? data.status_detail : null;

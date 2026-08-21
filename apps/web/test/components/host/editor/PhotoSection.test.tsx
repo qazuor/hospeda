@@ -69,7 +69,13 @@ const MOCK_TRANSLATIONS: Record<string, string> = {
         'Límite de galería alcanzado (máx {{cap}} fotos)'
 };
 
-vi.mock('@/lib/i18n', () => ({
+// PARTIAL mock (HOS-724). It used to replace the WHOLE module, which meant any
+// new import of a sibling export (`createT`, `SUPPORTED_LOCALES`, ...) anywhere
+// in the section's dependency graph resolved to `undefined` and blew the suite
+// up at import time — a failure mode with nothing to do with what is under test.
+// Only `createTranslations` is overridden; everything else stays real.
+vi.mock('@/lib/i18n', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@/lib/i18n')>()),
     createTranslations: (_locale: string) => ({
         t: (key: string, fallback?: string, params?: Record<string, unknown>) => {
             const raw = MOCK_TRANSLATIONS[key] ?? fallback ?? key;
@@ -128,7 +134,12 @@ vi.mock('@/store/toast-store', () => ({
     addToast: mockAddToast
 }));
 
-vi.mock('@repo/schemas', () => ({
+// PARTIAL mock (HOS-724), same reason as `@/lib/i18n` above: the whole-module
+// form pinned the cap AND erased every other schema export, so the first
+// transitive import needing one (`ProductDomainEnum`, via `@repo/billing`)
+// failed the suite before a single test ran.
+vi.mock('@repo/schemas', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/schemas')>()),
     ENTITY_GALLERY_CAPS: { accommodation: 50 }
 }));
 

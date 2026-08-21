@@ -11,7 +11,7 @@
 
 import type { QZPayBilling, QZPayCurrency, QZPayPaymentStatus } from '@qazuor/qzpay-core';
 import { AnalyticsEvents } from '@repo/analytics';
-import { createMercadoPagoAdapter } from '@repo/billing';
+import { asMajor, createMercadoPagoAdapter, type Major, toCentavos } from '@repo/billing';
 import {
     and,
     billingAddonPurchases,
@@ -106,7 +106,15 @@ const MP_APPROVED_STATUSES = new Set(['approved', 'accredited']);
 export async function confirmAnnualSubscription(input: {
     readonly annualSubscriptionId: string;
     readonly providerPaymentId: string;
-    readonly amount: number;
+    /**
+     * The charged amount in MAJOR units (ARS pesos), as MP reports it.
+     *
+     * HOS-720 — `Major` rather than `number` because this function converts it
+     * back to centavos internally for `billing_payments.amount`. Both of its
+     * callers start from a qzpay adapter response in CENTAVOS, and one of them
+     * (the live webhook handler) shipped that value undivided in HOS-713.
+     */
+    readonly amount: Major;
     readonly currency: string;
     readonly billing: QZPayBilling;
     readonly source: string;
@@ -213,7 +221,10 @@ export async function confirmAnnualSubscription(input: {
         .limit(1);
 
     if (existingPayment.length === 0) {
-        const amountInCentavos = Math.round(amount * 100);
+        // HOS-720: `billing_payments.amount` is CENTAVOS, `amount` is MAJOR.
+        // `toCentavos` is the only crossing; a hand-written `* 100` would yield a
+        // plain `number` that no longer satisfies the branded parameter above.
+        const amountInCentavos = toCentavos(amount);
         try {
             await billing.payments.record({
                 id: crypto.randomUUID(),
@@ -494,7 +505,12 @@ async function resolveDiscountAwareUpgradeAmount(
 async function confirmPlanUpgrade(input: {
     readonly metadata: PlanChangeUpgradeMetadata;
     readonly providerPaymentId: string;
-    readonly amount: number;
+    /**
+     * The charged prorated delta in MAJOR units (ARS pesos), as MP reports it.
+     * Converted to centavos internally for the `billing_payments` row — see the
+     * note on {@link confirmAnnualSubscription}'s `amount` (HOS-720).
+     */
+    readonly amount: Major;
     readonly currency: string;
     readonly billing: QZPayBilling;
     readonly source: string;
@@ -747,7 +763,10 @@ async function confirmPlanUpgrade(input: {
         .limit(1);
 
     if (existingPayment.length === 0) {
-        const amountInCentavos = Math.round(amount * 100);
+        // HOS-720: `billing_payments.amount` is CENTAVOS, `amount` is MAJOR.
+        // `toCentavos` is the only crossing; a hand-written `* 100` would yield a
+        // plain `number` that no longer satisfies the branded parameter above.
+        const amountInCentavos = toCentavos(amount);
         try {
             await billing.payments.record({
                 id: crypto.randomUUID(),
@@ -949,10 +968,10 @@ async function applyWebhookRefundLifecycle({
     // If absent or non-numeric → undefined → applyRefundLifecycle treats as full refund.
     const mpRefundedAmountMajor =
         typeof data.transaction_amount_refunded === 'number'
-            ? data.transaction_amount_refunded
+            ? asMajor(data.transaction_amount_refunded)
             : null;
     const refundAmountCentavos =
-        mpRefundedAmountMajor === null ? undefined : Math.round(mpRefundedAmountMajor * 100);
+        mpRefundedAmountMajor === null ? undefined : toCentavos(mpRefundedAmountMajor);
 
     // HOS-597: resolve the provider refund id off the local payment's metadata
     // — the same field the admin hook read when it applied the refund — so a
@@ -1024,6 +1043,51 @@ async function resolveAnalyticsDistinctId(customerId: string): Promise<string> {
 }
 
 /**
+ * Resolve the billing customer id from a raw payment/webhook metadata bag,
+ * accepting either the canonical camelCase spelling or the MercadoPago
+ * snake_case wire spelling.
+ *
+ * ## Why this exists (HOS-744)
+ *
+ * This is the gate for payment status notification dispatch (success AND
+ * failure, below): if it does not resolve, no notification is sent. It
+ * used to read `metadata.customerId` only, which never resolves for a real
+ * webhook, because MercadoPago snake-cases preference metadata keys when it
+ * copies them onto the payment object it echoes back on `payment.updated` —
+ * a preference written with `customerId` round-trips as `customer_id`. The
+ * gate was permanently closed: no payment success or failure notification
+ * was ever dispatched.
+ *
+ * ## Why this is a local helper, not `normalizeAddonCheckoutMetadata`
+ *
+ * HOS-721 established the convention this follows — camelCase is canonical,
+ * snake_case is a wire format, translate once at the border instead of
+ * having every reader defend both spellings — via `normalizeAddonCheckoutMetadata`
+ * (`services/addon-checkout-metadata.ts`). That module's `AddonCheckoutMetadata`
+ * payload deliberately EXCLUDES `customerId`: its own docs call it (together
+ * with `addonSlug`) the add-on *dispatch discriminator*, resolved separately
+ * by `extractAddonMetadata` before the add-on payload is ever read. This gate
+ * is not add-on-specific — it fires for every payment, add-on or not — so
+ * widening that module would blur a boundary it was written to keep. This is
+ * its own, narrower border: one key, one call site.
+ *
+ * @param metadata - The raw metadata bag from the payment payload, before
+ *   any spelling normalization.
+ * @returns The customer id, or `null` when absent under either spelling.
+ */
+function resolvePaymentCustomerId(metadata: Record<string, unknown> | undefined): string | null {
+    if (!metadata) {
+        return null;
+    }
+    const camel = metadata.customerId;
+    if (typeof camel === 'string' && camel.length > 0) {
+        return camel;
+    }
+    const snake = metadata.customer_id;
+    return typeof snake === 'string' && snake.length > 0 ? snake : null;
+}
+
+/**
  * Process a payment.updated event's business logic.
  *
  * Dispatches payment success/failure notifications and confirms add-on
@@ -1040,7 +1104,7 @@ export async function processPaymentUpdated({
 }: ProcessPaymentUpdatedInput): Promise<ProcessPaymentUpdatedResult> {
     const paymentInfo = extractPaymentInfo(data);
     const metadata = data.metadata as Record<string, unknown> | undefined;
-    const customerId = typeof metadata?.customerId === 'string' ? metadata.customerId : null;
+    const customerId = resolvePaymentCustomerId(metadata);
 
     // Dispatch payment status notifications
     if (paymentInfo && customerId) {
@@ -1389,11 +1453,12 @@ export async function processPaymentUpdated({
         // written to the ledger as collected.
         ...(paymentInfo !== null && MP_APPROVED_STATUSES.has(paymentInfo.status)
             ? {
-                  // `paymentInfo.amount` is in MAJOR units (extractPaymentInfo
+                  // `paymentInfo.amount` is typed `Major` (extractPaymentInfo
                   // reads MP's `transaction_amount`); billing_payments stores
-                  // integer centavos, the same conversion the sibling
-                  // `billing.payments.record()` calls above perform.
-                  amountInCents: Math.round(paymentInfo.amount * 100),
+                  // integer centavos, the same crossing the sibling
+                  // `billing.payments.record()` calls above perform — and since
+                  // HOS-720 the same named function performs it everywhere.
+                  amountInCents: toCentavos(paymentInfo.amount),
                   currency: paymentInfo.currency
               }
             : {}),

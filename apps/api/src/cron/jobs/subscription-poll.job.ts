@@ -17,7 +17,7 @@
 
 import type { QZPaySubscriptionPollingJob, QZPayWebhookEvent } from '@qazuor/qzpay-core';
 import type { QZPayMercadoPagoAdapter } from '@qazuor/qzpay-mercadopago';
-import { createMercadoPagoAdapter } from '@repo/billing';
+import { asCentavos, createMercadoPagoAdapter, toMajor } from '@repo/billing';
 import {
     and,
     billingSubscriptions,
@@ -42,6 +42,7 @@ import {
     processPaymentUpdated
 } from '../../routes/webhooks/mercadopago/payment-logic.js';
 import { processSubscriptionUpdated } from '../../routes/webhooks/mercadopago/subscription-logic.js';
+import type { SyntheticMpPaymentPayload } from '../../routes/webhooks/mercadopago/types.js';
 import { env } from '../../utils/env.js';
 import type { CronJobDefinition, CronJobResult } from '../types.js';
 
@@ -374,12 +375,15 @@ async function runOneTimePaymentPoll(params: {
                 type: paymentMeta.type ?? jobMeta.type
             };
 
-            const syntheticPayload: Record<string, unknown> = {
+            const syntheticPayload: SyntheticMpPaymentPayload = {
                 id: succeeded.id,
                 status: 'approved',
-                // extractPaymentInfo reads transaction_amount as MAJOR units.
-                // The adapter returns amount in cents, so divide by 100.
-                transaction_amount: succeeded.amount / 100,
+                // HOS-720: the adapter returns CENTAVOS and `extractPaymentInfo`
+                // reads `transaction_amount` as MAJOR units. `asCentavos` states
+                // the incoming unit, `toMajor` crosses it — the compiler now
+                // rejects the undivided forward that HOS-713 shipped on the
+                // identical field in the live webhook handler.
+                transaction_amount: toMajor(asCentavos(succeeded.amount)),
                 currency_id: succeeded.currency,
                 metadata: syntheticMetadata,
                 external_reference: locked.providerResourceId
@@ -422,9 +426,10 @@ async function runOneTimePaymentPoll(params: {
         //
         // amount comes from the adapter in cents (smallest currency unit);
         // confirmAnnualSubscription expects MAJOR units (it converts back
-        // to cents internally when recording the payment row). Mirror the
-        // webhook handler convention.
-        const amountMajor = succeeded.amount / 100;
+        // to cents internally when recording the payment row). Since HOS-720
+        // that expectation is its parameter TYPE (`Major`), so this crossing
+        // cannot be skipped rather than merely being documented here.
+        const amountMajor = toMajor(asCentavos(succeeded.amount));
         const annualSubscriptionId =
             typeof succeeded.metadata?.annualSubscriptionId === 'string'
                 ? succeeded.metadata.annualSubscriptionId
