@@ -25,7 +25,7 @@
 import type { Image, OpeningHours } from '@repo/schemas';
 import { ExperienceOwnerUpdateInputSchema, GastronomyOwnerUpdateInputSchema } from '@repo/schemas';
 import { type JSX, useCallback, useMemo, useState } from 'react';
-import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
+import type { DestinationOption } from '@/components/commerce/destination-option';
 import { ActionBar } from '@/components/host/editor/ActionBar.client';
 import type { EditorSectionNavItem } from '@/components/host/editor/EditorSectionNav.client';
 import { EditorSectionNav } from '@/components/host/editor/EditorSectionNav.client';

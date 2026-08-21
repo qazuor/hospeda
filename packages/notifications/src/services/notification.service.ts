@@ -16,7 +16,6 @@ import {
     AiCostThresholdAlert,
     AllianceClaimInvite,
     AllianceLeadDecision,
-    CommerceOwnerCredentials,
     ContactSubmissionEmail,
     FeedbackReportEmail,
     HostTradeRevoked,
@@ -57,7 +56,6 @@ import type {
     AiCostThresholdAlertPayload,
     AllianceClaimInvitePayload,
     AllianceLeadDecisionPayload,
-    CommerceOwnerCredentialsPayload,
     ContactSubmissionPayload,
     FeedbackReportPayload,
     HostTradeReplyModeratedPayload,
@@ -620,15 +618,6 @@ export class NotificationService {
                     accessUntil: p.accessUntil,
                     migrationHint: p.migrationHint,
                     baseUrl: this.deps.siteUrl
-                });
-            }
-
-            case 'commerce_owner_credentials': {
-                const p = payload as CommerceOwnerCredentialsPayload;
-                return CommerceOwnerCredentials({
-                    recipientName,
-                    temporaryPassword: p.temporaryPassword,
-                    changePasswordUrl: p.changePasswordUrl
                 });
             }
 
