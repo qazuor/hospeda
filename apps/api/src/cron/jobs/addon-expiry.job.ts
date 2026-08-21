@@ -34,8 +34,10 @@ import {
     featuredListingAddonGrants,
     getDb,
     isNull,
+    UserModel,
     withTransaction
 } from '@repo/db';
+import type { AddonLinkLocale } from '@repo/notifications';
 import { NotificationType } from '@repo/notifications';
 import { AddonCatalogService, syncFeaturedByEntitlementForAccommodation } from '@repo/service-core';
 import { chunkArray } from '@repo/utils';
@@ -55,6 +57,49 @@ import type { CronJobDefinition } from '../types.js';
 // Replaces static `getAddonBySlug` from `@repo/billing` for display-name
 // resolution and revocation retry. Instantiated once at module level.
 const catalogService = new AddonCatalogService();
+
+// ─── User model (recipient locale resolution — HOS-722) ───────────────────────
+const userModel = new UserModel();
+
+/**
+ * Resolves the recipient's preferred locale for the add-on expiry/expired
+ * email CTA link (HOS-722).
+ *
+ * Mirrors the `user.settings?.languageWeb ?? 'es'` pattern already used by
+ * `alerts-digest.job.ts` — `languageWeb` is the user's web-facing language
+ * preference (`packages/schemas/src/entities/user/user.settings.schema.ts`),
+ * which is what the CTA link (an `apps/web` route) must match.
+ *
+ * Degrades to `'es'` instead of throwing when `userId` is `null` (a billing
+ * customer with no linked Hospeda user) or the lookup fails, matching the
+ * resilience contract of {@link lookupCustomerDetails} — a locale mismatch is
+ * cosmetic, never a reason to drop the notification.
+ *
+ * @param userId - Hospeda `users.id`, or `null` if unresolved.
+ * @returns The recipient's preferred locale, or `'es'` as fallback.
+ */
+async function resolveRecipientLocale(userId: string | null): Promise<AddonLinkLocale> {
+    if (!userId) {
+        return 'es';
+    }
+
+    try {
+        const user = await userModel.findById(userId);
+        const rawLocale = user?.settings?.languageWeb;
+
+        if (rawLocale === 'es' || rawLocale === 'en' || rawLocale === 'pt') {
+            return rawLocale;
+        }
+
+        return 'es';
+    } catch (error) {
+        apiLogger.warn(
+            { userId, error: error instanceof Error ? error.message : String(error) },
+            'Failed to resolve recipient locale for add-on notification, defaulting to es'
+        );
+        return 'es';
+    }
+}
 
 /**
  * Number of expired addon purchases to process concurrently per chunk (SPEC-194 T-015).
@@ -492,6 +537,13 @@ export const addonExpiryJob: CronJobDefinition = {
                                     ? addonCatalogExpired.data.name
                                     : expiredAddon.addonSlug;
 
+                                // HOS-722: the CTA link must land on the add-ons page (focused
+                                // on this add-on) in the recipient's own locale, not a
+                                // hardcoded /es/ subscription link.
+                                const recipientLocaleExpired = await resolveRecipientLocale(
+                                    customerDetails.userId
+                                );
+
                                 // Fire-and-forget notification (the notification helper logs to billing_notification_log)
                                 sendNotification({
                                     type: NotificationType.ADDON_EXPIRED,
@@ -500,6 +552,8 @@ export const addonExpiryJob: CronJobDefinition = {
                                     userId: customerDetails.userId,
                                     customerId: expiredAddon.customerId,
                                     addonName: addonDisplayNameExpired,
+                                    addonSlug: expiredAddon.addonSlug,
+                                    locale: recipientLocaleExpired,
                                     expirationDate: expiredAddon.expiresAt.toISOString(),
                                     idempotencyKey: generateIdempotencyKey(
                                         NotificationType.ADDON_EXPIRED,
@@ -615,6 +669,13 @@ export const addonExpiryJob: CronJobDefinition = {
                                     ? addonCatalog3d.data.name
                                     : expiringAddon.addonSlug;
 
+                                // HOS-722: the CTA link must land on the add-ons page (focused
+                                // on this add-on) in the recipient's own locale, not a
+                                // hardcoded /es/ subscription link.
+                                const recipientLocale3d = await resolveRecipientLocale(
+                                    customerDetails.userId
+                                );
+
                                 // Fire-and-forget notification (the notification helper logs to billing_notification_log)
                                 sendNotification({
                                     type: NotificationType.ADDON_EXPIRATION_WARNING,
@@ -623,6 +684,8 @@ export const addonExpiryJob: CronJobDefinition = {
                                     userId: customerDetails.userId,
                                     customerId: expiringAddon.customerId,
                                     addonName: addonDisplayName3d,
+                                    addonSlug: expiringAddon.addonSlug,
+                                    locale: recipientLocale3d,
                                     expirationDate: expiringAddon.expiresAt.toISOString(),
                                     daysRemaining: expiringAddon.daysUntilExpiration,
                                     idempotencyKey: generateIdempotencyKey(
@@ -736,6 +799,13 @@ export const addonExpiryJob: CronJobDefinition = {
                                     ? addonCatalog1d.data.name
                                     : expiringAddon.addonSlug;
 
+                                // HOS-722: the CTA link must land on the add-ons page (focused
+                                // on this add-on) in the recipient's own locale, not a
+                                // hardcoded /es/ subscription link.
+                                const recipientLocale1d = await resolveRecipientLocale(
+                                    customerDetails.userId
+                                );
+
                                 // Fire-and-forget notification (the notification helper logs to billing_notification_log)
                                 sendNotification({
                                     type: NotificationType.ADDON_EXPIRATION_WARNING,
@@ -744,6 +814,8 @@ export const addonExpiryJob: CronJobDefinition = {
                                     userId: customerDetails.userId,
                                     customerId: expiringAddon.customerId,
                                     addonName: addonDisplayName1d,
+                                    addonSlug: expiringAddon.addonSlug,
+                                    locale: recipientLocale1d,
                                     expirationDate: expiringAddon.expiresAt.toISOString(),
                                     daysRemaining: expiringAddon.daysUntilExpiration,
                                     idempotencyKey: generateIdempotencyKey(
