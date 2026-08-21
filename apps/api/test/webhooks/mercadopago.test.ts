@@ -493,7 +493,13 @@ describe('MercadoPago Webhook Handler', () => {
                 type: 'payment.created',
                 providerEventId: 'evt_123',
                 status: 'pending',
-                payload: event
+                payload: event,
+                // HOS-708: livemode = !env.HOSPEDA_MERCADO_PAGO_SANDBOX. This
+                // suite's mocked env Proxy returns `undefined` for any unset
+                // key, so `!undefined` is `true` here — dedicated coverage for
+                // the sandbox=true (livemode=false) case lives in
+                // test/routes/webhooks/webhook-event-livemode.test.ts.
+                livemode: true
             });
             expect(result).toBeUndefined();
         });

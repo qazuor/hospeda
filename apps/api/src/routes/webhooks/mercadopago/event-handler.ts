@@ -11,6 +11,7 @@
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
 import { billingWebhookEvents, eq, getDb } from '@repo/db';
 import { captureWebhookError } from '../../../lib/sentry';
+import { env } from '../../../utils/env';
 import { apiLogger } from '../../../utils/logger';
 import { classifyWebhookError } from './error-classification';
 import { markEventFailedByProviderId, markEventProcessedByProviderId } from './utils';
@@ -81,7 +82,16 @@ export const handleWebhookEvent: QZPayWebhookHandler = async (c, event) => {
                     type: event.type,
                     providerEventId,
                     status: 'pending',
-                    payload: event
+                    payload: event,
+                    // This INSERT bypasses the QZPay storage adapter (see the
+                    // comment above), so it must derive livemode itself instead
+                    // of inheriting the adapter's computation. Same single
+                    // source of truth as middlewares/billing.ts: sandbox mode
+                    // means every persisted row is non-live. Omitting this
+                    // silently falls back to the column's `DEFAULT true`
+                    // (packages/db/src/migrations/0000_baseline.sql), which
+                    // mislabels every sandbox event as production (HOS-708).
+                    livemode: !env.HOSPEDA_MERCADO_PAGO_SANDBOX
                 })
                 .returning();
 
