@@ -1040,6 +1040,12 @@
                 "ai-support-monthly": "To add AI support"
             }
         },
+        "featuredOffer": {
+            "title": "Feature this accommodation",
+            "body": "A visibility boost makes this accommodation appear featured in listings and search results for as long as the add-on lasts.",
+            "scope": "Heads up: the boost applies to this listing only. If you have more than one accommodation, each one needs its own add-on.",
+            "linkSr": "for this accommodation"
+        },
         "billingType": {
             "one_time": "One-time",
             "recurring": "Monthly"
