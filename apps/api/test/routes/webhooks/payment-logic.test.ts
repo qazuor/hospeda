@@ -421,7 +421,7 @@ describe('processPaymentUpdated', () => {
     // read `metadata.customerId`, which is exactly the bug that shipped.
     it('should send success notification for approved payment with snake_case metadata (real MP wire format)', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1000,
+            amount: asMajor(1000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -445,7 +445,7 @@ describe('processPaymentUpdated', () => {
 
     it('should NOT dispatch any payment notification when customerId is absent under either spelling', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1000,
+            amount: asMajor(1000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -818,7 +818,7 @@ describe('processPaymentUpdated', () => {
     // camelCase-only tests above are structurally blind to this bug class.
     it('should send failure notification for rejected payment with snake_case metadata (real MP wire format)', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 500,
+            amount: asMajor(500),
             currency: 'ARS',
             status: 'rejected',
             statusDetail: 'cc_rejected_other_reason',
