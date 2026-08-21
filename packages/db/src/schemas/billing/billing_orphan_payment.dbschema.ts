@@ -1,4 +1,5 @@
 import {
+    boolean,
     index,
     integer,
     jsonb,
@@ -79,6 +80,22 @@ export const billingOrphanPayments = pgTable(
 
         /** ISO-4217 currency of the charge. */
         currency: varchar('currency', { length: 3 }).notNull(),
+
+        /**
+         * `false` when the charge came from the MercadoPago sandbox.
+         *
+         * ALWAYS derived from `HOSPEDA_MERCADO_PAGO_SANDBOX`, never hard-coded
+         * (HOS-708 / HOS-719 — the one rule with no exception to remember: every
+         * write to a `livemode` column derives it from the environment).
+         *
+         * Load-bearing for THIS table specifically: the queue exists so a human
+         * can look at a stranded payment and decide what to do about it, and the
+         * first thing that decision needs is whether real money moved. Without
+         * this column a sandbox test and a genuine stranded charge are the same
+         * row. Note there is no `DEFAULT` here on purpose — a caller that
+         * forgets it fails loudly instead of silently claiming production.
+         */
+        livemode: boolean('livemode').notNull(),
 
         /**
          * The local subscription status observed at discard time — the value

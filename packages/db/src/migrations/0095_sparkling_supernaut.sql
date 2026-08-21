@@ -8,6 +8,7 @@ CREATE TABLE "billing_orphan_payments" (
 	"customer_id" uuid,
 	"amount" integer NOT NULL,
 	"currency" varchar(3) NOT NULL,
+	"livemode" boolean NOT NULL,
 	"observed_status" varchar(50),
 	"source" varchar(64) NOT NULL,
 	"status" varchar(32) DEFAULT 'unresolved' NOT NULL,

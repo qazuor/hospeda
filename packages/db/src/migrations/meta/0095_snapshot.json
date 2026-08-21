@@ -1,5 +1,5 @@
 {
-  "id": "220a1144-b0e2-4f49-9b73-38b29327d749",
+  "id": "e7167a39-33b7-441a-93b8-0858bbee861c",
   "prevId": "f8621611-b13e-4468-a15b-bff9b36bb9d9",
   "version": "7",
   "dialect": "postgresql",
@@ -5914,6 +5914,12 @@
         "currency": {
           "name": "currency",
           "type": "varchar(3)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "livemode": {
+          "name": "livemode",
+          "type": "boolean",
           "primaryKey": false,
           "notNull": true
         },
