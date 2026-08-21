@@ -580,6 +580,70 @@
             "key": "validation.formHasErrors"
         },
         {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.pickCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.title"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftDeleteOrUpgrade.upgradeCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftOrCreate.body"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftOrCreate.createCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftOrCreate.pickCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.pickDraftOrCreate.title"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteConfirm"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.deleteCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.resumeCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.title"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeDeleteOrUpgrade.upgradeCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeOrCreate.body"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeOrCreate.createCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeOrCreate.resumeCta"
+        },
+        {
+            "file": "apps/web/src/lib/host/publish-precheck-panel-content.ts",
+            "key": "host.pages.nueva.precheck.resumeOrCreate.title"
+        },
+        {
             "file": "apps/web/src/pages/[lang]/alojamientos/caracteristicas/[slug]/index.astro",
             "key": "accommodations.byFeature.tagline"
         },
@@ -628,46 +692,6 @@
             "key": "blog.byAuthor.viewAll"
         },
         {
-            "file": "apps/web/src/pages/[lang]/beneficios/index.astro",
-            "key": "benefits.hero.subtitle"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/beneficios/index.astro",
-            "key": "benefits.hero.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/beneficios/index.astro",
-            "key": "benefits.hero.titleAccent"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/beneficios/index.astro",
-            "key": "benefits.hero.titleMain"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/beneficios/index.astro",
-            "key": "benefits.owner.cta"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/beneficios/index.astro",
-            "key": "benefits.owner.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/beneficios/index.astro",
-            "key": "benefits.owner.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/beneficios/index.astro",
-            "key": "benefits.tourist.cta"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/beneficios/index.astro",
-            "key": "benefits.tourist.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/beneficios/index.astro",
-            "key": "benefits.tourist.title"
-        },
-        {
             "file": "apps/web/src/pages/[lang]/gastronomia/[slug].astro",
             "key": "common.anonymous"
         },
@@ -676,48 +700,148 @@
             "key": "gastronomy.detail.reviews.more"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.destination"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section1.content"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.featured"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section1.title"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.minRating"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section2.content"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.priceRange"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section2.title"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.search"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section3.content"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.searchPlaceholder"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section3.title"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.sort.featured"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section4.content"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.sort.nameAsc"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section4.title"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.sort.newest"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section5.content"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.sort.ratingDesc"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section5.title"
         },
         {
-            "file": "apps/web/src/pages/[lang]/gastronomia/index.astro",
-            "key": "gastronomy.listing.type"
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section6.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section6.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section7.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section7.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section8.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/privacidad/index.astro",
+            "key": "privacy.section8.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section1.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section1.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section10.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section10.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section2.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section2.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section3.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section3.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section4.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section4.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section5.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section5.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section6.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section6.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section7.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section7.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section8.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section8.title"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section9.content"
+        },
+        {
+            "file": "apps/web/src/pages/[lang]/legal/terminos/index.astro",
+            "key": "terms.section9.title"
         },
         {
             "file": "apps/web/src/pages/[lang]/mi-cuenta/favoritos/colecciones/[id].astro",
@@ -756,54 +880,6 @@
             "key": "newsletter.confirmYourEmail.title"
         },
         {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.cta.button"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.cta.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.cta.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.hero.subtitle"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.hero.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.hero.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.mission.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.mission.text"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.region.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.region.text"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.region.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/nosotros/index.astro",
-            "key": "about.values.tagline"
-        },
-        {
             "file": "apps/web/src/pages/[lang]/publicaciones/[slug].astro",
             "key": "blog.detail.tags.title"
         },
@@ -820,188 +896,12 @@
             "key": "blog.byTag.tagline"
         },
         {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.categoryChips.ariaLabel"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.filters.category"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.filters.featured"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.filters.location"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.filters.publishedDate"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.filters.publishedFrom"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.filters.publishedTo"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.filters.search"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.rss.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.sort.featured"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.sort.mostSaved"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.sort.newest"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.sort.oldest"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.sort.titleAsc"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.sort.titleDesc"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicaciones/index.astro",
-            "key": "blog.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.benefits.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.benefits.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.cta.button"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.cta.desc"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.cta.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.cta.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.description"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.faq.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.faq.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.hero.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.steps.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/publicar/index.astro",
-            "key": "owners.steps.title"
-        },
-        {
             "file": "apps/web/src/pages/[lang]/suscriptores/planes/comparar/index.astro",
             "key": "pricing.owner.cta.description"
         },
         {
             "file": "apps/web/src/pages/[lang]/suscriptores/planes/comparar/index.astro",
             "key": "pricing.owner.cta.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.benefits.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.benefits.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.cta.button"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.cta.desc"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.cta.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.cta.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.description"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.faq.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.faq.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.hero.cta"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.hero.desc"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.hero.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.hero.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.steps.tagline"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.steps.title"
-        },
-        {
-            "file": "apps/web/src/pages/[lang]/suscriptores/propietarios/index.astro",
-            "key": "owners.title"
         },
         {
             "file": "apps/web/src/pages/[lang]/suscriptores/turistas/comparar/index.astro",
