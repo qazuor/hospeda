@@ -5,6 +5,8 @@
 
 import { DbError } from '@repo/db/utils';
 import { ServiceErrorCode } from '@repo/schemas';
+import type { ErrorLogLevel } from '@repo/service-core';
+import { resolveErrorLogLevel } from '@repo/service-core';
 import { ServiceError } from '@repo/service-core/types';
 import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
@@ -12,6 +14,7 @@ import type { ZodIssue, ZodTypeAny } from 'zod';
 import { readEntitlementCause } from './entitlement-cause';
 import { env } from './env';
 import { resolveErrorCodeForStatus } from './http-error-codes';
+import { resolveHttpStatusLogLevel } from './http-status-log-level';
 import { apiLogger } from './logger';
 
 /**
@@ -381,12 +384,39 @@ const PUBLIC_DETAILS_ERROR_CODES: ReadonlySet<ServiceErrorCode> = new Set([
 ]);
 
 /**
+ * Logs a route error at the level appropriate to its severity (HOS-622).
+ *
+ * A 404/410/422-shaped `ServiceError`, or a raw 401/403 `HTTPException`, is a
+ * CORRECT response — not an application fault. Logging every one of them as
+ * `error` with a full stack trace trains whoever reads the logs (the
+ * project's own staging/prod smoke method is "watch api logs after every
+ * action" — see CLAUDE.md) to ignore ERROR-level noise, and floods Sentry
+ * with non-actionable events. Only `error`-level entries carry the full
+ * error object (and therefore its stack); `info`/`warn` get a compact
+ * projection instead, with no stack.
+ *
+ * @param level - The resolved log level.
+ * @param error - The original error. Logged in full only when `level` is `error`.
+ * @param compact - `code`/`status` to log instead of the full object when
+ *   `level` is not `error`.
+ */
+const logRouteError = (
+    level: ErrorLogLevel,
+    error: unknown,
+    compact: { code?: string; status: number }
+): void => {
+    if (level === 'error') {
+        apiLogger.error({ message: 'Route error', error });
+        return;
+    }
+    apiLogger[level]({ message: 'Route error', ...compact });
+};
+
+/**
  * Helper function to handle errors in route handlers
  * Provides consistent error handling across all endpoints
  */
 export const handleRouteError = (error: unknown, c: Context) => {
-    apiLogger.error({ message: 'Route error', error });
-
     // Check for ServiceError first (most specific)
     if (error instanceof ServiceError) {
         // Map ServiceErrorCode to HTTP status codes
@@ -470,6 +500,14 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 break;
         }
 
+        // HOS-622: level the log the same way `createErrorHandler`
+        // (middlewares/response.ts) does for the same `ServiceError.code` —
+        // an expected outcome (NOT_FOUND, GONE, ...) never logs at `error`.
+        logRouteError(resolveErrorLogLevel(error.code), error, {
+            code: error.code,
+            status: statusCode
+        });
+
         // Emit Retry-After for rate-limited provider responses (SPEC-149 Part B).
         // Mirrors the same logic in `createErrorHandler` (middlewares/response.ts).
         // Routes whose handlers are wrapped by `createCRUDRoute` land here instead
@@ -510,6 +548,11 @@ export const handleRouteError = (error: unknown, c: Context) => {
         const statusCode = error.status;
         const message = error.message;
 
+        // HOS-622: level the log the same way `createErrorHandler`
+        // (middlewares/response.ts) does for the same HTTP status — a raw
+        // 401/403/404 `HTTPException` never logs at `error`.
+        logRouteError(resolveHttpStatusLogLevel(statusCode), error, { status: statusCode });
+
         // Map HTTP status to error code through the SHARED table in
         // `utils/http-error-codes.ts`, which `createErrorHandler`
         // (middlewares/response.ts) reads too.
@@ -540,6 +583,11 @@ export const handleRouteError = (error: unknown, c: Context) => {
             statusCode
         );
     }
+
+    // Everything below is a genuine fault, not an EXPECTED client-facing
+    // outcome (DbError, an untyped `Error`, or a non-Error thrown value):
+    // fail-safe default stays `error` with the full object/stack (HOS-622).
+    apiLogger.error({ message: 'Route error', error });
 
     // Check for DbError (database errors from models)
     if (error instanceof DbError) {
