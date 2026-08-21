@@ -20,6 +20,8 @@ import {
 import { NotificationType } from '@repo/notifications';
 import { SubscriptionStatusEnum } from '@repo/schemas';
 import {
+    BILLING_EVENT_TYPES,
+    type BillingEventType,
     checkSubscriptionStatusTransition,
     deriveTrialingStatus,
     normalizeStoredSubscriptionStatus,
@@ -73,6 +75,43 @@ const PAYMENT_RETRY_MAX_ATTEMPTS = 3;
 function maskId(id: string): string {
     if (id.length <= 4) return '****';
     return `***...${id.slice(-4)}`;
+}
+
+/**
+ * Resolves the `billing_subscription_events.event_type` to write for the
+ * generic MercadoPago status mapper's audit insert (HOS-657).
+ *
+ * `mappedStatus` (the Step 5c-derived destination status) is the input, not
+ * `previousStatus` or `triggerSource` — `triggerSource` already records WHO
+ * drove the write (webhook, `subscription-poll`, `webhook-retry`), so
+ * `eventType` here records WHAT the provider reported, one value per
+ * destination status. Only the six statuses `QZPAY_TO_HOSPEDA_STATUS` and
+ * `deriveTrialingStatus` can currently produce ever reach this function; the
+ * `default` branch is a defensive fallback for a future status this mapper
+ * doesn't yet enumerate, never expected to actually fire.
+ *
+ * @param mappedStatus - The destination status this webhook run resolved to.
+ * @returns The `BillingEventType` to persist on the audit row.
+ */
+function resolveWebhookSubscriptionEventType(
+    mappedStatus: SubscriptionStatusEnum
+): BillingEventType {
+    switch (mappedStatus) {
+        case SubscriptionStatusEnum.ACTIVE:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_ACTIVATED;
+        case SubscriptionStatusEnum.TRIALING:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_TRIALING;
+        case SubscriptionStatusEnum.PAUSED:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_PAUSED;
+        case SubscriptionStatusEnum.CANCELLED:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_CANCELLED;
+        case SubscriptionStatusEnum.EXPIRED:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_EXPIRED;
+        case SubscriptionStatusEnum.PAST_DUE:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_PAST_DUE;
+        default:
+            return BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_STATUS_OTHER;
+    }
 }
 
 import {
@@ -1019,6 +1058,7 @@ export async function processSubscriptionUpdated({
 
             await tx.insert(billingSubscriptionEvents).values({
                 subscriptionId: localSubscription.id,
+                eventType: resolveWebhookSubscriptionEventType(mappedStatus),
                 previousStatus,
                 newStatus: mappedStatus,
                 triggerSource: source ?? 'webhook',

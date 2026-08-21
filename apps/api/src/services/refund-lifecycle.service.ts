@@ -56,7 +56,11 @@
 import type { QZPayPayment } from '@qazuor/qzpay-core';
 import { billingPayments, billingSubscriptionEvents, billingSubscriptions, getDb } from '@repo/db';
 import { SubscriptionStatusEnum } from '@repo/schemas';
-import { checkSubscriptionStatusTransition, withServiceTransaction } from '@repo/service-core';
+import {
+    BILLING_EVENT_TYPES,
+    checkSubscriptionStatusTransition,
+    withServiceTransaction
+} from '@repo/service-core';
 import { eq, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
@@ -286,6 +290,7 @@ export async function applyRefundLifecycle({
             try {
                 await db.insert(billingSubscriptionEvents).values({
                     subscriptionId,
+                    eventType: BILLING_EVENT_TYPES.PAYMENT_PARTIAL_REFUND,
                     triggerSource: 'partial-refund',
                     metadata: {
                         action: 'payment.partial_refund',
@@ -424,6 +429,7 @@ export async function applyRefundLifecycle({
         try {
             await db.insert(billingSubscriptionEvents).values({
                 subscriptionId,
+                eventType: BILLING_EVENT_TYPES.PAYMENT_FULL_REFUND_NO_TRANSITION,
                 previousStatus: currentStatus,
                 newStatus: currentStatus,
                 triggerSource: 'admin-refund',
@@ -467,6 +473,7 @@ export async function applyRefundLifecycle({
 
             await tx.insert(billingSubscriptionEvents).values({
                 subscriptionId,
+                eventType: BILLING_EVENT_TYPES.PAYMENT_FULL_REFUND,
                 previousStatus: currentStatus,
                 newStatus: SubscriptionStatusEnum.CANCELLED,
                 triggerSource: 'admin-refund',
