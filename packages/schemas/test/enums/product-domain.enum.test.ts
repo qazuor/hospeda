@@ -13,10 +13,6 @@ describe('ProductDomainEnum', () => {
             expect(ProductDomainEnum.ACCOMMODATION).toBe('accommodation');
         });
 
-        it('should define COMMERCE', () => {
-            expect(ProductDomainEnum.COMMERCE).toBe('commerce');
-        });
-
         it('should define PARTNER', () => {
             expect(ProductDomainEnum.PARTNER).toBe('partner');
         });
@@ -35,12 +31,15 @@ describe('ProductDomainEnum', () => {
         // so this assertion is the only thing that fails when the vocabulary
         // changes without the call sites being reviewed.
         //
-        // COMMERCE is still a member on purpose: every commerce row in the
-        // database says `'commerce'` today, and the predicates fail closed on the
-        // exact string. It is retired in release C (HOS-695), once no row carries
-        // it — not here.
-        it('should have exactly 5 values', () => {
-            expect(Object.values(ProductDomainEnum)).toHaveLength(5);
+        // HOS-695 (release C) retired COMMERCE, dropping the count from 5 to 4 —
+        // the last of the three releases (A widened it, B rewrote every row off
+        // it, C removes the member itself).
+        it('should have exactly 4 values', () => {
+            expect(Object.values(ProductDomainEnum)).toHaveLength(4);
+        });
+
+        it('should NOT define COMMERCE (HOS-695 — retired)', () => {
+            expect(ProductDomainEnum).not.toHaveProperty('COMMERCE');
         });
     });
 
@@ -52,9 +51,9 @@ describe('ProductDomainEnum', () => {
             expect(result.success).toBe(true);
         });
 
-        it('should accept "commerce"', () => {
+        it('should reject the retired "commerce" value (HOS-695)', () => {
             const result = ProductDomainEnumSchema.safeParse('commerce');
-            expect(result.success).toBe(true);
+            expect(result.success).toBe(false);
         });
 
         it('should accept "partner"', () => {
