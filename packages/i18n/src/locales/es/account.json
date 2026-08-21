@@ -1004,6 +1004,18 @@
             "perAccommodation": "Por alojamiento",
             "account": "De cuenta"
         },
+        "focus": {
+            "others": "Otros complementos",
+            "headings": {
+                "fallback": "El complemento que estabas buscando",
+                "extra-photos-20": "Para ampliar tus fotos",
+                "extra-accommodations-5": "Para publicar más alojamientos",
+                "extra-properties-5": "Para sumar más propiedades",
+                "visibility-boost-7d": "Para destacar tu alojamiento",
+                "visibility-boost-30d": "Para destacar tu alojamiento",
+                "ai-support-monthly": "Para sumar soporte con IA"
+            }
+        },
         "billingType": {
             "one_time": "Pago único",
             "recurring": "Mensual"

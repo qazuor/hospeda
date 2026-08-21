@@ -1028,6 +1028,18 @@
             "perAccommodation": "Por hospedagem",
             "account": "Da conta"
         },
+        "focus": {
+            "others": "Outros complementos",
+            "headings": {
+                "fallback": "O complemento que você estava procurando",
+                "extra-photos-20": "Para ampliar suas fotos",
+                "extra-accommodations-5": "Para publicar mais hospedagens",
+                "extra-properties-5": "Para adicionar mais propriedades",
+                "visibility-boost-7d": "Para destacar sua hospedagem",
+                "visibility-boost-30d": "Para destacar sua hospedagem",
+                "ai-support-monthly": "Para adicionar suporte com IA"
+            }
+        },
         "billingType": {
             "one_time": "Pagamento único",
             "recurring": "Mensal"
