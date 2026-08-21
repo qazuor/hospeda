@@ -33,6 +33,13 @@ vi.mock('@repo/billing', async (importOriginal) => ({
 
 // Mock @repo/db with minimal stubs -- only needed because some modules
 // import table schemas at load time. No query chain mocking needed.
+// WHOLE-module mock: any @repo/db export the code under test reaches for and
+// that is missing here is `undefined`, and calling it throws mid-chain. Because
+// the webhook helpers swallow their own DB errors, such a throw is INVISIBLE —
+// this mock previously omitted `and`, so `markEventFailedByProviderId` threw on
+// every run of the test below while the test stayed green (the `.set()` call it
+// asserted happens before the `.where(and(...))` that blew up). Keep the
+// operator list complete.
 vi.mock('@repo/db', () => ({
     getDb: vi.fn(),
     billingWebhookEvents: {
@@ -44,9 +51,30 @@ vi.mock('@repo/db', () => ({
         payload: 'payload',
         error: 'error',
         processedAt: 'processedAt',
+        attempts: 'attempts',
+        livemode: 'livemode',
         createdAt: 'createdAt'
     },
-    eq: vi.fn((field: unknown, value: unknown) => ({ field, value }))
+    billingWebhookDeadLetter: {
+        id: 'id',
+        providerEventId: 'providerEventId',
+        provider: 'provider',
+        type: 'type',
+        payload: 'payload',
+        error: 'error',
+        attempts: 'attempts',
+        resolvedAt: 'resolvedAt',
+        livemode: 'livemode',
+        createdAt: 'createdAt'
+    },
+    eq: vi.fn((field: unknown, value: unknown) => ({ field, value })),
+    and: vi.fn((...conditions: unknown[]) => ({ __and: conditions })),
+    or: vi.fn((...conditions: unknown[]) => ({ __or: conditions })),
+    isNull: vi.fn((field: unknown) => ({ __isNull: field })),
+    sql: vi.fn(
+        (strings: TemplateStringsArray, ...values: unknown[]) =>
+            ({ __sql: strings.join('?'), values }) as unknown
+    )
 }));
 
 vi.mock('@repo/notifications', () => ({
@@ -834,7 +862,10 @@ describe('MercadoPago Webhook Handler', () => {
                     payments: {
                         retrieve: vi.fn().mockResolvedValue({
                             id: '987',
-                            amount: 0,
+                            // The adapter reports amounts in CENTAVOS; the
+                            // handler divides by 100 to build the major-units
+                            // `transaction_amount` the webhook payload carries.
+                            amount: 5000,
                             currency: 'ARS',
                             status: 'approved',
                             metadata: {
@@ -860,9 +891,18 @@ describe('MercadoPago Webhook Handler', () => {
 
             await handlePaymentUpdated(context, event);
 
+            // HOS-595: `paymentId` + the settled amount travel with the
+            // confirmation. Without them the purchase row got `payment_id: NULL`
+            // and no `billing_payments` entry was ever written for the charge.
             expect(mockConfirmPurchase).toHaveBeenCalledWith({
                 customerId: 'cust_123',
-                addonSlug: 'premium-photos'
+                addonSlug: 'premium-photos',
+                paymentId: '987',
+                // 5000 centavos in → 50 major units on the payload → 5000
+                // centavos back out. The round-trip is what makes the ledger
+                // amount match the provider's.
+                amountInCents: 5000,
+                currency: 'ARS'
             });
         });
 
@@ -943,8 +983,12 @@ describe('MercadoPago Webhook Handler', () => {
             const event = createMockEvent({ id: 'evt_fail', type: 'payment.created', data: {} });
             await handleWebhookEvent(context, event);
 
-            // Now set up DB mock for the error handler's markEventFailedByProviderId call
-            const mockWhere = vi.fn().mockResolvedValue(undefined);
+            // Now set up DB mock for the error handler's markEventFailedByProviderId call.
+            // HOS-717: the UPDATE ends in `.returning(...)` — the returned row is what
+            // feeds the recovery queue. An empty result means "no pending row matched",
+            // which keeps this test scoped to the status write.
+            const mockStatusReturning = vi.fn().mockResolvedValue([]);
+            const mockWhere = vi.fn().mockReturnValue({ returning: mockStatusReturning });
             const mockSet = vi.fn().mockReturnValue({ where: mockWhere });
             const mockUpdate = vi.fn().mockReturnValue({ set: mockSet });
 
@@ -957,10 +1001,12 @@ describe('MercadoPago Webhook Handler', () => {
             await handleWebhookError(error, context);
 
             expect(mockUpdate).toHaveBeenCalled();
-            expect(mockSet).toHaveBeenCalledWith({
-                status: 'failed',
-                error: 'Processing failed'
-            });
+            const [statusUpdate] = mockSet.mock.calls[0] as [Record<string, unknown>];
+            expect(statusUpdate.status).toBe('failed');
+            expect(statusUpdate.error).toBe('Processing failed');
+            // HOS-717: the attempt counter is bumped in the SAME update. Before it,
+            // `billing_webhook_events.attempts` had no writer anywhere in the repo.
+            expect(statusUpdate).toHaveProperty('attempts');
         });
 
         it('should clean up internal event tracking after error handling', async () => {

@@ -218,10 +218,30 @@ jobs:
         env:
           PLAYWRIGHT_HTML_OPEN: never
 
+      # HOS-593: this step reported success for months while executing zero
+      # tests, for two independent reasons.
+      #
+      # 1. It ran the `test` script, which resolves to `vitest.config.ts` —
+      #    and that config EXCLUDES `test/integration/**`. Filter and exclude
+      #    named the same directory, so the intersection was empty by
+      #    construction and `--passWithNoTests` turned the zero into a pass.
+      #    Switching to `test:integration` does NOT fix it either:
+      #    `vitest.config.integration.ts` only includes
+      #    `test/integration/ai/**`. `vitest.config.e2e.ts` is the one config
+      #    whose `include` covers `test/integration/**`. It is invoked
+      #    directly rather than through the `test:e2e` script because that
+      #    script prepends `build:deps`, and this job already built the apps.
+      #
+      # 2. `continue-on-error: true` meant that even once the tests ran, a
+      #    failure could not turn the job red. Fixing only the command would
+      #    have traded "green that proves nothing" for "red that stops
+      #    nothing", so both had to go.
+      #
+      # `if: always()` stays: these assertions are worth running even when the
+      # Playwright suite above failed.
       - name: Run integration security tests
         if: always()
-        run: pnpm --filter hospeda-api test test/integration/security
-        continue-on-error: true
+        run: pnpm --filter hospeda-api exec vitest run --config vitest.config.e2e.ts test/integration/security
 
       - name: Run CI scripts (raw-ilike + SEO + sitemap)
         if: always()

@@ -9,11 +9,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockUpdate = vi.fn().mockReturnThis();
 const mockSet = vi.fn().mockReturnThis();
-const mockWhere = vi.fn().mockResolvedValue([]);
+const mockWhere = vi.fn().mockReturnThis();
+// HOS-717: the failed-event UPDATE ends in `.returning(...)`, and the row it
+// returns is what feeds the recovery queue. Resolving to [] means "no pending
+// row matched", which keeps this file scoped to the status write.
+const mockReturning = vi.fn().mockResolvedValue([]);
 const mockDb = {
     update: mockUpdate,
     set: mockSet,
-    where: mockWhere
+    where: mockWhere,
+    returning: mockReturning
 };
 
 vi.mock('@repo/db', () => ({
@@ -22,11 +27,32 @@ vi.mock('@repo/db', () => ({
         providerEventId: 'provider_event_id',
         status: 'status',
         processedAt: 'processed_at',
-        error: 'error'
+        error: 'error',
+        attempts: 'attempts',
+        provider: 'provider',
+        type: 'type',
+        payload: 'payload',
+        livemode: 'livemode'
+    },
+    billingWebhookDeadLetter: {
+        id: 'id',
+        providerEventId: 'provider_event_id',
+        resolvedAt: 'resolved_at',
+        attempts: 'attempts'
     },
     eq: vi.fn((col: string, val: string) => ({ column: col, value: val, op: 'eq' })),
     and: vi.fn((...conditions: unknown[]) => ({ conditions, op: 'and' })),
-    or: vi.fn((...conditions: unknown[]) => ({ conditions, op: 'or' }))
+    or: vi.fn((...conditions: unknown[]) => ({ conditions, op: 'or' })),
+    isNull: vi.fn((col: string) => ({ column: col, op: 'isNull' })),
+    // HOS-717 bumps `attempts` with a sql`` fragment inside the same .set().
+    // Omitting `sql` here does NOT yield undefined - vitest throws on the
+    // named-import binding, and the throw happens while EVALUATING the .set()
+    // argument, so `set` is never called and the failure reads as "expected 1
+    // call, got 0" with no hint of the real cause.
+    sql: vi.fn(
+        (strings: TemplateStringsArray, ...values: unknown[]) =>
+            ({ __sql: strings.join('?'), values }) as unknown
+    )
 }));
 
 vi.mock('../../../../src/utils/logger', () => ({
@@ -48,7 +74,8 @@ describe('DB-only webhook idempotency', () => {
         vi.clearAllMocks();
         mockUpdate.mockReturnValue({ set: mockSet });
         mockSet.mockReturnValue({ where: mockWhere });
-        mockWhere.mockResolvedValue([]);
+        mockWhere.mockReturnValue({ returning: mockReturning });
+        mockReturning.mockResolvedValue([]);
     });
 
     describe('markEventProcessedByProviderId', () => {

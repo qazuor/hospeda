@@ -45,9 +45,13 @@ const mockRevalidationService = {
     getLogRetentionDays: mockGetLogRetentionDays
 };
 
-vi.mock('@repo/service-core', () => ({
-    getRevalidationService: vi.fn()
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        getRevalidationService: vi.fn()
+    };
+});
 
 // ---------------------------------------------------------------------------
 // Mock: @repo/db — RevalidationConfigModel and RevalidationLogModel

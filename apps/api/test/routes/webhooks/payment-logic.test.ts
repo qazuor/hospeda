@@ -918,6 +918,83 @@ describe('processPaymentUpdated', () => {
         });
     });
 
+    // ── HOS-595: the charge itself must reach confirmPurchase ─────────────
+    // This call site passed only { customerId, addonSlug }, so
+    // confirmAddonPurchase wrote `payment_id: null` on every purchase row (which
+    // also made this function's own idempotency SELECT — it matches on that
+    // column — permanently dead code), and had no amount to book in
+    // `billing_payments`. A real $5.000 add-on charge (MP payment 174625958196)
+    // left no ledger entry at all: unreconcilable and unrefundable.
+    it('forwards the provider payment id and the settled amount into confirmPurchase (HOS-595)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            // MP reports transaction_amount in MAJOR units.
+            amount: 5000,
+            currency: 'ARS',
+            status: 'approved',
+            statusDetail: null,
+            paymentMethod: 'account_money'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                id: '174625958196',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        // Exact-shape assertion on purpose: `expect.objectContaining` cannot tell
+        // a forwarded field from a missing one, which is precisely the defect.
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            paymentId: '174625958196',
+            // major units → integer centavos, the same conversion the sibling
+            // billing.payments.record() calls in this file perform.
+            amountInCents: 500_000,
+            currency: 'ARS'
+        });
+    });
+
+    it('withholds the settled amount when the charge was not approved (HOS-595)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: 5000,
+            currency: 'ARS',
+            status: 'rejected',
+            statusDetail: 'cc_rejected_insufficient_amount',
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                id: '999999999',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        // The payment id still travels (it is the idempotency key), but no amount
+        // does — `confirmAddonPurchase` books a `succeeded` ledger row only when
+        // it receives one, so a rejected charge can never be booked as collected.
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            paymentId: '999999999'
+        });
+    });
+
     it('should use source label in log messages', async () => {
         const { apiLogger } = await import('../../../src/utils/logger');
         vi.mocked(extractPaymentInfo).mockReturnValue({

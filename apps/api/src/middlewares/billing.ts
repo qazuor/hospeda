@@ -31,6 +31,20 @@ import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 /**
+ * Which QZPay facade {@link getQZPayBilling} should hand out.
+ */
+export interface GetQZPayBillingOptions {
+    /**
+     * Request the facade reserved for billing-customer creation and sync
+     * (`providerSyncErrorStrategy: 'log'`), instead of the default strict one
+     * (`'throw'`). See {@link getQZPayBilling} and HOS-596.
+     *
+     * @default false
+     */
+    readonly forCustomerSync?: boolean;
+}
+
+/**
  * Check if billing is properly configured
  *
  * @returns True if all required environment variables are set
@@ -64,6 +78,17 @@ function isBillingConfigured(): boolean {
  * Only created when billing is properly configured
  */
 let billingInstance: QZPayBilling | null = null;
+
+/**
+ * Lazy-initialized QZPay facade used ONLY for billing-customer creation/sync.
+ *
+ * Identical to {@link billingInstance} (same storage adapter, same payment
+ * adapter, same livemode) except for `providerSyncErrorStrategy: 'log'`, which
+ * is what keeps the local `billing_customers` row alive when MercadoPago
+ * rejects the customer create (HOS-596). See {@link getBillingInstance} for the
+ * full rationale.
+ */
+let billingCustomerSyncInstance: QZPayBilling | null = null;
 
 /**
  * The MercadoPago payment adapter backing {@link billingInstance}, cached so
@@ -163,13 +188,68 @@ function getBillingInstance(): QZPayBilling | null {
         // Without this, qzpay-core defaults to 'log' in non-livemode and silently
         // swallows provider errors — callers would receive a null/undefined result
         // instead of a typed ServiceError.
-        billingInstance = createQZPayBilling({
+        const strictInstance = createQZPayBilling({
             storage: storageAdapter,
             paymentAdapter,
             defaultCurrency: 'ARS',
             livemode,
-            providerSyncErrorStrategy: 'throw'
+            providerSyncErrorStrategy: 'throw',
+            logger: qzpayLogger
         });
+
+        // HOS-596: a SECOND facade over the very same storage + payment adapter,
+        // differing only in `providerSyncErrorStrategy: 'log'`, reserved for
+        // billing-customer creation/sync.
+        //
+        // Why it has to exist: qzpay-core's `customers.create()` inserts the
+        // local `billing_customers` row FIRST, then calls MercadoPago, and under
+        // `'throw'` it UNDOES its own insert (`storage.customers.delete()`) before
+        // rethrowing. That is how every affected production account ended up with
+        // zero live billing rows ~470 ms after signup, and why checkout answered
+        // "No billing account found" (400) even on a pure GET.
+        //
+        // A local customer row is not money: it is an identity record that costs
+        // nothing to keep and that the provider link can be reconciled onto later.
+        // Losing it, by contrast, locks the account out of every paid path. So the
+        // customer leg tolerates a MercadoPago outage while everything that DOES
+        // move money — subscriptions, checkout sessions, cancellations — keeps
+        // using `billingInstance` and its `'throw'` strategy, so
+        // QZPayProviderSyncError still reaches billing-provider-error.ts and is
+        // still mapped to a typed ServiceError (SPEC-149 T-002).
+        //
+        // The failure is NOT silent under `'log'` — but only because `logger` is
+        // passed explicitly below. Without it qzpay-core falls back to
+        // `createDefaultLogger`, which writes to `console.*` and never reaches
+        // `@repo/logger`; that is why BOTH facades now carry `qzpayLogger`. With
+        // it, a provider failure emits `logger.error('Provider sync failed during
+        // customer creation')` carrying the MercadoPago message and
+        // `QZPayErrorCode.PROVIDER_CREATE_CUSTOMER_FAILED`, then
+        // `logger.warn('Continuing customer creation without provider sync')`.
+        //
+        // Note what the surviving row does NOT get: a provider link. qzpay writes
+        // it as `providerCustomerIds`, and `mapCoreCustomerUpdateToDrizzle` in
+        // `@qazuor/qzpay-drizzle` has no branch for that field, so it is dropped
+        // on success too — there is no local reconciliation path today, and none
+        // is needed: since HOS-171 the checkout is a MercadoPago preapproval that
+        // collects the payer on MP's own page, so no paid path reads a local
+        // provider customer id.
+        const customerSyncInstance = createQZPayBilling({
+            storage: storageAdapter,
+            paymentAdapter,
+            defaultCurrency: 'ARS',
+            livemode,
+            providerSyncErrorStrategy: 'log',
+            logger: qzpayLogger
+        });
+
+        // Published together, only once BOTH exist. Assigning `billingInstance`
+        // above would make the early `if (billingInstance) return` at the top of
+        // this function a permanent trap if the second construction threw: the
+        // strict facade would serve forever while the customer-sync one stayed
+        // null, and a null facade is exactly the "no billing account" shape this
+        // change exists to remove.
+        billingInstance = strictInstance;
+        billingCustomerSyncInstance = customerSyncInstance;
 
         apiLogger.info('✅ QZPay billing initialized successfully');
 
@@ -185,6 +265,12 @@ function getBillingInstance(): QZPayBilling | null {
         // failing step (createQZPayBilling) threw. Otherwise getBillingPaymentAdapter()
         // would hand out a live adapter while the rest of billing is unavailable.
         billingPaymentAdapter = null;
+
+        // Both facades are published together above, so neither can be set here
+        // — this is belt-and-braces against a future edit that publishes them
+        // separately again.
+        billingInstance = null;
+        billingCustomerSyncInstance = null;
 
         const errorMessage = error instanceof Error ? error.message : String(error);
         const errorStack = error instanceof Error ? error.stack : undefined;
@@ -301,20 +387,40 @@ export const requireBilling: MiddlewareHandler = async (c, next) => {
 /**
  * Get the QZPay billing instance (for use outside middleware context)
  *
+ * Called with no arguments it returns the STRICT facade
+ * (`providerSyncErrorStrategy: 'throw'`), which is what every money-moving
+ * operation must use so `QZPayProviderSyncError` still reaches the typed error
+ * mapping (SPEC-149 T-002).
+ *
+ * Called with `{ forCustomerSync: true }` it returns the tolerant facade
+ * reserved for billing-customer creation and sync (HOS-596). That is the ONLY
+ * facade {@link BillingCustomerSyncService} may be constructed with — the strict
+ * one makes qzpay-core roll the local `billing_customers` row back whenever
+ * MercadoPago rejects the customer create, which is what left production
+ * accounts with zero live billing rows.
+ *
+ * @param options - Which facade to hand out. Defaults to the strict one.
  * @returns QZPay billing instance or null if not configured
  *
  * @example
  * ```typescript
  * import { getQZPayBilling } from './middlewares/billing';
  *
+ * // Money-moving work: strict, so provider errors surface as typed errors.
  * const billing = getQZPayBilling();
- * if (billing) {
- *   await billing.customers.create({ email: 'test@example.com' });
- * }
+ *
+ * // Customer identity work: tolerant, so the local row survives a MP outage.
+ * const syncService = new BillingCustomerSyncService(
+ *     getQZPayBilling({ forCustomerSync: true }),
+ *     { throwOnError: false }
+ * );
  * ```
  */
-export function getQZPayBilling(): QZPayBilling | null {
-    return getBillingInstance();
+export function getQZPayBilling(options: GetQZPayBillingOptions = {}): QZPayBilling | null {
+    // Both facades are built together, so this also primes the customer-sync one.
+    const strict = getBillingInstance();
+
+    return options.forCustomerSync === true ? billingCustomerSyncInstance : strict;
 }
 
 /**
@@ -338,6 +444,10 @@ export function resetBillingInstance(): void {
         );
     }
     billingInstance = null;
+    // The customer-sync facade is built in the same block, so it has to be
+    // dropped together with the strict one — otherwise a reset test would keep
+    // reading a facade wired to the previous test's adapter.
+    billingCustomerSyncInstance = null;
     // Clear the cached payment adapter too, so a test that resets billing and then
     // simulates "unconfigured" gets a null adapter from getBillingPaymentAdapter()
     // rather than the previous test's stale instance.
