@@ -12,7 +12,7 @@
 
 import { ExperienceTypeEnum, GastronomyTypeEnum } from '@repo/schemas';
 import type { JSX } from 'react';
-import type { DestinationOption } from '@/components/gastronomy/CommerceLead.client';
+import type { DestinationOption } from '@/components/commerce/destination-option';
 import { RichTextEditor } from '@/components/host/editor/RichTextEditor.client';
 import { FieldError } from '@/components/ui/FieldError';
 import { buildFieldErrorId, TextField } from '@/components/ui/TextField';

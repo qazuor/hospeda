@@ -31,8 +31,10 @@ let syncServiceInstance: BillingCustomerSyncService | null = null;
  */
 function getSyncService(): BillingCustomerSyncService {
     if (!syncServiceInstance) {
-        const billing = getQZPayBilling();
-        syncServiceInstance = new BillingCustomerSyncService(billing, {
+        // HOS-596: the customer-sync facade, never the strict one — a
+        // MercadoPago failure must not roll back the local billing_customers row.
+        const customerSyncBilling = getQZPayBilling({ forCustomerSync: true });
+        syncServiceInstance = new BillingCustomerSyncService(customerSyncBilling, {
             cacheTtlMs: 300000, // 5 minutes
             throwOnError: false // Log silently, don't break requests
         });

@@ -31,12 +31,6 @@ vi.mock('../../src/lib/lead-intake-ports.js', () => ({
 
 vi.mock('@repo/db', () => ({
     getDb: () => ({ select: mockSelect }),
-    commerceLeads: {
-        id: 'id',
-        status: 'status',
-        opsNotifiedAt: 'ops_notified_at',
-        createdAt: 'created_at'
-    },
     allianceLeads: {
         id: 'id',
         status: 'status',
@@ -54,8 +48,8 @@ const capturedWhere: unknown[] = [];
 /**
  * Stubs the drizzle query chain, returning `rows` for each successive call.
  *
- * The job runs the two funnel queries concurrently, so the queue is drained in
- * call order rather than keyed by table.
+ * The job runs a single alliance-leads query per tick (HOS-693 dropped the
+ * commerce-leads half), so the queue is drained in call order.
  */
 function stubQueries(batches: readonly (readonly Record<string, unknown>[])[]): void {
     const queue = [...batches];
@@ -81,17 +75,6 @@ function makeCronContext(overrides: Partial<CronJobContext> = {}): CronJobContex
         ...overrides
     };
 }
-
-const commerceRow = {
-    id: 'commerce-1',
-    domain: 'gastronomy',
-    businessName: 'La Parrilla',
-    contactName: 'Juan',
-    email: 'juan@example.com',
-    phone: null,
-    message: null,
-    createdAt: new Date('2026-07-24T12:00:00.000Z')
-};
 
 const allianceRow = {
     id: 'alliance-1',
@@ -125,11 +108,11 @@ describe('leadIntakeBackstopJob', () => {
         // the claim testable: a lead already approved or rejected was plainly
         // seen by somebody, and alerting on it would tell an operator about
         // work they already did.
-        stubQueries([[], []]);
+        stubQueries([[]]);
 
         await leadIntakeBackstopJob.handler(makeCronContext());
 
-        expect(capturedWhere).toHaveLength(2);
+        expect(capturedWhere).toHaveLength(1);
         for (const clause of capturedWhere) {
             const serialised = JSON.stringify(clause);
             expect(serialised).toContain('pending');
@@ -144,24 +127,21 @@ describe('leadIntakeBackstopJob', () => {
         // left over from smoke testing, all of them `pending` and all of them
         // with a null `opsNotifiedAt`. Without this filter the first tick would
         // email an operator about five deleted test applications.
-        stubQueries([[], []]);
+        stubQueries([[]]);
 
         await leadIntakeBackstopJob.handler(makeCronContext());
 
-        // The queries run concurrently; identify the alliance one by the column
-        // only its table has.
-        const clauses = capturedWhere.map((clause) => JSON.stringify(clause));
-        const allianceClause = clauses.find((clause) => clause.includes('deleted_at'));
-
+        expect(capturedWhere).toHaveLength(1);
+        const [clause] = capturedWhere;
         expect(
-            allianceClause,
+            JSON.stringify(clause),
             'the alliance query lost its deleted_at filter; soft-deleted applications ' +
                 'would be announced to ops'
-        ).toBeDefined();
+        ).toContain('deleted_at');
     });
 
     it('reports a clean tick when every lead has been announced', async () => {
-        stubQueries([[], []]);
+        stubQueries([[]]);
 
         const result = await leadIntakeBackstopJob.handler(makeCronContext());
 
@@ -170,22 +150,22 @@ describe('leadIntakeBackstopJob', () => {
         expect(mockAnnounce).not.toHaveBeenCalled();
     });
 
-    it('announces the leads nobody was told about, across both funnels', async () => {
-        stubQueries([[commerceRow], [allianceRow]]);
+    it('announces the leads nobody was told about', async () => {
+        stubQueries([[allianceRow]]);
 
         const result = await leadIntakeBackstopJob.handler(makeCronContext());
 
         expect(result.success).toBe(true);
-        expect(result.processed).toBe(2);
-        expect(mockAnnounce).toHaveBeenCalledTimes(2);
+        expect(result.processed).toBe(1);
+        expect(mockAnnounce).toHaveBeenCalledTimes(1);
 
         const funnels = mockAnnounce.mock.calls.map((call) => call[0]?.alert.funnel);
-        expect(funnels).toEqual(['commerce', 'alliance']);
+        expect(funnels).toEqual(['alliance']);
 
         // The alert carries the lead, exactly as the intake path builds it.
-        const allianceCall = mockAnnounce.mock.calls[1];
+        const allianceCall = mockAnnounce.mock.calls[0];
         if (!allianceCall) {
-            throw new Error('expected a second announce call for the alliance lead');
+            throw new Error('expected an announce call for the alliance lead');
         }
         const allianceAlert = allianceCall[0].alert;
         expect(allianceAlert.leadId).toBe('alliance-1');
@@ -194,20 +174,20 @@ describe('leadIntakeBackstopJob', () => {
     });
 
     it('sends nothing in dry-run but still reports what it found', async () => {
-        stubQueries([[commerceRow], [allianceRow]]);
+        stubQueries([[allianceRow]]);
 
         const result = await leadIntakeBackstopJob.handler(makeCronContext({ dryRun: true }));
 
         expect(result.success).toBe(true);
         expect(mockAnnounce).not.toHaveBeenCalled();
-        expect(result.message).toContain('2');
+        expect(result.message).toContain('1');
         expect(result.details?.dryRun).toBe(true);
     });
 
     it('reports an undelivered lead as an error instead of swallowing it', async () => {
         // The row keeps its null `opsNotifiedAt`, so the next tick retries it.
         // Reporting success here would hide a funnel that is still silent.
-        stubQueries([[commerceRow], []]);
+        stubQueries([[allianceRow]]);
         mockAnnounce.mockResolvedValue({ delivered: false });
 
         const result = await leadIntakeBackstopJob.handler(makeCronContext());

@@ -12,6 +12,7 @@ import type { Context } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import { z } from 'zod';
 import { getQZPayBilling } from '../../../middlewares/billing';
+import { isDuplicateKeyError } from '../../../services/billing-customer-sync.errors.js';
 import {
     initiatePartnerMonthlySubscription,
     SubscriptionCheckoutError
@@ -107,16 +108,40 @@ export const sendPartnerPaymentLinkHandler = async (
     let customer = await billing.customers.getByExternalId(customerExternalId);
 
     if (!customer) {
-        customer = await billing.customers.create({
-            externalId: customerExternalId,
-            email: buildPartnerCustomerEmail(partner.id),
-            name: partner.name,
-            metadata: {
-                source: 'partner-admin',
-                createdBy: 'partner-send-link-route',
-                partnerId: partner.id
+        // HOS-596: created on the TOLERANT facade. A partner customer row is
+        // identity, not money — losing it to a MercadoPago hiccup would leave the
+        // partner with no way to be billed at all, which is the same lockout the
+        // host-side flow had. The strict `billing` above stays in charge of the
+        // subscription leg below.
+        const customerSyncBilling = getQZPayBilling({ forCustomerSync: true }) ?? billing;
+
+        try {
+            customer = await customerSyncBilling.customers.create({
+                externalId: customerExternalId,
+                email: buildPartnerCustomerEmail(partner.id),
+                name: partner.name,
+                metadata: {
+                    source: 'partner-admin',
+                    createdBy: 'partner-send-link-route',
+                    partnerId: partner.id
+                }
+            });
+        } catch (error) {
+            // The partial UNIQUE index on (external_id, livemode) makes a
+            // concurrent create lose with SQLSTATE 23505 instead of writing a
+            // second row. Re-read the winner rather than 500ing the operator.
+            if (!isDuplicateKeyError(error)) {
+                throw error;
             }
-        });
+
+            const raceWinner = await billing.customers.getByExternalId(customerExternalId);
+
+            if (!raceWinner) {
+                throw error;
+            }
+
+            customer = raceWinner;
+        }
     }
 
     try {

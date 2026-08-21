@@ -103,7 +103,7 @@ export const createPartnersColumns = (t: ColumnTFunction): readonly ColumnConfig
         },
         {
             id: 'lifecycleState',
-            header: t('admin-entities.columns.lifecycleState' as TranslationKey),
+            header: t('admin-entities.columns.lifecycleState'),
             accessorKey: 'lifecycleState',
             enableSorting: true,
             columnType: ColumnType.BADGE,

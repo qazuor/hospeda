@@ -3,11 +3,15 @@ import type { CronJobContext } from '../../src/cron/types';
 
 const { mockPurgeOld } = vi.hoisted(() => ({ mockPurgeOld: vi.fn() }));
 
-vi.mock('@repo/service-core', () => ({
-    CronRunService: vi.fn(function () {
-        return { purgeOld: mockPurgeOld };
-    })
-}));
+vi.mock('@repo/service-core', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('@repo/service-core')>();
+    return {
+        ...actual,
+        CronRunService: vi.fn(function () {
+            return { purgeOld: mockPurgeOld };
+        })
+    };
+});
 
 vi.mock('../../src/utils/logger.js', () => ({
     apiLogger: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), debug: vi.fn() }

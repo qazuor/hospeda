@@ -8,14 +8,36 @@
 
 import '@testing-library/jest-dom/vitest';
 import { trans } from '@repo/i18n/web';
+import { cleanStores } from 'nanostores';
 import { afterEach } from 'vitest';
 import { resetInFlightAuthMe } from '../src/lib/auth-cache';
+import { authClient } from '../src/lib/auth-client';
 
 // HOS-160 lever D: `fetchAuthMe` shares a module-level in-flight promise to dedup
 // concurrent callers. A test that renders an island with a pending `/auth/me`
 // fetch leaves that promise set; without this reset, following tests reuse the
 // stale promise and never call `fetch`. Clear it after every test.
 afterEach(resetInFlightAuthMe);
+
+// HOS-718: `authClient.useSession()` (better-auth/react) mounts a nanostores
+// atom whose "last listener unsubscribed" cleanup is debounced by
+// `STORE_UNMOUNT_DELAY` (1000ms, see `nanostores/lifecycle`). That delayed
+// cleanup is what removes better-auth's `window`-bound storage/focus/online
+// listeners. If a component using `useSession()` unmounts near the end of a
+// test FILE, that debounced cleanup can still be pending when Vitest tears
+// down jsdom for the file — the orphaned `setTimeout` then fires against a
+// `window` that no longer exists:
+//   ReferenceError: window is not defined
+//     at Object.cleanupBroadcastSetup  better-auth/dist/client/broadcast-channel.mjs
+// Because the throw happens inside an orphaned `Timeout`, it belongs to no
+// test — vitest reports it under `Errors` (not a test failure) while the
+// process still exits 1, tumbling a random `hospeda-web` CI shard.
+// `cleanStores()` is nanostores' own testing helper for exactly this: it
+// forces the debounced cleanup to run synchronously, right now, while
+// `window` is still alive, instead of leaving it pending past teardown.
+afterEach(() => {
+    cleanStores(authClient.$store.atoms.session);
+});
 
 // HOS-160 lever A / HOS-369 Wave D: client islands read their translations from
 // `window.__HOSPEDA_I18N__` via `@/lib/i18n` instead of importing the full

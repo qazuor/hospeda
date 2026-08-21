@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
+    createBasicErrorHandler,
     createContinueOnErrorHandler,
     createDetailedErrorHandler,
     createGroupedErrorHandler,
@@ -176,5 +177,215 @@ describe('createGroupedErrorHandler', () => {
             const error = new Error(`Repeated error: details ${i}`);
             expect(() => handler(error, {}, context)).not.toThrow();
         }
+    });
+
+    it('groups errors without a message under "Unknown Error" and stops individual logging after 3', () => {
+        // Arrange
+        const handler = createGroupedErrorHandler();
+        const context = createTestContext();
+        const trackErrorSpy = vi.spyOn(summaryTracker, 'trackError').mockImplementation(() => {});
+
+        // Act: 5 errors with an empty message all fall into the same 'Unknown Error' group
+        for (let i = 0; i < 5; i++) {
+            handler(new Error(), {}, context);
+        }
+
+        // Assert: only the first 3 occurrences of the group trigger individual logging
+        expect(trackErrorSpy).toHaveBeenCalledTimes(3);
+    });
+
+    it('falls back to Unknown/unknown labels when context lacks entity/file info', () => {
+        // Arrange
+        const handler = createGroupedErrorHandler();
+        const context = createTestContext({ currentEntity: undefined, currentFile: undefined });
+        const trackErrorSpy = vi.spyOn(summaryTracker, 'trackError').mockImplementation(() => {});
+
+        // Act
+        handler(new Error('Boom: details'), {}, context);
+
+        // Assert
+        expect(trackErrorSpy).toHaveBeenCalledWith('Unknown', 'unknown', 'Boom: details');
+    });
+});
+
+describe('createRetryErrorHandler — entity/file fallback and retryable conditions', () => {
+    beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('falls back to Unknown/unknown labels when context lacks entity/file info while retrying', () => {
+        // Arrange
+        const handler = createRetryErrorHandler(3);
+        const context = createTestContext({ currentEntity: undefined, currentFile: undefined });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const error = new Error('Connection timeout');
+
+        // Act
+        handler(error, {}, context);
+
+        // Assert
+        expect(warnSpy).toHaveBeenCalledWith(expect.stringContaining('Retrying Unknown (unknown)'));
+    });
+
+    it('retries when the error message indicates a network failure (ECONNRESET)', () => {
+        // Arrange
+        const handler = createRetryErrorHandler(3);
+        const context = createTestContext();
+        const error = new Error('socket hang up: ECONNRESET');
+
+        // Act
+        handler(error, { id: 'net-1' }, context);
+
+        // Assert
+        const extendedContext = context as typeof context & { retryQueue?: unknown[] };
+        expect(extendedContext.retryQueue).toHaveLength(1);
+    });
+
+    it('retries when the error code is in the retryable codes list', () => {
+        // Arrange
+        const handler = createRetryErrorHandler(3);
+        const context = createTestContext();
+        const error = Object.assign(new Error('rate limited'), { code: 'RATE_LIMIT_EXCEEDED' });
+
+        // Act
+        handler(error, { id: 'code-1' }, context);
+
+        // Assert
+        const extendedContext = context as typeof context & { retryQueue?: unknown[] };
+        expect(extendedContext.retryQueue).toHaveLength(1);
+    });
+});
+
+describe('createContinueOnErrorHandler — entity/file fallback', () => {
+    beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('falls back to Unknown/unknown labels when context lacks entity/file info', () => {
+        // Arrange
+        const handler = createContinueOnErrorHandler(['DUPLICATE_KEY']);
+        const context = createTestContext({ currentEntity: undefined, currentFile: undefined });
+        const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+        const error = Object.assign(new Error('Duplicate'), { code: 'DUPLICATE_KEY' });
+
+        // Act
+        handler(error, {}, context);
+
+        // Assert
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('Continuing on DUPLICATE_KEY for Unknown (unknown)')
+        );
+    });
+});
+
+describe('createDetailedErrorHandler — item and cause branches', () => {
+    beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('does not log input data when item is falsy', () => {
+        // Arrange
+        const handler = createDetailedErrorHandler('Users');
+        const error = new Error('Detailed error');
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        // Act
+        handler(undefined, 2, error);
+
+        // Assert
+        const inputDataCalls = errorSpy.mock.calls.filter((call) =>
+            String(call[0]).startsWith('Input data:')
+        );
+        expect(inputDataCalls).toHaveLength(0);
+    });
+
+    it('logs the error cause when present', () => {
+        // Arrange
+        const handler = createDetailedErrorHandler('Users');
+        const error = Object.assign(new Error('Detailed error'), { cause: 'underlying issue' });
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        // Act
+        handler({}, 0, error);
+
+        // Assert
+        expect(errorSpy).toHaveBeenCalledWith('Cause: underlying issue');
+    });
+});
+
+describe('defaultErrorHandler — cause branch', () => {
+    beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('logs the error cause when present', () => {
+        // Arrange
+        const context = createTestContext();
+        const error = Object.assign(new Error('Failed with cause'), { cause: 'root cause detail' });
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        // Act
+        defaultErrorHandler(error, {}, context);
+
+        // Assert
+        expect(errorSpy).toHaveBeenCalledWith('Cause: root cause detail');
+    });
+});
+
+describe('createBasicErrorHandler', () => {
+    beforeEach(() => {
+        vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    });
+
+    afterEach(() => {
+        vi.restoreAllMocks();
+    });
+
+    it('logs error details without a cause line when no cause is present', () => {
+        // Arrange
+        const handler = createBasicErrorHandler();
+        const error = new Error('Basic failure');
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        // Act
+        handler({}, 3, error);
+
+        // Assert
+        const causeCalls = errorSpy.mock.calls.filter((call) =>
+            String(call[0]).startsWith('Cause:')
+        );
+        expect(causeCalls).toHaveLength(0);
+        expect(errorSpy).toHaveBeenCalledWith('Message: Basic failure');
+    });
+
+    it('logs the cause when present', () => {
+        // Arrange
+        const handler = createBasicErrorHandler();
+        const error = Object.assign(new Error('Basic failure with cause'), { cause: 'root' });
+        const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+        // Act
+        handler({}, 4, error);
+
+        // Assert
+        expect(errorSpy).toHaveBeenCalledWith('Cause: root');
     });
 });

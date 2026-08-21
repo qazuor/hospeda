@@ -18,9 +18,9 @@
         "process": {
             "title": "What happens after you submit",
             "step1": "You submit the form with your business details.",
-            "step2": "Our team reviews and approves it. This usually takes 24 to 48 business hours.",
-            "step3": "We email you once it is ready, with the steps to get in.",
-            "step4": "You complete the listing and choose your plan."
+            "step2": "Our team reviews your request and reaches out to coordinate next steps. This usually takes 24 to 48 business hours.",
+            "step3": "We email you to coordinate adding your business to the platform.",
+            "step4": "You create your account, complete the listing, and choose your plan."
         },
         "submit": "Submit request",
         "submitting": "Submitting...",
@@ -163,6 +163,12 @@
                 "WINE_TASTING": "Wine Tasting",
                 "OUTDOOR_ADVENTURE": "Outdoor Adventure",
                 "OTHER": "Other"
+            },
+            "priceRangeOption": {
+                "BUDGET": "Budget",
+                "MID": "Moderate",
+                "HIGH": "Upscale",
+                "PREMIUM": "Premium"
             },
             "priceUnitOption": {
                 "per_day": "Per day",

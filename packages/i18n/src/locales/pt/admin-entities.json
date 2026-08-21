@@ -121,6 +121,11 @@
             "singular": "Experiência",
             "plural": "Experiências",
             "description": "Gerencie atividades turísticas, excursões e aluguéis de equipamentos"
+        },
+        "partner": {
+            "singular": "Partner",
+            "plural": "Partners",
+            "description": "Gerencie partners e patrocinadores institucionais"
         }
     },
     "experience": {
@@ -204,6 +209,7 @@
         "type": "Tipo",
         "category": "Categoria",
         "status": "Status",
+        "lifecycleState": "Estado do ciclo de vida",
         "visibility": "Visibilidade",
         "moderation": "Moderação",
         "featured": "Destaque",
@@ -945,22 +951,7 @@
             "actions": "Ações"
         },
         "actions": {
-            "handle": "Resolver",
-            "provision": "Criar conta",
-            "approveProvision": "Aprovar e criar conta"
-        },
-        "approveProvision": {
-            "title": "Aprovar e criar conta de proprietário",
-            "description": "O lead de {{businessName}} será aprovado e {{email}} ficará habilitado como COMMERCE_OWNER. Se esse email já tiver conta, a permissão é somada e a senha é mantida; caso contrário, a conta é criada e credenciais temporárias são enviadas por email.",
-            "noteLabel": "Nota (opcional)",
-            "notePlaceholder": "Comentário interno para a equipe...",
-            "confirm": "Aprovar e criar conta",
-            "submitting": "Processando...",
-            "successMessage": "Lead aprovado e conta criada para {{email}}. As credenciais foram enviadas por email.",
-            "alreadyProvisionedMessage": "O lead já tinha uma conta provisionada.",
-            "error": "Erro ao aprovar e criar a conta. Tente novamente.",
-            "successLinkedMessage": "Lead aprovado. {{email}} já tinha conta: a permissão de comércio foi somada e a senha foi mantida. Nenhuma credencial foi enviada.",
-            "successNoCredentialsMessage": "Lead aprovado e conta criada para {{email}}, mas o email com as credenciais não pôde ser enviado. Ainda não consegue entrar."
+            "handle": "Resolver"
         },
         "handle": {
             "title": "Resolver lead",
@@ -973,16 +964,6 @@
             "submitting": "Salvando...",
             "successApproved": "Lead aprovado com sucesso.",
             "successRejected": "Lead rejeitado."
-        },
-        "provision": {
-            "title": "Criar conta de proprietário",
-            "description": "Isto vai habilitar {{businessName}} ({{email}}) como COMMERCE_OWNER. Se esse email já tiver conta, a permissão é somada e a senha é mantida; caso contrário, a conta é criada e credenciais temporárias são enviadas por email.",
-            "confirm": "Criar conta",
-            "submitting": "Criando...",
-            "successMessage": "Conta criada para {{name}} ({{email}}). As credenciais foram enviadas por email.",
-            "error": "Erro ao criar conta. Tente novamente.",
-            "successLinkedMessage": "{{email}} já tinha conta: a permissão de comércio foi somada e a senha foi mantida. Nenhuma credencial foi enviada.",
-            "successNoCredentialsMessage": "Conta criada para {{name}} ({{email}}), mas o email com as credenciais não pôde ser enviado. Ainda não consegue entrar."
         },
         "pagination": {
             "prev": "Anterior",

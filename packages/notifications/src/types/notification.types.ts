@@ -82,18 +82,6 @@ export enum NotificationType {
      */
     PLAN_BEING_RETIRED = 'plan_being_retired',
     /**
-     * SPEC-239 T-050 — credentials email sent to a newly provisioned
-     * COMMERCE_OWNER after an admin triggers the provision-owner action.
-     *
-     * Contains the owner's temporary password and a link to the
-     * change-password page so the owner can set their own password on
-     * first login.
-     *
-     * This is a TRANSACTIONAL notification: it is always sent, cannot be
-     * opted out of, and is required for the owner to access their account.
-     */
-    COMMERCE_OWNER_CREDENTIALS = 'commerce_owner_credentials',
-    /**
      * HOS-162 Phase 3 (spec §14.4) — sent to the host who connected an
      * external iCal feed (Airbnb / Booking.com / other) when a sync run
      * detects the feed is unreadable (fetch error, unparseable response, or
@@ -299,6 +287,13 @@ export interface SubscriptionEventPayload extends BaseNotificationPayload {
     newPlanName?: string;
 }
 
+/**
+ * Supported locale values for outbound email CTA links (HOS-722).
+ * Matches the three locales Hospeda serves via `@repo/i18n` / the `[lang]`
+ * route prefix in `apps/web`.
+ */
+export type AddonLinkLocale = 'es' | 'en' | 'pt';
+
 /** Add-on lifecycle events */
 export interface AddonEventPayload extends BaseNotificationPayload {
     type:
@@ -306,6 +301,20 @@ export interface AddonEventPayload extends BaseNotificationPayload {
         | NotificationType.ADDON_EXPIRED
         | NotificationType.ADDON_RENEWAL_CONFIRMATION;
     addonName: string;
+    /**
+     * Add-on catalog slug (e.g. `visibility-boost-7d`). When present, the CTA
+     * button deep-links to the add-ons management page focused on this
+     * specific add-on (`?focus=<slug>`, HOS-722 / HOS-729 contract). Optional
+     * for backward compatibility with callers that have not been updated to
+     * pass it — the link degrades to the unfocused add-ons page.
+     */
+    addonSlug?: string;
+    /**
+     * Recipient's preferred locale for the CTA link (HOS-722). Falls back to
+     * `'es'` when omitted or not one of the three supported locales — see
+     * `buildAddonManagementUrl` in `templates/utils/addon-links.ts`.
+     */
+    locale?: AddonLinkLocale;
     expirationDate?: string;
     daysRemaining?: number;
     amount?: number;
@@ -589,6 +598,10 @@ export interface AddonCancellationPayload extends BaseNotificationPayload {
     readonly addonName: string;
     /** ISO 8601 timestamp of when the add-on was cancelled */
     readonly canceledAt: string;
+    /** Add-on catalog slug, used to deep-link the CTA to this add-on (HOS-722). Optional. */
+    readonly addonSlug?: string;
+    /** Recipient's preferred locale for the CTA link (HOS-722). Falls back to `'es'`. */
+    readonly locale?: AddonLinkLocale;
 }
 
 /** Admin notifications */
@@ -713,50 +726,6 @@ export interface PlanBeingRetiredPayload extends BaseNotificationPayload {
      * resubscribe (e.g. "Re-subscribe to another plan to keep premium features").
      */
     readonly migrationHint: string;
-}
-
-/**
- * Payload for the COMMERCE_OWNER_CREDENTIALS notification (SPEC-239 T-050).
- *
- * Sent to a newly provisioned commerce owner immediately after an admin
- * triggers the provision-owner action.  Contains the temporary password
- * and a link to the change-password page.
- *
- * **Security note**: `temporaryPassword` is included so the email body can
- * display it to the recipient.  It MUST NOT be stored in the
- * `billing_notification_log` metadata beyond what the transport already logs,
- * and it MUST NOT appear in API responses.
- *
- * @example
- * ```ts
- * const payload: CommerceOwnerCredentialsPayload = {
- *   type: NotificationType.COMMERCE_OWNER_CREDENTIALS,
- *   recipientEmail: 'owner@mirestaurante.com',
- *   recipientName: 'Juan Pérez',
- *   userId: 'user-uuid',
- *   leadId: 'lead-uuid',
- *   temporaryPassword: 'abc123xyz456',
- *   changePasswordUrl: 'https://hospeda.com.ar/mi-cuenta/cambiar-contrasena',
- * };
- * ```
- */
-export interface CommerceOwnerCredentialsPayload extends BaseNotificationPayload {
-    readonly type: NotificationType.COMMERCE_OWNER_CREDENTIALS;
-    /**
-     * The server-generated temporary password to display in the email.
-     * NEVER store this in plain text beyond the email send.
-     */
-    readonly temporaryPassword: string;
-    /**
-     * UUID of the commerce lead that triggered this provisioning.
-     * Used for traceability in logs.
-     */
-    readonly leadId: string;
-    /**
-     * Full URL to the change-password page.
-     * Constructed from siteUrl + '/mi-cuenta/cambiar-contrasena'.
-     */
-    readonly changePasswordUrl: string;
 }
 
 /**
@@ -1182,7 +1151,6 @@ export type NotificationPayload =
     | SubscriptionCancelConfirmedPayload
     | SubscriptionAccessEndingSoonPayload
     | PlanBeingRetiredPayload
-    | CommerceOwnerCredentialsPayload
     | AllianceClaimInvitePayload
     | AllianceLeadDecisionPayload
     | HostTradeRevokedPayload

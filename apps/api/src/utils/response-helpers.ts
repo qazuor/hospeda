@@ -16,6 +16,7 @@ import { env } from './env';
 import { resolveErrorCodeForStatus } from './http-error-codes';
 import { resolveHttpStatusLogLevel } from './http-status-log-level';
 import { apiLogger } from './logger';
+import { RefinedBodyValidationError } from './refined-body';
 
 /**
  * Interface for pagination metadata
@@ -424,6 +425,47 @@ const logRouteError = (
  * Provides consistent error handling across all endpoints
  */
 export const handleRouteError = (error: unknown, c: Context) => {
+    // HOS-607: a cross-field refinement rejection (re-applied manually via
+    // `parseRefinedBody` because the route factory drops `.refine()` when it
+    // rebuilds the OpenAPI request schema — see utils/refined-body.ts) carries
+    // the full `transformZodError` payload. Render it in the SAME rich shape
+    // (`details`/`summary`/`userFriendlyMessage`) the OpenAPI request
+    // validator's `defaultHook` (utils/create-app.ts) already uses for an
+    // ordinary field-level rejection on the same route, instead of flattening
+    // it to the generic `{code, message}` envelope below. Checked BEFORE the
+    // `ServiceError` branch since this class extends it.
+    if (error instanceof RefinedBodyValidationError) {
+        const { validation } = error;
+        // This branch returns before the per-type levelling below, so it logs
+        // for itself. It deliberately keeps the `error` level this path had
+        // before HOS-622: 400 is not among the statuses either resolver
+        // downgrades, so routing it through them would produce the same level
+        // anyway — and quietly widening the downgrade to 400 while resolving a
+        // merge conflict is exactly the kind of scope creep this change is
+        // trying to stop. Revisit it together with the 422 question.
+        logRouteError(resolveHttpStatusLogLevel(400), error, {
+            code: validation.code,
+            status: 400
+        });
+        return c.json(
+            {
+                success: false,
+                error: {
+                    code: validation.code,
+                    messageKey: validation.messageKey,
+                    details: validation.details,
+                    summary: validation.summary,
+                    userFriendlyMessage: validation.userFriendlyMessage
+                },
+                metadata: {
+                    timestamp: new Date().toISOString(),
+                    requestId: c.get('requestId') || 'unknown'
+                }
+            },
+            400
+        );
+    }
+
     // Check for ServiceError first (most specific)
     if (error instanceof ServiceError) {
         // Map ServiceErrorCode to HTTP status codes
