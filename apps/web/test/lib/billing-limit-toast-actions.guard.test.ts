@@ -38,7 +38,12 @@ const SRC_DIR = resolve(__dirname, '../../src');
  */
 const KNOWN_CONSUMERS = [
     'components/host/CreatePropertyMiniForm.client.tsx',
-    'components/shared/favorite/FavoriteButton.client.tsx'
+    'components/shared/favorite/FavoriteButton.client.tsx',
+    // HOS-724. The photo cap is the FIRST consumer where the demoted slot is
+    // not hypothetical: `max_photos_per_accommodation` is one of the four
+    // limits an add-on raises, so dropping `secondaryAction` here would leave a
+    // host who wants the bigger plan with no route to it at all.
+    'components/host/editor/use-photo-section.ts'
 ] as const;
 
 /** `const <name> = buildLimitReachedPayload[FromDetails](` */
