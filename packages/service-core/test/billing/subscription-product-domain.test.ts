@@ -266,24 +266,10 @@ describe('isOwnerCategorySubscription (HOS-217)', () => {
     });
 });
 
-describe('subscriptionMatchesDomain (HOS-685)', () => {
-    /**
-     * Release A widens the vocabulary and rewrites NO rows, so every assertion
-     * about a `'commerce'` row below is the pre-HOS-685 behaviour restated. If
-     * one of these breaks, the release is not inert and reverting it is no
-     * longer free.
-     */
-    describe('is inert for the rows that exist today', () => {
-        it('still recognises a commerce row as commerce', () => {
-            expect(isCommerceSubscription({ productDomain: 'commerce' })).toBe(true);
-        });
-
+describe('subscriptionMatchesDomain (HOS-685 → narrowed HOS-695)', () => {
+    describe('accommodation / partner — unaffected by the vertical vocabulary', () => {
         it('still recognises an accommodation row as accommodation', () => {
             expect(isAccommodationSubscription({ productDomain: 'accommodation' })).toBe(true);
-        });
-
-        it('still keeps a commerce row out of the accommodation domain', () => {
-            expect(isAccommodationSubscription({ productDomain: 'commerce' })).toBe(false);
         });
 
         it('still keeps a partner row out of both domains', () => {
@@ -313,13 +299,31 @@ describe('subscriptionMatchesDomain (HOS-685)', () => {
         });
     });
 
-    describe('the widening', () => {
+    describe('HOS-695 — the retired commerce umbrella is no longer recognised', () => {
+        it('does NOT recognise a legacy commerce row as a commerce subscription any more', () => {
+            // Pre-HOS-695 this was `true` (the transitional umbrella). Release C
+            // narrows it: a row still carrying the retired string (it should not,
+            // past release B / HOS-692) is now unrecognised, not commerce.
+            expect(isCommerceSubscription({ productDomain: 'commerce' })).toBe(false);
+        });
+
+        it('still keeps a commerce-stringed row out of the accommodation domain too', () => {
+            // Fails closed both ways: an unrecognised value grants nothing.
+            expect(isAccommodationSubscription({ productDomain: 'commerce' })).toBe(false);
+        });
+
+        it('does not let the retired commerce string satisfy a single vertical', () => {
+            const legacyCommerceRow = { productDomain: 'commerce' };
+            expect(subscriptionMatchesDomain(legacyCommerceRow, 'gastronomy')).toBe(false);
+            expect(subscriptionMatchesDomain(legacyCommerceRow, 'experience')).toBe(false);
+        });
+    });
+
+    describe('the live verticals', () => {
         it.each([
             'gastronomy',
             'experience'
         ] as const)('counts a %s row as a commerce subscription', (domain) => {
-            // This is what keeps release B revertible: after the rows are
-            // rewritten, the reconciler must still see them as commerce.
             expect(isCommerceSubscription({ productDomain: domain })).toBe(true);
         });
 
@@ -340,16 +344,6 @@ describe('subscriptionMatchesDomain (HOS-685)', () => {
             expect(subscriptionMatchesDomain({ productDomain: 'gastronomy' }, 'experience')).toBe(
                 false
             );
-        });
-
-        it('does NOT let a transitional commerce row satisfy a single vertical', () => {
-            // `'commerce'` is ambiguous between the two verticals. Guessing would
-            // charge an experience against a gastronomy cap, so a vertical-scoped
-            // read fails closed until release B resolves the ambiguity in the data.
-            const legacyCommerceRow = { productDomain: 'commerce' };
-            expect(subscriptionMatchesDomain(legacyCommerceRow, 'gastronomy')).toBe(false);
-            expect(subscriptionMatchesDomain(legacyCommerceRow, 'experience')).toBe(false);
-            expect(subscriptionMatchesDomain(legacyCommerceRow, 'commerce')).toBe(true);
         });
 
         it('fails closed on a domain value nobody defined', () => {
@@ -378,8 +372,12 @@ describe('subscriptionMatchesDomain (HOS-685)', () => {
                 expect(isAccommodationSubscription(row)).toBe(
                     subscriptionMatchesDomain(row, 'accommodation')
                 );
+                // isCommerceSubscription ORs the canonical helper across both live
+                // verticals (COMMERCE_DOMAINS) — it is no longer a single-value
+                // lookup, since 'commerce' is not a domain that exists any more.
                 expect(isCommerceSubscription(row)).toBe(
-                    subscriptionMatchesDomain(row, 'commerce')
+                    subscriptionMatchesDomain(row, 'gastronomy') ||
+                        subscriptionMatchesDomain(row, 'experience')
                 );
             }
         });
