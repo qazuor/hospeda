@@ -8,7 +8,6 @@ import type {
     AllianceLeadCreateInput,
     AmenityPublic,
     AnnouncementItem,
-    CommerceLeadCreateInput,
     DestinationPointOfInterestSummary,
     DestinationPublic,
     EventOrganizerPublic,
@@ -1761,35 +1760,6 @@ export const experiencesApi = {
      */
     getFaqs({ id }: { readonly id: string }): Promise<ApiResult<ReadonlyArray<unknown>>> {
         return apiClient.get({ path: `${BASE}/experiences/${id}/faqs` });
-    }
-};
-
-// --- Commerce lead (SPEC-239 T-047) ---
-
-/**
- * Commerce lead submission — wraps the honeypot field so the
- * caller does not need to know the field name.
- *
- * The server silently returns 200 on honeypot rejection, so the
- * success path is indistinguishable from a real submission to bots.
- */
-export type CommerceLeadSubmitBody = CommerceLeadCreateInput & {
-    /** Honeypot field — must be sent as empty string by real users. */
-    readonly _hp?: string;
-};
-
-/** Public commerce lead API endpoints (SPEC-239 T-047). */
-export const commerceLeadApi = {
-    /**
-     * Submit a pre-onboarding commerce lead.
-     *
-     * POST /api/v1/public/commerce/leads
-     *
-     * Always include `_hp: ''` in the body — the server silently drops
-     * submissions where `_hp` is non-empty (honeypot spam guard).
-     */
-    submit(body: CommerceLeadSubmitBody): Promise<ApiResult<Record<string, unknown>>> {
-        return apiClient.post({ path: `${BASE}/commerce/leads`, body });
     }
 };
 
