@@ -58,7 +58,12 @@ const CACHEABLE_ROUTE_FAMILIES: ReadonlyArray<string> = [
     'eventos',
     'publicaciones',
     'gastronomia',
-    'experiencias'
+    'experiencias',
+    // HOS-690: the two commerce vertical landings lost the CommerceLead form
+    // (and with it the only reason either page read the session), so both
+    // moved off `SESSION_OPTIONAL_SEGMENTS` and onto this list.
+    'publicar-restaurante',
+    'publicar-experiencia'
 ];
 
 describe('HOS-369 W1-2a — cacheable route families parse no session', () => {
@@ -92,9 +97,7 @@ describe('HOS-369 W1-2a — cacheable route families parse no session', () => {
         const reasons: Readonly<Record<string, string>> = {
             feedback: 'A report is attributed to its author.',
             guest: 'The guest area is per-visitor by definition.',
-            publicar: 'The host onboarding funnel branches on having an account.',
-            'publicar-restaurante': 'Commerce lead form pre-fills the visitor name/e-mail.',
-            'publicar-experiencia': 'Commerce lead form pre-fills the visitor name/e-mail.'
+            publicar: 'The host onboarding funnel branches on having an account.'
         };
 
         for (const segment of SESSION_OPTIONAL_SEGMENTS) {
