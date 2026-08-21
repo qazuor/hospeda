@@ -4,10 +4,15 @@
  *
  * ## Scope
  *
- * Asserts the full lifecycle from lead → provisioning → listing creation →
- * subscription link → visibility reconciliation → public read gating →
- * owner operational update → review moderation → rating recompute against
- * a REAL ephemeral PostgreSQL database.
+ * Asserts the full lifecycle from listing creation → subscription link →
+ * visibility reconciliation → public read gating → owner operational
+ * update → review moderation → rating recompute against a REAL ephemeral
+ * PostgreSQL database.
+ *
+ * The former T-2 case (lead → admin-provisioned COMMERCE_OWNER via
+ * `CommerceOwnerProvisioningService`) was removed by HOS-693 §6.2 along with
+ * the service itself — owners now grant themselves the role by creating
+ * their own listing (HOS-687).
  *
  * ## Why real-DB
  *
@@ -25,7 +30,6 @@
  * @module spec-239-gastronomy-commerce.integration.test
  */
 
-import type { CommerceLead } from '@repo/schemas';
 import {
     CommerceEntityTypeEnum,
     GastronomyTypeEnum,
@@ -37,9 +41,7 @@ import {
     resolveListingCompleteness,
     VisibilityEnum
 } from '@repo/schemas';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import type { CreateUserPortResult } from '../../../src/services/commerce/commerce-owner-provisioning.service';
-import { CommerceOwnerProvisioningService } from '../../../src/services/commerce/commerce-owner-provisioning.service';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type {
     CommerceEntityModel,
     ResolveCommerceListingCompleteness
@@ -68,7 +70,6 @@ import {
     closeServiceTestPool,
     getServiceTestDb,
     isServiceTestDbAvailable,
-    seedCommerceLead,
     seedCommerceListingSubscription,
     seedGastronomy,
     withServiceTestTransaction
@@ -233,126 +234,6 @@ describe('SPEC-239 — Gastronomy commerce admin-sells lifecycle (integration)',
                 expect(result.data.destinationId).toBe(destinationId);
                 expect(result.data.visibility).toBe('PRIVATE');
                 expect(result.data.lifecycleState).toBe('INACTIVE');
-            });
-        }
-    );
-
-    // -----------------------------------------------------------------------
-    // T-2: Commerce owner provisioning via CreateUserPort stub
-    // -----------------------------------------------------------------------
-
-    it.skipIf(!dbAvailable)(
-        'T-2: provisions a COMMERCE_OWNER user from a commerce lead',
-        async () => {
-            await withServiceTestTransaction(async (tx) => {
-                // Arrange: seed a commerce lead row
-                const { leadId, email, contactName } = await seedCommerceLead(tx);
-                const ctx: ServiceContext = { tx };
-
-                // Stub CreateUserPort: insert a real user row in the tx so the
-                // FK constraint is satisfied when the gastronomy listing later
-                // references this userId.
-                const provisionedUserId = crypto.randomUUID();
-                const { users, userRole } = await import('@repo/db');
-
-                const createUserPortStub = vi.fn(
-                    async (input: {
-                        email: string;
-                        password: string;
-                        name: string;
-                        role: RoleEnum;
-                        mustChangePassword: boolean;
-                    }): Promise<CreateUserPortResult> => {
-                        // Actually insert the row so FK on gastronomies.owner_id works.
-                        // HOS-296: no `role` column any more; the hat is a
-                        // `user_role` row, which the real port grants. This stub
-                        // only needs the FK target to exist.
-                        await tx.insert(users).values({
-                            id: provisionedUserId,
-                            email: input.email,
-                            displayName: input.name,
-                            emailVerified: false,
-                            lifecycleState: 'ACTIVE',
-                            mustChangePassword: input.mustChangePassword
-                        } as typeof users.$inferInsert);
-                        await tx.insert(userRole).values({
-                            userId: provisionedUserId,
-                            role: input.role,
-                            grantReason: 'commerce_lead_approved'
-                        });
-                        return {
-                            id: provisionedUserId,
-                            email: input.email,
-                            name: input.name,
-                            alreadyExisted: false
-                        };
-                    }
-                );
-
-                const provisioningService = new CommerceOwnerProvisioningService(
-                    { logger: createLoggerMock() },
-                    createUserPortStub,
-                    null // no-op notifier
-                );
-
-                // Build the lead object that matches CommerceLead type.
-                // CommerceLead includes audit fields (createdById / updatedById)
-                // from BaseAuditFields. They are nullable in the schema.
-                const lead: CommerceLead = {
-                    id: leadId,
-                    email,
-                    contactName,
-                    domain: 'gastronomy',
-                    businessName: 'Test Business',
-                    status: 'pending',
-                    createdAt: new Date(),
-                    updatedAt: new Date(),
-                    createdById: null,
-                    updatedById: null,
-                    phone: null,
-                    destinationId: null,
-                    message: null,
-                    handledAt: null,
-                    handledById: null,
-                    adminNote: null
-                };
-
-                // Act
-                const result = await provisioningService.provisionCommerceOwner(
-                    adminActor,
-                    { lead },
-                    ctx
-                );
-
-                // Assert
-                expect(result.error).toBeUndefined();
-                expect(result.data).toBeDefined();
-                if (!result.data) throw new Error('expected result.data to be populated');
-
-                expect(result.data.userId).toBe(provisionedUserId);
-                expect(result.data.email).toBe(email);
-                expect(result.data.name).toBe(contactName);
-                // A freshly created account keeps its generated password;
-                // `alreadyExisted` accounts get `null` (HOS-296 AC-4).
-                expect(result.data.alreadyExisted).toBe(false);
-                expect(result.data.temporaryPassword).toBeTruthy();
-                expect(result.data.temporaryPassword?.length).toBeGreaterThanOrEqual(20);
-
-                // Assert the user row exists and has mustChangePassword=true
-                const { eq } = await import('@repo/db');
-                const userRow = await tx
-                    .select()
-                    .from(users)
-                    .where(eq(users.id, provisionedUserId));
-                const user = userRow[0];
-                expect(user).toBeDefined();
-                expect((user as Record<string, unknown>).mustChangePassword).toBe(true);
-
-                // Assert CreateUserPort was called with correct role
-                expect(createUserPortStub).toHaveBeenCalledOnce();
-                const callArg = createUserPortStub.mock.calls[0]?.[0];
-                expect(callArg?.role).toBe(RoleEnum.COMMERCE_OWNER);
-                expect(callArg?.mustChangePassword).toBe(true);
             });
         }
     );
