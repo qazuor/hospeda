@@ -478,6 +478,10 @@ export const handleRouteError = (error: unknown, c: Context) => {
             case ServiceErrorCode.GONE:
                 statusCode = 410;
                 break;
+            // Change-password: current-password mismatch (HOS-612)
+            case ServiceErrorCode.PASSWORD_INCORRECT:
+                statusCode = 400;
+                break;
             // Host-trade benefit usage + reviews (HOS-376 §7.5)
             case ServiceErrorCode.HOST_NOT_FOUND:
                 statusCode = 404;
@@ -625,6 +629,8 @@ export const handleRouteError = (error: unknown, c: Context) => {
                 [ServiceErrorCode.PROVIDER_TIMEOUT]: 504,
                 [ServiceErrorCode.PLAN_DISABLED]: 410,
                 [ServiceErrorCode.GONE]: 410,
+                // Change-password: current-password mismatch (HOS-612)
+                [ServiceErrorCode.PASSWORD_INCORRECT]: 400,
                 // These three were missing, so a legacy `"CODE: message"` error
                 // carrying them fell through `?? 500` — an entitlement or limit
                 // refusal reaching the client as a server fault, which reads as

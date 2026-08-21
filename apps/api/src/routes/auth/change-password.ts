@@ -5,8 +5,12 @@
  * column (SPEC-239 T-041: commerce owner forced-password-change gate).
  */
 import { accounts, getDb, UserModel, users } from '@repo/db';
-import { ChangePasswordInputSchema, ChangePasswordResponseSchema } from '@repo/schemas';
-import { withServiceTransaction } from '@repo/service-core';
+import {
+    ChangePasswordInputSchema,
+    ChangePasswordResponseSchema,
+    ServiceErrorCode
+} from '@repo/schemas';
+import { ServiceError, withServiceTransaction } from '@repo/service-core';
 import { compare, hash } from 'bcryptjs';
 import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
@@ -48,7 +52,15 @@ export const changePasswordRoute = createSimpleRoute({
         // 2. Verify current password (outside tx — CPU-bound, no DB needed)
         const isValid = await compare(currentPassword, account.password);
         if (!isValid) {
-            throw new HTTPException(400, { message: 'Current password is incorrect' });
+            // HOS-612: a raw `HTTPException` carries no ServiceErrorCode, so the
+            // client's `code === 'PASSWORD_INCORRECT'` check never matched and
+            // the raw English message leaked through. `ChangePasswordForm.client.tsx`
+            // already knows how to translate this exact code — it just never
+            // received it.
+            throw new ServiceError(
+                ServiceErrorCode.PASSWORD_INCORRECT,
+                'Current password is incorrect'
+            );
         }
 
         // 3. Hash new password (outside tx — CPU-bound, no DB needed)
