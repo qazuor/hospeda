@@ -714,7 +714,10 @@
             "CAMPING": "Camping",
             "ROOM": "Room",
             "MOTEL": "Motel",
-            "RESORT": "Resort"
+            "RESORT": "Resort",
+            "APART_HOTEL": "Apart Hotel",
+            "ESTANCIA": "Estancia",
+            "BED_AND_BREAKFAST": "Bed & Breakfast"
         },
         "stepIndicator": {
             "title": "Step 1 of 2 · Basic details",
