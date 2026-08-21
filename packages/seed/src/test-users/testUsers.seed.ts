@@ -1,4 +1,9 @@
-import { ALL_PLANS, getAddonBySlug, OWNER_TRIAL_DAYS } from '@repo/billing';
+import {
+    ALL_PLANS,
+    DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL,
+    getAddonBySlug,
+    OWNER_TRIAL_DAYS
+} from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     accounts,
@@ -205,14 +210,14 @@ export const TEST_USERS: readonly TestUserSpec[] = [
         email: 'commerce-gastronomy@local.test',
         displayName: 'Comercio Gastronomía',
         role: RoleEnum.COMMERCE_OWNER,
-        planSlug: 'gastronomy-premium',
+        planSlug: DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy,
         subscriptionProductDomain: ProductDomainEnum.GASTRONOMY
     },
     {
         email: 'commerce-experience@local.test',
         displayName: 'Comercio Experiencia',
         role: RoleEnum.COMMERCE_OWNER,
-        planSlug: 'experience-premium',
+        planSlug: DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.experience,
         subscriptionProductDomain: ProductDomainEnum.EXPERIENCE
     },
     // Owns exactly one gastronomy listing, at MAX_GASTRONOMIES=1 — the state
@@ -222,7 +227,7 @@ export const TEST_USERS: readonly TestUserSpec[] = [
         email: 'commerce-gastronomy-at-cap@local.test',
         displayName: 'Comercio Gastronomía Al Tope',
         role: RoleEnum.COMMERCE_OWNER,
-        planSlug: 'gastronomy-premium',
+        planSlug: DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy,
         subscriptionProductDomain: ProductDomainEnum.GASTRONOMY,
         ownsGastronomyAtCap: true
     },
