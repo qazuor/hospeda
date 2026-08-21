@@ -3,10 +3,10 @@
  * @description RTL tests for the owner self-service commerce create form
  * island (HOS-166 §7.2, §8 point 2).
  *
- * Covers: pre-fill degrades to a fully empty, usable form when absent
- * (AC-10/AC-11/AC-12), successful submit calls the create endpoint and
- * redirects to the editor, validation blocks submit on missing required
- * fields, and the experience vertical additionally requires priceFrom/priceUnit.
+ * Covers: the form renders empty (HOS-693 §6.2 removed the HOS-257 `prefill`
+ * prop), successful submit calls the create endpoint and redirects to the
+ * editor, validation blocks submit on missing required fields, and the
+ * experience vertical additionally requires priceFrom/priceUnit.
  */
 
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
@@ -62,8 +62,8 @@ beforeEach(() => {
 });
 
 describe('CommerceCreateForm', () => {
-    describe('D-4 pre-fill degradation (AC-10/AC-11/AC-12)', () => {
-        it('renders a fully empty, usable form when no prefill is given', () => {
+    describe('always renders empty (HOS-693 §6.2 removed the HOS-257 prefill prop)', () => {
+        it('renders a fully empty, usable form', () => {
             render(
                 <CommerceCreateForm
                     vertical="gastronomy"
@@ -73,64 +73,22 @@ describe('CommerceCreateForm', () => {
             );
 
             expect(screen.getByLabelText('Nombre del comercio')).toHaveValue('');
+            expect(screen.getByLabelText('Ciudad / Destino')).toHaveValue('');
         });
 
-        it('pre-fills name from the prefill prop when one is provided', () => {
+        it('lets the owner type freely into the name field', () => {
             render(
                 <CommerceCreateForm
                     vertical="gastronomy"
                     locale="es"
                     destinations={destinations}
-                    prefill={{ name: 'La Parrilla de Juan' }}
-                />
-            );
-
-            expect(screen.getByLabelText('Nombre del comercio')).toHaveValue('La Parrilla de Juan');
-        });
-
-        it('lets the owner overwrite a pre-filled value freely', () => {
-            render(
-                <CommerceCreateForm
-                    vertical="gastronomy"
-                    locale="es"
-                    destinations={destinations}
-                    prefill={{ name: 'La Parrilla de Juan' }}
                 />
             );
 
             const input = screen.getByLabelText('Nombre del comercio');
-            fireEvent.change(input, { target: { value: 'Otro nombre' } });
+            fireEvent.change(input, { target: { value: 'La Parrilla de Juan' } });
 
-            expect(input).toHaveValue('Otro nombre');
-        });
-
-        it('pre-fills destinationId from the prefill prop when one is provided (HOS-257)', () => {
-            render(
-                <CommerceCreateForm
-                    vertical="gastronomy"
-                    locale="es"
-                    destinations={destinations}
-                    prefill={{ name: 'La Parrilla de Juan', destinationId: 'dest-1' }}
-                />
-            );
-
-            expect(screen.getByLabelText('Ciudad / Destino')).toHaveValue('dest-1');
-        });
-
-        it('lets the owner overwrite a pre-filled destinationId freely (AC-12)', () => {
-            render(
-                <CommerceCreateForm
-                    vertical="gastronomy"
-                    locale="es"
-                    destinations={[...destinations, { id: 'dest-2', name: 'Colón' }]}
-                    prefill={{ destinationId: 'dest-1' }}
-                />
-            );
-
-            const select = screen.getByLabelText('Ciudad / Destino');
-            fireEvent.change(select, { target: { value: 'dest-2' } });
-
-            expect(select).toHaveValue('dest-2');
+            expect(input).toHaveValue('La Parrilla de Juan');
         });
     });
 
