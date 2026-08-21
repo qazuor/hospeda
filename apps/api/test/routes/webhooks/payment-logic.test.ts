@@ -918,6 +918,172 @@ describe('processPaymentUpdated', () => {
         });
     });
 
+    // ── HOS-721: promo metadata must survive the provider round-trip ───────
+    //
+    // These cases deliberately do NOT hand `processPaymentUpdated` the shape
+    // the code wants. They hand it the shape the PROVIDER produces. The
+    // pre-existing unit tests for `confirmAddonPurchase` passed `metadata`
+    // explicitly, in camelCase, so they were structurally blind to the fact
+    // that the only thing which ever reaches production is a snake_cased
+    // MercadoPago payment object — `createAddonCheckout` writes the promo keys
+    // as `promo_code_id` / `promo_code` / `discount_amount` and the
+    // confirmation looked up `promoCodeId` / `promoCode` / `discountAmount`.
+    // Every add-on bought with a coupon was charged at the discounted price and
+    // the coupon's `used_count` never moved.
+    //
+    // The assertion is on the CALLER's argument, from the production entry
+    // point, precisely so that a regression in the key mapping cannot hide
+    // behind a hand-built input.
+    it('translates a real MercadoPago snake_case payment payload into canonical promo metadata (HOS-721)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'extra-photos-20',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                // Verbatim shape of the metadata MercadoPago copies onto the
+                // payment object from the preference created by
+                // `createAddonCheckout` — every key snake_cased by the provider.
+                metadata: {
+                    addon_slug: 'extra-photos-20',
+                    customer_id: 'cust-1',
+                    user_id: 'user-9',
+                    type: 'addon_purchase',
+                    order_id: 'addon_extra-photos-20_cs_uuid',
+                    promo_code: 'SAVE10',
+                    promo_code_id: 'promo-uuid-1',
+                    discount_amount: 1500,
+                    original_price: 5000
+                }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'extra-photos-20',
+            metadata: {
+                promoCodeId: 'promo-uuid-1',
+                promoCode: 'SAVE10',
+                discountAmount: 1500
+            }
+        });
+    });
+
+    it('reads the polling fallback camelCase payload to the same canonical shape (HOS-721)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'extra-photos-20',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                // The polling job's synthetic payload is built from the job row,
+                // which MercadoPago never touches, so it keeps camelCase. For an
+                // MP Preference this is usually the ONLY path that confirms.
+                metadata: {
+                    addonSlug: 'extra-photos-20',
+                    customerId: 'cust-1',
+                    type: 'addon_purchase',
+                    promoCodeId: 'promo-uuid-1',
+                    promoCode: 'SAVE10',
+                    discountAmount: 1500
+                }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'extra-photos-20',
+            metadata: {
+                promoCodeId: 'promo-uuid-1',
+                promoCode: 'SAVE10',
+                discountAmount: 1500
+            }
+        });
+    });
+
+    it('carries the accommodation and the promo together from one snake_case payload (HOS-721)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                metadata: {
+                    addon_slug: 'visibility-boost-7d',
+                    customer_id: 'cust-1',
+                    type: 'addon_purchase',
+                    accommodation_id: 'accom_target_1',
+                    promo_code: 'BOOST5',
+                    promo_code_id: 'promo-uuid-2',
+                    // MercadoPago stringifies some metadata values on the round
+                    // trip; a discount written as a number can come back quoted.
+                    discount_amount: '750'
+                }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            metadata: {
+                accommodationId: 'accom_target_1',
+                promoCodeId: 'promo-uuid-2',
+                promoCode: 'BOOST5',
+                discountAmount: 750
+            }
+        });
+    });
+
+    it('never turns a null promo key into a metadata property (HOS-721)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'extra-photos-20',
+            customerId: 'cust-1'
+        });
+
+        getMockConfirmPurchase().mockResolvedValueOnce({ success: true, data: undefined });
+
+        await processPaymentUpdated({
+            data: {
+                // `createAddonCheckout` writes `null` (not `undefined`) for the
+                // keys that do not apply; none of them may become a metadata
+                // property, or `confirmAddonPurchase` would see a promo that
+                // does not exist.
+                metadata: {
+                    addon_slug: 'extra-photos-20',
+                    customer_id: 'cust-1',
+                    type: 'addon_purchase',
+                    promo_code: null,
+                    promo_code_id: null,
+                    discount_amount: 0,
+                    accommodation_id: null
+                }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'extra-photos-20',
+            metadata: { discountAmount: 0 }
+        });
+    });
+
     it('should use source label in log messages', async () => {
         const { apiLogger } = await import('../../../src/utils/logger');
         vi.mocked(extractPaymentInfo).mockReturnValue({

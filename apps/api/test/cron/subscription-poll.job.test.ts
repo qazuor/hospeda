@@ -757,6 +757,100 @@ describe('subscription-poll cron job', () => {
             expect(meta.accommodationId).toBe('accom_from_payment');
         });
 
+        // ── HOS-721: the promo keys must survive the synthetic payload ─────
+        // Same whitelist, same silence: the add-on activated, the customer paid
+        // the discounted price, and the code's used_count never moved — so a
+        // capped code never reached its cap.
+        it('carries the promo keys from job metadata into the synthetic payload (HOS-721)', async () => {
+            const job = buildJob({
+                id: 'addon-job-promo',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_promo_uuid',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'extra-photos-20',
+                    customerId: 'cust_aaa',
+                    userId: 'user_bbb',
+                    orderId: 'addon_extra-photos-20_cs_promo_uuid',
+                    promoCodeId: 'promo_uuid_1',
+                    promoCode: 'SAVE10',
+                    discountAmount: 1500
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_pay_promo',
+                    status: 'succeeded',
+                    amount: 350000,
+                    currency: 'ARS',
+                    // The MP payment deliberately does NOT carry the promo keys:
+                    // the job row is the reliable carrier.
+                    metadata: {
+                        addonSlug: 'extra-photos-20',
+                        customerId: 'cust_aaa',
+                        type: 'addon_purchase'
+                    }
+                }
+            ]);
+
+            await subscriptionPollJob.handler(buildContext());
+
+            expect(mockProcessPaymentUpdated).toHaveBeenCalledTimes(1);
+            const [callArg] = mockProcessPaymentUpdated.mock.calls[0] as [
+                { data: Record<string, unknown> }
+            ];
+            const meta = callArg.data.metadata as Record<string, unknown>;
+            expect(meta.promoCodeId).toBe('promo_uuid_1');
+            expect(meta.promoCode).toBe('SAVE10');
+            expect(meta.discountAmount).toBe(1500);
+        });
+
+        it('prefers the payment snake_case promo keys over the job values (HOS-721)', async () => {
+            const job = buildJob({
+                id: 'addon-job-promo-2',
+                resourceType: 'one_time_payment',
+                providerResourceId: 'cs_promo_uuid_2',
+                metadata: {
+                    type: 'addon_purchase',
+                    addonSlug: 'extra-photos-20',
+                    customerId: 'cust_aaa',
+                    userId: 'user_bbb',
+                    orderId: 'addon_extra-photos-20_cs_promo_uuid_2',
+                    promoCodeId: 'promo_from_job'
+                }
+            });
+            mockFindDuePending.mockResolvedValue([job]);
+            lockWithJob(job);
+            mockSearch.mockResolvedValueOnce([
+                {
+                    id: 'mp_pay_promo_2',
+                    status: 'succeeded',
+                    amount: 350000,
+                    currency: 'ARS',
+                    metadata: {
+                        addonSlug: 'extra-photos-20',
+                        customerId: 'cust_aaa',
+                        type: 'addon_purchase',
+                        promo_code_id: 'promo_from_payment',
+                        promo_code: 'FROMMP',
+                        discount_amount: 999
+                    }
+                }
+            ]);
+
+            await subscriptionPollJob.handler(buildContext());
+
+            const [callArg] = mockProcessPaymentUpdated.mock.calls[0] as [
+                { data: Record<string, unknown> }
+            ];
+            const meta = callArg.data.metadata as Record<string, unknown>;
+            expect(meta.promoCodeId).toBe('promo_from_payment');
+            expect(meta.promoCode).toBe('FROMMP');
+            expect(meta.discountAmount).toBe(999);
+        });
+
         it('annual job (no addon discriminator) + succeeded payment → confirmAnnualSubscription called, NOT processPaymentUpdated', async () => {
             const job = buildJob({
                 id: 'annual-job-6',
