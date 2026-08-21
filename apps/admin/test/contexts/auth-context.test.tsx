@@ -68,7 +68,8 @@ const AUTHENTICATED_SERVER_STATE = {
     displayName: 'Staff Member',
     email: 'staff@hospeda.com.ar',
     avatar: null,
-    emailVerified: true
+    emailVerified: true,
+    languageWeb: null
 };
 
 /** Minimal consumer exposing `signOut` behind a button, mirroring how real

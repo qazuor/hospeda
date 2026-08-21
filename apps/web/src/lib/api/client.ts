@@ -3,6 +3,7 @@
  * Provides typed fetch wrapper with error handling, timeout, and query serialization.
  */
 import { getApiUrl, getInternalApiUrl, getInternalRequestSecret } from '../env';
+import { isValidLocale } from '../i18n';
 import { getOrSetCached } from './ssr-cache';
 import type {
     ApiError,
@@ -11,6 +12,29 @@ import type {
     ApiSuccessResponse,
     PaginatedResponse
 } from './types';
+
+/**
+ * Request header carrying the locale segment of the page the browser is
+ * currently on (HOS-605). The API's return-URL resolver
+ * (`resolveReturnUrlLocale`) reads this as the highest-precedence signal —
+ * "an explicit locale in the URL" — so a purchase started from `/es/...`
+ * returns to `/es/...` regardless of the account's saved language
+ * preference. Only set for BROWSER requests: an SSR-to-API call has no
+ * `window`, and Referer alone is not reliable cross-origin (the site's
+ * `Referrer-Policy: strict-origin-when-cross-origin` strips the path).
+ */
+const CLIENT_LOCALE_HEADER = 'X-Client-Locale';
+
+/**
+ * Reads the current page's locale segment from `window.location.pathname`
+ * (e.g. `/es/mi-cuenta/addons/` -> `'es'`). Returns `null` outside the
+ * browser or when the path has no valid locale segment.
+ */
+function readClientLocaleFromPath(): string | null {
+    if (typeof window === 'undefined') return null;
+    const segment = window.location.pathname.split('/')[1];
+    return segment && isValidLocale(segment) ? segment : null;
+}
 
 /** Resolved lazily on first request so module import never throws. */
 let _cachedBaseUrl: string | undefined;
@@ -144,6 +168,14 @@ async function request<T>({
             }
             if (cookieHeader) {
                 headers.cookie = cookieHeader;
+            }
+            // HOS-605: tell the API which locale the browser is ACTUALLY on,
+            // so a mutation that triggers a return-URL build (checkout,
+            // addon purchase, subscription start) can honor it over the
+            // account's saved preference. Browser-only; never set during SSR.
+            const clientLocale = readClientLocaleFromPath();
+            if (clientLocale) {
+                headers[CLIENT_LOCALE_HEADER] = clientLocale;
             }
             // HOS-103: over the internal URL during SSR, attach the shared secret
             // so the API exempts this server-to-server traffic from the public
