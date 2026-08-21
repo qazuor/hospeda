@@ -27,11 +27,29 @@
  * **camelCase is canonical.** snake_case is a wire format, not a second
  * convention: it exists only between `createAddonCheckout` and whatever
  * MercadoPago hands back, and it is translated away exactly once, here, at the
- * border. Nothing downstream of {@link normalizeAddonCheckoutMetadata} should
+ * border. Nothing downstream of {@link normalizeMercadoPagoMetadata} should
  * ever look up a snake_case key again — the alternative (each consumer reading
  * both spellings defensively) is how the two ends drifted apart in the first
  * place, and it scales with the number of readers instead of the number of
  * borders.
+ *
+ * ## The border is generic (HOS-743)
+ *
+ * HOS-721 translated only the four add-on checkout payload keys, which left the
+ * three *dispatch discriminators* in `webhooks/mercadopago/utils.ts`
+ * (`extractAddonMetadata`, `extractAnnualSubscriptionMetadata`,
+ * `extractPlanChangeUpgradeMetadata`) reading camelCase off a payload
+ * MercadoPago had already snake_cased. `extractAddonMetadata` is the grave one:
+ * it decides whether an incoming payment IS an add-on purchase, so a key that
+ * does not resolve means no dispatch at all — no error, no log, nothing. It
+ * only worked because `createAddonCheckout` happens to write `addonSlug` and
+ * `customerId` in BOTH spellings, a duplication that reads like redundancy and
+ * would take the dispatch down with it the day somebody tidied it away.
+ *
+ * {@link normalizeMercadoPagoMetadata} is therefore the border for the whole
+ * bag, not for a fixed list of keys, and every one of those extractors goes
+ * through it. A new metadata key needs no registration and cannot regress to
+ * camelCase-only reading.
  *
  * @module services/addon-checkout-metadata
  */
@@ -63,34 +81,98 @@ export type AddonCheckoutMetadata = {
 };
 
 /**
- * The snake_case spelling MercadoPago delivers for each canonical key.
+ * Matches a well-formed lower snake_case key: alphanumeric groups joined by
+ * single underscores, with at least one underscore.
  *
- * Declared as a map rather than inline reads so the two spellings of a key can
- * never be added, renamed or removed independently of one another.
+ * Deliberately strict. A key that is already canonical (`addonSlug`), a single
+ * word (`type`), or malformed (`__weird`, `a__b`) is left alone rather than
+ * given a speculative alias — the border only translates what MercadoPago's
+ * own transformation could have produced.
  */
-const WIRE_KEY_BY_CANONICAL_KEY = {
-    accommodationId: 'accommodation_id',
-    promoCodeId: 'promo_code_id',
-    promoCode: 'promo_code',
-    discountAmount: 'discount_amount'
-} as const satisfies Record<keyof AddonCheckoutMetadata, string>;
+const WIRE_KEY_PATTERN = /^[a-z0-9]+(?:_[a-z0-9]+)+$/;
 
 /**
- * Read one canonical key from a raw metadata bag, trying the camelCase spelling
- * first and falling back to the MercadoPago snake_case one.
+ * Convert one MercadoPago wire key to its canonical camelCase spelling.
+ *
+ * The inverse of the transformation MercadoPago applies: `promo_code_id` →
+ * `promoCodeId`.
  */
-function readRawValue({
-    meta,
-    key
+function toCanonicalKey(wireKey: string): string {
+    return wireKey.replace(/_([a-z0-9])/g, (_match, char: string) => char.toUpperCase());
+}
+
+/**
+ * Translate a raw MercadoPago metadata bag into the canonical camelCase
+ * convention. **This is the border.**
+ *
+ * ## Why this is one translation and not N defensive reads
+ *
+ * MercadoPago snake_cases preference metadata keys when it copies them onto the
+ * payment object, so a real `payment.updated` payload spells every key
+ * differently from the rest of the codebase. There are exactly two ways to
+ * absorb that:
+ *
+ * 1. every consumer reads both spellings (`meta.addonSlug ?? meta.addon_slug`);
+ * 2. the payload is translated once, on the way in, and every consumer reads
+ *    the canonical spelling only.
+ *
+ * (1) scales with the number of READERS and drifts the moment one of them is
+ * added without the fallback — which is precisely how HOS-675, HOS-721 and
+ * HOS-743 each happened. (2) scales with the number of BORDERS, of which there
+ * is one. This function is it.
+ *
+ * ## The rules
+ *
+ * - The translation is **mechanical**, not a registry of known keys. A hand-kept
+ *   map reproduces the original bug for the next key somebody adds: it would be
+ *   camelCase-only again, silently, until a payment failed to dispatch. Anything
+ *   MercadoPago can snake_case, this can un-snake_case.
+ * - It is **additive**. The original keys are preserved, so any reader still
+ *   using a wire spelling keeps working; only the missing canonical aliases are
+ *   filled in.
+ * - **camelCase wins.** A canonical key that already carries a value is never
+ *   overwritten by its wire twin. `null` and `undefined` do not count as values:
+ *   `createAddonCheckout` writes `null` for a key that does not apply, and a
+ *   null canonical key must not shadow a populated wire one.
+ *
+ * @param input - Receives the raw metadata bag from the payment payload.
+ * @returns A new bag carrying both the original keys and their canonical
+ *   aliases; an empty object when the input is not a plain object.
+ *
+ * @example
+ * ```ts
+ * normalizeMercadoPagoMetadata({
+ *   metadata: { addon_slug: 'extra-photos-20', customer_id: 'cust_1' }
+ * });
+ * // → { addon_slug: '…', customer_id: '…', addonSlug: '…', customerId: '…' }
+ * ```
+ */
+export function normalizeMercadoPagoMetadata({
+    metadata
 }: {
-    readonly meta: Record<string, unknown>;
-    readonly key: keyof AddonCheckoutMetadata;
-}): unknown {
-    const camelValue = meta[key];
-    if (camelValue !== undefined && camelValue !== null) {
-        return camelValue;
+    readonly metadata: unknown;
+}): Record<string, unknown> {
+    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
+        return {};
     }
-    return meta[WIRE_KEY_BY_CANONICAL_KEY[key]];
+
+    const meta = metadata as Record<string, unknown>;
+    const normalized: Record<string, unknown> = { ...meta };
+
+    for (const [rawKey, value] of Object.entries(meta)) {
+        if (!WIRE_KEY_PATTERN.test(rawKey)) {
+            continue;
+        }
+
+        const canonicalKey = toCanonicalKey(rawKey);
+        const existing = normalized[canonicalKey];
+
+        if (existing === undefined || existing === null) {
+            normalized[canonicalKey] = value;
+        }
+    }
+
+    return normalized;
 }
 
 /**
@@ -165,16 +247,12 @@ export function normalizeAddonCheckoutMetadata({
 }: {
     readonly metadata: unknown;
 }): AddonCheckoutMetadata {
-    if (!metadata || typeof metadata !== 'object' || Array.isArray(metadata)) {
-        return {};
-    }
+    const meta = normalizeMercadoPagoMetadata({ metadata });
 
-    const meta = metadata as Record<string, unknown>;
-
-    const accommodationId = toOptionalString(readRawValue({ meta, key: 'accommodationId' }));
-    const promoCodeId = toOptionalString(readRawValue({ meta, key: 'promoCodeId' }));
-    const promoCode = toOptionalString(readRawValue({ meta, key: 'promoCode' }));
-    const discountAmount = toOptionalNumber(readRawValue({ meta, key: 'discountAmount' }));
+    const accommodationId = toOptionalString(meta.accommodationId);
+    const promoCodeId = toOptionalString(meta.promoCodeId);
+    const promoCode = toOptionalString(meta.promoCode);
+    const discountAmount = toOptionalNumber(meta.discountAmount);
 
     return {
         ...(accommodationId === undefined ? {} : { accommodationId }),
