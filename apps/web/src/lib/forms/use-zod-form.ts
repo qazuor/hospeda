@@ -158,9 +158,7 @@ export function useZodForm<TSchema extends ZodTypeAny>({
                 // alongside the inline <FieldError> messages the caller renders.
                 addToast({
                     type: 'error',
-                    message: t
-                        ? t('validation.formHasErrors', 'Revisá los campos marcados')
-                        : 'Revisá los campos marcados'
+                    message: t ? t('validation.formHasErrors') : 'Revisá los campos marcados'
                 });
                 // Opt-in (HOS-373): only forms that declared an id namespace get
                 // the focus move. Runs after the toast so the toast is never

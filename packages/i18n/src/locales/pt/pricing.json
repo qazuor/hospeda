@@ -39,7 +39,11 @@
         "subtitle": "Escolha o plano que melhor se adapta à sua propriedade e seus objetivos.",
         "empty": "Os planos não estão disponíveis no momento.",
         "period": "/mês",
-        "cardsHeading": "Comparação de planos para anfitriões"
+        "cardsHeading": "Comparação de planos para anfitriões",
+        "cta": {
+            "description": "Si es tu primera suscripción, empezás con {{trialDays}} días de prueba gratis. Descubrí cómo Hospeda puede ayudarte a aumentar tus reservas.",
+            "title": "¿Listo para hacer crecer tu negocio?"
+        }
     },
     "tourist": {
         "title": "Planos para viajantes",
@@ -49,7 +53,11 @@
         "subtitle": "Escolha o plano que melhor se adapta ao seu jeito de viajar.",
         "empty": "Os planos não estão disponíveis no momento.",
         "period": "/mês",
-        "cardsHeading": "Comparação de planos para viajantes"
+        "cardsHeading": "Comparação de planos para viajantes",
+        "cta": {
+            "description": "Registrate gratis y comienza a explorar los mejores alojamientos del Litoral argentino.",
+            "title": "¿Listo para comenzar tu aventura?"
+        }
     },
     "comparison": {
         "link": "Ver comparação detalhada",

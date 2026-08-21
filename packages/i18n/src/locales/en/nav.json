@@ -44,5 +44,8 @@
     "breadcrumb": {
         "home": "Home"
     },
-    "experiences": "Experiences"
+    "experiences": "Experiences",
+    "language": "Idioma",
+    "theme": "Tema",
+    "signIn": "Iniciar sesión"
 }

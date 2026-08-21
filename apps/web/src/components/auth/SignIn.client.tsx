@@ -275,7 +275,7 @@ export function SignIn({
                 className={styles.skeleton}
                 role="status"
                 aria-busy="true"
-                aria-label={t('auth-ui.loading', 'Loading form')}
+                aria-label={t('auth-ui.loading')}
             >
                 <div className={cn(styles.skeletonLine, styles.skeletonTitle)} />
                 <div className={styles.skeletonField} />

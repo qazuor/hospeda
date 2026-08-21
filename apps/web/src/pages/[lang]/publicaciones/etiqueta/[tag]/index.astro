@@ -92,7 +92,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/etiqueta/${tagSlug}` });
 <ListingLayout
     locale={locale}
     title={`#${tagName} - ${t('blog.title', 'Publicaciones')}`}
-    description={`${t('blog.byTag.description', 'Publicaciones con etiqueta')} ${tagName}`}
+    description={`${t('blog.byTag.description')} ${tagName}`}
     showFilters={false}
     noindex={true}
     totalCount={total}
@@ -110,7 +110,7 @@ const baseUrl = buildUrl({ locale, path: `publicaciones/etiqueta/${tagSlug}` });
     <ListingPageHeader
         slot="page-header"
         locale={locale}
-        tagline={t('blog.byTag.tagline', 'Etiqueta')}
+        tagline={t('blog.byTag.tagline')}
         title={`#${tagName}`}
     />
 

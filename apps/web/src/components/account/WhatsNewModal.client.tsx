@@ -73,7 +73,7 @@ export function WhatsNewModal({ locale, open, onOpenChange }: WhatsNewModalProps
                         type="button"
                         className={styles.closeButton}
                         onClick={handleClose}
-                        aria-label={t('common.close', 'Cerrar')}
+                        aria-label={t('common.close')}
                     >
                         ✕
                     </button>

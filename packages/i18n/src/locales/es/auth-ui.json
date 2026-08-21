@@ -167,6 +167,14 @@
         "verifyEmail": {
             "title": "Verificar correo",
             "description": "Verificando tu dirección de correo electrónico en Hospeda"
+        },
+        "verifyEmailSent": {
+            "body": "Te enviamos un correo con un enlace para verificar tu cuenta. Hacé clic en el enlace para activar tu acceso. Si no lo ves en la bandeja de entrada, revisá la carpeta de spam o promociones.",
+            "description": "Te enviamos un correo para verificar tu cuenta",
+            "heading": "Casi listo",
+            "signInLink": "Ir a iniciar sesión",
+            "title": "Revisá tu correo"
         }
-    }
+    },
+    "loading": "Loading form"
 }

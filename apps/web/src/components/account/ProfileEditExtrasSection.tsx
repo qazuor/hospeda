@@ -46,7 +46,7 @@ export function ProfileEditExtrasSection({
                 className={styles.sectionTitle}
                 id="extras-section-title"
             >
-                {t('account.pages.editProfile.extrasSection', 'Más sobre vos')}
+                {t('account.pages.editProfile.extrasSection')}
             </h3>
             <div className={styles.grid}>
                 {/* website */}
@@ -55,7 +55,7 @@ export function ProfileEditExtrasSection({
                         className={styles.label}
                         htmlFor="website"
                     >
-                        {t('account.editProfile.fields.website', 'Sitio web')}
+                        {t('account.editProfile.fields.website')}
                     </label>
                     <input
                         id="website"
@@ -81,7 +81,7 @@ export function ProfileEditExtrasSection({
                         className={styles.label}
                         htmlFor="occupation"
                     >
-                        {t('account.editProfile.fields.occupation', 'Ocupación')}
+                        {t('account.editProfile.fields.occupation')}
                     </label>
                     <input
                         id="occupation"

@@ -92,22 +92,15 @@ export function ProfileCompletionAvatarPicker({
         if (!file) return;
 
         if (!(ACCEPTED_TYPES as readonly string[]).includes(file.type)) {
-            reportError(
-                t(
-                    'account.profileCompletion.avatar.errors.invalidType',
-                    'El archivo debe ser una imagen JPG, PNG o WebP.'
-                )
-            );
+            reportError(t('account.profileCompletion.avatar.errors.invalidType'));
             return;
         }
 
         if (file.size > MAX_FILE_BYTES) {
             reportError(
-                t(
-                    'account.profileCompletion.avatar.errors.fileTooLarge',
-                    'La imagen no puede superar los {{maxSize}} MB.',
-                    { maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB }
-                )
+                t('account.profileCompletion.avatar.errors.fileTooLarge', {
+                    maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
+                })
             );
             return;
         }
@@ -127,10 +120,7 @@ export function ProfileCompletionAvatarPicker({
             });
 
             if (!response.ok) {
-                const localFallback = t(
-                    'account.profileCompletion.avatar.errors.uploadFailed',
-                    'No pudimos subir la imagen. Probá de nuevo.'
-                );
+                const localFallback = t('account.profileCompletion.avatar.errors.uploadFailed');
                 let message = localFallback;
                 try {
                     const errBody = (await response.json()) as UploadResponse;
@@ -152,23 +142,13 @@ export function ProfileCompletionAvatarPicker({
             const body = (await response.json()) as UploadResponse;
             const url = body.data?.url;
             if (!url) {
-                reportError(
-                    t(
-                        'account.profileCompletion.avatar.errors.unexpectedResponse',
-                        'Respuesta inesperada del servidor.'
-                    )
-                );
+                reportError(t('account.profileCompletion.avatar.errors.unexpectedResponse'));
                 return;
             }
 
             onUploaded(url);
         } catch {
-            reportError(
-                t(
-                    'account.profileCompletion.avatar.errors.uploadFailed',
-                    'No pudimos subir la imagen. Probá de nuevo.'
-                )
-            );
+            reportError(t('account.profileCompletion.avatar.errors.uploadFailed'));
         } finally {
             setIsUploading(false);
         }
@@ -184,7 +164,7 @@ export function ProfileCompletionAvatarPicker({
                 aria-busy={isUploading}
             >
                 {isUploading
-                    ? t('account.profileCompletion.avatar.uploading', 'Subiendo...')
+                    ? t('account.profileCompletion.avatar.uploading')
                     : t('account.profileCompletion.avatar.change', 'Cambiar foto')}
             </button>
             <input

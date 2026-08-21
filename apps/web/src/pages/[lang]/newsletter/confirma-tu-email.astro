@@ -33,24 +33,20 @@ const isPlausibleEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(rawEmail) && rawEmail
 const email = isPlausibleEmail ? rawEmail : '';
 
 const pageTitle = t(
-    'newsletter.confirmYourEmail.title',
-    'Revisá tu email para confirmar la suscripción.'
+    'newsletter.confirmYourEmail.title'
 );
 const pageDescription = email
     ? t(
           'newsletter.confirmYourEmail.descriptionWithEmail',
-          'Te enviamos un email a {email} con un link para confirmar.',
           { email }
       )
     : t(
-          'newsletter.confirmYourEmail.descriptionGeneric',
-          'Te enviamos un email con un link para confirmar tu suscripción.'
+          'newsletter.confirmYourEmail.descriptionGeneric'
       );
 const noteText = t(
-    'newsletter.confirmYourEmail.spamNote',
-    'Si no lo encontrás en tu bandeja, revisá la carpeta de spam.'
+    'newsletter.confirmYourEmail.spamNote'
 );
-const cancelLink = t('newsletter.confirmYourEmail.cancelLink', 'Volver al inicio');
+const cancelLink = t('newsletter.confirmYourEmail.cancelLink');
 ---
 
 <DefaultLayout

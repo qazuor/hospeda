@@ -343,7 +343,7 @@ export const FavoriteButton: FC<FavoriteButtonProps> = ({
                     type: 'success',
                     message: t('account.favorites.toast.saved', 'Guardado en favoritos'),
                     action: {
-                        label: t('account.favorites.toast.view', 'Ver favoritos'),
+                        label: t('account.favorites.toast.view'),
                         href: favoritesHref
                     }
                 });

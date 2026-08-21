@@ -56,8 +56,8 @@ const baseUrl = buildUrl({ locale, path: `alojamientos/caracteristicas/${slug}` 
 ---
 
 <ListingLayout locale={locale} title={`${featureName} - ${t('accommodations.title', 'Alojamientos')}`} showFilters={false} noindex={true} totalCount={total}>
-	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' }, { label: t('accommodations.features', 'Características') }, { label: featureName }]} />
-	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.byFeature.tagline', 'Característica')} title={featureName} />
+	<Breadcrumbs slot="breadcrumbs" locale={locale} items={[{ label: t('accommodations.title', 'Alojamientos'), path: 'alojamientos' }, { label: t('accommodations.features') }, { label: featureName }]} />
+	<ListingPageHeader slot="page-header" locale={locale} tagline={t('accommodations.byFeature.tagline')} title={featureName} />
 	<CompareModeControls slot="page-header" locale={locale} />
 	{hasError && !result.ok && <ErrorBanner locale={locale} error={result.error} entityName="alojamientos" />}
 	{!hasError && cards.length === 0 && <EmptyState locale={locale} variant="no-results" actionUrl={buildUrl({ locale, path: 'alojamientos' })} />}

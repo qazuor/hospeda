@@ -306,7 +306,7 @@ const breadcrumbItems = [
                         {reviews.slice(0, 3).map((review) => (
                             <li class="gastro-detail__review-item">
                                 <p class="gastro-detail__review-author">
-                                    {review.user?.name ?? t('common.anonymous', 'Usuario')}
+                                    {review.user?.name ?? t('common.anonymous')}
                                 </p>
                                 {review.averageRating != null && (
                                     <span class="gastro-detail__review-rating">
@@ -320,7 +320,7 @@ const breadcrumbItems = [
                         ))}
                         {totalReviews > 3 && (
                             <p class="gastro-detail__reviews-more">
-                                {t('gastronomy.detail.reviews.more', '+ {n} reseñas más', { n: totalReviews - 3 })}
+                                {t('gastronomy.detail.reviews.more', { n: totalReviews - 3 })}
                             </p>
                         )}
                     </ul>

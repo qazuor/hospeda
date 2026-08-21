@@ -39,7 +39,11 @@
         "subtitle": "Elegí el plan que mejor se adapte a tu propiedad y objetivos.",
         "empty": "Planes no disponibles en este momento.",
         "period": "/mes",
-        "cardsHeading": "Comparativa de planes para propietarios"
+        "cardsHeading": "Comparativa de planes para propietarios",
+        "cta": {
+            "description": "Si es tu primera suscripción, empezás con {{trialDays}} días de prueba gratis. Descubrí cómo Hospeda puede ayudarte a aumentar tus reservas.",
+            "title": "¿Listo para hacer crecer tu negocio?"
+        }
     },
     "tourist": {
         "title": "Planes para turistas",
@@ -49,7 +53,11 @@
         "subtitle": "Elegí el plan que mejor se adapte a tu forma de viajar.",
         "empty": "Planes no disponibles en este momento.",
         "period": "/mes",
-        "cardsHeading": "Comparativa de planes para turistas"
+        "cardsHeading": "Comparativa de planes para turistas",
+        "cta": {
+            "description": "Registrate gratis y comienza a explorar los mejores alojamientos del Litoral argentino.",
+            "title": "¿Listo para comenzar tu aventura?"
+        }
     },
     "comparison": {
         "link": "Ver comparativa detallada",

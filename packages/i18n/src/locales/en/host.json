@@ -108,6 +108,15 @@
                     "mapHint": "Arrastrá el pin para ajustar la ubicación",
                     "mapToggleExpand": "Expandir mapa",
                     "mapToggleCollapse": "Contraer mapa"
+                },
+                "cityPicker": {
+                    "contactMessage": "No encontré mi ciudad en el buscador del formulario de publicación. Me gustaría poder publicar mi alojamiento ahí. ¿Pueden agregarla?",
+                    "contactSubject": "Solicitud de nueva ciudad",
+                    "empty": "No hay coincidencias",
+                    "label": "Ciudad",
+                    "loading": "Buscando ciudades...",
+                    "notFoundLink": "No encuentro mi ciudad",
+                    "placeholder": "Buscá tu ciudad (mín. 2 letras)"
                 }
             },
             "capacidad": {
@@ -644,11 +653,16 @@
                 "bedrooms": "bedrooms",
                 "bathrooms": "bathrooms",
                 "mainImage": "the main photo"
-            }
+            },
+            "pageDescription": "Editar información de tu propiedad"
         },
         "empty": {
             "title": "You haven't published any property yet",
-            "cta": "Publish now"
+            "cta": "Publish now",
+            "fetchError": "No se pudo cargar la lista. Intentá recargar la página."
+        },
+        "error": {
+            "retry": "Reintentar"
         }
     },
     "landing": {
@@ -883,7 +897,9 @@
             "precheck": {
                 "resumeDeleteOrUpgrade": {
                     "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
-                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan."
+                    "body_other": "You're using {{currentCount}} properties and your plan allows {{maxAllowed}}. You can resume your draft, delete it to free up space, or upgrade your plan.",
+                    "deleteConfirm": "¿Borrar este borrador? Vas a poder crear una propiedad nueva.",
+                    "deleteCta": "Borrar borrador"
                 },
                 "pickDraftDeleteOrUpgrade": {
                     "body_one": "You're using {{currentCount}} property and your plan allows {{maxAllowed}}. Edit one of your existing drafts or upgrade your plan to create a new one.",

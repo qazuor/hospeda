@@ -498,7 +498,7 @@ const breadcrumbItems = [
 		{postTags.length > 0 && (
 			<div class="post-detail__tags">
 				<FilterChips
-					ariaLabel={t('blog.detail.tags.title', 'Etiquetas de la publicación')}
+					ariaLabel={t('blog.detail.tagsTitle')}
 					chips={postTags.map((tag) => ({
 						label: tag.name,
 						href: buildUrl({ locale, path: `publicaciones/etiqueta/${tag.slug}` }),

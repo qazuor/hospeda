@@ -35,7 +35,8 @@
         "emptyState": "No hay alojamientos disponibles en este momento",
         "emptyAction": "Ver todos los alojamientos",
         "noReviews": "Sin resenas",
-        "seeAllAction": "Ver todos los alojamientos"
+        "seeAllAction": "Ver todos los alojamientos",
+        "typesLabel": "Filtrar por tipo"
     },
     "accommodations": {
         "badge": {
@@ -58,7 +59,8 @@
         "description": "Explora los lugares más atractivos de la costa del río Uruguay en Entre Ríos y encuentra el alojamiento perfecto para tus vacaciones. ",
         "accentSubtitle": "Explorá la región",
         "ariaLabel": "Destinos destacados",
-        "emptyState": "No hay destinos disponibles en este momento"
+        "emptyState": "No hay destinos disponibles en este momento",
+        "viewAll": "Ver todos los destinos"
     },
     "upcomingEvents": {
         "title": "Próximos eventos",
@@ -168,7 +170,8 @@
         "feature2": {
             "title": "Disponibilidad en tiempo real",
             "description": "Consultá disponibilidad y reservá al instante, sin intermediarios ni llamadas telefónicas."
-        }
+        },
+        "cta": "Conocé más sobre nosotros"
     },
     "ownerCta": {
         "accentSubtitle": "Para propietarios",
@@ -191,7 +194,8 @@
             "title": "Sincronización con Google Calendar",
             "description": "Conectá tu Google Calendar para sincronizar la disponibilidad de tu alojamiento y evitar reservas superpuestas"
         },
-        "statsLabel": "viajeros satisfechos"
+        "statsLabel": "viajeros satisfechos",
+        "ctaButton": "Publicá tu alojamiento"
     },
     "partners": {
         "tagline": "Nuestros partners",
@@ -271,6 +275,14 @@
             "ROOM": "Habitación",
             "MOTEL": "Motel",
             "RESORT": "Resort"
-        }
+        },
+        "closePanel": "Cerrar panel",
+        "destinationSearchLabel": "Buscar entre los destinos",
+        "destinationSearchPlaceholder": "Buscá un destino",
+        "featuredDestinationLabel": "Destino destacado",
+        "noDestinationsMatch": "No hay destinos que coincidan con tu búsqueda",
+        "noTypesMatch": "No hay tipos que coincidan con tu búsqueda",
+        "typeSearchLabel": "Buscar entre los tipos de alojamiento",
+        "typeSearchPlaceholder": "Buscá un tipo"
     }
 }

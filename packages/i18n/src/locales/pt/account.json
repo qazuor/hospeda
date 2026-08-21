@@ -91,7 +91,9 @@
         "benefitUsages": "Usos do benefício",
         "myPosts": "Minhas publicações",
         "myEvents": "Meus eventos",
-        "provider": "Minha ficha de fornecedor"
+        "provider": "Minha ficha de fornecedor",
+        "repeatTour": "Repetir tour",
+        "repeatTourDesc": "Volvé a ver el tour guiado por el panel de cuenta"
     },
     "doors": {
         "sectionLabel": "Descubra mais",
@@ -166,7 +168,10 @@
             "uploadFailed": "Erro ao enviar a imagem",
             "updateFailed": "Erro ao atualizar o perfil",
             "unexpectedResponse": "Resposta inesperada do servidor"
-        }
+        },
+        "changeButton": "Cambiar foto",
+        "fileInputLabel": "Seleccionar imagen de perfil",
+        "uploading": "Subiendo…"
     },
     "editProfile": {
         "fields": {
@@ -174,7 +179,22 @@
             "firstName": "Nome",
             "lastName": "Sobrenome",
             "phone": "Telefone",
-            "bio": "Biografia"
+            "bio": "Biografia",
+            "occupation": "Ocupación",
+            "website": "Sitio web",
+            "addressLine1": "Dirección",
+            "city": "Ciudad",
+            "country": "País",
+            "postalCode": "Código postal",
+            "province": "Provincia / Región",
+            "birthDate": "Fecha de nacimiento",
+            "birthDateHint": "Formato: dd/mm/yyyy.",
+            "phoneHint": "Formato E.164: +541134567890",
+            "facebook": "Facebook",
+            "instagram": "Instagram",
+            "linkedin": "LinkedIn",
+            "twitter": "X / Twitter",
+            "youtube": "YouTube"
         },
         "save": "Salvar alterações",
         "saving": "Salvando...",
@@ -245,23 +265,29 @@
         },
         "notifications": {
             "email": {
-                "label": "Notificações por e-mail"
+                "label": "Notificações por e-mail",
+                "description": "Recibir notificaciones por email"
             },
             "push": {
-                "label": "Notificações push"
+                "label": "Notificações push",
+                "description": "Recibir notificaciones en el navegador"
             },
             "sms": {
-                "label": "Notificações por SMS"
+                "label": "Notificações por SMS",
+                "description": "Recibir notificaciones por SMS"
             }
         },
         "language": {
-            "label": "Idioma do site"
+            "label": "Idioma do site",
+            "description": "Idioma de la plataforma web"
         },
         "newsletter": {
-            "label": "Receber newsletter"
+            "label": "Receber newsletter",
+            "description": "Recibir novedades, ofertas y destinos destacados"
         },
         "errors": {
-            "fetchFailed": "Erro ao carregar as preferências"
+            "fetchFailed": "Erro ao carregar as preferências",
+            "saveFailed": "No se pudo guardar la preferencia"
         },
         "whatsNew": {
             "title": "Novidades",
@@ -440,7 +466,20 @@
             "moveError": "Não foi possível mover o favorito",
             "deleting": "Excluindo…",
             "deleteSuccess": "Coleção excluída com sucesso",
-            "deleteError": "Não foi possível excluir a coleção. Tente novamente."
+            "deleteError": "Não foi possível excluir a coleção. Tente novamente.",
+            "fields": {
+                "colorNone": "Sin color",
+                "iconNone": "Sin ícono",
+                "iconNoneLabel": "Ninguno",
+                "color": "Color",
+                "description": "Descripción",
+                "descriptionHint": "Opcional. Describe para qué usarás esta colección.",
+                "icon": "Ícono",
+                "name": "Nombre"
+            },
+            "assignFailed": "No se pudo asignar a la colección",
+            "assignPrompt": "Asignar a una colección",
+            "assignSuccess": "Movido a {{name}}"
         },
         "filter": {
             "all": "Todos",
@@ -473,11 +512,13 @@
         "removeLabel": "Remover dos favoritos",
         "toast": {
             "saved": "Salvo nos favoritos",
-            "removed": "Removido dos favoritos"
+            "removed": "Removido dos favoritos",
+            "view": "Ver favoritos"
         },
         "errors": {
             "fetchFailed": "Erro ao carregar favoritos",
-            "removeFailed": "Erro ao remover favorito"
+            "removeFailed": "Erro ao remover favorito",
+            "saveFailed": "No se pudo guardar la nota"
         }
     },
     "reviews": {
@@ -574,13 +615,17 @@
                 "propertiesDesc": "Acomodações publicadas",
                 "messages": "Mensagens não lidas",
                 "messagesDesc": "Consultas de hóspedes"
-            }
+            },
+            "sectionsLabel": "Secciones"
         },
         "editProfile": {
             "title": "Editar perfil",
             "description": "Atualize suas informações pessoais e preferencias de conta.",
             "avatarSection": "Foto do perfil",
-            "personalSection": "Informações pessoais"
+            "personalSection": "Informações pessoais",
+            "extrasSection": "Más sobre vos",
+            "locationSection": "Ubicación",
+            "socialSection": "Redes sociales"
         },
         "favorites": {
             "title": "Meus favoritos",
@@ -811,7 +856,14 @@
             "alt": "Avatar",
             "hint": "Sua foto de perfil",
             "change": "Alterar foto",
-            "urlLabel": "URL do avatar"
+            "urlLabel": "URL do avatar",
+            "errors": {
+                "fileTooLarge": "La imagen no puede superar los {{maxSize}} MB.",
+                "invalidType": "El archivo debe ser una imagen JPG, PNG o WebP.",
+                "unexpectedResponse": "Respuesta inesperada del servidor.",
+                "uploadFailed": "No pudimos subir la imagen. Probá de nuevo."
+            },
+            "uploading": "Subiendo..."
         },
         "fields": {
             "firstName": "Nome",
@@ -846,7 +898,8 @@
             "locationRegion": "Estado / Província",
             "locationRegionPlaceholder": "São Paulo",
             "locationCity": "Cidade",
-            "locationCityPlaceholder": "São Paulo"
+            "locationCityPlaceholder": "São Paulo",
+            "birthDateOpenPicker": "Abrir calendario"
         },
         "moreDetails": {
             "toggle": "Mais detalhes",
@@ -904,8 +957,24 @@
             "passwordWeak": "A senha deve ter pelo menos 8 caracteres, maiúsculas, minúsculas, números e um caractere especial.",
             "confirmMismatch": "As senhas não coincidem.",
             "submitFailed": "Não foi possível definir a senha. Tente novamente.",
-            "skipFailed": "Não foi possível pular este passo. Tente novamente."
-        }
+            "skipFailed": "Não foi possível pular este passo. Tente novamente.",
+            "passwordMax": "La contraseña no puede superar los 128 caracteres.",
+            "passwordsMismatch": "Las contraseñas no coinciden."
+        },
+        "hidePassword": "Ocultar contraseña",
+        "passwordStrength": {
+            "medium": "Media",
+            "strong": "Fuerte",
+            "weak": "Débil"
+        },
+        "rules": {
+            "digit": "Al menos 1 número",
+            "length": "Mínimo 8 caracteres",
+            "lower": "Al menos 1 minúscula",
+            "special": "Al menos 1 carácter especial (@$!%*?&)",
+            "upper": "Al menos 1 mayúscula"
+        },
+        "showPassword": "Mostrar contraseña"
     },
     "searchHistory": {
         "loading": "Carregando histórico...",
@@ -1477,5 +1546,8 @@
             "WHATSAPP": "WhatsApp",
             "OTHER": "Outro canal"
         }
-    }
+    },
+    "description": "Gestioná tu cuenta en Hospeda",
+    "menu": "Menú de cuenta",
+    "title": "Mi cuenta"
 }

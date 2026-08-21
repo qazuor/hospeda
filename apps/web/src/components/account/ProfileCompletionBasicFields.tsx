@@ -357,10 +357,7 @@ function BirthDateField({
                     className={styles.birthDatePickerButton}
                     onClick={() => setPickerOpen((open) => !open)}
                     disabled={disabled}
-                    aria-label={t(
-                        'account.profileCompletion.fields.birthDateOpenPicker',
-                        'Abrir calendario'
-                    )}
+                    aria-label={t('account.profileCompletion.fields.birthDateOpenPicker')}
                     aria-expanded={pickerOpen}
                 >
                     <CalendarIcon

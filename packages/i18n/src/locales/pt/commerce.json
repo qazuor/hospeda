@@ -50,7 +50,16 @@
         "success": "Sua senha foi atualizada com sucesso.",
         "error": "Ocorreu um erro ao atualizar a senha. Por favor, tente novamente.",
         "mismatch": "As senhas não coincidem.",
-        "currentIncorrect": "A senha atual está incorreta."
+        "currentIncorrect": "A senha atual está incorreta.",
+        "currentRequired": "La contraseña actual es requerida.",
+        "hidePassword": "Ocultar contraseña",
+        "showPassword": "Mostrar contraseña",
+        "strength": {
+            "medium": "Media",
+            "strong": "Segura",
+            "weak": "Débil"
+        },
+        "strengthLabel": "Seguridad de la contraseña"
     },
     "visibility": {
         "active": "Ativo",
@@ -223,7 +232,10 @@
                 "uploadFailed": "Erro ao enviar a imagem",
                 "uploadTimeout": "O envio demorou demais. Tente novamente.",
                 "capReached_one": "Limite da galeria atingido (máx. {{cap}} foto)",
-                "capReached_other": "Limite da galeria atingido (máx. {{cap}} fotos)"
+                "capReached_other": "Limite da galeria atingido (máx. {{cap}} fotos)",
+                "featuredFailed": "No se pudo marcar la imagen como principal",
+                "persistFailed": "No se pudo guardar la imagen en la base de datos",
+                "removeFailed": "No se pudo eliminar la imagen"
             },
             "slugImmutableNotice": "A URL pública é gerada a partir do nome ao criar o comércio e não pode ser alterada depois."
         },

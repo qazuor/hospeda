@@ -514,7 +514,7 @@ export function DowngradePreviewPanel({
                     onClick={onBack}
                     disabled={isPending}
                 >
-                    {t('common.back', 'Volver')}
+                    {t('common.back')}
                 </button>
                 <button
                     type="button"

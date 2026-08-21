@@ -82,7 +82,7 @@ const seeAllHref = buildUrl({ locale, path: '/alojamientos/' });
     <!-- Accommodation type filter badges: per-type colour identity,
          clickable links to the filtered listing. -->
     <ScrollableNav
-      ariaLabel={t('home.featuredAccommodations.typesLabel', 'Filtrar por tipo')}
+      ariaLabel={t('home.featuredAccommodations.typesLabel')}
       innerClass="accommodations__types"
     >
       {ACCOMMODATION_TYPES.map(({ type, slug }) => (

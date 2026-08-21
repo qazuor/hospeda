@@ -156,7 +156,7 @@ function ListView({
                         type="button"
                         className={styles.closeButton}
                         onClick={onClose}
-                        aria-label={t('common.close', 'Cerrar')}
+                        aria-label={t('common.close')}
                     >
                         ✕
                     </button>
@@ -260,7 +260,7 @@ function DetailView({ entry, locale, onBack, onClose }: DetailViewProps) {
                     type="button"
                     className={styles.backButton}
                     onClick={onBack}
-                    aria-label={t('common.back', 'Volver')}
+                    aria-label={t('common.back')}
                 >
                     ←
                 </button>
@@ -269,7 +269,7 @@ function DetailView({ entry, locale, onBack, onClose }: DetailViewProps) {
                     type="button"
                     className={styles.closeButton}
                     onClick={onClose}
-                    aria-label={t('common.close', 'Cerrar')}
+                    aria-label={t('common.close')}
                 >
                     ✕
                 </button>
