@@ -268,7 +268,6 @@ export interface PaymentNotificationPayload extends BaseNotificationPayload {
     currency: string;
     planName: string;
     failureReason?: string;
-    retryDate?: string;
     paymentMethod?: string;
 }
 

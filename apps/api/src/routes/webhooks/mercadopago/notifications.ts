@@ -194,9 +194,6 @@ export async function sendPaymentFailureNotifications(
             return;
         }
 
-        const retryDate = new Date();
-        retryDate.setDate(retryDate.getDate() + 3);
-
         const customerName =
             typeof customer.metadata?.name === 'string' ? customer.metadata.name : customer.email;
         const userId =
@@ -221,8 +218,7 @@ export async function sendPaymentFailureNotifications(
             planName,
             amount,
             currency,
-            failureReason: sanitizedUserReason,
-            retryDate: retryDate.toISOString()
+            failureReason: sanitizedUserReason
         }).catch((error) => {
             apiLogger.debug(
                 {
@@ -256,8 +252,7 @@ export async function sendPaymentFailureNotifications(
                         amount,
                         currency,
                         failureReason: sanitizedAdminReason,
-                        planName,
-                        retryDate: retryDate.toISOString()
+                        planName
                     },
                     severity: 'warning'
                 }).catch((error) => {

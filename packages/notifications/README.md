@@ -541,8 +541,7 @@ if (payment.status === 'approved') {
     customerId: customer.id,
     amount: payment.amount,
     currency: 'ARS',
-    failureReason: payment.statusDetail,
-    retryDate: calculateRetryDate(payment)
+    failureReason: payment.statusDetail
   });
 }
 ```
