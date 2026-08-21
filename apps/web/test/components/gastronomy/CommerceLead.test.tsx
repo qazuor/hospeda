@@ -632,11 +632,15 @@ describe('CommerceLead', () => {
             fireEvent.click(screen.getByRole('button', { name: /enviar solicitud/i }));
         }
 
-        it('explains the manual approval BEFORE the visitor submits', () => {
+        it('explains the manual review BEFORE the visitor submits', () => {
             renderForm();
             // The whole point of the issue: the applicant should not discover
-            // the review step only after sending the form.
-            expect(screen.getByText(/nuestro equipo lo revisa y lo aprueba/i)).toBeInTheDocument();
+            // the review step only after sending the form. HOS-693 retired the
+            // admin approve-and-provision flow, so this no longer promises an
+            // automated approval — just that a human reviews and reaches out.
+            expect(
+                screen.getByText(/nuestro equipo revisa tu solicitud y te contacta/i)
+            ).toBeInTheDocument();
         });
 
         it('gives a concrete expectation of how long the review takes', () => {
@@ -652,16 +656,16 @@ describe('CommerceLead', () => {
             expect(steps[3]?.textContent).toMatch(/contratás el plan/i);
         });
 
-        // The submitted email does NOT link an approved lead to an existing
-        // account today — commerce-ports.ts calls signUpEmail with no lookup.
-        // That is HOS-296. The copy must not promise it in the meantime, in
-        // ANY phrasing, so this pins the exact wording of the step rather than
-        // blacklisting a couple of words a reworded promise would slip past.
-        it('pins step 3 to the account-neutral wording', () => {
+        // HOS-693 retired the admin approve-and-provision flow entirely — there
+        // is no automated account creation to promise or to stay neutral about
+        // anymore. The copy must not promise one is coming, in ANY phrasing, so
+        // this pins the exact wording of the step rather than blacklisting a
+        // couple of words a reworded promise would slip past.
+        it('pins step 3 to wording that promises no automated account creation', () => {
             renderForm();
             const step3 = screen.getByRole('list').querySelectorAll('li')[2];
             expect(step3?.textContent).toBe(
-                'Te avisamos por correo cuando esté listo, con los pasos para entrar.'
+                'Te escribimos por correo para coordinar cómo sumar tu negocio a la plataforma.'
             );
         });
 
@@ -701,7 +705,9 @@ describe('CommerceLead', () => {
                 expect(screen.getByText(/qué pasa ahora/i)).toBeInTheDocument();
             });
             expect(screen.getByRole('list').querySelectorAll('li')).toHaveLength(4);
-            expect(screen.getByText(/nuestro equipo lo revisa y lo aprueba/i)).toBeInTheDocument();
+            expect(
+                screen.getByText(/nuestro equipo revisa tu solicitud y te contacta/i)
+            ).toBeInTheDocument();
         });
 
         it('echoes the address the lead was actually sent with', async () => {

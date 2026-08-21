@@ -18,9 +18,9 @@
         "process": {
             "title": "Cómo sigue después de enviarlo",
             "step1": "Enviás el formulario con los datos de tu negocio.",
-            "step2": "Nuestro equipo lo revisa y lo aprueba. Suele tardar entre 24 y 48 horas hábiles.",
-            "step3": "Te avisamos por correo cuando esté listo, con los pasos para entrar.",
-            "step4": "Completás la publicación y contratás el plan."
+            "step2": "Nuestro equipo revisa tu solicitud y te contacta para coordinar los próximos pasos. Suele tardar entre 24 y 48 horas hábiles.",
+            "step3": "Te escribimos por correo para coordinar cómo sumar tu negocio a la plataforma.",
+            "step4": "Creás tu cuenta, completás la publicación y contratás el plan."
         },
         "submit": "Enviar solicitud",
         "submitting": "Enviando...",
