@@ -862,7 +862,10 @@ describe('MercadoPago Webhook Handler', () => {
                     payments: {
                         retrieve: vi.fn().mockResolvedValue({
                             id: '987',
-                            amount: 0,
+                            // The adapter reports amounts in CENTAVOS; the
+                            // handler divides by 100 to build the major-units
+                            // `transaction_amount` the webhook payload carries.
+                            amount: 5000,
                             currency: 'ARS',
                             status: 'approved',
                             metadata: {
@@ -888,9 +891,18 @@ describe('MercadoPago Webhook Handler', () => {
 
             await handlePaymentUpdated(context, event);
 
+            // HOS-595: `paymentId` + the settled amount travel with the
+            // confirmation. Without them the purchase row got `payment_id: NULL`
+            // and no `billing_payments` entry was ever written for the charge.
             expect(mockConfirmPurchase).toHaveBeenCalledWith({
                 customerId: 'cust_123',
-                addonSlug: 'premium-photos'
+                addonSlug: 'premium-photos',
+                paymentId: '987',
+                // 5000 centavos in → 50 major units on the payload → 5000
+                // centavos back out. The round-trip is what makes the ledger
+                // amount match the provider's.
+                amountInCents: 5000,
+                currency: 'ARS'
             });
         });
 
