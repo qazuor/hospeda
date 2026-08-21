@@ -414,7 +414,9 @@ export class NotificationService {
                     addonName: p.addonName,
                     baseUrl: this.deps.siteUrl,
                     daysRemaining: p.daysRemaining,
-                    expirationDate: p.expirationDate
+                    expirationDate: p.expirationDate,
+                    addonSlug: p.addonSlug,
+                    locale: p.locale
                 });
             }
 
@@ -424,7 +426,9 @@ export class NotificationService {
                     recipientName,
                     addonName: p.addonName,
                     baseUrl: this.deps.siteUrl,
-                    expirationDate: p.expirationDate || ''
+                    expirationDate: p.expirationDate || '',
+                    addonSlug: p.addonSlug,
+                    locale: p.locale
                 });
             }
 
@@ -435,7 +439,9 @@ export class NotificationService {
                     addonName: p.addonName,
                     baseUrl: this.deps.siteUrl,
                     amount: p.amount || 0,
-                    currency: p.currency || 'ARS'
+                    currency: p.currency || 'ARS',
+                    addonSlug: p.addonSlug,
+                    locale: p.locale
                 });
             }
 
@@ -574,7 +580,9 @@ export class NotificationService {
                     recipientName,
                     addonName: p.addonName,
                     canceledAt: p.canceledAt,
-                    baseUrl: this.deps.siteUrl
+                    baseUrl: this.deps.siteUrl,
+                    addonSlug: p.addonSlug,
+                    locale: p.locale
                 });
             }
 
