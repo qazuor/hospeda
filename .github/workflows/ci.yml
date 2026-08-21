@@ -464,9 +464,10 @@ jobs:
         with:
           name: build-outputs
       # Coverage is expensive (v8 instrumentation is ~3x slower than a
-      # plain vitest run). We only need it on main pushes — that is where
-      # coverage-check enforces the per-package threshold gate. PRs and
-      # pushes to staging run the cheaper `test` script instead.
+      # plain vitest run), so it runs only where the threshold gate does:
+      # on main pushes and on PRs targeting main. PRs targeting staging
+      # and pushes to staging run the cheaper `test` script instead —
+      # which is the overwhelming majority of CI runs.
       #
       # `VITEST_SHARD` is part of the turbo cache key (see turbo.json),
       # so different shards never share a cache entry. That means we no
@@ -476,7 +477,13 @@ jobs:
       # warm-up from the previous step stays warm and the test step
       # starts immediately.
       - name: Run tests with coverage (shard ${{ matrix.shard }}/5)
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        # HOS-613: also runs on any PR targeting `main` — i.e. the
+        # promotion PR. The gate exists to protect `main`, so measuring it
+        # only on the push *after* the merge meant every promotion since
+        # May 2026 went red with nobody able to act on it beforehand.
+        # PRs targeting `staging` still take the cheap no-coverage path,
+        # so the day-to-day PR stays as fast as it is today.
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')
         env:
           VITEST_SHARD: ${{ matrix.shard }}/5
         # --passWithNoTests is NOT injected from CI here — every package's
@@ -498,18 +505,20 @@ jobs:
             --coverage.thresholds.branches=0 \
             --coverage.thresholds.statements=0
       - name: Run tests without coverage (shard ${{ matrix.shard }}/5)
-        if: github.event_name != 'push' || github.ref != 'refs/heads/main'
+        if: "!((github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main'))"
         env:
           VITEST_SHARD: ${{ matrix.shard }}/5
-        # Cheaper run for PRs and pushes to staging. No coverage artifact
-        # produced, so coverage-check is skipped (and accepted by ci-pass).
+        # Cheaper run for PRs targeting staging and pushes to staging. No
+        # coverage artifact produced, so coverage-check is skipped (and
+        # accepted by ci-pass). PRs targeting `main` take the coverage
+        # path above instead — see HOS-613.
         # See coverage variant above for why --passWithNoTests is NOT
         # injected here from CI.
         run: |
           pnpm turbo run test --concurrency=4 -- \
             --shard=${{ matrix.shard }}/5
       - name: Upload coverage artifacts (shard ${{ matrix.shard }})
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')
         uses: actions/upload-artifact@v7
         with:
           name: coverage-shard-${{ matrix.shard }}
@@ -568,10 +577,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     needs: test-unit
-    # Coverage artifacts only exist on main pushes (see test-unit job).
-    # On PRs and staging pushes this job is skipped and ci-pass treats
-    # the skipped result as acceptable.
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    # Coverage artifacts exist on main pushes and on PRs targeting main
+    # (see test-unit job). On PRs targeting staging and on staging pushes
+    # this job is skipped and ci-pass treats the skipped result as
+    # acceptable.
+    #
+    # HOS-613: running this only after the merge meant a promotion could
+    # not be fixed before it went red — and it went red on every single
+    # promotion from May to August 2026 without blocking anything, which
+    # is the worst of both worlds. Running it on the promotion PR makes
+    # the gate actionable while leaving the staging PR path untouched.
+    if: (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'pull_request' && github.base_ref == 'main')
     steps:
       - uses: actions/checkout@v7
       - name: Setup Node.js
@@ -738,10 +754,11 @@ jobs:
       - csp-headers
     steps:
       - name: Aggregate result
-        # coverage-check is intentionally skipped on PRs and staging
-        # pushes (the threshold gate only applies on main), so accept
-        # "skipped" as a passing result for that one job. Every other
-        # job must report "success".
+        # coverage-check is intentionally skipped on PRs targeting
+        # staging and on staging pushes (the threshold gate only applies
+        # to main), so accept "skipped" as a passing result for that one
+        # job. On a PR targeting main it runs for real and must pass.
+        # Every other job must report "success".
         run: |
           if [ "${{ needs.lint.result }}" != "success" ] \
             || [ "${{ needs.security.result }}" != "success" ] \
