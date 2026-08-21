@@ -7,10 +7,13 @@
  * marketing text never reaches the catalog: pages call
  * `t('some.key', 'a Spanish fallback')` for keys that do not exist in ANY
  * locale, so `resolve()` returns the fallback and the fallback is what ships —
- * in every language. `/beneficios` is the whole page (`benefits.owner.*` /
- * `benefits.tourist.*` are absent; the file defines `owners.*` / `tourists.*`),
- * and so are `owners.hero.desc`, `about.mission.text` and
- * `pricing.owner.cta.description`.
+ * in every language. As of round 3, live examples included `pricing.owner.cta.description`
+ * and the `legal/privacidad` and `legal/terminos` per-section prose (see the
+ * `LIVE_FALLBACKS` pin below) — `/beneficios`'s `benefits.owner.*` /
+ * `benefits.tourist.*` and `owners.hero.desc` / `about.mission.text` were live
+ * at the time this file was written but were moved into the locale catalog by
+ * HOS-616 and are catalog-backed copy now (see the handoff note at the bottom
+ * of this comment).
  *
  * The cost of that blind spot is concrete: a sweep to remove "soporte dedicado"
  * edited `benefits.json`'s `tourists.customerSupport.description` — a key with
@@ -21,6 +24,21 @@
  * So this file inverts the lookup: extract every inline fallback from the page
  * sources, keep the ones whose key is absent from all locales (those are the
  * live strings), and hold them to the same claims rules.
+ *
+ * ## Handoff as HOS-616 drains this file
+ *
+ * HOS-616 is systematically moving inline fallbacks into the locale catalog,
+ * six-or-so files at a time (see its PRs for the running total). Every batch
+ * shrinks `LIVE_FALLBACKS` and moves that copy from THIS file's coverage to
+ * `plan-copy-veracity.test.ts`'s — which reads the catalog and, as of the
+ * HOS-616 fix, sweeps entire namespaces (`benefits`, `owners`, `about`, `blog`,
+ * `gastronomy`) rather than an enumerated path list, so newly-catalogued copy
+ * is covered the moment it lands without anyone remembering to list it. This
+ * file's own closing comment already anticipates the end state: "If this ever
+ * hits zero… delete this file." When that happens, `plan-copy-veracity.test.ts`
+ * is the guard that inherits full responsibility for marketing-claims
+ * veracity — do not delete this file's rules without confirming the namespace
+ * sweep there already covers the same ground.
  */
 
 import { readdirSync, readFileSync, statSync } from 'node:fs';
@@ -260,8 +278,28 @@ describe('inline fallback veracity (HOS-331)', () => {
         const tsxRows = ALL_FALLBACKS.filter((fb) => fb.file.endsWith('.tsx')).length;
         expect(astroRows).toBeGreaterThan(500);
         expect(tsxRows).toBeGreaterThan(500);
-        // And pin the row this file was written for, which only `pair` produces.
-        expect(LIVE_FALLBACKS.some((fb) => fb.key === 'benefits.owner.5.title')).toBe(true);
+        // And pin a row that only `pair` produces.
+        //
+        // The original pin here was `benefits.owner.5.title`, from
+        // `beneficios/index.astro`'s `ownerBenefits` array. HOS-616 moved that
+        // key (and 104 others) into the locale catalog, which is the intended
+        // fix — but it also means `benefits.owner.5.title` now resolves from
+        // the catalog instead of the fallback, so it silently dropped out of
+        // `LIVE_FALLBACKS` and the pin went stale on the very PR meant to
+        // shrink this file's coverage safely.
+        //
+        // Re-pinned to `privacy.section1.title` (`legal/privacidad/index.astro`):
+        // verified BOTH conditions this pin exists to hold, not assumed —
+        // (1) still live: `privacy.section1.title` is absent from the
+        // `privacy` namespace in all three locales, so it is still served from
+        // `titleFb` today; (2) pair-only: grepping the whole `apps/web/src`
+        // tree for a literal `t('privacy.section1.title', ...)` call finds
+        // nothing — the key is reachable exclusively through the
+        // `titleKey`/`titleFb` pair in that page's `sections` array. The legal
+        // pages are outside HOS-616's scope (marketing copy, not legal
+        // boilerplate), so this pin is not expected to go stale the same way
+        // on the next HOS-616 batch.
+        expect(LIVE_FALLBACKS.some((fb) => fb.key === 'privacy.section1.title')).toBe(true);
     });
 
     it('finds fallbacks whose key is missing from at least one locale', () => {

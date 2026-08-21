@@ -72,7 +72,61 @@
         "description": "Descubre los beneficios de usar Hospeda para turistas y propietarios de alojamientos en el Litoral argentino"
     },
     "hero": {
-        "description": "Hospeda conecta viajeros con alojamientos auténticos y apoya a propietarios con herramientas profesionales. Descubre los beneficios de formar parte de nuestra comunidad."
+        "description": "Hospeda conecta viajeros con alojamientos auténticos y apoya a propietarios con herramientas profesionales. Descubre los beneficios de formar parte de nuestra comunidad.",
+        "tagline": "Por qué Hospeda",
+        "titleMain": "Lo que ofrecemos a nuestra",
+        "titleAccent": "comunidad",
+        "subtitle": "Descubrí los beneficios de usar Hospeda como viajero o como propietario del Litoral entrerriano."
+    },
+    "tourist": {
+        "title": "Beneficios para turistas",
+        "tagline": "Para viajeros",
+        "cta": "Explorar alojamientos",
+        "1": {
+            "title": "Variedad de opciones",
+            "desc": "Desde cabañas junto al río hasta hoteles en el centro. Encontrá el alojamiento perfecto para tu viaje."
+        },
+        "2": {
+            "title": "Precios transparentes",
+            "desc": "Sin costos ocultos ni sorpresas. Sabés exactamente cuánto pagás antes de reservar."
+        },
+        "3": {
+            "title": "Reseñas verificadas",
+            "desc": "Opiniones reales de viajeros que ya se hospedaron. Elegí con confianza."
+        },
+        "4": {
+            "title": "Información local",
+            "desc": "Destinos, eventos y guías de viaje para planificar tu escapada al Litoral."
+        },
+        "5": {
+            "title": "Contacto directo",
+            "desc": "Comunicación directa con el propietario. Sin intermediarios ni demoras."
+        }
+    },
+    "owner": {
+        "title": "Beneficios para propietarios",
+        "tagline": "Para propietarios",
+        "cta": "Publicá tu alojamiento",
+        "1": {
+            "title": "Visibilidad regional",
+            "desc": "Llegá a miles de viajeros que buscan alojamiento en la costa del río Uruguay."
+        },
+        "2": {
+            "title": "Gestión simple",
+            "desc": "Panel de control intuitivo para gestionar tu propiedad, fotos y precios."
+        },
+        "3": {
+            "title": "Sin comisiones ocultas",
+            "desc": "Planes transparentes con precios fijos. Sabés exactamente cuánto pagás."
+        },
+        "4": {
+            "title": "Estadísticas detalladas",
+            "desc": "Accedé a métricas de visitas, consultas y rendimiento de tu publicación."
+        },
+        "5": {
+            "title": "Soporte real, no un bot",
+            "desc": "Equipo de soporte por WhatsApp, mail y teléfono en horario de oficina para ayudarte con cualquier consulta."
+        }
     },
     "tourists": {
         "heading": "Beneficios para Turistas",
