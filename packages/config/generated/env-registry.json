@@ -2437,14 +2437,14 @@
       "type": "string",
       "required": false,
       "secret": false,
-      "defaultValue": "Content-Type,Authorization,X-Requested-With,X-Forwarded-For,X-Real-IP,X-Request-ID",
-      "exampleValue": "Content-Type,Authorization,X-Requested-With,X-Forwarded-For,X-Real-IP,X-Request-ID",
+      "defaultValue": "Content-Type,Authorization,X-Requested-With,X-Idempotency-Key,X-Client-Locale,X-Forwarded-For,X-Real-IP,X-Request-ID",
+      "exampleValue": "Content-Type,Authorization,X-Requested-With,X-Idempotency-Key,X-Client-Locale,X-Forwarded-For,X-Real-IP,X-Request-ID",
       "apps": [
         "api"
       ],
       "category": "api-config",
-      "howToObtain": "Headers the browser may send. Default covers Content-Type/Authorization/X-Requested-With + the IP/request-id headers the API actually reads. Add more if you introduce new x-* request headers (e.g. x-actor-id for impersonation).",
-      "howToObtainEs": "Headers que el navegador puede mandar. El default cubre Content-Type/Authorization/X-Requested-With + los headers de IP/request-id que la API realmente lee. Agregá más si incorporás nuevos headers x-* en el request (ej: x-actor-id para impersonar)."
+      "howToObtain": "Headers the browser may send. Default covers Content-Type/Authorization/X-Requested-With + the IP/request-id headers the API actually reads. X-Idempotency-Key and X-Client-Locale are enforced in code (getCorsConfig REQUIRED_HEADERS) even if an override here omits them — a non-simple header missing from this list silently fails the browser preflight for every cross-origin mutation, not just the one that reads it, so this example lists them explicitly rather than relying on the code-side safety net alone. Add more if you introduce new x-* request headers (e.g. x-actor-id for impersonation).",
+      "howToObtainEs": "Headers que el navegador puede mandar. El default cubre Content-Type/Authorization/X-Requested-With + los headers de IP/request-id que la API realmente lee. X-Idempotency-Key y X-Client-Locale se fuerzan en código (getCorsConfig REQUIRED_HEADERS) aunque un override acá los omita — un header no-simple ausente de esta lista hace fallar el preflight del navegador para TODA mutación cross-origin, no sólo la que lo lee, así que este ejemplo los lista explícitamente en vez de depender sólo de la red de seguridad del código. Agregá más si incorporás nuevos headers x-* en el request (ej: x-actor-id para impersonar)."
     },
     {
       "name": "API_CORS_EXPOSE_HEADERS",
