@@ -11,10 +11,12 @@
 
 import type { QZPayProviderPayment } from '@qazuor/qzpay-core';
 import type { QZPayWebhookHandler } from '@qazuor/qzpay-hono';
+import { asCentavos, toMajor } from '@repo/billing';
 import { captureBillingError } from '../../../lib/sentry';
 import { apiLogger } from '../../../utils/logger';
 import { cleanupRequestProviderEventId } from './event-handler';
 import { processPaymentUpdated } from './payment-logic';
+import type { SyntheticMpPaymentPayload } from './types';
 import {
     getWebhookDependencies,
     markEventFailedByProviderId,
@@ -148,36 +150,41 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
         // null — those are used only by failure notification copy, not by
         // any dispatch decision.
         //
-        // HOS-704 — `transaction_amount_refunded` is NOT one of those benign
-        // omissions. `applyWebhookRefundLifecycle` (payment-logic.ts) reads it
-        // to decide whether a refund is partial or total, and its absence is
-        // read as "total": `refunded_amount` is set to the whole payment, the
+        // Units: every money field qzpay hands back is CENTAVOS (it normalizes
+        // to minor units — see the adapter's `Math.round(amount * 100)`),
+        // whereas every `data.*` field below is MP-RAW-shaped and therefore
+        // MAJOR units. HOS-720 put that flip in the type instead of in this
+        // comment: `asCentavos` states what qzpay gave us, `toMajor` performs
+        // the crossing, and `extractPaymentInfo`/`applyWebhookRefundLifecycle`
+        // downstream now demand `Major`, so forwarding an unconverted centavo
+        // figure no longer compiles.
+        //
+        // HOS-704 — `transaction_amount_refunded` is not an optional nicety.
+        // `applyWebhookRefundLifecycle` (payment-logic.ts) reads it to decide
+        // whether a refund is partial or total, and its absence is read as
+        // "total": `refunded_amount` is set to the whole payment, the
         // subscription is cancelled and entitlements are revoked. Dropping it
         // meant a customer who was refunded 30% lost their subscription. The
         // figure was never missing from MercadoPago — it rides on the same
         // `payments.retrieve` response fetched above; qzpay simply did not map
         // it until `refundedAmount` was added to QZPayProviderPayment.
         //
-        // Units: `refundedAmount` is CENTAVOS (qzpay normalizes every money
-        // field to minor units — see the adapter's `Math.round(amount * 100)`),
-        // whereas `data.transaction_amount_refunded` is an MP-RAW-shaped field
-        // and payment-logic.ts converts it with `Math.round(value * 100)`. So
-        // it is divided by 100 here, the same direction subscription-poll.job.ts
-        // already uses when it builds a synthetic payload (`amount / 100`).
-        const data: Record<string, unknown> = {
+        // HOS-713 — the sibling `amount` field was the SAME mistake in the
+        // other direction: it was forwarded to `transaction_amount` undivided,
+        // and payment-logic.ts converted it back with `Math.round(x * 100)`
+        // before writing `billing_payments.amount` and before handing it to
+        // `sendNotification`, inflating a real $150.00 charge to $15.000,00 —
+        // 100× — in the ledger AND in the payment email the customer receives.
+        // Both bugs were a unit crossed by hand; neither is expressible now.
+        const data: SyntheticMpPaymentPayload = {
             id: providerPayment.id,
-            // HOS-713 — `amount` is CENTAVOS, by the same qzpay minor-unit
-            // normalization documented for `refundedAmount` just above. But
-            // `extractPaymentInfo` reads `transaction_amount` as MAJOR units,
-            // and payment-logic.ts converts it back with `Math.round(x * 100)`
-            // before writing `billing_payments.amount` and before handing it to
-            // `sendNotification`. Passing centavos through undivided inflated a
-            // real $150.00 charge to $15.000,00 — 100× — in the ledger AND in
-            // the payment email the customer receives. Divide here, the same
-            // direction subscription-poll.job.ts uses on the identical field.
-            transaction_amount: providerPayment.amount / 100,
+            transaction_amount: toMajor(asCentavos(providerPayment.amount)),
             ...(typeof providerPayment.refundedAmount === 'number'
-                ? { transaction_amount_refunded: providerPayment.refundedAmount / 100 }
+                ? {
+                      transaction_amount_refunded: toMajor(
+                          asCentavos(providerPayment.refundedAmount)
+                      )
+                  }
                 : {}),
             currency_id: providerPayment.currency,
             status: providerPayment.status,

@@ -299,6 +299,7 @@ vi.mock('../../../src/services/plan-upgrade-restoration.service', () => ({
 }));
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
+import { asMajor } from '@repo/billing';
 import { PromoEffectKindEnum } from '@repo/schemas';
 import * as serviceCore from '@repo/service-core';
 import {
@@ -385,7 +386,7 @@ describe('processPaymentUpdated', () => {
 
     it('should send success notification for approved payment', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1000,
+            amount: asMajor(1000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -420,7 +421,7 @@ describe('processPaymentUpdated', () => {
     // read `metadata.customerId`, which is exactly the bug that shipped.
     it('should send success notification for approved payment with snake_case metadata (real MP wire format)', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1000,
+            amount: asMajor(1000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -444,7 +445,7 @@ describe('processPaymentUpdated', () => {
 
     it('should NOT dispatch any payment notification when customerId is absent under either spelling', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1000,
+            amount: asMajor(1000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -465,7 +466,7 @@ describe('processPaymentUpdated', () => {
     describe('PostHog subscription_payment_succeeded capture', () => {
         it('captures subscription_payment_succeeded on an approved payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -499,7 +500,7 @@ describe('processPaymentUpdated', () => {
 
         it('marks the payer active on the person profile via $set', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -522,7 +523,7 @@ describe('processPaymentUpdated', () => {
         it('falls back to customerId as distinctId when the customer maps to no user', async () => {
             vi.mocked(resolveOwnerUserId).mockResolvedValueOnce(null);
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -546,7 +547,7 @@ describe('processPaymentUpdated', () => {
         it('never throws out of the webhook when resolveOwnerUserId rejects (falls back to customerId)', async () => {
             vi.mocked(resolveOwnerUserId).mockRejectedValueOnce(new Error('DB connection lost'));
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'rejected',
                 statusDetail: 'cc_rejected_other_reason',
@@ -571,7 +572,7 @@ describe('processPaymentUpdated', () => {
 
         it('does NOT capture subscription_payment_succeeded for a rejected payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'rejected',
                 statusDetail: 'cc_rejected_other_reason',
@@ -590,7 +591,7 @@ describe('processPaymentUpdated', () => {
 
         it('does not throw and processing still succeeds when the PostHog client throws', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -623,7 +624,7 @@ describe('processPaymentUpdated', () => {
     describe('PostHog payment_failed capture', () => {
         it('captures payment_failed with failureReason on a rejected payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'rejected',
                 statusDetail: 'cc_rejected_insufficient_amount',
@@ -655,7 +656,7 @@ describe('processPaymentUpdated', () => {
         it('falls back to customerId as distinctId when the customer maps to no user', async () => {
             vi.mocked(resolveOwnerUserId).mockResolvedValueOnce(null);
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'rejected',
                 statusDetail: 'cc_rejected_other_reason',
@@ -678,7 +679,7 @@ describe('processPaymentUpdated', () => {
         it('never throws out of the webhook when resolveOwnerUserId rejects (falls back to customerId)', async () => {
             vi.mocked(resolveOwnerUserId).mockRejectedValueOnce(new Error('DB connection lost'));
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'rejected',
                 statusDetail: 'cc_rejected_other_reason',
@@ -703,7 +704,7 @@ describe('processPaymentUpdated', () => {
 
         it('falls back to status as failureReason when statusDetail is absent', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'cancelled',
                 statusDetail: null,
@@ -725,7 +726,7 @@ describe('processPaymentUpdated', () => {
 
         it('does NOT capture payment_failed for an approved payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -744,7 +745,7 @@ describe('processPaymentUpdated', () => {
 
         it('does not throw and processing still succeeds when the PostHog client throws', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 500,
+                amount: asMajor(500),
                 currency: 'ARS',
                 status: 'refunded',
                 statusDetail: 'refunded',
@@ -766,7 +767,7 @@ describe('processPaymentUpdated', () => {
 
     it('should send failure notification for rejected payment', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 500,
+            amount: asMajor(500),
             currency: 'ARS',
             status: 'rejected',
             statusDetail: 'cc_rejected_other_reason',
@@ -790,7 +791,7 @@ describe('processPaymentUpdated', () => {
 
     it('should send failure notification for cancelled payment', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 750,
+            amount: asMajor(750),
             currency: 'ARS',
             status: 'cancelled',
             statusDetail: null,
@@ -817,7 +818,7 @@ describe('processPaymentUpdated', () => {
     // camelCase-only tests above are structurally blind to this bug class.
     it('should send failure notification for rejected payment with snake_case metadata (real MP wire format)', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 500,
+            amount: asMajor(500),
             currency: 'ARS',
             status: 'rejected',
             statusDetail: 'cc_rejected_other_reason',
@@ -1009,7 +1010,7 @@ describe('processPaymentUpdated', () => {
     it('forwards the provider payment id and the settled amount into confirmPurchase (HOS-595)', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             // MP reports transaction_amount in MAJOR units.
-            amount: 5000,
+            amount: asMajor(5000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -1045,7 +1046,7 @@ describe('processPaymentUpdated', () => {
 
     it('withholds the settled amount when the charge was not approved (HOS-595)', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 5000,
+            amount: asMajor(5000),
             currency: 'ARS',
             status: 'rejected',
             statusDetail: 'cc_rejected_insufficient_amount',
@@ -1244,7 +1245,7 @@ describe('processPaymentUpdated', () => {
     it('should use source label in log messages', async () => {
         const { apiLogger } = await import('../../../src/utils/logger');
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1000,
+            amount: asMajor(1000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -1273,7 +1274,7 @@ describe('processPaymentUpdated', () => {
 
         function approvedAnnualPayment() {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 350_000,
+                amount: asMajor(350_000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -1397,7 +1398,7 @@ describe('processPaymentUpdated', () => {
 
         it('does NOT activate when MP status is not approved/accredited', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 350_000,
+                amount: asMajor(350_000),
                 currency: 'ARS',
                 status: 'in_process',
                 statusDetail: null,
@@ -1499,7 +1500,7 @@ describe('processPaymentUpdated', () => {
 
         it('accepts `accredited` MP status (alongside `approved`)', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 350_000,
+                amount: asMajor(350_000),
                 currency: 'ARS',
                 status: 'accredited',
                 statusDetail: null,
@@ -1752,7 +1753,7 @@ describe('processPaymentUpdated', () => {
 
         function approvedUpgradePayment() {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1_000, // major units; delta is ~1k ARS for the upgrade
+                amount: asMajor(1_000), // major units; delta is ~1k ARS for the upgrade
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -2108,7 +2109,7 @@ describe('processPaymentUpdated', () => {
 
         it('does not commit when MP status is not approved/accredited', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1_000,
+                amount: asMajor(1_000),
                 currency: 'ARS',
                 status: 'in_process',
                 statusDetail: null,
@@ -2277,7 +2278,7 @@ describe('processPaymentUpdated', () => {
                 targetTransactionAmountMajor: 2000
             });
             vi.mocked(extractPaymentInfo).mockReturnValue({
-                amount: 1000,
+                amount: asMajor(1000),
                 currency: 'ARS',
                 status: 'approved',
                 statusDetail: null,
@@ -2592,7 +2593,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
         vi.clearAllMocks();
         resetAnnualDbState();
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1500,
+            amount: asMajor(1500),
             currency: 'ARS',
             status: 'refunded',
             statusDetail: null,
@@ -2734,7 +2735,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
 
     it('does NOT call applyRefundLifecycle for a cancelled (non-refunded) payment', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1500,
+            amount: asMajor(1500),
             currency: 'ARS',
             status: 'cancelled',
             statusDetail: null,
@@ -2753,7 +2754,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
 
     it('does NOT call applyRefundLifecycle for a rejected payment', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1500,
+            amount: asMajor(1500),
             currency: 'ARS',
             status: 'rejected',
             statusDetail: 'cc_rejected_other_reason',
@@ -2985,7 +2986,7 @@ describe('confirmAnnualSubscription — transition guard', () => {
         const result = await confirmAnnualSubscription({
             annualSubscriptionId: ANNUAL_SUB_ID,
             providerPaymentId: MP_PAYMENT_ID,
-            amount: 100,
+            amount: asMajor(100),
             currency: 'ARS',
             billing: mockBillingForGuard,
             source: 'test',
@@ -3030,7 +3031,7 @@ describe('confirmAnnualSubscription — transition guard', () => {
         await confirmAnnualSubscription({
             annualSubscriptionId: ANNUAL_SUB_ID,
             providerPaymentId: MP_PAYMENT_ID,
-            amount: 100,
+            amount: asMajor(100),
             currency: 'ARS',
             billing: mockBillingForGuard,
             source: 'test',
@@ -3069,7 +3070,7 @@ describe('confirmAnnualSubscription — transition guard', () => {
         await confirmAnnualSubscription({
             annualSubscriptionId: ANNUAL_SUB_ID,
             providerPaymentId: MP_PAYMENT_ID,
-            amount: 100,
+            amount: asMajor(100),
             currency: 'ARS',
             billing: mockBillingForGuard,
             source: 'test',
@@ -3103,7 +3104,7 @@ describe('confirmAnnualSubscription — transition guard', () => {
         const result = await confirmAnnualSubscription({
             annualSubscriptionId: ANNUAL_SUB_ID,
             providerPaymentId: MP_PAYMENT_ID,
-            amount: 100,
+            amount: asMajor(100),
             currency: 'ARS',
             billing: mockBillingForGuard,
             source: 'test',
