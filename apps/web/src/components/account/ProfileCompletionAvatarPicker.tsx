@@ -49,7 +49,11 @@ export interface ProfileCompletionAvatarPickerProps {
     /** Whether the parent form is currently submitting (disables the picker). */
     readonly disabled: boolean;
     /** Translation function from the parent island. */
-    readonly t: (key: string, fallback: string, params?: Record<string, string | number>) => string;
+    readonly t: (
+        key: string,
+        fallback?: string,
+        params?: Record<string, string | number>
+    ) => string;
     /** Called with the uploaded URL after a successful upload. */
     readonly onUploaded: (url: string) => void;
     /** Called when the picker encounters an error (validation or upload). */
@@ -98,7 +102,7 @@ export function ProfileCompletionAvatarPicker({
 
         if (file.size > MAX_FILE_BYTES) {
             reportError(
-                t('account.profileCompletion.avatar.errors.fileTooLarge', {
+                t('account.profileCompletion.avatar.errors.fileTooLarge', undefined, {
                     maxSize: DEFAULT_AVATAR_MAX_FILE_SIZE_MB
                 })
             );

@@ -69,7 +69,11 @@ export interface ProfileCompletionBasicFieldsProps {
      * TypeScript accepts a function that takes fewer arguments — and the raw
      * placeholder would reach the user.
      */
-    readonly t: (key: string, fallback: string, params?: Record<string, string | number>) => string;
+    readonly t: (
+        key: string,
+        fallback?: string,
+        params?: Record<string, string | number>
+    ) => string;
     /** Handler for firstName changes (parent manages display-name sync). */
     readonly onFirstNameChange: (value: string) => void;
     /** Handler for lastName changes (parent manages display-name sync). */
@@ -298,7 +302,7 @@ function BirthDateField({
     readonly disabled: boolean;
     readonly locale: SupportedLocale;
     readonly error?: string;
-    readonly t: (key: string, fallback: string) => string;
+    readonly t: (key: string, fallback?: string) => string;
 }) {
     const [pickerOpen, setPickerOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);

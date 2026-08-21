@@ -49,7 +49,8 @@
         "reviews": {
             "title": "Avaliações",
             "empty": "Ainda não há avaliações. Seja o primeiro a comentar!",
-            "more": "+ {n} reseñas más"
+            "more_one": "+ {{count}} reseña más",
+            "more_other": "+ {{count}} reseñas más"
         },
         "faqs": {
             "title": "Perguntas frequentes"

@@ -86,7 +86,7 @@ export function NewsletterResendButton({ email, locale }: NewsletterResendButton
             return t('newsletter.confirmYourEmail.resendSending');
         }
         if (cooldown > 0) {
-            return t('newsletter.confirmYourEmail.resendCooldown', {
+            return t('newsletter.confirmYourEmail.resendCooldown', undefined, {
                 seconds: cooldown
             });
         }

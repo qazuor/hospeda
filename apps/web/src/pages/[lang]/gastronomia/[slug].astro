@@ -40,7 +40,7 @@ import { applyCacheHeaders } from '@/lib/cache/response-cache';
 export const prerender = false;
 
 const locale = Astro.locals.locale as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 const { slug } = Astro.params;
 
 if (!slug) return new Response(null, { status: 404 });
@@ -320,7 +320,7 @@ const breadcrumbItems = [
                         ))}
                         {totalReviews > 3 && (
                             <p class="gastro-detail__reviews-more">
-                                {t('gastronomy.detail.reviews.more', { n: totalReviews - 3 })}
+                                {tPlural('gastronomy.detail.reviews.more', totalReviews - 3)}
                             </p>
                         )}
                     </ul>

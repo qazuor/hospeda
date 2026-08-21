@@ -41,8 +41,9 @@
         "period": "/month",
         "cardsHeading": "Owner plan comparison",
         "cta": {
-            "description": "Si es tu primera suscripción, empezás con {{trialDays}} días de prueba gratis. Descubrí cómo Hospeda puede ayudarte a aumentar tus reservas.",
-            "title": "¿Listo para hacer crecer tu negocio?"
+            "title": "¿Listo para hacer crecer tu negocio?",
+            "description_one": "Si es tu primera suscripción, empezás con {{count}} día de prueba gratis. Descubrí cómo Hospeda puede ayudarte a aumentar tus reservas.",
+            "description_other": "Si es tu primera suscripción, empezás con {{count}} días de prueba gratis. Descubrí cómo Hospeda puede ayudarte a aumentar tus reservas."
         }
     },
     "tourist": {

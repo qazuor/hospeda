@@ -308,7 +308,7 @@ export function CreateEditCollectionModal({
                                 className={styles.counter}
                                 role="status"
                                 aria-live="polite"
-                                aria-label={t('common.form.charCounter', {
+                                aria-label={t('common.form.charCounter', undefined, {
                                     current: form.name.length,
                                     max: NAME_MAX_LENGTH
                                 })}

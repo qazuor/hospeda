@@ -36,9 +36,7 @@ const pageTitle = t(
     'newsletter.confirmYourEmail.title'
 );
 const pageDescription = email
-    ? t(
-          'newsletter.confirmYourEmail.descriptionWithEmail',
-          { email }
+    ? t('newsletter.confirmYourEmail.descriptionWithEmail', undefined, { email }
       )
     : t(
           'newsletter.confirmYourEmail.descriptionGeneric'

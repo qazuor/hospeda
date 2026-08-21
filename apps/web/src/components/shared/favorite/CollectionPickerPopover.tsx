@@ -232,7 +232,7 @@ export const CollectionPickerPopover: FC<CollectionPickerPopoverProps> = ({
                 onAssigned?.({ collectionId: collection.id });
                 addToast({
                     type: 'success',
-                    message: t('account.favorites.collections.assignSuccess', {
+                    message: t('account.favorites.collections.assignSuccess', undefined, {
                         name: collection.name
                     }),
                     action: {

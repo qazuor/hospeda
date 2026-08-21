@@ -49,7 +49,8 @@
         "reviews": {
             "title": "Reviews",
             "empty": "No reviews yet. Be the first to share your experience!",
-            "more": "+ {n} reseñas más"
+            "more_one": "+ {{count}} reseña más",
+            "more_other": "+ {{count}} reseñas más"
         },
         "faqs": {
             "title": "Frequently asked questions"

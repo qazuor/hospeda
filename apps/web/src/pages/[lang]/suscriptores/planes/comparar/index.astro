@@ -29,7 +29,7 @@ import { BuildingIcon, BarChartIcon, CheckCircleIcon } from '@repo/icons';
 export const prerender = false;
 
 const locale = (Astro.params.lang ?? 'es') as SupportedLocale;
-const { t } = createTranslations(locale);
+const { t, tPlural } = createTranslations(locale);
 
 // Cache at the edge, tagged so a plan write purges exactly these pages instead
 // of flushing the whole zone (HOS-369 W1-1). `PlanService.triggerPricingRevalidation`
@@ -128,7 +128,7 @@ const headingMain = headingWords.join(' ');
 					{t('pricing.owner.cta.title')}
 				</h2>
 				<p class="comparison-cta__desc">
-					{t('pricing.owner.cta.description', { trialDays: genericTrialDays })}
+					{tPlural('pricing.owner.cta.description', genericTrialDays)}
 				</p>
 				<GradientButton
 					href={buildUrl({ locale, path: 'suscriptores/planes' })}
