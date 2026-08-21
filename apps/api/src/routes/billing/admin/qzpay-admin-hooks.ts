@@ -638,6 +638,7 @@ const onAfterSubscriptionChangePlan: NonNullable<
     // Step 2: Audit-log the plan transition (unchanged).
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        eventType: BILLING_EVENT_TYPES.ADMIN_PLAN_CHANGED,
         triggerSource: 'admin-change-plan',
         metadata: {
             adminUserId: actor.id,
@@ -672,6 +673,7 @@ const onAfterSubscriptionTrialExtended: NonNullable<
 
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        eventType: BILLING_EVENT_TYPES.ADMIN_TRIAL_EXTENDED,
         triggerSource: 'admin-extend-trial',
         metadata: {
             adminUserId: actor.id,
@@ -907,6 +909,7 @@ const onAfterSubscriptionPause: NonNullable<
 
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_PAUSED,
         newStatus: SubscriptionStatusEnum.PAUSED,
         triggerSource: 'admin-pause',
         metadata: {
@@ -974,6 +977,7 @@ const onAfterSubscriptionResume: NonNullable<
 
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_RESUMED,
         newStatus: SubscriptionStatusEnum.ACTIVE,
         triggerSource: 'admin-resume',
         metadata: {
