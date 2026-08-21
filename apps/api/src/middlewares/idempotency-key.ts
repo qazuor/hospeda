@@ -44,6 +44,7 @@ import { billingIdempotencyKeys, type DrizzleClient, eq, getDb, sql } from '@rep
 import * as Sentry from '@sentry/node';
 import type { Context, MiddlewareHandler } from 'hono';
 import { getActorFromContext } from '../utils/actor';
+import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 /**
@@ -318,7 +319,14 @@ async function upsertEntry(
             responseBody: input.responseBody as Record<string, unknown>,
             statusCode: input.statusCode,
             expiresAt: input.expiresAt,
-            livemode: true
+            // Same single source of truth as middlewares/billing.ts and the
+            // mercadopago webhook event-handler: sandbox mode means every
+            // persisted row is non-live. Omitting this silently falls back
+            // to the column's `DEFAULT true`
+            // (packages/db/src/migrations/0000_baseline.sql), which
+            // mislabels every sandbox-generated idempotency key as
+            // production (HOS-719, same shape as HOS-708).
+            livemode: !env.HOSPEDA_MERCADO_PAGO_SANDBOX
         } as typeof billingIdempotencyKeys.$inferInsert)
         .onConflictDoUpdate({
             target: billingIdempotencyKeys.key,
