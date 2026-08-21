@@ -40,6 +40,17 @@ vi.mock('../../src/utils/logger', () => ({
     apiLogger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() }
 }));
 
+// Hoisted so the env value can be flipped per-test via `mockEnv.HOSPEDA_...`
+// (HOS-719 — same pattern as webhook-event-livemode.test.ts and
+// idempotency-key-livemode.test.ts).
+const mockEnv = vi.hoisted(() => ({
+    HOSPEDA_MERCADO_PAGO_SANDBOX: true as boolean
+}));
+
+vi.mock('../../src/utils/env', () => ({
+    env: mockEnv
+}));
+
 // ---------------------------------------------------------------------------
 // Imports (after all mocks)
 // ---------------------------------------------------------------------------
@@ -164,6 +175,7 @@ describe('buildRefundIdempotencyKey', () => {
 describe('claimRefundApplication', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mockEnv.HOSPEDA_MERCADO_PAGO_SANDBOX = true;
     });
 
     it('claims the refund when the insert returns a row', async () => {
@@ -216,6 +228,32 @@ describe('claimRefundApplication', () => {
         expect(row.requestParams).toEqual({ paymentId: PAYMENT_ID, source: 'webhook' });
         expect(row.expiresAt).toBeInstanceOf(Date);
         expect((row.expiresAt as Date).getTime()).toBeGreaterThan(Date.now());
+    });
+
+    // HOS-719: this insert (billing_idempotency_keys) hardcoded `livemode: true`,
+    // so every refund claim generated while HOSPEDA_MERCADO_PAGO_SANDBOX is on
+    // was mislabeled as production data — same shape as HOS-708 and the
+    // sibling bug already fixed in middlewares/idempotency-key.ts.
+    it('writes livemode: false when HOSPEDA_MERCADO_PAGO_SANDBOX is true (sandbox)', async () => {
+        mockEnv.HOSPEDA_MERCADO_PAGO_SANDBOX = true;
+        const { db, spies } = buildDbMock([{ key: 'k' }]);
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+        await claimRefundApplication({ key: 'k', context: {} });
+
+        const row = spies.values.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(row.livemode).toBe(false);
+    });
+
+    it('writes livemode: true when HOSPEDA_MERCADO_PAGO_SANDBOX is false (production)', async () => {
+        mockEnv.HOSPEDA_MERCADO_PAGO_SANDBOX = false;
+        const { db, spies } = buildDbMock([{ key: 'k' }]);
+        vi.mocked(getDb).mockReturnValue(db as unknown as ReturnType<typeof getDb>);
+
+        await claimRefundApplication({ key: 'k', context: {} });
+
+        const row = spies.values.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(row.livemode).toBe(true);
     });
 
     it('fails OPEN when the ledger write throws, and says so', async () => {

@@ -34,6 +34,7 @@
  */
 
 import { billingIdempotencyKeys, getDb } from '@repo/db';
+import { env } from '../utils/env';
 import { apiLogger } from '../utils/logger';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -185,7 +186,15 @@ export async function claimRefundApplication({
                 operation: REFUND_LEDGER_OPERATION,
                 requestParams: context as Record<string, unknown>,
                 expiresAt: new Date(Date.now() + CLAIM_TTL_MS),
-                livemode: true
+                // Same single source of truth as middlewares/billing.ts,
+                // middlewares/idempotency-key.ts, and the mercadopago webhook
+                // event-handler: sandbox mode means every persisted row is
+                // non-live. Omitting this silently falls back to the
+                // column's `DEFAULT true`
+                // (packages/db/src/migrations/0000_baseline.sql), which
+                // mislabels every sandbox-generated refund claim as
+                // production (HOS-719, same shape as HOS-708).
+                livemode: !env.HOSPEDA_MERCADO_PAGO_SANDBOX
             } as typeof billingIdempotencyKeys.$inferInsert)
             .onConflictDoNothing({ target: billingIdempotencyKeys.key })
             .returning({ key: billingIdempotencyKeys.key });
