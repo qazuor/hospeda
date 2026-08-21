@@ -10,8 +10,9 @@
  *                   payment.amount) UNCONDITIONALLY (HOS-235), then — only if
  *                   the subscription can still transition — move it to
  *                   `cancelled` via the SPEC-194 state machine and insert a
- *                   `payment.full_refund` audit event. Always clears the
- *                   entitlement cache so the customer loses access immediately.
+ *                   `payment.full_refund` audit event. Always hard-cancels the
+ *                   MercadoPago preapproval (HOS-753) and clears the entitlement
+ *                   cache so the customer loses access immediately.
  * - PARTIAL refund → accumulate `refunded_amount` on billing_payments, insert
  *                    a `payment.partial_refund` audit event, keep the
  *                    subscription active (entitlement cache NOT cleared —
@@ -64,6 +65,7 @@ import {
 import { eq, sql } from 'drizzle-orm';
 import { clearEntitlementCache } from '../middlewares/entitlement';
 import { apiLogger } from '../utils/logger';
+import { hardCancelPreapprovalBestEffort } from './billing/preapproval-hard-cancel';
 import { buildRefundIdempotencyKey, claimRefundApplication } from './refund-idempotency.service';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -375,13 +377,21 @@ export async function applyRefundLifecycle({
     }
 
     // Look up the current subscription status before the transaction.
+    // HOS-753: `mpSubscriptionId` is read in the SAME query — the provider
+    // hard-cancel below needs it, and re-reading the row after the status write
+    // would read a row this function itself just made terminal.
     let currentStatus: string | undefined;
+    let mpSubscriptionId: string | null = null;
     try {
         const rows = await db
-            .select({ status: billingSubscriptions.status })
+            .select({
+                status: billingSubscriptions.status,
+                mpSubscriptionId: billingSubscriptions.mpSubscriptionId
+            })
             .from(billingSubscriptions)
             .where(eq(billingSubscriptions.id, subscriptionId));
         currentStatus = rows[0]?.status;
+        mpSubscriptionId = rows[0]?.mpSubscriptionId ?? null;
 
         if (!currentStatus) {
             apiLogger.warn(
@@ -492,6 +502,36 @@ export async function applyRefundLifecycle({
             'Refund lifecycle: DB error during transactional status write — clearing cache despite write failure'
         );
     }
+
+    // ── HOS-753: close the subscription at the PROVIDER too ───────────────────
+    // Until this call existed, the refund cancelled the local row and stopped
+    // there. MercadoPago never heard about it, so the preapproval stayed
+    // authorized and charged the customer again on the next cycle (HOS-751).
+    //
+    // Nothing downstream would have caught it: the only other hard-cancel is the
+    // `finalize-cancelled-subs` cron, and its filter is
+    // `status IN ('active','past_due','trialing')` — the `cancelled` this
+    // function just wrote is precisely what excludes the row from that sweep.
+    //
+    // Runs on the same fail-open reasoning as the cache clear below, and for the
+    // same reason it is unconditional: the money is already back with the
+    // customer and cannot be un-refunded, so "keep the card on file charging" is
+    // never the safer branch — not even when the local status write failed.
+    //
+    // `hardCancelPreapprovalBestEffort` never throws by contract (a null
+    // `mpSubscriptionId` from a `comp` subscription is a clean no-op there); the
+    // catch is belt-and-braces so a future change to that contract cannot turn a
+    // completed refund into a 500 the admin retries.
+    await hardCancelPreapprovalBestEffort({
+        subscriptionId,
+        mpSubscriptionId,
+        source: 'refund-lifecycle'
+    }).catch((err: unknown) => {
+        apiLogger.error(
+            { subscriptionId, paymentId, customerId, mpSubscriptionId, err, adminUserId, source },
+            'Refund lifecycle: provider hard-cancel threw unexpectedly — preapproval may still be live'
+        );
+    });
 
     // Always clear cache, even if the DB write failed (fail-open: better to
     // re-load entitlements from QZPay than to leave a stale cancelled-plan user
