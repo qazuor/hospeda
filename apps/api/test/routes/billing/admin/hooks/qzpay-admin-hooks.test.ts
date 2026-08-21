@@ -97,7 +97,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
             };
         }),
         BILLING_EVENT_TYPES: {
-            ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING'
+            ADDON_REVOCATIONS_PENDING: 'ADDON_REVOCATIONS_PENDING',
+            ADMIN_SUBSCRIPTION_CANCELLED: 'ADMIN_SUBSCRIPTION_CANCELLED'
         },
         // SPEC-309 T-023: shared resolver + sync for the featuredByEntitlement
         // flag, called from the downgrade/upgrade branches of
@@ -593,6 +594,7 @@ describe('adminBillingHooks.onAfterSubscriptionCancel', () => {
         >;
         expect(eventArg).toMatchObject({
             subscriptionId: SUBSCRIPTION_ID,
+            eventType: 'ADMIN_SUBSCRIPTION_CANCELLED',
             newStatus: 'cancelled',
             triggerSource: 'admin-cancel',
             metadata: { adminUserId: ADMIN_USER_ID, immediate: true }

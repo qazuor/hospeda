@@ -333,6 +333,7 @@ const onAfterSubscriptionCancel: NonNullable<
     // admin actor that triggered the cancellation.
     await db.insert(billingSubscriptionEvents).values({
         subscriptionId: subscription.id,
+        eventType: BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_CANCELLED,
         previousStatus: typeof previousStatus === 'string' ? previousStatus : null,
         newStatus: SubscriptionStatusEnum.CANCELLED,
         triggerSource: 'admin-cancel',
