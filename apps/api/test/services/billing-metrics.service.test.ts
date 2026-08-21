@@ -20,7 +20,12 @@ vi.mock('@repo/db', () => {
             queryChunks: args
         })),
         {
-            raw: vi.fn((str: string) => str)
+            raw: vi.fn((str: string) => str),
+            // HOS-736: mirrors the real `sql.join` used to build parametrized
+            // `IN (...)` clauses from ENTITLEMENT_GRANTING_STATUSES.
+            join: vi.fn((chunks: unknown[], _separator: unknown) => ({
+                queryChunks: ['JOIN', chunks]
+            }))
         }
     );
 
@@ -43,6 +48,7 @@ vi.mock('../../src/utils/logger', () => ({
 }));
 
 // Import after mocks
+import { sql } from '@repo/db';
 import {
     BillingMetricsService,
     getBillingMetricsService,
@@ -639,6 +645,29 @@ describe('BillingMetricsService', () => {
 
             // Assert
             expect(mockExecute).toHaveBeenCalledTimes(1);
+        });
+
+        it('should derive the status filter from ENTITLEMENT_GRANTING_STATUSES, including comp (HOS-736)', async () => {
+            // Arrange
+            mockExecute.mockResolvedValueOnce({ rows: [] });
+
+            // Act
+            await service.getSubscriptionBreakdown();
+
+            // Assert
+            // The WHERE clause (and the active-like FILTER bucket) must be built
+            // from the canonical ENTITLEMENT_GRANTING_STATUSES constant via
+            // `sql.join`, never a hand-rolled `IN ('active', 'trialing')`
+            // literal — regression test for HOS-736 (comp subscribers were
+            // excluded entirely from the admin subscriber breakdown).
+            const joinCalls = (sql.join as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+            expect(joinCalls.length).toBeGreaterThan(0);
+            const sawCompInAnyJoin = joinCalls.some(([chunks]) =>
+                (chunks as Array<{ queryChunks?: unknown[] }>).some(
+                    (chunk) => chunk?.queryChunks?.[1] === 'comp'
+                )
+            );
+            expect(sawCompInAnyJoin).toBe(true);
         });
 
         it('should order results by active_count DESC', async () => {
