@@ -1,3 +1,4 @@
+import { DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     accounts,
@@ -461,17 +462,22 @@ export async function seedGastronomies(context: SeedContext): Promise<void> {
     let successCount = 0;
     let errorCount = 0;
 
-    // ── Step 1: Resolve the commerce plan id ────────────────────────────────
+    // ── Step 1: Resolve the gastronomy-vertical commerce plan id ────────────
+    // HOS-695 (release C): the pre-HOS-688 'commerce-listing' plan is retired
+    // and no longer seeded — resolve the per-vertical slug from the catalogue
+    // default map instead (the same slug `seedCommercePlan` stamps with
+    // `product_domain = 'gastronomy'`).
+    const gastronomyPlanSlug = DEFAULT_COMMERCE_PLAN_SLUG_BY_VERTICAL.gastronomy;
     const commercePlanRows = await db
         .select({ id: billingPlans.id })
         .from(billingPlans)
-        .where(eq(billingPlans.name, 'commerce-listing'))
+        .where(eq(billingPlans.name, gastronomyPlanSlug))
         .limit(1);
 
     const commercePlanRow = commercePlanRows[0];
     if (!commercePlanRow) {
         throw new Error(
-            'Commerce plan "commerce-listing" not found in billing_plans. ' +
+            `Gastronomy plan "${gastronomyPlanSlug}" not found in billing_plans. ` +
                 'Run the required seed (seedCommercePlan) before seedGastronomies.'
         );
     }

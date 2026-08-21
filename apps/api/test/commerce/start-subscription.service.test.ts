@@ -257,7 +257,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
         expect(result.expiresAt).toBe(EXPIRES_AT);
     });
 
-    it('materializes the pending_provider subscription stamped product_domain=commerce', async () => {
+    it('materializes the pending_provider subscription stamped with the listing own vertical (HOS-695)', async () => {
         const { billing } = createBillingMock();
 
         await initiateCommerceMonthlySubscription({ ...BASE_INPUT, billing });
@@ -267,7 +267,10 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
         // ADR-035 / SPEC-239: `loadEntitlements()` filters to
         // product_domain='accommodation'. A commerce checkout that stamped the
         // default would hand its owner the accommodation entitlement set.
-        expect(arg.productDomain).toBe(ProductDomainEnum.COMMERCE);
+        // HOS-695: the retired 'commerce' umbrella is gone — a gastronomy
+        // checkout (BASE_INPUT.entityType) stamps its OWN vertical, never a
+        // shared umbrella value.
+        expect(arg.productDomain).toBe(ProductDomainEnum.GASTRONOMY);
         expect(arg.productDomain).not.toBe(ProductDomainEnum.ACCOMMODATION);
         expect(arg.customerId).toBe(CUSTOMER_ID);
         expect(arg.planId).toBe(PLAN_ID);
@@ -279,6 +282,20 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
         expect(arg.livemode).toBe(false);
     });
 
+    it('stamps EXPERIENCE, not GASTRONOMY, for an experience checkout (HOS-695)', async () => {
+        const { billing } = createBillingMock();
+
+        await initiateCommerceMonthlySubscription({
+            ...BASE_INPUT,
+            entityType: 'experience',
+            billing
+        });
+
+        const arg = createPendingProviderSubscription.mock.calls[0]?.[0] as Record<string, unknown>;
+        expect(arg.productDomain).toBe(ProductDomainEnum.EXPERIENCE);
+        expect(arg.productDomain).not.toBe(ProductDomainEnum.GASTRONOMY);
+    });
+
     it('upserts the link row at pending_provider INSIDE the subscription transaction (D4)', async () => {
         const { billing } = createBillingMock();
 
@@ -287,7 +304,7 @@ describe('initiateCommerceMonthlySubscription (HOS-191 Path C)', () => {
         expect(txStub.insert).toHaveBeenCalledTimes(1);
         const insertedValues = insertValues.mock.calls[0]?.[0] as Record<string, unknown>;
         expect(insertedValues.subscriptionId).toBe(LOCAL_SUB_ID);
-        expect(insertedValues.productDomain).toBe(ProductDomainEnum.COMMERCE);
+        expect(insertedValues.productDomain).toBe(ProductDomainEnum.GASTRONOMY);
         expect(insertedValues.entityType).toBe('gastronomy');
         expect(insertedValues.entityId).toBe(ENTITY_ID);
         expect(insertedValues.status).toBe(SubscriptionStatusEnum.PENDING_PROVIDER);

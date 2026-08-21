@@ -29,12 +29,13 @@ import { z } from 'zod';
  * subscriptions, and a partner directory subscription is not one of them.
  * Admitting it would turn today's 400 into a 200 carrying a different row.
  *
- * `COMMERCE` is the transitional umbrella and matches any commerce vertical;
- * `GASTRONOMY` / `EXPERIENCE` scope to one. See `subscriptionMatchesDomain`.
+ * `GASTRONOMY` / `EXPERIENCE` scope to one commerce vertical each. The
+ * transitional `COMMERCE` umbrella is retired (HOS-695) — there is no longer
+ * a way to scope a read to "any commerce vertical" here. See
+ * `subscriptionMatchesDomain`.
  */
 const SUBSCRIPTION_SCOPE_DOMAINS = [
     ProductDomainEnum.ACCOMMODATION,
-    ProductDomainEnum.COMMERCE,
     ProductDomainEnum.GASTRONOMY,
     ProductDomainEnum.EXPERIENCE
 ] as const;

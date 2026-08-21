@@ -268,7 +268,6 @@ const KNOWN_NON_BUGS = new Set<string>([
     // concords with the SECOND placeholder (a page/window size), not the
     // first (current position) — task's own worked example.
     'comments::list.pagination',
-    'admin-entities::commerceLeads.pagination.info',
     'admin-entities::allianceLeads.pagination.info',
     'billing::invoices.showingOf',
     'admin-pages::ai.usage.daily.truncationNotice',

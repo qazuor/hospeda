@@ -930,52 +930,6 @@
             }
         }
     },
-    "commerceLeads": {
-        "page": {
-            "title": "Commerce leads",
-            "empty": "No leads to display.",
-            "loadError": "Failed to load leads. Please try again."
-        },
-        "filter": {
-            "label": "Status:",
-            "all": "All"
-        },
-        "status": {
-            "pending": "Pending",
-            "reviewing": "Reviewing",
-            "approved": "Approved",
-            "rejected": "Rejected"
-        },
-        "columns": {
-            "businessName": "Business",
-            "contactName": "Contact",
-            "email": "Email",
-            "domain": "Domain",
-            "status": "Status",
-            "createdAt": "Date",
-            "actions": "Actions"
-        },
-        "actions": {
-            "handle": "Handle"
-        },
-        "handle": {
-            "title": "Handle lead",
-            "decisionLabel": "Decision",
-            "approve": "Approve",
-            "reject": "Reject",
-            "noteLabel": "Note (optional)",
-            "notePlaceholder": "Internal comment for the team...",
-            "submit": "Confirm",
-            "submitting": "Saving...",
-            "successApproved": "Lead approved successfully.",
-            "successRejected": "Lead rejected."
-        },
-        "pagination": {
-            "prev": "Previous",
-            "next": "Next",
-            "info": "Page {{page}} of {{totalPages}} · {{total}} leads"
-        }
-    },
     "allianceLeads": {
         "page": {
             "title": "Alliance leads",

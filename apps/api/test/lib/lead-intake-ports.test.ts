@@ -1,10 +1,10 @@
 /**
  * Regression suite for H-62 / H-148 — a lead that reaches nobody.
  *
- * Both acquisition funnels accepted a submission, answered 201, and told no
- * one. Commerce had the hook and it was never injected; alliance never modelled
- * the idea. The failure left no trace: no error, no bounce, and on the commerce
- * side a single `logger.debug` that production does not emit.
+ * The alliance funnel accepted a submission, answered 201, and told no one —
+ * it never modelled the idea of an ops alert at all. (Commerce had the exact
+ * same defect for the same reason; its funnel, and this suite's commerce
+ * coverage, were retired in HOS-695 alongside `commerce_leads` itself.)
  *
  * These tests assert the two facts that make the defect impossible to
  * reintroduce silently:
@@ -43,14 +43,12 @@ vi.mock('../../src/utils/env', () => ({
 
 vi.mock('@repo/db', () => ({
     getDb: () => ({ update: mockUpdate }),
-    commerceLeads: { id: 'commerce_leads.id' },
     allianceLeads: { id: 'alliance_leads.id' }
 }));
 
 import {
     announceLeadToOps,
     createAllianceLeadIntakeNotifyPort,
-    createCommerceLeadNotificationPort,
     type LeadIntakeAlert
 } from '../../src/lib/lead-intake-ports';
 
@@ -118,15 +116,6 @@ describe('lead intake ops alert (H-62 / H-148)', () => {
             expect(payload.adminUrl).toBe('https://admin.hospeda.com.ar/platform/alliance-leads');
         });
 
-        it('points a commerce lead at the commerce queue', async () => {
-            await announceLeadToOps({ alert: alert({ funnel: 'commerce' }) });
-
-            expect(sentPayload().adminUrl).toBe(
-                'https://admin.hospeda.com.ar/platform/commerce-leads'
-            );
-            expect(sentPayload().funnelLabel).toBe('Comercios');
-        });
-
         it('stamps opsNotifiedAt when at least one mailbox received it', async () => {
             mockTrySend
                 .mockResolvedValueOnce({ delivered: false })
@@ -149,47 +138,6 @@ describe('lead intake ops alert (H-62 / H-148)', () => {
 
             expect(result.delivered).toBe(false);
             expect(mockUpdate).not.toHaveBeenCalled();
-        });
-    });
-
-    describe('commerce port', () => {
-        it('announces a submitted lead and labels its domain in Spanish', async () => {
-            const port = createCommerceLeadNotificationPort();
-
-            await port.notifyNewLead({
-                id: 'commerce-lead-1',
-                domain: 'gastronomy',
-                businessName: 'La Parrilla de Juan',
-                contactName: 'Juan Pérez',
-                email: 'juan@example.com',
-                phone: '+54911234567',
-                message: 'Quiero listar mi parrilla',
-                createdAt: new Date('2026-08-15T18:30:00.000Z')
-                // biome-ignore lint/suspicious/noExplicitAny: the port takes the full CommerceLead entity; this fixture carries only the fields it reads.
-            } as any);
-
-            expect(mockTrySend).toHaveBeenCalled();
-            expect(sentPayload().programLabel).toBe('Gastronomía');
-            expect(sentPayload().businessName).toBe('La Parrilla de Juan');
-        });
-
-        it('falls back to the raw domain rather than failing to send', async () => {
-            // `commerce_leads.domain` is a varchar precisely so a new vertical
-            // needs no migration, so an unmapped value is expected — and an
-            // unlabelled alert beats a lead nobody hears about.
-            const port = createCommerceLeadNotificationPort();
-
-            await port.notifyNewLead({
-                id: 'commerce-lead-2',
-                domain: 'lodging_supplies',
-                businessName: 'Insumos SA',
-                contactName: 'Ana',
-                email: 'ana@example.com',
-                createdAt: new Date()
-                // biome-ignore lint/suspicious/noExplicitAny: see above.
-            } as any);
-
-            expect(sentPayload().programLabel).toBe('lodging_supplies');
         });
     });
 

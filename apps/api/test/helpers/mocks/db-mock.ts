@@ -1121,16 +1121,10 @@ export function createDbMock() {
         GastronomyFaqModel: GenericMockModel,
         gastronomyFaqModel: new GenericMockModel(),
 
-        // SPEC-239 T-047: CommerceLeadModel — instantiated at module scope by
-        // CommerceLeadService when the commerce lead routes load. The GenericMockModel
+        // HOS-277: AllianceLeadModel — instantiated at module scope by
+        // AllianceLeadService when the alliance lead routes load. A GenericMockModel
         // no-op stub is sufficient for route-level permission-gate tests (no real DB
         // data needed; the service layer is exercised via mock actor headers).
-        CommerceLeadModel: GenericMockModel,
-
-        // HOS-277: AllianceLeadModel — instantiated at module scope by
-        // AllianceLeadService when the alliance lead routes load. Same rationale as
-        // CommerceLeadModel above: a GenericMockModel no-op stub is sufficient for
-        // route-level permission-gate tests.
         AllianceLeadModel: GenericMockModel,
 
         // HOS-376: the benefit-usage + review half of the host-trade domain.

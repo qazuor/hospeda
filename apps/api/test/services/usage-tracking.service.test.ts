@@ -882,15 +882,20 @@ describe('UsageTrackingService', () => {
         });
     });
 
-    describe('product domain scoping (HOS-259)', () => {
-        const commercePlanId = 'plan_commerce_monthly';
+    describe('product domain scoping (HOS-259, updated HOS-695)', () => {
+        // HOS-695 retired the transitional 'commerce' umbrella domain — a
+        // commerce-vertical subscription is scoped by its OWN vertical
+        // ('gastronomy' / 'experience') now, never by a shared 'commerce'
+        // value. This suite exercises the scoping mechanism through
+        // 'gastronomy' in place of the old 'commerce' fixture.
+        const gastronomyPlanId = 'plan_gastronomy_monthly';
 
-        /** A commerce-domain subscription living under the SAME billing customer. */
-        const commerceSubscription = {
+        /** A gastronomy-domain subscription living under the SAME billing customer. */
+        const gastronomySubscription = {
             ...mockSubscription,
-            id: 'sub_commerce_1',
-            planId: commercePlanId,
-            productDomain: 'commerce'
+            id: 'sub_gastronomy_1',
+            planId: gastronomyPlanId,
+            productDomain: 'gastronomy'
         };
 
         /** An explicitly accommodation-domain subscription. */
@@ -900,9 +905,9 @@ describe('UsageTrackingService', () => {
             productDomain: 'accommodation'
         };
 
-        const commercePlan = {
-            id: commercePlanId,
-            name: 'Commerce Monthly',
+        const gastronomyPlan = {
+            id: gastronomyPlanId,
+            name: 'Gastronomy Monthly',
             limits: {
                 [LimitKey.MAX_ACCOMMODATIONS]: 99
             }
@@ -910,36 +915,36 @@ describe('UsageTrackingService', () => {
 
         beforeEach(() => {
             (mockBilling.plans.get as Mock).mockImplementation((planId: string) =>
-                Promise.resolve(planId === commercePlanId ? commercePlan : mockPlan)
+                Promise.resolve(planId === gastronomyPlanId ? gastronomyPlan : mockPlan)
             );
         });
 
-        it('should resolve the commerce subscription when the commerce domain is requested, even when the accommodation one is listed first', async () => {
+        it('should resolve the gastronomy subscription when the gastronomy domain is requested, even when the accommodation one is listed first', async () => {
             // Arrange — a dual-role owner: accommodation sub ordered BEFORE the
-            // commerce one, which is exactly what made the old unscoped
+            // gastronomy one, which is exactly what made the old unscoped
             // `.find()` return the wrong row.
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 accommodationSubscription,
-                commerceSubscription
+                gastronomySubscription
             ]);
 
             // Act
-            const result = await service.getUsageSummary(mockCustomerId, 'commerce');
+            const result = await service.getUsageSummary(mockCustomerId, 'gastronomy');
 
-            // Assert — the commerce plan's limits, not the accommodation plan's.
+            // Assert — the gastronomy plan's limits, not the accommodation plan's.
             expect(result.success).toBe(true);
             const accommodationsLimit = result.data!.limits.find(
                 (l) => l.limitKey === LimitKey.MAX_ACCOMMODATIONS
             );
             expect(accommodationsLimit?.maxAllowed).toBe(99);
-            expect(mockBilling.plans.get).toHaveBeenCalledWith(commercePlanId);
+            expect(mockBilling.plans.get).toHaveBeenCalledWith(gastronomyPlanId);
         });
 
-        it('should resolve the accommodation subscription when the commerce one is listed first', async () => {
-            // Arrange — the mirror case: commerce ordered first, accommodation
+        it('should resolve the accommodation subscription when the gastronomy one is listed first', async () => {
+            // Arrange — the mirror case: gastronomy ordered first, accommodation
             // requested.
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
-                commerceSubscription,
+                gastronomySubscription,
                 accommodationSubscription
             ]);
 
@@ -958,7 +963,7 @@ describe('UsageTrackingService', () => {
         it('should default to the accommodation domain when none is given', async () => {
             // Arrange
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
-                commerceSubscription,
+                gastronomySubscription,
                 accommodationSubscription
             ]);
 
@@ -985,8 +990,8 @@ describe('UsageTrackingService', () => {
             expect(mockBilling.plans.get).toHaveBeenCalledWith(mockPlanId);
         });
 
-        it('should NOT fall back to the accommodation subscription when no commerce one exists', async () => {
-            // Arrange — an accommodation-only customer asking for commerce
+        it('should NOT fall back to the accommodation subscription when no gastronomy one exists', async () => {
+            // Arrange — an accommodation-only customer asking for gastronomy
             // usage. Returning the accommodation numbers here would be the
             // original bug in its most misleading form.
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
@@ -994,7 +999,7 @@ describe('UsageTrackingService', () => {
             ]);
 
             // Act
-            const result = await service.getUsageSummary(mockCustomerId, 'commerce');
+            const result = await service.getUsageSummary(mockCustomerId, 'gastronomy');
 
             // Assert
             expect(result.success).toBe(false);
@@ -1005,14 +1010,14 @@ describe('UsageTrackingService', () => {
             // Arrange
             (mockBilling.subscriptions.getByCustomerId as Mock).mockResolvedValue([
                 accommodationSubscription,
-                commerceSubscription
+                gastronomySubscription
             ]);
 
             // Act
             const result = await service.getUsageForLimit(
                 mockCustomerId,
                 LimitKey.MAX_ACCOMMODATIONS,
-                'commerce'
+                'gastronomy'
             );
 
             // Assert
@@ -1030,7 +1035,7 @@ describe('UsageTrackingService', () => {
             const result = await service.getUsageForLimit(
                 mockCustomerId,
                 LimitKey.MAX_ACCOMMODATIONS,
-                'commerce'
+                'gastronomy'
             );
 
             // Assert

@@ -16,6 +16,8 @@
  * belongs to B.
  */
 
+import { ServiceErrorCode } from '@repo/schemas';
+import { ServiceError } from '@repo/service-core';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockPlanList, mockCreateSimpleRoute, mockSelectWhere } = vi.hoisted(() => ({
@@ -198,17 +200,21 @@ describe('publicListPlansRoute — ?domain= scoping (HOS-685 AC-22)', () => {
         );
     });
 
-    it('accepts the transitional commerce value while it still exists', async () => {
-        // Arrange — `commerce` is retired in release C (HOS-695), not here, and a
-        // 400 on it today would break a caller that has every right to send it.
-        mockSelectWhere.mockImplementation(answerExclusionQueryFromCondition);
+    it('rejects the retired commerce value instead of answering an empty list', async () => {
+        // Arrange — `commerce` was the pre-HOS-685 transitional value, kept
+        // accepted through releases A/B so the old and new vocabularies could
+        // overlap while the data migration was reversible. Release C
+        // (HOS-695) removes the enum member itself, so `?domain=commerce` is
+        // now exactly as invalid as any other unrecognised string — a 400,
+        // not a silent empty catalogue.
+        mockSelectWhere.mockResolvedValue([]);
 
-        // Act
-        const result = await getHandler()(makePublicPlansCtx('commerce'));
+        // Act / Assert
+        const error = await getHandler()(makePublicPlansCtx('commerce')).catch((e) => e);
 
-        // Assert — no plan carries `commerce` in this fixture, so the answer is
-        // empty; what matters is that it did not throw.
-        expect(result).toEqual([]);
+        expect(error).toBeInstanceOf(ServiceError);
+        expect((error as ServiceError).code).toBe(ServiceErrorCode.VALIDATION_ERROR);
+        expect((error as ServiceError).message).toMatch(/commerce/);
     });
 
     describe('when the domain query itself fails', () => {

@@ -45,14 +45,14 @@ import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
 /**
  * The product-domain values that denote a commerce vertical.
  *
- * `COMMERCE` is the transitional umbrella: every commerce row in the database
- * still carries it, and it is retired in release C (HOS-695) by deleting the
- * one line below. Until then a `'commerce'`-scoped read must find rows written
- * under either vocabulary, which is precisely what keeps release B's data
- * rewrite undoable.
+ * HOS-695 (release C) retired the transitional `COMMERCE` umbrella: every
+ * commerce row was rewritten to its own vertical in release B (HOS-692), and
+ * the value no longer exists in {@link ProductDomainEnum} at all. A row that
+ * still somehow carries the old `'commerce'` string (it should not, past
+ * release B) is no longer recognised as a commerce subscription by anything
+ * in this file — that is the narrowing this release exists to make.
  */
-const COMMERCE_DOMAINS: readonly string[] = [
-    ProductDomainEnum.COMMERCE,
+const COMMERCE_DOMAINS: readonly ProductDomainValue[] = [
     ProductDomainEnum.GASTRONOMY,
     ProductDomainEnum.EXPERIENCE
 ];
@@ -108,7 +108,7 @@ export function isAccommodationSubscription(sub: unknown): boolean {
  * Returns `true` when a subscription belongs to `domain`. The single place in
  * the codebase that compares a subscription's `productDomain` against a value.
  *
- * Three reading rules, all of them the vocabulary's own legacy semantics rather
+ * Two reading rules, both of them the vocabulary's own legacy semantics rather
  * than product behaviour (§6.8 G-2 forbids branching *behaviour* by domain; a
  * lookup that reads a different value is explicitly not that):
  *
@@ -116,20 +116,20 @@ export function isAccommodationSubscription(sub: unknown): boolean {
  *   `productDomain` is `null`/`undefined`, counts as accommodation. The column
  *   post-dates most rows and defaults to `'accommodation'`, so a legacy row
  *   must not be dropped from a host's own entitlement set.
- * - **`commerce` is the transitional umbrella**, matching any value in
- *   {@link COMMERCE_DOMAINS}. Before release B every commerce row says
- *   `'commerce'`; after it they say `'gastronomy'` / `'experience'`. A
- *   commerce-scoped read has to find both, or reverting B would leave the
- *   reconciler blind to every commerce subscription and darken every listing.
  * - **Every other domain matches its own string exactly**, fail-closed. In
- *   particular a `'commerce'` row does NOT satisfy `'gastronomy'`: the old
- *   value is ambiguous between the two verticals, and guessing would charge an
- *   experience against a gastronomy cap. Per-vertical reads become meaningful
- *   once release B has resolved the ambiguity in the data (HOS-688).
+ *   particular a row still carrying the retired `'commerce'` string (it
+ *   should not, past release B / HOS-692) does NOT satisfy `'gastronomy'` or
+ *   `'experience'` — HOS-695 narrowed this on purpose, so a stray legacy row
+ *   goes dark instead of silently matching a vertical it was never resolved
+ *   to.
  *
  * Fail-closed everywhere except accommodation means the failure mode of an
  * unrecognised value is **a dark listing, never a granted entitlement** — the
  * isolation SPEC-239 exists to guarantee.
+ *
+ * To test membership across every commerce vertical at once, use
+ * {@link isCommerceSubscription} rather than re-deriving that union at the
+ * call site.
  *
  * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`.
  * @param domain - The domain to test membership of.
@@ -161,10 +161,6 @@ export function subscriptionMatchesDomain(sub: unknown, domain: ProductDomainVal
         return false;
     }
 
-    if (domain === ProductDomainEnum.COMMERCE) {
-        return COMMERCE_DOMAINS.includes(value);
-    }
-
     return value === domain;
 }
 
@@ -180,10 +176,14 @@ export function subscriptionMatchesDomain(sub: unknown, domain: ProductDomainVal
  * silently including an unrelated row here would leak an accommodation/partner
  * subscription into a commerce-scoped read (HOS-259).
  *
- * Since HOS-685 it answers `true` for `'gastronomy'` and `'experience'` as well
- * as `'commerce'`. That widening is what makes release B's data rewrite safe to
- * undo, and it is inert until a row actually carries one of the new values.
- * To scope a read to **one** vertical, call
+ * Answers `true` for `'gastronomy'` and `'experience'` — the two live
+ * verticals — by delegating to {@link subscriptionMatchesDomain} for each and
+ * OR-ing the results, so this stays a thin composition rather than a second
+ * place that reads `productDomain` itself. **Narrowed in HOS-695 (release
+ * C)**: it no longer answers `true` for the retired `'commerce'` umbrella —
+ * that string is not a member of {@link ProductDomainEnum} any more, and a
+ * row still carrying it (it should not, past release B / HOS-692) is treated
+ * as unrecognised, not as commerce. To scope a read to **one** vertical, call
  * {@link subscriptionMatchesDomain} with that vertical instead.
  *
  * @param sub - Any object returned by `billing.subscriptions.getByCustomerId()`.
@@ -197,7 +197,7 @@ export function subscriptionMatchesDomain(sub: unknown, domain: ProductDomainVal
  * ```
  */
 export function isCommerceSubscription(sub: unknown): boolean {
-    return subscriptionMatchesDomain(sub, ProductDomainEnum.COMMERCE);
+    return COMMERCE_DOMAINS.some((domain) => subscriptionMatchesDomain(sub, domain));
 }
 
 /**

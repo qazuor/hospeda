@@ -659,9 +659,11 @@ export interface InitiateCommerceMonthlySubscriptionResult {
  *      `preapproval_plan` for this commercial plan variant + trial-day variant
  *      (`resolveCheckoutMpPlanId`);
  *   2. materialize a `pending_provider` `billing_subscriptions` row stamped
- *      `product_domain = 'commerce'` (D3) plus its `billing_pending_checkouts`
- *      correlation row, and — in the SAME transaction — upsert the
- *      `commerce_listing_subscriptions` link row (D4);
+ *      with the listing's OWN vertical (`product_domain = 'gastronomy'` /
+ *      `'experience'`, HOS-695 — the transitional `'commerce'` umbrella is
+ *      retired) (D3) plus its `billing_pending_checkouts` correlation row,
+ *      and — in the SAME transaction — upsert the `commerce_listing_subscriptions`
+ *      link row (D4);
  *   3. redirect the browser to MercadoPago's hosted share link, where MP itself
  *      collects the card. The real preapproval id is linked back later by the
  *      back_url handler (F2) or the webhook fallback (F3).
@@ -682,6 +684,12 @@ export async function initiateCommerceMonthlySubscription(
     input: InitiateCommerceMonthlySubscriptionInput
 ): Promise<InitiateCommerceMonthlySubscriptionResult> {
     const { customerId, planSlug, entityType, entityId, billing, urls } = input;
+
+    // HOS-695: the subscription and its link row are stamped with the
+    // listing's OWN vertical, never the retired 'commerce' umbrella — same
+    // idiom as `attachListingToSubscription` (commerce-subscription-attach.service.ts).
+    const productDomain =
+        entityType === 'gastronomy' ? ProductDomainEnum.GASTRONOMY : ProductDomainEnum.EXPERIENCE;
 
     const plan = await resolvePlanBySlug(billing, planSlug);
     if (!plan) {
@@ -806,8 +814,9 @@ export async function initiateCommerceMonthlySubscription(
         // D3: stamped inside the helper's transaction. ADR-035 / SPEC-239 —
         // `loadEntitlements()` filters to `product_domain = 'accommodation'`, so
         // this is what keeps a commerce subscription from granting its owner the
-        // accommodation entitlement set.
-        productDomain: ProductDomainEnum.COMMERCE,
+        // accommodation entitlement set. HOS-695: the listing's own vertical,
+        // not the retired 'commerce' umbrella.
+        productDomain,
         // The SUBSCRIPTION → ENTITY path. The link row below only encodes the
         // inverse and is upserted per entity, so a second checkout click
         // overwrites the pointer to this subscription; if the buyer then
@@ -822,7 +831,7 @@ export async function initiateCommerceMonthlySubscription(
                 .insert(commerceListingSubscriptions)
                 .values({
                     subscriptionId,
-                    productDomain: ProductDomainEnum.COMMERCE,
+                    productDomain,
                     entityType,
                     entityId,
                     status: SubscriptionStatusEnum.PENDING_PROVIDER
