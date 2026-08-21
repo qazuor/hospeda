@@ -42,6 +42,8 @@ const ERROR_CODE_TO_HTTP: Record<ServiceErrorCode, number> = {
     [ServiceErrorCode.PROVIDER_TIMEOUT]: 504,
     [ServiceErrorCode.PLAN_DISABLED]: 410,
     [ServiceErrorCode.GONE]: 410,
+    // Change-password: current-password mismatch (HOS-612)
+    [ServiceErrorCode.PASSWORD_INCORRECT]: 400,
     // Host-trade benefit usage + reviews (HOS-376 §7.5)
     [ServiceErrorCode.HOST_NOT_FOUND]: 404,
     [ServiceErrorCode.USAGE_PENDING_EXISTS]: 409,

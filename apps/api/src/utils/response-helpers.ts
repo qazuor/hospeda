@@ -447,6 +447,10 @@ export const handleRouteError = (error: unknown, c: Context) => {
             case ServiceErrorCode.GONE:
                 statusCode = 410;
                 break;
+            // Change-password: current-password mismatch (HOS-612)
+            case ServiceErrorCode.PASSWORD_INCORRECT:
+                statusCode = 400;
+                break;
             // Host-trade benefit usage + reviews (HOS-376 §7.5)
             case ServiceErrorCode.HOST_NOT_FOUND:
                 statusCode = 404;
