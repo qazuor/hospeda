@@ -30,9 +30,15 @@ export interface QZPayAdapterConfig {
      * Whether the adapter is running in live mode (production)
      * vs test mode (sandbox/development).
      *
-     * @default true
+     * **Required — no default.** HOS-708: this field used to default to `true`
+     * when omitted, which silently classified every row written through a
+     * caller that forgot to pass it as "production" data. A default that
+     * assumes production is exactly what turns a forgotten argument into a
+     * silent misclassification instead of a loud failure. Every call site
+     * must derive this value from the real environment (e.g.
+     * `!env.HOSPEDA_MERCADO_PAGO_SANDBOX`) and pass it explicitly.
      */
-    livemode?: boolean;
+    livemode: boolean;
 }
 
 /**
@@ -100,15 +106,28 @@ export interface QZPayAdapterConfig {
  */
 export function createBillingAdapter(
     db: DrizzleClient,
-    config: QZPayAdapterConfig = {}
+    config: QZPayAdapterConfig
 ): QZPayStorageAdapter {
+    // HOS-708: fail loud instead of silently defaulting to `livemode: true`.
+    // The TS type already makes `livemode` required, but a caller reaching
+    // this function through `as any`/plain JS (no compile-time check) must
+    // still be stopped here — a runtime default of "production" is precisely
+    // what turned a forgotten argument into a silent misclassification.
+    if (typeof config?.livemode !== 'boolean') {
+        throw new Error(
+            'createBillingAdapter: `livemode` is required and must be a boolean. ' +
+                'Derive it from the real environment (e.g. `!env.HOSPEDA_MERCADO_PAGO_SANDBOX`) ' +
+                'and pass it explicitly — do not rely on a default.'
+        );
+    }
+
     // Cast db to the type expected by qzpay-drizzle (PostgresJsDatabase)
     // This is safe because both NodePgDatabase and PostgresJsDatabase
     // share the same core Drizzle API surface
     const adapter = createQZPayDrizzleAdapter(
         db as unknown as Parameters<typeof createQZPayDrizzleAdapter>[0],
         {
-            livemode: config.livemode ?? true
+            livemode: config.livemode
         }
     );
 

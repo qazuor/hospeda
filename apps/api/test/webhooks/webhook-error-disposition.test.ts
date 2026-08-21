@@ -47,7 +47,8 @@ vi.mock('@repo/db', () => ({
     eq: vi.fn((field: unknown, value: unknown) => ({ field, value }))
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: vi.fn(),
     getAddonBySlug: vi.fn()
 }));

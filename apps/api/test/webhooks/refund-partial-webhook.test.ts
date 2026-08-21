@@ -214,7 +214,8 @@ vi.mock('../../src/middlewares/billing', () => ({
     getQZPayBilling: vi.fn()
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: vi.fn().mockReturnValue({}),
     getAddonBySlug: vi.fn().mockReturnValue(undefined)
 }));
