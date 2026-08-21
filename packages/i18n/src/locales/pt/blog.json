@@ -26,12 +26,34 @@
     "found": "publicacoes encontradas",
     "emptyTitle": "Nenhuma publicacao disponivel",
     "emptyMessage": "Em breve compartilharemos conteudo interessante com voce.",
+    "tagline": "Descubra histórias",
+    "rss": {
+        "title": "RSS de publicações"
+    },
+    "categoryChips": {
+        "ariaLabel": "Filtrar por categoria de publicação"
+    },
     "filters": {
         "all": "Todos",
         "guides": "Guias de viagem",
         "tips": "Dicas",
         "experiences": "Experiencias",
-        "news": "Noticias"
+        "news": "Noticias",
+        "search": "Buscar",
+        "featured": "Somente destaques",
+        "category": "Categoria",
+        "publishedDate": "Data de publicação",
+        "publishedFrom": "De",
+        "publishedTo": "Até",
+        "location": "Destino"
+    },
+    "sort": {
+        "newest": "Mais recentes",
+        "oldest": "Mais antigas",
+        "mostSaved": "Mais salvas",
+        "featured": "Destaques primeiro",
+        "titleAsc": "Título (A-Z)",
+        "titleDesc": "Título (Z-A)"
     },
     "card": {
         "readMore": "Ler mais",

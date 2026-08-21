@@ -39,6 +39,7 @@ import type { ZodTypeAny } from 'zod';
 import { protectedAuthMiddleware } from '../middlewares/authorization';
 import { mapAiEngineErrorToHttpStatus } from './ai-error-mapper';
 import { createRouter } from './create-app';
+import { apiLogger } from './logger';
 import { ResponseFactory } from './response-factory';
 import { createErrorResponse, handleRouteError } from './response-helpers';
 import type { RouteOptions } from './route-factory';
@@ -311,6 +312,33 @@ export const createStreamingRoute = (options: StreamingRouteOptions) => {
                 // Handles mid-stream and post-drain throws (e.g. output moderation)
                 const aiMapping = mapAiEngineErrorToHttpStatus(err);
                 const code = aiMapping?.code ?? 'INTERNAL_ERROR';
+
+                // HOS-668: this branch used to emit the SSE error frame and log
+                // NOTHING. The response has already been committed as 200 with
+                // headers flushed, so a cut here is invisible from every angle
+                // the team actually looks at: the access log shows a 200, the
+                // error log shows silence, and the user sees a failure message.
+                // That combination is what made the reported AI failures
+                // impossible to diagnose — there was no server-side record that
+                // anything had gone wrong at all.
+                //
+                // A recognised AI-engine rejection (output moderation being the
+                // expected one) is a deliberate outcome, so it logs at `warn`.
+                // Anything unrecognised is a real fault and keeps `error` with
+                // the full object — same fail-safe direction as `handleRouteError`
+                // (HOS-622): only what we explicitly classify gets downgraded.
+                const logPayload = {
+                    message: 'Streaming route error after response commit',
+                    code,
+                    path: c.req.path,
+                    requestId: c.get('requestId') || 'unknown'
+                };
+                if (aiMapping) {
+                    apiLogger.warn(logPayload);
+                } else {
+                    apiLogger.error({ ...logPayload, error: err });
+                }
+
                 await sseStream.writeSSE({
                     event: 'error',
                     data: JSON.stringify({ code, message: safeErrorMessage(code) })

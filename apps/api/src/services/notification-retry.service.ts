@@ -344,8 +344,7 @@ function reconstructPayload(record: FailedNotificationRecord): NotificationPaylo
                 amount: (metadata.amount as number) || 0,
                 currency: (metadata.currency as string) || 'ARS',
                 planName: (metadata.planName as string) || '',
-                failureReason: (metadata.failureReason as string) || 'Unknown',
-                retryDate: (metadata.retryDate as string) || ''
+                failureReason: (metadata.failureReason as string) || 'Unknown'
             } as NotificationPayload;
 
         case NotificationType.ADDON_EXPIRED:

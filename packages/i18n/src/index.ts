@@ -30,6 +30,15 @@ export {
 } from './formatting';
 // React hooks for translations
 export { useTranslations } from './hooks/use-translations';
+export type {
+    LocaleResolutionSource,
+    MatchAcceptLanguageArgs,
+    MatchAcceptLanguageResult,
+    ResolveDisplayLocaleArgs,
+    ResolveDisplayLocaleResult
+} from './locale-resolution';
+// Single product-wide locale-precedence resolver (HOS-605 / HOS-609 / HOS-617)
+export { matchAcceptLanguage, resolveDisplayLocale } from './locale-resolution';
 // Pluralization utilities
 export { pluralize } from './pluralization';
 // TypeScript types for translation keys

@@ -83,6 +83,8 @@
         "CONFLICT": "O recurso entra em conflito com o estado atual.",
         "SERVICE_UNAVAILABLE": "Este serviço está temporariamente indisponível. Tente novamente em alguns minutos.",
         "NEWSLETTER_NOT_CONFIGURED": "A newsletter não está disponível no momento. Estamos trabalhando para restabelecê-la.",
+        "ACCOUNT_DELETED": "Esta conta foi excluída e não está mais disponível.",
+        "PASSWORD_INCORRECT": "A senha atual está incorreta.",
         "INVALID_EMAIL_OR_PASSWORD": "O endereço de e-mail ou a senha estão incorretos.",
         "ACCOUNT_LOCKED": "Sua conta está temporariamente bloqueada devido a muitas tentativas de login malsucedidas. Tente novamente em alguns minutos ou use a opção de recuperação de senha.",
         "EMAIL_NOT_VERIFIED": "Você ainda não verificou seu e-mail. Verifique sua caixa de entrada e clique no link de verificação.",

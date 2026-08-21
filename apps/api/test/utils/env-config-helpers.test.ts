@@ -4,6 +4,13 @@
  *
  * SPEC-203: Verifies that X-Idempotency-Key is always present in the resolved
  * CORS allowHeaders, even when the env override omits it (FIX 1).
+ *
+ * HOS-605: X-Client-Locale joined the same REQUIRED_HEADERS enforcement after
+ * its absence broke EVERY cross-origin browser mutation (not just locale
+ * resolution) — a non-simple header missing from the preflight allowlist
+ * fails the whole request, silently, before it reaches the API. Caught by the
+ * E2E commerce-editor suite (`commerce-03`/`commerce-05`), not by a unit test,
+ * which is exactly why this file now asserts it directly.
  */
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -13,8 +20,12 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 const HELPER_PATH = '../../src/utils/env-config-helpers';
 
-describe('getCorsConfig — allowHeaders always includes X-Idempotency-Key', () => {
+describe.each([
+    { header: 'X-Idempotency-Key', reason: 'idempotencyKeyMiddleware (SPEC-203)' },
+    { header: 'X-Client-Locale', reason: 'browser locale signal (HOS-605)' }
+])('getCorsConfig — allowHeaders always includes $header ($reason)', ({ header }) => {
     const originalEnv = { ...process.env };
+    const lowerHeader = header.toLowerCase();
 
     beforeEach(() => {
         // Clean up any leftover override between tests
@@ -31,7 +42,7 @@ describe('getCorsConfig — allowHeaders always includes X-Idempotency-Key', () 
         Object.assign(process.env, originalEnv);
     });
 
-    it('includes X-Idempotency-Key when env override omits it', async () => {
+    it(`includes ${header} when env override omits it`, async () => {
         process.env.API_CORS_ALLOW_HEADERS = 'Content-Type,Authorization';
 
         // Dynamic import bypasses module-level cache so process.env changes take effect.
@@ -39,44 +50,40 @@ describe('getCorsConfig — allowHeaders always includes X-Idempotency-Key', () 
         const config = getCorsConfig();
 
         const headers = config.allowHeaders as string[];
-        const hasIdempotencyKey = headers.some(
-            (h: string) => h.toLowerCase() === 'x-idempotency-key'
-        );
-        expect(hasIdempotencyKey).toBe(true);
+        const hasRequiredHeader = headers.some((h: string) => h.toLowerCase() === lowerHeader);
+        expect(hasRequiredHeader).toBe(true);
     });
 
-    it('does not add a duplicate X-Idempotency-Key when already present', async () => {
-        process.env.API_CORS_ALLOW_HEADERS = 'Content-Type,X-Idempotency-Key,Authorization';
+    it(`does not add a duplicate ${header} when already present`, async () => {
+        process.env.API_CORS_ALLOW_HEADERS = `Content-Type,${header},Authorization`;
 
         const { getCorsConfig } = await import(HELPER_PATH);
         const config = getCorsConfig();
 
         const headers = config.allowHeaders as string[];
-        const count = headers.filter((h: string) => h.toLowerCase() === 'x-idempotency-key').length;
+        const count = headers.filter((h: string) => h.toLowerCase() === lowerHeader).length;
         expect(count).toBe(1);
     });
 
     it('does not add a duplicate when already present in different case', async () => {
-        process.env.API_CORS_ALLOW_HEADERS = 'Content-Type,x-idempotency-key';
+        process.env.API_CORS_ALLOW_HEADERS = `Content-Type,${lowerHeader}`;
 
         const { getCorsConfig } = await import(HELPER_PATH);
         const config = getCorsConfig();
 
         const headers = config.allowHeaders as string[];
-        const count = headers.filter((h: string) => h.toLowerCase() === 'x-idempotency-key').length;
+        const count = headers.filter((h: string) => h.toLowerCase() === lowerHeader).length;
         expect(count).toBe(1);
     });
 
-    it('includes X-Idempotency-Key with the default (no env override)', async () => {
+    it(`includes ${header} with the default (no env override)`, async () => {
         // No API_CORS_ALLOW_HEADERS set — uses the hardcoded default
         const { getCorsConfig } = await import(HELPER_PATH);
         const config = getCorsConfig();
 
         const headers = config.allowHeaders as string[];
-        const hasIdempotencyKey = headers.some(
-            (h: string) => h.toLowerCase() === 'x-idempotency-key'
-        );
-        expect(hasIdempotencyKey).toBe(true);
+        const hasRequiredHeader = headers.some((h: string) => h.toLowerCase() === lowerHeader);
+        expect(hasRequiredHeader).toBe(true);
     });
 });
 

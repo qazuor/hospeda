@@ -32,6 +32,7 @@ import {
     MegaphoneIcon,
     NewsletterIcon,
     OffersIcon,
+    PackageIcon,
     PostIcon,
     ReceiptIcon,
     SearchIcon,
@@ -146,6 +147,44 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 href: 'mi-cuenta/suscripcion',
                 icon: CreditCardIcon,
                 surfaces: CURATED_SURFACES
+            },
+            {
+                id: 'addons',
+                /**
+                 * Reuses the addons PAGE title key on purpose (the same
+                 * pattern `recommendations` and `inbox` already use): the nav
+                 * label and the page's own `<h1>` must always read the same
+                 * word, and a single key makes that structural instead of a
+                 * convention two files have to remember.
+                 */
+                i18nKey: 'account.pages.addons.title',
+                href: 'mi-cuenta/addons',
+                icon: PackageIcon,
+                /**
+                 * HOS-726. The page itself gates per PRODUCT DOMAIN — it needs
+                 * an entitlement-granting subscription (`active`/`trialing`/
+                 * `comp`) in accommodation, gastronomy or experience — and
+                 * anyone without one lands on an empty state. A pure tourist
+                 * always does, so the item cannot ship ungated.
+                 *
+                 * `BILLING_ADDON_PURCHASE` exists FOR this gate (owner decision,
+                 * 2026-08-21). Nothing pre-existing fit: `requiredPermission`
+                 * holds one permission with no OR, so `ACCOMMODATION_CREATE`
+                 * would have hidden the entry from the COMMERCE_OWNER who buys
+                 * `extra-gastronomies-1`, while `SUBSCRIPTION_VIEW_OWN` and
+                 * `BILLING_VIEW_OWN` — the two that read like a fit — are both
+                 * granted to plain `RoleEnum.USER` by the seed and would have
+                 * shown the catalog to every tourist. The `subscription` item
+                 * above declares no permission at all, so there was nothing to
+                 * copy from it either.
+                 *
+                 * Granted to HOST, COMMERCE_OWNER, ADMIN and SUPER_ADMIN — see
+                 * the entry in `PERMISSION_ROLE_MAP` (`src/lib/nav-gating.ts`),
+                 * the seed baseline, and the
+                 * `0067-hos-726-addon-purchase-permission` data-migration.
+                 */
+                requiredPermission: PermissionEnum.BILLING_ADDON_PURCHASE,
+                surfaces: FULL_SURFACES
             },
             {
                 id: 'preferences',

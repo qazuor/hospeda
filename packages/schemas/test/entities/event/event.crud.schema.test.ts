@@ -354,6 +354,38 @@ describe('Event CRUD Schemas', () => {
         });
     });
 
+    describe('date object requires a custom message (HOS-608)', () => {
+        // Every other required field on the create schema (name, summary,
+        // category, authorId) declares its own `zodError.event.*` message so
+        // a missing value never surfaces Zod's raw default text ("Invalid
+        // input: expected object, received undefined"). `date` was the one
+        // sibling that did not, because the custom message lives on the base
+        // type constructor (`z.object(shape, { message })`), not on a field
+        // inside the object — a missing `date` key never reaches the fields
+        // that DO carry `zodError.event.date.start.invalid` etc.
+        it('should reject a create that omits date entirely with a custom message', () => {
+            const result = EventCreateInputSchema.safeParse({
+                name: 'Missing Date Event',
+                slug: 'missing-date-event',
+                summary: 'An event used to exercise the missing-date custom message',
+                category: EventCategoryEnum.MUSIC,
+                authorId: '123e4567-e89b-12d3-a456-426614174000',
+                organizerId: '123e4567-e89b-12d3-a456-426614174001',
+                visibility: 'PUBLIC',
+                lifecycleState: 'ACTIVE'
+                // `date` intentionally omitted.
+            });
+
+            expect(result.success).toBe(false);
+            expect(result.error?.issues).toContainEqual(
+                expect.objectContaining({
+                    path: ['date'],
+                    message: 'zodError.event.date.required'
+                })
+            );
+        });
+    });
+
     describe('EventUpdateInputSchema', () => {
         it('should validate partial update input', () => {
             const partialInput = {

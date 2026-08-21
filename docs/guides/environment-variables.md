@@ -184,7 +184,7 @@ Rate limiter sub-groups: global, auth (`API_RATE_LIMIT_AUTH_*`), public
 | `VITE_ENABLE_QUERY_DEVTOOLS` | boolean | no | no | `false` | Enable TanStack Query DevTools |
 | `VITE_ENABLE_ROUTER_DEVTOOLS` | boolean | no | no | `false` | Enable TanStack Router DevTools |
 | `VITE_SENTRY_DSN` | url | no | yes | - | Sentry DSN for admin tracking |
-| `VITE_SUPPORTED_LOCALES` | string | no | no | `es,en` | Comma-separated locale codes |
+| `VITE_SUPPORTED_LOCALES` | string | no | no | `es,en,pt` | Comma-separated locale codes |
 | `VITE_DEFAULT_LOCALE` | string | no | no | `es` | Default locale code |
 
 ### System Variables

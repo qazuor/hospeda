@@ -26,12 +26,34 @@
     "found": "blog posts found",
     "emptyTitle": "No blog posts available",
     "emptyMessage": "We'll be sharing interesting content with you soon.",
+    "tagline": "Discover stories",
+    "rss": {
+        "title": "Blog posts RSS"
+    },
+    "categoryChips": {
+        "ariaLabel": "Filter by post category"
+    },
     "filters": {
         "all": "All",
         "guides": "Travel guides",
         "tips": "Tips",
         "experiences": "Experiences",
-        "news": "News"
+        "news": "News",
+        "search": "Search",
+        "featured": "Featured only",
+        "category": "Category",
+        "publishedDate": "Published date",
+        "publishedFrom": "From",
+        "publishedTo": "To",
+        "location": "Destination"
+    },
+    "sort": {
+        "newest": "Newest first",
+        "oldest": "Oldest first",
+        "mostSaved": "Most saved",
+        "featured": "Featured first",
+        "titleAsc": "Title (A-Z)",
+        "titleDesc": "Title (Z-A)"
     },
     "card": {
         "readMore": "Read more",

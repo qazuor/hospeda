@@ -268,7 +268,6 @@ export interface PaymentNotificationPayload extends BaseNotificationPayload {
     currency: string;
     planName: string;
     failureReason?: string;
-    retryDate?: string;
     paymentMethod?: string;
 }
 
@@ -287,6 +286,13 @@ export interface SubscriptionEventPayload extends BaseNotificationPayload {
     newPlanName?: string;
 }
 
+/**
+ * Supported locale values for outbound email CTA links (HOS-722).
+ * Matches the three locales Hospeda serves via `@repo/i18n` / the `[lang]`
+ * route prefix in `apps/web`.
+ */
+export type AddonLinkLocale = 'es' | 'en' | 'pt';
+
 /** Add-on lifecycle events */
 export interface AddonEventPayload extends BaseNotificationPayload {
     type:
@@ -294,6 +300,20 @@ export interface AddonEventPayload extends BaseNotificationPayload {
         | NotificationType.ADDON_EXPIRED
         | NotificationType.ADDON_RENEWAL_CONFIRMATION;
     addonName: string;
+    /**
+     * Add-on catalog slug (e.g. `visibility-boost-7d`). When present, the CTA
+     * button deep-links to the add-ons management page focused on this
+     * specific add-on (`?focus=<slug>`, HOS-722 / HOS-729 contract). Optional
+     * for backward compatibility with callers that have not been updated to
+     * pass it — the link degrades to the unfocused add-ons page.
+     */
+    addonSlug?: string;
+    /**
+     * Recipient's preferred locale for the CTA link (HOS-722). Falls back to
+     * `'es'` when omitted or not one of the three supported locales — see
+     * `buildAddonManagementUrl` in `templates/utils/addon-links.ts`.
+     */
+    locale?: AddonLinkLocale;
     expirationDate?: string;
     daysRemaining?: number;
     amount?: number;
@@ -577,6 +597,10 @@ export interface AddonCancellationPayload extends BaseNotificationPayload {
     readonly addonName: string;
     /** ISO 8601 timestamp of when the add-on was cancelled */
     readonly canceledAt: string;
+    /** Add-on catalog slug, used to deep-link the CTA to this add-on (HOS-722). Optional. */
+    readonly addonSlug?: string;
+    /** Recipient's preferred locale for the CTA link (HOS-722). Falls back to `'es'`. */
+    readonly locale?: AddonLinkLocale;
 }
 
 /** Admin notifications */

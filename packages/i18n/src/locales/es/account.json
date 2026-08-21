@@ -1016,6 +1016,12 @@
                 "ai-support-monthly": "Para sumar soporte con IA"
             }
         },
+        "featuredOffer": {
+            "title": "Destacá este alojamiento",
+            "body": "Un impulso de visibilidad hace que este alojamiento aparezca destacado en los listados y en los resultados de búsqueda mientras dure el complemento.",
+            "scope": "Ojo: el impulso se aplica solo a esta ficha. Si tenés más de un alojamiento, cada uno necesita su propio complemento.",
+            "linkSr": "para este alojamiento"
+        },
         "billingType": {
             "one_time": "Pago único",
             "recurring": "Mensual"
@@ -1069,6 +1075,14 @@
             "ai-support-monthly": {
                 "name": "Soporte con IA (mensual)",
                 "description": "Desbloquea herramientas de soporte con IA para anfitriones, incluidas sugerencias de respuesta inteligentes y gestión automática de preguntas frecuentes de huéspedes. Se renueva mensualmente."
+            },
+            "extra-gastronomies-1": {
+                "name": "Gastronomía extra (+1)",
+                "description": "Agrega 1 gastronomía adicional a tu plan. Se renueva mensualmente."
+            },
+            "extra-experiences-1": {
+                "name": "Experiencia extra (+1)",
+                "description": "Agrega 1 experiencia adicional a tu plan. Se renueva mensualmente."
             }
         }
     },

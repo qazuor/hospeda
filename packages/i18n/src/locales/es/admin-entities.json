@@ -121,6 +121,11 @@
             "singular": "Experiencia",
             "plural": "Experiencias",
             "description": "Gestiona actividades turísticas, excursiones y alquileres de equipos"
+        },
+        "partner": {
+            "singular": "Partner",
+            "plural": "Partners",
+            "description": "Gestiona partners y patrocinadores institucionales"
         }
     },
     "experience": {
@@ -204,6 +209,7 @@
         "type": "Tipo",
         "category": "Categoría",
         "status": "Estado",
+        "lifecycleState": "Estado de ciclo de vida",
         "visibility": "Visibilidad",
         "moderation": "Moderación",
         "featured": "Destacado",

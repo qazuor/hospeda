@@ -483,3 +483,129 @@ describe('getNavForSurface + isVisibleByRoles (server SSR gating, approximate)',
         expect(editorial?.items.map((item) => item.id)).toEqual(['myEvents']);
     });
 });
+
+describe('addons nav item (HOS-726)', () => {
+    /** Item ids the `cuenta` group actually yields for a given visibility predicate. */
+    function cuentaItemIds(
+        visibility: (node: { readonly requiredPermission?: PermissionEnum }) => boolean,
+        surface: 'sidebar' | 'mobile' | 'avatar' = 'sidebar'
+    ): readonly string[] {
+        const { groups } = getNavForSurface({ surface, visibility });
+        return findGroup(groups, 'cuenta')?.items.map((item) => item.id) ?? [];
+    }
+
+    it('declares the item inside the cuenta group, pointing at /mi-cuenta/addons with an icon component', () => {
+        const cuenta = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'cuenta');
+        const addons = cuenta?.items.find((item) => item.id === 'addons');
+        expect(addons).toBeDefined();
+        expect(addons?.href).toBe('mi-cuenta/addons');
+        expect(addons?.i18nKey).toBe('account.pages.addons.title');
+        expect(typeof addons?.icon).toBe('function');
+    });
+
+    it('gates the item on BILLING_ADDON_PURCHASE, which PERMISSION_ROLE_MAP resolves to both paying tiers plus staff', () => {
+        const cuenta = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'cuenta');
+        const addons = cuenta?.items.find((item) => item.id === 'addons');
+        expect(addons?.requiredPermission).toBe(PermissionEnum.BILLING_ADDON_PURCHASE);
+        // The SSR approximation must not silently resolve to "nobody": a missing
+        // map entry makes isVisibleByRoles return false for EVERY role, admin
+        // included, and reads exactly like a deliberate hide.
+        const roles = PERMISSION_ROLE_MAP[PermissionEnum.BILLING_ADDON_PURCHASE];
+        expect(roles).toBeDefined();
+        expect([...(roles ?? [])].sort()).toEqual(
+            [RoleEnum.ADMIN, RoleEnum.COMMERCE_OWNER, RoleEnum.HOST, RoleEnum.SUPER_ADMIN].sort()
+        );
+        expect(roles?.has(RoleEnum.USER)).toBe(false);
+    });
+
+    it('does NOT gate the item on ACCOMMODATION_CREATE — that would exclude the commerce owner', () => {
+        // The regression this whole permission exists to prevent. Asserted
+        // separately from the positive check above so a future edit that swaps
+        // the gate back cannot pass by coincidence of role-set overlap.
+        const cuenta = ACCOUNT_NAV_GROUPS.find((group) => group.id === 'cuenta');
+        const addons = cuenta?.items.find((item) => item.id === 'addons');
+        expect(addons?.requiredPermission).not.toBe(PermissionEnum.ACCOMMODATION_CREATE);
+        expect(addons?.requiredPermission).not.toBe(PermissionEnum.SUBSCRIPTION_VIEW_OWN);
+        expect(addons?.requiredPermission).not.toBe(PermissionEnum.BILLING_VIEW_OWN);
+    });
+
+    it('hides the item from a plain tourist USER role (SSR) — the page would only show them an empty state', () => {
+        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.USER]))).not.toContain(
+            'addons'
+        );
+    });
+
+    it('hides the item from an unauthenticated visitor (SSR, roles = null)', () => {
+        expect(cuentaItemIds((node) => isVisibleByRoles(node, null))).not.toContain('addons');
+    });
+
+    it('shows the item to a HOST role (SSR)', () => {
+        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.HOST]))).toContain(
+            'addons'
+        );
+    });
+
+    it('shows the item to an ADMIN role (SSR)', () => {
+        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.ADMIN]))).toContain(
+            'addons'
+        );
+    });
+
+    it('shows the item to a COMMERCE_OWNER role (SSR) — the case ACCOMMODATION_CREATE could not reach', () => {
+        expect(
+            cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.COMMERCE_OWNER]))
+        ).toContain('addons');
+    });
+
+    it('keeps the item visible for the MIXED role sets, since visibility is a union over held roles', () => {
+        // The mixed cases are the ones a single-role test cannot reach: holding
+        // USER alongside a paying tier must ADD nothing and REMOVE nothing.
+        // Accumulating hats can only ever add nav (HOS-296).
+        expect(
+            cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.HOST]))
+        ).toContain('addons');
+        expect(
+            cuentaItemIds((node) =>
+                isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.COMMERCE_OWNER])
+            )
+        ).toContain('addons');
+        // ...and a mix of two roles that BOTH lack it stays hidden, which is the
+        // combination that proves the union is really being evaluated rather
+        // than the predicate defaulting open.
+        expect(
+            cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.USER, RoleEnum.EDITOR]))
+        ).not.toContain('addons');
+    });
+
+    it('hides the item from an EDITOR role — an editor is not a host (SSR)', () => {
+        expect(cuentaItemIds((node) => isVisibleByRoles(node, [RoleEnum.EDITOR]))).not.toContain(
+            'addons'
+        );
+    });
+
+    it('hides the item on client surfaces without the exact permission, and shows it with BILLING_ADDON_PURCHASE', () => {
+        expect(cuentaItemIds((node) => isVisibleByPermissions(node, []))).not.toContain('addons');
+        expect(
+            cuentaItemIds((node) =>
+                isVisibleByPermissions(node, [PermissionEnum.SUBSCRIPTION_VIEW_OWN])
+            )
+        ).not.toContain('addons');
+        expect(
+            cuentaItemIds((node) =>
+                isVisibleByPermissions(node, [PermissionEnum.ACCOMMODATION_CREATE])
+            )
+        ).not.toContain('addons');
+        expect(
+            cuentaItemIds((node) =>
+                isVisibleByPermissions(node, [PermissionEnum.BILLING_ADDON_PURCHASE])
+            )
+        ).toContain('addons');
+    });
+
+    it('renders on the sidebar and mobile surfaces, and stays off the curated avatar dropdown', () => {
+        const allow = () => true;
+        expect(cuentaItemIds(allow, 'sidebar')).toContain('addons');
+        expect(cuentaItemIds(allow, 'mobile')).toContain('addons');
+        expect(cuentaItemIds(allow, 'avatar')).not.toContain('addons');
+    });
+});

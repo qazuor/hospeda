@@ -2,6 +2,7 @@
  * Centralized API client for consuming apps/api public endpoints.
  * Provides typed fetch wrapper with error handling, timeout, and query serialization.
  */
+import { locales as SUPPORTED_LOCALES } from '@repo/i18n/web';
 import { getApiUrl, getInternalApiUrl, getInternalRequestSecret } from '../env';
 import { getOrSetCached } from './ssr-cache';
 import type {
@@ -11,6 +12,53 @@ import type {
     ApiSuccessResponse,
     PaginatedResponse
 } from './types';
+
+/**
+ * Request header carrying the locale segment of the page the browser is
+ * currently on (HOS-605). The API's return-URL resolver
+ * (`resolveReturnUrlLocale`) reads this as the highest-precedence signal —
+ * "an explicit locale in the URL" — so a purchase started from `/es/...`
+ * returns to `/es/...` regardless of the account's saved language
+ * preference. Only set for BROWSER requests: an SSR-to-API call has no
+ * `window`, and Referer alone is not reliable cross-origin (the site's
+ * `Referrer-Policy: strict-origin-when-cross-origin` strips the path).
+ */
+const CLIENT_LOCALE_HEADER = 'X-Client-Locale';
+
+/**
+ * Reads the current page's locale segment from `window.location.pathname`
+ * (e.g. `/es/mi-cuenta/addons/` -> `'es'`). Returns `null` outside the
+ * browser, when `location`/`pathname` is unavailable, or when the path has
+ * no valid locale segment.
+ *
+ * Two defensive choices here, each pinned to a real failure found writing
+ * this function, not a hypothetical:
+ *
+ * 1. Validates against `@repo/i18n/web`'s `locales`, NOT
+ *    `apps/web/src/lib/i18n.ts`'s `isValidLocale`. This module (`client.ts`)
+ *    is imported by nearly every component test in the app, and 130+ of
+ *    those test files blindly `vi.mock('.../lib/i18n', () => ({
+ *    createTranslations }))` to avoid loading real locale JSON under jsdom —
+ *    a mock that provides no `isValidLocale`. `@repo/i18n`/`@repo/i18n/web`
+ *    has zero mocks anywhere in this app's test suite.
+ * 2. Reads `window.location?.pathname` with optional chaining, not a bare
+ *    property access. 26+ test files stub `window.location` via
+ *    `Object.defineProperty(window, 'location', { value: { href: '' } } )`
+ *    (jsdom rejects a direct `location.href` assignment) — a stub with NO
+ *    `pathname` at all. A bare `.pathname.split(...)` threw
+ *    `TypeError: Cannot read properties of undefined (reading 'split')`
+ *    inside every one of those tests' `beforeEach`, caught by this
+ *    function's caller's try/catch and silently turned into `{ ok: false }`
+ *    — the fetch mock never fired, with no thrown error surfacing anywhere
+ *    (confirmed via a temporary console.error in that catch block; removed
+ *    once diagnosed). This is the actual root cause PlanPurchaseButton's
+ *    suite hit; (1) above was a real but secondary risk fixed pre-emptively.
+ */
+function readClientLocaleFromPath(): string | null {
+    if (typeof window === 'undefined') return null;
+    const segment = window.location?.pathname?.split('/')[1];
+    return segment && (SUPPORTED_LOCALES as readonly string[]).includes(segment) ? segment : null;
+}
 
 /** Resolved lazily on first request so module import never throws. */
 let _cachedBaseUrl: string | undefined;
@@ -144,6 +192,14 @@ async function request<T>({
             }
             if (cookieHeader) {
                 headers.cookie = cookieHeader;
+            }
+            // HOS-605: tell the API which locale the browser is ACTUALLY on,
+            // so a mutation that triggers a return-URL build (checkout,
+            // addon purchase, subscription start) can honor it over the
+            // account's saved preference. Browser-only; never set during SSR.
+            const clientLocale = readClientLocaleFromPath();
+            if (clientLocale) {
+                headers[CLIENT_LOCALE_HEADER] = clientLocale;
             }
             // HOS-103: over the internal URL during SSR, attach the shared secret
             // so the API exempts this server-to-server traffic from the public

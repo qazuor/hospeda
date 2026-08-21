@@ -150,16 +150,13 @@ const PRICE_RANGES = ['BUDGET', 'MID', 'HIGH', 'PREMIUM'] as const;
 const filterGroups: FilterGroup[] = [
     {
         id: 'q',
-        label: t('gastronomy.listing.search', 'Búsqueda por texto'),
+        label: t('gastronomy.listing.search'),
         type: 'search',
-        placeholder: t(
-            'gastronomy.listing.searchPlaceholder',
-            'Buscar por nombre o descripción...'
-        )
+        placeholder: t('gastronomy.listing.searchPlaceholder')
     },
     {
         id: 'destinationId',
-        label: t('gastronomy.listing.destination', 'Destino'),
+        label: t('gastronomy.listing.destination'),
         type: 'select-search',
         options: destinations.map((d) => ({
             value: d.id,
@@ -170,7 +167,7 @@ const filterGroups: FilterGroup[] = [
     },
     {
         id: 'type',
-        label: t('gastronomy.listing.type', 'Tipo de establecimiento'),
+        label: t('gastronomy.listing.type'),
         type: 'checkbox',
         options: GASTRONOMY_TYPES.map((value) => ({
             value,
@@ -179,7 +176,7 @@ const filterGroups: FilterGroup[] = [
     },
     {
         id: 'priceRange',
-        label: t('gastronomy.listing.priceRange', 'Rango de precio'),
+        label: t('gastronomy.listing.priceRange'),
         type: 'checkbox',
         options: PRICE_RANGES.map((value) => ({
             value,
@@ -188,24 +185,24 @@ const filterGroups: FilterGroup[] = [
     },
     {
         id: 'isFeatured',
-        label: t('gastronomy.listing.featured', 'Solo destacados'),
+        label: t('gastronomy.listing.featured'),
         type: 'toggle'
     },
     {
         id: 'minRating',
-        label: t('gastronomy.listing.minRating', 'Calificación mínima'),
+        label: t('gastronomy.listing.minRating'),
         type: 'stars'
     }
 ];
 
 const sortOptions = [
-    { value: 'featured', label: t('gastronomy.listing.sort.featured', 'Destacados primero') },
+    { value: 'featured', label: t('gastronomy.listing.sort.featured') },
     {
         value: 'ratingDesc',
-        label: t('gastronomy.listing.sort.ratingDesc', 'Mejor valorados')
+        label: t('gastronomy.listing.sort.ratingDesc')
     },
-    { value: 'newest', label: t('gastronomy.listing.sort.newest', 'Recién agregados') },
-    { value: 'nameAsc', label: t('gastronomy.listing.sort.nameAsc', 'Nombre (A-Z)') }
+    { value: 'newest', label: t('gastronomy.listing.sort.newest') },
+    { value: 'nameAsc', label: t('gastronomy.listing.sort.nameAsc') }
 ];
 
 // --- Build initial params for sidebar (avoids hydration flash) ---

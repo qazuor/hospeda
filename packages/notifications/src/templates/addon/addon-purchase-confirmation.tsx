@@ -1,9 +1,10 @@
 import { Section, Text } from '@react-email/components';
+import type { AddonLinkLocale } from '../../types/notification.types.js';
 import { Button } from '../components/button.js';
 import { Heading } from '../components/heading.js';
 import { InfoRow } from '../components/info-row.js';
 import { EmailLayout } from '../components/layout.js';
-import { formatCurrency, formatDate } from '../utils/index.js';
+import { buildAddonManagementUrl, formatCurrency, formatDate } from '../utils/index.js';
 
 /**
  * Props for AddonPurchaseConfirmation email template
@@ -25,6 +26,13 @@ export interface AddonPurchaseConfirmationProps {
     readonly currency?: string;
     /** Base URL for CTA links (e.g. 'https://hospeda.com.ar') */
     readonly baseUrl: string;
+    /**
+     * Add-on catalog slug. When present, the CTA button deep-links to the
+     * add-ons management page focused on this add-on (HOS-722).
+     */
+    readonly addonSlug?: string;
+    /** Recipient's preferred locale for the CTA link. Falls back to `'es'` (HOS-722). */
+    readonly locale?: AddonLinkLocale;
 }
 
 /**
@@ -42,10 +50,13 @@ export function AddonPurchaseConfirmation({
     orderId,
     amount,
     currency = 'ARS',
-    baseUrl
+    baseUrl,
+    addonSlug,
+    locale
 }: AddonPurchaseConfirmationProps) {
     const formattedAmount = formatCurrency({ amount, currency });
     const formattedExpiresAt = expiresAt ? formatDate({ dateString: expiresAt }) : null;
+    const manageUrl = buildAddonManagementUrl({ baseUrl, locale, addonSlug });
 
     return (
         <EmailLayout previewText={`Compra confirmada: ${addonName}`}>
@@ -94,7 +105,7 @@ export function AddonPurchaseConfirmation({
             </Text>
 
             <Section style={styles.buttonContainer}>
-                <Button href={`${baseUrl}/es/mi-cuenta/suscripcion`}>Ver mis complementos</Button>
+                <Button href={manageUrl}>Ver mis complementos</Button>
             </Section>
 
             <Text style={styles.footerNote}>

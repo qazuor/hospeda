@@ -42,14 +42,31 @@ const {
     };
 });
 
+// NOTE: this is a WHOLE-module mock, so anything the job imports from @repo/db
+// and that is missing here arrives as `undefined` and throws only when called —
+// surfacing as an unrelated `errors: 1` instead of an import failure. Add the
+// key here whenever the job (or anything it imports) reaches for a new export.
 vi.mock('@repo/db', () => ({
     getDb: mockGetDb,
     withTransaction: mockWithTransactionWebhook,
-    billingWebhookEvents: { providerEventId: 'providerEventId', status: 'status' },
-    billingWebhookDeadLetter: { id: 'id', resolvedAt: 'resolvedAt', attempts: 'attempts' },
+    billingWebhookEvents: {
+        providerEventId: 'providerEventId',
+        status: 'status',
+        processedAt: 'processedAt',
+        error: 'error'
+    },
+    billingWebhookDeadLetter: {
+        id: 'id',
+        resolvedAt: 'resolvedAt',
+        attempts: 'attempts',
+        createdAt: 'createdAt'
+    },
     eq: vi.fn((_col: unknown, _val: unknown) => ({ __eq: true })),
     isNull: vi.fn((_col: unknown) => ({ __isNull: true })),
     and: vi.fn((...conditions: unknown[]) => ({ __and: true, conditions })),
+    // HOS-717: markAsResolved now also closes the originating
+    // billing_webhook_events row, scoping the UPDATE with or(pending, failed).
+    or: vi.fn((...conditions: unknown[]) => ({ __or: true, conditions })),
     lt: vi.fn((_col: unknown, _val: unknown) => ({ __lt: true })),
     // sql is required for pg_try_advisory_xact_lock (concurrency guard added in GAP-009)
     sql: vi.fn((strings: TemplateStringsArray, ...values: unknown[]) => ({

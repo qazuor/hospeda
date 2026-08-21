@@ -41,7 +41,9 @@ const {
 } = vi.hoisted(() => {
     // returning() chain: insert() -> values() -> returning()
     const mockDbInsertReturning = vi.fn().mockResolvedValue([{ id: 'purchase_uuid_abc' }]);
-    const mockDbInsertValues = vi.fn(() => ({ returning: mockDbInsertReturning }));
+    const mockDbInsertValues = vi.fn((_values: Record<string, unknown>) => ({
+        returning: mockDbInsertReturning
+    }));
     const mockDbInsert = vi.fn(() => ({ values: mockDbInsertValues }));
 
     // SPEC-064: tx.execute() is used for SELECT FOR UPDATE dedup check inside the transaction.
@@ -158,6 +160,21 @@ const { mockAccommodationFindById } = vi.hoisted(() => ({
     mockAccommodationFindById: vi.fn()
 }));
 
+// HOS-595: `recordAddonPayment` dedupes against `billing_payments` with a
+// `getDb().select().from().where().limit()` chain before calling
+// `billing.payments.record()`. `mockLedgerSelectLimit` is the terminal link and
+// defaults to "no existing row" so the record path runs; the dedupe test
+// overrides it with a hit.
+const { mockLedgerSelectLimit, mockPaymentsRecord } = vi.hoisted(() => ({
+    mockLedgerSelectLimit: vi.fn<() => Promise<Array<{ id: string }>>>(async () => []),
+    // Typed with its input so `mock.calls[0][0]` is readable in the
+    // assertions (an untyped `vi.fn(async () => ...)` infers a zero-length
+    // tuple for its calls).
+    mockPaymentsRecord: vi.fn<(input: Record<string, unknown>) => Promise<{ id: string }>>(
+        async () => ({ id: 'billing_payment_uuid_001' })
+    )
+}));
+
 vi.mock('@repo/db', async (importOriginal) => {
     const actual = await importOriginal<Record<string, unknown>>();
     return {
@@ -169,9 +186,15 @@ vi.mock('@repo/db', async (importOriginal) => {
         }),
         // SPEC-309 T-007: backs both the featured_listing_addon_grants insert
         // and the pre-existing needsEntitlementSync update.
+        // HOS-595: `select` backs the billing_payments dedupe lookup.
         getDb: vi.fn(() => ({
             insert: vi.fn(() => ({ values: mockGrantInsertValues })),
-            update: vi.fn(() => ({ set: mockDbUpdateSet }))
+            update: vi.fn(() => ({ set: mockDbUpdateSet })),
+            select: vi.fn(() => ({
+                from: vi.fn(() => ({
+                    where: vi.fn(() => ({ limit: mockLedgerSelectLimit }))
+                }))
+            }))
         }))
     };
 });
@@ -262,16 +285,44 @@ vi.mock('../../src/utils/env', () => ({
     }
 }));
 
-// PromoCodeService is constructed inside createAddonCheckout. Stub it so the
-// happy path skips real DB lookups.
+// PromoCodeService is constructed inside createAddonCheckout AND inside
+// confirmAddonPurchase. Stub it so the happy path skips real DB lookups.
+//
+// HOS-721: `redeemAndRecord` is the authoritative redemption — it takes the
+// row lock, re-validates `maxUses`/`maxPerCustomer` under it, increments
+// `used_count` and inserts the usage row. Hoisted so the confirmation tests can
+// assert on it and drive its usage-cap outcomes.
+const { mockPromoValidate, mockPromoGetByCode, mockPromoRedeemAndRecord } = vi.hoisted(() => ({
+    mockPromoValidate: vi.fn(),
+    mockPromoGetByCode: vi.fn(),
+    mockPromoRedeemAndRecord: vi.fn()
+}));
+
 vi.mock('../../src/services/promo-code.service', () => ({
     PromoCodeService: vi.fn().mockImplementation(function () {
         return {
-            validate: vi.fn().mockResolvedValue({ valid: true, discountAmount: 0 }),
-            getByCode: vi.fn().mockResolvedValue({ success: true, data: { id: 'promo_uuid' } })
+            validate: mockPromoValidate,
+            getByCode: mockPromoGetByCode,
+            redeemAndRecord: mockPromoRedeemAndRecord
         };
     })
 }));
+
+/**
+ * Reset the PromoCodeService stubs to the "no promo involved" happy path.
+ * Individual tests override whichever one they exercise.
+ */
+function applyDefaultPromoCodeServiceStubs(): void {
+    mockPromoValidate.mockResolvedValue({ valid: true, discountAmount: 0 });
+    mockPromoGetByCode.mockResolvedValue({ success: true, data: { id: 'promo_uuid' } });
+    mockPromoRedeemAndRecord.mockResolvedValue({
+        success: true,
+        data: {
+            promoCode: { id: 'promo_uuid', usedCount: 1, maxUses: null },
+            usageRecord: { id: 'usage_uuid' }
+        }
+    });
+}
 
 // SPEC-127 T-001 / T-003: PlanService + AddonCatalogService mocks.
 // Both are instantiated at module level in addon.checkout.ts and must be mocked
@@ -335,6 +386,12 @@ function createMockBilling(
                 id: 'plan_basico',
                 limits: { max_photos_per_accommodation: 5 }
             })
+        },
+        // HOS-595: the canonical ledger facade. This is the SAME method the
+        // subscription flows call (annual upfront, plan-upgrade delta, recurring
+        // charge, dead-letter retry); the add-on path used to call nothing at all.
+        payments: {
+            record: mockPaymentsRecord
         }
     } as unknown as QZPayBilling;
 }
@@ -359,6 +416,7 @@ describe('confirmAddonPurchase', () => {
         vi.clearAllMocks();
         mockBilling = createMockBilling(activeSubscriptions);
         mockEntitlementService = createMockEntitlementService();
+        applyDefaultPromoCodeServiceStubs();
 
         // Default AddonCatalogService mock: returns known addon definitions by slug.
         // Tests that need a different addon or a NOT_FOUND override individually.
@@ -419,6 +477,12 @@ describe('confirmAddonPurchase', () => {
 
         // Reset default: successful insert returning a known purchaseId
         mockDbInsertReturning.mockResolvedValue([{ id: 'purchase_uuid_abc' }]);
+
+        // HOS-595 defaults: no pre-existing ledger row, record() succeeds.
+        mockLedgerSelectLimit.mockImplementation(async () => []);
+        mockPaymentsRecord.mockImplementation(async () => ({
+            id: 'billing_payment_uuid_001'
+        }));
 
         // Restore mockDbTransaction after clearAllMocks.
         // SPEC-064: tx must have both insert() and execute() (for SELECT FOR UPDATE dedup check).
@@ -988,6 +1052,188 @@ describe('confirmAddonPurchase', () => {
     // Subscription could be cancelled between checkout creation and confirmation.
     // =========================================================================
 
+    // =========================================================================
+    // HOS-595: the charge has to leave a `billing_payments` row carrying the
+    // provider payment id, and the purchase row has to carry `payment_id` +
+    // `addon_id`.
+    //
+    // The production defect: `visibility-boost-7d` was bought for real money
+    // (MP payment 174625958196, approved), `billing_addon_purchases` got its row
+    // — and `billing_payments` got nothing, `payment_id` was NULL and `addon_id`
+    // was NULL. Money collected with no receipt of our own: unreconcilable,
+    // unrefundable (the refund path looks the payment up by its provider id) and
+    // absent from every revenue report.
+    //
+    // NOTE on what these assertions can prove: `apps/api/test/setup.ts` mocks
+    // `@repo/db` wholesale, so asserting "a row exists in the table" would be
+    // vacuous here. What is asserted instead is that the CANONICAL ledger facade
+    // (`billing.payments.record`, the same one the subscription flows call) is
+    // invoked with the right values — and each field is read off the captured
+    // argument by name, never via `expect.objectContaining`, which is blind to a
+    // field that is simply missing.
+    // =========================================================================
+
+    describe('billing_payments ledger row (HOS-595)', () => {
+        /** The real production charge from the smoke run that surfaced F-81. */
+        const settledCharge: ConfirmPurchaseInput = {
+            customerId: 'cust_abc',
+            addonSlug: 'extra-photos-20',
+            paymentId: '174625958196',
+            amountInCents: 500_000,
+            currency: 'ARS'
+        };
+
+        it('records the charge through billing.payments.record with the provider payment id', async () => {
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                settledCharge
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockPaymentsRecord).toHaveBeenCalledOnce();
+
+            const recorded = mockPaymentsRecord.mock.calls[0]?.[0] ?? {};
+
+            // Presence first: a record() call that simply omits the provider id
+            // is the exact shape of the production bug, and it would sail past an
+            // `objectContaining` assertion.
+            expect(Object.hasOwn(recorded, 'providerPaymentId')).toBe(true);
+            expect(recorded.providerPaymentId).toBe('174625958196');
+
+            // Then every other field the ledger row is built from.
+            expect(recorded.customerId).toBe('cust_abc');
+            expect(recorded.subscriptionId).toBe('sub_001');
+            expect(recorded.amount).toBe(500_000);
+            expect(recorded.currency).toBe('ARS');
+            expect(recorded.status).toBe('succeeded');
+            expect(recorded.provider).toBe('mercadopago');
+            expect(recorded.metadata).toEqual({
+                flow: 'addon-purchase',
+                addonSlug: 'extra-photos-20',
+                purchaseId: 'purchase_uuid_abc'
+            });
+        });
+
+        it('books the amount the provider charged, not the catalog list price', async () => {
+            // Arrange: the catalog says 5000 centavos for this addon; the charge
+            // that actually settled was 500000 (a promo/price change makes the two
+            // diverge, and the ledger must hold what was charged).
+            // Act
+            await confirmAddonPurchase(mockBilling, mockEntitlementService, settledCharge);
+
+            // Assert
+            const recorded = mockPaymentsRecord.mock.calls[0]?.[0] ?? {};
+            expect(recorded.amount).toBe(500_000);
+            expect(recorded.amount).not.toBe(5000);
+        });
+
+        it('writes payment_id and addon_id on the billing_addon_purchases row', async () => {
+            // Arrange: a catalog entry that carries its `billing_addons` primary
+            // key (HOS-595 also restored `id` on the mapped definition).
+            mockAddonCatalogGetBySlug.mockResolvedValue({
+                success: true,
+                data: {
+                    id: 'addon_uuid_extra_photos',
+                    slug: 'extra-photos-20',
+                    name: 'Extra Photos 20',
+                    description: 'Add 20 extra photos',
+                    billingType: 'recurring' as const,
+                    priceArs: 5000,
+                    durationDays: null,
+                    isActive: true,
+                    targetCategories: ['owner'] as const,
+                    sortOrder: 1,
+                    affectsLimitKey: 'max_photos_per_accommodation',
+                    limitIncrease: 20,
+                    grantsEntitlement: null
+                }
+            });
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                settledCharge
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockDbInsertValues).toHaveBeenCalledOnce();
+
+            const inserted = mockDbInsertValues.mock.calls[0]?.[0] ?? {};
+
+            expect(Object.hasOwn(inserted, 'paymentId')).toBe(true);
+            expect(inserted.paymentId).toBe('174625958196');
+
+            // `addon_id` was never even named in the insert before HOS-595 —
+            // presence is the assertion that catches a regression to that.
+            expect(Object.hasOwn(inserted, 'addonId')).toBe(true);
+            expect(inserted.addonId).toBe('addon_uuid_extra_photos');
+        });
+
+        it('does not double-insert when a ledger row already exists for the same provider payment id', async () => {
+            // Arrange: MercadoPago redelivers the same approved charge.
+            mockLedgerSelectLimit.mockImplementation(async () => [
+                { id: 'billing_payment_uuid_existing' }
+            ]);
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                settledCharge
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockPaymentsRecord).not.toHaveBeenCalled();
+        });
+
+        it('does not book a ledger row when the caller reports no settled amount', async () => {
+            // Arrange: `payment-logic.ts` forwards `amountInCents` only for an
+            // APPROVED payment, so its absence means the money did not move.
+            // Booking a `succeeded` row here would be a lie.
+            const { amountInCents: _unsettled, ...withoutAmount } = settledCharge;
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                withoutAmount
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            expect(mockPaymentsRecord).not.toHaveBeenCalled();
+        });
+
+        it('still confirms the purchase when the ledger write throws', async () => {
+            // Arrange: the purchase row is already committed and the money is
+            // already collected, so a ledger failure must not undo either.
+            mockPaymentsRecord.mockImplementation(async () => {
+                throw new Error('billing_payments insert failed');
+            });
+
+            // Act
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                settledCharge
+            );
+
+            // Assert
+            expect(result.success).toBe(true);
+            const { captureBillingError } = await import('../../src/lib/sentry');
+            expect(vi.mocked(captureBillingError)).toHaveBeenCalledOnce();
+            expect(vi.mocked(captureBillingError).mock.calls[0]?.[1]?.operation).toBe(
+                'addon_payment_record'
+            );
+        });
+    });
+
     describe('subscription re-check before DB insert (GAP-043-57)', () => {
         it('should return SUBSCRIPTION_CANCELLED when subscription is cancelled between checkout and confirmation', async () => {
             // Arrange: initial check returns active, re-check (second call) returns cancelled
@@ -1132,6 +1378,132 @@ describe('confirmAddonPurchase', () => {
             expect(mockDbTransaction).toHaveBeenCalledOnce();
         });
     });
+
+    // =========================================================================
+    // HOS-721 — promo redemption after payment confirmation
+    //
+    // The redemption is deliberately deferred to this point (not checkout) so an
+    // abandoned checkout cannot inflate a code's `used_count`. That made the
+    // defect invisible from the other side too: nothing at checkout time is
+    // wrong, and the only observable symptom is a counter that never moves.
+    // =========================================================================
+
+    describe('promo code redemption (HOS-721)', () => {
+        it('records the redemption exactly once when the confirmation carries a promo', async () => {
+            // Arrange
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                metadata: {
+                    promoCodeId: 'promo_uuid_1',
+                    promoCode: 'SAVE10',
+                    discountAmount: 1500
+                }
+            });
+
+            // Assert — one redemption, carrying the discount that was actually
+            // granted. A second call here would double-count the code.
+            expect(result.success).toBe(true);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledTimes(1);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledWith({
+                promoCodeId: 'promo_uuid_1',
+                customerId: 'cust_abc',
+                discountAmount: 1500,
+                currency: 'ARS'
+            });
+        });
+
+        it('records the redemption when only the promo code ID survives', async () => {
+            // `promoCode` is the human-facing string and is used for logging
+            // only. Requiring it too let a cosmetic key suppress the redemption.
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                metadata: { promoCodeId: 'promo_uuid_1', discountAmount: 1500 }
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledTimes(1);
+        });
+
+        it('does not redeem anything for an undiscounted purchase', async () => {
+            const result = await confirmAddonPurchase(
+                mockBilling,
+                mockEntitlementService,
+                defaultInput
+            );
+
+            expect(result.success).toBe(true);
+            expect(mockPromoRedeemAndRecord).not.toHaveBeenCalled();
+        });
+
+        // ── Usage caps ────────────────────────────────────────────────────
+        // The cap itself is enforced inside `redeemAndRecordUsage`, under the
+        // promo row's `SELECT ... FOR UPDATE`. What this confirmation path owes
+        // the counter is narrower and is what these two cases pin: it must call
+        // the redemption exactly once per confirmed purchase, and it must honour
+        // the verdict that comes back — including a refusal.
+
+        it('consumes the last remaining use of a capped code exactly once', async () => {
+            // Arrange: a code with maxUses = 5 sitting at 4 used. The redemption
+            // takes it to its cap.
+            mockPromoRedeemAndRecord.mockResolvedValueOnce({
+                success: true,
+                data: {
+                    promoCode: { id: 'promo_last_use', usedCount: 5, maxUses: 5 },
+                    usageRecord: { id: 'usage_final' }
+                }
+            });
+
+            // Act
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                metadata: {
+                    promoCodeId: 'promo_last_use',
+                    promoCode: 'LASTONE',
+                    discountAmount: 2000
+                }
+            });
+
+            // Assert: the purchase confirms and the counter advanced once — not
+            // zero times (the HOS-721 defect) and not twice.
+            expect(result.success).toBe(true);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledTimes(1);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledWith({
+                promoCodeId: 'promo_last_use',
+                customerId: 'cust_abc',
+                discountAmount: 2000,
+                currency: 'ARS'
+            });
+        });
+
+        it('confirms the purchase anyway when the code is already at its cap', async () => {
+            // Arrange: the code hit its cap between checkout and confirmation.
+            // The customer has already been charged, so refusing the purchase
+            // here would take their money and give them nothing.
+            mockPromoRedeemAndRecord.mockResolvedValueOnce({
+                success: false,
+                error: {
+                    code: 'USAGE_LIMIT_REACHED',
+                    message: 'Promo code has reached its maximum number of uses'
+                }
+            });
+
+            // Act
+            const result = await confirmAddonPurchase(mockBilling, mockEntitlementService, {
+                ...defaultInput,
+                metadata: {
+                    promoCodeId: 'promo_exhausted',
+                    promoCode: 'TOOLATE',
+                    discountAmount: 2000
+                }
+            });
+
+            // Assert: non-fatal — the add-on is granted, the counter is left
+            // exactly where the cap put it, and the miss is logged for review.
+            expect(result.success).toBe(true);
+            expect(mockPromoRedeemAndRecord).toHaveBeenCalledTimes(1);
+            expect(mockEntitlementService.applyAddonEntitlements).toHaveBeenCalledOnce();
+        });
+    });
 });
 
 // ---------------------------------------------------------------------------
@@ -1182,6 +1554,7 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        applyDefaultPromoCodeServiceStubs();
         // Re-set default after clearAllMocks wipes implementations.
         mockBillingCheckoutCreate.mockResolvedValue({
             id: 'session_test_123',
@@ -1274,6 +1647,7 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
         readonly lineItems: ReadonlyArray<{
             readonly categoryId?: string;
             readonly title: string;
+            readonly description?: string;
             readonly quantity: number;
             readonly unitAmount?: number;
         }>;
@@ -1497,7 +1871,15 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             expect(arg.lineItems[0]?.unitAmount).toBe(5000);
         });
 
-        it('sets lineItems[0].title to addon.name', async () => {
+        // HOS-606 regression: the checkout used to send `addon.name`/
+        // `addon.description` verbatim — the raw English config literal —
+        // straight to MercadoPago, regardless of the buyer's site locale.
+        // The web app never shows that raw value (it resolves display copy
+        // by slug via i18n), so the bug was only visible on MP's own payment
+        // screen. `createAddonCheckout` must now resolve the SAME
+        // `account.addons.catalog.<slug>.name`/`.description` keys the web
+        // app uses, for the buyer's `input.locale`.
+        it('HOS-606: resolves lineItems[0].title/description via i18n by slug, not the raw addon.name/description', async () => {
             const billing = createBillingForCheckout({
                 customer: {
                     id: 'cust_abc',
@@ -1506,10 +1888,127 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                 }
             });
 
+            // No `locale` on the input — falls back to 'es', same as
+            // successUrl/cancelUrl's documented fallback.
             await createAddonCheckout(billing, defaultInput);
 
             const arg = getCheckoutCreateArgOnce();
-            expect(arg.lineItems[0]?.title).toBe('Extra Photos 20');
+            // Real i18n translation for 'extra-photos-20' in es/account.json —
+            // NOT the fixture's raw `addon.name` ('Extra Photos 20').
+            expect(arg.lineItems[0]?.title).toBe('Pack de fotos extra (+20 fotos)');
+            expect(arg.lineItems[0]?.description).toBe(
+                'Agrega 20 fotos adicionales a cada alojamiento. Se renueva mensualmente.'
+            );
+        });
+
+        it('HOS-606: translates lineItems[0].title per input.locale (en/pt), never the raw English config name', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'guest@example.com',
+                    metadata: { name: 'Juan Perez' }
+                }
+            });
+
+            await createAddonCheckout(billing, { ...defaultInput, locale: 'en' });
+            expect(getCheckoutCreateArgOnce().lineItems[0]?.title).toBe(
+                'Extra Photos Pack (+20 photos)'
+            );
+
+            vi.clearAllMocks();
+            mockBillingCheckoutCreate.mockResolvedValue({
+                id: 'session_test_123',
+                providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+                providerSandboxInitPoint: 'https://sandbox.mercadopago.com.ar/checkout/test',
+                expiresAt: new Date('2030-01-01T00:30:00Z')
+            });
+            mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+            mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
+                if (slug === 'extra-photos-20') {
+                    return {
+                        success: true,
+                        data: {
+                            slug: 'extra-photos-20',
+                            name: 'Extra Photos 20',
+                            description: 'Add 20 extra photos',
+                            billingType: 'recurring' as const,
+                            priceArs: 5000,
+                            durationDays: null,
+                            isActive: true,
+                            targetCategories: ['owner'] as const,
+                            sortOrder: 1,
+                            affectsLimitKey: 'max_photos_per_accommodation',
+                            limitIncrease: 20,
+                            grantsEntitlement: null
+                        }
+                    };
+                }
+                return {
+                    success: false,
+                    error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+                };
+            });
+            mockPlanServiceGetById.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+
+            await createAddonCheckout(billing, { ...defaultInput, locale: 'pt' });
+            expect(getCheckoutCreateArgOnce().lineItems[0]?.title).toBe(
+                'Pacote de fotos extra (+20 fotos)'
+            );
+        });
+
+        it('falls back to the raw addon.name/description when no translation exists for the slug', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'guest@example.com',
+                    metadata: { name: 'Juan Perez' }
+                }
+            });
+
+            // A slug with no `account.addons.catalog.<slug>.*` entry in any
+            // locale — resolveAddonCheckoutName/Description must fall back to
+            // the raw config strings rather than emitting an empty title.
+            mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
+                if (slug === 'guard-probe-untranslated-addon') {
+                    return {
+                        success: true,
+                        data: {
+                            slug: 'guard-probe-untranslated-addon',
+                            name: 'Guard Probe Addon',
+                            description: 'An addon with no i18n entry, on purpose.',
+                            billingType: 'one_time' as const,
+                            priceArs: 1000,
+                            durationDays: 7,
+                            isActive: true,
+                            targetCategories: ['owner'] as const,
+                            sortOrder: 99,
+                            affectsLimitKey: null,
+                            limitIncrease: null,
+                            grantsEntitlement: null
+                        }
+                    };
+                }
+                return {
+                    success: false,
+                    error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+                };
+            });
+
+            await createAddonCheckout(billing, {
+                ...defaultInput,
+                addonSlug: 'guard-probe-untranslated-addon'
+            });
+
+            const arg = getCheckoutCreateArgOnce();
+            expect(arg.lineItems[0]?.title).toBe('Guard Probe Addon');
+            expect(arg.lineItems[0]?.description).toBe('An addon with no i18n entry, on purpose.');
         });
     });
 
@@ -1973,6 +2472,56 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             expect(jobArg.metadata).not.toHaveProperty('accommodationId');
         });
 
+        // ── HOS-721: the promo keys ride the same carrier ──────────────────
+        // The polling job's synthetic payment metadata is built from this row.
+        // Leaving the promo keys out of it meant the path that actually
+        // confirms most add-on purchases could never record a redemption, no
+        // matter how the webhook path was fixed.
+        it('carries the promo keys into the polling job metadata (HOS-721)', async () => {
+            mockPromoValidate.mockResolvedValue({ valid: true, discountAmount: 1500 });
+            mockPromoGetByCode.mockResolvedValue({
+                success: true,
+                data: { id: 'promo_uuid_1' }
+            });
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'extra-photos-20',
+                userId: 'user_xyz',
+                promoCode: 'SAVE10'
+            });
+
+            expect(result.success).toBe(true);
+            expect(mockPollingJobsCreate).toHaveBeenCalledOnce();
+            const jobArg = mockPollingJobsCreate.mock.calls[0]?.[0] as {
+                metadata: Record<string, unknown>;
+            };
+            expect(jobArg.metadata).toMatchObject({
+                promoCodeId: 'promo_uuid_1',
+                promoCode: 'SAVE10',
+                discountAmount: 1500
+            });
+        });
+
+        it('omits the promo keys from polling job metadata for an undiscounted purchase (HOS-721)', async () => {
+            const billing = createBillingForCheckout({ customer });
+
+            const result = await createAddonCheckout(billing, {
+                customerId: 'cust_abc',
+                addonSlug: 'extra-photos-20',
+                userId: 'user_xyz'
+            });
+
+            expect(result.success).toBe(true);
+            const jobArg = mockPollingJobsCreate.mock.calls[0]?.[0] as {
+                metadata: Record<string, unknown>;
+            };
+            expect(jobArg.metadata).not.toHaveProperty('promoCodeId');
+            expect(jobArg.metadata).not.toHaveProperty('promoCode');
+            expect(jobArg.metadata).not.toHaveProperty('discountAmount');
+        });
+
         it('ignores accommodationId and never looks up ownership for an unrelated addon', async () => {
             const billing = createBillingForCheckout({ customer });
 
@@ -2043,6 +2592,7 @@ describe('createAddonCheckout — provider error wiring (SPEC-149 T-005)', () =>
 
     beforeEach(async () => {
         vi.clearAllMocks();
+        applyDefaultPromoCodeServiceStubs();
 
         // Re-set checkout create mock after clearAllMocks
         mockBillingCheckoutCreate.mockResolvedValue({
@@ -2306,6 +2856,8 @@ describe('createAddonCheckout — no server-side retry (SPEC-149 descope pin)', 
 
     beforeEach(async () => {
         vi.clearAllMocks();
+
+        applyDefaultPromoCodeServiceStubs();
 
         // Re-set checkout create mock (happy path by default; individual tests override)
         mockBillingCheckoutCreate.mockResolvedValue({

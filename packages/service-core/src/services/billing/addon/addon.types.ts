@@ -79,6 +79,16 @@ export interface PurchaseAddonInput {
      * absent, the checkout falls back to an `'es'`-prefixed URL.
      */
     cancelUrl?: string;
+    /**
+     * Buyer's preferred locale (HOS-606). Used to translate the add-on
+     * `name`/`description` sent to MercadoPago as the checkout line item's
+     * `title`/`description`, via `apps/api`'s `resolveAddonCheckoutName` /
+     * `resolveAddonCheckoutDescription` (`services/addon-checkout-locale.ts`).
+     * The route layer resolves it the same way it resolves `successUrl` /
+     * `cancelUrl`'s locale prefix (`resolveReturnUrlLocale`). Falls back to
+     * `'es'` when absent.
+     */
+    locale?: 'es' | 'en' | 'pt';
 }
 
 /**
@@ -146,6 +156,23 @@ export interface ConfirmPurchaseInput {
     paymentId?: string;
     /** Subscription ID */
     subscriptionId?: string;
+    /**
+     * Amount the provider actually charged, in ARS cents (HOS-595).
+     *
+     * Carried from the provider payload rather than derived from the catalog
+     * list price: a promo code, a currency conversion or a partial capture make
+     * the two differ, and `billing_payments` has to hold what was charged, not
+     * what was advertised. Deliberately NOT defaulted to the catalog price: when
+     * this is absent no ledger row is written and the gap is alerted, because a
+     * row holding an amount nobody was charged is worse than no row at all.
+     *
+     * Supplied only for a settled/approved provider charge.
+     */
+    amountInCents?: number;
+    /**
+     * ISO currency code of the charge (HOS-595). Defaults to `'ARS'`.
+     */
+    currency?: string;
     /** Additional metadata */
     metadata?: Record<string, unknown>;
 }
