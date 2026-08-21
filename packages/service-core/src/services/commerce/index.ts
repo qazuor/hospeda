@@ -4,8 +4,11 @@
  * Exports all public APIs from the commerce service layer:
  * - `BaseCommerceListingService` — abstract base for entity services
  * - `CommerceLeadService` — lead submission, listing, and handling
- * - `CommerceOwnerProvisioningService` — COMMERCE_OWNER user creation
  * - Permission helpers, junction-sync utilities, visibility reconciler, and types
+ *
+ * `CommerceOwnerProvisioningService` (COMMERCE_OWNER user creation from an
+ * approved lead) was removed by HOS-693 §6.2 — owners now grant themselves
+ * the role by creating their own listing (HOS-687).
  */
 
 export {
@@ -46,14 +49,6 @@ export {
     type ComposeCommerceMediaInput,
     composeCommerceMedia
 } from './commerce-media-compose';
-export {
-    CommerceOwnerProvisioningService,
-    type CreateUserPort,
-    type CreateUserPortResult,
-    type ProvisionCommerceOwnerInput,
-    type ProvisionCommerceOwnerResult,
-    type ProvisioningNotificationPort
-} from './commerce-owner-provisioning.service';
 export {
     type CommerceEntityModel,
     getCommerceListingSubscriptionStatus,
