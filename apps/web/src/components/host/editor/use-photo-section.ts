@@ -13,12 +13,13 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
-import type { AccommodationMediaItem, MediaImage } from '@/lib/api/types';
+import type { AccommodationMediaItem, ApiError, MediaImage } from '@/lib/api/types';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { uploadEntityImage } from '@/lib/media/upload-entity';
 import { addToast } from '@/store/toast-store';
+import { buildPhotoLimitToast, isLimitReachedError } from './photo-limit-toast';
 import {
     buildCapExceededOnSelectMessage,
     mediaRowToItem,
@@ -159,6 +160,42 @@ export function usePhotoSection({
         addToast({ type: 'error', message });
     }, []);
 
+    /**
+     * Report a failed `addMedia` call (HOS-724).
+     *
+     * Hitting the plan's photo cap is NOT an ordinary upload failure: it is the
+     * product's most natural upsell moment, and it has a purchasable way out
+     * that costs a fraction of a plan upgrade. Before this branch existed the
+     * host got the API's raw, Spanish-only sentence with nothing to click, in
+     * every locale. Every OTHER failure keeps the plain generic reporter — an
+     * add-on offer attached to a network error or a Cloudinary hiccup would be
+     * noise at best and a misdiagnosis at worst.
+     */
+    const reportAddMediaError = useCallback(
+        (error: ApiError) => {
+            if (isLimitReachedError({ error })) {
+                const limitToast = buildPhotoLimitToast({ details: error.details, locale });
+                setError(limitToast.message);
+                addToast({
+                    type: 'error',
+                    message: limitToast.message,
+                    action: limitToast.action,
+                    secondaryAction: limitToast.secondaryAction
+                });
+                return;
+            }
+
+            reportUploadError(
+                error.message ??
+                    t(
+                        'host.properties.editor.photo.persistFailed',
+                        'No se pudo guardar la imagen en la base de datos'
+                    )
+            );
+        },
+        [locale, t, reportUploadError]
+    );
+
     // --- Featured image ---
 
     const processFeaturedFile = useCallback(
@@ -190,13 +227,7 @@ export function usePhotoSection({
                 });
 
                 if (!addResult.ok) {
-                    reportUploadError(
-                        addResult.error.message ??
-                            t(
-                                'host.properties.editor.photo.persistFailed',
-                                'No se pudo guardar la imagen en la base de datos'
-                            )
-                    );
+                    reportAddMediaError(addResult.error);
                     return;
                 }
 
@@ -238,7 +269,7 @@ export function usePhotoSection({
                 }
             }
         },
-        [accommodationId, featuredItem, t, reportUploadError]
+        [accommodationId, featuredItem, t, reportUploadError, reportAddMediaError]
     );
 
     const handleFeaturedSelect = useCallback(
@@ -325,13 +356,14 @@ export function usePhotoSection({
                     });
 
                     if (!addResult.ok) {
-                        reportUploadError(
-                            addResult.error.message ??
-                                t(
-                                    'host.properties.editor.photo.persistFailed',
-                                    'No se pudo guardar la imagen en la base de datos'
-                                )
-                        );
+                        reportAddMediaError(addResult.error);
+                        // HOS-724: at the plan cap every remaining file in the
+                        // batch would fail identically. Stop instead of firing
+                        // one more toast per file — the host has been told, and
+                        // the CTA they need is already on screen.
+                        if (isLimitReachedError({ error: addResult.error })) {
+                            break;
+                        }
                         continue;
                     }
 
@@ -355,7 +387,15 @@ export function usePhotoSection({
                 galleryInputRef.current.value = '';
             }
         },
-        [accommodationId, galleryCap, galleryItems.length, t, tPlural, reportUploadError]
+        [
+            accommodationId,
+            galleryCap,
+            galleryItems.length,
+            t,
+            tPlural,
+            reportUploadError,
+            reportAddMediaError
+        ]
     );
 
     const handleGallerySelect = useCallback(
