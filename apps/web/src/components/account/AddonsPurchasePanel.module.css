@@ -232,3 +232,20 @@
 .subscriptionGateCta:hover {
     opacity: 0.88;
 }
+
+/* ── Focus (HOS-729) ──────────────────────────────────────────────────────
+ * The card the user was sent here for. Highlight only — the block's heading
+ * ("Para ampliar tus fotos") is what carries the meaning for anyone who does
+ * not see the border.
+ */
+
+.focusGroup {
+    scroll-margin-top: var(--space-8, 2rem);
+}
+
+.cardFocused {
+    border-color: var(--brand-primary);
+    box-shadow:
+        0 0 0 2px color-mix(in oklab, var(--core-card) 60%, var(--brand-primary) 40%),
+        var(--shadow-card);
+}
