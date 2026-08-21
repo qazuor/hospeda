@@ -4,12 +4,14 @@
  *
  * ## Why a guard and not a behaviour test
  *
- * The commerce alert was not missing code — the code was there, complete, with
- * a `TODO` beside it. What was missing was the ARGUMENT, at five separate
- * construction sites, none of which looked wrong on its own: `new
- * CommerceLeadService({ logger: apiLogger })` type-checks, runs, and quietly
- * takes the branch where nobody is told. That is a defect of N call sites, and
- * a behaviour test only ever covers the one call site somebody remembered.
+ * The alert was not missing code — the code was there, complete, with a
+ * `TODO` beside it (on the commerce funnel, which HOS-695 has since retired
+ * along with `commerce_leads`; this guard's remaining subject is alliance).
+ * What was missing was the ARGUMENT, at multiple construction sites, none of
+ * which looked wrong on its own: `new SomeLeadService({ logger: apiLogger })`
+ * type-checks, runs, and quietly takes the branch where nobody is told. That
+ * is a defect of N call sites, and a behaviour test only ever covers the one
+ * call site somebody remembered.
  *
  * So the assertion is made over the source: every construction of a
  * lead-owning service in `apps/api` must pass its notifier. A future route
@@ -123,33 +125,12 @@ describe('lead funnel wiring guard (H-62 / H-148)', () => {
         });
 
         it('locates the constructions it is meant to police', () => {
-            const commerce = files.flatMap(({ source }) =>
-                findConstructions({ source, className: 'CommerceLeadService' })
-            );
             const alliance = files.flatMap(({ source }) =>
                 findConstructions({ source, className: 'AllianceLeadService' })
             );
 
-            expect(commerce.length).toBeGreaterThan(0);
             expect(alliance.length).toBeGreaterThan(0);
         });
-    });
-
-    it('every CommerceLeadService is built with its notifier', () => {
-        const offenders = files
-            .filter(({ path }) => !path.endsWith('lead-intake-ports.ts'))
-            .flatMap(({ path, source }) =>
-                findConstructions({ source, className: 'CommerceLeadService' })
-                    .filter((args) => splitTopLevelArgs(args).length < 2)
-                    .map(() => path)
-            );
-
-        expect(
-            offenders,
-            'A CommerceLeadService built with only its config takes the branch where ' +
-                'nobody is told a lead arrived. Pass createCommerceLeadNotificationPort() ' +
-                'as the second argument.'
-        ).toEqual([]);
     });
 
     it('the public alliance intake route builds its service with the intake port', () => {
