@@ -57,6 +57,16 @@ interface ScheduleAddonPollingInput {
      * was created. `undefined` for every owner-wide add-on.
      */
     readonly accommodationId?: string | undefined;
+    /**
+     * Promo code redeemed at checkout (HOS-721). `undefined` when the purchase
+     * carries no discount. Travels for the same reason `accommodationId` does:
+     * the polling job row — not the MP payment — is the reliable carrier.
+     */
+    readonly promoCodeId?: string | undefined;
+    /** Human-facing promo code as typed by the customer (HOS-721). */
+    readonly promoCode?: string | undefined;
+    /** Discount applied at checkout in centavos (HOS-721). */
+    readonly discountAmount?: number | undefined;
 }
 
 /**
@@ -93,7 +103,10 @@ async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): P
         addonSlug,
         orderId,
         userId,
-        accommodationId
+        accommodationId,
+        promoCodeId,
+        promoCode,
+        discountAmount
     } = input;
 
     if (!env.HOSPEDA_BILLING_POLLING_ENABLED) {
@@ -136,7 +149,14 @@ async function scheduleAddonCheckoutPolling(input: ScheduleAddonPollingInput): P
                 // HOS-710 note above), so polling is usually the ONLY path that
                 // ever confirms the purchase — the staging repro of HOS-675 was
                 // confirmed with `source: 'polling'`.
-                ...(accommodationId === undefined ? {} : { accommodationId })
+                ...(accommodationId === undefined ? {} : { accommodationId }),
+                // HOS-721: the promo keys ride the same carrier, for the same
+                // reason. They are written in canonical camelCase here because
+                // this row is ours — MercadoPago never touches it, so the
+                // snake_case wire spelling has no business in it.
+                ...(promoCodeId === undefined ? {} : { promoCodeId }),
+                ...(promoCode === undefined ? {} : { promoCode }),
+                ...(discountAmount === undefined ? {} : { discountAmount })
             }
         });
         if (job) {
@@ -560,7 +580,12 @@ export async function createAddonCheckout(
             userId: input.userId,
             // HOS-675: only meaningful for target-required addons; every other
             // addon leaves it undefined and the key is omitted from job metadata.
-            accommodationId: input.accommodationId
+            accommodationId: input.accommodationId,
+            // HOS-721: undefined for an undiscounted purchase, in which case
+            // every promo key is omitted from the job metadata.
+            promoCodeId,
+            promoCode: input.promoCode,
+            discountAmount: discountAmount > 0 ? discountAmount : undefined
         });
 
         // NOTE: Promo code usage (incrementUsage + recordUsage) is intentionally
@@ -1079,6 +1104,15 @@ export async function confirmAddonPurchase(
         // Record promo code usage now that payment is confirmed (GAP-043-049).
         // Doing this here (not at checkout creation) prevents inflating usage
         // counts for abandoned checkouts.
+        //
+        // HOS-721: these reads are camelCase-only ON PURPOSE. camelCase is the
+        // canonical convention; the MercadoPago snake_case wire spelling
+        // (`promo_code_id`, `promo_code`, `discount_amount`) is translated away
+        // exactly once, by `normalizeAddonCheckoutMetadata` at the webhook
+        // border, before this function is ever called. Do NOT "harden" this
+        // spot by also reading the snake_case names — a second dual read here
+        // is precisely how the two ends drifted apart and how the redemption
+        // silently never ran in production.
         const confirmedPromoCodeId =
             typeof input.metadata?.promoCodeId === 'string'
                 ? input.metadata.promoCodeId
@@ -1088,7 +1122,10 @@ export async function confirmAddonPurchase(
         const confirmedDiscountAmount =
             typeof input.metadata?.discountAmount === 'number' ? input.metadata.discountAmount : 0;
 
-        if (confirmedPromoCodeId && confirmedPromoCode) {
+        // HOS-721: gated on the promo code ID alone. `promoCode` is the
+        // human-facing string and is used for logging only, so requiring it too
+        // made a purely cosmetic key able to suppress the redemption.
+        if (confirmedPromoCodeId) {
             const promoService = new PromoCodeService();
             const redeemResult = await promoService.redeemAndRecord({
                 promoCodeId: confirmedPromoCodeId,
