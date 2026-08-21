@@ -1274,6 +1274,7 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
         readonly lineItems: ReadonlyArray<{
             readonly categoryId?: string;
             readonly title: string;
+            readonly description?: string;
             readonly quantity: number;
             readonly unitAmount?: number;
         }>;
@@ -1497,7 +1498,15 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
             expect(arg.lineItems[0]?.unitAmount).toBe(5000);
         });
 
-        it('sets lineItems[0].title to addon.name', async () => {
+        // HOS-606 regression: the checkout used to send `addon.name`/
+        // `addon.description` verbatim — the raw English config literal —
+        // straight to MercadoPago, regardless of the buyer's site locale.
+        // The web app never shows that raw value (it resolves display copy
+        // by slug via i18n), so the bug was only visible on MP's own payment
+        // screen. `createAddonCheckout` must now resolve the SAME
+        // `account.addons.catalog.<slug>.name`/`.description` keys the web
+        // app uses, for the buyer's `input.locale`.
+        it('HOS-606: resolves lineItems[0].title/description via i18n by slug, not the raw addon.name/description', async () => {
             const billing = createBillingForCheckout({
                 customer: {
                     id: 'cust_abc',
@@ -1506,10 +1515,127 @@ describe('createAddonCheckout (SPEC-127 T-007)', () => {
                 }
             });
 
+            // No `locale` on the input — falls back to 'es', same as
+            // successUrl/cancelUrl's documented fallback.
             await createAddonCheckout(billing, defaultInput);
 
             const arg = getCheckoutCreateArgOnce();
-            expect(arg.lineItems[0]?.title).toBe('Extra Photos 20');
+            // Real i18n translation for 'extra-photos-20' in es/account.json —
+            // NOT the fixture's raw `addon.name` ('Extra Photos 20').
+            expect(arg.lineItems[0]?.title).toBe('Pack de fotos extra (+20 fotos)');
+            expect(arg.lineItems[0]?.description).toBe(
+                'Agrega 20 fotos adicionales a cada alojamiento. Se renueva mensualmente.'
+            );
+        });
+
+        it('HOS-606: translates lineItems[0].title per input.locale (en/pt), never the raw English config name', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'guest@example.com',
+                    metadata: { name: 'Juan Perez' }
+                }
+            });
+
+            await createAddonCheckout(billing, { ...defaultInput, locale: 'en' });
+            expect(getCheckoutCreateArgOnce().lineItems[0]?.title).toBe(
+                'Extra Photos Pack (+20 photos)'
+            );
+
+            vi.clearAllMocks();
+            mockBillingCheckoutCreate.mockResolvedValue({
+                id: 'session_test_123',
+                providerInitPoint: 'https://www.mercadopago.com.ar/checkout/test',
+                providerSandboxInitPoint: 'https://sandbox.mercadopago.com.ar/checkout/test',
+                expiresAt: new Date('2030-01-01T00:30:00Z')
+            });
+            mockRandomUUID.mockReturnValue('11111111-2222-3333-4444-555555555555');
+            mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
+                if (slug === 'extra-photos-20') {
+                    return {
+                        success: true,
+                        data: {
+                            slug: 'extra-photos-20',
+                            name: 'Extra Photos 20',
+                            description: 'Add 20 extra photos',
+                            billingType: 'recurring' as const,
+                            priceArs: 5000,
+                            durationDays: null,
+                            isActive: true,
+                            targetCategories: ['owner'] as const,
+                            sortOrder: 1,
+                            affectsLimitKey: 'max_photos_per_accommodation',
+                            limitIncrease: 20,
+                            grantsEntitlement: null
+                        }
+                    };
+                }
+                return {
+                    success: false,
+                    error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+                };
+            });
+            mockPlanServiceGetById.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+            mockPlanServiceGetBySlug.mockResolvedValue({
+                success: false,
+                error: { code: 'NOT_FOUND' }
+            });
+
+            await createAddonCheckout(billing, { ...defaultInput, locale: 'pt' });
+            expect(getCheckoutCreateArgOnce().lineItems[0]?.title).toBe(
+                'Pacote de fotos extra (+20 fotos)'
+            );
+        });
+
+        it('falls back to the raw addon.name/description when no translation exists for the slug', async () => {
+            const billing = createBillingForCheckout({
+                customer: {
+                    id: 'cust_abc',
+                    email: 'guest@example.com',
+                    metadata: { name: 'Juan Perez' }
+                }
+            });
+
+            // A slug with no `account.addons.catalog.<slug>.*` entry in any
+            // locale — resolveAddonCheckoutName/Description must fall back to
+            // the raw config strings rather than emitting an empty title.
+            mockAddonCatalogGetBySlug.mockImplementation(async function (slug: string) {
+                if (slug === 'guard-probe-untranslated-addon') {
+                    return {
+                        success: true,
+                        data: {
+                            slug: 'guard-probe-untranslated-addon',
+                            name: 'Guard Probe Addon',
+                            description: 'An addon with no i18n entry, on purpose.',
+                            billingType: 'one_time' as const,
+                            priceArs: 1000,
+                            durationDays: 7,
+                            isActive: true,
+                            targetCategories: ['owner'] as const,
+                            sortOrder: 99,
+                            affectsLimitKey: null,
+                            limitIncrease: null,
+                            grantsEntitlement: null
+                        }
+                    };
+                }
+                return {
+                    success: false,
+                    error: { code: 'NOT_FOUND', message: `Add-on '${slug}' not found` }
+                };
+            });
+
+            await createAddonCheckout(billing, {
+                ...defaultInput,
+                addonSlug: 'guard-probe-untranslated-addon'
+            });
+
+            const arg = getCheckoutCreateArgOnce();
+            expect(arg.lineItems[0]?.title).toBe('Guard Probe Addon');
+            expect(arg.lineItems[0]?.description).toBe('An addon with no i18n entry, on purpose.');
         });
     });
 

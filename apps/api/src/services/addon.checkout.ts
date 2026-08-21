@@ -30,6 +30,7 @@ import { clearEntitlementCache } from '../middlewares/entitlement';
 import { env } from '../utils/env.js';
 import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
+import { resolveAddonCheckoutDescription, resolveAddonCheckoutName } from './addon-checkout-locale';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { PromoCodeService } from './promo-code.service';
 
@@ -454,8 +455,22 @@ export async function createAddonCheckout(
                     unitAmount: finalPrice,
                     currency: 'ARS',
                     quantity: 1,
-                    title: addon.name,
-                    description: addon.description,
+                    // HOS-606: send the buyer's own copy, not the raw English
+                    // config literal — the web app already resolves these by
+                    // slug (see addon-checkout-locale.ts module doc) and never
+                    // shows `addon.name`/`addon.description` verbatim, so a
+                    // Spanish-site buyer saw the checkout item in English on
+                    // MercadoPago's own payment screen.
+                    title: resolveAddonCheckoutName({
+                        locale: input.locale,
+                        slug: addon.slug,
+                        fallback: addon.name
+                    }),
+                    description: resolveAddonCheckoutDescription({
+                        locale: input.locale,
+                        slug: addon.slug,
+                        fallback: addon.description
+                    }),
                     /**
                      * 'services' is the canonical MP category_id for digital SaaS.
                      * Now passed via qzpay's `categoryId` field — the adapter maps it
