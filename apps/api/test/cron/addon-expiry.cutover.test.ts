@@ -47,7 +47,12 @@ vi.mock('@repo/service-core', () => ({
 }));
 
 // getAddonBySlug must NOT be called after cutover
-vi.mock('@repo/billing', () => ({
+// HOS-702: PARTIAL mock (spread of the real module). The cron now calls
+// `isEntitlementGrantingStatus`; a whole-module stub left that export
+// `undefined`, so the call threw into the surrounding try/catch and the phase
+// silently did nothing while every assertion still ran.
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: mockGetAddonBySlug
 }));
 

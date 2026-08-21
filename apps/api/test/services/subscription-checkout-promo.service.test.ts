@@ -35,12 +35,17 @@ vi.mock('@repo/service-core', async () => {
 });
 
 const resolveFreeTrialExtensionPromoMock = vi.fn();
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     resolveFreeTrialExtensionPromo: (...args: unknown[]) =>
         resolveFreeTrialExtensionPromoMock(...args)
 }));
 
-vi.mock('@repo/schemas', () => ({
+// HOS-702: PARTIAL. This suite now loads the REAL @repo/billing, whose config
+// barrel reads ProductDomainEnum from @repo/schemas — a whole-module literal
+// here made that import undefined and aborted the file.
+vi.mock('@repo/schemas', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/schemas')>()),
     PromoEffectKindEnum: { DISCOUNT: 'discount', TRIAL_EXTENSION: 'trial_extension', COMP: 'comp' }
 }));
 

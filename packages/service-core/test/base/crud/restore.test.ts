@@ -80,14 +80,27 @@ describe('BaseService: restore', () => {
         expect(result.error?.code).toBe(ServiceErrorCode.INTERNAL_ERROR);
     });
 
-    it('should return forbidden error if actor lacks permission', async () => {
+    it('refuses a non-owner with the SAME answer as an id that does not exist', async () => {
+        // HOS-706 — see `update.test.ts` for the reasoning. Denial is still
+        // asserted (`model.restore` is never called); only the disclosure is
+        // gone.
         const nonAdminActor: Actor = {
             id: 'non-admin',
             roles: [RoleEnum.USER],
             permissions: []
         };
-        const result = await service.restore(nonAdminActor, MOCK_ENTITY_ID);
-        expect(result.error?.code).toBe('FORBIDDEN');
+        asMock(modelMock.findById).mockResolvedValue(mockDeletedEntity);
+        const foreign = await service.restore(nonAdminActor, MOCK_ENTITY_ID);
+
+        asMock(modelMock.findById).mockResolvedValue(null);
+        const invented = await service.restore(nonAdminActor, MOCK_ENTITY_ID);
+
+        expect(asMock(modelMock.restore)).not.toHaveBeenCalled();
+        expect({ code: foreign.error?.code, message: foreign.error?.message }).toEqual({
+            code: invented.error?.code,
+            message: invented.error?.message
+        });
+        expect(foreign.error?.code).toBe(ServiceErrorCode.NOT_FOUND);
     });
 
     it('should handle errors from the _afterRestore hook', async () => {

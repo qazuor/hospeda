@@ -23,7 +23,8 @@ vi.mock('@repo/db', () => ({
     createBillingAdapter: (...args: unknown[]) => mockCreateBillingAdapter(...args)
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: (...args: unknown[]) => mockCreateMercadoPagoAdapter(...args),
     createStubMercadoPagoAdapter: () => mockCreateStubMercadoPagoAdapter(),
     isTestControlEnabled: () => mockIsTestControlEnabled()

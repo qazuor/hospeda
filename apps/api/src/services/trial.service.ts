@@ -1315,13 +1315,19 @@ export class TrialService {
                 );
             }
 
-            // Reject if any subscription is active or trialing
-            const activeOrTrialing = subscriptions.find(
-                (sub) => sub.status === 'active' || sub.status === 'trialing'
+            // Reject if any subscription is already live. HOS-702: the canonical
+            // entitlement-granting set, so a `comp` subscriber cannot "reactivate"
+            // a stale cancelled row on top of their complimentary grant — the
+            // hand-rolled pair this replaces let exactly that through.
+            const activeOrTrialing = subscriptions.find((sub) =>
+                isEntitlementGrantingStatus(sub.status)
             );
 
             if (activeOrTrialing) {
-                const statusLabel = activeOrTrialing.status === 'active' ? 'active' : 'trialing';
+                // Report the actual status rather than collapsing it to one of two
+                // labels — with `comp` in the set, a two-way ternary would have
+                // mislabelled a complimentary subscription as "trialing".
+                const statusLabel = activeOrTrialing.status;
                 // HOS-114 T-015b: was a plain `Error` (HTTP 500) — now a
                 // typed business error mapped to HTTP 409 by
                 // `mapSubscriptionCheckoutErrorToHttp`.
@@ -1667,9 +1673,27 @@ export class TrialService {
                 return { cancelledCount: 0, cancelledIds: [], keptId: null };
             }
 
-            // Collect only subscriptions that are in a "live" state
+            // Collect only subscriptions that are in a "live" state.
+            //
+            // HOS-702: derived from the canonical entitlement-granting set MINUS
+            // `comp`, rather than a hand-rolled active/trialing pair. This is the
+            // one place in billing where excluding `comp` is the CORRECT answer,
+            // and it has to be visible rather than accidental: this reaper CANCELS
+            // every live subscription but the newest, and a complimentary grant
+            // (SPEC-262) has no MercadoPago preapproval to cancel and is permanent
+            // by design — reaping one would silently destroy a grant nobody can
+            // re-create through checkout. Deriving from the canonical set still
+            // means a fourth entitlement-granting status added later is picked up
+            // here automatically instead of being silently ignored.
+            //
+            // Both sides widen to `string`: QZPay's status union has no
+            // Hospeda-specific `comp` member, so a direct comparison is a
+            // compile error even though the value reaches here at runtime. Same
+            // widening cast `start-paid.ts` uses for the same reason.
             const liveSubscriptions = allSubscriptions.filter(
-                (sub) => sub.status === 'active' || sub.status === 'trialing'
+                (sub) =>
+                    isEntitlementGrantingStatus(sub.status as string) &&
+                    (sub.status as string) !== SubscriptionStatusEnum.COMP
             );
 
             if (liveSubscriptions.length <= 1) {

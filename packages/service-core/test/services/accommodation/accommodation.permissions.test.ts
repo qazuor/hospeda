@@ -262,10 +262,47 @@ describe('Accommodation Permissions', () => {
             )
         ).not.toThrow();
     });
-    it('checkCanView forbids private without permission', () => {
+    // HOS-706. A foreign PRIVATE listing used to answer
+    // `403 'Permission denied to view accommodation'`. It now answers the same
+    // 404 as every other refusal in this function — asserted against a sibling
+    // 404 branch rather than against a hard-coded string, so a future change to
+    // the canonical message cannot re-open the gap by moving only one of them.
+    it('checkCanView refuses a foreign PRIVATE listing exactly like a non-existent one', () => {
+        const capture = (fn: () => void): ServiceError => {
+            try {
+                fn();
+            } catch (err) {
+                if (err instanceof ServiceError) return err;
+            }
+            throw new Error('Should have thrown a ServiceError');
+        };
+
+        const foreignPrivate = capture(() =>
+            checkCanView(createActor([]), withOwner(otherUserId, VisibilityEnum.PRIVATE))
+        );
+        // The lifecycle gate above already answered 404 for a row that exists.
+        const hiddenByLifecycle = capture(() =>
+            checkCanView(createActor([]), {
+                ...withOwner(otherUserId, VisibilityEnum.PUBLIC),
+                lifecycleState: LifecycleStatusEnum.DRAFT
+            })
+        );
+
+        expect({ code: foreignPrivate.code, message: foreignPrivate.message }).toEqual({
+            code: hiddenByLifecycle.code,
+            message: hiddenByLifecycle.message
+        });
+        expect(foreignPrivate.code).toBe(ServiceErrorCode.NOT_FOUND);
+    });
+
+    // HOS-706, the deliberate exception. A RESTRICTED listing keeps its 403 and
+    // its "VIP access required" message because that refusal IS the upsell —
+    // owner decision, documented in `apps/api/docs/error-contract.md`. This test
+    // exists so unifying it needs an explicit, visible edit.
+    it('checkCanView keeps the VIP 403 for a foreign RESTRICTED listing', () => {
         expectForbidden(
-            () => checkCanView(createActor([]), withOwner(otherUserId, VisibilityEnum.PRIVATE)),
-            'Permission denied to view accommodation'
+            () => checkCanView(createActor([]), withOwner(otherUserId, VisibilityEnum.RESTRICTED)),
+            'VIP access required'
         );
     });
 

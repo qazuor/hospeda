@@ -40,7 +40,7 @@ export class AppLogEntryModel extends BaseModelImpl<AppLogEntry> {
     public entityName = 'app_log_entries';
 
     protected getTableName(): string {
-        return 'app_log_entries';
+        return 'appLogEntries';
     }
 
     /**

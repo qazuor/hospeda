@@ -204,10 +204,13 @@ export const handleStartPaidSubscription = async (
         // cron to flip the soft-cancelled sub to 'cancelled'.
         // SPEC-239 isolation: filter to accommodation-domain subs — a soft-cancelled
         // commerce sub must never block an accommodation checkout.
+        // HOS-702: "still live" is the canonical entitlement-granting set, the same
+        // one the guard 20 lines above already uses — a hand-rolled
+        // active/trialing pair here would have disagreed with it on `comp`.
         const hasSoftCancelledSub = existingSubscriptions.some(
             (sub) =>
                 isAccommodationSubscription(sub) &&
-                (sub.status === 'active' || sub.status === 'trialing') &&
+                isEntitlementGrantingStatus(sub.status as string) &&
                 sub.cancelAtPeriodEnd === true
         );
         if (hasSoftCancelledSub) {

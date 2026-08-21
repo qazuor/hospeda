@@ -1,3 +1,4 @@
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import { and, eq, getDb, isNull, partnerSubscriptions, partners } from '@repo/db';
 import {
     LifecycleStatusEnum,
@@ -14,13 +15,18 @@ function mapBillingStatusToPartnerState(status: string): {
     subscriptionStatus: PartnerSubscriptionStatusEnum;
     lifecycleState: LifecycleStatusEnum;
 } {
+    // HOS-702: the live branch is the canonical entitlement-granting set, checked
+    // BEFORE the switch. It used to be `case 'active': case 'trialing':`, which
+    // dropped `comp` into the `default` arm — a complimentary partner was
+    // reconciled to CANCELLED + ARCHIVED and vanished from the carousel.
+    if (isEntitlementGrantingStatus(status)) {
+        return {
+            subscriptionStatus: PartnerSubscriptionStatusEnum.ACTIVE,
+            lifecycleState: LifecycleStatusEnum.ACTIVE
+        };
+    }
+
     switch (status) {
-        case 'active':
-        case 'trialing':
-            return {
-                subscriptionStatus: PartnerSubscriptionStatusEnum.ACTIVE,
-                lifecycleState: LifecycleStatusEnum.ACTIVE
-            };
         case 'past_due':
             return {
                 subscriptionStatus: PartnerSubscriptionStatusEnum.PAST_DUE,

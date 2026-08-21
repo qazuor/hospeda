@@ -442,7 +442,18 @@ export abstract class BaseCrudWrite<
                 }
                 validateEntity(entity, this.entityName);
 
-                await this._canUpdateVisibility(validActor, entity, validData.visibility);
+                // HOS-706: `_getAndValidateEntity` above is passed a NO-OP check
+                // (the real one needs the requested visibility, which that
+                // signature cannot carry), so this hook is the one write-path
+                // permission gate that would otherwise run outside the mask and
+                // keep answering 403 for a foreign row.
+                await this._assertWritePermission({
+                    actor: validActor,
+                    entity,
+                    entityName: this.entityName,
+                    check: (maskedActor, maskedEntity) =>
+                        this._canUpdateVisibility(maskedActor, maskedEntity, validData.visibility)
+                });
 
                 let processedVisibility: VisibilityEnum;
                 try {

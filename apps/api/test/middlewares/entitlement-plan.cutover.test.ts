@@ -91,7 +91,8 @@ const _LIMIT_VALUES = new Set([
     'max_compare_items'
 ]);
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     EntitlementKey: {
         PUBLISH_ACCOMMODATIONS: 'publish_accommodations',
         EDIT_ACCOMMODATION_INFO: 'edit_accommodation_info',

@@ -114,7 +114,8 @@ const mockPaymentAdapter = {
     subscriptions: { retrieve: vi.fn() }
 };
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: vi.fn(() => mockPaymentAdapter)
 }));
 

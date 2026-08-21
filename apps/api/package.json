@@ -37,7 +37,7 @@
         "@linear/sdk": "^89.0.0",
         "@qazuor/qzpay-core": "^3.1.0",
         "@qazuor/qzpay-hono": "^1.6.8",
-        "@qazuor/qzpay-mercadopago": "^2.8.2",
+        "@qazuor/qzpay-mercadopago": "^2.9.0",
         "@react-email/components": "^1.0.12",
         "@react-email/render": "^2.1.0",
         "@repo/ai-core": "workspace:*",

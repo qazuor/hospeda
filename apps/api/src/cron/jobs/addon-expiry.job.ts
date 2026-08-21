@@ -22,7 +22,7 @@
  * @module cron/jobs/addon-expiry
  */
 
-import { EntitlementKey } from '@repo/billing';
+import { EntitlementKey, isEntitlementGrantingStatus } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import {
     accommodations,
@@ -930,10 +930,17 @@ export const addonExpiryJob: CronJobDefinition = {
                                     const qzpaySubscription = await billing.subscriptions.get(
                                         purchase.subscriptionId
                                     );
+                                    // HOS-702: the "still live, do not revoke" test is the
+                                    // canonical entitlement-granting set. The hand-rolled
+                                    // active/trialing pair that used to live here dropped
+                                    // `comp`, so a complimentary subscriber's add-on was
+                                    // revoked by this cron even though their subscription
+                                    // was live — the HOS-594 defect, one directory over.
                                     if (
                                         qzpaySubscription &&
-                                        (qzpaySubscription.status === 'active' ||
-                                            qzpaySubscription.status === 'trialing')
+                                        isEntitlementGrantingStatus(
+                                            qzpaySubscription.status as string
+                                        )
                                     ) {
                                         apiLogger.info(
                                             {
@@ -1227,8 +1234,10 @@ export const addonExpiryJob: CronJobDefinition = {
 
                             const qzpayStatus = qzpaySub.status;
 
-                            // If QZPay reports active or trialing, DB-QZPay split state confirmed
-                            if (qzpayStatus === 'active' || qzpayStatus === 'trialing') {
+                            // If QZPay still reports the subscription as live (HOS-702:
+                            // the canonical entitlement-granting set, `comp` included),
+                            // the DB-QZPay split state is confirmed.
+                            if (isEntitlementGrantingStatus(qzpayStatus as string)) {
                                 logger.warn(
                                     'Split state detected: DB=cancelled but QZPay is active — retrying cancel',
                                     {

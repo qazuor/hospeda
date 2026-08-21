@@ -217,7 +217,8 @@ vi.mock('../../../src/services/addon.service', () => {
     return { AddonService: MockAddonService };
 });
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn().mockReturnValue({ name: 'Test Addon', slug: 'test-addon' }),
     // HOS-123 T-013: confirmAnnualSubscription constructs a fresh MP adapter
     // (mirroring reactivation-supersession-reconcile.job.ts / webhook-retry.job.ts's

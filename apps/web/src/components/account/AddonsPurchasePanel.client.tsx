@@ -19,14 +19,29 @@ import { PackageIcon } from '@repo/icons';
 import type { AddonResponse } from '@repo/schemas';
 import { useState } from 'react';
 import { AccountEmptyState } from '@/components/account/AccountEmptyState';
+import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
 import { translateAddonDescription, translateAddonName } from '@/lib/addon-labels';
 import { billingApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
+import { buildUrl } from '@/lib/urls';
 import { addToast } from '@/store/toast-store';
 import styles from './AddonsPurchasePanel.module.css';
+
+/**
+ * Service error `reason` codes the addon purchase endpoint attaches when the
+ * caller has no usable subscription (HOS-602). Both resolve to the same
+ * "you need an active subscription" gate — see `addon.checkout.ts`
+ * `NO_SUBSCRIPTION` (zero subscription rows) vs `NO_ACTIVE_SUBSCRIPTION`
+ * (rows exist, none active/trialing) and `entitlement-cause.ts`, which
+ * forwards a whitelisted `cause.code` as `error.reason` on the wire.
+ */
+const SUBSCRIPTION_GATE_REASONS: ReadonlySet<string> = new Set([
+    'NO_SUBSCRIPTION',
+    'NO_ACTIVE_SUBSCRIPTION'
+]);
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -72,10 +87,29 @@ export function AddonsPurchasePanel({
     /** Slug of the addon currently mid-purchase (disables its button). */
     const [purchasingSlug, setPurchasingSlug] = useState<string | null>(null);
 
+    /**
+     * Slugs whose last purchase attempt was rejected specifically for
+     * lacking a usable subscription (HOS-602). Rendered as an inline banner
+     * next to that addon's card instead of (or in addition to) a toast, so
+     * the rejection reason the server already sends is actually visible —
+     * see `SUBSCRIPTION_GATE_REASONS` above. Reuses the exact copy from the
+     * page-level gate (`account.addons.gate.*`) rather than inventing new
+     * strings, per the single-source-of-truth rule for i18n.
+     */
+    const [subscriptionGateSlugs, setSubscriptionGateSlugs] = useState<Record<string, boolean>>({});
+
     const ownedSet = new Set(ownedAddonSlugs);
 
     const perAccommodationAddons = addons.filter((addon) => addon.requiresAccommodationTarget);
     const accountLevelAddons = addons.filter((addon) => !addon.requiresAccommodationTarget);
+
+    // Addon purchases are a host-only surface (targetCategories are always
+    // `owner`/`complex`), so the upgrade CTA always points at the host plans,
+    // never the tourist ones.
+    const upgradePlansHref = buildUrl({
+        locale,
+        path: resolveSubscriptionPlansPathForAudience({ audience: 'host' })
+    });
 
     function handleAccommodationChange(slug: string, accommodationId: string): void {
         setSelectedAccommodationBySlug((prev) => ({ ...prev, [slug]: accommodationId }));
@@ -83,6 +117,14 @@ export function AddonsPurchasePanel({
 
     async function handlePurchase(addon: AddonCardData): Promise<void> {
         const selectedAccommodationId = selectedAccommodationBySlug[addon.slug];
+
+        // A fresh attempt clears any stale gate banner from a previous
+        // failed attempt (e.g. the user upgraded in another tab and retried).
+        setSubscriptionGateSlugs((prev) => {
+            if (!prev[addon.slug]) return prev;
+            const { [addon.slug]: _removed, ...rest } = prev;
+            return rest;
+        });
 
         if (addon.requiresAccommodationTarget && !selectedAccommodationId) {
             addToast({
@@ -107,6 +149,22 @@ export function AddonsPurchasePanel({
         });
 
         if (!result.ok) {
+            // HOS-602: a missing/inactive subscription gets its own inline
+            // banner (reusing the page-level gate copy) instead of a toast —
+            // the rejection is actionable (upgrade), not transient, so it
+            // belongs next to the card the user was trying to buy, not in a
+            // notification that auto-dismisses in 5s. `translateApiError`'s
+            // priority chain would otherwise show a misleading generic
+            // "invalid data" message here: a 422's status-derived `code`
+            // collapses several distinct reasons into `VALIDATION_ERROR`,
+            // which wins over the specific English `message` — `reason` is
+            // the one field the API forwards undisturbed (see addons.ts).
+            if (result.error.reason && SUBSCRIPTION_GATE_REASONS.has(result.error.reason)) {
+                setSubscriptionGateSlugs((prev) => ({ ...prev, [addon.slug]: true }));
+                setPurchasingSlug(null);
+                return;
+            }
+
             addToast({
                 type: 'error',
                 message: translateApiError({
@@ -248,6 +306,30 @@ export function AddonsPurchasePanel({
                             ? t('account.addons.buyingButton', 'Procesando...')
                             : t('account.addons.buyButton', 'Comprar')}
                     </button>
+                )}
+
+                {!isOwned && subscriptionGateSlugs[addon.slug] && (
+                    <div
+                        className={styles.subscriptionGate}
+                        role="alert"
+                        data-testid={`addon-subscription-gate-${addon.slug}`}
+                    >
+                        <p className={styles.subscriptionGateTitle}>
+                            {t('account.addons.gate.title', 'Necesitás una suscripción activa')}
+                        </p>
+                        <p className={styles.subscriptionGateBody}>
+                            {t(
+                                'account.addons.gate.body',
+                                'Los complementos están disponibles para cuentas con una suscripción activa o en período de prueba.'
+                            )}
+                        </p>
+                        <a
+                            href={upgradePlansHref}
+                            className={styles.subscriptionGateCta}
+                        >
+                            {t('account.addons.gate.cta', 'Ver planes')}
+                        </a>
+                    </div>
                 )}
             </article>
         );

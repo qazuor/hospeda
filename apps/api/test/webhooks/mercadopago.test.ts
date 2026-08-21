@@ -25,7 +25,8 @@ vi.mock('@qazuor/qzpay-hono', () => ({
     createWebhookRouter: vi.fn().mockReturnValue({})
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: vi.fn(),
     getAddonBySlug: vi.fn()
 }));

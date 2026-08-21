@@ -108,7 +108,8 @@ vi.mock('@repo/service-core', async (importOriginal) => {
     };
 });
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     getAddonBySlug: vi.fn().mockReturnValue({
         slug: 'visibility-boost-7d',
         grantsEntitlement: 'featured_listing',

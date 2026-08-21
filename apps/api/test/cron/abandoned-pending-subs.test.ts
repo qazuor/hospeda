@@ -95,7 +95,8 @@ vi.mock('../../src/middlewares/billing.js', () => ({
     }))
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: mockCreateMercadoPagoAdapter
 }));
 
