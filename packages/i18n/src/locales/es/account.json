@@ -1016,6 +1016,12 @@
                 "ai-support-monthly": "Para sumar soporte con IA"
             }
         },
+        "featuredOffer": {
+            "title": "Destacá este alojamiento",
+            "body": "Un impulso de visibilidad hace que este alojamiento aparezca destacado en los listados y en los resultados de búsqueda mientras dure el complemento.",
+            "scope": "Ojo: el impulso se aplica solo a esta ficha. Si tenés más de un alojamiento, cada uno necesita su propio complemento.",
+            "linkSr": "para este alojamiento"
+        },
         "billingType": {
             "one_time": "Pago único",
             "recurring": "Mensual"
