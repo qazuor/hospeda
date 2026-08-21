@@ -275,7 +275,10 @@ describe('ensurePlan', () => {
         const metadata = inserted?.metadata as Record<string, unknown>;
         expect(metadata.slug).toBe('plan-test');
         expect(metadata.displayName).toBe('Brand New');
-        expect(metadata.monthlyPriceArs).toBe(1_000_000);
+        // HOS-692 (spec §6.9): monthlyPriceArs is removed from the metadata
+        // mirror — the typed column below is the live write; the DTO never
+        // reads the mirror (plan.crud.ts's mapDbToPlan doc comment).
+        expect(metadata).not.toHaveProperty('monthlyPriceArs');
         expect(metadata.annualPriceArs).toBe(10_000_000);
         // HOS-39 T-005: also dual-writes the typed top-level columns
         // (promoted in T-003), mirroring what plan.crud.ts's createPlan does.
