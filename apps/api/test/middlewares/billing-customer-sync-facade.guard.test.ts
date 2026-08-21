@@ -207,7 +207,7 @@ describe('HOS-596 guard — billing customer sync uses the tolerant QZPay facade
         const source = readFileSync(BILLING_MIDDLEWARE, 'utf-8');
 
         // Act
-        const assignmentIndex = source.indexOf('billingCustomerSyncInstance = createQZPayBilling(');
+        const assignmentIndex = source.indexOf('const customerSyncInstance = createQZPayBilling(');
 
         // Assert
         expect(assignmentIndex).toBeGreaterThan(-1);
@@ -222,7 +222,7 @@ describe('HOS-596 guard — billing customer sync uses the tolerant QZPay facade
         const source = readFileSync(BILLING_MIDDLEWARE, 'utf-8');
 
         // Act
-        const assignmentIndex = source.indexOf('billingInstance = createQZPayBilling(');
+        const assignmentIndex = source.indexOf('const strictInstance = createQZPayBilling(');
 
         // Assert
         expect(assignmentIndex).toBeGreaterThan(-1);

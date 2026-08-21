@@ -188,7 +188,7 @@ function getBillingInstance(): QZPayBilling | null {
         // Without this, qzpay-core defaults to 'log' in non-livemode and silently
         // swallows provider errors — callers would receive a null/undefined result
         // instead of a typed ServiceError.
-        billingInstance = createQZPayBilling({
+        const strictInstance = createQZPayBilling({
             storage: storageAdapter,
             paymentAdapter,
             defaultCurrency: 'ARS',
@@ -221,13 +221,22 @@ function getBillingInstance(): QZPayBilling | null {
         // and `QZPayErrorCode.PROVIDER_CREATE_CUSTOMER_FAILED`, and
         // BillingCustomerSyncService additionally warns when the returned customer
         // carries no provider id.
-        billingCustomerSyncInstance = createQZPayBilling({
+        const customerSyncInstance = createQZPayBilling({
             storage: storageAdapter,
             paymentAdapter,
             defaultCurrency: 'ARS',
             livemode,
             providerSyncErrorStrategy: 'log'
         });
+
+        // Published together, only once BOTH exist. Assigning `billingInstance`
+        // above would make the early `if (billingInstance) return` at the top of
+        // this function a permanent trap if the second construction threw: the
+        // strict facade would serve forever while the customer-sync one stayed
+        // null, and a null facade is exactly the "no billing account" shape this
+        // change exists to remove.
+        billingInstance = strictInstance;
+        billingCustomerSyncInstance = customerSyncInstance;
 
         apiLogger.info('✅ QZPay billing initialized successfully');
 
@@ -244,10 +253,10 @@ function getBillingInstance(): QZPayBilling | null {
         // would hand out a live adapter while the rest of billing is unavailable.
         billingPaymentAdapter = null;
 
-        // Same reasoning for the customer-sync facade: it may have been built
-        // before a later step threw, and handing it out while the strict facade
-        // is null would let customer writes proceed against a half-initialized
-        // billing stack.
+        // Both facades are published together above, so neither can be set here
+        // — this is belt-and-braces against a future edit that publishes them
+        // separately again.
+        billingInstance = null;
         billingCustomerSyncInstance = null;
 
         const errorMessage = error instanceof Error ? error.message : String(error);
