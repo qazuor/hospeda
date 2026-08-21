@@ -141,9 +141,9 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
 
         // Map the QZPayProviderPayment shape (qzpay's normalized type) to the
         // MP-raw-ish shape that the existing extractors (extractPaymentInfo,
-        // extractAnnualSubscriptionMetadata, …) consume. The mapping is
-        // straightforward: amount → transaction_amount and currency →
-        // currency_id; status and metadata pass through unchanged. Fields
+        // extractAnnualSubscriptionMetadata, …) consume. Every MONEY field
+        // crosses a unit boundary here (see below); currency, status and
+        // metadata pass through unchanged. Fields
         // that exist only in MP raw (status_detail, payment_method_id) stay
         // null — those are used only by failure notification copy, not by
         // any dispatch decision.
@@ -166,7 +166,16 @@ export const handlePaymentUpdated: QZPayWebhookHandler = async (c, event) => {
         // already uses when it builds a synthetic payload (`amount / 100`).
         const data: Record<string, unknown> = {
             id: providerPayment.id,
-            transaction_amount: providerPayment.amount,
+            // HOS-713 — `amount` is CENTAVOS, by the same qzpay minor-unit
+            // normalization documented for `refundedAmount` just above. But
+            // `extractPaymentInfo` reads `transaction_amount` as MAJOR units,
+            // and payment-logic.ts converts it back with `Math.round(x * 100)`
+            // before writing `billing_payments.amount` and before handing it to
+            // `sendNotification`. Passing centavos through undivided inflated a
+            // real $150.00 charge to $15.000,00 — 100× — in the ledger AND in
+            // the payment email the customer receives. Divide here, the same
+            // direction subscription-poll.job.ts uses on the identical field.
+            transaction_amount: providerPayment.amount / 100,
             ...(typeof providerPayment.refundedAmount === 'number'
                 ? { transaction_amount_refunded: providerPayment.refundedAmount / 100 }
                 : {}),

@@ -657,7 +657,7 @@ describe('MercadoPago Webhook Handler', () => {
                     payments: {
                         retrieve: vi.fn().mockResolvedValue({
                             id: '987',
-                            amount: 99.99,
+                            amount: 9999, // centavos (= $99.99) — the adapter emits integer minor units
                             currency: 'ARS',
                             status: 'approved',
                             metadata: { customerId: 'cust_123' }
@@ -714,7 +714,7 @@ describe('MercadoPago Webhook Handler', () => {
                     payments: {
                         retrieve: vi.fn().mockResolvedValue({
                             id: '987',
-                            amount: 99.99,
+                            amount: 9999, // centavos (= $99.99) — the adapter emits integer minor units
                             currency: 'ARS',
                             status: 'rejected',
                             statusDetail: 'cc_rejected_insufficient_amount',

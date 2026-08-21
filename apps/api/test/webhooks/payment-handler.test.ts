@@ -104,7 +104,7 @@ function makePaymentAdapter(
                 overrides.retrieve ??
                 vi.fn().mockResolvedValue({
                     id: '987',
-                    amount: 99.99,
+                    amount: 9999, // centavos (= $99.99) — the adapter emits integer minor units
                     currency: 'ARS',
                     status: 'approved',
                     metadata: {}
@@ -198,6 +198,52 @@ describe('handlePaymentUpdated', () => {
         });
         expect(markEventFailedByProviderId).not.toHaveBeenCalled();
         expect(cleanupRequestProviderEventId).toHaveBeenCalledOnce();
+    });
+
+    // -------------------------------------------------------------------------
+    // RED test: money unit boundary (HOS-713)
+    // -------------------------------------------------------------------------
+
+    it('[HOS-713 RED] converts the adapter amount from centavos to major units', async () => {
+        // The qzpay adapter emits every money field in CENTAVOS (integer minor
+        // units). `extractPaymentInfo` — and therefore every consumer of
+        // `transaction_amount` in payment-logic.ts — reads it as MAJOR units.
+        // A real $150,00 charge arrives from the adapter as 15000.
+        const AMOUNT_CENTAVOS = 15_000;
+        const EXPECTED_MAJOR = 150;
+
+        vi.mocked(getWebhookDependencies).mockReturnValue(
+            makeDependencies({
+                retrieve: vi.fn().mockResolvedValue({
+                    id: '987',
+                    amount: AMOUNT_CENTAVOS,
+                    currency: 'ARS',
+                    status: 'approved',
+                    metadata: {}
+                })
+            })
+        );
+        vi.mocked(processPaymentUpdated).mockResolvedValue({
+            success: true,
+            addonConfirmed: false
+        } as never);
+
+        await handlePaymentUpdated(makeMockContext() as never, makeEvent());
+
+        expect(processPaymentUpdated).toHaveBeenCalledOnce();
+        const call = vi.mocked(processPaymentUpdated).mock.calls[0]?.[0] as unknown as {
+            data: Record<string, unknown>;
+        };
+
+        // Exact-value assertion, not objectContaining: the whole point is the
+        // magnitude of the number, so a missing/duplicated conversion must fail.
+        expect(call.data.transaction_amount).toBe(EXPECTED_MAJOR);
+
+        // Spelled out so a regression reads as "we shipped centavos downstream"
+        // rather than an opaque numeric mismatch. Passing the raw adapter value
+        // through is what inflated `billing_payments.amount` and the customer's
+        // payment email by 100×.
+        expect(call.data.transaction_amount).not.toBe(AMOUNT_CENTAVOS);
     });
 
     // -------------------------------------------------------------------------
