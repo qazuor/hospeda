@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Unit tests for the `0067-hos-749-prod-billing-cleanup` data migration, over a
+ * Unit tests for the `0068-hos-749-prod-billing-cleanup` data migration, over a
  * mocked Drizzle chain — no real database connection.
  *
  * The fake dispatches on the REAL Drizzle table object passed to `.from()` /
@@ -11,7 +11,7 @@
  * `db.execute()` is routed by looking at the SQL text — the catalogue query
  * (`pg_constraint`) versus the per-referrer `COUNT(*)`.
  *
- * @module test/data-migrations/0067-hos-749-prod-billing-cleanup
+ * @module test/data-migrations/0068-hos-749-prod-billing-cleanup
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -27,7 +27,7 @@ import {
 } from '@repo/db';
 import { getTableName } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import * as migration from '../../src/data-migrations/0067-hos-749-prod-billing-cleanup.js';
+import * as migration from '../../src/data-migrations/0068-hos-749-prod-billing-cleanup.js';
 import type { SeedMigrationCtx } from '../../src/data-migrations/types.js';
 
 const OWNER_COMP_ID = '5cf22a13-e353-4627-825a-e95586771ab7';
@@ -234,7 +234,7 @@ const INVENTORY_SUBSCRIPTIONS: readonly SubscriptionRow[] = [
     }
 ];
 
-describe('0067-hos-749-prod-billing-cleanup', () => {
+describe('0068-hos-749-prod-billing-cleanup', () => {
     const originalNodeEnv = process.env.NODE_ENV;
 
     beforeEach(() => {
@@ -248,7 +248,7 @@ describe('0067-hos-749-prod-billing-cleanup', () => {
     it('is declared destructive and required', () => {
         expect(migration.meta.destructive).toBe(true);
         expect(migration.meta.group).toBe('required');
-        expect(migration.meta.name).toBe('0067-hos-749-prod-billing-cleanup');
+        expect(migration.meta.name).toBe('0068-hos-749-prod-billing-cleanup');
     });
 
     it('is a no-op outside production', async () => {
@@ -469,7 +469,7 @@ describe('0067-hos-749-prod-billing-cleanup', () => {
     it('never touches the users table — static guard on the migration source', () => {
         const here = path.dirname(fileURLToPath(import.meta.url));
         const source = readFileSync(
-            path.resolve(here, '../../src/data-migrations/0067-hos-749-prod-billing-cleanup.ts'),
+            path.resolve(here, '../../src/data-migrations/0068-hos-749-prod-billing-cleanup.ts'),
             'utf8'
         );
         // Strip comment prose so an explanatory mention of "users" cannot fail

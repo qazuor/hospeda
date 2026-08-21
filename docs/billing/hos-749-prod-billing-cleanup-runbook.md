@@ -30,12 +30,12 @@ now with no local row to explain the charge. MercadoPago comes first, always.
      (the 13 duplicates that exist are all already soft-deleted by the F-47 bug).
      Running this cleanup first only reduces the live set further, so the two
      changes do not conflict in either order.
-- Note that `packages/seed/src/data-migrations/0058`, `0059`, `0065` and `0066`
+- Note that `packages/seed/src/data-migrations/0058`, `0059`, `0065`, `0066` and `0067`
   are **still pending in production** (the ledger's last applied entry as of
-  2026-08-21 is `0057-staff-email-domain-to-com-ar`). They run *before* `0067`
+  2026-08-21 is `0057-staff-email-domain-to-com-ar`). They run *before* `0068`
   in the same batch and hard-delete 23 test accounts along with their billing
-  rows. `0067` is written to tolerate that: it targets whatever is still live at
-  its turn, never a fixed inventory. Do not run `0067` on its own.
+  rows. `0068` is written to tolerate that: it targets whatever is still live at
+  its turn, never a fixed inventory. Do not run `0068` on its own.
 
 ---
 
@@ -164,11 +164,11 @@ Do not proceed to step 3 until this passes.
 ## 3. Apply the migrations
 
 ```bash
-hops --target=prod db-seed-migrate --status      # preview: 0058 … 0067 pending
+hops --target=prod db-seed-migrate --status      # preview: 0058 … 0068 pending
 hops --target=prod db-seed-migrate --allow-destructive
 ```
 
-`0067` is `destructive: true`, so the runner's production gate requires
+`0068` is `destructive: true`, so the runner's production gate requires
 `--allow-destructive` (or `HOSPEDA_ALLOW_DESTRUCTIVE_MIGRATION=true`).
 
 The run aborts, without writing anything, if it meets a state it was not written
@@ -234,7 +234,7 @@ SELECT count(*) FILTER (WHERE deleted_at IS NULL)  AS live_users,
 FROM users;
 ```
 
-Compare against the same counts taken before step 3. `0067` never touches
+Compare against the same counts taken before step 3. `0068` never touches
 `users`; a difference here means `0058`/`0059` (which DO hard-delete 23 test
 accounts, by explicit decision) accounted for it — check their reported counts,
 and if the numbers still do not add up, stop and restore the backup.
@@ -307,7 +307,7 @@ The database says nothing about whether a card will be charged. Re-run the
 The migration is a soft delete, so recovery does not need the backup:
 
 ```sql
--- Undo everything 0067 wrote (its writes all share one timestamp).
+-- Undo everything 0068 wrote (its writes all share one timestamp).
 UPDATE billing_customers      SET deleted_at = NULL WHERE deleted_at = '<ts>';
 UPDATE billing_subscriptions  SET deleted_at = NULL WHERE deleted_at = '<ts>';
 UPDATE billing_payments       SET deleted_at = NULL WHERE deleted_at = '<ts>';
@@ -316,7 +316,7 @@ UPDATE billing_addon_purchases SET deleted_at = NULL WHERE deleted_at = '<ts>';
 
 Find `<ts>` with
 `SELECT DISTINCT deleted_at FROM billing_subscriptions WHERE deleted_at IS NOT NULL ORDER BY 1 DESC;`
-— `0067` stamps a single `new Date()` across all four tables, so its whole
+— `0068` stamps a single `new Date()` across all four tables, so its whole
 write set shares one timestamp and is separable from the 470ms-apart HOS-596
 self-deletions and from the 2026-08-16 QA-grant script.
 
@@ -335,6 +335,6 @@ The migration **preserves it**, because the failure modes are asymmetric: a
 stale grant left in place is visible and reversible, while a stripped grant is
 invisible until the person complains. If the owner decides it was a test, add
 the id to `PURGEABLE_COMP_SUBSCRIPTION_IDS` in
-`packages/seed/src/data-migrations/0067-hos-749-prod-billing-cleanup.ts` **before**
+`packages/seed/src/data-migrations/0068-hos-749-prod-billing-cleanup.ts` **before**
 the migration is applied anywhere — once it is ledgered, editing the file
 corrupts that environment's checksum and a new migration is required instead.

@@ -1,6 +1,6 @@
 /**
  * @fileoverview
- * Data migration: 0067-hos-749-prod-billing-cleanup
+ * Data migration: 0068-hos-749-prod-billing-cleanup
  *
  * HOS-749. Production-only. Soft-deletes the transactional billing rows that
  * production accumulated while the only person paying was the owner, so the
@@ -38,7 +38,7 @@
  * - **`users` and everything hanging off an account.** This module does not
  *   import the `users` table at all — there are real people registered who
  *   simply have not paid yet, and this is a cleanup of billing DATA, not of
- *   accounts. `packages/seed/test/data-migrations/0067-hos-749-prod-billing-cleanup.test.ts`
+ *   accounts. `packages/seed/test/data-migrations/0068-hos-749-prod-billing-cleanup.test.ts`
  *   fails CI if a `users` reference ever appears here.
  * - **Catalogue rows** — `billing_plans`, `billing_prices`, `billing_addons`,
  *   `billing_promo_codes`. Those are configuration, not test data.
@@ -121,7 +121,7 @@
  * Every write is `... AND deleted_at IS NULL`, so a second pass matches nothing
  * and reports zeroes. The ledger already prevents a re-run; this holds anyway.
  *
- * @module data-migrations/0067-hos-749-prod-billing-cleanup
+ * @module data-migrations/0068-hos-749-prod-billing-cleanup
  */
 import {
     and,
@@ -144,7 +144,7 @@ import {
 import type { SeedMigrationCtx, SeedMigrationModule, SeedMigrationResult } from './types.js';
 
 export const meta = {
-    name: '0067-hos-749-prod-billing-cleanup',
+    name: '0068-hos-749-prod-billing-cleanup',
     group: 'required',
     destructive: true
 } as const satisfies SeedMigrationModule['meta'];
