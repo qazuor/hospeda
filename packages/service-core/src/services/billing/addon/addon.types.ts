@@ -79,6 +79,16 @@ export interface PurchaseAddonInput {
      * absent, the checkout falls back to an `'es'`-prefixed URL.
      */
     cancelUrl?: string;
+    /**
+     * Buyer's preferred locale (HOS-606). Used to translate the add-on
+     * `name`/`description` sent to MercadoPago as the checkout line item's
+     * `title`/`description`, via `apps/api`'s `resolveAddonCheckoutName` /
+     * `resolveAddonCheckoutDescription` (`services/addon-checkout-locale.ts`).
+     * The route layer resolves it the same way it resolves `successUrl` /
+     * `cancelUrl`'s locale prefix (`resolveReturnUrlLocale`). Falls back to
+     * `'es'` when absent.
+     */
+    locale?: 'es' | 'en' | 'pt';
 }
 
 /**
