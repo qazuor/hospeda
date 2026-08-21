@@ -654,7 +654,7 @@ const comercialSidebar: SidebarInput = {
         {
             type: 'group',
             id: 'sponsorships',
-            label: { es: 'Sponsorships', en: 'Sponsorships', pt: 'Patrocínios' },
+            label: { es: 'Patrocinios', en: 'Sponsorships', pt: 'Patrocínios' },
             icon: 'PostSponsorshipIcon',
             defaultOpen: false,
             permissions: ['SPONSORSHIP_VIEW', 'POST_SPONSOR_VIEW'],
@@ -664,7 +664,7 @@ const comercialSidebar: SidebarInput = {
                     type: 'link',
                     id: 'sponsorships-list',
                     label: {
-                        es: 'Sponsorships activos',
+                        es: 'Patrocinios activos',
                         en: 'Active sponsorships',
                         pt: 'Patrocínios ativos'
                     },
@@ -677,7 +677,7 @@ const comercialSidebar: SidebarInput = {
                     type: 'link',
                     id: 'sponsors',
                     label: {
-                        es: 'Sponsors (entidad)',
+                        es: 'Patrocinadores (entidad)',
                         en: 'Sponsors (entity)',
                         pt: 'Patrocinadores (entidade)'
                     },
@@ -724,7 +724,11 @@ const comercialSidebar: SidebarInput = {
                 {
                     type: 'link',
                     id: 'webhook-events',
-                    label: { es: 'Webhook events', en: 'Webhook events', pt: 'Webhook events' },
+                    label: {
+                        es: 'Eventos de webhook',
+                        en: 'Webhook events',
+                        pt: 'Eventos de webhook'
+                    },
                     icon: 'WebhookIcon',
                     route: '/platform/ops/webhooks',
                     permissions: ['BILLING_READ_ALL'],
