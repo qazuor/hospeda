@@ -12,6 +12,7 @@ import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
     blankComments,
+    collectEntityKeys,
     extractReferences,
     prune,
     readReferenceLocale,
@@ -31,16 +32,19 @@ afterEach(() => {
  * @param params.locales - Namespace name to its JSON object.
  * @param params.sources - Repo-relative source path to its contents.
  * @param params.inventory - Optional frozen inventory entries.
+ * @param params.listPageComposes - Pass false to simulate EntityListPage dropping the template.
  * @returns The absolute root of the throwaway repo.
  */
 function makeRepo({
     locales,
     sources,
-    inventory
+    inventory,
+    listPageComposes
 }: {
     locales: Record<string, unknown>;
     sources: Record<string, string>;
     inventory?: Array<{ file: string; key: string }>;
+    listPageComposes?: boolean;
 }): string {
     const root = mkdtempSync(join(tmpdir(), 'i18n-guard-'));
     dirs.push(root);
@@ -60,6 +64,18 @@ function makeRepo({
         mkdirSync(join(full, '..'), { recursive: true });
         writeFileSync(full, contents, 'utf8');
     }
+
+    // Check 3 reads this file to confirm its template still exists; without it
+    // every check-3 test would pass for the wrong reason.
+    const listPage = join(root, 'apps/admin/src/components/entity-list/EntityListPage.tsx');
+    mkdirSync(join(listPage, '..'), { recursive: true });
+    writeFileSync(
+        listPage,
+        listPageComposes === false
+            ? 'const label = t(config.labelKey);'
+            : 'const label = t(`admin-entities.entities.${config.entityKey}.plural`);',
+        'utf8'
+    );
 
     mkdirSync(join(root, 'scripts'), { recursive: true });
     writeFileSync(
@@ -270,5 +286,74 @@ describe('prune', () => {
         // which is what stops prune from being a way to silence a violation.
         expect(after.entries.map((e) => e.key)).toEqual(['nav.signOut']);
         expect(run(root)).toBe(1);
+    });
+});
+
+describe('check 3 — every admin entity has a label to render', () => {
+    /** Locale content with both labels present for `partner`. */
+    const withPartner = {
+        'admin-entities': { entities: { partner: { singular: 'Aliado', plural: 'Aliados' } } }
+    };
+
+    it('passes when both labels exist', () => {
+        const root = makeRepo({
+            locales: withPartner,
+            sources: { 'apps/admin/src/features/partners/config.ts': "entityKey: 'partner'," }
+        });
+        expect(run(root)).toBe(0);
+    });
+
+    it('fails when the plural label is absent', () => {
+        const root = makeRepo({
+            locales: { 'admin-entities': { entities: { partner: { singular: 'Aliado' } } } },
+            sources: { 'apps/admin/src/features/partners/config.ts': "entityKey: 'partner'," }
+        });
+        expect(run(root)).toBe(1);
+    });
+
+    it('fails when the entity has no entry at all', () => {
+        const root = makeRepo({
+            locales: { 'admin-entities': { entities: { tag: { singular: 'E', plural: 'Es' } } } },
+            sources: { 'apps/admin/src/features/partners/config.ts': "entityKey: 'partner'," }
+        });
+        expect(run(root)).toBe(1);
+    });
+
+    it('fails when EntityListPage stops composing the key, so the rule cannot go vacuous', () => {
+        const root = makeRepo({
+            locales: withPartner,
+            sources: { 'apps/admin/src/features/partners/config.ts': "entityKey: 'partner'," },
+            listPageComposes: false
+        });
+        expect(run(root)).toBe(1);
+    });
+
+    it('ignores an entityKey that only a test file declares', () => {
+        const root = makeRepo({
+            locales: { 'admin-entities': { entities: {} } },
+            sources: {
+                'apps/admin/src/features/commerce/x.test.tsx': "entityKey: 'testCommerce',"
+            }
+        });
+        expect(run(root)).toBe(0);
+    });
+
+    it('ignores an entityKey declared outside the admin app', () => {
+        const root = makeRepo({
+            locales: { 'admin-entities': { entities: {} } },
+            sources: { 'apps/web/src/x.ts': "entityKey: 'partner'," }
+        });
+        expect(run(root)).toBe(0);
+    });
+});
+
+describe('collectEntityKeys', () => {
+    it('does not read an entityKey out of a comment', () => {
+        const root = makeRepo({
+            locales: { 'admin-entities': { entities: {} } },
+            sources: { 'apps/admin/src/a.ts': "// entityKey: 'partner'\nconst a = 1;" }
+        });
+        expect(run(root)).toBe(0);
+        expect(collectEntityKeys([join(root, 'apps/admin/src/a.ts')]).size).toBe(0);
     });
 });

@@ -39,9 +39,20 @@
  *   apps/web. They are enumerated in FALLBACK_INVENTORY and this guard fails on
  *   any site that is not in it.
  *
+ * Check 3 — every admin entity has the label the list page asks for.
+ *   `EntityListPage` builds its title and its create button from
+ *   `admin-entities.entities.${config.entityKey}.plural` / `.singular`. That key
+ *   is composed at runtime, so checks 1 and 2 are blind to it — and two of the
+ *   three raw keys read in the production partners listing were exactly this
+ *   shape. Every `entityKey` declared by a list config must therefore have both
+ *   labels. Check 3a first asserts the composition site still exists, because a
+ *   rule about a template that no longer exists is a rule that cannot fail.
+ *
  * This guard does NOT assert that a resolved key's TEXT is correct, nor that
  * `en`/`pt` values are really translated rather than the Spanish copied over.
  * Both are real and separate problems; neither is statically decidable here.
+ * It also does not see keys composed from a value it cannot resolve statically:
+ * check 3 closes the one such shape the smoke actually caught, not the class.
  *
  * ---------------------------------------------------------------------------
  * ON THE FALLBACK INVENTORY
@@ -268,6 +279,30 @@ export function extractReferences({
     return found;
 }
 
+/** `entityKey: 'partner'` as declared by an admin entity-list config. */
+export const ENTITY_KEY_PATTERN = /\bentityKey:\s*(['"])([A-Za-z][A-Za-z0-9]*)\1/g;
+
+/** The template `EntityListPage` builds its labels from. */
+export const ENTITY_LABEL_TEMPLATE = 'admin-entities.entities.${config.entityKey}.';
+
+/**
+ * Collects every entity key declared by an admin entity-list config.
+ *
+ * @param files - Absolute paths of the source files to scan.
+ * @returns Each declared key mapped to the file that declares it.
+ */
+export function collectEntityKeys(files: readonly string[]): Map<string, string> {
+    const declared = new Map<string, string>();
+    for (const file of files) {
+        if (!file.includes('/apps/admin/')) continue;
+        for (const m of blankComments(readFileSync(file, 'utf8')).matchAll(ENTITY_KEY_PATTERN)) {
+            const key = m[2] as string;
+            if (!declared.has(key)) declared.set(key, file);
+        }
+    }
+    return declared;
+}
+
 // ---------------------------------------------------------------------------
 // Inventory
 // ---------------------------------------------------------------------------
@@ -388,6 +423,47 @@ export function run(repoRoot: string): number {
             `  OK — ${fallbackSites.length} hardcoded fallbacks remain, all of them listed ` +
                 `in the frozen inventory (HOS-616 is what drains it).`
         );
+    }
+
+    // --- Check 3 -----------------------------------------------------------
+    const listPage = join(repoRoot, 'apps/admin/src/components/entity-list/EntityListPage.tsx');
+    let composes = false;
+    try {
+        composes = readFileSync(listPage, 'utf8').includes(ENTITY_LABEL_TEMPLATE);
+    } catch {
+        composes = false;
+    }
+
+    if (composes) {
+        const declared = collectEntityKeys(files);
+        const missingLabels: Array<{ key: string; file: string; part: string }> = [];
+        for (const [key, file] of declared) {
+            for (const part of ['singular', 'plural']) {
+                if (!locale.keys.has(`admin-entities.entities.${key}.${part}`)) {
+                    missingLabels.push({ key, file: rel(file), part });
+                }
+            }
+        }
+        if (missingLabels.length > 0) {
+            console.log('\nERROR: admin entities whose list page has no label to render.');
+            console.log('       EntityListPage builds its title and create button from these,');
+            console.log('       so the page shows "[MISSING: …]" where the name should be.');
+            for (const m of missingLabels) {
+                console.log(`  ${m.file}`);
+                console.log(`    admin-entities.entities.${m.key}.${m.part}`);
+            }
+            failed = true;
+        } else {
+            console.log(
+                `  OK — all ${declared.size} admin entities have a singular and a plural label.`
+            );
+        }
+    } else {
+        console.log('\nERROR: EntityListPage no longer composes');
+        console.log(`       ${ENTITY_LABEL_TEMPLATE}<singular|plural>.`);
+        console.log('       Check 3 below is written against that template, so it can no');
+        console.log('       longer fail. Point it at the new mechanism or drop it.');
+        failed = true;
     }
 
     console.log('');
