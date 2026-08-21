@@ -1028,6 +1028,18 @@
             "perAccommodation": "Per accommodation",
             "account": "Account-wide"
         },
+        "focus": {
+            "others": "Other add-ons",
+            "headings": {
+                "fallback": "The add-on you were looking for",
+                "extra-photos-20": "To add more photos",
+                "extra-accommodations-5": "To list more accommodations",
+                "extra-properties-5": "To add more properties",
+                "visibility-boost-7d": "To feature your accommodation",
+                "visibility-boost-30d": "To feature your accommodation",
+                "ai-support-monthly": "To add AI support"
+            }
+        },
         "billingType": {
             "one_time": "One-time",
             "recurring": "Monthly"

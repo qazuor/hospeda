@@ -17,6 +17,7 @@ import { resolveSubscriptionPlansPath } from '@/lib/account-roles';
 import type { AccommodationPhotoUsage, LimitUsage } from '@/lib/api/endpoints-protected';
 import { billingApi } from '@/lib/api/endpoints-protected';
 import type { ProductDomainScope } from '@/lib/api/types';
+import { buildAddonFocusUrl } from '@/lib/billing/addon-focus';
 import {
     addonSlugForLimit,
     groupLimitsByAudience,
@@ -148,11 +149,14 @@ function UpgradeActions({
     const addonSlug = addonSlugForLimit(limit.limitKey);
 
     const plansHref = buildUrl({ locale, path: resolveSubscriptionPlansPath({ roles }) });
-    const addonsHref = `${buildUrl({ locale, path: 'mi-cuenta/addons' })}#addon-${addonSlug}`;
+    // HOS-729: carries `?focus=<slug>` AND the pre-existing `#addon-<slug>`
+    // fragment, so the add-ons page both scrolls to the card (as before) and
+    // now actually surfaces it at the top under a heading naming this limit.
+    const addonsHref = addonSlug ? buildAddonFocusUrl({ locale, slug: addonSlug }) : null;
 
     return (
         <p className={styles.actions}>
-            {addonSlug && (
+            {addonsHref !== null && (
                 <a
                     className={styles.actionLink}
                     href={addonsHref}

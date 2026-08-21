@@ -10,6 +10,11 @@
  * target accommodation from an inline `<select>` before the button enables.
  * Already-owned active addons render as "Activo" instead of a buy button.
  *
+ * Focus (HOS-729): with a `focusSlug` that matches a card, that card renders
+ * first and alone, highlighted, under a heading naming the problem the user
+ * arrived with, and the WHOLE remaining catalog renders below it under "Otros
+ * complementos". Focus never filters — see `@/lib/billing/addon-focus`.
+ *
  * Hydration: caller MUST use `client:load` (the buy button must be
  * interactive immediately — there is no meaningful above/below-the-fold
  * distinction on this page).
@@ -23,6 +28,11 @@ import { resolveSubscriptionPlansPathForAudience } from '@/lib/account-roles';
 import { translateAddonDescription, translateAddonName } from '@/lib/addon-labels';
 import { billingApi } from '@/lib/api/endpoints-protected';
 import { translateApiError } from '@/lib/api-errors';
+import {
+    ADDON_FOCUS_FALLBACK_HEADING_KEY,
+    addonFocusHeadingKey,
+    splitAddonsByFocus
+} from '@/lib/billing/addon-focus';
 import { formatPrice } from '@/lib/format-utils';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
@@ -64,6 +74,12 @@ export interface AddonsPurchasePanelProps {
     readonly ownedAddonSlugs: readonly string[];
     /** The host's own accommodations, for `requiresAccommodationTarget` add-ons. */
     readonly accommodations: readonly AddonTargetAccommodation[];
+    /**
+     * Add-on slug to put in focus (HOS-729), read server-side from
+     * `?focus=<slug>`. A slug that matches nothing degrades to the normal
+     * render — it never hides anything.
+     */
+    readonly focusSlug?: string | null;
 }
 
 // ─── Component ────────────────────────────────────────────────────────────────
@@ -75,7 +91,8 @@ export function AddonsPurchasePanel({
     locale,
     addons,
     ownedAddonSlugs,
-    accommodations
+    accommodations,
+    focusSlug
 }: AddonsPurchasePanelProps) {
     const { t, tPlural } = createTranslations(locale);
 
@@ -100,8 +117,20 @@ export function AddonsPurchasePanel({
 
     const ownedSet = new Set(ownedAddonSlugs);
 
-    const perAccommodationAddons = addons.filter((addon) => addon.requiresAccommodationTarget);
-    const accountLevelAddons = addons.filter((addon) => !addon.requiresAccommodationTarget);
+    // HOS-729. `focused === null` (no param, unknown slug, or an add-on the
+    // user already owns and which is therefore absent from the catalog) leaves
+    // `rest` as the WHOLE list, which is exactly the normal render below.
+    const { focused: focusedAddon, rest: unfocusedAddons } = splitAddonsByFocus({
+        addons,
+        focusSlug
+    });
+
+    const perAccommodationAddons = unfocusedAddons.filter(
+        (addon) => addon.requiresAccommodationTarget
+    );
+    const accountLevelAddons = unfocusedAddons.filter(
+        (addon) => !addon.requiresAccommodationTarget
+    );
 
     // Addon purchases are a host-only surface (targetCategories are always
     // `owner`/`complex`), so the upgrade CTA always points at the host plans,
@@ -200,7 +229,23 @@ export function AddonsPurchasePanel({
 
     // ── Render helpers ────────────────────────────────────────────────────────
 
-    function renderCard(addon: AddonCardData) {
+    /**
+     * Renders one add-on card.
+     *
+     * RO-RO on purpose: called from `.map()`, where a positional second
+     * parameter would silently receive the array index.
+     *
+     * @param params.addon - The add-on to render.
+     * @param params.isFocused - Whether this is the focused card (HOS-729).
+     * @returns The card element.
+     */
+    function renderCard({
+        addon,
+        isFocused = false
+    }: {
+        readonly addon: AddonCardData;
+        readonly isFocused?: boolean;
+    }) {
         const isOwned = ownedSet.has(addon.slug);
         const isPurchasing = purchasingSlug === addon.slug;
         const needsSelect = addon.requiresAccommodationTarget;
@@ -225,7 +270,8 @@ export function AddonsPurchasePanel({
                 // page deep-links here (`#addon-<slug>`) when a limit that this
                 // add-on raises is running out.
                 id={`addon-${addon.slug}`}
-                className={styles.card}
+                className={isFocused ? `${styles.card} ${styles.cardFocused}` : styles.card}
+                data-focused={isFocused ? 'true' : undefined}
                 data-testid={`addon-card-${addon.slug}`}
             >
                 <div className={styles.cardHeader}>
@@ -337,6 +383,48 @@ export function AddonsPurchasePanel({
 
     // ── Ready state ────────────────────────────────────────────────────────────
 
+    // With a card in focus the remaining catalog collapses into ONE block under
+    // "Otros complementos" instead of its usual two: the page already carries a
+    // problem-shaped heading at the top, and re-stating "Por alojamiento" /
+    // "De cuenta" underneath it buries the point in headings. Nothing is
+    // dropped — every card the normal render shows is still here.
+    if (focusedAddon !== null) {
+        const genericFocusHeading = t(
+            ADDON_FOCUS_FALLBACK_HEADING_KEY,
+            'El complemento que estabas buscando'
+        );
+
+        return (
+            <div className={styles.root}>
+                <section
+                    className={`${styles.group} ${styles.focusGroup}`}
+                    data-testid="addon-focus-group"
+                >
+                    <h2 className={styles.groupTitle}>
+                        {t(addonFocusHeadingKey(focusedAddon.slug), genericFocusHeading)}
+                    </h2>
+                    <div className={styles.grid}>
+                        {renderCard({ addon: focusedAddon, isFocused: true })}
+                    </div>
+                </section>
+
+                {unfocusedAddons.length > 0 && (
+                    <section
+                        className={styles.group}
+                        data-testid="addon-others-group"
+                    >
+                        <h2 className={styles.groupTitle}>
+                            {t('account.addons.focus.others', 'Otros complementos')}
+                        </h2>
+                        <div className={styles.grid}>
+                            {unfocusedAddons.map((addon) => renderCard({ addon }))}
+                        </div>
+                    </section>
+                )}
+            </div>
+        );
+    }
+
     return (
         <div className={styles.root}>
             {perAccommodationAddons.length > 0 && (
@@ -344,7 +432,9 @@ export function AddonsPurchasePanel({
                     <h2 className={styles.groupTitle}>
                         {t('account.addons.groups.perAccommodation', 'Por alojamiento')}
                     </h2>
-                    <div className={styles.grid}>{perAccommodationAddons.map(renderCard)}</div>
+                    <div className={styles.grid}>
+                        {perAccommodationAddons.map((addon) => renderCard({ addon }))}
+                    </div>
                 </section>
             )}
 
@@ -353,7 +443,9 @@ export function AddonsPurchasePanel({
                     <h2 className={styles.groupTitle}>
                         {t('account.addons.groups.account', 'De cuenta')}
                     </h2>
-                    <div className={styles.grid}>{accountLevelAddons.map(renderCard)}</div>
+                    <div className={styles.grid}>
+                        {accountLevelAddons.map((addon) => renderCard({ addon }))}
+                    </div>
                 </section>
             )}
         </div>
