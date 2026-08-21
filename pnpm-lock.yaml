@@ -961,6 +961,9 @@ importers:
       jsdom:
         specifier: ^26.0.0
         version: 26.0.0(supports-color@8.1.1)
+      nanostores:
+        specifier: ^1.1.1
+        version: 1.4.0
       rollup-plugin-visualizer:
         specifier: ^7.0.1
         version: 7.0.1(rolldown@1.2.4)(rollup@4.62.0)
