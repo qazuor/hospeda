@@ -35,6 +35,7 @@
  */
 
 import { billingOrphanPayments, getDb } from '@repo/db';
+import { env } from '../../utils/env.js';
 import { apiLogger } from '../../utils/logger.js';
 
 /**
@@ -125,6 +126,7 @@ export function buildOrphanPaymentRow(input: RecordOrphanPaymentInput): {
     readonly observedStatus: string | null;
     readonly source: string;
     readonly status: 'unresolved';
+    readonly livemode: boolean;
     readonly metadata: Record<string, unknown>;
 } {
     return {
@@ -142,6 +144,12 @@ export function buildOrphanPaymentRow(input: RecordOrphanPaymentInput): {
         observedStatus: input.observedStatus ?? null,
         source: input.source,
         status: 'unresolved',
+        // HOS-708 / HOS-719: derived from the environment on every write, never
+        // hard-coded. Sandbox mode means every persisted row is non-live. This
+        // is the single derivation site for the queue, and it matters more here
+        // than anywhere else: a human triaging this table has to be able to tell
+        // a genuine stranded charge from a staging test at a glance.
+        livemode: !env.HOSPEDA_MERCADO_PAGO_SANDBOX,
         metadata: input.metadata ?? {}
     };
 }
@@ -205,7 +213,8 @@ export async function recordOrphanPayment(
                 amount: row.amount,
                 currency: row.currency,
                 observedStatus: row.observedStatus,
-                source: row.source
+                source: row.source,
+                livemode: row.livemode
             },
             'Confirmed payment could not be applied — queued for manual resolution',
             { capture: true }
@@ -227,6 +236,7 @@ export async function recordOrphanPayment(
                 currency: row.currency,
                 observedStatus: row.observedStatus,
                 source: row.source,
+                livemode: row.livemode,
                 metadata: row.metadata,
                 error: error instanceof Error ? error.message : String(error)
             },
