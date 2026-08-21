@@ -919,52 +919,6 @@
             }
         }
     },
-    "commerceLeads": {
-        "page": {
-            "title": "Leads de comercios",
-            "empty": "No hay leads para mostrar.",
-            "loadError": "Error al cargar los leads. Intentá de nuevo."
-        },
-        "filter": {
-            "label": "Estado:",
-            "all": "Todos"
-        },
-        "status": {
-            "pending": "Pendiente",
-            "reviewing": "En revisión",
-            "approved": "Aprobado",
-            "rejected": "Rechazado"
-        },
-        "columns": {
-            "businessName": "Negocio",
-            "contactName": "Contacto",
-            "email": "Email",
-            "domain": "Dominio",
-            "status": "Estado",
-            "createdAt": "Fecha",
-            "actions": "Acciones"
-        },
-        "actions": {
-            "handle": "Resolver"
-        },
-        "handle": {
-            "title": "Resolver lead",
-            "decisionLabel": "Decisión",
-            "approve": "Aprobar",
-            "reject": "Rechazar",
-            "noteLabel": "Nota (opcional)",
-            "notePlaceholder": "Comentario interno para el equipo...",
-            "submit": "Confirmar",
-            "submitting": "Guardando...",
-            "successApproved": "Lead aprobado exitosamente.",
-            "successRejected": "Lead rechazado."
-        },
-        "pagination": {
-            "prev": "Anterior",
-            "next": "Siguiente",
-            "info": "Página {{page}} de {{totalPages}} · {{total}} leads"
-        }
-    },
     "allianceLeads": {
         "page": {
             "title": "Leads de aliados",
