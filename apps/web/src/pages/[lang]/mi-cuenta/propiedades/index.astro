@@ -27,6 +27,7 @@ import { hasAccommodationsNavAccess } from '@/lib/nav-gating';
 import { getApiUrl } from '@/lib/env';
 import { webLogger as logger } from '@/lib/logger';
 import { MAX_ACCOMMODATIONS_LIMIT_KEY, parseUsageResponse } from '@/lib/host/usage-badge';
+import { resolveLimitAddonOffer } from '@/lib/billing/limit-addon-offer';
 import { shouldShowNeedsPlanBanner } from '@/lib/host/needs-plan-banner';
 import { resolveGenericOwnerTrialDays } from '@/lib/billing/generic-trial-days';
 import AccountLayout from '@/layouts/AccountLayout.astro';
@@ -193,6 +194,18 @@ const needsPlanDescription = t(
     'Tus propiedades quedan guardadas como borrador y todavía no son visibles en el sitio. Para publicarlas necesitás un plan de anfitrión activo.'
 );
 const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan de anfitrión');
+
+// HOS-727: the quota badge is where the host SEES the cap, so it is where the
+// cheap way past it belongs — next to, not instead of, the plan upgrade.
+// Resolved from the limit (never a hardcoded add-ons link): if
+// `max_accommodations` ever stops having a purchasable add-on this is `null`
+// and the badge silently goes back to offering only the upgrade, rather than
+// promising a card the add-ons page does not have.
+const accommodationsAddonOffer = resolveLimitAddonOffer({
+    locale,
+    limitKey: MAX_ACCOMMODATIONS_LIMIT_KEY
+});
+const usageAddonLabel = t('account.subscription.usage.buyAddon', 'Ampliar con un complemento');
 ---
 
 <AccountLayout locale={locale} title={title} description={subtitle} activeSection="propiedades">
@@ -235,6 +248,15 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
                     max: usageData.maxAllowed
                 })}
             </span>
+            {usageData.threshold !== 'ok' && accommodationsAddonOffer !== null && (
+                <a
+                    href={accommodationsAddonOffer.href}
+                    class="props-page__usage-addon"
+                    data-testid="usage-addon-cta"
+                >
+                    {usageAddonLabel}
+                </a>
+            )}
             {usageData.threshold !== 'ok' && (
                 <a href={buildUrl({ locale, path: 'suscriptores/planes' })} class="props-page__usage-upgrade">
                     {t('host.properties.usage.upgrade', 'Mejorar plan')}
@@ -289,6 +311,9 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
     .props-page__usage {
         display: inline-flex;
         align-items: center;
+        /* HOS-727 added a second CTA to this row; wrapping keeps the three
+           nowrap children from overflowing the pill on narrow screens. */
+        flex-wrap: wrap;
         gap: var(--space-3, 0.75rem);
         padding: 0.5rem 1rem;
         margin-bottom: var(--space-6, 1.5rem);
@@ -340,6 +365,31 @@ const needsPlanCta = t('host.properties.list.needsPlanBanner.cta', 'Elegir plan 
     }
 
     .props-page__usage-upgrade:hover {
+        opacity: 0.88;
+    }
+
+    /* ── HOS-727: the add-on offer, sitting beside the plan upgrade ──
+       Outlined rather than filled: it reads as a second, lighter way out of
+       the cap without restyling the pre-existing upgrade pill or competing
+       with it for the eye. Inherits `color` so it stays legible on all four
+       threshold backgrounds (ok / warning / critical / exceeded). */
+    .props-page__usage-addon {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.75rem;
+        border-radius: var(--radius-pill, 9999px);
+        border: 1px solid currentcolor;
+        color: inherit;
+        background-color: transparent;
+        font-family: var(--font-sans);
+        font-weight: 600;
+        font-size: 0.75rem;
+        text-decoration: none;
+        white-space: nowrap;
+        transition: opacity 150ms ease-out;
+    }
+
+    .props-page__usage-addon:hover {
         opacity: 0.88;
     }
 
