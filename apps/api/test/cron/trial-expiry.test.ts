@@ -54,7 +54,8 @@ const mockPaymentAdapter = {
 };
 const mockCreateMercadoPagoAdapter = vi.fn((..._args: unknown[]) => mockPaymentAdapter);
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: (...args: unknown[]) => mockCreateMercadoPagoAdapter(...args)
 }));
 

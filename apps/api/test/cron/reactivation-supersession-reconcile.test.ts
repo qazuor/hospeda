@@ -76,7 +76,11 @@ vi.mock('@repo/db', () => ({
     isNull: vi.fn((col: unknown) => ({ op: 'isNull', col }))
 }));
 
-vi.mock('@repo/schemas', () => ({
+// HOS-702: PARTIAL. This suite now loads the REAL @repo/billing, whose config
+// barrel reads ProductDomainEnum from @repo/schemas — a whole-module literal
+// here made that import undefined and aborted the file.
+vi.mock('@repo/schemas', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/schemas')>()),
     SubscriptionStatusEnum: {
         ACTIVE: 'active',
         TRIALING: 'trialing',
@@ -91,7 +95,8 @@ vi.mock('drizzle-orm', () => ({
     sql: (strings: TemplateStringsArray, ...values: unknown[]) => ({ _sql: { strings, values } })
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     createMercadoPagoAdapter: mockCreateMercadoPagoAdapter
 }));
 

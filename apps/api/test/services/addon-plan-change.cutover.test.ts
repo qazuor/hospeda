@@ -59,7 +59,8 @@ vi.mock('@repo/service-core', () => ({
     withServiceTransaction: vi.fn()
 }));
 
-vi.mock('@repo/billing', () => ({
+vi.mock('@repo/billing', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('@repo/billing')>()),
     // getPlanBySlug no longer used in addon-plan-change.service after T-026
     getAddonBySlug: mockGetAddonBySlug
 }));

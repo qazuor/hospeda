@@ -7,6 +7,7 @@
  * @module services/billing/addon/addon-user-addons
  */
 
+import { isEntitlementGrantingStatus } from '@repo/billing';
 import type { QueryContext } from '@repo/db';
 import { getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
@@ -180,10 +181,12 @@ async function parseMetadataAddons({
 
     // SPEC-239 T-034: filter to accommodation-domain subscriptions only.
     // Treats null/undefined productDomain as 'accommodation' (legacy rows).
+    // HOS-702: `isEntitlementGrantingStatus` is the canonical liveness set. The
+    // hand-rolled active/trialing pair it replaces dropped `comp`, so a
+    // complimentary subscriber's `addonAdjustments` metadata was never parsed and
+    // every add-on they held reported as absent.
     const activeSubscription = subscriptions.find(
-        (sub) =>
-            (sub.status === 'active' || sub.status === 'trialing') &&
-            isAccommodationSubscription(sub)
+        (sub) => isEntitlementGrantingStatus(sub.status) && isAccommodationSubscription(sub)
     );
 
     if (!activeSubscription) {

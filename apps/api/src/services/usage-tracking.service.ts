@@ -16,7 +16,7 @@
 
 import type { QZPayBilling } from '@qazuor/qzpay-core';
 import { getMonthlyCallCount } from '@repo/ai-core';
-import { isLimitKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
+import { isEntitlementGrantingStatus, isLimitKey, LIMIT_METADATA, LimitKey } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { accommodationMediaModel, accommodationModel, getDb } from '@repo/db';
 import { billingAddonPurchases } from '@repo/db/schemas';
@@ -199,9 +199,13 @@ function findActiveSubscriptionForDomain<T extends { status: string }>(input: {
     subscriptions: readonly T[];
     productDomain: ProductDomainScope;
 }): T | undefined {
+    // HOS-702: liveness is `isEntitlementGrantingStatus`, never a hand-rolled
+    // active/trialing pair. This function resolves the subscription whose PLAN
+    // supplies the limits, so dropping `comp` here reported a complimentary
+    // subscriber's every limit against no plan at all.
     return input.subscriptions.find(
         (sub) =>
-            (sub.status === 'active' || sub.status === 'trialing') &&
+            isEntitlementGrantingStatus(sub.status) &&
             subscriptionMatchesDomain(sub, input.productDomain)
     );
 }
