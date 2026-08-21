@@ -8,7 +8,6 @@
 import {
     accommodationReviews,
     accommodations,
-    commerceLeads,
     commerceListingSubscriptions,
     type DrizzleClient,
     destinationReviews,
@@ -840,50 +839,6 @@ export async function seedGastronomy(
     } as typeof gastronomies.$inferInsert);
 
     return { ownerId, destinationId, gastronomyId };
-}
-
-interface SeedCommerceLeadOverrides {
-    readonly leadId?: string;
-    readonly email?: string;
-    readonly contactName?: string;
-    readonly businessName?: string;
-    readonly domain?: string;
-}
-
-/**
- * Inserts a `commerce_leads` row (no FK dependencies beyond optional
- * destinationId). Returns the lead ID, email, and contact name so the
- * provisioning test can build the `CommerceLead` object.
- *
- * @param tx - Drizzle transaction client.
- * @param overrides - Optional field overrides.
- * @returns Object containing `{ leadId, email, contactName }`.
- */
-export async function seedCommerceLead(
-    tx: DrizzleClient,
-    overrides: SeedCommerceLeadOverrides = {}
-): Promise<{
-    readonly leadId: string;
-    readonly email: string;
-    readonly contactName: string;
-}> {
-    const leadId = overrides.leadId ?? crypto.randomUUID();
-    const uid = crypto.randomUUID().slice(0, 8);
-    const email = overrides.email ?? `lead-${uid}@example.com`;
-    const contactName = overrides.contactName ?? `Lead Contact ${uid}`;
-    const businessName = overrides.businessName ?? `Lead Business ${uid}`;
-    const domain = overrides.domain ?? 'gastronomy';
-
-    await tx.insert(commerceLeads).values({
-        id: leadId,
-        domain,
-        businessName,
-        contactName,
-        email,
-        status: 'new'
-    } as typeof commerceLeads.$inferInsert);
-
-    return { leadId, email, contactName };
 }
 
 interface SeedCommerceListingSubscriptionOverrides {
