@@ -96,7 +96,7 @@ function PartnerViewPage() {
 
                 <div className="grid gap-4 md:grid-cols-2">
                     <div className="space-y-3 rounded-lg border p-4">
-                        <h2 className="font-medium text-lg">Send payment link</h2>
+                        <h2 className="font-medium text-lg">Enviar link de pago</h2>
                         <p className="text-muted-foreground text-sm">
                             Genera un checkout real para el plan asignado al partner.
                         </p>
@@ -123,7 +123,7 @@ function PartnerViewPage() {
                     </div>
 
                     <div className="space-y-3 rounded-lg border p-4">
-                        <h2 className="font-medium text-lg">Register manual payment</h2>
+                        <h2 className="font-medium text-lg">Registrar pago manual</h2>
                         <textarea
                             className="min-h-24 w-full rounded-md border px-3 py-2"
                             placeholder="Nota interna opcional"
