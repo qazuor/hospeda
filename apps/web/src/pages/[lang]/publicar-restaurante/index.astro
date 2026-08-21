@@ -351,7 +351,11 @@ const signupUrl = buildUrl({ locale, path: 'auth/signup' });
         font-family: var(--font-decorative);
         font-weight: 700;
         font-size: clamp(1.1rem, 2.5vw, 1.4rem);
-        color: var(--brand-accent);
+        /* HOS-690 a11y fix: --brand-accent (#f07900) on --surface-warm (#e0f1ff)
+           measures 2.44:1, below the 3:1 AA large-text minimum (a11y sweep,
+           color-contrast, serious). --core-foreground is the design system's
+           always-AA-safe text token on any light surface. */
+        color: var(--core-foreground);
         margin: 0 0 var(--space-2);
     }
 
