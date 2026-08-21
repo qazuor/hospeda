@@ -386,7 +386,7 @@ const PUBLIC_DETAILS_ERROR_CODES: ReadonlySet<ServiceErrorCode> = new Set([
 /**
  * Logs a route error at the level appropriate to its severity (HOS-622).
  *
- * A 404/410/422-shaped `ServiceError`, or a raw 401/403 `HTTPException`, is a
+ * A 404/410-shaped `ServiceError`, or a raw 401/403 `HTTPException`, is a
  * CORRECT response — not an application fault. Logging every one of them as
  * `error` with a full stack trace trains whoever reads the logs (the
  * project's own staging/prod smoke method is "watch api logs after every
@@ -394,6 +394,13 @@ const PUBLIC_DETAILS_ERROR_CODES: ReadonlySet<ServiceErrorCode> = new Set([
  * with non-actionable events. Only `error`-level entries carry the full
  * error object (and therefore its stack); `info`/`warn` get a compact
  * projection instead, with no stack.
+ *
+ * This function does NOT decide which levels those are — it applies whatever
+ * `resolveErrorLogLevel` / `resolveHttpStatusLogLevel` return, and both
+ * default to `error` for anything they do not explicitly list. Notably a 422
+ * business-rule rejection is NOT downgraded today (see the pinning test in
+ * `response-helpers.handle-route-error.test.ts`); widening that is a
+ * contract change, not a tweak to this helper.
  *
  * @param level - The resolved log level.
  * @param error - The original error. Logged in full only when `level` is `error`.
