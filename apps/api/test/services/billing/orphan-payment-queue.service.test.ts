@@ -16,6 +16,7 @@
  *
  * @module test/services/billing/orphan-payment-queue.service
  */
+import { asMajor } from '@repo/billing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockLoggerError, mockLoggerInfo, dbState, envState } = vi.hoisted(() => ({
@@ -84,7 +85,7 @@ const BASE_INPUT = {
     providerPaymentId: 'mp-payment-42',
     flow: 'plan-change-upgrade' as const,
     reason: 'subscription-status-not-applicable' as const,
-    amountMajor: 123.45,
+    amountMajor: asMajor(123.45),
     currency: 'ARS',
     subscriptionId: 'sub-1',
     customerId: 'cust-1',
@@ -103,7 +104,7 @@ beforeEach(() => {
 describe('buildOrphanPaymentRow', () => {
     it('converts the major-unit amount to integer centavos', () => {
         // Arrange / Act
-        const row = buildOrphanPaymentRow({ ...BASE_INPUT, amountMajor: 123.45 });
+        const row = buildOrphanPaymentRow({ ...BASE_INPUT, amountMajor: asMajor(123.45) });
 
         // Assert
         expect(row.amount).toBe(12_345);
@@ -111,8 +112,12 @@ describe('buildOrphanPaymentRow', () => {
     });
 
     it('rounds a float amount rather than truncating it', () => {
-        expect(buildOrphanPaymentRow({ ...BASE_INPUT, amountMajor: 0.005 }).amount).toBe(1);
-        expect(buildOrphanPaymentRow({ ...BASE_INPUT, amountMajor: 19.999 }).amount).toBe(2000);
+        expect(buildOrphanPaymentRow({ ...BASE_INPUT, amountMajor: asMajor(0.005) }).amount).toBe(
+            1
+        );
+        expect(buildOrphanPaymentRow({ ...BASE_INPUT, amountMajor: asMajor(19.999) }).amount).toBe(
+            2000
+        );
     });
 
     it('defaults the provider to mercadopago and the status to unresolved', () => {
@@ -127,7 +132,7 @@ describe('buildOrphanPaymentRow', () => {
             providerPaymentId: 'mp-1',
             flow: 'annual-upfront',
             reason: 'subscription-not-found',
-            amountMajor: 10,
+            amountMajor: asMajor(10),
             currency: 'ARS',
             source: 'webhook'
         });

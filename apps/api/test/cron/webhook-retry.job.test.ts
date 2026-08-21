@@ -153,7 +153,7 @@ vi.mock('../../src/utils/env', () => ({
 // Imports (vi.mock calls above are hoisted by Vitest, so these are safe)
 // ---------------------------------------------------------------------------
 
-import { createMercadoPagoAdapter, getAddonBySlug } from '@repo/billing';
+import { asMajor, createMercadoPagoAdapter, getAddonBySlug } from '@repo/billing';
 import { getDb } from '@repo/db';
 import * as Sentry from '@sentry/node';
 import { webhookRetryJob } from '../../src/cron/jobs/webhook-retry.job';
@@ -324,7 +324,7 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
             billing as unknown as ReturnType<typeof getQZPayBilling>
         );
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 1500,
+            amount: asMajor(1500),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -1297,7 +1297,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
         );
 
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 2000,
+            amount: asMajor(2000),
             currency: 'ARS',
             status: 'approved',
             statusDetail: null,
@@ -1366,7 +1366,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
         );
 
         vi.mocked(extractPaymentInfo).mockReturnValue({
-            amount: 500,
+            amount: asMajor(500),
             currency: 'ARS',
             status: 'rejected',
             statusDetail: 'cc_rejected_insufficient_amount',
