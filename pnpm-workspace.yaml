@@ -278,8 +278,8 @@ allowBuilds:
 forceLegacyDeploy: true
 
 minimumReleaseAgeExclude:
-  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0'
-  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0'
-  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0'
-  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9'
-  - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24'
+  - '@qazuor/qzpay-core@1.15.0 || 1.16.0 || 1.17.0 || 2.0.0 || 3.0.0 || 3.1.0 || 4.0.0'
+  - '@qazuor/qzpay-mercadopago@2.6.0 || 2.7.0 || 2.8.0 || 2.8.1 || 2.8.2 || 2.9.0 || 2.9.1'
+  - '@qazuor/qzpay-drizzle@1.11.5 || 1.11.7 || 1.11.8 || 1.12.0 || 1.13.0'
+  - '@qazuor/qzpay-hono@1.6.7 || 1.6.8 || 1.6.9 || 1.6.10'
+  - '@qazuor/qzpay-react@1.1.22 || 1.1.23 || 1.1.24 || 1.1.25'

@@ -170,11 +170,11 @@ importers:
         specifier: ^1.0.5
         version: 1.0.5
       '@qazuor/qzpay-core':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^4.0.0
+        version: 4.0.0
       '@qazuor/qzpay-react':
-        specifier: ^1.1.24
-        version: 1.1.24(react@19.2.7)
+        specifier: ^1.1.25
+        version: 1.1.25(react@19.2.7)
       '@radix-ui/react-accordion':
         specifier: ^1.2.12
         version: 1.2.12(@types/react-dom@19.2.3(@types/react@19.2.17))(@types/react@19.2.17)(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -447,14 +447,14 @@ importers:
         specifier: ^89.0.0
         version: 89.0.0(graphql@16.14.2)
       '@qazuor/qzpay-core':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^4.0.0
+        version: 4.0.0
       '@qazuor/qzpay-hono':
-        specifier: ^1.6.9
-        version: 1.6.9(hono@4.13.0)(zod@4.3.6)
+        specifier: ^1.6.10
+        version: 1.6.10(hono@4.13.0)(zod@4.3.6)
       '@qazuor/qzpay-mercadopago':
-        specifier: ^2.9.0
-        version: 2.9.0(mercadopago@2.12.0)
+        specifier: ^2.9.1
+        version: 2.9.1(mercadopago@2.12.0)
       '@react-email/components':
         specifier: ^1.0.12
         version: 1.0.12(react-dom@19.2.7(react@19.2.7))(react@19.2.7)
@@ -1103,11 +1103,11 @@ importers:
   packages/billing:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^4.0.0
+        version: 4.0.0
       '@qazuor/qzpay-mercadopago':
-        specifier: ^2.9.0
-        version: 2.9.0(mercadopago@2.12.0)
+        specifier: ^2.9.1
+        version: 2.9.1(mercadopago@2.12.0)
       '@repo/config':
         specifier: workspace:*
         version: link:../config
@@ -1217,11 +1217,11 @@ importers:
   packages/db:
     dependencies:
       '@qazuor/qzpay-core':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^4.0.0
+        version: 4.0.0
       '@qazuor/qzpay-drizzle':
-        specifier: ^1.12.0
-        version: 1.12.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)
+        specifier: ^1.13.0
+        version: 1.13.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)
       '@repo/billing':
         specifier: workspace:*
         version: link:../billing
@@ -1798,8 +1798,8 @@ importers:
         version: 4.3.6
     devDependencies:
       '@qazuor/qzpay-core':
-        specifier: ^3.1.0
-        version: 3.1.0
+        specifier: ^4.0.0
+        version: 4.0.0
       '@repo/typescript-config':
         specifier: workspace:*
         version: link:../typescript-config
@@ -4031,33 +4031,33 @@ packages:
     engines: {node: '>=18'}
     hasBin: true
 
-  '@qazuor/qzpay-core@3.1.0':
-    resolution: {integrity: sha512-QaDgJty8x4t8BU84D5yIfx2rIAy0f17P98lYsqn21f42iNB5HJVKqZU+e2qB5tyDODIo4DxJHAzNTpmjIhnSag==}
+  '@qazuor/qzpay-core@4.0.0':
+    resolution: {integrity: sha512-rvrC3+qZ8f/yvmJdDSCe6vkP2IfuFUJVcbUei0S76a71zrFp/321xuStHjH1pu5nozoWI1dkPVstxmTLbz17Mw==}
     engines: {node: '>=22'}
 
-  '@qazuor/qzpay-drizzle@1.12.0':
-    resolution: {integrity: sha512-eEFjqQccZAysRppeJ7LXa8MApUusVR3RotA7zni9nLu9paICsxq6AP5eCFP1Vvcujk41ZOpIv/7OXyRhpQt8pg==}
+  '@qazuor/qzpay-drizzle@1.13.0':
+    resolution: {integrity: sha512-444GVR8XXyX9LGQIDB3Z5IG+dkcotpgldTc421x/dVeNmBXnH8/ZVHhUsmlcIOjLmxQGoLFJ73JfTqpETto7HQ==}
     engines: {node: '>=22'}
     peerDependencies:
       drizzle-orm: '>=0.45.2'
       postgres: '>=3.4.0'
       zod: 4.3.6
 
-  '@qazuor/qzpay-hono@1.6.9':
-    resolution: {integrity: sha512-azXsj/1o8GC72XJQ9CZyqaskLcm3ktJDxvDVsG1JVoY3FkH8eKAZYU3FwiSyYUvJdIvDysABcw3jW7o7UP8uEg==}
+  '@qazuor/qzpay-hono@1.6.10':
+    resolution: {integrity: sha512-uN/rw8i1dwTs0/e+srerpfY80zeZR4A7xh8YMiYG25driTVLPXgyWTgg+mWmE2dFTpZ02Rsg5BdnJ7nZRNvbkA==}
     engines: {node: '>=22'}
     peerDependencies:
       hono: '>=4.0.0'
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@2.9.0':
-    resolution: {integrity: sha512-IFJPgQACjIJRC9N8EAm3D7LbN2dSYo/A2XiXiokAPAAZozZw5w3g8OqqhIA3DkpVphpl/PINX/yzXtdDrMg2jA==}
+  '@qazuor/qzpay-mercadopago@2.9.1':
+    resolution: {integrity: sha512-HLgwclQsSot9TMZ86ZBwLB8RRM75NIn6au/GKo+cliejYrqp4H1vidyRNfzkf4spRfD5nYrxoYRKs9NoSJ57kw==}
     engines: {node: '>=22'}
     peerDependencies:
       mercadopago: '>=2.0.0'
 
-  '@qazuor/qzpay-react@1.1.24':
-    resolution: {integrity: sha512-44HbkdrVTIFvXhjF4oA7bb9m66T/XUe5Cj5eVUkZ9KvT7vAlIOErMKIfDFT/5NTDSk9/DS5E3rNqRZ+Q2q1JFQ==}
+  '@qazuor/qzpay-react@1.1.25':
+    resolution: {integrity: sha512-YuTncqB2ebL+ls9kbq03clKEh3ckcIDq26UMZARfLHKAcYrwE4xwWIZm/1GPkVFa2F8Y51uvv1Acp77wfLNG9A==}
     engines: {node: '>=22'}
     peerDependencies:
       react: 19.2.7
@@ -14991,31 +14991,31 @@ snapshots:
       - react-native-b4a
       - supports-color
 
-  '@qazuor/qzpay-core@3.1.0': {}
+  '@qazuor/qzpay-core@4.0.0': {}
 
-  '@qazuor/qzpay-drizzle@1.12.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)':
+  '@qazuor/qzpay-drizzle@1.13.0(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(postgres@3.4.8)(zod@4.3.6)':
     dependencies:
-      '@qazuor/qzpay-core': 3.1.0
+      '@qazuor/qzpay-core': 4.0.0
       drizzle-orm: 0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8)
       drizzle-zod: 0.5.1(drizzle-orm@0.45.2(@opentelemetry/api@1.9.1)(@types/pg@8.21.0)(kysely@0.29.0)(pg@8.22.0)(postgres@3.4.8))(zod@4.3.6)
       postgres: 3.4.8
       zod: 4.3.6
 
-  '@qazuor/qzpay-hono@1.6.9(hono@4.13.0)(zod@4.3.6)':
+  '@qazuor/qzpay-hono@1.6.10(hono@4.13.0)(zod@4.3.6)':
     dependencies:
       '@hono/zod-validator': 0.7.6(hono@4.13.0)(zod@4.3.6)
-      '@qazuor/qzpay-core': 3.1.0
+      '@qazuor/qzpay-core': 4.0.0
       hono: 4.13.0
       zod: 4.3.6
 
-  '@qazuor/qzpay-mercadopago@2.9.0(mercadopago@2.12.0)':
+  '@qazuor/qzpay-mercadopago@2.9.1(mercadopago@2.12.0)':
     dependencies:
-      '@qazuor/qzpay-core': 3.1.0
+      '@qazuor/qzpay-core': 4.0.0
       mercadopago: 2.12.0
 
-  '@qazuor/qzpay-react@1.1.24(react@19.2.7)':
+  '@qazuor/qzpay-react@1.1.25(react@19.2.7)':
     dependencies:
-      '@qazuor/qzpay-core': 3.1.0
+      '@qazuor/qzpay-core': 4.0.0
       react: 19.2.7
 
   '@radix-ui/number@1.1.1': {}
