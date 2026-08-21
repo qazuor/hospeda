@@ -167,29 +167,23 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                  * anyone without one lands on an empty state. A pure tourist
                  * always does, so the item cannot ship ungated.
                  *
-                 * `ACCOMMODATION_CREATE` is the closest honest approximation
-                 * the SSR evaluator can make: `PERMISSION_ROLE_MAP` resolves it
-                 * to HOST/ADMIN/SUPER_ADMIN (verified against
-                 * `packages/seed/src/required/rolePermissions.seed.ts`), which
-                 * is exactly who buys the accommodation add-ons that make up
-                 * the catalog today.
+                 * `BILLING_ADDON_PURCHASE` exists FOR this gate (owner decision,
+                 * 2026-08-21). Nothing pre-existing fit: `requiredPermission`
+                 * holds one permission with no OR, so `ACCOMMODATION_CREATE`
+                 * would have hidden the entry from the COMMERCE_OWNER who buys
+                 * `extra-gastronomies-1`, while `SUBSCRIPTION_VIEW_OWN` and
+                 * `BILLING_VIEW_OWN` — the two that read like a fit — are both
+                 * granted to plain `RoleEnum.USER` by the seed and would have
+                 * shown the catalog to every tourist. The `subscription` item
+                 * above declares no permission at all, so there was nothing to
+                 * copy from it either.
                  *
-                 * The two billing-shaped permissions that at first look like a
-                 * better fit — `SUBSCRIPTION_VIEW_OWN` and `BILLING_VIEW_OWN` —
-                 * are BOTH granted to plain `RoleEnum.USER` by the seed, so
-                 * either one would put this item in front of every tourist.
-                 * The `subscription` item above declares no permission at all,
-                 * so there was nothing to copy from it either.
-                 *
-                 * Known gap, deliberately left open: a COMMERCE_OWNER-only user
-                 * does not get this entry, because `requiredPermission` holds
-                 * ONE permission and the nav model has no OR. Widening it needs
-                 * an owner decision (a shared permission, or two items), not a
-                 * second guess here — a wrong widening is what put the whole
-                 * host group in front of editors once already (see the EDITOR
-                 * note in `PERMISSION_ROLE_MAP`).
+                 * Granted to HOST, COMMERCE_OWNER, ADMIN and SUPER_ADMIN — see
+                 * the entry in `PERMISSION_ROLE_MAP` (`src/lib/nav-gating.ts`),
+                 * the seed baseline, and the
+                 * `0067-hos-726-addon-purchase-permission` data-migration.
                  */
-                requiredPermission: PermissionEnum.ACCOMMODATION_CREATE,
+                requiredPermission: PermissionEnum.BILLING_ADDON_PURCHASE,
                 surfaces: FULL_SURFACES
             },
             {
