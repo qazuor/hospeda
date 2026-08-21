@@ -673,6 +673,13 @@
       "when": 1787298659074,
       "tag": "0095_sparkling_supernaut",
       "breakpoints": true
+    },
+    {
+      "idx": 96,
+      "version": "7",
+      "when": 1787328042544,
+      "tag": "0096_busy_johnny_blaze",
+      "breakpoints": true
     }
   ]
 }
