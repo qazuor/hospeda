@@ -5,10 +5,16 @@
  *  - `commerceLeadKeys`          — stable query-key factory.
  *  - `useCommerceLeadsQuery`     — paginated list of leads (GET /admin/commerce/leads).
  *  - `useMarkLeadHandledMutation`— POST /admin/commerce/leads/:id/handle (approve/reject).
- *  - `useProvisionOwnerMutation` — POST /admin/commerce/leads/:id/provision-owner.
  *
  * All fetchers unwrap the `{success, data: {items, pagination}}` API envelope.
  * Gate: COMMERCE_VIEW_ALL (list) / COMMERCE_EDIT_ALL (mutations).
+ *
+ * HOS-693 §6.2 removed the admin owner-provisioning flow (the
+ * `POST /admin/commerce/leads/:id/provision-owner` and
+ * `.../approve-and-provision` endpoints, and their hooks that used to live
+ * here) — owners now grant themselves the COMMERCE_OWNER role by creating
+ * their own listing (HOS-687), so there is nothing left for the admin to
+ * provision.
  */
 
 import type { CommerceLead } from '@repo/schemas';
@@ -46,45 +52,6 @@ export type MarkLeadHandledPayload = {
     readonly id: string;
     readonly status: 'approved' | 'rejected';
     readonly adminNote?: string;
-};
-
-/** Response from the provision-owner endpoint. */
-export type ProvisionOwnerResult = {
-    readonly userId: string;
-    readonly email: string;
-    readonly name: string;
-    /**
-     * `true` only when a NEW account was created.
-     *
-     * `false` when the email already had one and was granted the commerce role
-     * additively (HOS-296 G-4) — the case the success copy used to narrate as
-     * a creation that never happened (H-87 / H-150).
-     */
-    readonly accountCreated: boolean;
-    /** `true` only when a credentials email was confirmed delivered. */
-    readonly credentialsSent: boolean;
-};
-
-/** Payload for the combined approve-and-provision mutation (SPEC-249 Part D). */
-export type ApproveAndProvisionPayload = {
-    readonly id: string;
-    readonly adminNote?: string;
-};
-
-/** Response from the approve-and-provision endpoint. */
-export type ApproveAndProvisionResult = {
-    readonly lead: CommerceLead;
-    readonly userId: string;
-    /**
-     * `true` when THIS call did the provisioning work; `false` on the
-     * idempotent no-op. It does NOT mean an account was created — branching a
-     * message on it announces a creation that may not have happened.
-     */
-    readonly provisioned: boolean;
-    /** `true` only when a NEW account was created. */
-    readonly accountCreated: boolean;
-    /** `true` only when a credentials email was confirmed delivered. */
-    readonly credentialsSent: boolean;
 };
 
 // ---------------------------------------------------------------------------
@@ -146,38 +113,6 @@ async function markLeadHandled(payload: MarkLeadHandledPayload): Promise<Commerc
     return result.data.data;
 }
 
-/**
- * Calls POST /admin/commerce/leads/:id/provision-owner.
- * Creates the COMMERCE_OWNER account and emails temp credentials.
- * Returns `{userId, email, name}` — NEVER a password.
- */
-async function provisionOwner(id: string): Promise<ProvisionOwnerResult> {
-    const result = await fetchApi<{ success: boolean; data: ProvisionOwnerResult }>({
-        path: `/api/v1/admin/commerce/leads/${id}/provision-owner`,
-        method: 'POST',
-        body: {}
-    });
-    return result.data.data;
-}
-
-/**
- * Calls POST /admin/commerce/leads/:id/approve-and-provision.
- * Approves the lead AND provisions its COMMERCE_OWNER account in one action.
- * Idempotent server-side via `lead.provisionedUserId`. Returns
- * `{lead, userId, provisioned}` — NEVER a password.
- */
-async function approveAndProvision(
-    payload: ApproveAndProvisionPayload
-): Promise<ApproveAndProvisionResult> {
-    const { id, ...body } = payload;
-    const result = await fetchApi<{ success: boolean; data: ApproveAndProvisionResult }>({
-        path: `/api/v1/admin/commerce/leads/${id}/approve-and-provision`,
-        method: 'POST',
-        body
-    });
-    return result.data.data;
-}
-
 // ---------------------------------------------------------------------------
 // Hooks
 // ---------------------------------------------------------------------------
@@ -217,54 +152,6 @@ export const useMarkLeadHandledMutation = () => {
 
     return useMutation({
         mutationFn: (payload: MarkLeadHandledPayload) => markLeadHandled(payload),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: commerceLeadKeys.lists() });
-        }
-    });
-};
-
-/**
- * TanStack mutation hook — provision a COMMERCE_OWNER account for a lead.
- *
- * Creates the user and emails temp credentials.  Invalidates the leads list on
- * success (so the lead's `handledAt` / `status` are refreshed from the server).
- * The returned `ProvisionOwnerResult` includes `{userId, email, name}` — the
- * temp password is NEVER included in the response.
- *
- * @example
- * ```tsx
- * const mutation = useProvisionOwnerMutation();
- * const result = await mutation.mutateAsync(lead.id);
- * // result.email — show in success toast
- * ```
- */
-export const useProvisionOwnerMutation = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: (id: string) => provisionOwner(id),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: commerceLeadKeys.lists() });
-        }
-    });
-};
-
-/**
- * TanStack mutation hook — approve a lead AND provision its owner in one action
- * (SPEC-249 Part D). Invalidates the leads list on success so the inbox
- * reflects the new `status` / `provisionedUserId`.
- *
- * @example
- * ```tsx
- * const mutation = useApproveAndProvisionMutation();
- * const result = await mutation.mutateAsync({ id: lead.id, adminNote: 'OK' });
- * ```
- */
-export const useApproveAndProvisionMutation = () => {
-    const queryClient = useQueryClient();
-
-    return useMutation({
-        mutationFn: (payload: ApproveAndProvisionPayload) => approveAndProvision(payload),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: commerceLeadKeys.lists() });
         }

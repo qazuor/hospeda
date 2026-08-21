@@ -12,13 +12,11 @@ export type {
     CommerceLeadPagination,
     CommerceLeadsPage,
     CommerceLeadsQueryParams,
-    MarkLeadHandledPayload,
-    ProvisionOwnerResult
+    MarkLeadHandledPayload
 } from './hooks/useCommerceLeads';
 // Hooks
 export {
     commerceLeadKeys,
     useCommerceLeadsQuery,
-    useMarkLeadHandledMutation,
-    useProvisionOwnerMutation
+    useMarkLeadHandledMutation
 } from './hooks/useCommerceLeads';
