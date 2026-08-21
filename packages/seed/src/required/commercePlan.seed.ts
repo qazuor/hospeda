@@ -1,9 +1,4 @@
-import {
-    ALL_EXPERIENCE_PLANS,
-    ALL_GASTRONOMY_PLANS,
-    COMMERCE_LISTING_PLAN,
-    type PlanDefinition
-} from '@repo/billing';
+import { ALL_EXPERIENCE_PLANS, ALL_GASTRONOMY_PLANS, type PlanDefinition } from '@repo/billing';
 import { and, billingPlans, billingPrices, type DrizzleClient, eq, getDb } from '@repo/db';
 import { ProductDomainEnum, type ProductDomainValue } from '@repo/schemas';
 import { STATUS_ICONS } from '../utils/icons.js';
@@ -144,13 +139,24 @@ async function ensureCommercePlan(input: {
 /**
  * Commerce plan seed (SPEC-239 T-049 → HOS-688 §6.8).
  *
- * Seeds three catalogues, each stamped with its own `billing_plans.product_domain`:
+ * Seeds two catalogues, each stamped with its own `billing_plans.product_domain`:
  *
  * | Catalogue | `product_domain` | Why |
  * | --- | --- | --- |
- * | {@link COMMERCE_LISTING_PLAN} | `commerce` | The pre-HOS-688 plan. Live rows in `billing_subscriptions` still point at it, so removing it would strand their plan lookup. Retiring it is a data decision about real rows (HOS-692), not a config edit. |
  * | {@link ALL_GASTRONOMY_PLANS} | `gastronomy` | HOS-688: one subscription per owner per vertical. |
  * | {@link ALL_EXPERIENCE_PLANS} | `experience` | Same, experience side. |
+ *
+ * **The pre-HOS-688 `commerce-listing` plan is no longer seeded here
+ * (HOS-695, release C).** It used to be re-inserted/re-stamped on every run
+ * with `product_domain = 'commerce'` — a living-source assignment of the
+ * retired value, which AC-33 forbids and which no longer even compiles
+ * (`ProductDomainEnum.COMMERCE` does not exist). No current checkout path
+ * resolves to it (`resolveCommercePlanSlug` only ever returns a per-vertical
+ * gastronomy/experience slug), so a fresh DB has no reason to carry it at
+ * all. An already-seeded environment's existing `commerce-listing` row is
+ * UNTOUCHED by this change — its historical `product_domain='commerce'`
+ * value stays whatever it already was; retiring that row is a data decision
+ * about real rows (HOS-692), not something this code edit makes.
  *
  * Why a dedicated seed and NOT the `ALL_PLANS` loop in `billingPlans.seed.ts`:
  * every plan here is deliberately excluded from `ALL_PLANS` so the
@@ -178,7 +184,6 @@ export async function seedCommercePlan(_context: SeedContext): Promise<void> {
             plans: readonly PlanDefinition[];
             productDomain: ProductDomainValue;
         }> = [
-            { plans: [COMMERCE_LISTING_PLAN], productDomain: ProductDomainEnum.COMMERCE },
             { plans: ALL_GASTRONOMY_PLANS, productDomain: ProductDomainEnum.GASTRONOMY },
             { plans: ALL_EXPERIENCE_PLANS, productDomain: ProductDomainEnum.EXPERIENCE }
         ];
@@ -220,7 +225,7 @@ export async function seedCommercePlan(_context: SeedContext): Promise<void> {
         logger.error(`   ${error instanceof Error ? error.message : String(error)}`);
         summaryTracker.trackError(
             'Commerce Plan',
-            COMMERCE_LISTING_PLAN.slug,
+            'commercePlan.seed.ts',
             error instanceof Error ? error.message : String(error)
         );
         throw error;
