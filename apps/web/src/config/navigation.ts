@@ -32,6 +32,7 @@ import {
     MegaphoneIcon,
     NewsletterIcon,
     OffersIcon,
+    PackageIcon,
     PostIcon,
     ReceiptIcon,
     SearchIcon,
@@ -146,6 +147,50 @@ export const ACCOUNT_NAV_GROUPS: readonly NavGroup[] = [
                 href: 'mi-cuenta/suscripcion',
                 icon: CreditCardIcon,
                 surfaces: CURATED_SURFACES
+            },
+            {
+                id: 'addons',
+                /**
+                 * Reuses the addons PAGE title key on purpose (the same
+                 * pattern `recommendations` and `inbox` already use): the nav
+                 * label and the page's own `<h1>` must always read the same
+                 * word, and a single key makes that structural instead of a
+                 * convention two files have to remember.
+                 */
+                i18nKey: 'account.pages.addons.title',
+                href: 'mi-cuenta/addons',
+                icon: PackageIcon,
+                /**
+                 * HOS-726. The page itself gates per PRODUCT DOMAIN — it needs
+                 * an entitlement-granting subscription (`active`/`trialing`/
+                 * `comp`) in accommodation, gastronomy or experience — and
+                 * anyone without one lands on an empty state. A pure tourist
+                 * always does, so the item cannot ship ungated.
+                 *
+                 * `ACCOMMODATION_CREATE` is the closest honest approximation
+                 * the SSR evaluator can make: `PERMISSION_ROLE_MAP` resolves it
+                 * to HOST/ADMIN/SUPER_ADMIN (verified against
+                 * `packages/seed/src/required/rolePermissions.seed.ts`), which
+                 * is exactly who buys the accommodation add-ons that make up
+                 * the catalog today.
+                 *
+                 * The two billing-shaped permissions that at first look like a
+                 * better fit — `SUBSCRIPTION_VIEW_OWN` and `BILLING_VIEW_OWN` —
+                 * are BOTH granted to plain `RoleEnum.USER` by the seed, so
+                 * either one would put this item in front of every tourist.
+                 * The `subscription` item above declares no permission at all,
+                 * so there was nothing to copy from it either.
+                 *
+                 * Known gap, deliberately left open: a COMMERCE_OWNER-only user
+                 * does not get this entry, because `requiredPermission` holds
+                 * ONE permission and the nav model has no OR. Widening it needs
+                 * an owner decision (a shared permission, or two items), not a
+                 * second guess here — a wrong widening is what put the whole
+                 * host group in front of editors once already (see the EDITOR
+                 * note in `PERMISSION_ROLE_MAP`).
+                 */
+                requiredPermission: PermissionEnum.ACCOMMODATION_CREATE,
+                surfaces: FULL_SURFACES
             },
             {
                 id: 'preferences',
