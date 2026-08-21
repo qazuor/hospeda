@@ -11,6 +11,7 @@
  * @module services/billing-usage
  */
 
+import { ENTITLEMENT_GRANTING_STATUSES } from '@repo/billing';
 import type { DrizzleClient } from '@repo/db';
 import { getDb, sql } from '@repo/db';
 import { ServiceErrorCode } from '@repo/schemas';
@@ -84,6 +85,13 @@ export async function getSystemUsage(
     try {
         const db = tx ?? getDb();
 
+        // Derived from ENTITLEMENT_GRANTING_STATUSES (never hardcode the expanded
+        // list here) so `comp` subscribers are counted — see HOS-736.
+        const liveStatuses = sql.join(
+            ENTITLEMENT_GRANTING_STATUSES.map((status) => sql`${status}`),
+            sql`, `
+        );
+
         const [customersResult, customersByCategoryResult, planStatsResult] = await Promise.all([
             db.execute(sql`
                 SELECT COUNT(*) as count
@@ -104,7 +112,7 @@ export async function getSystemUsage(
                     plan_id as plan_name,
                     COUNT(*) as customer_count
                 FROM billing_subscriptions
-                WHERE status IN ('active', 'trialing')
+                WHERE status IN (${liveStatuses})
                 AND livemode = ${livemode}
                 AND deleted_at IS NULL
                 GROUP BY plan_id
