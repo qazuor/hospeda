@@ -347,6 +347,30 @@ async function runOneTimePaymentPoll(params: {
                     paymentMeta.accommodation_id ??
                     jobMeta.accommodationId ??
                     jobMeta.accommodation_id,
+                // HOS-721: promoCodeId/promoCode/discountAmount — the promo
+                // redemption `confirmAddonPurchase` records once the payment is
+                // confirmed. Omitting them from this whitelist was silent in
+                // exactly the way accommodationId was: the add-on activated, the
+                // customer paid the discounted price, and the code's used_count
+                // never moved — so a capped code never reached its cap.
+                // Forwarded raw (both spellings sourced); the single
+                // normalization to canonical camelCase happens downstream in
+                // payment-logic via normalizeAddonCheckoutMetadata.
+                promoCodeId:
+                    paymentMeta.promoCodeId ??
+                    paymentMeta.promo_code_id ??
+                    jobMeta.promoCodeId ??
+                    jobMeta.promo_code_id,
+                promoCode:
+                    paymentMeta.promoCode ??
+                    paymentMeta.promo_code ??
+                    jobMeta.promoCode ??
+                    jobMeta.promo_code,
+                discountAmount:
+                    paymentMeta.discountAmount ??
+                    paymentMeta.discount_amount ??
+                    jobMeta.discountAmount ??
+                    jobMeta.discount_amount,
                 type: paymentMeta.type ?? jobMeta.type
             };
 
