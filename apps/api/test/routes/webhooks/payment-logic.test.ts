@@ -408,6 +408,60 @@ describe('processPaymentUpdated', () => {
         expect(result.success).toBe(true);
     });
 
+    // ── HOS-744: the notification dispatch gate must resolve MercadoPago's
+    // real wire format ──────────────────────────────────────────────────────
+    //
+    // Every other test in this file builds `data.metadata` in camelCase,
+    // which is the shape our OWN code writes at checkout time — never the
+    // shape a real `payment.updated` webhook delivers. MercadoPago
+    // snake-cases preference metadata keys when it copies them onto the
+    // payment object it echoes back, so `customerId` never survives the
+    // round-trip: only `customer_id` does. A test built in camelCase is
+    // structurally blind to that — it would pass even if the gate only ever
+    // read `metadata.customerId`, which is exactly the bug that shipped.
+    it('should send success notification for approved payment with snake_case metadata (real MP wire format)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: 1000,
+            currency: 'ARS',
+            status: 'approved',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+
+        const result = await processPaymentUpdated({
+            data: { metadata: { customer_id: 'cust-1' } },
+            billing: mockBilling
+        });
+
+        expect(sendPaymentSuccessNotification).toHaveBeenCalledWith(
+            'cust-1',
+            1000,
+            'ARS',
+            'credit_card',
+            mockBilling
+        );
+        expect(result.success).toBe(true);
+    });
+
+    it('should NOT dispatch any payment notification when customerId is absent under either spelling', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: 1000,
+            currency: 'ARS',
+            status: 'approved',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+
+        const result = await processPaymentUpdated({
+            data: { metadata: { someOtherKey: 'irrelevant' } },
+            billing: mockBilling
+        });
+
+        expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
+        expect(sendPaymentFailureNotifications).not.toHaveBeenCalled();
+        expect(result.success).toBe(true);
+    });
+
     // ── PostHog subscription_payment_succeeded (this task) ─────────────────
     describe('PostHog subscription_payment_succeeded capture', () => {
         it('captures subscription_payment_succeeded on an approved payment', async () => {
@@ -754,6 +808,33 @@ describe('processPaymentUpdated', () => {
             750,
             'ARS',
             'cancelled',
+            mockBilling
+        );
+        expect(result.success).toBe(true);
+    });
+
+    // HOS-744: mirrors the snake_case coverage above for the failure branch —
+    // see the comment near the success-path snake_case test for why the
+    // camelCase-only tests above are structurally blind to this bug class.
+    it('should send failure notification for rejected payment with snake_case metadata (real MP wire format)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: 500,
+            currency: 'ARS',
+            status: 'rejected',
+            statusDetail: 'cc_rejected_other_reason',
+            paymentMethod: 'credit_card'
+        });
+
+        const result = await processPaymentUpdated({
+            data: { metadata: { customer_id: 'cust-1' } },
+            billing: mockBilling
+        });
+
+        expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+            'cust-1',
+            500,
+            'ARS',
+            'cc_rejected_other_reason',
             mockBilling
         );
         expect(result.success).toBe(true);

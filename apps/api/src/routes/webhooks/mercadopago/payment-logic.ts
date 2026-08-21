@@ -1043,6 +1043,51 @@ async function resolveAnalyticsDistinctId(customerId: string): Promise<string> {
 }
 
 /**
+ * Resolve the billing customer id from a raw payment/webhook metadata bag,
+ * accepting either the canonical camelCase spelling or the MercadoPago
+ * snake_case wire spelling.
+ *
+ * ## Why this exists (HOS-744)
+ *
+ * This is the gate for payment status notification dispatch (success AND
+ * failure, below): if it does not resolve, no notification is sent. It
+ * used to read `metadata.customerId` only, which never resolves for a real
+ * webhook, because MercadoPago snake-cases preference metadata keys when it
+ * copies them onto the payment object it echoes back on `payment.updated` —
+ * a preference written with `customerId` round-trips as `customer_id`. The
+ * gate was permanently closed: no payment success or failure notification
+ * was ever dispatched.
+ *
+ * ## Why this is a local helper, not `normalizeAddonCheckoutMetadata`
+ *
+ * HOS-721 established the convention this follows — camelCase is canonical,
+ * snake_case is a wire format, translate once at the border instead of
+ * having every reader defend both spellings — via `normalizeAddonCheckoutMetadata`
+ * (`services/addon-checkout-metadata.ts`). That module's `AddonCheckoutMetadata`
+ * payload deliberately EXCLUDES `customerId`: its own docs call it (together
+ * with `addonSlug`) the add-on *dispatch discriminator*, resolved separately
+ * by `extractAddonMetadata` before the add-on payload is ever read. This gate
+ * is not add-on-specific — it fires for every payment, add-on or not — so
+ * widening that module would blur a boundary it was written to keep. This is
+ * its own, narrower border: one key, one call site.
+ *
+ * @param metadata - The raw metadata bag from the payment payload, before
+ *   any spelling normalization.
+ * @returns The customer id, or `null` when absent under either spelling.
+ */
+function resolvePaymentCustomerId(metadata: Record<string, unknown> | undefined): string | null {
+    if (!metadata) {
+        return null;
+    }
+    const camel = metadata.customerId;
+    if (typeof camel === 'string' && camel.length > 0) {
+        return camel;
+    }
+    const snake = metadata.customer_id;
+    return typeof snake === 'string' && snake.length > 0 ? snake : null;
+}
+
+/**
  * Process a payment.updated event's business logic.
  *
  * Dispatches payment success/failure notifications and confirms add-on
@@ -1059,7 +1104,7 @@ export async function processPaymentUpdated({
 }: ProcessPaymentUpdatedInput): Promise<ProcessPaymentUpdatedResult> {
     const paymentInfo = extractPaymentInfo(data);
     const metadata = data.metadata as Record<string, unknown> | undefined;
-    const customerId = typeof metadata?.customerId === 'string' ? metadata.customerId : null;
+    const customerId = resolvePaymentCustomerId(metadata);
 
     // Dispatch payment status notifications
     if (paymentInfo && customerId) {

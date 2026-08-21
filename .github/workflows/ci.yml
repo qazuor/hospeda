@@ -283,6 +283,8 @@ jobs:
         run: npx tsx scripts/extract-zod-keys.ts --verify
       - name: Verify i18n locale parity (SPEC-096 T-065)
         run: pnpm --filter @repo/i18n check-locales
+      - name: Verify every translation key used in code exists (HOS-619)
+        run: pnpm check:i18n-keys
       - name: Check schema drift (SPEC-178)
         run: bash scripts/check-schema-drift.sh
       - name: Check DROP COLUMN ships with a release-gap marker (HOS-601)

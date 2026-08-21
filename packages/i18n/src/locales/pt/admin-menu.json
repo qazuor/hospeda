@@ -46,7 +46,11 @@
         "tags": "Etiquetas",
         "seo": "SEO",
         "portalSettings": "Configurações do Portal",
-        "revalidation": "Revalidação ISR"
+        "revalidation": "Revalidação ISR",
+        "postTags": "Etiquetas de publicações",
+        "systemTags": "Etiquetas do sistema",
+        "internalTags": "Etiquetas internas",
+        "userTagModeration": "Moderação de etiquetas"
     },
     "billing": {
         "title": "Faturamento",
