@@ -324,6 +324,23 @@
             "message_other": "You have {{currentCount}} of {{maxAllowed}} staff accounts in your plan. Upgrade to add more.",
             "cta": "View my subscription"
         },
+        "max_active_alerts": { "title": "You've reached your price alerts limit" },
+        "max_compare_items": { "title": "You've reached your compare items limit" },
+        "max_ai_text_improve_per_month": {
+            "title": "You've reached your AI text improvements limit"
+        },
+        "max_ai_chat_per_month": { "title": "You've reached your AI chat limit" },
+        "max_ai_chat_consumer_per_month": {
+            "title": "You've reached your AI assistant chat limit"
+        },
+        "max_ai_search_per_month": { "title": "You've reached your AI search limit" },
+        "max_ai_support_per_month": { "title": "You've reached your AI support limit" },
+        "max_ai_translate_per_month": { "title": "You've reached your AI translations limit" },
+        "max_ai_accommodation_import_per_month": {
+            "title": "You've reached your AI accommodation imports limit"
+        },
+        "max_search_history_entries": { "title": "You've reached your search history limit" },
+        "max_collections": { "title": "You've reached your favorites collections limit" },
         "generic": {
             "title": "Plan limit reached",
             "message": "You've reached your plan's limit. Upgrade to continue.",
@@ -566,10 +583,13 @@
             "max_compare_items": "Simultaneous comparisons",
             "max_ai_text_improve_per_month": "AI text improvements per month",
             "max_ai_chat_per_month": "AI chat queries per month",
+            "max_ai_chat_consumer_per_month": "AI assistant queries per month",
             "max_ai_search_per_month": "AI searches per month",
             "max_ai_support_per_month": "AI support queries per month",
             "max_ai_translate_per_month": "AI translations per month",
-            "max_ai_accommodation_import_per_month": "AI imports per month"
+            "max_ai_accommodation_import_per_month": "AI imports per month",
+            "max_search_history_entries": "Search history entries",
+            "max_collections": "Favorites collections"
         }
     }
 }
