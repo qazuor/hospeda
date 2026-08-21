@@ -14,12 +14,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { accommodationMediaApi } from '@/lib/api/endpoints-protected';
 import type { AccommodationMediaItem, ApiError, MediaImage } from '@/lib/api/types';
+import { buildLimitReachedPayloadFromDetails } from '@/lib/billing-limit-error';
 import type { SupportedLocale } from '@/lib/i18n';
 import { createTranslations } from '@/lib/i18n';
 import { webLogger } from '@/lib/logger';
 import { uploadEntityImage } from '@/lib/media/upload-entity';
 import { addToast } from '@/store/toast-store';
-import { buildPhotoLimitToast, isLimitReachedError } from './photo-limit-toast';
 import {
     buildCapExceededOnSelectMessage,
     mediaRowToItem,
@@ -42,6 +42,25 @@ function legacyToDisplay(img: MediaImage, isFeatured: boolean): AccommodationMed
         publicId: img.publicId,
         isFeatured
     };
+}
+
+/**
+ * Whether an `addMedia` failure is the plan's photo cap rather than any other
+ * upload error (HOS-724).
+ *
+ * Both halves are load-bearing: `LIMIT_REACHED` is the code and `403` is the
+ * status the API error contract pairs it with. The same literal pair is what
+ * `FavoriteButton` and `CreatePropertyMiniForm` match on; the literal is pinned
+ * against `ServiceErrorCode.LIMIT_REACHED` in
+ * `test/components/host/editor/PhotoSection.limit.test.tsx` so a rename of the
+ * enum member cannot leave this string behind. It is spelled out rather than
+ * imported from `@repo/billing`, whose barrel drags `@repo/logger` into the
+ * client bundle, where it reads the process environment at module scope and
+ * kills the island during hydration — see
+ * `test/static-guards/billing-barrel-client-isolation.test.ts`.
+ */
+function isPlanLimitReached(error: ApiError): boolean {
+    return error.status === 403 && error.code === 'LIMIT_REACHED';
 }
 
 export interface UsePhotoSectionParams {
@@ -167,20 +186,42 @@ export function usePhotoSection({
      * product's most natural upsell moment, and it has a purchasable way out
      * that costs a fraction of a plan upgrade. Before this branch existed the
      * host got the API's raw, Spanish-only sentence with nothing to click, in
-     * every locale. Every OTHER failure keeps the plain generic reporter — an
-     * add-on offer attached to a network error or a Cloudinary hiccup would be
-     * noise at best and a misdiagnosis at worst.
+     * every locale, while `error.details.limitKey` sat unread on the very same
+     * object.
+     *
+     * The payload — copy AND which CTA leads — comes whole from
+     * `buildLimitReachedPayloadFromDetails`, exactly as the two other limit
+     * toasts in the app consume it. This surface decides nothing about
+     * prominence: HOS-723 moved that decision into the helper, so re-deriving
+     * the add-on offer here would be a fourth copy of a rule that already has
+     * one home. Both slots are forwarded verbatim (guarded by
+     * `test/lib/billing-limit-toast-actions.guard.test.ts`) — dropping
+     * `secondaryAction` would silently remove the plan upgrade, since for this
+     * limit an add-on exists and takes the primary slot.
+     *
+     * `payload.title` is the message on purpose: it is the photo-specific,
+     * localized line ("Llegaste al límite de fotos"), the same shape
+     * `buildLimitReachedPayload`'s own JSDoc example uses. `payload.message`
+     * currently resolves to a generic sentence for EVERY limit — see the
+     * follow-up note on the helper.
+     *
+     * Every OTHER failure keeps the plain generic reporter: an add-on offer
+     * bolted onto a network error or a Cloudinary hiccup would be noise at
+     * best and a misdiagnosis at worst.
      */
     const reportAddMediaError = useCallback(
         (error: ApiError) => {
-            if (isLimitReachedError({ error })) {
-                const limitToast = buildPhotoLimitToast({ details: error.details, locale });
-                setError(limitToast.message);
+            if (isPlanLimitReached(error)) {
+                const limitPayload = buildLimitReachedPayloadFromDetails({
+                    details: error.details,
+                    locale
+                });
+                setError(limitPayload.title);
                 addToast({
                     type: 'error',
-                    message: limitToast.message,
-                    action: limitToast.action,
-                    secondaryAction: limitToast.secondaryAction
+                    message: limitPayload.title,
+                    action: limitPayload.action,
+                    secondaryAction: limitPayload.secondaryAction
                 });
                 return;
             }
@@ -361,7 +402,7 @@ export function usePhotoSection({
                         // batch would fail identically. Stop instead of firing
                         // one more toast per file — the host has been told, and
                         // the CTA they need is already on screen.
-                        if (isLimitReachedError({ error: addResult.error })) {
+                        if (isPlanLimitReached(addResult.error)) {
                             break;
                         }
                         continue;
