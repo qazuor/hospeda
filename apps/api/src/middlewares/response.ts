@@ -1,5 +1,4 @@
 import { ServiceErrorCode } from '@repo/schemas';
-import type { ErrorLogLevel } from '@repo/service-core';
 import { resolveErrorLogLevel, ServiceError } from '@repo/service-core';
 /**
  * Response formatting middleware
@@ -17,6 +16,7 @@ import type {
 import { readEntitlementCause } from '../utils/entitlement-cause';
 import { env, getResponseConfig } from '../utils/env';
 import { resolveErrorCodeForStatus } from '../utils/http-error-codes';
+import { resolveHttpStatusLogLevel } from '../utils/http-status-log-level';
 import { apiLogger } from '../utils/logger';
 import { RefinedBodyValidationError } from '../utils/refined-body';
 
@@ -305,38 +305,6 @@ function isDbPoolExhausted(error: Error): boolean {
         msg.includes('pool is draining')
     );
 }
-
-/**
- * Maps a raw HTTP status code to the log level its errors should be emitted at.
- *
- * Companion to {@link resolveErrorLogLevel} (`@repo/service-core`) for errors
- * that do NOT carry a `ServiceErrorCode` — namely Hono's `HTTPException`,
- * thrown directly by middleware (e.g. the auth guard's 401 on a guest hitting
- * a protected route, or its 403 on a permission/admin-access denial). Mirrors
- * the same EXPECTED-outcome intent as `resolveErrorLogLevel` (HOS-109 / OQ-1):
- * a guest 401 and a missing-resource 404 are routine
- * browsing outcomes → `info`; a 403 permission denial is a probing signal
- * worth slightly more visibility → `warn`; everything else stays `error`.
- *
- * @param status - The HTTP status code carried by the `HTTPException`.
- * @returns The log level to emit at; defaults to `error`.
- */
-const resolveHttpStatusLogLevel = (status: number): ErrorLogLevel => {
-    switch (status) {
-        case 401:
-        case 404:
-            return 'info';
-        case 402:
-        // An entitlement gate is a business outcome, not a fault: logging it at
-        // `error` with a stack trace floods the ERROR stream with every blocked
-        // write of every lapsed host, and the middleware already emits its own
-        // `warn` for the same event (HOS-283).
-        case 403:
-            return 'warn';
-        default:
-            return 'error';
-    }
-};
 
 /**
  * Creates an error handler for Hono app.onError()
