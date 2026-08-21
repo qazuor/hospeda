@@ -545,6 +545,62 @@ describe('PlanUsageSection', () => {
         expect(screen.getByRole('link', { name: 'Mejorar mi plan' })).toBeInTheDocument();
     });
 
+    /**
+     * HOS-723 — this row used to compose `addonSlugForLimit` +
+     * `buildAddonFocusUrl` itself, the third copy of that pair in the app; it
+     * now goes through `resolveLimitAddonOffer`. The migration is only safe if
+     * nothing the user sees moved, so the href is pinned WHOLE.
+     *
+     * The test above asserts `stringContaining('#addon-...')`, which survives
+     * losing the `?focus=` parameter entirely — and `?focus=` is what actually
+     * reorders and highlights the card (HOS-729); without it the buyer lands on
+     * an unhighlighted catalog and has to hunt. So a substring match on the
+     * fragment cannot certify this migration. The trailing slash is part of the
+     * expectation too: `buildUrl` emits one, and an href written from memory
+     * without it is wrong.
+     */
+    it.each([
+        ['max_accommodations', 'extra-accommodations-5'],
+        ['max_gastronomies', 'extra-gastronomies-1']
+    ])('should link %s to the whole focus URL of %s, unchanged by the resolver migration', async (limitKey, slug) => {
+        // Arrange
+        mockGetUsage.mockResolvedValue(
+            okUsage([
+                buildLimit({
+                    limitKey,
+                    currentUsage: 5,
+                    maxAllowed: 5,
+                    usagePercentage: 100,
+                    threshold: 'exceeded'
+                })
+            ])
+        );
+
+        // Act
+        renderSection();
+
+        // Assert — query param AND fragment, in the active locale.
+        const addonLink = await screen.findByRole('link', {
+            name: 'Ampliar con un complemento'
+        });
+        expect(addonLink).toHaveAttribute(
+            'href',
+            `/es/mi-cuenta/addons/?focus=${slug}#addon-${slug}`
+        );
+
+        // The plan upgrade is still offered, and is a different place.
+        const planLink = screen.getByRole('link', { name: 'Mejorar mi plan' });
+        expect(planLink.getAttribute('href')).not.toBe(addonLink.getAttribute('href'));
+        expect(planLink.getAttribute('href')).not.toContain('/mi-cuenta/addons/');
+
+        // Order is the only prominence signal on this surface — both links
+        // share `styles.actionLink`, so nothing but position says the add-on
+        // leads. Asserted on the rendered DOM, never on the source.
+        expect(
+            addonLink.compareDocumentPosition(planLink) & Node.DOCUMENT_POSITION_FOLLOWING
+        ).toBeTruthy();
+    });
+
     it('should not offer upgrade links while comfortably under the limit', async () => {
         // Arrange — otherwise the whole section reads as an ad.
         mockGetUsage.mockResolvedValue(
