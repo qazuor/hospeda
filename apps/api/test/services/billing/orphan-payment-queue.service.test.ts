@@ -18,9 +18,11 @@
  */
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { mockLoggerError, mockLoggerInfo, dbState } = vi.hoisted(() => ({
+const { mockLoggerError, mockLoggerInfo, dbState, envState } = vi.hoisted(() => ({
     mockLoggerError: vi.fn(),
     mockLoggerInfo: vi.fn(),
+    /** Mutable stand-in for `env.HOSPEDA_MERCADO_PAGO_SANDBOX`. */
+    envState: { sandbox: true },
     dbState: {
         /** Rows the `.returning()` call resolves with. Empty = ON CONFLICT hit. */
         returningRows: [] as Array<{ id: string }>,
@@ -32,6 +34,14 @@ const { mockLoggerError, mockLoggerInfo, dbState } = vi.hoisted(() => ({
             values: Record<string, unknown>;
             conflict: unknown;
         }>
+    }
+}));
+
+vi.mock('../../../src/utils/env', () => ({
+    env: {
+        get HOSPEDA_MERCADO_PAGO_SANDBOX() {
+            return envState.sandbox;
+        }
     }
 }));
 
@@ -87,6 +97,7 @@ beforeEach(() => {
     dbState.returningRows = [{ id: 'orphan-row-1' }];
     dbState.throwOnInsert = null;
     dbState.calls.length = 0;
+    envState.sandbox = true;
 });
 
 describe('buildOrphanPaymentRow', () => {
@@ -127,6 +138,25 @@ describe('buildOrphanPaymentRow', () => {
         expect(row.metadata).toEqual({});
     });
 
+    it('derives livemode=false from a SANDBOX environment', () => {
+        // Arrange
+        envState.sandbox = true;
+
+        // Act / Assert — HOS-708 / HOS-719: a sandbox charge must never be
+        // stored as production money. This is what lets whoever triages the
+        // queue tell a staging test from a real stranded payment.
+        expect(buildOrphanPaymentRow(BASE_INPUT).livemode).toBe(false);
+    });
+
+    it('derives livemode=true from a NON-sandbox environment', () => {
+        // Arrange
+        envState.sandbox = false;
+
+        // Act / Assert — the other half of the derivation. Asserting only the
+        // sandbox case would stay green against a hard-coded `false`.
+        expect(buildOrphanPaymentRow(BASE_INPUT).livemode).toBe(true);
+    });
+
     it('carries flow, reason and the observed status through verbatim', () => {
         const row = buildOrphanPaymentRow(BASE_INPUT);
 
@@ -153,8 +183,21 @@ describe('recordOrphanPayment', () => {
             amount: 12_345,
             currency: 'ARS',
             observedStatus: 'past_due',
-            status: 'unresolved'
+            status: 'unresolved',
+            livemode: false
         });
+    });
+
+    it('writes the environment-derived livemode through to the insert', async () => {
+        // Arrange
+        envState.sandbox = false;
+
+        // Act
+        await recordOrphanPayment(BASE_INPUT);
+
+        // Assert — the derivation must survive the whole path, not just the
+        // builder: a row that reaches the table mislabelled is the failure mode.
+        expect(dbState.calls[0]?.values).toMatchObject({ livemode: true });
     });
 
     it('deduplicates on (provider, providerPaymentId) so MP redeliveries cannot double-queue', async () => {
