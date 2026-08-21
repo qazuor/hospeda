@@ -15,11 +15,10 @@ import { refreshBetterAuthSession } from '../../src/lib/auth-client';
 
 // ─── Module mocks ─────────────────────────────────────────────────────────────
 
-vi.mock('../../src/lib/i18n', () => ({
-    createTranslations: (_locale: string) => ({
-        t: (_key: string, fallback?: string) => fallback ?? _key
-    })
-}));
+vi.mock('../../src/lib/i18n', async () => {
+    const { tFromCatalog } = await import('../helpers/i18n-catalog');
+    return { createTranslations: (_locale: string) => ({ t: tFromCatalog }) };
+});
 
 vi.mock('../../src/components/auth/ChangePasswordForm.module.css', () => ({
     default: new Proxy({} as Record<string, string>, {
@@ -269,7 +268,7 @@ describe('ChangePasswordForm', () => {
 
             await waitFor(() => {
                 expect(
-                    screen.getByText(/contraseña actualizada correctamente/i)
+                    screen.getByText(/contraseña fue actualizada correctamente/i)
                 ).toBeInTheDocument();
             });
         });

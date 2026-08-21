@@ -15,19 +15,15 @@ import { DEFAULT_AVATAR_MAX_FILE_SIZE_MB, mbToBytes } from '@repo/media';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ProfileCompletionAvatarPicker } from '../../../src/components/account/ProfileCompletionAvatarPicker';
+import { tFromCatalog } from '../../helpers/i18n-catalog';
 
 /**
- * Minimal translation stub. Interpolates `{{param}}` placeholders the way the
- * real `createTranslations().t` does — a stub that returned the fallback
- * verbatim would happily let a message ship with a raw `{{maxSize}}` in it.
+ * Resolves against the real `es` catalog. The previous stub returned the inline
+ * fallback, which HOS-616 removed from these call sites — and it interpolated
+ * `{{param}}` for the same reason the helper does: a message must never ship
+ * with a raw `{{maxSize}}` in it.
  */
-const t = (_key: string, fallback: string, params?: Record<string, string | number>): string =>
-    params
-        ? Object.entries(params).reduce(
-              (acc, [key, value]) => acc.replaceAll(`{{${key}}}`, String(value)),
-              fallback
-          )
-        : fallback;
+const t = tFromCatalog;
 
 const API_URL = 'http://api.test';
 
