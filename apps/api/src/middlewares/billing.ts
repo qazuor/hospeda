@@ -193,7 +193,8 @@ function getBillingInstance(): QZPayBilling | null {
             paymentAdapter,
             defaultCurrency: 'ARS',
             livemode,
-            providerSyncErrorStrategy: 'throw'
+            providerSyncErrorStrategy: 'throw',
+            logger: qzpayLogger
         });
 
         // HOS-596: a SECOND facade over the very same storage + payment adapter,
@@ -216,17 +217,29 @@ function getBillingInstance(): QZPayBilling | null {
         // QZPayProviderSyncError still reaches billing-provider-error.ts and is
         // still mapped to a typed ServiceError (SPEC-149 T-002).
         //
-        // The failure is NOT silent under `'log'`: qzpay logs the provider error
-        // through `qzpayLogger` (→ apiLogger) with the MercadoPago error message
-        // and `QZPayErrorCode.PROVIDER_CREATE_CUSTOMER_FAILED`, and
-        // BillingCustomerSyncService additionally warns when the returned customer
-        // carries no provider id.
+        // The failure is NOT silent under `'log'` — but only because `logger` is
+        // passed explicitly below. Without it qzpay-core falls back to
+        // `createDefaultLogger`, which writes to `console.*` and never reaches
+        // `@repo/logger`; that is why BOTH facades now carry `qzpayLogger`. With
+        // it, a provider failure emits `logger.error('Provider sync failed during
+        // customer creation')` carrying the MercadoPago message and
+        // `QZPayErrorCode.PROVIDER_CREATE_CUSTOMER_FAILED`, then
+        // `logger.warn('Continuing customer creation without provider sync')`.
+        //
+        // Note what the surviving row does NOT get: a provider link. qzpay writes
+        // it as `providerCustomerIds`, and `mapCoreCustomerUpdateToDrizzle` in
+        // `@qazuor/qzpay-drizzle` has no branch for that field, so it is dropped
+        // on success too — there is no local reconciliation path today, and none
+        // is needed: since HOS-171 the checkout is a MercadoPago preapproval that
+        // collects the payer on MP's own page, so no paid path reads a local
+        // provider customer id.
         const customerSyncInstance = createQZPayBilling({
             storage: storageAdapter,
             paymentAdapter,
             defaultCurrency: 'ARS',
             livemode,
-            providerSyncErrorStrategy: 'log'
+            providerSyncErrorStrategy: 'log',
+            logger: qzpayLogger
         });
 
         // Published together, only once BOTH exist. Assigning `billingInstance`
