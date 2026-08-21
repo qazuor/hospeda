@@ -5,8 +5,12 @@
  *
  * A "commerce lead" is a pre-onboarding application submitted via the public
  * "Sumar mi negocio" (Add my business) form.  It records the applicant's
- * contact info and business details so an admin can review and, if approved,
- * proceed with owner provisioning and listing creation.
+ * contact info and business details for admin review and marketing capture.
+ * HOS-693 §6.2 removed the admin-provisioning method this used to feed
+ * (approve a lead AND create its owner account in one action) — owners now
+ * create their own listing directly, which is what grants the COMMERCE_OWNER
+ * role (HOS-687). This service's remaining surface (`createLead`,
+ * `listLeads`, `markHandled`, `getMyLead`) is unchanged.
  *
  * ## Design decisions
  * - Extends `BaseService` (not `BaseCrudService`) because the lead lifecycle
@@ -63,43 +67,6 @@ export interface LeadNotificationPort {
     notifyNewLead: (lead: CommerceLead) => Promise<void>;
 }
 
-/**
- * Minimal port for the owner-provisioning step used by {@link CommerceLeadService.approveAndProvision}.
- *
- * Decouples the lead service from the concrete `CommerceOwnerProvisioningService`
- * (which the API layer constructs per-request to capture Better Auth headers).
- * The concrete service is structurally assignable to this port.
- */
-export interface CommerceOwnerProvisioner {
-    /**
-     * Provisions a COMMERCE_OWNER account from a lead (creates the user + sends
-     * the credential email). Returns the created user's id on success.
-     */
-    provisionCommerceOwner: (
-        actor: Actor,
-        input: { lead: CommerceLead },
-        ctx?: ServiceContext
-    ) => Promise<
-        ServiceOutput<{
-            userId: string;
-            email: string;
-            name: string;
-            /**
-             * Whether the address already had an account, which was granted the
-             * commerce role instead of a second one being created.
-             *
-             * This port used to declare only `userId`, `email` and `name`, so
-             * the distinction was erased at the TYPE level before any code
-             * could drop it — and the screen went on narrating the case that
-             * had not happened (H-87 / H-150).
-             */
-            alreadyExisted: boolean;
-            /** Whether a credentials email was actually delivered. */
-            credentialsSent: boolean;
-        }>
-    >;
-}
-
 // ---------------------------------------------------------------------------
 // Input / output types
 // ---------------------------------------------------------------------------
@@ -126,52 +93,6 @@ export interface MarkLeadHandledInput {
     readonly handledById: string;
     /** Optional admin note explaining the decision. */
     readonly adminNote?: string;
-}
-
-/** Input for the combined approve-and-provision admin action (SPEC-249 Part D). */
-export interface ApproveAndProvisionInput {
-    /** UUID of the lead to approve and provision. */
-    readonly id: string;
-    /** UUID of the admin user performing the action. */
-    readonly handledById: string;
-    /** Optional admin note explaining the decision. */
-    readonly adminNote?: string;
-}
-
-/** Result of {@link CommerceLeadService.approveAndProvision}. */
-export interface ApproveAndProvisionResult {
-    /** The updated lead (status 'approved', linked to the provisioned owner). */
-    readonly lead: CommerceLead;
-    /** The provisioned COMMERCE_OWNER user id. */
-    readonly userId: string;
-    /**
-     * `true` when THIS CALL did the provisioning work; `false` when the lead
-     * was already provisioned (idempotent no-op).
-     *
-     * It does NOT mean an account was created — its previous wording said so
-     * and was wrong, which is exactly the trap it laid: an approval that linked
-     * an existing account returns `true` here, and a UI branching on it to
-     * announce "cuenta creada" chooses wrong (H-87 / H-150). Use
-     * {@link accountCreated} for that question.
-     */
-    readonly provisioned: boolean;
-    /**
-     * `true` only when a NEW user account was created for the lead's email.
-     *
-     * `false` when the address already had an account and was simply granted
-     * the commerce role (HOS-296 G-4), and `false` for the idempotent no-op,
-     * where this call created nothing at all.
-     */
-    readonly accountCreated: boolean;
-    /**
-     * `true` only when a credentials email was actually delivered.
-     *
-     * `false` when the account already existed — its own password stands and
-     * the generated one would not sign anyone in — and `false` when the send
-     * was attempted and failed. Both cases end with an applicant who has no
-     * credentials to look for, so both must read the same way to the operator.
-     */
-    readonly credentialsSent: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -202,12 +123,6 @@ export type GetMyLeadInput = z.infer<typeof getMyLeadInputSchema>;
 const markHandledInputSchema = z.object({
     id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     status: z.enum(['approved', 'rejected']),
-    handledById: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
-    adminNote: z.string().max(1000).optional()
-});
-
-const approveAndProvisionInputSchema = z.object({
-    id: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     handledById: z.string().uuid({ message: 'zodError.common.id.invalidUuid' }),
     adminNote: z.string().max(1000).optional()
 });
@@ -335,15 +250,16 @@ export class CommerceLeadService extends BaseService {
      * Returns the authenticated caller's own most-recent PROVISIONED lead, for
      * pre-filling the commerce create form (HOS-257 D-4).
      *
-     * Scoped by `provisionedUserId = actor.id` — the FK set by
-     * {@link approveAndProvision} when the owner account was created from this
-     * lead. This is the only reliable "own lead" link: `commerce_leads` rows
+     * Scoped by `provisionedUserId = actor.id` — the FK the now-removed
+     * admin provisioning flow used to set when the owner account was created
+     * from this lead (HOS-693 §6.2 deleted that flow; this method and its
+     * scoping column are unchanged, so no lead is provisioned by it any
+     * more). This is the only reliable "own lead" link: `commerce_leads` rows
      * have no `ownerId`/`createdById` (leads are anonymous public-form
      * submissions, see the schema doc), so any OTHER lead matching the actor's
      * email would NOT be provably theirs. A caller with no provisioned lead
-     * (the common case for most owners — provisioning is admin-driven and
-     * optional) gets `null`, never an error — this is a pre-fill convenience,
-     * not a gate (D-4 golden rule).
+     * (now the ONLY case) gets `null`, never an error — this is a pre-fill
+     * convenience, not a gate (D-4 golden rule).
      *
      * No permission check beyond `validateActor` — the query is inherently
      * self-scoped, so there is nothing an elevated permission would unlock.
@@ -517,126 +433,6 @@ export class CommerceLeadService extends BaseService {
                     execCtx?.tx
                 );
                 return updated as CommerceLead;
-            }
-        });
-    }
-
-    // -----------------------------------------------------------------------
-    // approveAndProvision — admin (requires COMMERCE_EDIT_ALL) — SPEC-249 Part D
-    // -----------------------------------------------------------------------
-
-    /**
-     * Approves a lead AND provisions its COMMERCE_OWNER account in one action.
-     *
-     * Requires `COMMERCE_EDIT_ALL`. Orchestration order is deliberate:
-     * 1. **Idempotency guard** — if the lead already has `provisionedUserId`,
-     *    return it as a no-op (`provisioned: false`); never double-provision.
-     * 2. **Provision first** — create the owner account + send credentials via
-     *    the injected {@link CommerceOwnerProvisioner}. If this fails, the lead
-     *    is left unhandled so the admin can retry cleanly (no orphan `approved`
-     *    lead without an owner).
-     * 3. **Then mark approved + link** — set `status: 'approved'`, `handledAt`,
-     *    `handledById`, and `provisionedUserId` in a single update.
-     *
-     * The provisioner is passed per-call (not held on the service) because the
-     * API layer constructs `CommerceOwnerProvisioningService` per-request to
-     * capture the Better Auth request headers.
-     *
-     * @param actor - The admin actor performing the action.
-     * @param input - `{ id, handledById, adminNote? }`.
-     * @param provisioner - The owner-provisioning port (per-request instance).
-     * @param ctx - Optional service execution context.
-     * @returns `ServiceOutput<ApproveAndProvisionResult>`.
-     * @throws `NOT_FOUND` when the lead does not exist; `FORBIDDEN` without permission.
-     */
-    public async approveAndProvision(
-        actor: Actor,
-        input: ApproveAndProvisionInput,
-        provisioner: CommerceOwnerProvisioner,
-        ctx?: ServiceContext
-    ): Promise<ServiceOutput<ApproveAndProvisionResult>> {
-        return this.runWithLoggingAndValidation({
-            methodName: 'approveAndProvision',
-            input: { actor, ...input },
-            schema: approveAndProvisionInputSchema,
-            ctx,
-            execute: async (validated, a, execCtx) => {
-                if (!hasPermission(a, PermissionEnum.COMMERCE_EDIT_ALL)) {
-                    throw new ServiceError(
-                        ServiceErrorCode.FORBIDDEN,
-                        'Permission denied: COMMERCE_EDIT_ALL required to approve and provision commerce leads'
-                    );
-                }
-
-                const existing = (await this._model.findById(
-                    validated.id,
-                    execCtx?.tx
-                )) as CommerceLead | null;
-                if (!existing) {
-                    throw new ServiceError(
-                        ServiceErrorCode.NOT_FOUND,
-                        `Commerce lead not found: ${validated.id}`
-                    );
-                }
-
-                // (1) Idempotency guard — already provisioned, never re-provision.
-                if (existing.provisionedUserId) {
-                    return {
-                        lead: existing,
-                        userId: existing.provisionedUserId,
-                        provisioned: false,
-                        // This call created nothing and sent nothing. Whatever
-                        // happened on the original approval is not something
-                        // this response may claim.
-                        accountCreated: false,
-                        credentialsSent: false
-                    };
-                }
-
-                // (2) Provision first — if this fails, the lead stays unhandled.
-                const provisionResult = await provisioner.provisionCommerceOwner(
-                    a,
-                    { lead: existing },
-                    execCtx
-                );
-                if (provisionResult.error || !provisionResult.data) {
-                    throw new ServiceError(
-                        provisionResult.error?.code ?? ServiceErrorCode.INTERNAL_ERROR,
-                        provisionResult.error?.message ?? 'Owner provisioning failed'
-                    );
-                }
-                const { userId, alreadyExisted, credentialsSent } = provisionResult.data;
-
-                // (3) Mark approved + link the provisioned owner in one update.
-                const updatePayload: CommerceLeadAdminUpdateInput = {
-                    id: validated.id,
-                    status: 'approved',
-                    handledAt: new Date(),
-                    handledById: validated.handledById,
-                    provisionedUserId: userId,
-                    ...(validated.adminNote === undefined ? {} : { adminNote: validated.adminNote })
-                };
-                const parsed = CommerceLeadAdminUpdateInputSchema.safeParse(updatePayload);
-                if (!parsed.success) {
-                    throw new ServiceError(
-                        ServiceErrorCode.VALIDATION_ERROR,
-                        `Invalid update payload: ${parsed.error.message}`
-                    );
-                }
-
-                const updated = (await this._model.update(
-                    { id: validated.id },
-                    parsed.data as Partial<CommerceLead>,
-                    execCtx?.tx
-                )) as CommerceLead;
-
-                return {
-                    lead: updated,
-                    userId,
-                    provisioned: true,
-                    accountCreated: !alreadyExisted,
-                    credentialsSent
-                };
             }
         });
     }

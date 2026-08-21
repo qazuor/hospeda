@@ -1,7 +1,7 @@
 /**
  * @file mi-cuenta-comercio-nuevo.astro.test.ts
  * @description Source-level assertions for the owner self-service commerce
- * create page (HOS-257 pre-fill wiring, HOS-687 access gate).
+ * create page (HOS-693 §6.2 pre-fill removal, HOS-687 access gate).
  *
  * Astro pages cannot be rendered via Vitest, so we lean on string-level
  * assertions on the .astro source — same pattern used elsewhere in this repo
@@ -24,29 +24,16 @@ const verticalPickerSource = readFileSync(resolve(PAGES_ROOT, 'nuevo/index.astro
 const listingIndexSource = readFileSync(resolve(PAGES_ROOT, 'index.astro'), 'utf8');
 const editorSource = readFileSync(resolve(PAGES_ROOT, '[vertical]/[id]/editar.astro'), 'utf8');
 
-describe('mi-cuenta/comercio/nuevo/[vertical].astro (HOS-257 pre-fill)', () => {
-    it('fetches the caller own lead via fetchMyCommerceLead (never the lead service/table directly)', () => {
-        expect(source).toContain('fetchMyCommerceLead');
+describe('mi-cuenta/comercio/nuevo/[vertical].astro — HOS-257 pre-fill removed (HOS-693 §6.2)', () => {
+    it('no longer fetches the caller own lead — fetchMyCommerceLead and the lead endpoint are gone', () => {
+        expect(source).not.toContain('fetchMyCommerceLead');
+        expect(source).not.toContain('leads/mine');
         expect(source).not.toContain('CommerceLeadService');
         expect(source).not.toContain('commerce_leads');
     });
 
-    it("forwards the request's Cookie header so the protected endpoint sees the session", () => {
-        expect(source).toMatch(/Astro\.request\.headers\.get\(\s*['"]cookie['"]\s*\)/);
-    });
-
-    it('degrades to an undefined prefill (no lead-conditioned gate) when myLead is null', () => {
-        expect(source).toContain('myLead');
-        expect(source).toContain('? {');
-        expect(source).toContain(': undefined');
-    });
-
-    it('passes prefill through to CommerceCreateForm', () => {
-        expect(source).toMatch(/prefill=\{prefill\}/);
-    });
-
-    it('never sources prefill.name from the personal profile name', () => {
-        expect(source).not.toMatch(/prefill.*Astro\.locals\.user\.name/);
+    it('never passes a prefill prop to CommerceCreateForm', () => {
+        expect(source).not.toContain('prefill');
     });
 });
 

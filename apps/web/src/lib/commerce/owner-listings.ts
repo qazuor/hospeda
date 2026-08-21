@@ -28,7 +28,6 @@ import type { ApiResult } from '../api/types';
 const GASTRONOMY_MINE_PATH = '/api/v1/protected/gastronomies/mine';
 const EXPERIENCE_MINE_PATH = '/api/v1/protected/experiences/mine';
 const COMMERCE_LISTINGS_PATH = '/api/v1/protected/commerce/listings';
-const COMMERCE_MY_LEAD_PATH = '/api/v1/protected/commerce/leads/mine';
 
 /** Owner-tier detail of a single commerce listing, one of the two verticals. */
 export type CommerceListingDetail = GastronomyProtected | ExperienceProtected;
@@ -172,68 +171,6 @@ export async function fetchOwnerCommerceListingsWithState({
             return { ...summary, completeness };
         })
     );
-}
-
-// ---------------------------------------------------------------------------
-// HOS-257 — owner self-service create-form pre-fill
-// ---------------------------------------------------------------------------
-
-/**
- * Pre-fill-shaped subset of the caller's own commerce lead, as returned by
- * `GET /api/v1/protected/commerce/leads/mine`. Field names already match
- * `CommerceCreateForm`'s `prefill` prop naming (`businessName` -> `name` is
- * done server-side).
- */
-export interface MyCommerceLead {
-    readonly name: string;
-    readonly destinationId: string | null;
-    readonly contactName: string;
-    readonly email: string;
-    readonly phone: string | null;
-}
-
-/**
- * Fetches the caller's own most-recent provisioned commerce lead, for
- * pre-filling the create form (HOS-257).
- *
- * D-4 compliance: this is the ONLY place `apps/web` talks to the lead
- * subsystem, and it does so exclusively over HTTP via the protected read
- * endpoint — never by importing the lead service or table directly (enforced
- * by the AC-14 static guard, `test/static-guards/commerce-lead-isolation.test.ts`).
- * Degrades to `null` on ANY failure (network error, 401, 5xx, no lead) —
- * this is a pre-fill convenience, never a gate; the create page must render
- * fully usable regardless of the outcome (AC-10/AC-11).
- *
- * `vertical` is REQUIRED (H-155). Without it the endpoint returns the owner's
- * most recent lead in ANY vertical, so opening the experience create form
- * pre-filled it with a gastronomy lead's business name and destination. The
- * create form derives the public slug from `name` and the slug is immutable
- * afterwards, so an owner who misses the pre-filled restaurant name ships their
- * excursion under it permanently — an irreversible error committed in the same
- * click. One owner holding listings in both verticals is exactly what the
- * product invites, so this is the common case, not an edge one.
- *
- * @param vertical - The vertical whose create form is being rendered; scopes the
- *   lead lookup to that domain.
- * @param cookieHeader - Raw `Cookie` header from the SSR request, forwarded so
- *   the protected endpoint can resolve the session.
- * @returns The pre-fill-shaped lead, or `null` when the caller has none in this
- *   vertical / the request failed.
- */
-export async function fetchMyCommerceLead({
-    vertical,
-    cookieHeader
-}: {
-    vertical: CommerceVertical;
-    cookieHeader?: string;
-}): Promise<MyCommerceLead | null> {
-    const result = await apiClient.getProtected<{ readonly lead: MyCommerceLead | null }>({
-        path: COMMERCE_MY_LEAD_PATH,
-        params: { domain: vertical },
-        cookieHeader
-    });
-
-    return result.ok ? (result.data.lead ?? null) : null;
 }
 
 /** Payload accepted by {@link createOwnerListing} — one per vertical. */

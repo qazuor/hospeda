@@ -19,19 +19,11 @@
  * create endpoint itself validates against, so there is only one set of
  * rules, just scoped to the fields this form actually collects.
  *
- * ## D-4 compliance (HOS-166 §6.1 / HOS-257 — the golden rule)
- *
- * `prefill` is OPTIONAL and PRE-FILL ONLY, never a gate. `nuevo/[vertical].astro`
- * (the sole caller) sources it from `GET /api/v1/protected/commerce/leads/mine`
- * — a protected READ endpoint that returns the CALLER's own most-recent
- * provisioned lead (`{ lead: null }` when there is none). This component itself
- * never talks to the lead subsystem — it only receives the
- * already-shaped `prefill` object over props, same as it always has. Every
- * field is optional and an absent/empty value degrades silently to a blank
- * input, so an owner with no lead gets the IDENTICAL, fully usable form
- * (AC-10/AC-11) — there is no lead-conditioned branch anywhere in this
- * component. Overwriting a pre-filled value is always allowed (AC-12): these
- * are plain `useState` initial values, editable like any other input.
+ * HOS-693 §6.2 removed the HOS-257 `prefill` prop (sourced from the caller's
+ * own admin-provisioned commerce lead, which no longer exists — HOS-687
+ * grants COMMERCE_OWNER on listing creation instead). The form always starts
+ * blank now, which was already its behaviour for the common case
+ * (AC-10/AC-11 predate this and still hold).
  *
  * Hydration: caller MUST use `client:load` (the primary interactive surface
  * of the create page).
@@ -74,18 +66,6 @@ export interface CommerceCreateFormProps {
      * callers/tests that omit it keep the prior behaviour.
      */
     readonly destinationsLoadFailed?: boolean;
-    /**
-     * Optional pre-fill values (HOS-257), sourced by the caller from the
-     * caller's own commerce lead (see module doc). Every field is optional and
-     * an absent/empty value degrades silently to a blank input. Only the
-     * fields this form actually collects are pre-fillable — `contactName` /
-     * `email` / `phone` live on the lead but have no equivalent input here
-     * (they are `CommerceListingEditor` fields, filled in after create).
-     */
-    readonly prefill?: {
-        readonly name?: string;
-        readonly destinationId?: string;
-    };
 }
 
 const GASTRONOMY_TYPE_OPTIONS = Object.values(GastronomyTypeEnum);
@@ -130,19 +110,18 @@ export function CommerceCreateForm({
     vertical,
     locale,
     destinations,
-    destinationsLoadFailed = false,
-    prefill
+    destinationsLoadFailed = false
 }: CommerceCreateFormProps): JSX.Element {
     const { t } = createTranslations(locale);
 
     const schema = vertical === 'gastronomy' ? GASTRONOMY_FORM_SCHEMA : EXPERIENCE_FORM_SCHEMA;
     const { fieldErrors, formError, validate, handleApiError } = useZodForm({ schema, t });
 
-    const [name, setName] = useState(prefill?.name ?? '');
+    const [name, setName] = useState('');
     const [listingType, setListingType] = useState('');
     const [summary, setSummary] = useState('');
     const [description, setDescription] = useState('');
-    const [destinationId, setDestinationId] = useState(prefill?.destinationId ?? '');
+    const [destinationId, setDestinationId] = useState('');
     const [priceFrom, setPriceFrom] = useState<number | null>(null);
     const [priceUnit, setPriceUnit] = useState('');
     const [isPriceOnRequest, setIsPriceOnRequest] = useState(false);

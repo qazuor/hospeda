@@ -8,16 +8,19 @@
  *    status badge, createdAt).
  *  - Status filter (all / pending / reviewing / approved / rejected).
  *  - Per-row "Handle" dialog: approve/reject radio + optional admin note.
- *  - Per-row "Provision owner" confirm dialog: creates COMMERCE_OWNER account
- *    and emails temp credentials.  Success toast shows {name, email} — NEVER
- *    a password.
  *
- * Gate: COMMERCE_VIEW_ALL (read) / COMMERCE_EDIT_ALL (handle + provision).
+ * Gate: COMMERCE_VIEW_ALL (read) / COMMERCE_EDIT_ALL (handle).
+ *
+ * HOS-693 §6.2 removed the "Provision owner" and "Approve & provision"
+ * dialogs (and the `provision-owner` / `approve-and-provision` admin routes
+ * they called) — owners now grant themselves the COMMERCE_OWNER role by
+ * creating their own listing (HOS-687), so there is no account left for an
+ * admin to provision from here. "Handle" (approve/reject the lead, a
+ * marketing-capture record) is the only action that remains.
  *
  * @module features/commerce-leads/components/CommerceLeadInbox
  */
 
-import type { TranslationKey } from '@repo/i18n';
 import type { CommerceLead } from '@repo/schemas';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -36,10 +39,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useTranslations } from '@/hooks/use-translations';
 import {
     type CommerceLeadsQueryParams,
-    useApproveAndProvisionMutation,
     useCommerceLeadsQuery,
-    useMarkLeadHandledMutation,
-    useProvisionOwnerMutation
+    useMarkLeadHandledMutation
 } from '../hooks/useCommerceLeads';
 import { CommerceLeadStatusBadge } from './CommerceLeadStatusBadge';
 
@@ -167,222 +168,6 @@ function HandleDialog({ lead, onClose }: HandleDialogProps) {
 }
 
 // ---------------------------------------------------------------------------
-// Provision owner dialog
-// ---------------------------------------------------------------------------
-
-type ProvisionDialogProps = {
-    readonly lead: CommerceLead;
-    readonly onClose: () => void;
-};
-
-/**
- * Picks the message that describes what provisioning ACTUALLY did
- * (H-87 / H-150).
- *
- * The admin used to announce "cuenta creada, credenciales enviadas" on every
- * success. With an email that already had an account, HOS-296 correctly
- * resolves it to that account, grants the commerce role additively and skips
- * the credential email — so neither half of the sentence was true, and the
- * operator closed the ticket telling the applicant to look for a mail nobody
- * had sent.
- *
- * Two booleans, not one: an account can be created and its credential email
- * still fail to go out, which leaves an owner who cannot sign in. That case
- * reads like success to everyone unless it is named.
- *
- * @param outcome - What the server reported.
- * @returns The i18n key for the message that matches it.
- */
-function provisionOutcomeKey(outcome: {
-    readonly accountCreated: boolean;
-    readonly credentialsSent: boolean;
-}): TranslationKey {
-    if (!outcome.accountCreated) {
-        return 'admin-entities.commerceLeads.provision.successLinkedMessage';
-    }
-
-    return outcome.credentialsSent
-        ? 'admin-entities.commerceLeads.provision.successMessage'
-        : 'admin-entities.commerceLeads.provision.successNoCredentialsMessage';
-}
-
-/**
- * The approve-and-provision counterpart of {@link provisionOutcomeKey}.
- *
- * Only called when `provisioned` is true — the idempotent no-op has its own
- * message, because that call did nothing at all.
- *
- * @param outcome - What the server reported.
- * @returns The i18n key for the message that matches it.
- */
-function approveOutcomeKey(outcome: {
-    readonly accountCreated: boolean;
-    readonly credentialsSent: boolean;
-}): TranslationKey {
-    if (!outcome.accountCreated) {
-        return 'admin-entities.commerceLeads.approveProvision.successLinkedMessage';
-    }
-
-    return outcome.credentialsSent
-        ? 'admin-entities.commerceLeads.approveProvision.successMessage'
-        : 'admin-entities.commerceLeads.approveProvision.successNoCredentialsMessage';
-}
-
-/**
- * Confirmation dialog to provision a COMMERCE_OWNER account for a lead.
- * On success shows the returned {name, email} in a toast — NEVER a password.
- */
-function ProvisionDialog({ lead, onClose }: ProvisionDialogProps) {
-    const { t } = useTranslations();
-    const { addToast } = useToast();
-    const mutation = useProvisionOwnerMutation();
-
-    const handleProvision = async () => {
-        const result = await mutation.mutateAsync(lead.id);
-
-        addToast({
-            variant: 'success',
-            message: t(provisionOutcomeKey(result), {
-                name: result.name,
-                email: result.email
-            })
-        });
-
-        onClose();
-    };
-
-    return (
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>{t('admin-entities.commerceLeads.provision.title')}</DialogTitle>
-                <DialogDescription>
-                    {t('admin-entities.commerceLeads.provision.description', {
-                        businessName: lead.businessName,
-                        email: lead.email
-                    })}
-                </DialogDescription>
-            </DialogHeader>
-
-            {mutation.isError && (
-                <p className="text-destructive text-sm">
-                    {t('admin-entities.commerceLeads.provision.error')}
-                </p>
-            )}
-
-            <DialogFooter>
-                <Button
-                    variant="outline"
-                    onClick={onClose}
-                    disabled={mutation.isPending}
-                >
-                    {t('admin-entities.actions.cancel')}
-                </Button>
-                <Button
-                    onClick={handleProvision}
-                    disabled={mutation.isPending}
-                >
-                    {mutation.isPending
-                        ? t('admin-entities.commerceLeads.provision.submitting')
-                        : t('admin-entities.commerceLeads.provision.confirm')}
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-    );
-}
-
-// ---------------------------------------------------------------------------
-// Approve & provision dialog (SPEC-249 Part D)
-// ---------------------------------------------------------------------------
-
-type ApproveProvisionDialogProps = {
-    readonly lead: CommerceLead;
-    readonly onClose: () => void;
-};
-
-/**
- * Combined "Approve & provision" confirmation dialog. Approves the lead AND
- * creates its COMMERCE_OWNER account in a single action. Optional admin note.
- * Server-side idempotent via `lead.provisionedUserId`.
- */
-function ApproveProvisionDialog({ lead, onClose }: ApproveProvisionDialogProps) {
-    const { t } = useTranslations();
-    const { addToast } = useToast();
-    const mutation = useApproveAndProvisionMutation();
-
-    const [adminNote, setAdminNote] = useState('');
-
-    const handleConfirm = async () => {
-        const result = await mutation.mutateAsync({
-            id: lead.id,
-            adminNote: adminNote.trim() || undefined
-        });
-
-        addToast({
-            variant: 'success',
-            message: result.provisioned
-                ? t(approveOutcomeKey(result), { email: lead.email })
-                : t('admin-entities.commerceLeads.approveProvision.alreadyProvisionedMessage')
-        });
-
-        onClose();
-    };
-
-    return (
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>
-                    {t('admin-entities.commerceLeads.approveProvision.title')}
-                </DialogTitle>
-                <DialogDescription>
-                    {t('admin-entities.commerceLeads.approveProvision.description', {
-                        businessName: lead.businessName,
-                        email: lead.email
-                    })}
-                </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-1 py-2">
-                <Label htmlFor="approve-provision-note">
-                    {t('admin-entities.commerceLeads.approveProvision.noteLabel')}
-                </Label>
-                <Textarea
-                    id="approve-provision-note"
-                    value={adminNote}
-                    onChange={(e) => setAdminNote(e.target.value)}
-                    placeholder={t('admin-entities.commerceLeads.approveProvision.notePlaceholder')}
-                    rows={3}
-                    maxLength={1000}
-                />
-            </div>
-
-            {mutation.isError && (
-                <p className="text-destructive text-sm">
-                    {t('admin-entities.commerceLeads.approveProvision.error')}
-                </p>
-            )}
-
-            <DialogFooter>
-                <Button
-                    variant="outline"
-                    onClick={onClose}
-                    disabled={mutation.isPending}
-                >
-                    {t('admin-entities.actions.cancel')}
-                </Button>
-                <Button
-                    onClick={handleConfirm}
-                    disabled={mutation.isPending}
-                >
-                    {mutation.isPending
-                        ? t('admin-entities.commerceLeads.approveProvision.submitting')
-                        : t('admin-entities.commerceLeads.approveProvision.confirm')}
-                </Button>
-            </DialogFooter>
-        </DialogContent>
-    );
-}
-
-// ---------------------------------------------------------------------------
 // Row actions
 // ---------------------------------------------------------------------------
 
@@ -391,17 +176,16 @@ type RowActionsProps = {
 };
 
 /**
- * Renders the per-row "Handle" and (optionally) "Provision owner" action buttons.
- * Each action opens a Shadcn Dialog.
+ * Renders the per-row "Handle" action button, which opens a Shadcn Dialog.
+ *
+ * HOS-693 §6.2 removed the "Provision owner" and "Approve & provision"
+ * actions this used to render alongside "Handle" — see the module doc.
  */
 function RowActions({ lead }: RowActionsProps) {
     const { t } = useTranslations();
     const [handleOpen, setHandleOpen] = useState(false);
-    const [provisionOpen, setProvisionOpen] = useState(false);
-    const [approveProvisionOpen, setApproveProvisionOpen] = useState(false);
 
     const isHandled = lead.status === 'approved' || lead.status === 'rejected';
-    const isAlreadyProvisioned = lead.provisionedUserId != null;
 
     return (
         <div className="flex items-center gap-2">
@@ -425,49 +209,6 @@ function RowActions({ lead }: RowActionsProps) {
                     />
                 )}
             </Dialog>
-
-            {/* Combined "Approve & provision" — only for leads not yet handled */}
-            {!isHandled && (
-                <Dialog
-                    open={approveProvisionOpen}
-                    onOpenChange={setApproveProvisionOpen}
-                >
-                    <DialogTrigger asChild>
-                        <Button size="sm">
-                            {t('admin-entities.commerceLeads.actions.approveProvision')}
-                        </Button>
-                    </DialogTrigger>
-                    {approveProvisionOpen && (
-                        <ApproveProvisionDialog
-                            lead={lead}
-                            onClose={() => setApproveProvisionOpen(false)}
-                        />
-                    )}
-                </Dialog>
-            )}
-
-            {/* Provision dialog — only show when approved and not yet provisioned */}
-            {lead.status === 'approved' && !isAlreadyProvisioned && (
-                <Dialog
-                    open={provisionOpen}
-                    onOpenChange={setProvisionOpen}
-                >
-                    <DialogTrigger asChild>
-                        <Button
-                            size="sm"
-                            variant="secondary"
-                        >
-                            {t('admin-entities.commerceLeads.actions.provision')}
-                        </Button>
-                    </DialogTrigger>
-                    {provisionOpen && (
-                        <ProvisionDialog
-                            lead={lead}
-                            onClose={() => setProvisionOpen(false)}
-                        />
-                    )}
-                </Dialog>
-            )}
         </div>
     );
 }
