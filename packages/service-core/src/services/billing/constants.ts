@@ -184,7 +184,127 @@ export const BILLING_EVENT_TYPES = {
      * elapsed (HOS-657). Such rows are invisible to every other reconciler,
      * so this is the only writer that ever produces this event.
      */
-    SUBSCRIPTION_EXPIRED_WITHOUT_PREAPPROVAL: 'SUBSCRIPTION_EXPIRED_WITHOUT_PREAPPROVAL'
+    SUBSCRIPTION_EXPIRED_WITHOUT_PREAPPROVAL: 'SUBSCRIPTION_EXPIRED_WITHOUT_PREAPPROVAL',
+    /**
+     * Fired when an admin changes a subscription's plan via the admin panel
+     * (HOS-657). Mirrors the self-service plan-change flow's audit shape but
+     * for the admin-initiated path (`onAfterSubscriptionPlanChanged` hook in
+     * `qzpay-admin-hooks.ts`).
+     */
+    ADMIN_PLAN_CHANGED: 'ADMIN_PLAN_CHANGED',
+    /**
+     * Fired when an admin extends a subscription's trial via the admin panel
+     * (HOS-657, `onAfterSubscriptionTrialExtended` hook).
+     */
+    ADMIN_TRIAL_EXTENDED: 'ADMIN_TRIAL_EXTENDED',
+    /**
+     * Fired when an admin pauses a subscription via the admin panel (HOS-657).
+     * Mirrors {@link BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_PAUSED} for the
+     * admin-initiated path.
+     */
+    ADMIN_SUBSCRIPTION_PAUSED: 'ADMIN_SUBSCRIPTION_PAUSED',
+    /**
+     * Fired when an admin resumes a paused subscription via the admin panel
+     * (HOS-657). Mirrors {@link BILLING_EVENT_TYPES.HOST_SUBSCRIPTION_RESUMED}
+     * for the admin-initiated path.
+     */
+    ADMIN_SUBSCRIPTION_RESUMED: 'ADMIN_SUBSCRIPTION_RESUMED',
+    /**
+     * Fired when a host pauses their OWN subscription via the self-service
+     * `/me/subscription-pause` route (HOS-657). Mirrors
+     * {@link BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_PAUSED} for the
+     * host-initiated path.
+     */
+    HOST_SUBSCRIPTION_PAUSED: 'HOST_SUBSCRIPTION_PAUSED',
+    /**
+     * Fired when a host resumes their OWN paused subscription via the
+     * self-service `/me/subscription-resume` route (HOS-657). Mirrors
+     * {@link BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_RESUMED} for the
+     * host-initiated path.
+     */
+    HOST_SUBSCRIPTION_RESUMED: 'HOST_SUBSCRIPTION_RESUMED',
+    /**
+     * Fired by the generic MercadoPago `subscription_preapproval.updated`
+     * status mapper (`subscription-logic.ts::processSubscriptionUpdated`,
+     * HOS-657) when the provider-reported status resolves to `active`. This
+     * is the highest-volume writer of `billing_subscription_events` — it is
+     * shared by the live webhook, the `subscription-poll` backup cron, and
+     * the `webhook-retry` cron (distinguished via `triggerSource`, not
+     * `eventType`). One event type per destination status ({@link
+     * BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_TRIALING},
+     * {@link BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_PAUSED},
+     * {@link BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_CANCELLED},
+     * {@link BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_EXPIRED},
+     * {@link BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_PAST_DUE}) rather than
+     * one generic value — `newStatus` on the row already carries the exact
+     * destination, but a single flat "webhook fired" event type would still
+     * force every reader back to decoding `newStatus` by hand, which is
+     * exactly the ambiguity HOS-657 set out to remove. Covers a dunning
+     * recovery, a provider-side resume, and a fresh activation alike — those
+     * are distinguished by `previousStatus`, not by a separate event type.
+     */
+    WEBHOOK_SUBSCRIPTION_ACTIVATED: 'WEBHOOK_SUBSCRIPTION_ACTIVATED',
+    /**
+     * Same mapper as {@link BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_ACTIVATED}
+     * (HOS-657), fired when `deriveTrialingStatus` resolves the destination
+     * to `trialing` — a card-first trial preapproval MercadoPago reports as
+     * `active` but whose local `trialEnd` is still in the future.
+     */
+    WEBHOOK_SUBSCRIPTION_TRIALING: 'WEBHOOK_SUBSCRIPTION_TRIALING',
+    /**
+     * Same mapper as {@link BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_ACTIVATED}
+     * (HOS-657), fired when the provider reports `paused`. Never fired for
+     * the intentional soft-cancel grace carve-out (a `paused` transition on a
+     * `cancelAtPeriodEnd=true` row is skipped before the audit insert is
+     * reached — see the comment above it in `subscription-logic.ts`).
+     */
+    WEBHOOK_SUBSCRIPTION_PAUSED: 'WEBHOOK_SUBSCRIPTION_PAUSED',
+    /**
+     * Same mapper as {@link BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_ACTIVATED}
+     * (HOS-657), fired when the provider reports `canceled`. Distinct from
+     * {@link BILLING_EVENT_TYPES.USER_CANCELED} /
+     * {@link BILLING_EVENT_TYPES.ADMIN_SUBSCRIPTION_CANCELLED}: those record
+     * the LOCAL intent at request time, while this records MercadoPago
+     * independently confirming the preapproval is cancelled (which can also
+     * happen for a cancellation initiated directly in the MP dashboard, or as
+     * the provider-side echo of a local cancel request).
+     */
+    WEBHOOK_SUBSCRIPTION_CANCELLED: 'WEBHOOK_SUBSCRIPTION_CANCELLED',
+    /**
+     * Same mapper as {@link BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_ACTIVATED}
+     * (HOS-657), fired when the provider reports `finished`.
+     */
+    WEBHOOK_SUBSCRIPTION_EXPIRED: 'WEBHOOK_SUBSCRIPTION_EXPIRED',
+    /**
+     * Same mapper as {@link BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_ACTIVATED}
+     * (HOS-657), fired when the provider reports `past_due` — the signal that
+     * routes the subscription into the dunning cron's grace window.
+     */
+    WEBHOOK_SUBSCRIPTION_PAST_DUE: 'WEBHOOK_SUBSCRIPTION_PAST_DUE',
+    /**
+     * Defensive fallback for {@link BILLING_EVENT_TYPES.WEBHOOK_SUBSCRIPTION_ACTIVATED}'s
+     * mapper (HOS-657): the six statuses above are the only ones
+     * `QZPAY_TO_HOSPEDA_STATUS` + `deriveTrialingStatus` can currently
+     * produce, so this should never actually be written. Exists so a future
+     * upstream status this mapper doesn't yet enumerate still gets an
+     * `eventType` instead of silently reverting to `NULL` (the exact bug
+     * HOS-657 fixes) — never remove without also making the mapper's switch
+     * exhaustive over the full {@link SubscriptionStatusEnum}.
+     */
+    WEBHOOK_SUBSCRIPTION_STATUS_OTHER: 'WEBHOOK_SUBSCRIPTION_STATUS_OTHER',
+    /**
+     * Fired when a deferred reactivation supersession pairing completes
+     * (HOS-114, audited via HOS-657): the superseded subscription was
+     * confirmed cancelled and the new subscription's activation is now the
+     * audited record of that pairing. Covers both flavors —
+     * `trial-reactivation` (trial → paid conversion) and
+     * `subscription-reactivation` (lapsed subscription reactivated) — kept as
+     * ONE event type because `triggerSource` on the same row already
+     * distinguishes them (see `completeSupersessionPairing` in
+     * `reactivation-supersession-complete.ts`); splitting the event type too
+     * would duplicate that distinction across two columns.
+     */
+    REACTIVATION_SUPERSESSION_COMPLETED: 'REACTIVATION_SUPERSESSION_COMPLETED'
 } as const;
 
 /**
