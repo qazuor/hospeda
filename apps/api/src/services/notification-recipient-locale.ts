@@ -23,7 +23,29 @@ import { apiLogger } from '../utils/logger.js';
 /** Locale used when the recipient's preference is unknown or unsupported. */
 export const DEFAULT_RECIPIENT_LOCALE: AddonLinkLocale = 'es';
 
-const userModel = new UserModel();
+/**
+ * Lazily-created `UserModel` singleton.
+ *
+ * Deliberately NOT constructed at module scope: this module is imported by
+ * `addon.checkout.ts` and `addon.user-addons.ts`, so an import-time `new
+ * UserModel()` would force every existing consumer's `@repo/db` mock to grow a
+ * `UserModel` export just to get past the import — turning a locale lookup that
+ * most of those suites never reach into a load-time failure for all of them.
+ */
+let userModel: UserModel | null = null;
+
+/**
+ * Returns the shared `UserModel`, constructing it on first use.
+ *
+ * @returns The module's `UserModel` singleton.
+ */
+function getUserModel(): UserModel {
+    if (!userModel) {
+        userModel = new UserModel();
+    }
+
+    return userModel;
+}
 
 /**
  * Narrows an arbitrary stored value to a supported notification link locale.
@@ -67,7 +89,7 @@ export async function resolveRecipientLocale({
     }
 
     try {
-        const user = await userModel.findById(userId);
+        const user = await getUserModel().findById(userId);
         const rawLocale = user?.settings?.languageWeb;
 
         return isSupportedLocale(rawLocale) ? rawLocale : DEFAULT_RECIPIENT_LOCALE;
