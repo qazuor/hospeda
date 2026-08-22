@@ -183,6 +183,50 @@ export function isClearedPaymentStatus(status: string): boolean {
 }
 
 /**
+ * The statuses that mean the charge did NOT go through, in both vocabularies.
+ *
+ * The mirror image of {@link CLEARED_PAYMENT_STATUSES} and written in the same
+ * shape on purpose, so the pair reads as one decision rather than two unrelated
+ * lists. MercadoPago's raw spellings are `'rejected'` and `'cancelled'`; the
+ * qzpay adapter normalizes them inside `payments.retrieve()` to `'failed'` and
+ * `'canceled'` (one `l`). The live webhook therefore delivers the normalized
+ * pair and the polling fallback delivers the raw pair, exactly as with the
+ * cleared side — so a gate that knows only one of the two vocabularies is
+ * false for a whole producer (HOS-763).
+ *
+ * ## Why `'refunded'` is NOT in here
+ *
+ * It is the one status whose two spellings coincide, so it never suffered the
+ * blindness this set exists to cure, and it is the only member of this family
+ * known to actually fire in production (HOS-704 was a live partial-refund
+ * incident). The failure-notification gate below keeps it as its own explicit
+ * disjunct: including it here would fold live, working behaviour into a
+ * predicate whose whole point is to repair dead behaviour, and would also make
+ * `isFailedPaymentStatus` lie about what a refund is — a refund is a reversal
+ * of a charge that DID clear, not a charge that failed.
+ */
+const FAILED_PAYMENT_STATUSES = ['rejected', 'cancelled', 'failed', 'canceled'] as const;
+
+/**
+ * Whether a payment status reaching this module means the charge did not go
+ * through.
+ *
+ * The canonical, producer-agnostic answer to "did this charge fail?", the
+ * sibling of {@link isClearedPaymentStatus}. Deliberately silent about
+ * `'refunded'` — see {@link FAILED_PAYMENT_STATUSES}.
+ *
+ * @param status - The payment status as `extractPaymentInfo` read it off the
+ *   payload's `status` field, in either provider vocabulary.
+ * @returns `true` for `'rejected'` / `'cancelled'` (MercadoPago raw) and
+ *   `'failed'` / `'canceled'` (qzpay-normalized); `false` for every other
+ *   status, `'refunded'` included.
+ */
+export function isFailedPaymentStatus(status: string): boolean {
+    // Derive from the const set so the two can never drift out of sync.
+    return (FAILED_PAYMENT_STATUSES as readonly string[]).includes(status);
+}
+
+/**
  * Activate an annual local subscription after the linked MP one-time
  * payment cleared (SPEC-141 D1).
  *
@@ -1203,31 +1247,25 @@ export async function processPaymentUpdated({
     if (paymentInfo && customerId) {
         const { amount, currency, status, statusDetail, paymentMethod } = paymentInfo;
 
-        // HOS-756 — SCOPE NOTE, read before "fixing" this line.
+        // HOS-763 — this gate and its failure sibling below were BOTH mute for
+        // their entire lifetime, and turning them on is this change.
         //
-        // This comparison has the SAME raw-vocabulary blindness the three
-        // dispatch gates below had: an approved charge arrives from the live
-        // webhook spelled `'succeeded'`, so no payment-success notification and
-        // no `subscription_payment_succeeded` capture is ever produced on the
-        // primary path — `sendPaymentSuccessNotification` has exactly one call
-        // site, this one. The sibling failure branch just below is blind the same
-        // way (`rejected → failed`, `cancelled → canceled`), which is why
-        // `'refunded'` — the one status whose two spellings coincide — is the
-        // only one there that works.
+        // HOS-756 left them deliberately unrepaired while it fixed the three
+        // dispatch gates further down: an approved charge arrives from the live
+        // webhook spelled `'succeeded'`, so `status === 'approved'` was false
+        // for every payment the webhook ever confirmed, and
+        // `sendPaymentSuccessNotification` has exactly one call site — this one.
+        // Its sibling was blind the same way (`rejected → failed`,
+        // `cancelled → canceled`). Neither email was ever sent, to anyone.
         //
-        // It is deliberately NOT repaired here. HOS-756 turns on three DISPATCH
-        // paths whose idempotency was measured first; switching this one on
-        // additionally starts sending customer-facing emails for every payment
-        // the webhook confirms, which is a different blast radius and needs its
-        // own issue and its own smoke. Tracked separately — do not widen this
-        // condition as a drive-by.
-        //
-        // `'accredited'` IS removed, because that deletion is provably inert:
-        // it is a `status_detail` descriptor, never a `status`, and
-        // `extractPaymentInfo` reads `status_detail` into a separate field. No
-        // producer could ever put it here, so nothing that used to fire stops
-        // firing and nothing new starts.
-        if (status === 'approved') {
+        // The scope note HOS-756 left here said the repair "starts sending
+        // customer-facing emails for every payment the webhook confirms, which
+        // is a different blast radius and needs its own issue and its own
+        // smoke". That issue is HOS-763; the owner decided to switch them on,
+        // both templates were render-verified against the BUILT
+        // `@repo/notifications` artifact (the resolution production uses) first,
+        // and the change carries a staging smoke.
+        if (isClearedPaymentStatus(status)) {
             apiLogger.debug(
                 { customerId, amount, currency, status, source },
                 'Payment succeeded - sending success notification'
@@ -1284,7 +1322,12 @@ export async function processPaymentUpdated({
             }
         }
 
-        if (status === 'rejected' || status === 'cancelled' || status === 'refunded') {
+        // HOS-763 — `'refunded'` stays an explicit disjunct rather than a member
+        // of `FAILED_PAYMENT_STATUSES`. Its two spellings coincide, so it was
+        // never blind, and it is the only branch of this family known to fire in
+        // production (HOS-704). The predicate repairs the two dead spellings
+        // WITHOUT touching the one live behaviour standing next to them.
+        if (isFailedPaymentStatus(status) || status === 'refunded') {
             const failureReason = statusDetail || status;
 
             apiLogger.debug(
