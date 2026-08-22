@@ -861,6 +861,160 @@ describe('processPaymentUpdated', () => {
         expect(result.success).toBe(true);
     });
 
+    // ── HOS-763: the notification gates must speak BOTH vocabularies ───────
+    //
+    // Every notification test above this block hands the gate a MercadoPago
+    // RAW status (`approved` / `rejected` / `cancelled`). No producer in this
+    // codebase delivers those to `processPaymentUpdated` on the primary path:
+    // the MP adapter normalizes inside `payments.retrieve()` before
+    // `payment-handler.ts` forwards, so the live webhook says `succeeded` /
+    // `failed` / `canceled`. Only the polling fallback speaks raw.
+    //
+    // That makes every test above structurally blind to the bug that shipped:
+    // they were all green while BOTH gates were false for every payment the
+    // live webhook ever confirmed, and neither email was sent to anyone in the
+    // lifetime of the feature. These tests assert the normalized spellings,
+    // and each one fails against the pre-HOS-763 literal comparisons.
+    describe('HOS-763: qzpay-normalized statuses reach the notification gates', () => {
+        it('sends the SUCCESS notification for a normalized `succeeded` payment', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(1000),
+                currency: 'ARS',
+                status: 'succeeded',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(sendPaymentSuccessNotification).toHaveBeenCalledWith(
+                'cust-1',
+                1000,
+                'ARS',
+                'credit_card',
+                mockBilling
+            );
+            // A cleared charge must never also be reported as a failure.
+            expect(sendPaymentFailureNotifications).not.toHaveBeenCalled();
+            expect(result.success).toBe(true);
+        });
+
+        it('sends the FAILURE notification for a normalized `failed` payment', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(500),
+                currency: 'ARS',
+                status: 'failed',
+                statusDetail: 'cc_rejected_insufficient_amount',
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+                'cust-1',
+                500,
+                'ARS',
+                'cc_rejected_insufficient_amount',
+                mockBilling
+            );
+            expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
+            expect(result.success).toBe(true);
+        });
+
+        // `canceled` with ONE `l` — qzpay's spelling. MercadoPago writes
+        // `cancelled`. The two are one keystroke apart and the old gate knew
+        // only the MP one, which is precisely why nothing looked wrong.
+        it('sends the FAILURE notification for a normalized `canceled` payment (single l)', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(750),
+                currency: 'ARS',
+                status: 'canceled',
+                statusDetail: null,
+                paymentMethod: 'debit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+                'cust-1',
+                750,
+                'ARS',
+                'canceled',
+                mockBilling
+            );
+            expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
+            expect(result.success).toBe(true);
+        });
+
+        // The one status whose spellings coincide, and the only branch of this
+        // family known to fire in production (HOS-704). It is kept OUT of
+        // `FAILED_PAYMENT_STATUSES` and left as its own explicit disjunct, so
+        // this asserts that repairing dead behaviour did not disturb the live
+        // behaviour standing next to it.
+        it('still sends the FAILURE notification for `refunded` (behaviour that already worked)', async () => {
+            vi.mocked(extractPaymentInfo).mockReturnValue({
+                amount: asMajor(900),
+                currency: 'ARS',
+                status: 'refunded',
+                statusDetail: null,
+                paymentMethod: 'credit_card'
+            });
+
+            const result = await processPaymentUpdated({
+                data: { metadata: { customer_id: 'cust-1' } },
+                billing: mockBilling
+            });
+
+            expect(sendPaymentFailureNotifications).toHaveBeenCalledWith(
+                'cust-1',
+                900,
+                'ARS',
+                'refunded',
+                mockBilling
+            );
+            expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
+            expect(result.success).toBe(true);
+        });
+
+        // ── Negative control ───────────────────────────────────────────────
+        //
+        // Widening a gate too far is the same defect as leaving it shut, and
+        // it is the one this change could plausibly introduce: an in-flight
+        // charge is NOT terminal — MP's `pending` / `in_process` (qzpay
+        // `pending` / `processing`) can still settle either way. Mailing "your
+        // payment failed" or "your payment cleared" at that point is a claim a
+        // later webhook cannot retract.
+        for (const status of ['pending', 'processing', 'in_process'] as const) {
+            it(`dispatches NEITHER email for a non-terminal \`${status}\` payment`, async () => {
+                vi.mocked(extractPaymentInfo).mockReturnValue({
+                    amount: asMajor(1000),
+                    currency: 'ARS',
+                    status,
+                    statusDetail: null,
+                    paymentMethod: 'credit_card'
+                });
+
+                const result = await processPaymentUpdated({
+                    data: { metadata: { customer_id: 'cust-1' } },
+                    billing: mockBilling
+                });
+
+                expect(sendPaymentSuccessNotification).not.toHaveBeenCalled();
+                expect(sendPaymentFailureNotifications).not.toHaveBeenCalled();
+                expect(result.success).toBe(true);
+            });
+        }
+    });
+
     it('should confirm addon purchase when addon metadata present', async () => {
         vi.mocked(extractPaymentInfo).mockReturnValue(clearedWebhookPaymentInfo());
         vi.mocked(extractAddonMetadata).mockReturnValue({
