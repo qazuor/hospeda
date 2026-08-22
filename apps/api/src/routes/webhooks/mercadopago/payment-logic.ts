@@ -90,6 +90,46 @@ interface ProcessPaymentUpdatedResult {
 const MP_APPROVED_STATUSES = new Set(['approved', 'accredited']);
 
 /**
+ * Every status value that means "this charge cleared", across BOTH vocabularies
+ * a `data.status` reaching this module can be spelled in (HOS-742).
+ *
+ * `processPaymentUpdated` is handed payment payloads by three producers, and
+ * they do NOT agree on the spelling of `status`:
+ *
+ * - `subscription-poll.job.ts` builds a synthetic payload with a literal
+ *   `status: 'approved'` — MercadoPago's RAW vocabulary.
+ * - `payment-handler.ts` (the live webhook) forwards
+ *   `providerPayment.status` from `paymentAdapter.payments.retrieve()`. The
+ *   MercadoPago adapter NORMALIZES that value through its own table before
+ *   returning it (`approved → succeeded`, `rejected → failed`,
+ *   `cancelled → canceled`, `in_process → processing`; `refunded` and
+ *   `pending` happen to map to themselves). So on the live webhook path an
+ *   approved charge arrives here spelled `'succeeded'`, and the raw string
+ *   `'approved'` NEVER appears.
+ * - `webhook-retry.job.ts` replays the stored raw IPN body, which carries no
+ *   `status` at all.
+ *
+ * {@link MP_APPROVED_STATUSES} holds only the raw spellings, so a predicate
+ * built on it alone is TRUE for the polling job and FALSE for every live
+ * webhook — it does not mean "not approved", it means "arrived by webhook".
+ * Gating the add-on confirmation on it alone would therefore not have stopped
+ * unpaid confirmations; it would have stopped nearly ALL confirmations, since
+ * the webhook is the primary path and polling is only the fallback.
+ *
+ * This set accepts both spellings so the gate below asks the question it
+ * actually means — did the money clear? — independently of which producer
+ * delivered the event.
+ *
+ * NOTE: the raw-vocabulary-only predicate is also what the annual (SPEC-141
+ * D1), plan-change (D7) and HOS-595 ledger gates in this file are built on,
+ * which means all three are unreachable on the live webhook path. That is a
+ * pre-existing defect with a blast radius well beyond the add-on branch and is
+ * deliberately NOT changed here — widening `MP_APPROVED_STATUSES` itself would
+ * silently switch on three dormant dispatch paths in one bug-fix PR.
+ */
+const CLEARED_PAYMENT_STATUSES = new Set([...MP_APPROVED_STATUSES, 'succeeded']);
+
+/**
  * Activate an annual local subscription after the linked MP one-time
  * payment cleared (SPEC-141 D1).
  *
@@ -1373,10 +1413,55 @@ export async function processPaymentUpdated({
     // below — one reader, one spelling convention (HOS-721).
     const { addonSlug, customerId: addonCustomerId } = addonInfo;
 
-    // ── Idempotency check: skip if this paymentId was already processed ───────
     const paymentId =
         typeof data.id === 'string' || typeof data.id === 'number' ? String(data.id) : null;
 
+    // ── HOS-742: confirm the purchase only when the charge actually cleared ──
+    //
+    // The two sibling dispatches above (annual, SPEC-141 D1; plan-change, D7)
+    // both refuse to commit anything unless the payment is approved. This one
+    // never did: `extractAddonMetadata` decided the event was an add-on
+    // purchase and control walked straight into `confirmPurchase`, whatever
+    // MercadoPago said about the money. A `rejected` or `cancelled` payment
+    // carrying add-on metadata therefore activated the add-on and granted its
+    // entitlements with nothing collected.
+    //
+    // HOS-595 closed the LEDGER half of this hole — the `amountInCents` forward
+    // below is conditional on the payment having cleared, so a rejected charge
+    // is never booked in `billing_payments`. But withholding the amount only
+    // keeps the books honest; it does not stop the purchase from being
+    // confirmed. This is the confirmation half.
+    //
+    // The predicate is {@link CLEARED_PAYMENT_STATUSES}, not the narrower
+    // {@link MP_APPROVED_STATUSES} the ledger forward below uses: see that
+    // constant's note. The two producers spell an approved charge differently
+    // (`'approved'` from the polling job, `'succeeded'` from the live webhook),
+    // and a gate that only knew the raw spelling would refuse every webhook —
+    // turning a fix for unpaid confirmations into an outage of paid ones.
+    //
+    // On `paymentInfo === null`: both real producers always populate the two
+    // fields `extractPaymentInfo` requires — the live webhook handler maps a
+    // fetched `payments.retrieve` response (`status` + `transaction_amount`),
+    // and `subscription-poll` builds its synthetic payload with a literal
+    // `status: 'approved'`. The dead-letter retry replays the raw IPN body,
+    // which carries neither — but it carries no `metadata` either, so it exits
+    // at the `!addonInfo` branch above and never reaches here.
+    if (paymentInfo === null || !CLEARED_PAYMENT_STATUSES.has(paymentInfo.status)) {
+        apiLogger.warn(
+            {
+                addonSlug,
+                customerId: addonCustomerId,
+                paymentId,
+                paymentStatus: paymentInfo?.status ?? null,
+                source
+            },
+            'Add-on payment has not cleared — skipping purchase confirmation'
+        );
+
+        return { success: true, addonConfirmed: false };
+    }
+
+    // ── Idempotency check: skip if this paymentId was already processed ───────
     if (paymentId) {
         try {
             const { billingAddonPurchases } = await import('@repo/db/schemas/billing');
@@ -1447,10 +1532,17 @@ export async function processPaymentUpdated({
         // The charged amount is forwarded ONLY for an approved payment, which is
         // what makes the ledger row conditional on the money having actually
         // moved: `confirmAddonPurchase` books a `succeeded` row when — and only
-        // when — it receives an amount. Unlike the annual and plan-upgrade
-        // dispatches above, this branch has never gated itself on
-        // MP_APPROVED_STATUSES, so without this gate a rejected charge would be
-        // written to the ledger as collected.
+        // when — it receives an amount.
+        //
+        // HOS-742: this condition is NARROWER than the branch gate above, and
+        // deliberately left as HOS-595 shipped it. `MP_APPROVED_STATUSES` holds
+        // only MercadoPago's RAW spellings, so on the live webhook path — where
+        // an approved charge arrives normalized as `'succeeded'` — the amount is
+        // still withheld and no `billing_payments` row is written. That is a
+        // pre-existing HOS-595 defect, not something this change introduces, and
+        // it is scoped to a separate fix along with the annual/plan-upgrade
+        // dispatches that share the same blind spot. Changing it here would mean
+        // altering ledger-writing behaviour inside a confirmation-gate PR.
         ...(paymentInfo !== null && MP_APPROVED_STATUSES.has(paymentInfo.status)
             ? {
                   // `paymentInfo.amount` is typed `Major` (extractPaymentInfo
