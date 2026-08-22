@@ -1317,7 +1317,12 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
             2000,
             'ARS',
             'debit_card',
-            billing
+            billing,
+            // HOS-757: the payment-scoped idempotency key. `undefined` here
+            // because the replayed dead-letter payload carries no `data.id` —
+            // nothing to key on, so the send proceeds ungated rather than being
+            // suppressed on a guess.
+            undefined
         );
     });
 
