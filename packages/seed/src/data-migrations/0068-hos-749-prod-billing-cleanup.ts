@@ -36,10 +36,23 @@
  * NEVER TOUCHED:
  *
  * - **`users` and everything hanging off an account.** This module does not
- *   import the `users` table at all — there are real people registered who
- *   simply have not paid yet, and this is a cleanup of billing DATA, not of
- *   accounts. `packages/seed/test/data-migrations/0068-hos-749-prod-billing-cleanup.test.ts`
+ *   import the `users` table at all.
+ *   `packages/seed/test/data-migrations/0068-hos-749-prod-billing-cleanup.test.ts`
  *   fails CI if a `users` reference ever appears here.
+ *
+ *   That sentence used to read "there are real people registered who simply have
+ *   not paid yet, and this is a cleanup of billing DATA, not of accounts". Every
+ *   word of it was true and it still hid a real defect, so it is worth keeping
+ *   the correction visible: leaving the `users` row alone is NOT the same as
+ *   leaving the person's billing record alone. The customer rule was "survives
+ *   iff it owns a preserved subscription", and a person who registered and never
+ *   paid owns **zero** subscriptions — so they failed that test by construction
+ *   and their `billing_customers` row was swept. Seven accounts the owner never
+ *   asked to sweep were in that hole. See {@link PRESERVED_CUSTOMER_IDS}.
+ * - **The `billing_customers` record of a listed account** — preserved by id,
+ *   even when every subscription and payment attached to it is swept. This is
+ *   the one deliberate asymmetry in the module: the record is kept, the
+ *   transactional data is not, so the books still land at zero.
  * - **Catalogue rows** — `billing_plans`, `billing_prices`, `billing_addons`,
  *   `billing_promo_codes`. Those are configuration, not test data.
  * - **The operational trail** — `billing_webhook_events`,
@@ -106,6 +119,16 @@
  * decide whether something is live, and each is asserted inert before any write
  * (`assertRetainedTablesAreInert`). If one is not inert, the migration aborts
  * and reports which row — it does not "fix" an ambiguous case on its own.
+ *
+ * Both guards are handed `targetCustomerIds` — the records actually being
+ * soft-deleted — and never the wider `purgeableCustomerIds`. Each asks "is
+ * anything unclassified, or anything still live, pointing at a row about to
+ * disappear?", and a preserved record is not disappearing. So a pending checkout
+ * or a promo-usage counter belonging to one of the seven no longer aborts the
+ * run: the customer it points at stays live, which is exactly the state that
+ * guard exists to protect. Preserving a record can therefore only narrow what
+ * the guards examine — it can never leave a live row orphaned, because a
+ * customer is a PARENT here and its children are written first.
  *
  * ## The inventory cutoff — a real customer can never be swept up
  *
@@ -174,6 +197,55 @@ const OWNER_COMP_SUBSCRIPTION_ID = '5cf22a13-e353-4627-825a-e95586771ab7';
  */
 const PURGEABLE_COMP_SUBSCRIPTION_IDS: readonly string[] = [
     '9c1a79e3-0882-4526-9278-6f96faf65465'
+] as const;
+
+/**
+ * `billing_customers.id` values whose CUSTOMER RECORD is preserved even though
+ * every subscription, payment and addon purchase attached to it is still swept.
+ *
+ * ## Why an explicit list is needed at all
+ *
+ * The general rule is "a customer survives iff it still owns a preserved
+ * subscription". A customer with **zero** subscriptions owns none, so it fails
+ * that test by construction and falls into the sweep — there is no shape of the
+ * general rule that can rescue it. Every id below was therefore being swept by
+ * accident, not by decision.
+ *
+ * ## Group 1 — six real people who registered and never paid
+ *
+ * They are not fixtures, not smoke accounts, and not the owner. They hold zero
+ * subscriptions and zero payments; the only billing row they have is the
+ * customer record itself, created the moment they first looked at a plan.
+ * Sweeping it destroys nothing that is test data and costs a real person their
+ * billing identity.
+ *
+ * ## Group 2 — the owner's staff account
+ *
+ * `727d0a5d-…` is `superadmin@hospeda.com`. Note the email carries the OLD
+ * domain because `0057-staff-email-domain-to-com-ar` deliberately excluded this
+ * qzpay-owned mirror column; in `users` the same account is
+ * `superadmin@hospeda.com.ar`. It is one account, not two. Unlike group 1 it
+ * DOES own subscriptions and payments — the 19/08 smoke — and those are test
+ * data that goes. Only the record stays.
+ *
+ * ## The asymmetry is the point
+ *
+ * This list exempts a row from ONE write: the `billing_customers` soft delete.
+ * It deliberately does NOT exempt that customer's transactional data, which is
+ * why {@link up} keeps two separate sets — see `purgeableCustomerIds` (whose
+ * DATA goes) versus `targetCustomerIds` (whose RECORD goes). Owner decision,
+ * 2026-08-21; the books still land at zero.
+ */
+const PRESERVED_CUSTOMER_IDS: readonly string[] = [
+    // Group 1 — real people, zero subscriptions.
+    '054d5c34-e29f-4d1f-bc26-0bf0f50894f4', // asrilevich.joaquin@gmail.com
+    'ac2c775c-a882-48b6-a868-f1dd7876b21b', // jasiolga@yahoo.com.ar
+    '626e7bd4-aab1-41be-a736-90b005bf01d2', // vivianarichard@hotmail.com
+    '52faa6dd-cb8f-4228-b4a4-44e3e1f67e19', // julimogni08@gmail.com
+    'fab75799-a003-459f-86a0-01cdeb7b0940', // peychauxchristian@gmail.com
+    '585a3646-f717-4e6e-bc33-bf18e3c8c3f9', // olgafrontelli@gmail.com
+    // Group 2 — the owner's staff account; its subscriptions and payments go.
+    '727d0a5d-6d3e-4f75-ac51-823bb9279a3d' // superadmin@hospeda.com
 ] as const;
 
 /**
@@ -337,8 +409,9 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         );
     }
 
-    // A customer survives iff it still owns a preserved subscription.
-    const preservedCustomerIds = new Set(
+    // A customer whose subscription is preserved keeps ALL of its billing data:
+    // the surviving subscription is live, so nothing hanging off it may go.
+    const customersOwningPreservedSubscription = new Set(
         liveSubscriptions.filter((s) => preservedSubscriptionIds.has(s.id)).map((s) => s.customerId)
     );
 
@@ -347,9 +420,21 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         .from(billingCustomers)
         .where(isNull(billingCustomers.deletedAt));
 
-    const targetCustomerIds = liveCustomers
-        .filter((c) => !preservedCustomerIds.has(c.id) && c.createdAt < INVENTORY_CUTOFF)
+    // Customers whose transactional billing DATA is in scope: they own no
+    // preserved subscription, and they predate the inventory.
+    const purgeableCustomerIds = liveCustomers
+        .filter(
+            (c) => !customersOwningPreservedSubscription.has(c.id) && c.createdAt < INVENTORY_CUTOFF
+        )
         .map((c) => c.id);
+
+    // ...and of those, the ones whose `billing_customers` RECORD is itself
+    // soft-deleted. PRESERVED_CUSTOMER_IDS keeps the record while its data still
+    // goes, which is the one place the two sets diverge. Read the constant's
+    // docstring before adding or removing an id here.
+    const preservedCustomerIds = new Set(PRESERVED_CUSTOMER_IDS);
+    const targetCustomerIds = purgeableCustomerIds.filter((id) => !preservedCustomerIds.has(id));
+    const customersPreservedByList = purgeableCustomerIds.length - targetCustomerIds.length;
 
     // ── 3. Guards — abort before any write ───────────────────────────────────
     await assertSoftDeleteOrder(db);
@@ -371,8 +456,13 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
     // construction. A child pointing at a preserved subscription therefore
     // cannot match the `inArray(..., targetSubscriptionIds)` branch, and the
     // orphan branch below only fires when `subscription_id IS NULL`.
+    //
+    // The orphan branch is keyed on `purgeableCustomerIds`, NOT on
+    // `targetCustomerIds`: a customer preserved by PRESERVED_CUSTOMER_IDS keeps
+    // its record but not its test payments, so its subscription-less rows must
+    // stay in scope. Using the narrower set here would quietly leave them live.
     const hasSubscriptionTargets = targetSubscriptionIds.length > 0;
-    const hasCustomerTargets = targetCustomerIds.length > 0;
+    const hasCustomerTargets = purgeableCustomerIds.length > 0;
 
     const targetPayments =
         hasSubscriptionTargets || hasCustomerTargets
@@ -390,7 +480,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                               hasCustomerTargets
                                   ? and(
                                         isNull(billingPayments.subscriptionId),
-                                        inArray(billingPayments.customerId, targetCustomerIds)
+                                        inArray(billingPayments.customerId, purgeableCustomerIds)
                                     )
                                   : undefined
                           )
@@ -417,7 +507,10 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
                               hasCustomerTargets
                                   ? and(
                                         isNull(billingAddonPurchases.subscriptionId),
-                                        inArray(billingAddonPurchases.customerId, targetCustomerIds)
+                                        inArray(
+                                            billingAddonPurchases.customerId,
+                                            purgeableCustomerIds
+                                        )
                                     )
                                   : undefined
                           )
@@ -444,7 +537,8 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
         `${customersSoftDeleted} customer(s), ${paymentsSoftDeleted} payment(s) and ` +
         `${addonPurchasesSoftDeleted} addon purchase(s). ` +
         `Preserved ${preservedSubscriptionIds.size} subscription(s) including the owner's comp ` +
-        `(${OWNER_COMP_SUBSCRIPTION_ID}). No account row was touched. ` +
+        `(${OWNER_COMP_SUBSCRIPTION_ID}), and kept ${customersPreservedByList} listed customer ` +
+        'record(s) whose transactional data was swept anyway. No account row was touched. ' +
         'MercadoPago preapprovals are NOT cancelled by this migration.';
     logger.info(summary);
 
@@ -456,6 +550,7 @@ export async function up(ctx: SeedMigrationCtx): Promise<SeedMigrationResult> {
             paymentsSoftDeleted,
             addonPurchasesSoftDeleted,
             preservedSubscriptions: preservedSubscriptionIds.size,
+            customersPreservedByList,
             skippedAfterCutoff
         }
     };
