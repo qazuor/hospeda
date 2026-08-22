@@ -1163,6 +1163,136 @@ describe('processPaymentUpdated', () => {
         expect(result).toEqual({ success: true, addonConfirmed: false });
     });
 
+    // Fail closed, exactly like the annual and plan-change branches: both read
+    // `paymentInfo &&` before their own status check. `extractPaymentInfo`
+    // returns null when the payload carries no numeric `transaction_amount` or
+    // no string `status` — i.e. when the charge's outcome is UNKNOWABLE. An
+    // unknowable outcome is not an approval.
+    //
+    // Rescued from the closed PR #2967 (the discarded duplicate implementation of
+    // HOS-742). The merged gate already refuses this input, but no test SAID so
+    // by name, which is how a `paymentInfo === null` fall-through comes back
+    // unnoticed.
+    it('does NOT confirm the add-on when the payment status cannot be read (HOS-742)', async () => {
+        vi.mocked(extractPaymentInfo).mockReturnValue(null);
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '999999999',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        expect(result).toEqual({ success: true, addonConfirmed: false });
+    });
+
+    // ── The other half of HOS-742: the cleared RE-DELIVERY must still work ──
+    //
+    // HOS-595 started forwarding `paymentId` unconditionally, so an ungated
+    // non-cleared delivery wrote `billing_addon_purchases.payment_id = X` with no
+    // amount — no `billing_payments` row, only an error log. When MP then
+    // re-delivered the SAME payment X as cleared, the idempotency SELECT found
+    // that row and returned early, so the ledger entry was never written and
+    // never could be. The gate is what makes the re-delivery reachable: the first
+    // delivery now writes nothing at all.
+    //
+    // Rescued from the closed PR #2967, and widened here. The original ran only
+    // on `'approved'`, the polling job's spelling — testing the re-delivery on
+    // the one path that barely sees add-on payments. `'succeeded'` is what the
+    // live webhook delivers, which is how an add-on purchase actually arrives
+    // (HOS-756).
+    it.each([
+        'approved',
+        'succeeded'
+    ])('lets the %s re-delivery of the same payment book the charge (HOS-742)', async (status) => {
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+        const data = {
+            id: '174625958196',
+            metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+        };
+
+        // 1st delivery: MP says in_process. Nothing is written, so no purchase
+        // row can carry this paymentId.
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status: 'in_process',
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        await processPaymentUpdated({ data, billing: mockBilling });
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+
+        // 2nd delivery: the same payment id, now cleared. The idempotency SELECT
+        // (annualDbState.subRows, empty) finds nothing precisely because the
+        // first delivery confirmed nothing — so the charge is booked.
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status,
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        const result = await processPaymentUpdated({ data, billing: mockBilling });
+
+        expect(getMockConfirmPurchase()).toHaveBeenCalledTimes(1);
+        expect(getMockConfirmPurchase()).toHaveBeenCalledWith({
+            customerId: 'cust-1',
+            addonSlug: 'visibility-boost-7d',
+            amountInCents: 500_000,
+            currency: 'ARS',
+            paymentId: '174625958196'
+        });
+        expect(result).toEqual({ success: true, addonConfirmed: true });
+    });
+
+    // Why the above matters: once ANY purchase row carries the paymentId, the
+    // idempotency check short-circuits a cleared delivery of that same payment —
+    // permanently. This test pins that trapdoor so it stays visible.
+    //
+    // Rescued from the closed PR #2967, widened to both vocabularies. HOS-756
+    // moved exactly the ordering this exercises: the branch gate now rejects a
+    // charge that did not clear BEFORE the idempotency SELECT runs, so this case
+    // is reachable only for a charge that did — in either spelling.
+    it.each([
+        'approved',
+        'succeeded'
+    ])('an existing purchase row for this paymentId short-circuits even a %s charge (HOS-742)', async (status) => {
+        vi.mocked(extractPaymentInfo).mockReturnValue({
+            amount: asMajor(5000),
+            currency: 'ARS',
+            status,
+            statusDetail: null,
+            paymentMethod: 'credit_card'
+        });
+        vi.mocked(extractAddonMetadata).mockReturnValue({
+            addonSlug: 'visibility-boost-7d',
+            customerId: 'cust-1'
+        });
+        // The idempotency SELECT is the first `getDb().select()` of this path.
+        annualDbState.subRows = [{ id: 'existing-purchase-uuid', customerId: 'cust-1' }];
+
+        const result = await processPaymentUpdated({
+            data: {
+                id: '174625958196',
+                metadata: { addonSlug: 'visibility-boost-7d', customerId: 'cust-1' }
+            },
+            billing: mockBilling
+        });
+
+        expect(getMockConfirmPurchase()).not.toHaveBeenCalled();
+        expect(result).toEqual({ success: true, addonConfirmed: false });
+    });
+
     // The positive controls for the cases above. Without these, a gate that
     // refused EVERYTHING would pass every negative case and look correct while
     // taking add-on sales offline.
