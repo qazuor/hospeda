@@ -220,7 +220,7 @@ function makeDeadLetterEvent(
             data: {
                 transaction_amount: 1500,
                 currency_id: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 payment_method_id: 'credit_card',
                 metadata: { customerId: 'cust-1', addonSlug: 'extra-photos' }
             }
@@ -326,7 +326,7 @@ describe('webhookRetryJob.handler — retryWebhookEvent routing', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1500),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -1263,7 +1263,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
                 data: {
                     transaction_amount: 2000,
                     currency_id: 'ARS',
-                    status: 'approved',
+                    status: 'succeeded',
                     payment_method_id: 'debit_card',
                     metadata: { customerId: 'cust-2' }
                 }
@@ -1299,7 +1299,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(2000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'debit_card'
         });
@@ -1317,7 +1317,12 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
             2000,
             'ARS',
             'debit_card',
-            billing
+            billing,
+            // HOS-757: the payment-scoped idempotency key. `undefined` here
+            // because the replayed dead-letter payload carries no `data.id` —
+            // nothing to key on, so the send proceeds ungated rather than being
+            // suppressed on a guess.
+            undefined
         );
     });
 
@@ -1331,7 +1336,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
                 data: {
                     transaction_amount: 500,
                     currency_id: 'ARS',
-                    status: 'rejected',
+                    status: 'failed',
                     status_detail: 'cc_rejected_insufficient_amount',
                     payment_method_id: 'credit_card',
                     metadata: { customerId: 'cust-3' }
@@ -1368,7 +1373,7 @@ describe('webhookRetryJob.handler — retryMercadoPagoPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(500),
             currency: 'ARS',
-            status: 'rejected',
+            status: 'failed',
             statusDetail: 'cc_rejected_insufficient_amount',
             paymentMethod: 'credit_card'
         });

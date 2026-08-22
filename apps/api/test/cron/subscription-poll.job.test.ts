@@ -653,8 +653,12 @@ describe('subscription-poll cron job', () => {
             expect(callArg.source).toBe('polling');
             // id = MP payment id
             expect(callArg.data.id).toBe('mp_pay_123');
-            // status must be 'approved' (MP canonical for succeeded)
-            expect(callArg.data.status).toBe('approved');
+            // HOS-757: the status is FORWARDED, not translated. This assertion
+            // used to demand MercadoPago's raw `'approved'`, which made this
+            // cron the only producer in `src/` speaking that vocabulary while
+            // `processPaymentUpdated` and the live webhook spoke qzpay's
+            // normalized one — the divergence that kept four dispatches dormant.
+            expect(callArg.data.status).toBe('succeeded');
             // transaction_amount in major units (150000 cents / 100 = 1500)
             expect(callArg.data.transaction_amount).toBe(1500);
             expect(callArg.data.currency_id).toBe('ARS');

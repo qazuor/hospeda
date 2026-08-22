@@ -24,7 +24,25 @@ export interface PaymentInfo {
     amount: Major;
     /** Currency code (default: 'ARS') */
     currency: string;
-    /** Payment status from MercadoPago */
+    /**
+     * Payment status, in the QZPay-NORMALIZED vocabulary
+     * (`pending | processing | succeeded | failed | canceled | refunded |
+     * partially_refunded | disputed`), NOT MercadoPago's raw one.
+     *
+     * HOS-757 — every producer that reaches `processPaymentUpdated` hands over a
+     * status the qzpay MercadoPago adapter already translated: the live webhook
+     * handler forwards `QZPayProviderPayment.status` verbatim, and the polling
+     * cron forwards the same field off a `payments.search` hit. Nothing between
+     * the adapter and here re-translates, so a predicate written against MP's raw
+     * words (`approved`, `rejected`, `cancelled`) can never be true — which is
+     * exactly how four dispatches in `payment-logic.ts` stayed dormant for months.
+     *
+     * Typed `string` rather than `QZPayPaymentStatus` on purpose:
+     * `extractPaymentInfo` reads it out of arbitrary provider JSON and must be
+     * able to carry a value the union does not name (the adapter passes an
+     * unrecognised MP status through verbatim). The narrowing happens at the
+     * comparison, against the allowlist in `payment-logic.ts`.
+     */
     status: string;
     /** Detailed status reason, if available */
     statusDetail: string | null;
@@ -62,7 +80,25 @@ export type SyntheticMpPaymentPayload = {
     readonly transaction_amount_refunded?: Major;
     /** ISO-4217 currency code. */
     readonly currency_id: string;
-    /** MP payment status (`approved`, `rejected`, …). */
+    /**
+     * Payment status in the QZPay-NORMALIZED vocabulary (`succeeded`, `failed`,
+     * `canceled`, …) — never MercadoPago's raw one.
+     *
+     * HOS-757: both producers hold a normalized value already — it comes
+     * straight off a `QZPayProviderPayment` the adapter returned — so
+     * forwarding that field verbatim is the only correct way to fill this one.
+     * The polling cron used to translate back to MP's raw `'approved'` here by
+     * hand, which is the divergence this note closes.
+     *
+     * Kept `string` rather than qzpay-core's `QZPayPaymentStatus` because
+     * `QZPayProviderPayment.status` is itself `string`: the adapter passes an
+     * MP status it does not recognise through verbatim, so a producer really
+     * can be holding a value the union does not name, and narrowing here would
+     * force every producer into a cast that asserts something untrue. The
+     * enforcement lives at the comparison instead — see `settled` in
+     * `payment-logic.ts`, which is the only door the money-spending branches
+     * can reach an amount through.
+     */
     readonly status: string;
     /** Checkout metadata bag, forwarded verbatim to the dispatch extractors. */
     readonly metadata?: unknown;

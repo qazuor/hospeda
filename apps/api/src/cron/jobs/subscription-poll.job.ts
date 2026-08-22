@@ -294,7 +294,14 @@ async function runOneTimePaymentPoll(params: {
             //
             // Field mapping:
             //   id              → succeeded.id (MP payment id, used as paymentId)
-            //   status          → 'approved' (MP canonical for succeeded)
+            //   status          → succeeded.status, forwarded VERBATIM. HOS-757:
+            //                     this used to hand-translate back to MP's raw
+            //                     'approved', which made this cron the only
+            //                     producer in src/ speaking that vocabulary while
+            //                     the live webhook path spoke qzpay's normalized
+            //                     one. processPaymentUpdated now reads exactly one
+            //                     vocabulary; a producer that translates is a
+            //                     producer that can disagree with it.
             //   transaction_amount → succeeded.amount / 100 (cents → major units;
             //                     extractPaymentInfo reads transaction_amount as
             //                     major units from the MP payload shape)
@@ -377,7 +384,7 @@ async function runOneTimePaymentPoll(params: {
 
             const syntheticPayload: SyntheticMpPaymentPayload = {
                 id: succeeded.id,
-                status: 'approved',
+                status: succeeded.status,
                 // HOS-720: the adapter returns CENTAVOS and `extractPaymentInfo`
                 // reads `transaction_amount` as MAJOR units. `asCentavos` states
                 // the incoming unit, `toMajor` crosses it — the compiler now
@@ -417,7 +424,12 @@ async function runOneTimePaymentPoll(params: {
             return {
                 terminal: true,
                 status: 'succeeded',
-                providerStatus: 'approved',
+                // HOS-757: the provider verdict, in the adapter's normalized
+                // vocabulary — the same one the failure branch below already
+                // records (`failure.status`) and the same one the preapproval
+                // branch records (`provider.status`). These two success returns
+                // were the only places that wrote MP's raw word instead.
+                providerStatus: succeeded.status,
                 error: null
             };
         }
@@ -460,7 +472,12 @@ async function runOneTimePaymentPoll(params: {
             });
             throw err;
         }
-        return { terminal: true, status: 'succeeded', providerStatus: 'approved', error: null };
+        return {
+            terminal: true,
+            status: 'succeeded',
+            providerStatus: succeeded.status,
+            error: null
+        };
     }
 
     // No succeeded — check for terminal failure (rejected / cancelled)
