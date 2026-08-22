@@ -191,21 +191,57 @@ function toOptionalString(value: unknown): string | undefined {
 }
 
 /**
- * Coerce a metadata value to a finite number, or `undefined`.
+ * Matches a plain decimal number, optionally signed: `12345`, `-500`, `8999.99`.
  *
- * MercadoPago stringifies some metadata values on the round-trip, so a discount
- * written as `1500` can come back as `'1500'`. Both are accepted; anything else
- * (including `NaN`, `Infinity` and non-numeric strings) reads as absent.
+ * Deliberately narrower than `Number()`. A JSON round-trip of a JS number in the
+ * range this codebase deals with (ARS prices, centavo counts) never produces
+ * exponent notation, hex, `Infinity` or a trailing unit, so accepting those
+ * shapes would only widen the surface for a malformed value to land as a
+ * plausible amount. `parseFloat` is the trap this exists to avoid:
+ * `parseFloat('12abc')` is `12`, which would read as a real amount.
  */
-function toOptionalNumber(value: unknown): number | undefined {
+const PLAIN_DECIMAL_PATTERN = /^-?\d+(?:\.\d+)?$/;
+
+/**
+ * Coerce a MercadoPago metadata value to a finite number, or `undefined`.
+ *
+ * ## Why the value type needs a border too (HOS-743 follow-up)
+ *
+ * {@link normalizeMercadoPagoMetadata} translates the metadata *keys*
+ * MercadoPago rewrites on the wire. It does not touch *values* — and the
+ * provider stringifies numeric metadata on the round-trip, so an amount written
+ * as `12345` can come back as `'12345'`. Every reader of a numeric metadata
+ * field therefore has the same two-shape problem the keys had, and it is
+ * absorbed the same way: once, here, rather than defensively in each reader.
+ *
+ * Fail-closed is the other half of the contract. A reader that used this to
+ * accept anything coercible would forward `NaN` as a subscription's new
+ * recurring amount, which is worse than dropping the payload. Only a finite
+ * number or a plain-decimal string is an amount; `''`, `'  '`, `'abc'`,
+ * `'12abc'`, `'1e5'`, `NaN`, `Infinity`, `null`, booleans and objects all read
+ * as absent.
+ *
+ * @param input - Receives the raw metadata value, in either carrier shape.
+ * @returns The finite number it denotes, or `undefined` when it denotes none.
+ *
+ * @example
+ * ```ts
+ * parseMetadataNumber({ value: 12345 });    // → 12345
+ * parseMetadataNumber({ value: '12345' });  // → 12345 (the wire shape)
+ * parseMetadataNumber({ value: '12abc' });  // → undefined
+ * ```
+ */
+export function parseMetadataNumber({ value }: { readonly value: unknown }): number | undefined {
     if (typeof value === 'number') {
         return Number.isFinite(value) ? value : undefined;
     }
     if (typeof value === 'string') {
         const trimmed = value.trim();
-        if (trimmed.length === 0) {
+        if (!PLAIN_DECIMAL_PATTERN.test(trimmed)) {
             return undefined;
         }
+        // Still guarded: a digit string long enough to overflow a double parses
+        // to Infinity, which the pattern alone cannot rule out.
         const parsed = Number(trimmed);
         return Number.isFinite(parsed) ? parsed : undefined;
     }
@@ -252,7 +288,7 @@ export function normalizeAddonCheckoutMetadata({
     const accommodationId = toOptionalString(meta.accommodationId);
     const promoCodeId = toOptionalString(meta.promoCodeId);
     const promoCode = toOptionalString(meta.promoCode);
-    const discountAmount = toOptionalNumber(meta.discountAmount);
+    const discountAmount = parseMetadataNumber({ value: meta.discountAmount });
 
     return {
         ...(accommodationId === undefined ? {} : { accommodationId }),

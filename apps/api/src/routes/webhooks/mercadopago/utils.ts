@@ -11,7 +11,10 @@ import { asMajor, createMercadoPagoAdapter } from '@repo/billing';
 import { and, billingWebhookEvents, eq, getDb, or, sql } from '@repo/db';
 import { qzpayLogger } from '../../../lib/qzpay-logger';
 import { getQZPayBilling } from '../../../middlewares/billing';
-import { normalizeMercadoPagoMetadata } from '../../../services/addon-checkout-metadata';
+import {
+    normalizeMercadoPagoMetadata,
+    parseMetadataNumber
+} from '../../../services/addon-checkout-metadata';
 import { apiLogger } from '../../../utils/logger';
 import { enqueueWebhookForRetry, failedWebhookEventReturning } from './dead-letter';
 import type { AddonMetadata, PaymentInfo } from './types';
@@ -440,18 +443,31 @@ export interface PlanChangeUpgradeMetadata {
  * camelCase ONLY, so nothing was covering the snake_case spelling MercadoPago
  * delivers — an upgrade whose keys did not resolve would be charged and never
  * committed.
+ *
+ * The amount goes through {@link parseMetadataNumber} for the same reason the
+ * keys go through the normalizer: HOS-743 fixed the key spelling but not the
+ * VALUE type, and MercadoPago stringifies numeric metadata on the round-trip.
+ * A bare `typeof === 'number'` guard on `targetTransactionAmountMajor` is
+ * therefore a prorated upgrade the customer pays for and never receives — the
+ * silent-drop failure mode this whole family of extractors keeps reproducing.
+ * The parse stays fail-closed: a value that denotes no finite amount (`NaN`
+ * and `Infinity` included, both of which the old `typeof` check let through)
+ * still returns `null` rather than reaching the MP preapproval update.
  */
 export function extractPlanChangeUpgradeMetadata(
     metadata: unknown
 ): PlanChangeUpgradeMetadata | null {
     const m = normalizeMercadoPagoMetadata({ metadata });
+    const targetTransactionAmountMajor = parseMetadataNumber({
+        value: m.targetTransactionAmountMajor
+    });
     if (
         typeof m.planChangeUpgradeId !== 'string' ||
         m.planChangeUpgradeId.length === 0 ||
         typeof m.oldPlanId !== 'string' ||
         typeof m.newPlanId !== 'string' ||
         typeof m.newPriceId !== 'string' ||
-        typeof m.targetTransactionAmountMajor !== 'number'
+        targetTransactionAmountMajor === undefined
     ) {
         return null;
     }
@@ -460,7 +476,7 @@ export function extractPlanChangeUpgradeMetadata(
         oldPlanId: m.oldPlanId,
         newPlanId: m.newPlanId,
         newPriceId: m.newPriceId,
-        targetTransactionAmountMajor: m.targetTransactionAmountMajor
+        targetTransactionAmountMajor
     };
 }
 
