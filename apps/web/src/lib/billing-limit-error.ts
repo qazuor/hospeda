@@ -235,7 +235,28 @@ function buildFromDetails({
     const genericCta = 'Ver mi suscripción';
 
     const title = t(`billing.limit.${limitKey}.title`, genericTitle);
-    const message = t(`billing.limit.${limitKey}.message`, genericMessage, {
+
+    // HOS-754 — 8 of the 19 known limits carry `message_one`/`message_other`
+    // (CLDR plural forms), never a flat `.message`: the noun in the sentence
+    // is pluralized on `maxAllowed` (e.g. "1 favorito" vs "3 favoritos"), not
+    // on `currentCount`. The other 11 known limits (plus `generic`) have no
+    // message entry at all — that gap is deliberate (HOS-690 AC-23, see the
+    // KNOWN_LIMIT_KEYS comment above). Resolving a flat `.message` key, as
+    // this used to do, therefore NEVER matched for any of the 19 limits, and
+    // the toast always rendered `genericMessage` regardless of which limit
+    // was actually hit.
+    //
+    // This deliberately does NOT use `tPlural` (from `createTranslations`):
+    // its missing-key fallback detection (`pluralize()` in @repo/i18n) checks
+    // for the `[MISSING: ...]` marker that `resolve()` only emits in
+    // `import.meta.env.DEV` — in a production build a missing plural key
+    // resolves to the bare key string instead, so `pluralize()` would render
+    // the literal `billing.limit.<key>.message_one` for the 11 limits with no
+    // message entry, instead of falling back. Resolving the CLDR-suffixed key
+    // ourselves through `t()` reuses the same real-fallback mechanism already
+    // used for `title`/`cta` above, which is safe in both dev and production.
+    const pluralSuffix = maxAllowed === 1 ? '_one' : '_other';
+    const message = t(`billing.limit.${limitKey}.message${pluralSuffix}`, genericMessage, {
         currentCount,
         maxAllowed
     });

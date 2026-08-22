@@ -32,6 +32,7 @@ import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
 import { resolveAddonCheckoutDescription, resolveAddonCheckoutName } from './addon-checkout-locale';
 import type { AddonEntitlementService } from './addon-entitlement.service';
+import { resolveRecipientLocale } from './notification-recipient-locale';
 import { PromoCodeService } from './promo-code.service';
 
 // ─── Polling fallback (SPEC-127 T-010) ────────────────────────────────────────
@@ -1366,16 +1367,29 @@ export async function confirmAddonPurchase(
                         : (customer.email ?? 'Usuario');
                 const userId =
                     typeof customer.metadata?.userId === 'string' ? customer.metadata.userId : null;
+
+                // HOS-722: the receipt's CTA must land on the add-ons page
+                // (focused on the add-on just bought) in the recipient's own
+                // locale. Until this issue, `ADDON_PURCHASE` shared
+                // `PurchaseConfirmationPayload` with `SUBSCRIPTION_PURCHASE` and
+                // was therefore rendered by the subscription template, whose CTA
+                // is a hardcoded `/es/mi-cuenta` link.
+                const recipientLocale = await resolveRecipientLocale({ userId });
+
                 sendNotification({
                     type: NotificationType.ADDON_PURCHASE,
                     recipientEmail: customer.email,
                     recipientName: customerName,
                     userId,
                     customerId: input.customerId,
-                    planName: addon.name,
+                    addonName: addon.name,
+                    addonDescription: addon.description,
+                    orderId: input.paymentId ?? '',
                     amount: addon.priceArs,
                     currency: 'ARS',
-                    nextBillingDate: expiresAt?.toISOString() || undefined
+                    expiresAt: expiresAt?.toISOString() ?? null,
+                    addonSlug: input.addonSlug,
+                    locale: recipientLocale
                 }).catch((notifErr) => {
                     apiLogger.debug(
                         {

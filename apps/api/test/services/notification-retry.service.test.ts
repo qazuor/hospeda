@@ -219,6 +219,113 @@ describe('processDbNotificationRetries', () => {
             expect(stats.succeeded).toBe(1);
         });
 
+        describe('HOS-722 — the add-on CTA deep link survives the retry round trip', () => {
+            /**
+             * A retry does NOT resend the original payload: it rebuilds one from
+             * `billing_notification_log.metadata` and nothing else. So fixing the
+             * add-on dispatch sites to pass `locale`/`addonSlug` only fixed the
+             * FIRST attempt — a retried expiry email silently reverted to
+             * `/es/mi-cuenta/addons/` with no `?focus=`, which is exactly the
+             * pre-HOS-722 link the issue set out to remove.
+             *
+             * Assertions use an exact object shape rather than
+             * `expect.objectContaining`, because objectContaining is blind to a
+             * MISSING field and a missing field is the entire defect.
+             *
+             * MUTATION CHECK: deleting the `...resolveAddonLinkFields(metadata)`
+             * spread from the ADDON_EXPIRED branch fails the first test below —
+             * confirmed by applying the mutation before committing.
+             */
+            it('carries locale and addonSlug from metadata into the retried payload', async () => {
+                // Arrange
+                const notification = createFailedNotification({
+                    type: NotificationType.ADDON_EXPIRED,
+                    metadata: {
+                        retryCount: 0,
+                        addonName: 'Extra Photos',
+                        expirationDate: '2026-02-05',
+                        userId: 'user-abc',
+                        recipientName: 'Valeria',
+                        addonSlug: 'extra-photos-20',
+                        locale: 'pt'
+                    }
+                });
+                mockLimit.mockResolvedValue([notification]);
+                mockSendNotification.mockResolvedValue(undefined);
+
+                // Act
+                await processDbNotificationRetries();
+
+                // Assert — exact payload shape, minus the per-attempt key.
+                expect(mockSendNotification).toHaveBeenCalledTimes(1);
+                const payload = mockSendNotification.mock.calls[0]?.[0] as Record<string, unknown>;
+                const { idempotencyKey, ...stable } = payload;
+
+                expect(typeof idempotencyKey).toBe('string');
+                expect(stable).toEqual({
+                    type: NotificationType.ADDON_EXPIRED,
+                    recipientEmail: 'user@example.com',
+                    recipientName: 'Valeria',
+                    userId: 'user-abc',
+                    customerId: 'cust-123',
+                    addonName: 'Extra Photos',
+                    expirationDate: '2026-02-05',
+                    addonSlug: 'extra-photos-20',
+                    locale: 'pt'
+                });
+            });
+
+            it('omits both fields when metadata never carried them', async () => {
+                // A row logged before HOS-722 must degrade to the template's own
+                // 'es' fallback, not carry `locale: undefined` as a present key.
+                const notification = createFailedNotification({
+                    type: NotificationType.ADDON_EXPIRED,
+                    metadata: {
+                        retryCount: 0,
+                        addonName: 'Extra Photos',
+                        expirationDate: '2026-02-05',
+                        userId: 'user-abc',
+                        recipientName: 'Valeria'
+                    }
+                });
+                mockLimit.mockResolvedValue([notification]);
+                mockSendNotification.mockResolvedValue(undefined);
+
+                await processDbNotificationRetries();
+
+                const payload = mockSendNotification.mock.calls[0]?.[0] as Record<string, unknown>;
+
+                expect('locale' in payload).toBe(false);
+                expect('addonSlug' in payload).toBe(false);
+            });
+
+            it('drops a locale outside the three supported values', async () => {
+                // A corrupted row must never inject an arbitrary path segment
+                // into the CTA URL's locale prefix.
+                const notification = createFailedNotification({
+                    type: NotificationType.ADDON_EXPIRED,
+                    metadata: {
+                        retryCount: 0,
+                        addonName: 'Extra Photos',
+                        expirationDate: '2026-02-05',
+                        userId: 'user-abc',
+                        recipientName: 'Valeria',
+                        addonSlug: 'extra-photos-20',
+                        locale: '../../evil'
+                    }
+                });
+                mockLimit.mockResolvedValue([notification]);
+                mockSendNotification.mockResolvedValue(undefined);
+
+                await processDbNotificationRetries();
+
+                const payload = mockSendNotification.mock.calls[0]?.[0] as Record<string, unknown>;
+
+                expect('locale' in payload).toBe(false);
+                expect(payload.addonSlug).toBe('extra-photos-20');
+            });
+        });
+
         it('should retry RENEWAL_REMINDER notifications', async () => {
             const notification = createFailedNotification({
                 type: NotificationType.RENEWAL_REMINDER,

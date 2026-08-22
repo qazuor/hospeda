@@ -41,7 +41,7 @@
  * by hand instead of calling the predicate that already encodes it correctly.
  */
 
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -105,8 +105,12 @@ function stripComments(source: string): string {
  */
 function hasHandRolledActiveTrialingPair(source: string): boolean {
     const liveCode = stripComments(source);
-    const activePositions = [...liveCode.matchAll(/['"]active['"]/g)].map((m) => m.index ?? -1);
-    const trialingPositions = [...liveCode.matchAll(/['"]trialing['"]/g)].map((m) => m.index ?? -1);
+    const activePositions = [
+        ...liveCode.matchAll(/['"]active['"]|SubscriptionStatusEnum\.ACTIVE\b/g)
+    ].map((m) => m.index ?? -1);
+    const trialingPositions = [
+        ...liveCode.matchAll(/['"]trialing['"]|SubscriptionStatusEnum\.TRIALING\b/g)
+    ].map((m) => m.index ?? -1);
 
     for (const activeIndex of activePositions) {
         for (const trialingIndex of trialingPositions) {
@@ -120,6 +124,54 @@ function hasHandRolledActiveTrialingPair(source: string): boolean {
 
 function readSrc(relativePath: string): string {
     return readFileSync(resolve(SRC_ROOT, relativePath), 'utf-8');
+}
+
+/**
+ * Files under `packages/service-core/src` that rebuild the status set by hand
+ * and are allowed to, each with the reason. Same triage criterion as the
+ * `apps/api` sibling guard: does this path touch a MercadoPago preapproval? If
+ * it does, excluding `comp` is correct — a complimentary subscription has
+ * `mp_subscription_id = NULL` by design.
+ *
+ * A file that lands in the pattern and is NOT listed fails the scan below.
+ */
+const HAND_ROLLED_SCAN_EXCLUSIONS: ReadonlyArray<{
+    readonly file: string;
+    readonly why: string;
+}> = [
+    {
+        file: 'services/billing/plan/plan-price-change.service.ts',
+        why: 'Its own docstring says it: comp is excluded because there is no preapproval to re-price.'
+    },
+    {
+        file: 'services/billing/subscription/subscription-status-constants.ts',
+        why: 'Pure status constants — enumerating them is the whole point of the file.'
+    },
+    {
+        file: 'services/billing/subscription/subscription-status-normalize.ts',
+        why: 'The qzpay→Hospeda spelling map. It must name every status to translate them.'
+    },
+    {
+        file: 'services/billing/subscription/subscription-status-transitions.ts',
+        why: 'The transition state machine, which documents COMP explicitly. Enumerating states is its definition.'
+    }
+] as const;
+
+/** Source extensions the scan reads. */
+const SCANNED_EXTENSIONS = ['.ts', '.tsx'];
+
+/** Recursively collect source files under a directory, as paths relative to it. */
+function collectSourceFiles(dir: string, base: string): string[] {
+    const found: string[] = [];
+    for (const entry of readdirSync(dir)) {
+        const full = `${dir}/${entry}`;
+        if (statSync(full).isDirectory()) {
+            found.push(...collectSourceFiles(full, base));
+        } else if (SCANNED_EXTENSIONS.some((ext) => entry.endsWith(ext))) {
+            found.push(full.slice(base.length + 1));
+        }
+    }
+    return found;
 }
 
 describe('HOS-702 guard: service-core billing status gates use the canonical predicate', () => {
@@ -166,5 +218,44 @@ describe('HOS-702 guard: service-core billing status gates use the canonical pre
                 'isEntitlementGrantingStatus(sub.status) or ENTITLEMENT_GRANTING_STATUSES ' +
                 'instead.'
         ).toBe(false);
+    });
+
+    it('no unreviewed file under src/ hand-rolls the entitlement-granting set', () => {
+        /*
+         * The scan the family asked for. A whitelist proves the reviewed files
+         * have not regressed and says nothing about a new one — but the defect
+         * class is precisely "somebody writes a NEW hand-rolled set". Scanning
+         * moves the burden onto whoever writes it: route through the canonical
+         * predicate, or record why this file is an exception.
+         */
+        const allowed = new Set(HAND_ROLLED_SCAN_EXCLUSIONS.map((e) => e.file));
+        const offenders = collectSourceFiles(SRC_ROOT, SRC_ROOT)
+            .filter((file) => !allowed.has(file))
+            .filter((file) => hasHandRolledActiveTrialingPair(readSrc(file)));
+
+        expect(
+            offenders,
+            `These files rebuild the entitlement-granting set by hand:\n` +
+                `${offenders.map((f) => `  - ${f}`).join('\n')}\n\n` +
+                'Omitting `comp` that way is HOS-238, HOS-239 and HOS-594. Use ' +
+                'isEntitlementGrantingStatus / ENTITLEMENT_GRANTING_STATUSES ' +
+                '(@repo/billing), or add the file to HAND_ROLLED_SCAN_EXCLUSIONS with ' +
+                'the reason it is deliberate.'
+        ).toEqual([]);
+    });
+
+    it('every scan exclusion still exists and still needs to be there', () => {
+        // An exclusion rots two ways: the file is renamed and the entry guards
+        // nothing, or the file is migrated and the entry blindfolds the scan
+        // against a future regression in it.
+        const stale = HAND_ROLLED_SCAN_EXCLUSIONS.filter(
+            (entry) => !hasHandRolledActiveTrialingPair(readSrc(entry.file))
+        ).map((entry) => entry.file);
+
+        expect(
+            stale,
+            `Listed in HAND_ROLLED_SCAN_EXCLUSIONS but no longer matching the ` +
+                `pattern:\n${stale.map((f) => `  - ${f}`).join('\n')}`
+        ).toEqual([]);
     });
 });

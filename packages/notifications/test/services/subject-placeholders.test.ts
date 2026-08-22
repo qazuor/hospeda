@@ -110,17 +110,20 @@ describe('Subject placeholders reach the inbox resolved (H-64 / H-75)', () => {
             // addon payment. The sweep cross-checked subjects against the keys
             // the old chain ASSIGNED, and the chain did assign `addonName` —
             // guarded by `if ('addonName' in payload)`. What it never checked is
-            // that ADDON_PURCHASE is served by `PurchaseConfirmationPayload`,
-            // which has no such field: the emitter puts the addon's name in
-            // `planName`. The guard is over the whole set, so it caught what
-            // reading the chain could not.
+            // whether the payload serving ADDON_PURCHASE actually had such a
+            // field. The guard is over the whole set, so it caught what reading
+            // the chain could not. HOS-722 then gave the type its own
+            // `AddonPurchaseConfirmationPayload`, which does carry `addonName`,
+            // so the subject reads it directly instead of through `planName`.
             const subject = await sentSubject({
                 type: NotificationType.ADDON_PURCHASE,
                 ...basePayload,
-                planName: 'Fotos extra',
+                addonName: 'Fotos extra',
+                addonDescription: '20 fotos adicionales por alojamiento',
+                orderId: 'mp-payment-1',
                 amount: 250000,
                 currency: 'ARS',
-                nextBillingDate: '2026-09-15T00:00:00.000Z'
+                expiresAt: '2026-09-15T00:00:00.000Z'
             });
 
             expect(subject).toContain('Fotos extra');

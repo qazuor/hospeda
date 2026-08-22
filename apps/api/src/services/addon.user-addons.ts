@@ -31,6 +31,7 @@ import { apiLogger } from '../utils/logger';
 import { sendNotification } from '../utils/notification-helper';
 import type { AddonEntitlementService } from './addon-entitlement.service';
 import { recalculateAddonLimitsForCustomer } from './addon-limit-recalculation.service';
+import { resolveRecipientLocale } from './notification-recipient-locale';
 
 // Re-export types from service-core for backward compatibility
 export type { RevokeAllAddonsInput, RevokeAllAddonsResult } from '@repo/service-core';
@@ -363,6 +364,11 @@ export async function cancelUserAddon(
                     typeof customer.metadata?.name === 'string'
                         ? customer.metadata.name
                         : (customer.email ?? 'Usuario');
+                // HOS-722: the CTA link must land on the add-ons page (focused on
+                // the add-on that was just cancelled) in the recipient's own
+                // locale, not a hardcoded /es/ link with no focus.
+                const recipientLocale = await resolveRecipientLocale({ userId: input.userId });
+
                 sendNotification({
                     type: NotificationType.ADDON_CANCELLATION,
                     recipientEmail: customer.email,
@@ -370,7 +376,9 @@ export async function cancelUserAddon(
                     userId: input.userId,
                     customerId: input.customerId,
                     addonName: addonDef?.name || addonSlug,
-                    canceledAt: new Date().toISOString()
+                    canceledAt: new Date().toISOString(),
+                    addonSlug,
+                    locale: recipientLocale
                 }).catch((notifErr) => {
                     apiLogger.debug(
                         {

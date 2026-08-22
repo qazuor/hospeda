@@ -103,7 +103,9 @@ describe('NotificationService — extended coverage', () => {
             const payload: NotificationPayload = {
                 type: NotificationType.ADDON_PURCHASE,
                 ...basePayload,
-                planName: 'Fotos Extra',
+                addonName: 'Fotos Extra',
+                addonDescription: '20 fotos adicionales',
+                orderId: 'mp-payment-1',
                 amount: 2000,
                 currency: 'ARS'
             };
