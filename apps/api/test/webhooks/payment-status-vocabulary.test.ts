@@ -50,8 +50,31 @@ vi.mock('../../src/routes/webhooks/mercadopago/event-handler', () => ({
     cleanupRequestProviderEventId: vi.fn()
 }));
 
+// The success double RECORDS the delivery into `deliveredReceipts`, because
+// that is what the real notification service does (it writes the
+// `billing_notification_log` row carrying the idempotency key). A double that
+// only counted calls would let the exactly-once tests pass with the guard
+// removed: nothing would ever be written, so the second pass would always find
+// an empty table and send again — the test would be asserting the mock, not the
+// mechanism.
 vi.mock('../../src/routes/webhooks/mercadopago/notifications', () => ({
-    sendPaymentSuccessNotification: vi.fn().mockResolvedValue(undefined),
+    sendPaymentSuccessNotification: vi
+        .fn()
+        .mockImplementation(
+            async (
+                _customerId: string,
+                _amount: number,
+                _currency: string,
+                _paymentMethod: string | null,
+                _billing: unknown,
+                idempotencyKey?: string
+            ) => {
+                const paymentId = idempotencyKey?.split(':').at(-1);
+                if (paymentId) {
+                    dbState.deliveredReceipts.add(paymentId);
+                }
+            }
+        ),
     sendPaymentFailureNotifications: vi.fn().mockResolvedValue(undefined)
 }));
 
@@ -76,15 +99,22 @@ vi.mock('../../src/lib/posthog', () => ({
 }));
 
 /**
- * Rows the mocked Drizzle `select()` chain hands back, in call order within one
- * `getDb()` scope. `addonPurchaseRows` drives the add-on idempotency lookup that
- * the notification dispatch consults (HOS-757).
+ * State the mocked Drizzle client answers from.
+ *
+ * `deliveredReceipts` models `billing_notification_log`: the provider payment
+ * ids whose PAYMENT_SUCCESS receipt has already been DELIVERED. It is what
+ * `wasPaymentSuccessAlreadyDispatched` reads, so it is what makes the
+ * exactly-once cases below exercise the real mechanism rather than a stand-in.
+ *
+ * A successful send appends to it, exactly as the notification service writes
+ * the row — otherwise the second delivery in a sequence would find an empty
+ * table and the test would pass with the guard doing nothing.
  */
 const dbState: {
-    addonPurchaseRows: Array<{ id: string }>;
+    deliveredReceipts: Set<string>;
     subRows: Array<Record<string, unknown>>;
     updateCalls: Array<{ values: unknown }>;
-} = { addonPurchaseRows: [], subRows: [], updateCalls: [] };
+} = { deliveredReceipts: new Set(), subRows: [], updateCalls: [] };
 
 vi.mock('@repo/db', () => {
     let selectIndex = 0;
@@ -93,6 +123,27 @@ vi.mock('@repo/db', () => {
             from: () => chain,
             where: () => chain,
             limit: async () => rows
+        };
+        return chain;
+    }
+    /**
+     * The `billing_notification_log` lookup. Reads the idempotency key back out
+     * of the `where` clause the production code built, and answers from
+     * `deliveredReceipts`.
+     */
+    function makeReceiptChain() {
+        let key: string | null = null;
+        const chain = {
+            from: () => chain,
+            where: (cond: unknown) => {
+                const found = JSON.stringify(cond ?? {}).match(
+                    /payment-success:mercadopago:([\w-]+)/
+                );
+                key = found?.[1] ?? null;
+                return chain;
+            },
+            limit: async () =>
+                key !== null && dbState.deliveredReceipts.has(key) ? [{ id: 'log-row-1' }] : []
         };
         return chain;
     }
@@ -108,7 +159,15 @@ vi.mock('@repo/db', () => {
         getDb: vi.fn(() => {
             selectIndex = 0;
             return {
-                select: vi.fn(() => {
+                // The notification-log lookup is routed by the COLUMN SENTINELS
+                // in its projection, not by call order: it runs before every
+                // other select in the flow, so an index-based stub would shift
+                // each time the dispatch order changed and would silently start
+                // answering a different query.
+                select: vi.fn((cols?: Record<string, unknown>) => {
+                    if (cols && Object.values(cols).includes('NOTIFICATION_LOG_ID')) {
+                        return makeReceiptChain();
+                    }
                     const i = selectIndex;
                     selectIndex += 1;
                     return makeSelectChain(i === 0 ? dbState.subRows : []);
@@ -131,6 +190,13 @@ vi.mock('@repo/db', () => {
         },
         billingPayments: { id: 'PAYMENT_ID', providerPaymentIds: 'PROVIDER_PAYMENT_IDS' },
         billingAddonPurchases: { id: 'ADDON_PURCHASE_ID', paymentId: 'PAYMENT_ID_COL' },
+        billingNotificationLog: {
+            id: 'NOTIFICATION_LOG_ID',
+            type: 'NOTIFICATION_LOG_TYPE',
+            customerId: 'NOTIFICATION_LOG_CUSTOMER_ID',
+            status: 'NOTIFICATION_LOG_STATUS',
+            metadata: 'NOTIFICATION_LOG_METADATA'
+        },
         and: (...args: unknown[]) => ({ _and: args }),
         eq: (a: unknown, b: unknown) => ({ _eq: [a, b] }),
         isNull: (a: unknown) => ({ _isNull: a }),
@@ -255,9 +321,9 @@ function providerPaymentFor(rawMpStatus: string, metadata: Record<string, unknow
     };
 }
 
-function makeEvent(): QZPayWebhookEvent {
+function makeEvent(eventId = 'mp-event-1'): QZPayWebhookEvent {
     return {
-        id: 'mp-event-1',
+        id: eventId,
         type: 'payment.updated',
         data: { id: MP_PAYMENT_ID },
         created: Date.now(),
@@ -273,19 +339,28 @@ function makeContext() {
  * Wire `payments.retrieve` to answer with the given raw MP status, normalized
  * by the real adapter mapping, and run the live webhook handler.
  */
-async function deliverWebhook(rawMpStatus: string, metadata: Record<string, unknown> = {}) {
+async function deliverWebhook(
+    rawMpStatus: string,
+    metadata: Record<string, unknown> = {},
+    eventId = 'mp-event-1'
+) {
     const retrieve = vi.fn().mockResolvedValue(providerPaymentFor(rawMpStatus, metadata));
     mockGetWebhookDependencies.mockReturnValue({
         billing: mockBilling,
         paymentAdapter: { payments: { retrieve } }
     });
-    await handlePaymentUpdated(makeContext(), makeEvent());
+    // `eventId` is the NOTIFICATION id, distinct from `MP_PAYMENT_ID`. Two
+    // deliveries with different event ids model exactly what MercadoPago does
+    // when it notifies twice about one charge — and what the upstream
+    // `billing_webhook_events` guard cannot catch, because it dedupes on this
+    // value rather than on the payment.
+    await handlePaymentUpdated(makeContext(), makeEvent(eventId));
     return { retrieve };
 }
 
 beforeEach(() => {
     vi.clearAllMocks();
-    dbState.addonPurchaseRows = [];
+    dbState.deliveredReceipts.clear();
     dbState.subRows = [];
     dbState.updateCalls.length = 0;
     getMockConfirmPurchase().mockResolvedValue({ success: true, data: undefined });
@@ -334,7 +409,8 @@ describe('MercadoPago payment status vocabulary (HOS-757)', () => {
                 AMOUNT_MAJOR,
                 'ARS',
                 null,
-                mockBilling
+                mockBilling,
+                `payment-success:mercadopago:${MP_PAYMENT_ID}`
             );
             expect(sendPaymentFailureNotifications).not.toHaveBeenCalled();
             expect(mockMarkEventProcessed).toHaveBeenCalledTimes(1);
@@ -432,73 +508,121 @@ describe('MercadoPago payment status vocabulary (HOS-757)', () => {
 
     // ── The double-effect this change had to avoid ──────────────────────────
     //
-    // An add-on charge is processed by TWO producers that do not coordinate:
-    // the live webhook, and the per-minute polling cron whose job stays open
-    // until it finds the settled payment itself. Waking the success dispatch up
-    // without a guard would have meant one email and one analytics event per
-    // producer — the HOS-676 duplicate-email defect, rebuilt.
-    describe('exactly-once dispatch across the webhook and the polling cron', () => {
-        /** The payload the polling cron builds, post-HOS-757: normalized status. */
-        function pollingPayload() {
+    // HOS-763 turned the payment-success receipt ON. One settled charge can
+    // reach that dispatch more than once, from two producers that do not
+    // coordinate, and NEITHER is stopped by the webhook-event idempotency
+    // upstream:
+    //
+    //   1. Two provider notifications about the same payment. That guard dedupes
+    //      on `providerEventId`, and the adapter sets the event id from the
+    //      NOTIFICATION (`mapToQZPayEvent`: `id: String(mpEvent.id)`), not from
+    //      the payment. Two notifications carry two ids and both get through.
+    //   2. The polling cron, which writes no webhook-event row at all.
+    //
+    // The add-on flow has a second, narrower defence downstream (the
+    // `billing_addon_purchases.paymentId` lookup). A SUBSCRIPTION charge has
+    // none — which is why the subscription cases below are the ones that matter
+    // most here.
+    describe('exactly-once payment-success dispatch (HOS-757)', () => {
+        /** The payload the polling cron builds: adapter-normalized status. */
+        function pollingPayload(metadata: Record<string, unknown>) {
             return {
                 id: MP_PAYMENT_ID,
                 status: mapMPPaymentStatus('approved'),
                 transaction_amount: AMOUNT_MAJOR,
                 currency_id: 'ARS',
-                metadata: { customerId: CUSTOMER_ID, addonSlug: 'visibility-boost-7d' },
+                metadata,
                 external_reference: 'cs-uuid-1'
             };
         }
 
-        it('sends one notification when the webhook lands first and the cron follows', async () => {
-            // 1. The webhook arrives. No purchase row exists yet.
-            await deliverWebhook('approved', {
-                customerId: CUSTOMER_ID,
-                addonSlug: 'visibility-boost-7d'
-            });
-            expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
-            expect(getMockConfirmPurchase()).toHaveBeenCalledTimes(1);
+        const ADDON_META = { customerId: CUSTOMER_ID, addonSlug: 'visibility-boost-7d' };
+        /** A plain subscription charge: no add-on metadata, so no second defence. */
+        const SUBSCRIPTION_META = { customerId: CUSTOMER_ID };
 
-            // 2. A minute later the cron polls, finds the same settled payment
-            //    and re-enters with its own payload. The purchase row written in
-            //    step 1 is now there.
-            dbState.subRows = [{ id: 'addon-purchase-1' }];
+        it('sends one receipt when the webhook lands first and the cron follows', async () => {
+            await deliverWebhook('approved', ADDON_META);
+            expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
+
+            // A minute later the cron polls, finds the same settled payment and
+            // re-enters with its own payload.
             await processPaymentUpdated({
-                data: pollingPayload(),
+                data: pollingPayload(ADDON_META),
                 billing: mockBilling,
                 source: 'polling'
-            });
-
-            // Still one. Not two.
-            expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
-            expect(mockPostHogCapture).toHaveBeenCalledTimes(1);
-            expect(getMockConfirmPurchase()).toHaveBeenCalledTimes(1);
-        });
-
-        it('sends one notification when the cron lands first and the webhook follows', async () => {
-            await processPaymentUpdated({
-                data: pollingPayload(),
-                billing: mockBilling,
-                source: 'polling'
-            });
-            expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
-
-            dbState.subRows = [{ id: 'addon-purchase-1' }];
-            await deliverWebhook('approved', {
-                customerId: CUSTOMER_ID,
-                addonSlug: 'visibility-boost-7d'
             });
 
             expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
             expect(mockPostHogCapture).toHaveBeenCalledTimes(1);
         });
 
-        // The guard is scoped to add-ons, which are the only flow with a second
-        // producer. A non-add-on charge must NOT be silenced by a stray row.
-        it('does not suppress a non-add-on payment when a purchase row exists', async () => {
-            dbState.subRows = [{ id: 'some-other-addon-purchase' }];
+        it('sends one receipt when the cron lands first and the webhook follows', async () => {
+            await processPaymentUpdated({
+                data: pollingPayload(ADDON_META),
+                billing: mockBilling,
+                source: 'polling'
+            });
+            expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
 
-            await deliverWebhook('approved', { customerId: CUSTOMER_ID });
+            await deliverWebhook('approved', ADDON_META);
+
+            expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
+            expect(mockPostHogCapture).toHaveBeenCalledTimes(1);
+        });
+
+        // THE SUBSCRIPTION HOLE. Two distinct provider notifications about one
+        // settled subscription charge — two `providerEventId`s, so the
+        // webhook-event guard passes both — and no add-on metadata, so nothing
+        // downstream would have suppressed the repeat either. Before HOS-757
+        // this sent two receipts and captured two analytics events.
+        it('sends one receipt for two provider notifications about one subscription charge', async () => {
+            await deliverWebhook('approved', SUBSCRIPTION_META, 'mp-event-1');
+            expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
+
+            await deliverWebhook('approved', SUBSCRIPTION_META, 'mp-event-2');
+
+            expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
+            expect(mockPostHogCapture).toHaveBeenCalledTimes(1);
+        });
+
+        it('captures the succeeded analytics event exactly once for a subscription charge', async () => {
+            await deliverWebhook('approved', SUBSCRIPTION_META, 'mp-event-1');
+            await deliverWebhook('approved', SUBSCRIPTION_META, 'mp-event-2');
+
+            const captures = mockPostHogCapture.mock.calls.filter(
+                ([arg]) => (arg as { event?: string }).event === 'subscription_payment_succeeded'
+            );
+            expect(captures).toHaveLength(1);
+        });
+
+        // A DIFFERENT payment must still be notified. Without this, a guard that
+        // suppressed everything after the first send would pass every case above
+        // and silently stop every receipt in production.
+        it('still sends for a different payment id', async () => {
+            await deliverWebhook('approved', SUBSCRIPTION_META);
+            expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
+
+            dbState.deliveredReceipts.add('some-unrelated-payment');
+            await processPaymentUpdated({
+                data: {
+                    ...pollingPayload(SUBSCRIPTION_META),
+                    id: 'a-different-payment-id'
+                },
+                billing: mockBilling,
+                source: 'polling'
+            });
+
+            expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(2);
+        });
+
+        // The guard reads only DELIVERED rows. A logged `failed` row means the
+        // customer never got the email, so a retry must go out — treating it as
+        // "already sent" would turn a delivery failure into a permanently
+        // missing receipt.
+        it('still sends when the earlier attempt was not delivered', async () => {
+            // Nothing in `deliveredReceipts`: the previous attempt logged
+            // `failed`, which this lookup deliberately does not match.
+            await deliverWebhook('approved', SUBSCRIPTION_META);
 
             expect(sendPaymentSuccessNotification).toHaveBeenCalledTimes(1);
         });
