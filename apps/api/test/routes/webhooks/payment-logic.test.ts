@@ -409,7 +409,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -424,7 +424,11 @@ describe('processPaymentUpdated', () => {
             1000,
             'ARS',
             'credit_card',
-            mockBilling
+            mockBilling,
+            // HOS-757: the payment-scoped idempotency key. `undefined` here
+            // because this payload carries no `data.id` — nothing to key on, so
+            // the send proceeds ungated rather than being suppressed on a guess.
+            undefined
         );
         expect(result.success).toBe(true);
     });
@@ -444,7 +448,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -459,7 +463,11 @@ describe('processPaymentUpdated', () => {
             1000,
             'ARS',
             'credit_card',
-            mockBilling
+            mockBilling,
+            // HOS-757: the payment-scoped idempotency key. `undefined` here
+            // because this payload carries no `data.id` — nothing to key on, so
+            // the send proceeds ungated rather than being suppressed on a guess.
+            undefined
         );
         expect(result.success).toBe(true);
     });
@@ -468,7 +476,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -489,7 +497,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -523,7 +531,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -546,7 +554,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -570,7 +578,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'rejected',
+                status: 'failed',
                 statusDetail: 'cc_rejected_other_reason',
                 paymentMethod: 'credit_card'
             });
@@ -595,7 +603,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'rejected',
+                status: 'failed',
                 statusDetail: 'cc_rejected_other_reason',
                 paymentMethod: 'credit_card'
             });
@@ -614,7 +622,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -636,7 +644,11 @@ describe('processPaymentUpdated', () => {
                 1000,
                 'ARS',
                 'credit_card',
-                mockBilling
+                mockBilling,
+                // HOS-757: the payment-scoped idempotency key. `undefined` here
+                // because this payload carries no `data.id` — nothing to key on,
+                // so the send proceeds ungated rather than being suppressed.
+                undefined
             );
         });
     });
@@ -647,7 +659,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'rejected',
+                status: 'failed',
                 statusDetail: 'cc_rejected_insufficient_amount',
                 paymentMethod: 'credit_card'
             });
@@ -668,7 +680,7 @@ describe('processPaymentUpdated', () => {
                     currency: 'ARS',
                     payment_provider: 'mercadopago',
                     failure_reason: 'cc_rejected_insufficient_amount',
-                    failure_category: 'rejected',
+                    failure_category: 'failed',
                     source: 'webhook'
                 }
             });
@@ -679,7 +691,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'rejected',
+                status: 'failed',
                 statusDetail: 'cc_rejected_other_reason',
                 paymentMethod: 'credit_card'
             });
@@ -702,7 +714,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'rejected',
+                status: 'failed',
                 statusDetail: 'cc_rejected_other_reason',
                 paymentMethod: 'credit_card'
             });
@@ -727,7 +739,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(500),
                 currency: 'ARS',
-                status: 'cancelled',
+                status: 'canceled',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -742,14 +754,14 @@ describe('processPaymentUpdated', () => {
             );
             expect(
                 (call?.[0] as { properties: { failure_reason: string } }).properties.failure_reason
-            ).toBe('cancelled');
+            ).toBe('canceled');
         });
 
         it('does NOT capture payment_failed for an approved payment', async () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -790,7 +802,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(500),
             currency: 'ARS',
-            status: 'rejected',
+            status: 'failed',
             statusDetail: 'cc_rejected_other_reason',
             paymentMethod: 'credit_card'
         });
@@ -814,7 +826,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(750),
             currency: 'ARS',
-            status: 'cancelled',
+            status: 'canceled',
             statusDetail: null,
             paymentMethod: 'debit_card'
         });
@@ -828,7 +840,7 @@ describe('processPaymentUpdated', () => {
             'cust-1',
             750,
             'ARS',
-            'cancelled',
+            'canceled',
             mockBilling
         );
         expect(result.success).toBe(true);
@@ -841,7 +853,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(500),
             currency: 'ARS',
-            status: 'rejected',
+            status: 'failed',
             statusDetail: 'cc_rejected_other_reason',
             paymentMethod: 'credit_card'
         });
@@ -895,7 +907,11 @@ describe('processPaymentUpdated', () => {
                 1000,
                 'ARS',
                 'credit_card',
-                mockBilling
+                mockBilling,
+                // HOS-757: the payment-scoped idempotency key. `undefined` here
+                // because this payload carries no `data.id` — nothing to key on,
+                // so the send proceeds ungated rather than being suppressed.
+                undefined
             );
             // A cleared charge must never also be reported as a failure.
             expect(sendPaymentFailureNotifications).not.toHaveBeenCalled();
@@ -1199,7 +1215,7 @@ describe('processPaymentUpdated', () => {
             // MP reports transaction_amount in MAJOR units.
             amount: asMajor(5000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'account_money'
         });
@@ -1242,7 +1258,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(5000),
             currency: 'ARS',
-            status: 'rejected',
+            status: 'failed',
             statusDetail: 'cc_rejected_insufficient_amount',
             paymentMethod: 'credit_card'
         });
@@ -1361,10 +1377,14 @@ describe('processPaymentUpdated', () => {
     // the one path that barely sees add-on payments. `'succeeded'` is what the
     // live webhook delivers, which is how an add-on purchase actually arrives
     // (HOS-756).
-    it.each([
-        'approved',
-        'succeeded'
-    ])('lets the %s re-delivery of the same payment book the charge (HOS-742)', async (status) => {
+    // HOS-757: this case used to run `it.each(['approved', 'succeeded'])`,
+    // treating MercadoPago's raw spelling as an equally valid producer output.
+    // It is not one any more — the polling cron forwards the adapter's
+    // normalized status instead of hand-translating back — so `'approved'` has
+    // no producer and a positive control built on it would assert something
+    // nothing can send. The raw spellings get their own negative control below.
+    it('lets the succeeded re-delivery of the same payment book the charge (HOS-742)', async () => {
+        const status = 'succeeded';
         vi.mocked(extractAddonMetadata).mockReturnValue({
             addonSlug: 'visibility-boost-7d',
             customerId: 'cust-1'
@@ -1417,10 +1437,14 @@ describe('processPaymentUpdated', () => {
     // moved exactly the ordering this exercises: the branch gate now rejects a
     // charge that did not clear BEFORE the idempotency SELECT runs, so this case
     // is reachable only for a charge that did — in either spelling.
-    it.each([
-        'approved',
-        'succeeded'
-    ])('an existing purchase row for this paymentId short-circuits even a %s charge (HOS-742)', async (status) => {
+    // HOS-757: this case used to run `it.each(['approved', 'succeeded'])`,
+    // treating MercadoPago's raw spelling as an equally valid producer output.
+    // It is not one any more — the polling cron forwards the adapter's
+    // normalized status instead of hand-translating back — so `'approved'` has
+    // no producer and a positive control built on it would assert something
+    // nothing can send. The raw spellings get their own negative control below.
+    it('an existing purchase row for this paymentId short-circuits even a succeeded charge (HOS-742)', async () => {
+        const status = 'succeeded';
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(5000),
             currency: 'ARS',
@@ -1457,10 +1481,14 @@ describe('processPaymentUpdated', () => {
     // figures travel on either — which is the whole point of collapsing the two
     // sets into one. (`'accredited'` was dropped from this list: it is a
     // `status_detail` descriptor and no producer can put it in `status`.)
-    it.each([
-        'approved',
-        'succeeded'
-    ])('still confirms the add-on purchase when the payment is %s (HOS-742)', async (status) => {
+    // HOS-757: this case used to run `it.each(['approved', 'succeeded'])`,
+    // treating MercadoPago's raw spelling as an equally valid producer output.
+    // It is not one any more — the polling cron forwards the adapter's
+    // normalized status instead of hand-translating back — so `'approved'` has
+    // no producer and a positive control built on it would assert something
+    // nothing can send. The raw spellings get their own negative control below.
+    it('still confirms the add-on purchase when the payment is succeeded (HOS-742)', async () => {
+        const status = 'succeeded';
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(5000),
             currency: 'ARS',
@@ -1741,7 +1769,7 @@ describe('processPaymentUpdated', () => {
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1000),
             currency: 'ARS',
-            status: 'approved',
+            status: 'succeeded',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -1770,7 +1798,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(350_000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -2300,7 +2328,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1_000), // major units; delta is ~1k ARS for the upgrade
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -2884,7 +2912,7 @@ describe('processPaymentUpdated', () => {
             vi.mocked(extractPaymentInfo).mockReturnValue({
                 amount: asMajor(1000),
                 currency: 'ARS',
-                status: 'approved',
+                status: 'succeeded',
                 statusDetail: null,
                 paymentMethod: 'credit_card'
             });
@@ -3083,7 +3111,7 @@ describe('processPaymentUpdated', () => {
                 data: {
                     id: 'mp-legacy-1',
                     external_reference: 'addon_visibility-boost-7d_1700000000000',
-                    status: 'approved',
+                    status: 'succeeded',
                     metadata: null
                 },
                 billing: mockBilling
@@ -3109,7 +3137,7 @@ describe('processPaymentUpdated', () => {
                 data: {
                     id: 'mp-qzpay-1',
                     external_reference: qzpaySessionId,
-                    status: 'approved',
+                    status: 'succeeded',
                     metadata: {}
                 },
                 billing: mockBilling
@@ -3121,7 +3149,7 @@ describe('processPaymentUpdated', () => {
                 expect.objectContaining({
                     externalReference: qzpaySessionId,
                     paymentId: 'mp-qzpay-1',
-                    paymentStatus: 'approved',
+                    paymentStatus: 'succeeded',
                     metadataKeys: []
                 }),
                 'Payment has bare UUID external_reference (qzpay session id) but no addon metadata - possible qzpay-era addon payment missing metadata; correlate via qzpay checkout session'
@@ -3345,7 +3373,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1500),
             currency: 'ARS',
-            status: 'cancelled',
+            status: 'canceled',
             statusDetail: null,
             paymentMethod: 'credit_card'
         });
@@ -3364,7 +3392,7 @@ describe('processPaymentUpdated — webhook refund lifecycle (SPEC-194 T-008)', 
         vi.mocked(extractPaymentInfo).mockReturnValue({
             amount: asMajor(1500),
             currency: 'ARS',
-            status: 'rejected',
+            status: 'failed',
             statusDetail: 'cc_rejected_other_reason',
             paymentMethod: 'credit_card'
         });
