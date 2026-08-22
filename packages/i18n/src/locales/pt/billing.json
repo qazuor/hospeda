@@ -219,6 +219,11 @@
             "reasonCardDeclined": "O cartão foi recusado",
             "reasonExpired": "O cartão está vencido",
             "reasonInvalidData": "Dados do cartão inválidos",
+            "reasonHighRisk": "A operação não foi autorizada pela prevenção de fraudes",
+            "reasonSecurityCode": "Confira o código de segurança do cartão",
+            "reasonCardDisabled": "O cartão está bloqueado ou desabilitado",
+            "reasonInvalidInstallments": "O parcelamento escolhido não é válido para este cartão",
+            "reasonUnknown": "Motivo não informado pelo banco",
             "retryCta": "Tentar novamente",
             "supportCta": "Falar com o suporte",
             "pageTitle": "Pagamento recusado"

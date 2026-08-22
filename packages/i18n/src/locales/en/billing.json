@@ -219,6 +219,11 @@
             "reasonCardDeclined": "The card was declined",
             "reasonExpired": "The card has expired",
             "reasonInvalidData": "Invalid card details",
+            "reasonHighRisk": "The payment was not authorized by fraud prevention",
+            "reasonSecurityCode": "Check the card's security code",
+            "reasonCardDisabled": "The card is blocked or disabled",
+            "reasonInvalidInstallments": "The selected installment plan is not valid for this card",
+            "reasonUnknown": "Reason not reported by the bank",
             "retryCta": "Try again",
             "supportCta": "Contact support",
             "pageTitle": "Payment rejected"
